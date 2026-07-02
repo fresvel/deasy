@@ -23,6 +23,7 @@ import {
   createGeneralTask,
   listAddableDeliverables,
   searchTaskRecipients,
+  listFlowCatalog,
   listMySends
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
@@ -168,6 +169,13 @@ router.get(
   loadAccessContext,
   requireRouteUserAccess({ resource: "process_execution", action: "create" }),
   searchTaskRecipients
+);
+router.get(
+  '/:id/flow-catalog',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "process_execution", action: "create" }),
+  listFlowCatalog
 );
 router.get(
   '/:id/my-sends',

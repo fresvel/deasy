@@ -3614,6 +3614,34 @@ export const searchTaskRecipients = async (req, res) => {
   }
 };
 
+// Catálogo para el flow-builder routed "Por cargo": unidades + cargos activos (elegir cargo + unidad).
+export const listFlowCatalog = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  const connection = await pool.getConnection();
+  try {
+    const [units] = await connection.query(
+      `SELECT id, name FROM units WHERE is_active = 1 ORDER BY name ASC LIMIT 1000`
+    );
+    const [cargos] = await connection.query(
+      `SELECT id, name FROM cargos WHERE is_active = 1 ORDER BY name ASC LIMIT 500`
+    );
+    return res.json({ result: "ok", units, cargos });
+  } catch (error) {
+    console.error("listFlowCatalog error:", error);
+    return res.status(500).json({ message: "No se pudo cargar el catálogo de cargos/unidades." });
+  } finally {
+    connection.release();
+  }
+};
+
 // R4: consolidado "Mis envíos" — todo lo que el usuario ha enviado (items routed) entre TODOS los
 // tipos/procesos, con su tipo, destinatario, estado y fecha. Los recibidos viven en firmas/documental.
 export const listMySends = async (req, res) => {
@@ -3792,18 +3820,22 @@ export const createGeneralTask = async (req, res) => {
       let targetUnitId = sourceUnitId;
 
       if (itemMode === "routed") {
-        if (!recipientPersonId) {
+        // Con flujo runtime el flujo define los actores → el destinatario es opcional (metadato
+        // "Para:"). Sin flujo (compat legacy) sigue siendo obligatorio 1 destinatario firmante.
+        if (!recipientPersonId && !runtimeFlow) {
           throw new Error("Debes elegir el destinatario del envío.");
         }
-        const [recipRows] = await connection.query(
-          `SELECT id FROM persons WHERE id = ? AND is_active = 1 LIMIT 1`,
-          [recipientPersonId]
-        );
-        if (!recipRows?.length) {
-          throw new Error("El destinatario no es válido.");
+        if (recipientPersonId) {
+          const [recipRows] = await connection.query(
+            `SELECT id FROM persons WHERE id = ? AND is_active = 1 LIMIT 1`,
+            [recipientPersonId]
+          );
+          if (!recipRows?.length) {
+            throw new Error("El destinatario no es válido.");
+          }
         }
-        targetPersonId = recipientPersonId; // dueño/firmante = destinatario (resolver de dueño lee target_person_id)
-        targetPositionId = null; // se rutea por persona, no por puesto
+        targetPersonId = recipientPersonId || null; // "Para:" (puede ser null si la firma es por cargo)
+        targetPositionId = null; // se rutea por el flujo, no por puesto
         targetUnitId = null;
       }
 

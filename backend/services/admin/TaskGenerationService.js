@@ -1099,9 +1099,28 @@ export const materializeRuntimeFlowForTaskItem = async (
   connection,
   { taskItemId, processDefinitionTemplateId, flow }
 ) => {
-  const personId = (x) => Number(x?.person_id ?? x) || null;
-  const entrega = (Array.isArray(flow?.entrega) ? flow.entrega : []).map(personId).filter(Boolean);
-  const firma = (Array.isArray(flow?.firma) ? flow.firma : []).map(personId).filter(Boolean);
+  const APPROVALS = new Set(["and", "or", "at_least"]);
+  // Normaliza un paso runtime → persona concreta (specific_person) o cargo (cargo_in_scope + ámbito).
+  const normStep = (raw) => {
+    if (raw && raw.cargo_id) {
+      const unitId = raw.unit_id ? Number(raw.unit_id) : null;
+      const unitTypeId = raw.unit_type_id ? Number(raw.unit_type_id) : null;
+      return {
+        kind: "cargo",
+        cargo_id: Number(raw.cargo_id),
+        unit_id: unitId,
+        unit_type_id: unitTypeId,
+        unit_scope_type: raw.unit_scope_type || (unitId ? "unit_exact" : unitTypeId ? "unit_type" : "all_units"),
+        approval_mode: APPROVALS.has(raw.approval_mode) ? raw.approval_mode : "and",
+        required_min: raw.required_min ? Number(raw.required_min) : null,
+      };
+    }
+    const pid = Number(raw?.person_id ?? raw) || null;
+    return pid ? { kind: "person", person_id: pid } : null;
+  };
+
+  const entrega = (Array.isArray(flow?.entrega) ? flow.entrega : []).map(normStep).filter(Boolean);
+  const firma = (Array.isArray(flow?.firma) ? flow.firma : []).map(normStep).filter(Boolean);
   let fillSteps = 0;
   let signatureSteps = 0;
 
@@ -1113,13 +1132,23 @@ export const materializeRuntimeFlowForTaskItem = async (
     );
     const fillTplId = Number(ft.insertId);
     let order = 1;
-    for (const pid of entrega) {
-      await connection.query(
-        `INSERT INTO fill_flow_steps
-           (fill_flow_template_id, step_order, resolver_type, assigned_person_id, selection_mode, is_required, can_reject)
-         VALUES (?, ?, 'specific_person', ?, 'auto_one', 1, ?)`,
-        [fillTplId, order, pid, order > 1 ? 1 : 0]
-      );
+    for (const step of entrega) {
+      const canReject = order > 1 ? 1 : 0;
+      if (step.kind === "cargo") {
+        await connection.query(
+          `INSERT INTO fill_flow_steps
+             (fill_flow_template_id, step_order, resolver_type, unit_scope_type, unit_id, unit_type_id, cargo_id, selection_mode, is_required, can_reject)
+           VALUES (?, ?, 'cargo_in_scope', ?, ?, ?, ?, 'auto_one', 1, ?)`,
+          [fillTplId, order, step.unit_scope_type, step.unit_id, step.unit_type_id, step.cargo_id, canReject]
+        );
+      } else {
+        await connection.query(
+          `INSERT INTO fill_flow_steps
+             (fill_flow_template_id, step_order, resolver_type, assigned_person_id, selection_mode, is_required, can_reject)
+           VALUES (?, ?, 'specific_person', ?, 'auto_one', 1, ?)`,
+          [fillTplId, order, step.person_id, canReject]
+        );
+      }
       order += 1;
       fillSteps += 1;
     }
@@ -1133,13 +1162,25 @@ export const materializeRuntimeFlowForTaskItem = async (
     );
     const sigTplId = Number(st.insertId);
     let order = 1;
-    for (const pid of firma) {
-      await connection.query(
-        `INSERT INTO signature_flow_steps
-           (template_id, step_order, code, name, slot, resolver_type, assigned_person_id, selection_mode, approval_mode, is_required)
-         VALUES (?, ?, ?, ?, ?, 'specific_person', ?, 'auto_all', 'and', 1)`,
-        [sigTplId, order, `firma_${order}`, `Firma ${order}`, `firma_${order}`, pid]
-      );
+    for (const step of firma) {
+      const code = `firma_${order}`;
+      const name = `Firma ${order}`;
+      if (step.kind === "cargo") {
+        await connection.query(
+          `INSERT INTO signature_flow_steps
+             (template_id, step_order, code, name, slot, resolver_type, unit_scope_type, unit_id, unit_type_id, required_cargo_id, selection_mode, approval_mode, required_signers_min, is_required)
+           VALUES (?, ?, ?, ?, ?, 'cargo_in_scope', ?, ?, ?, ?, 'auto_all', ?, ?, 1)`,
+          [sigTplId, order, code, name, code, step.unit_scope_type, step.unit_id, step.unit_type_id, step.cargo_id,
+            step.approval_mode, step.approval_mode === "at_least" ? (step.required_min || 1) : null]
+        );
+      } else {
+        await connection.query(
+          `INSERT INTO signature_flow_steps
+             (template_id, step_order, code, name, slot, resolver_type, assigned_person_id, selection_mode, approval_mode, is_required)
+           VALUES (?, ?, ?, ?, ?, 'specific_person', ?, 'auto_all', 'and', 1)`,
+          [sigTplId, order, code, name, code, step.person_id]
+        );
+      }
       order += 1;
       signatureSteps += 1;
     }
