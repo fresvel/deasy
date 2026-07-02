@@ -1091,36 +1091,49 @@ export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, owner
   return null;
 };
 
-// P1 routed: materializa el flujo POR INSTANCIA definido por el usuario en runtime.
-// `flow = { entrega:[{person_id}...], firma:[{person_id}...] }` (personas concretas → specific_person).
-// Crea fill/signature_flow_templates con task_item_id (para que la materialización del documento los
-// prefiera sobre el flujo autorado de la plantilla). Devuelve cuántos pasos creó.
+// P1/P2 routed: materializa el flujo POR INSTANCIA definido por el usuario en runtime.
+// flow = { entrega:[signer...], firma:[step...] }
+//   signer = { person_id } | { cargo_id, unit_id?, unit_type_id?, unit_scope_type? }
+//   entrega: cada signer = 1 paso secuencial (1 responsable llena).
+//   firma:   cada step = { signers:[signer...], approval_mode, required_min } → varios firmantes por paso
+//            (signers JSON + quórum por approval_mode). También acepta un signer suelto (= paso de 1 firmante).
+// Crea fill/signature_flow_templates con task_item_id para que la materialización del documento los prefiera.
 export const materializeRuntimeFlowForTaskItem = async (
   connection,
   { taskItemId, processDefinitionTemplateId, flow }
 ) => {
   const APPROVALS = new Set(["and", "or", "at_least"]);
-  // Normaliza un paso runtime → persona concreta (specific_person) o cargo (cargo_in_scope + ámbito).
-  const normStep = (raw) => {
+  // Firmante/responsable → forma que consumen parseStepSigners / resolveFillStepAssignees.
+  const normSigner = (raw) => {
     if (raw && raw.cargo_id) {
       const unitId = raw.unit_id ? Number(raw.unit_id) : null;
       const unitTypeId = raw.unit_type_id ? Number(raw.unit_type_id) : null;
       return {
-        kind: "cargo",
+        type: "cargo_in_scope",
         cargo_id: Number(raw.cargo_id),
         unit_id: unitId,
         unit_type_id: unitTypeId,
         unit_scope_type: raw.unit_scope_type || (unitId ? "unit_exact" : unitTypeId ? "unit_type" : "all_units"),
-        approval_mode: APPROVALS.has(raw.approval_mode) ? raw.approval_mode : "and",
-        required_min: raw.required_min ? Number(raw.required_min) : null,
       };
     }
     const pid = Number(raw?.person_id ?? raw) || null;
-    return pid ? { kind: "person", person_id: pid } : null;
+    return pid ? { type: "specific_person", person_id: pid } : null;
+  };
+  // Paso de firma → { signers:[...], approval_mode, required_min }. Acepta { signers:[...] } o un signer suelto.
+  const normFirmaStep = (raw) => {
+    const rawSigners = Array.isArray(raw?.signers) ? raw.signers : [raw];
+    const signers = rawSigners.map(normSigner).filter(Boolean);
+    if (!signers.length) return null;
+    const approval = APPROVALS.has(raw?.approval_mode) ? raw.approval_mode : "and";
+    return {
+      signers,
+      approval_mode: signers.length > 1 ? approval : "and",
+      required_min: signers.length > 1 && approval === "at_least" ? (Number(raw?.required_min) || 1) : null,
+    };
   };
 
-  const entrega = (Array.isArray(flow?.entrega) ? flow.entrega : []).map(normStep).filter(Boolean);
-  const firma = (Array.isArray(flow?.firma) ? flow.firma : []).map(normStep).filter(Boolean);
+  const entrega = (Array.isArray(flow?.entrega) ? flow.entrega : []).map(normSigner).filter(Boolean);
+  const firma = (Array.isArray(flow?.firma) ? flow.firma : []).map(normFirmaStep).filter(Boolean);
   let fillSteps = 0;
   let signatureSteps = 0;
 
@@ -1132,21 +1145,21 @@ export const materializeRuntimeFlowForTaskItem = async (
     );
     const fillTplId = Number(ft.insertId);
     let order = 1;
-    for (const step of entrega) {
+    for (const s of entrega) {
       const canReject = order > 1 ? 1 : 0;
-      if (step.kind === "cargo") {
+      if (s.type === "cargo_in_scope") {
         await connection.query(
           `INSERT INTO fill_flow_steps
              (fill_flow_template_id, step_order, resolver_type, unit_scope_type, unit_id, unit_type_id, cargo_id, selection_mode, is_required, can_reject)
            VALUES (?, ?, 'cargo_in_scope', ?, ?, ?, ?, 'auto_one', 1, ?)`,
-          [fillTplId, order, step.unit_scope_type, step.unit_id, step.unit_type_id, step.cargo_id, canReject]
+          [fillTplId, order, s.unit_scope_type, s.unit_id, s.unit_type_id, s.cargo_id, canReject]
         );
       } else {
         await connection.query(
           `INSERT INTO fill_flow_steps
              (fill_flow_template_id, step_order, resolver_type, assigned_person_id, selection_mode, is_required, can_reject)
            VALUES (?, ?, 'specific_person', ?, 'auto_one', 1, ?)`,
-          [fillTplId, order, step.person_id, canReject]
+          [fillTplId, order, s.person_id, canReject]
         );
       }
       order += 1;
@@ -1164,23 +1177,24 @@ export const materializeRuntimeFlowForTaskItem = async (
     let order = 1;
     for (const step of firma) {
       const code = `firma_${order}`;
-      const name = `Firma ${order}`;
-      if (step.kind === "cargo") {
-        await connection.query(
-          `INSERT INTO signature_flow_steps
-             (template_id, step_order, code, name, slot, resolver_type, unit_scope_type, unit_id, unit_type_id, required_cargo_id, selection_mode, approval_mode, required_signers_min, is_required)
-           VALUES (?, ?, ?, ?, ?, 'cargo_in_scope', ?, ?, ?, ?, 'auto_all', ?, ?, 1)`,
-          [sigTplId, order, code, name, code, step.unit_scope_type, step.unit_id, step.unit_type_id, step.cargo_id,
-            step.approval_mode, step.approval_mode === "at_least" ? (step.required_min || 1) : null]
-        );
-      } else {
-        await connection.query(
-          `INSERT INTO signature_flow_steps
-             (template_id, step_order, code, name, slot, resolver_type, assigned_person_id, selection_mode, approval_mode, is_required)
-           VALUES (?, ?, ?, ?, ?, 'specific_person', ?, 'auto_all', 'and', 1)`,
-          [sigTplId, order, code, name, code, step.person_id]
-        );
-      }
+      const primary = step.signers[0]; // columnas de resolutor = fallback; el flujo usa `signers` cuando existe.
+      await connection.query(
+        `INSERT INTO signature_flow_steps
+           (template_id, step_order, code, name, slot, resolver_type, assigned_person_id, required_cargo_id, unit_scope_type, unit_id, unit_type_id, selection_mode, approval_mode, required_signers_min, signers, is_required)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'auto_all', ?, ?, ?, 1)`,
+        [
+          sigTplId, order, code, `Firma ${order}`, code,
+          primary.type,
+          primary.type === "specific_person" ? primary.person_id : null,
+          primary.type === "cargo_in_scope" ? primary.cargo_id : null,
+          primary.type === "cargo_in_scope" ? primary.unit_scope_type : "context_exact",
+          primary.type === "cargo_in_scope" ? primary.unit_id : null,
+          primary.type === "cargo_in_scope" ? primary.unit_type_id : null,
+          step.approval_mode,
+          step.required_min,
+          JSON.stringify(step.signers),
+        ]
+      );
       order += 1;
       signatureSteps += 1;
     }

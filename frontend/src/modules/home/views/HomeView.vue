@@ -1877,9 +1877,9 @@
               <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('entrega')">+ Agregar</button>
             </div>
             <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
-              <li v-for="(p, i) in flowEntrega" :key="`e-${p.person_id}-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700">
+              <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700">
                 <span class="text-[0.65rem] font-bold text-slate-400">{{ i + 1 }}</span>{{ p.label }}
-                <button type="button" class="text-slate-400 hover:text-rose-500" @click="removeFlowPerson('entrega', i)">×</button>
+                <button type="button" class="text-slate-400 hover:text-rose-500" @click="removeFromEntrega(i)">×</button>
               </li>
               <li v-if="!flowEntrega.length" class="text-xs text-slate-400">Nadie asignado.</li>
             </ul>
@@ -1887,19 +1887,39 @@
 
           <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
             <div class="flex items-center justify-between">
-              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Firma (en orden)</span>
-              <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('firma')">+ Agregar firmante</button>
+              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Firma (pasos en orden)</span>
+              <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
             </div>
-            <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
-              <li v-for="(p, i) in flowFirma" :key="`f-${p.person_id}-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700">
-                <span class="text-[0.65rem] font-bold text-slate-400">{{ i + 1 }}</span>{{ p.label }}
-                <button type="button" class="text-slate-400 hover:text-rose-500" @click="removeFlowPerson('firma', i)">×</button>
-              </li>
-              <li v-if="!flowFirma.length" class="text-xs text-slate-400">Sin firma.</li>
-            </ul>
+            <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 rounded-lg border border-slate-200 bg-white p-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400">Paso {{ si + 1 }}</span>
+                <div class="flex items-center gap-1.5">
+                  <template v-if="step.signers.length > 1">
+                    <select v-model="step.approval_mode" class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-semibold text-slate-600 outline-none focus:border-indigo-400">
+                      <option value="and">Firman todas</option>
+                      <option value="or">Cualquiera</option>
+                      <option value="at_least">Mínimo</option>
+                    </select>
+                    <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" class="w-14 rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] text-slate-700 outline-none focus:border-indigo-400" />
+                  </template>
+                  <button type="button" class="text-[0.7rem] font-semibold text-rose-500 hover:text-rose-600" @click="removeFirmaStep(si)">Quitar</button>
+                </div>
+              </div>
+              <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">
+                <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-700">
+                  {{ sg.label }}
+                  <button type="button" class="text-slate-400 hover:text-rose-500" @click="removeSignerFromStep(si, gi)">×</button>
+                </li>
+              </ul>
+              <button type="button" class="mt-1.5 text-[0.7rem] font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>
+            </div>
+            <p v-if="!flowFirma.length" class="m-0 mt-2 text-xs text-slate-400">Sin firma. Usa “+ Agregar paso” si el documento debe firmarse.</p>
           </div>
 
           <div v-if="flowPickerTarget" class="flex flex-col gap-2 rounded-xl border border-indigo-200 bg-indigo-50/40 p-3">
+            <p class="m-0 text-[0.7rem] font-semibold text-indigo-700">
+              {{ flowPickerTarget === 'entrega' ? 'Quién elabora' : (flowPickerTarget === 'firma:new' ? 'Nuevo paso de firma' : 'Añadir firmante al paso') }}
+            </p>
             <div class="inline-flex self-start rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-semibold">
               <button type="button" :class="flowPickerMode === 'person' ? 'bg-indigo-600 text-white' : 'text-slate-500'" class="rounded-md px-3 py-1" @click="flowPickerMode = 'person'">Persona</button>
               <button type="button" :class="flowPickerMode === 'cargo' ? 'bg-indigo-600 text-white' : 'text-slate-500'" class="rounded-md px-3 py-1" @click="flowPickerMode = 'cargo'">Por cargo</button>
@@ -1909,7 +1929,7 @@
               <input
                 v-model="recipientQuery"
                 type="text"
-                :placeholder="flowPickerTarget === 'firma' ? 'Busca al firmante…' : 'Busca a quién elabora…'"
+                placeholder="Busca por nombre, cédula o correo…"
                 class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
                 @input="searchRecipients"
               />
@@ -1935,15 +1955,7 @@
                   <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
                 </select>
               </div>
-              <div v-if="flowPickerTarget === 'firma'" class="flex items-center gap-2">
-                <select v-model="flowCargoForm.approvalMode" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
-                  <option value="and">Firman todas</option>
-                  <option value="or">Firma cualquiera</option>
-                  <option value="at_least">Mínimo N</option>
-                </select>
-                <input v-if="flowCargoForm.approvalMode === 'at_least'" v-model.number="flowCargoForm.requiredMin" type="number" min="1" class="w-20 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
-              </div>
-              <button type="button" class="self-start rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar cargo</button>
+              <button type="button" class="self-start rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</button>
             </div>
           </div>
         </div>
@@ -2846,7 +2858,7 @@ const flowFirma = ref([]);
 const flowPickerTarget = ref(null); // 'entrega' | 'firma' | null
 const flowPickerMode = ref('person'); // 'person' | 'cargo'
 const flowCatalog = ref({ units: [], cargos: [] });
-const flowCargoForm = ref({ cargoId: null, unitId: null, approvalMode: 'and', requiredMin: 1 });
+const flowCargoForm = ref({ cargoId: null, unitId: null });
 const deliverableOperationModal = ref(null);
 const deliverableSignResultModal = ref(null);
 const deliverablePreviewModal = ref(null);
@@ -4687,7 +4699,7 @@ const openGeneralTaskModal = (mode = 'free', context = {}) => {
   flowFirma.value = [];
   flowPickerTarget.value = null;
   flowPickerMode.value = 'person';
-  flowCargoForm.value = { cargoId: null, unitId: null, approvalMode: 'and', requiredMin: 1 };
+  flowCargoForm.value = { cargoId: null, unitId: null };
   if (usesRuntimeFlow) loadFlowCatalog();
   generalTaskModalInstance = Modal.getOrCreateInstance(generalTaskModal.value?.el);
   generalTaskModalInstance?.show();
@@ -4741,64 +4753,73 @@ const selectRecipient = (person) => {
   recipientQuery.value = generalTaskForm.value.recipientLabel;
 };
 
-// Flow-builder routed: agregar/quitar pasos (persona o cargo) de entrega o firma.
+// Flow-builder routed: entrega = pasos secuenciales (1 responsable c/u). Firma = pasos, cada uno con
+// 1..N firmantes + aprobación (todas/cualquiera/mínimo N). Firmante = persona concreta o por cargo.
+// flowPickerTarget: 'entrega' | 'firma:new' (nuevo paso) | 'firma:<idx>' (añadir a un paso) | null.
 const openFlowPicker = (target) => {
   flowPickerTarget.value = flowPickerTarget.value === target ? null : target;
   flowPickerMode.value = 'person';
-  flowCargoForm.value = { cargoId: null, unitId: null, approvalMode: 'and', requiredMin: 1 };
+  flowCargoForm.value = { cargoId: null, unitId: null };
   recipientQuery.value = '';
   recipientResults.value = [];
 };
-const flowListFor = (target) => (target === 'firma' ? flowFirma : flowEntrega);
-const addFlowPerson = (person) => {
-  const list = flowListFor(flowPickerTarget.value);
-  if (!list.value.some((p) => p.kind === 'person' && Number(p.person_id) === Number(person.id))) {
-    list.value.push({
-      kind: 'person',
-      person_id: person.id,
-      label: person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim(),
-    });
+const sameSigner = (a, b) => a.kind === b.kind
+  && Number(a.person_id || 0) === Number(b.person_id || 0)
+  && Number(a.cargo_id || 0) === Number(b.cargo_id || 0)
+  && Number(a.unit_id || 0) === Number(b.unit_id || 0);
+// Enruta un firmante/responsable al destino activo.
+const pushSigner = (signer) => {
+  const t = flowPickerTarget.value;
+  if (t === 'entrega') {
+    if (!flowEntrega.value.some((p) => sameSigner(p, signer))) flowEntrega.value.push(signer);
+  } else if (t === 'firma:new') {
+    flowFirma.value.push({ signers: [signer], approval_mode: 'and', required_min: 1 });
+  } else if (typeof t === 'string' && t.startsWith('firma:')) {
+    const step = flowFirma.value[Number(t.split(':')[1])];
+    if (step && !step.signers.some((p) => sameSigner(p, signer))) step.signers.push(signer);
   }
-  openFlowPicker(flowPickerTarget.value); // cierra y resetea
+  openFlowPicker(t); // cierra y resetea
+};
+const addFlowPerson = (person) => {
+  pushSigner({
+    kind: 'person',
+    person_id: person.id,
+    cargo_id: null,
+    unit_id: null,
+    label: person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim(),
+  });
 };
 const addFlowCargo = () => {
   const f = flowCargoForm.value;
   if (!f.cargoId) return;
   const cargoName = flowCatalog.value.cargos.find((c) => Number(c.id) === Number(f.cargoId))?.name || 'Cargo';
   const unitName = f.unitId ? flowCatalog.value.units.find((u) => Number(u.id) === Number(f.unitId))?.name : null;
-  const step = {
+  pushSigner({
     kind: 'cargo',
+    person_id: null,
     cargo_id: Number(f.cargoId),
     unit_id: f.unitId ? Number(f.unitId) : null,
     label: `${cargoName}${unitName ? ` · ${unitName}` : ' · todas las unidades'}`,
-  };
-  if (flowPickerTarget.value === 'firma') {
-    step.approval_mode = f.approvalMode;
-    step.required_min = f.approvalMode === 'at_least' ? Number(f.requiredMin || 1) : null;
-  }
-  flowListFor(flowPickerTarget.value).value.push(step);
-  openFlowPicker(flowPickerTarget.value);
+  });
 };
-const removeFlowPerson = (target, idx) => {
-  flowListFor(target).value.splice(idx, 1);
+const removeFromEntrega = (idx) => { flowEntrega.value.splice(idx, 1); };
+const removeFirmaStep = (idx) => { flowFirma.value.splice(idx, 1); };
+const removeSignerFromStep = (stepIdx, signerIdx) => {
+  const step = flowFirma.value[stepIdx];
+  if (!step) return;
+  step.signers.splice(signerIdx, 1);
+  if (!step.signers.length) flowFirma.value.splice(stepIdx, 1);
 };
-// Destinatario principal (para "Para:" / owner): 1er firmante persona, o el 1er responsable de
-// entrega persona distinto de ti. Con pasos por cargo puede quedar null (no hay 1 persona).
+// Destinatario principal ("Para:"/owner): 1er firmante persona, o 1er responsable de entrega ≠ tú.
 const primaryRecipientFromFlow = () => {
-  const firstFirma = flowFirma.value.find((p) => p.kind === 'person')?.person_id || null;
+  const firstFirma = flowFirma.value.flatMap((s) => s.signers).find((x) => x.kind === 'person')?.person_id || null;
   const entregaDelegate = flowEntrega.value
     .find((p) => p.kind === 'person' && Number(p.person_id) !== Number(currentUserId.value))?.person_id || null;
   return firstFirma || entregaDelegate || null;
 };
-// Paso de flujo → payload backend (persona concreta o cargo con ámbito/aprobación).
-const mapFlowStep = (s) => (s.kind === 'cargo'
-  ? {
-      cargo_id: s.cargo_id,
-      unit_id: s.unit_id || null,
-      unit_scope_type: s.unit_id ? 'unit_exact' : 'all_units',
-      approval_mode: s.approval_mode || 'and',
-      required_min: s.required_min || null,
-    }
+// Firmante/responsable → payload backend (persona concreta o cargo con ámbito).
+const mapSigner = (s) => (s.kind === 'cargo'
+  ? { cargo_id: s.cargo_id, unit_id: s.unit_id || null, unit_scope_type: s.unit_id ? 'unit_exact' : 'all_units' }
   : { person_id: s.person_id });
 
 const generalTaskModalTitle = computed(() => {
@@ -4973,7 +4994,7 @@ const submitGeneralTask = async () => {
     return;
   }
   const primaryRecipient = usesRuntimeFlow ? primaryRecipientFromFlow() : null;
-  const hasRecipientLike = flowFirma.value.length > 0
+  const hasRecipientLike = flowFirma.value.some((s) => s.signers.length)
     || flowEntrega.value.some((p) => p.kind === 'cargo'
       || (p.kind === 'person' && Number(p.person_id) !== Number(currentUserId.value)));
   if (form.itemMode === 'routed' && !hasRecipientLike) {
@@ -4994,8 +5015,14 @@ const submitGeneralTask = async () => {
       recipient_person_id: primaryRecipient,
       flow: usesRuntimeFlow
         ? {
-            entrega: flowEntrega.value.map(mapFlowStep),
-            firma: flowFirma.value.map(mapFlowStep),
+            entrega: flowEntrega.value.map(mapSigner),
+            firma: flowFirma.value
+              .filter((s) => s.signers.length)
+              .map((s) => ({
+                signers: s.signers.map(mapSigner),
+                approval_mode: s.signers.length > 1 ? s.approval_mode : 'and',
+                required_min: (s.signers.length > 1 && s.approval_mode === 'at_least') ? Number(s.required_min || 1) : null,
+              })),
           }
         : null,
       custom_term: {
