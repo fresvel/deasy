@@ -1852,7 +1852,7 @@
       content-class="rounded-4 shadow border-0"
       body-class="pt-4"
     >
-      <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-5">
         <p class="m-0 text-sm font-medium text-slate-500">
           {{ generalTaskForm.itemMode === 'routed'
             ? 'Crea un envío de este entregable y elige a la persona que lo recibe y firma.'
@@ -1860,7 +1860,7 @@
               ? 'Crea una réplica de este entregable. Hereda su flujo de entrega y firmas; solo cambia la etiqueta.'
               : (generalTaskForm.mode === 'derived'
                 ? 'Agrega un entregable adicional dentro de la tarea seleccionada. Heredará su unidad de contexto.'
-                : 'Crea una tarea ad-hoc y endósala a una persona (que puede ser tú). Quien la reciba será quien la atienda.')) }}
+                : 'Crea un documento ad-hoc y endósalo a una persona (que puede ser tú). Define quién lo elabora y quién lo firma.')) }}
         </p>
 
         <div v-if="generalTaskForm.templateName" class="flex flex-wrap items-center gap-2">
@@ -1868,20 +1868,31 @@
           <AppTag variant="muted">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
         </div>
 
-        <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
+        <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
 
-        <label class="flex flex-col gap-1">
-          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
-          <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
-        </label>
+        <!-- Documento -->
+        <section class="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><IconFileDescription class="h-4 w-4" /></span>
+            <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Documento</h6>
+          </div>
+          <label class="flex flex-col gap-1">
+            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
+            <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+          </label>
+          <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
+            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Descripción</span>
+            <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"></textarea>
+          </label>
+        </section>
 
-        <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
-          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Descripción</span>
-          <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del entregable…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"></textarea>
-        </label>
-
-        <div v-if="generalTaskForm.itemMode === 'routed' || generalTaskForm.mode === 'free'" class="flex flex-col gap-3">
-          <p class="m-0 text-xs text-slate-400">Define el flujo de este envío: quién lo elabora y quién lo firma.</p>
+        <!-- Flujo del envío -->
+        <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><IconSend class="h-4 w-4" /></span>
+            <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Flujo del envío</h6>
+          </div>
+          <p class="m-0 -mt-1 text-xs font-medium text-slate-400">Quién elabora el documento y quién lo firma (en orden).</p>
 
           <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
             <div class="flex items-center justify-between">
@@ -1970,30 +1981,29 @@
               <button type="button" class="self-start rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</button>
             </div>
           </div>
-        </div>
+        </section>
 
-        <label v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-1">
-          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Unidad *</span>
-          <select v-model="generalTaskForm.unitId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
-            <option :value="null" disabled>Selecciona una unidad</option>
-            <option v-for="unit in unitsPanelData" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
-          </select>
-        </label>
-
-        <div v-if="generalTaskForm.mode === 'free'" class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label class="flex flex-col gap-1 sm:col-span-1">
-            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Periodo</span>
-            <input v-model="generalTaskForm.termName" type="text" maxlength="180" placeholder="Ej. Junio 2026" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
-          </label>
-          <label class="flex flex-col gap-1">
-            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Inicio</span>
-            <input v-model="generalTaskForm.startDate" type="date" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
-          </label>
-          <label class="flex flex-col gap-1">
-            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Fin</span>
-            <input v-model="generalTaskForm.endDate" type="date" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
-          </label>
-        </div>
+        <!-- Destino y plazo -->
+        <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><IconBuildingMonument class="h-4 w-4" /></span>
+            <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Destino y plazo</h6>
+          </div>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1">
+              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Unidad *</span>
+              <select v-model="generalTaskForm.unitId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+                <option :value="null" disabled>Selecciona una unidad</option>
+                <option v-for="unit in unitsPanelData" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-slate-300">(opcional)</span></span>
+              <input v-model="generalTaskForm.endDate" type="date" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+            </label>
+          </div>
+          <p class="m-0 text-[0.7rem] font-medium text-slate-400">El envío se registra con fecha de hoy. Indica un vencimiento solo si debe atenderse antes de una fecha.</p>
+        </section>
       </div>
       <template #footer>
         <AppButton variant="secondary" data-modal-dismiss>Cancelar</AppButton>
@@ -4836,8 +4846,12 @@ const mapSigner = (s) => (s.kind === 'cargo'
   ? { cargo_id: s.cargo_id, unit_id: s.unit_id || null, unit_scope_type: s.unit_id ? 'unit_exact' : 'all_units' }
   : { person_id: s.person_id });
 
+// El modal de envío/tarea usa el flujo de runtime (elabora/firma) cuando es routed o alta libre.
+const isSendFlowModal = computed(() => generalTaskForm.value.itemMode === 'routed' || generalTaskForm.value.mode === 'free');
 const generalTaskModalTitle = computed(() => {
   const f = generalTaskForm.value;
+  // En un proceso routed abierto, el título refleja el proceso ("Nuevo Memorandum" / "Nueva tarea").
+  if ((f.itemMode === 'routed' || f.mode === 'free') && isRoutedProcess.value) return routedCreateLabel.value;
   if (f.itemMode === 'routed') return 'Enviar entregable';
   if (f.itemMode === 'replicated') return 'Agregar réplica';
   if (f.mode === 'derived') return 'Agregar entregable';
