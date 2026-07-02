@@ -92,7 +92,10 @@
             <span>{{ formatDate(item.created_at) }}</span>
           </p>
         </div>
-        <AppTag :variant="statusMeta(item).tone">{{ statusMeta(item).label }}</AppTag>
+        <div class="flex shrink-0 items-center gap-1.5">
+          <AppTag v-if="activeTab === 'received' && receivedRole(item)" :variant="receivedRole(item).tone">{{ receivedRole(item).label }}</AppTag>
+          <AppTag :variant="statusMeta(item).tone">{{ statusMeta(item).label }}</AppTag>
+        </div>
       </li>
     </ul>
   </section>
@@ -131,6 +134,14 @@ const emptyHint = computed(() => (activeTab.value === 'sends'
   : 'Cuando alguien te endose un documento de este tipo, aparecerá aquí.'));
 
 const personName = (item) => item.recipient_name || item.sender_name || 'Sin destinatario';
+
+// Qué debe hacer el usuario con un recibido: elaborarlo, firmarlo, o solo lo recibió como destinatario.
+const receivedRole = (item) => {
+  if (item.needs_fill) return { tone: 'info', label: 'Elaborar' };
+  if (item.needs_sign) return { tone: 'warning', label: 'Firmar' };
+  if (item.is_recipient) return { tone: 'neutral', label: 'Para ti' };
+  return null;
+};
 
 // Estado del documento/ítem → chip. Mapeo tolerante: éxito (firmado/completo), en curso, y neutro por defecto.
 const statusMeta = (item) => {

@@ -3690,8 +3690,9 @@ export const listMySends = async (req, res) => {
   }
 };
 
-// "Recibidos" — items routed (endosados) que el usuario RECIBIÓ (es el destinatario), entre todos los
-// procesos routed, con su tipo, remitente (quién lo endosó), estado y fecha. Simétrico a listMySends.
+// "Recibidos" — items routed que le LLEGARON al usuario para ACTUAR: es el destinatario ("Para:"),
+// o el flujo lo asignó a ELABORAR (fill_request) o FIRMAR (signature_request). Simétrico a listMySends.
+// Nota: el asignado suele resolverse por CARGO (cargo_in_scope), por eso no basta con target_person_id.
 export const listMyReceived = async (req, res) => {
   const authenticatedUserId = getAuthenticatedUserId(req);
   const routeUserId = getNumericUserId(req);
@@ -3702,6 +3703,21 @@ export const listMyReceived = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion MariaDB no disponible" });
   }
+  // Subconsultas EXISTS reutilizables: ¿la persona es asignada de llenado / firma del documento del item?
+  const FILL_EXISTS = `EXISTS (
+    SELECT 1 FROM fill_requests fr
+      JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+      JOIN document_versions dv ON dv.id = dff.document_version_id
+      JOIN documents dd ON dd.id = dv.document_id
+     WHERE dd.task_item_id = ti.id AND fr.assigned_person_id = ?
+  )`;
+  const SIGN_EXISTS = `EXISTS (
+    SELECT 1 FROM signature_requests sr
+      JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+      JOIN document_versions dv ON dv.id = sfi.document_version_id
+      JOIN documents dd ON dd.id = dv.document_id
+     WHERE dd.task_item_id = ti.id AND sr.assigned_person_id = ?
+  )`;
   const connection = await pool.getConnection();
   try {
     const [rows] = await connection.query(
@@ -3715,7 +3731,10 @@ export const listMyReceived = async (req, res) => {
          p.id AS process_id,
          p.name AS process_name,
          pdv.id AS definition_id,
-         d.status AS document_status
+         d.status AS document_status,
+         ${FILL_EXISTS} AS needs_fill,
+         ${SIGN_EXISTS} AS needs_sign,
+         (ti.target_person_id = ?) AS is_recipient
        FROM task_items ti
        JOIN process_definition_templates pdt
          ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
@@ -3724,11 +3743,19 @@ export const listMyReceived = async (req, res) => {
        JOIN processes p ON p.id = pdv.process_id
        LEFT JOIN persons sender ON sender.id = ti.created_by_person_id
        LEFT JOIN documents d ON d.task_item_id = ti.id
-       WHERE ti.target_person_id = ?
-         AND (ti.created_by_person_id IS NULL OR ti.created_by_person_id <> ?)
+       WHERE (ti.created_by_person_id IS NULL OR ti.created_by_person_id <> ?)
+         AND ( ti.target_person_id = ? OR ${FILL_EXISTS} OR ${SIGN_EXISTS} )
        ORDER BY ti.created_at DESC, ti.id DESC
        LIMIT 200`,
-      [authenticatedUserId, authenticatedUserId]
+      [
+        authenticatedUserId, // FILL_EXISTS (select)
+        authenticatedUserId, // SIGN_EXISTS (select)
+        authenticatedUserId, // is_recipient (select)
+        authenticatedUserId, // created_by <> (where)
+        authenticatedUserId, // target = (where)
+        authenticatedUserId, // FILL_EXISTS (where)
+        authenticatedUserId, // SIGN_EXISTS (where)
+      ]
     );
     return res.json({ result: "ok", received: rows });
   } catch (error) {
