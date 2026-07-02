@@ -75,3 +75,81 @@ legado/seed/runtime, pero **no** son opciones de autoría web.
 - Réplicas/instancias routed = `task_items` con `origin_kind='user_added'`.
 - `task_items.target_person_id` — usado hoy por el atajo routed (dueño = destinatario, vía
   `resolveOwnerPersonIdForTaskItem`, que alimenta el resolutor `document_owner`).
+
+---
+
+## Auditoría modelo ↔ código (2026‑07‑01, verificado archivo:línea)
+
+| Modo | Veredicto | Evidencia |
+|---|---|---|
+| **single** | ✅ **Aplica** | Siembra filtrada a `single` → 1 instancia al lanzar (`TaskGenerationService.js:1172,1236`); flujo predefinido heredado del template ligado (`746‑838`, `290‑304`). Autoría web `task_assignee`/`cargo_in_scope`. |
+| **replicated** | ✅ **Aplica** | 0 siembra al lanzar; el usuario crea N réplicas `user_added` con etiqueta (`user_controler.js:3806‑3842`) que **heredan** el flujo del template vía `process_definition_template_id` (`TaskGenerationService.js:761‑776`; firma `DocumentSignatureWorkflowService.js:660‑662`). |
+| **routed** | ⚠️ **Diverge** | El modelo exige flujo **definido al instanciar**; el código solo captura **etiqueta + 1 destinatario** (`user_controler.js:3685,3790‑3804`; `HomeView.vue:4829‑4842`, sin pasos) y **hereda** el flujo del template (misma vía que single). **No existe editor de flujo runtime.** |
+| **Proceso por defecto** | ⚠️ **Diverge (mismo defecto)** | Funciona por un **atajo**: link `item_mode='routed'` + un paso `document_owner` **sembrado** (`SystemBootstrapService.js:537,563‑567`); el destinatario queda como owner (`resolveOwnerPersonIdForTaskItem:987‑990` → resolver `document_owner:548‑549`). |
+| **Autoría de flujo** | ✅ **Aplica** | Solo `task_assignee`/`cargo_in_scope` (+`specific_person` en ad_hoc); **sin** `document_owner`/`position`/`manual_pick` (`SqlAdminService.js:261`; modal `307‑311/468‑471`). El editor **ignora `item_mode`** (el modo vive en el LINK, no en la plantilla). |
+
+**Divergencia central:** para `routed`, el flujo se resuelve por el **template ligado**
+(`getActiveFillFlowTemplateForDefinitionTemplate`, misma ruta que single/replicated). **No
+hay ningún camino donde el usuario defina los pasos al instanciar.** El "editor de flujo en
+runtime" —pilar del modelo— no existe. El front está limpio de `document_owner`
+("Responsable del documento") — 0 coincidencias.
+
+---
+
+## Plan P1 — Editor de flujo en runtime para routed (cierra la brecha)
+
+**Objetivo:** al crear una instancia routed, el usuario **define el flujo de entrega +
+firma** (pasos con **personas concretas**); el backend materializa ese flujo **POR
+INSTANCIA**, sin heredar el del template. Reemplaza el atajo "1 destinatario +
+`document_owner` sembrado".
+
+### Idea clave (reuso, sin resolutores nuevos)
+Como es runtime, el usuario elige **personas concretas** → cada paso = resolutor
+**`specific_person`** con `person_id`. No se necesita `document_owner` ni un resolutor
+"destinatario". Se reusa la maquinaria de `fill_flow_*`/`signature_flow_*`.
+
+### Decisión de esquema (a resolver primero)
+`fill_requests.fill_flow_step_id` y `signature_requests.step_id` son **FK NOT NULL** a las
+tablas de pasos, y `fill_flow_templates.process_definition_template_id` /
+`signature_flow_instances.template_id` son **NOT NULL**. ⇒ un flujo por‑instancia necesita
+filas de **template + steps propias**. **Recomendado:** añadir columna nullable
+**`task_item_id`** a `fill_flow_templates` y `signature_flow_templates`:
+- flujo de plantilla (single/replicated) → `task_item_id IS NULL` (como hoy);
+- flujo por‑instancia (routed) → `task_item_id = <el ítem>`.
+La búsqueda "activa por link" (`getActiveFillFlowTemplateForDefinitionTemplate`) añade
+`AND task_item_id IS NULL`; la materialización de un routed busca el flujo por `task_item_id`.
+
+### Backend (fases)
+1. **Esquema**: `task_item_id` (nullable, FK) en `fill_flow_templates` + `signature_flow_templates` (schema + `mariadb_initializer` idempotente).
+2. **Contrato**: `createGeneralTask` (routed/free) acepta `flow` en el body:
+   `{ entrega:[{person_id|"me"}...], firma:[{signers:[person_id...], approval_mode, required_min}...] }`.
+   Validar personas activas, ≥1 paso de entrega, orden.
+3. **Materialización por instancia**: tras crear `task_item`+`documents`+`document_versions`,
+   crear un `fill_flow_template`(+steps `specific_person`)/`signature_flow_template`(+steps)
+   con `task_item_id` = el ítem, y materializar `fill_requests`/`signature_requests`
+   (reusando la maquinaria existente, apuntada al flujo por‑instancia). Variante
+   `ensureFillFlowForDocumentVersion` que prefiera el flujo por `task_item_id` si existe.
+4. **Retirar el atajo**: dejar de sembrar `document_owner` en el proceso por defecto
+   (`SystemBootstrapService`); su flujo también se define en runtime. Revisar el uso de
+   `target_person_id` (puede quedar como metadato "destinatario principal" para "Para:").
+
+### Frontend (fases)
+1. **Componente flow‑builder runtime** (reutilizable): extraído de los sub‑forms
+   "Quién hace el paso"/"Quién firma" de `AdminDraftArtifactModal`, pero eligiendo
+   **personas concretas** (buscador `task-recipients`), no resolvers.
+   - Entrega: lista de pasos (persona; "yo" por defecto en el 1º).
+   - Firma: lista de pasos (firmantes + aprobación: todas/cualquiera/mínimo N).
+2. **Modal "Nuevo envío"**: reemplazar el "1 destinatario" por el flow‑builder; enviar `flow`.
+3. **P2 (aviso en Paquetes)**: "El flujo de un routed se define AL ENVIAR, no aquí."
+
+### Decisiones a confirmar (próxima sesión)
+- ¿La entrega runtime permite también resolvers (cargo) o **solo personas concretas**?
+  (el modelo dice "el usuario determina" → personas concretas; cargo sería extensión).
+- "Para:" / "Mis envíos" con flujo multi‑persona: ¿mostrar el/los firmantes o un
+  "destinatario principal"?
+- Convivencia/migración de routed existentes (default con `document_owner` sembrado).
+
+### Verificación objetivo
+Crear un routed en runtime con entrega=autor + firma=persona X → materializa
+`fill_request`(autor) + `signature_request`(X) → autor llena, X firma. E2E, sin
+`document_owner`.
