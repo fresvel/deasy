@@ -128,9 +128,7 @@
             <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
           </select>
         </label>
-        <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <input v-model="editForm.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600" /> Activo
-        </label>
+        <SToggle v-model="editForm.is_active" label="Activo" label-position="end" />
       </div>
       <template #footer>
         <AppButton variant="cancel" :disabled="savingEdit" @click="closeEditModal">Cancelar</AppButton>
@@ -344,6 +342,7 @@ import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import { IconX, IconPencil, IconArrowLeft, IconRefresh, IconDownload, IconPlus } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
 import ProcessConfigNode from "./ProcessConfigNode.vue";

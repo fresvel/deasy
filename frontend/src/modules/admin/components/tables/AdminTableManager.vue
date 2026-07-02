@@ -95,10 +95,9 @@
             diagnóstico. Editarlos directamente puede afectar la consistencia del flujo.
           </span>
         </p>
-        <label v-if="isAdminUser" class="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-amber-900">
-          <input v-model="advancedRuntimeMode" type="checkbox" class="h-4 w-4 rounded border-amber-300 text-amber-600" />
-          Modo avanzado (edición directa)
-        </label>
+        <SToggle v-if="isAdminUser" v-model="advancedRuntimeMode" label-position="end">
+          <span class="whitespace-nowrap text-sm font-semibold text-amber-900">Modo avanzado (edición directa)</span>
+        </SToggle>
       </div>
       <p v-if="isAdminUser && advancedRuntimeMode" class="m-0 mt-2 text-xs font-bold text-red-700">
         Edición directa habilitada: puede afectar la consistencia del flujo. No reemplaza las validaciones del backend.
@@ -1074,6 +1073,7 @@ import {
   vacantPositionTableFields
 } from "@/modules/admin/services/AdminTableManagerConfig";
 import AdminFeedbackToast from "@/modules/admin/components/ui/AdminFeedbackToast.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminDefinitionArtifactsModal from "@/modules/admin/components/modals/AdminDefinitionArtifactsModal.vue";
 import AdminDefinitionArtifactsPanel from "@/modules/admin/components/modals/AdminDefinitionArtifactsPanel.vue";
 import AdminDefinitionCreatedPromptModal from "@/modules/admin/components/modals/AdminDefinitionCreatedPromptModal.vue";

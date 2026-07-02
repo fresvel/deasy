@@ -1164,10 +1164,9 @@
             </div>
           </label>
 
-          <label v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-7 p-3 rounded-2xl border border-slate-100 bg-slate-50/50 cursor-pointer">
-            <span class="font-bold text-slate-700 text-sm select-none">Crear periodo custom</span>
-            <input v-model="taskLaunchUseCustomTerm" type="checkbox" class="w-5 h-5 rounded text-sky-600 focus:ring-sky-500 border-slate-300 transition-colors" />
-          </label>
+          <div v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="mt-1 md:mt-7 p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
+            <SToggle v-model="taskLaunchUseCustomTerm" label="Crear periodo custom" />
+          </div>
 
           <template v-if="taskLaunchUseCustomTerm">
             <label class="flex flex-col gap-2 md:col-span-2">
@@ -2702,6 +2701,7 @@ import { API_ROUTES } from '@/core/config/apiConfig';
 import { Modal } from '@/shared/utils/modalController';
 import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
+import SToggle from '@/shared/components/forms/SToggle.vue';
 import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 import HomeSignatureEntry from '@/modules/home/components/HomeSignatureEntry.vue';

@@ -208,9 +208,7 @@
                   <option value="promocion">Promoción</option>
                   <option value="simbolico">Simbólico</option>
                 </select>
-                <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-                  <input v-model="positionForm.is_unit_head" type="checkbox" class="h-3.5 w-3.5" /> Jefatura
-                </label>
+                <SToggle v-model="positionForm.is_unit_head" label="Jefatura" label-position="end" />
               </div>
               <div class="flex justify-end gap-2">
                 <AppButton variant="cancel" size="sm" @click="addingPosition = false">Cancelar</AppButton>
@@ -364,13 +362,9 @@
             <option value="simbolico">Simbólico</option>
           </select>
         </label>
-        <div class="flex items-center gap-4">
-          <label class="flex items-center gap-1.5 text-sm font-medium text-slate-600">
-            <input v-model="editPositionForm.is_unit_head" type="checkbox" class="h-4 w-4" /> Jefatura
-          </label>
-          <label class="flex items-center gap-1.5 text-sm font-medium text-slate-600">
-            <input v-model="editPositionForm.is_active" type="checkbox" class="h-4 w-4" /> Activo
-          </label>
+        <div class="flex items-center gap-6">
+          <SToggle v-model="editPositionForm.is_unit_head" label="Jefatura" label-position="end" />
+          <SToggle v-model="editPositionForm.is_active" label="Activo" label-position="end" />
         </div>
 
       </div>
@@ -484,6 +478,7 @@ import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";

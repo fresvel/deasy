@@ -716,19 +716,16 @@
         </div>
       </div>
 
-      <label class="inline-flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <input
-          v-model="allowUntrustedSigner"
-          type="checkbox"
-          class="mt-1 h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-300"
-        />
-        <span>
-          Permitir certificados no validados
-          <span class="block text-xs text-amber-700">
-            Solo para pruebas. Si la cadena de confianza no puede validarse, la firma continuará y se devolverá como advertencia.
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <SToggle v-model="allowUntrustedSigner" label-position="end">
+          <span class="text-sm text-amber-900">
+            Permitir certificados no validados
+            <span class="block text-xs text-amber-700">
+              Solo para pruebas. Si la cadena de confianza no puede validarse, la firma continuará y se devolverá como advertencia.
+            </span>
           </span>
-        </span>
-      </label>
+        </SToggle>
+      </div>
 
       <p v-if="signError" class="mb-0 text-sm font-medium text-red-600">{{ signError }}</p>
     </div>
@@ -1015,6 +1012,7 @@
   import UserCertificatesPanel from '@/modules/firmas/components/UserCertificatesPanel.vue';
   import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
   import AdminButton from '@/shared/components/buttons/AppButton.vue';
+  import SToggle from '@/shared/components/forms/SToggle.vue';
   import Loading from '@/shared/components/feedback/Loading.vue';
   import MultiSignerPanel from '@/modules/firmas/components/MultiSignerPanel.vue';
 

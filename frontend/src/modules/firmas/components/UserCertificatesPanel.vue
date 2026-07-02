@@ -107,10 +107,7 @@
           @clear="clearSelectedFile"
         />
 
-        <label class="inline-flex items-center gap-2 text-sm text-slate-600">
-          <input v-model="uploadAsDefault" type="checkbox" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500" />
-          Marcar como predeterminado
-        </label>
+        <SToggle v-model="uploadAsDefault" label="Marcar como predeterminado" label-position="end" />
 
         <AdminButton
           variant="primary"
@@ -131,6 +128,7 @@ import AppTag from "@/shared/components/data/AppTag.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 const props = defineProps({
