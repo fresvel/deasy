@@ -54,10 +54,7 @@
                   <AdminInputField :model-value="personCargoForm.end_date" type="date" @update:model-value="updateCargoField('end_date', $event)" />
                 </AdminFieldGroup>
                 <AdminFieldGroup label="Actual" group-class="md:col-span-4">
-                  <AdminSelectField :model-value="personCargoForm.is_current" @update:model-value="updateCargoField('is_current', $event)">
-                    <option value="1">Si</option>
-                    <option value="0">No</option>
-                  </AdminSelectField>
+                  <SToggle :model-value="Number(personCargoForm.is_current) === 1" label-position="end" @change="(value) => updateCargoField('is_current', value ? '1' : '0')" />
                 </AdminFieldGroup>
               </div>
               <AdminFormActions
@@ -268,6 +265,7 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const props = defineProps({

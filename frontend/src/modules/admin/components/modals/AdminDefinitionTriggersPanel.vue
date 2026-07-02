@@ -42,10 +42,7 @@
           />
         </div>
         <AdminFieldGroup label="Activo" group-class="md:col-span-4">
-          <AdminSelectField :model-value="form.is_active" :disabled="!canManage" @update:model-value="updateField('is_active', $event)">
-            <option value="1">Si</option>
-            <option value="0">No</option>
-          </AdminSelectField>
+          <SToggle :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" @change="(value) => updateField('is_active', value ? '1' : '0')" />
         </AdminFieldGroup>
       </div>
       <template #footer>
@@ -104,7 +101,7 @@ import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
-import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 

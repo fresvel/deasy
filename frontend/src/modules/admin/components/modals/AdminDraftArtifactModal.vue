@@ -244,11 +244,9 @@
             <label class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Grupo</label>
             <input :value="field.group" placeholder="general" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSchemaField(index, 'group', $event.target.value)" />
           </div>
-          <div class="col-span-1 flex items-center justify-center pb-1.5">
-            <label class="inline-flex flex-col items-center gap-0.5 text-[0.6rem] font-semibold text-slate-400">
-              Req.
-              <input type="checkbox" :checked="field.required" class="h-4 w-4" @change="updateSchemaField(index, 'required', $event.target.checked)" />
-            </label>
+          <div class="col-span-1 flex flex-col items-center justify-center gap-1 pb-1.5">
+            <span class="text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Req.</span>
+            <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
             <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
@@ -574,6 +572,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import axios from "axios";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";

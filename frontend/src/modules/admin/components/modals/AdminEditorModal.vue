@@ -79,15 +79,13 @@
             {{ formatSelectOptionLabel(field, option) }}
           </option>
         </AdminSelectField>
-        <AdminSelectField
+        <SToggle
           v-else-if="field.type === 'boolean'"
-          :model-value="formData[field.name]"
+          :model-value="Number(formData[field.name]) === 1"
           :disabled="isFieldLocked(field)"
-          @update:model-value="updateFormField(field.name, $event)"
-        >
-          <option value="1">Si</option>
-          <option value="0">No</option>
-        </AdminSelectField>
+          label-position="end"
+          @change="(value) => updateFormField(field.name, value ? '1' : '0')"
+        />
         <AdminInputField
           v-else
           :model-value="formData[field.name]"
@@ -242,6 +240,7 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const props = defineProps({

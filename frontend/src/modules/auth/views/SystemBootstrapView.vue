@@ -65,13 +65,14 @@
 
           <!-- Paso 2: Gestor por defecto (opcional) -->
           <div v-show="step === 2" class="space-y-4">
-            <label class="flex items-center gap-3 rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
-              <input v-model="gestorEnabled" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" />
-              <span>
-                <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
-                <span class="block text-xs text-slate-500">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
-              </span>
-            </label>
+            <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+              <SToggle v-model="gestorEnabled">
+                <span>
+                  <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
+                  <span class="block text-xs text-slate-500">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
+                </span>
+              </SToggle>
+            </div>
             <div v-if="gestorEnabled" class="space-y-4">
               <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
                 <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleGestor" />
@@ -106,13 +107,14 @@
             </div>
 
             <!-- Usuario de prueba (opcional): rol base "Usuario" para validar el flujo operativo -->
-            <label class="flex items-center gap-3 rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
-              <input v-model="usuarioEnabled" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" />
-              <span>
-                <span class="block text-sm font-semibold text-slate-700">Crear un usuario de prueba</span>
-                <span class="block text-xs text-slate-500">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
-              </span>
-            </label>
+            <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+              <SToggle v-model="usuarioEnabled">
+                <span>
+                  <span class="block text-sm font-semibold text-slate-700">Crear un usuario de prueba</span>
+                  <span class="block text-xs text-slate-500">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
+                </span>
+              </SToggle>
+            </div>
             <div v-if="usuarioEnabled" class="space-y-4">
               <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
                 <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleUsuario" />
@@ -193,46 +195,50 @@
                 </label>
               </div>
             </fieldset>
-            <label
-              class="flex items-start gap-3 rounded-lg border p-3.5 transition-colors"
+            <div
+              class="rounded-lg border p-3.5 transition-colors"
               :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
             >
-              <input v-model="preconfig.relation_unit_types" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
-              <span>
-                <span class="block text-sm font-semibold text-slate-700">Relación orgánica</span>
-                <span class="block text-xs text-slate-500">Crea el tipo de relación jerárquica entre unidades.</span>
-              </span>
-            </label>
-            <label
-              class="flex items-start gap-3 rounded-lg border p-3.5 transition-colors"
+              <SToggle v-model="preconfig.relation_unit_types">
+                <span>
+                  <span class="block text-sm font-semibold text-slate-700">Relación orgánica</span>
+                  <span class="block text-xs text-slate-500">Crea el tipo de relación jerárquica entre unidades.</span>
+                </span>
+              </SToggle>
+            </div>
+            <div
+              class="rounded-lg border p-3.5 transition-colors"
               :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
             >
-              <input v-model="preconfig.example_units" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
-              <span>
-                <span class="block text-sm font-semibold text-slate-700">Estructura de unidades de ejemplo</span>
-                <span class="block text-xs text-slate-500">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
-              </span>
-            </label>
-            <label
-              class="flex items-start gap-3 rounded-lg border p-3.5 transition-colors"
+              <SToggle v-model="preconfig.example_units">
+                <span>
+                  <span class="block text-sm font-semibold text-slate-700">Estructura de unidades de ejemplo</span>
+                  <span class="block text-xs text-slate-500">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
+                </span>
+              </SToggle>
+            </div>
+            <div
+              class="rounded-lg border p-3.5 transition-colors"
               :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
             >
-              <input v-model="preconfig.example_positions" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
-              <span>
-                <span class="block text-sm font-semibold text-slate-700">Puestos de ejemplo</span>
-                <span class="block text-xs text-slate-500">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
-              </span>
-            </label>
-            <label
-              class="flex items-start gap-3 rounded-lg border p-3.5 transition-colors"
+              <SToggle v-model="preconfig.example_positions">
+                <span>
+                  <span class="block text-sm font-semibold text-slate-700">Puestos de ejemplo</span>
+                  <span class="block text-xs text-slate-500">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
+                </span>
+              </SToggle>
+            </div>
+            <div
+              class="rounded-lg border p-3.5 transition-colors"
               :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
             >
-              <input v-model="preconfig.example_users" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
-              <span>
-                <span class="block text-sm font-semibold text-slate-700">Usuarios de ejemplo</span>
-                <span class="block text-xs text-slate-500">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
-              </span>
-            </label>
+              <SToggle v-model="preconfig.example_users">
+                <span>
+                  <span class="block text-sm font-semibold text-slate-700">Usuarios de ejemplo</span>
+                  <span class="block text-xs text-slate-500">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
+                </span>
+              </SToggle>
+            </div>
           </div>
 
           <!-- Paso 4: Resumen -->
@@ -330,6 +336,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import SystemBootstrapService from "@/modules/auth/services/SystemBootstrapService";
 import {
   IconAlertCircle,

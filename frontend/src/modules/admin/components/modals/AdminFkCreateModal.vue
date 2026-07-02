@@ -45,14 +45,12 @@
             {{ formatSelectOptionLabel(field, option) }}
           </option>
         </AdminSelectField>
-        <AdminSelectField
+        <SToggle
           v-else-if="field.type === 'boolean'"
-          :model-value="fkCreateForm[field.name]"
-          @update:model-value="updateField(field.name, $event)"
-        >
-          <option value="1">Si</option>
-          <option value="0">No</option>
-        </AdminSelectField>
+          :model-value="Number(fkCreateForm[field.name]) === 1"
+          label-position="end"
+          @change="(value) => updateField(field.name, value ? '1' : '0')"
+        />
         <AdminInputField
           v-else
           :model-value="fkCreateForm[field.name]"
@@ -87,6 +85,7 @@ import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vu
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 
 const props = defineProps({
   fkTable: {
