@@ -153,3 +153,34 @@ La búsqueda "activa por link" (`getActiveFillFlowTemplateForDefinitionTemplate`
 Crear un routed en runtime con entrega=autor + firma=persona X → materializa
 `fill_request`(autor) + `signature_request`(X) → autor llena, X firma. E2E, sin
 `document_owner`.
+
+---
+
+## Estado P1 — IMPLEMENTADO (2026‑07‑02)
+
+Commits: `841ba4a` (esquema), `87849ea` (materialización), `6cbe326` (frontend + fix).
+
+- **Esquema**: `task_item_id` (nullable, FK) en `fill_flow_templates` /
+  `signature_flow_templates` (+ migración idempotente). NULL = flujo de plantilla; != NULL
+  = flujo por instancia (routed).
+- **Backend**: `materializeRuntimeFlowForTaskItem` crea el flujo por instancia con pasos
+  `specific_person` desde `flow{entrega[],firma[]}`. `getActive{Fill,Signature}FlowTemplate…`
+  aceptan `taskItemId` y **prefieren** el flujo por instancia; el lookup de plantilla excluye
+  los por instancia. `createGeneralTask` (routed derived + free) parsea `flow` y lo
+  materializa antes de crear el documento.
+- **Frontend** (`HomeView`): el modal "Nuevo envío" trae un **flow‑builder** — "Elabora
+  (entrega)" + "Firma (en orden)" con personas concretas (chips + buscador; "Tú (autor)"
+  por defecto). Envía `flow`; `recipient_person_id` = destinatario principal derivado
+  (owner/"Para:").
+- **Verificado E2E** (UI + API): envío entrega=autor(24)/firma=CAE(12), owner=12 →
+  `fill_request` para el **autor (24)** desde el flujo por instancia (`specific_person`),
+  **no** vía `document_owner`. La firma (CAE) se activa tras la entrega (secuencial).
+
+**Pendiente / deuda menor:**
+- **P1.4 (diferido)**: el `document_owner` sembrado en el proceso por defecto
+  (`SystemBootstrapService`) se conserva como **fallback** para envíos sin `flow`. Como el
+  frontend ahora siempre envía `flow`, el flujo por instancia lo sobrescribe; se puede
+  retirar el seed cuando se confirme que no quedan rutas sin `flow`.
+- **Firma multi‑firmante por paso** (aprobación todas/cualquiera/mínimo N): hoy cada paso de
+  firma runtime = 1 persona (secuencial). Extensión futura.
+- **Entrega por cargo** en runtime (hoy solo personas concretas): extensión futura.
