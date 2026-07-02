@@ -87,7 +87,7 @@
                   class-name="deasy-nav-item"
                   :class="selectedProcessKey === String(process.process_definition_id) ? 'deasy-nav-item--active' : ''"
                   type="button"
-                  :title="process.name"
+                  :title="routedMenuLabel(process)"
                   @click="handleProcessSelect(process, cargo)"
                 >
                   <span
@@ -96,7 +96,7 @@
                   >
                     <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                   </span>
-                  <span class="deasy-nav-item__label">{{ process.name }}</span>
+                  <span class="deasy-nav-item__label">{{ routedMenuLabel(process) }}</span>
                   <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                 </AppButton>
                 <div v-if="!cargo.processes.length" class="px-4 py-1 text-sm italic text-slate-400">
@@ -285,7 +285,7 @@
                       <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
                         <IconCheck v-if="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id))" class="h-3 w-3" />
                       </span>
-                      <span class="truncate">{{ process.name }}</span>
+                      <span class="truncate">{{ routedMenuLabel(process) }}</span>
                       <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                     </button>
                   </div>
@@ -471,7 +471,7 @@
                             <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                           </span>
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ process.name }}</strong>
+                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
                           <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
@@ -566,7 +566,7 @@
                             <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                           </span>
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ process.name }}</strong>
+                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
                           <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
@@ -843,10 +843,10 @@
             <div class="admin-page-header">
               <div class="admin-page-header__main">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 m-0">
-                  {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
+                  {{ isRoutedProcess ? 'Documentos' : (selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso') }}
                 </p>
                 <h1 class="admin-page-header__title mt-1">
-                  {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Configuración de proceso' }}
+                  {{ isRoutedProcess ? routedHeaderTitle : (selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Configuración de proceso') }}
                 </h1>
               </div>
               <div class="admin-page-header__actions">
@@ -876,7 +876,19 @@
                 {{ processActionMessage.text }}
               </section>
 
-              <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <!-- Rediseño routed: página enfocada de envíos/recibidos (reemplaza la vista genérica de tareas). -->
+              <RoutedProcessPanel
+                v-if="isRoutedProcess"
+                :purpose="routedPanelPurpose"
+                :create-label="routedCreateLabel"
+                :sends="routedSends"
+                :received="routedReceived"
+                :loading="routedInboxLoading"
+                @create="openNewSend"
+                @refresh="loadRoutedInbox"
+              />
+
+              <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
                 <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
@@ -2683,6 +2695,7 @@ import HomeSignatureEntry from '@/modules/home/components/HomeSignatureEntry.vue
 import DeliverableCard from '@/modules/home/components/DeliverableCard.vue';
 import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
 import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel.vue';
+import RoutedProcessPanel from '@/modules/home/components/RoutedProcessPanel.vue';
 import {
   resolveWorkspaceCargoIcon,
   resolveWorkspaceProcessIcon,
@@ -3130,6 +3143,7 @@ const homeContextTitle = computed(() => {
   if (isGlobalSignatureRoute.value) return 'Centro de firmas';
   if (isDocumentCenterRoute.value) return 'Centro documental';
   if (selectedProcessKey.value) {
+    if (isRoutedProcess.value) return routedHeaderTitle.value;
     return selectedProcessPanel.value?.definition?.name || 'Proceso activo';
   }
   return userFullName.value;
@@ -4934,6 +4948,61 @@ const openNewSend = () => {
   openGeneralTaskModal('free');
 };
 
+// ── Rediseño routed: bandeja del proceso (envíos + recibidos) para RoutedProcessPanel ──
+const routedSends = ref([]);
+const routedReceived = ref([]);
+const routedInboxLoading = ref(false);
+const loadRoutedInbox = async () => {
+  const userId = currentUserId.value;
+  if (!userId || !isRoutedProcess.value) {
+    routedSends.value = [];
+    routedReceived.value = [];
+    return;
+  }
+  routedInboxLoading.value = true;
+  const pid = String(selectedProcessContext.value?.id || '');
+  try {
+    const [sendsData, recvData] = await Promise.all([
+      processPanelService.listMySends(userId),
+      processPanelService.listMyReceived(userId),
+    ]);
+    const allSends = Array.isArray(sendsData?.sends) ? sendsData.sends : [];
+    const allRecv = Array.isArray(recvData?.received) ? recvData.received : [];
+    // Los endpoints devuelven TODOS los routed; se filtra por el proceso abierto.
+    routedSends.value = pid ? allSends.filter((s) => String(s.process_id) === pid) : allSends;
+    routedReceived.value = pid ? allRecv.filter((r) => String(r.process_id) === pid) : allRecv;
+  } catch {
+    routedSends.value = [];
+    routedReceived.value = [];
+  } finally {
+    routedInboxLoading.value = false;
+  }
+};
+watch(
+  () => `${selectedProcessContext.value?.id || ''}:${isRoutedProcess.value}`,
+  () => { loadRoutedInbox(); },
+);
+
+// El proceso por defecto es el comodín "Tareas"; los demás routed usan su propio nombre.
+const isDefaultRoutedProcess = computed(() => String(selectedProcessContext.value?.slug || '') === 'default');
+// Etiqueta del CTA: "Nueva tarea" (default) o "Nuevo <proceso>" (Memorandum → "Nuevo Memorandum").
+const routedCreateLabel = computed(() => {
+  if (isDefaultRoutedProcess.value) return 'Nueva tarea';
+  const name = selectedProcessContext.value?.name
+    || selectedProcessPanel.value?.definition?.process_name
+    || 'documento';
+  return `Nuevo ${name}`;
+});
+const routedPanelPurpose = computed(() => (isDefaultRoutedProcess.value
+  ? 'Crea una tarea y endósala a la persona responsable. Lo que te asignen aparece en Recibidos y en tu Centro de firmas.'
+  : `Crea un ${selectedProcessContext.value?.name || 'documento'} y endósalo a una persona. Lo recibido aparece en Recibidos y en tu Centro de firmas.`));
+// Rótulo del proceso en el aside: el default se muestra como "Tareas"; el resto conserva su nombre.
+const routedMenuLabel = (process) => (String(process?.slug || '') === 'default' ? 'Tareas' : (process?.name || ''));
+// Título de cabecera para un proceso routed (default → "Tareas").
+const routedHeaderTitle = computed(() => (isDefaultRoutedProcess.value
+  ? 'Tareas'
+  : (selectedProcessContext.value?.name || selectedProcessPanel.value?.definition?.name || 'Proceso')));
+
 // R4: consolidado "Mis envíos" — todo lo que el usuario envió (routed) entre tipos, con filtro por tipo.
 const mySendsModal = ref(null);
 let mySendsModalInstance = null;
@@ -5036,6 +5105,7 @@ const submitGeneralTask = async () => {
     await loadUserMenu();
     await refreshActiveProcessPanel();
     await loadAddableDeliverables();
+    await loadRoutedInbox();
     const okMsg = form.itemMode === 'routed'
       ? 'Envío creado correctamente.'
       : (form.itemMode === 'replicated' ? 'Réplica agregada correctamente.' : 'Tarea creada correctamente.');

@@ -24,7 +24,8 @@ import {
   listAddableDeliverables,
   searchTaskRecipients,
   listFlowCatalog,
-  listMySends
+  listMySends,
+  listMyReceived
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -183,6 +184,13 @@ router.get(
   loadAccessContext,
   requireRouteUserAccess({ resource: "process_execution", action: "read" }),
   listMySends
+);
+router.get(
+  '/:id/my-received',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "process_execution", action: "read" }),
+  listMyReceived
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',

@@ -51,6 +51,7 @@ export const API_ROUTES = {
   USERS_TASK_RECIPIENTS: (userId) => `${API_PREFIX}/users/${userId}/task-recipients`,
   USERS_FLOW_CATALOG: (userId) => `${API_PREFIX}/users/${userId}/flow-catalog`,
   USERS_MY_SENDS: (userId) => `${API_PREFIX}/users/${userId}/my-sends`,
+  USERS_MY_RECEIVED: (userId) => `${API_PREFIX}/users/${userId}/my-received`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENTS: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT: (userId, definitionId, taskItemId, attachmentId) =>
