@@ -1989,12 +1989,13 @@
             <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><IconBuildingMonument class="h-4 w-4" /></span>
             <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Destino y plazo</h6>
           </div>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label class="flex flex-col gap-1">
-              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Unidad *</span>
+          <div class="grid grid-cols-1 gap-3" :class="showSenderUnitSelect ? 'sm:grid-cols-2' : ''">
+            <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->
+            <label v-if="showSenderUnitSelect" class="flex flex-col gap-1">
+              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Unidad emisora *</span>
               <select v-model="generalTaskForm.unitId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
                 <option :value="null" disabled>Selecciona una unidad</option>
-                <option v-for="unit in unitsPanelData" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
+                <option v-for="unit in senderUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
               </select>
             </label>
             <label class="flex flex-col gap-1">
@@ -2002,7 +2003,9 @@
               <input v-model="generalTaskForm.endDate" type="date" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
             </label>
           </div>
-          <p class="m-0 text-[0.7rem] font-medium text-slate-400">El envío se registra con fecha de hoy. Indica un vencimiento solo si debe atenderse antes de una fecha.</p>
+          <p class="m-0 text-[0.7rem] font-medium text-slate-400">
+            Se emite<template v-if="senderUnitName"> desde <strong class="font-semibold text-slate-500">{{ senderUnitName }}</strong></template> con fecha de hoy. Indica un vencimiento solo si debe atenderse antes de una fecha.
+          </p>
         </section>
       </div>
       <template #footer>
@@ -4848,6 +4851,14 @@ const mapSigner = (s) => (s.kind === 'cargo'
 
 // El modal de envío/tarea usa el flujo de runtime (elabora/firma) cuando es routed o alta libre.
 const isSendFlowModal = computed(() => generalTaskForm.value.itemMode === 'routed' || generalTaskForm.value.mode === 'free');
+// Unidad emisora del alta libre: con una sola unidad se auto-usa (preseleccionada en openGeneralTaskModal) y se
+// oculta el selector; con varias se muestra para elegir en representación de cuál se emite.
+const senderUnits = computed(() => unitsPanelData.value || []);
+const showSenderUnitSelect = computed(() => senderUnits.value.length > 1);
+const senderUnitName = computed(() => {
+  const id = generalTaskForm.value.unitId;
+  return senderUnits.value.find((u) => String(u.id) === String(id))?.name || '';
+});
 const generalTaskModalTitle = computed(() => {
   const f = generalTaskForm.value;
   // En un proceso routed abierto, el título refleja el proceso ("Nuevo Memorandum" / "Nueva tarea").
