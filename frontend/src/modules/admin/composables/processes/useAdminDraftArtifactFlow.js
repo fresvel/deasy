@@ -228,6 +228,11 @@ export function useAdminDraftArtifactFlow({
       if (draftArtifactForm.value.process_definition_id) {
         form.append("process_definition_id", String(draftArtifactForm.value.process_definition_id));
       }
+      // Modo de emisión del vínculo a proceso (single/replicated/routed). El backend lo fija AL CREAR el
+      // link; en edición el modo se administra desde el proceso, así que solo se envía al crear.
+      if (!isEditingDraft) {
+        form.append("item_mode", draftArtifactForm.value.item_mode || "single");
+      }
       if (draftArtifactFiles.value.pdf) {
         form.append("pdf_file", draftArtifactFiles.value.pdf);
       }

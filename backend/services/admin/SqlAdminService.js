@@ -66,6 +66,13 @@ const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").
 const DEFAULT_SEED_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
 // Formatos de documento de referencia (al menos uno es obligatorio al crear una plantilla).
 const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
+// Modos de emisión válidos para el vínculo plantilla↔proceso (process_definition_templates.item_mode).
+// El modo vive en el LINK, no en la plantilla. 'routed' no autora flujo (se define al enviar).
+const ITEM_EMISSION_MODES = ["single", "replicated", "routed"];
+const normalizeItemMode = (value) => {
+  const mode = String(value ?? "").trim();
+  return ITEM_EMISSION_MODES.includes(mode) ? mode : "single";
+};
 // Rol derivado del formato (sustituye al eje "mode" que ya no se almacena): jinja2 = contrato ejecutable,
 // latex = render derivable, el resto = documento de referencia. Es 1:1 con el formato, por eso es derivable.
 const FORMAT_ROLE = { jinja2: "contract", latex: "render" };
@@ -6234,6 +6241,10 @@ export default class SqlAdminService {
       throw new Error("Debes seleccionar el proceso (o 'default') al que pertenece esta plantilla.");
     }
 
+    // Modo de emisión del vínculo a proceso (single/replicated/routed). Se fija AL CREAR el link;
+    // default 'single'. 'routed' no autora flujo predefinido: se define al enviar (runtime).
+    const requestedItemMode = normalizeItemMode(data.item_mode);
+
     const existingAvailableFormats = parseAvailableFormats(existingArtifact?.available_formats);
 
     // Toda plantilla nace de una semilla: si al crear no se eligió ninguna, se usa la general (default).
@@ -6254,13 +6265,16 @@ export default class SqlAdminService {
       if (!hasReferenceDoc) {
         throw new Error("Debes adjuntar al menos un documento de referencia (PDF, Word, Excel o PowerPoint).");
       }
-      // Toda plantilla debe definir un flujo de entrega con al menos un paso (fail-fast antes del upload).
-      let fillWorkflowCheck = data.fill_workflow;
-      if (typeof fillWorkflowCheck === "string") {
-        try { fillWorkflowCheck = JSON.parse(fillWorkflowCheck); } catch { fillWorkflowCheck = null; }
-      }
-      if (!fillWorkflowCheck || !Array.isArray(fillWorkflowCheck.steps) || !fillWorkflowCheck.steps.length) {
-        throw new Error("Debes definir al menos un paso en el flujo de entrega.");
+      // Toda plantilla single/replicated debe definir un flujo de entrega con al menos un paso
+      // (fail-fast antes del upload). 'routed' NO autora flujo: se define al enviar (runtime).
+      if (requestedItemMode !== "routed") {
+        let fillWorkflowCheck = data.fill_workflow;
+        if (typeof fillWorkflowCheck === "string") {
+          try { fillWorkflowCheck = JSON.parse(fillWorkflowCheck); } catch { fillWorkflowCheck = null; }
+        }
+        if (!fillWorkflowCheck || !Array.isArray(fillWorkflowCheck.steps) || !fillWorkflowCheck.steps.length) {
+          throw new Error("Debes definir al menos un paso en el flujo de entrega.");
+        }
       }
     } else if (
       !templateSeedId
@@ -6649,9 +6663,16 @@ export default class SqlAdminService {
         if (!existingLink?.length) {
           await this.pool.query(
             `INSERT INTO process_definition_templates
-              (process_definition_id, template_artifact_id, sort_order)
-             VALUES (?, ?, 1)`,
-            [requestedProcessDefinitionId, createdId]
+              (process_definition_id, template_artifact_id, sort_order, item_mode)
+             VALUES (?, ?, 1, ?)`,
+            [requestedProcessDefinitionId, createdId, requestedItemMode]
+          );
+        } else if (requestedItemMode !== "single") {
+          // El link ya existía (p. ej. reintento): respeta el modo solicitado si no es el default.
+          await this.pool.query(
+            `UPDATE process_definition_templates SET item_mode = ?
+             WHERE process_definition_id = ? AND template_artifact_id = ?`,
+            [requestedItemMode, requestedProcessDefinitionId, createdId]
           );
         }
       }

@@ -55,6 +55,18 @@
       @create="handlePrimaryCreateAction"
     />
 
+    <div v-if="table && isTemplateArtifactsTable" class="mb-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+      <p class="m-0 flex items-start gap-2 text-sm text-sky-800">
+        <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
+        <span>
+          <strong>Consulta y versionado.</strong>
+          Las plantillas se <strong>crean desde un proceso</strong> (pestaña “Plantillas” de la configuración).
+          Aquí puedes consultarlas, ver sus versiones y abrir su editor; el vínculo al proceso y el modo de
+          emisión se gestionan dentro de la configuración.
+        </span>
+      </p>
+    </div>
+
     <div v-if="table && isPositionAssignmentsTable" class="admin-related-tabs">
       <ProfileSubsectionTabs
         :model-value="positionAssignmentsView"
@@ -1909,7 +1921,13 @@ const advancedRuntimeMode = ref(false);
 const isCurrentTableTraceability = computed(() => isTraceabilityTable(currentTableName.value));
 const runtimeWriteAllowed = computed(() =>
   !isCurrentTableTraceability.value || (isAdminUser.value && advancedRuntimeMode.value));
-const canCreateCurrentTable = computed(() => canCreateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
+const canCreateCurrentTable = computed(() =>
+  canCreateAdminTable(currentTableName.value)
+  && runtimeWriteAllowed.value
+  // Las plantillas se crean SOLO desde un proceso (pestaña "Plantillas" de la configuración). La tabla
+  // global es de consulta/versionado: se oculta el botón "Crear".
+  && !isTemplateArtifactsTable.value
+);
 const canCreateProcessConfiguration = computed(() => canCreateAdminTable("process_definition_versions"));
 const canDeleteProcessConfiguration = computed(() => canDeleteAdminTable("process_definition_versions"));
 const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);

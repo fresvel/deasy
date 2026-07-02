@@ -202,3 +202,72 @@ paralelo con quórum.
 - "Para:" cuando el destinatario es un cargo (no muestra 1 persona).
 - Migración de instalaciones previas con `document_owner` sembrado (solo afecta a instalados
   antes de P1.4; en dev se resuelve con reset).
+
+---
+
+## Plan P3 — Consolidar administración de plantillas en el proceso + `item_mode` al crear
+
+**Motivación (verificada archivo:línea):** `item_mode` vive en el LINK
+`process_definition_templates`, no en la plantilla. Hoy el link se inserta **sin `item_mode`**
+→ queda en `DEFAULT 'single'` (`SqlAdminService.js` INSERT del link). El selector de modo solo
+existe en `AdminDefinitionArtifactsPanel.vue` (panel del proceso), **no** en la creación de la
+plantilla (`AdminDraftArtifactModal.vue`, que además exige elegir proceso con
+`requireProcessLink=true`). El esquema ya asume dueño único por plantilla
+(`deliverables.owner_process_id`), así que el "proceso destino" del modal es redundante.
+
+**Objetivo:** (A) fijar el modo de emisión **al crear** la plantilla; (B) entrada única desde
+el proceso (proceso implícito por contexto), reduciendo campos del modal.
+
+**Decisiones asumidas:** dueño único por plantilla (`owner_process_id`); `ad_hoc` fuera de
+alcance (ciclo de runtime); la pestaña global "Plantillas" pasa a solo lectura/descubrimiento.
+
+### Fases
+1. **Backend — aceptar `item_mode` al crear/vincular** (`SqlAdminService.js`,
+   `sql_admin_router.js`): validar ENUM `single|replicated|routed` (default `single`),
+   incluirlo en el INSERT de `process_definition_templates`; **relajar** el fail‑fast de
+   "≥1 paso de entrega" cuando el modo es `routed` (routed no autora flujo). Aditivo, sin ruptura.
+2. **Frontend — selector de modo en el modal de creación** (`AdminDraftArtifactModal.vue`,
+   `useAdminDraftArtifactFlow.js`): `<select>` `item_mode` en *General* (reusar labels/aviso de
+   `AdminDefinitionArtifactsPanel`); si `routed` ocultar/deshabilitar pestañas de flujo.
+3. **Frontend — entrada única desde el proceso** (`AdminDefinitionArtifactsPanel.vue`,
+   `AdminTableManager.vue`): botón "Crear plantilla nueva" en el panel → abre el modal con
+   `preselectProcessDefinitionId`; ocultar el bloque "Configuración destino" cuando llega
+   preseleccionado (chip de solo lectura). Gate a `draft` (ya existe).
+4. **Frontend — pestaña global "Plantillas" → solo lectura** (`AdminTableManagerConfig.js`):
+   sin "crear" fuera de contexto; editar/versionar ancla al `owner_process_id`.
+5. **Verificación E2E (Docker)**: crear single/replicated/routed dentro de un proceso draft;
+   confirmar `item_mode` en el link y que routed no exige flujo; `pnpm run lint`.
+6. **Docs/memoria**: actualizar este doc y `project_item_emission_modes.md`.
+
+### Estado (2026‑07‑02)
+- **F1 — HECHO**. Backend acepta `item_mode` al crear el link (`SqlAdminService.createTemplateArtifactDraft`):
+  constante `ITEM_EMISSION_MODES` + `normalizeItemMode`, INSERT del link con el modo solicitado
+  (antes caía siempre a `DEFAULT 'single'`), y **fail‑fast de flujo relajado para `routed`**
+  (routed no autora flujo). Verificado E2E por API: crear routed sin flujo → 200 con link
+  `item_mode='routed'`; crear single sin flujo → 400 (gate intacto). *Nota: backend corre
+  `node index.js` sin hot‑reload; requiere reiniciar el contenedor tras editar.*
+- **F2 — HECHO**. `AdminDraftArtifactModal`: selector "Modo de emisión" (solo al crear); si `routed`
+  se ocultan las pestañas Entrega/Firmas (`visibleTabKeys`) y `canSubmit` no exige flujo.
+  `useAdminDraftArtifactFlow`: envía `item_mode` en el FormData (solo al crear). Lint OK.
+- **F3 — HECHO**. La creación desde el proceso ya existía (botón "Agregar plantilla" → pestaña
+  "Crear" con `preselectDefinitionId`). Se redujeron campos del modal **omitiendo los de solo
+  lectura redundantes en la creación**: (a) "Configuración destino" no se muestra cuando la config
+  llega por contexto (`hasPreselectedProcess`) — el vínculo se resuelve por `preselectProcessDefinitionId`;
+  (b) el badge "Tipo de plantilla" solo aparece en edición/consulta (al crear desde admin siempre es
+  oficial). Lint OK.
+- **F4 — HECHO**. La tabla global "Plantillas" (`template_artifacts`) pasa a **consulta/versionado**:
+  se oculta el botón "Crear" (`canCreateCurrentTable && !isTemplateArtifactsTable`) y se añade un
+  banner informativo ("las plantillas se crean desde un proceso"). En el modal, "Configuración
+  destino" tampoco se muestra al **editar** (el vínculo se conserva; se gestiona desde el proceso).
+  Editar/versionar desde la tabla sigue disponible. Lint OK.
+- **F5 — HECHO** (E2E de UI, Chrome DevTools MCP, admin). Verificado: (a) tabla global "Plantillas"
+  muestra el banner y **no** tiene botón "Crear"; (b) en la config Memorandum (draft) → Paquetes →
+  "Agregar plantilla" → "Crear nueva", el modal muestra **Modo de emisión** y **oculta**
+  "Configuración destino" y el badge "Tipo de plantilla"; (c) al elegir **Ruteado** desaparecen las
+  pestañas **Entrega/Firmas** y aparece el aviso "el flujo se define AL ENVIAR". Capturas en scratchpad.
+- **F6 — HECHO** (memoria `project_item_emission_modes.md` actualizada con el cierre P3).
+- **Deuda del tooltip — RESUELTA.** El `title` del botón "Crear plantilla" deshabilitado ahora es
+  dinámico (`submitBlockReason`): lista SOLO lo que falta según modo/contexto. Verificado en UI: un
+  `routed` desde el proceso muestra "Faltan: documento de referencia." (sin "proceso destino" ni "flujo").
+
+**PLAN P3 COMPLETO (F1–F6).**

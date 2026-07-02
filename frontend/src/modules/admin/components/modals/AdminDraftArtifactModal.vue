@@ -102,7 +102,8 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Tipo de plantilla" group-class="md:col-span-6">
+      <!-- Badge de solo lectura: redundante al crear (desde admin siempre es oficial). Solo en edición/consulta. -->
+      <AdminFieldGroup v-if="draftArtifactEditId" label="Tipo de plantilla" group-class="md:col-span-6">
         <template #labelSuffix>
           <AppInfoTip>{{ isAdHoc ? "Extensión puntual de usuario: permite persona concreta; sin tipo de unidad." : "Desde admin solo se crean oficiales: permiten tipo de unidad; sin persona concreta." }}</AppInfoTip>
         </template>
@@ -128,7 +129,9 @@
           @update:model-value="updateField('description', $event)"
         />
       </AdminFieldGroup>
-      <AdminFieldGroup label="Configuración destino" group-class="md:col-span-12">
+      <!-- El vínculo a proceso se gestiona DESDE el proceso: no se muestra si viene por contexto ni al editar
+           (el link se conserva). Solo aparecería en un alta standalone (hoy deshabilitada). -->
+      <AdminFieldGroup v-if="!hasPreselectedProcess && !draftArtifactEditId" label="Configuración destino" group-class="md:col-span-12">
         <template #labelSuffix>
           <AppInfoTip>La plantilla quedará vinculada a esta configuración de proceso (o 'default' para tareas libres). ¿No existe? Créala con el wizard guiado.</AppInfoTip>
         </template>
@@ -149,6 +152,23 @@
           </AdminSelectField>
           <AdminButton variant="cancel" @click="$emit('create-process')">+ Nueva configuración</AdminButton>
         </div>
+      </AdminFieldGroup>
+      <!-- Modo de emisión del vínculo a proceso. Solo al crear; en edición se ajusta desde el proceso. -->
+      <AdminFieldGroup v-if="!draftArtifactEditId" label="Modo de emisión" group-class="md:col-span-12">
+        <template #labelSuffix>
+          <AppInfoTip>Cómo se emiten los entregables de esta plantilla en el proceso. Se puede reajustar luego desde la configuración del proceso.</AppInfoTip>
+        </template>
+        <AdminSelectField
+          :model-value="draftArtifactForm.item_mode || 'single'"
+          @update:model-value="updateField('item_mode', $event)"
+        >
+          <option value="single">Simple (1 entregable)</option>
+          <option value="replicated">Replicado (N con etiqueta)</option>
+          <option value="routed">Ruteado (endosar a alguien)</option>
+        </AdminSelectField>
+        <p v-if="isRouted" class="mt-1 m-0 text-xs font-medium text-amber-600">
+          El flujo (entrega/firma) de un routed se define AL ENVIAR, no aquí.
+        </p>
       </AdminFieldGroup>
     </div>
 
@@ -540,7 +560,7 @@
         v-if="!isReadOnly"
         variant="outlinePrimary"
         :disabled="draftArtifactLoading || !canSubmit"
-        :title="canSubmit ? '' : 'Faltan: proceso destino, documento de referencia y al menos un paso de flujo de entrega.'"
+        :title="submitBlockReason"
         @click="$emit('submit')"
       >
         {{ draftArtifactLoading ? "Subiendo a MinIO..." : (draftArtifactEditId ? "Guardar cambios" : "Crear plantilla") }}
@@ -593,6 +613,9 @@ const loadProcessDefinitionOptions = async () => {
 };
 // Toda plantilla debe pertenecer a un proceso: el vínculo es obligatorio para todos los roles.
 const requireProcessLink = computed(() => true);
+// Cuando el modal se abre DESDE un proceso, la configuración destino llega por contexto: el campo de
+// selección se omite (redundante en la creación). El vínculo se resuelve por preselectProcessDefinitionId.
+const hasPreselectedProcess = computed(() => Boolean(props.preselectProcessDefinitionId));
 onMounted(loadProcessDefinitionOptions);
 
 // ── Catálogos para resolver el responsable/ámbito de cada paso (controlados contra la DB) ──
@@ -727,7 +750,16 @@ watch(() => props.newProcessDefinitionId, async (id) => {
 // ── Pestañas ──
 // Flujo guiado: semilla/base → documento de referencia → entrega → firmas → campos del documento (schema).
 const TAB_KEYS = ["general", "formatos", "entrega", "firmas", "campos"];
+// 'routed' NO autora flujo (se define al enviar) → se ocultan las pestañas de entrega y firmas.
+const isRouted = computed(() => String(props.draftArtifactForm.item_mode || "single") === "routed");
+const visibleTabKeys = computed(() =>
+  (isRouted.value ? TAB_KEYS.filter((key) => key !== "entrega" && key !== "firmas") : TAB_KEYS)
+);
 const activeTab = ref("general");
+// Si el modo cambia a routed estando en una pestaña de flujo ya oculta, regresa a General.
+watch(isRouted, () => {
+  if (!visibleTabKeys.value.includes(activeTab.value)) activeTab.value = "general";
+});
 
 const isGeneralComplete = computed(() => {
   const hasName = Boolean(String(props.draftArtifactForm.display_name || "").trim());
@@ -750,7 +782,21 @@ const isFirmasComplete = computed(() => signatureSteps.value.length > 0);
 // (Campos y firmas son opcionales). En edición no se bloquea el guardado.
 const canSubmit = computed(() => {
   if (props.draftArtifactEditId) return true;
-  return isGeneralComplete.value && isFormatosComplete.value && isEntregaComplete.value;
+  // routed no autora flujo de entrega: no se exige ≥1 paso (se define al enviar).
+  const flowOk = isRouted.value || isEntregaComplete.value;
+  return isGeneralComplete.value && isFormatosComplete.value && flowOk;
+});
+
+// Motivo dinámico de bloqueo (tooltip del botón "Crear"): lista SOLO lo que falta según el modo y el
+// contexto (p. ej. un routed desde el proceso no pide "proceso destino" ni "flujo de entrega").
+const submitBlockReason = computed(() => {
+  if (canSubmit.value) return "";
+  const missing = [];
+  if (!String(props.draftArtifactForm.display_name || "").trim()) missing.push("nombre");
+  if (requireProcessLink.value && !props.draftArtifactForm.process_definition_id) missing.push("proceso destino");
+  if (!isFormatosComplete.value) missing.push("documento de referencia");
+  if (!isRouted.value && !isEntregaComplete.value) missing.push("al menos un paso de flujo de entrega");
+  return missing.length ? `Faltan: ${missing.join(", ")}.` : "";
 });
 
 const tabState = {
@@ -761,20 +807,20 @@ const tabState = {
   firmas: isFirmasComplete,
 };
 const TAB_LABELS = { general: "General", formatos: "Formatos", entrega: "Entrega", firmas: "Firmas", campos: "Campos (documento)" };
-const tabDescriptors = computed(() => TAB_KEYS.map((key) => ({
+const tabDescriptors = computed(() => visibleTabKeys.value.map((key) => ({
   key,
   label: `${TAB_LABELS[key]}${tabState[key].value ? " ✓" : ""}`,
 })));
 
-const currentTabIndex = computed(() => TAB_KEYS.indexOf(activeTab.value));
+const currentTabIndex = computed(() => visibleTabKeys.value.indexOf(activeTab.value));
 const isFirstTab = computed(() => currentTabIndex.value <= 0);
-const isLastTab = computed(() => currentTabIndex.value >= TAB_KEYS.length - 1);
+const isLastTab = computed(() => currentTabIndex.value >= visibleTabKeys.value.length - 1);
 const goNextTab = () => {
-  const next = TAB_KEYS[currentTabIndex.value + 1];
+  const next = visibleTabKeys.value[currentTabIndex.value + 1];
   if (next) activeTab.value = next;
 };
 const goPrevTab = () => {
-  const prev = TAB_KEYS[currentTabIndex.value - 1];
+  const prev = visibleTabKeys.value[currentTabIndex.value - 1];
   if (prev) activeTab.value = prev;
 };
 // Reinicia a la primera pestaña al cambiar entre crear/editar.
