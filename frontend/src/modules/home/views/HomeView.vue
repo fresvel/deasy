@@ -1899,23 +1899,52 @@
             </ul>
           </div>
 
-          <div v-if="flowPickerTarget" class="relative flex flex-col gap-1">
-            <input
-              v-model="recipientQuery"
-              type="text"
-              :placeholder="flowPickerTarget === 'firma' ? 'Busca al firmante…' : 'Busca a quién elabora…'"
-              class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
-              @input="searchRecipients"
-            />
-            <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg list-none m-0 p-1">
-              <li v-for="person in recipientResults" :key="`fp-${person.id}`">
-                <button type="button" class="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-sky-50" @click="addFlowPerson(person)">
-                  {{ person.full_name }}
-                  <span class="text-xs text-slate-400">· {{ person.cedula || person.email || '' }}</span>
-                </button>
-              </li>
-            </ul>
-            <p v-else-if="recipientSearching" class="m-0 text-xs text-slate-400">Buscando…</p>
+          <div v-if="flowPickerTarget" class="flex flex-col gap-2 rounded-xl border border-indigo-200 bg-indigo-50/40 p-3">
+            <div class="inline-flex self-start rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-semibold">
+              <button type="button" :class="flowPickerMode === 'person' ? 'bg-indigo-600 text-white' : 'text-slate-500'" class="rounded-md px-3 py-1" @click="flowPickerMode = 'person'">Persona</button>
+              <button type="button" :class="flowPickerMode === 'cargo' ? 'bg-indigo-600 text-white' : 'text-slate-500'" class="rounded-md px-3 py-1" @click="flowPickerMode = 'cargo'">Por cargo</button>
+            </div>
+
+            <div v-if="flowPickerMode === 'person'" class="relative flex flex-col gap-1">
+              <input
+                v-model="recipientQuery"
+                type="text"
+                :placeholder="flowPickerTarget === 'firma' ? 'Busca al firmante…' : 'Busca a quién elabora…'"
+                class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
+                @input="searchRecipients"
+              />
+              <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg list-none m-0 p-1">
+                <li v-for="person in recipientResults" :key="`fp-${person.id}`">
+                  <button type="button" class="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-sky-50" @click="addFlowPerson(person)">
+                    {{ person.full_name }}
+                    <span class="text-xs text-slate-400">· {{ person.cedula || person.email || '' }}</span>
+                  </button>
+                </li>
+              </ul>
+              <p v-else-if="recipientSearching" class="m-0 text-xs text-slate-400">Buscando…</p>
+            </div>
+
+            <div v-else class="flex flex-col gap-2">
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <select v-model="flowCargoForm.cargoId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+                  <option :value="null" disabled>Cargo…</option>
+                  <option v-for="c in flowCatalog.cargos" :key="`c-${c.id}`" :value="c.id">{{ c.name }}</option>
+                </select>
+                <select v-model="flowCargoForm.unitId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+                  <option :value="null">Todas las unidades</option>
+                  <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
+                </select>
+              </div>
+              <div v-if="flowPickerTarget === 'firma'" class="flex items-center gap-2">
+                <select v-model="flowCargoForm.approvalMode" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+                  <option value="and">Firman todas</option>
+                  <option value="or">Firma cualquiera</option>
+                  <option value="at_least">Mínimo N</option>
+                </select>
+                <input v-if="flowCargoForm.approvalMode === 'at_least'" v-model.number="flowCargoForm.requiredMin" type="number" min="1" class="w-20 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+              </div>
+              <button type="button" class="self-start rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar cargo</button>
+            </div>
           </div>
         </div>
 
@@ -2810,10 +2839,14 @@ const recipientQuery = ref('');
 const recipientResults = ref([]);
 const recipientSearching = ref(false);
 let recipientSearchTimer = null;
-// P1 routed: flujo definido al ENVIAR (personas concretas). entrega = quién elabora; firma = quién firma.
+// P1/P2 routed: flujo definido al ENVIAR. Pasos = persona concreta o "por cargo".
+// entrega = quién elabora; firma = quién firma (en orden).
 const flowEntrega = ref([]);
 const flowFirma = ref([]);
 const flowPickerTarget = ref(null); // 'entrega' | 'firma' | null
+const flowPickerMode = ref('person'); // 'person' | 'cargo'
+const flowCatalog = ref({ units: [], cargos: [] });
+const flowCargoForm = ref({ cargoId: null, unitId: null, approvalMode: 'and', requiredMin: 1 });
 const deliverableOperationModal = ref(null);
 const deliverableSignResultModal = ref(null);
 const deliverablePreviewModal = ref(null);
@@ -4649,12 +4682,26 @@ const openGeneralTaskModal = (mode = 'free', context = {}) => {
   // routed / proceso por defecto (free): el usuario define el flujo al enviar. Entrega arranca con "Tú".
   const usesRuntimeFlow = mode === 'free' || context.itemMode === 'routed';
   flowEntrega.value = usesRuntimeFlow
-    ? [{ person_id: currentUserId.value, label: 'Tú (autor)' }]
+    ? [{ kind: 'person', person_id: currentUserId.value, label: 'Tú (autor)' }]
     : [];
   flowFirma.value = [];
   flowPickerTarget.value = null;
+  flowPickerMode.value = 'person';
+  flowCargoForm.value = { cargoId: null, unitId: null, approvalMode: 'and', requiredMin: 1 };
+  if (usesRuntimeFlow) loadFlowCatalog();
   generalTaskModalInstance = Modal.getOrCreateInstance(generalTaskModal.value?.el);
   generalTaskModalInstance?.show();
+};
+
+const loadFlowCatalog = async () => {
+  const userId = currentUserId.value;
+  if (!userId || (flowCatalog.value.cargos?.length && flowCatalog.value.units?.length)) return;
+  try {
+    const data = await processPanelService.listFlowCatalog(userId);
+    flowCatalog.value = { units: data?.units || [], cargos: data?.cargos || [] };
+  } catch {
+    flowCatalog.value = { units: [], cargos: [] };
+  }
 };
 
 // Abre el modal de alta para una plantilla configurada (replicated/routed) desde el panel de tarea.
@@ -4694,34 +4741,65 @@ const selectRecipient = (person) => {
   recipientQuery.value = generalTaskForm.value.recipientLabel;
 };
 
-// Flow-builder routed: agregar/quitar personas de entrega o firma.
+// Flow-builder routed: agregar/quitar pasos (persona o cargo) de entrega o firma.
 const openFlowPicker = (target) => {
   flowPickerTarget.value = flowPickerTarget.value === target ? null : target;
+  flowPickerMode.value = 'person';
+  flowCargoForm.value = { cargoId: null, unitId: null, approvalMode: 'and', requiredMin: 1 };
   recipientQuery.value = '';
   recipientResults.value = [];
 };
+const flowListFor = (target) => (target === 'firma' ? flowFirma : flowEntrega);
 const addFlowPerson = (person) => {
-  const list = flowPickerTarget.value === 'firma' ? flowFirma : flowEntrega;
-  if (!list.value.some((p) => Number(p.person_id) === Number(person.id))) {
+  const list = flowListFor(flowPickerTarget.value);
+  if (!list.value.some((p) => p.kind === 'person' && Number(p.person_id) === Number(person.id))) {
     list.value.push({
+      kind: 'person',
       person_id: person.id,
       label: person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim(),
     });
   }
-  flowPickerTarget.value = null;
-  recipientQuery.value = '';
-  recipientResults.value = [];
+  openFlowPicker(flowPickerTarget.value); // cierra y resetea
+};
+const addFlowCargo = () => {
+  const f = flowCargoForm.value;
+  if (!f.cargoId) return;
+  const cargoName = flowCatalog.value.cargos.find((c) => Number(c.id) === Number(f.cargoId))?.name || 'Cargo';
+  const unitName = f.unitId ? flowCatalog.value.units.find((u) => Number(u.id) === Number(f.unitId))?.name : null;
+  const step = {
+    kind: 'cargo',
+    cargo_id: Number(f.cargoId),
+    unit_id: f.unitId ? Number(f.unitId) : null,
+    label: `${cargoName}${unitName ? ` · ${unitName}` : ' · todas las unidades'}`,
+  };
+  if (flowPickerTarget.value === 'firma') {
+    step.approval_mode = f.approvalMode;
+    step.required_min = f.approvalMode === 'at_least' ? Number(f.requiredMin || 1) : null;
+  }
+  flowListFor(flowPickerTarget.value).value.push(step);
+  openFlowPicker(flowPickerTarget.value);
 };
 const removeFlowPerson = (target, idx) => {
-  (target === 'firma' ? flowFirma : flowEntrega).value.splice(idx, 1);
+  flowListFor(target).value.splice(idx, 1);
 };
-// Destinatario principal (para "Para:" / owner): 1er firmante, o el 1er responsable de entrega distinto de ti.
+// Destinatario principal (para "Para:" / owner): 1er firmante persona, o el 1er responsable de
+// entrega persona distinto de ti. Con pasos por cargo puede quedar null (no hay 1 persona).
 const primaryRecipientFromFlow = () => {
-  const firstFirma = flowFirma.value[0]?.person_id || null;
+  const firstFirma = flowFirma.value.find((p) => p.kind === 'person')?.person_id || null;
   const entregaDelegate = flowEntrega.value
-    .find((p) => Number(p.person_id) !== Number(currentUserId.value))?.person_id || null;
+    .find((p) => p.kind === 'person' && Number(p.person_id) !== Number(currentUserId.value))?.person_id || null;
   return firstFirma || entregaDelegate || null;
 };
+// Paso de flujo → payload backend (persona concreta o cargo con ámbito/aprobación).
+const mapFlowStep = (s) => (s.kind === 'cargo'
+  ? {
+      cargo_id: s.cargo_id,
+      unit_id: s.unit_id || null,
+      unit_scope_type: s.unit_id ? 'unit_exact' : 'all_units',
+      approval_mode: s.approval_mode || 'and',
+      required_min: s.required_min || null,
+    }
+  : { person_id: s.person_id });
 
 const generalTaskModalTitle = computed(() => {
   const f = generalTaskForm.value;
@@ -4895,8 +4973,11 @@ const submitGeneralTask = async () => {
     return;
   }
   const primaryRecipient = usesRuntimeFlow ? primaryRecipientFromFlow() : null;
-  if (form.itemMode === 'routed' && !primaryRecipient) {
-    generalTaskError.value = 'Un envío necesita al menos un firmante o un responsable distinto de ti.';
+  const hasRecipientLike = flowFirma.value.length > 0
+    || flowEntrega.value.some((p) => p.kind === 'cargo'
+      || (p.kind === 'person' && Number(p.person_id) !== Number(currentUserId.value)));
+  if (form.itemMode === 'routed' && !hasRecipientLike) {
+    generalTaskError.value = 'Un envío necesita al menos un firmante (persona o cargo) o un responsable distinto de ti.';
     return;
   }
   generalTaskSubmitting.value = true;
@@ -4913,8 +4994,8 @@ const submitGeneralTask = async () => {
       recipient_person_id: primaryRecipient,
       flow: usesRuntimeFlow
         ? {
-            entrega: flowEntrega.value.map((p) => ({ person_id: p.person_id })),
-            firma: flowFirma.value.map((p) => ({ person_id: p.person_id })),
+            entrega: flowEntrega.value.map(mapFlowStep),
+            firma: flowFirma.value.map(mapFlowStep),
           }
         : null,
       custom_term: {

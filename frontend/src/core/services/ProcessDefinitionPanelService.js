@@ -114,6 +114,17 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
+  async listFlowCatalog(userId) {
+    if (!userId) {
+      throw new Error("Se requiere usuario.");
+    }
+    const { data } = await axios.get(
+      API_ROUTES.USERS_FLOW_CATALOG(userId),
+      { headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
   async listTaskItemObservations(userId, processDefinitionId, taskItemId) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, configuración y entregable.");
