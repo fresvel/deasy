@@ -176,11 +176,19 @@ Commits: `841ba4a` (esquema), `87849ea` (materialización), `6cbe326` (frontend 
   `fill_request` para el **autor (24)** desde el flujo por instancia (`specific_person`),
   **no** vía `document_owner`. La firma (CAE) se activa tras la entrega (secuencial).
 
-**Pendiente / deuda menor:**
-- **P1.4 (diferido)**: el `document_owner` sembrado en el proceso por defecto
-  (`SystemBootstrapService`) se conserva como **fallback** para envíos sin `flow`. Como el
-  frontend ahora siempre envía `flow`, el flujo por instancia lo sobrescribe; se puede
-  retirar el seed cuando se confirme que no quedan rutas sin `flow`.
-- **Firma multi‑firmante por paso** (aprobación todas/cualquiera/mínimo N): hoy cada paso de
-  firma runtime = 1 persona (secuencial). Extensión futura.
-- **Entrega por cargo** en runtime (hoy solo personas concretas): extensión futura.
+**Completado después de P1:**
+- **P1.4 (2026‑07‑02, `1e40434`)**: retirado el `document_owner` sembrado del proceso por
+  defecto. El default define su flujo al enviar (runtime). Verificado: un envío sigue
+  materializando el fill al autor desde el flujo por instancia; el modelo ya no depende del
+  seed.
+- **P2 — pasos por cargo + aprobación (`51c7f13` back, `923565d` front)**: cada paso de
+  entrega/firma puede ser **persona concreta** (`specific_person`) o **por cargo**
+  (`cargo_in_scope` + ámbito unidad/tipo). La **firma por cargo** lleva `approval_mode`
+  (todas / cualquiera / mínimo N). Nuevo endpoint `GET /:id/flow-catalog` (unidades +
+  cargos). El destinatario "Para:" pasa a ser opcional (puede ser null si la firma es por
+  cargo). Verificado E2E (UI + API).
+
+**Deuda restante (menor):**
+- Firma multi‑firmante **paralela con personas concretas** en un mismo paso: el esquema
+  liga 1 `specific_person` por paso; el paralelismo con quórum solo existe vía **cargo**
+  (un resolutor → N personas + `approval_mode`). Personas concretas = pasos secuenciales.
