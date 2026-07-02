@@ -87,12 +87,26 @@ const shouldInferSignatureFlowForContext = (context) => {
 
 const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
   connection,
-  processDefinitionTemplateId
+  processDefinitionTemplateId,
+  taskItemId = null
 ) => {
+  // routed: flujo POR INSTANCIA tiene prioridad.
+  if (taskItemId) {
+    const [inst] = await connection.query(
+      `SELECT id FROM signature_flow_templates
+       WHERE task_item_id = ? AND is_active = 1
+       ORDER BY id DESC LIMIT 1`,
+      [taskItemId]
+    );
+    if (inst?.[0]) {
+      return inst[0];
+    }
+  }
   const [rows] = await connection.query(
     `SELECT id
      FROM signature_flow_templates
      WHERE process_definition_template_id = ?
+       AND task_item_id IS NULL
        AND is_active = 1
      ORDER BY id DESC
      LIMIT 1`,
@@ -659,7 +673,8 @@ export const inspectDocumentVersionSignatureReadiness = async (connection, docum
 
   const signatureFlowTemplate = await getActiveSignatureFlowTemplateForDefinitionTemplate(
     connection,
-    context.process_definition_template_id
+    context.process_definition_template_id,
+    context.task_item_id
   );
   if (!signatureFlowTemplate?.id) {
     return { ok: false, reason: "signature_template_missing", context, currentStatus };

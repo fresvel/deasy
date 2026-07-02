@@ -289,12 +289,27 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
 
 const getActiveFillFlowTemplateForDefinitionTemplate = async (
   connection,
-  processDefinitionTemplateId
+  processDefinitionTemplateId,
+  taskItemId = null
 ) => {
+  // routed: flujo POR INSTANCIA (definido en runtime) tiene prioridad.
+  if (taskItemId) {
+    const [inst] = await connection.query(
+      `SELECT id FROM fill_flow_templates
+       WHERE task_item_id = ? AND is_active = 1
+       ORDER BY id DESC LIMIT 1`,
+      [taskItemId]
+    );
+    if (inst?.[0]) {
+      return inst[0];
+    }
+  }
+  // Flujo autorado de la plantilla (single/replicated): excluye los por‑instancia.
   const [rows] = await connection.query(
     `SELECT id
      FROM fill_flow_templates
      WHERE process_definition_template_id = ?
+       AND task_item_id IS NULL
        AND is_active = 1
      ORDER BY id DESC
      LIMIT 1`,
@@ -760,7 +775,8 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
     const flowId = Number(existingFlow[0][0].id);
     const fillFlowTemplate = await getActiveFillFlowTemplateForDefinitionTemplate(
       connection,
-      context.process_definition_template_id
+      context.process_definition_template_id,
+      context.task_item_id
     );
     if (fillFlowTemplate?.id) {
       const steps = await getFillFlowSteps(connection, fillFlowTemplate.id);
@@ -1072,6 +1088,63 @@ export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, owner
   }
 
   return null;
+};
+
+// P1 routed: materializa el flujo POR INSTANCIA definido por el usuario en runtime.
+// `flow = { entrega:[{person_id}...], firma:[{person_id}...] }` (personas concretas → specific_person).
+// Crea fill/signature_flow_templates con task_item_id (para que la materialización del documento los
+// prefiera sobre el flujo autorado de la plantilla). Devuelve cuántos pasos creó.
+export const materializeRuntimeFlowForTaskItem = async (
+  connection,
+  { taskItemId, processDefinitionTemplateId, flow }
+) => {
+  const personId = (x) => Number(x?.person_id ?? x) || null;
+  const entrega = (Array.isArray(flow?.entrega) ? flow.entrega : []).map(personId).filter(Boolean);
+  const firma = (Array.isArray(flow?.firma) ? flow.firma : []).map(personId).filter(Boolean);
+  let fillSteps = 0;
+  let signatureSteps = 0;
+
+  if (entrega.length) {
+    const [ft] = await connection.query(
+      `INSERT INTO fill_flow_templates (process_definition_template_id, task_item_id, name, is_active)
+       VALUES (?, ?, 'Entrega (definida al enviar)', 1)`,
+      [processDefinitionTemplateId, taskItemId]
+    );
+    const fillTplId = Number(ft.insertId);
+    let order = 1;
+    for (const pid of entrega) {
+      await connection.query(
+        `INSERT INTO fill_flow_steps
+           (fill_flow_template_id, step_order, resolver_type, assigned_person_id, selection_mode, is_required, can_reject)
+         VALUES (?, ?, 'specific_person', ?, 'auto_one', 1, ?)`,
+        [fillTplId, order, pid, order > 1 ? 1 : 0]
+      );
+      order += 1;
+      fillSteps += 1;
+    }
+  }
+
+  if (firma.length) {
+    const [st] = await connection.query(
+      `INSERT INTO signature_flow_templates (process_definition_template_id, task_item_id, name, is_active)
+       VALUES (?, ?, 'Firma (definida al enviar)', 1)`,
+      [processDefinitionTemplateId, taskItemId]
+    );
+    const sigTplId = Number(st.insertId);
+    let order = 1;
+    for (const pid of firma) {
+      await connection.query(
+        `INSERT INTO signature_flow_steps
+           (template_id, step_order, code, name, slot, resolver_type, assigned_person_id, selection_mode, approval_mode, is_required)
+         VALUES (?, ?, ?, ?, ?, 'specific_person', ?, 'auto_all', 'and', 1)`,
+        [sigTplId, order, `firma_${order}`, `Firma ${order}`, `firma_${order}`, pid]
+      );
+      order += 1;
+      signatureSteps += 1;
+    }
+  }
+
+  return { fillSteps, signatureSteps };
 };
 
 export const ensureDocumentForTaskItem = async (connection, taskItem) => {

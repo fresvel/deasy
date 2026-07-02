@@ -10,6 +10,7 @@ import RbacService from "../../services/auth/RbacService.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
   ensureDocumentForTaskItem,
+  materializeRuntimeFlowForTaskItem,
   launchProcessDefinitionInTerm,
   resolveOriginUnitIdForTaskItem,
   resolveOwnerPersonIdForTaskItem
@@ -3681,8 +3682,11 @@ export const createGeneralTask = async (req, res) => {
   const processDefinitionTemplateId = req.body?.process_definition_template_id
     ? Number(req.body.process_definition_template_id)
     : null;
-  // Destinatario (solo modo routed: memo/oficio que recibe y firma).
+  // Destinatario (compat legacy: routed simple = 1 destinatario firmante).
   const recipientPersonId = req.body?.recipient_person_id ? Number(req.body.recipient_person_id) : null;
+  // P1 routed: flujo definido al enviar { entrega:[{person_id}...], firma:[{person_id}...] }.
+  // "me" en el frontend se resuelve al creador antes de enviar.
+  const runtimeFlow = (req.body?.flow && typeof req.body.flow === "object") ? req.body.flow : null;
 
   if (!title) {
     return res.status(400).json({ message: "Debes indicar un título para la tarea." });
@@ -3859,6 +3863,14 @@ export const createGeneralTask = async (req, res) => {
          LIMIT 1`,
         [taskItemId]
       );
+      // routed: si el usuario definió el flujo al enviar, se materializa POR INSTANCIA (specific_person).
+      if (itemMode === "routed" && runtimeFlow) {
+        await materializeRuntimeFlowForTaskItem(connection, {
+          taskItemId,
+          processDefinitionTemplateId: definitionTemplateId,
+          flow: runtimeFlow,
+        });
+      }
       await ensureDocumentForTaskItem(connection, taskItemRows[0]);
       await connection.commit();
 
@@ -3977,6 +3989,14 @@ export const createGeneralTask = async (req, res) => {
        FROM task_items WHERE id = ? LIMIT 1`,
       [freeItemId]
     );
+    // Proceso por defecto (routed): flujo definido al enviar → materializado POR INSTANCIA.
+    if (runtimeFlow) {
+      await materializeRuntimeFlowForTaskItem(connection, {
+        taskItemId: freeItemId,
+        processDefinitionTemplateId: freeTpl.id,
+        flow: runtimeFlow,
+      });
+    }
     await ensureDocumentForTaskItem(connection, freeItemRows[0]);
 
     await connection.commit();
