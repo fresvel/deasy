@@ -1,0 +1,21 @@
+{
+  "tarea_gestor": {
+    "status": 200,
+    "isArray": true,
+    "count": 0,
+    "itemKeys": []
+  },
+  "tarea_missing_usuario": {
+    "status": 400
+  },
+  "tarea_pendiente": {
+    "status": 400,
+    "isArray": false,
+    "body": {
+      "message": "Se requiere la cedula del usuario."
+    }
+  },
+  "tarea_unknown_usuario": {
+    "status": 404
+  }
+}

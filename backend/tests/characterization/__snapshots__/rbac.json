@@ -1,0 +1,23 @@
+{
+  "admin_list_users_status": {
+    "status": 200
+  },
+  "no_token_denied": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "usuario_list_users_denied": {
+    "status": 403,
+    "body": {
+      "message": "No tienes permisos para realizar esta accion."
+    }
+  },
+  "usuario_others_document_center_denied": {
+    "status": 403,
+    "body": {
+      "message": "No tienes permisos para realizar esta accion."
+    }
+  }
+}
