@@ -548,26 +548,9 @@ export const ensureDefaultProcess = async (connection) => {
     [pdtId]
   );
 
-  // 6. flujo de entrega: 1 paso, el dueño del documento llena (universal).
-  let fillTpl = await fetchOne(
-    connection,
-    "SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ? LIMIT 1",
-    [pdtId]
-  );
-  if (!fillTpl) {
-    const [r] = await connection.query(
-      "INSERT INTO fill_flow_templates (process_definition_template_id, name, description, is_active) VALUES (?, ?, ?, 1)",
-      [pdtId, "Entrega del responsable", "El responsable de la tarea completa el contenido."]
-    );
-    fillTpl = { id: r.insertId };
-    await connection.query(
-      `INSERT INTO fill_flow_steps
-        (fill_flow_template_id, step_order, resolver_type, selection_mode, is_required, can_reject)
-       VALUES (?, 1, 'document_owner', 'auto_one', 1, 0)`,
-      [Number(fillTpl.id)]
-    );
-  }
-  // Firma: ad-hoc (no se predefine para tareas libres).
+  // 6. Sin flujo predefinido: el proceso por defecto es routed → el usuario DEFINE su flujo
+  // de entrega y firma AL ENVIAR (runtime, materializado por instancia con task_item_id).
+  // Antes se sembraba un paso de entrega `document_owner` (atajo deprecado); retirado (P1.4).
 
   // 7. periodo sentinela "Permanente" + vínculo de tipo de periodo (corre en Permanente) + regla all_units
   const permanentTermType = await fetchOne(
