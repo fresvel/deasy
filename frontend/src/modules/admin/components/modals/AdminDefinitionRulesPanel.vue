@@ -74,12 +74,12 @@
             <AdminLookupField
               :model-value="labels.unit_id"
               placeholder="Selecciona una unidad"
-              readonly
-              prevent-input-interaction
+              :suggest-provider="suggestProviders.unit_id"
               :disabled="!canManage"
               :clear-disabled="!canManage || !form.unit_id"
               :search-disabled="!canManage"
               @clear="$emit('clear-field', 'unit_id')"
+              @select="$emit('select-field', 'unit_id', $event)"
               @search="$emit('open-fk-search', 'unit_id')"
             />
           </AdminFieldGroup>
@@ -87,12 +87,12 @@
             <AdminLookupField
               :model-value="labels.unit_type_id"
               placeholder="Selecciona un tipo"
-              readonly
-              prevent-input-interaction
+              :suggest-provider="suggestProviders.unit_type_id"
               :disabled="!canManage"
               :clear-disabled="!canManage || !form.unit_type_id"
               :search-disabled="!canManage"
               @clear="$emit('clear-field', 'unit_type_id')"
+              @select="$emit('select-field', 'unit_type_id', $event)"
               @search="$emit('open-fk-search', 'unit_type_id')"
             />
           </AdminFieldGroup>
@@ -100,12 +100,12 @@
             <AdminLookupField
               :model-value="labels.cargo_id"
               placeholder="Selecciona un cargo"
-              readonly
-              prevent-input-interaction
+              :suggest-provider="suggestProviders.cargo_id"
               :disabled="!canManage"
               :clear-disabled="!canManage || !form.cargo_id"
               :search-disabled="!canManage"
               @clear="$emit('clear-field', 'cargo_id')"
+              @select="$emit('select-field', 'cargo_id', $event)"
               @search="$emit('open-fk-search', 'cargo_id')"
             />
           </AdminFieldGroup>
@@ -113,12 +113,12 @@
             <AdminLookupField
               :model-value="labels.position_id"
               placeholder="Selecciona un puesto"
-              readonly
-              prevent-input-interaction
+              :suggest-provider="suggestProviders.position_id"
               :disabled="!canManage"
               :clear-disabled="!canManage || !form.position_id"
               :search-disabled="!canManage"
               @clear="$emit('clear-field', 'position_id')"
+              @select="$emit('select-field', 'position_id', $event)"
               @search="$emit('open-fk-search', 'position_id')"
             />
           </AdminFieldGroup>
@@ -224,6 +224,8 @@ const props = defineProps({
   seriesScope: { type: Object, default: null },
   // En el wizard el encabezado del proceso ya lo muestra el shell; evita el banner de contexto duplicado.
   embedded: { type: Boolean, default: false },
+  // Mapa fieldName -> proveedor de recomendaciones (combobox). Vacío = lookup clásico.
+  suggestProviders: { type: Object, default: () => ({}) },
   formatCell: { type: Function, required: true }
 });
 
@@ -232,6 +234,7 @@ const emit = defineEmits([
   "scope-change",
   "recipient-policy-change",
   "clear-field",
+  "select-field",
   "open-fk-search",
   "submit",
   "reset",

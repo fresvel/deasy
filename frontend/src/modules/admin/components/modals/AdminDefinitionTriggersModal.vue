@@ -43,10 +43,11 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
+  suggestProvider: { type: Function, default: null },
   formatCell: { type: Function, required: true }
 });
 
-const emit = defineEmits(["update:form", "trigger-mode-change", "clear-term-type", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row", "close", "accept"]);
+const emit = defineEmits(["update:form", "trigger-mode-change", "clear-term-type", "select-term-type", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row", "close", "accept"]);
 const modalRef = ref(null);
 
 const panelBindings = computed(() => ({
@@ -61,6 +62,7 @@ const panelBindings = computed(() => ({
   loading: props.loading,
   rows: props.rows,
   tableFields: props.tableFields,
+  suggestProvider: props.suggestProvider,
   formatCell: props.formatCell
 }));
 
@@ -68,6 +70,7 @@ const panelListeners = {
   "update:form": (value) => emit("update:form", value),
   "trigger-mode-change": () => emit("trigger-mode-change"),
   "clear-term-type": () => emit("clear-term-type"),
+  "select-term-type": (option) => emit("select-term-type", option),
   "open-fk-search": () => emit("open-fk-search"),
   submit: () => emit("submit"),
   reset: () => emit("reset"),

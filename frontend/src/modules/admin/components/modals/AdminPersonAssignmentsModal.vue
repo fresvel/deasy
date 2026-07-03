@@ -40,10 +40,10 @@
                   <AdminLookupField
                     :model-value="personCargoLabels.position_id"
                     placeholder="Selecciona un puesto"
-                    readonly
-                    prevent-input-interaction
+                    :suggest-provider="cargoPositionSuggestProvider"
                     :clear-disabled="!personCargoForm.position_id"
                     @clear="$emit('clear-person-cargo-position')"
+                    @select="$emit('select-person-cargo', 'position_id', $event)"
                     @search="$emit('open-person-cargo-fk-search', 'position_id')"
                   />
                 </div>
@@ -114,10 +114,10 @@
                   <AdminLookupField
                     :model-value="personRoleLabels.role_id"
                     placeholder="Selecciona un rol"
-                    readonly
-                    prevent-input-interaction
+                    :suggest-provider="roleRoleSuggestProvider"
                     :clear-disabled="!personRoleForm.role_id"
                     @clear="$emit('clear-person-role-field', 'role_id')"
+                    @select="$emit('select-person-role', 'role_id', $event)"
                     @search="$emit('open-person-role-fk-search', 'role_id')"
                   />
                 </div>
@@ -126,10 +126,10 @@
                   <AdminLookupField
                     :model-value="personRoleLabels.unit_id"
                     placeholder="Selecciona una unidad"
-                    readonly
-                    prevent-input-interaction
+                    :suggest-provider="roleUnitSuggestProvider"
                     :clear-disabled="!personRoleForm.unit_id"
                     @clear="$emit('clear-person-role-field', 'unit_id')"
+                    @select="$emit('select-person-role', 'unit_id', $event)"
                     @search="$emit('open-person-role-fk-search', 'unit_id')"
                   />
                 </div>
@@ -182,10 +182,10 @@
                   <AdminLookupField
                     :model-value="personContractLabels.position_id"
                     placeholder="Selecciona un puesto"
-                    readonly
-                    prevent-input-interaction
+                    :suggest-provider="contractPositionSuggestProvider"
                     :clear-disabled="!personContractForm.position_id"
                     @clear="$emit('clear-person-contract-position')"
+                    @select="$emit('select-person-contract', $event)"
                     @search="$emit('open-person-contract-fk-search')"
                   />
                 </div>
@@ -296,7 +296,11 @@ const props = defineProps({
   rowKey: { type: Function, required: true },
   formatCell: { type: Function, required: true },
   formatPersonCargoUnit: { type: Function, required: true },
-  toDateInputValue: { type: Function, required: true }
+  toDateInputValue: { type: Function, required: true },
+  cargoPositionSuggestProvider: { type: Function, default: null },
+  roleRoleSuggestProvider: { type: Function, default: null },
+  roleUnitSuggestProvider: { type: Function, default: null },
+  contractPositionSuggestProvider: { type: Function, default: null }
 });
 
 const emit = defineEmits([
@@ -305,6 +309,7 @@ const emit = defineEmits([
   "update:person-contract-form",
   "clear-person-cargo-position",
   "open-person-cargo-fk-search",
+  "select-person-cargo",
   "submit-person-cargo-create",
   "reset-person-cargo-form",
   "view-person-cargo",
@@ -312,6 +317,7 @@ const emit = defineEmits([
   "delete-person-cargo",
   "clear-person-role-field",
   "open-person-role-fk-search",
+  "select-person-role",
   "submit-person-role-create",
   "reset-person-role-form",
   "view-person-role",
@@ -319,6 +325,7 @@ const emit = defineEmits([
   "delete-person-role",
   "clear-person-contract-position",
   "open-person-contract-fk-search",
+  "select-person-contract",
   "submit-person-contract-create",
   "reset-person-contract-form",
   "view-person-contract",

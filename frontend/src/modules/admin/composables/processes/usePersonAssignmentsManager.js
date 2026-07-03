@@ -29,6 +29,7 @@ export function usePersonAssignmentsManager({
   ensurePersonAssignmentsInstance,
   getPersonAssignmentsInstance,
   openFkSearch,
+  resolveFkSuggestions,
   resolveDisplayField,
   formatCell,
   toDateInputValue,
@@ -272,6 +273,67 @@ export function usePersonAssignmentsManager({
     });
   };
 
+  // Recomendaciones inline (combobox) para las asignaciones de persona. Reutiliza el
+  // fetcher headless (los "position_id" respetan la exclusión de puestos ya asignados).
+  const buildPersonSuggestProvider = (fieldName) => async (searchText) => {
+    const { rows, tableObj } = await resolveFkSuggestions(fieldName, { q: searchText });
+    if (!tableObj || !rows?.length) {
+      return [];
+    }
+    const displayField = resolveDisplayField(tableObj);
+    return rows.map((row) => {
+      const labelValue = row?.[displayField] ?? row?.id;
+      return {
+        id: row?.id ?? "",
+        label: labelValue !== null && labelValue !== undefined ? String(labelValue) : "",
+        row
+      };
+    });
+  };
+
+  const personCargoPositionSuggestProvider = buildPersonSuggestProvider("position_id");
+  const personRoleRoleSuggestProvider = buildPersonSuggestProvider("role_id");
+  const personRoleUnitSuggestProvider = buildPersonSuggestProvider("unit_id");
+  const personContractPositionSuggestProvider = buildPersonSuggestProvider("position_id");
+
+  const selectPersonCargoOption = (fieldName, option) => {
+    if (!fieldName) {
+      return;
+    }
+    personCargoForm.value = {
+      ...personCargoForm.value,
+      [fieldName]: option?.id ? String(option.id) : ""
+    };
+    personCargoLabels.value = {
+      ...personCargoLabels.value,
+      [fieldName]: option?.label ?? ""
+    };
+  };
+
+  const selectPersonRoleOption = (fieldName, option) => {
+    if (!fieldName) {
+      return;
+    }
+    personRoleForm.value = {
+      ...personRoleForm.value,
+      [fieldName]: option?.id ? String(option.id) : ""
+    };
+    personRoleLabels.value = {
+      ...personRoleLabels.value,
+      [fieldName]: option?.label ?? ""
+    };
+  };
+
+  const selectPersonContractOption = (option) => {
+    personContractForm.value = {
+      ...personContractForm.value,
+      position_id: option?.id ? String(option.id) : ""
+    };
+    personContractLabels.value = {
+      position_id: option?.label ?? ""
+    };
+  };
+
   const startPersonCargoEdit = (row) => {
     if (!row) {
       return;
@@ -471,6 +533,13 @@ export function usePersonAssignmentsManager({
     openPersonCargoFkSearch,
     openPersonRoleFkSearch,
     openPersonContractFkSearch,
+    personCargoPositionSuggestProvider,
+    personRoleRoleSuggestProvider,
+    personRoleUnitSuggestProvider,
+    personContractPositionSuggestProvider,
+    selectPersonCargoOption,
+    selectPersonRoleOption,
+    selectPersonContractOption,
     startPersonCargoEdit,
     startPersonRoleEdit,
     startPersonContractEdit,
