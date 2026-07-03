@@ -1,4 +1,10 @@
 import mysql from "mysql2/promise";
+import * as pgAdapter from "./postgres.js";
+
+// Cutover de motor: con DB_ENGINE=postgres, este módulo delega en el adaptador
+// de PostgreSQL (que espeja la interfaz de mysql2), de modo que los ~37
+// importadores y ~881 call sites no cambian.
+const USE_PG = process.env.DB_ENGINE === "postgres";
 
 const REQUIRED_ENV_VARS = ["MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD", "MARIADB_DATABASE"];
 
@@ -30,11 +36,14 @@ const pool = missingEnvVars.length
       queueLimit: 0
     });
 
-export const getMariaDBPool = () => pool;
-export const getMariaDBDatabaseName = () => databaseName;
+export const getMariaDBPool = () => (USE_PG ? pgAdapter.getPostgresPool() : pool);
+export const getMariaDBDatabaseName = () => (USE_PG ? pgAdapter.getPostgresDatabaseName() : databaseName);
 export const getMariaDBBaseConfig = () => baseConfig;
 
 export const assertMariaDBConnection = async () => {
+  if (USE_PG) {
+    return pgAdapter.assertPostgresConnection();
+  }
   if (!pool) {
     throw new Error(
       "La conexión a MariaDB no está configurada correctamente. Revisa las variables de entorno."
@@ -50,6 +59,9 @@ export const assertMariaDBConnection = async () => {
 };
 
 export const closeMariaDBPool = async () => {
+  if (USE_PG) {
+    return pgAdapter.closePostgresPool();
+  }
   if (!pool) {
     return;
   }

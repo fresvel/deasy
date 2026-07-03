@@ -8,8 +8,11 @@
 //      se reconstruye esa forma sobre el resultado de `pg`.
 //   3. `getConnection()` con `beginTransaction/commit/rollback/release/ping`.
 //
-// Lo que NO hace (queda para la fase de portado de queries): traducir backticks,
-// funciones de dialecto (NOW/CURDATE/GROUP_CONCAT), ON DUPLICATE KEY, etc.
+// Dialecto: translateDialect() reescribe (protegiendo strings/comentarios)
+// backticks->comillas, CURDATE/IFNULL/UNIX_TIMESTAMP, GROUP_CONCAT->string_agg,
+// INSERT IGNORE->ON CONFLICT DO NOTHING, SET FOREIGN_KEY_CHECKS->session_replication_role.
+// NO cubre ON DUPLICATE KEY UPDATE (requiere target de conflicto → fix en la query)
+// ni diferencias de information_schema.
 //
 // insertId: pg no expone un last-insert-id. Para INSERTs sin RETURNING se añade
 // `RETURNING id` best-effort; si la tabla no tiene columna `id` (42703) se
@@ -103,6 +106,104 @@ const isInsert = (sql) => /^\s*insert\b/i.test(sql);
 const isWrite = (sql) => /^\s*(insert|update|delete|replace)\b/i.test(sql);
 const hasReturning = (sql) => /\breturning\b/i.test(sql);
 
+// GROUP_CONCAT([DISTINCT] expr [ORDER BY cols] [SEPARATOR 's']) -> string_agg(...)
+function rewriteGroupConcat(code) {
+  let out = "";
+  let i = 0;
+  const re = /\bGROUP_CONCAT\s*\(/gi;
+  let m;
+  let last = 0;
+  while ((m = re.exec(code))) {
+    out += code.slice(last, m.index);
+    // parseo balanceado del contenido
+    let depth = 0;
+    let j = m.index + m[0].length - 1;
+    for (; j < code.length; j++) {
+      if (code[j] === "(") depth++;
+      else if (code[j] === ")") { depth--; if (depth === 0) break; }
+    }
+    let inner = code.slice(m.index + m[0].length, j).trim();
+    let distinct = "";
+    if (/^DISTINCT\s+/i.test(inner)) { distinct = "DISTINCT "; inner = inner.replace(/^DISTINCT\s+/i, ""); }
+    let sep = "','";
+    const sepM = inner.match(/\s+SEPARATOR\s+(\S+)\s*$/i);
+    if (sepM) { sep = sepM[1]; inner = inner.slice(0, sepM.index); }
+    let orderBy = "";
+    const obM = inner.match(/\s+ORDER\s+BY\s+(.+)$/i);
+    if (obM) { orderBy = ` ORDER BY ${obM[1].trim()}`; inner = inner.slice(0, obM.index); }
+    const expr = inner.trim();
+    // En PG, string_agg(DISTINCT x ORDER BY y) exige y == x. Cuando hay DISTINCT
+    // se ordena por la propia expresión (MySQL ordenaba por y; el conjunto de
+    // valores es el mismo, sólo puede variar el orden).
+    const finalOrderBy = distinct ? ` ORDER BY (${expr})::text` : orderBy;
+    out += `string_agg(${distinct}(${expr})::text, ${sep}${finalOrderBy})`;
+    last = j + 1;
+    re.lastIndex = last;
+  }
+  out += code.slice(last);
+  return out;
+}
+
+// IF(cond, a, b) -> CASE WHEN cond THEN a ELSE b END (paren-balanceado, anidados ok).
+function rewriteIf(code) {
+  const re = /\bIF\s*\(/gi;
+  let m;
+  while ((m = re.exec(code))) {
+    let depth = 0;
+    let j = m.index + m[0].length - 1;
+    const args = [];
+    let cur = "";
+    for (; j < code.length; j++) {
+      const ch = code[j];
+      if (ch === "(") { depth++; if (depth === 1) continue; }
+      if (ch === ")") { depth--; if (depth === 0) { args.push(cur); break; } }
+      if (ch === "," && depth === 1) { args.push(cur); cur = ""; continue; }
+      cur += ch;
+    }
+    if (args.length === 3) {
+      const repl = `CASE WHEN ${args[0].trim()} THEN ${args[1].trim()} ELSE ${args[2].trim()} END`;
+      code = code.slice(0, m.index) + repl + code.slice(j + 1);
+      re.lastIndex = m.index; // reescanea (permite IF anidados en los argumentos)
+    } else {
+      re.lastIndex = m.index + m[0].length;
+    }
+  }
+  return code;
+}
+
+// Reescribe dialecto MySQL->PG sobre segmentos de CÓDIGO (sin strings/comentarios).
+function rewriteDialect(code) {
+  let c = code;
+  c = c.replace(/`([^`]*)`/g, '"$1"'); // identificadores backtick -> comillas dobles
+  c = c.replace(/\bCURDATE\s*\(\s*\)/gi, "CURRENT_DATE");
+  c = c.replace(/\bCURTIME\s*\(\s*\)/gi, "CURRENT_TIME");
+  c = c.replace(/\bIFNULL\s*\(/gi, "COALESCE(");
+  c = c.replace(/\bUNIX_TIMESTAMP\s*\(\s*\)/gi, "EXTRACT(EPOCH FROM now())::bigint");
+  c = c.replace(/SET\s+FOREIGN_KEY_CHECKS\s*=\s*0/gi, "SET session_replication_role = replica");
+  c = c.replace(/SET\s+FOREIGN_KEY_CHECKS\s*=\s*1/gi, "SET session_replication_role = origin");
+  // INSERT IGNORE INTO ... -> INSERT INTO ... ON CONFLICT DO NOTHING
+  if (/^\s*INSERT\s+IGNORE\b/i.test(c)) {
+    c = c.replace(/^(\s*)INSERT\s+IGNORE\b/i, "$1INSERT") + " ON CONFLICT DO NOTHING";
+  }
+  if (/\bGROUP_CONCAT\s*\(/i.test(c)) c = rewriteGroupConcat(c);
+  if (/\bIF\s*\(/i.test(c)) c = rewriteIf(c);
+  return c;
+}
+
+// Traduce dialecto protegiendo strings y comentarios (para no tocar literales).
+function translateDialect(sql) {
+  const masks = [];
+  const masked = sql.replace(/'(?:[^']|'')*'|--[^\n]*|\/\*[\s\S]*?\*\//g, (mm) => {
+    masks.push(mm);
+    return `@@@${masks.length - 1}@@@`;
+  });
+  const rewritten = rewriteDialect(masked);
+  return restoreMasks(rewritten, masks);
+}
+function restoreMasks(text, masks) {
+  return text.replace(/@@@(\d+)@@@/g, (_, k) => masks[Number(k)]);
+}
+
 const writeHeader = (res, insertId) => [
   { affectedRows: res.rowCount, changedRows: res.rowCount, insertId },
   res.fields,
@@ -110,7 +211,7 @@ const writeHeader = (res, insertId) => [
 
 // Ejecuta contra un `executor` (pool o client de pg) y devuelve la forma mysql2.
 async function runQuery(executor, sql, params = []) {
-  const text = translatePlaceholders(sql);
+  const text = translatePlaceholders(translateDialect(sql));
 
   // insertId best-effort: se añade RETURNING id. Si la tabla no tiene columna
   // `id` (42703) se cae al INSERT normal. Dentro de una transacción, el fallo

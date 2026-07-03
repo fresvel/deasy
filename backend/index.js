@@ -8,6 +8,7 @@ import cors from "cors"
 import "./database/mongoose.js"
 import { assertMariaDBConnection } from "./config/mariadb.js";
 import { ensureMariaDBDatabase, ensureMariaDBSchema } from "./database/mariadb_initializer.js";
+import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -1273,12 +1274,19 @@ app.use(express.static("public"));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const initializeMariaDBWithRetry = async () => {
+  const usePostgres = process.env.DB_ENGINE === "postgres";
   const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
   const maxAttempts = Number(process.env.MARIADB_INIT_MAX_ATTEMPTS || 20);
   const retryDelayMs = Number(process.env.MARIADB_INIT_RETRY_DELAY_MS || 3000);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
+      if (usePostgres) {
+        await assertMariaDBConnection(); // delega en PostgreSQL
+        await ensurePostgresSchema({ reset: shouldResetSchema });
+        console.log("✅ PostgreSQL inicializada correctamente");
+        return;
+      }
       await ensureMariaDBDatabase();
       await assertMariaDBConnection();
       await ensureMariaDBSchema({ reset: shouldResetSchema });

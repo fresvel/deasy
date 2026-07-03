@@ -145,7 +145,7 @@ const flushTable = () => {
   for (const ix of indexStmts) out.push(ix);
   if (hasUpdatedAt) {
     out.push(
-      `CREATE TRIGGER trg_${tableName}_set_updated_at BEFORE UPDATE ON ${tableName} ` +
+      `CREATE OR REPLACE TRIGGER trg_${tableName}_set_updated_at BEFORE UPDATE ON ${tableName} ` +
         `FOR EACH ROW EXECUTE FUNCTION set_updated_at();`
     );
   }

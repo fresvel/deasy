@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS units (
   CONSTRAINT fk_units_unit_type FOREIGN KEY (unit_type_id) REFERENCES unit_types(id)
 );
 CREATE INDEX IF NOT EXISTS idx_units_unit_type ON units (unit_type_id);
-CREATE TRIGGER trg_units_set_updated_at BEFORE UPDATE ON units FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_units_set_updated_at BEFORE UPDATE ON units FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS persons (
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS persons (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TRIGGER trg_persons_set_updated_at BEFORE UPDATE ON persons FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_persons_set_updated_at BEFORE UPDATE ON persons FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 ALTER TABLE persons
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS person_certificates (
 );
 CREATE INDEX IF NOT EXISTS idx_person_certificates_person ON person_certificates (person_id);
 CREATE INDEX IF NOT EXISTS idx_person_certificates_default ON person_certificates (person_id, is_default);
-CREATE TRIGGER trg_person_certificates_set_updated_at BEFORE UPDATE ON person_certificates FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_person_certificates_set_updated_at BEFORE UPDATE ON person_certificates FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS relation_unit_types (
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS cargos (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TRIGGER trg_cargos_set_updated_at BEFORE UPDATE ON cargos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_cargos_set_updated_at BEFORE UPDATE ON cargos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS unit_positions (
@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS unit_positions (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_unit_cargo_slot ON unit_positions (unit_id, cargo_id, slot_no);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_unit_head ON unit_positions (unit_id, head_flag);
 CREATE INDEX IF NOT EXISTS idx_positions_unit_cargo_active ON unit_positions (unit_id, cargo_id, is_active);
-CREATE TRIGGER trg_unit_positions_set_updated_at BEFORE UPDATE ON unit_positions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_unit_positions_set_updated_at BEFORE UPDATE ON unit_positions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS position_assignments (
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS position_assignments (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_position_current ON position_assignments (position_id, current_flag);
 CREATE INDEX IF NOT EXISTS idx_assignments_person_current ON position_assignments (person_id, is_current);
-CREATE TRIGGER trg_position_assignments_set_updated_at BEFORE UPDATE ON position_assignments FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_position_assignments_set_updated_at BEFORE UPDATE ON position_assignments FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS vacancies (
@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS vacancies (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_one_open_vacancy_per_position ON vacancies (position_id, open_flag);
 CREATE INDEX IF NOT EXISTS idx_vacancies_position_status ON vacancies (position_id, status);
-CREATE TRIGGER trg_vacancies_set_updated_at BEFORE UPDATE ON vacancies FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_vacancies_set_updated_at BEFORE UPDATE ON vacancies FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS aplications (
@@ -217,7 +217,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_application_once ON aplications (vacancy_id
 CREATE UNIQUE INDEX IF NOT EXISTS uq_one_selected_per_vacancy ON aplications (vacancy_id, selected_flag);
 CREATE INDEX IF NOT EXISTS idx_applications_vacancy_status ON aplications (vacancy_id, status);
 CREATE INDEX IF NOT EXISTS idx_applications_person_time ON aplications (person_id, applied_at);
-CREATE TRIGGER trg_aplications_set_updated_at BEFORE UPDATE ON aplications FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_aplications_set_updated_at BEFORE UPDATE ON aplications FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS offers (
@@ -252,7 +252,7 @@ CREATE TABLE IF NOT EXISTS contracts (
 );
 CREATE INDEX IF NOT EXISTS idx_contracts_person_status ON contracts (person_id, status);
 CREATE INDEX IF NOT EXISTS idx_contracts_position_status ON contracts (position_id, status);
-CREATE TRIGGER trg_contracts_set_updated_at BEFORE UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_contracts_set_updated_at BEFORE UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS resources (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TRIGGER trg_resources_set_updated_at BEFORE UPDATE ON resources FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_resources_set_updated_at BEFORE UPDATE ON resources FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS actions (
@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS actions (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TRIGGER trg_actions_set_updated_at BEFORE UPDATE ON actions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_actions_set_updated_at BEFORE UPDATE ON actions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS permissions (
@@ -318,7 +318,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_permissions_resource_action ON permissions 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_permissions_code ON permissions (code);
 CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions (resource_id);
 CREATE INDEX IF NOT EXISTS idx_permissions_action ON permissions (action_id);
-CREATE TRIGGER trg_permissions_set_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_permissions_set_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS role_permissions (
@@ -559,7 +559,7 @@ CREATE TABLE IF NOT EXISTS term_types (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TRIGGER trg_term_types_set_updated_at BEFORE UPDATE ON term_types FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_term_types_set_updated_at BEFORE UPDATE ON term_types FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 INSERT INTO term_types (id, code, name, description, is_active)
@@ -622,7 +622,7 @@ CREATE TABLE IF NOT EXISTS process_runs (
 );
 CREATE INDEX IF NOT EXISTS idx_process_runs_definition ON process_runs (process_definition_id, status);
 CREATE INDEX IF NOT EXISTS idx_process_runs_term ON process_runs (term_id);
-CREATE TRIGGER trg_process_runs_set_updated_at BEFORE UPDATE ON process_runs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_process_runs_set_updated_at BEFORE UPDATE ON process_runs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS tasks (
@@ -876,7 +876,7 @@ CREATE TABLE IF NOT EXISTS document_fill_flows (
   CONSTRAINT fk_document_fill_flows_document FOREIGN KEY (document_version_id) REFERENCES document_versions(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_document_fill_flows_document ON document_fill_flows (document_version_id);
-CREATE TRIGGER trg_document_fill_flows_set_updated_at BEFORE UPDATE ON document_fill_flows FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_document_fill_flows_set_updated_at BEFORE UPDATE ON document_fill_flows FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 CREATE TABLE IF NOT EXISTS fill_requests (
@@ -1103,7 +1103,7 @@ CREATE TABLE IF NOT EXISTS signature_batch_jobs (
 );
 CREATE INDEX IF NOT EXISTS idx_signature_batch_jobs_user ON signature_batch_jobs (user_id);
 CREATE INDEX IF NOT EXISTS idx_signature_batch_jobs_status ON signature_batch_jobs (status);
-CREATE TRIGGER trg_signature_batch_jobs_set_updated_at BEFORE UPDATE ON signature_batch_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER trg_signature_batch_jobs_set_updated_at BEFORE UPDATE ON signature_batch_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 -- ============================================================================
@@ -1138,7 +1138,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_process_definition_versions_before_update
+CREATE OR REPLACE TRIGGER trg_process_definition_versions_before_update
 BEFORE UPDATE ON process_definition_versions
 FOR EACH ROW EXECUTE FUNCTION trg_pdv_before_update_fn();
 
@@ -1165,7 +1165,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_position_assignments_after_insert
+CREATE OR REPLACE TRIGGER trg_position_assignments_after_insert
 AFTER INSERT ON position_assignments
 FOR EACH ROW EXECUTE FUNCTION trg_position_assignments_after_insert_fn();
 
@@ -1199,7 +1199,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_position_assignments_after_update
+CREATE OR REPLACE TRIGGER trg_position_assignments_after_update
 AFTER UPDATE ON position_assignments
 FOR EACH ROW EXECUTE FUNCTION trg_position_assignments_after_update_fn();
 
@@ -1222,7 +1222,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_persons_after_update
+CREATE OR REPLACE TRIGGER trg_persons_after_update
 AFTER UPDATE ON persons
 FOR EACH ROW EXECUTE FUNCTION trg_persons_after_update_fn();
 
@@ -1246,6 +1246,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_units_after_update
+CREATE OR REPLACE TRIGGER trg_units_after_update
 AFTER UPDATE ON units
 FOR EACH ROW EXECUTE FUNCTION trg_units_after_update_fn();

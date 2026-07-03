@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { SQL_TABLES } from "../config/sqlTables.js";
+import { getPostgresPool } from "../config/postgres.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendRoot = path.resolve(__dirname, "..");
@@ -227,15 +228,35 @@ const decodeValue = (value, mysqlType) => {
   return value;
 };
 
+const USE_PG = process.env.DB_ENGINE === "postgres";
+
 const getDatabaseTables = async (connection, databaseName) => {
-  const [rows] = await connection.query(
-    `SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'`,
-    [databaseName]
-  );
+  const [rows] = USE_PG
+    ? await connection.query(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'`
+      )
+    : await connection.query(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'`,
+        [databaseName]
+      );
   return rows.map((row) => row.table_name);
 };
 
 const getTableColumns = async (connection, tableName) => {
+  if (USE_PG) {
+    const [rows] = await connection.query(
+      `SELECT column_name AS name, data_type AS mysql_type, is_generated
+         FROM information_schema.columns
+        WHERE table_schema = current_schema() AND table_name = ?`,
+      [tableName]
+    );
+    return rows.map((row) => ({
+      name: row.name,
+      mysql_type: row.mysql_type,
+      extra: row.is_generated === "ALWAYS" ? "generated" : "",
+      is_generated: row.is_generated === "ALWAYS"
+    }));
+  }
   const [rows] = await connection.query(`SHOW COLUMNS FROM \`${tableName}\``);
   return rows.map((row) => ({
     name: row.Field,
@@ -390,7 +411,7 @@ const applySeed = async (connection, filePath, { includeAll = false } = {}) => {
 
   if (!orderedTables.length) throw new Error("La semilla no contiene tablas.");
 
-  const schemaTables = new Set(await getDatabaseTables(connection, connection.config.database));
+  const schemaTables = new Set(await getDatabaseTables(connection, connection.config?.database ?? process.env.MARIADB_DATABASE));
   const missingTables = orderedTables
     .map((tableData) => tableData.table)
     .filter((tableName) => !schemaTables.has(tableName));
@@ -503,8 +524,13 @@ const run = async () => {
   }
 
   await loadEnv();
-  const config = ensureConfig();
-  const connection = await mysql.createConnection(config);
+  // Con DB_ENGINE=postgres se usa una conexión del adaptador pg (que espeja la
+  // interfaz mysql2: query->[rows], beginTransaction/commit/rollback); si no,
+  // la conexión mysql2 directa de siempre.
+  const config = USE_PG ? null : ensureConfig();
+  const connection = USE_PG
+    ? await getPostgresPool().getConnection()
+    : await mysql.createConnection(config);
 
   try {
     if (args.mode === "capture") {
@@ -513,7 +539,8 @@ const run = async () => {
     }
     await applySeed(connection, args.file, { includeAll: args.includeAll });
   } finally {
-    await connection.end();
+    if (USE_PG) connection.release();
+    else await connection.end();
   }
 };
 
