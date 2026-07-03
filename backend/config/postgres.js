@@ -284,6 +284,51 @@ function restoreMasks(text, masks) {
   return text.replace(/@@@(\d+)@@@/g, (_, k) => masks[Number(k)]);
 }
 
+// Cache de índices ÚNICOS por tabla (incluye PK, UNIQUE constraints y
+// CREATE UNIQUE INDEX). Se usa para inferir el target de ON CONFLICT.
+let uniqueColsCache = null;
+async function ensureUniqueCols(executor) {
+  if (uniqueColsCache) return uniqueColsCache;
+  const res = await executor.query(
+    `SELECT idx.indrelid::regclass::text AS tbl,
+            array_agg(a.attname::text ORDER BY a.attnum) AS cols
+       FROM pg_index idx
+       JOIN pg_attribute a ON a.attrelid = idx.indrelid AND a.attnum = ANY(idx.indkey)
+      WHERE idx.indisunique AND idx.indpred IS NULL
+      GROUP BY idx.indexrelid, idx.indrelid`
+  );
+  const toArray = (v) =>
+    Array.isArray(v) ? v : String(v).replace(/^{|}$/g, "").split(",").map((s) => s.replace(/^"|"$/g, ""));
+  const map = new Map();
+  for (const row of res.rows) {
+    const tbl = row.tbl.replace(/^[^.]*\./, "").replace(/"/g, "").toLowerCase();
+    if (!map.has(tbl)) map.set(tbl, []);
+    map.get(tbl).push(toArray(row.cols).map((c) => String(c).toLowerCase()));
+  }
+  uniqueColsCache = map;
+  return map;
+}
+
+// ON DUPLICATE KEY UPDATE <sets> -> ON CONFLICT (<target>) DO UPDATE SET <sets>.
+// El target se infiere: el índice único cuyas columnas están TODAS en la lista
+// de columnas del INSERT (prefiere el más corto que no sea sólo `id`).
+async function rewriteOnDuplicate(sql, executor) {
+  const m = sql.match(/INSERT\s+(?:IGNORE\s+)?INTO\s+`?(\w+)`?\s*\(([^)]*)\)/i);
+  if (!m) return sql;
+  const table = m[1].toLowerCase();
+  const insertCols = m[2].split(",").map((s) => s.trim().replace(/`/g, "").toLowerCase());
+  const cache = await ensureUniqueCols(executor);
+  const covered = (cache.get(table) || [])
+    .filter((cols) => cols.every((c) => insertCols.includes(c)))
+    .sort((a, b) => a.length - b.length);
+  const target = covered.find((cols) => !(cols.length === 1 && cols[0] === "id")) || covered[0];
+  if (!target) return sql;
+  return sql.replace(/ON\s+DUPLICATE\s+KEY\s+UPDATE\s+([\s\S]*?)$/i, (_full, sets) => {
+    const conv = sets.replace(/=\s*VALUES\(\s*(\w+)\s*\)/gi, "= EXCLUDED.$1");
+    return `ON CONFLICT (${target.join(", ")}) DO UPDATE SET ${conv}`;
+  });
+}
+
 const writeHeader = (res, insertId) => [
   { affectedRows: res.rowCount, changedRows: res.rowCount, insertId },
   res.fields,
@@ -291,7 +336,11 @@ const writeHeader = (res, insertId) => [
 
 // Ejecuta contra un `executor` (pool o client de pg) y devuelve la forma mysql2.
 async function runQuery(executor, sql, params = []) {
-  const { text, values } = bindParams(translateDialect(sql), params);
+  // ON DUPLICATE KEY UPDATE necesita inferir el target de conflicto (async).
+  const prepared = /ON\s+DUPLICATE\s+KEY\s+UPDATE/i.test(sql)
+    ? await rewriteOnDuplicate(sql, executor)
+    : sql;
+  const { text, values } = bindParams(translateDialect(prepared), params);
 
   // insertId best-effort: se añade RETURNING id. Si la tabla no tiene columna
   // `id` (42703) se cae al INSERT normal. Dentro de una transacción, el fallo
