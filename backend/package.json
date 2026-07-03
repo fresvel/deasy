@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test:char": "node --test tests/characterization/flows/*.test.mjs"
+    "test:char": "node --test tests/characterization/flows/*.test.mjs",
+    "test:char:seed": "node tests/characterization/setup/seed_execution.mjs"
   },
   "keywords": [],
   "author": "",

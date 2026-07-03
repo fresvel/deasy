@@ -8,13 +8,19 @@
       "message": "Token requerido"
     }
   },
-  "usuario_list_users_denied": {
+  "usuario_others_document_center_denied": {
+    "status": 403,
+    "body": {
+      "message": "No tienes permiso para consultar este centro documental."
+    }
+  },
+  "usuario_people_create_denied": {
     "status": 403,
     "body": {
       "message": "No tienes permisos para realizar esta accion."
     }
   },
-  "usuario_others_document_center_denied": {
+  "usuario_process_create_denied": {
     "status": 403,
     "body": {
       "message": "No tienes permisos para realizar esta accion."

@@ -26,18 +26,27 @@ const VOLATILE_KEYS = new Set([
 
 const MASK = "<normalized>";
 
+// Claves que son ids (primarios o foráneos). Con `maskIdKeys` se enmascaran
+// TODAS genéricamente: en datos de ejecución los auto-increment derivan entre
+// reseeds (baseline usa DELETE, no reinicia AUTO_INCREMENT), y perseguirlas una
+// a una es whack-a-mole. El contrato de columnas ya lo fija listFingerprint.
+const ID_KEY_RE = /(^id$|_id$|Id$)/;
+
 // Ordena claves de objetos para que las diferencias de orden de serialización
 // (frecuentes al cambiar de driver/motor) no generen falsos positivos.
-export function normalize(value, { extraMask = [], keep = [] } = {}) {
+export function normalize(value, { extraMask = [], keep = [], maskIdKeys = false } = {}) {
   const maskSet = new Set([...VOLATILE_KEYS, ...extraMask]);
   keep.forEach((k) => maskSet.delete(k));
+
+  const shouldMask = (key) =>
+    maskSet.has(key) || (maskIdKeys && ID_KEY_RE.test(key) && !keep.includes(key));
 
   const walk = (node) => {
     if (Array.isArray(node)) return node.map(walk);
     if (node && typeof node === "object") {
       const out = {};
       for (const key of Object.keys(node).sort()) {
-        out[key] = maskSet.has(key) ? MASK : walk(node[key]);
+        out[key] = shouldMask(key) ? MASK : walk(node[key]);
       }
       return out;
     }
