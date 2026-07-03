@@ -42,6 +42,7 @@ export function useProcessDefinitionManager({
   pushModalOrigin,
   closeProcessDefinitionActivationModal,
   openFkSearch,
+  resolveFkSuggestions,
   resolveFkTable,
   formatFkOptionLabel,
   fetchFkLabel,
@@ -344,6 +345,77 @@ export function useProcessDefinitionManager({
     }, { initialPositionFilters: positionFilters });
   };
 
+  // Recomendaciones inline (combobox) para los campos FK de la regla. Reutiliza el
+  // fetcher headless (respeta exclusión de puestos asignados, activos, contexto de
+  // unidad/cargo) y el mismo formateador de etiqueta que el modal.
+  const buildDefinitionRuleSuggestProvider = (fieldName) => async (searchText) => {
+    const initialPositionFilters = fieldName === "position_id"
+      ? {
+          unit_type_id: definitionRulesForm.value.unit_type_id || "",
+          unit_id: definitionRulesForm.value.unit_id || "",
+          cargo_id: definitionRulesForm.value.cargo_id || ""
+        }
+      : null;
+    const { rows } = await resolveFkSuggestions(fieldName, {
+      q: searchText,
+      initialPositionFilters
+    });
+    return (rows || []).map((row) => ({
+      id: row?.id ?? "",
+      label: formatFkOptionLabel(resolveFkTable(fieldName), row),
+      row
+    }));
+  };
+
+  const definitionRuleSuggestProviders = {
+    unit_id: buildDefinitionRuleSuggestProvider("unit_id"),
+    unit_type_id: buildDefinitionRuleSuggestProvider("unit_type_id"),
+    cargo_id: buildDefinitionRuleSuggestProvider("cargo_id"),
+    position_id: buildDefinitionRuleSuggestProvider("position_id")
+  };
+
+  const selectDefinitionRuleOption = async (fieldName, option) => {
+    if (!fieldName) {
+      return;
+    }
+    const idValue = option?.id ?? "";
+    definitionRulesForm.value = {
+      ...definitionRulesForm.value,
+      [fieldName]: idValue ? String(idValue) : ""
+    };
+    definitionRulesLabels.value = {
+      ...definitionRulesLabels.value,
+      [fieldName]: option?.label ?? ""
+    };
+    // Al elegir un puesto exacto, autollenar unidad y cargo desde la misma fila
+    // (el combobox ya nos entrega el row completo; no hace falta re-consultar).
+    if (fieldName === "position_id" && idValue) {
+      const positionRow = option?.row;
+      if (positionRow?.unit_id) {
+        await fetchFkLabel("units", positionRow.unit_id);
+        definitionRulesForm.value = {
+          ...definitionRulesForm.value,
+          unit_id: String(positionRow.unit_id)
+        };
+        definitionRulesLabels.value = {
+          ...definitionRulesLabels.value,
+          unit_id: String(getFkCachedLabel("units", positionRow.unit_id) || positionRow.unit_id)
+        };
+      }
+      if (positionRow?.cargo_id) {
+        await fetchFkLabel("cargos", positionRow.cargo_id);
+        definitionRulesForm.value = {
+          ...definitionRulesForm.value,
+          cargo_id: String(positionRow.cargo_id)
+        };
+        definitionRulesLabels.value = {
+          ...definitionRulesLabels.value,
+          cargo_id: String(getFkCachedLabel("cargos", positionRow.cargo_id) || positionRow.cargo_id)
+        };
+      }
+    }
+  };
+
   const clearDefinitionRuleField = (fieldName) => {
     if (!fieldName) {
       return;
@@ -527,6 +599,29 @@ export function useProcessDefinitionManager({
         term_type_id: formatFkOptionLabel("term_types", row)
       };
     });
+  };
+
+  // Recomendaciones inline (combobox) para "Tipo de periodo". Reutiliza el fetcher
+  // headless y el mismo formateador de etiqueta que el modal.
+  const definitionTriggerSuggestProvider = async (searchText) => {
+    const { rows } = await resolveFkSuggestions("term_type_id", { q: searchText });
+    return (rows || []).map((row) => ({
+      id: row?.id ?? "",
+      label: formatFkOptionLabel("term_types", row),
+      row
+    }));
+  };
+
+  const selectDefinitionTriggerOption = (option) => {
+    const idValue = option?.id ?? "";
+    definitionTriggersForm.value = {
+      ...definitionTriggersForm.value,
+      term_type_id: idValue ? String(idValue) : ""
+    };
+    definitionTriggersLabels.value = {
+      ...definitionTriggersLabels.value,
+      term_type_id: option?.label ?? ""
+    };
   };
 
   const clearDefinitionTriggerTermType = () => {
@@ -835,6 +930,8 @@ export function useProcessDefinitionManager({
     openDefinitionRulesFromActivation,
     openDefinitionArtifactsFromActivation,
     openDefinitionRuleFkSearch,
+    definitionRuleSuggestProviders,
+    selectDefinitionRuleOption,
     clearDefinitionRuleField,
     startDefinitionRuleEdit,
     submitDefinitionRule,
@@ -848,6 +945,8 @@ export function useProcessDefinitionManager({
     openDefinitionTriggersFromActivation,
     handleDefinitionTriggerModeChange,
     openDefinitionTriggerFkSearch,
+    definitionTriggerSuggestProvider,
+    selectDefinitionTriggerOption,
     clearDefinitionTriggerTermType,
     startDefinitionTriggerEdit,
     submitDefinitionTrigger,

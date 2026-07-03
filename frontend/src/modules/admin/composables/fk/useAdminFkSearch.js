@@ -25,8 +25,6 @@ export function useAdminFkSearch({
   loadFkProcessDefinitionProcessOptions,
   resolveFkTable,
   resolveDisplayField,
-  isFkUnitPositions,
-  isFkUnits,
   isForeignKeyField,
   prefetchFkLabelsForRows,
   prefetchUnitTypeForUnitPositions,
@@ -39,6 +37,149 @@ export function useAdminFkSearch({
   hideParentModals,
   allTablesMap
 }) {
+  // Núcleo headless: computa las filas FK para una tabla/campo dados sin tocar el
+  // estado del modal. Es la única fuente de verdad de las reglas de negocio
+  // (exclusión de puestos asignados, filtro activo, merge por tipo de unidad,
+  // series no-legacy). Lo reutilizan `fetchFkRows` (modal) y `resolveFkSuggestions`
+  // (dropdown inline de recomendaciones).
+  const computeFkRows = async ({ tableObj, field, search, positionFilters, filterParams }) => {
+    const tableName = tableObj.table;
+    const params = filterParams || {};
+    const inheritedUnitId = params.filter_unit_id;
+    const cleanFilterParams = { ...params };
+    if (cleanFilterParams.filter_unit_id !== undefined) {
+      delete cleanFilterParams.filter_unit_id;
+    }
+    const baseParams = {
+      q: search || undefined,
+      ...cleanFilterParams
+    };
+    const posFilters = positionFilters || {};
+
+    let rowsData = [];
+    if (tableName === "unit_positions") {
+      const selectedUnitId = posFilters.unit_id || inheritedUnitId || "";
+      const selectedUnitTypeId = posFilters.unit_type_id || "";
+      const selectedCargoId = posFilters.cargo_id || "";
+      const cargoFilter = selectedCargoId ? { filter_cargo_id: selectedCargoId } : {};
+      const activeFilter = { filter_is_active: 1 };
+      if (selectedUnitId) {
+        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
+          params: {
+            ...baseParams,
+            filter_unit_id: selectedUnitId,
+            ...cargoFilter,
+            ...activeFilter,
+            limit: 200
+          }
+        });
+        rowsData = response.data || [];
+      } else if (selectedUnitTypeId) {
+        const unitsResponse = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), {
+          params: {
+            filter_unit_type_id: selectedUnitTypeId,
+            limit: 500
+          }
+        });
+        const unitIds = Array.from(
+          new Set(
+            (unitsResponse.data || [])
+              .map((row) => row?.id)
+              .filter((value) => value !== null && value !== undefined && value !== "")
+          )
+        );
+        if (!unitIds.length) {
+          rowsData = [];
+        } else {
+          const responses = await Promise.all(
+            unitIds.map((unitId) =>
+              axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
+                params: {
+                  ...baseParams,
+                  filter_unit_id: unitId,
+                  ...cargoFilter,
+                  ...activeFilter,
+                  limit: 200
+                }
+              })
+            )
+          );
+          const mergedRows = new Map();
+          responses.forEach((response) => {
+            (response.data || []).forEach((row) => {
+              const key = row?.id !== undefined ? String(row.id) : JSON.stringify(row);
+              mergedRows.set(key, row);
+            });
+          });
+          rowsData = Array.from(mergedRows.values());
+        }
+      } else {
+        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
+          params: {
+            ...baseParams,
+            ...cargoFilter,
+            ...activeFilter,
+            limit: 25
+          }
+        });
+        rowsData = response.data || [];
+      }
+
+      const activeAssignmentsResponse = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("position_assignments"), {
+        params: {
+          filter_is_current: 1,
+          limit: 5000
+        }
+      });
+      const assignedPositionIds = new Set(
+        (activeAssignmentsResponse.data || [])
+          .map((row) => row?.position_id)
+          .filter((value) => value !== null && value !== undefined && value !== "")
+          .map((value) => String(value))
+      );
+      rowsData = rowsData.filter((row) => !assignedPositionIds.has(String(row?.id)));
+    } else if (tableName === "units") {
+      const selectedUnitTypeId = posFilters.unit_type_id || "";
+      const unitTypeFilter = selectedUnitTypeId
+        ? { filter_unit_type_id: selectedUnitTypeId }
+        : {};
+      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), {
+        params: {
+          ...baseParams,
+          ...unitTypeFilter,
+          limit: 100
+        }
+      });
+      rowsData = response.data || [];
+    } else {
+      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(tableName), {
+        params: {
+          ...baseParams,
+          limit: 25
+        }
+      });
+      rowsData = response.data || [];
+    }
+
+    if (tableName === "process_definition_series" && field === "series_id") {
+      rowsData = rowsData.filter(
+        (row) => Number(row?.is_active) === 1 && String(row?.source_type || "") !== "legacy"
+      );
+    }
+
+    return rowsData;
+  };
+
+  const prefetchFkRowLabels = async (rows, tableObj) => {
+    const fkFields = (tableObj.fields || [])
+      .filter((field) => isForeignKeyField(field))
+      .map((field) => field.name);
+    await prefetchFkLabelsForRows(rows, fkFields);
+    if (tableObj.table === "unit_positions") {
+      await prefetchUnitTypeForUnitPositions(rows);
+    }
+  };
+
   const fetchFkRows = async () => {
     if (!fkTable.value) {
       fkRows.value = [];
@@ -47,139 +188,54 @@ export function useAdminFkSearch({
     fkLoading.value = true;
     fkError.value = "";
     try {
-      const filterParams = buildFkFilterParams();
-      const inheritedUnitId = filterParams.filter_unit_id;
-      if (filterParams.filter_unit_id !== undefined) {
-        delete filterParams.filter_unit_id;
-      }
-      const baseParams = {
-        q: fkSearch.value || undefined,
-        ...filterParams
-      };
-
-      let rowsData = [];
-      if (isFkUnitPositions.value) {
-        const selectedUnitId = fkPositionFilters.value.unit_id || inheritedUnitId || "";
-        const selectedUnitTypeId = fkPositionFilters.value.unit_type_id || "";
-        const selectedCargoId = fkPositionFilters.value.cargo_id || "";
-        const cargoFilter = selectedCargoId ? { filter_cargo_id: selectedCargoId } : {};
-        const activeFilter = { filter_is_active: 1 };
-        if (selectedUnitId) {
-          const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
-            params: {
-              ...baseParams,
-              filter_unit_id: selectedUnitId,
-              ...cargoFilter,
-              ...activeFilter,
-              limit: 200
-            }
-          });
-          rowsData = response.data || [];
-        } else if (selectedUnitTypeId) {
-          const unitsResponse = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), {
-            params: {
-              filter_unit_type_id: selectedUnitTypeId,
-              limit: 500
-            }
-          });
-          const unitIds = Array.from(
-            new Set(
-              (unitsResponse.data || [])
-                .map((row) => row?.id)
-                .filter((value) => value !== null && value !== undefined && value !== "")
-            )
-          );
-          if (!unitIds.length) {
-            rowsData = [];
-          } else {
-            const responses = await Promise.all(
-              unitIds.map((unitId) =>
-                axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
-                  params: {
-                    ...baseParams,
-                    filter_unit_id: unitId,
-                    ...cargoFilter,
-                    ...activeFilter,
-                    limit: 200
-                  }
-                })
-              )
-            );
-            const mergedRows = new Map();
-            responses.forEach((response) => {
-              (response.data || []).forEach((row) => {
-                const key = row?.id !== undefined ? String(row.id) : JSON.stringify(row);
-                mergedRows.set(key, row);
-              });
-            });
-            rowsData = Array.from(mergedRows.values());
-          }
-        } else {
-          const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
-            params: {
-              ...baseParams,
-              ...cargoFilter,
-              ...activeFilter,
-              limit: 25
-            }
-          });
-          rowsData = response.data || [];
-        }
-
-        const activeAssignmentsResponse = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("position_assignments"), {
-          params: {
-            filter_is_current: 1,
-            limit: 5000
-          }
-        });
-        const assignedPositionIds = new Set(
-          (activeAssignmentsResponse.data || [])
-            .map((row) => row?.position_id)
-            .filter((value) => value !== null && value !== undefined && value !== "")
-            .map((value) => String(value))
-        );
-        rowsData = rowsData.filter((row) => !assignedPositionIds.has(String(row?.id)));
-      } else if (isFkUnits.value) {
-        const selectedUnitTypeId = fkPositionFilters.value.unit_type_id || "";
-        const unitTypeFilter = selectedUnitTypeId
-          ? { filter_unit_type_id: selectedUnitTypeId }
-          : {};
-        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), {
-          params: {
-            ...baseParams,
-            ...unitTypeFilter,
-            limit: 100
-          }
-        });
-        rowsData = response.data || [];
-      } else {
-        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(fkTable.value.table), {
-          params: {
-            ...baseParams,
-            limit: 25
-          }
-        });
-        rowsData = response.data || [];
-      }
-
-      if (fkTable.value.table === "process_definition_series" && fkField.value === "series_id") {
-        rowsData = rowsData.filter(
-          (row) => Number(row?.is_active) === 1 && String(row?.source_type || "") !== "legacy"
-        );
-      }
-
+      const rowsData = await computeFkRows({
+        tableObj: fkTable.value,
+        field: fkField.value,
+        search: fkSearch.value,
+        positionFilters: fkPositionFilters.value,
+        filterParams: buildFkFilterParams()
+      });
       fkRows.value = rowsData;
-      const fkFields = (fkTable.value.fields || [])
-        .filter((field) => isForeignKeyField(field))
-        .map((field) => field.name);
-      await prefetchFkLabelsForRows(fkRows.value, fkFields);
-      if (fkTable.value.table === "unit_positions") {
-        await prefetchUnitTypeForUnitPositions(fkRows.value);
-      }
+      await prefetchFkRowLabels(fkRows.value, fkTable.value);
     } catch (err) {
       fkError.value = err?.response?.data?.message || "No se pudo cargar la informacion.";
     } finally {
       fkLoading.value = false;
+    }
+  };
+
+  // Headless: devuelve recomendaciones para un campo FK sin abrir el modal ni
+  // tocar su estado. Alimenta el combobox inline de `AdminLookupField`.
+  const resolveFkSuggestions = async (fieldName, options = {}) => {
+    const tableName = resolveFkTable(fieldName);
+    const tableObj = tableName ? (allTablesMap.value[tableName] || null) : null;
+    if (!tableObj) {
+      return { rows: [], tableObj: null, error: "" };
+    }
+    const initialPositionFilters = options.initialPositionFilters || null;
+    const positionFilters = initialPositionFilters
+      ? {
+          unit_type_id: initialPositionFilters.unit_type_id ? String(initialPositionFilters.unit_type_id) : "",
+          unit_id: initialPositionFilters.unit_id ? String(initialPositionFilters.unit_id) : "",
+          cargo_id: initialPositionFilters.cargo_id ? String(initialPositionFilters.cargo_id) : ""
+        }
+      : {};
+    try {
+      const rows = await computeFkRows({
+        tableObj,
+        field: fieldName,
+        search: options.q || "",
+        positionFilters,
+        filterParams: {}
+      });
+      await prefetchFkRowLabels(rows, tableObj);
+      return { rows, tableObj, error: "" };
+    } catch (err) {
+      return {
+        rows: [],
+        tableObj,
+        error: err?.response?.data?.message || "No se pudo cargar la informacion."
+      };
     }
   };
 
@@ -282,6 +338,7 @@ export function useAdminFkSearch({
 
   return {
     fetchFkRows,
+    resolveFkSuggestions,
     openFkSearch,
     applyFkSelection,
     selectFkRow,

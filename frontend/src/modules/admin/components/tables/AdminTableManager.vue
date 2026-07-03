@@ -291,11 +291,16 @@
       :format-cell="formatCell"
       :format-person-cargo-unit="formatPersonCargoUnit"
       :to-date-input-value="toDateInputValue"
+      :cargo-position-suggest-provider="personCargoPositionSuggestProvider"
+      :role-role-suggest-provider="personRoleRoleSuggestProvider"
+      :role-unit-suggest-provider="personRoleUnitSuggestProvider"
+      :contract-position-suggest-provider="personContractPositionSuggestProvider"
       @update:person-assignment-section="personAssignmentSection = $event"
       @update:person-cargo-form="personCargoForm = $event"
       @update:person-contract-form="personContractForm = $event"
       @clear-person-cargo-position="clearPersonCargoPosition"
       @open-person-cargo-fk-search="openPersonCargoFkSearch"
+      @select-person-cargo="selectPersonCargoOption"
       @submit-person-cargo-create="submitPersonCargoCreate"
       @reset-person-cargo-form="resetPersonCargoForm"
       @view-person-cargo="openRecordViewer($event, allTablesMap.position_assignments)"
@@ -303,6 +308,7 @@
       @delete-person-cargo="deletePersonCargo"
       @clear-person-role-field="clearPersonRoleField"
       @open-person-role-fk-search="openPersonRoleFkSearch"
+      @select-person-role="selectPersonRoleOption"
       @submit-person-role-create="submitPersonRoleCreate"
       @reset-person-role-form="resetPersonRoleForm"
       @view-person-role="openRecordViewer($event, allTablesMap.role_assignments)"
@@ -310,6 +316,7 @@
       @delete-person-role="deletePersonRole"
       @clear-person-contract-position="clearPersonContractPosition"
       @open-person-contract-fk-search="openPersonContractFkSearch"
+      @select-person-contract="selectPersonContractOption"
       @submit-person-contract-create="submitPersonContractCreate"
       @reset-person-contract-form="resetPersonContractForm"
       @view-person-contract="openRecordViewer($event, allTablesMap.contracts)"
@@ -475,10 +482,12 @@
       :loading="definitionTriggersLoading"
       :rows="definitionTriggersRows"
       :table-fields="definitionTriggersTableFields"
+      :suggest-provider="definitionTriggerSuggestProvider"
       :format-cell="formatCell"
       @update:form="definitionTriggersForm = $event"
       @trigger-mode-change="handleDefinitionTriggerModeChange"
       @clear-term-type="clearDefinitionTriggerTermType"
+      @select-term-type="selectDefinitionTriggerOption"
       @open-fk-search="openDefinitionTriggerFkSearch"
       @submit="submitDefinitionTrigger"
       @reset="resetDefinitionTriggersForm"
@@ -503,11 +512,13 @@
       :rows="definitionRulesRows"
       :table-fields="definitionRulesTableFields"
       :series-scope="definitionRulesSeriesScope"
+      :suggest-providers="definitionRuleSuggestProviders"
       :format-cell="formatDefinitionRuleCell"
       @update:form="definitionRulesForm = $event"
       @scope-change="handleDefinitionRuleScopeChange"
       @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
       @clear-field="clearDefinitionRuleField"
+      @select-field="selectDefinitionRuleOption"
       @open-fk-search="openDefinitionRuleFkSearch"
       @submit="submitDefinitionRule"
       @reset="resetDefinitionRulesForm"
@@ -582,11 +593,13 @@
           :rows="definitionRulesRows"
           :table-fields="definitionRulesTableFields"
           :series-scope="definitionRulesSeriesScope"
+          :suggest-providers="definitionRuleSuggestProviders"
           :format-cell="formatDefinitionRuleCell"
           @update:form="definitionRulesForm = $event"
           @scope-change="handleDefinitionRuleScopeChange"
           @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
           @clear-field="clearDefinitionRuleField"
+          @select-field="selectDefinitionRuleOption"
           @open-fk-search="openDefinitionRuleFkSearch"
           @submit="wizardSubmitRule"
           @reset="resetDefinitionRulesForm"
@@ -609,10 +622,12 @@
           :loading="definitionTriggersLoading"
           :rows="definitionTriggersRows"
           :table-fields="definitionTriggersTableFields"
+          :suggest-provider="definitionTriggerSuggestProvider"
           :format-cell="formatCell"
           @update:form="definitionTriggersForm = $event"
           @trigger-mode-change="handleDefinitionTriggerModeChange"
           @clear-term-type="clearDefinitionTriggerTermType"
+          @select-term-type="selectDefinitionTriggerOption"
           @open-fk-search="openDefinitionTriggerFkSearch"
           @submit="wizardSubmitTrigger"
           @reset="resetDefinitionTriggersForm"
@@ -835,10 +850,10 @@
                 <AdminLookupField
                   v-model="processFilterLabels.parent_id"
                   placeholder="Selecciona un proceso padre"
-                  readonly
-                  prevent-input-interaction
+                  :suggest-provider="processParentSuggestProvider"
                   :clear-disabled="!processFilters.parent_id"
                   @clear="clearProcessParentFilter"
+                  @select="selectProcessFilterOption('parent_id', $event)"
                   @search="openProcessFkSearch('parent_id')"
                 />
               </div>
@@ -878,10 +893,10 @@
                 <AdminLookupField
                   v-model="templateFilterLabels.process_id"
                   placeholder="Selecciona un proceso"
-                  readonly
-                  prevent-input-interaction
+                  :suggest-provider="templateProcessSuggestProvider"
                   :clear-disabled="!templateFilters.process_id"
                   @clear="clearTemplateProcessFilter"
+                  @select="selectTemplateProcessFilterOption($event)"
                   @search="openTemplateFkSearch"
                 />
               </div>
@@ -901,10 +916,10 @@
                 <AdminLookupField
                   v-model="documentFilterLabels.task_id"
                   placeholder="Selecciona una tarea"
-                  readonly
-                  prevent-input-interaction
+                  :suggest-provider="documentTaskSuggestProvider"
                   :clear-disabled="!documentFilters.task_id"
                   @clear="clearDocumentTaskFilter"
+                  @select="selectDocumentFilterOption('task_id', $event)"
                   @search="openDocumentFkSearch('task_id')"
                 />
               </div>
@@ -2596,6 +2611,7 @@ const {
 
 const {
   fetchFkRows,
+  resolveFkSuggestions,
   openFkSearch,
   applyFkSelection,
   selectFkRow,
@@ -2974,6 +2990,13 @@ const {
   openPersonCargoFkSearch,
   openPersonRoleFkSearch,
   openPersonContractFkSearch,
+  personCargoPositionSuggestProvider,
+  personRoleRoleSuggestProvider,
+  personRoleUnitSuggestProvider,
+  personContractPositionSuggestProvider,
+  selectPersonCargoOption,
+  selectPersonRoleOption,
+  selectPersonContractOption,
   startPersonCargoEdit,
   startPersonRoleEdit,
   startPersonContractEdit,
@@ -3010,6 +3033,7 @@ const {
   ensurePersonAssignmentsInstance,
   getPersonAssignmentsInstance,
   openFkSearch,
+  resolveFkSuggestions,
   resolveDisplayField,
   formatCell,
   toDateInputValue,
@@ -3048,6 +3072,10 @@ const {
   openDefinitionTriggersFromActivation,
   handleDefinitionTriggerModeChange,
   openDefinitionTriggerFkSearch,
+  definitionTriggerSuggestProvider,
+  selectDefinitionTriggerOption,
+  definitionRuleSuggestProviders,
+  selectDefinitionRuleOption,
   clearDefinitionTriggerTermType,
   startDefinitionTriggerEdit,
   submitDefinitionTrigger,
@@ -3106,6 +3134,7 @@ const {
   closeProcessDefinitionActivationModal: hideProcessDefinitionActivationModal,
   closeDefinitionArtifactsPrompt: hideDefinitionArtifactsPromptModal,
   openFkSearch,
+  resolveFkSuggestions,
   resolveFkTable,
   formatFkOptionLabel,
   fetchFkLabel,
@@ -4070,7 +4099,13 @@ const {
   assignVacantPosition,
   openTemplateFkSearch,
   openDocumentFkSearch,
-  openProcessFkSearch
+  openProcessFkSearch,
+  processParentSuggestProvider,
+  templateProcessSuggestProvider,
+  documentTaskSuggestProvider,
+  selectProcessFilterOption,
+  selectTemplateProcessFilterOption,
+  selectDocumentFilterOption
 } = useAdminSearchFilters({
   props,
   formData,
@@ -4106,6 +4141,7 @@ const {
   loadUnitPositionUnitOptions,
   loadVacantPositionUnitOptions,
   openFkSearch,
+  resolveFkSuggestions,
   resolveDisplayField,
   fetchFkLabel,
   getFkCachedLabel,

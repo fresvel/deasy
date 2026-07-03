@@ -43,6 +43,7 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
   seriesScope: { type: Object, default: null },
+  suggestProviders: { type: Object, default: () => ({}) },
   formatCell: { type: Function, required: true }
 });
 
@@ -51,6 +52,7 @@ const emit = defineEmits([
   "scope-change",
   "recipient-policy-change",
   "clear-field",
+  "select-field",
   "open-fk-search",
   "submit",
   "reset",
@@ -74,6 +76,7 @@ const panelBindings = computed(() => ({
   rows: props.rows,
   tableFields: props.tableFields,
   seriesScope: props.seriesScope,
+  suggestProviders: props.suggestProviders,
   formatCell: props.formatCell
 }));
 
@@ -82,6 +85,7 @@ const panelListeners = {
   "scope-change": (value) => emit("scope-change", value),
   "recipient-policy-change": (value) => emit("recipient-policy-change", value),
   "clear-field": (field) => emit("clear-field", field),
+  "select-field": (field, option) => emit("select-field", field, option),
   "open-fk-search": (field) => emit("open-fk-search", field),
   submit: () => emit("submit"),
   reset: () => emit("reset"),

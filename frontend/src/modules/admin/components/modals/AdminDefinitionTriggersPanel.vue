@@ -32,12 +32,12 @@
           <AdminLookupField
             :model-value="labels.term_type_id"
             placeholder="Selecciona el tipo de periodo en que corre el proceso"
-            readonly
-            prevent-input-interaction
+            :suggest-provider="suggestProvider"
             :disabled="!canManage"
             :clear-disabled="!canManage || !form.term_type_id"
             :search-disabled="!canManage"
             @clear="$emit('clear-term-type')"
+            @select="$emit('select-term-type', $event)"
             @search="$emit('open-fk-search')"
           />
         </div>
@@ -121,10 +121,11 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
   embedded: { type: Boolean, default: false },
+  suggestProvider: { type: Function, default: null },
   formatCell: { type: Function, required: true }
 });
 
-const emit = defineEmits(["update:form", "trigger-mode-change", "clear-term-type", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
+const emit = defineEmits(["update:form", "trigger-mode-change", "clear-term-type", "select-term-type", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
 
 // Formulario en modal: por defecto solo se ve la lista. Se abre con "Agregar periodo" o al editar una fila,
 // y se cierra al cancelar o cuando el guardado tiene éxito (alta = la lista crece; edición = editId se limpia).
