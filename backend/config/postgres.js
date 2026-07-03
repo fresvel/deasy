@@ -102,6 +102,61 @@ export function translatePlaceholders(sql) {
   return out;
 }
 
+// Enlaza `?` -> `$n` Y expande parámetros array como hace mysql2:
+//   IN (?)      con [1,2,3]        -> IN ($1, $2, $3)
+//   VALUES ?    con [[1,2],[3,4]]  -> VALUES ($1, $2), ($3, $4)   (bulk insert)
+//   IN (?)      con []             -> IN (NULL)                   (no matchea nada)
+// Devuelve { text, values } con los valores aplanados en el orden correcto.
+// Respeta strings/identificadores/comentarios (no toca `?` literales).
+function bindParams(sql, params = []) {
+  let out = "";
+  let i = 0;
+  let paramIndex = 0;
+  let pg = 1;
+  const values = [];
+  let inSingle = false, inDouble = false, inBacktick = false, inLine = false, inBlock = false;
+
+  const pushScalar = (v) => { values.push(v); return "$" + pg++; };
+
+  while (i < sql.length) {
+    const c = sql[i];
+    const c2 = sql[i + 1];
+
+    if (inLine) { out += c; if (c === "\n") inLine = false; i++; continue; }
+    if (inBlock) { out += c; if (c === "*" && c2 === "/") { out += c2; i += 2; inBlock = false; continue; } i++; continue; }
+    if (inSingle) { out += c; if (c === "'") { if (c2 === "'") { out += c2; i += 2; continue; } inSingle = false; } i++; continue; }
+    if (inDouble) { out += c; if (c === '"') { if (c2 === '"') { out += c2; i += 2; continue; } inDouble = false; } i++; continue; }
+    if (inBacktick) { out += c; if (c === "`") inBacktick = false; i++; continue; }
+
+    if (c === "-" && c2 === "-") { inLine = true; out += c; i++; continue; }
+    if (c === "/" && c2 === "*") { inBlock = true; out += c; i++; continue; }
+    if (c === "'") { inSingle = true; out += c; i++; continue; }
+    if (c === '"') { inDouble = true; out += c; i++; continue; }
+    if (c === "`") { inBacktick = true; out += c; i++; continue; }
+
+    if (c === "?") {
+      const val = params[paramIndex++];
+      if (Array.isArray(val)) {
+        if (val.length === 0) {
+          out += "NULL";
+        } else if (Array.isArray(val[0])) {
+          out += val.map((inner) => `(${inner.map(pushScalar).join(", ")})`).join(", ");
+        } else {
+          out += val.map(pushScalar).join(", ");
+        }
+      } else {
+        out += pushScalar(val);
+      }
+      i++;
+      continue;
+    }
+
+    out += c;
+    i++;
+  }
+  return { text: out, values };
+}
+
 const isInsert = (sql) => /^\s*insert\b/i.test(sql);
 const isWrite = (sql) => /^\s*(insert|update|delete|replace)\b/i.test(sql);
 const hasReturning = (sql) => /\breturning\b/i.test(sql);
@@ -171,6 +226,30 @@ function rewriteIf(code) {
   return code;
 }
 
+// YEAR/MONTH/DAY/HOUR/MINUTE/SECOND(x) -> EXTRACT(field FROM (x))::int (balanceado).
+const DATE_PART_FNS = ["YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"];
+function rewriteDateParts(code) {
+  for (const fn of DATE_PART_FNS) {
+    const re = new RegExp(`\\b${fn}\\s*\\(`, "gi");
+    let m;
+    while ((m = re.exec(code))) {
+      let depth = 0;
+      let j = m.index + m[0].length - 1;
+      let arg = "";
+      for (; j < code.length; j++) {
+        const ch = code[j];
+        if (ch === "(") { depth++; if (depth === 1) continue; }
+        if (ch === ")") { depth--; if (depth === 0) break; }
+        arg += ch;
+      }
+      const repl = `EXTRACT(${fn} FROM (${arg.trim()}))::int`;
+      code = code.slice(0, m.index) + repl + code.slice(j + 1);
+      re.lastIndex = m.index + repl.length;
+    }
+  }
+  return code;
+}
+
 // Reescribe dialecto MySQL->PG sobre segmentos de CÓDIGO (sin strings/comentarios).
 function rewriteDialect(code) {
   let c = code;
@@ -185,6 +264,7 @@ function rewriteDialect(code) {
   if (/^\s*INSERT\s+IGNORE\b/i.test(c)) {
     c = c.replace(/^(\s*)INSERT\s+IGNORE\b/i, "$1INSERT") + " ON CONFLICT DO NOTHING";
   }
+  if (/\b(YEAR|MONTH|DAY|HOUR|MINUTE|SECOND)\s*\(/i.test(c)) c = rewriteDateParts(c);
   if (/\bGROUP_CONCAT\s*\(/i.test(c)) c = rewriteGroupConcat(c);
   if (/\bIF\s*\(/i.test(c)) c = rewriteIf(c);
   return c;
@@ -211,7 +291,7 @@ const writeHeader = (res, insertId) => [
 
 // Ejecuta contra un `executor` (pool o client de pg) y devuelve la forma mysql2.
 async function runQuery(executor, sql, params = []) {
-  const text = translatePlaceholders(translateDialect(sql));
+  const { text, values } = bindParams(translateDialect(sql), params);
 
   // insertId best-effort: se añade RETURNING id. Si la tabla no tiene columna
   // `id` (42703) se cae al INSERT normal. Dentro de una transacción, el fallo
@@ -220,7 +300,7 @@ async function runQuery(executor, sql, params = []) {
     const inTx = !!executor._adapterInTx;
     if (inTx) await executor.query("SAVEPOINT _adapter_insertid");
     try {
-      const res = await executor.query(`${text} RETURNING id`, params);
+      const res = await executor.query(`${text} RETURNING id`, values);
       if (inTx) await executor.query("RELEASE SAVEPOINT _adapter_insertid");
       return writeHeader(res, res.rows?.[0]?.id);
     } catch (err) {
@@ -229,7 +309,7 @@ async function runQuery(executor, sql, params = []) {
     }
   }
 
-  const res = await executor.query(text, params);
+  const res = await executor.query(text, values);
   if (isWrite(sql)) return writeHeader(res, undefined);
   // SELECT / WITH / SHOW-like: devolver filas como en mysql2.
   return [res.rows, res.fields];

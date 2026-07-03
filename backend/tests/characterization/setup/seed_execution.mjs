@@ -35,7 +35,7 @@ const ADMIN_PERSON_ID = Number(process.env.SEED_ADMIN_PERSON_ID ?? 1);
 // al deliverable del proceso por defecto (id 5, tpl_informe_general, process 1).
 // Asume baseline fresco (protocolo: seed apply -> este setup), así que no hay
 // que deduplicar.
-const DELIVERABLE_ID = Number(process.env.SEED_DELIVERABLE_ID ?? 5);
+const PROCESS_ID = Number(process.env.SEED_PROCESS_ID ?? 1);
 const DEFINITION_ID = Number(process.env.SEED_DEFINITION_ID ?? 1);
 
 // La creación de template_artifacts está bloqueada en el endpoint CRUD (solo
@@ -58,12 +58,29 @@ async function seedTemplateLayer() {
     return;
   }
 
+  // El deliverable (identidad del entregable) puede no existir en una base
+  // fresca (no está en el snapshot del seed). Se reusa por `code` si existe, o
+  // se crea. Así el setup es self-contained y reproducible en cualquier motor.
+  const CODE = "tpl_informe_general";
+  const [delivRows] = await pool.query(`SELECT id FROM deliverables WHERE code = ? LIMIT 1`, [CODE]);
+  let deliverableId;
+  if (delivRows.length) {
+    deliverableId = delivRows[0].id;
+  } else {
+    const [dRes] = await pool.query(
+      `INSERT INTO deliverables (code, display_name, owner_process_id, owner_variation_key, template_scope)
+       VALUES (?, ?, ?, 'general', 'official')`,
+      [CODE, "Informe general", PROCESS_ID]
+    );
+    deliverableId = dRes.insertId;
+  }
+
   const [artRes] = await pool.query(
     `INSERT INTO template_artifacts
        (deliverable_id, storage_version, lifecycle_state, base_object_prefix,
         available_formats, schema_object_key, meta_object_key, is_active)
      VALUES (?, ?, 'published', ?, ?, ?, ?, 1)`,
-    [DELIVERABLE_ID, "v1", prefix, '["pdf"]', `${prefix}/schema.json`, `${prefix}/meta.json`]
+    [deliverableId, "v1", prefix, '["pdf"]', `${prefix}/schema.json`, `${prefix}/meta.json`]
   );
   const artifactId = artRes.insertId;
 

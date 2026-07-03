@@ -268,7 +268,8 @@ const getUserDocumentCenterRows = async (pool, userId) => {
        YEAR(trm.start_date) AS term_year,
        tar_dl.display_name AS template_artifact_name,
        COALESCE(fill_stats.pending_fill_count, 0) AS pending_fill_count,
-       COALESCE(signature_stats.pending_signature_count, 0) AS pending_signature_count
+       COALESCE(signature_stats.pending_signature_count, 0) AS pending_signature_count,
+       COALESCE(trm.start_date, t.created_at) AS sort_date
      FROM documents d
      INNER JOIN (
        SELECT dv1.*
@@ -340,7 +341,7 @@ const getUserDocumentCenterRows = async (pool, userId) => {
            AND sr_access.assigned_person_id = ?
        )
      )
-     ORDER BY COALESCE(trm.start_date, t.created_at) DESC, p.name ASC, d.id DESC`,
+     ORDER BY sort_date DESC, p.name ASC, d.id DESC`,
     [userId, userId, userId, userId, userId, userId]
   );
   return rows;
@@ -375,7 +376,8 @@ const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        trm.name AS term_name,
        tt.name AS term_type_name,
        YEAR(trm.start_date) AS term_year,
-       tar_dl.display_name AS template_artifact_name
+       tar_dl.display_name AS template_artifact_name,
+       COALESCE(trm.start_date, t.created_at) AS sort_date
      FROM signature_requests sr
      INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
@@ -407,7 +409,7 @@ const getUserGlobalPendingSignatureRows = async (pool, userId) => {
          'pendiente de firma',
          'firmado parcial'
        )
-     ORDER BY COALESCE(trm.start_date, t.created_at) DESC, sr.requested_at DESC, sr.id DESC`,
+     ORDER BY sort_date DESC, sr.requested_at DESC, sr.id DESC`,
     [userId]
   );
   return rows;

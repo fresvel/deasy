@@ -496,6 +496,29 @@ const applySeed = async (connection, filePath, { includeAll = false } = {}) => {
 
     await connection.query("SET FOREIGN_KEY_CHECKS = 1");
     await connection.commit();
+
+    // PG: insertar ids explícitos en columnas IDENTITY NO avanza la secuencia,
+    // así que el primer INSERT del app colisionaría (PK duplicada). Se
+    // resincroniza cada secuencia a max(id). (En MySQL AUTO_INCREMENT se ajusta
+    // solo.) Se ejecuta por el cliente crudo (bloque plpgsql, sin traducción).
+    if (USE_PG && connection._client) {
+      await connection._client.query(
+        `DO $$
+         DECLARE r record;
+         BEGIN
+           FOR r IN
+             SELECT table_name FROM information_schema.columns
+              WHERE table_schema = current_schema() AND column_name = 'id' AND is_identity = 'YES'
+           LOOP
+             EXECUTE format(
+               'SELECT setval(pg_get_serial_sequence(%L, %L), GREATEST((SELECT COALESCE(max(id), 0) FROM %I), 1))',
+               r.table_name, 'id', r.table_name
+             );
+           END LOOP;
+         END $$;`
+      );
+    }
+
     console.log(`Semilla aplicada (${includeAll ? "completa" : "baseline estructural"}): ${filePath}`);
     console.log(`Tablas vaciadas: ${tables.length} | sembradas: ${insertTables.length}`);
     if (missingTables.length) {
