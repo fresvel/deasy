@@ -1,0 +1,24 @@
+{
+  "document_center_admin": {
+    "status": 200,
+    "body": {
+      "documents": [],
+      "total": 0,
+      "user_id": 1
+    }
+  },
+  "signature_center_admin": {
+    "status": 200,
+    "body": {
+      "signatures": [],
+      "total": 0,
+      "user_id": 1
+    }
+  },
+  "signature_center_no_token": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  }
+}

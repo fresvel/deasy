@@ -1,0 +1,20 @@
+{
+  "conversations_no_token": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "conversations_usuario": {
+    "status": 200,
+    "isArray": true,
+    "count": 0,
+    "itemKeys": []
+  },
+  "notifications_usuario": {
+    "status": 200,
+    "isArray": true,
+    "count": 0,
+    "itemKeys": []
+  }
+}

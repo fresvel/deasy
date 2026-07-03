@@ -1,0 +1,202 @@
+{
+  "document_center_usuario": {
+    "status": 200,
+    "body": {
+      "documents": [
+        {
+          "definition_name": "Proceso por defecto por General",
+          "document_id": "<normalized>",
+          "document_status": "Pendiente de llenado",
+          "document_version": "0.1",
+          "document_version_id": "<normalized>",
+          "document_version_status": "Pendiente de llenado",
+          "final_file_path": "<normalized>",
+          "pending_fill_count": 1,
+          "pending_signature_count": 0,
+          "preloadFilePath": null,
+          "preloadPdfPath": null,
+          "process_definition_id": "<normalized>",
+          "process_id": "<normalized>",
+          "process_name": "Proceso por defecto",
+          "process_slug": "default",
+          "task_id": "<normalized>",
+          "task_item_id": "<normalized>",
+          "template_artifact_name": "Informe general",
+          "term_id": "<normalized>",
+          "term_name": "<normalized>",
+          "term_type_name": "Custom",
+          "term_year": 2026,
+          "unit_id": "<normalized>",
+          "unit_label": "Carrera de Tecnologías de la Información",
+          "working_file_path": "<normalized>"
+        }
+      ],
+      "total": 1,
+      "user_id": "<normalized>"
+    }
+  },
+  "signature_center_usuario": {
+    "status": 200,
+    "body": {
+      "signatures": [],
+      "total": 0,
+      "user_id": "<normalized>"
+    }
+  },
+  "signature_flow_snapshot": {
+    "status": 200,
+    "body": {
+      "canOperate": false,
+      "currentSignatureStepOrder": null,
+      "currentStatus": "Pendiente de llenado",
+      "documentVersionId": "<normalized>",
+      "readiness": {
+        "context": {
+          "document_version_id": "<normalized>",
+          "document_version_status": "Pendiente de llenado",
+          "owner_person_id": "<normalized>",
+          "process_definition_id": "<normalized>",
+          "process_definition_template_id": "<normalized>",
+          "responsible_position_id": "<normalized>",
+          "scope_unit_id": "<normalized>",
+          "scope_unit_type_id": "<normalized>",
+          "task_created_by_user_id": "<normalized>",
+          "task_id": "<normalized>",
+          "task_item_assigned_person_id": "<normalized>",
+          "task_item_id": "<normalized>",
+          "task_item_responsible_position_id": "<normalized>",
+          "working_file_path": "<normalized>"
+        },
+        "currentStatus": "Pendiente de llenado",
+        "ok": false,
+        "steps": []
+      },
+      "responsableActual": null,
+      "signatureFlow": null,
+      "signatureRequests": [],
+      "signatureSteps": []
+    }
+  },
+  "sql_document_versions": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "document_id",
+      "final_file_path",
+      "format",
+      "id",
+      "payload_hash",
+      "payload_mongo_id",
+      "payload_object_path",
+      "render_engine",
+      "status",
+      "template_artifact_id",
+      "version",
+      "working_file_path"
+    ]
+  },
+  "sql_documents": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "comments_thread_ref",
+      "created_at",
+      "id",
+      "origin_type",
+      "owner_person_id",
+      "status",
+      "task_item_id",
+      "title",
+      "updated_at"
+    ]
+  },
+  "sql_signature_flow_steps": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "anchor_refs",
+      "approval_mode",
+      "assigned_person_id",
+      "code",
+      "created_at",
+      "id",
+      "is_required",
+      "name",
+      "position_id",
+      "required_cargo_id",
+      "required_signers_max",
+      "required_signers_min",
+      "resolver_type",
+      "selection_mode",
+      "slot",
+      "step_order",
+      "template_id",
+      "unit_id",
+      "unit_scope_type",
+      "unit_type_id"
+    ]
+  },
+  "sql_signature_flow_templates": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "description",
+      "id",
+      "is_active",
+      "name",
+      "process_definition_template_id"
+    ]
+  },
+  "sql_task_items": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "assigned_person_id",
+      "created_at",
+      "created_by_person_id",
+      "end_date",
+      "id",
+      "origin_kind",
+      "process_definition_template_id",
+      "responsible_position_id",
+      "sort_order",
+      "source_task_item_id",
+      "start_date",
+      "status",
+      "target_person_id",
+      "target_position_id",
+      "target_unit_id",
+      "task_id",
+      "template_artifact_id",
+      "title",
+      "user_started_at"
+    ]
+  },
+  "sql_tasks": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "comments_thread_ref",
+      "created_at",
+      "created_by_user_id",
+      "description",
+      "end_date",
+      "id",
+      "process_definition_id",
+      "process_run_id",
+      "responsible_position_id",
+      "scope_unit_id",
+      "start_date",
+      "status",
+      "term_id"
+    ]
+  }
+}
