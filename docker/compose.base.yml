@@ -22,6 +22,23 @@ services:
     volumes:
       - mongodb_data:/data/db
 
+  # Motor destino de la migración (convive con MariaDB/Mongo durante la transición).
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
   rabbitmq:
     image: rabbitmq:3-management
     restart: unless-stopped
@@ -115,6 +132,11 @@ services:
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       URI_MONGO: ${URI_MONGO}
       PORT: ${BACKEND_PORT}
       MINIO_ENDPOINT: http://minio:9000
@@ -149,6 +171,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_started
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
 
@@ -212,6 +236,7 @@ services:
 volumes:
   mariadb_data:
   mongodb_data:
+  postgres_data:
   rabbitmq_data:
   minio_data:
   backend_node_modules_v2:
