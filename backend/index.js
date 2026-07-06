@@ -17,7 +17,6 @@ import sign_router from "./routes/sign_router.js";
 
 import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
-import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
@@ -1253,7 +1252,6 @@ app.use(ROUTES.admin, admin_router)
 app.use(ROUTES.program, program_router)
 app.use(ROUTES.units, unit_router)
 
-app.use(ROUTES.area, area_router)
 
 app.use(ROUTES.tarea, tarea_router)
 

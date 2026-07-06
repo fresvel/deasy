@@ -8,7 +8,6 @@ export const PATHS = {
   admin: "/admin",
   units: "/units",
   program: "/program",
-  area: "/area",
   tarea: "/tarea",
   vacancies: "/vacancies",
   chat: "/chat",
