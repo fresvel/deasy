@@ -398,41 +398,36 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     );
   }
 
+  // Entregable (identidad) del demo. El refactor de "deliverables" movió aquí la
+  // identidad que antes vivía en template_artifacts (code/nombre/owner).
+  const deliverableId = await upsertByUnique(
+    connection,
+    "deliverables",
+    {
+      code: "tpl-demo-workflow-report",
+      display_name: "Documento demo de flujo",
+      description: "Entregable demo para probar documentos y firmas.",
+      owner_process_id: processId,
+      owner_variation_key: "general",
+      template_scope: "official"
+    },
+    ["display_name", "description", "owner_process_id", "owner_variation_key", "template_scope"]
+  );
+
   const artifactId = await upsertByUnique(
     connection,
     "template_artifacts",
     {
-      template_seed_id: null,
-      owner_person_id: null,
-      template_code: "tpl-demo-workflow-report",
-      display_name: "Documento demo de flujo",
-      description: "Plantilla demo para probar documentos y firmas.",
-      owner_ref: "demo",
-      source_version: "1.0.0",
-      storage_version: "1.0.0",
-      artifact_stage: "published",
-      bucket: process.env.MINIO_TEMPLATES_BUCKET || "templates",
+      deliverable_id: deliverableId,
+      storage_version: "v1",
+      lifecycle_state: "published",
       base_object_prefix: "Seeds/demo-workflow",
-      available_formats: JSON.stringify(["pdf", "docx"]),
+      available_formats: JSON.stringify(["pdf"]),
       schema_object_key: "Seeds/demo-workflow/schema.json",
-      meta_object_key: "Seeds/demo-workflow/meta.yaml",
-      content_hash: "demo-workflow",
+      meta_object_key: "Seeds/demo-workflow/meta.json",
       is_active: 1
     },
-    [
-      "display_name",
-      "description",
-      "owner_ref",
-      "source_version",
-      "artifact_stage",
-      "bucket",
-      "base_object_prefix",
-      "available_formats",
-      "schema_object_key",
-      "meta_object_key",
-      "content_hash",
-      "is_active"
-    ]
+    ["lifecycle_state", "base_object_prefix", "available_formats", "schema_object_key", "meta_object_key", "is_active"]
   );
 
   const definitionTemplateId = await upsertByUnique(
@@ -441,10 +436,10 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     {
       process_definition_id: definitionId,
       template_artifact_id: artifactId,
-      creates_task: 1,
-      sort_order: 1
+      sort_order: 1,
+      item_mode: "single"
     },
-    ["creates_task", "sort_order"]
+    ["sort_order", "item_mode"]
   );
 
   for (const cargoId of cargoIds) {
@@ -526,17 +521,6 @@ const getOrCreateFillFlowTemplate = async (connection, definitionTemplateId) => 
 };
 
 const getOrCreateSignatureFlowTemplate = async (connection, definitionTemplateId) => {
-  const signatureTypeId = await upsertByUnique(
-    connection,
-    "signature_types",
-    {
-      code: "electronica",
-      name: "Electronica",
-      description: "Firma electronica demo.",
-      is_active: 1
-    },
-    ["name", "description", "is_active"]
-  );
   const pendingStatusId = await upsertByUnique(
     connection,
     "signature_request_statuses",
@@ -573,7 +557,6 @@ const getOrCreateSignatureFlowTemplate = async (connection, definitionTemplateId
       code: "firma-demo",
       name: "Firma demo",
       slot: "principal",
-      step_type_id: signatureTypeId,
       resolver_type: "document_owner",
       assigned_person_id: null,
       unit_scope_type: "all_units",
@@ -592,7 +575,6 @@ const getOrCreateSignatureFlowTemplate = async (connection, definitionTemplateId
       "code",
       "name",
       "slot",
-      "step_type_id",
       "resolver_type",
       "assigned_person_id",
       "unit_scope_type",
