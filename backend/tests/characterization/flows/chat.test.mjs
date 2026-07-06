@@ -106,3 +106,9 @@ test("POST /chat/processes/:id/thread -> crea el process_thread con scope", asyn
   const res = await post("/chat/processes/1/thread?scope_unit_id=16", { token, body: {} });
   matchSnapshot(SUITE, "process_thread_created", snapshotShape(res, CHAT_OPTS));
 });
+
+test("POST /chat/units/:unitId/thread -> crea el unit_thread con scope", async () => {
+  const token = await tokenFor("usuario");
+  const res = await post("/chat/units/16/thread", { token, body: {} });
+  matchSnapshot(SUITE, "unit_thread_created", snapshotShape(res, CHAT_OPTS));
+});

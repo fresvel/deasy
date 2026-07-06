@@ -277,5 +277,44 @@
       },
       "message": "Thread del proceso no encontrado para el ámbito solicitado."
     }
+  },
+  "unit_thread_created": {
+    "status": 201,
+    "body": {
+      "data": {
+        "archived_at": "<normalized>",
+        "created_at": "<normalized>",
+        "created_by": 3,
+        "id": "<normalized>",
+        "last_message_at": "<normalized>",
+        "last_message_id": "<normalized>",
+        "mobile_summary": null,
+        "participants": [
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 3,
+            "role": "member"
+          }
+        ],
+        "process_id": "<normalized>",
+        "scope": {
+          "current_definition_id": "<normalized>",
+          "origin_definition_id": "<normalized>",
+          "process_id": "<normalized>",
+          "scope_unit_id": "<normalized>",
+          "stable_key": "unit:16"
+        },
+        "title": "Unidad · Carrera de Tecnologías de la Información",
+        "type": "unit",
+        "unread_count": 0,
+        "updated_at": "<normalized>"
+      },
+      "meta": {
+        "created": true,
+        "synchronized": false,
+        "unit_id": "<normalized>"
+      }
+    }
   }
 }
