@@ -130,6 +130,27 @@ async function main() {
     throw new Error(`general-task falló: ${task.status} ${JSON.stringify(task.body)}`);
   }
 
+  // 2.5) Datos de chat deterministas: admin crea una conversación de grupo con
+  //      usuario y envía un mensaje (materializa conversación + mensaje +
+  //      notificación para usuario). Base para el golden del chat.
+  const conv = await post("/chat/conversations", {
+    token: admin,
+    body: {
+      type: "group",
+      title: "Chat characterization (seed)",
+      participant_ids: [USUARIO_PERSON_ID],
+    },
+  });
+  const conversationId = conv.body?.data?.id;
+  console.log("[setup] chat conversation:", conv.status, "id=", conversationId);
+  if (conversationId) {
+    const msg = await post(`/chat/conversations/${conversationId}/messages`, {
+      token: admin,
+      body: { content: "Mensaje determinista de prueba." },
+    });
+    console.log("[setup] chat message:", msg.status);
+  }
+
   // 3) Comprobación de poblado.
   for (const t of [
     "tasks", "task_items", "task_assignments", "documents", "document_versions",

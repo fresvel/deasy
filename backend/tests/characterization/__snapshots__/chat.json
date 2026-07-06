@@ -1,4 +1,46 @@
 {
+  "conversations_admin": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "archived_at": "<normalized>",
+          "created_at": "<normalized>",
+          "created_by": 1,
+          "id": "<normalized>",
+          "last_message_at": "<normalized>",
+          "last_message_id": "<normalized>",
+          "mobile_summary": "Mensaje determinista de prueba.",
+          "participants": [
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 1,
+              "role": "owner"
+            },
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 3,
+              "role": "member"
+            }
+          ],
+          "process_id": "<normalized>",
+          "scope": {
+            "current_definition_id": "<normalized>",
+            "origin_definition_id": "<normalized>",
+            "process_id": "<normalized>",
+            "scope_unit_id": "<normalized>",
+            "stable_key": null
+          },
+          "title": "Chat characterization (seed)",
+          "type": "group",
+          "unread_count": 0,
+          "updated_at": "<normalized>"
+        }
+      ]
+    }
+  },
   "conversations_no_token": {
     "status": 401,
     "body": {
@@ -7,14 +49,88 @@
   },
   "conversations_usuario": {
     "status": 200,
-    "isArray": true,
-    "count": 0,
-    "itemKeys": []
+    "body": {
+      "data": [
+        {
+          "archived_at": "<normalized>",
+          "created_at": "<normalized>",
+          "created_by": 1,
+          "id": "<normalized>",
+          "last_message_at": "<normalized>",
+          "last_message_id": "<normalized>",
+          "mobile_summary": "Mensaje determinista de prueba.",
+          "participants": [
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 1,
+              "role": "owner"
+            },
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 3,
+              "role": "member"
+            }
+          ],
+          "process_id": "<normalized>",
+          "scope": {
+            "current_definition_id": "<normalized>",
+            "origin_definition_id": "<normalized>",
+            "process_id": "<normalized>",
+            "scope_unit_id": "<normalized>",
+            "stable_key": null
+          },
+          "title": "Chat characterization (seed)",
+          "type": "group",
+          "unread_count": 1,
+          "updated_at": "<normalized>"
+        }
+      ]
+    }
+  },
+  "messages_admin": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "attachments": [],
+          "content": "Mensaje determinista de prueba.",
+          "content_type": "text",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "deleted_at": "<normalized>",
+          "delivery_state": "stored",
+          "edited_at": "<normalized>",
+          "id": "<normalized>",
+          "read_by": [
+            1
+          ],
+          "reply_to_message_id": "<normalized>",
+          "sender_person_id": 1
+        }
+      ]
+    }
   },
   "notifications_usuario": {
     "status": 200,
-    "isArray": true,
-    "count": 0,
-    "itemKeys": []
+    "body": {
+      "data": [
+        {
+          "body": "Mensaje determinista de prueba.",
+          "channel": "in_app",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "entity_id": "<normalized>",
+          "entity_type": "conversation",
+          "id": "<normalized>",
+          "message_id": "<normalized>",
+          "read_at": "<normalized>",
+          "recipient_person_id": 3,
+          "title": "Nuevo mensaje en Chat characterization (seed)",
+          "type": "chat.message.created"
+        }
+      ]
+    }
   }
 }
