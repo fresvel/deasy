@@ -1255,3 +1255,96 @@ CREATE TABLE IF NOT EXISTS signature_batch_jobs (
   INDEX idx_signature_batch_jobs_user (user_id),
   INDEX idx_signature_batch_jobs_status (status)
 );
+
+-- ============================================================================
+-- Chat / notificaciones (migrado desde MongoDB — Fase 5). person_id/process_id/
+-- unit_id/definition_id son FKs lógicas al núcleo relacional (sin constraint).
+-- UNIQUE(stable_key): en MySQL/MariaDB los NULL son distintos → equivale al
+-- índice sparse de Mongo (varios threads sin stable_key permitidos).
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS chat_conversations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  type ENUM('direct','group','thread','process_thread','unit') NOT NULL,
+  title VARCHAR(255) NULL,
+  process_id INT NULL,
+  scope_process_id INT NULL,
+  scope_unit_id INT NULL,
+  stable_key VARCHAR(255) NULL,
+  scope_current_definition_id INT NULL,
+  scope_origin_definition_id INT NULL,
+  created_by INT NOT NULL,
+  last_message_id BIGINT NULL,
+  last_message_at DATETIME NULL,
+  archived_at DATETIME NULL,
+  mobile_summary TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_chat_conversations_stable_key (stable_key),
+  INDEX idx_chat_conversations_process (type, process_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS chat_conversation_participants (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  conversation_id BIGINT NOT NULL,
+  person_id INT NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'member',
+  joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  left_at DATETIME NULL,
+  UNIQUE KEY uq_chat_participant (conversation_id, person_id),
+  INDEX idx_chat_participant_person (person_id, conversation_id),
+  CONSTRAINT fk_chat_participants_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  conversation_id BIGINT NOT NULL,
+  sender_person_id INT NOT NULL,
+  content TEXT NOT NULL DEFAULT '',
+  content_type ENUM('text','system','attachment') NOT NULL DEFAULT 'text',
+  reply_to_message_id BIGINT NULL,
+  edited_at DATETIME NULL,
+  deleted_at DATETIME NULL,
+  delivery_state VARCHAR(20) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_chat_messages_conversation (conversation_id, created_at),
+  INDEX idx_chat_messages_sender (sender_person_id, created_at),
+  CONSTRAINT fk_chat_messages_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_messages_reply FOREIGN KEY (reply_to_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS chat_message_attachments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  message_id BIGINT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  path VARCHAR(500) NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  mime VARCHAR(120) NULL,
+  size BIGINT NOT NULL DEFAULT 0,
+  INDEX idx_chat_attachments_message (message_id, sort_order),
+  CONSTRAINT fk_chat_attachments_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS chat_message_reads (
+  message_id BIGINT NOT NULL,
+  person_id INT NOT NULL,
+  read_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (message_id, person_id),
+  CONSTRAINT fk_chat_reads_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS chat_notifications (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  recipient_person_id INT NOT NULL,
+  type VARCHAR(80) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  body TEXT NOT NULL,
+  entity_type VARCHAR(40) NULL,
+  entity_id VARCHAR(64) NULL,
+  conversation_id BIGINT NULL,
+  message_id BIGINT NULL,
+  channel VARCHAR(20) NOT NULL DEFAULT 'in_app',
+  read_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_chat_notif_recipient_created (recipient_person_id, created_at),
+  INDEX idx_chat_notif_recipient_read (recipient_person_id, read_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
