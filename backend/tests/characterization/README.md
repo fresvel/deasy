@@ -71,14 +71,9 @@ flujo de entrega — MinIO —; quedan como ampliación futura.)
 > limpia sus tablas, así que `setup/seed_execution.mjs` las purga por el pool
 > antes de crear los datos de chat — determinista entre corridas sin pasos extra.
 
-> **Dossier / determinismo (temporal)**: el dossier aún vive en MongoDB (migración
-> en curso). Purga sus colecciones antes del setup para un golden determinista:
-> ```bash
-> docker exec deasy-dev-mongodb-1 mongosh deasy --quiet --eval \
->   'db.dossiers.deleteMany({}); db.usuarios.deleteMany({})'
-> ```
-> Cuando el dossier pase a relacional, el setup limpiará sus tablas y este paso
-> desaparece.
+> **Dossier / determinismo**: el dossier ya es relacional (Fase 6). El setup
+> purga `dossier_items`/`dossiers` por el pool antes de crear los datos —
+> determinista sin pasos extra.
 
 Este harness vive en el worktree `deasy-tests`. Antes de ejecutar, hay que
 **apuntar los dockers a este worktree** (el `docker-env.sh` que invocas es la

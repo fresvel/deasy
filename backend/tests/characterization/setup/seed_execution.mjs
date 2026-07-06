@@ -167,6 +167,10 @@ async function main() {
   //      Determinismo: hoy el dossier vive en Mongo (limpiar colección antes,
   //      ver README); tras migrar a relacional se purgan las tablas aquí.
   const CEDULA = process.env.SEED_USUARIO_CEDULA ?? "1122334455";
+  // El dossier ya es relacional (Fase 6); el seed baseline no limpia sus tablas.
+  for (const t of ["dossier_items", "dossiers"]) {
+    await pool.query(`DELETE FROM ${t}`);
+  }
   const dossier = await get(`/dossier/${CEDULA}`, { token: usuario });
   console.log("[setup] dossier getOrCreate:", dossier.status);
   const dTitulo = await post(`/dossier/${CEDULA}/titulos`, {
