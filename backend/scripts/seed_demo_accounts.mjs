@@ -185,12 +185,11 @@ const getOrCreatePosition = async (connection, { unitId, cargoId, title }) => up
     unit_id: unitId,
     slot_no: 1,
     title,
-    profile_ref: "demo",
     position_type: "real",
     is_active: 1,
     cargo_id: cargoId
   },
-  ["title", "profile_ref", "position_type", "is_active"]
+  ["title", "position_type", "is_active"]
 );
 
 const upsertPositionAssignment = async (connection, { positionId, personId }) => upsertByUnique(
@@ -333,7 +332,7 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     connection,
     "process_definition_series",
     {
-      source_type: "legacy",
+      source_type: "default",
       unit_type_id: null,
       cargo_id: null,
       code: "demo-account-flow",

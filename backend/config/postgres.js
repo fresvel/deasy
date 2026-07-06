@@ -309,6 +309,31 @@ async function ensureUniqueCols(executor) {
   return map;
 }
 
+// Columnas GENERADAS por tabla (STORED). Un índice único puede incluirlas
+// (p.ej. uq_position_current sobre current_flag) y NUNCA aparecen en el INSERT,
+// pero SÍ son un target válido de ON CONFLICT (PG las computa). Se usa para
+// cubrir esos índices cuando ninguno es cubierto por columnas explícitas.
+let generatedColsCache = null;
+async function ensureGeneratedCols(executor) {
+  if (generatedColsCache) return generatedColsCache;
+  const res = await executor.query(
+    `SELECT c.relname AS tbl, a.attname AS col
+       FROM pg_attribute a
+       JOIN pg_class c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE a.attgenerated <> '' AND a.attnum > 0 AND NOT a.attisdropped
+        AND n.nspname = ANY (current_schemas(false))`
+  );
+  const map = new Map();
+  for (const row of res.rows) {
+    const tbl = String(row.tbl).toLowerCase();
+    if (!map.has(tbl)) map.set(tbl, new Set());
+    map.get(tbl).add(String(row.col).toLowerCase());
+  }
+  generatedColsCache = map;
+  return map;
+}
+
 // ON DUPLICATE KEY UPDATE <sets> -> ON CONFLICT (<target>) DO UPDATE SET <sets>.
 // El target se infiere: el índice único cuyas columnas están TODAS en la lista
 // de columnas del INSERT (prefiere el más corto que no sea sólo `id`).
@@ -318,9 +343,18 @@ async function rewriteOnDuplicate(sql, executor) {
   const table = m[1].toLowerCase();
   const insertCols = m[2].split(",").map((s) => s.trim().replace(/`/g, "").toLowerCase());
   const cache = await ensureUniqueCols(executor);
-  const covered = (cache.get(table) || [])
-    .filter((cols) => cols.every((c) => insertCols.includes(c)))
-    .sort((a, b) => a.length - b.length);
+  const all = cache.get(table) || [];
+  // Preferir índices cubiertos SOLO por columnas del INSERT (comportamiento
+  // conservador de siempre). Si ninguno lo está, admitir índices cuyas columnas
+  // faltantes sean GENERADAS (target válido de ON CONFLICT en PG).
+  const strict = all.filter((cols) => cols.every((c) => insertCols.includes(c)));
+  let pool = strict;
+  if (!pool.length) {
+    const generated = await ensureGeneratedCols(executor);
+    const gen = generated.get(table) || new Set();
+    pool = all.filter((cols) => cols.every((c) => insertCols.includes(c) || gen.has(c)));
+  }
+  const covered = pool.sort((a, b) => a.length - b.length);
   const target = covered.find((cols) => !(cols.length === 1 && cols[0] === "id")) || covered[0];
   if (!target) return sql;
   return sql.replace(/ON\s+DUPLICATE\s+KEY\s+UPDATE\s+([\s\S]*?)$/i, (_full, sets) => {
