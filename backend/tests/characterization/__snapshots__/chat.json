@@ -89,6 +89,95 @@
       ]
     }
   },
+  "conversations_usuario_after_read": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "archived_at": "<normalized>",
+          "created_at": "<normalized>",
+          "created_by": 1,
+          "id": "<normalized>",
+          "last_message_at": "<normalized>",
+          "last_message_id": "<normalized>",
+          "mobile_summary": "Mensaje determinista de prueba.",
+          "participants": [
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 1,
+              "role": "owner"
+            },
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 3,
+              "role": "member"
+            }
+          ],
+          "process_id": "<normalized>",
+          "scope": {
+            "current_definition_id": "<normalized>",
+            "origin_definition_id": "<normalized>",
+            "process_id": "<normalized>",
+            "scope_unit_id": "<normalized>",
+            "stable_key": null
+          },
+          "title": "Chat characterization (seed)",
+          "type": "group",
+          "unread_count": 0,
+          "updated_at": "<normalized>"
+        }
+      ]
+    }
+  },
+  "mark_conversation_read": {
+    "status": 200,
+    "body": {
+      "data": {
+        "conversation_id": "<normalized>",
+        "read_at": "<normalized>",
+        "unread_count": 0
+      },
+      "notifications": [
+        {
+          "body": "Mensaje determinista de prueba.",
+          "channel": "in_app",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "entity_id": "<normalized>",
+          "entity_type": "conversation",
+          "id": "<normalized>",
+          "message_id": "<normalized>",
+          "read_at": "<normalized>",
+          "recipient_person_id": 3,
+          "title": "Nuevo mensaje en Chat characterization (seed)",
+          "type": "chat.message.created"
+        }
+      ]
+    }
+  },
+  "mark_notifications_read": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "body": "Mensaje determinista de prueba.",
+          "channel": "in_app",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "entity_id": "<normalized>",
+          "entity_type": "conversation",
+          "id": "<normalized>",
+          "message_id": "<normalized>",
+          "read_at": "<normalized>",
+          "recipient_person_id": 3,
+          "title": "Nuevo mensaje en Chat characterization (seed)",
+          "type": "chat.message.created"
+        }
+      ]
+    }
+  },
   "messages_admin": {
     "status": 200,
     "body": {

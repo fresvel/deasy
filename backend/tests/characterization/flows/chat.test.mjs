@@ -11,7 +11,7 @@
 // contenido/título/tipo, que es lo que de verdad fija la conducta.
 
 import { test, before } from "node:test";
-import { get } from "../lib/http.mjs";
+import { get, post } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { snapshotShape } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
@@ -58,4 +58,35 @@ test("GET /chat/notifications (usuario) -> notificación del mensaje", async () 
 test("GET /chat/conversations sin token -> 401", async () => {
   const res = await get("/chat/conversations");
   matchSnapshot(SUITE, "conversations_no_token", snapshotShape(res));
+});
+
+// --- Flujo de MARCAR LEÍDO (mutación) — va DESPUÉS de los tests que dependen
+//     del estado no-leído (unread=1, notif sin leer). Determinista porque los
+//     tests de un mismo archivo corren en orden y el setup recrea el estado. ---
+
+test("POST /chat/conversations/:id/read (usuario) -> marca la conversación leída", async () => {
+  const token = await tokenFor("usuario");
+  const list = await get("/chat/conversations", { token });
+  const conversationId = list.body?.data?.[0]?.id;
+  if (!conversationId) throw new Error("no hay conversación: ¿corriste el setup?");
+  const res = await post(`/chat/conversations/${conversationId}/read`, { token });
+  matchSnapshot(SUITE, "mark_conversation_read", snapshotShape(res, CHAT_OPTS));
+});
+
+test("GET /chat/conversations (usuario) tras marcar leído -> unread_count 0", async () => {
+  const token = await tokenFor("usuario");
+  const res = await get("/chat/conversations", { token });
+  matchSnapshot(SUITE, "conversations_usuario_after_read", snapshotShape(res, CHAT_OPTS));
+});
+
+test("POST /chat/notifications/read (usuario) -> notificación marcada leída", async () => {
+  const token = await tokenFor("usuario");
+  const list = await get("/chat/notifications", { token });
+  const notificationId = list.body?.data?.[0]?.id;
+  if (!notificationId) throw new Error("no hay notificación: ¿corriste el setup?");
+  const res = await post("/chat/notifications/read", {
+    token,
+    body: { notification_ids: [notificationId] },
+  });
+  matchSnapshot(SUITE, "mark_notifications_read", snapshotShape(res, CHAT_OPTS));
 });
