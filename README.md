@@ -18,7 +18,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 
 - Frontend consume API del backend.
 - Backend integra:
-  - Base de datos (MariaDB + Mongo segun el modulo).
+  - Base de datos (PostgreSQL).
   - Motor de procesos basado en `processes` + `process_definition_versions` + `process_target_rules`.
   - Storage de artifacts de plantillas via MinIO.
   - Authoring de templates integrado en `tools/templates`.
@@ -29,7 +29,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 ## Quick start (desarrollo)
 
 1) Revisar variables de entorno y requisitos en docs/07-despliegue/docker.md.
-2) Levantar servicios (ver docker/docker-compose.yml y scripts/start-services.sh).
+2) Levantar servicios con `bash scripts/docker-env.sh dev up -d --build` (ver scripts/docker-env.sh).
 3) Iniciar backend y frontend segun sus README internos:
    - backend/README.md
    - frontend/README.md
@@ -38,7 +38,6 @@ Operaciones DB con Docker por ambiente:
 
 - `bash scripts/seed-db.sh dev capture`
 - `bash scripts/reset-db.sh qa`
-- `bash scripts/migrate-db.sh dev --list`
 
 ## Documentacion
 
@@ -101,7 +100,7 @@ Anexos:
 
 Resumen clave desde Deploy/deploy_broker:
 
-- Mensajeria en tiempo real con WebSockets (Socket.IO) integrados en el backend, y Mongo.
+- Mensajeria en tiempo real con WebSockets (Socket.IO) integrados en el backend.
 - Tipos de conversacion: direct, group, thread (thread ligado a process_id).
 - Responsable del proceso puede agregar/remover participantes en threads.
 - Notificaciones internas en tiempo real.
@@ -122,10 +121,6 @@ Pendientes:
 - Definir ruta exacta de SHARED_STORAGE_ROOT en entorno docker/NFS.
 - Confirmar donde vive el "responsable del proceso" en BD (tabla/campo).
 - Escalado horizontal: si se corren varias instancias de backend, anadir el adapter de Redis de Socket.IO.
-
-Nota sobre error legado:
-
-- Error MariaDB: Field 'template_version_id' doesn't have a default value (columna legacy en process_templates).
 
 ## Siguiente paso
 
