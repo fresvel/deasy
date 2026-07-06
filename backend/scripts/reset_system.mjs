@@ -33,34 +33,31 @@ const loadEnv = async () => {
   }
 };
 
-// Reset integral del sistema al "estado base": deja MariaDB, MinIO y MongoDB vacíos para que,
+// Reset integral del sistema al "estado base": deja PostgreSQL y MinIO vacíos para que,
 // al arrancar el backend, SystemBootstrapService detecte una instalación virgen (installationMode
 // = 'bootstrap') y la UI solicite la creación del primer administrador.
 //
 // Flags:
-//   --keep-db       no recrea el schema de MariaDB
+//   --keep-db       no recrea el schema de PostgreSQL
 //   --keep-minio    no purga los buckets de MinIO
-//   --keep-mongo    no elimina la base de datos de MongoDB
 const main = async () => {
   await loadEnv();
   const args = new Set(process.argv.slice(2));
   const keepDb = args.has("--keep-db");
   const keepMinio = args.has("--keep-minio");
-  const keepMongo = args.has("--keep-mongo");
 
-  const { ensureMariaDBDatabase, ensureMariaDBSchema } = await import("../database/mariadb_initializer.js");
+  const { ensurePostgresSchema } = await import("../database/postgres_initializer.js");
   const { assertMariaDBConnection, closeMariaDBPool } = await import("../config/mariadb.js");
-  const { resetMinio, resetMongo } = await import("./reset_storage.mjs");
+  const { resetMinio } = await import("./reset_storage.mjs");
 
   try {
     if (!keepDb) {
-      console.log("→ Reseteando MariaDB (drop + recreación del schema)...");
-      await ensureMariaDBDatabase();
+      console.log("→ Reseteando PostgreSQL (drop + recreación del schema)...");
       await assertMariaDBConnection();
-      await ensureMariaDBSchema({ reset: true });
-      console.log("✅ MariaDB en schema vacío.");
+      await ensurePostgresSchema({ reset: true });
+      console.log("✅ PostgreSQL en schema vacío.");
     } else {
-      console.log("• MariaDB conservada (--keep-db).");
+      console.log("• PostgreSQL conservada (--keep-db).");
     }
 
     if (!keepMinio) {
@@ -68,13 +65,6 @@ const main = async () => {
       await resetMinio();
     } else {
       console.log("• MinIO conservado (--keep-minio).");
-    }
-
-    if (!keepMongo) {
-      console.log("→ Eliminando base de datos de MongoDB...");
-      await resetMongo();
-    } else {
-      console.log("• MongoDB conservado (--keep-mongo).");
     }
 
     console.log("");

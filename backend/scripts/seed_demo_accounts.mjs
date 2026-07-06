@@ -5,10 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import bcrypt from "bcrypt";
-import mysql from "mysql2/promise";
 import { getPostgresPool } from "../config/postgres.js";
 
-const USE_PG = process.env.DB_ENGINE === "postgres";
+const USE_PG = true; // PG-only (MariaDB retirado)
 
 import {
   ACTION_CATALOG,

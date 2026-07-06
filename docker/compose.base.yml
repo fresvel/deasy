@@ -1,22 +1,5 @@
 services:
-  mariadb:
-    image: mariadb:11.4
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 10s
-
-  # Motor destino de la migración (convive con MariaDB/Mongo durante la transición).
+  # Único motor de datos (migración a PostgreSQL completa; MariaDB y Mongo retirados).
   postgres:
     image: postgres:17
     restart: unless-stopped
@@ -121,11 +104,6 @@ services:
   backend:
     restart: unless-stopped
     environment:
-      MARIADB_HOST: mariadb
-      MARIADB_PORT: 3306
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB}
@@ -160,8 +138,6 @@ services:
       SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
       SIGN_RESPONSE_QUEUE_PREFIX: deasy.sign.response
     depends_on:
-      mariadb:
-        condition: service_healthy
       postgres:
         condition: service_healthy
       rabbitmq:
@@ -170,11 +146,11 @@ services:
   storage-uploader:
     restart: unless-stopped
     environment:
-      MARIADB_HOST: mariadb
-      MARIADB_PORT: 3306
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
@@ -185,7 +161,7 @@ services:
       RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
     command: ["node", "workers/storage_uploader.js"]
     depends_on:
-      mariadb:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -225,7 +201,6 @@ services:
       - storage_data:/data
 
 volumes:
-  mariadb_data:
   postgres_data:
   rabbitmq_data:
   minio_data:

@@ -6,7 +6,6 @@ import user_router from "./routes/user_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
 import { assertMariaDBConnection } from "./config/mariadb.js";
-import { ensureMariaDBDatabase, ensureMariaDBSchema } from "./database/mariadb_initializer.js";
 import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
@@ -1270,32 +1269,24 @@ app.use(express.static("public"));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const initializeMariaDBWithRetry = async () => {
-  const usePostgres = process.env.DB_ENGINE === "postgres";
-  const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
-  const maxAttempts = Number(process.env.MARIADB_INIT_MAX_ATTEMPTS || 20);
-  const retryDelayMs = Number(process.env.MARIADB_INIT_RETRY_DELAY_MS || 3000);
+const initializeDatabaseWithRetry = async () => {
+  const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
+  const maxAttempts = Number(process.env.DB_INIT_MAX_ATTEMPTS || 20);
+  const retryDelayMs = Number(process.env.DB_INIT_RETRY_DELAY_MS || 3000);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      if (usePostgres) {
-        await assertMariaDBConnection(); // delega en PostgreSQL
-        await ensurePostgresSchema({ reset: shouldResetSchema });
-        console.log("✅ PostgreSQL inicializada correctamente");
-        return;
-      }
-      await ensureMariaDBDatabase();
-      await assertMariaDBConnection();
-      await ensureMariaDBSchema({ reset: shouldResetSchema });
-      console.log("✅ MariaDB inicializada correctamente");
+      await assertMariaDBConnection(); // PostgreSQL vía el adaptador
+      await ensurePostgresSchema({ reset: shouldResetSchema });
+      console.log("✅ PostgreSQL inicializada correctamente");
       return;
     } catch (error) {
       const isLastAttempt = attempt === maxAttempts;
       console.error(
-        `⚠️  Falló la inicialización de MariaDB (intento ${attempt}/${maxAttempts}): ${error.message}`
+        `⚠️  Falló la inicialización de PostgreSQL (intento ${attempt}/${maxAttempts}): ${error.message}`
       );
       if (isLastAttempt) {
-        console.error("⚠️  Se agotaron los reintentos de MariaDB. El backend seguirá en ejecución.");
+        console.error("⚠️  Se agotaron los reintentos de PostgreSQL. El backend seguirá en ejecución.");
         return;
       }
       await sleep(retryDelayMs);
@@ -1304,7 +1295,7 @@ const initializeMariaDBWithRetry = async () => {
 };
 
 const startServer = async () => {
-  await initializeMariaDBWithRetry();
+  await initializeDatabaseWithRetry();
 
   const httpServer = http.createServer(app);
   realtimeGateway.init(httpServer, { corsOrigin: resolveCorsOrigin, credentials: true });

@@ -54,20 +54,18 @@ The backend has **no declared lint or test scripts**. If adding tests, place the
 
 ### Seeds / DB (Docker-backed, per environment)
 ```bash
-bash scripts/seed-db.sh <env> capture|apply|rbac   # MariaDB SQL snapshot (pucese.seed.json)
-bash scripts/migrate-db.sh <env> --list            # list migrations
-bash scripts/migrate-db.sh <env> <migration-name>  # run one
-bash scripts/reset-db.sh <env>                      # reset MariaDB
+bash scripts/seed-db.sh <env> capture|apply|rbac   # PostgreSQL SQL snapshot (pucese.seed.json)
+bash scripts/reset-db.sh <env>                      # reset PostgreSQL schema
 ```
-`<env>` ∈ `dev | qa-local | qa | prod`. `apply` **drops and reinserts** the included tables — never run on data you want to keep. `seed-db.sh` only touches MariaDB SQL; MinIO template files are published separately via the `storage-init` / `storage-publish-seeds` / `storage-publish` Compose profiles (see `COMANDOS_PROYECTO.md`).
+`<env>` ∈ `dev | qa-local | qa | prod`. `apply` **drops and reinserts** the included tables — never run on data you want to keep. `seed-db.sh` only touches the relational SQL; MinIO template files are published separately via the `storage-init` / `storage-publish-seeds` / `storage-publish` Compose profiles (see `COMANDOS_PROYECTO.md`). The legacy `migrate-db.sh` mechanism was retired with the MariaDB migration — `postgres_schema.sql` is the single source of truth for the schema.
 
 ## Architecture
 
 ### Backend (`backend/`, no `src/` — modules at root)
-- `index.js` — single large entry point: Swagger definition, CORS, middleware, route mounting, and MariaDB bootstrap-with-retry before listen.
+- `index.js` — single large entry point: Swagger definition, CORS, middleware, route mounting, and PostgreSQL bootstrap-with-retry before listen.
 - Layering: `routes/*_router.js` → `controllers/` → `services/` → `models/`. Keep business logic in services/models, never in routers or the frontend.
 - API base path lives in `config/apiPaths.js` (`API_PREFIX = "/deasy/v1"`, docs at `/deasy/docs`). Route mount paths come from the `ROUTES` constant — add new routers there.
-- **Dual datastore**: MariaDB (relational core — users, RBAC, processes) + MongoDB/Mongoose (`models/chat`, notifications). MariaDB schema is bootstrapped from `database/mariadb_schema.sql` via `database/mariadb_initializer.js` on startup (`ensureMariaDBDatabase` / `ensureMariaDBSchema`).
+- **Datastore**: PostgreSQL, single relational core (users, RBAC, processes, chat, notifications, dossier). Schema is bootstrapped from `database/postgres_schema.sql` via `database/postgres_initializer.js` on startup (`ensurePostgresSchema`). Data access goes through `config/postgres.js` — an adapter that mirrors the mysql2 interface (`?`→`$n`, `[rows]`/`insertId` shape, dialect translation), so SQL is written mysql2-style. `config/mariadb.js` keeps its legacy export names (`getMariaDBPool`, etc.) and delegates to that adapter, so the ~37 importers didn't change. **MariaDB and MongoDB were fully retired** (migration `migrate/postgresql`); no dual-datastore, no Mongoose.
 - **Realtime**: Socket.IO is embedded in the backend HTTP server (`services/realtime/RealtimeGateway.js`) — there is **no external broker** (EMQX/MQTT was removed). The handshake authenticates with the app JWT; clients request to join rooms (`user:{id}`, `conversation:{id}`, `process:{id}`) and the backend validates participation before joining. Only the backend publishes.
 - Async/integration: RabbitMQ queues drive the signer; MinIO stores template artifacts and signed PDFs; `workers/storage_uploader.js` handles uploads.
 
@@ -79,7 +77,7 @@ bash scripts/reset-db.sh <env>                      # reset MariaDB
 - Approved base components to reuse: `AppButton`, `AppDataTable`, `AppModalShell` / `AppFormModalLayout`, `AppTag`, `AppNavCard`, `PdfDropField`.
 
 ### Process engine (core domain)
-Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in MariaDB. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.
+Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in PostgreSQL. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.
 
 ### Modos de emisión de entregables (single / replicated / routed) — LEER `docs/modelo-emision-entregables.md`
 Cada plantilla ligada declara su modo en `process_definition_templates.item_mode`:
@@ -92,7 +90,7 @@ El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenec
 Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. **routed no autora flujo** (es de runtime). Estado: single/replicated hechos; **routed está a medias** (hoy solo elige 1 destinatario vía atajo `document_owner` sembrado; falta el editor de flujo en runtime). Ver el doc para detalle y deuda técnica.
 
 ## Environments & ports
-`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). `qa-local` uses `9088`/`9443`. Direct backend dev port is `3030`. Per-env infra ports (MariaDB/Mongo/RabbitMQ/MinIO/Signer) are listed in `COMANDOS_PROYECTO.md`.
+`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). `qa-local` uses `9088`/`9443`. Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `COMANDOS_PROYECTO.md`.
 
 Env config: `docker/.env` + per-env `docker/.env.<env>`; reference model is `docker/.env_model`. Frontend uses `VITE_API_BASE_URL` (`/api` behind the Nginx proxy in Docker).
 

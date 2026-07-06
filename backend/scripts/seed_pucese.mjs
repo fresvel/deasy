@@ -10,7 +10,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendRoot = path.resolve(__dirname, "..");
 const projectRoot = path.resolve(backendRoot, "..");
 const backendRequire = createRequire(path.join(backendRoot, "package.json"));
-const mysql = backendRequire("mysql2/promise");
 
 const envPath = path.join(backendRoot, ".env");
 const defaultSeedName = "pucese";
@@ -228,7 +227,7 @@ const decodeValue = (value, mysqlType) => {
   return value;
 };
 
-const USE_PG = process.env.DB_ENGINE === "postgres";
+const USE_PG = true; // PG-only (MariaDB retirado)
 
 const getDatabaseTables = async (connection, databaseName) => {
   const [rows] = USE_PG

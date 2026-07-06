@@ -1,69 +1,17 @@
-import mysql from "mysql2/promise";
-import * as pgAdapter from "./postgres.js";
+// Acceso a datos = PostgreSQL (migración completa; MariaDB retirado).
+// Se conserva el nombre del módulo y de los exports (getMariaDBPool, etc.) por
+// compatibilidad con los ~37 importadores y ~881 call sites; internamente TODO
+// va al adaptador pg (config/postgres.js), que espeja la interfaz de mysql2.
+import {
+  getPostgresPool,
+  getPostgresDatabaseName,
+  assertPostgresConnection,
+  closePostgresPool,
+} from "./postgres.js";
 
-// Cutover de motor: con DB_ENGINE=postgres, este módulo delega en el adaptador
-// de PostgreSQL (que espeja la interfaz de mysql2), de modo que los ~37
-// importadores y ~881 call sites no cambian.
-const USE_PG = process.env.DB_ENGINE === "postgres";
-
-const REQUIRED_ENV_VARS = ["MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD", "MARIADB_DATABASE"];
-
-const missingEnvVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
-
-if (missingEnvVars.length) {
-  console.warn(
-    `⚠️  Configuración MariaDB incompleta. Variables faltantes: ${missingEnvVars.join(", ")}`
-  );
-}
-
-const baseConfig = {
-  host: process.env.MARIADB_HOST,
-  port: Number(process.env.MARIADB_PORT),
-  user: process.env.MARIADB_USER,
-  password: process.env.MARIADB_PASSWORD,
-  timezone: process.env.MARIADB_TIMEZONE || "Z"
-};
-
-const databaseName = process.env.MARIADB_DATABASE;
-
-const pool = missingEnvVars.length
-  ? null
-  : mysql.createPool({
-      ...baseConfig,
-      database: databaseName,
-      waitForConnections: true,
-      connectionLimit: Number(process.env.MARIADB_CONNECTION_LIMIT || 10),
-      queueLimit: 0
-    });
-
-export const getMariaDBPool = () => (USE_PG ? pgAdapter.getPostgresPool() : pool);
-export const getMariaDBDatabaseName = () => (USE_PG ? pgAdapter.getPostgresDatabaseName() : databaseName);
-export const getMariaDBBaseConfig = () => baseConfig;
-
-export const assertMariaDBConnection = async () => {
-  if (USE_PG) {
-    return pgAdapter.assertPostgresConnection();
-  }
-  if (!pool) {
-    throw new Error(
-      "La conexión a MariaDB no está configurada correctamente. Revisa las variables de entorno."
-    );
-  }
-
-  const connection = await pool.getConnection();
-  try {
-    await connection.ping();
-  } finally {
-    connection.release();
-  }
-};
-
-export const closeMariaDBPool = async () => {
-  if (USE_PG) {
-    return pgAdapter.closePostgresPool();
-  }
-  if (!pool) {
-    return;
-  }
-  await pool.end();
-};
+export const getMariaDBPool = () => getPostgresPool();
+export const getMariaDBDatabaseName = () => getPostgresDatabaseName();
+// Legacy: sólo lo usaba el bootstrap MariaDB (retirado). Stub por compatibilidad.
+export const getMariaDBBaseConfig = () => ({});
+export const assertMariaDBConnection = () => assertPostgresConnection();
+export const closeMariaDBPool = () => closePostgresPool();

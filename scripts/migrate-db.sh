@@ -21,78 +21,26 @@ Notas:
 EOF
 }
 
+# El mecanismo de migraciones incrementales de MariaDB fue retirado en la migración a
+# PostgreSQL. Todas las migraciones one-time históricas quedaron encapsuladas en
+# backend/database/postgres_schema.sql, que es ahora la ÚNICA fuente de verdad del esquema
+# (aplicada por backend/database/postgres_initializer.js -> ensurePostgresSchema). Por eso ya
+# no hay migraciones legacy que listar ni resolver; estas funciones se conservan como stubs
+# para no romper las llamadas existentes al script.
 list_migrations() {
   cat <<'EOF'
-Migraciones disponibles:
-  backfill-base-usuario-role               -> /app/backend/scripts/backfill_base_usuario_role.mjs
-  backfill-unit-labels                     -> /app/backend/scripts/backfill_unit_labels.mjs
-  drop-legacy-tables                      -> /app/backend/scripts/drop_legacy_tables.mjs
-  drop-process-definition-template-creates-task -> /app/backend/scripts/drop_process_definition_template_creates_task.mjs
-  add-signature-flow-steps-signers        -> /app/backend/scripts/add_signature_flow_steps_signers.mjs
-  enforce-process-definition-active-series -> /app/backend/scripts/enforce_process_definition_active_series.mjs
-  enforce-process-definition-document-artifacts -> /app/backend/scripts/enforce_process_definition_document_artifacts.mjs
-  migrate-process-definition-series       -> /app/backend/scripts/migrate_process_definition_series.mjs
-  migrate-process-templates               -> /app/backend/scripts/migrate_process_templates.mjs
-  migrate-template-artifact-origin        -> /app/backend/scripts/migrate_template_artifact_origin.mjs
-  migrate-template-artifact-owner-fk      -> /app/backend/scripts/migrate_template_artifact_owner_fk.mjs
-  migrate-template-artifact-stage-enum    -> /app/backend/scripts/migrate_template_artifact_stage_enum.mjs
-  migrate-template-artifacts-to-json      -> /app/backend/scripts/migrate_template_artifacts_to_json.mjs
-  migrate-template-prefixes-to-system-users -> /app/backend/scripts/migrate_template_prefixes_to_system_users.mjs
-  migrate-template-seed-drafts            -> /app/backend/scripts/migrate_template_seed_drafts.mjs
+No hay migraciones legacy disponibles.
+
+El mecanismo de migraciones incrementales de MariaDB fue retirado en la migración a
+PostgreSQL. El esquema completo vive en backend/database/postgres_schema.sql y se aplica
+automáticamente al arrancar el backend (ensurePostgresSchema). Para recrear el esquema
+desde cero usa el reset de base de datos, no este comando.
 EOF
 }
 
 resolve_script_path() {
-  case "$1" in
-    backfill-base-usuario-role)
-      echo "/app/backend/scripts/backfill_base_usuario_role.mjs"
-      ;;
-    backfill-unit-labels)
-      echo "/app/backend/scripts/backfill_unit_labels.mjs"
-      ;;
-    drop-legacy-tables)
-      echo "/app/backend/scripts/drop_legacy_tables.mjs"
-      ;;
-    drop-process-definition-template-creates-task)
-      echo "/app/backend/scripts/drop_process_definition_template_creates_task.mjs"
-      ;;
-    add-signature-flow-steps-signers)
-      echo "/app/backend/scripts/add_signature_flow_steps_signers.mjs"
-      ;;
-    enforce-process-definition-active-series)
-      echo "/app/backend/scripts/enforce_process_definition_active_series.mjs"
-      ;;
-    enforce-process-definition-document-artifacts)
-      echo "/app/backend/scripts/enforce_process_definition_document_artifacts.mjs"
-      ;;
-    migrate-process-definition-series|process-definition-series)
-      echo "/app/backend/scripts/migrate_process_definition_series.mjs"
-      ;;
-    migrate-process-templates|process-templates)
-      echo "/app/backend/scripts/migrate_process_templates.mjs"
-      ;;
-    migrate-template-artifact-origin|template-artifact-origin)
-      echo "/app/backend/scripts/migrate_template_artifact_origin.mjs"
-      ;;
-    migrate-template-artifact-owner-fk|template-artifact-owner-fk)
-      echo "/app/backend/scripts/migrate_template_artifact_owner_fk.mjs"
-      ;;
-    migrate-template-artifact-stage-enum|template-artifact-stage-enum)
-      echo "/app/backend/scripts/migrate_template_artifact_stage_enum.mjs"
-      ;;
-    migrate-template-artifacts-to-json|template-artifacts-to-json)
-      echo "/app/backend/scripts/migrate_template_artifacts_to_json.mjs"
-      ;;
-    migrate-template-prefixes-to-system-users|template-prefixes-to-system-users)
-      echo "/app/backend/scripts/migrate_template_prefixes_to_system_users.mjs"
-      ;;
-    migrate-template-seed-drafts|template-seed-drafts)
-      echo "/app/backend/scripts/migrate_template_seed_drafts.mjs"
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+  # Ninguna migración legacy soportada tras la migración a PostgreSQL.
+  return 1
 }
 
 if [ "$#" -ne 2 ]; then

@@ -35,20 +35,19 @@ const loadEnv = async () => {
 
 const main = async () => {
   await loadEnv();
-  const { ensureMariaDBDatabase, ensureMariaDBSchema } = await import("../database/mariadb_initializer.js");
+  const { ensurePostgresSchema } = await import("../database/postgres_initializer.js");
   const { assertMariaDBConnection, closeMariaDBPool } = await import("../config/mariadb.js");
 
   try {
-    await ensureMariaDBDatabase();
     await assertMariaDBConnection();
-    await ensureMariaDBSchema({ reset: true });
-    console.log("✅ Reset completo de MariaDB finalizado.");
+    await ensurePostgresSchema({ reset: true });
+    console.log("✅ Reset completo de PostgreSQL finalizado.");
   } finally {
     await closeMariaDBPool();
   }
 };
 
 main().catch((error) => {
-  console.error(`❌ No se pudo resetear MariaDB: ${error.message}`);
+  console.error(`❌ No se pudo resetear PostgreSQL: ${error.message}`);
   process.exitCode = 1;
 });
