@@ -4,15 +4,10 @@ x-runtime-env-file: &qa_runtime_env_file
   - ${DEASY_CONTAINER_ENV_FILE:-.env.qa}
 
 services:
-  mariadb:
+  postgres:
     env_file: *qa_runtime_env_file
     ports:
-      - "13306:3306"
-
-  mongodb:
-    env_file: *qa_runtime_env_file
-    ports:
-      - "12717:27017"
+      - "15432:5432"
 
   rabbitmq:
     env_file: *qa_runtime_env_file
@@ -73,10 +68,8 @@ services:
     env_file: *qa_runtime_env_file
 
 volumes:
-  mariadb_data:
-    name: deasy_qa_mariadb_data
-  mongodb_data:
-    name: deasy_qa_mongodb_data
+  postgres_data:
+    name: deasy_qa_postgres_data
   rabbitmq_data:
     name: deasy_qa_rabbitmq_data
   minio_data:
