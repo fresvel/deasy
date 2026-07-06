@@ -1,42 +1,19 @@
-import mongoose from "mongoose";
-import { ChatConversation } from "../../models/chat/conversation_model.js";
-import { ChatMessage } from "../../models/chat/message_model.js";
+import * as store from "./chatStore.js";
 import { logChatInfo } from "./chat_logging.js";
 
-const toParticipantSummary = (participant) => ({
-  person_id: Number(participant.person_id),
-  role: participant.role || "member",
-  joined_at: participant.joined_at,
-  left_at: participant.left_at
-});
+// Carga participantes + unread y ensambla el summary de una conversación.
+async function summaryFor(row, personId, unread = null) {
+  const participantsMap = await store.loadParticipants([row.id]);
+  const unreadCount = unread === null ? await store.unreadCount(row.id, personId) : unread;
+  return store.mapConversation(row, participantsMap.get(String(row.id)) || [], unreadCount);
+}
 
-const toConversationSummary = (conversation, unreadCount = 0) => ({
-  id: conversation._id.toString(),
-  type: conversation.type,
-  title: conversation.title,
-  process_id: conversation.process_id,
-  scope: conversation.scope || null,
-  participants: Array.isArray(conversation.participants)
-    ? conversation.participants.map(toParticipantSummary)
-    : [],
-  created_by: conversation.created_by,
-  created_at: conversation.created_at,
-  updated_at: conversation.updated_at,
-  last_message_id: conversation.last_message_id ? conversation.last_message_id.toString() : null,
-  last_message_at: conversation.last_message_at,
-  archived_at: conversation.archived_at,
-  mobile_summary: conversation.mobile_summary,
-  unread_count: Number(unreadCount || 0)
-});
+const normalizeIds = (ids) =>
+  Array.from(new Set((ids || []).map((v) => Number(v)).filter((v) => Number.isFinite(v) && v > 0)));
 
 export default class ChatConversationService {
   async resolveUnreadCount(conversationId, personId) {
-    if (!personId) return 0;
-    return ChatMessage.countDocuments({
-      conversation_id: conversationId,
-      sender_person_id: { $ne: Number(personId) },
-      read_by: { $ne: Number(personId) }
-    });
+    return store.unreadCount(conversationId, personId);
   }
 
   buildProcessThreadTitle({ processName = null, scopeUnitLabel = null } = {}) {
@@ -50,106 +27,76 @@ export default class ChatConversationService {
 
   async listForParticipant(personId, { limit = 20 } = {}) {
     const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
-    const conversations = await ChatConversation.find({
-      participants: {
-        $elemMatch: {
-          person_id: Number(personId),
-          left_at: null
-        }
-      }
-    })
-      .sort({ last_message_at: -1, updated_at: -1 })
-      .limit(safeLimit);
-
+    const rows = await store.listConversationsForParticipant(personId, safeLimit);
+    const participantsMap = await store.loadParticipants(rows.map((r) => r.id));
     const summaries = await Promise.all(
-      conversations.map(async (conversation) => {
-        const unreadCount = await this.resolveUnreadCount(conversation._id, personId);
-        return toConversationSummary(conversation, unreadCount);
+      rows.map(async (row) => {
+        const unread = await store.unreadCount(row.id, personId);
+        return store.mapConversation(row, participantsMap.get(String(row.id)) || [], unread);
       })
     );
-
     return summaries;
   }
 
   async getForParticipant(conversationId, personId) {
-    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    if (!store.isValidId(conversationId)) {
       const error = new Error("conversationId inválido.");
       error.status = 400;
       throw error;
     }
-
-    const conversation = await ChatConversation.findOne({
-      _id: conversationId,
-      participants: {
-        $elemMatch: {
-          person_id: Number(personId),
-          left_at: null
-        }
-      }
-    });
-
-    if (!conversation) {
+    const row = await store.findConversationForParticipant(conversationId, personId);
+    if (!row) {
       const error = new Error("Conversación no encontrada o no autorizada.");
       error.status = 404;
       throw error;
     }
-
-    const unreadCount = await this.resolveUnreadCount(conversation._id, personId);
-    return toConversationSummary(conversation, unreadCount);
+    return summaryFor(row, personId);
   }
 
   async createConversation({ type, title = null, participantIds = [], createdBy, processId = null }) {
-    const normalizedParticipantIds = Array.from(
-      new Set(
-        participantIds
-          .map((value) => Number(value))
-          .filter((value) => Number.isFinite(value) && value > 0)
-      )
-    );
-
+    const normalizedParticipantIds = normalizeIds(participantIds);
     if (!normalizedParticipantIds.length) {
       const error = new Error("Debe existir al menos un participante.");
       error.status = 400;
       throw error;
     }
-
     if (!["direct", "group", "thread"].includes(type)) {
       const error = new Error("Tipo de conversación no válido.");
       error.status = 400;
       throw error;
     }
-
     if (type === "thread") {
       const error = new Error("Los threads ligados a proceso deben crearse por el endpoint canónico del proceso.");
       error.status = 400;
       throw error;
     }
 
-    const conversation = await ChatConversation.create({
+    const now = new Date();
+    const id = await store.insertConversation({
       type,
       title: title?.trim() || null,
-      participants: normalizedParticipantIds.map((personId) => ({
-        person_id: personId,
-        role: personId === Number(createdBy) ? "owner" : "member",
-        joined_at: new Date(),
-        left_at: null
-      })),
       process_id: processId ? Number(processId) : null,
       created_by: Number(createdBy),
-      last_message_id: null,
-      last_message_at: null,
-      archived_at: null,
-      mobile_summary: null
     });
+    await store.insertParticipants(
+      id,
+      normalizedParticipantIds.map((personId) => ({
+        person_id: personId,
+        role: personId === Number(createdBy) ? "owner" : "member",
+        joined_at: now,
+        left_at: null,
+      }))
+    );
 
     logChatInfo("chat.conversation.created", {
-      conversation_id: conversation._id.toString(),
+      conversation_id: String(id),
       type,
       process_id: Number(processId || 0) || null,
-      person_id: Number(createdBy)
+      person_id: Number(createdBy),
     });
 
-    return toConversationSummary(conversation, 0);
+    const row = await store.findConversationById(id);
+    return summaryFor(row, Number(createdBy), 0);
   }
 
   async getProcessThread(processId, personId) {
@@ -159,52 +106,24 @@ export default class ChatConversationService {
       error.status = 400;
       throw error;
     }
-
-    const conversation = await ChatConversation.findOne({
-      type: "thread",
-      process_id: safeProcessId,
-      participants: {
-        $elemMatch: {
-          person_id: Number(personId),
-          left_at: null
-        }
-      }
-    });
-
-    if (!conversation) {
+    const row = await store.findProcessThreadForParticipant(safeProcessId, personId);
+    if (!row) {
       const error = new Error("Thread del proceso no encontrado o no autorizado.");
       error.status = 404;
       throw error;
     }
-
-    const unreadCount = await this.resolveUnreadCount(conversation._id, personId);
-    return toConversationSummary(conversation, unreadCount);
+    return summaryFor(row, personId);
   }
 
   async getByStableKeyForParticipant(stableKey, personId) {
-    const conversation = await ChatConversation.findOne({
-      "scope.stable_key": String(stableKey),
-      participants: {
-        $elemMatch: {
-          person_id: Number(personId),
-          left_at: null
-        }
-      }
-    });
-
-    if (!conversation) {
-      return null;
-    }
-
-    const unreadCount = await this.resolveUnreadCount(conversation._id, personId);
-    return toConversationSummary(conversation, unreadCount);
+    const row = await store.findConversationByStableKey(String(stableKey), personId);
+    if (!row) return null;
+    return summaryFor(row, personId);
   }
 
   async getByStableKey(stableKey) {
-    const conversation = await ChatConversation.findOne({
-      "scope.stable_key": String(stableKey)
-    });
-    return conversation || null;
+    const row = await store.findConversationByStableKey(String(stableKey));
+    return row || null;
   }
 
   async createProcessThread({
@@ -217,61 +136,48 @@ export default class ChatConversationService {
     originDefinitionId = null,
     createdBy,
     processName = null,
-    scopeUnitLabel = null
+    scopeUnitLabel = null,
   }) {
-    const normalizedParticipantIds = Array.from(
-      new Set(
-        participantIds
-          .map((value) => Number(value))
-          .filter((value) => Number.isFinite(value) && value > 0)
-      )
-    );
-
+    const normalizedParticipantIds = normalizeIds(participantIds);
     if (!normalizedParticipantIds.length) {
       const error = new Error("No se pudieron resolver participantes para el thread del proceso.");
       error.status = 400;
       throw error;
     }
-
-    const adminIdSet = new Set(
-      adminIds
-        .map((value) => Number(value))
-        .filter((value) => Number.isFinite(value) && value > 0)
-    );
+    const adminIdSet = new Set(normalizeIds(adminIds));
     adminIdSet.add(Number(createdBy));
 
-    const conversation = await ChatConversation.create({
+    const now = new Date();
+    const id = await store.insertConversation({
       type: "process_thread",
       title: this.buildProcessThreadTitle({ processName, scopeUnitLabel }),
-      participants: normalizedParticipantIds.map((personId) => ({
+      process_id: Number(processId),
+      scope_process_id: Number(processId),
+      scope_unit_id: Number(scopeUnitId),
+      stable_key: String(stableKey),
+      scope_current_definition_id: currentDefinitionId ? Number(currentDefinitionId) : null,
+      scope_origin_definition_id: originDefinitionId ? Number(originDefinitionId) : null,
+      created_by: Number(createdBy),
+    });
+    await store.insertParticipants(
+      id,
+      normalizedParticipantIds.map((personId) => ({
         person_id: personId,
         role: adminIdSet.has(personId) ? "admin" : "member",
-        joined_at: new Date(),
-        left_at: null
-      })),
-      process_id: Number(processId),
-      scope: {
-        process_id: Number(processId),
-        scope_unit_id: Number(scopeUnitId),
-        stable_key: String(stableKey),
-        current_definition_id: currentDefinitionId ? Number(currentDefinitionId) : null,
-        origin_definition_id: originDefinitionId ? Number(originDefinitionId) : null
-      },
-      created_by: Number(createdBy),
-      last_message_id: null,
-      last_message_at: null,
-      archived_at: null,
-      mobile_summary: null
-    });
+        joined_at: now,
+        left_at: null,
+      }))
+    );
 
     logChatInfo("chat.process_thread.created", {
-      conversation_id: conversation._id.toString(),
+      conversation_id: String(id),
       process_id: Number(processId),
       scope_unit_id: Number(scopeUnitId),
-      person_id: Number(createdBy)
+      person_id: Number(createdBy),
     });
 
-    return toConversationSummary(conversation, 0);
+    const row = await store.findConversationById(id);
+    return summaryFor(row, Number(createdBy), 0);
   }
 
   buildUnitThreadTitle(unitLabel = null) {
@@ -279,113 +185,78 @@ export default class ChatConversationService {
     return normalizedUnitLabel ? `Unidad · ${normalizedUnitLabel}` : "Chat de unidad";
   }
 
-  async createUnitThread({
-    unitId,
-    stableKey,
-    participantIds = [],
-    adminIds = [],
-    createdBy,
-    unitLabel = null
-  }) {
-    const normalizedParticipantIds = Array.from(
-      new Set(
-        participantIds
-          .map((value) => Number(value))
-          .filter((value) => Number.isFinite(value) && value > 0)
-      )
-    );
-
+  async createUnitThread({ unitId, stableKey, participantIds = [], adminIds = [], createdBy, unitLabel = null }) {
+    const normalizedParticipantIds = normalizeIds(participantIds);
     if (!normalizedParticipantIds.length) {
       const error = new Error("No se pudieron resolver miembros para el chat de la unidad.");
       error.status = 400;
       throw error;
     }
+    const adminIdSet = new Set(normalizeIds(adminIds));
 
-    // El rol admin del chat de unidad sigue a la jefatura (is_unit_head), no a
-    // quién abre primero la conversación, por lo que no se promueve a createdBy.
-    const adminIdSet = new Set(
-      adminIds
-        .map((value) => Number(value))
-        .filter((value) => Number.isFinite(value) && value > 0)
-    );
-
-    const conversation = await ChatConversation.create({
+    const now = new Date();
+    const id = await store.insertConversation({
       type: "unit",
       title: this.buildUnitThreadTitle(unitLabel),
-      participants: normalizedParticipantIds.map((personId) => ({
+      scope_unit_id: Number(unitId),
+      stable_key: String(stableKey),
+      created_by: Number(createdBy),
+    });
+    await store.insertParticipants(
+      id,
+      normalizedParticipantIds.map((personId) => ({
         person_id: personId,
         role: adminIdSet.has(personId) ? "admin" : "member",
-        joined_at: new Date(),
-        left_at: null
-      })),
-      scope: {
-        scope_unit_id: Number(unitId),
-        stable_key: String(stableKey)
-      },
-      created_by: Number(createdBy),
-      last_message_id: null,
-      last_message_at: null,
-      archived_at: null,
-      mobile_summary: null
-    });
+        joined_at: now,
+        left_at: null,
+      }))
+    );
 
     logChatInfo("chat.unit_thread.created", {
-      conversation_id: conversation._id.toString(),
+      conversation_id: String(id),
       scope_unit_id: Number(unitId),
-      person_id: Number(createdBy)
+      person_id: Number(createdBy),
     });
 
-    return toConversationSummary(conversation, 0);
+    const row = await store.findConversationById(id);
+    return summaryFor(row, Number(createdBy), 0);
   }
 
-  async syncUnitThread(conversationId, {
-    participantIds = [],
-    adminIds = [],
-    unitLabel = null
-  } = {}) {
-    const conversation = await ChatConversation.findById(conversationId);
-    if (!conversation) {
+  async syncUnitThread(conversationId, { participantIds = [], adminIds = [], unitLabel = null } = {}) {
+    const row = await store.findConversationById(conversationId);
+    if (!row) {
       const error = new Error("Chat de la unidad no encontrado.");
       error.status = 404;
       throw error;
     }
+    const normalizedParticipantIds = normalizeIds(participantIds);
+    const adminIdSet = new Set(normalizeIds(adminIds));
 
-    const normalizedParticipantIds = Array.from(
-      new Set(
-        participantIds
-          .map((value) => Number(value))
-          .filter((value) => Number.isFinite(value) && value > 0)
-      )
-    );
-    const adminIdSet = new Set(
-      adminIds
-        .map((value) => Number(value))
-        .filter((value) => Number.isFinite(value) && value > 0)
-    );
-
+    const existingMap = await store.loadParticipants([row.id]);
     const existingByPersonId = new Map(
-      (conversation.participants || []).map((participant) => [Number(participant.person_id), participant])
+      (existingMap.get(String(row.id)) || []).map((p) => [Number(p.person_id), p])
     );
 
-    conversation.participants = normalizedParticipantIds.map((personId) => {
-      const existing = existingByPersonId.get(personId);
-      return {
+    const now = new Date();
+    await store.replaceParticipants(
+      row.id,
+      normalizedParticipantIds.map((personId) => ({
         person_id: personId,
         role: adminIdSet.has(personId) ? "admin" : "member",
-        joined_at: existing?.joined_at || new Date(),
-        left_at: null
-      };
-    });
-    conversation.title = this.buildUnitThreadTitle(unitLabel);
-    await conversation.save();
+        joined_at: existingByPersonId.get(personId)?.joined_at || now,
+        left_at: null,
+      }))
+    );
+    await store.updateConversation(row.id, { title: this.buildUnitThreadTitle(unitLabel) });
 
     logChatInfo("chat.unit_thread.synced", {
-      conversation_id: conversation._id.toString(),
-      scope_unit_id: Number(conversation.scope?.scope_unit_id || 0) || null,
-      participants_count: normalizedParticipantIds.length
+      conversation_id: String(row.id),
+      scope_unit_id: num(row.scope_unit_id),
+      participants_count: normalizedParticipantIds.length,
     });
 
-    return toConversationSummary(conversation, 0);
+    const updated = await store.findConversationById(row.id);
+    return summaryFor(updated, Number(existingByPersonId.keys().next().value || 0), 0);
   }
 
   async syncProcessThread(conversationId, {
@@ -393,57 +264,51 @@ export default class ChatConversationService {
     adminIds = [],
     currentDefinitionId = null,
     processName = null,
-    scopeUnitLabel = null
+    scopeUnitLabel = null,
   } = {}) {
-    const conversation = await ChatConversation.findById(conversationId);
-    if (!conversation) {
+    const row = await store.findConversationById(conversationId);
+    if (!row) {
       const error = new Error("Conversación de proceso no encontrada.");
       error.status = 404;
       throw error;
     }
+    const normalizedParticipantIds = normalizeIds(participantIds);
+    const adminIdSet = new Set(normalizeIds(adminIds));
 
-    const normalizedParticipantIds = Array.from(
-      new Set(
-        participantIds
-          .map((value) => Number(value))
-          .filter((value) => Number.isFinite(value) && value > 0)
-      )
-    );
-    const adminIdSet = new Set(
-      adminIds
-        .map((value) => Number(value))
-        .filter((value) => Number.isFinite(value) && value > 0)
-    );
-
+    const existingMap = await store.loadParticipants([row.id]);
     const existingByPersonId = new Map(
-      (conversation.participants || []).map((participant) => [Number(participant.person_id), participant])
+      (existingMap.get(String(row.id)) || []).map((p) => [Number(p.person_id), p])
     );
-    const nextParticipants = [];
 
-    normalizedParticipantIds.forEach((personId) => {
-      const existing = existingByPersonId.get(personId);
-      nextParticipants.push({
-        person_id: personId,
-        role: adminIdSet.has(personId) ? "admin" : (existing?.role || "member"),
-        joined_at: existing?.joined_at || new Date(),
-        left_at: null
-      });
+    const now = new Date();
+    await store.replaceParticipants(
+      row.id,
+      normalizedParticipantIds.map((personId) => {
+        const existing = existingByPersonId.get(personId);
+        return {
+          person_id: personId,
+          role: adminIdSet.has(personId) ? "admin" : existing?.role || "member",
+          joined_at: existing?.joined_at || now,
+          left_at: null,
+        };
+      })
+    );
+    await store.updateConversation(row.id, {
+      title: this.buildProcessThreadTitle({ processName, scopeUnitLabel }),
+      scope_current_definition_id: currentDefinitionId
+        ? Number(currentDefinitionId)
+        : row.scope_current_definition_id ?? null,
     });
-
-    conversation.participants = nextParticipants;
-    conversation.title = this.buildProcessThreadTitle({ processName, scopeUnitLabel });
-    conversation.scope = {
-      ...conversation.scope,
-      current_definition_id: currentDefinitionId ? Number(currentDefinitionId) : conversation.scope?.current_definition_id ?? null
-    };
-    await conversation.save();
 
     logChatInfo("chat.process_thread.synced", {
-      conversation_id: conversation._id.toString(),
-      process_id: Number(conversation.process_id || conversation.scope?.process_id || 0) || null,
-      current_definition_id: Number(currentDefinitionId || conversation.scope?.current_definition_id || 0) || null
+      conversation_id: String(row.id),
+      process_id: num(row.process_id) || num(row.scope_process_id),
+      current_definition_id: Number(currentDefinitionId || row.scope_current_definition_id || 0) || null,
     });
 
-    return toConversationSummary(conversation, 0);
+    const updated = await store.findConversationById(row.id);
+    return summaryFor(updated, 0, 0);
   }
 }
+
+const num = (v) => (v === null || v === undefined ? null : Number(v));

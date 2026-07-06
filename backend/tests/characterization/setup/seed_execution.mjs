@@ -133,6 +133,15 @@ async function main() {
   // 2.5) Datos de chat deterministas: admin crea una conversación de grupo con
   //      usuario y envía un mensaje (materializa conversación + mensaje +
   //      notificación para usuario). Base para el golden del chat.
+  //      El seed relacional no limpia las tablas de chat, así que se purgan aquí
+  //      (hijos primero) para que el golden sea determinista entre corridas.
+  const pool = getMariaDBPool();
+  for (const t of [
+    "chat_notifications", "chat_message_reads", "chat_message_attachments",
+    "chat_messages", "chat_conversation_participants", "chat_conversations",
+  ]) {
+    await pool.query(`DELETE FROM ${t}`);
+  }
   const conv = await post("/chat/conversations", {
     token: admin,
     body: {

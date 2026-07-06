@@ -67,15 +67,9 @@ flujo de entrega — MinIO —; quedan como ampliación futura.)
 > **Nota**: builds/tests corren DENTRO de los contenedores vía
 > `scripts/docker-env.sh` (nunca npm/npx en el host). Ver CLAUDE.md.
 
-> **Chat / determinismo (temporal)**: el chat vive hoy en MongoDB y el seed
-> relacional NO lo limpia, así que acumula entre corridas. Para un golden de
-> chat determinista, purga las colecciones antes del setup:
-> ```bash
-> docker exec deasy-dev-mongodb-1 mongosh deasy --quiet --eval \
->   'db.chatconversations.deleteMany({}); db.chatmessages.deleteMany({}); db.chatnotifications.deleteMany({})'
-> ```
-> Cuando el chat migre a PostgreSQL relacional (Fase 5), sus tablas se limpiarán
-> con el seed y este paso desaparece.
+> **Chat / determinismo**: el chat ya es relacional (Fase 5). El seed baseline no
+> limpia sus tablas, así que `setup/seed_execution.mjs` las purga por el pool
+> antes de crear los datos de chat — determinista entre corridas sin pasos extra.
 
 Este harness vive en el worktree `deasy-tests`. Antes de ejecutar, hay que
 **apuntar los dockers a este worktree** (el `docker-env.sh` que invocas es la

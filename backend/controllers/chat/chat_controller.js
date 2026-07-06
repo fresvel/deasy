@@ -222,7 +222,7 @@ export const createOrGetProcessThread = async (req, res) => {
 
     const existingConversationRecord = await conversationService.getByStableKey(context.stableKey);
     if (existingConversationRecord) {
-      const syncedConversation = await conversationService.syncProcessThread(existingConversationRecord._id, {
+      const syncedConversation = await conversationService.syncProcessThread(existingConversationRecord.id, {
         participantIds: context.participantIds,
         adminIds: context.adminIds,
         currentDefinitionId: context.currentDefinitionId,
@@ -324,7 +324,7 @@ export const createOrGetUnitThread = async (req, res) => {
 
     const existingConversationRecord = await conversationService.getByStableKey(context.stableKey);
     if (existingConversationRecord) {
-      const syncedConversation = await conversationService.syncUnitThread(existingConversationRecord._id, {
+      const syncedConversation = await conversationService.syncUnitThread(existingConversationRecord.id, {
         participantIds: context.participantIds,
         adminIds: context.adminIds,
         unitLabel: context.unitLabel
