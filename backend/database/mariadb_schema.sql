@@ -1348,3 +1348,28 @@ CREATE TABLE IF NOT EXISTS chat_notifications (
   INDEX idx_chat_notif_recipient_created (recipient_person_id, created_at),
   INDEX idx_chat_notif_recipient_read (recipient_person_id, read_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- Dossier / expediente personal (migrado desde MongoDB — Fase 6). Documento
+-- heterogéneo accedido como árbol completo por cédula → 2 tablas con `data` JSON.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS dossiers (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  person_id INT NOT NULL,
+  cedula VARCHAR(20) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_dossiers_person (person_id),
+  INDEX idx_dossiers_cedula (cedula)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS dossier_items (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  dossier_id BIGINT NOT NULL,
+  section VARCHAR(20) NOT NULL,
+  data JSON NOT NULL,
+  url_documento TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_dossier_items (dossier_id, section, id),
+  CONSTRAINT fk_dossier_items_dossier FOREIGN KEY (dossier_id) REFERENCES dossiers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
