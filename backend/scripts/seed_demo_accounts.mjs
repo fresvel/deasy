@@ -7,6 +7,9 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 import mysql from "mysql2/promise";
+import { getPostgresPool } from "../config/postgres.js";
+
+const USE_PG = process.env.DB_ENGINE === "postgres";
 
 import { Dossier } from "../models/users/dossiers.js";
 import { Usuario } from "../models/users/usuario_model.js";
@@ -93,6 +96,8 @@ const requireEnv = (keys) => {
 };
 
 const createMariaDbConnection = async () => {
+  // Con DB_ENGINE=postgres se usa una conexión del adaptador pg (espeja mysql2).
+  if (USE_PG) return getPostgresPool().getConnection();
   requireEnv(["MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD", "MARIADB_DATABASE"]);
   return mysql.createConnection({
     host: process.env.MARIADB_HOST,
@@ -948,7 +953,8 @@ const run = async () => {
     await connection.rollback();
     throw error;
   } finally {
-    await connection.end();
+    if (USE_PG) connection.release();
+    else await connection.end();
     await mongoose.disconnect();
   }
 };

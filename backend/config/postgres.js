@@ -324,7 +324,14 @@ async function rewriteOnDuplicate(sql, executor) {
   const target = covered.find((cols) => !(cols.length === 1 && cols[0] === "id")) || covered[0];
   if (!target) return sql;
   return sql.replace(/ON\s+DUPLICATE\s+KEY\s+UPDATE\s+([\s\S]*?)$/i, (_full, sets) => {
-    const conv = sets.replace(/=\s*VALUES\(\s*(\w+)\s*\)/gi, "= EXCLUDED.$1");
+    const conv = sets
+      // VALUES(col) o VALUES(`col`) -> EXCLUDED.col
+      .replace(/=\s*VALUES\(\s*[`"]?(\w+)[`"]?\s*\)/gi, "= EXCLUDED.$1")
+      // idiom MySQL `id = LAST_INSERT_ID(id)` -> se elimina (en PG el id se
+      // obtiene con RETURNING id, que el adaptador añade a los INSERT).
+      .replace(/\bid\s*=\s*LAST_INSERT_ID\s*\([^)]*\)\s*,?\s*/gi, "")
+      .replace(/^\s*,\s*/, "")
+      .trim();
     return `ON CONFLICT (${target.join(", ")}) DO UPDATE SET ${conv}`;
   });
 }
