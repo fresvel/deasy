@@ -160,6 +160,29 @@ async function main() {
     console.log("[setup] chat message:", msg.status);
   }
 
+  // 2.6) Datos de dossier deterministas: usuario abre su dossier (getOrCreate) y
+  //      añade un título, una experiencia (con funcion_catedra array) y un
+  //      artículo de investigación. Cubre arrays raíz + anidamiento de
+  //      investigación + array-de-strings. Base para el golden del dossier.
+  //      Determinismo: hoy el dossier vive en Mongo (limpiar colección antes,
+  //      ver README); tras migrar a relacional se purgan las tablas aquí.
+  const CEDULA = process.env.SEED_USUARIO_CEDULA ?? "1122334455";
+  const dossier = await get(`/dossier/${CEDULA}`, { token: usuario });
+  console.log("[setup] dossier getOrCreate:", dossier.status);
+  const dTitulo = await post(`/dossier/${CEDULA}/titulos`, {
+    token: usuario,
+    body: { titulo: "Ing. en Tecnologías de la Información", ies: "PUCESE", nivel: "Grado", tipo: "Presencial", campo_amplio: "TIC", sreg: "REG-0001" },
+  });
+  const dExp = await post(`/dossier/${CEDULA}/experiencia`, {
+    token: usuario,
+    body: { institucion: "PUCESE", tipo: "Docencia", modalidad: "Presencial", funcion_catedra: ["Programación", "Bases de datos"] },
+  });
+  const dArt = await post(`/dossier/${CEDULA}/investigacion/articulos`, {
+    token: usuario,
+    body: { titulo: "Migración de datos", revista: "Rev. TIC", estado: "Publicado", rol: "Autor", issn: "1234-5678" },
+  });
+  console.log("[setup] dossier titulo/exp/articulo:", dTitulo.status, dExp.status, dArt.status);
+
   // 3) Comprobación de poblado.
   for (const t of [
     "tasks", "task_items", "task_assignments", "documents", "document_versions",

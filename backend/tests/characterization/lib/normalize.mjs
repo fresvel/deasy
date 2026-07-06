@@ -34,9 +34,13 @@ const ID_KEY_RE = /(^id$|_id$|Id$)/;
 
 // Ordena claves de objetos para que las diferencias de orden de serialización
 // (frecuentes al cambiar de driver/motor) no generen falsos positivos.
-export function normalize(value, { extraMask = [], keep = [], maskIdKeys = false } = {}) {
+// `drop`: claves a ELIMINAR por completo (no enmascarar) — para campos que
+// existen en un motor/store y no en otro (p.ej. `usuario`/`__v` de Mongo que la
+// versión SQL no emite), de modo que el golden pase idéntico en ambos.
+export function normalize(value, { extraMask = [], keep = [], maskIdKeys = false, drop = [] } = {}) {
   const maskSet = new Set([...VOLATILE_KEYS, ...extraMask]);
   keep.forEach((k) => maskSet.delete(k));
+  const dropSet = new Set(drop);
 
   const shouldMask = (key) =>
     maskSet.has(key) || (maskIdKeys && ID_KEY_RE.test(key) && !keep.includes(key));
@@ -46,6 +50,7 @@ export function normalize(value, { extraMask = [], keep = [], maskIdKeys = false
     if (node && typeof node === "object") {
       const out = {};
       for (const key of Object.keys(node).sort()) {
+        if (dropSet.has(key)) continue;
         out[key] = shouldMask(key) ? MASK : walk(node[key]);
       }
       return out;

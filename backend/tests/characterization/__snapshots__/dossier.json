@@ -1,0 +1,66 @@
+{
+  "dossier_no_token": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "dossier_usuario": {
+    "status": 200,
+    "body": {
+      "data": {
+        "_id": "<normalized>",
+        "cedula": "1122334455",
+        "certificaciones": [],
+        "experiencia": [
+          {
+            "_id": "<normalized>",
+            "funcion_catedra": [
+              "Programación",
+              "Bases de datos"
+            ],
+            "institucion": "PUCESE",
+            "modalidad": "Presencial",
+            "tipo": "Docencia",
+            "url_documento": ""
+          }
+        ],
+        "formacion": [],
+        "investigacion": {
+          "articulos": [
+            {
+              "_id": "<normalized>",
+              "estado": "Publicado",
+              "issn": "1234-5678",
+              "pais": "Ecuador",
+              "revista": "Rev. TIC",
+              "rol": "Autor",
+              "titulo": "Migración de datos",
+              "url_documento": ""
+            }
+          ],
+          "libros": [],
+          "ponencias": [],
+          "proyectos": [],
+          "tesis": []
+        },
+        "referencias": [],
+        "titulos": [
+          {
+            "_id": "<normalized>",
+            "campo_amplio": "TIC",
+            "ies": "PUCESE",
+            "nivel": "Grado",
+            "pais": "Ecuador",
+            "sera": "Enviado",
+            "sreg": "REG-0001",
+            "tipo": "Presencial",
+            "titulo": "Ing. en Tecnologías de la Información",
+            "url_documento": ""
+          }
+        ]
+      },
+      "success": true
+    }
+  }
+}
