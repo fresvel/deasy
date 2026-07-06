@@ -5,9 +5,8 @@ import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import user_router from "./routes/user_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
-import "./database/mongoose.js"
 import { assertMariaDBConnection } from "./config/mariadb.js";
-import { ensureMariaDBDatabase, ensureMariaDBSchema } from "./database/mariadb_initializer.js";
+import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -16,7 +15,6 @@ import sign_router from "./routes/sign_router.js";
 
 import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
-import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
@@ -1252,7 +1250,6 @@ app.use(ROUTES.admin, admin_router)
 app.use(ROUTES.program, program_router)
 app.use(ROUTES.units, unit_router)
 
-app.use(ROUTES.area, area_router)
 
 app.use(ROUTES.tarea, tarea_router)
 
@@ -1272,25 +1269,24 @@ app.use(express.static("public"));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const initializeMariaDBWithRetry = async () => {
-  const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
-  const maxAttempts = Number(process.env.MARIADB_INIT_MAX_ATTEMPTS || 20);
-  const retryDelayMs = Number(process.env.MARIADB_INIT_RETRY_DELAY_MS || 3000);
+const initializeDatabaseWithRetry = async () => {
+  const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
+  const maxAttempts = Number(process.env.DB_INIT_MAX_ATTEMPTS || 20);
+  const retryDelayMs = Number(process.env.DB_INIT_RETRY_DELAY_MS || 3000);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      await ensureMariaDBDatabase();
-      await assertMariaDBConnection();
-      await ensureMariaDBSchema({ reset: shouldResetSchema });
-      console.log("✅ MariaDB inicializada correctamente");
+      await assertMariaDBConnection(); // PostgreSQL vía el adaptador
+      await ensurePostgresSchema({ reset: shouldResetSchema });
+      console.log("✅ PostgreSQL inicializada correctamente");
       return;
     } catch (error) {
       const isLastAttempt = attempt === maxAttempts;
       console.error(
-        `⚠️  Falló la inicialización de MariaDB (intento ${attempt}/${maxAttempts}): ${error.message}`
+        `⚠️  Falló la inicialización de PostgreSQL (intento ${attempt}/${maxAttempts}): ${error.message}`
       );
       if (isLastAttempt) {
-        console.error("⚠️  Se agotaron los reintentos de MariaDB. El backend seguirá en ejecución.");
+        console.error("⚠️  Se agotaron los reintentos de PostgreSQL. El backend seguirá en ejecución.");
         return;
       }
       await sleep(retryDelayMs);
@@ -1299,7 +1295,7 @@ const initializeMariaDBWithRetry = async () => {
 };
 
 const startServer = async () => {
-  await initializeMariaDBWithRetry();
+  await initializeDatabaseWithRetry();
 
   const httpServer = http.createServer(app);
   realtimeGateway.init(httpServer, { corsOrigin: resolveCorsOrigin, credentials: true });

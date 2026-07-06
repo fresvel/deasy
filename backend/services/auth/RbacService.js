@@ -28,14 +28,7 @@ export default class RbacService {
          r.name,
          r.description,
          ra.unit_id,
-         ra.source
-       FROM role_assignments ra
-       INNER JOIN roles r ON r.id = ra.role_id
-       WHERE ra.person_id = ?
-         AND ra.is_current = 1
-         AND r.is_active = 1
-         AND (ra.end_date IS NULL OR ra.end_date >= CURDATE())
-       ORDER BY
+         ra.source,
          CASE r.name
            WHEN 'AdminSistema' THEN 1
            WHEN 'GestorSeguridad' THEN 2
@@ -51,8 +44,14 @@ export default class RbacService {
            WHEN 'Auditor' THEN 12
            WHEN 'Usuario' THEN 13
            ELSE 14
-         END,
-         r.name ASC`,
+         END AS role_sort_order
+       FROM role_assignments ra
+       INNER JOIN roles r ON r.id = ra.role_id
+       WHERE ra.person_id = ?
+         AND ra.is_current = 1
+         AND r.is_active = 1
+         AND (ra.end_date IS NULL OR ra.end_date >= CURDATE())
+       ORDER BY role_sort_order, r.name ASC`,
       [numericUserId]
     );
 

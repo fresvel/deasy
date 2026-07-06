@@ -1,4 +1,46 @@
 {
+  "conversations_admin": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "archived_at": "<normalized>",
+          "created_at": "<normalized>",
+          "created_by": 1,
+          "id": "<normalized>",
+          "last_message_at": "<normalized>",
+          "last_message_id": "<normalized>",
+          "mobile_summary": "Mensaje determinista de prueba.",
+          "participants": [
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 1,
+              "role": "owner"
+            },
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 3,
+              "role": "member"
+            }
+          ],
+          "process_id": "<normalized>",
+          "scope": {
+            "current_definition_id": "<normalized>",
+            "origin_definition_id": "<normalized>",
+            "process_id": "<normalized>",
+            "scope_unit_id": "<normalized>",
+            "stable_key": null
+          },
+          "title": "Chat characterization (seed)",
+          "type": "group",
+          "unread_count": 0,
+          "updated_at": "<normalized>"
+        }
+      ]
+    }
+  },
   "conversations_no_token": {
     "status": 401,
     "body": {
@@ -7,14 +49,272 @@
   },
   "conversations_usuario": {
     "status": 200,
-    "isArray": true,
-    "count": 0,
-    "itemKeys": []
+    "body": {
+      "data": [
+        {
+          "archived_at": "<normalized>",
+          "created_at": "<normalized>",
+          "created_by": 1,
+          "id": "<normalized>",
+          "last_message_at": "<normalized>",
+          "last_message_id": "<normalized>",
+          "mobile_summary": "Mensaje determinista de prueba.",
+          "participants": [
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 1,
+              "role": "owner"
+            },
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 3,
+              "role": "member"
+            }
+          ],
+          "process_id": "<normalized>",
+          "scope": {
+            "current_definition_id": "<normalized>",
+            "origin_definition_id": "<normalized>",
+            "process_id": "<normalized>",
+            "scope_unit_id": "<normalized>",
+            "stable_key": null
+          },
+          "title": "Chat characterization (seed)",
+          "type": "group",
+          "unread_count": 1,
+          "updated_at": "<normalized>"
+        }
+      ]
+    }
+  },
+  "conversations_usuario_after_read": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "archived_at": "<normalized>",
+          "created_at": "<normalized>",
+          "created_by": 1,
+          "id": "<normalized>",
+          "last_message_at": "<normalized>",
+          "last_message_id": "<normalized>",
+          "mobile_summary": "Mensaje determinista de prueba.",
+          "participants": [
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 1,
+              "role": "owner"
+            },
+            {
+              "joined_at": "<normalized>",
+              "left_at": "<normalized>",
+              "person_id": 3,
+              "role": "member"
+            }
+          ],
+          "process_id": "<normalized>",
+          "scope": {
+            "current_definition_id": "<normalized>",
+            "origin_definition_id": "<normalized>",
+            "process_id": "<normalized>",
+            "scope_unit_id": "<normalized>",
+            "stable_key": null
+          },
+          "title": "Chat characterization (seed)",
+          "type": "group",
+          "unread_count": 0,
+          "updated_at": "<normalized>"
+        }
+      ]
+    }
+  },
+  "mark_conversation_read": {
+    "status": 200,
+    "body": {
+      "data": {
+        "conversation_id": "<normalized>",
+        "read_at": "<normalized>",
+        "unread_count": 0
+      },
+      "notifications": [
+        {
+          "body": "Mensaje determinista de prueba.",
+          "channel": "in_app",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "entity_id": "<normalized>",
+          "entity_type": "conversation",
+          "id": "<normalized>",
+          "message_id": "<normalized>",
+          "read_at": "<normalized>",
+          "recipient_person_id": 3,
+          "title": "Nuevo mensaje en Chat characterization (seed)",
+          "type": "chat.message.created"
+        }
+      ]
+    }
+  },
+  "mark_notifications_read": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "body": "Mensaje determinista de prueba.",
+          "channel": "in_app",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "entity_id": "<normalized>",
+          "entity_type": "conversation",
+          "id": "<normalized>",
+          "message_id": "<normalized>",
+          "read_at": "<normalized>",
+          "recipient_person_id": 3,
+          "title": "Nuevo mensaje en Chat characterization (seed)",
+          "type": "chat.message.created"
+        }
+      ]
+    }
+  },
+  "messages_admin": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "attachments": [],
+          "content": "Mensaje determinista de prueba.",
+          "content_type": "text",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "deleted_at": "<normalized>",
+          "delivery_state": "stored",
+          "edited_at": "<normalized>",
+          "id": "<normalized>",
+          "read_by": [
+            1
+          ],
+          "reply_to_message_id": "<normalized>",
+          "sender_person_id": 1
+        }
+      ]
+    }
   },
   "notifications_usuario": {
     "status": 200,
-    "isArray": true,
-    "count": 0,
-    "itemKeys": []
+    "body": {
+      "data": [
+        {
+          "body": "Mensaje determinista de prueba.",
+          "channel": "in_app",
+          "conversation_id": "<normalized>",
+          "created_at": "<normalized>",
+          "entity_id": "<normalized>",
+          "entity_type": "conversation",
+          "id": "<normalized>",
+          "message_id": "<normalized>",
+          "read_at": "<normalized>",
+          "recipient_person_id": 3,
+          "title": "Nuevo mensaje en Chat characterization (seed)",
+          "type": "chat.message.created"
+        }
+      ]
+    }
+  },
+  "process_thread_created": {
+    "status": 201,
+    "body": {
+      "data": {
+        "archived_at": "<normalized>",
+        "created_at": "<normalized>",
+        "created_by": 3,
+        "id": "<normalized>",
+        "last_message_at": "<normalized>",
+        "last_message_id": "<normalized>",
+        "mobile_summary": null,
+        "participants": [
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 3,
+            "role": "admin"
+          }
+        ],
+        "process_id": "<normalized>",
+        "scope": {
+          "current_definition_id": "<normalized>",
+          "origin_definition_id": "<normalized>",
+          "process_id": "<normalized>",
+          "scope_unit_id": "<normalized>",
+          "stable_key": "process:1:unit:16"
+        },
+        "title": "Proceso por defecto · Carrera de Tecnologías de la Información",
+        "type": "process_thread",
+        "unread_count": 0,
+        "updated_at": "<normalized>"
+      },
+      "meta": {
+        "accessible_scope_unit_ids": [
+          16
+        ],
+        "created": true,
+        "process_id": "<normalized>",
+        "scope_unit_id": "<normalized>",
+        "synchronized": false
+      }
+    }
+  },
+  "process_thread_missing": {
+    "status": 404,
+    "body": {
+      "context": {
+        "accessible_scope_unit_ids": [
+          16
+        ],
+        "process_id": "<normalized>",
+        "scope_unit_id": "<normalized>"
+      },
+      "message": "Thread del proceso no encontrado para el ámbito solicitado."
+    }
+  },
+  "unit_thread_created": {
+    "status": 201,
+    "body": {
+      "data": {
+        "archived_at": "<normalized>",
+        "created_at": "<normalized>",
+        "created_by": 3,
+        "id": "<normalized>",
+        "last_message_at": "<normalized>",
+        "last_message_id": "<normalized>",
+        "mobile_summary": null,
+        "participants": [
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 3,
+            "role": "member"
+          }
+        ],
+        "process_id": "<normalized>",
+        "scope": {
+          "current_definition_id": "<normalized>",
+          "origin_definition_id": "<normalized>",
+          "process_id": "<normalized>",
+          "scope_unit_id": "<normalized>",
+          "stable_key": "unit:16"
+        },
+        "title": "Unidad · Carrera de Tecnologías de la Información",
+        "type": "unit",
+        "unread_count": 0,
+        "updated_at": "<normalized>"
+      },
+      "meta": {
+        "created": true,
+        "synchronized": false,
+        "unit_id": "<normalized>"
+      }
+    }
   }
 }

@@ -24,9 +24,9 @@ before(async () => {
   await waitForReady();
 });
 
-test("usuario sin people.create -> POST /admin/perfil -> 403", async () => {
+test("usuario sin people.create -> POST /admin/sql/units/:id/positions -> 403", async () => {
   const token = await tokenFor("usuario");
-  const res = await post("/admin/perfil", { token, body: {} });
+  const res = await post("/admin/sql/units/1/positions", { token, body: {} });
   matchSnapshot(SUITE, "usuario_people_create_denied", snapshotShape(res));
 });
 

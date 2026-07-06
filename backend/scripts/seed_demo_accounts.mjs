@@ -5,11 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import bcrypt from "bcrypt";
-import mongoose from "mongoose";
-import mysql from "mysql2/promise";
+import { getPostgresPool } from "../config/postgres.js";
 
-import { Dossier } from "../models/users/dossiers.js";
-import { Usuario } from "../models/users/usuario_model.js";
+const USE_PG = true; // PG-only (MariaDB retirado)
+
 import {
   ACTION_CATALOG,
   RESOURCE_CATALOG,
@@ -93,6 +92,8 @@ const requireEnv = (keys) => {
 };
 
 const createMariaDbConnection = async () => {
+  // Con DB_ENGINE=postgres se usa una conexión del adaptador pg (espeja mysql2).
+  if (USE_PG) return getPostgresPool().getConnection();
   requireEnv(["MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD", "MARIADB_DATABASE"]);
   return mysql.createConnection({
     host: process.env.MARIADB_HOST,
@@ -184,12 +185,11 @@ const getOrCreatePosition = async (connection, { unitId, cargoId, title }) => up
     unit_id: unitId,
     slot_no: 1,
     title,
-    profile_ref: "demo",
     position_type: "real",
     is_active: 1,
     cargo_id: cargoId
   },
-  ["title", "profile_ref", "position_type", "is_active"]
+  ["title", "position_type", "is_active"]
 );
 
 const upsertPositionAssignment = async (connection, { positionId, personId }) => upsertByUnique(
@@ -332,7 +332,7 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     connection,
     "process_definition_series",
     {
-      source_type: "legacy",
+      source_type: "default",
       unit_type_id: null,
       cargo_id: null,
       code: "demo-account-flow",
@@ -398,41 +398,36 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     );
   }
 
+  // Entregable (identidad) del demo. El refactor de "deliverables" movió aquí la
+  // identidad que antes vivía en template_artifacts (code/nombre/owner).
+  const deliverableId = await upsertByUnique(
+    connection,
+    "deliverables",
+    {
+      code: "tpl-demo-workflow-report",
+      display_name: "Documento demo de flujo",
+      description: "Entregable demo para probar documentos y firmas.",
+      owner_process_id: processId,
+      owner_variation_key: "general",
+      template_scope: "official"
+    },
+    ["display_name", "description", "owner_process_id", "owner_variation_key", "template_scope"]
+  );
+
   const artifactId = await upsertByUnique(
     connection,
     "template_artifacts",
     {
-      template_seed_id: null,
-      owner_person_id: null,
-      template_code: "tpl-demo-workflow-report",
-      display_name: "Documento demo de flujo",
-      description: "Plantilla demo para probar documentos y firmas.",
-      owner_ref: "demo",
-      source_version: "1.0.0",
-      storage_version: "1.0.0",
-      artifact_stage: "published",
-      bucket: process.env.MINIO_TEMPLATES_BUCKET || "templates",
+      deliverable_id: deliverableId,
+      storage_version: "v1",
+      lifecycle_state: "published",
       base_object_prefix: "Seeds/demo-workflow",
-      available_formats: JSON.stringify(["pdf", "docx"]),
+      available_formats: JSON.stringify(["pdf"]),
       schema_object_key: "Seeds/demo-workflow/schema.json",
-      meta_object_key: "Seeds/demo-workflow/meta.yaml",
-      content_hash: "demo-workflow",
+      meta_object_key: "Seeds/demo-workflow/meta.json",
       is_active: 1
     },
-    [
-      "display_name",
-      "description",
-      "owner_ref",
-      "source_version",
-      "artifact_stage",
-      "bucket",
-      "base_object_prefix",
-      "available_formats",
-      "schema_object_key",
-      "meta_object_key",
-      "content_hash",
-      "is_active"
-    ]
+    ["lifecycle_state", "base_object_prefix", "available_formats", "schema_object_key", "meta_object_key", "is_active"]
   );
 
   const definitionTemplateId = await upsertByUnique(
@@ -441,10 +436,10 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     {
       process_definition_id: definitionId,
       template_artifact_id: artifactId,
-      creates_task: 1,
-      sort_order: 1
+      sort_order: 1,
+      item_mode: "single"
     },
-    ["creates_task", "sort_order"]
+    ["sort_order", "item_mode"]
   );
 
   for (const cargoId of cargoIds) {
@@ -526,17 +521,6 @@ const getOrCreateFillFlowTemplate = async (connection, definitionTemplateId) => 
 };
 
 const getOrCreateSignatureFlowTemplate = async (connection, definitionTemplateId) => {
-  const signatureTypeId = await upsertByUnique(
-    connection,
-    "signature_types",
-    {
-      code: "electronica",
-      name: "Electronica",
-      description: "Firma electronica demo.",
-      is_active: 1
-    },
-    ["name", "description", "is_active"]
-  );
   const pendingStatusId = await upsertByUnique(
     connection,
     "signature_request_statuses",
@@ -573,7 +557,6 @@ const getOrCreateSignatureFlowTemplate = async (connection, definitionTemplateId
       code: "firma-demo",
       name: "Firma demo",
       slot: "principal",
-      step_type_id: signatureTypeId,
       resolver_type: "document_owner",
       assigned_person_id: null,
       unit_scope_type: "all_units",
@@ -592,7 +575,6 @@ const getOrCreateSignatureFlowTemplate = async (connection, definitionTemplateId
       "code",
       "name",
       "slot",
-      "step_type_id",
       "resolver_type",
       "assigned_person_id",
       "unit_scope_type",
@@ -791,85 +773,12 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
   }
 };
 
-const buildDossierPayload = (user, mongoUserId = null) => {
-  const label = `${user.first_name} ${user.last_name}`;
-  return {
-    usuario: mongoUserId,
-    cedula: user.cedula,
-    titulos: [
-      { titulo: `Ingenieria de Software - ${label}`, ies: "PUCESE", nivel: "Grado", sreg: `${user.cedula}-T1`, campo_amplio: "Tecnologias de la informacion", tipo: "Presencial", pais: "Ecuador", sera: "Aprobado" },
-      { titulo: `Diplomado en Gestion Academica - ${label}`, ies: "PUCESE", nivel: "Diplomado", sreg: `${user.cedula}-T2`, campo_amplio: "Administracion", tipo: "Virtual", pais: "Ecuador", sera: "Revisado" },
-      { titulo: `Doctorado en Educacion Superior - ${label}`, ies: "Universidad Demo", nivel: "Doctorado", sreg: `${user.cedula}-T3`, campo_amplio: "Educacion", tipo: "Semipresencial", pais: "Ecuador", sera: "Enviado" }
-    ],
-    experiencia: [
-      { institucion: "PUCESE", fecha_inicio: new Date("2021-01-01"), fecha_fin: new Date("2022-12-31"), funcion_catedra: ["Docencia", "Tutoria"], modalidad: "Presencial", tipo: "Docencia", sera: "Aprobado" },
-      { institucion: "Instituto Tecnologico Demo", fecha_inicio: new Date("2023-01-01"), fecha_fin: new Date("2024-06-30"), funcion_catedra: ["Gestion", "Coordinacion"], modalidad: "Hibrida", tipo: "Profesional", sera: "Revisado" },
-      { institucion: "Centro de Investigacion QA", fecha_inicio: new Date("2024-07-01"), fecha_fin: new Date("2025-12-31"), funcion_catedra: ["Investigacion"], modalidad: "Virtual", tipo: "Profesional", sera: "Enviado" }
-    ],
-    referencias: [
-      { nombre: "Maria Referencia", cargo_parentesco: "Directora Academica", email: `referencia1.${user.cedula}@deasy.local`, telefono: "0999911111", institution: "PUCESE", tipo: "laboral" },
-      { nombre: "Carlos Referencia", cargo_parentesco: "Colega", email: `referencia2.${user.cedula}@deasy.local`, telefono: "0999922222", institution: "Instituto Demo", tipo: "personal" },
-      { nombre: "Ana Referencia", cargo_parentesco: "Coordinadora", email: `referencia3.${user.cedula}@deasy.local`, telefono: "0999933333", institution: "Centro QA", tipo: "laboral" }
-    ],
-    formacion: [
-      { tema: "Diseno de procesos academicos", institution: "PUCESE", horas: 40, fecha_inicio: new Date("2024-01-10"), fecha_fin: new Date("2024-01-20"), tipo: "Docente", rol: "Asistencia", pais: "Ecuador", sera: "Aprobado" },
-      { tema: "Gestion documental institucional", institution: "DEASY", horas: 24, fecha_inicio: new Date("2024-03-05"), fecha_fin: new Date("2024-03-12"), tipo: "Profesional", rol: "Instructor", pais: "Ecuador", sera: "Revisado" },
-      { tema: "Indicadores de calidad", institution: "Unidad QA", horas: 32, fecha_inicio: new Date("2024-05-01"), fecha_fin: new Date("2024-05-15"), tipo: "Docente", rol: "Asistencia", pais: "Ecuador", sera: "Enviado" }
-    ],
-    certificaciones: [
-      { titulo: "Certificacion en gestion de calidad", institution: "PUCESE", horas: 40, fecha: new Date("2024-02-01"), tipo: "Nacional", descripcion: "Certificacion nacional demo.", sera: "Aprobado" },
-      { titulo: "Certificacion en analitica academica", institution: "DEASY", horas: 30, fecha: new Date("2024-04-01"), tipo: "Internacional", descripcion: "Certificacion internacional demo.", sera: "Revisado" },
-      { titulo: "Certificacion en firma electronica", institution: "Unidad QA", horas: 16, fecha: new Date("2024-06-01"), tipo: "Nacional", descripcion: "Certificacion para flujo de firmas.", sera: "Enviado" }
-    ],
-    investigacion: {
-      articulos: [
-        { titulo: `Articulo demo de ${user.role}`, base_indexada: "Latindex", revista: "Revista QA", doi: `10.0000/${user.cedula}.1`, issn: "0000-0001", sjr: 0.21, fecha: new Date("2024-07-01"), pais: "Ecuador", estado: "Publicado", rol: "Autor", sera: "Aprobado" }
-      ],
-      libros: [
-        { titulo: `Libro demo de ${user.role}`, editorial: "Editorial QA", isbn: `978-${user.cedula.slice(-4)}-000`, isnn: "0000-0002", pais: "Ecuador", tipo: "Libro", sera: "Revisado" }
-      ],
-      ponencias: [
-        { titulo: `Ponencia demo de ${user.role}`, evento: "Congreso QA DEASY", pais: "Ecuador", sera: "Enviado" }
-      ],
-      tesis: [],
-      proyectos: []
-    }
-  };
-};
-
-const seedMongoAccount = async (user, passwordHash) => {
-  const mongoUser = await Usuario.findOneAndUpdate(
-    { cedula: user.cedula },
-    {
-      cedula: user.cedula,
-      password: passwordHash,
-      nombre: user.first_name,
-      apellido: user.last_name,
-      email: user.email,
-      correo: user.email,
-      direccion: "Av. Demo y Calle QA",
-      whatsapp: user.whatsapp,
-      verify: { whatsapp: true, email: true },
-      status: "Activo"
-    },
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
-  );
-
-  const payload = buildDossierPayload(user, mongoUser?._id || null);
-  await Dossier.findOneAndUpdate(
-    { cedula: user.cedula },
-    payload,
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
-  );
-};
 
 const run = async () => {
   await loadEnvFile();
-  requireEnv(["URI_MONGO"]);
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const connection = await createMariaDbConnection();
-  await mongoose.connect(process.env.URI_MONGO);
 
   const roleIds = new Map();
   const cargoIds = new Map();
@@ -934,7 +843,6 @@ const run = async () => {
     await connection.commit();
 
     for (const user of demoUsers) {
-      await seedMongoAccount(user, passwordHash);
     }
 
     console.log("Semilla demo aplicada correctamente.");
@@ -948,8 +856,8 @@ const run = async () => {
     await connection.rollback();
     throw error;
   } finally {
-    await connection.end();
-    await mongoose.disconnect();
+    if (USE_PG) connection.release();
+    else await connection.end();
   }
 };
 

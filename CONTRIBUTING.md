@@ -23,13 +23,13 @@ Este proyecto incluye backend, frontend, documentacion y componentes de desplieg
 Desde la raiz del repositorio:
 
 ```bash
-./scripts/start-services.sh
+bash scripts/docker-env.sh dev up -d --build
 ```
 
-Si necesitas recargar servicios especificos:
+Si necesitas recargar servicios tras cambios, vuelve a ejecutar el mismo comando:
 
 ```bash
-./scripts/reload-services.sh
+bash scripts/docker-env.sh dev up -d --build
 ```
 
 ### Opcion B: desarrollo por modulo

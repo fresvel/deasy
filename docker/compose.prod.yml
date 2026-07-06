@@ -4,17 +4,11 @@ x-runtime-env-file: &prod_runtime_env_file
   - ${DEASY_CONTAINER_ENV_FILE:-.env.prod}
 
 services:
-  mariadb:
+  postgres:
     env_file: *prod_runtime_env_file
     restart: always
     ports:
-      - "23306:3306"
-
-  mongodb:
-    env_file: *prod_runtime_env_file
-    restart: always
-    ports:
-      - "22717:27017"
+      - "25432:5432"
 
   rabbitmq:
     env_file: *prod_runtime_env_file
@@ -117,10 +111,8 @@ services:
       - no-new-privileges:true
 
 volumes:
-  mariadb_data:
-    name: deasy_prod_mariadb_data
-  mongodb_data:
-    name: deasy_prod_mongodb_data
+  postgres_data:
+    name: deasy_prod_postgres_data
   rabbitmq_data:
     name: deasy_prod_rabbitmq_data
   minio_data:

@@ -35,7 +35,7 @@ const ADMIN_PERSON_ID = Number(process.env.SEED_ADMIN_PERSON_ID ?? 1);
 // al deliverable del proceso por defecto (id 5, tpl_informe_general, process 1).
 // Asume baseline fresco (protocolo: seed apply -> este setup), así que no hay
 // que deduplicar.
-const DELIVERABLE_ID = Number(process.env.SEED_DELIVERABLE_ID ?? 5);
+const PROCESS_ID = Number(process.env.SEED_PROCESS_ID ?? 1);
 const DEFINITION_ID = Number(process.env.SEED_DEFINITION_ID ?? 1);
 
 // La creación de template_artifacts está bloqueada en el endpoint CRUD (solo
@@ -58,12 +58,29 @@ async function seedTemplateLayer() {
     return;
   }
 
+  // El deliverable (identidad del entregable) puede no existir en una base
+  // fresca (no está en el snapshot del seed). Se reusa por `code` si existe, o
+  // se crea. Así el setup es self-contained y reproducible en cualquier motor.
+  const CODE = "tpl_informe_general";
+  const [delivRows] = await pool.query(`SELECT id FROM deliverables WHERE code = ? LIMIT 1`, [CODE]);
+  let deliverableId;
+  if (delivRows.length) {
+    deliverableId = delivRows[0].id;
+  } else {
+    const [dRes] = await pool.query(
+      `INSERT INTO deliverables (code, display_name, owner_process_id, owner_variation_key, template_scope)
+       VALUES (?, ?, ?, 'general', 'official')`,
+      [CODE, "Informe general", PROCESS_ID]
+    );
+    deliverableId = dRes.insertId;
+  }
+
   const [artRes] = await pool.query(
     `INSERT INTO template_artifacts
        (deliverable_id, storage_version, lifecycle_state, base_object_prefix,
         available_formats, schema_object_key, meta_object_key, is_active)
      VALUES (?, ?, 'published', ?, ?, ?, ?, 1)`,
-    [DELIVERABLE_ID, "v1", prefix, '["pdf"]', `${prefix}/schema.json`, `${prefix}/meta.json`]
+    [deliverableId, "v1", prefix, '["pdf"]', `${prefix}/schema.json`, `${prefix}/meta.json`]
   );
   const artifactId = artRes.insertId;
 
@@ -112,6 +129,63 @@ async function main() {
   if (task.status !== 200 && task.status !== 201) {
     throw new Error(`general-task falló: ${task.status} ${JSON.stringify(task.body)}`);
   }
+
+  // 2.5) Datos de chat deterministas: admin crea una conversación de grupo con
+  //      usuario y envía un mensaje (materializa conversación + mensaje +
+  //      notificación para usuario). Base para el golden del chat.
+  //      El seed relacional no limpia las tablas de chat, así que se purgan aquí
+  //      (hijos primero) para que el golden sea determinista entre corridas.
+  const pool = getMariaDBPool();
+  for (const t of [
+    "chat_notifications", "chat_message_reads", "chat_message_attachments",
+    "chat_messages", "chat_conversation_participants", "chat_conversations",
+  ]) {
+    await pool.query(`DELETE FROM ${t}`);
+  }
+  const conv = await post("/chat/conversations", {
+    token: admin,
+    body: {
+      type: "group",
+      title: "Chat characterization (seed)",
+      participant_ids: [USUARIO_PERSON_ID],
+    },
+  });
+  const conversationId = conv.body?.data?.id;
+  console.log("[setup] chat conversation:", conv.status, "id=", conversationId);
+  if (conversationId) {
+    const msg = await post(`/chat/conversations/${conversationId}/messages`, {
+      token: admin,
+      body: { content: "Mensaje determinista de prueba." },
+    });
+    console.log("[setup] chat message:", msg.status);
+  }
+
+  // 2.6) Datos de dossier deterministas: usuario abre su dossier (getOrCreate) y
+  //      añade un título, una experiencia (con funcion_catedra array) y un
+  //      artículo de investigación. Cubre arrays raíz + anidamiento de
+  //      investigación + array-de-strings. Base para el golden del dossier.
+  //      Determinismo: hoy el dossier vive en Mongo (limpiar colección antes,
+  //      ver README); tras migrar a relacional se purgan las tablas aquí.
+  const CEDULA = process.env.SEED_USUARIO_CEDULA ?? "1122334455";
+  // El dossier ya es relacional (Fase 6); el seed baseline no limpia sus tablas.
+  for (const t of ["dossier_items", "dossiers"]) {
+    await pool.query(`DELETE FROM ${t}`);
+  }
+  const dossier = await get(`/dossier/${CEDULA}`, { token: usuario });
+  console.log("[setup] dossier getOrCreate:", dossier.status);
+  const dTitulo = await post(`/dossier/${CEDULA}/titulos`, {
+    token: usuario,
+    body: { titulo: "Ing. en Tecnologías de la Información", ies: "PUCESE", nivel: "Grado", tipo: "Presencial", campo_amplio: "TIC", sreg: "REG-0001" },
+  });
+  const dExp = await post(`/dossier/${CEDULA}/experiencia`, {
+    token: usuario,
+    body: { institucion: "PUCESE", tipo: "Docencia", modalidad: "Presencial", funcion_catedra: ["Programación", "Bases de datos"] },
+  });
+  const dArt = await post(`/dossier/${CEDULA}/investigacion/articulos`, {
+    token: usuario,
+    body: { titulo: "Migración de datos", revista: "Rev. TIC", estado: "Publicado", rol: "Autor", issn: "1234-5678" },
+  });
+  console.log("[setup] dossier titulo/exp/articulo:", dTitulo.status, dExp.status, dArt.status);
 
   // 3) Comprobación de poblado.
   for (const t of [

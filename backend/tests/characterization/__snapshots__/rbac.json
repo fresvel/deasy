@@ -17,7 +17,7 @@
   "usuario_people_create_denied": {
     "status": 403,
     "body": {
-      "message": "No tienes permisos para realizar esta accion."
+      "message": "No tienes permiso people.create para esta operacion."
     }
   },
   "usuario_process_create_denied": {

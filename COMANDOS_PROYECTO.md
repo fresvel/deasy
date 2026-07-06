@@ -15,7 +15,7 @@ El repositorio esta organizado como un monorepo con capas separadas:
 - `backend/`: API Express en ESM. Usa `npm` y expone la API bajo `/deasy/v1`.
 - `docs/`: sitio de documentacion en Astro Starlight. Usa `pnpm`.
 - `signer/`: servicio de firma digital con Python, `pyhanko`, MinIO y un helper Node en `sigmaker/`.
-- `docker/`: composicion de servicios para MariaDB, MongoDB, RabbitMQ, MinIO, Nginx, backend, frontend, signer y analytics. El chat en tiempo real usa WebSockets (Socket.IO) dentro del backend, sin broker externo.
+- `docker/`: composicion de servicios para PostgreSQL, RabbitMQ, MinIO, Nginx, backend, frontend, signer y analytics. El chat en tiempo real usa WebSockets (Socket.IO) dentro del backend, sin broker externo.
 - `scripts/`: wrappers operativos para arranque, despliegue, seeds, reset y migraciones.
 - `tools/`: herramientas auxiliares, incluyendo plantillas.
 
@@ -115,33 +115,6 @@ Apagar y limpiar contenedores huerfanos:
 bash scripts/docker-env.sh dev down --remove-orphans
 ```
 
-## Arranque alternativo con scripts legacy
-
-Estos scripts usan `docker/docker-compose.yml` y crean `docker/.env` desde
-`docker/.env.example` si no existe.
-
-En Windows PowerShell:
-
-```powershell
-.\scripts\start-services.ps1
-```
-
-En Bash:
-
-```bash
-bash scripts/start-services.sh
-bash scripts/start-services.sh --build
-bash scripts/start-services.sh --no-cache
-```
-
-Ver estado si se usa el compose legacy:
-
-```bash
-cd docker
-docker compose ps
-docker compose logs -f backend
-```
-
 ## URLs utiles en desarrollo
 
 Con el stack Docker de `dev`:
@@ -207,18 +180,17 @@ docker/.env_model
 Variables clave:
 
 - `PORT=3030`
-- `URI_MONGO`
-- `MARIADB_HOST`
-- `MARIADB_PORT`
-- `MARIADB_USER`
-- `MARIADB_PASSWORD`
-- `MARIADB_DATABASE`
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
 - `MINIO_ENDPOINT`
 - `MINIO_ACCESS_KEY`
 - `MINIO_SECRET_KEY`
 - `RABBITMQ_HTTP_API`
 
-El backend necesita que MariaDB, MongoDB, RabbitMQ y MinIO esten
+El backend necesita que PostgreSQL, RabbitMQ y MinIO esten
 disponibles si se usan los flujos completos del sistema. El chat en tiempo real
 se sirve por WebSockets (Socket.IO) desde el propio backend.
 
@@ -269,11 +241,11 @@ Variables importantes del signer:
 
 ## Seeds, reset y migraciones
 
-### Seed SQL de MariaDB
+### Seed SQL de PostgreSQL
 
 Estos comandos trabajan con datos SQL, no con archivos de plantillas en MinIO.
 Sirven para capturar o aplicar el snapshot `backend/scripts/seeds/pucese.seed.json`
-contra la base MariaDB del ambiente indicado.
+contra la base PostgreSQL del ambiente indicado.
 
 Capturar seed desde `dev`:
 
@@ -310,7 +282,7 @@ bash scripts/seed-db.sh dev apply --file /app/backend/scripts/seeds/pucese.seed.
 
 Notas importantes:
 
-- `capture` lee la MariaDB actual y escribe el JSON de semilla.
+- `capture` lee la base PostgreSQL actual y escribe el JSON de semilla.
 - `apply` borra y reinserta las tablas incluidas en el JSON; no lo uses sobre datos que quieras conservar.
 - `rbac` crea/actualiza roles, recursos, acciones, permisos, permisos por rol y asignaciones derivadas desde cargos existentes.
 - Si solo levantaste QA local con `bash scripts/docker-env.sh qa-local up -d --build`, el comando `bash scripts/seed-db.sh dev apply` no encuentra el backend de `dev`.
@@ -327,19 +299,11 @@ docker compose --env-file .env.qa -f compose.base.yml -f compose.proxy.yml -f co
 La clave por defecto de los usuarios demo es `Deasy1234!`. Para cambiarla en una
 ejecucion puntual, definir `DEASY_DEMO_PASSWORD` antes de correr el comando.
 
-Listar migraciones disponibles:
+El mecanismo de migraciones legacy (`migrate-db.sh`) fue retirado con la
+migracion a PostgreSQL: `backend/database/postgres_schema.sql` es la unica fuente
+de verdad del esquema (se aplica al arrancar via `ensurePostgresSchema`).
 
-```bash
-bash scripts/migrate-db.sh dev --list
-```
-
-Ejecutar una migracion:
-
-```bash
-bash scripts/migrate-db.sh dev migrate-process-definition-series
-```
-
-Reset de MariaDB:
+Reset de PostgreSQL:
 
 ```bash
 bash scripts/reset-db.sh dev
@@ -386,26 +350,6 @@ El comando `storage-publish-seeds` toma los archivos desde
 `MINIO_TEMPLATES_BUCKET`, bajo el prefijo `MINIO_TEMPLATES_SEEDS_PREFIX`.
 El comando `storage-publish` toma archivos desde `tools/templates/dist/Plantillas`;
 si esa carpeta no existe o esta vacia, primero hay que generar las plantillas.
-
-Existe tambien un wrapper legacy para seeds locales:
-
-Nota: `run-seeds.ps1` y `run-seeds.sh` usan el compose legacy
-`docker/docker-compose.yml`. Para el entorno multiambiente actual es mas claro
-usar `scripts/docker-env.sh` con `dev` o `qa-local`.
-
-```powershell
-.\scripts\run-seeds.ps1
-.\scripts\run-seeds.ps1 -SkipDb
-.\scripts\run-seeds.ps1 -SkipStorage
-```
-
-En Bash:
-
-```bash
-bash scripts/run-seeds.sh
-bash scripts/run-seeds.sh --skip-db
-bash scripts/run-seeds.sh --skip-storage
-```
 
 ## Comandos por ambiente
 
@@ -495,8 +439,7 @@ Dev:
 - Proxy HTTPS: `8443`
 - Backend interno: `3030`
 - Frontend interno: `8080`
-- MariaDB: `3306`
-- MongoDB: `27017`
+- PostgreSQL: `5432`
 - RabbitMQ AMQP: `5672`
 - RabbitMQ UI: `15672`
 - MinIO API: `9000`
@@ -505,8 +448,7 @@ Dev:
 
 QA:
 
-- MariaDB: `13306`
-- MongoDB: `12717`
+- PostgreSQL: `15432`
 - RabbitMQ AMQP: `15672`
 - RabbitMQ UI: `15673`
 - MinIO API: `9100`
@@ -515,8 +457,7 @@ QA:
 
 Prod:
 
-- MariaDB: `23306`
-- MongoDB: `22717`
+- PostgreSQL: `25432`
 - RabbitMQ AMQP: `25672`
 - RabbitMQ UI: `25673`
 - MinIO API: `9200`
@@ -541,8 +482,8 @@ Imagenes publicadas:
 
 ## Notas importantes encontradas
 
-- `docker/docker-compose.yml` sigue existiendo como baseline legacy de dev.
-- La ruta recomendada multiambiente es `scripts/docker-env.sh`.
+- El unico stack es `docker/compose.base.yml` con overlays por ambiente; se ejecuta via `scripts/docker-env.sh`.
+- El motor de datos es PostgreSQL unicamente (MariaDB y MongoDB fueron retirados).
 - `backend/README.md` menciona `backend/.env_model`, pero el archivo real encontrado esta en `docker/.env_model`.
 - El `README.md` principal referencia documentacion en rutas como `docs/07-despliegue/docker.md`; en el arbol actual esas versiones estan bajo `docs/docs-md-antiguos/`.
 - El frontend tiene lint configurado; el backend no declara lint ni tests en `package.json`.

@@ -1,91 +1,31 @@
-import mongoose from "mongoose";
-import { ChatConversation } from "../../models/chat/conversation_model.js";
-import { ChatMessage } from "../../models/chat/message_model.js";
+import * as store from "./chatStore.js";
 import { logChatInfo } from "./chat_logging.js";
-
-const toMessageSummary = (message) => ({
-  id: message._id.toString(),
-  conversation_id: message.conversation_id.toString(),
-  sender_person_id: Number(message.sender_person_id),
-  content: message.content,
-  content_type: message.content_type,
-  attachments: Array.isArray(message.attachments) ? message.attachments : [],
-  reply_to_message_id: message.reply_to_message_id ? message.reply_to_message_id.toString() : null,
-  created_at: message.created_at,
-  edited_at: message.edited_at,
-  deleted_at: message.deleted_at,
-  read_by: Array.isArray(message.read_by) ? message.read_by.map(Number) : [],
-  delivery_state: message.delivery_state
-});
-
-const getActiveParticipantIds = (conversation) =>
-  Array.isArray(conversation?.participants)
-    ? conversation.participants
-        .filter((participant) => participant && participant.left_at === null)
-        .map((participant) => Number(participant.person_id))
-        .filter((value) => Number.isFinite(value) && value > 0)
-    : [];
 
 export default class ChatMessageService {
   async listForConversation(conversationId, personId, { limit = 30, before = null } = {}) {
-    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    if (!store.isValidId(conversationId)) {
       const error = new Error("conversationId inválido.");
       error.status = 400;
       throw error;
     }
-
-    const conversation = await ChatConversation.findOne({
-      _id: conversationId,
-      participants: {
-        $elemMatch: {
-          person_id: Number(personId),
-          left_at: null
-        }
-      }
-    }).select("_id");
-
+    const conversation = await store.findConversationForParticipant(conversationId, personId);
     if (!conversation) {
       const error = new Error("Conversación no encontrada o no autorizada.");
       error.status = 404;
       throw error;
     }
-
     const safeLimit = Math.min(Math.max(Number(limit) || 30, 1), 100);
-    const query = {
-      conversation_id: conversation._id
-    };
-
-    if (before) {
-      const beforeDate = new Date(before);
-      if (!Number.isNaN(beforeDate.getTime())) {
-        query.created_at = { $lt: beforeDate };
-      }
-    }
-
-    const messages = await ChatMessage.find(query)
-      .sort({ created_at: -1 })
-      .limit(safeLimit);
-
-    return messages.reverse().map(toMessageSummary);
+    const rows = await store.listMessages(conversation.id, safeLimit, before);
+    return store.mapMessages(rows.reverse());
   }
 
   async createMessage(conversationId, personId, payload = {}) {
-    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    if (!store.isValidId(conversationId)) {
       const error = new Error("conversationId inválido.");
       error.status = 400;
       throw error;
     }
-
-    const conversation = await ChatConversation.findOne({
-      _id: conversationId,
-      participants: {
-        $elemMatch: {
-          person_id: Number(personId),
-          left_at: null
-        }
-      }
-    });
-
+    const conversation = await store.findConversationForParticipant(conversationId, personId);
     if (!conversation) {
       const error = new Error("Conversación no encontrada o no autorizada.");
       error.status = 404;
@@ -100,100 +40,80 @@ export default class ChatMessageService {
       throw error;
     }
 
-    const message = await ChatMessage.create({
-      conversation_id: conversation._id,
+    const replyTo = store.isValidId(payload.reply_to_message_id) ? Number(payload.reply_to_message_id) : null;
+    const messageRow = await store.insertMessage({
+      conversation_id: conversation.id,
       sender_person_id: Number(personId),
       content,
-      content_type: attachments.length ? "attachment" : (payload.content_type || "text"),
-      attachments,
-      reply_to_message_id: payload.reply_to_message_id || null,
-      read_by: [Number(personId)],
-      delivery_state: "stored"
+      content_type: attachments.length ? "attachment" : payload.content_type || "text",
+      reply_to_message_id: replyTo,
+      delivery_state: "stored",
+    });
+    await store.insertMessageReads(messageRow.id, [Number(personId)]);
+    if (attachments.length) await store.insertAttachments(messageRow.id, attachments);
+
+    const mobileSummary = content || (attachments[0]?.filename ?? "Adjunto");
+    await store.updateConversation(conversation.id, {
+      last_message_id: messageRow.id,
+      last_message_at: messageRow.created_at,
+      mobile_summary: mobileSummary,
     });
 
-    conversation.last_message_id = message._id;
-    conversation.last_message_at = message.created_at;
-    conversation.mobile_summary = content || (attachments[0]?.filename ?? "Adjunto");
-    await conversation.save();
-
-    const activeParticipantIds = getActiveParticipantIds(conversation);
-    const recipientPersonIds = activeParticipantIds.filter((participantId) => participantId !== Number(personId));
+    const participantsMap = await store.loadParticipants([conversation.id]);
+    const recipientPersonIds = (participantsMap.get(String(conversation.id)) || [])
+      .filter((p) => p.left_at === null || p.left_at === undefined)
+      .map((p) => Number(p.person_id))
+      .filter((id) => Number.isFinite(id) && id > 0 && id !== Number(personId));
 
     logChatInfo("chat.message.created", {
-      conversation_id: conversation._id.toString(),
-      message_id: message._id.toString(),
-      process_id: Number(conversation.process_id || conversation.scope?.process_id || 0) || null,
+      conversation_id: String(conversation.id),
+      message_id: String(messageRow.id),
+      process_id: Number(conversation.process_id || conversation.scope_process_id || 0) || null,
       person_id: Number(personId),
-      attachments_count: attachments.length
+      attachments_count: attachments.length,
     });
 
+    const [message] = await store.mapMessages([messageRow]);
     return {
       conversation: {
-        id: conversation._id.toString(),
+        id: String(conversation.id),
         title: conversation.title,
         type: conversation.type,
-        scope: conversation.scope || null,
-        last_message_id: message._id.toString(),
-        last_message_at: message.created_at,
-        mobile_summary: conversation.mobile_summary
+        scope: store.buildScope(conversation),
+        last_message_id: String(messageRow.id),
+        last_message_at: messageRow.created_at,
+        mobile_summary: mobileSummary,
       },
-      message: toMessageSummary(message),
-      recipient_person_ids: recipientPersonIds
+      message,
+      recipient_person_ids: recipientPersonIds,
     };
   }
 
   async markConversationRead(conversationId, personId) {
-    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+    if (!store.isValidId(conversationId)) {
       const error = new Error("conversationId inválido.");
       error.status = 400;
       throw error;
     }
-
-    const conversation = await ChatConversation.findOne({
-      _id: conversationId,
-      participants: {
-        $elemMatch: {
-          person_id: Number(personId),
-          left_at: null
-        }
-      }
-    }).select("_id");
-
+    const conversation = await store.findConversationForParticipant(conversationId, personId);
     if (!conversation) {
       const error = new Error("Conversación no encontrada o no autorizada.");
       error.status = 404;
       throw error;
     }
 
-    await ChatMessage.updateMany(
-      {
-        conversation_id: conversation._id,
-        sender_person_id: { $ne: Number(personId) },
-        read_by: { $ne: Number(personId) }
-      },
-      {
-        $addToSet: {
-          read_by: Number(personId)
-        }
-      }
-    );
-
-    const unreadCount = await ChatMessage.countDocuments({
-      conversation_id: conversation._id,
-      sender_person_id: { $ne: Number(personId) },
-      read_by: { $ne: Number(personId) }
-    });
+    const unread = await store.markConversationReadForPerson(conversation.id, personId);
 
     logChatInfo("chat.conversation.read", {
-      conversation_id: conversation._id.toString(),
+      conversation_id: String(conversation.id),
       person_id: Number(personId),
-      unread_count: unreadCount
+      unread_count: unread,
     });
 
     return {
-      conversation_id: conversation._id.toString(),
-      unread_count: unreadCount,
-      read_at: new Date()
+      conversation_id: String(conversation.id),
+      unread_count: unread,
+      read_at: new Date(),
     };
   }
 }

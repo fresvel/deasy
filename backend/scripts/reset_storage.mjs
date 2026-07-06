@@ -129,34 +129,13 @@ export const resetMinio = async () => {
   console.log(`✅ MinIO purgado: ${total} objeto(s) en ${buckets.length} bucket(s).`);
 };
 
-// Elimina por completo la base de datos de MongoDB (dossier, chat, etc.).
-export const resetMongo = async () => {
-  const uri = process.env.URI_MONGO;
-  if (!uri) {
-    console.warn("⚠️  URI_MONGO no definido, se omite el reset de MongoDB.");
-    return;
-  }
-  const mongoose = (await import("mongoose")).default;
-  const connection = await mongoose.createConnection(uri).asPromise();
-  try {
-    await connection.dropDatabase();
-    console.log(`✅ Base de datos MongoDB '${connection.name}' eliminada.`);
-  } finally {
-    await connection.close();
-  }
-};
-
 const main = async () => {
   await loadEnv();
   const args = new Set(process.argv.slice(2));
-  const keepMongo = args.has("--keep-mongo");
   const keepMinio = args.has("--keep-minio");
 
   if (!keepMinio) {
     await resetMinio();
-  }
-  if (!keepMongo) {
-    await resetMongo();
   }
   console.log("✅ Reset de almacenamiento finalizado.");
 };
