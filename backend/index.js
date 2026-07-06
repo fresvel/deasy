@@ -5,7 +5,6 @@ import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import user_router from "./routes/user_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
-import "./database/mongoose.js"
 import { assertMariaDBConnection } from "./config/mariadb.js";
 import { ensureMariaDBDatabase, ensureMariaDBSchema } from "./database/mariadb_initializer.js";
 import { ensurePostgresSchema } from "./database/postgres_initializer.js";

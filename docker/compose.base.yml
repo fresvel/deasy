@@ -16,12 +16,6 @@ services:
       retries: 20
       start_period: 10s
 
-  mongodb:
-    image: mongo:7
-    restart: unless-stopped
-    volumes:
-      - mongodb_data:/data/db
-
   # Motor destino de la migración (convive con MariaDB/Mongo durante la transición).
   postgres:
     image: postgres:17
@@ -137,7 +131,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      URI_MONGO: ${URI_MONGO}
       PORT: ${BACKEND_PORT}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_PUBLIC_ENDPOINT: http://localhost:${MINIO_API_PORT}
@@ -169,8 +162,6 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-      mongodb:
-        condition: service_started
       postgres:
         condition: service_healthy
       rabbitmq:
@@ -235,7 +226,6 @@ services:
 
 volumes:
   mariadb_data:
-  mongodb_data:
   postgres_data:
   rabbitmq_data:
   minio_data:

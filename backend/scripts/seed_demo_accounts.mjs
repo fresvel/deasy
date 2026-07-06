@@ -5,14 +5,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import bcrypt from "bcrypt";
-import mongoose from "mongoose";
 import mysql from "mysql2/promise";
 import { getPostgresPool } from "../config/postgres.js";
 
 const USE_PG = process.env.DB_ENGINE === "postgres";
 
-import { Dossier } from "../models/users/dossiers.js";
-import { Usuario } from "../models/users/usuario_model.js";
 import {
   ACTION_CATALOG,
   RESOURCE_CATALOG,
@@ -796,85 +793,12 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
   }
 };
 
-const buildDossierPayload = (user, mongoUserId = null) => {
-  const label = `${user.first_name} ${user.last_name}`;
-  return {
-    usuario: mongoUserId,
-    cedula: user.cedula,
-    titulos: [
-      { titulo: `Ingenieria de Software - ${label}`, ies: "PUCESE", nivel: "Grado", sreg: `${user.cedula}-T1`, campo_amplio: "Tecnologias de la informacion", tipo: "Presencial", pais: "Ecuador", sera: "Aprobado" },
-      { titulo: `Diplomado en Gestion Academica - ${label}`, ies: "PUCESE", nivel: "Diplomado", sreg: `${user.cedula}-T2`, campo_amplio: "Administracion", tipo: "Virtual", pais: "Ecuador", sera: "Revisado" },
-      { titulo: `Doctorado en Educacion Superior - ${label}`, ies: "Universidad Demo", nivel: "Doctorado", sreg: `${user.cedula}-T3`, campo_amplio: "Educacion", tipo: "Semipresencial", pais: "Ecuador", sera: "Enviado" }
-    ],
-    experiencia: [
-      { institucion: "PUCESE", fecha_inicio: new Date("2021-01-01"), fecha_fin: new Date("2022-12-31"), funcion_catedra: ["Docencia", "Tutoria"], modalidad: "Presencial", tipo: "Docencia", sera: "Aprobado" },
-      { institucion: "Instituto Tecnologico Demo", fecha_inicio: new Date("2023-01-01"), fecha_fin: new Date("2024-06-30"), funcion_catedra: ["Gestion", "Coordinacion"], modalidad: "Hibrida", tipo: "Profesional", sera: "Revisado" },
-      { institucion: "Centro de Investigacion QA", fecha_inicio: new Date("2024-07-01"), fecha_fin: new Date("2025-12-31"), funcion_catedra: ["Investigacion"], modalidad: "Virtual", tipo: "Profesional", sera: "Enviado" }
-    ],
-    referencias: [
-      { nombre: "Maria Referencia", cargo_parentesco: "Directora Academica", email: `referencia1.${user.cedula}@deasy.local`, telefono: "0999911111", institution: "PUCESE", tipo: "laboral" },
-      { nombre: "Carlos Referencia", cargo_parentesco: "Colega", email: `referencia2.${user.cedula}@deasy.local`, telefono: "0999922222", institution: "Instituto Demo", tipo: "personal" },
-      { nombre: "Ana Referencia", cargo_parentesco: "Coordinadora", email: `referencia3.${user.cedula}@deasy.local`, telefono: "0999933333", institution: "Centro QA", tipo: "laboral" }
-    ],
-    formacion: [
-      { tema: "Diseno de procesos academicos", institution: "PUCESE", horas: 40, fecha_inicio: new Date("2024-01-10"), fecha_fin: new Date("2024-01-20"), tipo: "Docente", rol: "Asistencia", pais: "Ecuador", sera: "Aprobado" },
-      { tema: "Gestion documental institucional", institution: "DEASY", horas: 24, fecha_inicio: new Date("2024-03-05"), fecha_fin: new Date("2024-03-12"), tipo: "Profesional", rol: "Instructor", pais: "Ecuador", sera: "Revisado" },
-      { tema: "Indicadores de calidad", institution: "Unidad QA", horas: 32, fecha_inicio: new Date("2024-05-01"), fecha_fin: new Date("2024-05-15"), tipo: "Docente", rol: "Asistencia", pais: "Ecuador", sera: "Enviado" }
-    ],
-    certificaciones: [
-      { titulo: "Certificacion en gestion de calidad", institution: "PUCESE", horas: 40, fecha: new Date("2024-02-01"), tipo: "Nacional", descripcion: "Certificacion nacional demo.", sera: "Aprobado" },
-      { titulo: "Certificacion en analitica academica", institution: "DEASY", horas: 30, fecha: new Date("2024-04-01"), tipo: "Internacional", descripcion: "Certificacion internacional demo.", sera: "Revisado" },
-      { titulo: "Certificacion en firma electronica", institution: "Unidad QA", horas: 16, fecha: new Date("2024-06-01"), tipo: "Nacional", descripcion: "Certificacion para flujo de firmas.", sera: "Enviado" }
-    ],
-    investigacion: {
-      articulos: [
-        { titulo: `Articulo demo de ${user.role}`, base_indexada: "Latindex", revista: "Revista QA", doi: `10.0000/${user.cedula}.1`, issn: "0000-0001", sjr: 0.21, fecha: new Date("2024-07-01"), pais: "Ecuador", estado: "Publicado", rol: "Autor", sera: "Aprobado" }
-      ],
-      libros: [
-        { titulo: `Libro demo de ${user.role}`, editorial: "Editorial QA", isbn: `978-${user.cedula.slice(-4)}-000`, isnn: "0000-0002", pais: "Ecuador", tipo: "Libro", sera: "Revisado" }
-      ],
-      ponencias: [
-        { titulo: `Ponencia demo de ${user.role}`, evento: "Congreso QA DEASY", pais: "Ecuador", sera: "Enviado" }
-      ],
-      tesis: [],
-      proyectos: []
-    }
-  };
-};
-
-const seedMongoAccount = async (user, passwordHash) => {
-  const mongoUser = await Usuario.findOneAndUpdate(
-    { cedula: user.cedula },
-    {
-      cedula: user.cedula,
-      password: passwordHash,
-      nombre: user.first_name,
-      apellido: user.last_name,
-      email: user.email,
-      correo: user.email,
-      direccion: "Av. Demo y Calle QA",
-      whatsapp: user.whatsapp,
-      verify: { whatsapp: true, email: true },
-      status: "Activo"
-    },
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
-  );
-
-  const payload = buildDossierPayload(user, mongoUser?._id || null);
-  await Dossier.findOneAndUpdate(
-    { cedula: user.cedula },
-    payload,
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
-  );
-};
 
 const run = async () => {
   await loadEnvFile();
-  requireEnv(["URI_MONGO"]);
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const connection = await createMariaDbConnection();
-  await mongoose.connect(process.env.URI_MONGO);
 
   const roleIds = new Map();
   const cargoIds = new Map();
@@ -939,7 +863,6 @@ const run = async () => {
     await connection.commit();
 
     for (const user of demoUsers) {
-      await seedMongoAccount(user, passwordHash);
     }
 
     console.log("Semilla demo aplicada correctamente.");
@@ -955,7 +878,6 @@ const run = async () => {
   } finally {
     if (USE_PG) connection.release();
     else await connection.end();
-    await mongoose.disconnect();
   }
 };
 

@@ -10,10 +10,6 @@ services:
     ports:
       - "3306:3306"
 
-  mongodb:
-    ports:
-      - "27017:27017"
-
   postgres:
     ports:
       - "5432:5432"
@@ -81,8 +77,6 @@ services:
 volumes:
   mariadb_data:
     name: deasy_dev_mariadb_data
-  mongodb_data:
-    name: deasy_dev_mongodb_data
   postgres_data:
     name: deasy_dev_postgres_data
   rabbitmq_data:
