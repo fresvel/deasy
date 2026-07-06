@@ -221,5 +221,61 @@
         }
       ]
     }
+  },
+  "process_thread_created": {
+    "status": 201,
+    "body": {
+      "data": {
+        "archived_at": "<normalized>",
+        "created_at": "<normalized>",
+        "created_by": 3,
+        "id": "<normalized>",
+        "last_message_at": "<normalized>",
+        "last_message_id": "<normalized>",
+        "mobile_summary": null,
+        "participants": [
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 3,
+            "role": "admin"
+          }
+        ],
+        "process_id": "<normalized>",
+        "scope": {
+          "current_definition_id": "<normalized>",
+          "origin_definition_id": "<normalized>",
+          "process_id": "<normalized>",
+          "scope_unit_id": "<normalized>",
+          "stable_key": "process:1:unit:16"
+        },
+        "title": "Proceso por defecto · Carrera de Tecnologías de la Información",
+        "type": "process_thread",
+        "unread_count": 0,
+        "updated_at": "<normalized>"
+      },
+      "meta": {
+        "accessible_scope_unit_ids": [
+          16
+        ],
+        "created": true,
+        "process_id": "<normalized>",
+        "scope_unit_id": "<normalized>",
+        "synchronized": false
+      }
+    }
+  },
+  "process_thread_missing": {
+    "status": 404,
+    "body": {
+      "context": {
+        "accessible_scope_unit_ids": [
+          16
+        ],
+        "process_id": "<normalized>",
+        "scope_unit_id": "<normalized>"
+      },
+      "message": "Thread del proceso no encontrado para el ámbito solicitado."
+    }
   }
 }

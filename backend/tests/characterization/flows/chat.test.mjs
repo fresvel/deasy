@@ -90,3 +90,19 @@ test("POST /chat/notifications/read (usuario) -> notificación marcada leída", 
   });
   matchSnapshot(SUITE, "mark_notifications_read", snapshotShape(res, CHAT_OPTS));
 });
+
+// --- Process thread (el tipo más complejo: scope + stable_key + participantes
+//     derivados del contexto del proceso). Va AL FINAL porque crea una nueva
+//     conversación; idempotente por stable_key (setup limpia entre corridas). ---
+
+test("GET /chat/processes/:id/thread antes de crear -> 404 con contexto", async () => {
+  const token = await tokenFor("usuario");
+  const res = await get("/chat/processes/1/thread?scope_unit_id=16", { token });
+  matchSnapshot(SUITE, "process_thread_missing", snapshotShape(res, CHAT_OPTS));
+});
+
+test("POST /chat/processes/:id/thread -> crea el process_thread con scope", async () => {
+  const token = await tokenFor("usuario");
+  const res = await post("/chat/processes/1/thread?scope_unit_id=16", { token, body: {} });
+  matchSnapshot(SUITE, "process_thread_created", snapshotShape(res, CHAT_OPTS));
+});
