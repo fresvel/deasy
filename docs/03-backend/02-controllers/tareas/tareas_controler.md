@@ -41,5 +41,5 @@ Este archivo contiene el controlador para gestionar tareas (tasks) en el sistema
   - Éxito: JSON con tareas pendientes.
   - Error: Respuesta de error 404, 500.
 ## Dependencias
-- `getMariaDBPool` de `../../config/mariadb.js`
+- `getPostgresPool` de `../../config/postgres.js`
 - `SqlAdminService` de `../../services/admin/SqlAdminService.js`

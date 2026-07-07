@@ -1,5 +1,7 @@
 # Auditoria de campos en las bases de datos
 
+> ⚠️ **Documento histórico (pre-migración PostgreSQL).** Refleja el estado del **6 de junio de 2026**, cuando el sistema todavía usaba **MariaDB + MongoDB**. Ambos motores fueron **retirados**: hoy el único datastore es **PostgreSQL** (`backend/database/postgres_schema.sql`). Se conserva como registro de la auditoría previa a la migración; no describe el esquema actual.
+
 ## Objetivo
 
 Identificar tablas, colecciones y campos que:

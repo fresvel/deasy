@@ -1,5 +1,7 @@
 # Decisiones del modelo de entregables · junio 2026
 
+> ⚠️ **Registro histórico fechado (junio 2026).** Algunas menciones a **MariaDB/MongoDB** y a scripts como `mariadb_initializer` describen el estado de ESE momento. Ambos motores fueron **retirados**; hoy el único datastore es **PostgreSQL**. Se conserva el texto original como registro de decisiones.
+
 ## Proposito
 
 Este documento registra las decisiones de negocio acordadas para limpiar el modelo de procesos,

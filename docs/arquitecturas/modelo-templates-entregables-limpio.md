@@ -27,7 +27,7 @@
 >   (constante 'process'; propiedad por owner_ref), `process_definition_templates.usage_role` +
 >   `task_items.template_usage_role` (constantes 'primary'; UNIQUE KEY reconstruido sin la columna en un
 >   ALTER atómico), y `processes.unit_id/program_id/person_id/term_id` (vestigiales, nunca usadas). Migración
->   idempotente en `mariadb_initializer.js` + `mariadb_schema.sql`. Front/back limpios; build y writes OK.
+>   idempotente en `postgres_initializer.js` + `postgres_schema.sql`. Front/back limpios; build y writes OK.
 > - ⏳ Pendientes: cablear el render jinja2→PDF en runtime (hoy `render_seed.py` es tooling CLI, no lo invoca
 >   el backend); revisar `documents.updated_at` (siempre NULL).
 

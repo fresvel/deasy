@@ -19,5 +19,5 @@ Este archivo contiene el controlador para gestionar programas (unidades) en el s
   - Éxito: JSON con las unidades.
   - Error: Respuesta de error 500.
 ## Dependencias
-- `getMariaDBPool` de `../../config/mariadb.js`
+- `getPostgresPool` de `../../config/postgres.js`
 - `SqlAdminService` de `../../services/admin/SqlAdminService.js`

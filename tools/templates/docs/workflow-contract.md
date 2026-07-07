@@ -2,7 +2,7 @@
 
 Este documento define el contrato técnico mínimo que debe declarar cada artifact en su
 `meta.yaml`. El objetivo es que la fuente de verdad del flujo documental nazca en el template y no
-en la base de datos. MariaDB puede sincronizar esa información, enriquecerla con política de
+en la base de datos. PostgreSQL puede sincronizar esa información, enriquecerla con política de
 negocio o resolver usuarios concretos, pero no debería inventar desde cero la estructura técnica de
 llenado y firma.
 
@@ -82,7 +82,7 @@ valide que el schema del documento sí declara los campos esperados por ese patr
 
 ## Interpretación de `dependencies`
 
-`dependencies` no significa relaciones entre tablas de MariaDB. Aquí se habla únicamente de
+`dependencies` no significa relaciones entre tablas de PostgreSQL. Aquí se habla únicamente de
 dependencias técnicas del artifact. Por ejemplo, una plantilla puede requerir un template base, un
 archivo auxiliar, una semilla previa, un catálogo de datos o algún insumo necesario para su render
 o para el flujo técnico de llenado/firma.
@@ -107,14 +107,14 @@ a MinIO. En ese flujo, backend debe escribir el mismo contrato mínimo en `meta.
 que un artifact de usuario entre al sistema sin la información mínima necesaria para sincronizarlo
 después con la base.
 
-## Sincronización futura hacia MariaDB
+## Sincronización futura hacia PostgreSQL
 
 La sincronización recomendada es:
 
 1. el artifact publica `workflows` y `dependencies` en `meta.yaml`
 2. el `dist` preserva ese contrato
 3. el sincronizador de artifacts lo lee
-4. MariaDB crea o actualiza:
+4. PostgreSQL crea o actualiza:
    - `fill_flow_templates`
    - `fill_flow_steps`
    - `signature_flow_templates`
@@ -214,7 +214,7 @@ Cada paso de llenado debería poder declarar:
 - `can_reject`
   Indica si el actor puede devolver o rebotar el documento.
 
-### Mapeo actual hacia MariaDB
+### Mapeo actual hacia PostgreSQL
 
 Este contrato se puede mapear casi directo al modelo actual:
 
@@ -687,7 +687,7 @@ La implementación debería seguir este orden:
 2. empezar a poblar `schema.json` con `x-deasy-field-code` y metadata mínima de UI
 3. agregar `field_refs` a `workflows.fill.steps`
 4. validar consistencia entre `schema.json` y `meta.yaml`
-5. recién después sincronizar eso hacia MariaDB
+5. recién después sincronizar eso hacia PostgreSQL
 
 Así, cuando llegue el momento de construir la librería de formularios del front, ya existirá una
 base técnica consistente para renderizar inputs, agruparlos y habilitarlos por actor y por paso.

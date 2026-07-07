@@ -32,7 +32,7 @@ cargo, pero no reciben el rol `AdminSistema` por defecto.
 
 ## Recarga del seed en dev
 
-Para limpiar y cargar los datos base en MariaDB:
+Para limpiar y cargar los datos base en PostgreSQL:
 
 ```bash
 bash scripts/seed-db.sh dev apply

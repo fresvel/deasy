@@ -53,7 +53,7 @@ definicion de proceso:
 
 4. Ejecuta `Sincronizar dist` en el panel admin, dentro de `template_artifacts`.
    - El sistema recorre el `dist` local y crea/actualiza filas en `template_artifacts`.
-   - Este paso registra en MariaDB el metadata necesario para que Deasy pueda referenciar el
+   - Este paso registra en PostgreSQL el metadata necesario para que Deasy pueda referenciar el
      artifact publicado sin cargarlo a mano.
    - Si el backend corre en Docker, `docker-compose` debe montar `tools/templates` dentro del
      contenedor backend para que pueda leer `tools/templates/dist/Plantillas/`.
@@ -78,13 +78,13 @@ Esto significa que cada template versionado debe declarar en `meta.yaml` una est
 - `dependencies` declara dependencias técnicas que el artifact necesita para operar o sincronizar
 
 Aquí `dependencies` no significa relaciones relacionales entre tablas de negocio. Ese plano sigue
-perteneciendo al modelo de MariaDB. En `meta.yaml`, `dependencies` debe leerse como dependencia
+perteneciendo al modelo de PostgreSQL. En `meta.yaml`, `dependencies` debe leerse como dependencia
 técnica del artifact: plantillas base, archivos auxiliares, datos requeridos o cualquier insumo que
 el template necesite para poder renderizarse, llenarse o sincronizarse correctamente.
 
 La CLI ya genera esa estructura por defecto para templates nuevos y el empaquetado valida que
 exista antes de producir `dist/`. Con esto, el `dist` deja de ser solamente un empaquetado visual y
-pasa a ser también un contrato técnico sincronizable hacia MariaDB.
+pasa a ser también un contrato técnico sincronizable hacia PostgreSQL.
 
 En el caso de templates del sistema basados en Jinja/LaTeX, esa estructura debe existir desde el
 origen para que el artifact se pueda empaquetar. En el caso de templates creados por usuarios con
@@ -101,7 +101,7 @@ entienda cómo inyectar tokens y datos reales de firmantes.
 En la etapa actual, el uso esperado es mixto. El template puede declarar `pattern_ref` dentro de
 `workflows.signatures` para dejar explícito qué patrón reutilizable adopta, pero sigue manteniendo
 `anchors` y `steps` materializados en su propio `meta.yaml`, porque esa es la forma que hoy
-sincroniza el backend hacia MariaDB. De este modo se gana trazabilidad y validación sin romper el
+sincroniza el backend hacia PostgreSQL. De este modo se gana trazabilidad y validación sin romper el
 flujo operativo vigente.
 
 La conexión práctica de ese patrón con el compilador ya puede empezar por la preparación de payload

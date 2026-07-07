@@ -30,6 +30,6 @@ Este archivo contiene el controlador para gestionar usuarios, incluyendo creaci√
 - `path`, `fs-extra` para manejo de archivos.
 - `whatsappBot` de `../../services/whatsapp/WhatsAppBot.js`
 - `UserRepository` de `../../services/auth/UserRepository.js`
-- `getMariaDBPool` de `../../config/mariadb.js`
+- `getPostgresPool` de `../../config/postgres.js`
 - `hydrateTaskFromDefinition` de `../../services/admin/TaskGenerationService.js`
 - `sendEmailVerification` de `../../services/mail/sendEmailVerification.js`

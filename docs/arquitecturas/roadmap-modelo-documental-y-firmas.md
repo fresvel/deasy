@@ -29,7 +29,7 @@ Este documento fija:
 
 Fuente de verdad del esquema:
 
-- [backend/database/mariadb_schema.sql](../../backend/database/mariadb_schema.sql)
+- [backend/database/postgres_schema.sql](../../backend/database/postgres_schema.sql)
 
 Código relevante revisado:
 
@@ -227,7 +227,6 @@ Para documentos standalone:
 La tabla actual:
 
 - mezcla una noción histórica de LaTeX con el ciclo documental moderno
-- todavía conserva `payload_mongo_id`
 - usa `latex_path`, `pdf_path`, `signed_pdf_path` con semántica ambigua
 
 ### Dirección de cambio
@@ -249,7 +248,7 @@ Se propone evolucionar a un modelo neutral por formato:
 ### Criterios
 
 - `latex_path` debe desaparecer o migrarse a `working_file_path`
-- `payload_mongo_id` debe migrarse a MinIO o a una referencia neutral de storage
+- ~~`payload_mongo_id` debe migrarse a una referencia neutral de storage~~ — hecho: la columna fue **eliminada** con la migración a PostgreSQL
 - `pdf_path` y `signed_pdf_path` deben revisarse; idealmente:
   - `working_file_path`
   - `final_file_path`

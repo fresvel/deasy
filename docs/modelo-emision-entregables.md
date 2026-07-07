@@ -120,7 +120,7 @@ La búsqueda "activa por link" (`getActiveFillFlowTemplateForDefinitionTemplate`
 `AND task_item_id IS NULL`; la materialización de un routed busca el flujo por `task_item_id`.
 
 ### Backend (fases)
-1. **Esquema**: `task_item_id` (nullable, FK) en `fill_flow_templates` + `signature_flow_templates` (schema + `mariadb_initializer` idempotente).
+1. **Esquema**: `task_item_id` (nullable, FK) en `fill_flow_templates` + `signature_flow_templates` (schema + `postgres_initializer` idempotente).
 2. **Contrato**: `createGeneralTask` (routed/free) acepta `flow` en el body:
    `{ entrega:[{person_id|"me"}...], firma:[{signers:[person_id...], approval_mode, required_min}...] }`.
    Validar personas activas, ≥1 paso de entrega, orden.

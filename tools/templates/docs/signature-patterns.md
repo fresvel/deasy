@@ -93,7 +93,7 @@ Eso significa que el patrón reusable no reemplaza por completo al `meta.yaml`, 
 fuente de una parte repetible de su contenido.
 
 En la transición actual del proyecto, el template todavía mantiene `anchors` y `steps`
-materializados en su propio `meta.yaml`, porque el sync hacia MariaDB ya opera sobre esa forma. Por
+materializados en su propio `meta.yaml`, porque el sync hacia PostgreSQL ya opera sobre esa forma. Por
 eso el uso práctico hoy es mixto: el template declara `pattern_ref` para dejar explícito el patrón
 que adopta, pero conserva también la definición concreta que el backend ya sincroniza. De esa
 manera ganamos trazabilidad y validación sin romper el flujo operativo actual.
@@ -132,7 +132,7 @@ La recomendación práctica para la siguiente etapa es:
 
 1. mantener el patrón reusable en `tools/templates/patterns/signatures/`
 2. permitir que seeds y templates lo referencien de forma explícita
-3. seguir sincronizando a MariaDB el resultado materializado
+3. seguir sincronizando a PostgreSQL el resultado materializado
 4. cuando exista el compilador, hacer que lea el patrón y no solo los campos sueltos del template
 
 Con eso el patrón común de firmas no desaparece. Al contrario, queda formalizado como una pieza

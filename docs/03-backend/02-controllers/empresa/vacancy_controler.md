@@ -11,4 +11,4 @@ Este archivo contiene el controlador para gestionar vacantes (vacancies) en el s
   - Éxito: JSON con las vacantes.
   - Error: Respuesta de error 401, 500 con mensaje.
 ## Dependencias
-- `getMariaDBPool` de `../../config/mariadb.js`
+- `getPostgresPool` de `../../config/postgres.js`
