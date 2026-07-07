@@ -2,8 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> See `AGENTS.md` for the full repository conventions (layer boundaries, reuse rules, approved base components). The notes below are the operational quick-start that complements it.
-
 ## Reglas de Testing 
 Para realizar las pruebas debes considerar que todo el sistema está dockerizado.  En la ruta scripts está docker-env.sh que te permite levantar entornos y ejecutar comandos de manera rápida. 
 
