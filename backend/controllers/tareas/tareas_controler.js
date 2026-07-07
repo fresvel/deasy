@@ -1,44 +1,4 @@
 import { getPostgresPool } from "../../config/postgres.js";
-import SqlAdminService from "../../services/admin/SqlAdminService.js";
-
-const sqlService = new SqlAdminService();
-
-
-export const createTarea = async (req, res) => {
-  console.log("Creando Nueva Tarea (SQL)");
-  try {
-    const created = await sqlService.create("tasks", req.body ?? {});
-    res.json({ result: created });
-  } catch (error) {
-    console.log("Error Creating Tarea");
-    console.error(error.message);
-    res.status(400).send({
-      message: "Error al crear la tarea",
-      error: error.message
-    });
-  }
-};
-
-export const createLoteTareas = async (req, res) => {
-  console.log("Creando Lote de Tareas (SQL)");
-  try {
-    const tareas = Array.isArray(req.body?.tareas) ? req.body.tareas : [];
-    if (!tareas.length) {
-      return res.status(400).json({ message: "No se recibieron tareas para insertar." });
-    }
-    const createdIds = [];
-    for (const tarea of tareas) {
-      const created = await sqlService.create("tasks", tarea);
-      createdIds.push(created?.id);
-    }
-    res.json({ result: "ok", created_ids: createdIds });
-  } catch (error) {
-    console.log("Error Creating Lote de Tareas");
-    console.error(error.message);
-    res.status(400).json({ message: error.message });
-  }
-};
-
 
 export const getuserTarea = async (req, res) => {
   console.log("Buscando Tareas por parámetros (SQL)");
@@ -129,18 +89,5 @@ export const getuserTarea = async (req, res) => {
   }
 };
 
-export const getTareas = async (req, res) => {
-  console.log("Buscando Todas las Tareas (SQL)");
-  try {
-    const pool = getPostgresPool();
-    if (!pool) {
-      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
-    }
-    const [rows] = await pool.query("SELECT * FROM tasks ORDER BY created_at DESC");
-    res.json(rows || []);
-  } catch (error) {
-    res.status(400).json({ message: "Error al buscar tareas", error: error.message });
-  }
-};
 
 

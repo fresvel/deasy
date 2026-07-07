@@ -1,14 +1,10 @@
 import { Router } from "express";
-import { createTarea, createLoteTareas, getuserTarea } from "../controllers/tareas/tareas_controler.js";
+import { getuserTarea } from "../controllers/tareas/tareas_controler.js";
 import { getMySupervisedStuckTasks } from "../controllers/tareas/supervision_controler.js";
 import { authMiddleware } from "../middlewares/auth.js";
 
 const router = new Router();
 
-
-router.post('/', createTarea);
-
-router.post('/lote', createLoteTareas);
 
 router.get('/', getuserTarea);
 
