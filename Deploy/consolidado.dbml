@@ -1,22 +1,360 @@
-Table unit_types [headercolor: #abe0f7] {
-  id integer [pk, increment, unique]
-  name varchar(120) [not null]
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+// Modelo de datos de Deasy — PostgreSQL
+// Generado desde backend/database/postgres_schema.sql (introspección de information_schema).
+// Fuente de verdad: postgres_schema.sql. Regenerar con tools de introspección si el schema cambia.
+
+Project deasy {
+  database_type: 'PostgreSQL'
 }
 
-Table units [headercolor: #abe0f7] {
-  id integer [pk, increment, unique]
+Table actions {
+  id integer [pk, increment]
+  code varchar(40) [not null, unique]
+  name varchar(120) [not null]
+  description varchar(255)
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table aplications {
+  id integer [pk, increment]
+  person_id integer [not null]
+  vacancy_id integer [not null]
+  status text [not null, default: 'aplicado']
+  selected_flag smallint [note: "columna generada (STORED)"]
+  applied_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  note varchar(255)
+}
+
+Table cargo_role_map {
+  id integer [pk, increment]
+  role_id integer [not null]
+  cargo_id integer [not null]
+}
+
+Table cargos {
+  id integer [pk, increment]
+  code varchar(120) [not null, unique]
+  name varchar(120) [not null, unique]
+  description varchar(255)
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table chat_conversation_participants {
+  id bigint [pk, increment]
+  conversation_id bigint [not null]
+  person_id integer [not null]
+  role varchar(20) [not null, default: 'member']
+  joined_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  left_at timestamp
+}
+
+Table chat_conversations {
+  id bigint [pk, increment]
+  type text [not null]
+  title text
+  process_id integer
+  scope_process_id integer
+  scope_unit_id integer
+  stable_key varchar(255)
+  scope_current_definition_id integer
+  scope_origin_definition_id integer
+  created_by integer [not null]
+  last_message_id bigint
+  last_message_at timestamp
+  archived_at timestamp
+  mobile_summary text
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table chat_message_attachments {
+  id bigint [pk, increment]
+  message_id bigint [not null]
+  sort_order integer [not null, default: 0]
+  path varchar(500) [not null]
+  filename varchar(255) [not null]
+  mime varchar(120)
+  size bigint [not null, default: 0]
+}
+
+Table chat_message_reads {
+  message_id bigint [not null]
+  person_id integer [not null]
+  read_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (message_id, person_id) [pk]
+  }
+}
+
+Table chat_messages {
+  id bigint [pk, increment]
+  conversation_id bigint [not null]
+  sender_person_id integer [not null]
+  content text [not null, default: '']
+  content_type varchar(20) [not null, default: 'text']
+  reply_to_message_id bigint
+  edited_at timestamp
+  deleted_at timestamp
+  delivery_state varchar(20)
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table chat_notifications {
+  id bigint [pk, increment]
+  recipient_person_id integer [not null]
+  type varchar(80) [not null]
+  title text [not null]
+  body text [not null]
+  entity_type varchar(40)
+  entity_id varchar(64)
+  conversation_id bigint
+  message_id bigint
+  channel varchar(20) [not null, default: 'in_app']
+  read_at timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table contract_origin_recruitment {
+  contract_id integer [pk]
+  offer_id integer [not null, unique]
+  vacancy_id integer [not null, unique]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table contract_origin_renewal {
+  contract_id integer [pk]
+  renewed_from_contract_id integer [not null]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table contract_origins {
+  contract_id integer [pk]
+  origin_type text [not null]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table contracts {
+  id integer [pk, increment]
+  person_id integer [not null]
+  position_id integer [not null]
+  relation_type varchar(60) [not null]
+  dedication varchar(30) [not null]
+  start_date date [not null]
+  end_date date
+  status text [not null, default: 'activo']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table deliverables {
+  id integer [pk, increment]
+  code varchar(180) [not null]
+  display_name varchar(180) [not null]
+  description varchar(255)
+  owner_process_id integer
+  owner_variation_key varchar(120)
+  template_scope text [not null, default: 'official']
+  template_seed_id integer
+  owner_person_id integer
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table document_attachments {
+  id integer [pk, increment]
+  document_version_id integer [not null]
+  kind text [not null, default: 'annex']
+  file_path varchar(255) [not null]
+  file_name varchar(255) [not null]
+  mime_type varchar(120)
+  size_bytes bigint
+  description varchar(255)
+  uploaded_by_person_id integer
+  sort_order integer [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table document_fill_flows {
+  id integer [pk, increment]
+  fill_flow_template_id integer [not null]
+  document_version_id integer [not null]
+  status text [not null, default: 'pending']
+  current_step_order integer
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table document_signatures {
+  id integer [pk, increment]
+  signature_request_id integer
+  document_version_id integer [not null]
+  signer_user_id integer [not null]
+  signature_status_id integer [not null]
+  note_short varchar(255)
+  signed_file_path varchar(255)
+  signed_at timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table document_versions {
+  id integer [pk, increment]
+  document_id integer [not null]
+  version numeric(4,1) [not null, default: 0.1]
+  template_artifact_id integer
+  payload_hash varchar(64)
+  payload_object_path varchar(255)
+  working_file_path varchar(255)
+  final_file_path varchar(255)
+  format varchar(40)
+  render_engine varchar(80)
+  status varchar(30) [not null, default: 'Borrador']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table document_workflow_observations {
+  id integer [pk, increment]
+  task_item_id integer [not null]
+  document_version_id integer [not null]
+  fill_request_id integer
+  signature_request_id integer
+  phase text [not null]
+  kind text [not null, default: 'observation']
+  message text [not null]
+  author_person_id integer [not null]
+  target_person_id integer
+  resolved_by_person_id integer
+  resolved_at timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table documents {
+  id integer [pk, increment]
+  task_item_id integer
+  owner_person_id integer
+  origin_unit_id integer
+  origin_type text [not null, default: 'task_item']
+  title varchar(180)
+  status varchar(30) [not null, default: 'Inicial']
+  comments_thread_ref varchar(64)
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp
+}
+
+Table dossier_items {
+  id bigint [pk, increment]
+  dossier_id bigint [not null]
+  section varchar(20) [not null]
+  data jsonb [not null, default: '{}']
+  url_documento text [not null, default: '']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table dossiers {
+  id bigint [pk, increment]
+  person_id integer [not null]
+  cedula varchar(20)
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table email_verification_codes {
+  id bigint [pk, increment]
+  person_id integer [not null]
+  code_hash varchar(255) [not null]
+  expires_at timestamp [not null]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table fill_flow_steps {
+  id integer [pk, increment]
+  fill_flow_template_id integer [not null]
+  step_order integer [not null]
+  resolver_type text [not null, default: 'task_assignee']
+  assigned_person_id integer
+  unit_scope_type text [not null, default: 'unit_exact']
+  unit_id integer
+  unit_type_id integer
+  relation_type_id integer
+  cargo_id integer
+  position_id integer
+  selection_mode text [not null, default: 'auto_one']
+  is_required smallint [not null, default: 1]
+  can_reject smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table fill_flow_templates {
+  id integer [pk, increment]
+  process_definition_template_id integer [not null]
+  task_item_id integer
   name varchar(180) [not null]
-  slug varchar(180) [not null]
-  unit_type_id integer [not null]
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  description varchar(255)
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table fill_requests {
+  id integer [pk, increment]
+  document_fill_flow_id integer [not null]
+  fill_flow_step_id integer [not null]
+  assigned_person_id integer
+  status text [not null, default: 'pending']
+  is_manual smallint [not null, default: 0]
+  requested_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  responded_at timestamp
+  response_note varchar(255)
+}
+
+Table offers {
+  id integer [pk, increment]
+  application_id integer [not null]
+  status text [not null, default: 'enviada']
+  active_flag smallint [note: "columna generada (STORED)"]
+  terms_snapshot text
+  sent_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  responded_at timestamp
+  expires_at timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table password_reset_codes {
+  id bigint [pk, increment]
+  person_id integer [not null]
+  code_hash varchar(255) [not null]
+  expires_at timestamp [not null]
+  used smallint [default: 0]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table permissions {
+  id integer [pk, increment]
+  resource_id integer [not null]
+  action_id integer [not null]
+  code varchar(120) [not null]
+  description varchar(255)
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table person_certificates {
+  id integer [pk, increment]
+  person_id integer [not null]
+  label varchar(180) [not null]
+  original_filename varchar(255) [not null]
+  bucket varchar(120) [not null]
+  object_name varchar(500) [not null]
+  is_default smallint [not null, default: 0]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table persons {
-  id int [pk, increment]
+  id integer [pk, increment]
   cedula varchar(20) [unique]
   first_name varchar(120) [not null]
   last_name varchar(120) [not null]
@@ -24,588 +362,566 @@ Table persons {
   whatsapp varchar(30)
   direccion varchar(255)
   pais varchar(80)
+  pais_residencia varchar(80)
+  provincia_residencia varchar(120)
+  ciudad_residencia varchar(120)
+  calle_primaria varchar(180)
+  calle_secundaria varchar(180)
+  codigo_postal varchar(30)
   password_hash varchar(255) [not null]
-  status varchar(30) [default: 'Inactivo', note: "Expected: Inactivo|Activo|Verificado|Reportado (ENUM in SQL)"]
-  verify_email boolean [default: false]
-  verify_whatsapp boolean [default: false]
-  photo_url longtext
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  status text [default: 'Inactivo']
+  verify_email smallint [default: 0]
+  verify_whatsapp smallint [default: 0]
+  photo_url text
+  is_active smallint [not null, default: 1]
+  token varchar(10) [not null, unique]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table relation_unit_types [headercolor: #abe0f7] {
-  id integer [pk, increment, not null, unique]
+Table position_assignments {
+  id integer [pk, increment]
+  position_id integer [not null]
+  person_id integer [not null]
+  start_date date [not null]
+  end_date date
+  is_current smallint [not null, default: 1]
+  current_flag smallint [note: "columna generada (STORED)"]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table process_definition_period_types {
+  id integer [pk, increment]
+  process_definition_id integer [not null]
+  term_type_id integer [not null]
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table process_definition_series {
+  id integer [pk, increment]
+  source_type text [not null, default: 'default']
+  unit_type_id integer
+  cargo_id integer
+  code varchar(120) [not null]
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table process_definition_templates {
+  id integer [pk, increment]
+  process_definition_id integer [not null]
+  template_artifact_id integer [not null]
+  sort_order integer [not null, default: 1]
+  item_mode text [not null, default: 'single']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table process_definition_versions {
+  id integer [pk, increment]
+  process_id integer [not null]
+  series_id integer [not null]
+  variation_key varchar(120) [not null, default: 'general']
+  definition_version varchar(20) [not null]
+  name varchar(180) [not null]
+  description varchar(255)
+  status text [not null, default: 'draft']
+  active_series_flag smallint [note: "columna generada (STORED)"]
+  effective_from date [not null]
+  effective_to date
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table process_runs {
+  id integer [pk, increment]
+  process_definition_id integer [not null]
+  term_id integer
+  run_mode text [not null, default: 'manual']
+  source_run_id integer
+  created_by_user_id integer
+  reason varchar(255)
+  status text [not null, default: 'active']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table process_target_rules {
+  id integer [pk, increment]
+  process_definition_id integer [not null]
+  unit_scope_type text [not null, default: 'unit_exact']
+  unit_id integer
+  unit_type_id integer
+  cargo_id integer
+  position_id integer
+  recipient_policy text [not null, default: 'all_matches']
+  priority integer [not null, default: 1]
+  is_active smallint [not null, default: 1]
+  effective_from date
+  effective_to date
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table processes {
+  id integer [pk, increment]
+  name varchar(180) [not null]
+  slug varchar(180) [not null, unique]
+  parent_id integer
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table relation_unit_types {
+  id integer [pk, increment]
   code varchar(40) [not null, unique]
   name varchar(40) [not null]
   description varchar(255)
-  is_inheritance_allowed boolean [not null, default: false]
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  is_inheritance_allowed smallint [not null, default: 0]
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table unit_relations [headercolor: #abf7ad] {
-  id integer [pk, increment, not null, unique]
-  relation_type_id integer [not null]
-  parent_unit_id integer [not null]
-  child_unit_id integer [not null]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (parent_unit_id, child_unit_id, relation_type_id) [name: "unit_relations_uq", unique]
-    (child_unit_id, relation_type_id) [name: "uq_unit_relations_child_type", unique]
-  }
-}
-
-Table cargos [headercolor: #abe0f7] {
-  id integer [pk, increment, unique]
-  name varchar(120) [not null]
-  description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table unit_positions [headercolor: #eb576b] {
-  id integer [pk, increment, unique]
-  unit_id integer [not null]
-  slot_no integer [not null]
-  title varchar(180)
-  profile_ref varchar(64) [note: "Mongo profile version id as string"]
-  position_type varchar(20) [not null, default: "real", note: "real|promocion|simbolico"]
-  is_active boolean [not null, default: true]
-  deactivated_at datetime
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  cargo_id integer [not null]
-
-  indexes {
-    (unit_id, cargo_id, slot_no) [name: "uq_unit_cargo_slot", unique]
-    (unit_id, cargo_id, is_active) [name: "idx_positions_unit_cargo_active"]
-  }
-}
-
-Table position_assignments [headercolor: #abe0f7] {
-  id integer [pk, increment, unique]
-  position_id integer [not null]
-  person_id integer [not null]
-  start_date date [not null]
-  end_date date
-  is_current boolean [not null, default: true]
-  current_flag boolean [note: "In SQL: IF(is_current=1,1,NULL) for partial uniqueness"]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (position_id, current_flag) [name: "uq_position_current", unique]
-    (person_id, is_current) [name: "idx_assignments_person_current"]
-  }
-}
-
-Table vacancies [headercolor: #fcf995] {
-  id integer [pk, increment, unique]
-  title varchar(180) [not null]
-  category varchar(120)
-  dedication varchar(30) [not null]
-  relation_type varchar(60) [not null, note: "dependencia|servicios|promocion"]
-  status varchar(30) [not null, default: "abierta", note: "abierta|cubierta|cerrada|cancelada"]
-  open_flag boolean [note: "In SQL: IF(status='abierta',1,NULL) for one open vacancy per position"]
-  profile_ref varchar(64) [note: "Optional snapshot of required profile version id"]
-  opened_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  closed_at datetime
-  position_id integer [not null]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (position_id, open_flag) [name: "uq_one_open_vacancy_per_position", unique]
-    (position_id, status) [name: "idx_vacancies_position_status"]
-  }
-}
-
-Table vacancy_visibility [headercolor: #fcf995] {
-  id integer [pk, increment, unique]
-  vacancy_id integer [not null]
-  unit_id integer
-  role_id integer
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (vacancy_id) [name: "idx_vacancy_visibility_vacancy"]
-    (unit_id) [name: "idx_vacancy_visibility_unit"]
-    (role_id) [name: "idx_vacancy_visibility_role"]
-  }
-}
-
-Table aplications [headercolor: #fcf2a4] {
-  person_id integer [not null]
-  vacancy_id integer [not null]
-  status varchar(30) [not null, default: "aplicado", note: "aplicado|preseleccionado|entrevista|rechazado|retirado|seleccionado"]
-  id integer [pk, increment, not null, unique]
-  selected_flag boolean [note: "In SQL: IF(status='seleccionado',1,NULL) for one selected per vacancy"]
-  applied_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  note varchar(255)
-
-  indexes {
-    (vacancy_id, person_id) [name: "uq_application_once", unique]
-    (vacancy_id, selected_flag) [name: "uq_one_selected_per_vacancy", unique]
-    (vacancy_id, status) [name: "idx_applications_vacancy_status"]
-    (person_id, applied_at) [name: "idx_applications_person_time"]
-  }
-}
-
-Table offers [headercolor: #fff9b3] {
-  application_id integer [not null]
-  id integer [pk, increment, not null, unique]
-  status varchar(30) [not null, default: "enviada", note: "enviada|aceptada|rechazada|retractada|expirada"]
-  active_flag boolean [note: "In SQL: IF(status='enviada',1,NULL) for one active offer per application"]
-  terms_snapshot text [note: "Prefer JSON snapshot in app"]
-  sent_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  responded_at datetime
-  expires_at datetime
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (application_id, active_flag) [name: "uq_one_active_offer_per_application", unique]
-    (application_id, status) [name: "idx_offers_application_status"]
-  }
-}
-
-Table contracts [headercolor: #faf49b] {
-  id integer [pk, increment, unique]
-  person_id integer [not null]
-  position_id integer [not null]
-  relation_type varchar(60) [not null, note: "dependencia|servicios|promocion"]
-  dedication varchar(30) [not null]
-  start_date date [not null]
-  end_date date
-  status varchar(30) [not null, default: "activo", note: "activo|finalizado|cancelado"]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (person_id, status) [name: "idx_contracts_person_status"]
-    (position_id, status) [name: "idx_contracts_position_status"]
-  }
-}
-
-
-Table roles [headercolor: #175e7a] {
-  id integer [pk, increment, unique]
-  name varchar(120) [not null]
-  description varchar(255)
-  is_active boolean [not null, default: true]
-}
-
-Table resources [headercolor: #175e7a] {
-  id integer [pk, increment, not null, unique]
+Table resources {
+  id integer [pk, increment]
   code varchar(80) [not null, unique]
   name varchar(120) [not null]
   description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table actions [headercolor: #175e7a] {
-  id integer [pk, increment, not null, unique]
-  code varchar(40) [not null, unique]
-  name varchar(120) [not null]
-  description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+Table role_assignment_relation_types {
+  id integer [pk, increment]
+  relation_type_id integer [not null]
+  role_assignment_id integer [not null]
 }
 
-Table permissions [headercolor: #175e7a] {
-  id integer [pk, increment, unique]
-  resource_id integer [not null]
-  action_id integer [not null]
-  code varchar(120) [not null, note: "Suggested: resource.code + '.' + action.code (vacancies.create)"]
-  description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (resource_id, action_id) [name: "uq_permissions_resource_action", unique]
-    (code) [name: "uq_permissions_code", unique]
-    (resource_id) [name: "idx_permissions_resource"]
-    (action_id) [name: "idx_permissions_action"]
-  }
-}
-
-Table role_permissions [headercolor: #175e7a] {
-  id integer [pk, increment, not null, unique]
-  role_id integer [not null]
-  permission_id integer [not null]
-
-  indexes {
-    (role_id, permission_id) [name: "uq_role_permissions", unique]
-  }
-}
-
-Table role_assignments [headercolor: #abe0f7] {
-  id integer [pk, increment, unique]
+Table role_assignments {
+  id integer [pk, increment]
   role_id integer [not null]
   unit_id integer [not null]
   derived_from_assignment_id integer
-  source varchar(20) [not null, default: "manual", note: "manual|derived"]
+  source text [not null, default: 'manual']
   person_id integer [not null]
   max_depth integer [not null]
   start_date date [not null]
   end_date date
-  is_current boolean [not null, default: true]
-  current_flag boolean [note: "In SQL: IF(is_current=1,1,NULL) for partial uniqueness"]
-  assigned_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  revoked_at datetime
+  is_current smallint [not null, default: 1]
+  current_flag smallint [note: "columna generada (STORED)"]
+  assigned_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  revoked_at timestamp
   revoked_reason varchar(255)
-
-  indexes {
-    (person_id, role_id, unit_id, source, current_flag) [name: "uq_role_assignment_current", unique]
-    (person_id) [name: "idx_role_assignments_person"]
-    (unit_id) [name: "idx_role_assignments_unit"]
-  }
 }
 
-Table role_assignment_relation_types [headercolor: #abf7ad] {
-  id integer [pk, increment, unique]
-  relation_type_id integer [not null]
-  role_assignment_id integer [not null]
-
-  indexes {
-    (role_assignment_id, relation_type_id) [name: "idx_role_assignment_relation_types"]
-  }
-}
-
-Table cargo_role_map [headercolor: #abf7ad] {
-  id integer [pk, increment, not null, unique]
+Table role_permissions {
+  id integer [pk, increment]
   role_id integer [not null]
-  cargo_id integer [not null]
-
-  indexes {
-    (cargo_id, role_id) [name: "uq_cargo_role_map", unique]
-  }
+  permission_id integer [not null]
 }
 
-
-Table contract_origins [headercolor: #fff0b3] {
-  contract_id integer [pk, not null, note: "PK=FK a contracts.id (1:1). En SQL: ON DELETE CASCADE."]
-  origin_type varchar(20) [not null, note: "Valores: recruitment|renewal. En SQL: CHECK/ENUM logico. Regla XOR (no modelable en DBML): debe existir exactamente 1 fila subtipo segun origin_type."]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table contract_origin_recruitment [headercolor: #fff0b3] {
-  contract_id integer [pk, not null, note: "FK a contract_origins.contract_id. Regla (no modelable en DBML): contract_origins.origin_type debe ser 'recruitment'."]
-  offer_id integer [not null, unique, note: "FK a offers.id. Regla: 1 contrato por oferta (UNIQUE)."]
-  vacancy_id integer [not null, unique, note: "FK a vacancies.id. Regla: 1 contrato por vacante (UNIQUE). Coherencia requerida (no modelable en DBML): vacancy_id debe coincidir con la vacante derivada desde offer_id (offers->aplications->vacancies)."]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table contract_origin_renewal [headercolor: #fff0b3] {
-  contract_id integer [pk, not null, note: "FK a contract_origins.contract_id. Regla (no modelable en DBML): contract_origins.origin_type debe ser 'renewal'."]
-  renewed_from_contract_id integer [not null, note: "FK a contracts.id (contrato inmediatamente anterior). Se permite cadena A->B->C. Regla (no modelable en DBML): evitar ciclos A->B->A."]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (renewed_from_contract_id) [name: "idx_renewed_from_contract"]
-  }
-}
-
-
-
-
-/*Modificaciones*/
-
-
-/* Refs */
-Ref fk_unit_types_id_units { unit_types.id < units.unit_type_id }
-Ref fk_units_id_unit_parent_relations { units.id < unit_relations.parent_unit_id }
-Ref fk_units_id_unit_child_relations { units.id < unit_relations.child_unit_id }
-Ref fk_relation_unit_types_id_unit_relations { relation_unit_types.id < unit_relations.relation_type_id }
-Ref fk_units_id_unit_positions { units.id < unit_positions.unit_id }
-Ref fk_cargos_id_unit_positions { cargos.id < unit_positions.cargo_id }
-Ref fk_unit_positions_id_position_assignments { unit_positions.id < position_assignments.position_id }
-Ref fk_persons_id_position_assignments { persons.id < position_assignments.person_id }
-Ref fk_unit_positions_id_vacancies { unit_positions.id < vacancies.position_id }
-Ref fk_vacancies_id_vacancy_visibility { vacancies.id < vacancy_visibility.vacancy_id }
-Ref fk_units_id_vacancy_visibility { units.id < vacancy_visibility.unit_id }
-Ref fk_roles_id_vacancy_visibility { roles.id < vacancy_visibility.role_id }
-Ref fk_vacancies_id_aplications { vacancies.id < aplications.vacancy_id }
-Ref fk_persons_id_aplications { persons.id < aplications.person_id }
-Ref fk_aplications_id_offers { aplications.id < offers.application_id }
-Ref fk_persons_id_contracts { persons.id < contracts.person_id }
-Ref fk_unit_positions_id_contracts { unit_positions.id < contracts.position_id }
-Ref fk_roles_id_role_permissions { roles.id < role_permissions.role_id }
-Ref fk_permissions_id_role_permissions { permissions.id < role_permissions.permission_id }
-Ref fk_persons_id_role_assignments { persons.id < role_assignments.person_id }
-Ref fk_roles_id_role_assignments { roles.id < role_assignments.role_id }
-Ref fk_units_id_role_assignments { units.id < role_assignments.unit_id }
-Ref fk_position_assignments_id_role_assignments { position_assignments.id < role_assignments.derived_from_assignment_id }
-Ref fk_role_assignments_id_role_assignment_relation_types { role_assignments.id < role_assignment_relation_types.role_assignment_id }
-Ref fk_relation_unit_types_id_role_assignment_relation_types { relation_unit_types.id < role_assignment_relation_types.relation_type_id }
-Ref fk_cargos_id_cargo_role_map { cargos.id < cargo_role_map.cargo_id }
-Ref fk_roles_id_cargo_role_map { roles.id < cargo_role_map.role_id }
-Ref fk_actions_id_permissions { actions.id < permissions.action_id }
-Ref fk_resources_id_permissions { resources.id < permissions.resource_id }
-
-/* Refs nuevos */
-Ref fk_contracts_id_contract_origins { contracts.id < contract_origins.contract_id }
-
-Ref fk_contract_origins_id_contract_origin_recruitment { contract_origins.contract_id < contract_origin_recruitment.contract_id }
-Ref fk_offers_id_contract_origin_recruitment { offers.id < contract_origin_recruitment.offer_id }
-Ref fk_vacancies_id_contract_origin_recruitment { vacancies.id < contract_origin_recruitment.vacancy_id }
-
-Ref fk_contract_origins_id_contract_origin_renewal { contract_origins.contract_id < contract_origin_renewal.contract_id }
-Ref fk_contracts_id_contract_origin_renewal_from { contracts.id < contract_origin_renewal.renewed_from_contract_id }
-
-
-
-/* Modificaciones: procesos/plantillas/tareas/documentos/firmas */
-
-Table processes {
-  id int [pk, increment]
-  name varchar(180) [not null]
-  slug varchar(180) [not null, unique]
-  parent_id int [ref: > processes.id]
-  has_document boolean [not null, default: true]
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table process_units {
-  id int [pk, increment]
-  process_id int [not null, ref: > processes.id]
-  unit_id int [not null, ref: > units.id]
-  scope varchar(20) [not null, default: 'owner', note: "owner|collaborator"]
-  is_primary boolean [not null, default: false]
-  is_active boolean [not null, default: true]
-  effective_from date
-  effective_to date
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (process_id, unit_id) [name: "uq_process_units_process_unit", unique]
-    (process_id, is_active) [name: "idx_process_units_process_active"]
-    (unit_id, is_active) [name: "idx_process_units_unit_active"]
-  }
-}
-
-Table process_versions {
-  id int [pk, increment]
-  process_id int [not null, ref: > processes.id]
-  version varchar(10) [not null]
-  name varchar(180) [not null]
-  slug varchar(180) [not null]
-  parent_version_id int [ref: > process_versions.id]
-  cargo_id int [not null, ref: > cargos.id]
-  has_document boolean [not null, default: true]
-  is_active boolean [not null, default: true]
-  effective_from date [not null]
-  effective_to date
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (process_id, version) [unique]
-  }
-}
-
-Table terms {
-  id int [pk, increment]
-  name varchar(60) [not null, unique]
-  start_date date [not null]
-  end_date date [not null]
-  is_active boolean [not null, default: true]
-}
-
-Table tasks {
-  id int [pk, increment]
-  process_version_id int [not null, ref: > process_versions.id]
-  term_id int [not null, ref: > terms.id]
-  parent_task_id int [ref: > tasks.id]
-  responsible_position_id int [ref: > unit_positions.id]
-  description text
-  comments_thread_ref varchar(64) [note: "Mongo thread id para comentarios de la tarea. Permisos/reportes se resuelven en backend al combinar SQL + Mongo."]
-  is_main boolean [not null, default: true, note: "Main task created by system per process instance."]
-  start_date date [not null]
-  end_date date
-  status varchar(30) [not null, default: 'pendiente', note: "pendiente|en_proceso|completada|cancelada"]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (process_version_id, term_id) [name: 'idx_tasks_version_term']
-  }
-}
-
-Table task_assignments {
-  id int [pk, increment]
-  task_id int [not null, ref: > tasks.id]
-  position_id int [not null, ref: > unit_positions.id]
-  assigned_person_id int [ref: > persons.id, note: "Snapshot de ocupante al asignar"]
-  status varchar(30) [not null, default: 'pendiente', note: "pendiente|en_proceso|completada|cancelada"]
-  assigned_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  unassigned_at datetime
-
-  Indexes {
-    (task_id, position_id) [unique]
-    (assigned_person_id) [name: "idx_task_assignments_person"]
-  }
-}
-
-Table templates {
-  id int [pk, increment]
-  process_id int [not null, ref: > processes.id]
-  name varchar(180) [not null]
-  slug varchar(180) [not null, unique]
+Table roles {
+  id integer [pk, increment]
+  name varchar(120) [not null, unique]
   description varchar(255)
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (process_id) [name: "idx_templates_process_id"]
-  }
+  is_active smallint [not null, default: 1]
 }
 
-Table template_versions {
-  id int [pk, increment]
-  template_id int [not null, ref: > templates.id]
-  version varchar(20) [not null]
-  mongo_ref varchar(64) [not null, note: "Mongo template version id as string"]
-  mongo_version varchar(40) [not null]
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (template_id, version) [unique]
-  }
-}
-
-Table documents {
-  id int [pk, increment]
-  task_id int [not null, ref: > tasks.id]
-  status varchar(30) [not null, default: 'Inicial', note: "Inicial|En proceso|Aprobado|Rechazado"]
-  comments_thread_ref varchar(64) [note: "Mongo thread id para comentarios del documento. Permisos/reportes se resuelven en backend al combinar SQL + Mongo."]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime
-}
-
-Table document_versions {
-  id int [pk, increment]
-  document_id int [not null, ref: > documents.id]
-  version decimal(4,1) [not null, default: 0.1]
-  payload_mongo_id varchar(180) [not null]
-  payload_hash varchar(64) [not null]
-  latex_path varchar(255)
-  pdf_path varchar(255)
-  signed_pdf_path varchar(255)
-  status varchar(30) [not null, default: 'Borrador', note: "Borrador|Final|Archivado"]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (document_id, version) [unique]
-  }
-}
-
-Table signature_flow_templates {
-  id int [pk, increment]
-  process_version_id int [not null, ref: > process_versions.id]
-  name varchar(180) [not null]
-  description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table signature_flow_steps {
-  id int [pk, increment]
-  template_id int [not null, ref: > signature_flow_templates.id]
-  step_order int [not null]
-  step_type_id int [not null, ref: > signature_types.id, note: "Catalog: elaboracion|revision|aprobacion"]
-  required_cargo_id int [not null, ref: > cargos.id]
-  selection_mode varchar(20) [not null, default: "auto_all", note: "auto_all|select|auto_quorum"]
-  required_signers_min int [note: "Usado si selection_mode=auto_quorum o para validar seleccion manual"]
-  required_signers_max int [note: "Limite superior opcional para seleccion manual"]
-  is_required boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (template_id, step_order) [unique]
-  }
-
-  Note: 'Niveles = step_order. auto_all: todos los ocupantes; select: usuario elige y debe cumplir min/max; auto_quorum: sistema elige hasta required_signers_min.'
+Table signature_batch_jobs {
+  job_id char(36) [pk]
+  user_id bigint
+  sign_mode varchar(40)
+  status varchar(20) [not null, default: 'queued']
+  total integer [not null, default: 0]
+  processed integer [not null, default: 0]
+  success_count integer [not null, default: 0]
+  failed_count integer [not null, default: 0]
+  results jsonb
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table signature_flow_instances {
-  id int [pk, increment]
-  template_id int [not null, ref: > signature_flow_templates.id]
-  document_version_id int [not null, ref: > document_versions.id]
-  status_id int [not null, ref: > signature_request_statuses.id, note: "Catalog: pendiente|notificado|firmado|rechazado|expirado"]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (document_version_id) [unique]
-  }
+  id integer [pk, increment]
+  template_id integer [not null]
+  document_version_id integer [not null]
+  status_id integer [not null]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table signature_requests {
-  id int [pk, increment]
-  instance_id int [not null, ref: > signature_flow_instances.id]
-  step_id int [not null, ref: > signature_flow_steps.id]
-  assigned_person_id int [ref: > persons.id]
-  status_id int [not null, ref: > signature_request_statuses.id, note: "Catalog: pendiente|notificado|firmado|rechazado|expirado"]
-  is_manual boolean [not null, default: false, note: "true = solicitud seleccionada o añadida manualmente"]
-  requested_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  notified_at datetime
-  responded_at datetime
-
-  Indexes {
-    (instance_id, step_id, assigned_person_id) [unique]
-    (instance_id, step_id) [name: "idx_signature_requests_step"]
-  }
+Table signature_flow_steps {
+  id integer [pk, increment]
+  template_id integer [not null]
+  step_order integer [not null]
+  code varchar(120)
+  name varchar(180)
+  slot varchar(80)
+  resolver_type text [not null, default: 'cargo_in_scope']
+  assigned_person_id integer
+  unit_scope_type text [not null, default: 'context_exact']
+  unit_id integer
+  unit_type_id integer
+  position_id integer
+  required_cargo_id integer
+  selection_mode varchar(20) [not null, default: 'auto_all']
+  approval_mode text [not null, default: 'and']
+  required_signers_min integer
+  required_signers_max integer
+  is_required smallint [not null, default: 1]
+  anchor_refs jsonb
+  signers jsonb
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table document_signatures {
-  id int [pk, increment]
-  signature_request_id int [ref: > signature_requests.id]
-  document_version_id int [not null, ref: > document_versions.id]
-  signer_user_id int [not null, ref: > persons.id]
-  signature_status_id int [not null, ref: > signature_statuses.id, note: "Catalog: pendiente|firmado|rechazado|anulado"]
-  signature_type_id int [not null, ref: > signature_types.id, note: "Catalog: elaboracion|revision|aprobacion"]
-  note_short varchar(255)
-  signed_file_path varchar(255)
-  signed_at datetime
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table signature_types {
-  id int [pk, increment]
-  code varchar(40) [not null, unique]
-  name varchar(80) [not null]
+Table signature_flow_templates {
+  id integer [pk, increment]
+  process_definition_template_id integer [not null]
+  task_item_id integer
+  name varchar(180) [not null]
   description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Note: 'Valores sugeridos: elaboracion, revision, aprobacion.'
-}
-
-Table signature_statuses {
-  id int [pk, increment]
-  code varchar(40) [not null, unique]
-  name varchar(80) [not null]
-  description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Note: 'Valores sugeridos: pendiente, firmado, rechazado, anulado.'
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table signature_request_statuses {
-  id int [pk, increment]
+  id integer [pk, increment]
   code varchar(40) [not null, unique]
   name varchar(80) [not null]
   description varchar(255)
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Note: 'Valores sugeridos: pendiente, notificado, firmado, rechazado, expirado.'
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
+
+Table signature_requests {
+  id integer [pk, increment]
+  instance_id integer [not null]
+  step_id integer [not null]
+  assigned_person_id integer
+  status_id integer [not null]
+  is_manual smallint [not null, default: 0]
+  requested_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  notified_at timestamp
+  responded_at timestamp
+}
+
+Table signature_statuses {
+  id integer [pk, increment]
+  code varchar(40) [not null, unique]
+  name varchar(80) [not null]
+  description varchar(255)
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table task_assignments {
+  id integer [pk, increment]
+  task_id integer [not null]
+  position_id integer [not null]
+  assigned_person_id integer
+  status varchar(30) [not null, default: 'pendiente']
+  assigned_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  unassigned_at timestamp
+}
+
+Table task_item_handovers {
+  id integer [pk, increment]
+  task_item_id integer [not null]
+  from_person_id integer
+  to_person_id integer
+  reason varchar(255)
+  trigger_kind text [not null, default: 'manual']
+  performed_by_user_id bigint
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table task_items {
+  id integer [pk, increment]
+  task_id integer [not null]
+  process_definition_template_id integer
+  template_artifact_id integer [not null]
+  origin_kind text [not null, default: 'process_defined']
+  title varchar(180)
+  sort_order integer [not null, default: 1]
+  created_by_person_id integer
+  source_task_item_id integer
+  target_unit_id integer
+  target_position_id integer
+  target_person_id integer
+  process_definition_template_key integer [note: "columna generada (STORED)"]
+  target_position_key integer [note: "columna generada (STORED)"]
+  target_person_key integer [note: "columna generada (STORED)"]
+  responsible_position_id integer
+  assigned_person_id integer
+  start_date date [not null]
+  end_date date
+  user_started_at timestamp
+  status varchar(30) [not null, default: 'pendiente']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table tasks {
+  id integer [pk, increment]
+  process_definition_id integer [not null]
+  process_run_id integer
+  term_id integer [not null]
+  scope_unit_id integer
+  normalized_scope_unit_id integer [note: "columna generada (STORED)"]
+  created_by_user_id integer
+  responsible_position_id integer
+  description text
+  comments_thread_ref varchar(64)
+  start_date date [not null]
+  end_date date
+  status varchar(30) [not null, default: 'pendiente']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table template_artifacts {
+  id integer [pk, increment]
+  deliverable_id integer [not null]
+  storage_version varchar(20) [not null]
+  lifecycle_state text [not null, default: 'published']
+  base_object_prefix varchar(255) [not null]
+  available_formats jsonb [not null]
+  schema_object_key varchar(255) [not null]
+  meta_object_key varchar(255) [not null]
+  content_hash varchar(64)
+  parent_version_id integer
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table template_seeds {
+  id integer [pk, increment]
+  seed_code varchar(180) [not null]
+  display_name varchar(180) [not null]
+  description varchar(255)
+  seed_type varchar(40) [not null]
+  source_path varchar(255) [not null]
+  preview_path varchar(255)
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table term_types {
+  id integer [pk, increment]
+  code varchar(40) [not null, unique]
+  name varchar(80) [not null, unique]
+  description varchar(255)
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table terms {
+  id integer [pk, increment]
+  name varchar(60) [not null, unique]
+  term_type_id integer [not null]
+  start_date date [not null]
+  end_date date [not null]
+  is_active smallint [not null, default: 1]
+}
+
+Table unit_positions {
+  id integer [pk, increment]
+  unit_id integer [not null]
+  slot_no integer [not null]
+  title varchar(180)
+  profile jsonb
+  position_type text [not null, default: 'real']
+  is_active smallint [not null, default: 1]
+  is_unit_head smallint [not null, default: 0]
+  head_flag smallint [note: "columna generada (STORED)"]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  cargo_id integer [not null]
+}
+
+Table unit_relations {
+  id integer [pk, increment]
+  relation_type_id integer [not null]
+  parent_unit_id integer [not null]
+  child_unit_id integer [not null]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table unit_types {
+  id integer [pk, increment]
+  name varchar(120) [not null]
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table units {
+  id integer [pk, increment]
+  name varchar(180) [not null]
+  label varchar(75)
+  slug varchar(180) [not null]
+  unit_type_id integer [not null]
+  is_active smallint [not null, default: 1]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table vacancies {
+  id integer [pk, increment]
+  title varchar(180) [not null]
+  category varchar(120)
+  dedication varchar(30) [not null]
+  relation_type varchar(60) [not null]
+  status text [not null, default: 'abierta']
+  open_flag smallint [note: "columna generada (STORED)"]
+  profile_ref varchar(64)
+  opened_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  closed_at timestamp
+  position_id integer [not null]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table vacancy_visibility {
+  id integer [pk, increment]
+  vacancy_id integer [not null]
+  unit_id integer
+  role_id integer
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+// ── Relaciones (claves foráneas) ──
+Ref: aplications.person_id > persons.id
+Ref: aplications.vacancy_id > vacancies.id
+Ref: cargo_role_map.cargo_id > cargos.id
+Ref: cargo_role_map.role_id > roles.id
+Ref: chat_message_attachments.message_id > chat_messages.id
+Ref: chat_messages.conversation_id > chat_conversations.id
+Ref: chat_messages.reply_to_message_id > chat_messages.id
+Ref: chat_conversation_participants.conversation_id > chat_conversations.id
+Ref: chat_message_reads.message_id > chat_messages.id
+Ref: contract_origin_recruitment.contract_id > contract_origins.contract_id
+Ref: contract_origin_recruitment.offer_id > offers.id
+Ref: contract_origin_recruitment.vacancy_id > vacancies.id
+Ref: contract_origin_renewal.contract_id > contract_origins.contract_id
+Ref: contract_origin_renewal.renewed_from_contract_id > contracts.id
+Ref: contract_origins.contract_id > contracts.id
+Ref: contracts.person_id > persons.id
+Ref: contracts.position_id > unit_positions.id
+Ref: deliverables.owner_person_id > persons.id
+Ref: deliverables.owner_process_id > processes.id
+Ref: deliverables.template_seed_id > template_seeds.id
+Ref: document_attachments.uploaded_by_person_id > persons.id
+Ref: document_attachments.document_version_id > document_versions.id
+Ref: document_fill_flows.document_version_id > document_versions.id
+Ref: document_fill_flows.fill_flow_template_id > fill_flow_templates.id
+Ref: document_signatures.document_version_id > document_versions.id
+Ref: document_signatures.signature_request_id > signature_requests.id
+Ref: document_signatures.signer_user_id > persons.id
+Ref: document_signatures.signature_status_id > signature_statuses.id
+Ref: document_versions.template_artifact_id > template_artifacts.id
+Ref: document_versions.document_id > documents.id
+Ref: document_workflow_observations.author_person_id > persons.id
+Ref: document_workflow_observations.fill_request_id > fill_requests.id
+Ref: document_workflow_observations.task_item_id > task_items.id
+Ref: document_workflow_observations.resolved_by_person_id > persons.id
+Ref: document_workflow_observations.signature_request_id > signature_requests.id
+Ref: document_workflow_observations.target_person_id > persons.id
+Ref: document_workflow_observations.document_version_id > document_versions.id
+Ref: documents.origin_unit_id > units.id
+Ref: documents.owner_person_id > persons.id
+Ref: documents.task_item_id > task_items.id
+Ref: dossier_items.dossier_id > dossiers.id
+Ref: email_verification_codes.person_id > persons.id
+Ref: fill_flow_steps.cargo_id > cargos.id
+Ref: fill_flow_steps.assigned_person_id > persons.id
+Ref: fill_flow_steps.position_id > unit_positions.id
+Ref: fill_flow_steps.relation_type_id > relation_unit_types.id
+Ref: fill_flow_steps.fill_flow_template_id > fill_flow_templates.id
+Ref: fill_flow_steps.unit_id > units.id
+Ref: fill_flow_steps.unit_type_id > unit_types.id
+Ref: fill_flow_templates.process_definition_template_id > process_definition_templates.id
+Ref: fill_flow_templates.task_item_id > task_items.id
+Ref: fill_requests.document_fill_flow_id > document_fill_flows.id
+Ref: fill_requests.assigned_person_id > persons.id
+Ref: fill_requests.fill_flow_step_id > fill_flow_steps.id
+Ref: offers.application_id > aplications.id
+Ref: password_reset_codes.person_id > persons.id
+Ref: permissions.action_id > actions.id
+Ref: permissions.resource_id > resources.id
+Ref: person_certificates.person_id > persons.id
+Ref: position_assignments.person_id > persons.id
+Ref: position_assignments.position_id > unit_positions.id
+Ref: process_definition_period_types.process_definition_id > process_definition_versions.id
+Ref: process_definition_period_types.term_type_id > term_types.id
+Ref: process_definition_series.cargo_id > cargos.id
+Ref: process_definition_series.unit_type_id > unit_types.id
+Ref: process_definition_templates.template_artifact_id > template_artifacts.id
+Ref: process_definition_templates.process_definition_id > process_definition_versions.id
+Ref: process_definition_versions.process_id > processes.id
+Ref: process_definition_versions.series_id > process_definition_series.id
+Ref: process_runs.created_by_user_id > persons.id
+Ref: process_runs.process_definition_id > process_definition_versions.id
+Ref: process_runs.source_run_id > process_runs.id
+Ref: process_runs.term_id > terms.id
+Ref: process_target_rules.cargo_id > cargos.id
+Ref: process_target_rules.process_definition_id > process_definition_versions.id
+Ref: process_target_rules.position_id > unit_positions.id
+Ref: process_target_rules.unit_id > units.id
+Ref: process_target_rules.unit_type_id > unit_types.id
+Ref: processes.parent_id > processes.id
+Ref: role_assignment_relation_types.relation_type_id > relation_unit_types.id
+Ref: role_assignment_relation_types.role_assignment_id > role_assignments.id
+Ref: role_assignments.person_id > persons.id
+Ref: role_assignments.derived_from_assignment_id > position_assignments.id
+Ref: role_assignments.role_id > roles.id
+Ref: role_assignments.unit_id > units.id
+Ref: role_permissions.permission_id > permissions.id
+Ref: role_permissions.role_id > roles.id
+Ref: signature_flow_instances.document_version_id > document_versions.id
+Ref: signature_flow_instances.status_id > signature_request_statuses.id
+Ref: signature_flow_instances.template_id > signature_flow_templates.id
+Ref: signature_flow_steps.required_cargo_id > cargos.id
+Ref: signature_flow_steps.assigned_person_id > persons.id
+Ref: signature_flow_steps.position_id > unit_positions.id
+Ref: signature_flow_steps.template_id > signature_flow_templates.id
+Ref: signature_flow_steps.unit_id > units.id
+Ref: signature_flow_steps.unit_type_id > unit_types.id
+Ref: signature_flow_templates.process_definition_template_id > process_definition_templates.id
+Ref: signature_flow_templates.task_item_id > task_items.id
+Ref: signature_requests.instance_id > signature_flow_instances.id
+Ref: signature_requests.assigned_person_id > persons.id
+Ref: signature_requests.status_id > signature_request_statuses.id
+Ref: signature_requests.step_id > signature_flow_steps.id
+Ref: task_assignments.assigned_person_id > persons.id
+Ref: task_assignments.position_id > unit_positions.id
+Ref: task_assignments.task_id > tasks.id
+Ref: task_item_handovers.from_person_id > persons.id
+Ref: task_item_handovers.task_item_id > task_items.id
+Ref: task_item_handovers.to_person_id > persons.id
+Ref: task_items.assigned_person_id > persons.id
+Ref: task_items.created_by_person_id > persons.id
+Ref: task_items.process_definition_template_id > process_definition_templates.id
+Ref: task_items.responsible_position_id > unit_positions.id
+Ref: task_items.source_task_item_id > task_items.id
+Ref: task_items.target_person_id > persons.id
+Ref: task_items.target_position_id > unit_positions.id
+Ref: task_items.target_unit_id > units.id
+Ref: task_items.task_id > tasks.id
+Ref: task_items.template_artifact_id > template_artifacts.id
+Ref: tasks.created_by_user_id > persons.id
+Ref: tasks.process_definition_id > process_definition_versions.id
+Ref: tasks.process_run_id > process_runs.id
+Ref: tasks.responsible_position_id > unit_positions.id
+Ref: tasks.scope_unit_id > units.id
+Ref: tasks.term_id > terms.id
+Ref: template_artifacts.deliverable_id > deliverables.id
+Ref: template_artifacts.parent_version_id > template_artifacts.id
+Ref: terms.term_type_id > term_types.id
+Ref: unit_positions.cargo_id > cargos.id
+Ref: unit_positions.unit_id > units.id
+Ref: unit_relations.child_unit_id > units.id
+Ref: unit_relations.parent_unit_id > units.id
+Ref: unit_relations.relation_type_id > relation_unit_types.id
+Ref: units.unit_type_id > unit_types.id
+Ref: vacancies.position_id > unit_positions.id
+Ref: vacancy_visibility.role_id > roles.id
+Ref: vacancy_visibility.unit_id > units.id
+Ref: vacancy_visibility.vacancy_id > vacancies.id
