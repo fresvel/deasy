@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=./_backend_db_exec.sh
 . "$ROOT_DIR/scripts/_backend_db_exec.sh"
 
-# Servicios de aplicacion que mantienen conexiones/estado contra MariaDB/MinIO/Mongo/RabbitMQ y
+# Servicios de aplicacion que mantienen conexiones/estado contra PostgreSQL/MinIO/RabbitMQ y
 # que deben reciclarse tras el wipe para reconectar limpio (el backend ademas re-corre la
 # inicializacion de esquema y queda en modo bootstrap). Solo se tocan los que existan en el entorno.
 APP_SERVICES=("backend" "storage-uploader" "signer")
@@ -22,18 +22,16 @@ Uso:
   bash scripts/reset-system.sh <dev|qa|prod> [flags]
 
 Regresa el sistema al estado base (instalación virgen) para arrancar el bootstrap:
-  - MariaDB: dropea todas las tablas y recrea el schema vacío
+  - PostgreSQL: dropea todas las tablas y recrea el schema vacío (incluye dossier, chat, etc.)
   - MinIO:   vacía todos los buckets gestionados por la app
-  - MongoDB: elimina la base de datos (dossier, chat, etc.)
 
 Tras el wipe reinicia los servicios de app (backend, storage-uploader, signer) para que
 reconecten en limpio; el backend detecta la instalación virgen y la UI pide crear el primer
 administrador.
 
 Flags de wipe (se pasan a reset_system.mjs):
-  --keep-db        conserva MariaDB
+  --keep-db        conserva PostgreSQL
   --keep-minio     conserva los buckets de MinIO
-  --keep-mongo     conserva la base de datos de MongoDB
 
 Flags de servicios:
   --rebuild        reconstruye las imágenes y recrea los servicios (en vez de solo reiniciar);
@@ -42,7 +40,7 @@ Flags de servicios:
 
 Ejemplos:
   bash scripts/reset-system.sh dev
-  bash scripts/reset-system.sh dev --keep-mongo
+  bash scripts/reset-system.sh dev --keep-minio
   bash scripts/reset-system.sh qa --rebuild
   bash scripts/reset-system.sh dev --no-restart
 
@@ -70,7 +68,7 @@ while [ "$#" -gt 0 ]; do
     --no-restart)
       RESTART_MODE="none"
       ;;
-    --keep-db|--keep-minio|--keep-mongo)
+    --keep-db|--keep-minio)
       NODE_ARGS+=("$1")
       ;;
     --help|-h)

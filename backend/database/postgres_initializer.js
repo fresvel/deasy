@@ -1,15 +1,15 @@
-// Bootstrap del schema PostgreSQL (espejo de mariadb_initializer.js).
+// Bootstrap del schema PostgreSQL.
 //
 // El schema (postgres_schema.sql) es IDEMPOTENTE: CREATE TABLE/INDEX IF NOT
 // EXISTS, CREATE OR REPLACE FUNCTION/TRIGGER, seeds con ON CONFLICT / WHERE NOT
-// EXISTS. Por eso se aplica en cada arranque, igual que la variante MariaDB.
+// EXISTS. Por eso se aplica en cada arranque.
 //
 // Se usa el protocolo simple de pg (client.query con un string multi-statement
 // y SIN parámetros), que ejecuta todas las sentencias en una llamada y respeta
 // los bloques $$...$$ de plpgsql — no hace falta trocear.
 //
 // La base de datos `deasy` la crea el contenedor postgres (POSTGRES_DB), así que
-// no hay equivalente de ensureMariaDBDatabase (CREATE DATABASE).
+// el schema no necesita crear la base (no hay CREATE DATABASE).
 
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";

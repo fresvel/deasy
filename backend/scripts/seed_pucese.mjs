@@ -121,20 +121,6 @@ const loadEnv = async () => {
   }
 };
 
-const ensureConfig = () => {
-  const required = ["MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD", "MARIADB_DATABASE"];
-  const missing = required.filter((key) => !process.env[key]);
-  if (missing.length) throw new Error(`Configuracion MariaDB incompleta. Faltan: ${missing.join(", ")}`);
-  return {
-    host: process.env.MARIADB_HOST,
-    port: Number(process.env.MARIADB_PORT),
-    user: process.env.MARIADB_USER,
-    password: process.env.MARIADB_PASSWORD,
-    database: process.env.MARIADB_DATABASE,
-    timezone: process.env.MARIADB_TIMEZONE || "Z"
-  };
-};
-
 const baseType = (mysqlType = "") => mysqlType.toLowerCase().split("(")[0];
 
 const SEED_TABLE_ORDER = [
@@ -227,41 +213,25 @@ const decodeValue = (value, mysqlType) => {
   return value;
 };
 
-const USE_PG = true; // PG-only (MariaDB retirado)
-
-const getDatabaseTables = async (connection, databaseName) => {
-  const [rows] = USE_PG
-    ? await connection.query(
-        `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'`
-      )
-    : await connection.query(
-        `SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'`,
-        [databaseName]
-      );
+const getDatabaseTables = async (connection) => {
+  const [rows] = await connection.query(
+    `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'`
+  );
   return rows.map((row) => row.table_name);
 };
 
 const getTableColumns = async (connection, tableName) => {
-  if (USE_PG) {
-    const [rows] = await connection.query(
-      `SELECT column_name AS name, data_type AS mysql_type, is_generated
-         FROM information_schema.columns
-        WHERE table_schema = current_schema() AND table_name = ?`,
-      [tableName]
-    );
-    return rows.map((row) => ({
-      name: row.name,
-      mysql_type: row.mysql_type,
-      extra: row.is_generated === "ALWAYS" ? "generated" : "",
-      is_generated: row.is_generated === "ALWAYS"
-    }));
-  }
-  const [rows] = await connection.query(`SHOW COLUMNS FROM \`${tableName}\``);
+  const [rows] = await connection.query(
+    `SELECT column_name AS name, data_type AS mysql_type, is_generated
+       FROM information_schema.columns
+      WHERE table_schema = current_schema() AND table_name = ?`,
+    [tableName]
+  );
   return rows.map((row) => ({
-    name: row.Field,
-    mysql_type: row.Type,
-    extra: row.Extra,
-    is_generated: /generated/i.test(String(row.Extra || ""))
+    name: row.name,
+    mysql_type: row.mysql_type,
+    extra: row.is_generated === "ALWAYS" ? "generated" : "",
+    is_generated: row.is_generated === "ALWAYS"
   }));
 };
 
@@ -364,11 +334,11 @@ const applyForwardCompatibilityDefaults = (tableData, tableMap) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const captureSeed = async (connection, config, filePath) => {
-  const tables = getTableOrder(await getDatabaseTables(connection, config.database));
+const captureSeed = async (connection, filePath) => {
+  const tables = getTableOrder(await getDatabaseTables(connection));
   const snapshot = {
     seed_name: defaultSeedName,
-    source_database: config.database,
+    source_database: process.env.POSTGRES_DB || "postgres",
     captured_at: new Date().toISOString(),
     tables: []
   };
@@ -410,7 +380,7 @@ const applySeed = async (connection, filePath, { includeAll = false } = {}) => {
 
   if (!orderedTables.length) throw new Error("La semilla no contiene tablas.");
 
-  const schemaTables = new Set(await getDatabaseTables(connection, connection.config?.database ?? process.env.MARIADB_DATABASE));
+  const schemaTables = new Set(await getDatabaseTables(connection));
   const missingTables = orderedTables
     .map((tableData) => tableData.table)
     .filter((tableName) => !schemaTables.has(tableName));
@@ -500,7 +470,7 @@ const applySeed = async (connection, filePath, { includeAll = false } = {}) => {
     // así que el primer INSERT del app colisionaría (PK duplicada). Se
     // resincroniza cada secuencia a max(id). (En MySQL AUTO_INCREMENT se ajusta
     // solo.) Se ejecuta por el cliente crudo (bloque plpgsql, sin traducción).
-    if (USE_PG && connection._client) {
+    if (connection._client) {
       await connection._client.query(
         `DO $$
          DECLARE r record;
@@ -546,23 +516,18 @@ const run = async () => {
   }
 
   await loadEnv();
-  // Con DB_ENGINE=postgres se usa una conexión del adaptador pg (que espeja la
-  // interfaz mysql2: query->[rows], beginTransaction/commit/rollback); si no,
-  // la conexión mysql2 directa de siempre.
-  const config = USE_PG ? null : ensureConfig();
-  const connection = USE_PG
-    ? await getPostgresPool().getConnection()
-    : await mysql.createConnection(config);
+  // Conexión del adaptador pg (espeja la interfaz mysql2: query->[rows],
+  // beginTransaction/commit/rollback).
+  const connection = await getPostgresPool().getConnection();
 
   try {
     if (args.mode === "capture") {
-      await captureSeed(connection, config, args.file);
+      await captureSeed(connection, args.file);
       return;
     }
     await applySeed(connection, args.file, { includeAll: args.includeAll });
   } finally {
-    if (USE_PG) connection.release();
-    else await connection.end();
+    connection.release();
   }
 };
 

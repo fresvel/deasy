@@ -1,4 +1,4 @@
-import { closeMariaDBPool, getMariaDBPool } from "../config/mariadb.js";
+import { closePostgresPool, getPostgresPool } from "../config/postgres.js";
 import bcrypt from "bcrypt";
 import {
   ACTION_CATALOG,
@@ -451,9 +451,9 @@ const revokeManualRoleByEmail = async (connection, { email, roleName, roleIds })
 };
 
 const applyPatch = async () => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    throw new Error("MariaDB no esta configurada. Revisa variables MARIADB_*.");
+    throw new Error("PostgreSQL no esta configurada. Revisa variables POSTGRES_*.");
   }
 
   const connection = await pool.getConnection();
@@ -514,12 +514,12 @@ const applyPatch = async () => {
     throw error;
   } finally {
     connection.release();
-    await closeMariaDBPool();
+    await closePostgresPool();
   }
 };
 
 applyPatch().catch(async (error) => {
   console.error("No se pudo aplicar el patch RBAC:", error.message);
-  await closeMariaDBPool();
+  await closePostgresPool();
   process.exitCode = 1;
 });

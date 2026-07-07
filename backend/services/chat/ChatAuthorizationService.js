@@ -1,4 +1,4 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 const normalizeNumericId = (value) => {
   const number = Number(value);
@@ -8,13 +8,13 @@ const normalizeNumericId = (value) => {
 const buildStableKey = (processId, scopeUnitId) => `process:${processId}:unit:${scopeUnitId}`;
 
 export default class ChatAuthorizationService {
-  constructor(pool = getMariaDBPool()) {
+  constructor(pool = getPostgresPool()) {
     this.pool = pool;
   }
 
   ensurePool() {
     if (!this.pool) {
-      const error = new Error("Conexión MariaDB no disponible.");
+      const error = new Error("Conexión PostgreSQL no disponible.");
       error.status = 500;
       throw error;
     }

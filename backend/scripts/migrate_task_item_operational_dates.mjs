@@ -1,6 +1,6 @@
-import { getMariaDBPool, closeMariaDBPool } from "../config/mariadb.js";
+import { getPostgresPool, closePostgresPool } from "../config/postgres.js";
 
-const pool = getMariaDBPool();
+const pool = getPostgresPool();
 
 async function columnExists(connection, tableName, columnName) {
   const [rows] = await connection.query(
@@ -95,7 +95,7 @@ async function run() {
     }, null, 2));
   } finally {
     connection.release();
-    await closeMariaDBPool();
+    await closePostgresPool();
   }
 }
 
@@ -105,7 +105,7 @@ run().catch(async (error) => {
     message: error.message
   }, null, 2));
   try {
-    await closeMariaDBPool();
+    await closePostgresPool();
   } catch {
     // noop
   }

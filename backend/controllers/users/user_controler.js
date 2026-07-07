@@ -7,7 +7,7 @@ import { pipeline } from "stream/promises";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import RbacService from "../../services/auth/RbacService.js";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import {
   ensureDocumentForTaskItem,
   materializeRuntimeFlowForTaskItem,
@@ -1949,7 +1949,7 @@ export const createUser = async (req, res) => {
     };
 
     const createdUser = await userRepository.create(userPayload);
-    console.log(`Usuario creado en MariaDB con id ${createdUser.id}`);
+    console.log(`Usuario creado en PostgreSQL con id ${createdUser.id}`);
 
     try {
       await sendEmailVerification({
@@ -2058,9 +2058,9 @@ export const getUserMenu = async (req, res) => {
       return res.status(400).json({ message: "Se requiere el id del usuario." });
     }
 
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
 
     const [orgRelationRows] = await pool.query(
@@ -2434,9 +2434,9 @@ export const getUserProcessDefinitionPanel = async (req, res) => {
 
     const scopeUnitId = req.query?.scope_unit_id ? Number(req.query.scope_unit_id) : null;
 
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
 
     const panel = await buildUserProcessDefinitionPanel(pool, userId, definitionId, scopeUnitId);
@@ -2466,9 +2466,9 @@ export const getUserDocumentCenter = async (req, res) => {
       return res.status(403).json({ message: "No tienes permiso para consultar este centro documental." });
     }
 
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
 
     const rows = await getUserDocumentCenterRows(pool, userId);
@@ -2530,9 +2530,9 @@ export const getUserGlobalSignatureCenter = async (req, res) => {
       return res.status(403).json({ message: "No tienes permiso para consultar esta bandeja de firmas." });
     }
 
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
 
     const rows = await getUserGlobalPendingSignatureRows(pool, userId);
@@ -2595,9 +2595,9 @@ export const createUserProcessTask = async (req, res) => {
     return res.status(400).json({ message: "Se requieren el usuario y la configuracion del proceso." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   const accessPanel = await buildUserProcessDefinitionPanel(pool, userId, definitionId);
@@ -2646,9 +2646,9 @@ export const listTaskItemObservations = async (req, res) => {
   if (!userId || !definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
     return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
     const taskItem = await getAccessibleTaskItemForUser(pool, userId, definitionId, taskItemId);
@@ -2692,9 +2692,9 @@ export const addTaskItemObservation = async (req, res) => {
   const kind = String(req.body?.kind || "observation").trim();
   const targetPersonId = req.body?.target_person_id ? Number(req.body.target_person_id) : null;
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   const connection = await pool.getConnection();
   try {
@@ -2742,9 +2742,9 @@ export const resolveTaskItemObservation = async (req, res) => {
   if (!definitionId || !taskItemId || !observationId || Number.isNaN(observationId)) {
     return res.status(400).json({ message: "Parámetros inválidos." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
     const taskItem = await getAccessibleTaskItemForUser(pool, userId, definitionId, taskItemId);
@@ -2785,10 +2785,10 @@ export const uploadDeliverablePdf = async (req, res) => {
     return res.status(400).json({ message: "Debes seleccionar un archivo del entregable." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
     await fs.remove(uploadedFile.path).catch(() => {});
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   const connection = await pool.getConnection();
@@ -2875,9 +2875,9 @@ export const downloadDeliverableTemplate = async (req, res) => {
     return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   try {
@@ -2981,9 +2981,9 @@ export const downloadDeliverableFile = async (req, res) => {
     return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   try {
@@ -3078,9 +3078,9 @@ export const resetDeliverableWorkflow = async (req, res) => {
     return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   const connection = await pool.getConnection();
@@ -3233,9 +3233,9 @@ export const listDeliverableAttachments = async (req, res) => {
     return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   try {
@@ -3279,10 +3279,10 @@ export const uploadDeliverableAttachment = async (req, res) => {
   }
   const kind = ATTACHMENT_ALLOWED_KINDS.has(requestedKind) ? requestedKind : "annex";
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
     await fs.remove(uploadedFile.path).catch(() => {});
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   const connection = await pool.getConnection();
@@ -3377,9 +3377,9 @@ export const deleteDeliverableAttachment = async (req, res) => {
     return res.status(400).json({ message: "Se requieren la configuración, el entregable y el anexo." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   try {
@@ -3431,9 +3431,9 @@ export const downloadDeliverableAttachment = async (req, res) => {
     return res.status(400).json({ message: "Se requieren la configuración, el entregable y el anexo." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   try {
@@ -3533,9 +3533,9 @@ export const listAddableDeliverables = async (req, res) => {
   if ((!taskId || Number.isNaN(taskId)) && (!requestedDefinitionId || Number.isNaN(requestedDefinitionId))) {
     return res.status(400).json({ message: "Se requiere task_id o definition_id." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   const connection = await pool.getConnection();
   try {
@@ -3584,9 +3584,9 @@ export const searchTaskRecipients = async (req, res) => {
     return res.status(403).json({ message: "No autorizado." });
   }
   const q = String(req.query?.q || "").trim();
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   const connection = await pool.getConnection();
   try {
@@ -3623,9 +3623,9 @@ export const listFlowCatalog = async (req, res) => {
   if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
     return res.status(403).json({ message: "No autorizado." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   const connection = await pool.getConnection();
   try {
@@ -3652,9 +3652,9 @@ export const listMySends = async (req, res) => {
   if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
     return res.status(403).json({ message: "No autorizado." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   const connection = await pool.getConnection();
   try {
@@ -3701,9 +3701,9 @@ export const listMyReceived = async (req, res) => {
   if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
     return res.status(403).json({ message: "No autorizado." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   // Subconsultas EXISTS reutilizables: ¿la persona es asignada de llenado / firma del documento del item?
   const FILL_EXISTS = `EXISTS (
@@ -3801,9 +3801,9 @@ export const createGeneralTask = async (req, res) => {
     return res.status(400).json({ message: "Se requiere la tarea de origen para agregar el entregable." });
   }
 
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
   const connection = await pool.getConnection();

@@ -4,7 +4,7 @@ import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 
-import { closeMariaDBPool, getMariaDBPool } from "../config/mariadb.js";
+import { closePostgresPool, getPostgresPool } from "../config/postgres.js";
 import UserCertificateRepository from "../services/auth/UserCertificateRepository.js";
 import { ensureBucketExists, uploadFileToMinio } from "../services/storage/minio_service.js";
 
@@ -16,10 +16,10 @@ const CERT_PASSWORD = "Demo1234!";
 const CERT_LABEL = "Demo Autofirmado";
 
 const certificateRepository = new UserCertificateRepository();
-const pool = getMariaDBPool();
+const pool = getPostgresPool();
 
 if (!pool) {
-  throw new Error("La conexión MariaDB no está configurada.");
+  throw new Error("La conexión PostgreSQL no está configurada.");
 }
 
 const sanitizeFileName = (value) =>
@@ -145,5 +145,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await closeMariaDBPool().catch(() => {});
+    await closePostgresPool().catch(() => {});
   });

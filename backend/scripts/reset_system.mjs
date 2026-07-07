@@ -47,13 +47,13 @@ const main = async () => {
   const keepMinio = args.has("--keep-minio");
 
   const { ensurePostgresSchema } = await import("../database/postgres_initializer.js");
-  const { assertMariaDBConnection, closeMariaDBPool } = await import("../config/mariadb.js");
+  const { assertPostgresConnection, closePostgresPool } = await import("../config/postgres.js");
   const { resetMinio } = await import("./reset_storage.mjs");
 
   try {
     if (!keepDb) {
       console.log("→ Reseteando PostgreSQL (drop + recreación del schema)...");
-      await assertMariaDBConnection();
+      await assertPostgresConnection();
       await ensurePostgresSchema({ reset: true });
       console.log("✅ PostgreSQL en schema vacío.");
     } else {
@@ -71,7 +71,7 @@ const main = async () => {
     console.log("✅ Sistema regresado a estado base.");
     console.log("   Reinicia el backend para entrar en modo bootstrap y crear el primer administrador.");
   } finally {
-    await closeMariaDBPool();
+    await closePostgresPool();
   }
 };
 

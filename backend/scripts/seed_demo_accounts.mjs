@@ -7,8 +7,6 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcrypt";
 import { getPostgresPool } from "../config/postgres.js";
 
-const USE_PG = true; // PG-only (MariaDB retirado)
-
 import {
   ACTION_CATALOG,
   RESOURCE_CATALOG,
@@ -84,26 +82,7 @@ const loadEnvFile = async () => {
   }
 };
 
-const requireEnv = (keys) => {
-  const missing = keys.filter((key) => !process.env[key]);
-  if (missing.length) {
-    throw new Error(`Faltan variables de entorno: ${missing.join(", ")}`);
-  }
-};
-
-const createMariaDbConnection = async () => {
-  // Con DB_ENGINE=postgres se usa una conexión del adaptador pg (espeja mysql2).
-  if (USE_PG) return getPostgresPool().getConnection();
-  requireEnv(["MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD", "MARIADB_DATABASE"]);
-  return mysql.createConnection({
-    host: process.env.MARIADB_HOST,
-    port: Number(process.env.MARIADB_PORT),
-    user: process.env.MARIADB_USER,
-    password: process.env.MARIADB_PASSWORD,
-    database: process.env.MARIADB_DATABASE,
-    timezone: process.env.MARIADB_TIMEZONE || "Z"
-  });
-};
+const createDbConnection = async () => getPostgresPool().getConnection();
 
 const fetchOne = async (connection, sql, params = []) => {
   const [rows] = await connection.query(sql, params);
@@ -694,7 +673,6 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
         document_id: documentId,
         version: 1.0,
         template_artifact_id: processData.artifactId,
-        payload_mongo_id: null,
         payload_hash: null,
         payload_object_path: null,
         working_file_path: definition.workingPath,
@@ -705,7 +683,6 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
       },
       [
         "template_artifact_id",
-        "payload_mongo_id",
         "payload_hash",
         "payload_object_path",
         "working_file_path",
@@ -778,7 +755,7 @@ const run = async () => {
   await loadEnvFile();
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-  const connection = await createMariaDbConnection();
+  const connection = await createDbConnection();
 
   const roleIds = new Map();
   const cargoIds = new Map();
@@ -856,8 +833,7 @@ const run = async () => {
     await connection.rollback();
     throw error;
   } finally {
-    if (USE_PG) connection.release();
-    else await connection.end();
+    connection.release();
   }
 };
 

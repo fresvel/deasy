@@ -1,17 +1,17 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import { ADMIN_ROLES } from "../../config/rbacPolicy.js";
 
 const uniqueStrings = (values = []) =>
   [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
 
 export default class RbacService {
-  constructor(pool = getMariaDBPool()) {
+  constructor(pool = getPostgresPool()) {
     this.pool = pool;
   }
 
   ensurePool() {
     if (!this.pool) {
-      throw new Error("La conexion con MariaDB no esta disponible.");
+      throw new Error("La conexion con PostgreSQL no esta disponible.");
     }
   }
 

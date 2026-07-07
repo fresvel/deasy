@@ -1,4 +1,4 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import {
   hydrateTaskFromDefinition,
   ensureProcessRun,
@@ -1528,13 +1528,13 @@ const sanitizePersonRow = (tableName, row) => {
 };
 
 export default class SqlAdminService {
-  constructor(pool = getMariaDBPool()) {
+  constructor(pool = getPostgresPool()) {
     this.pool = pool;
   }
 
   ensurePool() {
     if (!this.pool) {
-      throw new Error("La conexion con MariaDB no esta disponible.");
+      throw new Error("La conexion con PostgreSQL no esta disponible.");
     }
   }
 

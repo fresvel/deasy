@@ -1,15 +1,15 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
 export default class UserRepository {
-  constructor(pool = getMariaDBPool()) {
+  constructor(pool = getPostgresPool()) {
     this.pool = pool;
   }
 
   ensurePool() {
     if (!this.pool) {
-      throw new Error("La conexión con MariaDB no está disponible.");
+      throw new Error("La conexión con PostgreSQL no está disponible.");
     }
   }
 

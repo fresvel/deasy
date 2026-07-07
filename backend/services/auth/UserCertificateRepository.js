@@ -1,13 +1,13 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 export default class UserCertificateRepository {
-  constructor(pool = getMariaDBPool()) {
+  constructor(pool = getPostgresPool()) {
     this.pool = pool;
   }
 
   ensurePool() {
     if (!this.pool) {
-      throw new Error("La conexión con MariaDB no está disponible.");
+      throw new Error("La conexión con PostgreSQL no está disponible.");
     }
   }
 

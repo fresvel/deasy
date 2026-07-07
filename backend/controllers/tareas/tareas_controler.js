@@ -1,4 +1,4 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 
 const sqlService = new SqlAdminService();
@@ -47,9 +47,9 @@ export const getuserTarea = async (req, res) => {
     if (!cedula) {
       return res.status(400).json({ message: "Se requiere la cedula del usuario." });
     }
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
     const [persons] = await pool.query("SELECT id FROM persons WHERE cedula = ? LIMIT 1", [cedula]);
     const personId = persons?.[0]?.id;
@@ -132,9 +132,9 @@ export const getuserTarea = async (req, res) => {
 export const getTareas = async (req, res) => {
   console.log("Buscando Todas las Tareas (SQL)");
   try {
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
     const [rows] = await pool.query("SELECT * FROM tasks ORDER BY created_at DESC");
     res.json(rows || []);
@@ -151,9 +151,9 @@ export const getTareaspendientes = async (req, res) => {
     if (!cedula) {
       return res.status(400).json({ message: "Se requiere la cedula del usuario." });
     }
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
     const [persons] = await pool.query("SELECT id FROM persons WHERE cedula = ? LIMIT 1", [cedula]);
     const personId = persons?.[0]?.id;

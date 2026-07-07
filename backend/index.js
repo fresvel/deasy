@@ -5,7 +5,7 @@ import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import user_router from "./routes/user_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
-import { assertMariaDBConnection } from "./config/mariadb.js";
+import { assertPostgresConnection } from "./config/postgres.js";
 import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
@@ -1220,17 +1220,17 @@ app.use("/uploads", express.static("uploads"));
 
 app.get("/health", async (req, res) => {
   try {
-    await assertMariaDBConnection();
+    await assertPostgresConnection();
     res.status(200).json({
       status: "ok",
       service: "backend",
-      mariadb: "ok",
+      database: "ok",
     });
   } catch (error) {
     res.status(503).json({
       status: "error",
       service: "backend",
-      mariadb: "error",
+      database: "error",
       message: error.message,
     });
   }
@@ -1270,13 +1270,13 @@ app.use(express.static("public"));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const initializeDatabaseWithRetry = async () => {
-  const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
+  const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || "0") === "1";
   const maxAttempts = Number(process.env.DB_INIT_MAX_ATTEMPTS || 20);
   const retryDelayMs = Number(process.env.DB_INIT_RETRY_DELAY_MS || 3000);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      await assertMariaDBConnection(); // PostgreSQL vía el adaptador
+      await assertPostgresConnection(); // PostgreSQL vía el adaptador
       await ensurePostgresSchema({ reset: shouldResetSchema });
       console.log("✅ PostgreSQL inicializada correctamente");
       return;

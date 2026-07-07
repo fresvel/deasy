@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
 
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import { getMinioObjectStream } from "../storage/minio_service.js";
 
 const SERVICE_DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -295,7 +295,7 @@ const loadPatternForMeta = (meta) => {
 };
 
 export class DocumentRuntimeService {
-  constructor({ pool = getMariaDBPool() } = {}) {
+  constructor({ pool = getPostgresPool() } = {}) {
     this.pool = pool;
   }
 

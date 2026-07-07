@@ -1,11 +1,11 @@
 import UserRepository from "../../services/auth/UserRepository.js";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import { FILL_REQUEST_STATUS } from "../../services/documents/DocumentWorkflowCatalog.js";
 import { syncDocumentProgressFromFillRequest } from "../../services/documents/DocumentProgressService.js";
 import { addDocumentObservation } from "../../services/documents/DocumentObservationService.js";
 
 const userRepository = new UserRepository();
-const pool = getMariaDBPool();
+const pool = getPostgresPool();
 
 const getCurrentUser = async (req) => {
   const userId = Number(req.user?.uid);
@@ -141,7 +141,7 @@ const assertFillActionAllowed = ({ action, currentStatus, assignedPersonId, curr
 
 const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
   if (!pool) {
-    return res.status(500).json({ error: "La conexión con MariaDB no está disponible." });
+    return res.status(500).json({ error: "La conexión con PostgreSQL no está disponible." });
   }
 
   const connection = await pool.getConnection();

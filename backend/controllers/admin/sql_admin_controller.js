@@ -3,7 +3,7 @@ import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import {
   TEMPLATES_BUCKET,
   collectFormatResources,
@@ -91,9 +91,9 @@ export const downloadTemplateArtifactArchive = async (req, res) => {
   if (!id || Number.isNaN(id)) {
     return res.status(400).json({ message: "Identificador de plantilla invalido." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
     const [rows] = await pool.query(
@@ -131,9 +131,9 @@ export const downloadTemplateSeedArchive = async (req, res) => {
   if (!id || Number.isNaN(id)) {
     return res.status(400).json({ message: "Identificador de seed invalido." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
     const [rows] = await pool.query(
@@ -171,9 +171,9 @@ export const downloadTemplateArtifactSource = async (req, res) => {
   if (!id || Number.isNaN(id)) {
     return res.status(400).json({ message: "Identificador de plantilla invalido." });
   }
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
     const [rows] = await pool.query(

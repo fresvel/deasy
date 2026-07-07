@@ -6,7 +6,7 @@ import { saveEmailVerificationCode } from '../../services/mail/saveEmailVerifica
 import { verifyEmailCode } from "../../services/mail/emailVerification.js";
 
 
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 export const sendVerificationEmail = async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 
 const service = new SqlAdminService();
@@ -25,9 +25,9 @@ export const createProgram = async (req, res) => {
 export const getPrograms = async (req, res) => {
   console.log("Listando unidades (compat /program)");
   try {
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
 
     const conditions = [];

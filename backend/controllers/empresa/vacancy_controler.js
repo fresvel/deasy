@@ -1,4 +1,4 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 export const listVisibleVacancies = async (req, res) => {
   try {
@@ -9,9 +9,9 @@ export const listVisibleVacancies = async (req, res) => {
     }
 
     const status = req.query?.status ?? "abierta";
-    const pool = getMariaDBPool();
+    const pool = getPostgresPool();
     if (!pool) {
-      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+      return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
 
     const [rows] = await pool.query(

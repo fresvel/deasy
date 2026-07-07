@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 export const saveEmailVerificationCode = async (personId, code) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   const codeHash = await bcrypt.hash(code, 10);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min

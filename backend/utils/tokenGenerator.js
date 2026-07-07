@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { getMariaDBPool } from "../config/mariadb.js";
+import { getPostgresPool } from "../config/postgres.js";
 
 const TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const TOKEN_LENGTH = 10;
@@ -19,10 +19,10 @@ const generateRawToken = () => {
  * solo cuando se pasa al servicio de firma.
  */
 export const generateUniqueToken = async () => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   if (!pool) {
-    throw new Error("Pool de MariaDB no disponible al generar token.");
+    throw new Error("Pool de PostgreSQL no disponible al generar token.");
   }
 
   let token;

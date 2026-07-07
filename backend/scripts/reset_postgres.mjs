@@ -36,14 +36,14 @@ const loadEnv = async () => {
 const main = async () => {
   await loadEnv();
   const { ensurePostgresSchema } = await import("../database/postgres_initializer.js");
-  const { assertMariaDBConnection, closeMariaDBPool } = await import("../config/mariadb.js");
+  const { assertPostgresConnection, closePostgresPool } = await import("../config/postgres.js");
 
   try {
-    await assertMariaDBConnection();
+    await assertPostgresConnection();
     await ensurePostgresSchema({ reset: true });
     console.log("✅ Reset completo de PostgreSQL finalizado.");
   } finally {
-    await closeMariaDBPool();
+    await closePostgresPool();
   }
 };
 

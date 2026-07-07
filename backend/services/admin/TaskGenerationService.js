@@ -1,4 +1,4 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import {
   transitionDocumentState,
   transitionDocumentVersionState,
@@ -1766,8 +1766,8 @@ export const launchDefinitionInTerm = async (connection, {
 };
 
 export const generateTasksForTerm = async (termId) => {
-  const pool = getMariaDBPool();
-  if (!pool) throw new Error("La conexion con MariaDB no esta disponible.");
+  const pool = getPostgresPool();
+  if (!pool) throw new Error("La conexion con PostgreSQL no esta disponible.");
 
   const connection = await pool.getConnection();
   try {
@@ -1834,8 +1834,8 @@ export const launchProcessDefinitionInTerm = async (definitionId, termId, {
   relaunch = false,
   reason = null
 } = {}) => {
-  const pool = getMariaDBPool();
-  if (!pool) throw new Error("La conexion con MariaDB no esta disponible.");
+  const pool = getPostgresPool();
+  if (!pool) throw new Error("La conexion con PostgreSQL no esta disponible.");
 
   const connection = await pool.getConnection();
   try {
@@ -1891,8 +1891,8 @@ export const launchProcessDefinitionInTerm = async (definitionId, termId, {
 // del term, indica si está lanzada (hay corrida) y/o relanzada (más de una corrida), y lista las
 // pendientes de lanzar. Alimenta la UI de "Lanzar proceso" / "lanzar pendientes" (Fase 3).
 export const getTermLaunchStatus = async (termId) => {
-  const pool = getMariaDBPool();
-  if (!pool) throw new Error("La conexion con MariaDB no esta disponible.");
+  const pool = getPostgresPool();
+  if (!pool) throw new Error("La conexion con PostgreSQL no esta disponible.");
 
   const connection = await pool.getConnection();
   try {
@@ -1950,8 +1950,8 @@ export const getTermLaunchStatus = async (termId) => {
 // Info de lanzamiento de UNA configuración (vista process-centric): tipos de periodo en que corre,
 // periodos disponibles de esos tipos (con marca de si ya tienen corrida) e historial de corridas.
 export const getDefinitionLaunchInfo = async (definitionId) => {
-  const pool = getMariaDBPool();
-  if (!pool) throw new Error("La conexion con MariaDB no esta disponible.");
+  const pool = getPostgresPool();
+  if (!pool) throw new Error("La conexion con PostgreSQL no esta disponible.");
 
   const connection = await pool.getConnection();
   try {

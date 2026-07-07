@@ -30,4 +30,4 @@ ensure_environment "$ENVIRONMENT"
 ensure_docker_ready
 ensure_backend_running "$ENVIRONMENT"
 
-run_in_backend "$ENVIRONMENT" node /app/backend/scripts/reset_mariadb.mjs
+run_in_backend "$ENVIRONMENT" node /app/backend/scripts/reset_postgres.mjs

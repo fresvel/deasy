@@ -5,7 +5,7 @@ import os from "os";
 import path from "path";
 import { spawn } from "child_process";
 import { pipeline } from "stream/promises";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import UserCertificateRepository from "../../services/auth/UserCertificateRepository.js";
 import {
@@ -28,7 +28,7 @@ import {
 
 const userRepository = new UserRepository();
 const certificateRepository = new UserCertificateRepository();
-const pool = getMariaDBPool();
+const pool = getPostgresPool();
 
 const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
 const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
@@ -161,7 +161,7 @@ const buildSignContext = async (req) => {
 
 const getDocumentVersionStorageContext = async (documentVersionId) => {
   if (!pool) {
-    throw new Error("La conexión a MariaDB no está disponible.");
+    throw new Error("La conexión a PostgreSQL no está disponible.");
   }
   const [rows] = await pool.query(
     `SELECT id, working_file_path, final_file_path
@@ -308,7 +308,7 @@ const assertSignContextBeforeSigning = async (context) => {
     return null;
   }
   if (!pool) {
-    throw new Error("La conexión a MariaDB no está disponible.");
+    throw new Error("La conexión a PostgreSQL no está disponible.");
   }
 
   const connection = await pool.getConnection();
@@ -407,7 +407,7 @@ const parseBatchDocumentContexts = (rawDocumentContexts) => {
 const asBoolean = (value) =>
   String(value ?? "").trim().toLowerCase() === "true" || String(value ?? "").trim() === "1";
 
-// Estado de los jobs de firma masiva PERSISTIDO en MariaDB (tabla signature_batch_jobs) para que
+// Estado de los jobs de firma masiva PERSISTIDO en PostgreSQL (tabla signature_batch_jobs) para que
 // sobreviva reinicios del backend (antes vivía en un Map en memoria y se perdía al reiniciar).
 const rowToBatchJob = (row) => {
   if (!row) return null;
@@ -854,7 +854,7 @@ export const downloadSigned = async (req, res) => {
       objectPath = requestedPath;
     } else {
       if (!pool) {
-        return res.status(500).json({ error: "La conexión a MariaDB no está disponible." });
+        return res.status(500).json({ error: "La conexión a PostgreSQL no está disponible." });
       }
       const [rows] = await pool.query(
         `SELECT dv.id
@@ -915,7 +915,7 @@ export const getSignatureFlow = async (req, res) => {
       return res.status(400).json({ error: "Versión documental inválida." });
     }
     if (!pool) {
-      return res.status(500).json({ error: "La conexión a MariaDB no está disponible." });
+      return res.status(500).json({ error: "La conexión a PostgreSQL no está disponible." });
     }
 
     const connection = await pool.getConnection();

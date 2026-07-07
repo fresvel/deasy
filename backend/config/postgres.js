@@ -1,5 +1,5 @@
-// Adaptador de PostgreSQL que ESPEJA la interfaz de mysql2/promise usada hoy en
-// config/mariadb.js, para migrar el motor sin reescribir los ~881 call sites.
+// Adaptador de PostgreSQL que ESPEJA la interfaz de mysql2/promise heredada de la
+// migración, para no reescribir los ~881 call sites (SQL escrito estilo mysql2).
 //
 // Qué traduce el adaptador (deliberadamente fino):
 //   1. Placeholders `?` (mysql2) → `$1..$n` (pg), respetando strings y comentarios.

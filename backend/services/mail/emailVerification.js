@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 export const verifyEmailCode = async (personId, code) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   // 1️⃣ Buscar código activo
   const [rows] = await pool.query(

@@ -20,7 +20,7 @@ const SUITE = "execution";
 // Rutas de almacenamiento y hashes son volátiles/infra: enmascarar.
 const STORAGE_MASK = [
   "working_file_path", "final_file_path", "payload_object_path", "payload_hash",
-  "payload_mongo_id", "base_object_prefix", "schema_object_key", "meta_object_key",
+  "base_object_prefix", "schema_object_key", "meta_object_key",
   "url", "signedUrl", "downloadUrl", "path",
   // El nombre del term ad-hoc creado por general-task lleva un sufijo aleatorio
   // (p.ej. "...· #3-mr528azz") → no determinista.

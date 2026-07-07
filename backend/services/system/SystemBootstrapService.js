@@ -3,7 +3,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
 import { buildProcessDefinitionVersionName } from "../admin/processDefinitionSeries.js";
@@ -703,13 +703,13 @@ const ensureAdminRoleAssignment = async (connection, { personId, roleId, unitId 
 };
 
 export default class SystemBootstrapService {
-  constructor(pool = getMariaDBPool()) {
+  constructor(pool = getPostgresPool()) {
     this.pool = pool;
   }
 
   ensurePool() {
     if (!this.pool) {
-      throw buildError("Conexion MariaDB no disponible.", 500);
+      throw buildError("Conexion PostgreSQL no disponible.", 500);
     }
   }
 

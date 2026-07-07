@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import * as Minio from "minio";
-import { getMariaDBPool } from "../config/mariadb.js";
+import { getPostgresPool } from "../config/postgres.js";
 import { consumeRabbitMessages, publishRabbitMessage } from "../services/infrastructure/rabbitmq_http.js";
 
 const WORKER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -99,7 +99,7 @@ const uploadTree = async ({ bucket, objectPrefix, sourceDir }) => {
 };
 
 const markArtifactActive = async (artifactId) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   await pool.query("UPDATE template_artifacts SET is_active = 1 WHERE id = ?", [artifactId]);
 };
 

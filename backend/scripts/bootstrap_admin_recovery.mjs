@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { closeMariaDBPool } from "../config/mariadb.js";
+import { closePostgresPool } from "../config/postgres.js";
 import SystemBootstrapService from "../services/system/SystemBootstrapService.js";
 
 const args = process.argv.slice(2);
@@ -42,5 +42,5 @@ try {
   console.error("No se pudo recuperar el administrador:", error.message);
   process.exitCode = 1;
 } finally {
-  await closeMariaDBPool().catch(() => {});
+  await closePostgresPool().catch(() => {});
 }

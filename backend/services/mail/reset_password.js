@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import fs from "fs/promises";
 import path from "path";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import { transporter } from "../../lib/mailer.js";
 import { generateVerificationCode } from "../../utils/email/generateCode.js";
 
@@ -9,7 +9,7 @@ import { generateVerificationCode } from "../../utils/email/generateCode.js";
  * Enviar código de recuperación de contraseña
  */
 export const sendResetCodeService = async (email) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   const [[user]] = await pool.query(
     "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
@@ -54,7 +54,7 @@ export const sendResetCodeService = async (email) => {
  * Verificar código de recuperación
  */
 export const verifyResetCodeService = async (email, code) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   const [[user]] = await pool.query(
     "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
@@ -88,7 +88,7 @@ export const verifyResetCodeService = async (email, code) => {
  * Resetear contraseña
  */
 export const resetPasswordService = async (email, code, password) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   // 1️⃣ Buscar usuario
   const [[user]] = await pool.query(

@@ -1,14 +1,14 @@
 // Acceso a datos del dossier sobre el núcleo relacional (Fase 6, ex-MongoDB).
 // Modelo de 2 tablas: dossiers (raíz por person_id) + dossier_items (una fila
 // por ítem, con `section` + `data` JSONB/JSON + url_documento). Engine-transparente
-// vía el adaptador (config/mariadb.js).
+// vía el adaptador (config/postgres.js).
 //
 // IDs opacos como String (era ObjectId). `data` guarda los campos del ítem; los
 // defaults por sección replican exactamente los del schema Mongoose.
 
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
-const pool = () => getMariaDBPool();
+const pool = () => getPostgresPool();
 
 export const SECTIONS = [
   "titulos", "experiencia", "referencias", "formacion", "certificaciones",

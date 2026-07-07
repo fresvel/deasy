@@ -1,13 +1,13 @@
 // Acceso a datos del chat sobre el núcleo relacional (Fase 5, ex-MongoDB).
-// Usa el pool de config/mariadb.js -> adaptador, así que es engine-transparente
-// (MariaDB o PostgreSQL según DB_ENGINE). Reemplaza a los modelos Mongoose.
+// Usa el pool de config/postgres.js (adaptador estilo mysql2).
+// Reemplaza a los modelos Mongoose.
 //
 // IDs: se exponen como STRING (String(n)) para preservar el contrato "id opaco"
 // que tenía Mongo (ObjectId.toString()); el front los trata como opacos.
 
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
-const pool = () => getMariaDBPool();
+const pool = () => getPostgresPool();
 
 export const isValidId = (v) => {
   const n = Number(v);

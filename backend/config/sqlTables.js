@@ -259,7 +259,7 @@ export const SQL_TABLES = [
       { name: "created_by_user_id", label: "Creada por", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text", readOnly: true },
+      { name: "comments_thread_ref", label: "Comentarios (legacy)", type: "text", readOnly: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       {
@@ -620,7 +620,7 @@ export const SQL_TABLES = [
         options: [...DOCUMENT_STATUSES],
         defaultValue: "Inicial"
       },
-      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text", readOnly: true },
+      { name: "comments_thread_ref", label: "Comentarios (legacy)", type: "text", readOnly: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
@@ -636,7 +636,6 @@ export const SQL_TABLES = [
       { name: "document_id", label: "Documento", type: "number", required: true },
       { name: "version", label: "Version", type: "number", defaultValue: "0.1", required: true },
       { name: "template_artifact_id", label: "Artifact", type: "number" },
-      { name: "payload_mongo_id", label: "Payload legacy", type: "text", readOnly: true },
       { name: "payload_hash", label: "Hash payload", type: "text", readOnly: true },
       { name: "payload_object_path", label: "Ruta payload", type: "text", readOnly: true },
       { name: "working_file_path", label: "Ruta working", type: "text" },
@@ -652,7 +651,7 @@ export const SQL_TABLES = [
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["payload_mongo_id", "payload_hash", "payload_object_path", "format", "render_engine", "status"]
+    searchFields: ["payload_hash", "payload_object_path", "format", "render_engine", "status"]
   },
   {
     table: "document_signatures",

@@ -20,7 +20,7 @@
 import { post, get } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
-import { getMariaDBPool } from "../../../config/mariadb.js";
+import { getPostgresPool } from "../../../config/postgres.js";
 
 // unit_position 10 vive en unit_id 16 (ver DESCRIBE unit_positions). Le damos
 // puesto vigente a la persona 3 (usuario) para que pueda crear general-tasks ahí.
@@ -44,7 +44,7 @@ const DEFINITION_ID = Number(process.env.SEED_DEFINITION_ID ?? 1);
 // (bypass del guard del endpoint, no de la DB) y dejamos que el resto del flujo
 // de ejecución lo produzca la lógica real de la app vía API. Idempotente.
 async function seedTemplateLayer() {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   const prefix = "official/tpl_informe_general";
 
   const [existing] = await pool.query(
@@ -135,7 +135,7 @@ async function main() {
   //      notificación para usuario). Base para el golden del chat.
   //      El seed relacional no limpia las tablas de chat, así que se purgan aquí
   //      (hijos primero) para que el golden sea determinista entre corridas.
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
   for (const t of [
     "chat_notifications", "chat_message_reads", "chat_message_attachments",
     "chat_messages", "chat_conversation_participants", "chat_conversations",

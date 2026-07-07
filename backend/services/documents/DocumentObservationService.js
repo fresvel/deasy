@@ -1,4 +1,4 @@
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
 
 const VALID_PHASES = new Set(["review", "signature"]);
 const VALID_KINDS = new Set(["observation", "return_reason", "rejection_reason", "internal_note"]);
@@ -108,7 +108,7 @@ export const isUserInTaskItemChain = async (connection, userId, taskItemId) => {
 
 // Hilo de observaciones de un entregable (con nombres de autor/destino/resolutor).
 export const listDocumentObservations = async (taskItemId, connection = null) => {
-  const conn = connection || getMariaDBPool();
+  const conn = connection || getPostgresPool();
   const [rows] = await conn.query(
     `SELECT
        o.id,
@@ -139,7 +139,7 @@ export const listDocumentObservations = async (taskItemId, connection = null) =>
 };
 
 export const getObservationById = async (observationId, connection = null) => {
-  const conn = connection || getMariaDBPool();
+  const conn = connection || getPostgresPool();
   const [rows] = await conn.query(
     "SELECT id, task_item_id, author_person_id, resolved_at FROM document_workflow_observations WHERE id = ? LIMIT 1",
     [Number(observationId)]
@@ -149,7 +149,7 @@ export const getObservationById = async (observationId, connection = null) => {
 
 // Marca una observación como resuelta (idempotente: no re-resuelve).
 export const resolveDocumentObservation = async (observationId, resolvedByPersonId, connection = null) => {
-  const conn = connection || getMariaDBPool();
+  const conn = connection || getPostgresPool();
   await conn.query(
     `UPDATE document_workflow_observations
      SET resolved_by_person_id = ?, resolved_at = CURRENT_TIMESTAMP
