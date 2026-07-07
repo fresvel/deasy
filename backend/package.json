@@ -15,7 +15,6 @@
   "dependencies": {
     "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
-    "canvas": "^3.2.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
@@ -28,7 +27,6 @@
     "nodemailer": "^8.0.4",
     "pdfjs-dist": "^5.6.205",
     "pg": "^8.22.0",
-    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "socket.io": "^4.8.3",
     "swagger-jsdoc": "^6.2.8",
