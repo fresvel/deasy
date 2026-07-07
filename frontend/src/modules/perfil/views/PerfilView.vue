@@ -82,10 +82,6 @@
             <InvestigacionView v-else-if="process==='Investigación'"></InvestigacionView>
             <CertificadosFirmaView v-else-if="process==='Certificados de firma'"></CertificadosFirmaView>
         </div>
-        <div v-else-if="area=='Academia'" class="w-full">
-            <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
-            <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
-        </div>
         <div v-else-if="area=='Firmar'" class="w-full">
             <!-- <FirmarPdf v-if="area=='Firmar'"></FirmarPdf> -->
              <div class="p-6 text-center text-slate-500 bg-white rounded-2xl m-4">Módulo de firma en migración (no disponible temporalmente)</div>
@@ -117,17 +113,12 @@ import ProfileHomePanel from '@/modules/perfil/components/ProfileHomePanel.vue';
 import InvestigacionView from '@/modules/perfil/views/InvestigacionView.vue';
 import CertificadosFirmaView from '@/modules/perfil/views/CertificadosFirmaView.vue';
 
-import IndexAcademia from '@/modules/academia/views/AcademiaView.vue';
-import LogrosView from '@/modules/academia/views/LogrosView.vue';
-
 // import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
 
-    import EasymServices from '@/shared/services/EasymServices';
     import { API_PREFIX, API_ROUTES } from '@/core/config/apiConfig';
 
 const router = useRouter();
     const route = useRoute();
-    const service = new EasymServices();
 const API_BASE_URL = API_ROUTES.BASE;
 
 const goBackFromProfileHome = () => {
@@ -296,9 +287,7 @@ const goBackFromProfileHome = () => {
                 userPhoto.value = resolvePhotoUrl(currentUser.value?.photoUrl);
                 refreshCurrentUser();
                 
-                // Cargar tareas con la cédula del usuario
                 if (currentUser.value.cedula) {
-                    service.getTareasPendientes(currentUser.value.cedula);
                     loadDossierCounts();
                 }
             } catch (error) {
@@ -312,8 +301,6 @@ const goBackFromProfileHome = () => {
         }
     });
 
-    const tareas=service.getEasymdata().tareas
-    
 const isClient = typeof window !== 'undefined';
 
 const dossierIconMeta = resolveWorkspaceSectionIcon('Perfil');

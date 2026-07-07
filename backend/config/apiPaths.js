@@ -1,10 +1,8 @@
 export const API_PREFIX = "/deasy/v1";
 
 export const PATHS = {
-  academia: "/academia",
   users: "/users",
   usersLogin: "/users/login",
-  tutorias: "/tutorias",
   admin: "/admin",
   units: "/units",
   program: "/program",
