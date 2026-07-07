@@ -31,8 +31,3 @@ test("GET /tarea?usuario=<inexistente> -> 404", async () => {
   const res = await get("/tarea?usuario=0000000000");
   matchSnapshot(SUITE, "tarea_unknown_usuario", { status: res.status });
 });
-
-test("GET /tarea/pendiente -> pendientes (contrato)", async () => {
-  const res = await get("/tarea/pendiente");
-  matchSnapshot(SUITE, "tarea_pendiente", listFingerprint(res));
-});

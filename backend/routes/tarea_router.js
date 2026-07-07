@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createTarea, createLoteTareas, getuserTarea, getTareaspendientes } from "../controllers/tareas/tareas_controler.js";
+import { createTarea, createLoteTareas, getuserTarea } from "../controllers/tareas/tareas_controler.js";
 import { getMySupervisedStuckTasks } from "../controllers/tareas/supervision_controler.js";
 import { authMiddleware } from "../middlewares/auth.js";
 
@@ -11,8 +11,6 @@ router.post('/', createTarea);
 router.post('/lote', createLoteTareas);
 
 router.get('/', getuserTarea);
-
-router.get('/pendiente', getTareaspendientes);
 
 // Scope por jefe: entregables atascados en las unidades que el usuario encabeza + descendientes.
 router.get('/supervised-stuck', authMiddleware, getMySupervisedStuckTasks);
