@@ -259,7 +259,7 @@ const PERMANENT_TERM_NAME = "Permanente";
 const PERMANENT_TERM_START = "1900-01-01";
 const PERMANENT_TERM_END = "9999-12-31";
 
-// Seed base empaquetado en el backend (copia de tools/templates/seeds/latex/informe-general, sin render/).
+// Seed base "informe-general" empaquetado y autocontenido en el backend (contrato latex/jinja2 + schema).
 const BASE_SEED_TYPE = "latex";
 const BASE_SEED_NAME = "informe-general";
 const BASE_SEED_CODE = `${BASE_SEED_TYPE}/${BASE_SEED_NAME}`;
