@@ -11,15 +11,13 @@ passfile
 passfile
 !nginx/certs/dev/*.pem
 !nginx/certs/qa/*.pem
-tools/templates/dist/Plantillas/
-tools/templates/dist/DOCUMENTOS/
-backend/templates_legacy/_runtime/
 .vscode
 __pycache__/
 *.pyc
 *.swp
-codex_refac.md
 sessions.cdx
+.playwright-mcp/
+docker/.mc/
 signer/trust/roots/*
 signer/trust/extra/*
 !signer/trust/roots/.gitkeep
