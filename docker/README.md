@@ -295,7 +295,11 @@ Wrappers actuales:
   `backend` por ambiente.
 - `scripts/reset-db.sh`: ejecuta el script de reset (resetea el esquema
   PostgreSQL) dentro del contenedor `backend` por ambiente.
-El mecanismo de migraciones legacy (`migrate-db.sh`) fue retirado con la
+- `scripts/reset-system.sh`: regresa el sistema al estado base (vacia esquema
+  PostgreSQL + buckets MinIO) para arrancar el bootstrap; recicla los servicios
+  de app. Flags `--keep-db`, `--keep-minio`, `--rebuild`, `--no-restart`.
+
+El mecanismo de migraciones incrementales fue retirado con la
 migracion a PostgreSQL: `backend/database/postgres_schema.sql` es la unica fuente
 de verdad del esquema (se aplica al arrancar).
 

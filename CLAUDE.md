@@ -55,7 +55,7 @@ The backend has **no declared lint or test scripts**. If adding tests, place the
 bash scripts/seed-db.sh <env> capture|apply|rbac   # PostgreSQL SQL snapshot (pucese.seed.json)
 bash scripts/reset-db.sh <env>                      # reset PostgreSQL schema
 ```
-`<env>` ∈ `dev | qa-local | qa | prod`. `apply` **drops and reinserts** the included tables — never run on data you want to keep. `seed-db.sh` only touches the relational SQL; the MinIO buckets are created by the `storage-init` Compose profile (`minio-bootstrap`), and template files live in MinIO uploaded from the web app (see `docs/07-despliegue/COMANDOS_PROYECTO.md`). The legacy `migrate-db.sh` mechanism was retired with the MariaDB migration — `postgres_schema.sql` is the single source of truth for the schema.
+`<env>` ∈ `dev | qa-local | qa | prod`. `apply` **drops and reinserts** the included tables — never run on data you want to keep. `seed-db.sh` only touches the relational SQL; the MinIO buckets are created by the `storage-init` Compose profile (`minio-bootstrap`), and template files live in MinIO uploaded from the web app (see `docs/07-despliegue/COMANDOS_PROYECTO.md`). Incremental DB migrations were retired with the MariaDB migration — `postgres_schema.sql` is the single source of truth for the schema.
 
 ## Architecture
 

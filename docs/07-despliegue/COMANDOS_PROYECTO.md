@@ -299,7 +299,7 @@ docker compose --env-file .env.qa -f compose.base.yml -f compose.proxy.yml -f co
 La clave por defecto de los usuarios demo es `Deasy1234!`. Para cambiarla en una
 ejecucion puntual, definir `DEASY_DEMO_PASSWORD` antes de correr el comando.
 
-El mecanismo de migraciones legacy (`migrate-db.sh`) fue retirado con la
+El mecanismo de migraciones incrementales fue retirado con la
 migracion a PostgreSQL: `backend/database/postgres_schema.sql` es la unica fuente
 de verdad del esquema (se aplica al arrancar via `ensurePostgresSchema`).
 
