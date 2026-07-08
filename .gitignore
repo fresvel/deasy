@@ -17,7 +17,9 @@ backend/templates_legacy/_runtime/
 .vscode
 __pycache__/
 *.pyc
+*.swp
 codex_refac.md
+sessions.cdx
 signer/trust/roots/*
 signer/trust/extra/*
 !signer/trust/roots/.gitkeep
