@@ -55,7 +55,7 @@ The backend has **no declared lint or test scripts**. If adding tests, place the
 bash scripts/seed-db.sh <env> capture|apply|rbac   # PostgreSQL SQL snapshot (pucese.seed.json)
 bash scripts/reset-db.sh <env>                      # reset PostgreSQL schema
 ```
-`<env>` ∈ `dev | qa-local | qa | prod`. `apply` **drops and reinserts** the included tables — never run on data you want to keep. `seed-db.sh` only touches the relational SQL; MinIO template files are published separately via the `storage-init` / `storage-publish-seeds` / `storage-publish` Compose profiles (see `COMANDOS_PROYECTO.md`). The legacy `migrate-db.sh` mechanism was retired with the MariaDB migration — `postgres_schema.sql` is the single source of truth for the schema.
+`<env>` ∈ `dev | qa-local | qa | prod`. `apply` **drops and reinserts** the included tables — never run on data you want to keep. `seed-db.sh` only touches the relational SQL; the MinIO buckets are created by the `storage-init` Compose profile (`minio-bootstrap`), and template files live in MinIO uploaded from the web app (see `docs/07-despliegue/COMANDOS_PROYECTO.md`). The legacy `migrate-db.sh` mechanism was retired with the MariaDB migration — `postgres_schema.sql` is the single source of truth for the schema.
 
 ## Architecture
 
@@ -88,7 +88,7 @@ El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenec
 Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. **routed no autora flujo** (es de runtime). Estado: single/replicated hechos; **routed está a medias** (hoy solo elige 1 destinatario vía atajo `document_owner` sembrado; falta el editor de flujo en runtime). Ver el doc para detalle y deuda técnica.
 
 ## Environments & ports
-`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). `qa-local` uses `9088`/`9443`. Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `COMANDOS_PROYECTO.md`.
+`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). `qa-local` uses `9088`/`9443`. Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.
 
 Env config: `docker/.env` + per-env `docker/.env.<env>`; reference model is `docker/.env_model`. Frontend uses `VITE_API_BASE_URL` (`/api` behind the Nginx proxy in Docker).
 
