@@ -8,7 +8,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Canonical schema aligned to Deploy/consolidado.dbml
+-- Canonical schema aligned to docs/02-dominio-datos/consolidado.dbml
 -- Engine: InnoDB, charset utf8mb4
 
 CREATE TABLE IF NOT EXISTS unit_types (

@@ -10,9 +10,8 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 - docker/: definiciones de contenedores y servicios.
 - scripts/: utilidades de arranque.
 - backend/scripts/: scripts de datos, seeds, reset y migraciones del backend.
-- tools/: herramientas integradas del proyecto (incluye authoring de templates).
 - docs/: documentacion tecnica, arquitectura y modelos.
-- Deploy/: notas de despliegue y contexto de cambios.
+- deploy/: unidades systemd de despliegue (server-pull).
 
 ## Arquitectura (resumen)
 
@@ -98,7 +97,7 @@ Anexos:
 
 ## Broker y notificaciones (contexto actual)
 
-Resumen clave desde Deploy/deploy_broker:
+Resumen clave:
 
 - Mensajeria en tiempo real con WebSockets (Socket.IO) integrados en el backend.
 - Tipos de conversacion: direct, group, thread (thread ligado a process_id).
