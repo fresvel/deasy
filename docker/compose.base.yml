@@ -67,40 +67,6 @@ services:
     depends_on:
       - minio
 
-  minio-publish-seeds:
-    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
-    profiles:
-      - storage-publish-seeds
-    restart: "no"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
-      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
-    entrypoint: ["/bin/sh", "/publish-seeds.sh"]
-    volumes:
-      - ./minio/publish-template-seeds.sh:/publish-seeds.sh:ro
-      - ../tools/templates/seeds:/publish:ro
-    depends_on:
-      - minio
-
-  minio-publish:
-    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
-    profiles:
-      - storage-publish
-    restart: "no"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
-      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
-    entrypoint: ["/bin/sh", "/publish.sh"]
-    volumes:
-      - ./minio/publish-templates.sh:/publish.sh:ro
-      - ../tools/templates/dist/Plantillas:/publish:ro
-    depends_on:
-      - minio
-
   backend:
     restart: unless-stopped
     environment:

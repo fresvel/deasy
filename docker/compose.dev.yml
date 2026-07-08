@@ -28,7 +28,6 @@ services:
       - .env.dev
     volumes:
       - ../backend:/app/backend
-      - ../tools/templates:/app/tools/templates:ro
       - backend_node_modules_v2:/app/backend/node_modules
       - uploads_data:/app/backend/uploads
       - storage_data:/app/backend/storage

@@ -27,12 +27,6 @@ services:
   minio-bootstrap:
     env_file: *prod_runtime_env_file
 
-  minio-publish-seeds:
-    env_file: *prod_runtime_env_file
-
-  minio-publish:
-    env_file: *prod_runtime_env_file
-
   backend:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
     pull_policy: always
