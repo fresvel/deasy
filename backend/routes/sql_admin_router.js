@@ -54,7 +54,12 @@ import { requireAnyRole, requireSqlAdminPermission } from "../middlewares/rbac.j
 import { MANAGEMENT_ROLES } from "../config/rbacPolicy.js";
 
 const router = new Router();
-const draftArtifactUpload = multer({ storage: multer.memoryStorage() });
+// memoryStorage sin límites deja que una subida grande agote la RAM del proceso.
+// 30 MB por fichero es el mismo tope que usa `uploadDeliverable` en user_router.
+const draftArtifactUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024, files: 4 }
+});
 
 router.get("/meta", requireAnyRole(MANAGEMENT_ROLES), getSqlMeta);
 router.get("/stats/operation", requireAnyRole(MANAGEMENT_ROLES), getOperationStats);

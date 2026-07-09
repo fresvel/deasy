@@ -90,7 +90,7 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
+import { reactive, ref, defineEmits, watch, computed } from "vue";
 import { Modal } from "@/shared/utils/modalController";
 import DossierService from "@/modules/dossier/services/DossierService";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
@@ -191,7 +191,8 @@ const buildPayload = () => {
 const validate = () => {
   if (!form.nombre?.trim()) return "Debe indicar el nombre de la referencia.";
   if (!form.email?.trim()) return "Debe indicar el correo electrónico.";
-  if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(form.email)) return "El correo electrónico no es válido.";
+  // Sin cuantificadores anidados: el patrón anterior sufría backtracking exponencial (ReDoS).
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email)) return "El correo electrónico no es válido.";
   if (form.tipo !== 'personal' && !form.cargo_parentesco?.trim()) return `Debe indicar ${form.tipo === 'laboral' ? 'el cargo' : 'el parentesco'}.`;
   if (form.tipo === 'laboral' && !form.institution?.trim()) return "Debe indicar la institución para referencias laborales.";
   return "";

@@ -387,7 +387,6 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";
 import {
-  IconCheck,
   IconChevronLeft,
   IconChevronRight,
   IconFiles,
@@ -399,7 +398,7 @@ import {
 } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
-import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
+import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import MultiSignerBatchStatusPanel from "@/modules/firmas/components/MultiSignerBatchStatusPanel.vue";
@@ -827,7 +826,8 @@ const appendField = (selection) => {
     id: `multi-field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     page: selection.page,
     pageReference: batchMode.value === "shared-coordinates" ? sharedPageReference.value : "start",
-    pageValue: batchMode.value === "shared-coordinates" ? selection.page : selection.page,
+    // Página absoluta: se guarda siempre, la lea o no `pageReference` (ver resolveFieldPage).
+    pageValue: selection.page,
     pageOffset: batchMode.value === "shared-coordinates" ? Math.max(0, totalPages.value - selection.page) : 0,
     x1: Number(selection.x1.toFixed(2)),
     y1: Number(selection.y1.toFixed(2)),
