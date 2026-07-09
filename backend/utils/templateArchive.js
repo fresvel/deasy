@@ -1,9 +1,9 @@
-import path from "path";
-import os from "os";
+import path from "node:path";
+import os from "node:os";
 import fs from "fs-extra";
-import { randomUUID } from "crypto";
-import { spawn } from "child_process";
-import { pipeline } from "stream/promises";
+import { randomUUID } from "node:crypto";
+import { spawn } from "node:child_process";
+import { pipeline } from "node:stream/promises";
 import { minioClient, getMinioObjectStream } from "../services/storage/minio_service.js";
 
 export const TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";

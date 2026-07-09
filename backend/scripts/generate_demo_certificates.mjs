@@ -1,8 +1,8 @@
-import fs from "fs/promises";
-import os from "os";
-import path from "path";
-import { execFile } from "child_process";
-import { promisify } from "util";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 import { closePostgresPool, getPostgresPool } from "../config/postgres.js";
 import UserCertificateRepository from "../services/auth/UserCertificateRepository.js";

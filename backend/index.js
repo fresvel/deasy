@@ -1,5 +1,5 @@
 import "dotenv/config"
-import http from "http";
+import http from "node:http";
 import express from "express";
 import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import user_router from "./routes/user_router.js";

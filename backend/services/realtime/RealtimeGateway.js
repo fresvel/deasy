@@ -4,7 +4,7 @@ import { getAccessTokenSecret } from "../../utils/login/generate_token.js";
 import UserRepository from "../auth/UserRepository.js";
 import ChatConversationService from "../chat/ChatConversationService.js";
 import ChatAuthorizationService from "../chat/ChatAuthorizationService.js";
-import { logChatError, logChatInfo } from "../chat/chat_logging.js";
+import { logChatInfo } from "../chat/chat_logging.js";
 
 const userRoom = (personId) => `user:${personId}`;
 const conversationRoom = (conversationId) => `conversation:${conversationId}`;

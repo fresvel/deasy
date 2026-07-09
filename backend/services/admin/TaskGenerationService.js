@@ -1,6 +1,5 @@
 import { getPostgresPool } from "../../config/postgres.js";
 import {
-  transitionDocumentState,
   transitionDocumentVersionState,
 } from "../documents/DocumentStateService.js";
 import { SIGNATURE_REQUEST_STATUS } from "../documents/DocumentWorkflowCatalog.js";

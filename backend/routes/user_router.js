@@ -42,7 +42,7 @@ import {
   requireRouteUserAccess
 } from "../middlewares/rbac.js";
 import multer from "multer";
-import os from "os";
+import os from "node:os";
 import {
   deleteMyCertificate,
   downloadMyCertificate,

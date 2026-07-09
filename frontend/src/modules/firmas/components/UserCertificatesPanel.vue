@@ -125,7 +125,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { IconCertificate } from "@tabler/icons-vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
+import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";

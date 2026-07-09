@@ -1002,12 +1002,12 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey, IconListCheck, IconInbox } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconListCheck, IconInbox } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/core/config/apiConfig';
   import AppTag from '@/shared/components/data/AppTag.vue';
   import AppDataTable from '@/shared/components/data/AppDataTable.vue';
   import AppCounterNavigator from '@/shared/components/widgets/AppCounterNavigator.vue';
-  import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
+  import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
   import SignatureBox from '@/modules/firmas/components/SignatureBox.vue';
   import UserCertificatesPanel from '@/modules/firmas/components/UserCertificatesPanel.vue';
   import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';

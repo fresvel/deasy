@@ -1106,11 +1106,9 @@ import AdminMainTableSection from "@/modules/admin/components/tables/AdminMainTa
 // Lazy-load: Vue Flow + dagre solo se cargan al abrir el organigrama / mapa de procesos (fuera del bundle).
 const UnitGraphView = defineAsyncComponent(() => import("@/modules/admin/components/units/UnitGraphView.vue"));
 const ProcessGraphView = defineAsyncComponent(() => import("@/modules/admin/components/units/ProcessGraphView.vue"));
-import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFkBrowserModal from "@/modules/admin/components/modals/AdminFkBrowserModal.vue";
 import AdminFkCreateModal from "@/modules/admin/components/modals/AdminFkCreateModal.vue";
 import AdminFkFilterModal from "@/modules/admin/components/modals/AdminFkFilterModal.vue";
-import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminPersonAssignmentsModal from "@/modules/admin/components/modals/AdminPersonAssignmentsModal.vue";
 import AdminProcessDefinitionActivationModal from "@/modules/admin/components/modals/AdminProcessDefinitionActivationModal.vue";
@@ -1124,12 +1122,10 @@ import AdminTableHeader from "@/modules/admin/components/tables/AdminTableHeader
 import AdminUnassignedArtifactsSection from "@/modules/admin/components/tables/AdminUnassignedArtifactsSection.vue";
 import AdminVacantPositionsSection from "@/modules/admin/components/tables/AdminVacantPositionsSection.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
-import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import { Modal } from "@/shared/utils/modalController";
 
@@ -1320,7 +1316,7 @@ const draftArtifactForm = ref({
   process_definition_id: "",
   schema_fields: [],
   fill_workflow: { required: true, steps: [] },
-  signature_workflow: { required: true, anchors: [], steps: [] }
+  signature_workflow: { required: true, steps: [] }
 });
 const draftArtifactFiles = ref({
   pdf: null,

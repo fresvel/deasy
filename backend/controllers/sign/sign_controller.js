@@ -1,10 +1,10 @@
-import fs from "fs";
-import { randomUUID } from "crypto";
+import fs from "node:fs";
+import { randomUUID } from "node:crypto";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import os from "os";
-import path from "path";
-import { spawn } from "child_process";
-import { pipeline } from "stream/promises";
+import os from "node:os";
+import path from "node:path";
+import { spawn } from "node:child_process";
+import { pipeline } from "node:stream/promises";
 import { getPostgresPool } from "../../config/postgres.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import UserCertificateRepository from "../../services/auth/UserCertificateRepository.js";

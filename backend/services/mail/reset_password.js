@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
-import fs from "fs/promises";
-import path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { getPostgresPool } from "../../config/postgres.js";
 import { transporter } from "../../lib/mailer.js";
 import { generateVerificationCode } from "../../utils/email/generateCode.js";

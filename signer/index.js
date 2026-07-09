@@ -1,4 +1,4 @@
-import http from 'http';
+import http from 'node:http';
 import amqp from 'amqplib';
 import { signDocument } from './signService.js';
 

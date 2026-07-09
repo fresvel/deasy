@@ -579,7 +579,7 @@ import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInlineShell from "@/shared/components/modals/AppInlineShell.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
-import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
+import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 
@@ -1150,10 +1150,8 @@ const commitSignature = (patch) => {
     ...props.draftArtifactForm,
     signature_workflow: {
       required: true,
-      anchors: [],
       steps: signatureSteps.value,
       ...props.draftArtifactForm.signature_workflow,
-      anchors: [],
       ...patch,
     },
   });

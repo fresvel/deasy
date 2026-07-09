@@ -1,12 +1,11 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { transporter } from '../../lib/mailer.js';
 import { generateVerificationCode } from '../../utils/email/generateCode.js';
 import { saveEmailVerificationCode } from '../../services/mail/saveEmailVerificationCode.js';
 import { verifyEmailCode } from "../../services/mail/emailVerification.js";
 
 
-import { getPostgresPool } from "../../config/postgres.js";
 
 export const sendVerificationEmail = async (req, res) => {
   try {

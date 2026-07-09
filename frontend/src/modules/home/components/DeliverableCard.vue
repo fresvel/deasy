@@ -1,7 +1,7 @@
 <script setup>
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
-import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
+import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
 import {
   IconEye,
   IconPlayerPlayFilled,

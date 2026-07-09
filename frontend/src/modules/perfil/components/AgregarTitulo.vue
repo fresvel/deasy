@@ -109,7 +109,7 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
+import { reactive, ref, defineEmits, watch, computed } from "vue";
 import { Modal } from "@/shared/utils/modalController";
 import DossierService from "@/modules/dossier/services/DossierService";
 import SInput from "@/shared/components/forms/SInput.vue";

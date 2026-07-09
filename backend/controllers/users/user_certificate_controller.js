@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import UserRepository from "../../services/auth/UserRepository.js";
 import UserCertificateRepository from "../../services/auth/UserCertificateRepository.js";
 import {

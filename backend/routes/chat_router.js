@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import os from "os";
+import os from "node:os";
 import { authMiddleware } from "../middlewares/auth.js";
 import {
   createConversation,

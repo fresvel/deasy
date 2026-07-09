@@ -40,7 +40,7 @@ export function useAdminDraftArtifactFlow({
       template_scope: "official",
       schema_fields: [],
       fill_workflow: { required: true, steps: [] },
-      signature_workflow: { required: true, anchors: [], steps: [] }
+      signature_workflow: { required: true, steps: [] }
     };
     draftArtifactFiles.value = {
       pdf: null,
@@ -121,7 +121,7 @@ export function useAdminDraftArtifactFlow({
           ...draftArtifactForm.value,
           schema_fields: Array.isArray(schemaData?.fields) ? schemaData.fields : [],
           fill_workflow: schemaData?.fill_workflow || { required: true, steps: [] },
-          signature_workflow: schemaData?.signature_workflow || { required: true, anchors: [], steps: [] }
+          signature_workflow: schemaData?.signature_workflow || { required: true, steps: [] }
         };
       } catch {
         // Si falla la lectura, se continúa con campos/flujos vacíos.
@@ -137,7 +137,7 @@ export function useAdminDraftArtifactFlow({
         template_scope: "official",
         schema_fields: [],
         fill_workflow: { required: true, steps: [] },
-        signature_workflow: { required: true, anchors: [], steps: [] }
+        signature_workflow: { required: true, steps: [] }
       };
       try {
         const { data: schemaData } = await adminSqlService.getTemplateArtifactSchema(cloneFrom.id);
@@ -145,7 +145,7 @@ export function useAdminDraftArtifactFlow({
           ...draftArtifactForm.value,
           schema_fields: Array.isArray(schemaData?.fields) ? schemaData.fields : [],
           fill_workflow: schemaData?.fill_workflow || { required: true, steps: [] },
-          signature_workflow: schemaData?.signature_workflow || { required: true, anchors: [], steps: [] }
+          signature_workflow: schemaData?.signature_workflow || { required: true, steps: [] }
         };
       } catch {
         // Si falla la lectura del esquema de origen, se continúa con campos/flujos vacíos.
@@ -162,7 +162,7 @@ export function useAdminDraftArtifactFlow({
         template_scope: "official",
         schema_fields: [],
         fill_workflow: { required: true, steps: [] },
-        signature_workflow: { required: true, anchors: [], steps: [] }
+        signature_workflow: { required: true, steps: [] }
       };
     }
     await loadDraftArtifactSeedOptions();

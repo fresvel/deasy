@@ -1,6 +1,6 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as Minio from "minio";
 import { getPostgresPool } from "../config/postgres.js";
 import { consumeRabbitMessages, publishRabbitMessage } from "../services/infrastructure/rabbitmq_http.js";

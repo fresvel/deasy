@@ -1,7 +1,7 @@
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
 import fs from 'fs-extra';
-import path from 'path';
-import { randomUUID } from 'crypto';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { downloadFromMinio, uploadToMinio } from './minioClient.js';
 import { generateStampImage } from './sigmaker/index.js';
 

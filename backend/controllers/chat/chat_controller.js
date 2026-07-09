@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 import fs from "fs-extra";
 import ChatConversationService from "../../services/chat/ChatConversationService.js";
 import ChatAuthorizationService from "../../services/chat/ChatAuthorizationService.js";

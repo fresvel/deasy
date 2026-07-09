@@ -2,7 +2,7 @@
 // Los datos van por dossierStore (2 tablas: dossiers + dossier_items JSONB);
 // MinIO sigue guardando los PDFs. Engine-transparente vía el adaptador.
 import * as Minio from "minio";
-import fs from "fs";
+import fs from "node:fs";
 import * as store from "../../services/users/dossierStore.js";
 
 // --- MinIO: cliente, constantes y helpers (sin cambios respecto a la versión Mongo) ---

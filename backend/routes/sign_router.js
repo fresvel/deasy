@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import os from "os";
+import os from "node:os";
 import { authMiddleware } from "../middlewares/auth.js";
 import { loadAccessContext, requirePermissions } from "../middlewares/rbac.js";
 import {

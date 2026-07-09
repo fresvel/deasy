@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { transporter } from "../../lib/mailer.js";
 import { generateVerificationCode } from "../../utils/email/generateCode.js";
 import { saveEmailVerificationCode } from "./saveEmailVerificationCode.js";

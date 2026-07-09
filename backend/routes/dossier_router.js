@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import os from 'os';
+import os from 'node:os';
 import * as dossierController from '../controllers/users/dossier_controler.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { loadAccessContext, requireDossierAccess } from '../middlewares/rbac.js';

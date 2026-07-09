@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
-import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";

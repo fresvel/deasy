@@ -1,7 +1,7 @@
-import fs from "fs";
-import os from "os";
-import path from "path";
-import { randomUUID } from "crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import {

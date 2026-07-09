@@ -2702,7 +2702,7 @@ import { Modal } from '@/shared/utils/modalController';
 import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import SToggle from '@/shared/components/forms/SToggle.vue';
-import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
+import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 import HomeSignatureEntry from '@/modules/home/components/HomeSignatureEntry.vue';
 import DeliverableCard from '@/modules/home/components/DeliverableCard.vue';
@@ -2721,7 +2721,6 @@ import {
   IconDownload,
   IconFileDescription,
   IconEye,
-  IconHome,
   IconSignature,
   IconUpload,
   IconAlertTriangle,
@@ -2743,10 +2742,8 @@ import {
   IconPlus,
   IconRefresh,
   IconChecklist,
-  IconId,
   IconSearch,
   IconSquareCheck,
-  IconUser,
   IconUserCheck,
   IconX
 } from '@tabler/icons-vue';

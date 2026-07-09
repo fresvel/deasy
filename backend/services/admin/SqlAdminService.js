@@ -9,14 +9,14 @@ import {
 } from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 import bcrypt from "bcrypt";
-import fs from "fs";
-import os from "os";
-import path from "path";
-import crypto from "crypto";
-import { spawn } from "child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import crypto from "node:crypto";
+import { spawn } from "node:child_process";
 import * as Minio from "minio";
-import { fileURLToPath } from "url";
-import { randomUUID } from "crypto";
+import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
 import { sanitizeStorageSegment } from "../../utils/templateArchive.js";
 import {
@@ -1229,7 +1229,7 @@ const pickPayload = (fields, data, { includeReadOnly = false } = {}) => {
     if (!includeReadOnly && field.readOnly) {
       continue;
     }
-    if (Object.prototype.hasOwnProperty.call(data, field.name)) {
+    if (Object.hasOwn(data, field.name)) {
       payload[field.name] = normalizeValue(field, data[field.name]);
     }
   }
@@ -1240,7 +1240,7 @@ const buildWhere = (keys, values) => {
   const clauses = [];
   const params = [];
   for (const key of keys) {
-    if (!Object.prototype.hasOwnProperty.call(values, key)) {
+    if (!Object.hasOwn(values, key)) {
       throw new Error(`Falta la llave primaria: ${key}`);
     }
     clauses.push(`${key} = ?`);
@@ -1269,7 +1269,7 @@ const ensureDateOrder = (startDate, endDate, label) => {
 
 const validateFieldTypes = (config, payload) => {
   for (const field of config.fields) {
-    if (!Object.prototype.hasOwnProperty.call(payload, field.name)) {
+    if (!Object.hasOwn(payload, field.name)) {
       continue;
     }
     const value = payload[field.name];
@@ -1395,7 +1395,7 @@ const validateTableRules = (tableName, candidate) => {
       if (!candidate.task_item_id && !candidate.owner_person_id) {
         throw new Error("Selecciona el item de tarea o define un propietario para el documento.");
       }
-      if (Object.prototype.hasOwnProperty.call(candidate, "status")) {
+      if (Object.hasOwn(candidate, "status")) {
         candidate.status = assertDocumentStatusValue(candidate.status);
       }
       break;
@@ -1455,7 +1455,7 @@ const validateTableRules = (tableName, candidate) => {
           throw new Error("La version debe ser mayor o igual a 0.1.");
         }
       }
-      if (Object.prototype.hasOwnProperty.call(candidate, "status")) {
+      if (Object.hasOwn(candidate, "status")) {
         candidate.status = assertDocumentVersionStatusValue(candidate.status);
       }
       break;
@@ -3609,7 +3609,7 @@ export default class SqlAdminService {
       }
     }
 
-    if (tableName === "persons" && Object.prototype.hasOwnProperty.call(data, "password")) {
+    if (tableName === "persons" && Object.hasOwn(data, "password")) {
       const rawPassword = typeof data.password === "string" ? data.password : "";
       if (rawPassword) {
         updates.password_hash = await hashPassword(rawPassword);
@@ -3622,29 +3622,29 @@ export default class SqlAdminService {
     }
     if (tableName === "tasks") {
       if (
-        Object.prototype.hasOwnProperty.call(updates, "process_definition_id")
+        Object.hasOwn(updates, "process_definition_id")
       ) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
           throw new Error("No se puede cambiar la configuracion de una tarea ya instanciada.");
         }
         delete updates.process_definition_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "term_id")) {
+      if (Object.hasOwn(updates, "term_id")) {
         if (Number(updates.term_id) !== Number(existing.term_id)) {
           throw new Error("No se puede cambiar el periodo de una tarea ya instanciada.");
         }
         delete updates.term_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "launch_mode")) {
+      if (Object.hasOwn(updates, "launch_mode")) {
         delete updates.launch_mode;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "created_by_user_id")) {
+      if (Object.hasOwn(updates, "created_by_user_id")) {
         if (Number(updates.created_by_user_id || 0) !== Number(existing.created_by_user_id || 0)) {
           throw new Error("No se puede cambiar el usuario creador de una tarea existente.");
         }
         delete updates.created_by_user_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "process_run_id")) {
+      if (Object.hasOwn(updates, "process_run_id")) {
         if (Number(updates.process_run_id || 0) !== Number(existing.process_run_id || 0)) {
           throw new Error("No se puede cambiar la corrida de proceso de una tarea existente.");
         }
@@ -3652,19 +3652,19 @@ export default class SqlAdminService {
       }
     }
     if (tableName === "task_items") {
-      if (Object.prototype.hasOwnProperty.call(updates, "task_id")) {
+      if (Object.hasOwn(updates, "task_id")) {
         if (Number(updates.task_id) !== Number(existing.task_id)) {
           throw new Error("No se puede cambiar la tarea asociada de un item.");
         }
         delete updates.task_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
+      if (Object.hasOwn(updates, "process_definition_template_id")) {
         if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
           throw new Error("No se puede cambiar la plantilla asociada de un item.");
         }
         delete updates.process_definition_template_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "template_artifact_id")) {
+      if (Object.hasOwn(updates, "template_artifact_id")) {
         if (Number(updates.template_artifact_id) !== Number(existing.template_artifact_id)) {
           throw new Error("No se puede cambiar el paquete asociado de un item.");
         }
@@ -3672,7 +3672,7 @@ export default class SqlAdminService {
       }
     }
     if (tableName === "documents") {
-      if (Object.prototype.hasOwnProperty.call(updates, "task_item_id")) {
+      if (Object.hasOwn(updates, "task_item_id")) {
         if (Number(updates.task_item_id) !== Number(existing.task_item_id)) {
           throw new Error("No se puede cambiar el item de tarea asociado de un documento.");
         }
@@ -3680,7 +3680,7 @@ export default class SqlAdminService {
       }
     }
     if (tableName === "signature_flow_templates") {
-      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
+      if (Object.hasOwn(updates, "process_definition_template_id")) {
         if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
           throw new Error("No se puede cambiar la plantilla asociada de un flujo de firma.");
         }
@@ -3696,7 +3696,7 @@ export default class SqlAdminService {
       );
     }
     if (tableName === "fill_flow_templates") {
-      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
+      if (Object.hasOwn(updates, "process_definition_template_id")) {
         if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
           throw new Error("No se puede cambiar la plantilla asociada de un flujo de entrega.");
         }
@@ -3711,7 +3711,7 @@ export default class SqlAdminService {
       }
     }
     if (tableName === "fill_flow_steps") {
-      if (Object.prototype.hasOwnProperty.call(updates, "fill_flow_template_id")) {
+      if (Object.hasOwn(updates, "fill_flow_template_id")) {
         if (Number(updates.fill_flow_template_id) !== Number(existing.fill_flow_template_id)) {
           throw new Error("No se puede cambiar la plantilla asociada de un paso de entrega.");
         }
@@ -3733,7 +3733,7 @@ export default class SqlAdminService {
       || tableName === "process_target_rules"
       || tableName === "process_definition_period_types"
     ) {
-      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
+      if (Object.hasOwn(updates, "process_definition_id")) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
           throw new Error("No se puede cambiar la configuracion asociada de este registro.");
         }
@@ -3822,31 +3822,31 @@ export default class SqlAdminService {
         return normalizedLeft === normalizedRight;
       };
 
-      if (Object.prototype.hasOwnProperty.call(updates, "definition_version")) {
+      if (Object.hasOwn(updates, "definition_version")) {
         if (!isSameValue("definition_version", updates.definition_version, existing.definition_version)) {
           throw new Error("No se puede modificar el numero de version de una configuracion.");
         }
         delete updates.definition_version;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "process_id")) {
+      if (Object.hasOwn(updates, "process_id")) {
         if (!isSameValue("process_id", updates.process_id, existing.process_id)) {
           throw new Error("No se puede cambiar el proceso de una configuracion.");
         }
         delete updates.process_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "series_id")) {
+      if (Object.hasOwn(updates, "series_id")) {
         if (!isSameValue("series_id", updates.series_id, existing.series_id)) {
           throw new Error("No se puede cambiar la serie de una configuracion.");
         }
         delete updates.series_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "variation_key")) {
+      if (Object.hasOwn(updates, "variation_key")) {
         if (!isSameValue("variation_key", updates.variation_key, existing.variation_key)) {
           throw new Error("No se puede cambiar la serie de una configuracion.");
         }
         delete updates.variation_key;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "name")) {
+      if (Object.hasOwn(updates, "name")) {
         delete updates.name;
       }
 
@@ -3857,7 +3857,7 @@ export default class SqlAdminService {
       });
 
       const currentStatus = String(existing.status || "draft");
-      const nextStatus = Object.prototype.hasOwnProperty.call(updates, "status")
+      const nextStatus = Object.hasOwn(updates, "status")
         ? String(updates.status || "")
         : currentStatus;
 
@@ -3961,7 +3961,7 @@ export default class SqlAdminService {
             `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
             [...values, ...params]
           );
-          if (Object.prototype.hasOwnProperty.call(updates, "status")) {
+          if (Object.hasOwn(updates, "status")) {
             const nextStatus = String(updates.status || "").trim().toLowerCase();
             if (nextStatus === "listo para firma") {
               const documentVersionId = Number(existing.id ?? keyPayload.id);
@@ -4057,7 +4057,7 @@ export default class SqlAdminService {
           `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
           [...values, ...params]
         );
-        if (tableName === "process_definition_series" && Object.prototype.hasOwnProperty.call(updates, "code")) {
+        if (tableName === "process_definition_series" && Object.hasOwn(updates, "code")) {
           await this.pool.query(
             `UPDATE process_definition_versions
              SET variation_key = ?
@@ -4066,12 +4066,12 @@ export default class SqlAdminService {
           );
           await this.refreshProcessDefinitionVersionNames({ seriesId: Number(existing.id) });
         }
-        if (tableName === "processes" && Object.prototype.hasOwnProperty.call(updates, "name")) {
+        if (tableName === "processes" && Object.hasOwn(updates, "name")) {
           await this.refreshProcessDefinitionVersionNames({ processId: Number(existing.id ?? keyPayload.id) });
         }
         if (
           (tableName === "unit_types" || tableName === "cargos")
-          && Object.prototype.hasOwnProperty.call(updates, "name")
+          && Object.hasOwn(updates, "name")
         ) {
           const foreignKey = tableName === "unit_types" ? "unit_type_id" : "cargo_id";
           const [seriesRows] = await this.pool.query(
@@ -5216,7 +5216,7 @@ export default class SqlAdminService {
 
     // Lee los workflows (fill/signatures) del meta.yaml en formato editable por la web.
     let fillWorkflow = { required: true, steps: [] };
-    let signatureWorkflow = { required: false, anchors: [], steps: [] };
+    let signatureWorkflow = { required: false, steps: [] };
     try {
       const meta = await this.loadTemplateArtifactMetaDocument(artifact);
       const fill = meta?.workflows?.fill || {};
@@ -6085,7 +6085,7 @@ export default class SqlAdminService {
           continue;
         }
         const fullRel = `${srcRelPrefix}${entry.rel}`;
-        if (Object.prototype.hasOwnProperty.call(protectedMap, fullRel)) {
+        if (Object.hasOwn(protectedMap, fullRel)) {
           const hash = crypto.createHash("sha256").update(fs.readFileSync(entry.abs)).digest("hex");
           if (hash !== protectedMap[fullRel]) {
             violations.push(`Archivo protegido modificado: ${entry.rel}`);
