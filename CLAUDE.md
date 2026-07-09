@@ -5,9 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Reglas de Testing 
 Para realizar las pruebas debes considerar que todo el sistema está dockerizado.  En la ruta scripts está docker-env.sh que te permite levantar entornos y ejecutar comandos de manera rápida. 
 
-Las contraseñas de todos los usuarios de dev son Demo1234!, se tienen los siguientes usuarios:
-    admin -> user: 1234567890
-    gestor -> user: 0987654321 (de momento tiene rol de usuario también)
+Los usuarios de referencia son los que **crea el bootstrap** (`/setup` → "usar datos de
+ejemplo"), no los de `seed-db.sh`. Ojo: la contraseña del gestor NO es `Demo1234!`.
+
+    admin   -> cédula 1234567890  /  Demo1234!
+    gestor  -> cédula 0987654321  /  Gestor1234!   (de momento tiene rol de usuario también)
+    usuario -> cédula 1122334455  /  Demo1234!
+
+El router bloquea `/home` y `/perfil` para el admin (`adminBlockedRouteNames`), así que para
+probar el dossier o las firmas hay que entrar como gestor o usuario.
 
 ## Monorepo layout
 

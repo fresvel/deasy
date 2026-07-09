@@ -258,6 +258,9 @@ function rewriteDialect(code) {
   c = c.replace(/\bCURTIME\s*\(\s*\)/gi, "CURRENT_TIME");
   c = c.replace(/\bIFNULL\s*\(/gi, "COALESCE(");
   c = c.replace(/\bUNIX_TIMESTAMP\s*\(\s*\)/gi, "EXTRACT(EPOCH FROM now())::bigint");
+  // `SELECT ... FROM DUAL` es una tabla ficticia de MySQL/Oracle. PostgreSQL admite el
+  // SELECT sin FROM, así que basta con eliminar la cláusula.
+  c = c.replace(/\bFROM\s+DUAL\b/gi, "");
   c = c.replace(/SET\s+FOREIGN_KEY_CHECKS\s*=\s*0/gi, "SET session_replication_role = replica");
   c = c.replace(/SET\s+FOREIGN_KEY_CHECKS\s*=\s*1/gi, "SET session_replication_role = origin");
   // INSERT IGNORE INTO ... -> INSERT INTO ... ON CONFLICT DO NOTHING
