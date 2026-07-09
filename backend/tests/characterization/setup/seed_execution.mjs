@@ -1,10 +1,7 @@
 // Setup reproducible de datos de EJECUCIÓN vía API (no vía seed SQL).
 //
-// El seed baseline deja vacía TODA la capa de plantillas+ejecución (incluidas
-// process_definition_templates / target_rules / period_types), así que un
-// "launch" de la definición sembrada no produce nada. La vía self-contained es
-// la ROUTED: el "Proceso por defecto" (pdv 1) permite crear una tarea ad-hoc
-// que materializa su propio flujo (entrega + firma) en runtime.
+// La vía self-contained es la ROUTED: el "Proceso por defecto" permite crear una
+// tarea ad-hoc que materializa su propio flujo (entrega + firma) en runtime.
 //
 // Este script, ejecutado por HTTP contra el stack, deja datos deterministas en:
 //   tasks, task_items, documents, document_versions,
@@ -13,92 +10,49 @@
 // (signature_flow_instances/requests requieren upload+approve; se abordan aparte)
 //
 // Orden reproducible:
-//   1) scripts/seed-db.sh dev apply         (baseline limpio)
-//   2) node tests/characterization/setup/seed_execution.mjs
-//   3) capturar/verificar golden (npm run test:char)
+//   1) bash scripts/reset-db.sh dev
+//   2) node tests/characterization/setup/bootstrap_system.mjs
+//   3) node tests/characterization/setup/seed_execution.mjs
+//   4) capturar/verificar golden (npm run test:char)
 
 import { post, get } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
 import { getPostgresPool } from "../../../config/postgres.js";
+import { FIXTURE, USERS } from "../config.mjs";
 
-// unit_position 10 vive en unit_id 16 (ver DESCRIBE unit_positions). Le damos
-// puesto vigente a la persona 3 (usuario) para que pueda crear general-tasks ahí.
-const UNIT_POSITION_ID = Number(process.env.SEED_UNIT_POSITION_ID ?? 10);
-const UNIT_ID = Number(process.env.SEED_UNIT_ID ?? 16);
-const USUARIO_PERSON_ID = Number(process.env.SEED_USUARIO_PERSON_ID ?? 3);
-const ADMIN_PERSON_ID = Number(process.env.SEED_ADMIN_PERSON_ID ?? 1);
+const { unitPositionId: UNIT_POSITION_ID, unitId: UNIT_ID } = FIXTURE;
+const { usuarioPersonId: USUARIO_PERSON_ID, adminPersonId: ADMIN_PERSON_ID } = FIXTURE;
+const { definitionId: DEFINITION_ID } = FIXTURE;
 
-// El baseline siembra `deliverables` (identidad) pero NO `template_artifacts`
-// ni el link `process_definition_templates`. Sin ese link, ni el launch ni el
-// routed pueden materializar entregables. Sembramos el mínimo por CRUD, ligado
-// al deliverable del proceso por defecto (id 5, tpl_informe_general, process 1).
-// Asume baseline fresco (protocolo: seed apply -> este setup), así que no hay
-// que deduplicar.
-const PROCESS_ID = Number(process.env.SEED_PROCESS_ID ?? 1);
-const DEFINITION_ID = Number(process.env.SEED_DEFINITION_ID ?? 1);
-
-// La creación de template_artifacts está bloqueada en el endpoint CRUD (solo
-// se registran por sync desde MinIO o el flujo de plantilla). Para un golden
-// determinista SIN infra de MinIO, sembramos la fila directamente por el pool
-// (bypass del guard del endpoint, no de la DB) y dejamos que el resto del flujo
-// de ejecución lo produzca la lógica real de la app vía API. Idempotente.
-async function seedTemplateLayer() {
+// El bootstrap ya siembra la capa de plantillas (deliverable + template_artifact +
+// el link process_definition_templates) por la lógica real de la aplicación.
+// Antes esto se inyectaba aquí escribiendo directo al pool, saltándose el guard
+// del endpoint CRUD, porque el seed baseline la dejaba vacía. Ahora solo se
+// comprueba: si falta, el fallo debe apuntar al bootstrap, no a un test.
+async function assertTemplateLayer() {
   const pool = getPostgresPool();
-  const prefix = "official/tpl_informe_general";
-
-  const [existing] = await pool.query(
+  const [rows] = await pool.query(
     `SELECT ta.id FROM process_definition_templates pdt
        JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
       WHERE pdt.process_definition_id = ? LIMIT 1`,
     [DEFINITION_ID]
   );
-  if (existing.length) {
-    console.log("[setup] template layer ya presente (artifact id=%s), skip", existing[0].id);
-    return;
-  }
-
-  // El deliverable (identidad del entregable) puede no existir en una base
-  // fresca (no está en el snapshot del seed). Se reusa por `code` si existe, o
-  // se crea. Así el setup es self-contained y reproducible en cualquier motor.
-  const CODE = "tpl_informe_general";
-  const [delivRows] = await pool.query(`SELECT id FROM deliverables WHERE code = ? LIMIT 1`, [CODE]);
-  let deliverableId;
-  if (delivRows.length) {
-    deliverableId = delivRows[0].id;
-  } else {
-    const [dRes] = await pool.query(
-      `INSERT INTO deliverables (code, display_name, owner_process_id, owner_variation_key, template_scope)
-       VALUES (?, ?, ?, 'general', 'official')`,
-      [CODE, "Informe general", PROCESS_ID]
+  if (!rows.length) {
+    throw new Error(
+      `La definición ${DEFINITION_ID} no tiene plantilla ligada. ` +
+        `¿Corriste setup/bootstrap_system.mjs con preconfig por defecto?`
     );
-    deliverableId = dRes.insertId;
   }
-
-  const [artRes] = await pool.query(
-    `INSERT INTO template_artifacts
-       (deliverable_id, storage_version, lifecycle_state, base_object_prefix,
-        available_formats, schema_object_key, meta_object_key, is_active)
-     VALUES (?, ?, 'published', ?, ?, ?, ?, 1)`,
-    [deliverableId, "v1", prefix, '["pdf"]', `${prefix}/schema.json`, `${prefix}/meta.json`]
-  );
-  const artifactId = artRes.insertId;
-
-  await pool.query(
-    `INSERT INTO process_definition_templates
-       (process_definition_id, template_artifact_id, sort_order, item_mode)
-     VALUES (?, ?, 1, 'single')`,
-    [DEFINITION_ID, artifactId]
-  );
-  console.log("[setup] template layer sembrado (artifact id=%s, ligado a pdv %s)", artifactId, DEFINITION_ID);
+  console.log("[setup] capa de plantillas presente (artifact id=%s)", rows[0].id);
 }
 
 async function main() {
   await waitForReady();
   const admin = await tokenFor("admin");
 
-  // 0) Sembrar la capa de plantillas mínima que el baseline omite.
-  await seedTemplateLayer();
+  // 0) La capa de plantillas la aporta el bootstrap; aquí solo se verifica.
+  await assertTemplateLayer();
 
   // 1) Asignar puesto vigente a la persona usuario (idempotente: el endpoint
   //    hace upsert del assignment current).
@@ -133,8 +87,8 @@ async function main() {
   // 2.5) Datos de chat deterministas: admin crea una conversación de grupo con
   //      usuario y envía un mensaje (materializa conversación + mensaje +
   //      notificación para usuario). Base para el golden del chat.
-  //      El seed relacional no limpia las tablas de chat, así que se purgan aquí
-  //      (hijos primero) para que el golden sea determinista entre corridas.
+  //      Se purgan aquí (hijos primero) para que el golden sea determinista aunque
+  //      este setup se reejecute sin resetear la base.
   const pool = getPostgresPool();
   for (const t of [
     "chat_notifications", "chat_message_reads", "chat_message_attachments",
@@ -164,10 +118,7 @@ async function main() {
   //      añade un título, una experiencia (con funcion_catedra array) y un
   //      artículo de investigación. Cubre arrays raíz + anidamiento de
   //      investigación + array-de-strings. Base para el golden del dossier.
-  //      Determinismo: hoy el dossier vive en Mongo (limpiar colección antes,
-  //      ver README); tras migrar a relacional se purgan las tablas aquí.
-  const CEDULA = process.env.SEED_USUARIO_CEDULA ?? "1122334455";
-  // El dossier ya es relacional (Fase 6); el seed baseline no limpia sus tablas.
+  const CEDULA = USERS.usuario.identifier;
   for (const t of ["dossier_items", "dossiers"]) {
     await pool.query(`DELETE FROM ${t}`);
   }

@@ -4,7 +4,7 @@
     "body": {
       "documents": [
         {
-          "definition_name": "Proceso por defecto por General",
+          "definition_name": "Proceso por defecto",
           "document_id": "<normalized>",
           "document_status": "Pendiente de llenado",
           "document_version": "0.1",

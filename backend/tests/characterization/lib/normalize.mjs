@@ -26,10 +26,10 @@ const VOLATILE_KEYS = new Set([
 
 const MASK = "<normalized>";
 
-// Claves que son ids (primarios o foráneos). Con `maskIdKeys` se enmascaran
-// TODAS genéricamente: en datos de ejecución los auto-increment derivan entre
-// reseeds (baseline usa DELETE, no reinicia AUTO_INCREMENT), y perseguirlas una
-// a una es whack-a-mole. El contrato de columnas ya lo fija listFingerprint.
+// Claves que son ids (primarios o foráneos). Con `maskIdKeys` se enmascaran TODAS
+// genéricamente: los ids de la capa de ejecución no aportan comportamiento y
+// perseguirlos uno a uno es whack-a-mole. El contrato de columnas ya lo fija
+// listFingerprint.
 const ID_KEY_RE = /(^id$|_id$|Id$)/;
 
 // Ordena claves de objetos para que las diferencias de orden de serialización

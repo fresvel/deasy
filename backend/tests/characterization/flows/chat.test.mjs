@@ -7,7 +7,7 @@
 // después (SQL).
 //
 // Se enmascaran los ids opacos (Mongo ObjectId hoy / enteros tras migrar) con
-// maskIdKeys, pero se CONSERVAN los person_id (deterministas, del seed) y el
+// maskIdKeys, pero se CONSERVAN los person_id (deterministas, del bootstrap) y el
 // contenido/título/tipo, que es lo que de verdad fija la conducta.
 
 import { test, before } from "node:test";
@@ -16,6 +16,7 @@ import { tokenFor } from "../lib/auth.mjs";
 import { snapshotShape } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
+import { FIXTURE } from "../config.mjs";
 
 const SUITE = "chat";
 // Conserva las referencias a personas (deterministas) y enmascara ids opacos.
@@ -97,18 +98,18 @@ test("POST /chat/notifications/read (usuario) -> notificación marcada leída", 
 
 test("GET /chat/processes/:id/thread antes de crear -> 404 con contexto", async () => {
   const token = await tokenFor("usuario");
-  const res = await get("/chat/processes/1/thread?scope_unit_id=16", { token });
+  const res = await get(`/chat/processes/${FIXTURE.processId}/thread?scope_unit_id=${FIXTURE.unitId}`, { token });
   matchSnapshot(SUITE, "process_thread_missing", snapshotShape(res, CHAT_OPTS));
 });
 
 test("POST /chat/processes/:id/thread -> crea el process_thread con scope", async () => {
   const token = await tokenFor("usuario");
-  const res = await post("/chat/processes/1/thread?scope_unit_id=16", { token, body: {} });
+  const res = await post(`/chat/processes/${FIXTURE.processId}/thread?scope_unit_id=${FIXTURE.unitId}`, { token, body: {} });
   matchSnapshot(SUITE, "process_thread_created", snapshotShape(res, CHAT_OPTS));
 });
 
 test("POST /chat/units/:unitId/thread -> crea el unit_thread con scope", async () => {
   const token = await tokenFor("usuario");
-  const res = await post("/chat/units/16/thread", { token, body: {} });
+  const res = await post(`/chat/units/${FIXTURE.unitId}/thread`, { token, body: {} });
   matchSnapshot(SUITE, "unit_thread_created", snapshotShape(res, CHAT_OPTS));
 });

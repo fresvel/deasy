@@ -247,7 +247,7 @@
           "origin_definition_id": "<normalized>",
           "process_id": "<normalized>",
           "scope_unit_id": "<normalized>",
-          "stable_key": "process:1:unit:16"
+          "stable_key": "process:1:unit:8"
         },
         "title": "Proceso por defecto · Carrera de Tecnologías de la Información",
         "type": "process_thread",
@@ -256,7 +256,7 @@
       },
       "meta": {
         "accessible_scope_unit_ids": [
-          16
+          8
         ],
         "created": true,
         "process_id": "<normalized>",
@@ -270,7 +270,7 @@
     "body": {
       "context": {
         "accessible_scope_unit_ids": [
-          16
+          8
         ],
         "process_id": "<normalized>",
         "scope_unit_id": "<normalized>"
@@ -295,6 +295,60 @@
             "left_at": "<normalized>",
             "person_id": 3,
             "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 24,
+            "role": "admin"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 25,
+            "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 29,
+            "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 30,
+            "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 31,
+            "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 32,
+            "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 33,
+            "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 34,
+            "role": "member"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 35,
+            "role": "member"
           }
         ],
         "process_id": "<normalized>",
@@ -303,7 +357,7 @@
           "origin_definition_id": "<normalized>",
           "process_id": "<normalized>",
           "scope_unit_id": "<normalized>",
-          "stable_key": "unit:16"
+          "stable_key": "unit:8"
         },
         "title": "Unidad · Carrera de Tecnologías de la Información",
         "type": "unit",

@@ -41,20 +41,38 @@ tests/characterization/
   __snapshots__/        # golden-master versionado (el diff en git = evidencia)
 ```
 
-## Datos de ejecución (setup/seed_execution.mjs) — importante
+## La fixture es el BOOTSTRAP, no el seed
 
-El seed **baseline** deja vacía toda la capa de plantillas+ejecución (y el seed
-`--full` está roto por drift de esquema). Los datos de runtime (tareas,
-entregables, flujos de firma) se producen **usando el sistema**, no sembrando.
+La fuente de verdad del sistema es lo que produce una **instalación nueva**:
+`POST /system/bootstrap/initialize`. El harness se construye contra eso.
 
-`setup/seed_execution.mjs` maneja el sistema por HTTP para materializarlos, de
-forma determinista e idempotente:
-1. Siembra el mínimo que el baseline omite: 1 `template_artifact` (ligado al
-   deliverable del proceso por defecto) + su link en `process_definition_templates`.
-   Se hace **directo por el pool** porque el endpoint CRUD lo bloquea (los
-   artifacts solo se registran por sync desde MinIO / flujo de plantilla).
-2. Asigna un puesto vigente a la persona usuario (id 3).
-3. Crea una tarea ad-hoc **routed** (`POST /users/3/general-tasks`) que
+Antes se construía contra `scripts/seed-db.sh dev apply`, un snapshot SQL paralelo.
+Eran dos fuentes de verdad, y el seed era la peor de las dos:
+
+- Dejaba vacía la capa de plantillas, así que el setup tenía que inyectarla
+  **escribiendo directo al pool**, saltándose el guard del endpoint.
+- Su modo `--full` está roto por drift de esquema.
+- Congelaba valores rancios: el golden guardaba `definition_name = "Proceso por
+  defecto por General"`, un nombre que la aplicación **ya no genera**.
+
+`seed-db.sh` sigue existiendo para cargar datos demo a mano; simplemente el harness
+ya no depende de él.
+
+### Los dos scripts de setup
+
+`setup/bootstrap_system.mjs` inicializa el sistema con datos de ejemplo y
+**verifica la fixture**: que `unit_position 25` viva en la unidad 8 y tenga cargo
+`DOCENTE`. Esa verificación no es cosmética — `cargo_role_map` eleva DOCENTE a
+`GestorEjecucionProcesos` (con `documents.*`). Con un cargo sin elevación, el test
+de ownership del document-center ajeno nunca llega a comprobar la propiedad: lo
+corta antes la puerta genérica de RBAC, y el test pasaría (403) sin probar lo que
+dice probar.
+
+`setup/seed_execution.mjs` produce los datos de runtime **usando el sistema**, no
+sembrando:
+1. Comprueba que el bootstrap dejó la capa de plantillas.
+2. Asigna un puesto vigente a la persona usuario.
+3. Crea una tarea ad-hoc **routed** (`POST /users/:id/general-tasks`) que
    materializa tarea + entregable + fill-flow + plantilla de firma.
 
 Resultado: datos reales en `tasks, task_items, documents, document_versions`,
@@ -62,55 +80,44 @@ las 4 tablas de fill-flow y `signature_flow_templates/steps`. (Las
 `signature_flow_instances/requests` requieren upload de PDF + aprobación del
 flujo de entrega — MinIO —; quedan como ampliación futura.)
 
+Los ids de la fixture viven en un único sitio: `FIXTURE`, en `config.mjs`.
+
 ## Cómo se corre
 
 > **Nota**: builds/tests corren DENTRO de los contenedores vía
 > `scripts/docker-env.sh` (nunca npm/npx en el host). Ver CLAUDE.md.
 
-> **Chat / determinismo**: el chat ya es relacional (Fase 5). El seed baseline no
-> limpia sus tablas, así que `setup/seed_execution.mjs` las purga por el pool
-> antes de crear los datos de chat — determinista entre corridas sin pasos extra.
+> **Chat y dossier**: `setup/seed_execution.mjs` purga sus tablas por el pool antes
+> de crear los datos, para que el setup siga siendo determinista aunque se reejecute
+> sin resetear la base.
 
-> **Dossier / determinismo**: el dossier ya es relacional (Fase 6). El setup
-> purga `dossier_items`/`dossiers` por el pool antes de crear los datos —
-> determinista sin pasos extra.
+### Los flujos de chat MUTAN estado: la fixture se reconstruye siempre
 
-Este harness vive en el worktree `deasy-tests`. Antes de ejecutar, hay que
-**apuntar los dockers a este worktree** (el `docker-env.sh` que invocas es la
-fuente de verdad de los binds):
+Un test como *"GET /chat/processes/:id/thread antes de crear → 404"* solo dice la
+verdad la primera vez: al correrlo, el siguiente test crea el hilo. Correr
+`test:char` dos veces sobre la misma base falla, y —mucho peor— capturar el golden
+sobre una base ya usada congela un **200** donde debía haber un 404.
 
-```bash
-# desde el worktree ~/Documentos/Pucese/deasy-tests
-bash scripts/docker-env.sh dev up -d --build
-bash scripts/docker-env.sh dev exec backend sh -lc \
-  'cd /app/backend && npm run test:char'
-```
-
-### Protocolo de 3 fases (la clave)
-
-El estado determinista es **baseline + setup**. Siempre en ese orden:
+Por eso los comandos reconstruyen la fixture ellos mismos. **No los partas a mano.**
 
 ```bash
-# 1) estado relacional conocido (borra+reinserta las tablas incluidas)
-bash scripts/seed-db.sh dev apply
-# 2) datos de ejecución vía API (idempotente sobre baseline fresco)
-bash scripts/docker-env.sh dev exec backend sh -lc 'cd /app/backend && npm run test:char:seed'
+# verificar (reset -> bootstrap -> datos de ejecución -> comparar)
+bash scripts/docker-env.sh dev exec backend npm run test:char:run
+
+# capturar el golden (mismo pipeline, pero reescribe __snapshots__)
+bash scripts/docker-env.sh dev exec backend npm run test:char:capture
 ```
 
-Luego:
+> `test:char:fixture` **resetea la base de datos**. Es lo que la hace determinista.
+> No la apuntes a un entorno cuyos datos te importen.
 
-1. **Capturar el golden contra el sistema ACTUAL (MariaDB/Mongo)** — una sola vez:
-   ```bash
-   ... exec backend sh -lc 'cd /app/backend && SNAPSHOT_MODE=update npm run test:char'
-   ```
-   Revisa el diff de `__snapshots__/` y **commitéalo**. Ese es el contrato.
+Tras capturar, revisa el diff de `__snapshots__/` y **commitéalo**: ese es el
+contrato. Recapturar solo es legítimo cuando sabes que el comportamiento actual es
+correcto; a mitad de un refactor, un diff de snapshot deja de distinguir "cambió el
+código" de "cambió la fixture".
 
-2. **Verificar tras migrar/refactorizar** — en cada cambio (reseed+setup primero):
-   ```bash
-   ... exec backend sh -lc 'cd /app/backend && npm run test:char'
-   ```
-   Si algo difiere del golden, el test falla y el `deepEqual` muestra qué campo
-   cambió.
+`npm run test:char` a secas solo compara, y asume que la fixture ya está recién
+construida.
 
 ## Variables de entorno
 
@@ -120,19 +127,31 @@ Luego:
 | `API_PREFIX` | `/deasy/v1` | prefijo montado por el backend |
 | `SNAPSHOT_MODE` | `compare` | `update` para capturar/reescribir el golden |
 | `READINESS_PATH` | `/system/bootstrap/status` | endpoint de readiness |
-| `TEST_ADMIN_ID` / `TEST_GESTOR_ID` | `1234567890` / `0987654321` | cédulas seed |
-| `*_PASSWORD` | `Demo1234!` | password seed |
+| `TEST_ADMIN_ID` / `TEST_GESTOR_ID` / `TEST_USUARIO_ID` | `1234567890` / `0987654321` / `1122334455` | cédulas del bootstrap |
+| `TEST_ADMIN_PASSWORD` / `TEST_USUARIO_PASSWORD` | `Demo1234!` | contraseñas del bootstrap |
+| `TEST_GESTOR_PASSWORD` | `Gestor1234!` | **ojo**: la del gestor es distinta |
+| `FIXTURE_*` | ver `config.mjs` | ids de la fixture (persona, unidad, puesto, proceso) |
 
 ## Determinismo
 
-El golden-master exige el estado determinista **baseline + setup** (ver arriba).
-El reseed baseline usa DELETE y **no reinicia AUTO_INCREMENT**, así que los ids
-de la capa de ejecución (y el nombre del term ad-hoc) **derivan** entre
-corridas. Por eso:
+El golden-master exige el estado determinista **reset + bootstrap + setup**, que es
+lo que hace `test:char:fixture`. Además:
 - Las listas se fijan con **huella estructural** (`listFingerprint`: status +
   count + columnas), no fila a fila.
 - Los snapshots de objeto de ejecución usan `maskIdKeys: true` (enmascara toda
   clave `id`/`_id`/`*Id`) + máscara de rutas y `term_name`.
 
-Verificado reproducible en dos corridas limpias independientes (ids distintos,
-golden idéntico).
+Verificado: `npm run test:char:run` da 40/40 dos veces seguidas.
+
+## Cobertura: lo que este harness NO protege
+
+Es una red de seguridad **parcial**, y conviene saber dónde no hay red.
+`sql_admin_router` expone ~48 endpoints; aquí se tocan tres, y de forma superficial:
+seis `GET /admin/sql/<tabla>` que solo comparan estado, número de filas y nombres de
+columna (`listFingerprint` no mira valores), un `GET document_versions`, y un POST
+con cuerpo vacío que solo comprueba un 403.
+
+En particular **no hay cobertura** de `SqlAdminService.create()` ni `update()` (las
+dos funciones más complejas del repositorio), ni del grafo de unidades, ni del de
+procesos, ni del ciclo de borrador/publicación de plantillas. Ampliarla es requisito
+previo para partir `SqlAdminService`.
