@@ -83,11 +83,6 @@ class AuthService {
     }
   }
 
-  async verifyEmail(code) {
-    const response = await axios.post(API_ROUTES.VERIFY_EMAIL, { code });
-    return response.data;
-  }
-
   setToken(token) {
     localStorage.setItem(this.TOKEN_KEY, token);
   }

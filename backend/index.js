@@ -22,6 +22,7 @@ import chat_router from "./routes/chat_router.js";
 import notification_router from "./routes/notification_router.js";
 import system_router from "./routes/system_router.js";
 import reset_password_router from "./routes/reset_password_router.js";
+import email_router from "./routes/email_router.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -1244,6 +1245,7 @@ app.get(DOCS_JSON_PATH, (req, res) => {
 
 app.use(ROUTES.users, user_router)
 app.use(ROUTES.resetPassword, reset_password_router)
+app.use(ROUTES.email, email_router)
 
 app.use(ROUTES.admin, admin_router)
 
