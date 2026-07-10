@@ -108,7 +108,7 @@ export function translatePlaceholders(sql) {
 //   IN (?)      con []             -> IN (NULL)                   (no matchea nada)
 // Devuelve { text, values } con los valores aplanados en el orden correcto.
 // Respeta strings/identificadores/comentarios (no toca `?` literales).
-function bindParams(sql, params = []) {
+export function bindParams(sql, params = []) {
   let out = "";
   let i = 0;
   let paramIndex = 0;
@@ -162,7 +162,7 @@ const isWrite = (sql) => /^\s*(insert|update|delete|replace)\b/i.test(sql);
 const hasReturning = (sql) => /\breturning\b/i.test(sql);
 
 // GROUP_CONCAT([DISTINCT] expr [ORDER BY cols] [SEPARATOR 's']) -> string_agg(...)
-function rewriteGroupConcat(code) {
+export function rewriteGroupConcat(code) {
   let out = "";
   let i = 0;
   const re = /\bGROUP_CONCAT\s*\(/gi;
@@ -200,7 +200,7 @@ function rewriteGroupConcat(code) {
 }
 
 // IF(cond, a, b) -> CASE WHEN cond THEN a ELSE b END (paren-balanceado, anidados ok).
-function rewriteIf(code) {
+export function rewriteIf(code) {
   const re = /\bIF\s*\(/gi;
   let m;
   while ((m = re.exec(code))) {
@@ -226,9 +226,45 @@ function rewriteIf(code) {
   return code;
 }
 
+// FIELD(expr, a, b, c) -> posición 1-based de expr en la lista, 0 si no está.
+// Es una función de MySQL usada para ordenar por un orden arbitrario
+// (`ORDER BY FIELD(status,'active','draft','retired')`). PostgreSQL no la tiene:
+// se traduce a un CASE que devuelve el mismo entero, preservando el 0 de "no
+// encontrado" para que los NULL/desconocidos sigan ordenando igual que en MySQL.
+export function rewriteField(code) {
+  const re = /\bFIELD\s*\(/gi;
+  let m;
+  while ((m = re.exec(code))) {
+    let depth = 0;
+    let j = m.index + m[0].length - 1;
+    const args = [];
+    let cur = "";
+    for (; j < code.length; j++) {
+      const ch = code[j];
+      if (ch === "(") { depth++; if (depth === 1) continue; }
+      if (ch === ")") { depth--; if (depth === 0) { args.push(cur); break; } }
+      if (ch === "," && depth === 1) { args.push(cur); cur = ""; continue; }
+      cur += ch;
+    }
+    if (args.length >= 2) {
+      const needle = args[0].trim();
+      const whens = args
+        .slice(1)
+        .map((value, index) => `WHEN ${value.trim()} THEN ${index + 1}`)
+        .join(" ");
+      const repl = `(CASE ${needle} ${whens} ELSE 0 END)`;
+      code = code.slice(0, m.index) + repl + code.slice(j + 1);
+      re.lastIndex = m.index + repl.length;
+    } else {
+      re.lastIndex = m.index + m[0].length;
+    }
+  }
+  return code;
+}
+
 // YEAR/MONTH/DAY/HOUR/MINUTE/SECOND(x) -> EXTRACT(field FROM (x))::int (balanceado).
 const DATE_PART_FNS = ["YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"];
-function rewriteDateParts(code) {
+export function rewriteDateParts(code) {
   for (const fn of DATE_PART_FNS) {
     const re = new RegExp(`\\b${fn}\\s*\\(`, "gi");
     let m;
@@ -251,7 +287,7 @@ function rewriteDateParts(code) {
 }
 
 // Reescribe dialecto MySQL->PG sobre segmentos de CÓDIGO (sin strings/comentarios).
-function rewriteDialect(code) {
+export function rewriteDialect(code) {
   let c = code;
   c = c.replace(/`([^`]*)`/g, '"$1"'); // identificadores backtick -> comillas dobles
   c = c.replace(/\bCURDATE\s*\(\s*\)/gi, "CURRENT_DATE");
@@ -269,12 +305,14 @@ function rewriteDialect(code) {
   }
   if (/\b(YEAR|MONTH|DAY|HOUR|MINUTE|SECOND)\s*\(/i.test(c)) c = rewriteDateParts(c);
   if (/\bGROUP_CONCAT\s*\(/i.test(c)) c = rewriteGroupConcat(c);
+  // FIELD antes que IF: no colisionan, pero el CASE generado no debe reescanearse.
+  if (/\bFIELD\s*\(/i.test(c)) c = rewriteField(c);
   if (/\bIF\s*\(/i.test(c)) c = rewriteIf(c);
   return c;
 }
 
 // Traduce dialecto protegiendo strings y comentarios (para no tocar literales).
-function translateDialect(sql) {
+export function translateDialect(sql) {
   const masks = [];
   const masked = sql.replace(/'(?:[^']|'')*'|--[^\n]*|\/\*[\s\S]*?\*\//g, (mm) => {
     masks.push(mm);
