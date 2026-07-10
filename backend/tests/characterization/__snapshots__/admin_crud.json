@@ -1,0 +1,180 @@
+{
+  "create_error_campo_requerido_ausente": {
+    "status": 400,
+    "body": {
+      "message": "Datos incompletos: Nombre"
+    }
+  },
+  "create_error_documento_sin_propietario": {
+    "status": 400,
+    "body": {
+      "message": "Los documentos standalone requieren un propietario."
+    }
+  },
+  "create_error_regla_sin_configuracion": {
+    "status": 400,
+    "body": {
+      "message": "La configuracion de proceso seleccionada no existe."
+    }
+  },
+  "create_error_series_sin_origen": {
+    "status": 400,
+    "body": {
+      "message": "Selecciona un origen de serie valido."
+    }
+  },
+  "create_error_tabla_desconocida": {
+    "status": 400,
+    "body": {
+      "message": "Tabla no soportada: tabla_inexistente"
+    }
+  },
+  "create_error_tarea_sin_configuracion": {
+    "status": 400,
+    "body": {
+      "message": "La configuracion de proceso seleccionada no existe."
+    }
+  },
+  "create_error_unit_relations_consigo_misma": {
+    "status": 400,
+    "body": {
+      "message": "Una unidad no puede relacionarse consigo misma."
+    }
+  },
+  "create_error_version_sin_serie": {
+    "status": 400,
+    "body": {
+      "message": "Selecciona una serie valida para la configuracion."
+    }
+  },
+  "process_detail": {
+    "status": 200,
+    "topLevelKeys": [
+      "children",
+      "configurations",
+      "process",
+      "runs"
+    ],
+    "process": {
+      "id": "<normalized>",
+      "is_active": 1,
+      "name": "Proceso por defecto",
+      "parent_id": "<normalized>",
+      "parent_name": null,
+      "slug": "default"
+    },
+    "configurationCount": 1
+  },
+  "processes_graph": {
+    "status": 200,
+    "topLevelKeys": [
+      "configs",
+      "edges",
+      "nodes",
+      "templates"
+    ],
+    "nodeCount": 1,
+    "edgeCount": 0,
+    "nodeKeys": [
+      "active_count",
+      "definitions_count",
+      "id",
+      "is_active",
+      "name",
+      "parent_id",
+      "slug"
+    ],
+    "edgeKeys": []
+  },
+  "roundtrip_create": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "is_active": 1,
+      "name": "Tipo caracterización"
+    }
+  },
+  "roundtrip_delete": {
+    "status": 200,
+    "body": {
+      "deleted": {
+        "id": "<normalized>"
+      }
+    }
+  },
+  "roundtrip_update": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "name": "Tipo caracterización (renombrado)"
+    }
+  },
+  "unit_detail": {
+    "status": 200,
+    "topLevelKeys": [
+      "positions",
+      "unit"
+    ],
+    "unit": {
+      "id": "<normalized>",
+      "label": "Carrera de Tecnologías de la Información",
+      "name": "Tecnologías de la Información"
+    },
+    "positionCount": 10
+  },
+  "unit_processes": {
+    "status": 200,
+    "topLevelKeys": [
+      "processes",
+      "unit"
+    ],
+    "processCount": 1
+  },
+  "units_graph": {
+    "status": 200,
+    "topLevelKeys": [
+      "edges",
+      "nodes",
+      "relationTypes"
+    ],
+    "nodeCount": 14,
+    "edgeCount": 12,
+    "nodeKeys": [
+      "head_count",
+      "id",
+      "is_active",
+      "label",
+      "name",
+      "occupied_count",
+      "positions_count",
+      "slug",
+      "unit_type_id",
+      "unit_type_name"
+    ],
+    "edgeKeys": [
+      "child_unit_id",
+      "id",
+      "parent_unit_id",
+      "relation_type_code",
+      "relation_type_id"
+    ]
+  },
+  "update_error_registro_inexistente": {
+    "status": 400,
+    "body": {
+      "message": "Registro no encontrado."
+    }
+  },
+  "update_error_sin_llave_primaria": {
+    "status": 400,
+    "body": {
+      "message": "Falta la llave primaria: id"
+    }
+  },
+  "update_error_tabla_desconocida": {
+    "status": 400,
+    "body": {
+      "message": "Tabla no soportada: tabla_inexistente"
+    }
+  }
+}
