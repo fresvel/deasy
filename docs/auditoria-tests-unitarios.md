@@ -47,6 +47,7 @@ una trampa sin documentar.
 | `services/documents/DocumentStateService.test.js` | 14 | Ninguno |
 | `services/admin/SqlAdminService.validation.test.js` | 18 | Extraer `SqlAdminService.validation.js` |
 | `services/admin/SqlAdminService.versioning.test.js` | 8 | Extraer `SqlAdminService.versioning.js` |
+| `services/admin/SqlAdminService.workflows.test.js` | 17 | Extraer `SqlAdminService.workflows.js` + `.primitives.js` |
 | `services/system/genericCatalog.test.js` (previo) | 3 | — |
 | `services/admin/SqlAdminService.processDefinitionSeries.test.js` (previo) | 6 | — |
 
@@ -68,14 +69,14 @@ el documento a `"Inicial"` sin error.
 
 | Función | Ubicación | Export | Por qué |
 |---|---|---|---|
-| `rewriteOnDuplicate` | `config/postgres.js:343` | privada | `ON DUPLICATE KEY UPDATE` → `ON CONFLICT (target)`. Infiere el índice consultando `pg_index`. Si elige mal el target, el UPSERT **inserta duplicados o pisa la fila equivocada**. Ya recibe `executor` por parámetro → inyectable; falta exportar y poder resetear `uniqueColsCache`/`generatedColsCache`. |
-| `collectAuthoredWorkflowIssues` (+`checkResolverRefs`, CC 54) | `SqlAdminService.js:880` | privada | Valida el contrato de los flujos de firma. Es pura (recibe todo por parámetro). Distingue `errors` de `warnings` — lógica de dominio delicada. **Mejor relación coste/valor de todo el fichero.** |
+| `rewriteOnDuplicate` | `config/postgres.js:343` | privada | `ON DUPLICATE KEY UPDATE` → `ON CONFLICT (target)`. Infiere el índice consultando `pg_index`. Si elige mal el target, el UPSERT **inserta duplicados o pisa la fila equivocada**. Ya recibe `executor` por parámetro → inyectable; falta exportar y poder resetear `uniqueColsCache`/`generatedColsCache`. **Único P0 que queda.** |
+
+`collectAuthoredWorkflowIssues`, `normalizeSignatureSteps`, `buildStepResolver` y toda
+la familia de flujos de firma se extrajeron a `SqlAdminService.workflows.js` (§3), con
+17 tests. Salen de la lista de pendientes.
 
 ### P1
 
-- `normalizeFillSteps` (`:693`) / `normalizeSignatureSteps` (`:747`) — este último
-  **descarta en silencio** firmantes sin cargo resoluble y pasos sin firmantes válidos.
-- `buildWorkflowsYaml` (`:146`) + `buildStepResolver` (`:113`) — round-trip con `normalizeFillSteps`.
 - `normalizeValue` (`:1183`) + `pickPayload` (`:1223`) — coerción antes de escribir.
 - `parseArtifactSyncMarker` (`:845`) — detección de drift; `templateCode` puede contener `:`.
 - `RbacService.hasAnyRole/hasPermission/can` (`:161-176`) — **sin refactor**: los tres métodos no tocan `this.pool`.
@@ -108,7 +109,7 @@ el documento a `"Inicial"` sin error.
 existe en el repo (`processDefinitionSeries.js`): extraer las funciones puras a
 módulos hermanos con named exports.
 
-- `SqlAdminService.workflows.js` — `buildStepResolver`, `buildWorkflowsYaml`, `normalizeFillSteps`, `normalizeSignatureSteps`, `collectAuthoredWorkflowIssues`, `resolveStepCargoId` + constantes.
+- ~~`SqlAdminService.workflows.js`~~ — hecho (+ `SqlAdminService.primitives.js` para los helpers compartidos).
 - `SqlAdminService.validation.js` — `validateTableRules`, `normalizeValue`, `pickPayload`, `validateFieldTypes`, `ensureDateOrder`, `validatePasswordPolicy`.
 - `SqlAdminService.artifacts.js` — `parseArtifactSyncMarker`, `parseAvailableFormats`, `findPreferredPdfObject`, `sanitizeLatexSource`, `parseYamlDocument`.
 - ~~`SqlAdminService.versioning.js`~~ — hecho.
