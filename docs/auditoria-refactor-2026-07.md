@@ -208,19 +208,17 @@ Refactorizar y arreglar bugs no se mezclan en el mismo commit.
 
 Por orden de riesgo creciente:
 
-1. **`backend/index.js`** (el más seguro: es configuración, no lógica).
-   - *Extract Class*: mover la definición OpenAPI a `config/swagger/`.
-   - *Parameterize Method*: `buildDossierSectionPaths(section, schemaRef)` colapsa los
-     seis bloques CRUD duplicados. Estimado: 1 327 → ~250 líneas.
+1. ~~**`backend/index.js`**~~ — **HECHO**. Definición OpenAPI extraída a
+   `config/swagger/definition.js`; los paths del dossier colapsados en
+   `config/swagger/dossierPaths.js` (tabla data-driven + helpers). `index.js`: 1 327 →
+   **234 líneas**. Auto-verificado: `/deasy/docs.json` idéntico byte a byte antes/después.
 
-2. **`SqlAdminService.js`** → *Extract Class* × 6, en este orden (de fuera hacia dentro,
-   empezando por lo que no toca dominio):
-   - `MinioTemplateStorage` (helpers de MinIO, sin estado)
-   - `TemplateArchiveService` (zip, LaTeX, hashing)
-   - `WorkflowNormalizer` (normalización/validación de flujos de firma)
-   - `UnitGraphService` / `ProcessGraphService` (los dos grafos)
-   - `TemplateArtifactDraftService` (borradores y publicación)
-   - lo que quede: `GenericCrudService` (`list`/`create`/`update`)
+2. **`SqlAdminService.js`** → funciones puras ya extraídas a módulos hermanos
+   (`.versioning`, `.validation`, `.workflows`, `.artifacts`, `.primitives`): 6 851 →
+   **5 925 líneas**, y con ello 100 tests unitarios nuevos. Lo que queda dentro son los
+   **métodos de clase que tocan el pool** — la siguiente capa sería *Extract Class* de
+   servicios con estado (MinIO, grafos, borradores de plantilla), un refactor mayor que
+   requiere mover también acceso a datos, no solo funciones puras.
 
 3. **`user_controler.js`** → *Extract Class* hacia servicios; el controlador no debe tener
    86 funciones (`CLAUDE.md`: la lógica de negocio vive en services/models).
