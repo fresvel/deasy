@@ -46,3 +46,24 @@ test("GET /users/me sin token -> 401 token requerido", async () => {
   const res = await get("/users/me");
   matchSnapshot(SUITE, "me_no_token", snapshotShape(res));
 });
+
+// --- Política de contraseñas en el registro (POST /users, middleware) ---------
+// Fija el contrato de RECHAZO a nivel HTTP: solo casos que NO crean usuario (400),
+// así el golden es determinista y no ensucia la fixture. Blinda la política tras
+// unificarla en utils/passwordPolicy.js.
+const REGISTER_BASE = { cedula: "9999999998", first_name: "T", last_name: "T", email: "policy@t.co" };
+
+test("POST /users con contraseña de 1 criterio -> 400 política", async () => {
+  const res = await post("/users", { body: { ...REGISTER_BASE, password: "abc" } });
+  matchSnapshot(SUITE, "register_password_1_criterion", snapshotShape(res));
+});
+
+test("POST /users con contraseña de 2 criterios -> 400 política", async () => {
+  const res = await post("/users", { body: { ...REGISTER_BASE, password: "abcdefgh" } });
+  matchSnapshot(SUITE, "register_password_2_criteria", snapshotShape(res));
+});
+
+test("POST /users solo con caracteres especiales -> 400 (special no cuenta)", async () => {
+  const res = await post("/users", { body: { ...REGISTER_BASE, password: "!@#$%^&*" } });
+  matchSnapshot(SUITE, "register_password_only_special", snapshotShape(res));
+});

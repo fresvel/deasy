@@ -64,6 +64,7 @@ import {
   isArtifactSignatureWorkflowSyncEnabled,
   findPreferredPdfObject,
 } from "./SqlAdminService.artifacts.js";
+import { assertPasswordPolicy } from "../../utils/passwordPolicy.js";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
@@ -556,24 +557,8 @@ const validateFieldTypes = (config, payload) => {
 
 const isBcryptHash = (value) => typeof value === "string" && BCRYPT_HASH_REGEX.test(value);
 
-const validatePasswordPolicy = (password) => {
-  const validations = {
-    length: password.length >= 8,
-    lowercase: /[a-z]/.test(password),
-    uppercase: /[A-Z]/.test(password),
-    number: /[0-9]/.test(password)
-  };
-
-  const passedCriteria = Object.values(validations).filter(Boolean).length;
-  if (passedCriteria < 3) {
-    throw new Error(
-      "La contraseña debe cumplir al menos 3 criterios: 8+ caracteres, mayúscula, minúscula, número."
-    );
-  }
-};
-
 const hashPassword = async (password) => {
-  validatePasswordPolicy(password);
+  assertPasswordPolicy(password);
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };
