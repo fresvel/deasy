@@ -376,28 +376,29 @@ async function ensureGeneratedCols(executor) {
 }
 
 // ON DUPLICATE KEY UPDATE <sets> -> ON CONFLICT (<target>) DO UPDATE SET <sets>.
-// El target se infiere: el índice único cuyas columnas están TODAS en la lista
-// de columnas del INSERT (prefiere el más corto que no sea sólo `id`).
-async function rewriteOnDuplicate(sql, executor) {
+//
+// Parte PURA: dado el catálogo de índices ya resuelto, infiere el target y reescribe
+// el texto. No toca la base de datos, así que es testeable sin pg (ver
+// postgres.dialect.test.js). `uniqueIndexes` es la lista de índices únicos de la tabla
+// (cada uno un array de columnas); `generatedCols` el Set de columnas GENERADAS.
+//
+// El target es el índice único cuyas columnas están TODAS cubiertas por la lista del
+// INSERT (o por columnas generadas, que PG computa aunque no vengan en el INSERT).
+// Entre los cubiertos se prefiere el más corto que no sea sólo `id`.
+export function applyOnConflict(sql, { uniqueIndexes = [], generatedCols = new Set() } = {}) {
   const m = sql.match(/INSERT\s+(?:IGNORE\s+)?INTO\s+`?(\w+)`?\s*\(([^)]*)\)/i);
   if (!m) return sql;
-  const table = m[1].toLowerCase();
   const insertCols = m[2].split(",").map((s) => s.trim().replace(/`/g, "").toLowerCase());
-  const cache = await ensureUniqueCols(executor);
-  const all = cache.get(table) || [];
-  // Preferir índices cubiertos SOLO por columnas del INSERT (comportamiento
-  // conservador de siempre). Si ninguno lo está, admitir índices cuyas columnas
-  // faltantes sean GENERADAS (target válido de ON CONFLICT en PG).
-  const strict = all.filter((cols) => cols.every((c) => insertCols.includes(c)));
+
+  const strict = uniqueIndexes.filter((cols) => cols.every((c) => insertCols.includes(c)));
   let pool = strict;
   if (!pool.length) {
-    const generated = await ensureGeneratedCols(executor);
-    const gen = generated.get(table) || new Set();
-    pool = all.filter((cols) => cols.every((c) => insertCols.includes(c) || gen.has(c)));
+    pool = uniqueIndexes.filter((cols) => cols.every((c) => insertCols.includes(c) || generatedCols.has(c)));
   }
-  const covered = pool.sort((a, b) => a.length - b.length);
+  const covered = [...pool].sort((a, b) => a.length - b.length);
   const target = covered.find((cols) => !(cols.length === 1 && cols[0] === "id")) || covered[0];
   if (!target) return sql;
+
   return sql.replace(/ON\s+DUPLICATE\s+KEY\s+UPDATE\s+([\s\S]*?)$/i, (_full, sets) => {
     const conv = sets
       // VALUES(col) o VALUES(`col`) -> EXCLUDED.col
@@ -409,6 +410,17 @@ async function rewriteOnDuplicate(sql, executor) {
       .trim();
     return `ON CONFLICT (${target.join(", ")}) DO UPDATE SET ${conv}`;
   });
+}
+
+// Orquestador: resuelve el catálogo de índices desde pg (con caché) y delega en la
+// parte pura. Solo la resolución de índices toca la base de datos.
+async function rewriteOnDuplicate(sql, executor) {
+  const m = sql.match(/INSERT\s+(?:IGNORE\s+)?INTO\s+`?(\w+)`?\s*\(/i);
+  if (!m) return sql;
+  const table = m[1].toLowerCase();
+  const uniqueIndexes = (await ensureUniqueCols(executor)).get(table) || [];
+  const generatedCols = (await ensureGeneratedCols(executor)).get(table) || new Set();
+  return applyOnConflict(sql, { uniqueIndexes, generatedCols });
 }
 
 const writeHeader = (res, insertId) => [

@@ -20,6 +20,7 @@ import {
   rewriteField,
   rewriteGroupConcat,
   rewriteIf,
+  applyOnConflict,
 } from "./postgres.js";
 
 // --- bindParams: ? -> $n y expansión de arrays -------------------------------
@@ -212,4 +213,72 @@ test("rewriteIf traduce IF anidados", () => {
     rewriteIf("SELECT IF(a, IF(b, 1, 2), 3)"),
     "SELECT CASE WHEN a THEN CASE WHEN b THEN 1 ELSE 2 END ELSE 3 END",
   );
+});
+
+// --- applyOnConflict: ON DUPLICATE KEY UPDATE -> ON CONFLICT ------------------
+//
+// La parte pura de la traducción de UPSERT. Elegir mal el target de conflicto haría
+// que el UPSERT inserte duplicados o pise la fila equivocada, sin error SQL. Se prueba
+// con los índices ya resueltos (la consulta a pg_index vive aparte, en la orquestadora).
+
+const rolesUpsert =
+  "INSERT INTO roles (name, description, is_active) VALUES ($1, $2, 1) " +
+  "ON DUPLICATE KEY UPDATE description = VALUES(description), is_active = 1";
+
+test("applyOnConflict infiere el target del único índice cubierto por el INSERT", () => {
+  // roles: PK (id) + UNIQUE (name). El INSERT no trae id, así que el target es (name).
+  const out = applyOnConflict(rolesUpsert, { uniqueIndexes: [["id"], ["name"]] });
+  assert.match(out, /ON CONFLICT \(name\) DO UPDATE SET/);
+  assert.match(out, /description = EXCLUDED\.description/);
+  assert.match(out, /is_active = 1/);
+  assert.doesNotMatch(out, /ON DUPLICATE/);
+});
+
+test("applyOnConflict traduce VALUES(col) a EXCLUDED.col, con o sin backticks", () => {
+  const sql =
+    "INSERT INTO t (a, b) VALUES ($1, $2) ON DUPLICATE KEY UPDATE a = VALUES(a), b = VALUES(`b`)";
+  const out = applyOnConflict(sql, { uniqueIndexes: [["a"]] });
+  assert.match(out, /a = EXCLUDED\.a/);
+  assert.match(out, /b = EXCLUDED\.b/);
+});
+
+test("applyOnConflict elimina el idiom id = LAST_INSERT_ID(id)", () => {
+  const sql =
+    "INSERT INTO t (a) VALUES ($1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), a = VALUES(a)";
+  const out = applyOnConflict(sql, { uniqueIndexes: [["a"]] });
+  assert.match(out, /DO UPDATE SET a = EXCLUDED\.a/);
+  assert.doesNotMatch(out, /LAST_INSERT_ID/);
+  assert.doesNotMatch(out, /DO UPDATE SET ,/, "no debe quedar una coma huérfana");
+});
+
+test("applyOnConflict prefiere el índice más corto que no sea solo (id)", () => {
+  // Con un único sobre (id) y otro sobre (email), gana (email): (id) solo se usa como
+  // último recurso, porque en un UPSERT por id no hay conflicto que resolver.
+  const sql = "INSERT INTO users (id, email, name) VALUES ($1, $2, $3) ON DUPLICATE KEY UPDATE name = VALUES(name)";
+  const out = applyOnConflict(sql, { uniqueIndexes: [["id"], ["email"]] });
+  assert.match(out, /ON CONFLICT \(email\)/);
+});
+
+test("applyOnConflict admite un target con columnas GENERADAS ausentes del INSERT", () => {
+  // uq_position_current = (position_id, current_flag) donde current_flag es GENERADA.
+  // El INSERT no la trae, pero es un target válido porque PG la computa.
+  const sql =
+    "INSERT INTO unit_position_assignments (position_id, person_id) VALUES ($1, $2) " +
+    "ON DUPLICATE KEY UPDATE person_id = VALUES(person_id)";
+  const out = applyOnConflict(sql, {
+    uniqueIndexes: [["position_id", "current_flag"]],
+    generatedCols: new Set(["current_flag"]),
+  });
+  assert.match(out, /ON CONFLICT \(position_id, current_flag\)/);
+});
+
+test("applyOnConflict deja el SQL intacto si ningún índice está cubierto", () => {
+  const sql = "INSERT INTO t (a) VALUES ($1) ON DUPLICATE KEY UPDATE a = VALUES(a)";
+  // El único índice pide una columna que el INSERT no trae y que no es generada.
+  const out = applyOnConflict(sql, { uniqueIndexes: [["b"]] });
+  assert.equal(out, sql, "sin target seguro, no se reescribe");
+});
+
+test("applyOnConflict deja pasar un SQL que no es un INSERT con columnas", () => {
+  assert.equal(applyOnConflict("UPDATE t SET a = 1", {}), "UPDATE t SET a = 1");
 });
