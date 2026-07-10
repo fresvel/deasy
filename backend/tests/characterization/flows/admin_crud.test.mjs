@@ -181,3 +181,15 @@ test("GET /admin/sql/units/:id/processes -> procesos de la unidad", async () => 
     processCount: Array.isArray(res.body?.processes) ? res.body.processes.length : null,
   });
 });
+
+// El schema del artifact procesa available_formats con parseAvailableFormats. Fija su
+// contrato de claves: guardia de la unificación de esa función (antes triplicada).
+test("GET /admin/sql/template_artifacts/:id/schema -> esquema del artifact", async () => {
+  const token = await tokenFor("admin");
+  const res = await get("/admin/sql/template_artifacts/1/schema", { token });
+  assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
+  matchSnapshot(SUITE, "template_artifact_schema", {
+    status: res.status,
+    topLevelKeys: Object.keys(res.body ?? {}).sort(),
+  });
+});

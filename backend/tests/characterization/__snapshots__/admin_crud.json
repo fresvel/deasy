@@ -109,6 +109,17 @@
       "name": "Tipo caracterización (renombrado)"
     }
   },
+  "template_artifact_schema": {
+    "status": 200,
+    "topLevelKeys": [
+      "artifact_id",
+      "display_name",
+      "fields",
+      "fill_workflow",
+      "signature_workflow",
+      "template_code"
+    ]
+  },
   "unit_detail": {
     "status": 200,
     "topLevelKeys": [

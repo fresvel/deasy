@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
+import { parseAvailableFormats } from "../../services/admin/SqlAdminService.artifacts.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import {
   TEMPLATES_BUCKET,
@@ -12,26 +13,6 @@ import {
 } from "../../utils/templateArchive.js";
 
 const service = new SqlAdminService();
-
-// NOTA: esta copia diverge de la de SqlAdminService.artifacts.js — es más laxa:
-// acepta arrays y no valida el resultado de JSON.parse. Para los datos reales
-// (available_formats siempre es un objeto {pdf, docx, ...}) el resultado es el mismo,
-// pero unificarla con la versión estricta cambiaría el comportamiento observable con
-// inputs raros, y no hay test que lo cubra. Unificar solo tras caracterizar este
-// endpoint. Ver docs/auditoria-tests-unitarios.md.
-const parseAvailableFormats = (value) => {
-  if (!value) {
-    return {};
-  }
-  if (typeof value === "object") {
-    return value;
-  }
-  try {
-    return JSON.parse(value);
-  } catch {
-    return {};
-  }
-};
 
 export const getSqlMeta = (req, res) => {
   try {
