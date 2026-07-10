@@ -8,6 +8,10 @@ bash scripts/docker-env.sh dev exec backend npm run test:unit    # tests unitari
 bash scripts/docker-env.sh dev exec backend npm run test:char:run # golden-master HTTP
 ```
 
+**Estado**: 101 tests unitarios (desde 9). Los **tres P0 de fallo silencioso están
+cubiertos**. `SqlAdminService.js` bajó de 6 851 a 6 045 líneas al extraer las funciones
+puras a módulos hermanos, que es lo que las hizo testeables. Quedan P1/P2.
+
 ## 1. El hallazgo transversal: casi nada es testeable
 
 Los dos ficheros más complejos del backend **no exportan** sus funciones puras:
@@ -65,15 +69,13 @@ el documento a `"Inicial"` sin error.
 
 ## 4. Pendiente, por prioridad
 
-### P0 — fallo silencioso = corrupción de datos o de permisos
+### P0 — todos cubiertos ✓
 
-| Función | Ubicación | Export | Por qué |
-|---|---|---|---|
-| `rewriteOnDuplicate` | `config/postgres.js:343` | privada | `ON DUPLICATE KEY UPDATE` → `ON CONFLICT (target)`. Infiere el índice consultando `pg_index`. Si elige mal el target, el UPSERT **inserta duplicados o pisa la fila equivocada**. Ya recibe `executor` por parámetro → inyectable; falta exportar y poder resetear `uniqueColsCache`/`generatedColsCache`. **Único P0 que queda.** |
-
-`collectAuthoredWorkflowIssues`, `normalizeSignatureSteps`, `buildStepResolver` y toda
-la familia de flujos de firma se extrajeron a `SqlAdminService.workflows.js` (§3), con
-17 tests. Salen de la lista de pendientes.
+Los tres P0 de fallo silencioso están cerrados:
+- `rewriteOnDuplicate` → parte pura `applyOnConflict` extraída y testeada (§3).
+- `validateTableRules` → `SqlAdminService.validation.js` (§3).
+- `collectAuthoredWorkflowIssues` y la familia de flujos de firma →
+  `SqlAdminService.workflows.js` (§3).
 
 ### P1
 
