@@ -51,6 +51,19 @@ import {
   collectSignatureWorkflowNormalizationIssues,
   collectAuthoredWorkflowIssues,
 } from "./SqlAdminService.workflows.js";
+import {
+  ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX,
+  ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX,
+  parseYamlDocument,
+  sanitizeLatexSource,
+  parseAvailableFormats,
+  buildArtifactSyncedFillDescription,
+  buildArtifactSyncedSignatureDescription,
+  parseArtifactSyncMarker,
+  isArtifactFillWorkflowSyncEnabled,
+  isArtifactSignatureWorkflowSyncEnabled,
+  findPreferredPdfObject,
+} from "./SqlAdminService.artifacts.js";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
@@ -78,8 +91,6 @@ const TEMPLATE_USERS_PREFIX = (
   || process.env.MINIO_TEMPLATES_DRAFT_PREFIX
   || "Users"
 ).replace(/^\/+|\/+$/g, "");
-const ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX = "artifact_sync_fill:";
-const ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX = "artifact_sync_signature:";
 const ARTIFACT_WORKFLOW_CONTRACT = [
   "workflows:",
   "  fill:",
@@ -174,30 +185,6 @@ const walkFiles = (dirPath, collected = []) => {
   return collected;
 };
 
-const getYamlScalar = (content, key) => {
-  const match = content.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
-  if (!match) {
-    return "";
-  }
-  let value = match[1].trim();
-  if (
-    (value.startsWith('"') && value.endsWith('"'))
-    || (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    value = value.slice(1, -1);
-  }
-  return value;
-};
-
-const parseYamlDocument = (content, { filePath = "meta.yaml" } = {}) => {
-  try {
-    const parsed = yaml.load(content);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch (error) {
-    throw new Error(`No se pudo interpretar ${filePath}: ${error.message}`);
-  }
-};
-
 const hasVisibleFiles = (dirPath) => {
   if (!fs.existsSync(dirPath)) {
     return false;
@@ -250,32 +237,6 @@ const unzipToDirectory = (zipPath, destDir) => new Promise((resolve, reject) => 
   proc.on("error", reject);
   proc.on("close", (code) => (code === 0 ? resolve(true) : reject(new Error(stderr.trim() || "No se pudo descomprimir el ZIP."))));
 });
-
-// Saneo anti-inyección del contenido LaTeX editable. Devuelve la lista de violaciones (vacía = OK).
-const sanitizeLatexSource = (relpath, text) => {
-  const violations = [];
-  const forbidden = [
-    [/\\write18/, "shell-escape (\\write18)"],
-    [/\\(directlua|latelua)\b/, "ejecución Lua (\\directlua/\\latelua)"],
-    [/\\openout\b/, "\\openout (escritura de archivos)"],
-    [/\\openin\b/, "\\openin (lectura de archivos)"],
-    [/\\special\s*\{\s*(?:dvips:\s*)?[!`|]/, "\\special con comando"],
-    [/\\ShellEscape\b/, "\\ShellEscape"],
-  ];
-  for (const [re, label] of forbidden) {
-    if (re.test(text)) violations.push(`${relpath}: ${label}`);
-  }
-  // \input/\include/\includegraphics/... con pipe, ruta absoluta o que escape del árbol (..)
-  const pathCmd = /\\(input|include|includegraphics|InputIfFileExists|import|subimport|usepackage)\b\s*(?:\[[^\]]*\])?\s*\{([^}]*)\}/g;
-  let match;
-  while ((match = pathCmd.exec(text)) !== null) {
-    const target = String(match[2] || "").trim();
-    if (/^[|`!]/.test(target) || target.startsWith("/") || target.includes("..") || /^[a-zA-Z]:[\\/]/.test(target)) {
-      violations.push(`${relpath}: ruta no permitida en \\${match[1]}{${target}}`);
-    }
-  }
-  return violations;
-};
 
 const getMinioClient = () => {
   if (!minioClientInstance) {
@@ -453,87 +414,6 @@ const uploadDirectoryToMinio = async (bucket, objectPrefix, sourceDir) => {
     await fPutObject(bucket, objectName, filePath);
   }
   return files.length;
-};
-
-const parseAvailableFormats = (value) => {
-  if (!value) {
-    return {};
-  }
-  if (typeof value === "object" && !Array.isArray(value)) {
-    return value;
-  }
-  if (typeof value !== "string") {
-    return {};
-  }
-  try {
-    const parsed = JSON.parse(value);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {};
-    }
-    return parsed;
-  } catch {
-    return {};
-  }
-};
-
-const buildArtifactSyncedFillDescription = ({ artifactId, templateCode, storageVersion }) =>
-  `${ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX}${artifactId}:${templateCode}:${storageVersion}`;
-
-const buildArtifactSyncedSignatureDescription = ({ artifactId, templateCode, storageVersion }) =>
-  `${ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX}${artifactId}:${templateCode}:${storageVersion}`;
-
-// Lee la marca de procedencia "<prefix><artifactId>:<templateCode>:<storageVersion>" para detectar drift:
-// si el storageVersion materializado en BD difiere del actual del artifact, la proyección está desfasada.
-// templateCode puede contener ':' improbable, pero artifactId (primer token) y storageVersion (último)
-// son inequívocos.
-const parseArtifactSyncMarker = (description, prefix) => {
-  const raw = String(description || "");
-  if (!raw.startsWith(prefix)) {
-    return null;
-  }
-  const body = raw.slice(prefix.length);
-  const firstColon = body.indexOf(":");
-  const lastColon = body.lastIndexOf(":");
-  if (firstColon < 0 || lastColon <= firstColon) {
-    return null;
-  }
-  return {
-    artifactId: Number(body.slice(0, firstColon)) || null,
-    templateCode: body.slice(firstColon + 1, lastColon),
-    storageVersion: body.slice(lastColon + 1)
-  };
-};
-
-const isArtifactFillWorkflowSyncEnabled = (workflow = {}) =>
-  String(workflow?.sync_mode || "").trim() === "artifact_to_db"
-  && normalizeBooleanFlag(workflow?.required, false)
-  && Array.isArray(workflow?.steps)
-  && workflow.steps.length > 0;
-
-const isArtifactSignatureWorkflowSyncEnabled = (workflow = {}) =>
-  String(workflow?.sync_mode || "").trim() === "artifact_to_db"
-  && normalizeBooleanFlag(workflow?.required, false)
-  && Array.isArray(workflow?.steps)
-  && workflow.steps.length > 0;
-
-const findPreferredPdfObject = (objectNames = []) => {
-  const pdfCandidates = (objectNames || []).filter((name) => /\.pdf$/i.test(String(name || "")));
-  if (!pdfCandidates.length) {
-    return null;
-  }
-  const preferredMatchers = [
-    /\/render\/output\/pdf\/.+\.pdf$/i,
-    /\/render\/.+\.pdf$/i,
-    /\/preview\/.+\.pdf$/i,
-    /\.pdf$/i
-  ];
-  for (const matcher of preferredMatchers) {
-    const match = pdfCandidates.find((name) => matcher.test(name));
-    if (match) {
-      return match;
-    }
-  }
-  return pdfCandidates[0];
 };
 
 // Layout aplanado por formato (sin eje "modes" ni "mode" ni "src"): template/<format>/...

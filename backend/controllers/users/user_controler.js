@@ -33,6 +33,7 @@ import {
 import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
 import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
+import { parseAvailableFormats } from "../../services/admin/SqlAdminService.artifacts.js";
 
 
 const userRepository = new UserRepository();
@@ -110,17 +111,6 @@ const resolveStoredDocumentObject = (storedPath) => {
   };
 };
 
-const parseAvailableFormats = (value) => {
-  if (!value) return {};
-  if (typeof value === "object" && !Array.isArray(value)) return value;
-  if (typeof value !== "string") return {};
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-};
 
 const listMinioObjects = (bucket, prefix, recursive = true) =>
   new Promise((resolve, reject) => {
