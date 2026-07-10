@@ -98,6 +98,12 @@ export const getUserPermissions = (user = getStoredUser()) => {
   return [...new Set([...accessPermissions, ...publicPermissions])];
 };
 
+// ESPEJO de backend/services/auth/RbacService.js (hasAnyRole/hasPermission/canAccessResource).
+// La lógica core (`res.action || res.manage`) debe coincidir con el backend, que es la
+// fuente de verdad: esto solo decide qué se muestra, el backend decide qué se permite.
+// Diferencia intencional: el backend usa `access.isAdmin` precomputado; aquí se deriva
+// de los roles (SYSTEM_ADMIN_ROLES). Al tocar esta lógica, revisa también el backend.
+// (El backend tiene RbacService.test.js; este lado no tiene runner de tests todavía.)
 export const hasAnyRole = (roles = [], user = getStoredUser()) => {
   const allowed = new Set(roles);
   return getUserRoles(user).some((role) => allowed.has(role));

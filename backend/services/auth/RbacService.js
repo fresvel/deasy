@@ -158,6 +158,11 @@ export default class RbacService {
     };
   }
 
+  // ESPEJO: frontend/src/core/utils/accessControl.js replica hasAnyRole/hasPermission/can
+  // para decidir la UI. La lógica core (`res.action || res.manage`) debe coincidir. La
+  // única diferencia intencional: aquí `access.isAdmin` viene precomputado; allí se deriva
+  // de los roles (SYSTEM_ADMIN_ROLES). Al tocar esta lógica, revisa también el espejo.
+  // Ambos lados tienen tests que fallan por separado si uno deriva (RbacService.test.js).
   hasAnyRole(access, roles = []) {
     const allowedRoles = new Set(roles);
     return Boolean(access?.roleNames?.some((roleName) => allowedRoles.has(roleName)));
