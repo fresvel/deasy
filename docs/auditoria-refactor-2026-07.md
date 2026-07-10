@@ -58,6 +58,7 @@ Los 155 «bugs» de Sonar son **146 de accesibilidad** (`InputWithoutLabelCheck`
 | B2 | `frontend/src/modules/firmas/components/MultiSignerPanel.vue:830` | `pageValue: cond ? selection.page : selection.page` — las dos ramas son idénticas. `pageValue` solo se lee cuando `pageReference === "start"`, y siempre vale `selection.page`: el ternario es redundante, sin cambio de comportamiento. |
 | B3 | `frontend/src/modules/perfil/components/AgregarReferencia.vue:194` | Regex vulnerable a *backtracking* exponencial (ReDoS), por cuantificadores anidados `\w+([.-]?\w+)*`. |
 | B4 | `signer/sigmaker/index.js:49` | `new Promise(async (resolve, reject) => …)` — si el `async` rechaza fuera del `try`, la promesa nunca se resuelve ni se rechaza. |
+| B5 | `backend/config/postgres.js` (dialecto) | **No lo encontró Sonar, sino la cobertura nueva.** Dos residuos de MariaDB sin traducir: `FROM DUAL` rompía el **bootstrap del sistema**, y `FIELD()` devolvía 400 en `processes/graph`, `processes/:id/detail` y `units/:id/processes`. Ver [`auditoria-tests-unitarios.md`](./auditoria-tests-unitarios.md). |
 
 ### 2.2 Falsos positivos (marcar en Sonar, no «arreglar»)
 
