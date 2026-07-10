@@ -20,43 +20,28 @@ import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
 import { sanitizeStorageSegment } from "../../utils/templateArchive.js";
 import {
-  assertDocumentStatusValue,
-  assertDocumentVersionStatusValue,
-} from "../documents/DocumentStateService.js";
-import {
   syncDocumentProgressFromDocumentSignature,
   syncDocumentProgressFromFillRequest,
   syncDocumentProgressFromSignatureRequest,
 } from "../documents/DocumentProgressService.js";
 import {
-  PROCESS_SERIES_SOURCE_TYPES,
   buildProcessDefinitionVersionName,
   resolveProcessDefinitionSeriesIdentity
 } from "./processDefinitionSeries.js";
+import {
+  ITEM_EMISSION_MODES,
+  bumpSemanticVersion,
+  normalizeItemMode,
+} from "./SqlAdminService.versioning.js";
+import {
+  parseJsonObject,
+  ensureDateOrder,
+  validateTableRules,
+} from "./SqlAdminService.validation.js";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
 const PERSON_TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-const SEMANTIC_VERSION_REGEX = /^\d+\.\d+\.\d+$/;
-const STORAGE_VERSION_BUMP_LEVELS = new Set(["patch", "minor", "major"]);
-// Calcula la siguiente versión semver (X.Y.Z) a partir de la actual y el nivel de cambio elegido por el
-// usuario al crear una nueva versión. La primera versión es 1.0.0.
-const bumpSemanticVersion = (current, level = "minor") => {
-  const safeLevel = STORAGE_VERSION_BUMP_LEVELS.has(String(level)) ? String(level) : "minor";
-  const match = String(current || "").trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
-  if (!match) {
-    return "1.0.0";
-  }
-  let [major, minor, patch] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  if (safeLevel === "major") {
-    major += 1; minor = 0; patch = 0;
-  } else if (safeLevel === "patch") {
-    patch += 1;
-  } else {
-    minor += 1; patch = 0;
-  }
-  return `${major}.${minor}.${patch}`;
-};
 const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
 const BACKEND_STORAGE_ROOT = path.join(REPO_ROOT, "backend", "storage");
@@ -66,13 +51,6 @@ const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").
 const DEFAULT_SEED_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
 // Formatos de documento de referencia (al menos uno es obligatorio al crear una plantilla).
 const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
-// Modos de emisión válidos para el vínculo plantilla↔proceso (process_definition_templates.item_mode).
-// El modo vive en el LINK, no en la plantilla. 'routed' no autora flujo (se define al enviar).
-const ITEM_EMISSION_MODES = ["single", "replicated", "routed"];
-const normalizeItemMode = (value) => {
-  const mode = String(value ?? "").trim();
-  return ITEM_EMISSION_MODES.includes(mode) ? mode : "single";
-};
 // Rol derivado del formato (sustituye al eje "mode" que ya no se almacena): jinja2 = contrato ejecutable,
 // latex = render derivable, el resto = documento de referencia. Es 1:1 con el formato, por eso es derivable.
 const FORMAT_ROLE = { jinja2: "contract", latex: "render" };
@@ -1159,26 +1137,6 @@ const validatePackagedArtifactDraft = (draftDir, availableFormats) => {
   }
 };
 
-const parseJsonObject = (value, fieldLabel) => {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-  if (typeof value === "object" && !Array.isArray(value)) {
-    return value;
-  }
-  if (typeof value !== "string") {
-    throw new Error(`El campo ${fieldLabel} debe ser un JSON valido.`);
-  }
-  try {
-    const parsed = JSON.parse(value);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error("invalid");
-    }
-    return parsed;
-  } catch {
-    throw new Error(`El campo ${fieldLabel} debe ser un JSON valido.`);
-  }
-};
 
 const normalizeValue = (field, value) => {
   if (value === undefined) {
@@ -1257,15 +1215,6 @@ const isValidDate = (value) => {
   return !Number.isNaN(date.getTime());
 };
 
-const ensureDateOrder = (startDate, endDate, label) => {
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (end < start) {
-      throw new Error(`La fecha de fin debe ser posterior a la fecha de inicio en ${label}.`);
-    }
-  }
-};
 
 const validateFieldTypes = (config, payload) => {
   for (const field of config.fields) {
@@ -1293,192 +1242,6 @@ const validateFieldTypes = (config, payload) => {
   }
 };
 
-const validateTableRules = (tableName, candidate) => {
-  switch (tableName) {
-    case "unit_relations":
-      if (candidate.parent_unit_id && candidate.child_unit_id) {
-        if (Number(candidate.parent_unit_id) === Number(candidate.child_unit_id)) {
-          throw new Error("La unidad padre y la unidad hija no pueden ser la misma.");
-        }
-      }
-      break;
-    case "terms":
-      ensureDateOrder(candidate.start_date, candidate.end_date, "periodos");
-      break;
-    case "processes":
-      break;
-    case "process_definition_versions":
-      if (!candidate.process_id) {
-        throw new Error("Selecciona un proceso base para la configuracion.");
-      }
-      if (!candidate.series_id) {
-        throw new Error("Selecciona una serie de configuracion.");
-      }
-      if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
-        throw new Error("La version de la configuracion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
-      }
-      if (!candidate.effective_from) {
-        throw new Error("Selecciona la fecha de vigencia inicial de la configuracion.");
-      }
-      ensureDateOrder(candidate.effective_from, candidate.effective_to, "configuraciones de proceso");
-      break;
-    case "process_definition_series":
-      if (!candidate.source_type || !PROCESS_SERIES_SOURCE_TYPES.has(String(candidate.source_type))) {
-        throw new Error("Selecciona el origen de la serie.");
-      }
-      if (candidate.source_type === "unit_type" && !candidate.unit_type_id) {
-        throw new Error("Una serie por tipo de unidad requiere seleccionar un tipo de unidad.");
-      }
-      if (candidate.source_type === "cargo" && !candidate.cargo_id) {
-        throw new Error("Una serie por cargo requiere seleccionar un cargo.");
-      }
-      if (candidate.source_type === "unit_type" && candidate.cargo_id) {
-        throw new Error("Una serie por tipo de unidad no admite cargo.");
-      }
-      if (candidate.source_type === "cargo" && candidate.unit_type_id) {
-        throw new Error("Una serie por cargo no admite tipo de unidad.");
-      }
-      if (candidate.source_type === "default" && (candidate.unit_type_id || candidate.cargo_id)) {
-        throw new Error("La serie por defecto no admite tipo de unidad ni cargo.");
-      }
-      break;
-    case "process_target_rules":
-      ensureDateOrder(candidate.effective_from, candidate.effective_to, "reglas de alcance");
-      if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una configuracion de proceso.");
-      }
-      if (candidate.recipient_policy === "exact_position" && !candidate.position_id) {
-        throw new Error("La politica exact_position requiere un puesto exacto.");
-      }
-      if (candidate.unit_scope_type === "unit_exact" || candidate.unit_scope_type === "unit_subtree") {
-        if (!candidate.unit_id && !candidate.position_id) {
-          throw new Error("El alcance por unidad requiere una unidad base.");
-        }
-      }
-      if (candidate.unit_scope_type === "unit_type" && !candidate.unit_type_id) {
-        throw new Error("El alcance por tipo requiere un tipo de unidad.");
-      }
-      break;
-    case "process_definition_period_types":
-      if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una configuracion de proceso.");
-      }
-      if (!candidate.term_type_id) {
-        throw new Error("Selecciona el tipo de periodo en que corre el proceso.");
-      }
-      break;
-    case "tasks":
-      if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una configuracion de proceso.");
-      }
-      if (!candidate.term_id) {
-        throw new Error("Selecciona un periodo para la tarea.");
-      }
-      ensureDateOrder(candidate.start_date, candidate.end_date, "tareas");
-      break;
-    case "task_items":
-      if (!candidate.task_id) {
-        throw new Error("Selecciona una tarea.");
-      }
-      if (
-        String(candidate.origin_kind || "process_defined") === "process_defined"
-        && !candidate.process_definition_template_id
-      ) {
-        throw new Error("Selecciona el entregable definido por proceso.");
-      }
-      if (!candidate.template_artifact_id) {
-        throw new Error("Selecciona la plantilla documental.");
-      }
-      ensureDateOrder(candidate.start_date, candidate.end_date, "items de tarea");
-      break;
-    case "documents":
-      if (!candidate.task_item_id && !candidate.owner_person_id) {
-        throw new Error("Selecciona el item de tarea o define un propietario para el documento.");
-      }
-      if (Object.hasOwn(candidate, "status")) {
-        candidate.status = assertDocumentStatusValue(candidate.status);
-      }
-      break;
-    case "fill_flow_templates":
-      if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso configurado.");
-      }
-      break;
-    case "fill_flow_steps":
-      if (!candidate.fill_flow_template_id) {
-        throw new Error("Selecciona la plantilla de entrega.");
-      }
-      if (!candidate.step_order) {
-        throw new Error("Define el orden del paso.");
-      }
-      break;
-    case "document_fill_flows":
-      if (!candidate.fill_flow_template_id) {
-        throw new Error("Selecciona la plantilla de entrega.");
-      }
-      if (!candidate.document_version_id) {
-        throw new Error("Selecciona la version de documento.");
-      }
-      break;
-    case "fill_requests":
-      if (!candidate.document_fill_flow_id) {
-        throw new Error("Selecciona la instancia de entrega.");
-      }
-      if (!candidate.fill_flow_step_id) {
-        throw new Error("Selecciona el paso de entrega.");
-      }
-      break;
-    case "signature_flow_templates":
-      if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso configurado.");
-      }
-      break;
-    case "task_assignments":
-      if (!candidate.task_id) {
-        throw new Error("Selecciona una tarea para asignar.");
-      }
-      if (!candidate.position_id) {
-        throw new Error("Selecciona un puesto para la asignacion.");
-      }
-      break;
-    case "vacancies":
-      break;
-    case "contracts":
-      ensureDateOrder(candidate.start_date, candidate.end_date, "contratos");
-      break;
-    case "role_assignments":
-      break;
-    case "document_versions":
-      if (candidate.version !== undefined) {
-        const versionValue = Number(candidate.version);
-        if (Number.isNaN(versionValue) || versionValue < 0.1) {
-          throw new Error("La version debe ser mayor o igual a 0.1.");
-        }
-      }
-      if (Object.hasOwn(candidate, "status")) {
-        candidate.status = assertDocumentVersionStatusValue(candidate.status);
-      }
-      break;
-    case "template_seeds":
-      if (!candidate.seed_code || !candidate.source_path) {
-        throw new Error("Debes registrar el codigo y la ruta fuente del seed.");
-      }
-      break;
-    case "template_artifacts":
-      if (!candidate.base_object_prefix) {
-        throw new Error("Debes registrar el prefijo base del artifact.");
-      }
-      {
-        const availableFormats = parseJsonObject(candidate.available_formats, "Formatos disponibles (JSON)");
-        if (!availableFormats || !Object.keys(availableFormats).length) {
-          throw new Error("Debes registrar al menos un formato disponible en available_formats.");
-        }
-      }
-      break;
-    default:
-      break;
-  }
-};
 
 const isBcryptHash = (value) => typeof value === "string" && BCRYPT_HASH_REGEX.test(value);
 
