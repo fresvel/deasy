@@ -45,8 +45,15 @@ una trampa sin documentar.
 |---|---:|---|
 | `config/postgres.dialect.test.js` | 28 | Exportar 7 funciones |
 | `services/documents/DocumentStateService.test.js` | 14 | Ninguno |
+| `services/admin/SqlAdminService.validation.test.js` | 18 | Extraer `SqlAdminService.validation.js` |
+| `services/admin/SqlAdminService.versioning.test.js` | 8 | Extraer `SqlAdminService.versioning.js` |
 | `services/system/genericCatalog.test.js` (previo) | 3 | — |
 | `services/admin/SqlAdminService.processDefinitionSeries.test.js` (previo) | 6 | — |
+
+**Trampa documentada** en `validateTableRules`: las ramas `documents` y
+`document_versions` no solo validan, **mutan `candidate.status` in-place** para
+normalizar los estados legacy. Un refactor que pierda ese efecto guardaría el valor
+sin normalizar sin que ningún error lo delate.
 
 **Trampa documentada**: `assertDocumentStatusValue` **no puede lanzar nunca**.
 `normalizeDocumentStatus` ya convierte cualquier basura en `"Inicial"`, que es un
@@ -62,12 +69,10 @@ el documento a `"Inicial"` sin error.
 | Función | Ubicación | Export | Por qué |
 |---|---|---|---|
 | `rewriteOnDuplicate` | `config/postgres.js:343` | privada | `ON DUPLICATE KEY UPDATE` → `ON CONFLICT (target)`. Infiere el índice consultando `pg_index`. Si elige mal el target, el UPSERT **inserta duplicados o pisa la fila equivocada**. Ya recibe `executor` por parámetro → inyectable; falta exportar y poder resetear `uniqueColsCache`/`generatedColsCache`. |
-| `validateTableRules` | `SqlAdminService.js:1296` | privada | Complejidad cognitiva **99**. Última barrera antes del INSERT/UPDATE de ~24 tablas. Muta `candidate.status` in-place. Ojo: su rama de `unit_relations` es **inalcanzable** desde `create()`, que tiene un guard propio antes. |
 | `collectAuthoredWorkflowIssues` (+`checkResolverRefs`, CC 54) | `SqlAdminService.js:880` | privada | Valida el contrato de los flujos de firma. Es pura (recibe todo por parámetro). Distingue `errors` de `warnings` — lógica de dominio delicada. **Mejor relación coste/valor de todo el fichero.** |
 
 ### P1
 
-- `bumpSemanticVersion` (`:44`) — versionado de plantillas.
 - `normalizeFillSteps` (`:693`) / `normalizeSignatureSteps` (`:747`) — este último
   **descarta en silencio** firmantes sin cargo resoluble y pasos sin firmantes válidos.
 - `buildWorkflowsYaml` (`:146`) + `buildStepResolver` (`:113`) — round-trip con `normalizeFillSteps`.
@@ -106,7 +111,8 @@ módulos hermanos con named exports.
 - `SqlAdminService.workflows.js` — `buildStepResolver`, `buildWorkflowsYaml`, `normalizeFillSteps`, `normalizeSignatureSteps`, `collectAuthoredWorkflowIssues`, `resolveStepCargoId` + constantes.
 - `SqlAdminService.validation.js` — `validateTableRules`, `normalizeValue`, `pickPayload`, `validateFieldTypes`, `ensureDateOrder`, `validatePasswordPolicy`.
 - `SqlAdminService.artifacts.js` — `parseArtifactSyncMarker`, `parseAvailableFormats`, `findPreferredPdfObject`, `sanitizeLatexSource`, `parseYamlDocument`.
-- `SqlAdminService.versioning.js` — `bumpSemanticVersion`, `normalizeItemMode`.
+- ~~`SqlAdminService.versioning.js`~~ — hecho.
+- ~~`validateTableRules`, `ensureDateOrder`, `parseJsonObject`~~ — hechos en `SqlAdminService.validation.js`; faltan `normalizeValue`, `pickPayload`, `validateFieldTypes`, `validatePasswordPolicy`.
 
 Esa extracción **es** el primer paso de la Fase 3 del plan de refactorización: parte
 el God Object por sus costuras naturales y, de paso, hace testeable lo que hoy no lo es.
