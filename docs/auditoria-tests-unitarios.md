@@ -8,7 +8,7 @@ bash scripts/docker-env.sh dev exec backend npm run test:unit    # tests unitari
 bash scripts/docker-env.sh dev exec backend npm run test:char:run # golden-master HTTP
 ```
 
-**Estado**: 138 tests unitarios (desde 9). Los **tres P0 de fallo silencioso están
+**Estado**: 138 tests unitarios en backend (desde 9) + 18 en frontend (Vitest, nuevo). Los **tres P0 de fallo silencioso están
 cubiertos**. `SqlAdminService.js` bajó de 6 851 a 5 925 líneas al extraer las funciones
 puras a módulos hermanos, que es lo que las hizo testeables. Quedan P1/P2.
 
@@ -83,7 +83,9 @@ Los tres P0 de fallo silencioso están cerrados:
 
 - `normalizeValue` + `pickPayload` — coerción antes de escribir. Aún en `SqlAdminService.js`; irían a un futuro `SqlAdminService.validation.js` ampliado.
 - ~~`RbacService.hasAnyRole/hasPermission/can`~~ — hecho (`RbacService.test.js`, 11 casos).
-- `frontend/src/core/utils/accessControl.js` — espejo del `RbacService`. No se puede fusionar (toolchains distintas). Hecho lo posible sin infra nueva: comentarios cruzados en ambos ficheros y el lado backend testeado. **Un test real de `accessControl.js` requiere montar Vitest en el frontend** (hoy solo tiene eslint) — decisión de infraestructura pendiente.
+- ~~`frontend/src/core/utils/accessControl.js`~~ — hecho. Se montó Vitest en el frontend
+  (`pnpm run test:unit`, environment node) y se escribieron 18 tests que fijan el espejo
+  del `RbacService`. Ambos lados testeados + comentarios cruzados.
 - ~~`validatePasswordPolicy`~~ — hecho: unificada en `utils/passwordPolicy.js` (9 tests + 3 de caracterización HTTP).
 
 ### Divergencias resueltas

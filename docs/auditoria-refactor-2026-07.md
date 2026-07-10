@@ -277,8 +277,8 @@ esmeralda) al seleccionar un fichero, como ya hacía el módulo de firmas, y gan
 para soltar carpetas. Además se corrige un `@drop` sin `preventDefault` que dejaba al
 navegador abrir el fichero soltado.
 
-**Pendiente de decisión**: borrar `signer/Dockerfile` (huérfano, §2.3). No se ha tocado
-por ser infraestructura y no bloquear nada.
+**`signer/Dockerfile` eliminado**: era huérfano (§2.3) — el build real usa
+`docker/signer/Dockerfile`. Con ello desaparece la vulnerabilidad `docker:S6470`.
 
 ---
 
