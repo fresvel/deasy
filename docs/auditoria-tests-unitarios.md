@@ -8,8 +8,8 @@ bash scripts/docker-env.sh dev exec backend npm run test:unit    # tests unitari
 bash scripts/docker-env.sh dev exec backend npm run test:char:run # golden-master HTTP
 ```
 
-**Estado**: 101 tests unitarios (desde 9). Los **tres P0 de fallo silencioso están
-cubiertos**. `SqlAdminService.js` bajó de 6 851 a 6 045 líneas al extraer las funciones
+**Estado**: 118 tests unitarios (desde 9). Los **tres P0 de fallo silencioso están
+cubiertos**. `SqlAdminService.js` bajó de 6 851 a 5 925 líneas al extraer las funciones
 puras a módulos hermanos, que es lo que las hizo testeables. Quedan P1/P2.
 
 ## 1. El hallazgo transversal: casi nada es testeable
@@ -52,6 +52,8 @@ una trampa sin documentar.
 | `services/admin/SqlAdminService.validation.test.js` | 18 | Extraer `SqlAdminService.validation.js` |
 | `services/admin/SqlAdminService.versioning.test.js` | 8 | Extraer `SqlAdminService.versioning.js` |
 | `services/admin/SqlAdminService.workflows.test.js` | 17 | Extraer `SqlAdminService.workflows.js` + `.primitives.js` |
+| `services/admin/SqlAdminService.artifacts.test.js` | 17 | Extraer `SqlAdminService.artifacts.js` |
+| `config/postgres.dialect.test.js` (applyOnConflict incluido) | 35 | Exportar `applyOnConflict` |
 | `services/system/genericCatalog.test.js` (previo) | 3 | — |
 | `services/admin/SqlAdminService.processDefinitionSeries.test.js` (previo) | 6 | — |
 
@@ -79,20 +81,30 @@ Los tres P0 de fallo silencioso están cerrados:
 
 ### P1
 
-- `normalizeValue` (`:1183`) + `pickPayload` (`:1223`) — coerción antes de escribir.
-- `parseArtifactSyncMarker` (`:845`) — detección de drift; `templateCode` puede contener `:`.
+- `normalizeValue` + `pickPayload` — coerción antes de escribir. Aún en `SqlAdminService.js`; irían a un futuro `SqlAdminService.validation.js` ampliado.
 - `RbacService.hasAnyRole/hasPermission/can` (`:161-176`) — **sin refactor**: los tres métodos no tocan `this.pool`.
 - `frontend/src/core/utils/accessControl.js` — **sin refactor**. Es el espejo del `RbacService`; Sonar marca 53 líneas duplicadas. Conviene un test que compare ambas lógicas para que no deriven.
-- `validatePasswordPolicy` (`:1485`) — **duplicada** con `middlewares/val_password.js:14-30`, con mensajes distintos y un criterio (`special`) que el middleware calcula pero no cuenta. Unificar en `utils/passwordPolicy.js`.
+- `validatePasswordPolicy` — **duplicada** con `middlewares/val_password.js:14-30`, con mensajes distintos y un criterio (`special`) que el middleware calcula pero no cuenta. Unificar en `utils/passwordPolicy.js`.
+
+### Duplicación con divergencia — deuda concreta
+
+- **`parseAvailableFormats`** existía TRIPLICADA. Dos copias (SqlAdminService, user_controler)
+  se deduplicaron contra `SqlAdminService.artifacts.js`. La tercera, en
+  `sql_admin_controller.js`, **diverge**: es más laxa (acepta arrays, no valida el
+  `JSON.parse`). Para los datos reales el resultado coincide, pero unificarla cambiaría el
+  comportamiento observable con inputs raros. Requiere caracterizar antes ese endpoint.
+  Está anotada en el propio fichero.
 
 ### P2
 
-`sanitizeLatexSource` (anti-inyección LaTeX; sube a P1 si se prioriza seguridad),
 `summarizeFillRequests`/`firstPendingStepOrder`/`arePreviousStepsApproved`
 (`DocumentProgressService.js`), mappers de `chatStore.js` (ya exportados),
-`parseJsonObject`/`parseAvailableFormats`, `findPreferredPdfObject`,
-`normalizeBooleanFlag`/`normalizeNumericId`, `buildSchemaJsonFromFields`,
+`parseJsonObject`, `normalizeNumericId`, `buildSchemaJsonFromFields`,
 `resolveTableResource`/`actionForHttpMethod` (`rbacPolicy.js`, ya exportados).
+
+Ya cubiertos al extraer sus módulos: `parseArtifactSyncMarker`, `sanitizeLatexSource`,
+`findPreferredPdfObject`, `parseAvailableFormats`, `parseYamlDocument` (artifacts §3);
+`normalizeBooleanFlag` (primitives, vía workflows).
 
 ## 5. Lo que NO merece test unitario
 
@@ -113,7 +125,7 @@ módulos hermanos con named exports.
 
 - ~~`SqlAdminService.workflows.js`~~ — hecho (+ `SqlAdminService.primitives.js` para los helpers compartidos).
 - `SqlAdminService.validation.js` — `validateTableRules`, `normalizeValue`, `pickPayload`, `validateFieldTypes`, `ensureDateOrder`, `validatePasswordPolicy`.
-- `SqlAdminService.artifacts.js` — `parseArtifactSyncMarker`, `parseAvailableFormats`, `findPreferredPdfObject`, `sanitizeLatexSource`, `parseYamlDocument`.
+- ~~`SqlAdminService.artifacts.js`~~ — hecho.
 - ~~`SqlAdminService.versioning.js`~~ — hecho.
 - ~~`validateTableRules`, `ensureDateOrder`, `parseJsonObject`~~ — hechos en `SqlAdminService.validation.js`; faltan `normalizeValue`, `pickPayload`, `validateFieldTypes`, `validatePasswordPolicy`.
 
