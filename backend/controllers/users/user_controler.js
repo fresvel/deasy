@@ -2,8 +2,6 @@ import path from "node:path";
 import os from "node:os";
 import fs from "fs-extra";
 import { randomUUID } from "node:crypto";
-import { spawn } from "node:child_process";
-import { pipeline } from "node:stream/promises";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import RbacService from "../../services/auth/RbacService.js";
@@ -24,7 +22,6 @@ import { sendEmailVerification } from "../../services/mail/sendEmailVerification
 import { generateUniqueToken } from "../../utils/tokenGenerator.js";
 import {
   ensureBucketExists,
-  minioClient,
   uploadFileToMinio,
   statMinioObject,
   getMinioObjectStream,
@@ -50,109 +47,20 @@ import {
   isPendingLikeSignatureStatus,
   canCurrentUserResetWorkflow
 } from "./user_controler.primitives.js";
+import {
+  MINIO_DOCUMENTS_BUCKET,
+  MINIO_DOCUMENTS_PREFIX,
+  MINIO_TEMPLATES_BUCKET,
+  resolveStoredDocumentObject,
+  collectDeliverableTemplateResources,
+  writeMinioObjectToFile,
+  createZipArchive
+} from "./user_controler.storage.js";
 
 
 const userRepository = new UserRepository();
 const rbacService = new RbacService();
 const sqlAdminService = new SqlAdminService();
-const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
-const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
-const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
-const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
-const TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS = new Set(["latex", "jinja2"]);
-
-const resolveStoredDocumentObject = (storedPath) => {
-  const normalizedPath = String(storedPath || "").trim().replace(/^\/+/, "");
-  if (!normalizedPath) {
-    return null;
-  }
-  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
-    return {
-      bucket: MINIO_DOCUMENTS_BUCKET,
-      objectName: normalizedPath,
-      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
-    };
-  }
-  return {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
-    relativePath: normalizedPath
-  };
-};
-
-
-const listMinioObjects = (bucket, prefix, recursive = true) =>
-  new Promise((resolve, reject) => {
-    const entries = [];
-    const stream = minioClient.listObjectsV2(bucket, String(prefix || "").replace(/^\/+/, ""), recursive);
-    stream.on("data", (item) => {
-      if (item?.name) {
-        entries.push(item.name);
-      }
-    });
-    stream.on("error", reject);
-    stream.on("end", () => resolve(entries));
-  });
-
-const collectDeliverableTemplateResources = async (availableFormats) => {
-  const resources = [];
-  // available_formats es plano: { <format>: { entry_object_key } }.
-  for (const [format, formatEntry] of Object.entries(availableFormats || {})) {
-    if (!formatEntry || typeof formatEntry !== "object" || Array.isArray(formatEntry)) {
-      continue;
-    }
-    const normalizedFormat = String(format || "").trim().toLowerCase();
-    if (!normalizedFormat || TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS.has(normalizedFormat)) {
-      continue;
-    }
-    const entryPrefix = String(formatEntry?.entry_object_key || "").trim().replace(/^\/+/, "");
-    if (!entryPrefix) {
-      continue;
-    }
-    const objectNames = await listMinioObjects(MINIO_TEMPLATES_BUCKET, entryPrefix, true);
-    for (const objectName of objectNames) {
-      const cleanObjectName = String(objectName || "").trim();
-      if (!cleanObjectName || cleanObjectName.endsWith("/")) {
-        continue;
-      }
-      const relativeName = cleanObjectName.startsWith(entryPrefix)
-        ? cleanObjectName.slice(entryPrefix.length).replace(/^\/+/, "")
-        : path.basename(cleanObjectName);
-      if (!relativeName || path.basename(relativeName).startsWith(".")) {
-        continue;
-      }
-      resources.push({
-        format: normalizedFormat,
-        objectName: cleanObjectName,
-        archiveName: relativeName.replace(/\\/g, "/")
-      });
-    }
-  }
-  return resources;
-};
-
-const writeMinioObjectToFile = async (bucket, objectName, destinationPath) => {
-  const stream = await getMinioObjectStream(bucket, objectName);
-  await fs.ensureDir(path.dirname(destinationPath));
-  await pipeline(stream, fs.createWriteStream(destinationPath));
-};
-
-const createZipArchive = async (cwd, outputPath) =>
-  new Promise((resolve, reject) => {
-    const zipProcess = spawn("zip", ["-rq", outputPath, "."], { cwd, stdio: ["ignore", "ignore", "pipe"] });
-    let stderr = "";
-    zipProcess.stderr.on("data", (chunk) => {
-      stderr += String(chunk || "");
-    });
-    zipProcess.on("error", reject);
-    zipProcess.on("close", (code) => {
-      if (code === 0) {
-        resolve(true);
-        return;
-      }
-      reject(new Error(stderr.trim() || "No se pudo generar el ZIP de la plantilla."));
-    });
-  });
 
 const getActiveUserPositions = async (pool, userId) => {
   const [rows] = await pool.query(

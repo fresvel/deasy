@@ -62,15 +62,24 @@ Mismo naming que `SqlAdminService.*`. Orden **de menor a mayor riesgo** (puras p
 
 Sin dependencias de `pool`/IO → testeables en aislamiento. **Primer commit**, cierra cobertura de lógica pura antes de tocar nada con estado.
 
-### M2 — `user_controler.storage.js`  *(MinIO + ZIP + FS)*
+### M2 — `user_controler.storage.js`  ✅ HECHO *(MinIO + ZIP + FS)*
 | Fn | Líneas |
 |----|--------|
+| `resolveStoredDocumentObject` | 95 *(reubicada desde M1)* |
 | `listMinioObjects` | 115 |
 | `collectDeliverableTemplateResources` | 128 |
 | `writeMinioObjectToFile` | 165 |
 | `createZipArchive` | 171 |
 
-Depende de `minio_service`/`fs-extra`/`archiver`. Cohesión clara (empaquetado de entregables). Sin SQL.
+Depende de `minio_service`/`fs-extra`/`zip`. Cohesión clara (empaquetado de entregables). Sin SQL.
+
+**Resultado:** raíz 3931→**3839 L**; `storage.js` 111 L; 4 tests nuevos (`test:unit` 159→**163**). Regresión: unit 163/163, char 61/61, arranque limpio.
+
+**Hallazgos en ejecución:**
+- Las constantes de bucket (`MINIO_DOCUMENTS_BUCKET/PREFIX`, `MINIO_TEMPLATES_BUCKET`) **viven ahora aquí y se exportan**: los handlers de la raíz las reimportan, así la definición sigue siendo única (no duplicada).
+- **`MINIO_SPOOL_BUCKET` era código muerto** (definido, cero usos) → eliminado.
+- Imports que quedaron huérfanos en la raíz y se barrieron: `minioClient`, `spawn` (`node:child_process`), `pipeline` (`node:stream/promises`). `getMinioObjectStream` se queda (lo siguen usando handlers).
+- **Deuda:** `collectDeliverableTemplateResources` tiene lógica de filtrado real (formatos excluidos, ocultos, nombres relativos) pero llama a `listMinioObjects` internamente → testearla exige mockear `minio_service`. Hoy solo la cubren los char tests.
 
 ### M3 — `user_controler.queries.js`  *(acceso a datos de lectura — el grueso, 60 SQL)*
 Las funciones `get*Rows` / `get*ForDefinition` / `get*ForDocumentVersions`:
