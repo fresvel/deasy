@@ -120,7 +120,14 @@ Las funciones `get*Rows` / `get*ForDefinition` / `get*ForDocumentVersions`:
 
 Todas reciben `pool`/`connection` explícito (no capturan estado del módulo) → mover-y-reimportar directo. **Este módulo es el candidato natural a promoverse a `services/users/*Repository.js`** en la fase arquitectónica posterior (ver §6).
 
-### M4 — `user_controler.panel.js`  *(ensamblado del panel — la función monstruo)*
+### M4 — `user_controler.panel.js`  ✅ HECHO *(ensamblado del panel — la función monstruo)*
+> **Resultado:** raíz 2647→**2223 L**; `panel.js` 443 L. char **72/72 con el golden del panel IDÉNTICO** — la prueba más fuerte posible, porque ese golden ES la salida de la función extraída.
+>
+> **Señal de que el corte fue por la costura correcta:** al sacar el panel quedaron **26 imports muertos** en la raíz (18 queries + 8 primitivas). El panel era el ÚNICO consumidor de casi todo el acceso a datos; la raíz solo retiene 8 queries y 8 primitivas. Imports podados.
+>
+> **🔶 Deuda destapada (duplicación real, NO tocada aquí):** `getUserMenu` lleva **copias inline** del resolver de subárbol de unidades y del matcher de reglas, mientras el panel usa las primitivas `createUnitSubtreeResolver` / `doesPositionMatchRule`. **Y no son equivalentes**: la primitiva normaliza los ids con `Number()`, la copia inline **no**. Deduplicar cambia comportamiento (ids string vs number) → merece su propio commit verificado contra el golden del menú, que ya existe.
+
+
 | Fn | Líneas |
 |----|--------|
 | `buildUserProcessDefinitionPanel` | 1507–1911 (~400 L) |
