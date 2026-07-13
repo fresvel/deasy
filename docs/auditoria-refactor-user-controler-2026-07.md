@@ -153,7 +153,35 @@ Para **cada** módulo Mn, en su propio commit:
 
 ---
 
-## 5. Golden-master ANTES de tocar nada
+## 5. Golden-master ANTES de tocar nada  ✅ HECHO — y destapó DOS BUGS DE PRODUCCIÓN
+
+> **Resultado:** flow `tests/characterization/flows/user_workspace.test.mjs`, 11 casos, char **61→72**.
+> Determinista: 72/72 en captura y en dos corridas compare consecutivas. Ningún golden preexistente modificado.
+>
+> ### 🔴 Dos endpoints estaban ROTOS (500) en producción
+> Al capturar el golden aparecieron dos 500 con el mismo error de PostgreSQL:
+> `for SELECT DISTINCT, ORDER BY expressions must appear in select list`
+>
+> | Endpoint | Función | Ordenaba por | ¿Proyectada? |
+> |---|---|---|---|
+> | `GET /users/:id/menu` | query inline de `getUserMenu` | `ptr.priority` | ❌ |
+> | `GET /users/:id/process-definitions/:defId/panel` | `getActiveUserPositions` | `up.slot_no` | ❌ |
+>
+> **Tercer residuo MariaDB→PostgreSQL**, de la misma familia que `FROM DUAL` y `FIELD()`: MySQL admite
+> `ORDER BY` sobre columnas no proyectadas cuando hay `DISTINCT`; PostgreSQL lo prohíbe.
+> **Arreglado** proyectando la columna de orden (preserva el orden intencionado; el `SELECT` ya llevaba la
+> PK, así que `DISTINCT` no cambia de cardinalidad). Commit `a199a28`.
+>
+> **Barrido del resto del backend**: las otras 5 queries con `SELECT DISTINCT` + `ORDER BY`
+> (`TaskGenerationService` ×2, `DocumentSignatureWorkflowService`, `RbacService`, `SqlAdminService`)
+> **sí** proyectan sus columnas de orden. No hay más casos.
+>
+> **La lección**: los dos endpoints rotos eran exactamente **los dos que no tenían cobertura**. El paso 0
+> de este plan no fue burocracia — era el que encontraba los bugs.
+
+---
+
+## 5-bis. Método original (referencia)
 
 A diferencia de `index.js` (diff byte-a-byte de `docs.json`), aquí el contrato es **HTTP behavioral**. Paso 0 obligatorio:
 
