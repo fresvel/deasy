@@ -1,0 +1,133 @@
+{
+  "generate_tasks_ok": {
+    "status": 200,
+    "body": {
+      "assignments_created": 0,
+      "definitions_without_assignees": [],
+      "definitions_without_target_rules": [],
+      "definitions_without_task_items": [],
+      "task_items_created": 0,
+      "tasks_created": 0,
+      "term_id": "<normalized>"
+    }
+  },
+  "generate_tasks_periodo_inexistente": {
+    "status": 500,
+    "body": {
+      "error": "Periodo no encontrado.",
+      "message": "Error al generar tareas para el periodo."
+    }
+  },
+  "launch_definicion_inexistente": {
+    "status": 400,
+    "body": {
+      "error": "La configuracion de proceso no existe.",
+      "message": "Error al lanzar la configuracion en el periodo."
+    }
+  },
+  "launch_info_antes": {
+    "status": 200,
+    "body": {
+      "definition": {
+        "id": "<normalized>",
+        "name": "Proceso por defecto",
+        "status": "active"
+      },
+      "period_types": [
+        {
+          "term_type_code": "PERM",
+          "term_type_id": "<normalized>",
+          "term_type_name": "Permanente"
+        }
+      ],
+      "runs": [],
+      "terms": [
+        {
+          "end_date": "9999-12-31T00:00:00.000Z",
+          "id": "<normalized>",
+          "launched": false,
+          "name": "Permanente",
+          "start_date": "1900-01-01T00:00:00.000Z",
+          "term_type_id": "<normalized>"
+        }
+      ]
+    }
+  },
+  "launch_info_definicion_inexistente": {
+    "status": 500,
+    "body": {
+      "error": "La configuracion de proceso no existe.",
+      "message": "Error al obtener la informacion de lanzamiento de la configuracion."
+    }
+  },
+  "launch_ok": {
+    "status": 200,
+    "body": {
+      "assignments_created": 40,
+      "definition_id": "<normalized>",
+      "process_run_id": "<normalized>",
+      "relaunched": false,
+      "status": "ok",
+      "task_items_created": 0,
+      "tasks_created": 12,
+      "term_id": "<normalized>"
+    }
+  },
+  "launch_sin_term": {
+    "status": 400,
+    "body": {
+      "message": "Se requiere un periodo (term_id) valido."
+    }
+  },
+  "launch_sin_token": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "launch_status_antes": {
+    "status": 200,
+    "body": {
+      "definitions": [
+        {
+          "active_run_id": "<normalized>",
+          "definition_id": "<normalized>",
+          "launched": false,
+          "name": "Proceso por defecto",
+          "relaunched": false,
+          "run_count": 0
+        }
+      ],
+      "pending": [
+        1
+      ],
+      "term_id": "<normalized>",
+      "term_type_id": "<normalized>"
+    }
+  },
+  "launch_status_despues": {
+    "status": 200,
+    "body": {
+      "definitions": [
+        {
+          "active_run_id": "<normalized>",
+          "definition_id": "<normalized>",
+          "launched": true,
+          "name": "Proceso por defecto",
+          "relaunched": false,
+          "run_count": 1
+        }
+      ],
+      "pending": [],
+      "term_id": "<normalized>",
+      "term_type_id": "<normalized>"
+    }
+  },
+  "launch_status_periodo_inexistente": {
+    "status": 500,
+    "body": {
+      "error": "Periodo no encontrado.",
+      "message": "Error al obtener el estado de lanzamiento del periodo."
+    }
+  }
+}
