@@ -1,0 +1,179 @@
+# Plan de refactor — `user_controler.js` (Fase 3, God Object #2)
+
+**Fecha:** 2026-07-10 · **Rama:** `refactor/auditoria-sonar`
+**Archivo:** `backend/controllers/users/user_controler.js` — **4118 L**
+**Antecedente del método:** `backend/index.js` 1327→234 L (golden-master byte-a-byte de `docs.json`) y `SqlAdminService.js` 6851→5925 L (extracción a módulos hermanos `.versioning/.validation/.workflows/.primitives/.artifacts`). Este plan replica **ese mismo patrón de módulos hermanos**, no una migración de capas.
+
+---
+
+## 1. Anatomía del archivo
+
+| Zona | Líneas | Contenido | SQL |
+|------|--------|-----------|-----|
+| Imports | 1–47 | 12 imports (fs-extra, node:*, UserRepository, RbacService, postgres, SqlAdminService, DocumentState/Reset, mail…) | — |
+| **Helpers privados** | 48–1911 | ~40 funciones `const` (arrow) | 60 hits |
+| **Handlers exportados** | 1912–4118 | 27 `export const xHandler = async (req,res)` | 86 hits |
+
+El primer `export` aparece en la **línea 1912**: casi la mitad del archivo (46 %) es infraestructura privada. Ahí está el objetivo real de la extracción.
+
+### 1.1 Los 27 handlers exportados (se quedan en el archivo raíz)
+```
+1912 createUser              2005 updateUserPhoto        2041 getUserMenu
+1982 getUsers                2415 getUserProcessDefinitionPanel
+2447 getUserDocumentCenter   2511 getUserGlobalSignatureCenter
+2579 createUserProcessTask   2630 listTaskItemObservations
+2664 addTaskItemObservation  2721 resolveTaskItemObservation
+2759 uploadDeliverablePdf    2854 downloadDeliverableTemplate
+2958 downloadDeliverableFile 3055 resetDeliverableWorkflow
+3115 updateMyProfile         3150 getMyProfile
+3209 listDeliverableAttachments  3248 uploadDeliverableAttachment
+3353 deleteDeliverableAttachment 3407 downloadDeliverableAttachment
+3511 listAddableDeliverables 3566 searchTaskRecipients
+3606 listFlowCatalog         3635 listMySends
+3684 listMyReceived          3757 createGeneralTask
+```
+El router (`routes/user_router.js`) importa por nombre desde `user_controler.js`. **Los handlers NO se mueven** → el router no se toca → riesgo de imports rotos = 0.
+
+---
+
+## 2. Módulos hermanos a extraer (destino de los ~1900 L privados)
+
+Mismo naming que `SqlAdminService.*`. Orden **de menor a mayor riesgo** (puras primero, acceso a datos al final).
+
+### M1 — `user_controler.primitives.js`  ✅ HECHO *(puras, SIN pool — extracción segura primero)*
+> **Refinamiento en ejecución:** `resolveStoredDocumentObject` NO era pura (depende de las constantes de módulo `MINIO_DOCUMENTS_PREFIX/BUCKET`) → se difiere a **M2 `.storage.js`**, donde encaja por dominio. M1 quedó en **14 funciones**. Resultado: raíz 4118→3931 L (−187); `primitives.js` 214 L; 21 tests nuevos (`node:test`); glob de `test:unit` ampliado con `controllers/**/*.test.js` (138→159). Regresión: unit 159/159, char 61/61, backend arranca OK.
+
+| Fn | Líneas |
+|----|--------|
+| `sanitizeStorageSegment` | 48 |
+| `buildDocumentVersionFolder` | 55 |
+| `buildCanonicalDocumentVersionBasePath` | 60 |
+| `buildWorkingObjectPathForUpload` | 84 |
+| `getNumericUserId` | 188 |
+| `getAuthenticatedUserId` | 220 |
+| `isAuthorizedUserScope` | 225 |
+| `buildRuleDisplayLabel` | 545 |
+| `buildFillStepDisplayLabel` | 1292 |
+| `isPendingLikeFillStatus` | 1321 |
+| `isPendingLikeSignatureStatus` | 1324 |
+| `canCurrentUserResetWorkflow` | 1327 |
+| `createUnitSubtreeResolver` | 424 |
+| `doesPositionMatchRule` | 452 |
+
+Sin dependencias de `pool`/IO → testeables en aislamiento. **Primer commit**, cierra cobertura de lógica pura antes de tocar nada con estado.
+
+### M2 — `user_controler.storage.js`  *(MinIO + ZIP + FS)*
+| Fn | Líneas |
+|----|--------|
+| `listMinioObjects` | 115 |
+| `collectDeliverableTemplateResources` | 128 |
+| `writeMinioObjectToFile` | 165 |
+| `createZipArchive` | 171 |
+
+Depende de `minio_service`/`fs-extra`/`archiver`. Cohesión clara (empaquetado de entregables). Sin SQL.
+
+### M3 — `user_controler.queries.js`  *(acceso a datos de lectura — el grueso, 60 SQL)*
+Las funciones `get*Rows` / `get*ForDefinition` / `get*ForDocumentVersions`:
+| Fn | Líneas |
+|----|--------|
+| `getActiveUserPositions` | 194 |
+| `getUserDocumentCenterRows` | 230 |
+| `getUserGlobalPendingSignatureRows` | 338 |
+| `getOrgChildrenMap` | 406 |
+| `getDefinitionContext` | 478 |
+| `getActiveDefinitionRules` | 512 |
+| `getActiveDefinitionPeriodTypes` | 563 |
+| `getDefinitionTemplates` | 581 |
+| `getAvailableTerms` | 609 |
+| `getUserOwnedTemplateArtifacts` | 628 |
+| `getUserAccessibleTasksForDefinition` | 648 |
+| `getTaskItemsForTaskIds` | 734 |
+| `getDocumentsForTaskItemIds` | 801 |
+| `getUserTaskItemParticipationSummary` | 857 |
+| `getAccessibleTaskItemForUser` | 898 |
+| `getAccessibleTaskItemDocumentForUser` | 994 |
+| `getUserPendingSignaturesForDefinition` | 1066 |
+| `getSignatureWorkflowRequestsForDocumentVersions` | 1103 |
+| `getSignatureWorkflowStepsForDocumentVersions` | 1140 |
+| `getUserPendingFillRequestsForDefinition` | 1195 |
+| `getAttachmentsForDocumentVersions` | 1231 |
+| `getFillWorkflowStepsForDocumentVersions` | 1247 |
+| `getUserOperationalProcessRows` | 1360 |
+| `getCustomTermType` | 1497 |
+
+Todas reciben `pool`/`connection` explícito (no capturan estado del módulo) → mover-y-reimportar directo. **Este módulo es el candidato natural a promoverse a `services/users/*Repository.js`** en la fase arquitectónica posterior (ver §6).
+
+### M4 — `user_controler.panel.js`  *(ensamblado del panel — la función monstruo)*
+| Fn | Líneas |
+|----|--------|
+| `buildUserProcessDefinitionPanel` | 1507–1911 (~400 L) |
+
+Orquesta M3. Es la de mayor complejidad cognitiva; extraerla aislada permite atacar su CC **después**, sin ruido del resto del archivo. Depende de M1 (labels/status) + M3 (queries).
+
+**Resultado esperado:** archivo raíz `user_controler.js` → **~2200 L** (solo los 27 handlers + imports de M1–M4). ~1900 L reubicadas.
+
+---
+
+## 3. Grafo de dependencias (orden de extracción)
+
+```
+M1 primitives ──────────────┐         (sin deps)
+M2 storage  ────────────────┤         (deps: minio/fs)
+M3 queries  ── usa M1 ───────┤        (deps: pool + M1)
+M4 panel    ── usa M1, M3 ───┘        (deps: M1, M3)
+raíz handlers ── usa M1,M2,M3,M4
+```
+Regla anti-ciclo (aprendida en SqlAdminService): los helpers genéricos van a `.primitives.js`; **nada** en M3/M4 debe importar de la raíz.
+
+---
+
+## 4. Método por módulo (checklist, idéntico al validado)
+
+Para **cada** módulo Mn, en su propio commit:
+
+1. **Extraer literal**: cortar las funciones a `user_controler.<sufijo>.js`, `export` cada una.
+2. **Importar** en la raíz (`import { … } from "./user_controler.<sufijo>.js"`).
+3. **Barrer residuos** (2 trampas conocidas):
+   - comentarios huérfanos que quedan donde estaba el `const`.
+   - imports muertos en la raíz que ahora solo usa el módulo nuevo (mover el import, no duplicarlo).
+4. **Verificar arranque**: `bash scripts/docker-env.sh dev up -d --build backend` → `logs -f backend` sin errores de bootstrap.
+5. **Regresión**: `npm run test:unit` (138) + `npm run test:char:run` (61) dentro del contenedor → 40/40 y verdes.
+6. **Escribir tests** del módulo nuevo (`user_controler.<sufijo>.test.js`) — empezar por M1 (puras, ROI máximo).
+
+> ⚠️ Mutación in-place: revisar que ninguna query de M3 mute su argumento (como `validateTableRules` mutaba `candidate.status`). Si alguna devuelve filas que el handler luego muta, documentarlo en el test.
+
+---
+
+## 5. Golden-master ANTES de tocar nada
+
+A diferencia de `index.js` (diff byte-a-byte de `docs.json`), aquí el contrato es **HTTP behavioral**. Paso 0 obligatorio:
+
+1. Confirmar qué endpoints de `user_router.js` cubren ya los 61 char tests (`tests/characterization/`).
+2. Para los handlers **no cubiertos** — sobre todo `getUserProcessDefinitionPanel`, `getUserDocumentCenter`, `getUserGlobalSignatureCenter`, `listMySends`, `listMyReceived` (los que consumen M3/M4) — **capturar golden-master HTTP** contra el stack `dev` sembrado (usuarios de referencia de CLAUDE.md: gestor cédula `0987654321`/`Gestor1234!`, usuario `1122334455`/`Demo1234!`; el admin tiene `/home` bloqueado).
+3. Guardar snapshots como línea base. Re-ejecutar tras cada Mn: **diff vacío = extracción correcta**.
+
+Sin este paso, M3/M4 se refactorizan a ciegas.
+
+---
+
+## 6. Deuda arquitectónica (fase posterior, NO en este pase)
+
+Este plan es **extracción a módulos hermanos** (mismo nivel, `controllers/users/`), riesgo bajo. La corrección de la **fuga de capa P2** (SQL crudo en controller) es un segundo pase:
+
+- Promover **M3 `.queries.js`** → `services/users/UserWorkspaceRepository.js` y **M4 `.panel.js`** → `services/users/UserProcessPanelService.js`.
+- Unificar naming del acceso a datos: hoy conviven `UserRepository.js`, `chatStore.js`, `dossierStore.js`. Elegir `*Repository.js`.
+- Es el "refactor mayor con estado" ya anotado en la memoria del plan Sonar → hacerlo **después** de que M1–M4 estén verdes y con golden-master, para que el movimiento entre capas sea un simple `git mv` + reapuntar imports, no una reescritura.
+
+---
+
+## 7. Secuencia de commits propuesta
+
+```
+1. refactor(user): extrae helpers puros a user_controler.primitives.js (+tests)
+2. refactor(user): extrae empaquetado MinIO/ZIP a user_controler.storage.js
+3. test(user): captura golden-master HTTP de panel/document-center/sends
+4. refactor(user): extrae acceso a datos a user_controler.queries.js
+5. refactor(user): extrae buildUserProcessDefinitionPanel a user_controler.panel.js
+6. docs(calidad): user_controler 4118→~2200 L, fase 3 God Object #2 hecho
+```
+Cada commit: arranque OK + `test:unit` + `test:char:run` verdes antes de continuar.
