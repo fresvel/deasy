@@ -51,6 +51,33 @@ export const buildWorkingObjectPathForUpload = ({ basePath, originalName, extens
   ].join("/");
 };
 
+// --- Anexos del entregable ---
+
+export const buildAttachmentObjectPath = ({ basePath, originalName, extension }) => {
+  const safeOriginalName = sanitizeStorageSegment(originalName, `anexo.${extension || "bin"}`);
+  const safeExtension = sanitizeStorageSegment(extension || "bin", "bin").toLowerCase();
+  return [
+    basePath,
+    "attachments",
+    safeExtension,
+    `${Date.now()}-${randomUUID()}-${safeOriginalName}`
+  ].join("/");
+};
+
+export const mapAttachmentRow = (row) => ({
+  id: Number(row.id),
+  document_version_id: Number(row.document_version_id),
+  kind: row.kind,
+  file_path: row.file_path,
+  file_name: row.file_name,
+  mime_type: row.mime_type || null,
+  size_bytes: row.size_bytes != null ? Number(row.size_bytes) : null,
+  description: row.description || null,
+  uploaded_by_person_id: row.uploaded_by_person_id != null ? Number(row.uploaded_by_person_id) : null,
+  sort_order: Number(row.sort_order || 1),
+  created_at: row.created_at,
+});
+
 // --- Identidad / alcance del usuario en la petición ---
 
 export const getNumericUserId = (req) => {

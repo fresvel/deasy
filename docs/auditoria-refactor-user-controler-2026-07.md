@@ -81,7 +81,15 @@ Depende de `minio_service`/`fs-extra`/`zip`. Cohesión clara (empaquetado de ent
 - Imports que quedaron huérfanos en la raíz y se barrieron: `minioClient`, `spawn` (`node:child_process`), `pipeline` (`node:stream/promises`). `getMinioObjectStream` se queda (lo siguen usando handlers).
 - **Deuda:** `collectDeliverableTemplateResources` tiene lógica de filtrado real (formatos excluidos, ocultos, nombres relativos) pero llama a `listMinioObjects` internamente → testearla exige mockear `minio_service`. Hoy solo la cubren los char tests.
 
-### M3 — `user_controler.queries.js`  *(acceso a datos de lectura — el grueso, 60 SQL)*
+### M3 — `user_controler.queries.js`  ✅ HECHO *(acceso a datos de lectura — el grueso, 60 SQL)*
+> **Resultado:** raíz 3839→**2647 L**; `queries.js` 1208 L, **26 funciones**. Regresión: unit 163/163, char **72/72 con el golden IDÉNTICO** (la prueba fuerte: panel y menú consumen casi todas estas queries).
+>
+> **Hallazgos en ejecución:**
+> - El bloque resultó **contiguo y autocontenido** (líneas 65–1228): no usa ninguna primitiva ni estado de módulo, solo el `pool` que recibe. Por eso `queries.js` **no importa nada**. Extracción hecha **por script** (`awk` + `sed`), no a mano: "extracción literal" exige cero errores de transcripción.
+> - Aparecieron **4 helpers privados más, escondidos ENTRE los handlers** (después del primer `export`), que la anatomía inicial no vio por escanear solo hasta el primer export: `getActiveGeneralDefinition` y `resolveUserPositionInUnit` (SQL → van a M3, con su constante `GENERAL_PROCESS_SLUG`, que queda privada), y `buildAttachmentObjectPath` + `mapAttachmentRow` (puras → van a M1 `.primitives.js`, donde les tocaba).
+> - Las 26 se siguen usando desde la raíz porque `buildUserProcessDefinitionPanel` **aún vive ahí**; se irá en M4.
+
+
 Las funciones `get*Rows` / `get*ForDefinition` / `get*ForDocumentVersions`:
 | Fn | Líneas |
 |----|--------|

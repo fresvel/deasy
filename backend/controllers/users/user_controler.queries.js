@@ -1,0 +1,1208 @@
+// Acceso a datos (solo LECTURA) de user_controler.js: las queries que alimentan el
+// panel operativo, el centro de documentos, el centro de firmas y las bandejas.
+// Extraído en la Fase 3 (God Object #2). Ver docs/auditoria-refactor-user-controler-2026-07.md
+//
+// Todas reciben `pool`/`connection` explícitamente: no capturan estado de módulo ni
+// abren conexiones propias. Por eso este módulo NO importa nada — es el candidato
+// natural a promoverse a services/users/UserWorkspaceRepository.js cuando se corrija
+// la fuga de capa (SQL crudo en un controller).
+//
+// OJO (bug histórico, ver commit a199a28): en PostgreSQL, un SELECT DISTINCT exige que
+// TODA columna del ORDER BY esté proyectada. MySQL no. Si añades un ORDER BY aquí,
+// proyecta la columna o tendrás un 500.
+
+export const getActiveUserPositions = async (pool, userId) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT
+       up.id AS position_id,
+       up.title AS position_title,
+       up.slot_no,
+       u.id AS unit_id,
+       u.name AS unit_name,
+       u.label AS unit_label,
+       u.unit_type_id,
+       c.id AS cargo_id,
+       c.name AS cargo_name
+     FROM position_assignments pa
+     INNER JOIN unit_positions up ON up.id = pa.position_id
+     INNER JOIN units u ON u.id = up.unit_id
+     INNER JOIN cargos c ON c.id = up.cargo_id
+     WHERE pa.person_id = ?
+       AND pa.is_current = 1
+       AND up.is_active = 1
+       AND u.is_active = 1
+       AND c.is_active = 1
+     ORDER BY u.name, c.name, up.slot_no, up.id`,
+    [userId]
+  );
+  return rows;
+};
+
+export const getUserDocumentCenterRows = async (pool, userId) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT
+       d.id AS document_id,
+       d.task_item_id,
+       d.owner_person_id,
+       d.status AS document_status,
+       dv.id AS document_version_id,
+       dv.version AS document_version,
+       dv.status AS document_version_status,
+       dv.working_file_path,
+       dv.final_file_path,
+       t.id AS task_id,
+       t.status AS task_status,
+       t.term_id,
+       pdv.id AS process_definition_id,
+       pdv.name AS definition_name,
+       pdv.variation_key,
+       pdv.definition_version,
+       p.id AS process_id,
+       p.name AS process_name,
+       p.slug AS process_slug,
+       COALESCE(origin_unit.label, origin_unit.name, scope_unit.label, scope_unit.name) AS unit_label,
+       COALESCE(origin_unit.id, scope_unit.id) AS unit_id,
+       trm.name AS term_name,
+       tt.name AS term_type_name,
+       YEAR(trm.start_date) AS term_year,
+       tar_dl.display_name AS template_artifact_name,
+       COALESCE(fill_stats.pending_fill_count, 0) AS pending_fill_count,
+       COALESCE(signature_stats.pending_signature_count, 0) AS pending_signature_count,
+       COALESCE(trm.start_date, t.created_at) AS sort_date
+     FROM documents d
+     INNER JOIN (
+       SELECT dv1.*
+       FROM document_versions dv1
+       INNER JOIN (
+         SELECT document_id, MAX(version) AS max_version
+         FROM document_versions
+         GROUP BY document_id
+       ) latest
+         ON latest.document_id = dv1.document_id
+        AND latest.max_version = dv1.version
+     ) dv ON dv.document_id = d.id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN tasks t ON t.id = ti.task_id
+     INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     INNER JOIN processes p ON p.id = pdv.process_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN terms trm ON trm.id = t.term_id
+     LEFT JOIN term_types tt ON tt.id = trm.term_type_id
+     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     LEFT JOIN unit_positions scope_position ON scope_position.id = COALESCE(ti.responsible_position_id, t.responsible_position_id)
+     LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
+     LEFT JOIN (
+       SELECT
+         dff.document_version_id,
+         SUM(CASE WHEN fr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_fill_count
+       FROM document_fill_flows dff
+       LEFT JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+       GROUP BY dff.document_version_id
+     ) fill_stats ON fill_stats.document_version_id = dv.id
+     LEFT JOIN (
+       SELECT
+         sfi.document_version_id,
+         SUM(CASE WHEN sr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
+       FROM signature_flow_instances sfi
+       LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
+       GROUP BY sfi.document_version_id
+     ) signature_stats ON signature_stats.document_version_id = dv.id
+     WHERE (
+       t.created_by_user_id = ?
+       OR EXISTS (
+         SELECT 1
+         FROM task_assignments ta
+         LEFT JOIN position_assignments pa
+           ON pa.position_id = ta.position_id
+          AND pa.is_current = 1
+          AND pa.person_id = ?
+         WHERE ta.task_id = t.id
+           AND (
+             ta.assigned_person_id = ?
+             OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
+           )
+       )
+       OR EXISTS (
+         SELECT 1
+         FROM document_versions dv_access
+         INNER JOIN document_fill_flows dff_access ON dff_access.document_version_id = dv_access.id
+         INNER JOIN fill_requests fr_access ON fr_access.document_fill_flow_id = dff_access.id
+         WHERE dv_access.document_id = d.id
+           AND fr_access.assigned_person_id = ?
+       )
+       OR EXISTS (
+         SELECT 1
+         FROM document_versions dv_access
+         INNER JOIN signature_flow_instances sfi_access ON sfi_access.document_version_id = dv_access.id
+         INNER JOIN signature_requests sr_access ON sr_access.instance_id = sfi_access.id
+         WHERE dv_access.document_id = d.id
+           AND sr_access.assigned_person_id = ?
+       )
+     )
+     ORDER BY sort_date DESC, p.name ASC, d.id DESC`,
+    [userId, userId, userId, userId, userId, userId]
+  );
+  return rows;
+};
+
+export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT
+       sr.id AS signature_request_id,
+       sr.requested_at,
+       srs.code AS signature_request_status_code,
+       srs.name AS signature_request_status_name,
+       sfs.step_order,
+       sfs.name AS step_name,
+       d.id AS document_id,
+       d.task_item_id,
+       d.status AS document_status,
+       dv.id AS document_version_id,
+       dv.version AS document_version,
+       dv.status AS document_version_status,
+       dv.working_file_path,
+       dv.final_file_path,
+       t.id AS task_id,
+       t.term_id,
+       pdv.id AS process_definition_id,
+       pdv.name AS definition_name,
+       p.id AS process_id,
+       p.name AS process_name,
+       p.slug AS process_slug,
+       COALESCE(origin_unit.label, origin_unit.name, scope_unit.label, scope_unit.name) AS unit_label,
+       COALESCE(origin_unit.id, scope_unit.id) AS unit_id,
+       trm.name AS term_name,
+       tt.name AS term_type_name,
+       YEAR(trm.start_date) AS term_year,
+       tar_dl.display_name AS template_artifact_name,
+       COALESCE(trm.start_date, t.created_at) AS sort_date
+     FROM signature_requests sr
+     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+     INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+     INNER JOIN (
+       SELECT document_id, MAX(version) AS max_version
+       FROM document_versions
+       GROUP BY document_id
+     ) latest
+       ON latest.document_id = dv.document_id
+      AND latest.max_version = dv.version
+     INNER JOIN documents d ON d.id = dv.document_id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN tasks t ON t.id = ti.task_id
+     INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     INNER JOIN processes p ON p.id = pdv.process_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN terms trm ON trm.id = t.term_id
+     LEFT JOIN term_types tt ON tt.id = trm.term_type_id
+     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     LEFT JOIN unit_positions scope_position ON scope_position.id = COALESCE(ti.responsible_position_id, t.responsible_position_id)
+     LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
+     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+     WHERE sr.assigned_person_id = ?
+       AND sr.responded_at IS NULL
+       AND LOWER(COALESCE(dv.status, '')) IN (
+         'listo para firma',
+         'pendiente de firma',
+         'firmado parcial'
+       )
+     ORDER BY sort_date DESC, sr.requested_at DESC, sr.id DESC`,
+    [userId]
+  );
+  return rows;
+};
+
+export const getOrgChildrenMap = async (pool) => {
+  const [rows] = await pool.query(
+    `SELECT ur.parent_unit_id, ur.child_unit_id
+     FROM unit_relations ur
+     INNER JOIN relation_unit_types rt
+       ON rt.id = ur.relation_type_id
+      AND rt.code = 'org'`
+  );
+  const map = new Map();
+  rows.forEach((row) => {
+    if (!map.has(row.parent_unit_id)) {
+      map.set(row.parent_unit_id, []);
+    }
+    map.get(row.parent_unit_id).push(row.child_unit_id);
+  });
+  return map;
+};
+
+export const getDefinitionContext = async (pool, definitionId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       pdv.id,
+       pdv.process_id,
+       pdv.series_id,
+       pdv.variation_key,
+       pdv.definition_version,
+       pdv.name,
+       pdv.description,
+       pdv.status,
+       pdv.effective_from,
+       pdv.effective_to,
+       p.name AS process_name,
+       p.slug AS process_slug,
+       pds.code AS series_code,
+       pds.source_type AS series_source_type,
+       CASE
+         WHEN pds.source_type = 'unit_type' THEN ut.name
+         WHEN pds.source_type = 'cargo' THEN c.name
+         ELSE NULL
+       END AS series_source_name
+     FROM process_definition_versions pdv
+     INNER JOIN processes p ON p.id = pdv.process_id
+     LEFT JOIN process_definition_series pds ON pds.id = pdv.series_id
+     LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
+     LEFT JOIN cargos c ON c.id = pds.cargo_id
+     WHERE pdv.id = ?
+     LIMIT 1`,
+    [definitionId]
+  );
+  return rows[0] || null;
+};
+
+export const getActiveDefinitionRules = async (pool, definitionId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       ptr.id,
+       ptr.unit_scope_type,
+       ptr.unit_id,
+       ptr.unit_type_id,
+       ptr.cargo_id,
+       ptr.position_id,
+       ptr.recipient_policy,
+       ptr.priority,
+       ptr.is_active,
+       ptr.effective_from,
+       ptr.effective_to,
+       u.name AS unit_name,
+       ut.name AS unit_type_name,
+       c.name AS cargo_name,
+       up.title AS position_title
+     FROM process_target_rules ptr
+     LEFT JOIN units u ON u.id = ptr.unit_id
+     LEFT JOIN unit_types ut ON ut.id = ptr.unit_type_id
+     LEFT JOIN cargos c ON c.id = ptr.cargo_id
+     LEFT JOIN unit_positions up ON up.id = ptr.position_id
+     WHERE ptr.process_definition_id = ?
+       AND ptr.is_active = 1
+       AND (ptr.effective_from IS NULL OR ptr.effective_from <= CURDATE())
+       AND (ptr.effective_to IS NULL OR ptr.effective_to >= CURDATE())
+     ORDER BY ptr.priority ASC, ptr.id ASC`,
+    [definitionId]
+  );
+  return rows;
+};
+
+export const getActiveDefinitionPeriodTypes = async (pool, definitionId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       pdp.id,
+       pdp.term_type_id,
+       pdp.is_active,
+       tt.code AS term_type_code,
+       tt.name AS term_type_name
+     FROM process_definition_period_types pdp
+     LEFT JOIN term_types tt ON tt.id = pdp.term_type_id
+     WHERE pdp.process_definition_id = ?
+       AND pdp.is_active = 1
+     ORDER BY tt.code ASC, pdp.id ASC`,
+    [definitionId]
+  );
+  return rows;
+};
+
+export const getDefinitionTemplates = async (pool, definitionId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       pdt.id,
+       pdt.sort_order,
+       tar.id AS template_artifact_id,
+       tar_dl.display_name AS template_artifact_name,
+       tar.is_active AS template_artifact_active,
+       COUNT(DISTINCT sft.id) AS signature_flow_count
+     FROM process_definition_templates pdt
+     INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN signature_flow_templates sft
+       ON sft.process_definition_template_id = pdt.id
+      AND sft.is_active = 1
+     WHERE pdt.process_definition_id = ?
+     GROUP BY
+       pdt.id,
+       pdt.sort_order,
+       tar.id,
+       tar_dl.display_name,
+       tar.is_active
+     ORDER BY pdt.sort_order ASC, pdt.id ASC`,
+    [definitionId]
+  );
+  return rows;
+};
+
+export const getAvailableTerms = async (pool) => {
+  const [rows] = await pool.query(
+    `SELECT
+       t.id,
+       t.name,
+       t.start_date,
+       t.end_date,
+       tt.id AS term_type_id,
+       tt.code AS term_type_code,
+       tt.name AS term_type_name
+     FROM terms t
+     INNER JOIN term_types tt ON tt.id = t.term_type_id
+     WHERE t.is_active = 1
+     ORDER BY t.start_date DESC, t.id DESC
+     LIMIT 40`
+  );
+  return rows;
+};
+
+export const getUserOwnedTemplateArtifacts = async (pool, userId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       ta.id,
+       d.display_name,
+       d.description,
+       ta.is_active,
+       ta.available_formats,
+       ta.created_at
+     FROM template_artifacts ta
+     INNER JOIN deliverables d ON d.id = ta.deliverable_id
+     WHERE d.owner_person_id = ?
+       AND ta.is_active = 1
+     ORDER BY ta.created_at DESC, ta.id DESC
+     LIMIT 12`,
+    [userId]
+  );
+  return rows;
+};
+
+export const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, scopeUnitId = null) => {
+  const unitFilter = scopeUnitId
+    ? `AND COALESCE(t.scope_unit_id, (
+         SELECT up_scope.unit_id
+         FROM unit_positions up_scope
+         WHERE up_scope.id = t.responsible_position_id
+         LIMIT 1
+       )) = ${Number(scopeUnitId)}`
+    : "";
+
+  const [rows] = await pool.query(
+    `SELECT
+       t.id,
+       t.term_id,
+       t.created_by_user_id,
+       t.scope_unit_id,
+       t.responsible_position_id,
+       t.description,
+       t.start_date,
+       t.end_date,
+       t.status,
+       t.created_at,
+       trm.name AS term_name,
+       tt.code AS term_type_code,
+       tt.name AS term_type_name,
+       rp.title AS responsible_position_title,
+       COALESCE(t.scope_unit_id, rp.unit_id) AS responsible_unit_id,
+       COALESCE(ru.label, ru.name) AS responsible_unit_label
+     FROM tasks t
+     INNER JOIN terms trm ON trm.id = t.term_id
+     INNER JOIN term_types tt ON tt.id = trm.term_type_id
+     LEFT JOIN unit_positions rp ON rp.id = t.responsible_position_id
+     LEFT JOIN units ru ON ru.id = rp.unit_id
+     WHERE t.process_definition_id = ?
+       ${unitFilter}
+       AND (
+         t.created_by_user_id = ?
+         OR EXISTS (
+           SELECT 1
+           FROM task_items ti_owner
+           WHERE ti_owner.task_id = t.id
+             AND (
+               ti_owner.assigned_person_id = ?
+               OR ti_owner.target_person_id = ?
+             )
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM task_assignments ta
+           LEFT JOIN position_assignments pa
+             ON pa.position_id = ta.position_id
+            AND pa.is_current = 1
+            AND pa.person_id = ?
+           WHERE ta.task_id = t.id
+             AND (
+               ta.assigned_person_id = ?
+               OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
+             )
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM task_items ti
+           INNER JOIN documents d ON d.task_item_id = ti.id
+           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
+           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+           WHERE ti.task_id = t.id
+             AND fr.assigned_person_id = ?
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM task_items ti
+           INNER JOIN documents d ON d.task_item_id = ti.id
+           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
+           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+           WHERE ti.task_id = t.id
+             AND sr.assigned_person_id = ?
+         )
+       )
+     ORDER BY t.start_date DESC, t.id DESC`,
+    [definitionId, userId, userId, userId, userId, userId, userId, userId, userId]
+  );
+  return rows;
+};
+
+export const getTaskItemsForTaskIds = async (pool, taskIds) => {
+  if (!taskIds.length) {
+    return [];
+  }
+  const placeholders = taskIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       ti.id,
+       ti.task_id,
+       ti.process_definition_template_id,
+       ti.template_artifact_id,
+       ti.origin_kind,
+       ti.title,
+       tar_dl.template_seed_id,
+       ti.sort_order,
+       ti.responsible_position_id,
+       ti.assigned_person_id,
+       ti.target_unit_id,
+       ti.target_position_id,
+       ti.target_person_id,
+       COALESCE(
+         ti.target_person_id,
+         ti.assigned_person_id,
+         (
+           SELECT ta.assigned_person_id
+           FROM task_assignments ta
+           WHERE ta.task_id = ti.task_id
+             AND ti.responsible_position_id IS NOT NULL
+             AND ta.position_id = ti.responsible_position_id
+             AND ta.assigned_person_id IS NOT NULL
+           ORDER BY ta.id ASC
+           LIMIT 1
+         ),
+         (
+           SELECT ta.assigned_person_id
+           FROM task_assignments ta
+           WHERE ta.task_id = ti.task_id
+             AND ta.assigned_person_id IS NOT NULL
+           ORDER BY ta.id ASC
+           LIMIT 1
+         )
+       ) AS resolved_owner_person_id,
+       ti.start_date,
+       ti.end_date,
+       ti.user_started_at,
+       ti.status,
+       COALESCE(NULLIF(ti.title, ''), tar_dl.display_name) AS template_artifact_name,
+       rp.title AS responsible_position_title,
+       pdt.item_mode AS item_mode,
+       NULLIF(TRIM(CONCAT(COALESCE(recip.first_name, ''), ' ', COALESCE(recip.last_name, ''))), '') AS recipient_name,
+       COALESCE(target_unit.label, target_unit.name) AS target_unit_label,
+       target_pos.title AS target_position_title
+     FROM task_items ti
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     LEFT JOIN unit_positions rp ON rp.id = ti.responsible_position_id
+     LEFT JOIN persons recip ON recip.id = ti.target_person_id
+     LEFT JOIN units target_unit ON target_unit.id = ti.target_unit_id
+     LEFT JOIN unit_positions target_pos ON target_pos.id = ti.target_position_id
+     WHERE ti.task_id IN (${placeholders})
+     ORDER BY ti.task_id ASC, ti.sort_order ASC, ti.id ASC`,
+    taskIds
+  );
+  return rows;
+};
+
+export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
+  if (!taskItemIds.length) {
+    return [];
+  }
+  const placeholders = taskItemIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       d.id AS document_id,
+       d.task_item_id,
+       d.owner_person_id,
+       d.origin_unit_id,
+       COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
+       d.status AS document_status,
+       dv.id AS document_version_id,
+       dv.version AS document_version,
+       dv.working_file_path,
+       dv.final_file_path,
+       COALESCE(sig.total_signature_count, 0) AS total_signature_count,
+       COALESCE(sig.pending_signature_count, 0) AS pending_signature_count
+     FROM documents d
+     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     LEFT JOIN (
+       SELECT dv1.*
+       FROM document_versions dv1
+       INNER JOIN (
+         SELECT document_id, MAX(version) AS max_version
+         FROM document_versions
+         GROUP BY document_id
+       ) latest
+         ON latest.document_id = dv1.document_id
+        AND latest.max_version = dv1.version
+     ) dv ON dv.document_id = d.id
+     LEFT JOIN (
+       SELECT
+         sfi.document_version_id,
+         COUNT(sr.id) AS total_signature_count,
+         SUM(CASE WHEN sr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
+       FROM signature_flow_instances sfi
+       INNER JOIN document_versions dv2 ON dv2.id = sfi.document_version_id
+       LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
+       WHERE LOWER(COALESCE(dv2.status, '')) IN (
+         'listo para firma',
+         'pendiente de firma',
+         'firmado',
+         'firmado parcial',
+         'firmado completo'
+       )
+       GROUP BY sfi.document_version_id
+     ) sig ON sig.document_version_id = dv.id
+     WHERE d.task_item_id IN (${placeholders})
+     ORDER BY d.task_item_id ASC, d.id DESC`,
+    taskItemIds
+  );
+  return rows;
+};
+
+export const getUserTaskItemParticipationSummary = async (pool, userId, taskItemIds) => {
+  if (!taskItemIds.length) {
+    return [];
+  }
+  const placeholders = taskItemIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       participation.task_item_id,
+       MAX(participation.has_past_fill) AS has_past_fill,
+       MAX(participation.has_past_signature) AS has_past_signature
+     FROM (
+       SELECT
+         d.task_item_id,
+         CASE WHEN fr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_fill,
+         0 AS has_past_signature
+       FROM documents d
+       INNER JOIN document_versions dv ON dv.document_id = d.id
+       INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
+       INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+       WHERE d.task_item_id IN (${placeholders})
+         AND fr.assigned_person_id = ?
+
+       UNION ALL
+
+       SELECT
+         d.task_item_id,
+         0 AS has_past_fill,
+         CASE WHEN sr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_signature
+       FROM documents d
+       INNER JOIN document_versions dv ON dv.document_id = d.id
+       INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
+       INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+       WHERE d.task_item_id IN (${placeholders})
+         AND sr.assigned_person_id = ?
+     ) participation
+     GROUP BY participation.task_item_id`,
+    [...taskItemIds, userId, ...taskItemIds, userId]
+  );
+  return rows;
+};
+
+export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItemId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       ti.id AS task_item_id,
+       t.id AS task_id,
+       t.term_id,
+       ti.process_definition_template_id,
+       ti.template_artifact_id,
+       ti.origin_kind,
+       ti.target_unit_id,
+       ti.target_position_id,
+       ti.target_person_id,
+       ti.start_date,
+       ti.end_date,
+       ti.user_started_at,
+       tar_dl.display_name AS template_artifact_name,
+       pdv.process_id,
+       trm.term_type_id,
+       trm.start_date AS term_start_date,
+       YEAR(trm.start_date) AS term_year,
+       COALESCE(
+         ti.target_person_id,
+         ti.assigned_person_id,
+         (
+           SELECT ta.assigned_person_id
+           FROM task_assignments ta
+           WHERE ta.task_id = ti.task_id
+             AND ti.responsible_position_id IS NOT NULL
+             AND ta.position_id = ti.responsible_position_id
+             AND ta.assigned_person_id IS NOT NULL
+           ORDER BY ta.id ASC
+           LIMIT 1
+         ),
+         (
+           SELECT ta.assigned_person_id
+           FROM task_assignments ta
+           WHERE ta.task_id = ti.task_id
+             AND ta.assigned_person_id IS NOT NULL
+           ORDER BY ta.id ASC
+           LIMIT 1
+         )
+       ) AS resolved_owner_person_id,
+       COALESCE(ti.target_unit_id, t.scope_unit_id, task_pos.unit_id, responsible_pos.unit_id) AS scope_unit_id
+     FROM task_items ti
+     INNER JOIN tasks t ON t.id = ti.task_id
+     INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     INNER JOIN terms trm ON trm.id = t.term_id
+     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
+     LEFT JOIN unit_positions responsible_pos ON responsible_pos.id = ti.responsible_position_id
+     WHERE ti.id = ?
+       AND t.process_definition_id = ?
+       AND (
+         t.created_by_user_id = ?
+         OR ti.target_person_id = ?
+         OR ti.assigned_person_id = ?
+         OR EXISTS (
+           SELECT 1
+           FROM task_assignments ta
+           LEFT JOIN position_assignments pa
+             ON pa.position_id = ta.position_id
+            AND pa.is_current = 1
+            AND pa.person_id = ?
+           WHERE ta.task_id = t.id
+             AND (
+               ta.assigned_person_id = ?
+               OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
+             )
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM documents d
+           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
+           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+           WHERE d.task_item_id = ti.id
+             AND fr.assigned_person_id = ?
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM documents d
+           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
+           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+           WHERE d.task_item_id = ti.id
+             AND sr.assigned_person_id = ?
+         )
+     )
+     LIMIT 1`,
+    [taskItemId, definitionId, userId, userId, userId, userId, userId, userId, userId, userId]
+  );
+  return rows?.[0] || null;
+};
+
+export const getAccessibleTaskItemDocumentForUser = async (
+  pool,
+  userId,
+  definitionId,
+  taskItemId,
+  { documentId = null } = {}
+) => {
+  const taskItem = await getAccessibleTaskItemForUser(pool, userId, definitionId, taskItemId);
+  if (!taskItem) {
+    return null;
+  }
+
+  const params = [taskItemId];
+  const documentFilter = documentId ? "AND d.id = ?" : "";
+  if (documentId) {
+    params.push(Number(documentId));
+  }
+
+  const [rows] = await pool.query(
+    `SELECT
+       d.id AS document_id,
+       d.task_item_id,
+       d.owner_person_id,
+       d.origin_unit_id,
+       COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
+       d.status AS document_status,
+       dv.id AS document_version_id,
+       dv.status AS document_version_status,
+       dv.version AS document_version,
+       dv.working_file_path,
+       dv.final_file_path,
+       (
+         SELECT COUNT(*)
+         FROM document_versions dv_seq
+         WHERE dv_seq.document_id = d.id
+           AND dv_seq.id <= dv.id
+       ) AS document_version_sequence
+     FROM documents d
+     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     INNER JOIN document_versions dv ON dv.document_id = d.id
+     INNER JOIN (
+       SELECT document_id, MAX(version) AS max_version
+       FROM document_versions
+       GROUP BY document_id
+     ) latest
+       ON latest.document_id = dv.document_id
+      AND latest.max_version = dv.version
+     WHERE d.task_item_id = ?
+       ${documentFilter}
+     ORDER BY d.id DESC`,
+    params
+  );
+
+  const documentRows = rows || [];
+  const selectedDocument = documentRows[0] || null;
+  return {
+    ...taskItem,
+    document_count: documentRows.length,
+    document_id: selectedDocument?.document_id || null,
+    owner_person_id: selectedDocument?.owner_person_id || null,
+    origin_unit_id: selectedDocument?.origin_unit_id || null,
+    origin_unit_label: selectedDocument?.origin_unit_label || null,
+    document_status: selectedDocument?.document_status || null,
+    document_version_id: selectedDocument?.document_version_id || null,
+    document_version_status: selectedDocument?.document_version_status || null,
+    document_version: selectedDocument?.document_version || null,
+    working_file_path: selectedDocument?.working_file_path || null,
+    final_file_path: selectedDocument?.final_file_path || null,
+    document_version_sequence: selectedDocument?.document_version_sequence || null
+  };
+};
+
+export const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       sr.id,
+       sr.requested_at,
+       sr.responded_at,
+       srs.name AS status_name,
+       sfs.step_order,       tar_dl.display_name AS template_artifact_name,
+       d.id AS document_id,
+       dv.id AS document_version_id,
+       dv.version AS document_version
+     FROM signature_requests sr
+     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+     INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+     INNER JOIN documents d ON d.id = dv.document_id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN tasks t ON t.id = ti.task_id
+     INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     WHERE sr.assigned_person_id = ?
+       AND t.process_definition_id = ?
+       AND LOWER(COALESCE(dv.status, '')) IN (
+         'listo para firma',
+         'pendiente de firma',
+         'firmado',
+         'firmado parcial',
+         'firmado completo'
+       )
+     ORDER BY sr.responded_at IS NOT NULL ASC, sr.requested_at DESC, sr.id DESC
+     LIMIT 12`,
+    [userId, definitionId]
+  );
+  return rows;
+};
+
+export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       sfi.document_version_id,
+       sr.id,
+       sr.assigned_person_id,
+       sr.requested_at,
+       sr.responded_at,
+       srs.code AS request_status_code,
+       srs.name AS status_name,
+       sfs.step_order,       c.name AS cargo_name,
+       tar_dl.display_name AS template_artifact_name,
+       d.id AS document_id,
+       dv.id AS document_version_id,
+       dv.version AS document_version,
+       TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name
+     FROM signature_flow_instances sfi
+     INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+     INNER JOIN documents d ON d.id = dv.document_id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+     LEFT JOIN persons p ON p.id = sr.assigned_person_id
+     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
+     WHERE sfi.document_version_id IN (${placeholders})
+     ORDER BY sfi.document_version_id ASC, sfs.step_order ASC, sr.id ASC`,
+    documentVersionIds
+  );
+  return rows;
+};
+
+export const getSignatureWorkflowStepsForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       dv_context.document_version_id,
+       sfs.id,
+       sfs.template_id,
+       sfs.step_order,
+       sfs.code,
+       sfs.name,
+       sfs.slot,
+       sfs.resolver_type,
+       sfs.selection_mode,
+       sfs.approval_mode,
+       sfs.required_signers_min,
+       sfs.required_signers_max,
+       sfs.is_required,
+       c.code AS cargo_code,
+       c.name AS cargo_name
+     FROM (
+       SELECT
+         dv.id AS document_version_id,
+         COALESCE(
+           (
+             SELECT sft.id
+             FROM documents d2
+             INNER JOIN task_items ti2 ON ti2.id = d2.task_item_id
+             INNER JOIN signature_flow_templates sft
+               ON sft.process_definition_template_id = ti2.process_definition_template_id
+              AND sft.is_active = 1
+             WHERE d2.id = dv.document_id
+             ORDER BY sft.id DESC
+             LIMIT 1
+           ),
+           (
+             SELECT sfi.template_id
+             FROM signature_flow_instances sfi
+             WHERE sfi.document_version_id = dv.id
+             ORDER BY sfi.id DESC
+             LIMIT 1
+           )
+         ) AS signature_template_id
+       FROM document_versions dv
+       WHERE dv.id IN (${placeholders})
+     ) dv_context
+     INNER JOIN signature_flow_steps sfs ON sfs.template_id = dv_context.signature_template_id     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
+     ORDER BY dv_context.document_version_id ASC, sfs.step_order ASC, sfs.id ASC`,
+    documentVersionIds
+  );
+  return rows;
+};
+
+export const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionId) => {
+  const [rows] = await pool.query(
+    `SELECT
+       fr.id,
+       fr.requested_at,
+       fr.responded_at,
+       fr.status AS status_name,
+       ffs.step_order,
+       tar_dl.display_name AS template_artifact_name,
+       d.id AS document_id,
+       dv.id AS document_version_id,
+       dv.version AS document_version
+     FROM fill_requests fr
+     INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+     INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
+     INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+     INNER JOIN documents d ON d.id = dv.document_id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN tasks t ON t.id = ti.task_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     WHERE fr.assigned_person_id = ?
+       AND t.process_definition_id = ?
+       AND LOWER(COALESCE(dv.status, '')) IN (
+         'pendiente de llenado',
+         'en llenado',
+         'en revisión de llenado',
+         'observado'
+       )
+     ORDER BY fr.responded_at IS NOT NULL ASC, fr.requested_at DESC, fr.id DESC
+     LIMIT 12`,
+    [userId, definitionId]
+  );
+  return rows;
+};
+
+export const getAttachmentsForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT id, document_version_id, kind, file_path, file_name, mime_type,
+            size_bytes, description, uploaded_by_person_id, sort_order, created_at
+     FROM document_attachments
+     WHERE document_version_id IN (${placeholders})
+     ORDER BY sort_order ASC, id ASC`,
+    documentVersionIds
+  );
+  return rows || [];
+};
+
+export const getFillWorkflowStepsForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       dff.document_version_id,
+       dff.status AS fill_flow_status,
+       dff.current_step_order,
+       ffs.id AS fill_flow_step_id,
+       ffs.step_order,
+       ffs.resolver_type,
+       ffs.selection_mode,
+       ffs.is_required,
+       ffs.can_reject,
+       fr.id AS fill_request_id,
+       fr.assigned_person_id,
+       fr.is_manual,
+       fr.status AS request_status,
+       fr.requested_at,
+       fr.responded_at,
+       fr.response_note,
+       TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name,
+       c.name AS cargo_name,
+       up.title AS position_title,
+       u.name AS unit_name,
+       ut.name AS unit_type_name
+     FROM document_fill_flows dff
+     INNER JOIN fill_flow_steps ffs ON ffs.fill_flow_template_id = dff.fill_flow_template_id
+     LEFT JOIN fill_requests fr
+       ON fr.document_fill_flow_id = dff.id
+      AND fr.fill_flow_step_id = ffs.id
+     LEFT JOIN persons p ON p.id = COALESCE(fr.assigned_person_id, ffs.assigned_person_id)
+     LEFT JOIN cargos c ON c.id = ffs.cargo_id
+     LEFT JOIN unit_positions up ON up.id = ffs.position_id
+     LEFT JOIN units u ON u.id = ffs.unit_id
+     LEFT JOIN unit_types ut ON ut.id = ffs.unit_type_id
+     WHERE dff.document_version_id IN (${placeholders})
+     ORDER BY dff.document_version_id ASC, ffs.step_order ASC, fr.id ASC`,
+    documentVersionIds
+  );
+  return rows;
+};
+
+export const getUserOperationalProcessRows = async (pool, userId) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT
+       operational.process_id,
+       operational.process_name,
+       operational.process_slug,
+       operational.process_definition_id,
+       operational.variation_key,
+       operational.definition_version,
+       operational.source_position_id,
+       operational.source_cargo_id,
+       operational.source_unit_id,
+       operational.source_unit_type_id
+     FROM (
+       SELECT
+         p.id AS process_id,
+         p.name AS process_name,
+         p.slug AS process_slug,
+         pdv.id AS process_definition_id,
+         pdv.variation_key,
+         pdv.definition_version,
+         COALESCE(ffs.position_id, fill_assignee_position.id) AS source_position_id,
+         COALESCE(fill_position.cargo_id, ffs.cargo_id, fill_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(fill_position.unit_id, ffs.unit_id, fill_assignee_position.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(fill_unit.unit_type_id, ffs.unit_type_id, fill_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
+       FROM fill_requests fr
+       INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+       INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
+       INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+       INNER JOIN (
+         SELECT document_id, MAX(version) AS max_version
+         FROM document_versions
+         GROUP BY document_id
+       ) latest_fill_dv
+         ON latest_fill_dv.document_id = dv.document_id
+        AND latest_fill_dv.max_version = dv.version
+       INNER JOIN documents d ON d.id = dv.document_id
+       INNER JOIN task_items ti ON ti.id = d.task_item_id
+       INNER JOIN tasks t ON t.id = ti.task_id
+       INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       INNER JOIN processes p ON p.id = pdv.process_id
+       LEFT JOIN (
+         SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
+         FROM position_assignments
+         WHERE is_current = 1
+         GROUP BY person_id
+       ) fill_assignee_ctx
+         ON fill_assignee_ctx.person_id = fr.assigned_person_id
+       LEFT JOIN unit_positions fill_position ON fill_position.id = ffs.position_id
+       LEFT JOIN unit_positions fill_assignee_position
+         ON fill_assignee_position.id = fill_assignee_ctx.position_id
+        AND fill_assignee_ctx.total_positions = 1
+       LEFT JOIN units fill_unit ON fill_unit.id = COALESCE(fill_position.unit_id, ffs.unit_id)
+       LEFT JOIN units fill_assignee_unit ON fill_assignee_unit.id = fill_assignee_position.unit_id
+       LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
+       LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
+       LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
+       LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
+       WHERE fr.assigned_person_id = ?
+         AND pdv.status = 'active'
+         AND pdv.effective_from <= CURDATE()
+         AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
+         AND p.is_active = 1
+         AND LOWER(COALESCE(dv.status, '')) IN (
+           'pendiente de llenado',
+           'en llenado',
+           'en revisión de llenado',
+           'observado',
+           'listo para firma',
+           'pendiente de firma',
+           'firmado parcial'
+         )
+
+       UNION ALL
+
+       SELECT
+         p.id AS process_id,
+         p.name AS process_name,
+         p.slug AS process_slug,
+         pdv.id AS process_definition_id,
+         pdv.variation_key,
+         pdv.definition_version,
+         COALESCE(sfs.position_id, signature_assignee_position.id) AS source_position_id,
+         COALESCE(signature_position.cargo_id, sfs.required_cargo_id, signature_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(signature_position.unit_id, sfs.unit_id, signature_assignee_position.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(signature_unit.unit_type_id, sfs.unit_type_id, signature_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
+       FROM signature_requests sr
+       INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+       INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+       INNER JOIN (
+         SELECT document_id, MAX(version) AS max_version
+         FROM document_versions
+         GROUP BY document_id
+       ) latest_signature_dv
+         ON latest_signature_dv.document_id = dv.document_id
+        AND latest_signature_dv.max_version = dv.version
+       INNER JOIN documents d ON d.id = dv.document_id
+       INNER JOIN task_items ti ON ti.id = d.task_item_id
+       INNER JOIN tasks t ON t.id = ti.task_id
+       INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       INNER JOIN processes p ON p.id = pdv.process_id
+       LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
+       LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+       LEFT JOIN (
+         SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
+         FROM position_assignments
+         WHERE is_current = 1
+         GROUP BY person_id
+       ) signature_assignee_ctx
+         ON signature_assignee_ctx.person_id = sr.assigned_person_id
+       LEFT JOIN unit_positions signature_position ON signature_position.id = sfs.position_id
+       LEFT JOIN unit_positions signature_assignee_position
+         ON signature_assignee_position.id = signature_assignee_ctx.position_id
+        AND signature_assignee_ctx.total_positions = 1
+       LEFT JOIN units signature_unit ON signature_unit.id = COALESCE(signature_position.unit_id, sfs.unit_id)
+       LEFT JOIN units signature_assignee_unit ON signature_assignee_unit.id = signature_assignee_position.unit_id
+       LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
+       LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
+       LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
+       LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
+       WHERE sr.assigned_person_id = ?
+         AND pdv.status = 'active'
+         AND pdv.effective_from <= CURDATE()
+         AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
+         AND p.is_active = 1
+         AND LOWER(COALESCE(dv.status, '')) IN (
+           'listo para firma',
+           'pendiente de firma',
+           'firmado parcial'
+         )
+     ) operational
+     ORDER BY operational.process_name ASC, operational.process_definition_id ASC`,
+    [userId, userId]
+  );
+  return rows;
+};
+
+export const getCustomTermType = async (connection) => {
+  const [rows] = await connection.query(
+    `SELECT id, code, name
+     FROM term_types
+     WHERE code = 'CUS'
+     LIMIT 1`
+  );
+  return rows[0] || null;
+};
+
+
+const GENERAL_PROCESS_SLUG = "default";
+
+export const getActiveGeneralDefinition = async (conn) => {
+  const [rows] = await conn.query(
+    `SELECT pdv.id
+     FROM process_definition_versions pdv
+     INNER JOIN processes p ON p.id = pdv.process_id
+     WHERE p.slug = ? AND pdv.status = 'active'
+     ORDER BY pdv.id DESC
+     LIMIT 1`,
+    [GENERAL_PROCESS_SLUG]
+  );
+  return rows?.[0]?.id ? Number(rows[0].id) : null;
+};
+
+// Resuelve la posición vigente del usuario en una unidad concreta.
+export const resolveUserPositionInUnit = async (conn, personId, unitId) => {
+  if (!unitId) return null;
+  const [rows] = await conn.query(
+    `SELECT up.id
+     FROM position_assignments pa
+     INNER JOIN unit_positions up ON up.id = pa.position_id
+     WHERE pa.person_id = ? AND pa.is_current = 1 AND up.unit_id = ?
+     ORDER BY up.id ASC
+     LIMIT 1`,
+    [personId, unitId]
+  );
+  return rows?.[0]?.id ? Number(rows[0].id) : null;
+};
+
