@@ -67,6 +67,7 @@ const getActiveUserPositions = async (pool, userId) => {
     `SELECT DISTINCT
        up.id AS position_id,
        up.title AS position_title,
+       up.slot_no,
        u.id AS unit_id,
        u.name AS unit_name,
        u.label AS unit_label,
@@ -1886,6 +1887,7 @@ export const getUserMenu = async (req, res) => {
          pdv.variation_key,
          pdv.definition_version,
          ptr.id AS rule_id,
+         ptr.priority,
          ptr.unit_scope_type,
          ptr.unit_id,
          ptr.unit_type_id,
