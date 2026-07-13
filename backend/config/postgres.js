@@ -297,6 +297,10 @@ export function rewriteDialect(code) {
   // `SELECT ... FROM DUAL` es una tabla ficticia de MySQL/Oracle. PostgreSQL admite el
   // SELECT sin FROM, así que basta con eliminar la cláusula.
   c = c.replace(/\bFROM\s+DUAL\b/gi, "");
+  // `<=>` es la igualdad NULL-safe de MySQL (NULL <=> NULL es TRUE). PostgreSQL no la
+  // tiene: el equivalente es IS NOT DISTINCT FROM. Sin esto, `term_id <=> ?` explota con
+  // "operator does not exist: integer <=> unknown" y tumbaba el lanzamiento de procesos.
+  c = c.replace(/\s*<=>\s*/g, " IS NOT DISTINCT FROM ");
   c = c.replace(/SET\s+FOREIGN_KEY_CHECKS\s*=\s*0/gi, "SET session_replication_role = replica");
   c = c.replace(/SET\s+FOREIGN_KEY_CHECKS\s*=\s*1/gi, "SET session_replication_role = origin");
   // INSERT IGNORE INTO ... -> INSERT INTO ... ON CONFLICT DO NOTHING

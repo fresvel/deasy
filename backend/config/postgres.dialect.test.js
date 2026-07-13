@@ -8,8 +8,10 @@
 //   - `FROM DUAL` sin traducir rompía el bootstrap del sistema.
 //   - `FIELD()` sin traducir rompía el grafo de procesos, el detalle de proceso y
 //     los procesos de una unidad ("function field(text, unknown...) does not exist").
+//   - `<=>` (igualdad NULL-safe) sin traducir rompía el LANZAMIENTO de procesos
+//     ("operator does not exist: integer <=> unknown").
 //
-// Ambos casos están fijados abajo como regresión.
+// Los tres casos están fijados abajo como regresión.
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -101,6 +103,27 @@ test("translateDialect traduce CURDATE y UNIX_TIMESTAMP", () => {
 test("translateDialect traduce SET FOREIGN_KEY_CHECKS", () => {
   assert.equal(translateDialect("SET FOREIGN_KEY_CHECKS = 0"), "SET session_replication_role = replica");
   assert.equal(translateDialect("SET FOREIGN_KEY_CHECKS = 1"), "SET session_replication_role = origin");
+});
+
+// Regresión: `<=>` (igualdad NULL-safe de MySQL) sin traducir rompía el LANZAMIENTO de
+// procesos por completo: "operator does not exist: integer <=> unknown".
+// El equivalente en PostgreSQL es IS NOT DISTINCT FROM. Aparecía en TaskGenerationService
+// como `term_id <=> ?` (term_id es nullable, por eso la comparación null-safe).
+test("translateDialect traduce <=> a IS NOT DISTINCT FROM (regresión del lanzamiento)", () => {
+  assert.equal(
+    translateDialect("SELECT 1 FROM process_runs WHERE process_definition_id = ? AND term_id <=> ?"),
+    "SELECT 1 FROM process_runs WHERE process_definition_id = ? AND term_id IS NOT DISTINCT FROM ?"
+  );
+});
+
+test("translateDialect normaliza el espaciado alrededor de <=>", () => {
+  assert.equal(translateDialect("WHERE a<=>b"), "WHERE a IS NOT DISTINCT FROM b");
+  assert.equal(translateDialect("WHERE a   <=>   b"), "WHERE a IS NOT DISTINCT FROM b");
+});
+
+test("translateDialect NO toca un <=> dentro de un literal", () => {
+  const sql = "SELECT 'a <=> b' AS texto WHERE x <=> ?";
+  assert.equal(translateDialect(sql), "SELECT 'a <=> b' AS texto WHERE x IS NOT DISTINCT FROM ?");
 });
 
 // Regresión: `FROM DUAL` rompía el bootstrap ("relation \"dual\" does not exist").
