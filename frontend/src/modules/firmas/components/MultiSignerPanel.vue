@@ -394,6 +394,9 @@ import {
   IconAlertCircle,
   IconDragDrop,
   IconSignature,
+  // Se usaba en la plantilla (linea ~104) SIN importarlo: Vue no podia resolver el
+  // componente, lo avisaba por consola y no pintaba nada donde deberia ir el icono.
+  IconInfoCircle,
   IconX,
 } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
