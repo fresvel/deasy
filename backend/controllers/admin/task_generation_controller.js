@@ -14,7 +14,7 @@ export const generateTasksForTermController = async (req, res) => {
     const result = await generateTasksForTerm(termId);
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode ?? 500).json({
       message: "Error al generar tareas para el periodo.",
       error: error.message
     });
@@ -43,7 +43,10 @@ export const launchProcessDefinitionController = async (req, res) => {
     });
     return res.json(result);
   } catch (error) {
-    return res.status(400).json({
+    // Este catch tenia un 400 HARDCODEADO: era el unico de los cuatro endpoints de
+    // lanzamiento que no devolvia 500 ante "no encontrado" — devolvia 400. Ni uno ni otro:
+    // ahora respeta el codigo del error de negocio (404 si la configuracion no existe).
+    return res.status(error.statusCode ?? 400).json({
       message: "Error al lanzar la configuracion en el periodo.",
       error: error.message
     });
@@ -60,7 +63,7 @@ export const getDefinitionLaunchInfoController = async (req, res) => {
     const result = await getDefinitionLaunchInfo(definitionId);
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode ?? 500).json({
       message: "Error al obtener la informacion de lanzamiento de la configuracion.",
       error: error.message
     });
@@ -77,7 +80,7 @@ export const getTermLaunchStatusController = async (req, res) => {
     const result = await getTermLaunchStatus(termId);
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode ?? 500).json({
       message: "Error al obtener el estado de lanzamiento del periodo.",
       error: error.message
     });

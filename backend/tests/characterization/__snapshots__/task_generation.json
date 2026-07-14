@@ -12,14 +12,14 @@
     }
   },
   "generate_tasks_periodo_inexistente": {
-    "status": 500,
+    "status": 404,
     "body": {
       "error": "Periodo no encontrado.",
       "message": "Error al generar tareas para el periodo."
     }
   },
   "launch_definicion_inexistente": {
-    "status": 400,
+    "status": 404,
     "body": {
       "error": "La configuracion de proceso no existe.",
       "message": "Error al lanzar la configuracion en el periodo."
@@ -54,7 +54,7 @@
     }
   },
   "launch_info_definicion_inexistente": {
-    "status": 500,
+    "status": 404,
     "body": {
       "error": "La configuracion de proceso no existe.",
       "message": "Error al obtener la informacion de lanzamiento de la configuracion."
@@ -124,7 +124,7 @@
     }
   },
   "launch_status_periodo_inexistente": {
-    "status": 500,
+    "status": 404,
     "body": {
       "error": "Periodo no encontrado.",
       "message": "Error al obtener el estado de lanzamiento del periodo."

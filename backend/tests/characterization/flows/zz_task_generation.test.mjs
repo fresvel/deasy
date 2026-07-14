@@ -16,16 +16,15 @@
 // Dentro del fichero el orden TAMBIÉN importa: primero se fijan los estados "antes de
 // lanzar", luego se lanza, luego el "después".
 //
-// 🔶 DEFECTO FIJADO TAL CUAL (no corregido aquí): el "no encontrado" es incoherente
-// entre endpoints. /launch devuelve 400 ante una definición inexistente, mientras
-// /launch-info, /launch-status y /generate-tasks devuelven 500 ante term/definición
-// inexistente (la excepción "Periodo no encontrado." cae en el catch genérico). Lo
-// correcto seria 404 en los cuatro. Se captura el comportamiento ACTUAL para que el
-// refactor no lo altere; cambiarlo es una decision de contrato aparte.
+// ✅ DEFECTO YA CORREGIDO (commit del arreglo de codigos de estado). Estos tests fijaban
+// el comportamiento roto: el "no encontrado" salia como 500 (la excepcion caia en el catch
+// generico) y /launch como 400. Ahora los cuatro endpoints devuelven 404, y el resto de
+// excepciones de negocio llevan su codigo (403 "no puedes", 409 "ya esta iniciado") via
+// errors/HttpError.js. Estos casos son ahora la regresion que impide volver al 500.
 
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { get, post } from "../lib/http.mjs";
+import { get, post, put } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { snapshotShape } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
@@ -65,21 +64,24 @@ test("GET /admin/process-definitions/:id/launch-info (sin lanzar) -> términos d
 
 // ─── 2. Rutas de error (NO mutan) — fijan el defecto de status descrito arriba ───
 
-test("GET /admin/terms/:termId/launch-status con periodo inexistente -> 500 (deberia ser 404)", async () => {
+test("GET /admin/terms/:termId/launch-status con periodo inexistente -> 404", async () => {
   const token = await tokenFor("admin");
   const res = await get("/admin/terms/999999/launch-status", { token });
+  assert.equal(res.status, 404, "un periodo inexistente es 404, no un error de servidor");
   matchSnapshot(SUITE, "launch_status_periodo_inexistente", snapshotShape(res, OBJ_OPTS));
 });
 
-test("GET /admin/process-definitions/:id/launch-info inexistente -> 500 (deberia ser 404)", async () => {
+test("GET /admin/process-definitions/:id/launch-info inexistente -> 404", async () => {
   const token = await tokenFor("admin");
   const res = await get("/admin/process-definitions/999999/launch-info", { token });
+  assert.equal(res.status, 404, "una definicion inexistente es 404, no un error de servidor");
   matchSnapshot(SUITE, "launch_info_definicion_inexistente", snapshotShape(res, OBJ_OPTS));
 });
 
-test("POST /admin/process-definitions/:id/launch inexistente -> 400 (incoherente con los GET)", async () => {
+test("POST /admin/process-definitions/:id/launch inexistente -> 404", async () => {
   const token = await tokenFor("admin");
   const res = await post("/admin/process-definitions/999999/launch", { token, body: { term_id: TERM_ID } });
+  assert.equal(res.status, 404, "coherente con los GET: definicion inexistente = 404 (antes daba 400)");
   matchSnapshot(SUITE, "launch_definicion_inexistente", snapshotShape(res, OBJ_OPTS));
 });
 
@@ -89,9 +91,10 @@ test("POST /admin/process-definitions/:id/launch sin term_id -> 400", async () =
   matchSnapshot(SUITE, "launch_sin_term", snapshotShape(res, OBJ_OPTS));
 });
 
-test("POST /admin/terms/:termId/generate-tasks con periodo inexistente -> 500 (deberia ser 404)", async () => {
+test("POST /admin/terms/:termId/generate-tasks con periodo inexistente -> 404", async () => {
   const token = await tokenFor("admin");
   const res = await post("/admin/terms/999999/generate-tasks", { token });
+  assert.equal(res.status, 404, "un periodo inexistente es 404, no un error de servidor");
   matchSnapshot(SUITE, "generate_tasks_periodo_inexistente", snapshotShape(res, OBJ_OPTS));
 });
 
@@ -132,6 +135,56 @@ test("POST /admin/terms/:termId/generate-tasks -> generacion automatica idempote
   const token = await tokenFor("admin");
   const res = await post(`/admin/terms/${TERM_ID}/generate-tasks`, { token });
   matchSnapshot(SUITE, "generate_tasks_ok", snapshotShape(res, OBJ_OPTS));
+});
+
+// ─── 3-bis. Códigos de estado de las excepciones de negocio ───
+//
+// Defecto sistémico corregido: TODA excepción de negocio caía en el catch genérico y salía
+// como 500 con el mensaje interno en crudo. Un entregable ya iniciado, una solicitud de otra
+// persona y un periodo inexistente eran, los tres, "error de servidor". Eso miente al cliente,
+// ensucia la monitorización (un 500 deja de significar nada) e impide al frontend distinguir
+// "no existe" de "no puedes" de "ya está hecho". Ahora cada uno lleva su código (errors/HttpError.js).
+// El fixture base no tiene solicitudes de entrega de OTRAS personas (solo la ad-hoc de la
+// persona 3), así que el test construye la condición: reasigna temporalmente la solicitud a
+// otra persona, comprueba el 403 y la devuelve a su dueña.
+test("la solicitud de entrega de OTRA persona -> 403 (no 500)", async () => {
+  const admin = await tokenFor("admin");
+  const usuario = await tokenFor("usuario");
+
+  const reqs = await get("/admin/sql/fill_requests", { token: admin });
+  const filas = Array.isArray(reqs.body) ? reqs.body : reqs.body?.data ?? [];
+  const mia = filas.find((r) => Number(r.assigned_person_id) === USUARIO_ID);
+  assert.ok(mia, "no hay ninguna solicitud de entrega de la persona 3: ¿corrió el setup?");
+
+  const reasignar = (personId) => put("/admin/sql/fill_requests", {
+    token: admin,
+    body: { keys: { id: mia.id }, data: { assigned_person_id: personId } },
+  });
+
+  await reasignar(FIXTURE.gestorPersonId); // ahora es de OTRA persona
+  try {
+    const res = await post(`/sign/fill-requests/${mia.id}/start`, { token: usuario });
+    assert.equal(res.status, 403, "operar la solicitud de otro es 403, no un error de servidor");
+  } finally {
+    await reasignar(USUARIO_ID); // devolver a su dueña, pase lo que pase
+  }
+});
+
+test("re-iniciar un entregable YA iniciado -> 409 (no 500)", async () => {
+  const admin = await tokenFor("admin");
+  const usuario = await tokenFor("usuario");
+
+  const reqs = await get("/admin/sql/fill_requests", { token: admin });
+  const filas = Array.isArray(reqs.body) ? reqs.body : reqs.body?.data ?? [];
+  const mia = filas.find((r) => Number(r.assigned_person_id) === USUARIO_ID);
+  assert.ok(mia, "no hay ninguna solicitud de entrega de la persona 3");
+
+  // Primer start: puede ir bien (si estaba pendiente) o ser ya un 409 (si el setup la inició).
+  await post(`/sign/fill-requests/${mia.id}/start`, { token: usuario });
+
+  // El SEGUNDO start es el caso: el estado ya no admite la operación.
+  const res = await post(`/sign/fill-requests/${mia.id}/start`, { token: usuario });
+  assert.equal(res.status, 409, "un entregable ya iniciado es 409 (conflicto), no un error de servidor");
 });
 
 // ─── 4. REGRESIÓN DE SEGURIDAD: IDOR entre entregables de la misma tarea ───

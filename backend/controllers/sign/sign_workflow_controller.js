@@ -1,4 +1,5 @@
 import UserRepository from "../../services/auth/UserRepository.js";
+import { forbidden, conflict } from "../../errors/HttpError.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import { FILL_REQUEST_STATUS } from "../../services/documents/DocumentWorkflowCatalog.js";
 import { syncDocumentProgressFromFillRequest } from "../../services/documents/DocumentProgressService.js";
@@ -119,7 +120,7 @@ const assertFillActionAllowed = ({ action, currentStatus, assignedPersonId, curr
   const normalizedStatus = String(currentStatus || "").trim().toLowerCase();
 
   if (assignedPersonId && Number(assignedPersonId) !== Number(currentUserId)) {
-    throw new Error("No puedes operar una solicitud de entrega asignada a otro usuario.");
+    throw forbidden("No puedes operar una solicitud de entrega asignada a otro usuario.");
   }
 
   if (!assignedPersonId && !isManual) {
@@ -135,7 +136,7 @@ const assertFillActionAllowed = ({ action, currentStatus, assignedPersonId, curr
   };
 
   if (!allowedByAction[action]?.has(normalizedStatus)) {
-    throw new Error(`La solicitud no puede pasar de ${currentStatus} usando la acción ${action}.`);
+    throw conflict(`La solicitud no puede pasar de ${currentStatus} usando la acción ${action}.`);
   }
 };
 
@@ -235,7 +236,8 @@ const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
   } catch (error) {
     await connection.rollback();
     console.error("[sign_workflow_controller] Error fill request:", error);
-    return res.status(500).json({ error: error.message || "No se pudo actualizar la solicitud de entrega." });
+    // Respeta el codigo de negocio (403/409/...). Sin statusCode -> 500 de verdad.
+    return res.status(error.statusCode ?? 500).json({ error: error.message || "No se pudo actualizar la solicitud de entrega." });
   } finally {
     connection.release();
   }

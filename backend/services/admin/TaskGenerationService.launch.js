@@ -7,6 +7,7 @@
 // lo traduce config/postgres.js. Sin esa traducción, lanzar un proceso devuelve 400
 // ("operator does not exist: integer <=> unknown") y la función queda MUERTA.
 import { getPostgresPool } from "../../config/postgres.js";
+import { notFound } from "../../errors/HttpError.js";
 import {
   getTermById,
   getActiveAutomaticDefinitions,
@@ -97,7 +98,7 @@ export const hydrateTaskFromDefinition = async ({
 }) => {
   const term = await getTermById(connection, termId);
   if (!term) {
-    throw new Error("Periodo no encontrado.");
+    throw notFound("Periodo no encontrado.");
   }
 
   const templatesMap = executableTemplatesMap || await getExecutableTemplatesMap(connection);
@@ -297,7 +298,7 @@ export const generateTasksForTerm = async (termId) => {
     await connection.beginTransaction();
 
     const term = await getTermById(connection, termId);
-    if (!term) throw new Error("Periodo no encontrado.");
+    if (!term) throw notFound("Periodo no encontrado.");
 
     const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
     const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
@@ -362,7 +363,7 @@ export const launchProcessDefinitionInTerm = async (definitionId, termId, {
     await connection.beginTransaction();
 
     const term = await getTermById(connection, termId);
-    if (!term) throw new Error("Periodo no encontrado.");
+    if (!term) throw notFound("Periodo no encontrado.");
 
     const [defRows] = await connection.query(
       `SELECT pdv.id, pdv.status
@@ -372,7 +373,7 @@ export const launchProcessDefinitionInTerm = async (definitionId, termId, {
       [definitionId]
     );
     const definition = defRows?.[0];
-    if (!definition) throw new Error("La configuracion de proceso no existe.");
+    if (!definition) throw notFound("La configuracion de proceso no existe.");
     if (String(definition.status || "") !== "active") {
       throw new Error("Solo se pueden lanzar configuraciones activas.");
     }
@@ -413,7 +414,7 @@ export const getTermLaunchStatus = async (termId) => {
   const connection = await pool.getConnection();
   try {
     const term = await getTermById(connection, termId);
-    if (!term) throw new Error("Periodo no encontrado.");
+    if (!term) throw notFound("Periodo no encontrado.");
 
     const [defs] = await connection.query(
       `SELECT pdv.id, pdv.name
@@ -472,7 +473,7 @@ export const getDefinitionLaunchInfo = async (definitionId) => {
       "SELECT id, name, status FROM process_definition_versions WHERE id = ? LIMIT 1",
       [definitionId]
     );
-    if (!definition) throw new Error("La configuracion de proceso no existe.");
+    if (!definition) throw notFound("La configuracion de proceso no existe.");
 
     const [periodTypes] = await connection.query(
       `SELECT pdp.term_type_id, tt.code AS term_type_code, tt.name AS term_type_name
