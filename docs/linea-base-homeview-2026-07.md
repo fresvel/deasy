@@ -33,6 +33,8 @@ HomeView.vue (7445 L) antes de partirlo: si algo de aquí cambia tras el refacto
 | **B2** | La pestaña FIRMAS mentía | ✅ `638eec1` — texto corregido |
 | **B3** | Aside fijo en la primera unidad | ✅ `638eec1` — selector de unidad restaurado |
 | **B4** | Tarjeta con "Iniciar" ya iniciada | ✅ **falsa alarma**: era el usuario probando en su propia sesión |
+| **B5** | El aside **flotaba sobre** el contenido y lo hacía inaccesible | ✅ `be2867f` — ahora es una columna que **desplaza** el contenido |
+| **B6** | `IconInfoCircle` usado sin importar en `MultiSignerPanel` | ✅ `b5c6fbf` — Vue no podía resolver el componente |
 
 Detalle histórico de cada uno, abajo.
 
@@ -78,7 +80,29 @@ UI **sí** actualiza el botón correctamente (verificado).
 tiene formato `jinja2`, que está **excluido a propósito** de las descargas (es el código fuente de la
 plantilla). No hay PDF/DOCX generado que servir. Pasaría igual con la plantilla original del bootstrap.
 
-## ⬜ Sin verificar todavía
+## ✅ Cadena completa entrega → firma (verificada end-to-end)
 
-Subir un PDF de verdad · flujo *routed* completo (flow-builder, destinatarios, envío) · bandejas
-"Mis envíos" / "Recibidos" · firma real de un documento.
+| # | Comportamiento | Evidencia |
+|---|---|---|
+| 10 | **Subir un PDF real** | Objeto en MinIO con la ruta canónica `9/PROCESOS/2/ANIOS/1900/.../v0001/working/pdf/...` — la que construyen `buildCanonicalDocumentVersionBasePath` + `buildWorkingObjectPathForUpload`, **las primitivas extraídas en M1** |
+| 11 | **Enviar** (completar la entrega) | *"El envío del entregable se completó correctamente"*; la tarjeta pasa a "Descargar PDF"/"Ver PDF" |
+| 12 | **El flujo de firma se materializa al enviar** | Documento → "Pendiente de firma"; 1 instancia + 1 solicitud |
+| 13 | **El firmante se resuelve por la regla** | La solicitud llega a **Coordinador E055**, resuelto por `cargo_in_scope` → Coordinador. Confirma que B2 era solo un texto engañoso: la config **sí** tenía pasos |
+| 14 | **Centro de firmas del firmante** | "1 firma(s) pendiente(s)"; la bandeja lista el documento con proceso/unidad/periodo/paso correctos |
+| 15 | **Subida de certificado .p12** | Certificado autofirmado cargado y listado |
+| 16 | **Multifirmador** | Abre y renderiza **el PDF subido** ("Informe de Gestión Docente"), 1 documento en cola |
+
+**Nota de alcance:** la firma criptográfica final (`Firmar lote masivo`) no llegó a ejecutarse — requiere
+colocar campos de firma y depende del microservicio Python + RabbitMQ. Eso es territorio de
+`FirmarPdf.vue` (2939 L), **otro God Object con su propio refactor**, no de HomeView. La cadena que
+alimenta HomeView está verificada hasta la bandeja del firmante.
+
+**El Coordinador NO ve el entregable en el panel del proceso** (0 tareas): no está asignado a la
+*tarea*, solo es firmante del *entregable*. Su vía es el Centro de firmas, y ahí sí aparece. Es el
+comportamiento de `getUserAccessibleTasksForDefinition` (nivel tarea), que **no** se tocó en el fix del
+IDOR.
+
+## ⬜ Sin verificar
+
+Flujo *routed* completo (flow-builder, destinatarios, envío) · bandejas "Mis envíos" / "Recibidos" ·
+firma criptográfica real.
