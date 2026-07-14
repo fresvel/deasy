@@ -1053,6 +1053,11 @@ export const downloadDeliverableTemplate = async (req, res) => {
               AND pa.is_current = 1
               AND pa.person_id = ?
              WHERE ta.task_id = t.id
+               -- Mismo guard que getAccessibleTaskItemForUser (ver el IDOR arreglado allí).
+               -- Aquí no hay fuga de datos (la plantilla es la misma para todos los entregables
+               -- de la configuración), pero se alinea el predicado para que no quede una copia
+               -- laxa que alguien reutilice como referencia.
+               AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
                AND (
                  ta.assigned_person_id = ?
                  OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)

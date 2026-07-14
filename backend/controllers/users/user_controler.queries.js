@@ -118,6 +118,10 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
           AND pa.is_current = 1
           AND pa.person_id = ?
          WHERE ta.task_id = t.id
+           -- Mismo IDOR que en getAccessibleTaskItemForUser: comprobar solo la asignación a la
+           -- TAREA hacía que cada responsable viera en su Centro Documental los documentos de
+           -- todos sus compañeros de la misma tarea (verificado: 15 de 18 eran ajenos).
+           AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
            AND (
              ta.assigned_person_id = ?
              OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
@@ -470,7 +474,7 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
   return rows;
 };
 
-export const getTaskItemsForTaskIds = async (pool, taskIds) => {
+export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
   if (!taskIds.length) {
     return [];
   }
@@ -523,6 +527,7 @@ export const getTaskItemsForTaskIds = async (pool, taskIds) => {
        COALESCE(target_unit.label, target_unit.name) AS target_unit_label,
        target_pos.title AS target_position_title
      FROM task_items ti
+     INNER JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
@@ -531,8 +536,50 @@ export const getTaskItemsForTaskIds = async (pool, taskIds) => {
      LEFT JOIN units target_unit ON target_unit.id = ti.target_unit_id
      LEFT JOIN unit_positions target_pos ON target_pos.id = ti.target_position_id
      WHERE ti.task_id IN (${placeholders})
+       -- El panel devolvía TODOS los task_items de la tarea. Como un proceso dirigido a un
+       -- cargo crea UN task_item por persona dentro de la MISMA tarea, cada responsable
+       -- recibía en el cliente los entregables de sus compañeros (nombre, estado, fechas).
+       -- El bloqueo era solo visual: la API los servía igual. Se filtra por participación,
+       -- con el mismo criterio que getAccessibleTaskItemForUser.
+       AND (
+         t.created_by_user_id = ?
+         OR ti.target_person_id = ?
+         OR ti.assigned_person_id = ?
+         OR EXISTS (
+           SELECT 1
+           FROM task_assignments ta
+           LEFT JOIN position_assignments pa
+             ON pa.position_id = ta.position_id
+            AND pa.is_current = 1
+            AND pa.person_id = ?
+           WHERE ta.task_id = ti.task_id
+             AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
+             AND (
+               ta.assigned_person_id = ?
+               OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
+             )
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM documents d
+           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
+           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+           WHERE d.task_item_id = ti.id
+             AND fr.assigned_person_id = ?
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM documents d
+           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
+           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+           WHERE d.task_item_id = ti.id
+             AND sr.assigned_person_id = ?
+         )
+       )
      ORDER BY ti.task_id ASC, ti.sort_order ASC, ti.id ASC`,
-    taskIds
+    [...taskIds, userId, userId, userId, userId, userId, userId, userId, userId]
   );
   return rows;
 };
@@ -700,6 +747,14 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
             AND pa.is_current = 1
             AND pa.person_id = ?
            WHERE ta.task_id = t.id
+             -- IDOR (arreglado): esta rama comprobaba SOLO la asignación a la TAREA. Pero un
+             -- proceso dirigido a un cargo crea UNA tarea por unidad con UN task_item por
+             -- persona, y TODOS sus responsables están asignados a esa MISMA tarea. Sin esta
+             -- línea, cualquier responsable pasaba el guard para el entregable de los demás y
+             -- podía descargar su documento (verificado: HTTP 200 con el PDF ajeno).
+             -- Si el entregable tiene responsable propio, la asignación debe ser LA SUYA.
+             -- Si no lo tiene (tarea de responsable único), se mantiene el alcance de tarea.
+             AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
              AND (
                ta.assigned_person_id = ?
                OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
