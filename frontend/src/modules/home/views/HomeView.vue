@@ -62,6 +62,34 @@
           </div>
 
           <div v-else class="deasy-nav-group mt-2">
+            <!--
+              Selector de UNIDAD. El aside solo muestra los cargos de UNA unidad, y al cargar se
+              fija en userUnits[0]. El control para cambiarla se habia borrado del template (su
+              logica quedo muerta y se limpio en 963aa3b), asi que quien pertenece a dos o mas
+              unidades NO podia alcanzar los procesos de las demas desde el aside.
+              Se restaura reusando selectUnitOption(), que sigue vivo: es el que usa loadUserMenu.
+              Solo aparece con mas de una unidad; con una sola no aporta nada.
+            -->
+            <div v-if="userUnits.length > 1" class="deasy-nav-shell mb-2">
+              <div class="deasy-nav-section">
+                <span class="deasy-nav-group-title block px-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Unidad
+                </span>
+                <AppButton
+                  v-for="unit in userUnits"
+                  :key="unit.id"
+                  variant="plain"
+                  class-name="deasy-nav-item"
+                  :class="{ 'deasy-nav-item--active': String(selectedGroupId) === String(unit.id) }"
+                  type="button"
+                  :title="unit.label || unit.name"
+                  @click="selectUnitOption(unit)"
+                >
+                  <span class="deasy-nav-item__label truncate">{{ unit.label || unit.name }}</span>
+                </AppButton>
+              </div>
+            </div>
+
             <div class="deasy-nav-shell">
               <div v-for="cargo in menuCargos" :key="cargo.id" class="deasy-nav-section">
               <AppButton
@@ -1720,7 +1748,7 @@
                 </AppTag>
               </div>
               <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
-                La configuración todavía no tiene pasos de firma visibles.
+                Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
               </div>
               <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div
@@ -2337,7 +2365,7 @@
               </AppTag>
             </div>
             <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
-              La configuración todavía no tiene pasos de firma visibles.
+              Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
