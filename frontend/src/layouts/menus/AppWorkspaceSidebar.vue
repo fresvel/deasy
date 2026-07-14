@@ -30,9 +30,11 @@
         :class="[
           'deasy-sidebar__flyout',
           containerClass,
+          // Cerrado en escritorio => xl:hidden (fuera del flujo), para que el contenido
+          // RECUPERE el espacio. Con invisible/opacity-0 seguia ocupando su columna.
           show
             ? 'xl:visible xl:translate-x-0 xl:opacity-100'
-            : 'xl:pointer-events-none xl:invisible xl:-translate-x-1 xl:opacity-0'
+            : 'xl:hidden'
         ]"
       >
         <div v-if="showLogo" class="mb-2 flex px-1 xl:hidden">

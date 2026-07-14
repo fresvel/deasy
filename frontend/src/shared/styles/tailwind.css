@@ -133,7 +133,7 @@
     }
 
     .deasy-sidebar {
-        @apply relative flex h-full min-h-0 w-full flex-col;
+        @apply relative flex h-full min-h-0 w-full flex-col xl:w-auto xl:flex-row;
     }
 
     .deasy-sidebar__rail {
@@ -144,9 +144,15 @@
         @apply flex h-full min-h-0 w-full flex-col gap-3 p-3;
     }
 
+    /* En escritorio el panel NO flota sobre el contenido: es una COLUMNA del layout.
+       Antes era `absolute left-full z-50`, asi que se superponia a la primera columna de
+       tarjetas y las hacia inalcanzables con el raton (el toggle si funcionaba, pero el
+       panel arranca abierto en escritorio). Ahora entra en el flujo: al abrirlo DESPLAZA el
+       contenido y al cerrarlo (xl:hidden en AppWorkspaceSidebar) el contenido recupera el
+       espacio. */
     @media (min-width: 1280px) {
         .deasy-sidebar__flyout {
-            @apply visible absolute left-full top-3 z-50 max-h-[calc(100vh-5rem)] w-[21.5rem] translate-x-0 overflow-y-auto rounded-2xl border p-3 opacity-100 shadow-[0_18px_44px_rgba(0,0,0,0.24)] [scrollbar-width:thin];
+            @apply visible relative h-full w-[21.5rem] shrink-0 translate-x-0 overflow-y-auto border-l p-3 opacity-100 [scrollbar-width:thin];
             border-color: rgba(255, 255, 255, 0.08);
             background: #0b2232;
         }
