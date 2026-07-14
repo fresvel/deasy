@@ -29,11 +29,15 @@ const SUITE = "user_workspace";
 // volátiles (infra) y los auto-increment derivan entre reseeds.
 // `requested_at` es la marca de tiempo de la solicitud de firma: la fija el reloj
 // de siembra, no la lógica (hermana de created_at/read_at, ya volátiles).
+// `effective_from/to` y `start_date/end_date` los fija el RELOJ DE SIEMBRA (el bootstrap los
+// pone a "hoy"), no la lógica. Sin enmascararlos, este golden es una bomba de relojería:
+// pasa el día que se captura y falla al siguiente, cuando cambia la fecha. Ya ocurrió.
 const STORAGE_MASK = [
   "working_file_path", "final_file_path", "payload_object_path", "payload_hash",
   "base_object_prefix", "schema_object_key", "meta_object_key",
   "url", "signedUrl", "downloadUrl", "path",
   "term_name", "requested_at",
+  "effective_from", "effective_to", "start_date", "end_date",
 ];
 
 // `available_terms` se DESCARTA del snapshot de objeto y se fija aparte (abajo) por

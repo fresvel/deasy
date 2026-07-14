@@ -40,6 +40,7 @@ const OBJ_OPTS = { extraMask: ["launched_at", "created_at", "term_name"], maskId
 
 const DEFINITION_ID = FIXTURE.definitionId; // 1 = "Proceso por defecto" (routed, Permanente)
 const TERM_ID = 1;                          // term sentinela "Permanente"
+const USUARIO_ID = FIXTURE.usuarioPersonId;
 
 before(async () => {
   await waitForReady();
@@ -131,4 +132,80 @@ test("POST /admin/terms/:termId/generate-tasks -> generacion automatica idempote
   const token = await tokenFor("admin");
   const res = await post(`/admin/terms/${TERM_ID}/generate-tasks`, { token });
   matchSnapshot(SUITE, "generate_tasks_ok", snapshotShape(res, OBJ_OPTS));
+});
+
+// ─── 4. REGRESIÓN DE SEGURIDAD: IDOR entre entregables de la misma tarea ───
+//
+// Un proceso dirigido a un CARGO crea UNA tarea por unidad con UN task_item por persona.
+// El guard de acceso comprobaba la asignación a la TAREA, no la propiedad del ENTREGABLE,
+// así que todos los responsables de una misma tarea podían leer (y DESCARGAR) el documento
+// de los demás. Verificado en su día: HTTP 200 devolviendo el PDF ajeno.
+//
+// El fixture base NO reproduce el escenario (no hay tareas multi-persona), así que el test
+// lo CONSTRUYE: añade a la tarea de la persona 3 un task_item cuyo responsable es OTRO
+// puesto, ocupado por otra persona. Si alguien relaja el predicado, esto vuelve a pasar.
+test("un usuario NO puede acceder al entregable de otro dentro de su misma tarea (IDOR)", async () => {
+  const admin = await tokenFor("admin");
+
+  // OJO con la elección de la tarea: NO vale la tarea ad-hoc de la persona 3, porque hay una
+  // rama LEGÍTIMA (`t.created_by_user_id = ?`) que da acceso a todos los ítems de una tarea
+  // que TÚ creaste (es tu envío). El IDOR vivía en las tareas LANZADAS POR EL SISTEMA, así
+  // que usamos una de esas (created_by NULL), que el test de lanzamiento de arriba ya creó.
+  const tareas = await get("/admin/sql/tasks", { token: admin });
+  const filas = Array.isArray(tareas.body) ? tareas.body : tareas.body?.data ?? [];
+  const tarea = filas.find(
+    (t) => t.created_by_user_id == null
+      && Number(t.process_definition_id) === DEFINITION_ID
+      && Number(t.scope_unit_id) === FIXTURE.unitId
+  );
+  assert.ok(tarea, "no hay tarea del sistema en la unidad del usuario: ¿corrió el lanzamiento?");
+
+  // Dos entregables en LA MISMA tarea: uno del usuario, otro de una persona distinta.
+  const crearItem = async (responsiblePositionId, titulo, sortOrder) => {
+    const res = await post("/admin/sql/task_items", {
+      token: admin,
+      body: {
+        task_id: tarea.id,
+        process_definition_template_id: 1, // exigido cuando origin_kind = process_defined
+        template_artifact_id: 1,           // obligatorio ("Plantilla documental")
+        start_date: "2026-01-01",       // obligatorio ("Inicio entregable")
+        responsible_position_id: responsiblePositionId,
+        // El indice unico uq_task_items_defined_target es (task, pdt, target_position, target_person):
+        // cada entregable debe apuntar a SU puesto, o los dos colisionan.
+        target_position_id: responsiblePositionId,
+        origin_kind: "process_defined",
+        sort_order: sortOrder,
+        title: titulo,
+      },
+    });
+    assert.ok(res.status < 400, `no pude crear el task_item: ${JSON.stringify(res.body)}`);
+    const id = res.body?.insertId ?? res.body?.id;
+    assert.ok(id, "sin id del task_item creado");
+    return Number(id);
+  };
+
+  const mioId = await crearItem(FIXTURE.unitPositionId, "Mi entregable (test IDOR)", 90);
+  const ajenoId = await crearItem(21, "Entregable de OTRA persona (test IDOR)", 91); // puesto de otra persona
+
+  const usuario = await tokenFor("usuario"); // persona 3: dueña de `mio`, NO de `ajeno`
+
+  // 1) El panel NO debe entregarle el entregable ajeno... pero SÍ el suyo.
+  const panel = await get(`/users/${USUARIO_ID}/process-definitions/${DEFINITION_ID}/panel`, { token: usuario });
+  const entregados = (panel.body?.tasks ?? []).flatMap((t) => t.items ?? []).map((i) => Number(i.id));
+  assert.ok(
+    !entregados.includes(ajenoId),
+    `🔴 IDOR: el panel entregó el entregable ajeno ${ajenoId}. Items: ${JSON.stringify(entregados)}`
+  );
+  assert.ok(
+    entregados.includes(mioId),
+    `el usuario dejó de ver su PROPIO entregable ${mioId}: el guard se pasó de estricto. Items: ${JSON.stringify(entregados)}`
+  );
+
+  // 2) Y no debe poder pedir su fichero. Lo relevante es que NO sea 200: da igual 403 o 404
+  //    (404 incluso es preferible, no revela que el recurso exista).
+  const file = await get(
+    `/users/${USUARIO_ID}/process-definitions/${DEFINITION_ID}/task-items/${ajenoId}/file`,
+    { token: usuario }
+  );
+  assert.notEqual(file.status, 200, "🔴 IDOR: el usuario descargó el fichero del entregable de otra persona");
 });
