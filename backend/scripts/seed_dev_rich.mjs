@@ -30,6 +30,7 @@ const sqlAdmin = new SqlAdminService();
 
 const SLUG = "informe-gestion-docente";
 const UNIT_ID = 8;            // Tecnologías de la Información
+const UNIT_2_ID = 9;          // Sistemas de Información (2ª unidad de la persona 3)
 const CARGO_DOCENTE = 2;      // destinatario del proceso (quien elabora)
 const CARGO_COORDINADOR = 1;  // quien firma
 const TERM_TYPE_PERM = 5;     // Permanente
@@ -49,13 +50,83 @@ const create = async (table, body, token) => {
   return id;
 };
 
+// FASE 2 — Segunda unidad para la persona 3.
+//
+// Con una sola unidad no se pueden verificar ni la vista consolidada (nivel 1 = unidades)
+// ni la fusión de cargos entre unidades que hace buildGroupCargos() en HomeView. Aquí se
+// le da a la persona 3 un segundo puesto de Docente en "Sistemas de Información" (unidad 9,
+// hermana de la 8) y se extiende el proceso a esa unidad.
+//
+// Se crea un puesto NUEVO (slot 9) en vez de reutilizar uno: los 8 existentes están
+// ocupados y el endpoint /assign desplazaría a su ocupante (le pone is_current=0).
+const addSecondUnit = async (token) => {
+  const UNIT_2 = UNIT_2_ID;
+
+  const assignments = rowsOf(await get("/admin/sql/position_assignments", { token }));
+  const positions = rowsOf(await get("/admin/sql/unit_positions", { token }));
+  const yaTiene = assignments.some((a) => {
+    if (Number(a.person_id) !== 3 || Number(a.is_current) !== 1) return false;
+    const pos = positions.find((p) => Number(p.id) === Number(a.position_id));
+    return Number(pos?.unit_id) === UNIT_2;
+  });
+  // Guardas SEPARADAS: el puesto y la regla se comprueban por su cuenta. Si se comprueban
+  // juntas, un fallo a mitad deja el puesto creado y la regla nunca se añade en el reintento.
+  if (yaTiene) {
+    console.log("La persona 3 ya tiene puesto en la unidad 9 (salto la asignación).");
+  } else {
+    console.log("\nDando a la persona 3 un segundo puesto (Docente en 'Sistemas de Información')...");
+    const positionId = await create("unit_positions", {
+      unit_id: UNIT_2,
+      cargo_id: CARGO_DOCENTE,
+      slot_no: 9,
+      title: "Docente",
+      position_type: "real",
+      is_active: 1,
+    }, token);
+
+    const assign = await post(`/admin/sql/units/positions/${positionId}/assign`, {
+      token,
+      body: { person_id: 3 },
+    });
+    if (assign.status >= 400) {
+      throw new Error(`Asignación falló -> ${assign.status}: ${JSON.stringify(assign.body)}`);
+    }
+    console.log(`  ✔ persona 3 asignada al puesto #${positionId}`);
+  }
+
+
+};
+
+// Qué verá realmente la persona 3 en /home tras correr el script.
+const resumen = async (token) => {
+  const menu = await get("/users/3/menu", { token });
+  const units = menu.body?.units ?? [];
+  console.log("\n── Lo que ve la persona 3 en /home ──");
+  for (const u of units) {
+    console.log(`  Unidad: ${u.name}`);
+    for (const c of u.cargos ?? []) {
+      console.log(`    Cargo: ${c.name}`);
+      for (const p of c.processes ?? []) {
+        console.log(`      - ${p.name}${p.is_routed ? " (routed)" : " (single)"}`);
+      }
+    }
+  }
+  if (units.length >= 2) {
+    console.log("\n✅ Fixture lista: 2 unidades y multi-proceso. /home ya es verificable.");
+  } else {
+    console.warn("\n⚠ Solo se ve 1 unidad: la vista consolidada no será verificable.");
+  }
+};
+
 const main = async () => {
   const token = await tokenFor("admin");
 
-  // Idempotencia: si ya está, no duplicar.
+  // Idempotencia: si el proceso ya está, saltamos la fase 1 pero seguimos con la 2.
   const existing = rowsOf(await get("/admin/sql/processes", { token }));
   if (existing.some((p) => p.slug === SLUG)) {
-    console.log(`El proceso "${SLUG}" ya existe. Nada que hacer.`);
+    console.log(`El proceso "${SLUG}" ya existe. Salto a la fase 2.`);
+    await addSecondUnit(token);
+    await resumen(token);
     return;
   }
 
@@ -160,16 +231,21 @@ const main = async () => {
     approval_mode: "and",
   }, token);
 
-  // 9. Regla de reparto: a los Docentes de la unidad 8 (ahí está la persona 3).
-  await create("process_target_rules", {
-    process_definition_id: definitionId,
-    unit_scope_type: "unit_exact",
-    unit_id: UNIT_ID,
-    cargo_id: CARGO_DOCENTE,
-    recipient_policy: "all_matches",
-    priority: 1,
-    is_active: 1,
-  }, token);
+  // 9. Reglas de reparto: a los Docentes de AMBAS unidades (8 y 9).
+  //    REGLA DE NEGOCIO: las reglas solo se pueden tocar con la config en `draft`, y una
+  //    config `active` NO puede volver a draft (para cambiar el alcance hay que versionar).
+  //    Por eso se crean las dos AQUÍ, antes de activar: añadirlas luego es imposible.
+  for (const [unitId, priority] of [[UNIT_ID, 1], [UNIT_2_ID, 2]]) {
+    await create("process_target_rules", {
+      process_definition_id: definitionId,
+      unit_scope_type: "unit_exact",
+      unit_id: unitId,
+      cargo_id: CARGO_DOCENTE,
+      recipient_policy: "all_matches",
+      priority,
+      is_active: 1,
+    }, token);
+  }
 
   // 10. ACTIVAR la definición: ya tiene plantilla, flujos y regla. Hasta ahora era draft.
   console.log("Activando la definición...");
@@ -183,8 +259,13 @@ const main = async () => {
   }
   console.log("  ✔ activa");
 
-  // 11. Lanzar en el periodo Permanente -> materializa tareas, task_items y flujos.
-  console.log("Lanzando la definición en el periodo Permanente...");
+  // 11. Segundo puesto ANTES de lanzar. EL ORDEN IMPORTA: el lanzamiento reparte
+  //     asignaciones a los puestos que existen EN ESE MOMENTO. Si se crea el puesto después,
+  //     la persona ve el proceso pero sin entregable asignado (no hay task_assignment).
+  await addSecondUnit(token);
+
+  // 12. Lanzar en el periodo Permanente -> materializa tareas, task_items y flujos.
+  console.log("\nLanzando la definición en el periodo Permanente...");
   const launch = await post(`/admin/process-definitions/${definitionId}/launch`, {
     token,
     body: { term_id: TERM_PERM },
@@ -194,18 +275,7 @@ const main = async () => {
   }
   console.log("  ✔ lanzado:", JSON.stringify(launch.body).slice(0, 160));
 
-  // Comprobación: ¿la persona 3 ve ya los dos procesos?
-  const menu = await get("/users/3/menu", { token });
-  const procesos = (menu.body?.units ?? [])
-    .flatMap((u) => u.cargos ?? [])
-    .flatMap((c) => c.processes ?? [])
-    .map((p) => p.name);
-  console.log("\nProcesos visibles para la persona 3:", procesos);
-  if (procesos.length < 2) {
-    console.warn("⚠ La persona 3 sigue sin ver 2 procesos: revisa la regla de reparto.");
-  } else {
-    console.log("✅ Fixture rica lista: /home ya tiene multi-proceso.");
-  }
+  await resumen(token);
 };
 
 main().catch((e) => {
