@@ -25,6 +25,17 @@ HomeView.vue (7445 L) antes de partirlo: si algo de aquí cambia tras el refacto
 | 8 | **Iniciar** un entregable pendiente → modal de confirmación y la tarjeta pasa a **"Subir archivo" / "Descargar plantilla"** |
 | 9 | **IDOR cerrado** (commit `895b6ef`): el panel entrega **solo los entregables propios** (antes 9, ahora 1); Centro Documental 18 → 4 |
 
+## ✅ Bugs B1–B4: TODOS CERRADOS (antes de refactorizar)
+
+| | Bug | Estado |
+|---|---|---|
+| **B1** | Excepciones de negocio como 500 | ✅ `da542ac` — `errors/HttpError.js`; 404/403/409 correctos |
+| **B2** | La pestaña FIRMAS mentía | ✅ `638eec1` — texto corregido |
+| **B3** | Aside fijo en la primera unidad | ✅ `638eec1` — selector de unidad restaurado |
+| **B4** | Tarjeta con "Iniciar" ya iniciada | ✅ **falsa alarma**: era el usuario probando en su propia sesión |
+
+Detalle histórico de cada uno, abajo.
+
 ## 🔴 Bugs encontrados (PRE-EXISTENTES, no los causó el refactor)
 
 ### B1 — Re-iniciar un entregable ya iniciado devuelve **500**
@@ -37,6 +48,9 @@ Debería ser **409 Conflict** (o 400), no un error de servidor con el mensaje in
 `/generate-tasks` devuelven 500 ante "no encontrado" en vez de 404) y que el guard de autorización
 (*"No puedes operar una solicitud asignada a otro usuario"* también sale como 500 en vez de 403).
 **Es un patrón sistémico: las excepciones de negocio caen en el catch genérico.**
+**→ CORREGIDO** en `da542ac`: `errors/HttpError.js` formaliza la convención (que ya existía a
+medias en `sql_admin_controller`) y los controllers respetan `error.statusCode`. Un error SIN
+statusCode sigue siendo 500 — y eso está bien: significa que es un fallo de verdad.
 
 ### B2 — La pestaña FIRMAS miente cuando el flujo aún no se ha instanciado
 Dice *"La configuración todavía no tiene pasos de firma visibles"* — pero la configuración **sí** los
@@ -50,13 +64,13 @@ unidad** (el control se borró del template; su lógica quedó muerta y se limpi
 unidades, los procesos de la segunda son **inalcanzables desde el aside**. La salida es la página
 consolidada, si el usuario sabe que existe. → **Va con el rediseño del aside, después del refactor.**
 
-### B4 — Estado obsoleto de la tarjeta (sin explicación confirmada)
+### B4 — Estado obsoleto de la tarjeta → ✅ FALSA ALARMA
 Encontré un entregable con la tarjeta ofreciendo **"Iniciar"** mientras en BD ya estaba `in_progress`
 (`user_started_at` puesto). Al pulsarlo → el 500 de B1.
-**No conseguí determinar qué lo inició**: la única llamada a `start` del log de red es la fallida, y el
-`user_started_at` es anterior a cualquier escritura mía. Lo dejo anotado como **no reproducido**, no
-como diagnosticado. Cuando la tarjeta se inicia por la vía normal, la UI **sí** actualiza el botón
-correctamente (verificado).
+No conseguí determinar qué lo inició — y resultó que **era el propio usuario probando en su sesión del
+navegador**, en paralelo a la mía. No es un bug. Se deja anotado como recordatorio de que en un entorno
+de dev compartido, el estado puede cambiar por debajo. Cuando la tarjeta se inicia por la vía normal, la
+UI **sí** actualiza el botón correctamente (verificado).
 
 ## 🔶 No es un bug (falsa alarma retirada)
 
