@@ -3069,7 +3069,6 @@ const signatureFlowState = ref({
 });
 let documentSignModalInstance = null;
 let signatureFlowModalInstance = null;
-let documentCenterModalInstance = null;
 let fillWorkflowModalInstance = null;
 let deliverableUploadModalInstance = null;
 let deliverableWorkspaceModalInstance = null;
@@ -3189,12 +3188,6 @@ const deliverableUploadModalHelp = computed(() => {
 const homePlural = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
 const asHomeArray = (value) => (Array.isArray(value) ? value : []);
 const countHomeArray = (value) => asHomeArray(value).length;
-
-const homeIdentityLabel = computed(() => (
-  currentUser.value?.email
-  || currentUser.value?.cedula
-  || 'Sin identificador'
-));
 
 const homeCargoSource = computed(() => (
   consolidatedCargos.value.length ? consolidatedCargos.value : menuCargos.value
@@ -3364,19 +3357,6 @@ const homePrimaryProcess = computed(() => (
   || homeProcesses.value[0]
   || null
 ));
-
-const homeProcessCards = computed(() => homeCargos.value.map((cargo) => {
-  const iconMeta = cargoIconMeta(cargo);
-  const processes = asHomeArray(cargo?.processes).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
-  return {
-    key: String(cargo?.id || cargo?.name),
-    name: cargo?.name || 'Cargo sin nombre',
-    icon: iconMeta.icon,
-    processes,
-    previewProcesses: processes.slice(0, 4),
-    remainingCount: Math.max(0, processes.length - 4)
-  };
-}));
 
 const homeDossierCounts = computed(() => {
   const dossier = homeDossier.value || {};
@@ -3560,8 +3540,6 @@ const homeActions = computed(() => {
   return actions.slice(0, 4);
 });
 
-const homeFocus = computed(() => homeActions.value[0]);
-
 const resolvePhotoUrl = (value) => {
   if (!value) {
     return '/images/avatar.png';
@@ -3584,59 +3562,6 @@ const selectConsolidated = () => {
   selectedGroupId.value = null;
   showGroupDropdown.value = false;
   applyMenuCargos(consolidatedCargos.value);
-};
-
-const buildGroupCargos = (group) => {
-  const cargoMap = new Map();
-  (group?.units ?? []).forEach((unit) => {
-    (unit.cargos ?? []).forEach((cargo) => {
-      if (!cargoMap.has(cargo.id)) {
-        cargoMap.set(cargo.id, { id: cargo.id, name: cargo.name, processes: [] });
-      }
-      const target = cargoMap.get(cargo.id);
-      (cargo.processes ?? []).forEach((process) => {
-        const uniqueKey = Number(process.process_definition_id || process.id || 0);
-        const existingIndex = target.processes.findIndex(
-          (proc) => Number(proc.process_definition_id || proc.id || 0) === uniqueKey
-        );
-        if (existingIndex >= 0) {
-          const existing = target.processes[existingIndex];
-          if (existing.access_source !== 'process' && process.access_source === 'process') {
-            target.processes.splice(existingIndex, 1, { ...existing, ...process });
-          }
-        } else {
-          target.processes.push(process);
-        }
-      });
-    });
-  });
-  const cargos = Array.from(cargoMap.values());
-  cargos.forEach((cargo) => {
-    cargo.processes.sort((a, b) => a.name.localeCompare(b.name));
-  });
-  cargos.sort((a, b) => a.name.localeCompare(b.name));
-  return cargos;
-};
-
-const selectGroup = (group) => {
-  selectedGroupId.value = group?.id ?? null;
-  showGroupDropdown.value = false;
-  applyMenuCargos(buildGroupCargos(group));
-  if (!showMenu.value) {
-    showMenu.value = true;
-  }
-};
-
-const toggleGroupDropdown = () => {
-  showGroupDropdown.value = !showGroupDropdown.value;
-};
-
-const selectGroupOption = (group) => {
-  if (!group) {
-    selectConsolidated();
-    return;
-  }
-  selectGroup(group);
 };
 
 const selectUnitOption = (unit) => {
@@ -3674,14 +3599,6 @@ const toggleCargo = (cargo) => {
 
 const cargoIconMeta = (cargo = {}) => resolveWorkspaceCargoIcon(cargo?.name || '');
 const processIconMeta = (process = {}) => resolveWorkspaceProcessIcon(process);
-const unitGroupIconMeta = (group = {}) => resolveWorkspaceUnitGroupIcon(group);
-const selectedGroupIconMeta = computed(() => {
-  if (!selectedGroupId.value) return unitGroupIconMeta({ label: 'Consolidado' });
-  const unit = userUnits.value.find((u) => String(u.id) === String(selectedGroupId.value));
-  if (unit) return unitGroupIconMeta({ label: unit.label || unit.name, name: unit.name });
-  const group = unitGroups.value.find((g) => String(g.id) === String(selectedGroupId.value));
-  return unitGroupIconMeta(group || {});
-});
 
 const resolveUnitNameById = (unitId) => {
   const normalized = Number(unitId || 0);
@@ -4024,11 +3941,6 @@ const documentCenterFilterUnits = computed(() =>
 const documentCenterFilterProcesses = computed(() =>
   getCenterFilterOptions(documentCenterItems.value, 'process_name')
 );
-const documentCenterFilterStatuses = computed(() =>
-  getCenterFilterOptions(documentCenterItems.value, 'document_version_status')
-);
-
-// Tasks combinadas de todos los procesos seleccionados, anotadas con su proceso de origen.
 const aggregatedProcessTasks = computed(() => {
   const panels = selectedProcessPanels.value;
   if (panels.length) {
@@ -4431,20 +4343,6 @@ const getDeliverablePeriodLabel = (task) => {
   return clean || 'Periodo no definido';
 };
 
-const getTaskItemFromSelectedPanel = (taskItemId) => {
-  const normalizedTaskItemId = Number(taskItemId || 0);
-  if (!normalizedTaskItemId) {
-    return null;
-  }
-  for (const task of selectedProcessPanel.value?.tasks || []) {
-    const match = (task.items || []).find((item) => Number(item.id || 0) === normalizedTaskItemId);
-    if (match) {
-      return match;
-    }
-  }
-  return null;
-};
-
 const loadSelectedProcessPanel = async (process) => {
   const userId = currentUserId.value;
   const definitionId = Number(process?.process_definition_id);
@@ -4686,13 +4584,6 @@ const closeTaskLaunchModal = () => {
   resetTaskLaunchForm();
 };
 
-const showGeneralTaskInfo = () => {
-  setProcessActionInfo(
-    'La creación de tareas generales todavía no tiene backend habilitado en Home. El siguiente paso es conectar este botón al flujo de artifacts generales y entregables personalizados.',
-    'error'
-  );
-};
-
 const openGeneralTaskModal = (mode = 'free', context = {}) => {
   const today = new Date().toISOString().slice(0, 10);
   generalTaskError.value = '';
@@ -4770,16 +4661,6 @@ const searchRecipients = () => {
   }, 250);
 };
 
-const selectRecipient = (person) => {
-  generalTaskForm.value.recipientPersonId = person.id;
-  generalTaskForm.value.recipientLabel = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim();
-  recipientResults.value = [];
-  recipientQuery.value = generalTaskForm.value.recipientLabel;
-};
-
-// Flow-builder routed: entrega = pasos secuenciales (1 responsable c/u). Firma = pasos, cada uno con
-// 1..N firmantes + aprobación (todas/cualquiera/mínimo N). Firmante = persona concreta o por cargo.
-// flowPickerTarget: 'entrega' | 'firma:new' (nuevo paso) | 'firma:<idx>' (añadir a un paso) | null.
 const openFlowPicker = (target) => {
   flowPickerTarget.value = flowPickerTarget.value === target ? null : target;
   flowPickerMode.value = 'person';
@@ -5725,14 +5606,6 @@ const getFillRequestStatusCode = (request) =>
 
 const getFillRequestId = (request) => Number(request?.request_id || request?.id || 0) || null;
 
-const isReviewLikeFillStep = (request) => {
-  const resolverType = String(request?.resolver_type || request?.resolverType || '').trim().toLowerCase();
-  if (!resolverType) {
-    return false;
-  }
-  return ['cargo_in_scope', 'position', 'specific_person'].includes(resolverType);
-};
-
 const getDeliverableAccessSource = (payload) => {
   const selectedAccessSource =
     String(selectedProcessPanel.value?.definition?.access_source || selectedProcessContext.value?.access_source || '')
@@ -6276,36 +6149,6 @@ const getDeliverableTagGroups = (payload) => {
   ];
 };
 
-const getDeliverableStatusBadge = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return {
-    variant: getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral'),
-    label: capitalize(subject.status || subject.documentStatus || 'pendiente') || 'Pendiente'
-  };
-};
-
-const getDeliverableDocumentLabel = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  if (!subject.documentId) return 'Sin doc';
-  return subject.documentVersion ? `Doc v${subject.documentVersion}` : 'Doc creado';
-};
-
-const getDeliverablePrimaryActionLabel = (payload) => {
-  if (shouldShowStartDeliverable(payload)) return 'Iniciar';
-  if (shouldShowUploadDeliverable(payload)) return getUploadActionLabel(payload);
-  if (shouldShowSign(payload)) return 'Firmar';
-  if (shouldShowOpenWorkspacePrimary(payload)) return 'Abrir';
-  return 'Sin acción inmediata';
-};
-
-const getDeliverableNextActionText = (payload) => {
-  if (shouldShowStartDeliverable(payload)) return 'El entregable aún no ha sido iniciado.';
-  if (shouldShowUploadDeliverable(payload)) return 'El flujo espera un archivo de trabajo actualizado.';
-  if (shouldShowSign(payload)) return 'El documento ya está listo para completar la firma.';
-  if (shouldShowManageFill(payload) || shouldShowSignatureFlow(payload)) return 'El detalle operativo está disponible en el workspace del entregable.';
-  return 'No hay una acción inmediata disponible en este momento.';
-};
-
 const getFillResponsibleName = (payload) => {
   const request = getCurrentFillWorkflowRequest(payload);
   const explicitLabel = String(request?.display_label || request?.displayLabel || request?.label || '').trim();
@@ -6535,48 +6378,6 @@ const toggleDeliverableProcess = () => {
   collapsedDeliverableIds.value = next;
 };
 
-const getDeliverableComplianceState = (payload) => {
-  const dueState = getDeliverableDueState(payload);
-  if (shouldShowSign(payload)) {
-    return {
-      label: 'Cumplimiento',
-      value: 'Listo para firma',
-      valueVariant: 'accent',
-      dueLabel: dueState.label,
-      dueValue: dueState.value,
-      dueVariant: dueState.variant
-    };
-  }
-  if (shouldShowStartDeliverable(payload)) {
-    return {
-      label: 'Cumplimiento',
-      value: 'Pendiente de inicio',
-      valueVariant: 'neutral',
-      dueLabel: dueState.label,
-      dueValue: dueState.value,
-      dueVariant: dueState.variant
-    };
-  }
-  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
-    return {
-      label: 'Cumplimiento',
-      value: 'En preparación',
-      valueVariant: 'info',
-      dueLabel: dueState.label,
-      dueValue: dueState.value,
-      dueVariant: dueState.variant
-    };
-  }
-  return {
-    label: 'Cumplimiento',
-    value: 'En seguimiento',
-    valueVariant: 'success',
-    dueLabel: dueState.label,
-    dueValue: dueState.value,
-    dueVariant: dueState.variant
-  };
-};
-
 const isReviewFillStep = computed(() => {
   const resolver = String(fillWorkflowState.value.request?.resolver_type || '').trim().toLowerCase();
   return ['cargo_in_scope', 'position', 'specific_person'].includes(resolver);
@@ -6660,7 +6461,6 @@ const getSignatureStepAssignedSummary = (step, requests = []) => {
   return labels.join(' | ') || 'Firmante no resuelto';
 };
 
-const canStartFillRequest = computed(() => getFillRequestStatusCode(fillWorkflowState.value.request) === 'pending');
 const canOperateCurrentFillRequest = computed(() =>
   currentUserCanOperateFillStep(fillWorkflowState.value.subject)
   || isFillRequestActionableByCurrentUser(fillWorkflowState.value.request)
@@ -6995,56 +6795,6 @@ const startDeliverableFlow = async (payload) => {
   }
 };
 
-const completeDeliverableFill = async (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const pendingFillRequest = (subject.workflow?.fill_requests || []).find((request) => !request.responded_at);
-  if (!pendingFillRequest?.id) {
-    setProcessActionInfo(`No se encontró una solicitud de entrega pendiente para ${subject.title}.`, 'error');
-    return;
-  }
-  if (!subject.preloadFilePath) {
-    setProcessActionInfo(`Primero debes subir el archivo del entregable ${subject.title} antes de aprobar la entrega.`, 'error');
-    return;
-  }
-  try {
-    processingFillItemId.value = Number(subject.itemId || 0);
-    openDeliverableOperationModal({
-      title: 'Gestionando entrega',
-      type: 'info',
-      message: `Validando el entregable ${subject.title}...`,
-      detail: 'Se está actualizando el estado del flujo de entrega.'
-    });
-    await processPanelService.approveFillRequest(pendingFillRequest.id, {
-      note: 'Entrega confirmado desde el panel del entregable.'
-    });
-    setProcessActionInfo(`La entrega del entregable ${subject.title} fue aprobado correctamente.`, 'success');
-    openDeliverableOperationModal({
-      title: 'Entrega actualizado',
-      type: 'success',
-      message: `El flujo de entrega de ${subject.title} se actualizó correctamente.`,
-      detail: subject.preloadPdfPath
-        ? 'El entregable ya puede avanzar hacia firma cuando exista una solicitud pendiente.'
-        : 'El archivo de trabajo quedó validado. Si aún no existe un PDF, la firma seguirá bloqueada.'
-    });
-    if (selectedProcessContext.value) {
-      await refreshActiveProcessPanel();
-    }
-  } catch (error) {
-    openDeliverableOperationModal({
-      title: 'Error en llenado',
-      type: 'error',
-      message: error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.',
-      detail: subject.title
-    });
-    setProcessActionInfo(
-      error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.',
-      'error'
-    );
-  } finally {
-    processingFillItemId.value = null;
-  }
-};
-
 const submitFillWorkflowAction = async (action) => {
   const subject = fillWorkflowState.value.subject;
   const request = fillWorkflowState.value.request;
@@ -7277,11 +7027,6 @@ const uploadSelectedDeliverableFile = async (file) => {
 const submitDeliverableUpload = async () => {
   if (!selectedDeliverableUploadFile.value || isUploadingDeliverable.value) return;
   await uploadSelectedDeliverableFile(selectedDeliverableUploadFile.value);
-};
-
-const openDocumentCenter = () => {
-  documentCenterModalInstance = Modal.getOrCreateInstance(documentCenterModal.value?.el);
-  documentCenterModalInstance?.show();
 };
 
 const openDocumentSignFlow = (payload) => {
@@ -7612,12 +7357,6 @@ const toggleNotify = () => {
   showNotify.value = !showNotify.value;
 };
 
-const toggleNavMenu = () => {
-  if (showNotify.value) {
-    showNotify.value = false;
-  }
-  showNavMenu.value = !showNavMenu.value;
-};
 </script>
 <style scoped>
 .deliverable-inline-upload :deep(.deasy-dropzone) {
