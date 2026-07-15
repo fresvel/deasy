@@ -2737,6 +2737,7 @@ import DeliverableCard from '@/modules/home/components/DeliverableCard.vue';
 import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
 import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel.vue';
 import RoutedProcessPanel from '@/modules/home/components/RoutedProcessPanel.vue';
+import { useRecipientSearch } from '@/modules/home/composables/useRecipientSearch.js';
 import {
   formatAttachmentSize,
   formatDate,
@@ -2921,10 +2922,6 @@ const generalTaskForm = ref({
   recipientLabel: '',
 });
 // Búsqueda de destinatarios para entregables 'routed'.
-const recipientQuery = ref('');
-const recipientResults = ref([]);
-const recipientSearching = ref(false);
-let recipientSearchTimer = null;
 // P1/P2 routed: flujo definido al ENVIAR. Pasos = persona concreta o "por cargo".
 // entrega = quién elabora; firma = quién firma (en orden).
 const flowEntrega = ref([]);
@@ -3814,6 +3811,14 @@ const navigateToGlobalSignaturePage = async () => {
 };
 
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
+
+const {
+  recipientQuery,
+  recipientResults,
+  recipientSearching,
+  searchRecipients,
+  clearRecipientSearch,
+} = useRecipientSearch({ currentUserId, processPanelService });
 const workspaceRouteMode = computed(() => {
   if (route.name === 'home-documents') return 'documents';
   if (route.name === 'home-signatures') return 'signatures';
@@ -4507,8 +4512,7 @@ const closeTaskLaunchModal = () => {
 const openGeneralTaskModal = (mode = 'free', context = {}) => {
   const today = new Date().toISOString().slice(0, 10);
   generalTaskError.value = '';
-  recipientQuery.value = '';
-  recipientResults.value = [];
+  clearRecipientSearch();
   generalTaskForm.value = {
     mode,
     title: '',
@@ -4564,29 +4568,12 @@ const openAddDeliverableModal = (task, template) => {
 };
 
 // Búsqueda de destinatarios (debounce simple) para modo routed.
-const searchRecipients = () => {
-  const userId = currentUserId.value;
-  if (recipientSearchTimer) clearTimeout(recipientSearchTimer);
-  recipientSearchTimer = setTimeout(async () => {
-    if (!userId) return;
-    recipientSearching.value = true;
-    try {
-      const data = await processPanelService.searchTaskRecipients(userId, recipientQuery.value.trim());
-      recipientResults.value = Array.isArray(data?.recipients) ? data.recipients : [];
-    } catch {
-      recipientResults.value = [];
-    } finally {
-      recipientSearching.value = false;
-    }
-  }, 250);
-};
 
 const openFlowPicker = (target) => {
   flowPickerTarget.value = flowPickerTarget.value === target ? null : target;
   flowPickerMode.value = 'person';
   flowCargoForm.value = { cargoId: null, unitId: null };
-  recipientQuery.value = '';
-  recipientResults.value = [];
+  clearRecipientSearch();
 };
 const sameSigner = (a, b) => a.kind === b.kind
   && Number(a.person_id || 0) === Number(b.person_id || 0)
