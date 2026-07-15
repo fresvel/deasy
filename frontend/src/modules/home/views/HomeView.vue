@@ -2739,6 +2739,7 @@ import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel
 import RoutedProcessPanel from '@/modules/home/components/RoutedProcessPanel.vue';
 import { useRecipientSearch } from '@/modules/home/composables/useRecipientSearch.js';
 import { useProcessPanels } from '@/modules/home/composables/useProcessPanels.js';
+import { useFlowBuilder } from '@/modules/home/composables/useFlowBuilder.js';
 import {
   formatAttachmentSize,
   formatDate,
@@ -2925,12 +2926,6 @@ const generalTaskForm = ref({
 // Búsqueda de destinatarios para entregables 'routed'.
 // P1/P2 routed: flujo definido al ENVIAR. Pasos = persona concreta o "por cargo".
 // entrega = quién elabora; firma = quién firma (en orden).
-const flowEntrega = ref([]);
-const flowFirma = ref([]);
-const flowPickerTarget = ref(null); // 'entrega' | 'firma' | null
-const flowPickerMode = ref('person'); // 'person' | 'cargo'
-const flowCatalog = ref({ units: [], cargos: [] });
-const flowCargoForm = ref({ cargoId: null, unitId: null });
 const deliverableOperationModal = ref(null);
 const deliverableSignResultModal = ref(null);
 const deliverablePreviewModal = ref(null);
@@ -3830,6 +3825,24 @@ const {
   searchRecipients,
   clearRecipientSearch,
 } = useRecipientSearch({ currentUserId, processPanelService });
+
+const {
+  flowEntrega,
+  flowFirma,
+  flowPickerTarget,
+  flowPickerMode,
+  flowCatalog,
+  flowCargoForm,
+  openFlowPicker,
+  addFlowPerson,
+  addFlowCargo,
+  removeFromEntrega,
+  removeFirmaStep,
+  removeSignerFromStep,
+  primaryRecipientFromFlow,
+  loadFlowCatalog,
+  resetFlowBuilder,
+} = useFlowBuilder({ clearRecipientSearch, currentUserId, processPanelService });
 const workspaceRouteMode = computed(() => {
   if (route.name === 'home-documents') return 'documents';
   if (route.name === 'home-signatures') return 'signatures';
@@ -4444,27 +4457,9 @@ const openGeneralTaskModal = (mode = 'free', context = {}) => {
   };
   // routed / proceso por defecto (free): el usuario define el flujo al enviar. Entrega arranca con "Tú".
   const usesRuntimeFlow = mode === 'free' || context.itemMode === 'routed';
-  flowEntrega.value = usesRuntimeFlow
-    ? [{ kind: 'person', person_id: currentUserId.value, label: 'Tú (autor)' }]
-    : [];
-  flowFirma.value = [];
-  flowPickerTarget.value = null;
-  flowPickerMode.value = 'person';
-  flowCargoForm.value = { cargoId: null, unitId: null };
-  if (usesRuntimeFlow) loadFlowCatalog();
+  resetFlowBuilder(usesRuntimeFlow);
   generalTaskModalInstance = Modal.getOrCreateInstance(generalTaskModal.value?.el);
   generalTaskModalInstance?.show();
-};
-
-const loadFlowCatalog = async () => {
-  const userId = currentUserId.value;
-  if (!userId || (flowCatalog.value.cargos?.length && flowCatalog.value.units?.length)) return;
-  try {
-    const data = await processPanelService.listFlowCatalog(userId);
-    flowCatalog.value = { units: data?.units || [], cargos: data?.cargos || [] };
-  } catch {
-    flowCatalog.value = { units: [], cargos: [] };
-  }
 };
 
 // Abre el modal de alta para una plantilla configurada (replicated/routed) desde el panel de tarea.
@@ -4481,66 +4476,6 @@ const openAddDeliverableModal = (task, template) => {
 
 // Búsqueda de destinatarios (debounce simple) para modo routed.
 
-const openFlowPicker = (target) => {
-  flowPickerTarget.value = flowPickerTarget.value === target ? null : target;
-  flowPickerMode.value = 'person';
-  flowCargoForm.value = { cargoId: null, unitId: null };
-  clearRecipientSearch();
-};
-const sameSigner = (a, b) => a.kind === b.kind
-  && Number(a.person_id || 0) === Number(b.person_id || 0)
-  && Number(a.cargo_id || 0) === Number(b.cargo_id || 0)
-  && Number(a.unit_id || 0) === Number(b.unit_id || 0);
-// Enruta un firmante/responsable al destino activo.
-const pushSigner = (signer) => {
-  const t = flowPickerTarget.value;
-  if (t === 'entrega') {
-    if (!flowEntrega.value.some((p) => sameSigner(p, signer))) flowEntrega.value.push(signer);
-  } else if (t === 'firma:new') {
-    flowFirma.value.push({ signers: [signer], approval_mode: 'and', required_min: 1 });
-  } else if (typeof t === 'string' && t.startsWith('firma:')) {
-    const step = flowFirma.value[Number(t.split(':')[1])];
-    if (step && !step.signers.some((p) => sameSigner(p, signer))) step.signers.push(signer);
-  }
-  openFlowPicker(t); // cierra y resetea
-};
-const addFlowPerson = (person) => {
-  pushSigner({
-    kind: 'person',
-    person_id: person.id,
-    cargo_id: null,
-    unit_id: null,
-    label: person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim(),
-  });
-};
-const addFlowCargo = () => {
-  const f = flowCargoForm.value;
-  if (!f.cargoId) return;
-  const cargoName = flowCatalog.value.cargos.find((c) => Number(c.id) === Number(f.cargoId))?.name || 'Cargo';
-  const unitName = f.unitId ? flowCatalog.value.units.find((u) => Number(u.id) === Number(f.unitId))?.name : null;
-  pushSigner({
-    kind: 'cargo',
-    person_id: null,
-    cargo_id: Number(f.cargoId),
-    unit_id: f.unitId ? Number(f.unitId) : null,
-    label: `${cargoName}${unitName ? ` · ${unitName}` : ' · todas las unidades'}`,
-  });
-};
-const removeFromEntrega = (idx) => { flowEntrega.value.splice(idx, 1); };
-const removeFirmaStep = (idx) => { flowFirma.value.splice(idx, 1); };
-const removeSignerFromStep = (stepIdx, signerIdx) => {
-  const step = flowFirma.value[stepIdx];
-  if (!step) return;
-  step.signers.splice(signerIdx, 1);
-  if (!step.signers.length) flowFirma.value.splice(stepIdx, 1);
-};
-// Destinatario principal ("Para:"/owner): 1er firmante persona, o 1er responsable de entrega ≠ tú.
-const primaryRecipientFromFlow = () => {
-  const firstFirma = flowFirma.value.flatMap((s) => s.signers).find((x) => x.kind === 'person')?.person_id || null;
-  const entregaDelegate = flowEntrega.value
-    .find((p) => p.kind === 'person' && Number(p.person_id) !== Number(currentUserId.value))?.person_id || null;
-  return firstFirma || entregaDelegate || null;
-};
 const isSendFlowModal = computed(() => generalTaskForm.value.itemMode === 'routed' || generalTaskForm.value.mode === 'free');
 // Unidad emisora del alta libre: con una sola unidad se auto-usa (preseleccionada en openGeneralTaskModal) y se
 // oculta el selector; con varias se muestra para elegir en representación de cuál se emite.
