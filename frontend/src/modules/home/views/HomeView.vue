@@ -2738,6 +2738,7 @@ import DeliverableObservations from '@/modules/home/components/DeliverableObserv
 import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel.vue';
 import RoutedProcessPanel from '@/modules/home/components/RoutedProcessPanel.vue';
 import { useRecipientSearch } from '@/modules/home/composables/useRecipientSearch.js';
+import { useProcessPanels } from '@/modules/home/composables/useProcessPanels.js';
 import {
   formatAttachmentSize,
   formatDate,
@@ -3768,21 +3769,6 @@ const selectConsolidatedCargo = async (cargo) => {
   await loadSelectedProcessPanels();
 };
 
-// Carga (en paralelo) los paneles de todos los procesos seleccionados del cargo activo.
-const loadSelectedProcessPanels = async () => {
-  const processes = consolidatedCargoProcesses.value.filter((p) =>
-    selectedConsolidatedProcessIds.value.includes(String(p.process_definition_id || p.id))
-  );
-  activeProcessUnitTab.value = 'all';
-  if (!processes.length) {
-    selectedProcessPanels.value = [];
-    selectedProcessPanel.value = null;
-    selectedProcessKey.value = null;
-    return;
-  }
-  await loadProcessPanelsForProcesses(processes);
-};
-
 const toggleConsolidatedProcess = async (processId) => {
   const id = String(processId);
   const current = new Set(selectedConsolidatedProcessIds.value);
@@ -3811,6 +3797,31 @@ const navigateToGlobalSignaturePage = async () => {
 };
 
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
+
+const {
+  loadProcessPanelsForProcesses,
+  loadSelectedProcessPanel,
+  loadSelectedProcessPanels,
+  refreshActiveProcessPanel,
+} = useProcessPanels({
+  activeConsolidatedUnitTab,
+  activeProcessUnitTab,
+  consolidatedCargoProcesses,
+  currentUserId,
+  processActionMessage,
+  processPanelError,
+  processPanelLoading,
+  processPanelService,
+  resetTaskListFilters,
+  selectedConsolidatedProcessIds,
+  selectedGroupId,
+  selectedProcessContext,
+  selectedProcessKey,
+  selectedProcessPanel,
+  selectedProcessPanels,
+  showCargosPanel,
+  showProcessesPanel,
+});
 
 const {
   recipientQuery,
@@ -4266,105 +4277,6 @@ const getDeliverablePeriodLabel = (task) => {
   // Las tareas libres usan un term con sufijo técnico único (" · #uid-token"); se oculta.
   const clean = raw.replace(/\s*·\s*#[^·]*$/, '').trim();
   return clean || 'Periodo no definido';
-};
-
-const loadSelectedProcessPanel = async (process) => {
-  const userId = currentUserId.value;
-  const definitionId = Number(process?.process_definition_id);
-  if (!userId || !definitionId) {
-    processPanelError.value = 'No se pudo identificar la configuración del proceso seleccionada.';
-    return;
-  }
-  processPanelLoading.value = true;
-  processPanelError.value = '';
-  processActionMessage.value = null;
-  try {
-    // Filtrar por unidad solo cuando hay contexto explícito de unidad:
-    // - Desde panel "Mis cargos": unit_id viene del card de la unidad específica
-    // - Desde sidebar con unidad seleccionada: selectedGroupId apunta a esa unidad
-    // - Desde sidebar "Todas las unidades" (selectedGroupId=null): sin filtro
-    const scopeUnitId = showCargosPanel.value
-      ? (process?.unit_id ? Number(process.unit_id) : null)
-      : showProcessesPanel.value
-        ? (activeConsolidatedUnitTab.value ? Number(activeConsolidatedUnitTab.value) : null)
-        : (selectedGroupId.value ? Number(selectedGroupId.value) : null);
-    const panel = await processPanelService.getPanel(userId, definitionId, scopeUnitId);
-    if (panel?.definition && process?.access_source) {
-      panel.definition.access_source = process.access_source;
-    }
-    selectedProcessPanel.value = panel;
-    selectedProcessPanels.value = panel ? [{ definitionId, process, panel }] : [];
-    selectedProcessKey.value = `${definitionId}`;
-    activeProcessUnitTab.value = 'all';
-    resetTaskListFilters();
-  } catch (error) {
-    console.error('Error al cargar el panel operativo de la configuración:', error);
-    selectedProcessPanel.value = null;
-    selectedProcessPanels.value = [];
-    processPanelError.value = error?.response?.data?.message || 'No se pudo cargar la configuración seleccionada.';
-  } finally {
-    processPanelLoading.value = false;
-  }
-};
-
-// Carga en paralelo los paneles de varios procesos (multi-selección del panel consolidado).
-const loadProcessPanelsForProcesses = async (processes, { resetFilters = true } = {}) => {
-  const userId = currentUserId.value;
-  if (!userId) {
-    processPanelError.value = 'No se pudo identificar al usuario.';
-    return;
-  }
-  processPanelLoading.value = true;
-  processPanelError.value = '';
-  processActionMessage.value = null;
-  const scopeUnitId = activeConsolidatedUnitTab.value ? Number(activeConsolidatedUnitTab.value) : null;
-  try {
-    const results = await Promise.all(
-      processes.map(async (process) => {
-        const definitionId = Number(process?.process_definition_id || process?.id);
-        if (!definitionId) return null;
-        const panel = await processPanelService.getPanel(userId, definitionId, scopeUnitId);
-        if (panel?.definition && process?.access_source) {
-          panel.definition.access_source = process.access_source;
-        }
-        return panel ? { definitionId, process, panel } : null;
-      })
-    );
-    selectedProcessPanels.value = results.filter(Boolean);
-    // selectedProcessPanel apunta al primero, para compatibilidad con código existente.
-    selectedProcessPanel.value = selectedProcessPanels.value[0]?.panel || null;
-    selectedProcessKey.value = selectedProcessPanels.value[0]?.definitionId
-      ? String(selectedProcessPanels.value[0].definitionId)
-      : null;
-    if (resetFilters) {
-      activeProcessUnitTab.value = 'all';
-      resetTaskListFilters();
-    }
-  } catch (error) {
-    console.error('Error al cargar los paneles operativos:', error);
-    selectedProcessPanels.value = [];
-    selectedProcessPanel.value = null;
-    processPanelError.value = error?.response?.data?.message || 'No se pudieron cargar los procesos seleccionados.';
-  } finally {
-    processPanelLoading.value = false;
-  }
-};
-
-// Refresca el/los panel(es) activos tras una acción, preservando filtros y selección.
-// En modo consolidado recarga todos los procesos seleccionados; si no, el panel singular.
-const refreshActiveProcessPanel = async () => {
-  if (showProcessesPanel.value && selectedProcessPanels.value.length) {
-    const processes = consolidatedCargoProcesses.value.filter((p) =>
-      selectedConsolidatedProcessIds.value.includes(String(p.process_definition_id || p.id))
-    );
-    if (processes.length) {
-      await loadProcessPanelsForProcesses(processes, { resetFilters: false });
-      return;
-    }
-  }
-  if (selectedProcessContext.value) {
-    await loadSelectedProcessPanel(selectedProcessContext.value);
-  }
 };
 
 const loadDocumentCenterPage = async () => {
