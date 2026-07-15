@@ -2740,6 +2740,7 @@ import RoutedProcessPanel from '@/modules/home/components/RoutedProcessPanel.vue
 import { useRecipientSearch } from '@/modules/home/composables/useRecipientSearch.js';
 import { useProcessPanels } from '@/modules/home/composables/useProcessPanels.js';
 import { useFlowBuilder } from '@/modules/home/composables/useFlowBuilder.js';
+import { useDeliverableCollapse } from '@/modules/home/composables/useDeliverableCollapse.js';
 import {
   formatAttachmentSize,
   formatDate,
@@ -2945,7 +2946,6 @@ const fillObservations = computed(() => deliverableObservations.value.filter((o)
 const signatureObservations = computed(() => deliverableObservations.value.filter((o) => o.phase === 'signature'));
 const processingFillItemId = ref(null);
 const startedDeliverableIds = ref(new Set());
-const collapsedDeliverableIds = ref(new Set());
 const fillWorkflowSubmitting = ref(false);
 const deliverablePreviewUrl = ref('');
 const deliverablePreviewName = ref('');
@@ -4097,6 +4097,13 @@ const filteredProcessDeliverables = computed(() =>
       return String(unitId) === activeProcessUnitTab.value;
     })
 );
+
+const {
+  isDeliverableCollapsed,
+  toggleDeliverableCard,
+  isProcessCollapsed,
+  toggleDeliverableProcess,
+} = useDeliverableCollapse({ filteredProcessDeliverables });
 
 const buildDeliverableRows = (items, keyPrefix = 'row') => {
   const columns = Math.max(1, Number(deliverableGridColumns.value || 1));
@@ -6065,42 +6072,6 @@ const getDeliverableDueState = (payload) => {
     return { label: 'Vencimiento', value: formattedDate, variant: 'warning' };
   }
   return { label: 'Vencimiento', value: formattedDate, variant: 'success' };
-};
-
-const getDeliverableCollapseKey = (payload) => String(payload?.id || payload?.document_id || payload?.task_item_id || '');
-
-const isDeliverableCollapsed = (payload) => collapsedDeliverableIds.value.has(getDeliverableCollapseKey(payload));
-
-const toggleDeliverableCard = (payload) => {
-  const key = getDeliverableCollapseKey(payload);
-  if (!key) return;
-  const next = new Set(collapsedDeliverableIds.value);
-  if (next.has(key)) next.delete(key);
-  else next.add(key);
-  collapsedDeliverableIds.value = next;
-};
-
-// Colapso a nivel proceso: todas las tarjetas del proceso visible se contraen/expanden juntas.
-const isProcessCollapsed = computed(() => {
-  const items = filteredProcessDeliverables.value;
-  return items.length > 0 && items.every((deliverable) => isDeliverableCollapsed(deliverable?.item));
-});
-
-const toggleDeliverableProcess = () => {
-  const items = filteredProcessDeliverables.value;
-  if (!items.length) return;
-
-  const next = new Set(collapsedDeliverableIds.value);
-  const shouldExpand = isProcessCollapsed.value;
-
-  items.forEach((deliverable) => {
-    const key = getDeliverableCollapseKey(deliverable?.item);
-    if (!key) return;
-    if (shouldExpand) next.delete(key);
-    else next.add(key);
-  });
-
-  collapsedDeliverableIds.value = next;
 };
 
 const isReviewFillStep = computed(() => {
