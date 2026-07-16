@@ -216,20 +216,28 @@ Debe ser: la **ruta padre** con `<router-view>` dentro, y las páginas sin saber
 
 > Regla de oro en todas: **pasos pequeños, el programa funcionando después de cada uno, y refactor y feature en commits distintos.**
 
-### Fase 0 — Bugs y código muerto (barato, sin refactor)
+### Fase 0 — Bugs y código muerto ✅ **COMPLETADA (16-07-2026)**
 
-Va primero porque es barato, algunos son visibles al usuario, y **no debe mezclarse** con el refactor.
+Fue primero porque era barato, algunos eran visibles al usuario, y **no debía mezclarse** con el refactor.
 
-| # | Acción | Riesgo |
-|---|---|---|
-| 0.1 | **Guard de backend** para `DELETE` de `process_definition_versions` (§3.1) | Bajo — el guard ya existe, sólo hay que invocarlo |
-| 0.2 | Resetear `searchTerm` en `useAdminTableReset.js` | Trivial |
-| 0.3 | `fieldsJson`: borrar el panel o definir el computed | Trivial |
-| 0.4 | `isMouseOverPdf` en el `v-if` de `MultiSignerPanel` | Trivial |
-| 0.5 | Borrar ramas `managementSection` de `AdminView` y el duplicado `isProcessTable` | Trivial |
-| 0.6 | Decidir sobre "Orígenes" y las 7 tablas fantasma: ¿exponer en `sqlTables.js` u ocultar? | Bajo — **requiere decisión de producto** |
-| 0.7 | `recordId = list[last]`: pedir al backend que devuelva el id creado | Medio — **toca contrato de API** |
-| 0.8 | Corregir las rutas del `CLAUDE.md` (§3.4) | Trivial |
+| # | Acción | Estado | Verificación |
+|---|---|---|---|
+| 0.1 | **Guard de backend** para `DELETE` de `process_definition_versions` (§3.1) | ✅ | E2E por API: borrar config `active` → **400** y fila intacta; borrar config `draft` → **200** y borrada |
+| 0.2 | Resetear `searchTerm` en `useAdminTableReset.js` | ✅ | E2E en navegador: buscar "Carrera" en *Tipos de unidad* → saltar a *Tipos de relacion* → caja vacía y tabla sin filtrar |
+| 0.3 | `fieldsJson`: panel de depuración borrado | ✅ | Nunca renderizó contenido (el computed no existía): sólo pintaba una caja negra vacía |
+| 0.4 | `isMouseOverPdf` añadido al `v-if` de `MultiSignerPanel` | ✅ | Alineado con `FirmarPdf.vue:302` |
+| 0.5 | Ramas `managementSection` de `AdminView` + duplicado `isProcessTable` borrados | ✅ | Arrastró `watch`, `useRoute` y `route`, que quedaban huérfanos |
+| 0.6 | "Orígenes" y las 7 tablas fantasma | ✅ | Filtro genérico `tableCount > 0` en `buildIndexMenuItems` + 7 referencias muertas eliminadas. Verificado en navegador: la tarjeta desapareció, "Vacantes" y "Contratos" siguen operativas |
+| 0.7 | `recordId = list[last]` → `createdId` del backend | ✅ | `addItem` ya devolvía `insertId`; el controller lo tiraba. E2E: crear título con PDF → `url_documento` = `…/titulo/6.pdf` sobre el registro 6 correcto |
+| 0.8 | Rutas del `CLAUDE.md` corregidas (§3.4) | ✅ | |
+
+**Validación**: `pnpm run lint` limpio · `pnpm run test:unit` 51/51 · consola del navegador sin errores · BD dev restaurada a su estado original.
+
+**Notas de la ejecución** (cosas que cambiaron respecto al diagnóstico):
+- **0.7 era un bug latente, no activo.** `loadTree` consulta con `ORDER BY id ASC`, así que `list[último]` acertaba *hoy*. El arreglo elimina el acoplamiento a ese `ORDER BY`, que era la bomba.
+- **0.6 aplicó Extract Method antes del fix**: los 5 `*MenuItems` eran idénticos, así que se extrajo `buildIndexMenuItems()` y el filtro se escribió **una** vez en vez de cinco (adelanta parte de la Fase 4.5). `tableCount` era una propiedad que sólo se escribía y nunca se leía; ahora es la base del filtro.
+- Se corrigieron además las descripciones de "Vacantes" y "Permisos", que prometían tablas que la UI no podía mostrar.
+- **`actions`, `resources`, `aplications`, `offers` y los 3 `contract_origin*` siguen existiendo en la BD** y sin exponerse. Si alguna vez deben gestionarse desde el admin, basta con añadirlas a `sqlTables.js`. Ojo con `actions`/`resources`: son primitivas de RBAC y hacerlas editables a mano puede romper permisos.
 
 ### Fase 1 — Red de seguridad
 

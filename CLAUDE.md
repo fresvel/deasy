@@ -76,8 +76,8 @@ bash scripts/reset-db.sh <env>                      # reset PostgreSQL schema
 ### Frontend (`frontend/src/`)
 - `modules/` — feature modules (`auth`, `admin`, `procesos`, `dossier`, `firmas`, `academia`, `perfil`, `home`).
 - `core/` — app config, constants, router, cross-cutting services/utils.
-- `shared/` — reusable `components`, `composables`, `services`, `styles`, `utils`. Reuse from here before creating local primitives.
-- Vue Composition API with `<script setup>`. Global visual behavior lives in `frontend/src/styles/tailwind.css`; do not hardcode colors/spacing/radii that already exist as shared classes.
+- `shared/` — reusable `components`, `composables`, `styles`, `utils`. Reuse from here before creating local primitives. (There is no `shared/services/`; cross-cutting services live in `core/services/`.)
+- Vue Composition API with `<script setup>`. Global visual behavior lives in `frontend/src/shared/styles/tailwind.css` **and** `shared/styles/theme.css` (both loaded from `main.js`); do not hardcode colors/spacing/radii that already exist as shared classes. ⚠️ Ambos ficheros tienen deuda conocida (selectores redefinidos en conflicto y dos juegos de tokens `--deasy-*`/`--brand-*`): ver `docs/plan-refactor-frontend.md` §3.4 antes de migrar hardcodes.
 - Approved base components to reuse: `AppButton`, `AppDataTable`, `AppModalShell` / `AppFormModalLayout`, `AppTag`, `AppNavCard`, `PdfDropField`.
 
 ### Process engine (core domain)
