@@ -2313,6 +2313,7 @@ import GeneralTaskModal from '@/modules/home/components/GeneralTaskModal.vue';
 import DeliverableAttachmentsTab from '@/modules/home/components/DeliverableAttachmentsTab.vue';
 import DeliverableFillTab from '@/modules/home/components/DeliverableFillTab.vue';
 import DeliverableSignatureTab from '@/modules/home/components/DeliverableSignatureTab.vue';
+import { useDeliverableView } from '@/modules/home/composables/useDeliverableView.js';
 import {
   formatAttachmentSize,
   formatDate,
@@ -3180,24 +3181,7 @@ const handleGroupDropdownOutsideClick = (event) => {
   }
 };
 
-
 const processIconMeta = (process = {}) => resolveWorkspaceProcessIcon(process);
-
-const resolveUnitNameById = (unitId) => {
-  const normalized = Number(unitId || 0);
-  if (!normalized) return '';
-  const directUnit = userUnits.value.find((unit) => Number(unit.id) === normalized);
-  if (directUnit) {
-    return directUnit.label || directUnit.name || '';
-  }
-  for (const group of unitGroups.value) {
-    const nestedUnit = (group?.units || []).find((unit) => Number(unit.id) === normalized);
-    if (nestedUnit) {
-      return nestedUnit.label || nestedUnit.name || '';
-    }
-  }
-  return '';
-};
 
 const resetTaskLaunchForm = () => {
   taskLaunchForm.value = {
@@ -3354,6 +3338,79 @@ const navigateToGlobalSignaturePage = async () => {
 };
 
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
+
+const {
+  canApproveFillRequestForPayload,
+  canPreviewInline,
+  canRejectFillRequestForPayload,
+  canReturnFillRequestForPayload,
+  canStartDeliverableAction,
+  capitalize,
+  currentUserCanOperateFillStep,
+  currentUserCanOperateSignatureStep,
+  getCurrentFillStepCandidates,
+  getCurrentFillWorkflowRequest,
+  getCurrentSignatureRequestsFromSubject,
+  getCurrentSignatureStepOrder,
+  getCurrentSignatureStepOrderFromSubject,
+  getCurrentSignatureWorkflowRequest,
+  getDeliverableAccessSource,
+  getDeliverableActionFilterState,
+  getDeliverableCardTone,
+  getDeliverableCurrentResponsibility,
+  getDeliverableDateRangeLabel,
+  getDeliverableDocumentTagVariant,
+  getDeliverableDueState,
+  getDeliverableHeaderActionTone,
+  getDeliverableParticipationFlags,
+  getDeliverablePeriodLabel,
+  getDeliverablePeriodLabelFromSubject,
+  getDeliverableProcessLabel,
+  getDeliverableProgress,
+  getDeliverableStateIcon,
+  getDeliverableSubject,
+  getDeliverableTagGroups,
+  getDeliverableUnitLabel,
+  getDeliverableWorkspacePayload,
+  getDeliverableWorkspaceTabClass,
+  getFileExtension,
+  getFileNameFromPath,
+  getFillApproveActionLabelForPayload,
+  getFillRequestId,
+  getFillResponsibleName,
+  getSignatureRequestAssignedSummary,
+  getSignatureResponsibleName,
+  getSignatureStepAssignedSummary,
+  getSignatureStepsFromSubject,
+  getUploadActionLabel,
+  hasDeliverableBeenStarted,
+  hasFillWorkflowActivity,
+  hasPendingFillWorkflow,
+  hasSignatureWorkflowActivity,
+  isDeliverableSignatureFlowCompleted,
+  isFillRequestActionableByCurrentUser,
+  isPdfWorkingFile,
+  isReviewFillRequestForPayload,
+  isSignaturePhaseDocumentStatus,
+  resolveUnitNameById,
+  shouldShowManageFill,
+  shouldShowResetWorkflow,
+  shouldShowSign,
+  shouldShowSignatureFlow,
+  shouldShowStartDeliverable,
+  shouldShowUploadDeliverable,
+  subjectHasWorkingArtifact,
+} = useDeliverableView({
+  currentUser,
+  currentUserId,
+  deliverableWorkspaceState,
+  selectedProcessContext,
+  selectedProcessPanel,
+  startedDeliverableIds,
+  unitGroups,
+  userFullName,
+  userUnits,
+});
 
 const {
   loadProcessPanelsForProcesses,
@@ -3773,12 +3830,6 @@ const canSubmitTaskLaunch = computed(() => {
   return Boolean(taskLaunchForm.value.term_id);
 });
 
-const capitalize = (value) => {
-  const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return '';
-  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
-};
-
 const signatureRequestStatusLabel = (statusCode) => {
   const normalized = String(statusCode || '').trim().toLowerCase();
   switch (normalized) {
@@ -3809,56 +3860,6 @@ const signatureRequestTagVariant = (statusCode) => {
     return 'warning';
   }
   return 'muted';
-};
-
-const getCurrentSignatureStepOrder = (snapshot) => {
-  const explicit = Number(snapshot?.currentSignatureStepOrder || 0);
-  if (explicit > 0) return explicit;
-
-  const requests = Array.isArray(snapshot?.signatureRequests) ? snapshot.signatureRequests : [];
-  const pendingLike = requests
-    .filter((request) => ['pendiente', 'en_progreso'].includes(String(request?.requestStatusCode || '').trim().toLowerCase()))
-    .sort((a, b) => Number(a?.stepOrder || 0) - Number(b?.stepOrder || 0));
-  if (pendingLike.length) {
-    return Number(pendingLike[0]?.stepOrder || 0) || null;
-  }
-
-  const completed = requests
-    .filter((request) => String(request?.requestStatusCode || '').trim().toLowerCase() === 'completado')
-    .sort((a, b) => Number(b?.stepOrder || 0) - Number(a?.stepOrder || 0));
-  if (completed.length) {
-    return Number(completed[0]?.stepOrder || 0) || null;
-  }
-
-  return null;
-};
-
-const getDeliverableProcessLabel = (_task = null, item = null) =>
-  item?.process_label
-  || item?.processLabel
-  || selectedProcessPanel.value?.definition?.process_name
-  || selectedProcessContext.value?.name
-  || 'Proceso';
-
-const getDeliverableUnitLabel = (item) =>
-  item?.unit_label
-  || item?.unitLabel
-  || resolveUnitNameById(
-    item?.origin_unit_id
-    || item?.originUnitId
-    || item?.scope_unit_id
-    || item?.scopeUnitId
-    || selectedProcessContext.value?.unit_id
-  )
-  || selectedProcessContext.value?.label
-  || selectedProcessContext.value?.name
-  || 'Unidad no definida';
-
-const getDeliverablePeriodLabel = (task) => {
-  const raw = task?.term_name || '';
-  // Las tareas libres usan un term con sufijo técnico único (" · #uid-token"); se oculta.
-  const clean = raw.replace(/\s*·\s*#[^·]*$/, '').trim();
-  return clean || 'Periodo no definido';
 };
 
 const loadDocumentCenterPage = async () => {
@@ -4587,109 +4588,6 @@ const openFillWorkflowModal = (payload = {}) => {
   fillWorkflowModalInstance?.show();
 };
 
-const getDeliverableSubject = (payload = {}) => {
-  const documentPayload = payload?.document || payload;
-  const workingFilePath = documentPayload?.working_file_path || documentPayload?.workingFilePath || payload?.workingFilePath || '';
-  const finalFilePath = documentPayload?.final_file_path || documentPayload?.finalFilePath || payload?.finalFilePath || '';
-  const preloadFilePath = finalFilePath || workingFilePath;
-  const preloadPdfPath = [finalFilePath, workingFilePath].find((value) => canPreviewInline(value)) || '';
-  return {
-    id: payload?.id || documentPayload?.id || documentPayload?.task_item_id || null,
-    itemId: payload?.id || payload?.itemId || documentPayload?.task_item_id || documentPayload?.itemId || null,
-    taskId: payload?.task_id || payload?.taskId || documentPayload?.task_id || documentPayload?.taskId || null,
-    processDefinitionId:
-      payload?.process_definition_id
-      || payload?.processDefinitionId
-      || documentPayload?.process_definition_id
-      || documentPayload?.processDefinitionId
-      || null,
-    documentId: documentPayload?.document_id || documentPayload?.documentId || payload?.documentId || null,
-    documentVersionId: documentPayload?.document_version_id || documentPayload?.documentVersionId || payload?.documentVersionId || null,
-    documentVersion: documentPayload?.document_version || documentPayload?.documentVersion || payload?.documentVersion || null,
-    processId:
-      payload?.process_id
-      || payload?.processId
-      || payload?.workflow?.process_id
-      || payload?.workflow?.processId
-      || selectedProcessPanel.value?.definition?.chat_context?.process_id
-      || selectedProcessPanel.value?.definition?.process_id
-      || null,
-    scopeUnitId:
-      payload?.scope_unit_id
-      || documentPayload?.scope_unit_id
-      || payload?.scopeUnitId
-      || documentPayload?.scopeUnitId
-      || selectedProcessContext.value?.unit_id
-      || null,
-    originUnitId:
-      payload?.origin_unit_id
-      || documentPayload?.origin_unit_id
-      || payload?.originUnitId
-      || documentPayload?.originUnitId
-      || null,
-    title: payload?.title || payload?.template_artifact_name || documentPayload?.title || documentPayload?.template_artifact_name || `Entregable #${payload?.id || documentPayload?.document_id || 's/n'}`,
-    templateArtifactName: payload?.template_artifact_name || payload?.templateArtifactName || documentPayload?.template_artifact_name || documentPayload?.templateArtifactName || '',
-    actions: payload?.actions || documentPayload?.actions || {},
-    workflow: payload?.workflow || documentPayload?.workflow || {},
-    status: payload?.status || payload?.status_name || payload?.statusName || documentPayload?.status || documentPayload?.status_name || documentPayload?.statusName || '',
-    documentStatus: payload?.document_status || payload?.documentStatus || documentPayload?.document_status || documentPayload?.documentStatus || '',
-    pendingFillCount: payload?.pending_fill_count || payload?.pendingFillCount || documentPayload?.pending_fill_count || documentPayload?.pendingFillCount || 0,
-    pendingSignatureCount: payload?.pending_signature_count || payload?.pendingSignatureCount || documentPayload?.pending_signature_count || documentPayload?.pendingSignatureCount || 0,
-    itemStartDate:
-      payload?.item_start_date
-      || payload?.itemStartDate
-      || documentPayload?.item_start_date
-      || documentPayload?.itemStartDate
-      || payload?.start_date
-      || payload?.startDate
-      || documentPayload?.start_date
-      || documentPayload?.startDate
-      || null,
-    itemEndDate:
-      payload?.item_end_date
-      || payload?.itemEndDate
-      || documentPayload?.item_end_date
-      || documentPayload?.itemEndDate
-      || payload?.end_date
-      || payload?.endDate
-      || documentPayload?.end_date
-      || documentPayload?.endDate
-      || null,
-    userStartedAt:
-      payload?.user_started_at
-      || payload?.userStartedAt
-      || documentPayload?.user_started_at
-      || documentPayload?.userStartedAt
-      || null,
-    taskStartDate: payload?.task_start_date || payload?.taskStartDate || documentPayload?.task_start_date || documentPayload?.taskStartDate || null,
-    taskEndDate: payload?.task_end_date || payload?.taskEndDate || documentPayload?.task_end_date || documentPayload?.taskEndDate || null,
-    periodLabel: payload?.period_label || payload?.periodLabel || '',
-    unitLabel:
-      payload?.unit_label
-      || payload?.unitLabel
-      || payload?.origin_unit_label
-      || payload?.originUnitLabel
-      || documentPayload?.unit_label
-      || documentPayload?.unitLabel
-      || documentPayload?.origin_unit_label
-      || documentPayload?.originUnitLabel
-      || '',
-    processLabel: payload?.process_label || payload?.processLabel || '',
-    description:
-      payload?.template_artifact_description
-      || payload?.templateArtifactDescription
-      || payload?.description
-      || documentPayload?.template_artifact_description
-      || documentPayload?.templateArtifactDescription
-      || documentPayload?.description
-      || '',
-    workingFilePath,
-    finalFilePath,
-    preloadFilePath,
-    preloadPdfPath
-  };
-};
-
 const resolvePreferredChatScopeUnitId = (payload = null) => {
   const subject = payload ? getDeliverableSubject(payload) : null;
   if (subject?.scopeUnitId) {
@@ -4766,273 +4664,9 @@ watch(
   { immediate: true, deep: true }
 );
 
-const getFileNameFromPath = (filePath = '') => filePath.split('/').pop() || 'archivo';
-
-const getFileExtension = (filePath = '') => {
-  const fileName = getFileNameFromPath(filePath);
-  const dotIndex = fileName.lastIndexOf('.');
-  return dotIndex >= 0 ? fileName.slice(dotIndex + 1).toLowerCase() : '';
-};
-
-const canPreviewInline = (filePath = '') => getFileExtension(filePath) === 'pdf';
-
-const isPdfWorkingFile = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return canPreviewInline(subject.workingFilePath);
-};
-
-const subjectHasWorkingArtifact = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return Boolean(subject.workingFilePath || subject.finalFilePath || subject.preloadFilePath);
-};
-
-const getCurrentFillStepCandidates = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const currentStepOrder = Number(
-    subject.workflow?.fill_flow?.current_step_order
-    || subject.workflow?.fill_flow?.currentStepOrder
-    || subject.workflow?.current_fill_step_order
-    || subject.workflow?.currentFillStepOrder
-    || 0
-  );
-  if (!currentStepOrder) {
-    const pendingRequests = (subject.workflow?.fill_requests || []).filter((item) => !(item?.responded_at || item?.respondedAt));
-    if (pendingRequests.length) {
-      return pendingRequests;
-    }
-  }
-  const stepCandidates = (subject.workflow?.fill_steps || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
-  if (stepCandidates.length) {
-    return stepCandidates;
-  }
-  return (subject.workflow?.fill_requests || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
-};
-
-const getCurrentFillWorkflowRequest = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const currentUser = Number(currentUserId.value || 0);
-  const currentStepCandidates = getCurrentFillStepCandidates(payload);
-  const unresolvedCurrentStepCandidates = currentStepCandidates.filter((item) => !(item?.responded_at || item?.respondedAt));
-  const preferredCurrentStepRequest =
-    unresolvedCurrentStepCandidates.find((item) => Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
-    || unresolvedCurrentStepCandidates.find((item) => Number(item.assigned_person_id || item.assignedPersonId || 0) > 0)
-    || unresolvedCurrentStepCandidates.find((item) => item.is_manual)
-    || currentStepCandidates.find((item) => Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
-    || currentStepCandidates[0];
-
-  return (
-    preferredCurrentStepRequest
-    || (subject.workflow?.fill_requests || []).find((item) => !(item?.responded_at || item?.respondedAt) && Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
-    || (subject.workflow?.fill_requests || []).find((item) => !(item?.responded_at || item?.respondedAt))
-    || subject.workflow?.fill_steps?.[0]
-    || subject.workflow?.fill_requests?.[0]
-    || null
-  );
-};
-
-const getFillRequestId = (request) => Number(request?.request_id || request?.id || 0) || null;
-
-const getDeliverableAccessSource = (payload) => {
-  const selectedAccessSource =
-    String(selectedProcessPanel.value?.definition?.access_source || selectedProcessContext.value?.access_source || '')
-      .trim()
-      .toLowerCase();
-  if (selectedAccessSource === 'flow') {
-    return 'Derivado';
-  }
-
-  const subject = getDeliverableSubject(payload);
-  const currentUser = Number(currentUserId.value || 0);
-  const currentFillRequest = getCurrentFillWorkflowRequest(payload);
-  const fillAssignedPersonId = Number(currentFillRequest?.assigned_person_id || currentFillRequest?.assignedPersonId || 0);
-  const fillResolverType = String(currentFillRequest?.resolver_type || currentFillRequest?.resolverType || '').trim().toLowerCase();
-
-  if (fillAssignedPersonId > 0 && fillAssignedPersonId === currentUser) {
-    if (['cargo_in_scope', 'position', 'specific_person', 'manual_pick'].includes(fillResolverType)) {
-      return 'Derivado';
-    }
-    return 'Directo';
-  }
-
-  const currentUserPendingSignature = (subject.workflow?.signature_requests || []).some((request) => {
-    const assignedPersonId = Number(request?.assigned_person_id || 0);
-    return assignedPersonId === currentUser && !request.responded_at;
-  });
-  if (currentUserPendingSignature) {
-    return 'Derivado';
-  }
-
-  return 'Directo';
-};
-
-const isFillRequestActionableByCurrentUser = (request) => {
-  if (!request) return false;
-  const currentUser = Number(currentUserId.value || 0);
-  const assignedPersonId = Number(request.assigned_person_id || request.assignedPersonId || 0);
-  if (assignedPersonId > 0) {
-    return assignedPersonId === currentUser;
-  }
-  return Boolean(request.is_manual || request.isManual);
-};
-
-const currentUserCanOperateFillStep = (payload) => {
-  const currentUser = Number(currentUserId.value || 0);
-  const candidates = getCurrentFillStepCandidates(payload);
-  if (!candidates.length) {
-    const fallbackRequest = getCurrentFillWorkflowRequest(payload);
-    return isFillRequestActionableByCurrentUser(fallbackRequest);
-  }
-  return candidates.some((request) => {
-    const assignedPersonId = Number(request?.assigned_person_id || request?.assignedPersonId || 0);
-    if (assignedPersonId > 0) {
-      return assignedPersonId === currentUser;
-    }
-    return Boolean(request?.is_manual || request?.isManual);
-  });
-};
-
-const hasDeliverableBeenStarted = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  if (subject.itemId && startedDeliverableIds.value.has(Number(subject.itemId))) return true;
-  if (subject.userStartedAt) return true;
-  if (subjectHasWorkingArtifact(payload)) return true;
-  const request = getCurrentFillWorkflowRequest(payload);
-  const code = getFillRequestStatusCode(request);
-  return ['in_progress', 'approved', 'returned', 'rejected', 'cancelled'].includes(code);
-};
-
-const shouldShowStartDeliverable = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const request = getCurrentFillWorkflowRequest(payload);
-  const code = getFillRequestStatusCode(request);
-  return Boolean(
-    subject.documentId
-    && !isSignaturePhaseDocumentStatus(payload)
-    && code === 'pending'
-    && !hasDeliverableBeenStarted(payload)
-  );
-};
-
-const canStartDeliverableAction = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  if (subject.itemId && startedDeliverableIds.value.has(Number(subject.itemId))) return false;
-  if (subjectHasWorkingArtifact(payload)) return false;
-  const request = getCurrentFillWorkflowRequest(payload);
-  const code = getFillRequestStatusCode(request);
-  if (code !== 'pending') {
-    return false;
-  }
-  return currentUserCanOperateFillStep(payload) || isFillRequestActionableByCurrentUser(request);
-};
-
-const shouldShowUploadDeliverable = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const request = getCurrentFillWorkflowRequest(payload);
-  const code = getFillRequestStatusCode(request);
-  return Boolean(
-    subject.actions?.can_upload_deliverable
-    && !isSignaturePhaseDocumentStatus(payload)
-    && currentUserCanOperateFillStep(payload)
-    && hasDeliverableBeenStarted(payload)
-    && ['pending', 'in_progress', 'returned'].includes(code)
-  );
-};
-
 const shouldShowTemplateDownload = (payload) => {
   const subject = getDeliverableSubject(payload);
   return Boolean(subject.actions?.can_download_template && hasDeliverableBeenStarted(payload));
-};
-
-const isReviewFillRequestForPayload = (payload) => {
-  const resolver = String(getCurrentFillWorkflowRequest(payload)?.resolver_type || '').trim().toLowerCase();
-  return ['cargo_in_scope', 'position', 'specific_person'].includes(resolver);
-};
-
-const canApproveFillRequestForPayload = (payload) => {
-  const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
-  return !isSignaturePhaseDocumentStatus(payload)
-    && currentUserCanOperateFillStep(payload)
-    && ['pending', 'in_progress'].includes(code)
-    && subjectHasWorkingArtifact(payload);
-};
-
-const canReturnFillRequestForPayload = (payload) => {
-  const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
-  return !isSignaturePhaseDocumentStatus(payload)
-    && currentUserCanOperateFillStep(payload)
-    && isReviewFillRequestForPayload(payload)
-    && ['pending', 'in_progress', 'returned'].includes(code);
-};
-
-const canRejectFillRequestForPayload = (payload) => {
-  const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
-  return !isSignaturePhaseDocumentStatus(payload)
-    && currentUserCanOperateFillStep(payload)
-    && isReviewFillRequestForPayload(payload)
-    && ['pending', 'in_progress', 'returned'].includes(code);
-};
-
-const getFillApproveActionLabelForPayload = (payload) => (
-  isReviewFillRequestForPayload(payload) ? 'Aprobar' : 'Enviar'
-);
-
-const shouldShowManageFill = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return Boolean(subject.actions?.can_manage_fill && subject.preloadFilePath);
-};
-
-const shouldShowSignatureFlow = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return Boolean(subject.actions?.can_review_signature_flow);
-};
-
-const hasPendingFillWorkflow = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const requests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
-  const steps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
-  const flowSteps = Array.isArray(subject.workflow?.fill_flow?.steps) ? subject.workflow.fill_flow.steps : [];
-  return requests.some((request) => !(request?.responded_at || request?.respondedAt))
-    || steps.some((step) => ['pending', 'in_progress', 'returned'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()))
-    || flowSteps.some((step) => ['pending', 'in_progress', 'returned'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()));
-};
-
-const hasFillWorkflowActivity = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const steps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
-  const requests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
-  return steps.length > 0
-    || requests.length > 0
-    || Number(
-      subject.workflow?.fill_flow?.current_step_order
-      || subject.workflow?.fill_flow?.currentStepOrder
-      || subject.workflow?.current_fill_step_order
-      || subject.workflow?.currentFillStepOrder
-      || 0
-    ) > 0;
-};
-
-const isSignaturePhaseDocumentStatus = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const normalized = String(
-    subject.document_status
-    || subject.documentStatus
-    || subject.document_version_status
-    || subject.documentVersionStatus
-    || ''
-  ).trim().toLowerCase();
-  return ['listo para firma', 'pendiente de firma', 'firmado parcial', 'firmado completo', 'firmado'].includes(normalized);
-};
-
-const hasSignatureWorkflowActivity = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
-  return requests.length > 0
-    || Number(subject.workflow?.signature_flow?.current_step_order || subject.workflow?.current_signature_step_order || 0) > 0;
-};
-
-const getSignatureStepsFromSubject = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return Array.isArray(subject.workflow?.signature_steps) ? subject.workflow.signature_steps : [];
 };
 
 const resolveDeliverableWorkspaceTab = (payload) => {
@@ -5042,82 +4676,6 @@ const resolveDeliverableWorkspaceTab = (payload) => {
   return 'summary';
 };
 
-const getDeliverableWorkspaceTabClass = (tab) => {
-  if (deliverableWorkspaceState.value.tab === tab) {
-    return 'border-slate-200 bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
-  }
-  return 'border-transparent bg-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-700';
-};
-
-const shouldShowResetWorkflow = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return Boolean(subject.actions?.can_reset_workflow && subject.actions?.implemented?.reset_workflow);
-};
-
-const getCurrentSignatureStepOrderFromSubject = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
-  const explicit = Number(
-    subject.workflow?.signature_flow?.current_step_order
-    || subject.workflow?.current_signature_step_order
-    || 0
-  );
-  if (explicit > 0) {
-    const matchesExplicitPendingStep = requests.some((request) => {
-      const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
-      return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
-        && !request?.responded_at
-        && Number(request?.step_order || 0) === explicit;
-    });
-    if (matchesExplicitPendingStep) return explicit;
-  }
-
-  const pendingLike = requests
-    .filter((request) => {
-      const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
-      return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
-    })
-    .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
-  if (pendingLike.length) {
-    return Number(pendingLike[0]?.step_order || 0) || null;
-  }
-
-  return null;
-};
-
-const getCurrentSignatureRequestsFromSubject = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const currentStepOrder = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0);
-  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
-  if (!currentStepOrder) {
-    return requests.filter((request) => !request?.responded_at);
-  }
-  return requests.filter((request) => Number(request?.step_order || 0) === currentStepOrder);
-};
-
-const currentUserCanOperateSignatureStep = (payload) => {
-  const currentUser = Number(currentUserId.value || 0);
-  if (!currentUser) return false;
-
-  const requests = getCurrentSignatureRequestsFromSubject(payload);
-  return requests.some((request) => {
-    const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
-    const isPendingLike = ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code);
-    return isPendingLike
-      && !request?.responded_at
-      && Number(request?.assigned_person_id || 0) === currentUser;
-  });
-};
-
-const shouldShowSign = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return Boolean(
-    subject.actions?.can_sign
-    && currentUserCanOperateSignatureStep(payload)
-    && isPdfWorkingFile(payload)
-  );
-};
-
 const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
   !shouldShowStartDeliverable(payload)
   && !shouldShowUploadDeliverable(payload)
@@ -5125,446 +4683,11 @@ const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
   && (shouldShowManageFill(payload) || shouldShowSignatureFlow(payload))
 );
 
-const getDeliverableCardTone = (payload) => {
-  if (shouldShowStartDeliverable(payload)) {
-    return {
-      card: 'border-indigo-200 hover:border-indigo-300',
-      header: 'border-indigo-100 bg-indigo-50/60 text-indigo-700',
-      accent: 'bg-indigo-500',
-      responsibility: 'border-indigo-100 bg-indigo-50/40',
-      responsibilityLabel: 'text-indigo-700',
-      iconChip: 'bg-indigo-100 text-indigo-700'
-    };
-  }
-
-  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-    return {
-      card: 'border-emerald-200 hover:border-emerald-300',
-      header: 'border-emerald-100 bg-emerald-50/60 text-emerald-700',
-      accent: 'bg-emerald-400',
-      responsibility: 'border-emerald-100 bg-emerald-50/40',
-      responsibilityLabel: 'text-emerald-700',
-      iconChip: 'bg-emerald-100 text-emerald-700'
-    };
-  }
-
-  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
-    return {
-      card: 'border-sky-200 hover:border-sky-300',
-      header: 'border-sky-100 bg-sky-50/60 text-sky-700',
-      accent: 'bg-sky-400',
-      responsibility: 'border-sky-100 bg-sky-50/40',
-      responsibilityLabel: 'text-sky-700',
-      iconChip: 'bg-sky-100 text-sky-700'
-    };
-  }
-
-  const subject = getDeliverableSubject(payload);
-  const variant = getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral');
-  if (variant === 'success') {
-    return {
-      card: 'border-emerald-200 hover:border-emerald-300',
-      header: 'border-emerald-100 bg-emerald-50/60 text-emerald-700',
-      accent: 'bg-emerald-400',
-      responsibility: 'border-emerald-100 bg-emerald-50/40',
-      responsibilityLabel: 'text-emerald-700',
-      iconChip: 'bg-emerald-100 text-emerald-700'
-    };
-  }
-
-  return {
-    card: 'border-slate-200 hover:border-slate-300',
-    header: 'border-slate-100 bg-slate-50/70 text-slate-500',
-    accent: 'bg-slate-300',
-    responsibility: 'border-slate-100 bg-slate-50/50',
-    responsibilityLabel: 'text-slate-500',
-    iconChip: 'bg-slate-100 text-slate-500'
-  };
-};
-
-const getDeliverableStateIcon = (payload) => {
-  if (shouldShowStartDeliverable(payload)) return IconPlayerPlayFilled;
-  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) return IconSignature;
-  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) return IconUpload;
-  const subject = getDeliverableSubject(payload);
-  if (getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral') === 'success') return IconCircleCheck;
-  return IconFileDescription;
-};
-
-const getDeliverableHeaderActionTone = (payload) => {
-  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-    return 'border-[#4BF1A1]/65 text-[#118a57] hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 focus:ring-[#4BF1A1]/35';
-  }
-  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
-    return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';
-  }
-  if (shouldShowStartDeliverable(payload)) {
-    return 'border-indigo-100/95 text-indigo-700 hover:border-indigo-200 hover:bg-indigo-50 focus:ring-indigo-200/70';
-  }
-  return 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
-};
-
-const isDeliverableSignatureFlowCompleted = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
-  const steps = getSignatureStepsFromSubject(payload);
-  if (!requests.length && !steps.length) {
-    return false;
-  }
-
-  const hasPendingLikeRequests = requests.some((request) => {
-    const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
-    return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
-  });
-  if (hasPendingLikeRequests) {
-    return false;
-  }
-
-  const normalizedDocumentStatus = String(
-    subject.document_status
-    || subject.documentStatus
-    || subject.document_version_status
-    || subject.documentVersionStatus
-    || ''
-  ).trim().toLowerCase();
-
-  if (['firmado', 'firmado completo', 'completed', 'completado'].includes(normalizedDocumentStatus)) {
-    return true;
-  }
-
-  const stepOrders = [...new Set(
-    [
-      ...steps.map((step) => Number(step?.step_order || step?.stepOrder || 0)),
-      ...requests.map((request) => Number(request?.step_order || request?.stepOrder || 0))
-    ].filter((value) => value > 0)
-  )];
-
-  if (!stepOrders.length) {
-    return false;
-  }
-
-  return stepOrders.every((stepOrder) => {
-    const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
-    return relatedRequests.length > 0 && relatedRequests.every((request) =>
-      isCompletedSignatureRequestStatus(
-        request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status
-      )
-    );
-  });
-};
-
-const getDeliverableParticipationFlags = (payload) => {
-  const currentUser = Number(currentUserId.value || 0);
-  if (!currentUser) {
-    return { current: false, future: false, past: false };
-  }
-
-  const subject = getDeliverableSubject(payload);
-  const historicalParticipation = payload?.participation || subject?.participation || {};
-  const fillRequests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
-  const signatureRequests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
-  const currentFillStepOrder = Number(
-    subject.workflow?.fill_flow?.current_step_order
-    || subject.workflow?.current_fill_step_order
-    || getCurrentFillWorkflowRequest(payload)?.step_order
-    || 0
-  );
-  const currentSignatureStepOrder = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0);
-
-  const current = Boolean(
-    shouldShowStartDeliverable(payload)
-    || shouldShowUploadDeliverable(payload)
-    || shouldShowSign(payload)
-    || canApproveFillRequestForPayload(payload)
-    || currentUserCanOperateFillStep(payload)
-    || currentUserCanOperateSignatureStep(payload)
-  );
-
-  const futureFill = fillRequests.some((request) =>
-    Number(request?.assigned_person_id || request?.assignedPersonId || 0) === currentUser
-    && !(request?.responded_at || request?.respondedAt)
-    && Number(request?.step_order || request?.stepOrder || 0) > currentFillStepOrder
-  );
-
-  const futureSignature = signatureRequests.some((request) => {
-    const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
-    return Number(request?.assigned_person_id || 0) === currentUser
-      && !request?.responded_at
-      && ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
-      && Number(request?.step_order || request?.stepOrder || 0) > currentSignatureStepOrder;
-  });
-
-  const pastFill = fillRequests.some((request) =>
-    Number(request?.assigned_person_id || request?.assignedPersonId || 0) === currentUser
-    && Boolean(request?.responded_at || request?.respondedAt)
-  );
-
-  const pastSignature = signatureRequests.some((request) =>
-    Number(request?.assigned_person_id || 0) === currentUser
-    && (
-      Boolean(request?.responded_at)
-      || isCompletedSignatureRequestStatus(
-        request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status
-      )
-    )
-  );
-
-  return {
-    current,
-    future: futureFill || futureSignature,
-    past: pastFill
-      || pastSignature
-      || Boolean(historicalParticipation?.has_past_fill)
-      || Boolean(historicalParticipation?.has_past_signature)
-  };
-};
-
-const getDeliverableActionFilterState = (payload) => {
-  if (shouldShowStartDeliverable(payload)) return 'start';
-  if (shouldShowSign(payload)) return 'sign';
-  if (shouldShowUploadDeliverable(payload) || canApproveFillRequestForPayload(payload)) return 'deliver';
-  return 'other';
-};
-
-const getDeliverableDocumentTagVariant = (subject) => {
-  if (!subject?.documentId) return 'warning';
-  return getWorkflowStateTagVariant(subject.documentStatus, 'info');
-};
-
-const getDeliverableTagGroups = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const accessSource = getDeliverableAccessSource(payload);
-  return [
-    {
-      key: 'access-source',
-      variant: getDeliverableAccessTagVariant(accessSource),
-      label: `Acceso: ${accessSource}`
-    },
-    {
-      key: 'deliverable-status',
-      variant: getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral'),
-      label: `Entregable: ${capitalize(subject.status || subject.documentStatus || 'pendiente')}`
-    },
-    {
-      key: 'document-status',
-      variant: getDeliverableDocumentTagVariant(subject),
-      label: subject.documentId
-        ? `Documento: ${subject.documentStatus || 'Creado'}`
-        : 'Documento: sin generar'
-    }
-  ];
-};
-
-const getFillResponsibleName = (payload) => {
-  const request = getCurrentFillWorkflowRequest(payload);
-  const explicitLabel = String(request?.display_label || request?.displayLabel || request?.label || '').trim();
-  if (explicitLabel) return explicitLabel;
-  const assignedPersonName = String(request?.assigned_person_name || request?.assignedPersonName || '').trim();
-  if (assignedPersonName) return assignedPersonName;
-  const cargoName = String(request?.cargo_name || request?.cargoName || '').trim();
-  if (cargoName) return cargoName;
-  const assignedPersonId = Number(request?.assigned_person_id || request?.assignedPersonId || 0);
-  if (assignedPersonId > 0 && assignedPersonId === Number(currentUserId.value || 0)) {
-    return userFullName.value;
-  }
-  return 'Responsable no resuelto';
-};
-
-const getSignatureRequestAssignedSummary = (request) => {
-  const personName = request?.assignedPerson
-    ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim()
-    : String(request?.assigned_person_name || request?.assignedPersonName || '').trim();
-  const cargoName = String(request?.cargoName || request?.cargo_name || '').trim();
-  const explicitLabel = String(request?.display_label || request?.label || '').trim();
-  if (personName && cargoName) {
-    return `${personName} · ${cargoName}`;
-  }
-  return personName || cargoName || explicitLabel || 'Responsable no resuelto';
-};
-
-const getCurrentSignatureWorkflowRequest = (payload) => {
-  const currentUser = Number(currentUserId.value || 0);
-  const requests = getCurrentSignatureRequestsFromSubject(payload);
-  return requests.find((request) => Number(request?.assigned_person_id || 0) === currentUser && !request?.responded_at)
-    || requests.find((request) => Number(request?.assigned_person_id || 0) > 0 && !request?.responded_at)
-    || requests.find((request) => !request?.responded_at)
-    || requests[0]
-    || null;
-};
-
-const getSignatureResponsibleName = (payload) => {
-  const request = getCurrentSignatureWorkflowRequest(payload);
-  if (!request) return 'Responsable no resuelto';
-  const summary = getSignatureRequestAssignedSummary(request);
-  if (summary && summary !== 'Responsable no resuelto') return summary;
-  const assignedPersonId = Number(request?.assigned_person_id || 0);
-  if (assignedPersonId > 0 && assignedPersonId === Number(currentUserId.value || 0)) {
-    return userFullName.value;
-  }
-  return 'Responsable no resuelto';
-};
-
-const getDeliverableCurrentResponsibility = (payload) => {
-  if (isSignaturePhaseDocumentStatus(payload) && (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload))) {
-    return {
-      type: 'signature',
-      name: getSignatureResponsibleName(payload),
-      variant: 'warning'
-    };
-  }
-  if (shouldShowStartDeliverable(payload) || shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
-    return {
-      type: 'fill',
-      name: getFillResponsibleName(payload),
-      variant: 'info'
-    };
-  }
-  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-    return {
-      type: 'signature',
-      name: getSignatureResponsibleName(payload),
-      variant: 'warning'
-    };
-  }
-  return {
-    type: 'none',
-    name: 'no resuelto',
-    variant: 'muted'
-  };
-};
-
-const getDeliverableProgress = (payload) => {
-  const subject = getDeliverableSubject(payload);
-
-  if (hasSignatureWorkflowActivity(payload)) {
-    const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
-    const signatureSteps = getSignatureStepsFromSubject(payload);
-    const templateStepOrders = [...new Set(
-      signatureSteps
-        .map((step) => Number(step?.step_order || step?.stepOrder || 0))
-        .filter((value) => value > 0)
-    )].sort((a, b) => a - b);
-    const requestStepOrders = [...new Set(
-      requests
-        .map((request) => Number(request?.step_order || request?.stepOrder || 0))
-        .filter((value) => value > 0)
-    )].sort((a, b) => a - b);
-    const stepOrders = templateStepOrders.length ? templateStepOrders : requestStepOrders;
-    const total = Number(subject.workflow?.total_signature_steps || 0) || stepOrders.length || Number(subject.pendingSignatureCount || 0) || 0;
-    if (!total) return null;
-    const current = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0) || total;
-    const completedSteps = stepOrders.filter((stepOrder) => {
-      const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
-      if (!relatedRequests.length) return false;
-      return relatedRequests.every((request) => {
-        const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
-        return ['completado', 'completed'].includes(code);
-      });
-    }).length;
-    const hasActivePendingStep = requests.some((request) => {
-      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
-      return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
-    });
-    const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
-    return {
-      label: 'Firmas',
-      current: Math.min(Math.max(current, 1), total),
-      total,
-      percent: Math.min(100, Math.max(8, (progressUnits / total) * 100))
-    };
-  }
-
-  const fillSteps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
-  const total = fillSteps.length || Number(subject.pendingFillCount || 0) || 0;
-  if (!total) return null;
-  const current = Number(subject.workflow?.fill_flow?.current_step_order || subject.workflow?.current_fill_step_order || getCurrentFillWorkflowRequest(payload)?.step_order || 0) || total;
-  const completedSteps = fillSteps.filter((step) => {
-    const code = String(step?.request_status || '').trim().toLowerCase();
-    return code === 'approved';
-  }).length;
-  const hasActivePendingStep = fillSteps.some((step) => {
-    const code = String(step?.request_status || '').trim().toLowerCase();
-    return ['pending', 'in_progress', 'returned'].includes(code);
-  });
-  const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
-  return {
-    label: 'Entrega',
-    current: Math.min(Math.max(current, 1), total),
-    total,
-    percent: Math.min(100, Math.max(8, (progressUnits / total) * 100))
-  };
-};
-
-const getDeliverablePeriodLabelFromSubject = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  if (subject.periodLabel) return subject.periodLabel;
-  return 'Periodo no resuelto';
-};
-
-const getDeliverableDateRangeLabel = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const startDate = subject.itemStartDate || subject.taskStartDate || null;
-  const endDate = subject.itemEndDate || subject.taskEndDate || null;
-  if (!startDate && !endDate) return 'Fechas no resueltas';
-  return `${formatDate(startDate)}${endDate ? ` - ${formatDate(endDate)}` : ''}`;
-};
-
-const getDeliverableWorkspacePayload = (deliverable) => ({
-  ...(deliverable?.item || {}),
-  period_label: getDeliverablePeriodLabel(deliverable?.task),
-  process_label: getDeliverableProcessLabel(deliverable?.task, deliverable?.item),
-  unit_label: getDeliverableUnitLabel(deliverable?.item),
-  item_start_date: deliverable?.item?.start_date || null,
-  item_end_date: deliverable?.item?.end_date || null,
-  user_started_at: deliverable?.item?.user_started_at || null,
-  task_start_date: deliverable?.task?.start_date || null,
-  task_end_date: deliverable?.task?.end_date || null,
-});
-
-const getDeliverableDueState = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  const dueDateValue = subject.itemEndDate || subject.taskEndDate || null;
-  if (!dueDateValue) {
-    return { label: 'Vencimiento', value: 'Sin definir', variant: 'muted' };
-  }
-
-  const normalized = String(dueDateValue).slice(0, 10);
-  const dueDate = new Date(`${normalized}T00:00:00`);
-  if (Number.isNaN(dueDate.getTime())) {
-    return { label: 'Vencimiento', value: normalized, variant: 'muted' };
-  }
-
-  const today = new Date();
-  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const diffDays = Math.round((dueDate.getTime() - todayDate.getTime()) / 86400000);
-  const formattedDate = formatDate(normalized);
-
-  if (diffDays < 0) {
-    return { label: 'Vencimiento', value: formattedDate, variant: 'danger' };
-  }
-  if (diffDays <= 5) {
-    return { label: 'Vencimiento', value: formattedDate, variant: 'warning' };
-  }
-  return { label: 'Vencimiento', value: formattedDate, variant: 'success' };
-};
-
 const isReviewFillStep = computed(() => {
   const resolver = String(fillWorkflowState.value.request?.resolver_type || '').trim().toLowerCase();
   return ['cargo_in_scope', 'position', 'specific_person'].includes(resolver);
 });
 const fillApproveActionLabel = computed(() => (isReviewFillStep.value ? 'Aprobar' : 'Enviar'));
-
-const getSignatureStepAssignedSummary = (step, requests = []) => {
-  const stepOrder = Number(step?.step_order || step?.stepOrder || 0);
-  const relatedRequests = (requests || []).filter((request) => Number(request?.stepOrder || 0) === stepOrder);
-  if (!relatedRequests.length) {
-    return 'Firmante no resuelto';
-  }
-
-  const labels = relatedRequests.map((request) => getSignatureRequestAssignedSummary(request)).filter(Boolean);
-
-  return labels.join(' | ') || 'Firmante no resuelto';
-};
 
 const canOperateCurrentFillRequest = computed(() =>
   currentUserCanOperateFillStep(fillWorkflowState.value.subject)
@@ -5641,16 +4764,6 @@ const hasDeliverablePreviewActions = computed(() =>
   || canRejectPreviewFillRequest.value
 );
 
-const getUploadActionLabel = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  if (!subject.preloadFilePath) {
-    return 'Subir archivo';
-  }
-  return canPreviewInline(subject.preloadFilePath) ? 'Cambiar PDF' : 'Cambiar archivo';
-};
-
-// Bundle of pure helpers passed to <DeliverableCard> so the card stays presentational.
-// Declared after all referenced helpers to avoid const TDZ errors during setup.
 const deliverableCardHelpers = {
   getDeliverableCardTone,
   getDeliverableStateIcon,
