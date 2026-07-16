@@ -239,12 +239,51 @@ Fue primero porque era barato, algunos eran visibles al usuario, y **no debía m
 - Se corrigieron además las descripciones de "Vacantes" y "Permisos", que prometían tablas que la UI no podía mostrar.
 - **`actions`, `resources`, `aplications`, `offers` y los 3 `contract_origin*` siguen existiendo en la BD** y sin exponerse. Si alguna vez deben gestionarse desde el admin, basta con añadirlas a `sqlTables.js`. Ojo con `actions`/`resources`: son primitivas de RBAC y hacerlas editables a mano puede romper permisos.
 
-### Fase 1 — Red de seguridad
+### Fase 1 — Red de seguridad ✅ **COMPLETADA (16-07-2026)**
 
-**Sin esto, todo lo demás es temerario** (§3.6). No hace falta cobertura total: bastan **characterization tests** sobre lo que se va a mover.
+**Sin esto, todo lo demás era temerario** (§3.6). No hacía falta cobertura total: bastaban
+**characterization tests** sobre lo que se va a mover.
 
-- Tests de render + navegación para las 3 rutas de `/home` y las 8 de `/perfil`: "esta ruta pinta este componente y carga estos datos".
-- Es la red mínima que permite afirmar que el split no cambió el comportamiento.
+**De 2 tests a 102** (4 ficheros, todos verdes):
+
+| Fichero | Tests | Qué congela |
+|---|---:|---|
+| `core/router/index.test.js` | **37** | La tabla de 12 rutas (URL → nombre → componente) y los 7 comportamientos del guard: modo de instalación, sesión, `adminBlockedRouteNames`, permisos por `meta`, y logout |
+| `modules/perfil/views/PerfilView.test.js` | **14** | El contrato `etiqueta → componente` de las 7 pestañas, su exclusión mutua, y que el estado **no** sobrevive al cambio de pestaña |
+| `core/utils/accessControl.test.js` | 18 | *(ya existía)* |
+| `modules/home/views/homeView.helpers.test.js` | 33 | *(ya existía)* |
+
+**Infraestructura añadida**: `jsdom` + `@vue/test-utils` (dev). `environment` sigue en `node` por defecto
+para no ralentizar los tests puros; los nuevos declaran `// @vitest-environment jsdom` por fichero.
+
+**Los tests tienen dientes — verificado por mutación**, no por fe:
+
+| Mutación introducida | Tests que la detectan |
+|---|---:|
+| Quitar `"home"` de `adminBlockedRouteNames` (fuga del admin al espacio de usuario) | 1 |
+| `/home/documentos` apuntando a otro componente | 2 |
+| Eliminar el guard `requiresAdminAccess` de `/admin` | 1 |
+| Quitar la tilde a la etiqueta `'Formación'` del menú de perfil | **5** |
+| `Experiencia` apuntando al componente equivocado | 2 |
+
+**Hallazgos de la fase** (los tests corrigieron el diagnóstico):
+
+- **El desajuste de etiquetas NO deja la sección en blanco: es un no-op silencioso.** `onmenuClick`
+  (`PerfilView.vue:424`) recorre `mainmenu` y sólo asigna `process` si la etiqueta casa. Una etiqueta
+  errónea emitida por `ProfileHomePanel` simplemente **se traga el clic**. La pantalla en blanco sí es
+  posible, pero por el otro desajuste (`mainmenu` ↔ los `v-else-if`), y hay un test para cada lado.
+- **`ProfileHomePanel` sólo existe dentro de la sección Inicio**, así que el único conductor de
+  navegación siempre disponible es el menú lateral. No es trivia: condiciona cómo se prueba y
+  desaparece al pasar a rutas hijas.
+
+**Estos tests describen el router y las pestañas que HAY, no los que queremos.** Dos de ellos
+(`las 12 rutas son planas: ninguna declara children` y el contrato de etiquetas de perfil) **deben
+romperse** en las fases 2 y 3: son el marcador de que el refactor estructural ocurrió. Romperlos a
+propósito y reescribirlos es la señal de éxito; romperlos sin darse cuenta es un bug.
+
+> ⚠️ **Deuda conocida**: bajo vitest 4, jsdom expone `window.localStorage` como un objeto vacío sin
+> métodos. Ambos ficheros instalan un stub propio de `localStorage` (documentado en el código). Si
+> algún día se arregla la incompatibilidad, se pueden borrar.
 
 ### Fase 2 — Layouts de ruta
 
