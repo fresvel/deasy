@@ -344,13 +344,6 @@
       </div>
     </div>
     
-    <div v-if="pdfReady && visibleFields.length" class="mt-6 mb-8">
-      <div class="bg-slate-800 text-slate-300 rounded-2xl shadow-sm border border-slate-700 p-4">
-        <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">JSON Output</div>
-        <pre class="text-xs whitespace-pre-wrap overflow-auto font-mono custom-scrollbar">{{ fieldsJson }}</pre>
-      </div>
-    </div>
-
   </div>
 
     <AdminModalShell

@@ -166,7 +166,7 @@
               <canvas ref="pdfCanvas" class="z-0 block h-auto w-full bg-white"></canvas>
 
               <SignatureBox
-                v-if="selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
+                v-if="isMouseOverPdf && selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
                 :is-preview="true"
                 :left="parseFloat(previewBoxStyle.left)"
                 :top="parseFloat(previewBoxStyle.top)"
