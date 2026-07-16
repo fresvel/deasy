@@ -5829,6 +5829,19 @@ export default class SqlAdminService {
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
 
+    // La configuración en sí: solo se puede eliminar en draft. Sus tablas hijas ya lo validan más abajo con
+    // ensureDraftDefinitionContext, pero la propia definición caía al DELETE genérico del final sin comprobar
+    // status, así que una configuración activa (con corridas en curso que la referencian) era borrable por API.
+    if (tableName === "process_definition_versions") {
+      const definition = await this.getProcessDefinitionVersion(keyPayload.id);
+      if (!definition) {
+        throw new Error("La configuracion de proceso seleccionada no existe.");
+      }
+      if (String(definition.status || "") !== "draft") {
+        throw new Error("Solo se pueden eliminar configuraciones de proceso cuando estan en draft.");
+      }
+    }
+
     if (
       tableName === "process_definition_templates"
       || tableName === "process_target_rules"
