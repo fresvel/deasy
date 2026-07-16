@@ -28,19 +28,11 @@
         :signature-sidebar-items="signatureSidebarItems"
         :menu-loading="menuLoading"
         :menu-error="menuError"
-        :menu-cargos="menuCargos"
-        :user-units="userUnits"
-        :selected-group-id="selectedGroupId"
-        :selected-process-key="selectedProcessKey"
+        :sends-count="mySends.length"
         :is-signature-sidebar-item-active="isSignatureSidebarItemActive"
         :workspace-icon-tone-class="workspaceIconToneClass"
-        :cargo-icon-meta="cargoIconMeta"
-        :process-icon-meta="processIconMeta"
-        :routed-menu-label="routedMenuLabel"
         @open-signature-item="openSignatureSidebarItem"
-        @select-unit="selectUnitOption"
-        @toggle-cargo="toggleCargo"
-        @select-process="({ process, cargo }) => handleProcessSelect(process, cargo)"
+        @open-section="openWorkspaceSection"
       />
     </template>
 
@@ -2344,7 +2336,6 @@ import {
   getSignatureStepResolverLabel,
 } from '@/modules/home/views/homeView.helpers.js';
 import {
-  resolveWorkspaceCargoIcon,
   resolveWorkspaceProcessIcon,
   resolveWorkspaceUnitGroupIcon,
   workspaceIconToneClass,
@@ -3189,11 +3180,7 @@ const handleGroupDropdownOutsideClick = (event) => {
   }
 };
 
-const toggleCargo = (cargo) => {
-  cargo.open = !cargo.open;
-};
 
-const cargoIconMeta = (cargo = {}) => resolveWorkspaceCargoIcon(cargo?.name || '');
 const processIconMeta = (process = {}) => resolveWorkspaceProcessIcon(process);
 
 const resolveUnitNameById = (unitId) => {
@@ -3301,6 +3288,22 @@ const openUnitsPanel = () => {
   showCargosPanel.value = false;
   showProcessesPanel.value = false;
   activeUnitPanelTab.value = unitsPanelData.value[0]?.id ?? null;
+};
+
+// Enruta los accesos directos del aside a los mismos destinos que las tarjetas del dashboard.
+// El aside ya no navega procesos (lo hace la pagina consolidada); solo lleva a la seccion.
+const openWorkspaceSection = (key) => {
+  const destinos = {
+    processes: scrollToProcessNav,
+    signatures: navigateToGlobalSignaturePage,
+    sends: openMySends,
+    documents: navigateToDocumentCenterPage,
+    dossier: () => navigateTo('perfil'),
+    cargos: openCargosPanel,
+    units: openUnitsPanel,
+  };
+  destinos[key]?.();
+  if (window.innerWidth < 1280) showMenu.value = false;
 };
 
 const selectConsolidatedUnit = async (unit) => {

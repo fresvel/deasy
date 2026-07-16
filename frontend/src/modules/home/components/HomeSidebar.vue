@@ -1,4 +1,5 @@
 <template>
+  <!-- Variante FIRMAS: en /home/firmas el aside navega las secciones del centro de firmas. -->
   <div v-if="isGlobalSignatureRoute" class="deasy-nav-group scroll-mt-24">
     <div class="deasy-nav-group mt-2">
       <div class="deasy-nav-shell">
@@ -25,118 +26,84 @@
     </div>
   </div>
 
+  <!-- Variante HOME: accesos directos a las secciones del espacio de trabajo. -->
   <div v-else id="procesos" class="deasy-nav-group scroll-mt-24">
-
     <div v-if="menuLoading" class="deasy-nav-feedback deasy-nav-feedback--info my-2">
       Cargando menú...
     </div>
     <div v-else-if="menuError" class="deasy-nav-feedback deasy-nav-feedback--info my-2">
       {{ menuError }}
     </div>
-    <div v-else-if="!menuCargos.length" class="deasy-nav-feedback deasy-nav-feedback--muted my-2">
-      No hay cargos asignados para mostrar.
-    </div>
 
     <div v-else class="deasy-nav-group mt-2">
-      <!--
-        Selector de UNIDAD. El aside solo muestra los cargos de UNA unidad, y al cargar se
-        fija en userUnits[0]. Solo aparece con más de una unidad; con una sola no aporta nada.
-      -->
-      <div v-if="userUnits.length > 1" class="deasy-nav-shell mb-2">
-        <div class="deasy-nav-section">
-          <span class="deasy-nav-group-title block px-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Unidad
-          </span>
-          <AppButton
-            v-for="unit in userUnits"
-            :key="unit.id"
-            variant="plain"
-            class-name="deasy-nav-item"
-            :class="{ 'deasy-nav-item--active': String(selectedGroupId) === String(unit.id) }"
-            type="button"
-            :title="unit.label || unit.name"
-            @click="$emit('select-unit', unit)"
-          >
-            <span class="deasy-nav-item__label truncate">{{ unit.label || unit.name }}</span>
-          </AppButton>
-        </div>
-      </div>
-
       <div class="deasy-nav-shell">
-        <div v-for="cargo in menuCargos" :key="cargo.id" class="deasy-nav-section">
-        <AppButton
-          variant="plain"
-          class-name="deasy-nav-group-title"
-          :class="{ 'deasy-nav-item--subtle-active': cargo.open }"
-          type="button"
-          @click="$emit('toggle-cargo', cargo)"
-        >
-          <span class="flex items-center gap-3.5 text-base font-semibold">
-            <span class="deasy-nav-glyph" :class="workspaceIconToneClass(cargoIconMeta(cargo).tone, 'deasy-nav-glyph')">
-              <component :is="cargoIconMeta(cargo).icon" class="h-5 w-5 shrink-0" />
-            </span>
-            <span class="truncate">{{ cargo.name }}</span>
-          </span>
-        </AppButton>
-
-        <div v-show="cargo.open" class="deasy-nav-tree">
-          <AppButton
-            v-for="process in cargo.processes"
-            :key="process.id"
-            variant="plain"
-            class-name="deasy-nav-item"
-            :class="selectedProcessKey === String(process.process_definition_id) ? 'deasy-nav-item--active' : ''"
+        <div class="deasy-nav-section">
+          <button
+            v-for="item in accessItems"
+            :key="item.key"
             type="button"
-            :title="routedMenuLabel(process)"
-            @click="$emit('select-process', { process, cargo })"
+            class="deasy-nav-item"
+            :title="item.label"
+            @click="$emit('open-section', item.key)"
           >
-            <span
-              class="deasy-nav-item__icon"
-              :class="workspaceIconToneClass(processIconMeta(process).tone)"
-            >
-              <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
+            <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(item.tone)">
+              <component :is="item.icon" class="h-4.5 w-4.5 shrink-0" />
             </span>
-            <span class="deasy-nav-item__label">{{ routedMenuLabel(process) }}</span>
-            <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
-          </AppButton>
-          <div v-if="!cargo.processes.length" class="px-4 py-1 text-sm italic text-slate-400">
-            Sin procesos asignados.
-          </div>
+            <span class="deasy-nav-item__label">{{ item.label }}</span>
+            <span
+              v-if="item.badge"
+              class="ml-auto inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"
+            >{{ item.badge }}</span>
+          </button>
         </div>
-      </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-// Aside de navegación de /home: firmas (cuando la ruta es de firmas) o el árbol
-// unidad → cargo → proceso. Extraído de HomeView.vue en la Fase C del refactor.
+// Aside de /home: ACCESOS DIRECTOS a las secciones del espacio de trabajo.
 //
-// Componente PRESENTACIONAL: recibe los datos como props y las funciones de display como
-// props-función (patrón deliverableCardHelpers ya usado en el proyecto), y emite las acciones.
-// Toda la lógica sigue en HomeView; aquí solo vive la plantilla del aside, aislada para poder
-// rediseñarla sin tocar las 7000 líneas del padre.
-import AppButton from '@/shared/components/buttons/AppButton.vue';
-import { IconSend } from '@tabler/icons-vue';
+// Rediseño (decisión de producto): el aside deja de navegar unidad → cargo → proceso. Esa
+// navegación ya la hace MEJOR la página consolidada "Mis procesos" (pestañas por unidad +
+// multi-selección de procesos), y tener las dos competía: el aside solo mostraba UNA unidad
+// (se quedaba fija en la primera) mientras la página las muestra todas. Ahora cada uno hace
+// una cosa: el aside lleva a la sección, la página navega dentro de ella.
+//
+// Los destinos son los mismos que las tarjetas del dashboard, así que el usuario tiene el
+// atajo sin salir de donde esté. La variante de firmas (en /home/firmas) se conserva.
+import { computed } from 'vue';
+import {
+  IconChecklist,
+  IconSignature,
+  IconSend,
+  IconFileDescription,
+  IconUserCheck,
+  IconBriefcase,
+  IconBuildingMonument,
+} from '@tabler/icons-vue';
 
-defineProps({
-  // Datos
+const props = defineProps({
   isGlobalSignatureRoute: { type: Boolean, default: false },
   signatureSidebarItems: { type: Array, default: () => [] },
   menuLoading: { type: Boolean, default: false },
   menuError: { type: String, default: '' },
-  menuCargos: { type: Array, default: () => [] },
-  userUnits: { type: Array, default: () => [] },
-  selectedGroupId: { type: [Number, String], default: null },
-  selectedProcessKey: { type: [Number, String], default: null },
-  // Helpers de display (funciones puras/de presentación que HomeView ya posee)
+  // Contadores opcionales para las insignias (envíos pendientes, documentos accesibles...).
+  sendsCount: { type: Number, default: 0 },
   isSignatureSidebarItemActive: { type: Function, required: true },
   workspaceIconToneClass: { type: Function, required: true },
-  cargoIconMeta: { type: Function, required: true },
-  processIconMeta: { type: Function, required: true },
-  routedMenuLabel: { type: Function, required: true },
 });
 
-defineEmits(['open-signature-item', 'select-unit', 'toggle-cargo', 'select-process']);
+// Espejo de las tarjetas del dashboard: mismas secciones, mismo orden.
+const accessItems = computed(() => ([
+  { key: 'processes', label: 'Mis procesos', icon: IconChecklist, tone: 'sky' },
+  { key: 'signatures', label: 'Centro de firmas', icon: IconSignature, tone: 'sky' },
+  { key: 'sends', label: 'Mis envíos', icon: IconSend, tone: 'indigo', badge: props.sendsCount || null },
+  { key: 'documents', label: 'Centro documental', icon: IconFileDescription, tone: 'sky' },
+  { key: 'dossier', label: 'Mi dossier', icon: IconUserCheck, tone: 'emerald' },
+  { key: 'cargos', label: 'Mis cargos', icon: IconBriefcase, tone: 'amber' },
+  { key: 'units', label: 'Mis unidades', icon: IconBuildingMonument, tone: 'amber' },
+]));
+
+defineEmits(['open-signature-item', 'open-section']);
 </script>
