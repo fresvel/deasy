@@ -140,8 +140,15 @@ const makeAdd = (section, okMsg, errMsg, validate = null) => async (req, res) =>
     const dossier = await store.getOrCreateDossier(req.params.cedula);
     if (!dossier) return fail(res, 404, "Usuario no encontrado");
     if (validate) { const v = validate(req.body); if (v) return fail(res, 400, v); }
-    await store.addItem(dossier.id, section, req.body);
-    res.json({ success: true, message: okMsg, data: await loadTreeHydrated(dossier) });
+    // createdId evita que el cliente tenga que adivinar cuál es el registro nuevo: hacerlo cogiendo el último
+    // del árbol solo funciona mientras loadTree ordene por id ASC, y ese acoplamiento no debe salir de aquí.
+    const createdId = await store.addItem(dossier.id, section, req.body);
+    res.json({
+      success: true,
+      message: okMsg,
+      createdId: createdId == null ? null : String(createdId),
+      data: await loadTreeHydrated(dossier)
+    });
   } catch (error) {
     console.error(errMsg, error);
     fail(res, 500, errMsg, error.message);
@@ -213,8 +220,13 @@ export const addInvestigacionItem = async (req, res) => {
     if (!validInvestigacionTipo(tipo)) return fail(res, 400, `Tipo de investigación inválido: "${tipo}"`);
     const dossier = await store.getOrCreateDossier(req.params.cedula);
     if (!dossier) return fail(res, 404, "Usuario no encontrado");
-    await store.addItem(dossier.id, tipo, req.body);
-    res.json({ success: true, message: "Item de investigación agregado correctamente", data: await loadTreeHydrated(dossier) });
+    const createdId = await store.addItem(dossier.id, tipo, req.body);
+    res.json({
+      success: true,
+      message: "Item de investigación agregado correctamente",
+      createdId: createdId == null ? null : String(createdId),
+      data: await loadTreeHydrated(dossier)
+    });
   } catch (error) {
     console.error("Error al agregar item de investigación:", error);
     fail(res, 500, "Error al agregar item de investigación", error.message);

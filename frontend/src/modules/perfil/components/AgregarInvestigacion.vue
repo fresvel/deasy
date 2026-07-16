@@ -525,8 +525,7 @@ const onSubmit = async () => {
       emit("investigacion-updated", response.data);
     } else {
       const response = await DossierService.createInvestigacion(form.tipoProduccion, payload);
-      const items = response.data?.investigacion?.[form.tipoProduccion] || [];
-      recordId = items[items.length - 1]?._id;
+      recordId = response.createdId ?? null;
       emit("investigacion-added", response.data);
     }
 

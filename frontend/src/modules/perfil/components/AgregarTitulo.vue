@@ -274,8 +274,7 @@ const onSubmit = async () => {
       emit("title-updated", response.data);
     } else {
       const response = await DossierService.createTitulo(payload);
-      const list = response.data?.titulos || [];
-      recordId = list[list.length - 1]?._id;
+      recordId = response.createdId ?? null;
       emit("title-added", response.data);
     }
 

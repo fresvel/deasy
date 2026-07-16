@@ -247,10 +247,7 @@ const onSubmit = async () => {
       emit("experiencia-updated", response.data);
     } else {
       const response = await DossierService.createExperiencia(payload);
-      // Extraer el ID del nuevo registro (último en el array experiencia)
-      const list = response.data?.experiencia || [];
-      const newRecord = list[list.length - 1];
-      recordId = newRecord?._id;
+      recordId = response.createdId ?? null;
       emit("experiencia-added", response.data);
     }
 

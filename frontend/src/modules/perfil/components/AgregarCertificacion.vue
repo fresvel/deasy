@@ -250,10 +250,7 @@ const onSubmit = async () => {
       emit("certificacion-updated", response.data);
     } else {
       const response = await DossierService.createCertificacion(payload);
-      // Extraer el ID del nuevo registro (último en el array certificaciones)
-      const list = response.data?.certificaciones || [];
-      const newRecord = list[list.length - 1];
-      recordId = newRecord?._id;
+      recordId = response.createdId ?? null;
       emit("certificacion-added", response.data);
     }
 

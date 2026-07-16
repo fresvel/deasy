@@ -281,10 +281,7 @@ const onSubmit = async () => {
       emit("capacitacion-updated", response.data);
     } else {
       const response = await DossierService.createCapacitacion(payload);
-      // Extraer el ID del nuevo registro (último en el array formacion)
-      const list = response.data?.formacion || [];
-      const newRecord = list[list.length - 1];
-      recordId = newRecord?._id;
+      recordId = response.createdId ?? null;
       emit("capacitacion-added", response.data);
     }
 

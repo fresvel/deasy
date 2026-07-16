@@ -217,8 +217,7 @@ const onSubmit = async () => {
       emit("referencia-updated", response.data);
     } else {
       const response = await DossierService.createReferencia(payload);
-      const list = response.data?.referencias || [];
-      recordId = list[list.length - 1]?._id;
+      recordId = response.createdId ?? null;
       emit("referencia-added", response.data);
     }
 
