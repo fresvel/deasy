@@ -11,6 +11,7 @@ export function useAdminTableReset({
   resetForm,
   resetPersonAssignments,
   positionMetaById,
+  searchTerm,
   vacantSearchTerm,
   vacantPositionRows,
   vacantPositionError,
@@ -65,6 +66,7 @@ export function useAdminTableReset({
       resetForm();
       resetPersonAssignments();
       positionMetaById.value = {};
+      searchTerm.value = "";
       vacantSearchTerm.value = "";
       vacantPositionRows.value = [];
       vacantPositionError.value = "";

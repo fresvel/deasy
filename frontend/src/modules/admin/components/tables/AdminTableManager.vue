@@ -327,7 +327,7 @@
       ref="editorModal"
       :editor-mode="editorMode"
       :table="table"
-      :is-process-table="isProcessTable"
+      :is-process-table="isProcessesTable"
       :modal-error="modalError"
       :visible-form-fields="visibleFormFields"
       :fk-display="fkDisplay"
@@ -1511,7 +1511,7 @@ const visibleFormFields = computed(() => {
           : field
       ));
   }
-  if (!isProcessTable.value) {
+  if (!isProcessesTable.value) {
     if (props.table?.table === "process_definition_versions") {
       return formFields.value.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
     }
@@ -1696,7 +1696,6 @@ const hasFkTemplateArtifactFilters = computed(() =>
   )
 );
 
-const isProcessTable = computed(() => props.table?.table === "processes");
 const isProcessDefinitionFilterTable = computed(() => props.table?.table === "process_definition_versions");
 const isTemplateSeedsTable = computed(() => props.table?.table === "template_seeds");
 const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
@@ -4192,6 +4191,7 @@ useAdminTableReset({
   resetForm,
   resetPersonAssignments,
   positionMetaById,
+  searchTerm,
   vacantSearchTerm,
   vacantPositionRows,
   vacantPositionError,

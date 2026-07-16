@@ -351,7 +351,7 @@
 
 <script setup>
 
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 import { 
   IconLock,
@@ -365,7 +365,7 @@ import {
 } from '@tabler/icons-vue'
 
 import axios from "axios";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
@@ -406,7 +406,6 @@ const adminManager = ref(null);
 
 const currentUser = ref(null);
 const router = useRouter();
-const route = useRoute();
 const defaultPhoto = "/images/avatar.png";
 const userPhoto = ref(defaultPhoto);
 const userFullName = computed(() => {
@@ -469,8 +468,8 @@ const GROUP_DEFS = [
   {
     key: "contratacion",
     label: "Contratos",
-    main: ["vacancies", "vacancy_visibility", "aplications", "offers", "contracts"],
-    support: ["contract_origins", "contract_origin_recruitment", "contract_origin_renewal"]
+    main: ["vacancies", "vacancy_visibility", "contracts"],
+    support: []
   },
   {
     key: "seguridad",
@@ -481,9 +480,7 @@ const GROUP_DEFS = [
       "cargo_role_map",
       "role_assignment_relation_types",
       "permissions",
-      "role_permissions",
-      "actions",
-      "resources"
+      "role_permissions"
     ],
     support: []
   },
@@ -586,8 +583,8 @@ const CONTRACT_INDEX_ITEMS = [
     key: "vacantes",
     label: "Vacantes",
     icon: "id-card",
-    description: "Gestiona vacantes, postulaciones y ofertas.",
-    tables: ["vacancies", "vacancy_visibility", "aplications", "offers"]
+    description: "Gestiona vacantes y su visibilidad.",
+    tables: ["vacancies", "vacancy_visibility"]
   },
   {
     key: "contratos",
@@ -595,13 +592,6 @@ const CONTRACT_INDEX_ITEMS = [
     icon: "certificate",
     description: "Gestiona contratos del sistema.",
     tables: ["contracts"]
-  },
-  {
-    key: "origenes",
-    label: "Origenes",
-    icon: "check-double",
-    description: "Gestiona catálogos y relaciones de origen contractual.",
-    tables: ["contract_origins", "contract_origin_recruitment", "contract_origin_renewal"]
   }
 ];
 const SECURITY_GROUP_KEY = "seguridad";
@@ -618,8 +608,8 @@ const SECURITY_INDEX_ITEMS = [
     key: "permisos",
     label: "Permisos",
     icon: "square-check",
-    description: "Gestiona permisos, recursos y acciones.",
-    tables: ["permissions", "role_permissions", "actions", "resources"]
+    description: "Gestiona permisos y su asignación a roles.",
+    tables: ["permissions", "role_permissions"]
   }
 ];
 
@@ -670,56 +660,25 @@ const homeGroups = computed(() =>
   groupedTables.value.filter((group) => (group.mainTables.length + group.supportTables.length) > 0)
 );
 
-const academyMenuItems = computed(() =>
-  ACADEMY_INDEX_ITEMS.map((item) => {
-    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
-    return {
-      ...item,
-      availableTables,
-      tableCount: availableTables.length
-    };
-  })
-);
-const gestionMenuItems = computed(() =>
-  GESTION_INDEX_ITEMS.map((item) => {
-    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
-    return {
-      ...item,
-      availableTables,
-      tableCount: availableTables.length
-    };
-  })
-);
-const usersMenuItems = computed(() =>
-  USERS_INDEX_ITEMS.map((item) => {
-    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
-    return {
-      ...item,
-      availableTables,
-      tableCount: availableTables.length
-    };
-  })
-);
-const contractsMenuItems = computed(() =>
-  CONTRACT_INDEX_ITEMS.map((item) => {
-    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
-    return {
-      ...item,
-      availableTables,
-      tableCount: availableTables.length
-    };
-  })
-);
-const securityMenuItems = computed(() =>
-  SECURITY_INDEX_ITEMS.map((item) => {
-    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
-    return {
-      ...item,
-      availableTables,
-      tableCount: availableTables.length
-    };
-  })
-);
+// Una tarjeta solo se muestra si el backend expone al menos una de sus tablas: sin ninguna no tiene a dónde
+// navegar y el clic no haría nada. El filtro va aquí, no en el template, para cubrir los dos v-for de cada grupo.
+const buildIndexMenuItems = (indexItems) =>
+  indexItems
+    .map((item) => {
+      const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
+      return {
+        ...item,
+        availableTables,
+        tableCount: availableTables.length
+      };
+    })
+    .filter((item) => item.tableCount > 0);
+
+const academyMenuItems = computed(() => buildIndexMenuItems(ACADEMY_INDEX_ITEMS));
+const gestionMenuItems = computed(() => buildIndexMenuItems(GESTION_INDEX_ITEMS));
+const usersMenuItems = computed(() => buildIndexMenuItems(USERS_INDEX_ITEMS));
+const contractsMenuItems = computed(() => buildIndexMenuItems(CONTRACT_INDEX_ITEMS));
+const securityMenuItems = computed(() => buildIndexMenuItems(SECURITY_INDEX_ITEMS));
 
 const currentSiblingSourceItem = computed(() => {
   const tableName = selectedTable.value?.table;
@@ -807,7 +766,7 @@ const adminHeroDescription = computed(() =>
   showAcademiaIndex.value ? 'Accesos principales para administrar unidades, periodos y cargos institucionales.'
   : showGestionesIndex.value ? 'Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.'
   : showUsersIndex.value ? 'Accesos por subgrupo para administrar personas del sistema.'
-  : showContractsIndex.value ? 'Accesos por subgrupo para administrar vacantes, contratos y orígenes.'
+  : showContractsIndex.value ? 'Accesos por subgrupo para administrar vacantes y contratos.'
   : showSecurityIndex.value ? 'Accesos por subgrupo para administrar roles y permisos.'
   : 'Accesos organizados para crear, editar, leer y eliminar datos del sistema.'
 );
@@ -1302,27 +1261,12 @@ const fetchMeta = async () => {
         openCategories.value[group.label] = false;
       }
     });
-    if (route.meta?.managementSection === "processes") {
-      openGestionItem(GESTION_INDEX_ITEMS[0]);
-    }
   } catch (error) {
     metaError.value = error?.response?.data?.message || "No se pudo cargar el catalogo.";
   } finally {
     loadingMeta.value = false;
   }
 };
-
-watch(
-  () => route.meta?.managementSection,
-  (section) => {
-    if (loadingMeta.value) {
-      return;
-    }
-    if (section === "processes") {
-      openGestionItem(GESTION_INDEX_ITEMS[0]);
-    }
-  }
-);
 
 onMounted(() => {
   const userDataString = localStorage.getItem("user");
