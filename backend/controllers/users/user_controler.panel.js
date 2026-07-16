@@ -64,7 +64,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
   const terms = await getAvailableTerms(pool);
   const userPackages = await getUserOwnedTemplateArtifacts(pool, userId);
   const taskIds = tasks.map((task) => task.id);
-  const taskItems = await getTaskItemsForTaskIds(pool, taskIds);
+  const taskItems = await getTaskItemsForTaskIds(pool, taskIds, userId);
   const taskItemIds = taskItems.map((item) => Number(item.id || 0)).filter((id) => id > 0);
   const taskItemDocuments = await getDocumentsForTaskItemIds(pool, taskItemIds);
   const taskItemParticipation = await getUserTaskItemParticipationSummary(pool, userId, taskItemIds);
