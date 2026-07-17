@@ -2165,27 +2165,16 @@
       </template>
     </AdminModalShell>
 
-    <AdminModalShell
+    <DeliverablePreviewModal
       ref="deliverablePreviewModal"
-      labelled-by="deliverable-preview-modal-title"
-      :title="deliverablePreviewName || 'Vista previa del archivo'"
-      size="xl"
-      content-class="rounded-4 shadow border-0"
-      body-class="pt-4"
+      :name="deliverablePreviewName"
+      :url="deliverablePreviewUrl"
+      :is-pdf="deliverablePreviewIsPdf"
+      @download="downloadPreviewedFile"
     >
-      <div class="min-h-[60vh]">
-        <iframe
-          v-if="deliverablePreviewUrl && deliverablePreviewIsPdf"
-          :src="deliverablePreviewUrl"
-          class="w-full min-h-[70vh] rounded-2xl border border-slate-200 bg-white"
-          title="Vista previa del archivo"
-        />
-        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-          El archivo no se puede previsualizar en línea. Usa la opción de descarga.
-        </div>
-      </div>
-      <template #footer>
-        <div class="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <!-- El panel de acciones del entregable solo lo tiene esta pantalla: el centro documental
+           monta el mismo modal sin este slot y obtiene la vista previa a secas. -->
+      <template #actions>
           <div
             v-if="hasDeliverablePreviewActions"
             class="rounded-2xl border border-slate-200 bg-white p-4"
@@ -2256,18 +2245,8 @@
               </button>
             </div>
           </div>
-
-          <div class="flex flex-wrap items-center justify-end gap-3">
-            <AppButton variant="secondary" data-modal-dismiss>
-              Cerrar
-            </AppButton>
-            <AppButton variant="primary" @click="downloadPreviewedFile">
-              Descargar archivo
-            </AppButton>
-          </div>
-        </div>
       </template>
-    </AdminModalShell>
+    </DeliverablePreviewModal>
 
     <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
 </template>
@@ -2300,12 +2279,14 @@ import { useProcessPanels } from '@/modules/home/composables/useProcessPanels.js
 import { useFlowBuilder } from '@/modules/home/composables/useFlowBuilder.js';
 import { useDeliverableCollapse } from '@/modules/home/composables/useDeliverableCollapse.js';
 import HomeSidebar from '@/modules/home/components/HomeSidebar.vue';
+import DeliverablePreviewModal from '@/modules/home/components/DeliverablePreviewModal.vue';
 import { useGeneralTask } from '@/modules/home/composables/useGeneralTask.js';
 import GeneralTaskModal from '@/modules/home/components/GeneralTaskModal.vue';
 import DeliverableAttachmentsTab from '@/modules/home/components/DeliverableAttachmentsTab.vue';
 import DeliverableFillTab from '@/modules/home/components/DeliverableFillTab.vue';
 import DeliverableSignatureTab from '@/modules/home/components/DeliverableSignatureTab.vue';
 import { useDeliverableView } from '@/modules/home/composables/useDeliverableView.js';
+import { useDeliverableFilePreview } from '@/modules/home/composables/useDeliverableFilePreview.js';
 import {
   formatAttachmentSize,
   formatDate,
@@ -2467,7 +2448,6 @@ const deliverableWorkspaceModal = ref(null);
 // entrega = quién elabora; firma = quién firma (en orden).
 const deliverableOperationModal = ref(null);
 const deliverableSignResultModal = ref(null);
-const deliverablePreviewModal = ref(null);
 const deliverableResetModal = ref(null);
 const embeddedSignerRef = ref(null);
 const signatureFlowSignerRef = ref(null);
@@ -2485,11 +2465,6 @@ const signatureObservations = computed(() => deliverableObservations.value.filte
 const processingFillItemId = ref(null);
 const startedDeliverableIds = ref(new Set());
 const fillWorkflowSubmitting = ref(false);
-const deliverablePreviewUrl = ref('');
-const deliverablePreviewName = ref('');
-const deliverablePreviewPath = ref('');
-const deliverablePreviewSource = ref(null);
-const deliverablePreviewIsPdf = ref(false);
 const deliverableOperationState = ref({
   title: 'Proceso del entregable',
   type: 'info',
@@ -2649,7 +2624,6 @@ let deliverableUploadModalInstance = null;
 let deliverableWorkspaceModalInstance = null;
 let deliverableOperationModalInstance = null;
 let deliverableSignResultModalInstance = null;
-let deliverablePreviewModalInstance = null;
 let deliverableResetModalInstance = null;
 let taskFiltersModalInstance = null;
 const taskLaunchForm = ref({
@@ -4305,19 +4279,6 @@ onMounted(async () => {
       pendingDeliverableUploadTarget.value = null;
     });
   }
-  if (deliverablePreviewModal.value?.el) {
-    deliverablePreviewModalInstance = Modal.getOrCreateInstance(deliverablePreviewModal.value.el);
-    deliverablePreviewModal.value.el.addEventListener('hidden.bs.modal', () => {
-      if (deliverablePreviewUrl.value) {
-        URL.revokeObjectURL(deliverablePreviewUrl.value);
-      }
-      deliverablePreviewUrl.value = '';
-      deliverablePreviewName.value = '';
-      deliverablePreviewPath.value = '';
-      deliverablePreviewSource.value = null;
-      deliverablePreviewIsPdf.value = false;
-    });
-  }
   if (deliverableSignResultModal.value?.el) {
     deliverableSignResultModalInstance = Modal.getOrCreateInstance(deliverableSignResultModal.value.el);
     deliverableSignResultModal.value.el.addEventListener('hidden.bs.modal', () => {
@@ -4372,10 +4333,6 @@ onBeforeUnmount(() => {
     window.removeEventListener('dossier-updated', handleHomeDossierUpdated);
     document.removeEventListener('click', handleGroupDropdownOutsideClick);
   }
-  if (deliverablePreviewUrl.value) {
-    URL.revokeObjectURL(deliverablePreviewUrl.value);
-  }
-  deliverablePreviewSource.value = null;
 });
 
 const navigateTo = (destination) => {
@@ -4772,73 +4729,29 @@ const downloadSignedDeliverableResult = async () => {
   }
 };
 
-const downloadDeliverableFile = async (payload) => {
-  const subject = getDeliverableSubject(payload);
-  if (!subject.preloadFilePath) {
-    setProcessActionInfo(`El entregable ${subject.title} todavía no tiene un archivo vinculado.`, 'error');
-    return;
-  }
-  try {
-    const preferredKind = subject.finalFilePath ? 'final' : 'working';
-    const blob = await fetchDeliverableFileBlob(payload, preferredKind);
-    downloadBlob(blob, getFileNameFromPath(subject.preloadFilePath));
-  } catch (error) {
-    setProcessActionInfo(
-      error?.response?.data?.message || error?.message || 'No se pudo descargar el archivo del entregable.',
-      'error'
-    );
-  }
-};
-
-const previewDeliverableFile = async (payload) => {
-  const subject = getDeliverableSubject(payload);
-  if (!subject.preloadFilePath) {
-    setProcessActionInfo(`El entregable ${subject.title} todavía no tiene un archivo vinculado.`, 'error');
-    return;
-  }
-  if (!canPreviewInline(subject.preloadFilePath)) {
-    await downloadDeliverableFile(payload);
-    return;
-  }
-  try {
-    const preferredKind = subject.finalFilePath ? 'final' : 'working';
-    const blob = await fetchDeliverableFileBlob(payload, preferredKind);
-    if (deliverablePreviewUrl.value) {
-      URL.revokeObjectURL(deliverablePreviewUrl.value);
-    }
-    deliverablePreviewUrl.value = URL.createObjectURL(blob);
-    deliverablePreviewName.value = getFileNameFromPath(subject.preloadFilePath);
-    deliverablePreviewPath.value = subject.preloadFilePath;
-    deliverablePreviewSource.value = payload;
-    deliverablePreviewIsPdf.value = true;
-    deliverablePreviewModalInstance = Modal.getOrCreateInstance(deliverablePreviewModal.value?.el);
-    deliverablePreviewModalInstance?.show();
-  } catch (error) {
-    setProcessActionInfo(
-      error?.response?.data?.message || error?.message || 'No se pudo abrir la vista previa del archivo.',
-      'error'
-    );
-  }
-};
-
-const downloadPreviewedFile = async () => {
-  if (!deliverablePreviewPath.value || !deliverablePreviewSource.value) return;
-  try {
-    const subject = getDeliverableSubject(deliverablePreviewSource.value);
-    const preferredKind = subject.finalFilePath ? 'final' : 'working';
-    const blob = await fetchDeliverableFileBlob(deliverablePreviewSource.value, preferredKind);
-    downloadBlob(blob, deliverablePreviewName.value || getFileNameFromPath(deliverablePreviewPath.value));
-  } catch (error) {
-    setProcessActionInfo(
-      error?.response?.data?.message || error?.message || 'No se pudo descargar el archivo.',
-      'error'
-    );
-  }
-};
+// La vista previa y la descarga del fichero de un entregable viven en useDeliverableFilePreview: el
+// centro documental las necesita igual y no puede depender de esta pantalla. Se le inyectan las tres
+// piezas que si son de aqui: getDeliverableSubject (que enriquece con el proceso seleccionado), la
+// descarga del blob, y el canal de avisos.
+const {
+  previewModal: deliverablePreviewModal,
+  previewUrl: deliverablePreviewUrl,
+  previewName: deliverablePreviewName,
+  previewSource: deliverablePreviewSource,
+  previewIsPdf: deliverablePreviewIsPdf,
+  previewFile: previewDeliverableFile,
+  downloadFile: downloadDeliverableFile,
+  downloadPreviewed: downloadPreviewedFile,
+  hidePreview: hideDeliverablePreview,
+} = useDeliverableFilePreview({
+  getSubject: getDeliverableSubject,
+  fetchBlob: fetchDeliverableFileBlob,
+  onError: (message) => setProcessActionInfo(message, 'error'),
+});
 
 const openPreviewDeliverableUploadModal = () => {
   if (!deliverablePreviewSource.value || isUploadingDeliverable.value) return;
-  deliverablePreviewModalInstance?.hide();
+  hideDeliverablePreview();
   openDeliverableUploadModal(deliverablePreviewSource.value);
 };
 
@@ -5059,7 +4972,7 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
       detail: 'El panel se actualizará con el nuevo estado.'
     });
     setProcessActionInfo(`El flujo de entrega de ${subject.title} se actualizó correctamente.`, 'success');
-    deliverablePreviewModalInstance?.hide();
+    hideDeliverablePreview();
     if (selectedProcessContext.value) {
       await refreshActiveProcessPanel();
     }

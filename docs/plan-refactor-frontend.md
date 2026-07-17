@@ -422,7 +422,7 @@ Por orden de riesgo creciente. **`/home/firmas` primero**: 2 líneas, cero estad
 | # | Acción | Riesgo |
 |---|---|---|
 | 3.1 | `/home/firmas` → `SignatureCenterView` | ✅ **hecha** |
-| 3.2 | `/home/documentos` → `DocumentCenterView` + `useDocumentCenter` | Bajo |
+| 3.2 | `/home/documentos` → `DocumentCenterView` | **Reestimada** — ver abajo |
 | 3.3 | `/home` → `HomeDashboardView`; **HomeView desaparece** | Medio |
 | 3.4 | `/perfil/*` con `children` + rename `*View` → `*Section` (mismo commit: el archivo se toca igual) | Medio — ajustar `adminBlockedRouteNames` |
 | 3.5 | `/admin`: los dos grafos primero (ya son lazy y autónomos), luego `:section/:item/:table` | Alto |
@@ -468,6 +468,49 @@ firmas; el ciclo `/home` → firmas → vuelta mantiene cabecera y aside correct
 > ⚠️ **Deuda que el corte deja a la vista**: `SignatureCenterView` deriva la identidad del usuario con su
 > propia copia de `userPhoto`/`userFullName`. Es la **quinta**. Refuerza lo dicho en 2.2: la identidad pide
 > su composable, y ahora hay un caso más para justificarlo.
+
+#### 3.2 — reestimada: son tres pasos, no uno
+
+**La estimación original era falsa.** Decía *"93 líneas + `useDocumentCenter`; la única costura
+(`documentCenterItems`) ya se carga dos veces hoy"*. La costura que importa es otra: las filas tienen
+**"Ver PDF" y "Descargar"**, y esas acciones arrastraban 5 refs de preview, el modal de vista previa, el
+toast, y helpers atrapados en `useDeliverableView`.
+
+| Paso | Qué | Estado |
+|---|---|---|
+| **3.2a** | `getDeliverableSubject(payload, { fallbacks })` — parametrizar sus dos dependencias de estado | Pendiente |
+| **3.2b** | `DeliverablePreviewModal` + `useDeliverableFilePreview()` | ✅ **hecha (16-07-2026)** |
+| **3.2c** | `DocumentCenterView` + `useDocumentCenter` + router + tests | Pendiente |
+
+##### 3.2b — completada
+
+- **`shared/utils/filePath.js`** (+18 tests): `getFileNameFromPath`, `getFileExtension`, `canPreviewInline`.
+  Eran **puros** y vivían dentro del closure de 1062 líneas de `useDeliverableView` sin motivo, obligando a
+  inyectar el composable entero sólo para saber si una ruta acaba en `.pdf`. El composable los sigue
+  devolviendo, así que sus consumidores no se enteran.
+- **`DeliverablePreviewModal.vue`** (+9 tests) con **slot `#actions`**, y **`useDeliverableFilePreview()`**,
+  que recibe tres **funciones** (`getSubject`, `fetchBlob`, `onError`) y **posee su estado** — al revés que
+  `useDeliverableView`, que recibe estado ajeno y por eso es un Middle Man.
+- `HomeView` **5588 → 5501 L**.
+
+**Corrección importante a lo dicho en la fase 3.1**: se afirmó que "el modal de preview es autocontenido".
+**Es falso.** Su pie **es** el panel de acciones del flujo de llenado (aprobar/devolver/rechazar/reemplazar),
+que depende de `useDeliverableView`, de `submitDeliverableCardFillAction` (63 L) y de otro modal. De ahí el
+slot: quien tenga el panel lo inyecta; el centro documental no, y obtiene la vista previa a secas.
+
+**Que el slot es la costura correcta está probado, no supuesto**: las filas del centro **no llevan `actions`
+ni `workflow`** (verificado por API), los cuatro predicados dependen justo de esos campos, y al abrir la
+vista previa desde el centro el panel **ya no se pintaba**. Comprobado en pantalla antes y después: el modal
+renderiza idéntico (PDF + "Cerrar" + "Descargar archivo", sin panel).
+
+> ⚠️ **El caso positivo del slot no es verificable en dev**: el único entregable con fichero está en
+> *"Pendiente de firma"*, y los predicados exigen `!isSignaturePhaseDocumentStatus()`. **No existe el dato
+> que haría aparecer el panel.** Por eso vive en un test de componente (`DeliverablePreviewModal.test.js`),
+> verificado por mutación: borrar el slot tumba el test.
+
+> ⚠️ **Aviso sobre este documento**: el §"centro documental sin datos" que llegó a afirmarse **era falso**,
+> por un fallo en la sonda (el endpoint devuelve `{ total, documents }`, no `items`). El usuario
+> `1122334455` tiene **6 documentos** y uno con PDF real. **3.2 no está bloqueado por datos.**
 
 ### Fase 4 — Colapsar duplicación
 

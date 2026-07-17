@@ -5,6 +5,9 @@ import {
   IconSignature,
   IconUpload,
 } from '@tabler/icons-vue';
+// Puros: viven fuera del closure para que no haga falta inyectar este composable entero solo para saber
+// si una ruta acaba en .pdf. Se siguen devolviendo mas abajo para no tocar a los consumidores actuales.
+import { canPreviewInline, getFileExtension, getFileNameFromPath } from '@/shared/utils/filePath.js';
 import {
   formatDate,
   getDeliverableAccessTagVariant,
@@ -210,16 +213,6 @@ export function useDeliverableView({
       preloadPdfPath
     };
   };
-
-  const getFileNameFromPath = (filePath = '') => filePath.split('/').pop() || 'archivo';
-
-  const getFileExtension = (filePath = '') => {
-    const fileName = getFileNameFromPath(filePath);
-    const dotIndex = fileName.lastIndexOf('.');
-    return dotIndex >= 0 ? fileName.slice(dotIndex + 1).toLowerCase() : '';
-  };
-
-  const canPreviewInline = (filePath = '') => getFileExtension(filePath) === 'pdf';
 
   const isPdfWorkingFile = (payload) => {
     const subject = getDeliverableSubject(payload);
