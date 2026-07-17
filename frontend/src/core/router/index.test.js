@@ -41,6 +41,14 @@ vi.mock("@/modules/home/views/HomeView.vue", () => ({ default: stub("HomeView") 
 vi.mock("@/modules/firmas/views/SignatureCenterView.vue", () => ({ default: stub("SignatureCenterView") }));
 vi.mock("@/modules/home/views/DocumentCenterView.vue", () => ({ default: stub("DocumentCenterView") }));
 vi.mock("@/modules/perfil/views/PerfilView.vue", () => ({ default: stub("PerfilView") }));
+vi.mock("@/modules/perfil/components/ProfileHomePanel.vue", () => ({ default: stub("ProfileHomePanel") }));
+vi.mock("@/modules/perfil/components/sections/TitulosSection.vue", () => ({ default: stub("TitulosSection") }));
+vi.mock("@/modules/perfil/components/sections/LaboralSection.vue", () => ({ default: stub("LaboralSection") }));
+vi.mock("@/modules/perfil/components/sections/ReferenciasSection.vue", () => ({ default: stub("ReferenciasSection") }));
+vi.mock("@/modules/perfil/components/sections/CapacitacionSection.vue", () => ({ default: stub("CapacitacionSection") }));
+vi.mock("@/modules/perfil/components/sections/CertificacionSection.vue", () => ({ default: stub("CertificacionSection") }));
+vi.mock("@/modules/perfil/components/sections/InvestigacionSection.vue", () => ({ default: stub("InvestigacionSection") }));
+vi.mock("@/modules/perfil/components/sections/CertificadosFirmaSection.vue", () => ({ default: stub("CertificadosFirmaSection") }));
 vi.mock("@/modules/admin/views/AdminView.vue", () => ({ default: stub("AdminView") }));
 vi.mock("@/modules/procesos/views/ProcessManagementView.vue", () => ({ default: stub("ProcessManagementView") }));
 
@@ -131,11 +139,39 @@ describe("tabla de rutas", () => {
     expect(resolved.matched[0].components.default.name).toBe(component);
   });
 
-  it("las 12 rutas son planas: ninguna declara children", () => {
-    // Deuda deliberada, no diseno. Al introducir layouts por ruta (fase 2) este test DEBE cambiar:
-    // es el marcador de que el refactor estructural ocurrio.
-    const conHijos = router.getRoutes().filter((r) => r.children.length > 0);
-    expect(conHijos).toHaveLength(0);
+  it("/perfil es un layout con las 8 secciones del dossier como rutas hijas", () => {
+    // Este test empezo siendo su contrario ("las 12 rutas son planas: ninguna declara children"), como
+    // marcador de la deuda. La fase 3.4 lo cumplio: ahora vigila que las secciones no vuelvan a ser
+    // pestanas sin URL.
+    //
+    // Se mira options.routes, la config cruda, y NO getRoutes(): este ultimo aplana el arbol, asi que
+    // deja DOS registros con path "/perfil" --el layout y su hija de path ""-- y un find() coge el hijo.
+    const perfil = router.options.routes.find((r) => r.path === "/perfil");
+    expect(perfil.children).toHaveLength(8);
+  });
+
+  it.each([
+    ["/perfil", "perfil", "ProfileHomePanel"],
+    ["/perfil/formacion", "perfil-formacion", "TitulosSection"],
+    ["/perfil/experiencia", "perfil-experiencia", "LaboralSection"],
+    ["/perfil/referencias", "perfil-referencias", "ReferenciasSection"],
+    ["/perfil/capacitacion", "perfil-capacitacion", "CapacitacionSection"],
+    ["/perfil/certificacion", "perfil-certificacion", "CertificacionSection"],
+    ["/perfil/investigacion", "perfil-investigacion", "InvestigacionSection"],
+    ["/perfil/certificados-firma", "perfil-certificados-firma", "CertificadosFirmaSection"]
+  ])("%s resuelve a '%s' servida por %s", (path, name, component) => {
+    // Congela las URLs del dossier: son enlazables desde hoy, asi que cambiarlas rompe marcadores ajenos.
+    const resolved = router.resolve(path);
+    expect(resolved.name).toBe(name);
+    expect(resolved.matched.at(-1).components.default.name).toBe(component);
+  });
+
+  it("toda seccion del dossier se monta DENTRO del layout de perfil", () => {
+    // matched[0] es el layout: si un dia una seccion dejara de anidarse, perderia el aside y la cabecera.
+    const layout = router.resolve("/perfil").matched[0].components.default;
+    ["/perfil/formacion", "/perfil/investigacion", "/perfil/certificados-firma"].forEach((path) => {
+      expect(router.resolve(path).matched[0].components.default).toBe(layout);
+    });
   });
 
   it("/home/firmas ya NO comparte componente con /home", () => {
@@ -157,6 +193,20 @@ describe("tabla de rutas", () => {
     );
     expect(new Set(componentes).size).toBe(3);
     expect(componentes.map((c) => c.name)).toEqual(["HomeView", "DocumentCenterView", "SignatureCenterView"]);
+  });
+
+  it("las hijas de /perfil HEREDAN blockedForAdmin del layout", () => {
+    // Se comprueba sobre el meta RESUELTO --lo que ve el guard-- y no sobre el registro: vue-router
+    // fusiona el meta del padre al resolver, pero el registro hijo conserva el suyo a secas. Si esta
+    // herencia se rompiera, el admin entraria en /perfil/* y la lista de nombres ya no esta para pararlo.
+    expect(router.resolve("/perfil").meta.blockedForAdmin).toBe(true);
+    expect(router.resolve("/perfil/formacion").meta.blockedForAdmin).toBe(true);
+    expect(router.resolve("/perfil/certificados-firma").meta.blockedForAdmin).toBe(true);
+  });
+
+  it("las pantallas de admin NO declaran blockedForAdmin", () => {
+    expect(router.resolve("/admin").meta.blockedForAdmin).toBeUndefined();
+    expect(router.resolve("/procesos").meta.blockedForAdmin).toBeUndefined();
   });
 
   it("solo /admin y /procesos declaran meta de acceso", () => {
@@ -239,13 +289,21 @@ describe("guard: sesion", () => {
 describe("guard: el admin no entra en el espacio de usuario", () => {
   // adminBlockedRouteNames. Documentado en CLAUDE.md: para probar dossier o firmas hay que entrar
   // como gestor o usuario. Al partir /home en tres paginas (fase 3) hay que preservar las tres.
-  it.each([["/home"], ["/home/documentos"], ["/home/firmas"], ["/perfil"]])(
-    "%s redirige a /admin cuando el usuario es admin",
-    async (path) => {
-      mockIsAdminUser.mockReturnValue(true);
-      expect(await goTo(path)).toBe("admin");
-    }
-  );
+  it.each([
+    ["/home"],
+    ["/home/documentos"],
+    ["/home/firmas"],
+    ["/perfil"],
+    // Las hijas del dossier. El guard miraba una lista de NOMBRES, y estas tienen nombre propio
+    // (perfil-formacion...), asi que se habrian colado. Por eso pasó a mirar `meta`, que vue-router
+    // hereda del padre. Sin estos casos, la fase 3.4 habria abierto un agujero en silencio.
+    ["/perfil/formacion"],
+    ["/perfil/experiencia"],
+    ["/perfil/certificados-firma"]
+  ])("%s redirige a /admin cuando el usuario es admin", async (path) => {
+    mockIsAdminUser.mockReturnValue(true);
+    expect(await goTo(path)).toBe("admin");
+  });
 
   it("el admin si puede entrar en /procesos", async () => {
     mockIsAdminUser.mockReturnValue(true);

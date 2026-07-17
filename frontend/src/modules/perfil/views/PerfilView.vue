@@ -45,19 +45,32 @@
                 </button>
 
                 <div v-show="showDossierMenu" class="deasy-nav-tree">
-                    <button v-for="(item, index) of mainmenu" :key="index"
+                    <!-- router-link, no button: la seccion activa la decide la URL, no un string. -->
+                    <router-link
+                      :to="{ name: 'perfil' }"
                       class="deasy-nav-item"
-                      :class="item.active ? 'deasy-nav-item--active' : ''"
-                      type="button"
-                      @click="onmenuClick(item.label)">
-                      <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(profileMenuIconMeta(item).tone)">
-                        <component :is="profileMenuIconMeta(item).icon" class="h-4.5 w-4.5 shrink-0" />
+                      :class="$route.name === 'perfil' ? 'deasy-nav-item--active' : ''"
+                    >
+                      <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(inicioIconMeta.tone)">
+                        <component :is="inicioIconMeta.icon" class="h-4.5 w-4.5 shrink-0" />
                       </span>
-                      <span class="deasy-nav-item__label">{{ item.label }}</span>
-                      <span v-if="item.key" class="ml-auto inline-flex items-center rounded-lg border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-[10px] font-bold text-[#21517a] shrink-0">
-                        {{ dossierCounts[item.key] ?? 0 }}
+                      <span class="deasy-nav-item__label">Inicio</span>
+                    </router-link>
+                    <router-link
+                      v-for="section of PROFILE_SECTIONS"
+                      :key="section.slug"
+                      :to="{ name: section.name }"
+                      class="deasy-nav-item"
+                      :class="$route.name === section.name ? 'deasy-nav-item--active' : ''"
+                    >
+                      <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(sectionIconMeta(section).tone)">
+                        <component :is="sectionIconMeta(section).icon" class="h-4.5 w-4.5 shrink-0" />
                       </span>
-                    </button>
+                      <span class="deasy-nav-item__label">{{ section.label }}</span>
+                      <span v-if="section.countKey" class="ml-auto inline-flex items-center rounded-lg border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-[10px] font-bold text-[#21517a] shrink-0">
+                        {{ dossierCounts[section.countKey] ?? 0 }}
+                      </span>
+                    </router-link>
                 </div>
               </div>
               </div>
@@ -65,26 +78,10 @@
         </div>
     </template>
 
-        <div v-if="area=='Perfil'" id="validar" class="w-full">
-            <ProfileHomePanel
-              v-if="process==='Inicio'"
-              :current-user="currentUser"
-              :photo="userPhoto"
-              :dossier-counts="dossierCounts"
-              @navigate-section="onmenuClick"
-              @go-back="goBackFromProfileHome"
-            />
-            <TitulosView v-else-if="process==='Formación'"></TitulosView>
-            <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
-            <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
-            <CapacitacionView v-else-if="process==='Capacitación'"></CapacitacionView>
-            <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
-            <InvestigacionView v-else-if="process==='Investigación'"></InvestigacionView>
-            <CertificadosFirmaView v-else-if="process==='Certificados de firma'"></CertificadosFirmaView>
-        </div>
-        <div v-else-if="area=='Firmar'" class="w-full">
-            <!-- <FirmarPdf v-if="area=='Firmar'"></FirmarPdf> -->
-             <div class="p-6 text-center text-slate-500 bg-white rounded-2xl m-4">Módulo de firma en migración (no disponible temporalmente)</div>
+        <!-- Aqui habia una cadena de 8 v-else-if sobre `process`, un string en espanol con tilde. Cada
+             seccion tiene ya su ruta: el router decide, y una URL que no casa falla ruidosamente. -->
+        <div id="validar" class="w-full">
+            <router-view />
         </div>
   </AppWorkspaceShell>
 
@@ -94,7 +91,7 @@
     <script setup>  
     
     
-import { ref, computed, onMounted, onBeforeUnmount, watch} from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, provide } from 'vue';
 import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
@@ -105,16 +102,8 @@ import {
       resolveWorkspaceSectionIcon,
       workspaceIconToneClass,
     } from '@/shared/utils/workspaceNavIcons.js';
-import TitulosView from '@/modules/perfil/views/TitulosView.vue';
-import LaboralView from '@/modules/perfil/views/LaboralView.vue';
-import ReferenciasView from '@/modules/perfil/views/ReferenciasView.vue';
-import CertificacionView from '@/modules/perfil/views/CertificacionView.vue';
-import CapacitacionView from '@/modules/perfil/views/CapacitacionView.vue';
-import ProfileHomePanel from '@/modules/perfil/components/ProfileHomePanel.vue';
-import InvestigacionView from '@/modules/perfil/views/InvestigacionView.vue';
-import CertificadosFirmaView from '@/modules/perfil/views/CertificadosFirmaView.vue';
-
-// import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
+// Las secciones ya no se importan aqui: cada una es una ruta hija y las monta el <router-view>.
+import { PROFILE_SECTIONS, PROFILE_CONTEXT } from '@/modules/perfil/profileSections.js';
 
     import { API_PREFIX, API_ROUTES } from '@/core/config/apiConfig';
 
@@ -306,16 +295,25 @@ const { isClient, menuOpen: vmenu, showNotify: vnotify, toggleMenu, closeMenu, t
   useWorkspaceChrome();
 
 const dossierIconMeta = resolveWorkspaceSectionIcon('Perfil');
-const profileMenuIconMeta = (item = {}) => resolveWorkspaceProfileMenuIcon(item.icon, item.label);
+const inicioIconMeta = resolveWorkspaceProfileMenuIcon('user', 'Inicio');
+const sectionIconMeta = (section) => resolveWorkspaceProfileMenuIcon(section.icon, section.label);
 
-const profileContextTitle = computed(() => {
-  if (process.value === 'Inicio') return 'Dossier profesional';
-  return process.value || 'Dossier profesional';
+// ProfileHomePanel pasa a ser ruta hija, asi que ya no puede recibir props del padre. El contexto va por
+// provide/inject: es lo idiomatico para que un layout comparta datos con lo que monta el <router-view>,
+// y evita colar props a todas las secciones --que no los quieren-- solo para que llegue a una.
+provide(PROFILE_CONTEXT, {
+  currentUser,
+  photo: userPhoto,
+  dossierCounts,
+  goBack: goBackFromProfileHome
 });
-const profileContextSubtitle = computed(() => {
-  if (process.value === 'Inicio') return 'Vista general de tu perfil académico y profesional';
-  return '';
-});
+
+// La cabecera sale de la ruta activa, no de un string de estado.
+const activeSection = computed(() => PROFILE_SECTIONS.find((s) => s.name === route.name) || null);
+const profileContextTitle = computed(() => activeSection.value?.label || 'Dossier profesional');
+const profileContextSubtitle = computed(() =>
+  activeSection.value ? '' : 'Vista general de tu perfil académico y profesional'
+);
 
     const process= ref("Inicio")
 
@@ -372,54 +370,11 @@ const profileContextSubtitle = computed(() => {
         }
     });
 
-    const syncAreaState = (areaName) => {
-        area.value = areaName;
-    };
-
-    const openSigningWorkspace = () => {
-        syncAreaState('Firmar');
-        process.value = 'Firmar';
-        router.replace({ path: '/perfil', query: { view: 'firmar' } });
-    };
-
-    const syncViewFromRoute = () => {
-        if (route.query?.view === 'firmar') {
-            syncAreaState('Firmar');
-            process.value = 'Firmar';
-            return;
-        }
-        if (area.value === 'Firmar') {
-            syncAreaState('Perfil');
-            mainmenu.value = buildPerfilMenu();
-            process.value = 'Inicio';
-        }
-    };
-    
-
-    const onmenuClick=(item)=>{
-        if (area.value === 'Firmar') {
-            syncAreaState('Perfil');
-            router.replace({ path: '/perfil' });
-        }
-        for (const el of mainmenu.value){
-            if(el.label === item){
-                el.active =true;
-                process.value=el.label;
-                //el.func()
-            }else{
-                el.active = false;
-            }
-        }
-    }
-    
-
-    watch(() => route.query.view, () => {
-        syncViewFromRoute();
-    });
-
-    onMounted(() => {
-        syncViewFromRoute();
-    });
+    // Aqui vivia el conmutador de pestanas: `process`/`area`, `onmenuClick` --que recorria el menu
+    // comparando ETIQUETAS en espanol con tilde-- y el par openSigningWorkspace/syncViewFromRoute del
+    // deep-link `?view=firmar`. Ese ultimo era doblemente muerto: apuntaba a un modulo desactivado ("en
+    // migracion") y su unico emisor, openSigningWorkspace, no se llamaba desde ningun sitio. Ahora la
+    // seccion la decide la URL y el router valida el destino.
 
 
       

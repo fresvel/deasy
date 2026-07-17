@@ -424,7 +424,7 @@ Por orden de riesgo creciente. **`/home/firmas` primero**: 2 líneas, cero estad
 | 3.1 | `/home/firmas` → `SignatureCenterView` | ✅ **hecha** |
 | 3.2 | `/home/documentos` → `DocumentCenterView` | **Reestimada** — ver abajo |
 | 3.3 | `/home` → `HomeDashboardView`; **HomeView desaparece** | Medio |
-| 3.4 | `/perfil/*` con `children` + rename `*View` → `*Section` (mismo commit: el archivo se toca igual) | Medio — ajustar `adminBlockedRouteNames` |
+| 3.4 | `/perfil/*` con `children` + rename `*View` → `*Section` | ✅ **hecha** |
 | 3.5 | `/admin`: los dos grafos primero (ya son lazy y autónomos), luego `:section/:item/:table` | Alto |
 | 3.6 | Modales de HomeView → componentes (patrón `GeneralTaskModal`, ya probado) | Medio |
 
@@ -522,6 +522,46 @@ fase 3.2"*). Reescritos: uno afirma ahora que **las tres rutas tienen cada una s
 > --stat`, se revirtió con `git checkout`, y se rehízo **cortando por rangos de línea validados**, con un
 > `assert` que aborta si un bloque supera las 40 líneas. Lección: en ficheros de 5000 líneas, borrar
 > "desde X hasta Y" es una escopeta; hay que acotar cada bloque por su propio cierre y verificar el tamaño.
+
+#### 3.4 — completada (17-07-2026). **El dossier ya tiene URLs.**
+
+Las 7 secciones del dossier son rutas hijas de `/perfil`. Los tres fallos que §1 y §5.2 documentaron están
+**corregidos y verificados en el navegador**:
+
+| Antes | Ahora |
+|---|---|
+| No se podía enlazar a "mis títulos" | `/perfil/investigacion` abre directo en Investigación, con sus 5 subpestañas |
+| **F5 devolvía a Inicio** siempre | `/perfil/certificados-firma` + F5 → sigue ahí |
+| **El botón atrás salía de `/perfil` entero** | Vuelve a la sección anterior |
+
+**Muere el contrato por magic string.** `modules/perfil/profileSections.js` es la única fuente: el aside y
+las tarjetas de Inicio la leen. Antes cada uno tenía **su propia lista a mano** y el acuerdo era la
+etiqueta en español con tilde — el desajuste que §"fragilidad" caracterizó como *no-op silencioso*.
+**Ahora el acuerdo es el `name` de la ruta, y vue-router valida**: equivocarse deja de ser mudo.
+
+**Renombrados los 7 `*View.vue` → `components/sections/*Section.vue`.** `views/` contiene ya sólo
+`PerfilView`, que **sí** es una ruta. El sufijo vuelve a informar.
+
+**Código muerto que se va con el conmutador**: `openSigningWorkspace` + `syncViewFromRoute` + el deep-link
+`?view=firmar`. Era doblemente muerto — apuntaba a un módulo desactivado (*"en migración"*) y su único
+emisor no se llamaba desde ningún sitio. `PerfilView` **428 → 383 L**.
+
+> 🔐 **El riesgo real de esta fase era de seguridad, y se resolvió con evidencia.** El guard miraba una
+> lista de **nombres** (`adminBlockedRouteNames`), pero las hijas tienen nombre propio
+> (`perfil-formacion`…): **se habrían colado**. Se cambió a `meta.blockedForAdmin`, que vue-router
+> **hereda del padre a los hijos**. Cubierto por 3 casos nuevos en el test del guard y **verificado en
+> vivo**: el admin pide `/perfil/formacion` y acaba en `/admin`.
+
+**Los tests**: se rompieron **15**, todos por diseño — el marcador de la fase 2 (*"las 12 rutas son planas:
+ninguna declara children"*) y los 14 de la caracterización de pestañas, que la 3.4 volvió obsoletos. El
+marcador se invirtió: ahora afirma que **`/perfil` tiene 8 hijas**. `PerfilView.test.js` se reescribió para
+describir el **layout** (17 tests); el contrato de URLs vive donde le toca, en el test del router. **207
+tests** en total.
+
+> Dos tests que escribí mal y el fallo lo delató: `getRoutes()` **aplana** el árbol (deja dos registros con
+> path `/perfil`, el layout y su hija de path `""`), y el `meta` del registro hijo **no** viene fusionado —
+> `to.meta` sí, que es lo que lee el guard. Se corrigieron para afirmar sobre `options.routes` y sobre el
+> meta **resuelto**.
 
 ##### 3.2b — completada
 

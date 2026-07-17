@@ -1,27 +1,25 @@
 // @vitest-environment jsdom
 
 /**
- * Characterization tests de la conmutacion de secciones de PerfilView.
+ * PerfilView como LAYOUT del dossier.
  *
- * Los 7 ficheros perfil/views/*View.vue NO son rutas: son pestanas que PerfilView elige con una cadena
- * v-if/v-else-if sobre `process`, un string en espanol CON TILDE (PerfilView.vue:68-84). Nadie puede
- * enlazar a /perfil/titulos, F5 devuelve a Inicio y el estado se pierde al cambiar de pestana.
+ * Este fichero congelaba antes lo contrario: que los 7 ficheros perfil/views/*View.vue NO eran rutas,
+ * sino pestanas que una cadena de v-if elegia comparando un string en espanol CON TILDE. Se escribio
+ * como red para la fase 3.4, y la 3.4 lo rompio entero --que era la senal de exito--. Reescrito: ahora
+ * describe el layout, y el contrato de URLs vive donde le toca, en core/router/index.test.js.
  *
- * Estos tests congelan ese contrato para que la conversion a rutas hijas
- * (docs/plan-refactor-frontend.md, fase 3.4) pueda demostrar que sigue rindiendo lo mismo. Describen lo
- * que HAY, no lo que queremos: cuando cada seccion tenga su ruta, este fichero debe reescribirse a
- * proposito --es la senal de que el refactor ocurrio--.
- *
- * El valor principal esta en `etiqueta -> componente`: hoy es un acuerdo por magic string duplicado
- * entre PerfilView.vue:200-249 y ProfileHomePanel.vue:85-93, sin constante compartida. Si alguien
- * corrige una tilde en un lado y no en el otro, la seccion renderiza EN BLANCO y sin error. Estos
- * tests son lo unico que lo detecta.
+ * Lo que se probaba antes y ya no hace falta probar, porque no puede pasar:
+ * - "una etiqueta que no casa es un no-op silencioso": no hay etiquetas; hay nombres de ruta y
+ *   vue-router avisa.
+ * - "el estado de la seccion no sobrevive al cambio de pestana": sigue sin sobrevivir (el <router-view>
+ *   tambien remonta), pero ya no es un accidente del v-if: es como funcionan las rutas.
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
+import { createRouter, createMemoryHistory } from "vue-router";
+import { PROFILE_SECTIONS } from "@/modules/perfil/profileSections.js";
 
-// jsdom bajo vitest 4 expone localStorage sin metodos; ver core/router/index.test.js.
 const storage = new Map();
 Object.defineProperty(globalThis, "localStorage", {
   configurable: true,
@@ -35,174 +33,150 @@ Object.defineProperty(globalThis, "localStorage", {
 
 const stub = (name) => ({ name, render: () => null });
 
-// Cada seccion se stubea con su nombre real: lo que se prueba es CUAL se elige, no que pinte.
-vi.mock("@/modules/perfil/views/TitulosView.vue", () => ({ default: stub("TitulosView") }));
-vi.mock("@/modules/perfil/views/LaboralView.vue", () => ({ default: stub("LaboralView") }));
-vi.mock("@/modules/perfil/views/ReferenciasView.vue", () => ({ default: stub("ReferenciasView") }));
-vi.mock("@/modules/perfil/views/CertificacionView.vue", () => ({ default: stub("CertificacionView") }));
-vi.mock("@/modules/perfil/views/CapacitacionView.vue", () => ({ default: stub("CapacitacionView") }));
-vi.mock("@/modules/perfil/views/InvestigacionView.vue", () => ({ default: stub("InvestigacionView") }));
-vi.mock("@/modules/perfil/views/CertificadosFirmaView.vue", () => ({ default: stub("CertificadosFirmaView") }));
-
-// ProfileHomePanel conserva sus emits: es el disparador de la navegacion entre secciones.
-vi.mock("@/modules/perfil/components/ProfileHomePanel.vue", () => ({
-  default: { name: "ProfileHomePanel", emits: ["navigate-section", "go-back"], render: () => null }
-}));
-
-// El shell entrega su contenido por el slot default; sin el, el v-if de las secciones no se evalua.
 vi.mock("@/layouts/workspace/AppWorkspaceShell.vue", () => ({
   default: {
     name: "AppWorkspaceShell",
-    setup: (_props, { slots }) => () => [slots.default?.(), slots.sidebar?.()]
+    setup: (_props, { slots }) => () => [slots.header?.(), slots.sidebar?.(), slots.default?.()]
   }
 }));
-vi.mock("@/shared/components/widgets/WorkspaceChatLauncher.vue", () => ({
-  default: stub("WorkspaceChatLauncher")
-}));
-
-vi.mock("axios", () => ({
-  default: { get: vi.fn().mockResolvedValue({ data: {} }), put: vi.fn().mockResolvedValue({ data: {} }) }
-}));
-
-const mockRoute = { query: {}, params: {}, name: "perfil", path: "/perfil", hash: "" };
-vi.mock("vue-router", () => ({
-  useRoute: () => mockRoute,
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
-}));
+vi.mock("@/shared/components/widgets/WorkspaceChatLauncher.vue", () => ({ default: stub("WorkspaceChatLauncher") }));
+vi.mock("axios", () => ({ default: { get: vi.fn().mockResolvedValue({ data: {} }), put: vi.fn().mockResolvedValue({ data: {} }) } }));
 
 const { default: PerfilView } = await import("./PerfilView.vue");
 
-/** Monta la vista y devuelve el wrapper ya asentado (hay onMounted asincronos). */
-const mountPerfil = async () => {
-  const wrapper = mount(PerfilView);
+/** Router de memoria con las mismas hijas que el real, pero con secciones stubeadas. */
+const crearRouter = () =>
+  createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: "/home", name: "home", component: stub("HomeView") },
+      { path: "/home/firmas", name: "home-signatures", component: stub("SignatureCenterView") },
+      {
+        path: "/perfil",
+        component: PerfilView,
+        children: [
+          { path: "", name: "perfil", component: stub("ProfileHomePanel") },
+          ...PROFILE_SECTIONS.map((s) => ({
+            path: s.slug,
+            name: s.name,
+            component: stub(`${s.slug}-section`)
+          }))
+        ]
+      }
+    ]
+  });
+
+const montarEn = async (path) => {
+  const router = crearRouter();
+  router.push(path);
+  await router.isReady();
+  const wrapper = mount({ template: "<router-view />" }, { global: { plugins: [router] } });
   await new Promise((r) => setTimeout(r, 0));
-  return wrapper;
-};
-
-/**
- * Clica el item del menu lateral con esa etiqueta (PerfilView.vue:48-52).
- * Es el unico conductor valido desde cualquier seccion: ProfileHomePanel solo existe mientras
- * process === 'Inicio', asi que no sirve para volver.
- * Devuelve false si ningun item la lleva --util para probar que una etiqueta que no casa es un no-op--.
- */
-const clickMenu = async (wrapper, label) => {
-  const item = wrapper
-    .findAll("button.deasy-nav-item")
-    .find((b) => b.find(".deasy-nav-item__label").text() === label);
-  if (!item) return false;
-  await item.trigger("click");
-  await wrapper.vm.$nextTick();
-  return true;
-};
-
-/** Conmuta llamando al handler directamente, saltandose el menu: permite inyectar etiquetas invalidas. */
-const emitSectionFromHomePanel = async (wrapper, label) => {
-  await wrapper.findComponent({ name: "ProfileHomePanel" }).vm.$emit("navigate-section", label);
-  await wrapper.vm.$nextTick();
+  return { wrapper, router };
 };
 
 beforeEach(() => {
   storage.clear();
-  localStorage.setItem("user", JSON.stringify({ id: 1, cedula: "0987654321", nombres: "Gestor" }));
-  mockRoute.query = {};
+  localStorage.setItem("user", JSON.stringify({ id: 1, cedula: "0987654321", first_name: "Gestor" }));
 });
 
-describe("estado inicial", () => {
-  it("/perfil siempre abre en Inicio, nunca en una seccion concreta", async () => {
-    // La consecuencia directa de no tener rutas: no hay deep-link ni F5 estable.
-    const wrapper = await mountPerfil();
-    expect(wrapper.findComponent({ name: "ProfileHomePanel" }).exists()).toBe(true);
-    expect(wrapper.findComponent({ name: "TitulosView" }).exists()).toBe(false);
+describe("aside del dossier", () => {
+  it("ofrece Inicio y las 7 secciones, todas como enlaces", async () => {
+    const { wrapper } = await montarEn("/perfil");
+    const enlaces = wrapper.findAll("a.deasy-nav-item");
+    expect(enlaces).toHaveLength(PROFILE_SECTIONS.length + 1);
+    const etiquetas = enlaces.map((a) => a.find(".deasy-nav-item__label").text());
+    expect(etiquetas).toEqual(["Inicio", ...PROFILE_SECTIONS.map((s) => s.label)]);
+  });
+
+  it("cada enlace apunta a la URL de su seccion", async () => {
+    const { wrapper } = await montarEn("/perfil");
+    const hrefs = wrapper.findAll("a.deasy-nav-item").map((a) => a.attributes("href"));
+    expect(hrefs).toEqual([
+      "/perfil",
+      "/perfil/formacion",
+      "/perfil/experiencia",
+      "/perfil/referencias",
+      "/perfil/capacitacion",
+      "/perfil/certificacion",
+      "/perfil/investigacion",
+      "/perfil/certificados-firma"
+    ]);
+  });
+
+  it("solo llevan contador las secciones que son del dossier", async () => {
+    // "Certificados de firma" no lo es: countKey null.
+    const { wrapper } = await montarEn("/perfil");
+    const conContador = wrapper.findAll("a.deasy-nav-item").filter((a) => a.find("span.ml-auto").exists());
+    expect(conContador).toHaveLength(PROFILE_SECTIONS.filter((s) => s.countKey).length);
   });
 });
 
-describe("contrato etiqueta -> componente", () => {
-  // Duplicado a mano entre PerfilView.vue:200-249 y ProfileHomePanel.vue:85-93. Las tildes son
-  // significativas: "Formación" casa, "Formacion" no, y el fallo es silencioso.
-  it.each([
-    ["Formación", "TitulosView"],
-    ["Experiencia", "LaboralView"],
-    ["Referencias", "ReferenciasView"],
-    ["Capacitación", "CapacitacionView"],
-    ["Certificación", "CertificacionView"],
-    ["Investigación", "InvestigacionView"],
-    ["Certificados de firma", "CertificadosFirmaView"]
-  ])("la etiqueta '%s' renderiza %s", async (label, component) => {
-    const wrapper = await mountPerfil();
-    expect(await clickMenu(wrapper, label)).toBe(true);
-    expect(wrapper.findComponent({ name: component }).exists()).toBe(true);
+describe("la URL manda", () => {
+  it.each(PROFILE_SECTIONS.map((s) => [s.slug, s.label]))(
+    "/perfil/%s marca '%s' como activa en el aside",
+    async (slug, label) => {
+      const { wrapper } = await montarEn(`/perfil/${slug}`);
+      const activos = wrapper
+        .findAll("a.deasy-nav-item--active")
+        .map((a) => a.find(".deasy-nav-item__label").text());
+      expect(activos).toEqual([label]);
+    }
+  );
+
+  it("/perfil marca Inicio", async () => {
+    const { wrapper } = await montarEn("/perfil");
+    const activos = wrapper.findAll("a.deasy-nav-item--active").map((a) => a.find(".deasy-nav-item__label").text());
+    expect(activos).toEqual(["Inicio"]);
   });
 
-  it("las secciones son mutuamente excluyentes: solo se pinta una", async () => {
-    const todas = [
-      "TitulosView", "LaboralView", "ReferenciasView", "CapacitacionView",
-      "CertificacionView", "InvestigacionView", "CertificadosFirmaView", "ProfileHomePanel"
-    ];
-    const wrapper = await mountPerfil();
-    await clickMenu(wrapper, "Experiencia");
-    const visibles = todas.filter((c) => wrapper.findComponent({ name: c }).exists());
-    expect(visibles).toEqual(["LaboralView"]);
+  it("monta la seccion de la URL, y solo esa", async () => {
+    const { wrapper } = await montarEn("/perfil/experiencia");
+    expect(wrapper.findComponent({ name: "experiencia-section" }).exists()).toBe(true);
+    expect(wrapper.findComponent({ name: "formacion-section" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "ProfileHomePanel" }).exists()).toBe(false);
+  });
+
+  it("deep-link: entrar directo en una seccion la monta, sin pasar por Inicio", async () => {
+    // Lo que antes era imposible: /perfil siempre abria en Inicio y F5 te devolvia ahi.
+    const { wrapper } = await montarEn("/perfil/investigacion");
+    expect(wrapper.findComponent({ name: "investigacion-section" }).exists()).toBe(true);
+  });
+});
+
+describe("cabecera", () => {
+  it("en Inicio, titulo generico y subtitulo", async () => {
+    const { wrapper } = await montarEn("/perfil");
+    expect(wrapper.find(".deasy-context-header__title").text()).toBe("Dossier profesional");
+    expect(wrapper.find(".deasy-context-header__subtitle").exists()).toBe(true);
+  });
+
+  it("en una seccion, su nombre y sin subtitulo", async () => {
+    const { wrapper } = await montarEn("/perfil/capacitacion");
+    expect(wrapper.find(".deasy-context-header__title").text()).toBe("Capacitación");
+    expect(wrapper.find(".deasy-context-header__subtitle").exists()).toBe(false);
+  });
+});
+
+describe("navegacion", () => {
+  it("clicar una seccion cambia la URL y lo que se monta", async () => {
+    const { wrapper, router } = await montarEn("/perfil");
+    const enlace = wrapper
+      .findAll("a.deasy-nav-item")
+      .find((a) => a.find(".deasy-nav-item__label").text() === "Referencias");
+    await enlace.trigger("click");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(router.currentRoute.value.path).toBe("/perfil/referencias");
+    expect(wrapper.findComponent({ name: "referencias-section" }).exists()).toBe(true);
   });
 
   it("se puede volver a Inicio desde una seccion", async () => {
-    const wrapper = await mountPerfil();
-    await clickMenu(wrapper, "Formación");
-    await clickMenu(wrapper, "Inicio");
-    expect(wrapper.findComponent({ name: "ProfileHomePanel" }).exists()).toBe(true);
-    expect(wrapper.findComponent({ name: "TitulosView" }).exists()).toBe(false);
-  });
-
-  it("ProfileHomePanel solo existe en Inicio, asi que no sirve para volver", async () => {
-    // Detalle estructural, no trivia: el atajo de secciones vive DENTRO de la seccion Inicio, asi que
-    // la unica navegacion siempre disponible es el menu lateral. Con rutas hijas esto deja de importar.
-    const wrapper = await mountPerfil();
-    await clickMenu(wrapper, "Formación");
-    expect(wrapper.findComponent({ name: "ProfileHomePanel" }).exists()).toBe(false);
-  });
-});
-
-describe("fragilidad del acuerdo por magic string", () => {
-  it("una etiqueta que no casa es un no-op silencioso: se queda donde estaba", async () => {
-    // onmenuClick (PerfilView.vue:424) recorre mainmenu y solo asigna process si la etiqueta casa.
-    // Sin tilde no casa nada y no pasa NADA: ni cambia de seccion, ni avisa. El clic se traga.
-    // Aqui se emite desde ProfileHomePanel --que es lo que hace la app (PerfilView.vue:74)-- con una
-    // etiqueta que no existe en mainmenu: exactamente el desajuste que permite tener las etiquetas
-    // duplicadas en dos ficheros (PerfilView.vue:200-249 vs ProfileHomePanel.vue:85-93) sin constante
-    // compartida. Con nombres de ruta (fase 3.4) vue-router avisaria en vez de callar.
-    const wrapper = await mountPerfil();
-    await emitSectionFromHomePanel(wrapper, "Formacion");
-    expect(wrapper.findComponent({ name: "TitulosView" }).exists()).toBe(false);
-    expect(wrapper.findComponent({ name: "ProfileHomePanel" }).exists()).toBe(true);
-  });
-
-  it("el menu lateral no ofrece ninguna etiqueta sin tilde", async () => {
-    // Blinda el otro lado del desajuste: si alguien 'normaliza' las etiquetas de mainmenu quitando
-    // tildes, los v-else-if del template (PerfilView.vue:77-83) dejan de casar y la seccion SI queda
-    // en blanco. Este test lo detecta antes de que llegue al usuario.
-    const wrapper = await mountPerfil();
-    const etiquetas = wrapper.findAll("button.deasy-nav-item").map((b) => b.find(".deasy-nav-item__label").text());
-    expect(etiquetas).toContain("Formación");
-    expect(etiquetas).not.toContain("Formacion");
-  });
-});
-
-describe("el estado de la seccion no sobrevive al cambio de pestana", () => {
-  it("volver a una seccion la vuelve a montar desde cero", async () => {
-    // v-if destruye y remonta (no es v-show): se pierde la subpestana activa y el dossier se
-    // refetchea entero. Es el coste que las rutas hijas + un store de dossier eliminan (fases 3.4/5.3).
-    const wrapper = await mountPerfil();
-
-    await clickMenu(wrapper, "Formación");
-    const primerMontaje = wrapper.findComponent({ name: "TitulosView" });
-    expect(primerMontaje.exists()).toBe(true);
-
-    await clickMenu(wrapper, "Experiencia");
-    expect(wrapper.findComponent({ name: "TitulosView" }).exists()).toBe(false);
-
-    await clickMenu(wrapper, "Formación");
-    const segundoMontaje = wrapper.findComponent({ name: "TitulosView" });
-    expect(segundoMontaje.exists()).toBe(true);
-    // Instancia distinta: se destruyo y se creo otra vez.
-    expect(segundoMontaje.vm).not.toBe(primerMontaje.vm);
+    const { wrapper, router } = await montarEn("/perfil/formacion");
+    const inicio = wrapper
+      .findAll("a.deasy-nav-item")
+      .find((a) => a.find(".deasy-nav-item__label").text() === "Inicio");
+    await inicio.trigger("click");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(router.currentRoute.value.name).toBe("perfil");
   });
 });
