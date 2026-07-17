@@ -38,6 +38,7 @@ vi.mock("@/modules/auth/views/SystemBootstrapView.vue", () => ({ default: stub("
 vi.mock("@/modules/auth/views/TermsView.vue", () => ({ default: stub("TermsView") }));
 vi.mock("@/modules/auth/views/VerifyEmail.vue", () => ({ default: stub("VerifyEmail") }));
 vi.mock("@/modules/home/views/HomeView.vue", () => ({ default: stub("HomeView") }));
+vi.mock("@/modules/firmas/views/SignatureCenterView.vue", () => ({ default: stub("SignatureCenterView") }));
 vi.mock("@/modules/perfil/views/PerfilView.vue", () => ({ default: stub("PerfilView") }));
 vi.mock("@/modules/admin/views/AdminView.vue", () => ({ default: stub("AdminView") }));
 vi.mock("@/modules/procesos/views/ProcessManagementView.vue", () => ({ default: stub("ProcessManagementView") }));
@@ -114,7 +115,7 @@ describe("tabla de rutas", () => {
     ["/", "login", "LoginView"],
     ["/home", "home", "HomeView"],
     ["/home/documentos", "home-documents", "HomeView"],
-    ["/home/firmas", "home-signatures", "HomeView"],
+    ["/home/firmas", "home-signatures", "SignatureCenterView"],
     ["/perfil", "perfil", "PerfilView"],
     ["/register", "register", "RegisterView"],
     ["/recover-password", "recover-password", "RecoverPasswordView"],
@@ -136,12 +137,24 @@ describe("tabla de rutas", () => {
     expect(conHijos).toHaveLength(0);
   });
 
-  it("las tres rutas de /home comparten el mismo componente", () => {
-    // El corazon del problema que arregla la fase 3: tres URLs, una sola pagina de 5663 lineas.
-    const componentes = ["/home", "/home/documentos", "/home/firmas"].map(
+  it("/home/firmas ya NO comparte componente con /home", () => {
+    // Antes las TRES rutas de /home apuntaban al mismo fichero de 5663 lineas, y este test lo
+    // congelaba como marcador. La fase 3.1 saco el centro de firmas a su vista: el marcador cambio de
+    // bando y ahora vigila que no vuelva a fusionarse.
+    const [home, firmas] = ["/home", "/home/firmas"].map(
       (p) => router.resolve(p).matched[0].components.default
     );
-    expect(new Set(componentes).size).toBe(1);
+    expect(firmas).not.toBe(home);
+    expect(firmas.name).toBe("SignatureCenterView");
+  });
+
+  it("/home y /home/documentos siguen compartiendo componente", () => {
+    // Deuda pendiente, no diseno: es el proximo corte (fase 3.2). Cuando ocurra, este test DEBE
+    // romperse; es la senal de que paso.
+    const [home, documentos] = ["/home", "/home/documentos"].map(
+      (p) => router.resolve(p).matched[0].components.default
+    );
+    expect(documentos).toBe(home);
   });
 
   it("solo /admin y /procesos declaran meta de acceso", () => {

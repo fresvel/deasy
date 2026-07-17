@@ -6,6 +6,7 @@ import SystemBootstrapView from "@/modules/auth/views/SystemBootstrapView.vue";
 import TermsView from "@/modules/auth/views/TermsView.vue";
 import VerifyEmail from "@/modules/auth/views/VerifyEmail.vue";
 import HomeView from "@/modules/home/views/HomeView.vue";
+import SignatureCenterView from "@/modules/firmas/views/SignatureCenterView.vue";
 import IndexPage from "@/modules/perfil/views/PerfilView.vue";
 import AdminView from "@/modules/admin/views/AdminView.vue";
 import ProcessManagementView from "@/modules/procesos/views/ProcessManagementView.vue";
@@ -24,7 +25,7 @@ const routes = [
   { path: "/", name: "login", component: Login },
   { path: "/home", name: "home", component: HomeView },
   { path: "/home/documentos", name: "home-documents", component: HomeView },
-  { path: "/home/firmas", name: "home-signatures", component: HomeView },
+  { path: "/home/firmas", name: "home-signatures", component: SignatureCenterView },
   { path: "/perfil", name: "perfil", component: IndexPage },
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },

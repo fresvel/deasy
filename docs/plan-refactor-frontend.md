@@ -413,9 +413,15 @@ Además se ejercitó el error del login con credenciales incorrectas: sale "La c
 
 Por orden de riesgo creciente. **`/home/firmas` primero**: 2 líneas, cero estado compartido, valida el patrón de extremo a extremo.
 
+> **La fase 2.2 dejó aquí el layout de ruta.** `AppWorkspaceShell` no puede ser ruta padre hasta que las
+> páginas se partan en header/sidebar/main, porque las 4 vistas usan los dos slots. Mientras tanto, cada
+> página nueva se envuelve en el shell como hacen las existentes (es el patrón vigente) y usa
+> `useWorkspaceChrome()`. El layout de ruta llega cuando haya suficientes páginas partidas para que los
+> *named router views* valgan la pena.
+
 | # | Acción | Riesgo |
 |---|---|---|
-| 3.1 | `/home/firmas` → `SignatureCenterView` | **Bajo** |
+| 3.1 | `/home/firmas` → `SignatureCenterView` | ✅ **hecha** |
 | 3.2 | `/home/documentos` → `DocumentCenterView` + `useDocumentCenter` | Bajo |
 | 3.3 | `/home` → `HomeDashboardView`; **HomeView desaparece** | Medio |
 | 3.4 | `/perfil/*` con `children` + rename `*View` → `*Section` (mismo commit: el archivo se toca igual) | Medio — ajustar `adminBlockedRouteNames` |
@@ -424,6 +430,44 @@ Por orden de riesgo creciente. **`/home/firmas` primero**: 2 líneas, cero estad
 
 > ⚠️ **Fase 3.4 añade funcionalidad por eliminación** (el deep-link aparece solo). Ese matiz importa: es refactor **y** feature → commits separados.
 > ⚠️ **Los grafos usan `defineAsyncComponent` deliberadamente** (`AdminTableManager.vue:1107`) para mantener Vue Flow + dagre fuera del bundle. Cualquier extracción **debe quedar dentro de esa frontera async**.
+
+#### 3.1 — completada (16-07-2026)
+
+**`modules/firmas/views/SignatureCenterView.vue`** sirve `/home/firmas`. El corte salió barato porque el
+acoplamiento era **cero**: la pantalla ya delegaba el 100% en `HomeSignatureEntry`, y `homeSignatureItems`
+—el estado de firmas de HomeView— lo lee el *dashboard*, no esa ruta.
+
+Se llevó consigo la lista del aside, las anclas y el watcher del hash — **enrutamiento anidado
+reimplementado a mano** con `router.replace` + `scrollIntoView`. Era la mejor prueba de que la pantalla
+pedía ruta propia: alguien ya necesitó deep-link y lo resolvió sin el router. Se conserva tal cual;
+convertir las anclas en rutas hijas es otro cambio.
+
+**`SignatureSidebar.vue`** sale de `HomeSidebar`, que llevaba **dos variantes en un componente** (el mismo
+*type code* un nivel más abajo). Con ella se va el booleano `isGlobalSignatureRoute` que elegía cuál pintar.
+
+**Lo que NO se llevó, a propósito**: el handler `@refresh-home`. En esa ruta llamaba a `loadUserMenu()`
+—que no alimenta nada visible: el aside de firmas es una lista estática— y a `refreshActiveProcessPanel()`,
+que refresca un panel de **otra** página. Con las páginas separadas, `/home` se remonta al volver y su
+`onMounted` recarga. **Verificado**: al volver disparan 5 llamadas (`menu`, `document-center`,
+`signature-center`, `dossier`, `certificates`). Los datos quedan **más frescos**, no menos.
+
+**Resultado**: `workspaceRouteMode` pasa de tres modos a dos. `HomeView` 5657 → **5588 L**. La reducción es
+modesta porque la rama eran literalmente dos líneas: **el valor está en la estructura, no en el LOC** —
+`/home/firmas` ya no monta los 13 modales de HomeView ni su dashboard.
+
+**Los dos tests marcadores se rompieron, que era el plan**, y sólo esos (los otros 35 verdes, incluidos los
+4 guards de `adminBlockedRouteNames`). Reescritos: uno vigila ahora que firmas **no vuelva** a fusionarse;
+el otro congela que `/home` y `/home/documentos` **todavía** comparten componente — y **deberá romperse** en
+la fase 3.2.
+
+**Verificación en navegador**: la página sirve la pantalla completa; las anclas siguen navegando (hash +
+item activo + scroll); **el deep-link directo con F5 funciona** (`/home/firmas#signature-launcher-pending`
+abre con "Bandeja de pendientes" marcada); `/home` conserva sus 7 accesos directos y **cero** items de
+firmas; el ciclo `/home` → firmas → vuelta mantiene cabecera y aside correctos. Consola limpia.
+
+> ⚠️ **Deuda que el corte deja a la vista**: `SignatureCenterView` deriva la identidad del usuario con su
+> propia copia de `userPhoto`/`userFullName`. Es la **quinta**. Refuerza lo dicho en 2.2: la identidad pide
+> su composable, y ahora hay un caso más para justificarlo.
 
 ### Fase 4 — Colapsar duplicación
 

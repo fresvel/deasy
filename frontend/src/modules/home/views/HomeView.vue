@@ -24,14 +24,10 @@
 
     <template #sidebar>
       <HomeSidebar
-        :is-global-signature-route="isGlobalSignatureRoute"
-        :signature-sidebar-items="signatureSidebarItems"
         :menu-loading="menuLoading"
         :menu-error="menuError"
         :sends-count="mySends.length"
-        :is-signature-sidebar-item-active="isSignatureSidebarItemActive"
         :workspace-icon-tone-class="workspaceIconToneClass"
-        @open-signature-item="openSignatureSidebarItem"
         @open-section="openWorkspaceSection"
       />
     </template>
@@ -129,10 +125,6 @@
             </section>
           </section>
         </template>
-        <template v-else-if="isGlobalSignatureRoute">
-          <HomeSignatureEntry @refresh-home="handleSignatureCenterRefresh" />
-        </template>
-
         <!-- Vista consolidada: Mis procesos — nivel 1: unidades / nivel 2: procesos -->
         <template v-else-if="showProcessesPanel">
           <section class="flex flex-col gap-6">
@@ -2299,7 +2291,6 @@ import AppButton from '@/shared/components/buttons/AppButton.vue';
 import SToggle from '@/shared/components/forms/SToggle.vue';
 import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
-import HomeSignatureEntry from '@/modules/home/components/HomeSignatureEntry.vue';
 import DeliverableCard from '@/modules/home/components/DeliverableCard.vue';
 import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
 import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel.vue';
@@ -2723,9 +2714,6 @@ const deliverableWorkspaceTitle = computed(() => {
 });
 
 const sidebarContextLabel = computed(() => {
-  if (isGlobalSignatureRoute.value) {
-    return 'Centro de firmas';
-  }
   if (isDocumentCenterRoute.value) {
     return 'Centro documental';
   }
@@ -2733,7 +2721,6 @@ const sidebarContextLabel = computed(() => {
 });
 
 const homeContextTitle = computed(() => {
-  if (isGlobalSignatureRoute.value) return 'Centro de firmas';
   if (isDocumentCenterRoute.value) return 'Centro documental';
   if (selectedProcessKey.value) {
     if (isRoutedProcess.value) return routedHeaderTitle.value;
@@ -2743,7 +2730,7 @@ const homeContextTitle = computed(() => {
 });
 
 const homeContextSubtitle = computed(() => {
-  if (isGlobalSignatureRoute.value || isDocumentCenterRoute.value || selectedProcessKey.value) return '';
+  if (isDocumentCenterRoute.value || selectedProcessKey.value) return '';
   const label = sidebarContextLabel.value;
   return label && label !== userFullName.value ? label : '';
 });
@@ -3458,53 +3445,10 @@ const {
   loadFlowCatalog,
   resetFlowBuilder,
 } = useFlowBuilder({ clearRecipientSearch, currentUserId, processPanelService });
-const workspaceRouteMode = computed(() => {
-  if (route.name === 'home-documents') return 'documents';
-  if (route.name === 'home-signatures') return 'signatures';
-  return 'default';
-});
+// El centro de firmas ya no vive aqui: tiene ruta y vista propias (modules/firmas/views/
+// SignatureCenterView.vue). Quedan dos modos, no tres.
+const workspaceRouteMode = computed(() => (route.name === 'home-documents' ? 'documents' : 'default'));
 const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'documents');
-const isGlobalSignatureRoute = computed(() => workspaceRouteMode.value === 'signatures');
-const signatureSidebarItems = computed(() => ([
-  { key: 'home', label: 'Inicio de firmas', icon: IconSignature, tone: 'sky', hash: '#signature-home' },
-  { key: 'request', label: 'Solicitar firmas', icon: IconMessages, tone: 'sky', hash: '#signature-launcher-request' },
-  { key: 'received', label: 'Solicitudes recibidas', icon: IconMessages, tone: 'sky', hash: '#signature-launcher-received' },
-  { key: 'database', label: 'Buscar en BD', icon: IconSearch, tone: 'sky', hash: '#signature-launcher-database' },
-  { key: 'pending', label: 'Bandeja de pendientes', icon: IconChecklist, tone: 'sky', hash: '#signature-launcher-pending' },
-]));
-
-const scrollToSignatureAnchor = async (hash) => {
-  if (!isClient || !hash) return;
-  await nextTick();
-  requestAnimationFrame(() => {
-    const target = document.querySelector(hash);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  });
-};
-
-const openSignatureSidebarItem = async (item) => {
-  const targetHash = item?.hash || '#signature-home';
-  if (route.name !== 'home-signatures' || route.hash !== targetHash) {
-    await router.replace({ name: 'home-signatures', hash: targetHash });
-  }
-  await scrollToSignatureAnchor(targetHash);
-};
-
-const isSignatureSidebarItemActive = (item) => {
-  const currentHash = route.hash || '#signature-home';
-  return currentHash === (item?.hash || '#signature-home');
-};
-
-watch(
-  () => [route.name, route.hash],
-  async ([routeName, hash]) => {
-    if (routeName === 'home-signatures' && hash) {
-      await scrollToSignatureAnchor(hash);
-    }
-  }
-);
 
 const documentCenterFields = [
   { name: 'document', label: 'Documento' },
@@ -3940,19 +3884,6 @@ const runHomeAction = async (target) => {
 const handleHomeDossierUpdated = () => {
   if (workspaceRouteMode.value === 'default') {
     loadHomeDossier();
-  }
-};
-
-const handleSignatureCenterRefresh = async () => {
-  await loadUserMenu();
-  if (selectedProcessContext.value || selectedProcessPanels.value.length) {
-    await refreshActiveProcessPanel();
-  }
-  if (workspaceRouteMode.value === 'documents') {
-    await loadDocumentCenterPage();
-  }
-  if (workspaceRouteMode.value === 'default') {
-    await loadHomeData();
   }
 };
 

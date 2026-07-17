@@ -1,33 +1,5 @@
 <template>
-  <!-- Variante FIRMAS: en /home/firmas el aside navega las secciones del centro de firmas. -->
-  <div v-if="isGlobalSignatureRoute" class="deasy-nav-group scroll-mt-24">
-    <div class="deasy-nav-group mt-2">
-      <div class="deasy-nav-shell">
-        <div class="deasy-nav-section">
-          <button
-            v-for="item in signatureSidebarItems"
-            :key="item.key"
-            type="button"
-            class="deasy-nav-item"
-            :class="isSignatureSidebarItemActive(item) ? 'deasy-nav-item--active' : ''"
-            :title="item.label"
-            @click="$emit('open-signature-item', item)"
-          >
-            <span
-              class="deasy-nav-item__icon"
-              :class="workspaceIconToneClass(item.tone || 'sky')"
-            >
-              <component :is="item.icon" class="h-4.5 w-4.5 shrink-0" />
-            </span>
-            <span class="deasy-nav-item__label">{{ item.label }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Variante HOME: accesos directos a las secciones del espacio de trabajo. -->
-  <div v-else id="procesos" class="deasy-nav-group scroll-mt-24">
+  <div id="procesos" class="deasy-nav-group scroll-mt-24">
     <div v-if="menuLoading" class="deasy-nav-feedback deasy-nav-feedback--info my-2">
       Cargando menú...
     </div>
@@ -71,7 +43,11 @@
 // una cosa: el aside lleva a la sección, la página navega dentro de ella.
 //
 // Los destinos son los mismos que las tarjetas del dashboard, así que el usuario tiene el
-// atajo sin salir de donde esté. La variante de firmas (en /home/firmas) se conserva.
+// atajo sin salir de donde esté.
+//
+// Ya no tiene variante: la de firmas se fue con su pantalla a modules/firmas/components/
+// SignatureSidebar.vue cuando el centro de firmas dejó de compartir componente con /home.
+// Con ella se fue el booleano `isGlobalSignatureRoute` que decidía cuál de las dos pintar.
 import { computed } from 'vue';
 import {
   IconChecklist,
@@ -84,13 +60,10 @@ import {
 } from '@tabler/icons-vue';
 
 const props = defineProps({
-  isGlobalSignatureRoute: { type: Boolean, default: false },
-  signatureSidebarItems: { type: Array, default: () => [] },
   menuLoading: { type: Boolean, default: false },
   menuError: { type: String, default: '' },
   // Contadores opcionales para las insignias (envíos pendientes, documentos accesibles...).
   sendsCount: { type: Number, default: 0 },
-  isSignatureSidebarItemActive: { type: Function, required: true },
   workspaceIconToneClass: { type: Function, required: true },
 });
 
@@ -105,5 +78,5 @@ const accessItems = computed(() => ([
   { key: 'units', label: 'Mis unidades', icon: IconBuildingMonument, tone: 'amber' },
 ]));
 
-defineEmits(['open-signature-item', 'open-section']);
+defineEmits(['open-section']);
 </script>
