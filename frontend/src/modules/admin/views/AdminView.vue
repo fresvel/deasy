@@ -6,12 +6,12 @@
     :photo="userPhoto"
     :username="userFullName"
     sidebar-subtitle="Administración"
-    @menu-toggle="handleHeaderToggle"
-    @close-mobile="vmenu = false"
+    @menu-toggle="toggleMenu"
+    @close-mobile="closeMenu"
     @notify="toggleNotify"
-    @notify-close="vnotify = false"
+    @notify-close="closeNotify"
     @sign="isSigningView = !isSigningView"
-    @primary-nav="handlePrimaryNavInteraction"
+    @primary-nav="revealSidebarForNav"
   >
 
       <template #header>
@@ -352,6 +352,7 @@
 <script setup>
 
 import { computed, onMounted, ref } from "vue";
+import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 
 import { 
   IconLock,
@@ -380,9 +381,8 @@ import {
 } from "@/shared/utils/workspaceNavIcons.js";
 import { canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
 
-const isClient = typeof window !== 'undefined';
-const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
-const vnotify = ref(false);
+const { menuOpen: vmenu, showNotify: vnotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
+  useWorkspaceChrome();
 const isSigningView = ref(false);
 const tables = ref([]);
 const loadingMeta = ref(false);
@@ -416,19 +416,6 @@ const userFullName = computed(() => {
   }
   return "Administrador";
 });
-
-const handleHeaderToggle = () => {
-  vmenu.value = !vmenu.value;
-};
-
-const handlePrimaryNavInteraction = ({ active } = {}) => {
-  if (!isClient) return;
-  if (window.innerWidth >= 1280) {
-    vmenu.value = active ? !vmenu.value : true;
-    return;
-  }
-  vmenu.value = true;
-};
 
 const GROUP_DEFS = [
   {
@@ -1244,10 +1231,6 @@ const goAdminHome = () => {
   Object.keys(openCategories.value).forEach((key) => {
     openCategories.value[key] = false;
   });
-};
-
-const toggleNotify = () => {
-  vnotify.value = !vnotify.value;
 };
 
 const fetchMeta = async () => {

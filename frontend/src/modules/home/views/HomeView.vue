@@ -6,10 +6,10 @@
     :photo="userPhoto"
     :username="userFullName"
     :sidebar-subtitle="sidebarContextLabel"
-    @menu-toggle="handleHeaderToggle"
-    @close-mobile="showMenu = false"
+    @menu-toggle="toggleMenu"
+    @close-mobile="closeMenu"
     @notify="toggleNotify"
-    @notify-close="showNotify = false"
+    @notify-close="closeNotify"
     @sign="router.push({ name: 'home-signatures' })"
     @primary-nav="handlePrimaryNavInteraction"
   >
@@ -2282,6 +2282,7 @@
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
+import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRouter, useRoute } from 'vue-router';
 import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
 import AppDataTable from '@/shared/components/data/AppDataTable.vue';
@@ -2384,7 +2385,8 @@ const WORKSPACE_CHAT_CONTEXT_KEY = 'deasy_workspace_chat_context';
 const currentUser = ref(null);
 const userPhoto = ref('/images/avatar.png');
 
-const isClient = typeof window !== 'undefined';
+const { isClient, menuOpen: showMenu, showNotify, toggleMenu, closeMenu, closeNotify, revealSidebarForNav } =
+  useWorkspaceChrome();
 let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true; // xl en Tailwind es 1280px
 const resolveDeliverableGridColumns = () => {
   if (!isClient) return 3;
@@ -2393,8 +2395,6 @@ const resolveDeliverableGridColumns = () => {
   return 1;
 };
 
-const showMenu = ref(isClient ? window.innerWidth >= 1280 : true);
-const showNotify = ref(false);
 const homeDashTab = ref('inicio');
 const showCargosPanel = ref(false);
 const showUnitsPanel = ref(false);
@@ -2438,12 +2438,8 @@ const handlePrimaryNavInteraction = async ({ active } = {}) => {
     showProcessesPanel.value = false;
     return;
   }
-  // Comportamiento normal: toggle sidebar
-  if (window.innerWidth >= 1280) {
-    showMenu.value = active ? !showMenu.value : true;
-    return;
-  }
-  showMenu.value = true;
+  // Agotado el escalado propio, el resto es el comportamiento comun del rail.
+  revealSidebarForNav({ active });
 };
 
 const menuLoading = ref(false);
@@ -5564,9 +5560,7 @@ const submitDeliverableReset = async () => {
   }
 };
 
-const handleHeaderToggle = () => {
-  showMenu.value = !showMenu.value;
-};
+
 
 const toggleNotify = () => {
   if (showNavMenu.value) {

@@ -290,8 +290,67 @@ propósito y reescribirlos es la señal de éxito; romperlos sin darse cuenta es
 | # | Acción | Δ | Riesgo |
 |---|---|---:|---|
 | 2.1 | **`AuthLayout.vue`** + `resolveApiErrorMessage()` | ✅ **hecha** | Ver abajo |
-| 2.2 | `WorkspaceLayout`: `AppWorkspaceShell` pasa a ruta padre con `<router-view>`; absorbe `menuOpen`, identidad y el `1280` | −150 L | Medio |
+| 2.2 | ~~`WorkspaceLayout` como ruta padre~~ → **`useWorkspaceChrome()`** | ✅ **hecha (parcial)** | Ver abajo |
 | 2.3 | Renombrar `S*` → `App*` (4 líneas: son internos a `layouts/`) y `SNotify`/`SMessage` | ~0 | Trivial |
+
+#### 2.2 — completada, pero **NO como estaba planeada** (16-07-2026)
+
+**El plan estaba equivocado en dos cosas.** Al medirlo:
+
+**(1) El `<router-view>` como ruta padre no es viable todavía.** Las **4 vistas usan los dos slots** del
+shell, `#header` **y** `#sidebar` (el de `AdminView` son ~50 líneas). Un `<router-view />` dentro del slot
+default **no puede rellenar los otros dos**. Hacerlo bien exige *named router views* → partir cada vista en
+tres componentes → **eso es exactamente la fase 3**. Hacerlo antes obligaría a `provide`/`inject` o
+`<Teleport>`, indirección peor que el problema.
+
+→ **El layout de ruta se mueve a la fase 3**, donde el split de páginas lo hace natural. No es un
+aplazamiento por pereza: es que 2.2 y 3 eran el mismo trabajo mirado desde dos sitios.
+
+**(2) El boilerplate "×4 idéntico" era menos uniforme de lo que decía la auditoría.** Lo medido:
+
+| Pieza | ¿Idéntica? |
+|---|---|
+| `menuOpen`/`showNotify` + toggles | Sí, salvo **tres nombres** (`vmenu`/`menuOpen`/`showMenu`) |
+| Lógica del `1280` | Idéntica en admin/perfil/procesos. **Home la lleva en la cola** de su propio escalado |
+| `handleHeaderToggle` | Idéntica en 3; perfil delega en `toggleVmenu` |
+| `toggleNotify` | Idéntica en 3; **home limpia `showNavMenu` antes** |
+| **Estado inicial del menú** | **3 abren en escritorio; procesos arranca SIEMPRE cerrado** |
+| `userPhoto` / `userFullName` | **Varía de verdad**: procesos usa `computed`, el resto `ref`; perfil la necesita **mutable** (sube la foto); el fallback cambia ("Administrador" vs "Usuario") y procesos además cae al `email` |
+
+**Entregado**: `shared/composables/useWorkspaceChrome.js` (+12 tests). Absorbe el estado del chrome, los
+toggles y `revealSidebarForNav`. Aplicado a las 4 vistas.
+
+**Sobre el `1280`, con precisión** (la auditoría contaba 10 apariciones en 3 ficheros y no todas eran lo
+mismo). Se unificaron las de **inicialización del menú** y **handler de navegación**. Quedan 6, y sólo 2
+son deuda:
+
+| Sitio | Qué es | ¿Deuda? |
+|---|---|---|
+| `PerfilView:322,326` · `HomeView:2390,2415` | **Listener de resize** que sincroniza el menú al cambiar el viewport. **Duplicado entre ambas** | **Sí** — próximo objetivo natural del composable |
+| `HomeView:2393` | Columnas de la rejilla (3/2/1). Mismo número, **otro concepto** | No |
+| `AppWorkspaceSidebar:111` | Interno del shell | No |
+
+**Lo que NO se unificó, y es deliberado**:
+
+- **La identidad del usuario.** Parece duplicada ×4 y no lo es (ver tabla). Unificarla cambiaría
+  comportamiento en tres vistas. Queda pendiente y necesita decisión de producto sobre el fallback.
+- **`handlePrimaryNavInteraction` de `HomeView`**. Antepone su escalado propio (navegar a `/home`, cerrar
+  el proceso abierto, cerrar paneles) y sólo después cae en la lógica común. Se expone la pieza
+  compartida, no el handler entero: home la invoca al final del suyo.
+- **El arranque cerrado de `procesos`.** Se preserva con `menuOpenByDefault: false`. Es 3 contra 1 y
+  probablemente sea un descuido, **pero unificarlo es decisión de producto**, no de un refactor.
+
+**Verificación — conducida en navegador, midiendo el DOM** (el menú es puro comportamiento; los tests
+unitarios no lo prueban):
+
+| Ruta | Ancho inicial del sidebar | Toggle | Nota |
+|---|---:|---|---|
+| `/admin` | **425 px** (abierto) | 425 → 81 → 425 ✅ | `revealSidebarForNav` en la sección activa: alterna ✅ |
+| `/procesos` | **81 px** (cerrado) | 81 → 425 ✅ | Su divergencia, preservada |
+| `/home` | 425 px | 425 → 81 → 425 ✅ | |
+| `/perfil` | 425 px | 425 → 81 → 425 ✅ | Su listener de resize propio sigue vivo: 800 px → 282, 1600 px → 425 ✅ |
+
+Consola sin errores en las cuatro.
 
 #### 2.1 — completada (16-07-2026)
 
@@ -324,6 +383,11 @@ suyo:
 Por eso `VerifyEmail` leía `.error` primero: ahí *estaba* su mensaje. La precedencia `message → error`
 cubre ambas formas sin mostrar nunca un stack. **El arreglo de fondo es unificar el contrato en el
 backend**; mientras tanto la traducción vive en un sitio en vez de en cinco.
+
+> 📄 **El problema es más grande de lo que se ve desde auth**: el censo completo dio **284 respuestas de
+> error con 13 formas distintas**, y **113 sitios del frontend** que las leen a mano en 30 ficheros. El
+> estado, el contrato objetivo y el plan de migración (que **no rompe nada** porque el helper ya actúa de
+> amortiguador) están en **`docs/contrato-errores-api.md`**.
 
 **Verificación — comparación de capturas contra golden master, no sólo "compila"**:
 

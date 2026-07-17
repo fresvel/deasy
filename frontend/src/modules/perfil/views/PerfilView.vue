@@ -8,13 +8,13 @@
     sidebar-subtitle="Dossier profesional"
     :signature-marker="signatureMarker"
     editable
-    @menu-toggle="handleHeaderToggle"
-    @close-mobile="vmenu = false"
+    @menu-toggle="toggleMenu"
+    @close-mobile="closeMenu"
     @notify="toggleNotify"
-    @notify-close="vnotify = false"
+    @notify-close="closeNotify"
     @sign="router.push({ name: 'home-signatures' })"
     @photo-selected="handlePhotoSelected"
-    @primary-nav="handlePrimaryNavInteraction"
+    @primary-nav="revealSidebarForNav"
   >
     <template #header>
       <div class="deasy-context-header">
@@ -95,6 +95,7 @@
     
     
 import { ref, computed, onMounted, onBeforeUnmount, watch} from 'vue';
+import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
     import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
@@ -301,7 +302,8 @@ const goBackFromProfileHome = () => {
         }
     });
 
-const isClient = typeof window !== 'undefined';
+const { isClient, menuOpen: vmenu, showNotify: vnotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
+  useWorkspaceChrome();
 
 const dossierIconMeta = resolveWorkspaceSectionIcon('Perfil');
 const profileMenuIconMeta = (item = {}) => resolveWorkspaceProfileMenuIcon(item.icon, item.label);
@@ -315,8 +317,6 @@ const profileContextSubtitle = computed(() => {
   return '';
 });
 
-    const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
-    const vnotify = ref(false);
     const process= ref("Inicio")
 
     let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true;
@@ -330,26 +330,10 @@ const profileContextSubtitle = computed(() => {
         }
     };
 
-    const handlePrimaryNavInteraction = ({ active } = {}) => {
-        if (!isClient) return;
-        if (window.innerWidth >= 1280) {
-            vmenu.value = active ? !vmenu.value : true;
-            return;
-        }
-        vmenu.value = true;
-    };
-
     const area= ref("Perfil")
     const showDossierMenu = ref(true);
     
     
-    const toggleVmenu = () => {
-        vmenu.value = !vmenu.value;
-    };
-      
-    const toggleNotify = () => {
-        vnotify.value = !vnotify.value;
-    };
     
     const handlePhotoSelected = async (file) => {
         if (!file || !currentUser.value?.cedula) {
@@ -387,10 +371,6 @@ const profileContextSubtitle = computed(() => {
             window.removeEventListener('resize', handleResize);
         }
     });
-
-    const handleHeaderToggle = () => {
-        toggleVmenu();
-    };
 
     const syncAreaState = (areaName) => {
         area.value = areaName;

@@ -6,12 +6,12 @@
     :photo="userPhoto"
     :username="userFullName"
     sidebar-subtitle="Gestión de procesos"
-    @menu-toggle="handleHeaderToggle"
-    @close-mobile="menuOpen = false"
+    @menu-toggle="toggleMenu"
+    @close-mobile="closeMenu"
     @notify="toggleNotify"
-    @notify-close="showNotify = false"
+    @notify-close="closeNotify"
     @sign="router.push({ name: 'home-signatures' })"
-    @primary-nav="handlePrimaryNavInteraction"
+    @primary-nav="revealSidebarForNav"
   >
     <template #header>
       <div class="deasy-context-header">
@@ -214,6 +214,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref } from "vue";
+import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import {
@@ -299,8 +300,10 @@ const TABLE_TAB_LABEL_OVERRIDES = {
 
 const defaultPhoto = "/images/avatar.png";
 const router = useRouter();
-const menuOpen = ref(false);
-const showNotify = ref(false);
+// Procesos es la unica vista cuyo menu arranca siempre cerrado; las otras tres lo abren en
+// escritorio. Se conserva tal cual: unificarlo es decision de producto, no de este refactor.
+const { menuOpen, showNotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
+  useWorkspaceChrome({ menuOpenByDefault: false });
 const loadingMeta = ref(false);
 const metaError = ref("");
 const tables = ref([]);
@@ -488,23 +491,6 @@ const openTemplateArtifactDraftFromHome = async () => {
   await nextTick();
   await nextTick();
   adminManager.value?.openDraftArtifactModal?.();
-};
-
-const handleHeaderToggle = () => {
-  menuOpen.value = !menuOpen.value;
-};
-
-const handlePrimaryNavInteraction = ({ active } = {}) => {
-  if (typeof window === "undefined") return;
-  if (window.innerWidth >= 1280) {
-    menuOpen.value = active ? !menuOpen.value : true;
-    return;
-  }
-  menuOpen.value = true;
-};
-
-const toggleNotify = () => {
-  showNotify.value = !showNotify.value;
 };
 
 const fetchMeta = async () => {
