@@ -39,6 +39,7 @@ vi.mock("@/modules/auth/views/TermsView.vue", () => ({ default: stub("TermsView"
 vi.mock("@/modules/auth/views/VerifyEmail.vue", () => ({ default: stub("VerifyEmail") }));
 vi.mock("@/modules/home/views/HomeView.vue", () => ({ default: stub("HomeView") }));
 vi.mock("@/modules/firmas/views/SignatureCenterView.vue", () => ({ default: stub("SignatureCenterView") }));
+vi.mock("@/modules/home/views/DocumentCenterView.vue", () => ({ default: stub("DocumentCenterView") }));
 vi.mock("@/modules/perfil/views/PerfilView.vue", () => ({ default: stub("PerfilView") }));
 vi.mock("@/modules/admin/views/AdminView.vue", () => ({ default: stub("AdminView") }));
 vi.mock("@/modules/procesos/views/ProcessManagementView.vue", () => ({ default: stub("ProcessManagementView") }));
@@ -114,7 +115,7 @@ describe("tabla de rutas", () => {
   it.each([
     ["/", "login", "LoginView"],
     ["/home", "home", "HomeView"],
-    ["/home/documentos", "home-documents", "HomeView"],
+    ["/home/documentos", "home-documents", "DocumentCenterView"],
     ["/home/firmas", "home-signatures", "SignatureCenterView"],
     ["/perfil", "perfil", "PerfilView"],
     ["/register", "register", "RegisterView"],
@@ -148,13 +149,14 @@ describe("tabla de rutas", () => {
     expect(firmas.name).toBe("SignatureCenterView");
   });
 
-  it("/home y /home/documentos siguen compartiendo componente", () => {
-    // Deuda pendiente, no diseno: es el proximo corte (fase 3.2). Cuando ocurra, este test DEBE
-    // romperse; es la senal de que paso.
-    const [home, documentos] = ["/home", "/home/documentos"].map(
+  it("las tres rutas de /home tienen ya cada una su componente", () => {
+    // Punto de llegada de las fases 3.1 y 3.2. Empezo siendo lo contrario: un test que congelaba que las
+    // TRES apuntaban al mismo fichero de 5663 lineas. Ahora vigila que no vuelvan a fusionarse.
+    const componentes = ["/home", "/home/documentos", "/home/firmas"].map(
       (p) => router.resolve(p).matched[0].components.default
     );
-    expect(documentos).toBe(home);
+    expect(new Set(componentes).size).toBe(3);
+    expect(componentes.map((c) => c.name)).toEqual(["HomeView", "DocumentCenterView", "SignatureCenterView"]);
   });
 
   it("solo /admin y /procesos declaran meta de acceso", () => {

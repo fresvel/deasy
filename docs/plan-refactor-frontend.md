@@ -478,9 +478,50 @@ toast, y helpers atrapados en `useDeliverableView`.
 
 | Paso | Qué | Estado |
 |---|---|---|
-| **3.2a** | `getDeliverableSubject(payload, { fallbacks })` — parametrizar sus dos dependencias de estado | Pendiente |
-| **3.2b** | `DeliverablePreviewModal` + `useDeliverableFilePreview()` | ✅ **hecha (16-07-2026)** |
-| **3.2c** | `DocumentCenterView` + `useDocumentCenter` + router + tests | Pendiente |
+| **3.2a** | `buildDeliverableSubject(payload, { fallbacks })` — parametrizar sus dos dependencias de estado | ✅ **hecha** |
+| **3.2b** | `DeliverablePreviewModal` + `useDeliverableFilePreview()` | ✅ **hecha** |
+| **3.2c** | `DocumentCenterView` + `useDocumentCenter` + router + tests | ✅ **hecha** |
+
+##### 3.2a y 3.2c — completadas (16-07-2026)
+
+**3.2a**: el núcleo de `getDeliverableSubject` (102 L) se va a `shared/utils/deliverableSubject.js`
+(+22 tests) con sus **dos** fallbacks como parámetro. `useDeliverableView` se queda un envoltorio de 10
+líneas que le sirve sus refs: **la firma no cambia y ninguno de sus ~40 call sites se entera**.
+`useDeliverableView` **1055 → 964 L**.
+
+**3.2c**: `DocumentCenterView` + `useDocumentCenter` (+15 tests). Llama a `buildDeliverableSubject`
+**sin fallbacks**: esta pantalla no tiene proceso seleccionado, así que `processId`/`scopeUnitId` quedan
+en `null`. Antes heredaba los del proceso que HomeView tuviera abierto — funcionaba **de casualidad**
+porque las filas traen su propio `process_id`.
+
+**El premio de la fase: `HomeView` deja de saber en qué ruta está.** `workspaceRouteMode` desaparece
+entero, y con él:
+
+- Las **8 guardas** repartidas por la pantalla (`if (workspaceRouteMode === 'documents')`…).
+- El **ternario de `homeErrorMessage`** (`workspaceRouteMode === 'default' ? documentCenterError : ''`),
+  que §5 de este documento señaló como la prueba de la fuga: dashboard y centro compartían el error.
+  Se borró **sin sustituto**, como estaba previsto.
+- El **`watch(route.fullPath)`**, que existía **sólo** para suplir el `onMounted` que no se re-disparaba
+  porque tres rutas compartían instancia. Deuda estructural pura: se fue con su causa.
+- Un **modal "Centro documental" muerto** (41 L): nadie lo abría nunca, y su texto —*"Este espacio quedará
+  para la consulta general de documentos con filtros"*— revela que era el **predecesor** de la ruta que lo
+  dejó obsoleto.
+
+**`HomeView` 5501 → 5243 L.** Desde el inicio de esta sesión: **5663 → 5243 (−420)**, y ahora sirve **una**
+ruta en vez de tres.
+
+**Los dos tests marcadores volvieron a romperse, como estaba escrito en la 3.1** (*"deberá romperse en la
+fase 3.2"*). Reescritos: uno afirma ahora que **las tres rutas tienen cada una su componente**.
+
+**Verificación en navegador**: `/home/documentos` sirve la pantalla completa (6 documentos, 4 filtros,
+1 "Ver PDF"); búsqueda, vacío y Reset funcionan; el preview abre con blob real y **sin** panel de acciones;
+`/home` conserva su dashboard y ya **no** embebe la tabla. Consola limpia.
+
+> ⚠️ **Incidente durante la ejecución**: un script de borrado por anclas de texto se llevó **894 líneas de
+> más** (`HomeView` 5501 → 4444) porque el ancla de cierre estaba lejísimos. Se detectó con `git diff
+> --stat`, se revirtió con `git checkout`, y se rehízo **cortando por rangos de línea validados**, con un
+> `assert` que aborta si un bloque supera las 40 líneas. Lección: en ficheros de 5000 líneas, borrar
+> "desde X hasta Y" es una escopeta; hay que acotar cada bloque por su propio cierre y verificar el tamaño.
 
 ##### 3.2b — completada
 

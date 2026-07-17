@@ -32,101 +32,8 @@
       />
     </template>
 
-        <template v-if="isDocumentCenterRoute">
-          <section class="flex flex-col gap-6">
-            <!-- Panel de supervisión (solo visible si el usuario encabeza alguna unidad). -->
-            <SupervisorStuckPanel />
-            <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-              <div class="deasy-filter-shell">
-              <div class="deasy-filter-grid">
-                <label class="deasy-filter-field deasy-filter-search-span">
-                  <span class="sr-only">Buscar</span>
-                  <input v-model="documentCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-filter-search-input" />
-                </label>
-                <label class="deasy-filter-field">
-                  <span class="sr-only">Año</span>
-                  <select v-model="documentCenterFilters.year" class="deasy-filter-control">
-                    <option value="all">Año</option>
-                    <option v-for="option in documentCenterFilterYears" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="deasy-filter-field">
-                  <span class="sr-only">Tipo de periodo</span>
-                  <select v-model="documentCenterFilters.termType" class="deasy-filter-control">
-                    <option value="all">Tipo de periodo</option>
-                    <option v-for="option in documentCenterFilterTermTypes" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="deasy-filter-field">
-                  <span class="sr-only">Unidad</span>
-                  <select v-model="documentCenterFilters.unit" class="deasy-filter-control">
-                    <option value="all">Unidad</option>
-                    <option v-for="option in documentCenterFilterUnits" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="deasy-filter-field">
-                  <span class="sr-only">Proceso</span>
-                  <select v-model="documentCenterFilters.process" class="deasy-filter-control">
-                    <option value="all">Proceso</option>
-                    <option v-for="option in documentCenterFilterProcesses" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-              </div>
-              <div class="deasy-filter-toolbar">
-                <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
-                <div class="deasy-filter-actions">
-                  <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetDocumentCenterFilters">Reset</AppButton>
-                  <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="loadDocumentCenterPage">Actualizar</AppButton>
-                </div>
-              </div>
-              </div>
-
-              <section v-if="documentCenterLoading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
-                Cargando centro documental...
-              </section>
-              <section v-else-if="documentCenterError" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">
-                {{ documentCenterError }}
-              </section>
-              <AppDataTable
-                v-else
-                :fields="documentCenterFields"
-                :rows="filteredDocumentCenterItems"
-                :row-key="(row) => `document-center-${row.document_id}`"
-                empty-text="No hay documentos para mostrar."
-                actions-label="ACCIONES"
-              >
-                <template #cell="{ row, field }">
-                  <template v-if="field.name === 'document'">
-                    <div class="flex flex-col gap-1">
-                      <strong class="text-sm font-bold text-slate-800">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
-                      <span class="text-xs font-medium text-slate-500">{{ row.document_version ? `v${row.document_version}` : 'Sin versión' }}</span>
-                    </div>
-                  </template>
-                  <template v-else-if="field.name === 'process'">{{ row.process_name }}</template>
-                  <template v-else-if="field.name === 'unit'">{{ row.unit_label || 'Sin unidad' }}</template>
-                  <template v-else-if="field.name === 'period'">{{ row.term_name || 'Sin periodo' }}</template>
-                  <template v-else-if="field.name === 'status'">
-                    <AppTag :variant="row.pending_signature_count ? 'warning' : row.pending_fill_count ? 'info' : 'neutral'">
-                      {{ row.document_version_status || row.document_status || 'Sin estado' }}
-                    </AppTag>
-                  </template>
-                </template>
-                <template #actions="{ row }">
-                  <div class="flex flex-wrap justify-end gap-2">
-                    <AppButton v-if="row.preloadPdfPath" variant="softNeutral" size="sm" @click="previewDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
-                      Ver PDF
-                    </AppButton>
-                    <AppButton v-if="row.preloadFilePath" variant="softPrimary" size="sm" @click="downloadDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
-                      Descargar
-                    </AppButton>
-                  </div>
-                </template>
-              </AppDataTable>
-            </section>
-          </section>
-        </template>
         <!-- Vista consolidada: Mis procesos — nivel 1: unidades / nivel 2: procesos -->
-        <template v-else-if="showProcessesPanel">
+        <template v-if="showProcessesPanel">
           <section class="flex flex-col gap-6">
 
             <!-- Nivel 1: tabs por unidad + botón volver en la misma fila -->
@@ -1336,47 +1243,6 @@
       </template>
     </AdminModalShell>
 
-    <AdminModalShell
-      ref="documentCenterModal"
-      labelled-by="document-center-modal-title"
-      title="Centro documental"
-      size="lg"
-      content-class="rounded-4 shadow border-0"
-      body-class="pt-4"
-    >
-      <div class="flex flex-col gap-4">
-        <p class="text-sm text-slate-600 m-0">
-          Este espacio quedará para la consulta general de documentos con filtros. Por ahora muestra un resumen básico de los documentos generados en esta configuración.
-        </p>
-        <div v-if="!selectedProcessPanel?.documents?.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-slate-500 bg-slate-50 text-center text-sm font-medium">
-          No hay documentos generados todavía.
-        </div>
-        <div v-else class="flex flex-col gap-3">
-          <div
-            v-for="doc in selectedProcessPanel.documents"
-            :key="`document-center-${doc.document_id}`"
-            class="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-slate-50/50"
-          >
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <strong class="text-sm font-bold text-slate-800">{{ doc.template_artifact_name || `Documento #${doc.document_id}` }}</strong>
-              <AppTag variant="muted" class-name="self-start sm:self-auto">
-                {{ doc.document_version ? `v${doc.document_version}` : `#${doc.document_version_id}` }}
-              </AppTag>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <AppTag variant="neutral">{{ doc.document_status || 'Inicial' }}</AppTag>
-              <AppTag v-if="doc.pending_fill_count" variant="info">Entrega pendiente: {{ doc.pending_fill_count }}</AppTag>
-              <AppTag v-if="doc.pending_signature_count" variant="warning">Firmas pendientes: {{ doc.pending_signature_count }}</AppTag>
-            </div>
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <AppButton variant="secondary" data-modal-dismiss>
-          Cerrar
-        </AppButton>
-      </template>
-    </AdminModalShell>
 
     <AdminModalShell
       ref="deliverableWorkspaceModal"
@@ -2393,11 +2259,6 @@ const handleResize = () => {
 
 const handlePrimaryNavInteraction = async ({ active } = {}) => {
   if (!isClient) return;
-  // En sub-rutas, siempre navegar a home
-  if (workspaceRouteMode.value !== 'default') {
-    await router.push({ name: 'home' });
-    return;
-  }
   // Si hay un proceso abierto, cerrarlo (volver al dashboard)
   if (selectedProcessKey.value) {
     clearSelectedProcess();
@@ -2439,7 +2300,6 @@ const taskLaunchUseCustomTerm = ref(false);
 const taskFiltersModal = ref(null);
 const documentSignModal = ref(null);
 const signatureFlowModal = ref(null);
-const documentCenterModal = ref(null);
 const fillWorkflowModal = ref(null);
 const deliverableUploadModal = ref(null);
 const deliverableWorkspaceModal = ref(null);
@@ -2651,14 +2511,6 @@ const taskListFilters = ref({
   actionState: 'all'
 });
 const showAdvancedTaskFilters = ref(false);
-const documentCenterFilters = ref({
-  query: '',
-  year: 'all',
-  termType: 'all',
-  unit: 'all',
-  process: 'all',
-  status: 'all'
-});
 const taskFilterParticipationOptions = [
   { value: 'all', label: 'Todas' },
   { value: 'current', label: 'Actual' },
@@ -2687,15 +2539,9 @@ const deliverableWorkspaceTitle = computed(() => {
   return version ? `${subject.title} · v${version}` : subject.title;
 });
 
-const sidebarContextLabel = computed(() => {
-  if (isDocumentCenterRoute.value) {
-    return 'Centro documental';
-  }
-  return selectedGroupLabel.value;
-});
+const sidebarContextLabel = computed(() => selectedGroupLabel.value);
 
 const homeContextTitle = computed(() => {
-  if (isDocumentCenterRoute.value) return 'Centro documental';
   if (selectedProcessKey.value) {
     if (isRoutedProcess.value) return routedHeaderTitle.value;
     return selectedProcessPanel.value?.definition?.name || 'Proceso activo';
@@ -2704,7 +2550,7 @@ const homeContextTitle = computed(() => {
 });
 
 const homeContextSubtitle = computed(() => {
-  if (isDocumentCenterRoute.value || selectedProcessKey.value) return '';
+  if (selectedProcessKey.value) return '';
   const label = sidebarContextLabel.value;
   return label && label !== userFullName.value ? label : '';
 });
@@ -2959,7 +2805,7 @@ const homeLoading = computed(() =>
 const homeErrorMessage = computed(() =>
   homeDossierError.value
   || homeSignatureError.value
-  || (workspaceRouteMode.value === 'default' ? documentCenterError.value : '')
+  || documentCenterError.value
   || menuError.value
 );
 
@@ -3169,16 +3015,6 @@ const resetTaskListFilters = () => {
   showAdvancedTaskFilters.value = false;
 };
 
-const resetDocumentCenterFilters = () => {
-  documentCenterFilters.value = {
-    query: '',
-    year: 'all',
-    termType: 'all',
-    unit: 'all',
-    process: 'all',
-    status: 'all'
-  };
-};
 
 const openTaskFiltersModal = () => {
   taskFiltersModalInstance = Modal.getOrCreateInstance(taskFiltersModal.value?.el);
@@ -3419,18 +3255,9 @@ const {
   loadFlowCatalog,
   resetFlowBuilder,
 } = useFlowBuilder({ clearRecipientSearch, currentUserId, processPanelService });
-// El centro de firmas ya no vive aqui: tiene ruta y vista propias (modules/firmas/views/
-// SignatureCenterView.vue). Quedan dos modos, no tres.
-const workspaceRouteMode = computed(() => (route.name === 'home-documents' ? 'documents' : 'default'));
-const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'documents');
+// Firmas y centro documental ya tienen ruta y vista propias, asi que HomeView solo sirve /home: se acabo
+// el conmutador de modo. Con el se van las guardas de workspaceRouteMode que ensuciaban media pantalla.
 
-const documentCenterFields = [
-  { name: 'document', label: 'Documento' },
-  { name: 'process', label: 'Proceso' },
-  { name: 'unit', label: 'Unidad' },
-  { name: 'period', label: 'Periodo' },
-  { name: 'status', label: 'Estado' }
-];
 
 // Toda plantilla vinculada materializa un entregable, así que todas se instancian al lanzar.
 const taskLaunchSystemTemplates = computed(() =>
@@ -3525,28 +3352,7 @@ const taskFilterStatuses = computed(() => {
   return Array.from(statuses).sort((a, b) => a.localeCompare(b));
 });
 
-const getCenterFilterOptions = (items, key, transform = (value) => value) => {
-  const values = new Set();
-  (items || []).forEach((item) => {
-    const rawValue = transform(item?.[key], item);
-    const normalized = String(rawValue || '').trim();
-    if (normalized) values.add(normalized);
-  });
-  return Array.from(values).sort((a, b) => a.localeCompare(b));
-};
 
-const documentCenterFilterYears = computed(() =>
-  getCenterFilterOptions(documentCenterItems.value, 'term_year').sort((a, b) => Number(b) - Number(a))
-);
-const documentCenterFilterTermTypes = computed(() =>
-  getCenterFilterOptions(documentCenterItems.value, 'term_type_name')
-);
-const documentCenterFilterUnits = computed(() =>
-  getCenterFilterOptions(documentCenterItems.value, 'unit_label')
-);
-const documentCenterFilterProcesses = computed(() =>
-  getCenterFilterOptions(documentCenterItems.value, 'process_name')
-);
 const aggregatedProcessTasks = computed(() => {
   const panels = selectedProcessPanels.value;
   if (panels.length) {
@@ -3688,26 +3494,6 @@ const processUnitTabs = computed(() => {
   return tabs;
 });
 
-const filteredDocumentCenterItems = computed(() => {
-  const filters = documentCenterFilters.value;
-  const query = String(filters.query || '').trim().toLowerCase();
-  return documentCenterItems.value.filter((item) => {
-    const matchesQuery = !query || [
-      item.template_artifact_name,
-      item.definition_name,
-      item.process_name,
-      item.unit_label,
-      item.term_name,
-      item.term_type_name
-    ].filter(Boolean).join(' ').toLowerCase().includes(query);
-    const matchesYear = filters.year === 'all' || String(item.term_year || '') === String(filters.year);
-    const matchesTermType = filters.termType === 'all' || String(item.term_type_name || '') === filters.termType;
-    const matchesUnit = filters.unit === 'all' || String(item.unit_label || '') === filters.unit;
-    const matchesProcess = filters.process === 'all' || String(item.process_name || '') === filters.process;
-    const matchesStatus = filters.status === 'all' || String(item.document_version_status || '') === filters.status;
-    return matchesQuery && matchesYear && matchesTermType && matchesUnit && matchesProcess && matchesStatus;
-  });
-});
 
 const canAdvanceTaskLaunchStep = computed(() => {
   if (taskLaunchSubmitting.value) {
@@ -3855,41 +3641,10 @@ const runHomeAction = async (target) => {
   }
 };
 
-const handleHomeDossierUpdated = () => {
-  if (workspaceRouteMode.value === 'default') {
-    loadHomeDossier();
-  }
-};
+const handleHomeDossierUpdated = () => loadHomeDossier();
 
-const buildWorkspacePayloadFromCenterItem = (item = {}) => ({
-  id: item.task_item_id,
-  itemId: item.task_item_id,
-  task_id: item.task_id,
-  process_definition_id: item.process_definition_id,
-  process_id: item.process_id,
-  process_label: item.process_name,
-  unit_label: item.unit_label,
-  period_label: item.term_name,
-  document_id: item.document_id,
-  document_version_id: item.document_version_id,
-  document_version: item.document_version,
-  document_status: item.document_status || item.document_version_status,
-  working_file_path: item.working_file_path,
-  final_file_path: item.final_file_path,
-  template_artifact_name: item.template_artifact_name || item.definition_name,
-  title: item.template_artifact_name || item.definition_name || `Documento #${item.document_id}`,
-  pending_signature_count: item.pending_signature_count || 0,
-  pending_fill_count: item.pending_fill_count || 0,
-  preloadFilePath: item.preloadFilePath || item.preload_file_path || item.final_file_path || item.working_file_path || '',
-  preloadPdfPath: item.preloadPdfPath || item.preload_pdf_path || '',
-  task_end_date: item.task_end_date || null,
-  item_end_date: item.item_end_date || null,
-});
 
 const handleProcessSelect = async (process) => {
-  if (workspaceRouteMode.value !== 'default') {
-    await router.push({ name: 'home' });
-  }
   // Desde el aside o paneles secundarios: modo standalone (cierra vista consolidada)
   showProcessesPanel.value = false;
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
@@ -4292,12 +4047,7 @@ onMounted(async () => {
   }
   
   await loadUserMenu();
-  if (workspaceRouteMode.value === 'documents') {
-    await loadDocumentCenterPage();
-  }
-  if (workspaceRouteMode.value === 'default') {
-    await loadHomeData();
-  }
+  await loadHomeData();
 });
 
 watch(
@@ -4313,19 +4063,11 @@ watch(
   }
 );
 
-watch(
-  () => route.fullPath,
-  async () => {
-    if (!String(route.path || '').startsWith('/home')) return;
-    await loadUserMenu();
-    if (workspaceRouteMode.value === 'documents') {
-      await loadDocumentCenterPage();
-    }
-    if (workspaceRouteMode.value === 'default') {
-      await loadHomeData();
-    }
-  }
-);
+// Aqui vivia un watch(route.fullPath) que recargaba los datos al cambiar de ruta. Existia solo porque
+// /home, /home/documentos y /home/firmas compartian este componente: vue-router reutilizaba la instancia,
+// onMounted no se volvia a disparar, y habia que suplirlo a mano. Con cada pantalla en su vista, HomeView
+// solo sirve /home; venir de otra ruta lo remonta y onMounted hace su trabajo. Deuda estructural, no
+// diseno: se va con la causa.
 
 onBeforeUnmount(() => {
   if (isClient) {
