@@ -58,7 +58,7 @@ const routes = [
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },
   { path: "/setup", name: "system-bootstrap", component: SystemBootstrapView },
   { path: "/terminos", name: "terminos", component: TermsView },
-  { path: "/admin", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
+  { path: "/admin/:section?/:item?/:table?", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
   { path: "/procesos", name: "process-management", component: ProcessManagementView, meta: { requiresProcessManagementAccess: true, managementSection: "processes" } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
   {

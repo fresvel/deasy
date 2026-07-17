@@ -351,7 +351,7 @@
 
 <script setup>
 
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 
 import { 
@@ -366,7 +366,7 @@ import {
 } from '@tabler/icons-vue'
 
 import axios from "axios";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
@@ -406,6 +406,7 @@ const adminManager = ref(null);
 
 const currentUser = ref(null);
 const router = useRouter();
+const route = useRoute();
 const defaultPhoto = "/images/avatar.png";
 const userPhoto = ref(defaultPhoto);
 const userFullName = computed(() => {
@@ -1233,6 +1234,79 @@ const goAdminHome = () => {
   });
 };
 
+// --- Enrutado por URL (Fase 3.5a) ---------------------------------------------------------------
+// La ruta /admin/:section?/:item?/:table? refleja el estado de navegacion para dar deep-link, F5 y
+// boton atras. Paso ADITIVO: los refs siguen siendo la fuente de verdad; aqui solo se sincroniza la
+// URL en ambos sentidos. Los refs se sustituiran por route.params en 3.5c. Grafo y firma no se
+// serializan todavia (llegan en 3.5d): F5 sobre el organigrama recae en su tabla, interino conocido.
+const activeItemKey = computed(() =>
+  selectedAcademyItem.value
+  || selectedGestionItem.value
+  || selectedUsuarioItem.value
+  || selectedContratoItem.value
+  || selectedSeguridadItem.value
+  || ""
+);
+
+const syncAdminUrl = () => {
+  const params = {};
+  if (selectedSection.value) params.section = selectedSection.value;
+  const itemKey = activeItemKey.value;
+  const tableName = selectedTable.value?.table || "";
+  // El item es posicional: si hay tabla sin item resuelto, se usa "-" como marcador de hueco.
+  if (params.section && (itemKey || tableName)) params.item = itemKey || "-";
+  if (tableName) params.table = tableName;
+  const current = route.params;
+  if ((current.section || "") === (params.section || "")
+    && (current.item || "") === (params.item || "")
+    && (current.table || "") === (params.table || "")) {
+    return;
+  }
+  // push (no replace): cada accion de navegacion crea UNA entrada de historial —el watch coalesce las
+  // mutaciones sincronas de un mismo click en una sola llamada— para que el boton atras recorra
+  // tabla -> indice -> inicio. La hidratacion no duplica: el guard de arriba corta si ya coincide.
+  router.push({ name: "admin", params }).catch(() => {});
+};
+
+watch([selectedSection, selectedTable, activeItemKey], syncAdminUrl);
+
+const findTableByName = (name) => {
+  for (const group of groupedTables.value) {
+    const match = [...(group.mainTables || []), ...(group.supportTables || [])]
+      .find((candidate) => candidate.table === name);
+    if (match) return match;
+  }
+  return null;
+};
+
+const openSectionIndexByKey = (key) => {
+  const openers = {
+    [ACADEMY_GROUP_KEY]: openAcademyIndex,
+    [GESTION_GROUP_KEY]: openGestionIndex,
+    [USERS_GROUP_KEY]: openUsersIndex,
+    [CONTRACT_GROUP_KEY]: openContractsIndex,
+    [SECURITY_GROUP_KEY]: openSecurityIndex,
+  };
+  const opener = openers[key];
+  if (opener) opener();
+};
+
+// Reconstruye el estado desde la URL al cargar (deep-link / F5). Requiere el catalogo ya cargado.
+const hydrateFromRoute = () => {
+  const tableName = route.params.table;
+  if (tableName) {
+    const table = findTableByName(tableName);
+    if (table) {
+      selectTable(table);
+      return;
+    }
+  }
+  const sectionKey = route.params.section;
+  if (sectionKey) {
+    openSectionIndexByKey(sectionKey);
+  }
+};
+
 const fetchMeta = async () => {
   loadingMeta.value = true;
   metaError.value = "";
@@ -1244,6 +1318,7 @@ const fetchMeta = async () => {
         openCategories.value[group.label] = false;
       }
     });
+    hydrateFromRoute();
   } catch (error) {
     metaError.value = error?.response?.data?.message || "No se pudo cargar el catalogo.";
   } finally {

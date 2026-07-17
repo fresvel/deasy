@@ -425,11 +425,48 @@ Por orden de riesgo creciente. **`/home/firmas` primero**: 2 líneas, cero estad
 | 3.2 | `/home/documentos` → `DocumentCenterView` | **Reestimada** — ver abajo |
 | 3.3 | `/home` → `HomeDashboardView`; **HomeView desaparece** | Medio |
 | 3.4 | `/perfil/*` con `children` + rename `*View` → `*Section` | ✅ **hecha** |
-| 3.5 | `/admin`: los dos grafos primero (ya son lazy y autónomos), luego `:section/:item/:table` | Alto |
+| 3.5 | `/admin` → `:section/:item/:table?`. **Reformulada** — ver abajo (3.5a ✅) | Alto |
 | 3.6 | Modales de HomeView → componentes (patrón `GeneralTaskModal`, ya probado) | Medio |
 
 > ⚠️ **Fase 3.4 añade funcionalidad por eliminación** (el deep-link aparece solo). Ese matiz importa: es refactor **y** feature → commits separados.
 > ⚠️ **Los grafos usan `defineAsyncComponent` deliberadamente** (`AdminTableManager.vue:1107`) para mantener Vue Flow + dagre fuera del bundle. Cualquier extracción **debe quedar dentro de esa frontera async**.
+
+#### 3.5 — reformulada: el corte es la URL, no el componente
+
+**El plan estaba equivocado en el mecanismo** (medido antes de tocar código; misma clase de corrección que 2.2/3.2).
+Decía "los dos grafos primero, luego partir en páginas hijas". Al medir:
+
+- El contenido principal de `AdminView` (`:175-346`) **lee estado local intrincado** (`selectedTable`, los 5 índices,
+  `AdminTableManager` con ~10 props, sentinelas de grafo). Moverlo a una hija `<router-view>` dejando el estado en
+  `AdminView` exigiría un `provide/inject` gigante — la indirección que la **Fase 2.2 rechazó**. El main y el estado
+  **no** están desacoplados como sí lo estaban las secciones de `/perfil`.
+- Los grafos **no están sueltos** en `AdminView`: se inyectan como claves sentinela (`__unit_graph__`) dentro de
+  `AdminTableManager` vía `:active-sibling-tab` (`:336`). "Los grafos primero" **no** es el paso más barato.
+
+→ **La costura correcta es la URL, no el split de componente.** Primero que el estado venga de `route.params`; el split
+del componente (layout + páginas) cae solo después. Orden nuevo: **3.5a** URL⇄estado aditivo → **3.5b** `section` a
+params + slugs bonitos → **3.5c** `selectedTable`/refs → `route.params` (muere `useAdminTableReset`) → **3.5d** grafos a
+ruta propia → **3.5e** tests.
+
+##### 3.5a — completada. **`/admin` tiene URLs.**
+
+`/admin/:section?/:item?/:table?` (misma `AdminView`, sin children todavía). Paso **aditivo**: los 8 refs siguen siendo
+la fuente de verdad; un `watch([selectedSection, selectedTable, activeItemKey])` **escribe** la URL con `router.push`
+(idempotente contra `route.params`, así que la hidratación no duplica), y `hydrateFromRoute()` en `fetchMeta`
+**reconstruye** el estado al cargar. El `watch` coalesce las mutaciones síncronas de un click en **una** entrada de
+historial, así que el botón atrás recorre tabla → índice → inicio.
+
+**Verificado en navegador** (admin `1234567890`): click Usuarios → `/admin/usuarios`; Personas →
+`/admin/usuarios/personas/persons`; **F5 hidrata la tabla** (43 filas), no el home; **atrás** recorre
+tabla→índice→inicio; deep-link directo a `/admin/procesos` abre el índice de Gestiones. Consola limpia, 218 tests verdes,
+lint limpio. **No se borró ningún ref** (eso es 3.5c).
+
+> ⚠️ **Deuda que deja 3.5a, a cerrar en pasos siguientes:**
+> - **Grafo y firma no se serializan** (llegan en 3.5d): F5 sobre el organigrama recae en su tabla `units`. Interino conocido.
+> - **La URL usa las claves internas**: la sección "Gestiones" es `/admin/procesos` (su `key` es `procesos`) y Academia es
+>   `estructura_academico`. Funcional pero feo y `procesos` **colisiona conceptualmente** con la ruta `/procesos`. **3.5b**
+>   introduce un mapa slug↔key (`academia`, `gestiones`…).
+> - Sigue siendo **una sola ruta parametrizada**, no children: el marcador "rutas planas" **aún es cierto** y se invierte en 3.5c.
 
 #### 3.1 — completada (16-07-2026)
 
