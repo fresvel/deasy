@@ -474,6 +474,20 @@ const GROUP_DEFS = [
   },
 ];
 
+// Slugs de URL para la seccion (3.5b): la URL usa el nombre humano en vez de la clave interna, para
+// no exponer "estructura_academico" ni chocar con la ruta /procesos (la seccion "Gestiones" tiene
+// key="procesos"). Se derivan de la etiqueta para no mantener un mapa a mano. item y table ya son
+// legibles y se quedan como estan.
+const slugifySection = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+const SECTION_SLUG_BY_KEY = Object.fromEntries(GROUP_DEFS.map((group) => [group.key, slugifySection(group.label)]));
+const SECTION_KEY_BY_SLUG = Object.fromEntries(GROUP_DEFS.map((group) => [slugifySection(group.label), group.key]));
+
 const ACADEMY_GROUP_KEY = "estructura_academico";
 const ACADEMY_GROUP_LABEL = "Academia";
 const ACADEMY_INDEX_ITEMS = [
@@ -1250,7 +1264,7 @@ const activeItemKey = computed(() =>
 
 const syncAdminUrl = () => {
   const params = {};
-  if (selectedSection.value) params.section = selectedSection.value;
+  if (selectedSection.value) params.section = SECTION_SLUG_BY_KEY[selectedSection.value] || selectedSection.value;
   const itemKey = activeItemKey.value;
   const tableName = selectedTable.value?.table || "";
   // El item es posicional: si hay tabla sin item resuelto, se usa "-" como marcador de hueco.
@@ -1301,9 +1315,9 @@ const hydrateFromRoute = () => {
       return;
     }
   }
-  const sectionKey = route.params.section;
-  if (sectionKey) {
-    openSectionIndexByKey(sectionKey);
+  const sectionSlug = route.params.section;
+  if (sectionSlug) {
+    openSectionIndexByKey(SECTION_KEY_BY_SLUG[sectionSlug] || sectionSlug);
   }
 };
 

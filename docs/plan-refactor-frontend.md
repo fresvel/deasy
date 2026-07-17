@@ -463,10 +463,20 @@ lint limpio. **No se borró ningún ref** (eso es 3.5c).
 
 > ⚠️ **Deuda que deja 3.5a, a cerrar en pasos siguientes:**
 > - **Grafo y firma no se serializan** (llegan en 3.5d): F5 sobre el organigrama recae en su tabla `units`. Interino conocido.
-> - **La URL usa las claves internas**: la sección "Gestiones" es `/admin/procesos` (su `key` es `procesos`) y Academia es
->   `estructura_academico`. Funcional pero feo y `procesos` **colisiona conceptualmente** con la ruta `/procesos`. **3.5b**
->   introduce un mapa slug↔key (`academia`, `gestiones`…).
 > - Sigue siendo **una sola ruta parametrizada**, no children: el marcador "rutas planas" **aún es cierto** y se invierte en 3.5c.
+
+##### 3.5b — completada. **La URL usa nombres humanos.**
+
+El `section` de la URL pasa de la clave interna al **slug** derivado de la etiqueta: `estructura_academico` → `academia`
+y, la importante, `procesos` (la `key` de "Gestiones") → `gestiones`, que **elimina la colisión conceptual** con la ruta
+hermana `/procesos`. `slugifySection(label)` genera el mapa `SECTION_SLUG_BY_KEY`/`SECTION_KEY_BY_SLUG` desde `GROUP_DEFS`
+(no hay tabla a mano que se desincronice). El slug solo vive en la frontera de la URL: `syncAdminUrl` convierte key→slug al
+escribir y `hydrateFromRoute` slug→key al leer; `selectedSection` sigue siendo la clave interna en todo el componente.
+`item` y `table` ya eran legibles (`procesos`, `personas`, `units`…) y se quedan como están.
+
+**Verificado en navegador**: Gestiones → `/admin/gestiones` (antes `/admin/procesos`); su sub-item → `/admin/gestiones/procesos/processes`
+(slug de sección + item `procesos` conviven sin choque); F5 hidrata la tabla; deep-link directo a `/admin/academia` abre el
+índice de Academia (conversión slug→key en hidratación). Consola limpia, lint limpio, 218 tests.
 
 #### 3.1 — completada (16-07-2026)
 
