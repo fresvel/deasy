@@ -49,7 +49,6 @@
     <!-- Modal Agregar/Editar -->
     <AppModalShell
       ref="modal"
-      id="investigacionModal"
       labelled-by="investigacion-modal-title"
       size="lg"
       :show-header="false"
@@ -60,6 +59,7 @@
         :initial-type="pendingType"
         @investigacion-added="loadDossier"
         @investigacion-updated="handleInvestigacionUpdated"
+        @close="hideModal"
       />
     </AppModalShell>
 
@@ -210,6 +210,12 @@ const loadDossier = async () => {
   } catch (error) {
     console.error("Error al cargar dossier:", error);
   }
+};
+
+// El formulario pide el cierre con @close; lo ejecuta quien monta el modal, que es esta seccion.
+const hideModal = () => {
+  if (!modal.value?.el) return;
+  Modal.getOrCreateInstance(modal.value.el).hide();
 };
 
 const openAddModal = () => {

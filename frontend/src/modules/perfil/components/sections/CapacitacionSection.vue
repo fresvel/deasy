@@ -45,29 +45,24 @@
       </AppDataTable>
     </ProfileSectionShell>
 
-    <!-- Modal Agregar -->
+    <!-- Modal Agregar/Editar.
+         Aqui habia DOS modales, y no por diseno: AgregarCapacitacion cerraba con
+         document.getElementById("capacitacionModal"), que encontraba SIEMPRE el de agregar. Editar
+         necesito entonces un segundo modal `controlled` y un handler que lo cerrara a mano. Con el
+         formulario emitiendo @close, la seccion vuelve al patron de sus cinco hermanas: un solo modal. -->
     <AppModalShell
       ref="modal"
-      id="capacitacionModal"
       labelled-by="capacitacion-modal-title"
       size="lg"
       :show-header="false"
       body-class="p-0"
     >
-      <AgregarCapacitacion @capacitacion-added="loadDossier" />
-    </AppModalShell>
-
-    <!-- Modal Editar -->
-    <AppModalShell
-      controlled
-      :open="showEditModal"
-      labelled-by="capacitacion-edit-modal-title"
-      size="lg"
-      :show-header="false"
-      body-class="p-0"
-      @close="showEditModal = false"
-    >
-      <AgregarCapacitacion :editing-item="pendingEdit" @capacitacion-updated="handleCapacitacionUpdated" />
+      <AgregarCapacitacion
+        :editing-item="pendingEdit"
+        @capacitacion-added="loadDossier"
+        @capacitacion-updated="handleCapacitacionUpdated"
+        @close="hideModal"
+      />
     </AppModalShell>
 
     <!-- Modal Eliminar -->
@@ -125,7 +120,6 @@ const loading = ref(true);
 const currentUser = ref(null);
 const pendingEdit = ref(null);
 const activeTab = ref("docente");
-const showEditModal = ref(false);
 const showDeleteModal = ref(false);
 let modalInstance = null;
 const pendingDelete = ref(null);
@@ -190,8 +184,17 @@ const loadDossier = async () => {
     }
 };
 
+// El formulario pide el cierre con @close; lo ejecuta quien monta el modal, que es esta seccion.
+const hideModal = () => {
+    if (!modal.value?.el) return;
+    Modal.getOrCreateInstance(modal.value.el).hide();
+};
+
 const openModal = () => {
     if (!canCreateDossier.value) return;
+    // Imprescindible ahora que agregar y editar comparten modal: sin esto, pulsar "Agregar" despues de
+    // haber editado abriria el formulario en modo edicion. Sus cinco hermanas ya lo hacian.
+    pendingEdit.value = null;
     if (!modal.value?.el) return;
     modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
@@ -242,11 +245,12 @@ const confirmDelete = async () => {
 const editarCapacitacion = (registro) => {
     if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...registro };
-    showEditModal.value = true;
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
+    modalInstance.show();
 };
 
 const handleCapacitacionUpdated = () => {
-    showEditModal.value = false;
     pendingEdit.value = null;
     loadDossier();
 };

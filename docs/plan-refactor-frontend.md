@@ -597,7 +597,7 @@ renderiza idéntico (PDF + "Cerrar" + "Descargar archivo", sin panel).
 
 | # | Acción | Δ | Nota |
 |---|---|---:|---|
-| 4.1 | `AppFormModalLayout` con `@close` → **mata los 6 `getElementById`** | −60 L | **Antes que 4.2**, o las seis no convergen |
+| 4.1 | `AppFormModalLayout` con `@close` → **mata los 6 `getElementById`** | ✅ **hecha (17-07-2026)** | Ver abajo |
 | 4.2 | `DossierSectionCrud.vue` + `useDossierSection(descriptor)`: 6 CRUD → 1 | **−1000 L** | `InvestigacionView` **el último** (es la variación real) |
 | 4.3 | Colapsar los 5 quintetos de `DossierService` a `(tipo, …)` | −120 L | Patrón ya probado en `:212,:244,:253` |
 | 4.4 | `useProcessDefinitionManager` → factory ×3 | **−700 L** | **Mejor ratio del módulo admin** |
@@ -643,3 +643,28 @@ Tan importante como el plan. Un patrón que parece un smell y no lo es:
 **0 (bugs + guard de backend) → 1 (tests de caracterización) → 2.1 (`AuthLayout`) → 3.1 (`/home/firmas`) → 2.2 (`WorkspaceLayout`) → 3.2-3.4 → 4.1-4.2 (dossier) → 4.4 (admin) → 5 → X (diseño).**
 
 Las tres primeras son baratas, de bajo riesgo y validan el patrón. El resto se apoya en ellas.
+
+#### 4.1 — completada (17-07-2026). **Muere el acoplamiento invisible.**
+
+Los 6 `Agregar*.vue` cerraban su modal con `document.getElementById("<x>Modal")` contra un id que
+declaraba el **padre**. Ahora piden el cierre con `@close` y lo ejecuta quien monta el modal. Los 5 ids
+se borran: sólo existían para ese `getElementById`.
+
+**La predicción del plan se cumplió.** §3 decía: *"E antes que C desbloquea `CapacitacionView` y hace que
+las seis converjan de verdad"*. Al mirarlo de cerca, la causa estaba clara:
+`AgregarCapacitacion.getElementById("capacitacionModal")` encontraba **siempre el modal de agregar**, así
+que editar necesitó un **segundo modal `controlled`** y un handler que lo cerrara a mano. Con el `emit`,
+los dos modales colapsan en uno y la sección vuelve al patrón de sus cinco hermanas. `showEditModal` muere.
+
+> ⚠️ **Bug evitado al colapsar**: `openModal` de `CapacitacionSection` **no limpiaba `pendingEdit`** — no
+> le hacía falta con modales separados. Compartiendo modal, pulsar "Agregar" tras editar habría abierto el
+> formulario **en modo edición**. Sus cinco hermanas ya lo limpiaban; se alineó.
+
+**Verificación**: en `/perfil/capacitacion`, Agregar abre el modal y **Cancelar lo cierra** (1 → 0
+diálogos): el camino `emit` funciona en vivo.
+
+> ⚠️ **El caso de EDITAR no es conducible en dev**: las subsecciones que tienen registros no son las que
+> abren por defecto (Formación tiene 1 en "Grado", pero abre en "Cuarto Nivel"; Capacitación tiene 0).
+> Como usa el mismo `closeModal`, el contrato vive en `AgregarTitulo.test.js` (+5 tests), **verificado por
+> mutación**: devolver el `getElementById` tumba 2 tests, incluido uno que espía `document.getElementById`
+> y falla si alguien lo reintroduce.

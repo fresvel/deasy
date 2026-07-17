@@ -44,7 +44,6 @@
     <!-- Modal Agregar/Editar -->
     <AppModalShell
       ref="modal"
-      id="tituloModal"
       labelled-by="titulo-modal-title"
       size="lg"
       :show-header="false"
@@ -54,6 +53,7 @@
         :editing-item="pendingEdit"
         @title-added="loadDossier"
         @title-updated="handleTituloUpdated"
+        @close="hideModal"
       />
     </AppModalShell>
 
@@ -157,6 +157,12 @@ const loadDossier = async () => {
 };
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
+
+// El formulario pide el cierre con @close; lo ejecuta quien monta el modal, que es esta seccion.
+const hideModal = () => {
+    if (!modal.value?.el) return;
+    Modal.getOrCreateInstance(modal.value.el).hide();
+};
 
 const openModal = () => {
     if (!canCreateDossier.value) return;

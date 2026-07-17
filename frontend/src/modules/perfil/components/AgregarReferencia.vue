@@ -91,7 +91,7 @@
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
 import { reactive, ref, defineEmits, watch, computed } from "vue";
-import { Modal } from "@/shared/utils/modalController";
+
 import DossierService from "@/modules/dossier/services/DossierService";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
@@ -103,7 +103,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["referencia-added", "referencia-updated"]);
+const emit = defineEmits(["referencia-added", "referencia-updated", "close"]);
 
 const isEditing = computed(() => !!props.editingItem);
 const hasExistingDocument = computed(() => !!props.editingItem?.url_documento);
@@ -132,12 +132,10 @@ const resetForm = () => {
   selectedFile.value = null;
 };
 
-const closeModal = () => {
-  const modalElement = document.getElementById("referenciaModal");
-  if (!modalElement) return;
-  const modalInstance = Modal.getInstance(modalElement);
-  modalInstance?.hide();
-};
+// El cierre se pide al padre, que es quien monta el modal. Antes se hacia
+// document.getElementById("<x>Modal") contra un id que declara el padre: acoplamiento invisible
+// para el compilador --renombrar ese id dejaba el modal imposible de cerrar y nadie se enteraba--.
+const closeModal = () => emit("close");
 
 // Cargar datos si estamos editando
 watch(() => props.editingItem, (newVal) => {

@@ -46,7 +46,6 @@
     <!-- Modal Agregar/Editar -->
     <AppModalShell
       ref="modal"
-      id="experienciaModal"
       labelled-by="experiencia-modal-title"
       size="lg"
       :show-header="false"
@@ -56,6 +55,7 @@
         :editing-item="pendingEdit"
         @experiencia-added="loadDossier"
         @experiencia-updated="handleExperienciaUpdated"
+        @close="hideModal"
       />
     </AppModalShell>
 
@@ -154,6 +154,12 @@ const loadDossier = async () => {
     } catch (error) {
         console.error('Error al cargar dossier:', error);
     }
+};
+
+// El formulario pide el cierre con @close; lo ejecuta quien monta el modal, que es esta seccion.
+const hideModal = () => {
+    if (!modal.value?.el) return;
+    Modal.getOrCreateInstance(modal.value.el).hide();
 };
 
 const openModal = () => {
