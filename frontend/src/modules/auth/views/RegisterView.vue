@@ -375,6 +375,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from "vue";
+import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
@@ -645,7 +646,7 @@ const createnewUser = async () => {
     sessionStorage.removeItem("register_draft");
     showSuccessModal.value = true;
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || error.message || "Error al crear el usuario. Por favor intenta de nuevo.";
+    errorMessage.value = resolveApiErrorMessage(error, "Error al crear el usuario. Por favor intenta de nuevo.");
   }
 };
 

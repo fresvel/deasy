@@ -289,9 +289,61 @@ propósito y reescribirlos es la señal de éxito; romperlos sin darse cuenta es
 
 | # | Acción | Δ | Riesgo |
 |---|---|---:|---|
-| 2.1 | **`AuthLayout.vue`** + `useApiError()` | −250 L | **Bajo** — sólo template. *Empezar por aquí* |
+| 2.1 | **`AuthLayout.vue`** + `resolveApiErrorMessage()` | ✅ **hecha** | Ver abajo |
 | 2.2 | `WorkspaceLayout`: `AppWorkspaceShell` pasa a ruta padre con `<router-view>`; absorbe `menuOpen`, identidad y el `1280` | −150 L | Medio |
 | 2.3 | Renombrar `S*` → `App*` (4 líneas: son internos a `layouts/`) y `SNotify`/`SMessage` | ~0 | Trivial |
+
+#### 2.1 — completada (16-07-2026)
+
+**`layouts/auth/AuthLayout.vue`** (3 props: `size`, `align`, `padded`) absorbe los tres niveles
+`page > center > card` que repetían las vistas de auth. **Migradas 4 de 6**: `LoginView`,
+`SystemBootstrapView`, `RecoverPasswordView`, `VerifyEmail`.
+
+**`RegisterView` y `TermsView` NO se migraron, y es deliberado.** No comparten el patrón: montan su propio
+centrado (`items-start`, `py-2 sm:py-6`, sin centrado vertical) **porque su contenido es alto y centrarlo
+verticalmente lo empujaría fuera de pantalla**. Eso no era deriva: era criterio. Forzarlas dentro exigiría
+props extra (`flex flex-col` en la tarjeta, padding vertical del centro…) y el layout empezaría a
+parecerse a los modales de 33 props de admin — el olor que este plan denuncia en §3. Sí se migró su
+lectura de error.
+
+**`shared/utils/apiError.js`** — `resolveApiErrorMessage(error, fallback)`, con 11 tests. Sustituye las 5
+lecturas manuales del error. **No es un composable** (no necesita reactividad): una función pura se
+prueba mejor y se usa igual.
+
+**Hallazgo que corrige §3.4 de este documento**: las 5 variantes de lectura del error **no eran
+descuido**. El backend tiene **dos contratos de error incompatibles** y cada vista se había adaptado al
+suyo:
+
+```js
+{ ok: false, error: "Código inválido o expirado" }                    // verify_email.js, reset_password.js
+                                                                       //   -> el mensaje HUMANO va en `error`
+{ success: false, message: "Error al…", error: "<stack>" }            // fail() de dossier_controler.js:123
+                                                                       //   -> `error` es el detalle TÉCNICO
+```
+
+Por eso `VerifyEmail` leía `.error` primero: ahí *estaba* su mensaje. La precedencia `message → error`
+cubre ambas formas sin mostrar nunca un stack. **El arreglo de fondo es unificar el contrato en el
+backend**; mientras tanto la traducción vive en un sitio en vez de en cinco.
+
+**Verificación — comparación de capturas contra golden master, no sólo "compila"**:
+
+| Pantalla | Resultado |
+|---|---|
+| `/` (login) | **Idéntica píxel a píxel** |
+| `/recover-password` | Difiere 1,04% dentro de la tarjeta: el padding normalizado (`p-8 sm:p-12` → `p-7 sm:p-10`). Cambio intencionado |
+| `/verify-email` | Renderiza correcta (privada: requiere sesión para verla) |
+| `/setup` | **No verificable en navegador**: el router redirige cuando `installationMode === "normal"`. Sólo compila + lint |
+
+Además se ejercitó el error del login con credenciales incorrectas: sale "La contraseña es incorrecta"
+(mensaje del backend), igual que antes.
+
+> ⚠️ **Bug preexistente detectado, NO introducido por el refactor** (verificado contra la captura previa):
+> en `/recover-password` y `/verify-email` el enlace "Volver al login" **se solapa con el logo**. No se
+> arregla aquí para no mezclar un fix visual en un commit de refactor.
+
+> ⚠️ **`LoginView` no delega su error entero en el helper**, a propósito: escala por código de estado y
+> para 401/400 el texto por estado debe ganar a `error.message` — que axios **siempre** rellena con
+> "Request failed with status code 401". Delegar sin más mostraría esa cadena técnica al usuario.
 
 ### Fase 3 — Split de páginas
 

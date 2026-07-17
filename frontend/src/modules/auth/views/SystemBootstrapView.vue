@@ -1,339 +1,337 @@
 <template>
-  <div class="deasy-auth-page">
-    <div class="deasy-auth-center">
-      <div class="deasy-auth-card mx-auto w-full max-w-2xl p-7 sm:p-10">
-        <div class="mb-7 flex flex-col items-center text-center">
-          <AppLogo size="lg" :framed="true" class-name="mb-4" />
-          <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Primera instalación · {{ environmentLabel }}
-          </span>
-          <h1 class="deasy-auth-title mt-4">Bootstrap del sistema</h1>
-          <p class="deasy-auth-copy max-w-md">{{ copyText }}</p>
+  <AuthLayout size="2xl">
+    <div class="mb-7 flex flex-col items-center text-center">
+      <AppLogo size="lg" :framed="true" class-name="mb-4" />
+      <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+        Primera instalación · {{ environmentLabel }}
+      </span>
+      <h1 class="deasy-auth-title mt-4">Bootstrap del sistema</h1>
+      <p class="deasy-auth-copy max-w-md">{{ copyText }}</p>
+    </div>
+
+    <div v-if="mode === 'bootstrap'" class="space-y-6" autocomplete="off">
+      <!-- Indicador de pasos -->
+      <ol class="flex items-center justify-center gap-1.5 text-xs font-semibold">
+        <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
+          <span
+            class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
+            :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-400'"
+          >{{ i + 1 }}</span>
+          <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-slate-400'">{{ s.label }}</span>
+          <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-slate-200"></span>
+        </li>
+      </ol>
+
+      <!-- Paso 1: Administrador -->
+      <div v-show="step === 1" class="space-y-4">
+        <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+          <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleAdmin" />
+          Usar datos de ejemplo (rellena el formulario para crear rápido)
+        </label>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+            <input v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1234567890" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+            <input v-model="form.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+            <input v-model="form.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Administrador" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+            <input v-model="form.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Principal" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
+            <input v-model="form.whatsapp" type="text" inputmode="tel" autocomplete="off" class="deasy-auth-field" placeholder="0990000000" />
+          </div>
+          <div class="hidden md:block"></div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+            <input v-model="form.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Nueva contraseña" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+            <input v-model="form.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 2: Gestor por defecto (opcional) -->
+      <div v-show="step === 2" class="space-y-4">
+        <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+          <SToggle v-model="gestorEnabled">
+            <span>
+              <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
+              <span class="block text-xs text-slate-500">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
+            </span>
+          </SToggle>
+        </div>
+        <div v-if="gestorEnabled" class="space-y-4">
+          <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+            <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleGestor" />
+            Usar datos de ejemplo
+          </label>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+              <input v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="0987654321" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+              <input v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="gestor@institucion.edu.ec" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+              <input v-model="gestorForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Gestor" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+              <input v-model="gestorForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Procesos" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+              <input v-model="gestorForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del gestor" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+              <input v-model="gestorForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+            </div>
+          </div>
         </div>
 
-        <div v-if="mode === 'bootstrap'" class="space-y-6" autocomplete="off">
-          <!-- Indicador de pasos -->
-          <ol class="flex items-center justify-center gap-1.5 text-xs font-semibold">
-            <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
-              <span
-                class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
-                :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-400'"
-              >{{ i + 1 }}</span>
-              <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-slate-400'">{{ s.label }}</span>
-              <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-slate-200"></span>
-            </li>
-          </ol>
+        <!-- Usuario de prueba (opcional): rol base "Usuario" para validar el flujo operativo -->
+        <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+          <SToggle v-model="usuarioEnabled">
+            <span>
+              <span class="block text-sm font-semibold text-slate-700">Crear un usuario de prueba</span>
+              <span class="block text-xs text-slate-500">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
+            </span>
+          </SToggle>
+        </div>
+        <div v-if="usuarioEnabled" class="space-y-4">
+          <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+            <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleUsuario" />
+            Usar datos de ejemplo
+          </label>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+              <input v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1122334455" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+              <input v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="usuario@institucion.edu.ec" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+              <input v-model="usuarioForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Usuario" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+              <input v-model="usuarioForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Prueba" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+              <input v-model="usuarioForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del usuario" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+              <input v-model="usuarioForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <!-- Paso 1: Administrador -->
-          <div v-show="step === 1" class="space-y-4">
-            <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
-              <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleAdmin" />
-              Usar datos de ejemplo (rellena el formulario para crear rápido)
+      <!-- Paso 3: Catálogos genéricos -->
+      <div v-show="step === 3" class="space-y-4">
+        <p class="m-0 text-sm text-slate-500">
+          Selecciona únicamente los registros que quieras crear. Podrás completar o editar estos catálogos después.
+        </p>
+        <fieldset
+          v-for="group in selectableCatalogGroups"
+          :key="group.key"
+          class="rounded-lg border border-slate-200 p-4"
+        >
+          <legend class="sr-only">{{ group.label }}</legend>
+          <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p class="m-0 text-sm font-semibold text-slate-700">{{ group.label }}</p>
+              <p class="m-0 mt-0.5 text-xs text-slate-500">{{ group.hint }}</p>
+            </div>
+            <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-600">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300 text-sky-600"
+                :checked="isCatalogGroupFullySelected(group)"
+                @change="toggleCatalogGroup(group, $event.target.checked)"
+              />
+              {{ preconfig[group.key].length }}/{{ group.options.length }}
             </label>
-            <div class="grid gap-4 md:grid-cols-2">
-              <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
-                <input v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1234567890" />
-              </div>
-              <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-                <input v-model="form.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" />
-              </div>
-              <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
-                <input v-model="form.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Administrador" />
-              </div>
-              <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
-                <input v-model="form.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Principal" />
-              </div>
-              <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
-                <input v-model="form.whatsapp" type="text" inputmode="tel" autocomplete="off" class="deasy-auth-field" placeholder="0990000000" />
-              </div>
-              <div class="hidden md:block"></div>
-              <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
-                <input v-model="form.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Nueva contraseña" />
-              </div>
-              <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-                <input v-model="form.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
-              </div>
-            </div>
           </div>
-
-          <!-- Paso 2: Gestor por defecto (opcional) -->
-          <div v-show="step === 2" class="space-y-4">
-            <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
-              <SToggle v-model="gestorEnabled">
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
-                  <span class="block text-xs text-slate-500">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
-                </span>
-              </SToggle>
-            </div>
-            <div v-if="gestorEnabled" class="space-y-4">
-              <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
-                <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleGestor" />
-                Usar datos de ejemplo
-              </label>
-              <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
-                  <input v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="0987654321" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-                  <input v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="gestor@institucion.edu.ec" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
-                  <input v-model="gestorForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Gestor" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
-                  <input v-model="gestorForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Procesos" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
-                  <input v-model="gestorForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del gestor" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-                  <input v-model="gestorForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Usuario de prueba (opcional): rol base "Usuario" para validar el flujo operativo -->
-            <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
-              <SToggle v-model="usuarioEnabled">
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">Crear un usuario de prueba</span>
-                  <span class="block text-xs text-slate-500">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
-                </span>
-              </SToggle>
-            </div>
-            <div v-if="usuarioEnabled" class="space-y-4">
-              <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
-                <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleUsuario" />
-                Usar datos de ejemplo
-              </label>
-              <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
-                  <input v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1122334455" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-                  <input v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="usuario@institucion.edu.ec" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
-                  <input v-model="usuarioForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Usuario" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
-                  <input v-model="usuarioForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Prueba" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
-                  <input v-model="usuarioForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del usuario" />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-                  <input v-model="usuarioForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
-                </div>
-              </div>
-            </div>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label
+              v-for="option in group.options"
+              :key="option.id"
+              class="flex min-h-11 items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors"
+              :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-white'"
+            >
+              <input
+                v-model="preconfig[group.key]"
+                type="checkbox"
+                :value="option.id"
+                class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600"
+              />
+              <span class="min-w-0">
+                <span class="block text-sm font-medium text-slate-700">{{ option.label }}</span>
+                <span v-if="option.description" class="block text-xs text-slate-500">{{ option.description }}</span>
+              </span>
+            </label>
           </div>
-
-          <!-- Paso 3: Catálogos genéricos -->
-          <div v-show="step === 3" class="space-y-4">
-            <p class="m-0 text-sm text-slate-500">
-              Selecciona únicamente los registros que quieras crear. Podrás completar o editar estos catálogos después.
-            </p>
-            <fieldset
-              v-for="group in selectableCatalogGroups"
-              :key="group.key"
-              class="rounded-lg border border-slate-200 p-4"
-            >
-              <legend class="sr-only">{{ group.label }}</legend>
-              <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p class="m-0 text-sm font-semibold text-slate-700">{{ group.label }}</p>
-                  <p class="m-0 mt-0.5 text-xs text-slate-500">{{ group.hint }}</p>
-                </div>
-                <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-600">
-                  <input
-                    type="checkbox"
-                    class="h-4 w-4 rounded border-slate-300 text-sky-600"
-                    :checked="isCatalogGroupFullySelected(group)"
-                    @change="toggleCatalogGroup(group, $event.target.checked)"
-                  />
-                  {{ preconfig[group.key].length }}/{{ group.options.length }}
-                </label>
-              </div>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <label
-                  v-for="option in group.options"
-                  :key="option.id"
-                  class="flex min-h-11 items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors"
-                  :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-white'"
-                >
-                  <input
-                    v-model="preconfig[group.key]"
-                    type="checkbox"
-                    :value="option.id"
-                    class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600"
-                  />
-                  <span class="min-w-0">
-                    <span class="block text-sm font-medium text-slate-700">{{ option.label }}</span>
-                    <span v-if="option.description" class="block text-xs text-slate-500">{{ option.description }}</span>
-                  </span>
-                </label>
-              </div>
-            </fieldset>
-            <div
-              class="rounded-lg border p-3.5 transition-colors"
-              :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
-            >
-              <SToggle v-model="preconfig.relation_unit_types">
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">Relación orgánica</span>
-                  <span class="block text-xs text-slate-500">Crea el tipo de relación jerárquica entre unidades.</span>
-                </span>
-              </SToggle>
-            </div>
-            <div
-              class="rounded-lg border p-3.5 transition-colors"
-              :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
-            >
-              <SToggle v-model="preconfig.example_units">
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">Estructura de unidades de ejemplo</span>
-                  <span class="block text-xs text-slate-500">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
-                </span>
-              </SToggle>
-            </div>
-            <div
-              class="rounded-lg border p-3.5 transition-colors"
-              :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
-            >
-              <SToggle v-model="preconfig.example_positions">
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">Puestos de ejemplo</span>
-                  <span class="block text-xs text-slate-500">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
-                </span>
-              </SToggle>
-            </div>
-            <div
-              class="rounded-lg border p-3.5 transition-colors"
-              :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
-            >
-              <SToggle v-model="preconfig.example_users">
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">Usuarios de ejemplo</span>
-                  <span class="block text-xs text-slate-500">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
-                </span>
-              </SToggle>
-            </div>
-          </div>
-
-          <!-- Paso 4: Resumen -->
-          <div v-show="step === 4" class="space-y-2.5 text-sm">
-            <div class="rounded-xl border border-slate-200 p-4">
-              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Administrador</p>
-              <p class="m-0 mt-1 font-semibold text-slate-700">{{ form.first_name }} {{ form.last_name }}</p>
-              <p class="m-0 text-slate-500">{{ form.email }}</p>
-            </div>
-            <div class="rounded-xl border border-slate-200 p-4">
-              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Gestor por defecto</p>
-              <p class="m-0 mt-1 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
-            </div>
-            <div class="rounded-xl border border-slate-200 p-4">
-              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Usuario de prueba</p>
-              <p class="m-0 mt-1 text-slate-500">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
-            </div>
-            <div class="rounded-xl border border-slate-200 p-4">
-              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Catálogos a preconfigurar</p>
-              <ul v-if="selectedCatalogSummary.length" class="m-0 mt-2 space-y-2 p-0">
-                <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-slate-500">
-                  <span class="font-semibold text-slate-700">{{ item.label }}:</span>
-                  {{ item.value }}
-                </li>
-              </ul>
-              <p v-else class="m-0 mt-1 text-slate-500">Ninguno</p>
-            </div>
-          </div>
-
-          <!-- Navegación -->
-          <div class="flex items-center justify-between gap-3 pt-1">
-            <button v-if="step > 1" type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-5" @click="prevStep">Atrás</button>
-            <span v-else></span>
-            <button v-if="step < steps.length" type="button" class="deasy-auth-button w-auto px-6" :disabled="!canAdvance" @click="nextStep">
-              Siguiente <IconArrowRight class="h-5 w-5" />
-            </button>
-            <button v-else type="button" class="deasy-auth-button w-auto px-6" :disabled="isSubmitting" @click="submitBootstrap">
-              <IconLoader2 v-if="isSubmitting" class="h-5 w-5 animate-spin" />
-              <template v-else>Crear sistema <IconArrowRight class="h-5 w-5" /></template>
-            </button>
-          </div>
-        </div>
-
+        </fieldset>
         <div
-          v-else-if="mode === 'recovery_required'"
-          class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
+          class="rounded-lg border p-3.5 transition-colors"
+          :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
-          <div class="flex items-start gap-3">
-            <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-            <div class="space-y-2">
-              <p class="m-0 font-semibold">La instancia requiere recuperación administrativa.</p>
-              <p class="m-0">
-                Existen datos operativos en la base y ya no es seguro reinicializar desde la UI. Usa el comando
-                <code class="rounded bg-white/80 px-1.5 py-0.5 text-[13px]">node scripts/bootstrap_admin_recovery.mjs ...</code>
-                desde el backend.
-              </p>
-            </div>
-          </div>
+          <SToggle v-model="preconfig.relation_unit_types">
+            <span>
+              <span class="block text-sm font-semibold text-slate-700">Relación orgánica</span>
+              <span class="block text-xs text-slate-500">Crea el tipo de relación jerárquica entre unidades.</span>
+            </span>
+          </SToggle>
         </div>
-        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-600">
-          Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
-        </div>
-
-        <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="-translate-y-2 opacity-0"
-          enter-to-class="translate-y-0 opacity-100"
-          leave-active-class="transition duration-200 ease-in"
-          leave-from-class="translate-y-0 opacity-100"
-          leave-to-class="-translate-y-2 opacity-0"
+        <div
+          class="rounded-lg border p-3.5 transition-colors"
+          :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
-          <div
-            v-if="message"
-            :class="[
-              'mt-6 flex rounded-xl border p-4',
-              isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-emerald-700'
-            ]"
-          >
-            <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />
-            <div class="flex-1 text-sm font-medium">{{ message }}</div>
-          </div>
-        </Transition>
+          <SToggle v-model="preconfig.example_units">
+            <span>
+              <span class="block text-sm font-semibold text-slate-700">Estructura de unidades de ejemplo</span>
+              <span class="block text-xs text-slate-500">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
+            </span>
+          </SToggle>
+        </div>
+        <div
+          class="rounded-lg border p-3.5 transition-colors"
+          :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+        >
+          <SToggle v-model="preconfig.example_positions">
+            <span>
+              <span class="block text-sm font-semibold text-slate-700">Puestos de ejemplo</span>
+              <span class="block text-xs text-slate-500">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
+            </span>
+          </SToggle>
+        </div>
+        <div
+          class="rounded-lg border p-3.5 transition-colors"
+          :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+        >
+          <SToggle v-model="preconfig.example_users">
+            <span>
+              <span class="block text-sm font-semibold text-slate-700">Usuarios de ejemplo</span>
+              <span class="block text-xs text-slate-500">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
+            </span>
+          </SToggle>
+        </div>
+      </div>
 
-        <div v-if="mode === 'normal'" class="mt-8 flex justify-center">
-          <button type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-6" @click="router.replace({ name: 'login' })">
-            Ir al login
-          </button>
+      <!-- Paso 4: Resumen -->
+      <div v-show="step === 4" class="space-y-2.5 text-sm">
+        <div class="rounded-xl border border-slate-200 p-4">
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Administrador</p>
+          <p class="m-0 mt-1 font-semibold text-slate-700">{{ form.first_name }} {{ form.last_name }}</p>
+          <p class="m-0 text-slate-500">{{ form.email }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-4">
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Gestor por defecto</p>
+          <p class="m-0 mt-1 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-4">
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Usuario de prueba</p>
+          <p class="m-0 mt-1 text-slate-500">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-4">
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Catálogos a preconfigurar</p>
+          <ul v-if="selectedCatalogSummary.length" class="m-0 mt-2 space-y-2 p-0">
+            <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-slate-500">
+              <span class="font-semibold text-slate-700">{{ item.label }}:</span>
+              {{ item.value }}
+            </li>
+          </ul>
+          <p v-else class="m-0 mt-1 text-slate-500">Ninguno</p>
+        </div>
+      </div>
+
+      <!-- Navegación -->
+      <div class="flex items-center justify-between gap-3 pt-1">
+        <button v-if="step > 1" type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-5" @click="prevStep">Atrás</button>
+        <span v-else></span>
+        <button v-if="step < steps.length" type="button" class="deasy-auth-button w-auto px-6" :disabled="!canAdvance" @click="nextStep">
+          Siguiente <IconArrowRight class="h-5 w-5" />
+        </button>
+        <button v-else type="button" class="deasy-auth-button w-auto px-6" :disabled="isSubmitting" @click="submitBootstrap">
+          <IconLoader2 v-if="isSubmitting" class="h-5 w-5 animate-spin" />
+          <template v-else>Crear sistema <IconArrowRight class="h-5 w-5" /></template>
+        </button>
+      </div>
+    </div>
+
+    <div
+      v-else-if="mode === 'recovery_required'"
+      class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
+    >
+      <div class="flex items-start gap-3">
+        <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <div class="space-y-2">
+          <p class="m-0 font-semibold">La instancia requiere recuperación administrativa.</p>
+          <p class="m-0">
+            Existen datos operativos en la base y ya no es seguro reinicializar desde la UI. Usa el comando
+            <code class="rounded bg-white/80 px-1.5 py-0.5 text-[13px]">node scripts/bootstrap_admin_recovery.mjs ...</code>
+            desde el backend.
+          </p>
         </div>
       </div>
     </div>
-  </div>
+    <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-600">
+      Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
+    </div>
+
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="-translate-y-2 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="-translate-y-2 opacity-0"
+    >
+      <div
+        v-if="message"
+        :class="[
+          'mt-6 flex rounded-xl border p-4',
+          isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-emerald-700'
+        ]"
+      >
+        <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />
+        <div class="flex-1 text-sm font-medium">{{ message }}</div>
+      </div>
+    </Transition>
+
+    <div v-if="mode === 'normal'" class="mt-8 flex justify-center">
+      <button type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-6" @click="router.replace({ name: 'login' })">
+        Ir al login
+      </button>
+    </div>
+  </AuthLayout>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
+import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
+import AuthLayout from '@/layouts/auth/AuthLayout.vue';
 import { useRouter } from "vue-router";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
@@ -536,7 +534,7 @@ const loadStatus = async ({ force = false } = {}) => {
       isError.value = false;
     }
   } catch (error) {
-    message.value = error.response?.data?.message || "No se pudo consultar el estado del sistema.";
+    message.value = resolveApiErrorMessage(error, "No se pudo consultar el estado del sistema.");
     isError.value = true;
   }
 };
@@ -561,7 +559,7 @@ const submitBootstrap = async () => {
       router.replace({ name: "login" });
     }, 900);
   } catch (error) {
-    message.value = error.response?.data?.message || "No se pudo inicializar el sistema.";
+    message.value = resolveApiErrorMessage(error, "No se pudo inicializar el sistema.");
     isError.value = true;
     await loadStatus({ force: true });
   } finally {
