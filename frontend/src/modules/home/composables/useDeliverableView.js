@@ -8,6 +8,7 @@ import {
 // Puros: viven fuera del closure para que no haga falta inyectar este composable entero solo para saber
 // si una ruta acaba en .pdf. Se siguen devolviendo mas abajo para no tocar a los consumidores actuales.
 import { canPreviewInline, getFileExtension, getFileNameFromPath } from '@/shared/utils/filePath.js';
+import { buildDeliverableSubject } from '@/shared/utils/deliverableSubject.js';
 import {
   formatDate,
   getDeliverableAccessTagVariant,
@@ -111,108 +112,16 @@ export function useDeliverableView({
     return clean || 'Periodo no definido';
   };
 
-  const getDeliverableSubject = (payload = {}) => {
-    const documentPayload = payload?.document || payload;
-    const workingFilePath = documentPayload?.working_file_path || documentPayload?.workingFilePath || payload?.workingFilePath || '';
-    const finalFilePath = documentPayload?.final_file_path || documentPayload?.finalFilePath || payload?.finalFilePath || '';
-    const preloadFilePath = finalFilePath || workingFilePath;
-    const preloadPdfPath = [finalFilePath, workingFilePath].find((value) => canPreviewInline(value)) || '';
-    return {
-      id: payload?.id || documentPayload?.id || documentPayload?.task_item_id || null,
-      itemId: payload?.id || payload?.itemId || documentPayload?.task_item_id || documentPayload?.itemId || null,
-      taskId: payload?.task_id || payload?.taskId || documentPayload?.task_id || documentPayload?.taskId || null,
-      processDefinitionId:
-        payload?.process_definition_id
-        || payload?.processDefinitionId
-        || documentPayload?.process_definition_id
-        || documentPayload?.processDefinitionId
-        || null,
-      documentId: documentPayload?.document_id || documentPayload?.documentId || payload?.documentId || null,
-      documentVersionId: documentPayload?.document_version_id || documentPayload?.documentVersionId || payload?.documentVersionId || null,
-      documentVersion: documentPayload?.document_version || documentPayload?.documentVersion || payload?.documentVersion || null,
+  // El nucleo es puro y vive en shared/utils/deliverableSubject.js; aqui solo se le sirven los dos
+  // fallbacks que dependen de esta pantalla. La firma no cambia: sus ~40 call sites siguen llamando
+  // getDeliverableSubject(payload) sin enterarse.
+  const getDeliverableSubject = (payload = {}) =>
+    buildDeliverableSubject(payload, {
       processId:
-        payload?.process_id
-        || payload?.processId
-        || payload?.workflow?.process_id
-        || payload?.workflow?.processId
-        || selectedProcessPanel.value?.definition?.chat_context?.process_id
-        || selectedProcessPanel.value?.definition?.process_id
-        || null,
-      scopeUnitId:
-        payload?.scope_unit_id
-        || documentPayload?.scope_unit_id
-        || payload?.scopeUnitId
-        || documentPayload?.scopeUnitId
-        || selectedProcessContext.value?.unit_id
-        || null,
-      originUnitId:
-        payload?.origin_unit_id
-        || documentPayload?.origin_unit_id
-        || payload?.originUnitId
-        || documentPayload?.originUnitId
-        || null,
-      title: payload?.title || payload?.template_artifact_name || documentPayload?.title || documentPayload?.template_artifact_name || `Entregable #${payload?.id || documentPayload?.document_id || 's/n'}`,
-      templateArtifactName: payload?.template_artifact_name || payload?.templateArtifactName || documentPayload?.template_artifact_name || documentPayload?.templateArtifactName || '',
-      actions: payload?.actions || documentPayload?.actions || {},
-      workflow: payload?.workflow || documentPayload?.workflow || {},
-      status: payload?.status || payload?.status_name || payload?.statusName || documentPayload?.status || documentPayload?.status_name || documentPayload?.statusName || '',
-      documentStatus: payload?.document_status || payload?.documentStatus || documentPayload?.document_status || documentPayload?.documentStatus || '',
-      pendingFillCount: payload?.pending_fill_count || payload?.pendingFillCount || documentPayload?.pending_fill_count || documentPayload?.pendingFillCount || 0,
-      pendingSignatureCount: payload?.pending_signature_count || payload?.pendingSignatureCount || documentPayload?.pending_signature_count || documentPayload?.pendingSignatureCount || 0,
-      itemStartDate:
-        payload?.item_start_date
-        || payload?.itemStartDate
-        || documentPayload?.item_start_date
-        || documentPayload?.itemStartDate
-        || payload?.start_date
-        || payload?.startDate
-        || documentPayload?.start_date
-        || documentPayload?.startDate
-        || null,
-      itemEndDate:
-        payload?.item_end_date
-        || payload?.itemEndDate
-        || documentPayload?.item_end_date
-        || documentPayload?.itemEndDate
-        || payload?.end_date
-        || payload?.endDate
-        || documentPayload?.end_date
-        || documentPayload?.endDate
-        || null,
-      userStartedAt:
-        payload?.user_started_at
-        || payload?.userStartedAt
-        || documentPayload?.user_started_at
-        || documentPayload?.userStartedAt
-        || null,
-      taskStartDate: payload?.task_start_date || payload?.taskStartDate || documentPayload?.task_start_date || documentPayload?.taskStartDate || null,
-      taskEndDate: payload?.task_end_date || payload?.taskEndDate || documentPayload?.task_end_date || documentPayload?.taskEndDate || null,
-      periodLabel: payload?.period_label || payload?.periodLabel || '',
-      unitLabel:
-        payload?.unit_label
-        || payload?.unitLabel
-        || payload?.origin_unit_label
-        || payload?.originUnitLabel
-        || documentPayload?.unit_label
-        || documentPayload?.unitLabel
-        || documentPayload?.origin_unit_label
-        || documentPayload?.originUnitLabel
-        || '',
-      processLabel: payload?.process_label || payload?.processLabel || '',
-      description:
-        payload?.template_artifact_description
-        || payload?.templateArtifactDescription
-        || payload?.description
-        || documentPayload?.template_artifact_description
-        || documentPayload?.templateArtifactDescription
-        || documentPayload?.description
-        || '',
-      workingFilePath,
-      finalFilePath,
-      preloadFilePath,
-      preloadPdfPath
-    };
-  };
+        selectedProcessPanel.value?.definition?.chat_context?.process_id
+        || selectedProcessPanel.value?.definition?.process_id,
+      scopeUnitId: selectedProcessContext.value?.unit_id,
+    });
 
   const isPdfWorkingFile = (payload) => {
     const subject = getDeliverableSubject(payload);
