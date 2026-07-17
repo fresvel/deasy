@@ -598,7 +598,7 @@ renderiza idéntico (PDF + "Cerrar" + "Descargar archivo", sin panel).
 | # | Acción | Δ | Nota |
 |---|---|---:|---|
 | 4.1 | `AppFormModalLayout` con `@close` → **mata los 6 `getElementById`** | ✅ **hecha (17-07-2026)** | Ver abajo |
-| 4.2 | `DossierSectionCrud.vue` + `useDossierSection(descriptor)`: 6 CRUD → 1 | ✅ **5/6 hechas (17-07)** | Investigación pendiente (variación real) |
+| 4.2 | `DossierSectionCrud.vue` + `useDossierSection(descriptor)`: 6 CRUD → 1 | ✅ **6/6 hechas (17-07)** | Investigación incluida, sin injertar casos especiales |
 | 4.3 | Colapsar los 5 quintetos de `DossierService` a `(tipo, …)` | −120 L | Patrón ya probado en `:212,:244,:253` |
 | 4.4 | `useProcessDefinitionManager` → factory ×3 | **−700 L** | **Mejor ratio del módulo admin** |
 | 4.5 | `AdminView`: los 5 bloques ×5 → un bucle sobre config | −400 L | Sin tocar el router |
@@ -713,3 +713,30 @@ confirmar llama a `deleteRecord` con el `_id`, **verificado por mutación**. **2
 > ⚠️ **Warnings preexistentes, NO introducidos**: `AgregarCapacitacion` monta `SSelect`/`SInput` sin pasar
 > `label`/`placeholder` (props requeridas) → avisos de Vue en consola. Están en varios `Agregar*` desde
 > antes de esta fase; no rompen nada. Deuda menor para un barrido aparte.
+
+#### 4.2 — COMPLETA, 6/6 (17-07-2026). **−1061 líneas.**
+
+Investigación se colapsó en el mismo `DossierSectionCrud` (331 → 100 L), y el composable **se generalizó sin
+una sola rama `if (investigacion)`** — que habría sido el injerto de caso especial que este plan critica en
+`AdminTableManager`. Los tres campos nuevos del descriptor son genuinamente generales:
+
+- `docType` como **función de la pestaña** (además de string fijo): Investigación tiene un tipo por pestaña.
+- `rowsFor(records, tab)` / `countFor(records, key)`: de dónde salen las filas. Investigación no es un array
+  plano sino un objeto de 5 sub-listas; las clásicas omiten estos campos y siguen filtrando el array.
+- La pestaña activa se pasa **siempre** a `deleteRecord`/`uploadDocument`; las clásicas la ignoran.
+
+Se caracterizó una trampa heredada: en Investigación conviven la **clave plural** (`"articulos"`, la usa
+`deleteInvestigacion` y el árbol) y el **docType singular** (`"articulo"`, lo usa `downloadDocument`). El
+descriptor mapea de una a otro; documentado para que nadie lo "arregle".
+
+**Balance final de las 6**: 1759 → 698 L (**−1061**), superando la estimación de −1000.
+
+**Verificación en navegador**: las 5 clásicas **re-verificadas** tras generalizar el composable (Experiencia,
+la más sensible, mantiene FUNCIONES→CÁTEDRAS, join y "Actualidad"). Investigación: 5 subpestañas con
+contador, **columnas que cambian por pestaña** (artículos → proyectos), editar pre-selecciona el tipo de la
+pestaña, agregar arranca en artículos, todo cierra a 0 modales. Consola sin errores.
+
+> Un susto instructivo: la primera medición dio "2 modales al editar, 1 tras cerrar". No era un fallo —
+> era el **SessionExpiryModal** ("Sesión por expirar") que saltó por el tiempo de sesión. Renovada la
+> sesión y filtrado ese modal, el conteo es 1 → 0 limpio. Recordatorio de no dar por bueno *ni* por malo un
+> número sin mirar qué lo compone.

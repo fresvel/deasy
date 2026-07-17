@@ -15,12 +15,20 @@ import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess"
  * El composable POSEE su estado (crea los refs de modal/preview/fileInput y los devuelve); el componente
  * que lo monta los ata con ref="...". Es el patron de useDeliverableFilePreview, no el de useDeliverableView.
  *
+ * Casi todas las secciones son un array plano filtrado por subpestana. Investigacion NO: sus datos son un
+ * objeto de sub-listas ({articulos, libros...}) y su tipo de documento cambia con la pestana. Para eso el
+ * descriptor admite `rowsFor`/`countFor` (de donde salen las filas) y `docType` como funcion de la pestana.
+ * Las secciones clasicas omiten esos campos y todo sigue como antes. La pestana activa se pasa SIEMPRE a
+ * deleteRecord/uploadDocument; quien no la necesita la ignora.
+ *
  * @param {object} descriptor
  * @param {string} descriptor.dossierKey   Clave dentro del arbol del dossier: dossier[dossierKey].
- * @param {string} descriptor.docType      Tipo para downloadDocument/deleteDocument (p. ej. "titulo").
- * @param {(id:string)=>Promise} descriptor.deleteRecord     Borra el registro.
- * @param {(id:string,file:File)=>Promise} descriptor.uploadDocument  Sube su PDF.
- * @param {Array<{key,label,filter}>} [descriptor.subsections]  Subpestanas; [] = sin pestanas.
+ * @param {string|((tab:string)=>string)} descriptor.docType  Tipo de documento; fijo, o funcion de la pestana.
+ * @param {(id:string,tab:string)=>Promise} descriptor.deleteRecord     Borra el registro.
+ * @param {(id:string,file:File,tab:string)=>Promise} descriptor.uploadDocument  Sube su PDF.
+ * @param {Array<{key,label,filter?}>} [descriptor.subsections]  Subpestanas; [] = sin pestanas.
+ * @param {(records:any,tab:string)=>Array} [descriptor.rowsFor]   Filas de la pestana; default: filtra el array.
+ * @param {(records:any,key:string)=>number} [descriptor.countFor]  Conteo de una subpestana; default: idem.
  * @param {(row:object)=>string} [descriptor.filenameFor]     Nombre del PDF al descargar.
  */
 export function useDossierSection(descriptor) {
@@ -30,8 +38,13 @@ export function useDossierSection(descriptor) {
     deleteRecord,
     uploadDocument,
     subsections = [],
-    filenameFor = (row) => `${row?.[docType] || docType}.pdf`
+    rowsFor,
+    countFor,
+    filenameFor = (row) => `${row?.[typeof docType === "string" ? docType : "documento"] || "documento"}.pdf`
   } = descriptor;
+
+  /** El tipo de documento de la pestana: fijo para las clasicas, por-pestana para Investigacion. */
+  const resolveDocType = (tab) => (typeof docType === "function" ? docType(tab) : docType);
 
   const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
@@ -46,19 +59,25 @@ export function useDossierSection(descriptor) {
   const selectedRecordId = ref(null);
   let modalInstance = null;
 
-  /** Todos los registros de la seccion, sin filtrar. */
-  const allRecords = computed(() => dossier.value?.[dossierKey] ?? []);
+  /** Datos crudos de la seccion: un array (clasicas) o un objeto de sub-listas (Investigacion). */
+  const allRecords = computed(() => dossier.value?.[dossierKey]);
 
   /** Subpestanas con su contador. Vacio si la seccion no tiene subpestanas. */
   const subsectionTabs = computed(() =>
-    subsections.map((s) => ({ key: s.key, label: s.label, count: allRecords.value.filter(s.filter).length }))
+    subsections.map((s) => ({
+      key: s.key,
+      label: s.label,
+      count: countFor ? countFor(allRecords.value, s.key) : (allRecords.value ?? []).filter(s.filter).length
+    }))
   );
 
   /** Filas visibles: las de la subpestana activa, o todas si no hay subpestanas. */
   const tableRows = computed(() => {
-    if (!subsections.length) return allRecords.value;
+    if (rowsFor) return rowsFor(allRecords.value, activeTab.value);
+    const records = allRecords.value ?? [];
+    if (!subsections.length) return records;
     const active = subsections.find((s) => s.key === activeTab.value) ?? subsections[0];
-    return allRecords.value.filter(active.filter);
+    return records.filter(active.filter);
   });
 
   const loadDossier = async () => {
@@ -107,7 +126,9 @@ export function useDossierSection(descriptor) {
   const confirmDelete = async () => {
     if (!pendingDelete.value) return;
     try {
-      await deleteRecord(pendingDelete.value._id);
+      // El borrado se dispara desde la fila de la pestana activa, asi que activeTab ES su tipo
+      // (lo unico que Investigacion necesita ademas del _id). Las clasicas ignoran el segundo arg.
+      await deleteRecord(pendingDelete.value._id, activeTab.value);
       await loadDossier();
       showDeleteModal.value = false;
     } catch (error) {
@@ -119,7 +140,7 @@ export function useDossierSection(descriptor) {
     if (!canDeleteDossier.value) return;
     if (!confirm("¿Estás seguro de eliminar solo el documento PDF?")) return;
     try {
-      await DossierService.deleteDocument(docType, record._id);
+      await DossierService.deleteDocument(resolveDocType(activeTab.value), record._id);
       await loadDossier();
     } catch (error) {
       console.error("Error al eliminar PDF:", error);
@@ -127,7 +148,7 @@ export function useDossierSection(descriptor) {
   };
 
   const getBlob = async (recordId) => {
-    const response = await DossierService.downloadDocument(docType, recordId);
+    const response = await DossierService.downloadDocument(resolveDocType(activeTab.value), recordId);
     return new Blob([response.data], { type: "application/pdf" });
   };
 
@@ -164,7 +185,7 @@ export function useDossierSection(descriptor) {
     const file = event.target.files[0];
     if (!file) return;
     try {
-      await uploadDocument(selectedRecordId.value, file);
+      await uploadDocument(selectedRecordId.value, file, activeTab.value);
       await loadDossier();
     } catch (error) {
       console.error("Error al subir:", error);

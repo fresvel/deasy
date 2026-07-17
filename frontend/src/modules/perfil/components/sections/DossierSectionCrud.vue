@@ -52,7 +52,7 @@
       :show-header="false"
       body-class="p-0"
     >
-      <slot name="form" :editing-item="pendingEdit" :on-updated="onUpdated" :reload="loadDossier" :close="hideModal" />
+      <slot name="form" :editing-item="pendingEdit" :on-updated="onUpdated" :reload="loadDossier" :close="hideModal" :active-tab="activeTab" />
     </AppModalShell>
 
     <!-- Modal Eliminar -->

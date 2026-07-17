@@ -139,14 +139,16 @@ describe("DossierSectionCrud", () => {
       expect(w.text()).toContain("Eliminar a Ana");
     });
 
-    it("confirmar llama al deleteRecord del descriptor con el _id", async () => {
+    it("confirmar llama al deleteRecord del descriptor con el _id y la pestana activa", async () => {
+      // El segundo arg (la pestana) es para Investigacion, cuyo borrado necesita el tipo; las secciones
+      // clasicas lo ignoran. La pestana activa inicial es la primera subseccion: "laborales".
       const w = montar();
       await asentar(w);
       await w.findAll(".del")[0].trigger("click");
       await asentar(w);
       const eliminar = w.findAll("button").find((b) => b.text() === "Eliminar");
       await eliminar.trigger("click");
-      expect(descriptor.deleteRecord).toHaveBeenCalledWith("1");
+      expect(descriptor.deleteRecord).toHaveBeenCalledWith("1", "laborales");
     });
   });
 });
