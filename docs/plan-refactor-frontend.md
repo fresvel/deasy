@@ -598,7 +598,7 @@ renderiza idéntico (PDF + "Cerrar" + "Descargar archivo", sin panel).
 | # | Acción | Δ | Nota |
 |---|---|---:|---|
 | 4.1 | `AppFormModalLayout` con `@close` → **mata los 6 `getElementById`** | ✅ **hecha (17-07-2026)** | Ver abajo |
-| 4.2 | `DossierSectionCrud.vue` + `useDossierSection(descriptor)`: 6 CRUD → 1 | **−1000 L** | `InvestigacionView` **el último** (es la variación real) |
+| 4.2 | `DossierSectionCrud.vue` + `useDossierSection(descriptor)`: 6 CRUD → 1 | ✅ **5/6 hechas (17-07)** | Investigación pendiente (variación real) |
 | 4.3 | Colapsar los 5 quintetos de `DossierService` a `(tipo, …)` | −120 L | Patrón ya probado en `:212,:244,:253` |
 | 4.4 | `useProcessDefinitionManager` → factory ×3 | **−700 L** | **Mejor ratio del módulo admin** |
 | 4.5 | `AdminView`: los 5 bloques ×5 → un bucle sobre config | −400 L | Sin tocar el router |
@@ -668,3 +668,48 @@ diálogos): el camino `emit` funciona en vivo.
 > Como usa el mismo `closeModal`, el contrato vive en `AgregarTitulo.test.js` (+5 tests), **verificado por
 > mutación**: devolver el `getElementById` tumba 2 tests, incluido uno que espía `document.getElementById`
 > y falla si alguien lo reintroduce.
+
+#### 4.2 — 5 de 6 secciones colapsadas (17-07-2026)
+
+Las 5 secciones clásicas del dossier (Títulos, Experiencia, Referencias, Capacitación, Certificación)
+pasan de ~285 L cada una a **~48 L de descriptor**. La lógica CRUD (~180 L byte-idénticas) vive ahora en
+`useDossierSection(descriptor)`, y el template común (shell + tabs + tabla + 2 modales + input + visor) en
+`DossierSectionCrud.vue`. Cada sección rellena tres slots con lo suyo: `#form`, `#cell`, `#delete-question`.
+
+| Sección | Antes | Ahora |
+|---|---:|---:|
+| Títulos | 273 | 50 |
+| Experiencia | 271 | 49 |
+| Referencias | 285 | 43 |
+| Capacitación | 334 | 53 |
+| Certificación | 265 | 48 |
+
+**Balance neto: 1428 → 577 L (−851).** No las −1000 prometidas, y la razón es honesta: **Investigación queda
+fuera** (su modelo de 5 sub-listas con columnas por pestaña es otra bestia, como el plan advirtió), y las
+celdas especiales **no se forzaron** a un descriptor declarativo. Esa decisión fue deliberada: Laboral pone
+`'Actualidad'` si no hay fecha_fin y su columna se llama FUNCIONES/CÁTEDRAS según la pestaña; Certificación
+trunca la descripción. Modelar eso en datos habría sido frágil. El slot `#cell` deja esas celdas **exactas**,
+copiadas sin reinterpretar — el principio de toda la sesión: mover código, no reescribir comportamiento.
+
+**`useDossierSection` posee su estado** (crea los refs de modal/preview/fileInput y los devuelve; el
+componente los ata con `ref="..."`). Es el patrón de `useDeliverableFilePreview`, no el Middle Man de
+`useDeliverableView`.
+
+**Verificación en navegador, las 5 con datos sembrados** (una por una, no de muestreo):
+
+| Sección | Comprobado en vivo |
+|---|---|
+| Títulos | Subpestañas con contador (Cuarto Nivel/Grado), celda `sreg` (slot) y genérica (`—`), editar→cerrar, cambio de pestaña |
+| **Experiencia** | Los 3 casos irreductibles: columna **FUNCIONES→CÁTEDRAS** al cambiar de pestaña, join de funciones, fecha y **"Actualidad"** |
+| Referencias | Tabs por tipo con contador, editar→cerrar |
+| Capacitación | Celdas de fecha, tabs, y **el colapso de 4.1 sigue** (editar = 1 modal) |
+| Certificación | **Sin** subpestañas (subsections vacío), descripción truncada, columnas |
+
+**Lo que no fue conducible en dev, cubierto por test**: el flujo de borrado (el usuario de dev no tiene
+permiso `dossier.delete`, así que el botón sale deshabilitado — comportamiento correcto e idéntico al
+original). `DossierSectionCrud.test.js` (+6) prueba que el slot `#delete-question` recibe el registro y que
+confirmar llama a `deleteRecord` con el `_id`, **verificado por mutación**. **218 tests** en total.
+
+> ⚠️ **Warnings preexistentes, NO introducidos**: `AgregarCapacitacion` monta `SSelect`/`SInput` sin pasar
+> `label`/`placeholder` (props requeridas) → avisos de Vue en consola. Están en varios `Agregar*` desde
+> antes de esta fase; no rompen nada. Deuda menor para un barrido aparte.
