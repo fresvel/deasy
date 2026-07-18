@@ -504,6 +504,23 @@ canvas de Vue Flow; consola limpia. Lint limpio, **218 tests**. `AdminView` no l
 > Queda para 3.5d: grafo/firma a ruta propia (serializar `graphTabActive`), y arreglar el selector global de
 > `ProcessGraphView.vue:1098`. El marcador "rutas planas" sigue cierto (aún es una ruta parametrizada, no children).
 
+##### 3.5d — grafos con URL propia (parte 1 de 2)
+
+Los grafos se muestran **sobre** la tabla `units`/`processes` (con `force-graph`/`force-process-graph` dentro de
+`AdminTableManager`), no como componentes sueltos. Ahora tienen su propio `:table`: **`organigrama`** (sobre `units`) y
+**`mapa`** (sobre `processes`). `syncAdminUrl` serializa el flag de grafo a ese slug y `hydrateFromRoute` lo reconstruye
+(`selectTable(units/processes)` + activar el flag). Se añadieron `graphTabActive`/`processGraphTabActive` a las fuentes del
+`watch` para que activar/desactivar el grafo (caso in-place, sin cambio de tabla) actualice la URL.
+
+**Verificado en navegador**: activar Organigrama → `/admin/academia/unidades/organigrama`; **F5 mantiene el grafo** (15 nodos,
+canvas visible, **sin** tabla CRUD); Mapa de procesos → `/admin/gestiones/procesos/mapa`, F5 → 3 nodos. Consola limpia, lint
+limpio, 218 tests. **La firma (`isSigningView`) NO se enruta** — es overlay modal sobre el contexto, por diseño (§4.2).
+
+> Parte 2 de 2 (commit aparte, es un **fix de bug**, no enrutado): el footgun del selector global de `exportPng`.
+> `UnitGraphView:635` y `ProcessGraphView:1098` hacen `document.querySelector(".unit-graph-canvas .vue-flow")` sobre la
+> **misma clase** (ProcessGraph copió `unit-graph-canvas`). Hoy latente (nunca se montan a la vez), pero se acota cada
+> `exportPng` a su propia raíz vía template ref.
+
 #### 3.1 — completada (16-07-2026)
 
 **`modules/firmas/views/SignatureCenterView.vue`** sirve `/home/firmas`. El corte salió barato porque el

@@ -1250,9 +1250,10 @@ const goAdminHome = () => {
 
 // --- Enrutado por URL (Fase 3.5a) ---------------------------------------------------------------
 // La ruta /admin/:section?/:item?/:table? refleja el estado de navegacion para dar deep-link, F5 y
-// boton atras. Paso ADITIVO: los refs siguen siendo la fuente de verdad; aqui solo se sincroniza la
-// URL en ambos sentidos. Los refs se sustituiran por route.params en 3.5c. Grafo y firma no se
-// serializan todavia (llegan en 3.5d): F5 sobre el organigrama recae en su tabla, interino conocido.
+// boton atras. Los refs son la copia de trabajo intra-montaje: App.vue remonta la vista por
+// route.fullPath, asi que se re-derivan de la URL en cada navegacion (la URL es la fuente de verdad).
+// syncAdminUrl escribe la URL y hydrateFromRoute la reconstruye. Los grafos son :table propios
+// (organigrama/mapa, 3.5d). La firma (isSigningView) es overlay modal, NO ruta (por diseno).
 const activeItemKey = computed(() =>
   selectedAcademyItem.value
   || selectedGestionItem.value
@@ -1262,11 +1263,19 @@ const activeItemKey = computed(() =>
   || ""
 );
 
+// El grafo se muestra SOBRE la tabla units/processes (force-graph); en la URL es su propio :table.
+const UNIT_GRAPH_SLUG = "organigrama";
+const PROCESS_GRAPH_SLUG = "mapa";
+
 const syncAdminUrl = () => {
   const params = {};
   if (selectedSection.value) params.section = SECTION_SLUG_BY_KEY[selectedSection.value] || selectedSection.value;
   const itemKey = activeItemKey.value;
-  const tableName = selectedTable.value?.table || "";
+  const tableName = graphTabActive.value
+    ? UNIT_GRAPH_SLUG
+    : processGraphTabActive.value
+      ? PROCESS_GRAPH_SLUG
+      : (selectedTable.value?.table || "");
   // El item es posicional: si hay tabla sin item resuelto, se usa "-" como marcador de hueco.
   if (params.section && (itemKey || tableName)) params.item = itemKey || "-";
   if (tableName) params.table = tableName;
@@ -1282,7 +1291,7 @@ const syncAdminUrl = () => {
   router.push({ name: "admin", params }).catch(() => {});
 };
 
-watch([selectedSection, selectedTable, activeItemKey], syncAdminUrl);
+watch([selectedSection, selectedTable, activeItemKey, graphTabActive, processGraphTabActive], syncAdminUrl);
 
 const findTableByName = (name) => {
   for (const group of groupedTables.value) {
@@ -1308,6 +1317,23 @@ const openSectionIndexByKey = (key) => {
 // Reconstruye el estado desde la URL al cargar (deep-link / F5). Requiere el catalogo ya cargado.
 const hydrateFromRoute = () => {
   const tableName = route.params.table;
+  // Los grafos son :table propios (organigrama/mapa): se muestran sobre units/processes con force-graph.
+  if (tableName === UNIT_GRAPH_SLUG) {
+    const unitsTable = findTableByName("units");
+    if (unitsTable) {
+      selectTable(unitsTable);
+      graphTabActive.value = true;
+      return;
+    }
+  }
+  if (tableName === PROCESS_GRAPH_SLUG) {
+    const processesTable = findTableByName("processes");
+    if (processesTable) {
+      selectTable(processesTable);
+      processGraphTabActive.value = true;
+      return;
+    }
+  }
   if (tableName) {
     const table = findTableByName(tableName);
     if (table) {
