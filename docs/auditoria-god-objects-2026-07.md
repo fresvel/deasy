@@ -114,6 +114,15 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   `spawn`). `SqlAdminService.js` 5535 → **5300 L** (−235). Verificado: `node --check`, backend arranca, **char 119/119**, unit
   177/177, y **smoke MinIO real**: `template_seeds/:id/download` → 200 (`downloadMinioPrefixToDirectory`+zip), preview ejercita
   `listMinioObjects` (404 preexistente por datos, no crash). **`SqlAdminService.js`: 5924 → 5300 L en los cuts #1+#2 (−624).**
+- **Cut #3 `TemplateArtifactService` HECHO** (`SqlAdminService.templateArtifact.js`, 544 L): ciclo de vida de artifacts
+  (publicar/retirar/versionar, esquema, fuente, activación) — 12 métodos. **Alcance reducido a propósito**: se deja fuera
+  `saveTemplateArtifactDraft` (542 L, God-method que llama 6 colaboradores de scope/workflow → necesita su propia
+  descomposición). El cluster reducido solo depende de `ensurePool`+`getByKeys` (patrón clase con estado + 11 delegadores,
+  como #2). El módulo importa 6 funciones de `storage.js` + `parseAvailableFormats` de `.artifacts.js`; 3 consts de config
+  espejadas (deuda menor: unificar en módulo de constantes). `SqlAdminService.js` 5300 → **4823 L** (−477). Verificado:
+  `node --check`, backend arranca, **char 119/119** (schema+versions vía delegador→módulo), unit 177/177, smoke de escritura
+  (`POST .../version` ejecuta el módulo hasta una regla de negocio preexistente, no crash). **Acumulado #1+#2+#3: 5924 → 4823
+  L (−1101, −19%).**
 
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
