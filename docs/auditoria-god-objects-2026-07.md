@@ -123,6 +123,17 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   `node --check`, backend arranca, **char 119/119** (schema+versions vía delegador→módulo), unit 177/177, smoke de escritura
   (`POST .../version` ejecuta el módulo hasta una regla de negocio preexistente, no crash). **Acumulado #1+#2+#3: 5924 → 4823
   L (−1101, −19%).**
+- **Cut #4 `ProcessDefinitionVersionService` HECHO** (`SqlAdminService.processDefinitionVersion.js`, 540 L): series, versionado,
+  clonado y contexto de borrador — 13 métodos. Cluster limpio: solo `ensurePool` + `getByKeys` + **`syncArtifactWorkflows`**
+  (1 dep de workflow, inyectada); helpers puros importados de `processDefinitionSeries.js` / `.versioning.js` / `.primitives.js`.
+  Patrón clase con estado + 13 delegadores → controller y los grafts de `create()`/`update()` (que llaman resolve/ensure/clone/
+  refresh — las tablas más "grafted") **no se tocan**. `SqlAdminService.js` 4823 → **4341 L** (−482). **Acumulado #1-#4: 5924 →
+  4341 L (−1583, −27%).** Verificado: backend arranca, **char 119/119** (series-scope + flujo de launch que ejercita versionado
+  + grafts), unit 177/177.
+  > ⚠️ **Lección de la ejecución**: `node --check` valida SINTAXIS, **no resolución de imports**. El primer intento importó
+  > `buildProcessDefinitionVersionName` de `.versioning.js` cuando en realidad vive en `processDefinitionSeries.js` → el backend
+  > **crasheó al arrancar** (`does not provide an export`), no en `node --check`. **Verificar SIEMPRE que el backend arranca
+  > (logs "Servidor iniciado", sin SyntaxError) antes de correr char.**
 
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
