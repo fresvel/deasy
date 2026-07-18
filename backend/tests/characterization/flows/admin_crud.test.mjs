@@ -21,7 +21,7 @@ import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { get, post, put, del } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
-import { normalize } from "../lib/normalize.mjs";
+import { normalize, listFingerprint } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
 import { FIXTURE } from "../config.mjs";
@@ -193,3 +193,70 @@ test("GET /admin/sql/template_artifacts/:id/schema -> esquema del artifact", asy
     topLevelKeys: Object.keys(res.body ?? {}).sort(),
   });
 });
+
+// --- 5. Contrato de LECTURA del list() genérico ------------------------------
+// El motor de lectura de SqlAdminService (`list`) no tenía NINGÚN test. Se fija su
+// huella (status + conteo + contrato de columnas) sobre las tablas que el refactor
+// por Extract Class va a tocar: si mover código altera qué columnas devuelve el list
+// de una tabla, o rompe la consulta, esto lo detecta. Conteo y claves son deterministas
+// con el bootstrap+seed de la fixture. Es la guardia del futuro `SqlCrudEngine`.
+const LIST_TABLES = [
+  "persons", "units", "unit_types", "unit_relations", "relation_unit_types",
+  "cargos", "unit_positions", "position_assignments", "term_types", "terms",
+  "processes", "process_definition_series", "process_definition_versions",
+  "process_target_rules", "process_definition_templates",
+  "template_seeds", "template_artifacts",
+  "tasks", "task_items", "task_assignments", "documents", "document_versions",
+  "roles", "permissions", "role_permissions", "cargo_role_map",
+];
+
+for (const table of LIST_TABLES) {
+  test(`GET /admin/sql/${table} -> contrato de lectura del list()`, async () => {
+    const token = await tokenFor("admin");
+    const res = await get(`/admin/sql/${table}`, { token });
+    matchSnapshot(SUITE, `list_${table}`, listFingerprint(res));
+  });
+}
+
+// --- 6. Endpoints de LECTURA de los subsistemas (guardia del Extract Class) ---
+// Cada uno vive en un subsistema que el refactor separará en su propia clase
+// (versionado de definiciones, target-scope/series, task-assignment, artifacts).
+// Son GET puros, sin efectos. Se fija su forma de respuesta; el valor concreto no
+// importa, sí que el endpoint siga respondiendo con la misma forma tras mover el código.
+test("GET /admin/sql/template_artifacts/versions -> versiones de artifacts", async () => {
+  const token = await tokenFor("admin");
+  const res = await get("/admin/sql/template_artifacts/versions", { token });
+  matchSnapshot(SUITE, "template_artifact_versions", listFingerprint(res));
+});
+
+const READ_SUBSYSTEM_CASES = [
+  ["activation_diff", `/admin/sql/process_definitions/${FIXTURE.definitionId}/activation-diff`],
+  ["target_scope", `/admin/sql/process_definitions/${FIXTURE.definitionId}/target-scope`],
+  ["resolvable_cargos", `/admin/sql/process_definitions/${FIXTURE.definitionId}/resolvable-cargos`],
+  ["series_scope", `/admin/sql/process_definitions/${FIXTURE.definitionId}/series-scope`],
+  ["stuck_task_items", "/admin/sql/task-items/stuck"],
+  ["unit_attachable_processes", `/admin/sql/units/${FIXTURE.unitId}/attachable-processes`],
+];
+
+// Huella estable para respuestas que pueden ser array u objeto: solo forma, sin
+// contenido volátil (un objeto se reduce a sus claves de primer nivel).
+const readShape = (res) => ({
+  status: res.status,
+  shape: Array.isArray(res.body)
+    ? {
+        isArray: true,
+        count: res.body.length,
+        itemKeys: [
+          ...new Set(res.body.flatMap((r) => (r && typeof r === "object" ? Object.keys(r) : []))),
+        ].sort(),
+      }
+    : { isArray: false, topLevelKeys: Object.keys(res.body ?? {}).sort() },
+});
+
+for (const [key, path] of READ_SUBSYSTEM_CASES) {
+  test(`GET ${path} -> ${key}`, async () => {
+    const token = await tokenFor("admin");
+    const res = await get(path, { token });
+    matchSnapshot(SUITE, `read_${key}`, readShape(res));
+  });
+}

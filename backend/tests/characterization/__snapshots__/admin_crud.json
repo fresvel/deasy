@@ -47,6 +47,401 @@
       "message": "Selecciona una serie valida para la configuracion."
     }
   },
+  "list_cargo_role_map": {
+    "status": 200,
+    "isArray": true,
+    "count": 4,
+    "itemKeys": [
+      "cargo_id",
+      "id",
+      "role_id"
+    ]
+  },
+  "list_cargos": {
+    "status": 200,
+    "isArray": true,
+    "count": 7,
+    "itemKeys": [
+      "code",
+      "description",
+      "id",
+      "is_active",
+      "name"
+    ]
+  },
+  "list_document_versions": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "document_id",
+      "final_file_path",
+      "format",
+      "id",
+      "payload_hash",
+      "payload_object_path",
+      "render_engine",
+      "status",
+      "template_artifact_id",
+      "version",
+      "working_file_path"
+    ]
+  },
+  "list_documents": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "comments_thread_ref",
+      "created_at",
+      "id",
+      "origin_type",
+      "owner_person_id",
+      "status",
+      "task_item_id",
+      "title",
+      "updated_at"
+    ]
+  },
+  "list_permissions": {
+    "status": 200,
+    "isArray": true,
+    "count": 50,
+    "itemKeys": [
+      "code",
+      "description",
+      "id"
+    ]
+  },
+  "list_persons": {
+    "status": 200,
+    "isArray": true,
+    "count": 43,
+    "itemKeys": [
+      "cedula",
+      "created_at",
+      "direccion",
+      "email",
+      "first_name",
+      "id",
+      "is_active",
+      "last_name",
+      "pais",
+      "photo_url",
+      "status",
+      "updated_at",
+      "verify_email",
+      "verify_whatsapp",
+      "whatsapp"
+    ]
+  },
+  "list_position_assignments": {
+    "status": 200,
+    "isArray": true,
+    "count": 41,
+    "itemKeys": [
+      "created_at",
+      "current_flag",
+      "end_date",
+      "id",
+      "is_current",
+      "person_id",
+      "position_id",
+      "start_date",
+      "updated_at"
+    ]
+  },
+  "list_process_definition_series": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "cargo_id",
+      "code",
+      "created_at",
+      "id",
+      "is_active",
+      "source_type",
+      "unit_type_id"
+    ]
+  },
+  "list_process_definition_templates": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "id",
+      "item_mode",
+      "process_definition_id",
+      "sort_order",
+      "template_artifact_id"
+    ]
+  },
+  "list_process_definition_versions": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "definition_version",
+      "description",
+      "effective_from",
+      "effective_to",
+      "id",
+      "name",
+      "process_id",
+      "series_id",
+      "status",
+      "variation_key"
+    ]
+  },
+  "list_process_target_rules": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "cargo_id",
+      "created_at",
+      "effective_from",
+      "effective_to",
+      "id",
+      "is_active",
+      "position_id",
+      "priority",
+      "process_definition_id",
+      "recipient_policy",
+      "unit_id",
+      "unit_scope_type",
+      "unit_type_id"
+    ]
+  },
+  "list_processes": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "active_definition_status",
+      "active_definition_version",
+      "created_at",
+      "id",
+      "is_active",
+      "name",
+      "parent_id",
+      "slug"
+    ]
+  },
+  "list_relation_unit_types": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "code",
+      "created_at",
+      "description",
+      "id",
+      "is_active",
+      "is_inheritance_allowed",
+      "name"
+    ]
+  },
+  "list_role_permissions": {
+    "status": 200,
+    "isArray": true,
+    "count": 50,
+    "itemKeys": [
+      "id",
+      "permission_id",
+      "role_id"
+    ]
+  },
+  "list_roles": {
+    "status": 200,
+    "isArray": true,
+    "count": 13,
+    "itemKeys": [
+      "description",
+      "id",
+      "is_active",
+      "name"
+    ]
+  },
+  "list_task_assignments": {
+    "status": 200,
+    "isArray": true,
+    "count": 0,
+    "itemKeys": []
+  },
+  "list_task_items": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "assigned_person_id",
+      "created_at",
+      "created_by_person_id",
+      "end_date",
+      "id",
+      "origin_kind",
+      "process_definition_template_id",
+      "responsible_position_id",
+      "sort_order",
+      "source_task_item_id",
+      "start_date",
+      "status",
+      "target_person_id",
+      "target_position_id",
+      "target_unit_id",
+      "task_id",
+      "template_artifact_id",
+      "title",
+      "user_started_at"
+    ]
+  },
+  "list_tasks": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "comments_thread_ref",
+      "created_at",
+      "created_by_user_id",
+      "description",
+      "end_date",
+      "id",
+      "process_definition_id",
+      "process_run_id",
+      "responsible_position_id",
+      "scope_unit_id",
+      "start_date",
+      "status",
+      "term_id"
+    ]
+  },
+  "list_template_artifacts": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "available_formats",
+      "base_object_prefix",
+      "content_hash",
+      "created_at",
+      "description",
+      "display_name",
+      "id",
+      "is_active",
+      "lifecycle_state",
+      "meta_object_key",
+      "owner_person_id",
+      "parent_version_id",
+      "schema_object_key",
+      "storage_version",
+      "template_code",
+      "template_scope",
+      "template_seed_id"
+    ]
+  },
+  "list_template_seeds": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "description",
+      "display_name",
+      "id",
+      "is_active",
+      "preview_path",
+      "seed_code",
+      "seed_type",
+      "source_path"
+    ]
+  },
+  "list_term_types": {
+    "status": 200,
+    "isArray": true,
+    "count": 5,
+    "itemKeys": [
+      "code",
+      "created_at",
+      "description",
+      "id",
+      "is_active",
+      "name",
+      "updated_at"
+    ]
+  },
+  "list_terms": {
+    "status": 200,
+    "isArray": true,
+    "count": 2,
+    "itemKeys": [
+      "end_date",
+      "id",
+      "is_active",
+      "name",
+      "start_date",
+      "term_type_id"
+    ]
+  },
+  "list_unit_positions": {
+    "status": 200,
+    "isArray": true,
+    "count": 40,
+    "itemKeys": [
+      "cargo_id",
+      "created_at",
+      "id",
+      "is_active",
+      "is_unit_head",
+      "position_type",
+      "profile",
+      "slot_no",
+      "title",
+      "unit_id",
+      "updated_at"
+    ]
+  },
+  "list_unit_relations": {
+    "status": 200,
+    "isArray": true,
+    "count": 12,
+    "itemKeys": [
+      "child_unit_id",
+      "created_at",
+      "id",
+      "parent_unit_id",
+      "relation_type_id"
+    ]
+  },
+  "list_unit_types": {
+    "status": 200,
+    "isArray": true,
+    "count": 9,
+    "itemKeys": [
+      "created_at",
+      "id",
+      "is_active",
+      "name"
+    ]
+  },
+  "list_units": {
+    "status": 200,
+    "isArray": true,
+    "count": 14,
+    "itemKeys": [
+      "created_at",
+      "id",
+      "is_active",
+      "label",
+      "name",
+      "slug",
+      "unit_type_id",
+      "updated_at"
+    ]
+  },
   "process_detail": {
     "status": 200,
     "topLevelKeys": [
@@ -86,6 +481,74 @@
     ],
     "edgeKeys": []
   },
+  "read_activation_diff": {
+    "status": 200,
+    "shape": {
+      "isArray": false,
+      "topLevelKeys": [
+        "config_status",
+        "from_version",
+        "has_active",
+        "period_types",
+        "rules",
+        "templates",
+        "to_version"
+      ]
+    }
+  },
+  "read_resolvable_cargos": {
+    "status": 200,
+    "shape": {
+      "isArray": false,
+      "topLevelKeys": [
+        "cargos"
+      ]
+    }
+  },
+  "read_series_scope": {
+    "status": 200,
+    "shape": {
+      "isArray": false,
+      "topLevelKeys": [
+        "cargo_id",
+        "cargo_name",
+        "source_type",
+        "unit_type_id",
+        "unit_type_name"
+      ]
+    }
+  },
+  "read_stuck_task_items": {
+    "status": 200,
+    "shape": {
+      "isArray": false,
+      "topLevelKeys": [
+        "items"
+      ]
+    }
+  },
+  "read_target_scope": {
+    "status": 200,
+    "shape": {
+      "isArray": false,
+      "topLevelKeys": [
+        "all_units",
+        "cargo_ids",
+        "has_rules",
+        "supports_context",
+        "unit_ids"
+      ]
+    }
+  },
+  "read_unit_attachable_processes": {
+    "status": 200,
+    "shape": {
+      "isArray": false,
+      "topLevelKeys": [
+        "definitions"
+      ]
+    }
+  },
   "roundtrip_create": {
     "status": 200,
     "body": {
@@ -119,6 +582,12 @@
       "signature_workflow",
       "template_code"
     ]
+  },
+  "template_artifact_versions": {
+    "status": 200,
+    "isArray": true,
+    "count": 0,
+    "itemKeys": []
   },
   "unit_detail": {
     "status": 200,
