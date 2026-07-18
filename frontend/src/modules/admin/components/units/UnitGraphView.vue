@@ -69,7 +69,7 @@
       {{ feedback.message }}
     </div>
 
-    <div class="unit-graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
+    <div ref="graphCanvas" class="unit-graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando organigrama…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-slate-400">No hay unidades para mostrar.</div>
@@ -631,9 +631,12 @@ const searchAndCenter = () => {
   fitView({ nodes: [{ id: String(match.id) }], duration: 600, maxZoom: 1.2, padding: 0.6 });
 };
 
+const graphCanvas = ref(null);
+
 const exportPng = async () => {
-  const target = document.querySelector(".unit-graph-canvas .vue-flow")
-    || document.querySelector(".unit-graph-canvas .vue-flow__viewport");
+  // Acotado a la raiz propia (no document.*): evita chocar con el canvas de ProcessGraph, que compartia clase.
+  const root = graphCanvas.value;
+  const target = root?.querySelector(".vue-flow") || root?.querySelector(".vue-flow__viewport");
   if (!target) {
     setFeedback("error", "No se encontró el lienzo para exportar.");
     return;

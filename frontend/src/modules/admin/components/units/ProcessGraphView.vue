@@ -43,7 +43,7 @@
       {{ feedback.message }}
     </div>
 
-    <div class="unit-graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
+    <div ref="graphCanvas" class="process-graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando mapa de procesos…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-slate-400">No hay procesos para mostrar.</div>
@@ -1094,9 +1094,13 @@ const toggleTemplatesView = () => {
   expandAllTemplates(showTemplates.value);
 };
 
+const graphCanvas = ref(null);
+
 const exportPng = async () => {
-  const target = document.querySelector(".unit-graph-canvas .vue-flow")
-    || document.querySelector(".unit-graph-canvas .vue-flow__viewport");
+  // Acotado a la raiz propia (no document.*): ProcessGraph y UnitGraph coexistian con la misma clase
+  // global .unit-graph-canvas, asi que un querySelector global podia exportar el grafo equivocado.
+  const root = graphCanvas.value;
+  const target = root?.querySelector(".vue-flow") || root?.querySelector(".vue-flow__viewport");
   if (!target) {
     setFeedback("error", "No se encontró el lienzo para exportar.");
     return;
@@ -1144,7 +1148,7 @@ defineExpose({
 </script>
 
 <style scoped>
-.unit-graph-canvas {
+.process-graph-canvas {
   height: 70vh;
   min-height: 28rem;
 }
