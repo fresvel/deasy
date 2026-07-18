@@ -286,6 +286,37 @@ describe("guard: sesion", () => {
   });
 });
 
+describe("contrato de URL de /admin (fase 3.5)", () => {
+  // /admin paso de ruta plana a /admin/:section?/:item?/:table? (fase 3.5a-d): la URL refleja
+  // seccion/item/tabla (con slugs de seccion y organigrama/mapa para los grafos) para dar deep-link,
+  // F5 y boton atras. Estos casos congelan ese contrato: cambiarlos rompe enlaces enviados por correo.
+  it("/admin sin params sigue resolviendo a la ruta admin", () => {
+    const resolved = router.resolve("/admin");
+    expect(resolved.name).toBe("admin");
+    expect(resolved.matched[0].components.default.name).toBe("AdminView");
+  });
+
+  it.each([
+    ["/admin/usuarios", { section: "usuarios" }],
+    ["/admin/usuarios/personas/persons", { section: "usuarios", item: "personas", table: "persons" }],
+    ["/admin/academia/unidades/organigrama", { section: "academia", item: "unidades", table: "organigrama" }],
+    ["/admin/gestiones/procesos/mapa", { section: "gestiones", item: "procesos", table: "mapa" }]
+  ])("%s resuelve a 'admin' con los params esperados", (path, params) => {
+    const resolved = router.resolve(path);
+    expect(resolved.name).toBe("admin");
+    expect(resolved.matched[0].components.default.name).toBe("AdminView");
+    expect(resolved.params).toMatchObject(params);
+  });
+
+  it("sigue siendo UNA ruta parametrizada, no children (a diferencia de /perfil)", () => {
+    // El split en paginas hijas (layout + router-view) se aplazo a proposito: el estado de AdminView
+    // no esta desacoplado como las secciones del dossier (ver plan 3.5). Marcador: si /admin gana
+    // children, hay que invertir este test como se hizo con /perfil en la fase 3.4.
+    const admin = router.options.routes.find((r) => r.path.startsWith("/admin"));
+    expect(admin.children).toBeUndefined();
+  });
+});
+
 describe("guard: el admin no entra en el espacio de usuario", () => {
   // adminBlockedRouteNames. Documentado en CLAUDE.md: para probar dossier o firmas hay que entrar
   // como gestor o usuario. Al partir /home en tres paginas (fase 3) hay que preservar las tres.
@@ -329,6 +360,14 @@ describe("guard: permisos por meta", () => {
   it("con permiso, /admin y /procesos se sirven", async () => {
     expect(await goTo("/admin")).toBe("admin");
     expect(await goTo("/procesos")).toBe("process-management");
+  });
+
+  it("una sub-ruta parametrizada de /admin tambien exige canAccessAdmin", async () => {
+    // requiresAdminAccess vive en el unico registro /admin/:section?...; todas las sub-rutas casan
+    // ese registro, asi que el guard cubre /admin/usuarios/personas/persons igual que /admin. Sin este
+    // caso, un deep-link a una tabla admin podria colarse si el guard mirara solo el path exacto.
+    mockCanAccessAdmin.mockReturnValue(false);
+    expect(await goTo("/admin/usuarios/personas/persons")).toBe("home");
   });
 });
 

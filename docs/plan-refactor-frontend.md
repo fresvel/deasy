@@ -425,7 +425,7 @@ Por orden de riesgo creciente. **`/home/firmas` primero**: 2 líneas, cero estad
 | 3.2 | `/home/documentos` → `DocumentCenterView` | **Reestimada** — ver abajo |
 | 3.3 | `/home` → `HomeDashboardView`; **HomeView desaparece** | Medio |
 | 3.4 | `/perfil/*` con `children` + rename `*View` → `*Section` | ✅ **hecha** |
-| 3.5 | `/admin` → `:section/:item/:table?`. **Reformulada** — ver abajo (3.5a ✅) | Alto |
+| 3.5 | `/admin` → `:section/:item/:table?`. **Reformulada** — ver abajo (3.5a–e ✅; split a children **descartado**) | Alto |
 | 3.6 | Modales de HomeView → componentes (patrón `GeneralTaskModal`, ya probado) | Medio |
 
 > ⚠️ **Fase 3.4 añade funcionalidad por eliminación** (el deep-link aparece solo). Ese matiz importa: es refactor **y** feature → commits separados.
@@ -520,6 +520,30 @@ limpio, 218 tests. **La firma (`isSigningView`) NO se enruta** — es overlay mo
 > `UnitGraphView:635` y `ProcessGraphView:1098` hacen `document.querySelector(".unit-graph-canvas .vue-flow")` sobre la
 > **misma clase** (ProcessGraph copió `unit-graph-canvas`). Hoy latente (nunca se montan a la vez), pero se acota cada
 > `exportPng` a su propia raíz vía template ref.
+
+##### 3.5d parte 2 — completada. **Muere el footgun del selector global.**
+
+Cada `exportPng` consulta ahora dentro de su **propia raíz** (`ref="graphCanvas"`), no con `document.querySelector`.
+`ProcessGraphView` renombra además su clase `unit-graph-canvas` → `process-graph-canvas` (era una copia). **Verificado en
+navegador**: en `/organigrama` hay **un** `.unit-graph-canvas` que contiene su `.vue-flow`; en `/mapa`, `.process-graph-canvas`
+contiene el suyo y **cero** `.unit-graph-canvas`. Lint limpio, 218 tests.
+
+##### 3.5e — completada. **El contrato de URL de admin queda congelado.**
+
+`core/router/index.test.js` (+7, **de 218 a 225**): los param-combos resuelven a `admin` con sus params
+(`/admin/usuarios/personas/persons`, `/admin/academia/unidades/organigrama`, `/admin/gestiones/procesos/mapa`), el guard
+`requiresAdminAccess` cubre **una sub-ruta parametrizada** (deep-link a una tabla admin no se cuela), y un marcador vigila que
+`/admin` **siga siendo una ruta parametrizada, no children** (a invertir si algún día se hace el split). **Dientes verificados
+por mutación**: revertir la ruta a `/admin` plana tumba exactamente los 5 casos del nuevo contrato, ni uno más.
+
+#### Fase 3.5 — cierre
+
+`/admin` pasó de ruta plana con 8 refs locales a `/admin/:section?/:item?/:table?` con deep-link, F5 y botón atrás, slugs
+humanos, grafos enlazables y `useAdminTableReset` borrado. **El split a páginas hijas (layout + `router-view`) se descartó, no
+se pospuso**: `App.vue` monta la vista con `:key="route.fullPath"`, así que la vista **ya se remonta e hidrata desde la URL en
+cada navegación** — la URL es la fuente de verdad y los refs son copia de trabajo intra-montaje. Partir el componente sería
+cosmético y de riesgo alto sin ganancia observable. Queda como deuda menor: los ~40 `= ""` de exclusión mutua de `selectTable`
+(inofensivos; el remount los haría redundantes solo si se borraran los refs) y el ítem posicional con marcador `-`.
 
 #### 3.1 — completada (16-07-2026)
 
