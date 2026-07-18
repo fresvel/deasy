@@ -478,6 +478,32 @@ escribir y `hydrateFromRoute` slug→key al leer; `selectedSection` sigue siendo
 (slug de sección + item `procesos` conviven sin choque); F5 hidrata la tabla; deep-link directo a `/admin/academia` abre el
 índice de Academia (conversión slug→key en hidratación). Consola limpia, lint limpio, 218 tests.
 
+##### 3.5c — completada. **Muere `useAdminTableReset.js` (−148 L).**
+
+**Descubrimiento que reformula el paso**: `App.vue:2` monta la vista con `<router-view :key="route.fullPath">`, así que
+**la vista se remonta en CADA navegación** (verificado: `history.back()` client-side re-hidrata sin recarga). Dos consecuencias:
+
+1. **La inversión "refs → `route.params`" que el plan pedía NO hace falta.** Con el remount, los 8 refs de `AdminView`
+   **ya se re-derivan de la URL en cada montaje** vía `hydrateFromRoute`; nada persiste entre navegaciones. La URL **ya es**
+   la fuente de verdad; los refs son solo copia de trabajo intra-montaje. Borrarlos sería cosmético y de riesgo alto → **no se
+   hace** (misma disciplina de "medir y corregir el plan" de 2.2/3.2).
+2. **`useAdminTableReset.js` (148 L) era redundante.** Era un `watch(() => props.table?.table)` que reseteaba a mano ~40 refs
+   (searchTerm, filtros, opciones, modales) al cambiar de tabla. Pero cambiar de tabla **siempre** pasa por `router.push` →
+   cambia `fullPath` → **remonta** `AdminTableManager` con el `setup` fresco (searchTerm=`""`, filtros vacíos, modales
+   cerrados). El reset a mano emulaba lo que el remontaje da gratis. **El bug de `searchTerm` se cura por construcción.**
+
+Se sustituyó por un `onMounted` en `AdminTableManager` que conserva **solo la carga inicial** del composable (opciones de
+filtro según el tipo de tabla + `fetchRows`); el reset de estado lo da el remount. `AdminTableManager` **no tenía `onMounted`**:
+la única carga inicial era el `immediate:true` del `watch` borrado, así que había que preservarla.
+
+**Verificado en navegador**: `persons` (43 filas) y **`unit_positions` (48 filas + los 3 selects de filtro poblados** — la rama
+`isPositionFilterTable` del `onMounted` corre); el toggle del **Organigrama** (caso in-place, sin remount) sigue renderizando el
+canvas de Vue Flow; consola limpia. Lint limpio, **218 tests**. `AdminView` no llama a `AdminTableManager` de forma imperativa
+(solo `ref=` en template), así que el remount por tabla es seguro.
+
+> Queda para 3.5d: grafo/firma a ruta propia (serializar `graphTabActive`), y arreglar el selector global de
+> `ProcessGraphView.vue:1098`. El marcador "rutas planas" sigue cierto (aún es una ruta parametrizada, no children).
+
 #### 3.1 — completada (16-07-2026)
 
 **`modules/firmas/views/SignatureCenterView.vue`** sirve `/home/firmas`. El corte salió barato porque el

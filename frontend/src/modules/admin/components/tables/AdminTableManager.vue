@@ -1031,7 +1031,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
+import { computed, defineAsyncComponent, defineEmits, defineProps, defineExpose, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useAdminFkManager } from "@/modules/admin/composables/fk/useAdminFkManager";
 import { useAdminFkCrud } from "@/modules/admin/composables/fk/useAdminFkCrud";
 import { useAdminFkSearch } from "@/modules/admin/composables/fk/useAdminFkSearch";
@@ -1047,7 +1047,6 @@ import { useAdminPresentationAdapters } from "@/modules/admin/composables/ui/use
 import { useAdminShellHelpers } from "@/modules/admin/composables/ui/useAdminShellHelpers";
 import { useAdminShellSearchActions } from "@/modules/admin/composables/data/useAdminShellSearchActions";
 import { useAdminSyncActions } from "@/modules/admin/composables/data/useAdminSyncActions";
-import { useAdminTableReset } from "@/modules/admin/composables/data/useAdminTableReset";
 import { usePersonAssignmentsManager } from "@/modules/admin/composables/processes/usePersonAssignmentsManager";
 import { useAdminRecordViewer } from "@/modules/admin/composables/data/useAdminRecordViewer";
 import { useAdminSearchFilters } from "@/modules/admin/composables/data/useAdminSearchFilters";
@@ -4180,56 +4179,25 @@ const {
 });
 
 
-useAdminTableReset({
-  props,
-  isModalShown,
-  personAssignmentsModal,
-  unitPositionSearchModal,
-  getPersonAssignmentsInstance,
-  getUnitPositionSearchInstance,
-  resetInlineFkState,
-  resetForm,
-  resetPersonAssignments,
-  positionMetaById,
-  searchTerm,
-  vacantSearchTerm,
-  vacantPositionRows,
-  vacantPositionError,
-  vacantPositionLoading,
-  processFilters,
-  processFilterLabels,
-  templateFilters,
-  templateFilterLabels,
-  documentFilters,
-  documentFilterLabels,
-  unitPositionFilters,
-  vacantPositionFilters,
-  unitPositionUnitTypeOptions,
-  unitPositionUnitOptions,
-  unitPositionCargoOptions,
-  vacantPositionUnitTypeOptions,
-  vacantPositionUnitOptions,
-  vacantPositionCargoOptions,
-  unassignedTemplateArtifactSearch,
-  unassignedTemplateArtifactFilters,
-  unassignedTemplateArtifactRows,
-  unassignedTemplateArtifactError,
-  unassignedTemplateArtifactLoading,
-  processDefinitionInlineFilters,
-  processTargetRuleInlineFilters,
-  templateArtifactInlineFilters,
-  processDefinitionProcessOptions,
-  processDefinitionSeriesOptions,
-  isPositionFilterTable,
-  isPositionAssignmentsTable,
-  isProcessDefinitionFilterTable,
-  loadUnitPositionUnitTypeOptions,
-  loadUnitPositionCargoOptions,
-  loadVacantPositionUnitTypeOptions,
-  loadVacantPositionCargoOptions,
-  loadProcessDefinitionProcessOptions,
-  loadProcessDefinitionSeriesOptions,
-  fetchRows
+// El estado por-tabla se resetea SOLO por el remontaje: App.vue monta la vista con
+// :key="route.fullPath", asi que cambiar de tabla/seccion recrea AdminTableManager con el setup
+// fresco (searchTerm="", filtros vacios, modales cerrados, opciones vacias). Antes esto lo emulaba
+// a mano useAdminTableReset (watch sobre props.table + reset de ~40 refs); con el remontaje solo
+// queda su carga inicial (opciones de filtro segun el tipo de tabla + fetch de filas).
+onMounted(async () => {
+  if (isPositionFilterTable.value) {
+    await loadUnitPositionUnitTypeOptions();
+    await loadUnitPositionCargoOptions();
+  }
+  if (isPositionAssignmentsTable.value) {
+    await loadVacantPositionUnitTypeOptions();
+    await loadVacantPositionCargoOptions();
+  }
+  if (isProcessDefinitionFilterTable.value) {
+    await loadProcessDefinitionProcessOptions();
+    await loadProcessDefinitionSeriesOptions();
+  }
+  await fetchRows();
 });
 
 onBeforeUnmount(() => {
