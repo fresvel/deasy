@@ -98,6 +98,16 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
 3. **Precondición innegociable:** characterization tests HTTP sobre los endpoints admin **antes** de mover
    nada (el harness `backend/tests/characterization/` ya existe; ampliarlo).
 
+**Progreso (2026-07-17):**
+- **Caracterización ampliada** (char 86 → **119**): contrato de lectura del `list()` genérico (26 tablas) + 7 GET de
+  subsistemas (activation-diff, target-scope, resolvable-cargos, series-scope, stuck, attachable-processes, artifact-versions).
+  Es la red para los cuts. Puramente aditiva (goldens previos intactos).
+- **Cut #2 `OrgStructureService` HECHO** (`SqlAdminService.orgStructure.js`, 437 L): 13 métodos de unidades/puestos/grafo
+  extraídos por script. El cluster era autocontenido (solo `this.pool` + `getByKeys` inyectado). `SqlAdminService` mantiene
+  **12 delegadores** con la misma firma → controller y grafts de `create()`/`update()` (que llaman `this.wouldCreateUnitCycle`
+  / `this.assertUnitHeadAllowed`) **no se tocan**. `SqlAdminService.js` 5924 → **5535 L** (−389). Verificado: `node --check`,
+  backend arranca, **char 119/119**, unit 177/177, organigrama (15 nodos) en navegador, consola limpia.
+
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
 | Fichero:línea | Qué hay | Baja a |
