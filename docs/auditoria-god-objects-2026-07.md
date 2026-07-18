@@ -107,6 +107,13 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   **12 delegadores** con la misma firma → controller y grafts de `create()`/`update()` (que llaman `this.wouldCreateUnitCycle`
   / `this.assertUnitHeadAllowed`) **no se tocan**. `SqlAdminService.js` 5924 → **5535 L** (−389). Verificado: `node --check`,
   backend arranca, **char 119/119**, unit 177/177, organigrama (15 nodos) en navegador, consola limpia.
+- **Cut #1 `MinioStorageService` HECHO** (`SqlAdminService.storage.js`, 266 L): 20 funciones de **nivel de módulo** (MinIO +
+  fs + zip) → patrón **módulo hermano** (no clase con estado): mover funciones + re-importar las 15 usadas fuera; el cliente
+  MinIO es singleton privado del módulo. Único acoplamiento resuelto: `buildProtectedManifest` recibe ahora el prefijo editable
+  por parámetro (no depende de `EDITABLE_CONTENT_SUBPATH`, const de dominio que se queda). Imports muertos podados (`Minio`,
+  `spawn`). `SqlAdminService.js` 5535 → **5300 L** (−235). Verificado: `node --check`, backend arranca, **char 119/119**, unit
+  177/177, y **smoke MinIO real**: `template_seeds/:id/download` → 200 (`downloadMinioPrefixToDirectory`+zip), preview ejercita
+  `listMinioObjects` (404 preexistente por datos, no crash). **`SqlAdminService.js`: 5924 → 5300 L en los cuts #1+#2 (−624).**
 
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
