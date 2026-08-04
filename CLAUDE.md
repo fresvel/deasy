@@ -25,7 +25,6 @@ Each module has its own toolchain and package manager — do not mix them.
 - `signer/` — Python (`pyhanko`) PDF signing microservice with a Node helper in `sigmaker/`; talks to the backend over RabbitMQ + MinIO.
 - `docker/` — multi-environment Compose stacks (`compose.base.yml` + overlays per env).
 - `scripts/` — operational wrappers for startup, deploy, seeds, reset, migrations.
-- `tools/templates/` — Jinja2 template authoring; output published to MinIO.
 
 ## Common commands
 
@@ -56,30 +55,10 @@ npm run start       # node index.js — API on http://localhost:3030/deasy/v1, S
 ```
 The backend has **no declared lint or test scripts**. If adding tests, place them beside the module using the `*.test.js` / `*.spec.js` pattern. Validate affected endpoints manually and document the checks.
 
-### Seeds / DB (Docker-backed, per environment)
-```bash
-bash scripts/seed-db.sh <env> capture|apply|rbac   # PostgreSQL SQL snapshot (pucese.seed.json)
-bash scripts/reset-db.sh <env>                      # reset PostgreSQL schema
-```
-`<env>` ∈ `dev | qa-local | qa | prod`. `apply` **drops and reinserts** the included tables — never run on data you want to keep. `seed-db.sh` only touches the relational SQL; the MinIO buckets are created by the `storage-init` Compose profile (`minio-bootstrap`), and template files live in MinIO uploaded from the web app (see `docs/07-despliegue/COMANDOS_PROYECTO.md`). Incremental DB migrations were retired with the MariaDB migration — `postgres_schema.sql` is the single source of truth for the schema.
-
 ## Architecture
 
-### Backend (`backend/`, no `src/` — modules at root)
-- `index.js` — single large entry point: Swagger definition, CORS, middleware, route mounting, and PostgreSQL bootstrap-with-retry before listen.
-- Layering: `routes/*_router.js` → `controllers/` → `services/` → `models/`. Keep business logic in services/models, never in routers or the frontend.
-- **Respuestas de error**: usa `{ message }` (+ `code` opcional) — es ya el 71% del backend. ⚠️ Conviven **13 formas distintas** (`{error}`, `{ok, error}`, `{success, message, error}`…) y `error` significa *mensaje humano* en unos endpoints y *detalle técnico* en otros. No añadas una forma nueva: ver `docs/contrato-errores-api.md`. En el frontend, lee el error con `resolveApiErrorMessage()` (`shared/utils/apiError.js`), nunca a mano.
-- API base path lives in `config/apiPaths.js` (`API_PREFIX = "/deasy/v1"`, docs at `/deasy/docs`). Route mount paths come from the `ROUTES` constant — add new routers there.
-- **Datastore**: PostgreSQL, single relational core (users, RBAC, processes, chat, notifications, dossier). Schema is bootstrapped from `database/postgres_schema.sql` via `database/postgres_initializer.js` on startup (`ensurePostgresSchema`). Data access goes through `config/postgres.js` — an adapter that mirrors the mysql2 interface (`?`→`$n`, `[rows]`/`insertId` shape, dialect translation), so SQL is written mysql2-style. Everything imports `config/postgres.js` directly (`getPostgresPool`, `assertPostgresConnection`, `closePostgresPool`). The former MariaDB/MongoDB engines were fully retired; no dual-datastore, no Mongoose.
-- **Realtime**: Socket.IO is embedded in the backend HTTP server (`services/realtime/RealtimeGateway.js`) — there is **no external broker** (EMQX/MQTT was removed). The handshake authenticates with the app JWT; clients request to join rooms (`user:{id}`, `conversation:{id}`, `process:{id}`) and the backend validates participation before joining. Only the backend publishes.
-- Async/integration: RabbitMQ queues drive the signer; MinIO stores template artifacts and signed PDFs; `workers/storage_uploader.js` handles uploads.
 
-### Frontend (`frontend/src/`)
-- `modules/` — feature modules (`auth`, `admin`, `procesos`, `dossier`, `firmas`, `academia`, `perfil`, `home`).
-- `core/` — app config, constants, router, cross-cutting services/utils.
-- `shared/` — reusable `components`, `composables`, `styles`, `utils`. Reuse from here before creating local primitives. (There is no `shared/services/`; cross-cutting services live in `core/services/`.)
-- Vue Composition API with `<script setup>`. Global visual behavior lives in `frontend/src/shared/styles/tailwind.css` **and** `shared/styles/theme.css` (both loaded from `main.js`); do not hardcode colors/spacing/radii that already exist as shared classes. ⚠️ Ambos ficheros tienen deuda conocida (selectores redefinidos en conflicto y dos juegos de tokens `--deasy-*`/`--brand-*`): ver `docs/plan-refactor-frontend.md` §3.4 antes de migrar hardcodes.
-- Approved base components to reuse: `AppButton`, `AppDataTable`, `AppModalShell` / `AppFormModalLayout`, `AppTag`, `AppNavCard`, `PdfDropField`.
+
 
 ### Process engine (core domain)
 Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in PostgreSQL. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.
