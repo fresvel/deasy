@@ -1,8 +1,16 @@
-# Prompt para la siguiente sesión — Fases 5 y X del refactor del frontend
+# Prompt para la siguiente sesión — Fases 5 y X del refactor del FRONTEND
 
 > Copia el bloque de abajo como primer mensaje de una sesión nueva de Claude Code.
 > Contexto: continúa el refactor del frontend descrito en `docs/plan-refactor-frontend.md`.
-> Las fases 0 a 4.2 están hechas y commiteadas en `develop` (17 commits, de 2 a 218 tests).
+> Las fases 0 a 4.2 están hechas y commiteadas en `develop`, y también la **3.5** (admin → subrutas).
+>
+> **Track distinto del backend.** Para bajar complejidad en el backend (God Objects, registro de
+> hooks, Sonar) el handoff es `SIGUIENTE-SESION-complejidad-backend.md`. No los mezcles.
+>
+> **Verificado el 2026-08-06 de que esto sigue vigente**: los dos `@layer components` en conflicto
+> siguen ahí (`.deasy-card` en :329, `.deasy-btn--primary` en :570), `AdminModalShell` y
+> `AdminDataTable` siguen existiendo, y los tokens `--brand-*` siguen duplicados en `theme.css`.
+> La **fase 5 se redujo de alcance** — lee la corrección dentro del prompt.
 
 ---
 
@@ -11,15 +19,20 @@ Continúo el refactor del frontend de Deasy (Vue 3 + Vite, dockerizado). El plan
 estado de cada fase están en docs/plan-refactor-frontend.md — léelo primero. Las fases 0 a 4.2
 están hechas y commiteadas en `develop`; ahora quiero las fases 5 y X.
 
-FASE 5 — useDeliverableView posee su estado.
-`modules/home/composables/useDeliverableView.js` (~964 L) es el "Middle Man" que la auditoría
-señaló: recibe 9 refs de HomeView y los muta, cero estado propio. Es el acoplamiento de fondo de
-HomeView. El objetivo es que POSEA su estado (crear los refs dentro y devolverlos), como ya se hizo
-tres veces esta serie: useDeliverableFilePreview, useDocumentCenter y useDossierSection son el patrón
-bueno a imitar. useProcessPanels.js (155 L, 0 refs propios) es el mismo problema, más pequeño, y
-puede ir en el mismo lote. HomeView ya sirve una sola ruta (/home) tras la fase 3, así que es el
-momento. Cuidado: el propio useDeliverableView.js:24-27 documenta por qué NO se hizo puro en su día
-(53 call sites) — hay que mover el estado sin romper esos call sites, un paso cada vez.
+FASE 5 — useProcessPanels posee su estado. (OJO: el alcance de esta fase se REDUJO, lee esto.)
+El plan original decía que `useDeliverableView.js` (~964 L) era un "Middle Man" que recibía 9 refs
+de HomeView y LOS MUTABA. Eso se midió después y es FALSO: tiene CERO asignaciones `.value =` (se
+puede reverificar con `grep -cE '^\s*[a-zA-Z_.]+\.value\s*=' useDeliverableView.js` → 0). Es una
+proyección/derivación READ-ONLY legítima; su "cero estado propio" es la forma correcta, no un smell.
+Los refs que recibe son estado transversal aguas-arriba (identidad, unidades, proceso abierto)
+compartido con otras piezas: hacer que los "posea" INVERTIRÍA el acoplamiento en vez de reducirlo.
+Está documentado en docs/auditoria-god-objects-2026-07.md §6. NO lo conviertas en dueño de su estado.
+Lo único que sí son candidatos genuinos ahí son dos refs sueltos (`deliverableWorkspaceState` y
+`startedDeliverableIds`) a un pequeño `useDeliverableWorkspace` — Move Field, no rediseño.
+
+Lo que SÍ sigue en pie es `useProcessPanels.js` (155 L): ese sí muta refs ajenos (28 asignaciones
+`.value =`), y ese sí debe pasar a poseer su estado. El patrón bueno a imitar:
+useDeliverableFilePreview, useDocumentCenter y useDossierSection.
 
 FASE X — sistema de diseño (BLOQUEANTE de los hardcodes; hacer ANTES de migrar colores).
 No migres los ~1269 valores hardcodeados todavía. Primero hay que arreglar el sistema, o se
