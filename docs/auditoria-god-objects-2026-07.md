@@ -94,11 +94,16 @@ depende de la TÉCNICA. *Extract Class* mueve (cuts #1–#6, #8, #9). *Replace C
 
 | CC | Dónde |
 |---:|---|
-| **158** | `SqlAdminService.templateLifecycle.js` → `saveTemplateArtifactDraft` (needs caracterización multipart antes) |
-| **99** | `SqlAdminService.validation.js` → `validateTableRules` (candidata clara a registro por tabla, como el cut #7) |
+| **158** | `SqlAdminService.templateLifecycle.js:966` → `saveTemplateArtifactDraft` (needs caracterización multipart antes) |
+| ~~99~~ | ~~`SqlAdminService.validation.js` → `validateTableRules`~~ — **HECHO, cut #10** (ver abajo) |
 | 75 | `user_controler.js:1868` → `createGeneralTask` (ya listado en §3.2) |
 | 67 | `frontend/.../useAdminSubmitFlow.js:30` |
-| 59 / 49 | `backend/config/postgres.js` → reescrituras de dialecto |
+| 59 / 49 | `backend/config/postgres.js:111` / `:47` → reescrituras de dialecto |
+| 44 | `frontend/.../FirmarPdf.vue:2482` y `.../useAdminPresentationAdapters.js:94` |
+| 36 | `SqlAdminService.js:261` → `list()`, el motor de lectura con sus 6 injertos |
+
+Tras el cut #10 **la peor función del backend es `saveTemplateArtifactDraft` (158)**, con el doble de complejidad que la
+siguiente. Es el objetivo obvio, y sigue bloqueado por lo mismo: necesita caracterización multipart antes de tocarlo.
 
 > **Nota sobre el marcado manual.** Se confirmó otra vez lo que avisa §1: al mover `PERSON_TOKEN_CHARS` de
 > `SqlAdminService.js` a `.tableHooks.js`, su `S6418` marcado *won't fix* se cerró y **reapareció sin marcar en el fichero
@@ -297,6 +302,54 @@ donde se encadena casi todo el cluster del cut #8.
 **`saveTemplateArtifactDraft` (542 L) sigue sin descomponer**, dicho claro: se movió LITERAL. Su ruta es multipart con subida
 de ficheros y no tiene caracterización propia; partirlo a ciegas sería el error que §1 señala. Es el siguiente trabajo, y
 necesita su red antes. Sí quedó verificado por smoke en sus dos ramas (POST con PDF de referencia y PUT `isEdit`).
+
+#### Cut #10 — `validateTableRules` a registro (2026-08-06, `develop @9e91711`)
+
+El `switch (tableName)` de `SqlAdminService.validation.js`: 22 `case`, 159 ncloc, **CC 99**, la densidad más alta de la
+familia (0,49 CC/ncloc). Mismo olor que los cuts #7/#7b quitaron de create/update/remove, pero en forma de switch — por eso
+§3.1 lo pasó por alto en su momento ("no es un switch", dicho mirando el otro fichero).
+
+**Resultado medido (re-escaneo del mismo día, tras el de `@3721069`):**
+
+| | Antes | Después |
+|---|---:|---:|
+| función `validateTableRules` | **CC 99** | **bajo el umbral** — su `S3776` cerró como *FIXED*, ninguna función del fichero pasa de 15 |
+| fichero `SqlAdminService.validation.js` | ≈106 | **CC 50** |
+| `validateTableRules` en ncloc | 185 | **10** |
+| complejidad cognitiva del proyecto | 8 840 | **8 781** (−59) |
+
+Batió la estimación por analogía del handoff (55–65), y por un motivo que conviene retener: **esa estimación asumía una
+función por tabla**. El resultado real reparte el trabajo entre 13 tablas que son **datos puros** (`requires` /
+`datesInOrder`, cero ramas) y 9 funciones pequeñas. Los datos no tienen complejidad; una función por tabla sí la habría
+tenido. *Replace Conditional with Registry* rinde más cuanto más del condicional se pueda expresar como tabla.
+
+**Dónde vive, y por qué no en `tableHooks.js`.** El registro se quedó en `validation.js` en contra de lo que proponía el
+handoff del cut #10. Motivo: los hooks son `(ctx)` asíncronos con pool, estas reglas son puras y síncronas; meterlas allí
+exigía un tercer módulo solo para romper el ciclo `validation ↔ tableHooks` y haría que el test puro cargase bcrypt,
+`TaskGenerationService` y `DocumentProgressService`. **La ganancia de CC no depende del fichero de destino** — la da aplanar
+el anidamiento.
+
+**Lo que cazó la red** (dos veces, y ninguna la habría visto char):
+- El script troceador contaba llaves pero no paréntesis y partía `task_items` a mitad de su condición multilínea. Lo paró un
+  invariante del propio script: las sentencias troceadas deben reconstruir el cuerpo línea a línea.
+- `datesInOrder` se emitió con los campos de fecha para las tablas que versionan vigencias (`effective_from`/`effective_to`)
+  **antes de generalizar el helper**, que seguía leyendo `start_date`/`end_date`. Dos validaciones quedaron mudas. Lo cazaron
+  los unit tests de orden de fechas; char no, porque ninguna ruta caracterizada manda vigencias invertidas.
+
+**Guards INTERCALADOS — la trampa de esta familia.** Tres tablas no siguen el patrón "requeridos primero":
+`process_definition_versions` mete el semver entre sus requeridos, `process_target_rules` valida fechas ANTES de su
+requerido y `task_items` mete el guard de origen en medio. Normalizarlas cambiaría el mensaje que ve el usuario sin romper
+nada visible. Hay unit tests dedicados a clavar ese orden (`202 → 209`; la red total pasó de 194 a 209).
+
+Verificado: unit 209, char 148 con **goldens idénticos** (0 bytes de diff), `check:imports` OK, arranque limpio. Ratings sin
+mover: 0 BLOCKER, 46 vulnerabilidades, C/D — esta vez no hubo marcas manuales que rescatar porque nada cambió de fichero.
+
+> **Nota de acceso a Sonar.** La instancia de `:9002` **ya no admite `admin:admin`**: SonarQube 26 retiró el basic-auth
+> usuario/contraseña de la API, y además la contraseña de esa instancia había cambiado. Se reseteó por base de datos
+> (`UPDATE users ... WHERE login='admin'` en el contenedor `sonar-db`) y quedó de nuevo en `admin`. Cuidado: **el snippet
+> canónico que circula para ese reset no vale en esta versión**. El hash correcto es PBKDF2-HMAC-SHA512, 100 000
+> iteraciones, 64 bytes, con el **salt base64-DECODIFICADO** a bytes (no el string), y `crypted_password` = `100000$<b64>`.
+> Los tokens se generan por sesión: `POST /api/authentication/login` con cookie jar + cabecera `X-XSRF-TOKEN`.
 
 ### 3.1.b Deuda encontrada al revisar (2026-08-06) — dos defectos de producción
 
