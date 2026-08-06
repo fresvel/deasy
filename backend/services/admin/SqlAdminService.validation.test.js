@@ -301,6 +301,108 @@ test("validateTableRules exige al menos un formato disponible en el artifact", (
   );
 });
 
+// --- Guards INTERCALADOS ------------------------------------------------------
+// Cuatro tablas no comprueban "todos los requeridos y luego lo demás": meten un
+// condicional o las fechas EN MEDIO de sus requeridos. El orden es el contrato —
+// decide qué mensaje ve el usuario — y es lo primero que rompería un refactor que
+// las normalizara a la plantilla declarativa. Estos tests lo clavan.
+
+test("process_target_rules valida las fechas ANTES que su configuracion requerida", () => {
+  // Con ambas cosas mal, gana la fecha: el ensureDateOrder va primero en el cuerpo.
+  throwsWith(
+    () => validateTableRules("process_target_rules", { effective_from: "2026-06-01", effective_to: "2026-01-01" }),
+    "en reglas de alcance",
+  );
+  throwsWith(() => validateTableRules("process_target_rules", {}), "Selecciona una configuracion de proceso.");
+  throwsWith(
+    () => validateTableRules("process_target_rules", { process_definition_id: 1, unit_scope_type: "unit_type" }),
+    "El alcance por tipo requiere un tipo de unidad.",
+  );
+  assert.doesNotThrow(() => validateTableRules("process_target_rules", { process_definition_id: 1 }));
+});
+
+test("process_definition_versions intercala el semver entre sus requeridos", () => {
+  throwsWith(() => validateTableRules("process_definition_versions", {}), "Selecciona un proceso base");
+  throwsWith(
+    () => validateTableRules("process_definition_versions", { process_id: 1 }),
+    "Selecciona una serie de configuracion.",
+  );
+  // El semver se exige ANTES que effective_from, aunque este también falte.
+  throwsWith(
+    () => validateTableRules("process_definition_versions", { process_id: 1, series_id: 1 }),
+    "tres segmentos",
+  );
+  throwsWith(
+    () => validateTableRules("process_definition_versions", { process_id: 1, series_id: 1, definition_version: "1.0.0" }),
+    "Selecciona la fecha de vigencia inicial",
+  );
+});
+
+test("task_items intercala el guard de origen entre sus dos requeridos", () => {
+  throwsWith(() => validateTableRules("task_items", {}), "Selecciona una tarea.");
+  // Sin origin_kind explícito cuenta como "process_defined", y ese guard gana al
+  // requerido de plantilla documental que viene después.
+  throwsWith(
+    () => validateTableRules("task_items", { task_id: 1 }),
+    "entregable definido por proceso",
+  );
+  throwsWith(
+    () => validateTableRules("task_items", { task_id: 1, origin_kind: "ad_hoc" }),
+    "Selecciona la plantilla documental.",
+  );
+  throwsWith(
+    () =>
+      validateTableRules("task_items", {
+        task_id: 1,
+        origin_kind: "ad_hoc",
+        template_artifact_id: 3,
+        start_date: "2026-06-01",
+        end_date: "2026-01-01",
+      }),
+    "en items de tarea",
+  );
+});
+
+test("template_artifacts exige el prefijo base antes de mirar los formatos", () => {
+  throwsWith(
+    () => validateTableRules("template_artifacts", { available_formats: "{}" }),
+    "Debes registrar el prefijo base del artifact.",
+  );
+  throwsWith(
+    () => validateTableRules("template_artifacts", { base_object_prefix: "x" }),
+    "al menos un formato",
+  );
+});
+
+// --- Las dos tablas restantes sin cobertura -----------------------------------
+
+test("unit_relations solo compara padre e hija cuando llegan las dos", () => {
+  throwsWith(
+    () => validateTableRules("unit_relations", { parent_unit_id: 4, child_unit_id: 4 }),
+    "no pueden ser la misma",
+  );
+  // Comparación numérica: "4" y 4 son la misma unidad.
+  throwsWith(
+    () => validateTableRules("unit_relations", { parent_unit_id: "4", child_unit_id: 4 }),
+    "no pueden ser la misma",
+  );
+  assert.doesNotThrow(() => validateTableRules("unit_relations", { parent_unit_id: 4, child_unit_id: 5 }));
+  // Con una sola de las dos no valida nada: el mensaje real lo da el hook de create().
+  assert.doesNotThrow(() => validateTableRules("unit_relations", { parent_unit_id: 4 }));
+  assert.doesNotThrow(() => validateTableRules("unit_relations", {}));
+});
+
+test("template_seeds exige codigo y ruta fuente con un unico mensaje", () => {
+  throwsWith(() => validateTableRules("template_seeds", {}), "codigo y la ruta fuente");
+  throwsWith(() => validateTableRules("template_seeds", { seed_code: "x" }), "codigo y la ruta fuente");
+  throwsWith(() => validateTableRules("template_seeds", { source_path: "y" }), "codigo y la ruta fuente");
+  assert.doesNotThrow(() => validateTableRules("template_seeds", { seed_code: "x", source_path: "y" }));
+});
+
+test("document_versions ignora la version cuando el candidato no la trae", () => {
+  assert.doesNotThrow(() => validateTableRules("document_versions", {}));
+});
+
 // --- Helpers extraídos junto a la función -------------------------------------
 
 test("ensureDateOrder solo se queja cuando el fin precede al inicio", () => {

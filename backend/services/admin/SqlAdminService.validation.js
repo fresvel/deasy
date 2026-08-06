@@ -6,11 +6,17 @@
 // reglas vivan en este módulo y no en `SqlAdminService.tableHooks.js`, cuyos hooks son
 // asíncronos y con conexión.
 //
-// El cut #10 la partió en dos mitades. `TABLE_RULES` es un registro declarativo (13
-// tablas cuya regla entera es "estos campos, en este orden, y las fechas al final");
-// el `switch` que queda abajo guarda las nueve tablas con condicionales compuestas,
-// mutación in-place o guards intercalados. Antes eran 22 `case` con complejidad
-// cognitiva 99, la cuarta más alta del repositorio.
+// El cut #10 la convirtió de un `switch (tableName)` de 22 `case` y complejidad cognitiva
+// 99 (la cuarta más alta del repositorio) en `TABLE_RULES`: un registro que asocia cada
+// tabla a una LISTA DE REGLAS aplicadas en orden. Trece tablas quedaron como datos puros
+// (`requires` / `datesInOrder`); las otras nueve aportan además una función propia, porque
+// tienen condicionales compuestas, comparan campos entre sí o mutan el candidato.
+//
+// El ORDEN dentro de la lista es CONTRATO: el primer guard que falla decide el mensaje que
+// ve el usuario. Ojo con las que INTERCALAN — `process_definition_versions` mete el semver
+// entre sus requeridos, `process_target_rules` valida fechas antes que su requerido y
+// `task_items` mete el guard de origen en medio. Normalizarlas a "requeridos primero"
+// cambiaría el mensaje; hay tests unitarios dedicados a clavar justo eso.
 //
 // AVISO sobre el orden de los guards: `SqlAdminService.create()` comprueba los campos
 // requeridos ANTES de llamar aquí, y varias tablas tienen guards propios aún antes.
@@ -80,10 +86,125 @@ const requires = (...pairs) => (candidate) => {
   }
 };
 
-const datesInOrder = (label) => (candidate) => {
-  ensureDateOrder(candidate.start_date, candidate.end_date, label);
+/**
+ * Orden de fechas. La mayoría de tablas usa `start_date`/`end_date`, pero las que versionan
+ * vigencias (`process_definition_versions`, `process_target_rules`) usan `effective_from`/
+ * `effective_to`; de ahí los dos parámetros opcionales.
+ */
+const datesInOrder = (label, startField = "start_date", endField = "end_date") => (candidate) => {
+  ensureDateOrder(candidate[startField], candidate[endField], label);
 };
 
+// --- Reglas propias ---------------------------------------------------------------------------
+// Lo que no cabe en `requires`/`datesInOrder`: condicionales compuestas, comparaciones entre
+// campos y las dos ramas que MUTAN el candidato (`documents` y `document_versions` normalizan
+// el estado in-place; un refactor que se lo comiera rompería la escritura en silencio).
+// Movidas literalmente desde el switch del cut #10, sin reescribir una línea.
+
+const unitRelationNotSelf = (candidate) => {
+  if (candidate.parent_unit_id && candidate.child_unit_id) {
+    if (Number(candidate.parent_unit_id) === Number(candidate.child_unit_id)) {
+      throw new Error("La unidad padre y la unidad hija no pueden ser la misma.");
+    }
+  }
+};
+
+const semanticVersionRequired = (candidate) => {
+  if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
+    throw new Error("La version de la configuracion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
+  }
+};
+
+const seriesSourceConsistent = (candidate) => {
+  if (!candidate.source_type || !PROCESS_SERIES_SOURCE_TYPES.has(String(candidate.source_type))) {
+    throw new Error("Selecciona el origen de la serie.");
+  }
+
+  if (candidate.source_type === "unit_type" && !candidate.unit_type_id) {
+    throw new Error("Una serie por tipo de unidad requiere seleccionar un tipo de unidad.");
+  }
+
+  if (candidate.source_type === "cargo" && !candidate.cargo_id) {
+    throw new Error("Una serie por cargo requiere seleccionar un cargo.");
+  }
+
+  if (candidate.source_type === "unit_type" && candidate.cargo_id) {
+    throw new Error("Una serie por tipo de unidad no admite cargo.");
+  }
+
+  if (candidate.source_type === "cargo" && candidate.unit_type_id) {
+    throw new Error("Una serie por cargo no admite tipo de unidad.");
+  }
+
+  if (candidate.source_type === "default" && (candidate.unit_type_id || candidate.cargo_id)) {
+    throw new Error("La serie por defecto no admite tipo de unidad ni cargo.");
+  }
+};
+
+const targetScopeConsistent = (candidate) => {
+  if (candidate.recipient_policy === "exact_position" && !candidate.position_id) {
+    throw new Error("La politica exact_position requiere un puesto exacto.");
+  }
+
+  if (candidate.unit_scope_type === "unit_exact" || candidate.unit_scope_type === "unit_subtree") {
+    if (!candidate.unit_id && !candidate.position_id) {
+      throw new Error("El alcance por unidad requiere una unidad base.");
+    }
+  }
+
+  if (candidate.unit_scope_type === "unit_type" && !candidate.unit_type_id) {
+    throw new Error("El alcance por tipo requiere un tipo de unidad.");
+  }
+};
+
+const processDefinedNeedsTemplate = (candidate) => {
+  if (
+    String(candidate.origin_kind || "process_defined") === "process_defined"
+    && !candidate.process_definition_template_id
+  ) {
+    throw new Error("Selecciona el entregable definido por proceso.");
+  }
+};
+
+const documentOwnerAndStatus = (candidate) => {
+  if (!candidate.task_item_id && !candidate.owner_person_id) {
+    throw new Error("Selecciona el item de tarea o define un propietario para el documento.");
+  }
+
+  if (Object.hasOwn(candidate, "status")) {
+    candidate.status = assertDocumentStatusValue(candidate.status);
+  }
+};
+
+const documentVersionNumberAndStatus = (candidate) => {
+  if (candidate.version !== undefined) {
+    const versionValue = Number(candidate.version);
+    if (Number.isNaN(versionValue) || versionValue < 0.1) {
+      throw new Error("La version debe ser mayor o igual a 0.1.");
+    }
+  }
+
+  if (Object.hasOwn(candidate, "status")) {
+    candidate.status = assertDocumentVersionStatusValue(candidate.status);
+  }
+};
+
+const seedCodeAndSourcePath = (candidate) => {
+  if (!candidate.seed_code || !candidate.source_path) {
+    throw new Error("Debes registrar el codigo y la ruta fuente del seed.");
+  }
+};
+
+// El bloque `{ }` que envolvía esto en el switch solo existía para acotar el `const`; dentro de
+// una función ya no hace falta.
+const artifactFormatsPresent = (candidate) => {
+  const availableFormats = parseJsonObject(candidate.available_formats, "Formatos disponibles (JSON)");
+  if (!availableFormats || !Object.keys(availableFormats).length) {
+    throw new Error("Debes registrar al menos un formato disponible en available_formats.");
+  }
+};
+
+// --- El registro ------------------------------------------------------------------------------
 const TABLE_RULES = {
   terms: [
     datesInOrder("periodos"),
@@ -137,132 +258,58 @@ const TABLE_RULES = {
     datesInOrder("contratos"),
   ],
   role_assignments: [],
+
+  // Tablas con reglas propias (tanda 2).
+  unit_relations: [
+    unitRelationNotSelf,
+  ],
+  process_definition_versions: [
+    requires(
+      ["process_id", "Selecciona un proceso base para la configuracion."],
+      ["series_id", "Selecciona una serie de configuracion."],
+    ),
+    semanticVersionRequired,
+    requires(["effective_from", "Selecciona la fecha de vigencia inicial de la configuracion."]),
+    datesInOrder("configuraciones de proceso", "effective_from", "effective_to"),
+  ],
+  process_definition_series: [
+    seriesSourceConsistent,
+  ],
+  process_target_rules: [
+    datesInOrder("reglas de alcance", "effective_from", "effective_to"),
+    requires(["process_definition_id", "Selecciona una configuracion de proceso."]),
+    targetScopeConsistent,
+  ],
+  task_items: [
+    requires(["task_id", "Selecciona una tarea."]),
+    processDefinedNeedsTemplate,
+    requires(["template_artifact_id", "Selecciona la plantilla documental."]),
+    datesInOrder("items de tarea"),
+  ],
+  documents: [
+    documentOwnerAndStatus,
+  ],
+  document_versions: [
+    documentVersionNumberAndStatus,
+  ],
+  template_seeds: [
+    seedCodeAndSourcePath,
+  ],
+  template_artifacts: [
+    requires(["base_object_prefix", "Debes registrar el prefijo base del artifact."]),
+    artifactFormatsPresent,
+  ],
 };
 
+/** Aplica en orden las reglas de la tabla. Una tabla sin entrada no tiene reglas. */
 export const validateTableRules = (tableName, candidate) => {
   // `Array.isArray` y no un `if (rules)` a secas: `tableName` viaja desde la URL y una clave
   // heredada de Object.prototype ("constructor") devolvería algo no iterable.
   const rules = TABLE_RULES[tableName];
-  if (Array.isArray(rules)) {
-    for (const rule of rules) {
-      rule(candidate);
-    }
+  if (!Array.isArray(rules)) {
     return;
   }
-
-  // Pendiente de convertir (tanda 2 del cut #10): las nueve tablas con condicionales
-  // compuestas, mutación in-place del candidato o guards intercalados.
-  switch (tableName) {
-    case "unit_relations":
-      if (candidate.parent_unit_id && candidate.child_unit_id) {
-        if (Number(candidate.parent_unit_id) === Number(candidate.child_unit_id)) {
-          throw new Error("La unidad padre y la unidad hija no pueden ser la misma.");
-        }
-      }
-      break;
-    case "process_definition_versions":
-      if (!candidate.process_id) {
-        throw new Error("Selecciona un proceso base para la configuracion.");
-      }
-      if (!candidate.series_id) {
-        throw new Error("Selecciona una serie de configuracion.");
-      }
-      if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
-        throw new Error("La version de la configuracion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
-      }
-      if (!candidate.effective_from) {
-        throw new Error("Selecciona la fecha de vigencia inicial de la configuracion.");
-      }
-      ensureDateOrder(candidate.effective_from, candidate.effective_to, "configuraciones de proceso");
-      break;
-    case "process_definition_series":
-      if (!candidate.source_type || !PROCESS_SERIES_SOURCE_TYPES.has(String(candidate.source_type))) {
-        throw new Error("Selecciona el origen de la serie.");
-      }
-      if (candidate.source_type === "unit_type" && !candidate.unit_type_id) {
-        throw new Error("Una serie por tipo de unidad requiere seleccionar un tipo de unidad.");
-      }
-      if (candidate.source_type === "cargo" && !candidate.cargo_id) {
-        throw new Error("Una serie por cargo requiere seleccionar un cargo.");
-      }
-      if (candidate.source_type === "unit_type" && candidate.cargo_id) {
-        throw new Error("Una serie por tipo de unidad no admite cargo.");
-      }
-      if (candidate.source_type === "cargo" && candidate.unit_type_id) {
-        throw new Error("Una serie por cargo no admite tipo de unidad.");
-      }
-      if (candidate.source_type === "default" && (candidate.unit_type_id || candidate.cargo_id)) {
-        throw new Error("La serie por defecto no admite tipo de unidad ni cargo.");
-      }
-      break;
-    case "process_target_rules":
-      ensureDateOrder(candidate.effective_from, candidate.effective_to, "reglas de alcance");
-      if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una configuracion de proceso.");
-      }
-      if (candidate.recipient_policy === "exact_position" && !candidate.position_id) {
-        throw new Error("La politica exact_position requiere un puesto exacto.");
-      }
-      if (candidate.unit_scope_type === "unit_exact" || candidate.unit_scope_type === "unit_subtree") {
-        if (!candidate.unit_id && !candidate.position_id) {
-          throw new Error("El alcance por unidad requiere una unidad base.");
-        }
-      }
-      if (candidate.unit_scope_type === "unit_type" && !candidate.unit_type_id) {
-        throw new Error("El alcance por tipo requiere un tipo de unidad.");
-      }
-      break;
-    case "task_items":
-      if (!candidate.task_id) {
-        throw new Error("Selecciona una tarea.");
-      }
-      if (
-        String(candidate.origin_kind || "process_defined") === "process_defined"
-        && !candidate.process_definition_template_id
-      ) {
-        throw new Error("Selecciona el entregable definido por proceso.");
-      }
-      if (!candidate.template_artifact_id) {
-        throw new Error("Selecciona la plantilla documental.");
-      }
-      ensureDateOrder(candidate.start_date, candidate.end_date, "items de tarea");
-      break;
-    case "documents":
-      if (!candidate.task_item_id && !candidate.owner_person_id) {
-        throw new Error("Selecciona el item de tarea o define un propietario para el documento.");
-      }
-      if (Object.hasOwn(candidate, "status")) {
-        candidate.status = assertDocumentStatusValue(candidate.status);
-      }
-      break;
-    case "document_versions":
-      if (candidate.version !== undefined) {
-        const versionValue = Number(candidate.version);
-        if (Number.isNaN(versionValue) || versionValue < 0.1) {
-          throw new Error("La version debe ser mayor o igual a 0.1.");
-        }
-      }
-      if (Object.hasOwn(candidate, "status")) {
-        candidate.status = assertDocumentVersionStatusValue(candidate.status);
-      }
-      break;
-    case "template_seeds":
-      if (!candidate.seed_code || !candidate.source_path) {
-        throw new Error("Debes registrar el codigo y la ruta fuente del seed.");
-      }
-      break;
-    case "template_artifacts":
-      if (!candidate.base_object_prefix) {
-        throw new Error("Debes registrar el prefijo base del artifact.");
-      }
-      {
-        const availableFormats = parseJsonObject(candidate.available_formats, "Formatos disponibles (JSON)");
-        if (!availableFormats || !Object.keys(availableFormats).length) {
-          throw new Error("Debes registrar al menos un formato disponible en available_formats.");
-        }
-      }
-      break;
-    default:
-      break;
+  for (const rule of rules) {
+    rule(candidate);
   }
 };
