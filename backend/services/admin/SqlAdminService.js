@@ -26,11 +26,9 @@ import {
   uploadDirectoryToMinio
 } from "./SqlAdminService.storage.js";
 import OrgStructureService from "./SqlAdminService.orgStructure.js";
-import bcrypt from "bcrypt";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
@@ -84,7 +82,6 @@ import TemplateArtifactService from "./SqlAdminService.templateArtifact.js";
 import ProcessDefinitionVersionService from "./SqlAdminService.processDefinitionVersion.js";
 import WorkflowSyncService from "./SqlAdminService.workflowSync.js";
 import TaskAssignmentService from "./SqlAdminService.taskAssignment.js";
-import { assertPasswordPolicy } from "../../utils/passwordPolicy.js";
 import {
   getTableHooks,
   runInTransaction,
@@ -92,8 +89,6 @@ import {
 } from "./SqlAdminService.tableHooks.js";
 
 const DEFAULT_LIMIT = 50;
-const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
-const PERSON_TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
 const BACKEND_STORAGE_ROOT = path.join(REPO_ROOT, "backend", "storage");
@@ -328,28 +323,6 @@ const validateFieldTypes = (config, payload) => {
       }
     }
   }
-};
-
-const isBcryptHash = (value) => typeof value === "string" && BCRYPT_HASH_REGEX.test(value);
-
-const hashPassword = async (password) => {
-  assertPasswordPolicy(password);
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(password, salt);
-};
-
-const generatePersonToken = () => {
-  const bytes = crypto.randomBytes(10);
-  return Array.from(bytes, (byte) => PERSON_TOKEN_CHARS[byte % PERSON_TOKEN_CHARS.length]).join("");
-};
-
-const resolveUniquePersonToken = async (pool) => {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const token = generatePersonToken();
-    const [rows] = await pool.query("SELECT id FROM persons WHERE token = ? LIMIT 1", [token]);
-    if (!rows?.length) return token;
-  }
-  throw new Error("No se pudo generar un token unico para el usuario.");
 };
 
 const sanitizePersonRow = (tableName, row) => {
@@ -1096,30 +1069,6 @@ export default class SqlAdminService {
       await hooks.beforeCreate(ctx);
     }
 
-    if (tableName === "unit_positions") {
-      this.assertUnitHeadAllowed(payload.is_unit_head, payload.position_type || "real");
-    }
-    if (tableName === "unit_relations") {
-      const parentId = Number(payload.parent_unit_id);
-      const childId = Number(payload.child_unit_id);
-      const relTypeId = Number(payload.relation_type_id);
-      if (!parentId || !childId || !relTypeId) {
-        throw new Error("La relación requiere unidad padre, unidad hija y tipo de relación.");
-      }
-      if (parentId === childId) {
-        throw new Error("Una unidad no puede relacionarse consigo misma.");
-      }
-      const [existingParent] = await this.pool.query(
-        "SELECT parent_unit_id FROM unit_relations WHERE child_unit_id = ? AND relation_type_id = ? LIMIT 1",
-        [childId, relTypeId]
-      );
-      if (existingParent.length) {
-        throw new Error("Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de crear otra.");
-      }
-      if (await this.wouldCreateUnitCycle(parentId, childId, relTypeId)) {
-        throw new Error("La relación crearía un ciclo en la jerarquía (la unidad padre ya depende de la hija).");
-      }
-    }
     const cloneSourceDefinitionId = (
       tableName === "process_definition_versions"
       && data?.source_process_definition_id !== undefined
@@ -1147,21 +1096,6 @@ export default class SqlAdminService {
       );
       if (dupRows?.length) {
         throw new Error("Ya existe una serie con ese origen.");
-      }
-    }
-
-    if (tableName === "persons") {
-      const rawPassword = typeof data?.password === "string" ? data.password : "";
-      const rawToken = typeof data?.token === "string" ? data.token.trim() : "";
-      payload.token = rawToken || await resolveUniquePersonToken(this.pool);
-      if (rawPassword) {
-        payload.password_hash = await hashPassword(rawPassword);
-      } else if (typeof payload.password_hash === "string" && payload.password_hash) {
-        if (!isBcryptHash(payload.password_hash)) {
-          payload.password_hash = await hashPassword(payload.password_hash);
-        }
-      } else {
-        throw new Error("Ingresa el password del usuario.");
       }
     }
 
@@ -1375,10 +1309,6 @@ export default class SqlAdminService {
 
     if (hooks.afterValidateCreate) {
       await hooks.afterValidateCreate(ctx);
-    }
-
-    if (tableName === "vacancies") {
-      await this.ensureContractablePosition(payload.position_id ?? data?.position_id);
     }
 
     const columns = Object.keys(payload);
@@ -1648,42 +1578,6 @@ export default class SqlAdminService {
       await hooks.beforeUpdate(ctx);
     }
 
-    if (tableName === "unit_positions") {
-      const effHead = updates.is_unit_head !== undefined ? updates.is_unit_head : existing.is_unit_head;
-      const effType = updates.position_type !== undefined ? updates.position_type : existing.position_type;
-      this.assertUnitHeadAllowed(effHead, effType);
-    }
-
-    if (tableName === "unit_relations") {
-      const parentId = Number(updates.parent_unit_id ?? existing.parent_unit_id);
-      const childId = Number(updates.child_unit_id ?? existing.child_unit_id);
-      const relTypeId = Number(updates.relation_type_id ?? existing.relation_type_id);
-      if (parentId === childId) {
-        throw new Error("Una unidad no puede relacionarse consigo misma.");
-      }
-      const [dupRel] = await this.pool.query(
-        "SELECT id FROM unit_relations WHERE child_unit_id = ? AND relation_type_id = ? AND id <> ? LIMIT 1",
-        [childId, relTypeId, Number(existing.id)]
-      );
-      if (dupRel.length) {
-        throw new Error("Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de reasignar.");
-      }
-      if (await this.wouldCreateUnitCycle(parentId, childId, relTypeId)) {
-        throw new Error("La relación crearía un ciclo en la jerarquía (la unidad padre ya depende de la hija).");
-      }
-    }
-
-    if (tableName === "persons" && Object.hasOwn(data, "password")) {
-      const rawPassword = typeof data.password === "string" ? data.password : "";
-      if (rawPassword) {
-        updates.password_hash = await hashPassword(rawPassword);
-      }
-    }
-    if (tableName === "persons" && typeof updates.password_hash === "string" && updates.password_hash) {
-      if (!isBcryptHash(updates.password_hash)) {
-        updates.password_hash = await hashPassword(updates.password_hash);
-      }
-    }
     if (tableName === "tasks") {
       if (
         Object.hasOwn(updates, "process_definition_id")
@@ -2144,22 +2038,6 @@ export default class SqlAdminService {
             [updates.code, Number(existing.id)]
           );
           await this.refreshProcessDefinitionVersionNames({ seriesId: Number(existing.id) });
-        }
-        if (tableName === "processes" && Object.hasOwn(updates, "name")) {
-          await this.refreshProcessDefinitionVersionNames({ processId: Number(existing.id ?? keyPayload.id) });
-        }
-        if (
-          (tableName === "unit_types" || tableName === "cargos")
-          && Object.hasOwn(updates, "name")
-        ) {
-          const foreignKey = tableName === "unit_types" ? "unit_type_id" : "cargo_id";
-          const [seriesRows] = await this.pool.query(
-            `SELECT id FROM process_definition_series WHERE ${foreignKey} = ?`,
-            [Number(existing.id ?? keyPayload.id)]
-          );
-          for (const seriesRow of seriesRows || []) {
-            await this.refreshProcessDefinitionVersionNames({ seriesId: Number(seriesRow.id) });
-          }
         }
       }
     } catch (error) {
