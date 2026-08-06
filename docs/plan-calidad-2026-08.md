@@ -454,9 +454,9 @@ responsabilidad) es el estilo objetivo.
 Ataca a la vez el God #2 (`user_controler.js`, cogn. **337**) y su **13,1 %** de duplicación (288 L,
 el segundo peor del repo tras los datos de `sqlTables.js`).
 
-### Fase E — Frontend: las tres piezas pendientes del plan de julio
+### Fase E — Frontend: las piezas pendientes del plan de julio
 
-Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo:
+Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda nueva (E-4):
 
 1. **Fase 5 (alcance reducido)** — `useProcessPanels.js` pasa a poseer su estado (155 L, 28
    asignaciones a refs ajenos). Imitar `useDeliverableFilePreview` / `useDocumentCenter` /
@@ -471,6 +471,16 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo:
 3. **Terminar la fase 3.5** — `AdminView` conserva `selectedTable`/`selectedSection` como estado local
    junto a los `route.params`. Mientras conviva el doble origen de verdad, la duplicación ×5 de
    `AdminView` (CC 153) no colapsa.
+4. **`httpClient` no es un cliente — es un efecto secundario global** *(deuda nueva, 2026-08-06)*.
+   `core/services/httpClient.js` no llama a `axios.create()`: registra el interceptor sobre el
+   **singleton** de axios y hace `export default axios`, o sea devuelve el mismo objeto que ya tenías.
+   Medido: **31 ficheros importan `axios` crudo y solo 2 importan `httpClient`** —`userPhotoService.js`
+   y `main.js:5`, este último como import a pelo. **La cabecera `Authorization` de toda la aplicación
+   depende de que `main.js` importe ese módulo antes que nadie.** Funciona, pero es orden de imports,
+   no diseño; y `PerfilView.vue` ya hace las dos cosas a la vez (axios crudo en `:97`, `httpClient`
+   por transitividad en `:113`).
+   **Coste:** tocar los 31 ficheros. **No es un arreglo de paso, es un refactor con nombre propio.**
+   **Síntoma ya cobrado:** rompió la suite de `PerfilView` durante semanas (ver §6 regla 11).
 
 ### Fase F — Los dos nunca auditados
 
@@ -522,6 +532,12 @@ No son consejos genéricos: cada una viene de un fallo real registrado en las au
    marcada**. No perder tiempo re-marcando después de mover ficheros; sí después de editarlos.
 9. **Refactor = mover código, NO reescribir comportamiento.**
 10. **Verificar en el navegador**, no solo con lint y tests.
+11. **Una suite que no arranca no es "0 tests", es un fallo.** Vitest la marca *Failed Suite* con 0
+    casos cuando el error ocurre al importar. Así estuvo muerta `PerfilView.test.js` (17 casos) desde
+    `0de813c`: un import nuevo metió `httpClient` en su grafo, el `vi.mock("axios")` no declaraba
+    `interceptors` y la suite moría antes del primer caso. **Mirar la línea `Test Files`, no solo la de
+    `Tests`.** Y al añadir un import a un componente con test, revisar que su mock siga teniendo la
+    forma del módulo real.
 
 ### Comandos (todo dentro de los contenedores)
 
