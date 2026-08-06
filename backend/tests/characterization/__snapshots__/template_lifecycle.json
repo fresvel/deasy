@@ -1,0 +1,72 @@
+{
+  "activation_diff_borrador": {
+    "status": 200,
+    "topLevelKeys": [
+      "config_status",
+      "from_version",
+      "has_active",
+      "period_types",
+      "rules",
+      "templates",
+      "to_version"
+    ]
+  },
+  "activation_diff_inexistente": {
+    "status": 400,
+    "body": {
+      "message": "La configuración no existe."
+    }
+  },
+  "estado_configuraciones_tras_publicar": {
+    "status": 200,
+    "byStatus": {
+      "active": 1,
+      "retired": 1
+    }
+  },
+  "guided_update_finish": {
+    "status": 200,
+    "body": {
+      "__notice": "Plantilla v1.1.0 publicada y configuración v1.1.0 activada.",
+      "config_definition_id": "<normalized>",
+      "config_status": "active",
+      "retired_previous_config": 1,
+      "template_artifact_id": "<normalized>",
+      "template_lifecycle_state": "published"
+    }
+  },
+  "guided_update_start": {
+    "status": 200,
+    "body": {
+      "__notice": "Borradores creados: plantilla v1.1.0 y configuración v1.1.0. Edita el contenido y publica para activar.",
+      "config_definition_version": "1.1.0",
+      "config_draft_id": "<normalized>",
+      "source_definition_id": "<normalized>",
+      "source_template_artifact_id": "<normalized>",
+      "template_draft_id": "<normalized>",
+      "template_storage_version": "1.1.0"
+    }
+  },
+  "seed_preview": {
+    "status": 404,
+    "body": {
+      "message": "El seed seleccionado no tiene preview PDF publicado en MinIO."
+    }
+  },
+  "seed_sync": {
+    "status": 200,
+    "body": {
+      "bucket": "deasy-templates",
+      "discovered": 1,
+      "inserted": 0,
+      "prefix": "Seeds",
+      "updated": 1
+    }
+  },
+  "use_in_config_sin_datos": {
+    "status": 400,
+    "body": {
+      "message": "Faltan datos: configuración y versión de plantilla."
+    }
+  }
+}
