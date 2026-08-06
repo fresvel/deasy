@@ -1054,116 +1054,11 @@ export default class SqlAdminService {
 
     if (hooks.beforeCreate) {
       await hooks.beforeCreate(ctx);
-    }
-
-    const cloneSourceDefinitionId = (
-      tableName === "process_definition_versions"
-      && data?.source_process_definition_id !== undefined
-      && data?.source_process_definition_id !== null
-      && data?.source_process_definition_id !== ""
-    )
-      ? Number(data.source_process_definition_id)
-      : null;
-
-    if (tableName === "process_definition_versions") {
-      if (typeof payload.definition_version === "string") {
-        payload.definition_version = payload.definition_version.trim();
+      // Un hook puede resolver el create sin llegar al INSERT (vinculo idempotente de
+      // process_definition_templates): devuelve la fila que ya existia.
+      if (ctx.shortCircuit !== undefined) {
+        return sanitizePersonRow(tableName, ctx.shortCircuit);
       }
-    }
-
-    if (tableName === "process_definition_series") {
-      const identity = await this.resolveProcessDefinitionSeriesIdentity(payload);
-      Object.assign(payload, identity);
-      const [dupRows] = await this.pool.query(
-        `SELECT id
-         FROM process_definition_series
-         WHERE code = ?
-         LIMIT 1`,
-        [identity.code]
-      );
-      if (dupRows?.length) {
-        throw new Error("Ya existe una serie con ese origen.");
-      }
-    }
-
-    if (
-      tableName === "process_definition_templates"
-      || tableName === "process_target_rules"
-      || tableName === "process_definition_period_types"
-    ) {
-      await this.ensureDraftDefinitionContext(
-        payload.process_definition_id,
-        {
-          entityLabel:
-            tableName === "process_definition_templates"
-              ? "las plantillas de configuracion"
-              : tableName === "process_target_rules"
-                ? "las reglas de alcance"
-                : "los periodos del proceso"
-        }
-      );
-    }
-
-    if (tableName === "process_definition_templates") {
-      // F3 — "la pared": solo se enlaza un entregable cuyo dueño = (proceso, variación) de la config.
-      await this.assertDeliverableBelongsToConfigLine(payload.process_definition_id, payload.template_artifact_id);
-      // Vínculo idempotente: si la plantilla ya está en esta configuración (p. ej. porque al crearla desde el
-      // wizard ya se enlazó), no se duplica el registro (evita el ER_DUP_ENTRY de uq_process_definition_templates);
-      // se devuelve el vínculo existente.
-      const [existingLinkRows] = await this.pool.query(
-        `SELECT id, sort_order FROM process_definition_templates
-         WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
-        [payload.process_definition_id, payload.template_artifact_id]
-      );
-      if (existingLinkRows?.length) {
-        return sanitizePersonRow(tableName, {
-          id: existingLinkRows[0].id,
-          process_definition_id: Number(payload.process_definition_id),
-          template_artifact_id: Number(payload.template_artifact_id),
-          sort_order: existingLinkRows[0].sort_order,
-          __notice: "La plantilla ya estaba vinculada a esta configuración."
-        });
-      }
-      // El orden es interno (secuencia de la plantilla dentro de la configuración) y se asigna solo:
-      // el usuario no debe elegirlo.
-      if (payload.sort_order === undefined || payload.sort_order === null || payload.sort_order === "") {
-        const [countRows] = await this.pool.query(
-          "SELECT COUNT(*) AS c FROM process_definition_templates WHERE process_definition_id = ?",
-          [payload.process_definition_id]
-        );
-        payload.sort_order = Number(countRows?.[0]?.c || 0) + 1;
-      }
-    }
-
-    if (tableName === "process_target_rules") {
-      await this.applyTargetRuleSeriesConstraints(payload.process_definition_id, payload);
-    }
-
-    if (tableName === "process_definition_period_types") {
-      const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
-      if (!definition) {
-        throw new Error("La configuracion de proceso seleccionada no existe.");
-      }
-    }
-
-    if (tableName === "template_artifacts") {
-      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento.");
-    }
-
-    if (tableName === "process_definition_versions") {
-      const requestedStatus = String(payload.status || "draft");
-      if (requestedStatus !== "draft") {
-        throw new Error("Las nuevas configuraciones solo pueden crearse en estado draft.");
-      }
-      const series = await this.resolveProcessDefinitionSeries(payload);
-      payload.variation_key = String(series.code || "").trim();
-      // El proceso por defecto es especial: SOLO admite la configuración "sin variación"
-      // (source_type='default'). Puede versionarse (N versiones), pero no tener otra
-      // variación por cargo/tipo de unidad.
-      await this.ensureDefaultProcessSingleVariation(payload.process_id, series);
-      payload.name = await this.resolveProcessDefinitionVersionName(payload.process_id, payload.series_id);
-      payload.status = "draft";
-      await this.ensureProcessDefinitionVersionAvailable(payload);
     }
 
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
@@ -1188,7 +1083,6 @@ export default class SqlAdminService {
     const values = columns.map((key) => payload[key]);
     const placeholders = columns.map(() => "?").join(", ");
     let result;
-    let createNotice = "";
     try {
       if (hooks.beforeInsertTx || hooks.afterInsertTx) {
         result = await runInTransaction(
@@ -1197,59 +1091,6 @@ export default class SqlAdminService {
           { before: hooks.beforeInsertTx, after: hooks.afterInsertTx },
           (connection) => insertPayload(connection, ctx)
         );
-      } else if (tableName === "process_definition_versions") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
-          );
-          result = insertResult;
-
-          if (cloneSourceDefinitionId) {
-            const cloneSummary = await this.cloneProcessDefinitionChildren({
-              sourceDefinitionId: cloneSourceDefinitionId,
-              targetDefinitionId: insertResult.insertId,
-              targetProcessId: payload.process_id,
-              connection
-            });
-            if (cloneSummary.clonedTemplates || cloneSummary.clonedRules || cloneSummary.clonedPeriodTypes) {
-              createNotice =
-                `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
-                + ` y ${cloneSummary.clonedPeriodTypes} periodos del proceso desde la configuracion origen.`;
-            }
-            if (cloneSummary.templateWorkflowWarnings?.length) {
-              createNotice = `${createNotice || ""} Atención: ${cloneSummary.templateWorkflowWarnings.length} plantilla(s) con flujo incompleto no se sincronizaron (revisa sus pasos de firma y vuelve a sincronizarlas).`.trim();
-            }
-          }
-
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "process_definition_templates") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
-          );
-          result = insertResult;
-          if (payload.template_artifact_id) {
-            await this.syncArtifactWorkflowsForTemplateArtifactId(Number(payload.template_artifact_id), connection);
-          }
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
       } else {
         const [insertResult] = await this.pool.query(
           `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
@@ -1262,17 +1103,10 @@ export default class SqlAdminService {
       if (mapped) {
         throw mapped;
       }
-      if (
-        tableName === "process_definition_versions"
-        && error?.code === "ER_DUP_ENTRY"
-        && String(error?.message || "").includes("uq_process_definition_one_active_series")
-      ) {
-        throw new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
-      }
       throw error;
     }
     const created = { id: result.insertId, ...payload };
-    const notice = createNotice || ctx.notice;
+    const notice = ctx.notice;
     if (notice) {
       return {
         ...sanitizePersonRow(tableName, created),
@@ -1316,187 +1150,6 @@ export default class SqlAdminService {
       await hooks.beforeUpdate(ctx);
     }
 
-    if (
-      tableName === "process_definition_templates"
-      || tableName === "process_target_rules"
-      || tableName === "process_definition_period_types"
-    ) {
-      if (Object.hasOwn(updates, "process_definition_id")) {
-        if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
-          throw new Error("No se puede cambiar la configuracion asociada de este registro.");
-        }
-        delete updates.process_definition_id;
-      }
-      await this.ensureDraftDefinitionContext(
-        existing.process_definition_id,
-        {
-          entityLabel:
-            tableName === "process_definition_templates"
-              ? "las plantillas de configuracion"
-              : tableName === "process_target_rules"
-                ? "las reglas de alcance"
-                : "los periodos del proceso"
-        }
-      );
-    }
-    if (tableName === "process_target_rules") {
-      const mergedRule = { ...existing, ...updates };
-      await this.applyTargetRuleSeriesConstraints(existing.process_definition_id, mergedRule);
-      for (const key of ["cargo_id", "unit_type_id"]) {
-        if (mergedRule[key] != null && Number(mergedRule[key]) !== Number(existing[key])) {
-          updates[key] = mergedRule[key];
-        }
-      }
-    }
-    if (tableName === "process_definition_series") {
-      const candidateSeries = { ...existing, ...updates };
-      const sourceType = String(candidateSeries.source_type || existing.source_type || "").trim();
-      if (sourceType === "default") {
-        throw new Error("La serie por defecto del sistema no se edita manualmente.");
-      }
-      const identity = await this.resolveProcessDefinitionSeriesIdentity(candidateSeries);
-      Object.assign(updates, identity);
-      const [dupRows] = await this.pool.query(
-        `SELECT id
-         FROM process_definition_series
-         WHERE code = ?
-           AND id <> ?
-         LIMIT 1`,
-        [identity.code, Number(existing.id)]
-      );
-      if (dupRows?.length) {
-        throw new Error("Ya existe otra serie con ese origen.");
-      }
-    }
-    if (tableName === "template_artifacts") {
-      // Una versión publicada es inmutable; solo se edita en borrador. Para cambiar una publicada, versiónala.
-      if (String(existing.lifecycle_state || "published") !== "draft") {
-        throw new Error("Esta plantilla está publicada (inmutable). Crea una nueva versión para editarla.");
-      }
-    }
-    let activateDraftVersion = false;
-    let processDefinitionActivationNotice = "";
-    let processDefinitionSeriesContext = null;
-
-    if (tableName === "process_definition_versions") {
-      if (typeof updates.definition_version === "string") {
-        updates.definition_version = updates.definition_version.trim();
-      }
-
-      const normalizeComparableValue = (fieldName, value) => {
-        if (value === null || value === undefined || value === "") {
-          return null;
-        }
-        const fieldMeta = config.fields.find((field) => field.name === fieldName);
-        if (value instanceof Date) {
-          if (fieldMeta?.type === "date") {
-            return value.toISOString().slice(0, 10);
-          }
-          if (fieldMeta?.type === "datetime") {
-            return value.toISOString().slice(0, 19).replace("T", " ");
-          }
-          return value.toISOString();
-        }
-        if (fieldMeta?.type === "number" || fieldMeta?.type === "boolean") {
-          const numeric = Number(value);
-          return Number.isNaN(numeric) ? String(value) : String(numeric);
-        }
-        return String(value);
-      };
-
-      const isSameValue = (fieldName, left, right) => {
-        const normalizedLeft = normalizeComparableValue(fieldName, left);
-        const normalizedRight = normalizeComparableValue(fieldName, right);
-        return normalizedLeft === normalizedRight;
-      };
-
-      if (Object.hasOwn(updates, "definition_version")) {
-        if (!isSameValue("definition_version", updates.definition_version, existing.definition_version)) {
-          throw new Error("No se puede modificar el numero de version de una configuracion.");
-        }
-        delete updates.definition_version;
-      }
-      if (Object.hasOwn(updates, "process_id")) {
-        if (!isSameValue("process_id", updates.process_id, existing.process_id)) {
-          throw new Error("No se puede cambiar el proceso de una configuracion.");
-        }
-        delete updates.process_id;
-      }
-      if (Object.hasOwn(updates, "series_id")) {
-        if (!isSameValue("series_id", updates.series_id, existing.series_id)) {
-          throw new Error("No se puede cambiar la serie de una configuracion.");
-        }
-        delete updates.series_id;
-      }
-      if (Object.hasOwn(updates, "variation_key")) {
-        if (!isSameValue("variation_key", updates.variation_key, existing.variation_key)) {
-          throw new Error("No se puede cambiar la serie de una configuracion.");
-        }
-        delete updates.variation_key;
-      }
-      if (Object.hasOwn(updates, "name")) {
-        delete updates.name;
-      }
-
-      Object.keys(updates).forEach((key) => {
-        if (isSameValue(key, updates[key], existing[key])) {
-          delete updates[key];
-        }
-      });
-
-      const currentStatus = String(existing.status || "draft");
-      const nextStatus = Object.hasOwn(updates, "status")
-        ? String(updates.status || "")
-        : currentStatus;
-
-      const allowedTransitions = {
-        draft: new Set(["draft", "active", "retired"]),
-        active: new Set(["active", "retired"]),
-        retired: new Set(["retired"])
-      };
-      const currentAllowedTransitions = allowedTransitions[currentStatus] || new Set([currentStatus]);
-      if (!currentAllowedTransitions.has(nextStatus)) {
-        throw new Error(`No se permite cambiar una configuracion ${currentStatus} a ${nextStatus}.`);
-      }
-
-      let allowed;
-      let errorMessage;
-      if (currentStatus === "draft") {
-        const generatedName = await this.resolveProcessDefinitionVersionName(existing.process_id, existing.series_id);
-        if (generatedName && !isSameValue("name", generatedName, existing.name)) {
-          updates.name = generatedName;
-        }
-        allowed = new Set([
-          "name",
-          "description",
-          "status",
-          "effective_from",
-          "effective_to"
-        ]);
-        errorMessage = "Una configuracion en borrador solo permite cambios funcionales y de estado.";
-      } else if (currentStatus === "active") {
-        allowed = new Set(["status", "effective_to"]);
-        errorMessage = "Una configuracion activa solo permite cambiar estado o vigencia final.";
-      } else {
-        allowed = new Set();
-        errorMessage = "Una configuracion retirada es de solo lectura.";
-      }
-
-      const disallowed = Object.keys(updates).filter((key) => !allowed.has(key));
-      if (disallowed.length) {
-        throw new Error(errorMessage);
-      }
-
-      if (currentStatus === "draft" && nextStatus === "active") {
-        activateDraftVersion = true;
-        processDefinitionSeriesContext = {
-          processId: existing.process_id,
-          variationKey: existing.variation_key,
-          excludeId: existing.id ?? keyPayload.id
-        };
-      }
-    }
-
     const allowPrimaryKeyUpdate = config.allowPrimaryKeyUpdate === true;
     const columns = Object.keys(updates).filter((column) =>
       allowPrimaryKeyUpdate ? true : !config.primaryKeys.includes(column)
@@ -1528,71 +1181,10 @@ export default class SqlAdminService {
           { before: hooks.beforeUpdateTx, after: hooks.afterUpdateTx },
           runUpdate
         );
-      } else if (tableName === "process_definition_versions" && activateDraftVersion) {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          await this.ensureDefinitionHasActiveRulesForActivation(existing.id ?? keyPayload.id, connection);
-          await this.ensureDefinitionHasActivePeriodTypesForActivation(existing.id ?? keyPayload.id, connection);
-          // Publica las plantillas borrador de la config (activa config + publica plantilla, juntas) antes de
-          // validar que haya artefactos activos.
-          await this.publishDraftTemplatesForDefinition(existing.id ?? keyPayload.id, connection);
-          await this.ensureDefinitionHasArtifactsForActivation(existing.id ?? keyPayload.id, connection);
-          const retiredCount = await this.retireActiveDefinitionsInSeries({
-            ...processDefinitionSeriesContext,
-            connection
-          });
-          await connection.query(
-            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-            [...values, ...params]
-          );
-          await connection.commit();
-          if (retiredCount > 0) {
-            processDefinitionActivationNotice = "La configuracion activa anterior de la misma serie fue retirada automaticamente.";
-          }
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "process_definition_templates") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          await connection.query(
-            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-            [...values, ...params]
-          );
-          const rawArtifactId =
-            updates.template_artifact_id
-            ?? existing.template_artifact_id
-            ?? keyPayload.template_artifact_id
-            ?? 0;
-          const artifactId = Number(rawArtifactId);
-          if (artifactId) {
-            await this.syncArtifactWorkflowsForTemplateArtifactId(artifactId, connection);
-          }
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
       } else {
         await runUpdate(this.pool);
         if (hooks.afterUpdate) {
           await hooks.afterUpdate(ctx);
-        }
-        if (tableName === "process_definition_series" && Object.hasOwn(updates, "code")) {
-          await this.pool.query(
-            `UPDATE process_definition_versions
-             SET variation_key = ?
-             WHERE series_id = ?`,
-            [updates.code, Number(existing.id)]
-          );
-          await this.refreshProcessDefinitionVersionNames({ seriesId: Number(existing.id) });
         }
       }
     } catch (error) {
@@ -1600,17 +1192,10 @@ export default class SqlAdminService {
       if (mapped) {
         throw mapped;
       }
-      if (
-        tableName === "process_definition_versions"
-        && error?.code === "ER_DUP_ENTRY"
-        && String(error?.message || "").includes("uq_process_definition_one_active_series")
-      ) {
-        throw new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
-      }
       throw error;
     }
     const updatedRow = sanitizePersonRow(tableName, { ...keyPayload, ...updates });
-    const notice = processDefinitionActivationNotice || ctx.notice;
+    const notice = ctx.notice;
     if (notice) {
       return {
         ...updatedRow,

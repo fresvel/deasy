@@ -157,6 +157,41 @@ const syncProgressHooks = (syncProgress) => ({
   }
 });
 
+// Las tres tablas HIJAS de una configuración (`process_definition_templates`, `process_target_rules`
+// y `process_definition_period_types`) comparten dos reglas: solo se tocan con la configuración en
+// BORRADOR, y la configuración a la que cuelgan es inmutable. Solo cambia la etiqueta del mensaje.
+const definitionChildGuards = (entityLabel) => ({
+  async beforeCreate(ctx) {
+    await ctx.service.ensureDraftDefinitionContext(ctx.payload.process_definition_id, { entityLabel });
+  },
+  async beforeUpdate(ctx) {
+    if (Object.hasOwn(ctx.updates, "process_definition_id")) {
+      if (Number(ctx.updates.process_definition_id) !== Number(ctx.existing.process_definition_id)) {
+        throw new Error("No se puede cambiar la configuracion asociada de este registro.");
+      }
+      delete ctx.updates.process_definition_id;
+    }
+    await ctx.service.ensureDraftDefinitionContext(ctx.existing.process_definition_id, { entityLabel });
+  }
+});
+
+const TEMPLATE_CHILD_GUARDS = definitionChildGuards("las plantillas de configuracion");
+const RULE_CHILD_GUARDS = definitionChildGuards("las reglas de alcance");
+const PERIOD_CHILD_GUARDS = definitionChildGuards("los periodos del proceso");
+
+// El remapeo de la unicidad "una sola activa por serie". OJO: ER_DUP_ENTRY es el código de MySQL y
+// la base es PostgreSQL desde la migración, así que esta rama YA ESTABA MUERTA antes del cut #7.
+// Se traslada tal cual para no cambiar comportamiento; arreglarla es otro trabajo.
+const mapOneActivePerSeries = (error) => {
+  if (
+    error?.code === "ER_DUP_ENTRY"
+    && String(error?.message || "").includes("uq_process_definition_one_active_series")
+  ) {
+    return new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
+  }
+  return null;
+};
+
 // -------------------------------------------------------------------------------------------
 // El registro. Una entrada por tabla con lógica propia; las demás pasan por el camino genérico.
 // -------------------------------------------------------------------------------------------
@@ -283,6 +318,389 @@ export const TABLE_HOOKS = {
   unit_types: { afterUpdate: refreshSeriesNamesOnRename("unit_type_id") },
 
   cargos: { afterUpdate: refreshSeriesNamesOnRename("cargo_id") },
+
+  // --- Estado complejo: el árbol de configuraciones de proceso -------------------------------
+  // Serie -> configuración (versionada) -> plantillas/reglas/periodos. Sus injertos encadenan
+  // versionado, clonado y sincronización de flujos; todo eso ya vive en los servicios extraídos
+  // en los cuts #3-#5, así que aquí solo queda la orquestación por-tabla.
+
+  process_definition_series: {
+    // La IDENTIDAD (code) no la elige el usuario: se deriva del origen (cargo o tipo de unidad).
+    async beforeCreate(ctx) {
+      const identity = await ctx.service.resolveProcessDefinitionSeriesIdentity(ctx.payload);
+      Object.assign(ctx.payload, identity);
+      const [dupRows] = await ctx.pool.query(
+        `SELECT id
+         FROM process_definition_series
+         WHERE code = ?
+         LIMIT 1`,
+        [identity.code]
+      );
+      if (dupRows?.length) {
+        throw new Error("Ya existe una serie con ese origen.");
+      }
+    },
+
+    async beforeUpdate(ctx) {
+      const candidateSeries = { ...ctx.existing, ...ctx.updates };
+      const sourceType = String(candidateSeries.source_type || ctx.existing.source_type || "").trim();
+      if (sourceType === "default") {
+        throw new Error("La serie por defecto del sistema no se edita manualmente.");
+      }
+      const identity = await ctx.service.resolveProcessDefinitionSeriesIdentity(candidateSeries);
+      Object.assign(ctx.updates, identity);
+      const [dupRows] = await ctx.pool.query(
+        `SELECT id
+         FROM process_definition_series
+         WHERE code = ?
+           AND id <> ?
+         LIMIT 1`,
+        [identity.code, Number(ctx.existing.id)]
+      );
+      if (dupRows?.length) {
+        throw new Error("Ya existe otra serie con ese origen.");
+      }
+    },
+
+    // Si la identidad cambió, arrastra el `variation_key` de todas sus configuraciones y regenera
+    // sus nombres. No es transaccional (no lo era antes).
+    async afterUpdate(ctx) {
+      if (!Object.hasOwn(ctx.updates, "code")) {
+        return;
+      }
+      await ctx.pool.query(
+        `UPDATE process_definition_versions
+         SET variation_key = ?
+         WHERE series_id = ?`,
+        [ctx.updates.code, Number(ctx.existing.id)]
+      );
+      await ctx.service.refreshProcessDefinitionVersionNames({ seriesId: Number(ctx.existing.id) });
+    }
+  },
+
+  process_definition_versions: {
+    async beforeCreate(ctx) {
+      // Se captura ANTES de nada porque es un campo virtual del request (no de la tabla) que el
+      // hook transaccional necesita después.
+      ctx.state.cloneSourceDefinitionId = (
+        ctx.data?.source_process_definition_id !== undefined
+        && ctx.data?.source_process_definition_id !== null
+        && ctx.data?.source_process_definition_id !== ""
+      )
+        ? Number(ctx.data.source_process_definition_id)
+        : null;
+
+      if (typeof ctx.payload.definition_version === "string") {
+        ctx.payload.definition_version = ctx.payload.definition_version.trim();
+      }
+
+      const requestedStatus = String(ctx.payload.status || "draft");
+      if (requestedStatus !== "draft") {
+        throw new Error("Las nuevas configuraciones solo pueden crearse en estado draft.");
+      }
+      const series = await ctx.service.resolveProcessDefinitionSeries(ctx.payload);
+      ctx.payload.variation_key = String(series.code || "").trim();
+      // El proceso por defecto es especial: SOLO admite la configuración "sin variación"
+      // (source_type='default'). Puede versionarse (N versiones), pero no tener otra
+      // variación por cargo/tipo de unidad.
+      await ctx.service.ensureDefaultProcessSingleVariation(ctx.payload.process_id, series);
+      ctx.payload.name = await ctx.service.resolveProcessDefinitionVersionName(
+        ctx.payload.process_id,
+        ctx.payload.series_id
+      );
+      ctx.payload.status = "draft";
+      await ctx.service.ensureProcessDefinitionVersionAvailable(ctx.payload);
+    },
+
+    // Clonar los hijos va en la MISMA transacción que el INSERT: o se copia todo o no se crea nada.
+    async afterInsertTx(ctx) {
+      if (!ctx.state.cloneSourceDefinitionId) {
+        return;
+      }
+      const cloneSummary = await ctx.service.cloneProcessDefinitionChildren({
+        sourceDefinitionId: ctx.state.cloneSourceDefinitionId,
+        targetDefinitionId: ctx.insertId,
+        targetProcessId: ctx.payload.process_id,
+        connection: ctx.connection
+      });
+      if (cloneSummary.clonedTemplates || cloneSummary.clonedRules || cloneSummary.clonedPeriodTypes) {
+        ctx.notice =
+          `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
+          + ` y ${cloneSummary.clonedPeriodTypes} periodos del proceso desde la configuracion origen.`;
+      }
+      if (cloneSummary.templateWorkflowWarnings?.length) {
+        ctx.notice = `${ctx.notice || ""} Atención: ${cloneSummary.templateWorkflowWarnings.length} plantilla(s) con flujo incompleto no se sincronizaron (revisa sus pasos de firma y vuelve a sincronizarlas).`.trim();
+      }
+    },
+
+    mapCreateError: mapOneActivePerSeries,
+    mapUpdateError: mapOneActivePerSeries,
+
+    // El injerto más grande del fichero: máquina de estados (draft -> active -> retired) + campos
+    // editables por estado + identidad inmutable. Deja decidido en `ctx.state` si el UPDATE necesita
+    // transacción (solo la activación de un borrador la necesita).
+    async beforeUpdate(ctx) {
+      const { updates, existing, config } = ctx;
+
+      if (typeof updates.definition_version === "string") {
+        updates.definition_version = updates.definition_version.trim();
+      }
+
+      // La comparación "¿cambió de verdad?" tiene que normalizar por TIPO DE CAMPO: el driver
+      // devuelve Date para las fechas y números para los enteros, y el request manda strings.
+      const normalizeComparableValue = (fieldName, value) => {
+        if (value === null || value === undefined || value === "") {
+          return null;
+        }
+        const fieldMeta = config.fields.find((field) => field.name === fieldName);
+        if (value instanceof Date) {
+          if (fieldMeta?.type === "date") {
+            return value.toISOString().slice(0, 10);
+          }
+          if (fieldMeta?.type === "datetime") {
+            return value.toISOString().slice(0, 19).replace("T", " ");
+          }
+          return value.toISOString();
+        }
+        if (fieldMeta?.type === "number" || fieldMeta?.type === "boolean") {
+          const numeric = Number(value);
+          return Number.isNaN(numeric) ? String(value) : String(numeric);
+        }
+        return String(value);
+      };
+
+      const isSameValue = (fieldName, left, right) => {
+        const normalizedLeft = normalizeComparableValue(fieldName, left);
+        const normalizedRight = normalizeComparableValue(fieldName, right);
+        return normalizedLeft === normalizedRight;
+      };
+
+      // Identidad inmutable. Reenviar el MISMO valor no es error: se descarta en silencio (el
+      // formulario del admin manda la fila entera).
+      if (Object.hasOwn(updates, "definition_version")) {
+        if (!isSameValue("definition_version", updates.definition_version, existing.definition_version)) {
+          throw new Error("No se puede modificar el numero de version de una configuracion.");
+        }
+        delete updates.definition_version;
+      }
+      if (Object.hasOwn(updates, "process_id")) {
+        if (!isSameValue("process_id", updates.process_id, existing.process_id)) {
+          throw new Error("No se puede cambiar el proceso de una configuracion.");
+        }
+        delete updates.process_id;
+      }
+      if (Object.hasOwn(updates, "series_id")) {
+        if (!isSameValue("series_id", updates.series_id, existing.series_id)) {
+          throw new Error("No se puede cambiar la serie de una configuracion.");
+        }
+        delete updates.series_id;
+      }
+      if (Object.hasOwn(updates, "variation_key")) {
+        if (!isSameValue("variation_key", updates.variation_key, existing.variation_key)) {
+          throw new Error("No se puede cambiar la serie de una configuracion.");
+        }
+        delete updates.variation_key;
+      }
+      if (Object.hasOwn(updates, "name")) {
+        delete updates.name;
+      }
+
+      Object.keys(updates).forEach((key) => {
+        if (isSameValue(key, updates[key], existing[key])) {
+          delete updates[key];
+        }
+      });
+
+      const currentStatus = String(existing.status || "draft");
+      const nextStatus = Object.hasOwn(updates, "status")
+        ? String(updates.status || "")
+        : currentStatus;
+
+      const allowedTransitions = {
+        draft: new Set(["draft", "active", "retired"]),
+        active: new Set(["active", "retired"]),
+        retired: new Set(["retired"])
+      };
+      const currentAllowedTransitions = allowedTransitions[currentStatus] || new Set([currentStatus]);
+      if (!currentAllowedTransitions.has(nextStatus)) {
+        throw new Error(`No se permite cambiar una configuracion ${currentStatus} a ${nextStatus}.`);
+      }
+
+      let allowed;
+      let errorMessage;
+      if (currentStatus === "draft") {
+        const generatedName = await ctx.service.resolveProcessDefinitionVersionName(
+          existing.process_id,
+          existing.series_id
+        );
+        if (generatedName && !isSameValue("name", generatedName, existing.name)) {
+          updates.name = generatedName;
+        }
+        allowed = new Set([
+          "name",
+          "description",
+          "status",
+          "effective_from",
+          "effective_to"
+        ]);
+        errorMessage = "Una configuracion en borrador solo permite cambios funcionales y de estado.";
+      } else if (currentStatus === "active") {
+        allowed = new Set(["status", "effective_to"]);
+        errorMessage = "Una configuracion activa solo permite cambiar estado o vigencia final.";
+      } else {
+        allowed = new Set();
+        errorMessage = "Una configuracion retirada es de solo lectura.";
+      }
+
+      const disallowed = Object.keys(updates).filter((key) => !allowed.has(key));
+      if (disallowed.length) {
+        throw new Error(errorMessage);
+      }
+
+      if (currentStatus === "draft" && nextStatus === "active") {
+        ctx.state.activateDraftVersion = true;
+        ctx.state.seriesContext = {
+          processId: existing.process_id,
+          variationKey: existing.variation_key,
+          excludeId: existing.id ?? ctx.keyPayload.id
+        };
+      }
+    },
+
+    // Solo la ACTIVACIÓN necesita transacción; el resto de ediciones del borrador son un UPDATE llano.
+    needsUpdateTransaction: (ctx) => ctx.state.activateDraftVersion === true,
+
+    // Los guards de activación corren ANTES del UPDATE y dentro de la transacción: si uno falla, no
+    // queda nada a medias (ni plantillas publicadas ni configuraciones retiradas).
+    async beforeUpdateTx(ctx) {
+      const definitionId = ctx.existing.id ?? ctx.keyPayload.id;
+      await ctx.service.ensureDefinitionHasActiveRulesForActivation(definitionId, ctx.connection);
+      await ctx.service.ensureDefinitionHasActivePeriodTypesForActivation(definitionId, ctx.connection);
+      // Publica las plantillas borrador de la config (activa config + publica plantilla, juntas) antes de
+      // validar que haya artefactos activos.
+      await ctx.service.publishDraftTemplatesForDefinition(definitionId, ctx.connection);
+      await ctx.service.ensureDefinitionHasArtifactsForActivation(definitionId, ctx.connection);
+      const retiredCount = await ctx.service.retireActiveDefinitionsInSeries({
+        ...ctx.state.seriesContext,
+        connection: ctx.connection
+      });
+      if (retiredCount > 0) {
+        // El injerto original fijaba este aviso TRAS el commit; da igual, porque si el commit falla
+        // se propaga el error y la respuesta nunca se construye.
+        ctx.notice = "La configuracion activa anterior de la misma serie fue retirada automaticamente.";
+      }
+    }
+  },
+
+  process_definition_templates: {
+    async beforeCreate(ctx) {
+      await TEMPLATE_CHILD_GUARDS.beforeCreate(ctx);
+      // F3 — "la pared": solo se enlaza un entregable cuyo dueño = (proceso, variación) de la config.
+      await ctx.service.assertDeliverableBelongsToConfigLine(
+        ctx.payload.process_definition_id,
+        ctx.payload.template_artifact_id
+      );
+      // Vínculo idempotente: si la plantilla ya está en esta configuración (p. ej. porque al crearla desde el
+      // wizard ya se enlazó), no se duplica el registro (evita el ER_DUP_ENTRY de uq_process_definition_templates);
+      // se devuelve el vínculo existente. `shortCircuit` corta el create() sin llegar al INSERT.
+      const [existingLinkRows] = await ctx.pool.query(
+        `SELECT id, sort_order FROM process_definition_templates
+         WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
+        [ctx.payload.process_definition_id, ctx.payload.template_artifact_id]
+      );
+      if (existingLinkRows?.length) {
+        ctx.shortCircuit = {
+          id: existingLinkRows[0].id,
+          process_definition_id: Number(ctx.payload.process_definition_id),
+          template_artifact_id: Number(ctx.payload.template_artifact_id),
+          sort_order: existingLinkRows[0].sort_order,
+          __notice: "La plantilla ya estaba vinculada a esta configuración."
+        };
+        return;
+      }
+      // El orden es interno (secuencia de la plantilla dentro de la configuración) y se asigna solo:
+      // el usuario no debe elegirlo.
+      if (ctx.payload.sort_order === undefined || ctx.payload.sort_order === null || ctx.payload.sort_order === "") {
+        const [countRows] = await ctx.pool.query(
+          "SELECT COUNT(*) AS c FROM process_definition_templates WHERE process_definition_id = ?",
+          [ctx.payload.process_definition_id]
+        );
+        ctx.payload.sort_order = Number(countRows?.[0]?.c || 0) + 1;
+      }
+    },
+
+    async afterInsertTx(ctx) {
+      if (ctx.payload.template_artifact_id) {
+        await ctx.service.syncArtifactWorkflowsForTemplateArtifactId(
+          Number(ctx.payload.template_artifact_id),
+          ctx.connection
+        );
+      }
+    },
+
+    beforeUpdate: TEMPLATE_CHILD_GUARDS.beforeUpdate,
+
+    // Al reenlazar hay que resincronizar los flujos del artifact. El id sale de lo que se actualiza,
+    // de la fila existente o de la propia clave, en ese orden.
+    async afterUpdateTx(ctx) {
+      const rawArtifactId =
+        ctx.updates.template_artifact_id
+        ?? ctx.existing.template_artifact_id
+        ?? ctx.keyPayload.template_artifact_id
+        ?? 0;
+      const artifactId = Number(rawArtifactId);
+      if (artifactId) {
+        await ctx.service.syncArtifactWorkflowsForTemplateArtifactId(artifactId, ctx.connection);
+      }
+    }
+  },
+
+  process_target_rules: {
+    async beforeCreate(ctx) {
+      await RULE_CHILD_GUARDS.beforeCreate(ctx);
+      await ctx.service.applyTargetRuleSeriesConstraints(ctx.payload.process_definition_id, ctx.payload);
+    },
+
+    // La serie BLINDA el cargo/tipo de unidad de la regla: si la restricción los cambia, ese cambio
+    // se propaga a los updates (no se pierde).
+    async beforeUpdate(ctx) {
+      await RULE_CHILD_GUARDS.beforeUpdate(ctx);
+      const mergedRule = { ...ctx.existing, ...ctx.updates };
+      await ctx.service.applyTargetRuleSeriesConstraints(ctx.existing.process_definition_id, mergedRule);
+      for (const key of ["cargo_id", "unit_type_id"]) {
+        if (mergedRule[key] != null && Number(mergedRule[key]) !== Number(ctx.existing[key])) {
+          ctx.updates[key] = mergedRule[key];
+        }
+      }
+    }
+  },
+
+  process_definition_period_types: {
+    async beforeCreate(ctx) {
+      await PERIOD_CHILD_GUARDS.beforeCreate(ctx);
+      const definition = await ctx.service.getProcessDefinitionVersion(ctx.payload.process_definition_id);
+      if (!definition) {
+        throw new Error("La configuracion de proceso seleccionada no existe.");
+      }
+    },
+
+    beforeUpdate: PERIOD_CHILD_GUARDS.beforeUpdate
+  },
+
+  template_artifacts: {
+    // Los artifacts no se crean por CRUD admin: entran por sincronización desde MinIO o por el
+    // flujo de plantilla de documento.
+    beforeCreate() {
+      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento.");
+    },
+
+    beforeUpdate(ctx) {
+      // Una versión publicada es inmutable; solo se edita en borrador. Para cambiar una publicada, versiónala.
+      if (String(ctx.existing.lifecycle_state || "published") !== "draft") {
+        throw new Error("Esta plantilla está publicada (inmutable). Crea una nueva versión para editarla.");
+      }
+    }
+  },
 
   // --- Runtime -------------------------------------------------------------------------------
   // Estas tablas NO las escriben los flujos de la app (TaskGenerationService y compañía hacen

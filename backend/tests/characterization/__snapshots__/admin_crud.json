@@ -78,6 +78,59 @@
       "message": "No se puede cambiar el item de tarea asociado de un documento."
     }
   },
+  "graft_pdv_create_activa_rechazada": {
+    "status": 400,
+    "body": {
+      "message": "Las nuevas configuraciones solo pueden crearse en estado draft."
+    }
+  },
+  "graft_pdv_create_clon": {
+    "status": 200,
+    "body": {
+      "__notice": "Se clonaron 0 plantillas, 1 reglas y 1 periodos del proceso desde la configuracion origen.",
+      "definition_version": "2.0.0",
+      "effective_from": "2026-02-01",
+      "id": "<normalized>",
+      "name": "Proceso cadena caracterización por Jefe",
+      "process_id": "<normalized>",
+      "series_id": "<normalized>",
+      "status": "draft",
+      "variation_key": "jefe"
+    }
+  },
+  "graft_pdv_create_draft": {
+    "status": 200,
+    "body": {
+      "definition_version": "1.0.0",
+      "effective_from": "2026-01-01",
+      "id": "<normalized>",
+      "name": "Proceso cadena caracterización por Jefe",
+      "process_id": "<normalized>",
+      "series_id": "<normalized>",
+      "status": "draft",
+      "variation_key": "jefe"
+    }
+  },
+  "graft_pdv_update_activacion": {
+    "status": 400,
+    "body": {
+      "message": "No se puede activar una configuracion si no tiene al menos un paquete (plantilla) vinculado."
+    }
+  },
+  "graft_pdv_update_serie_inmutable": {
+    "status": 400,
+    "body": {
+      "message": "No se puede cambiar la serie de una configuracion."
+    }
+  },
+  "graft_period_types_create": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "process_definition_id": "<normalized>",
+      "term_type_id": "<normalized>"
+    }
+  },
   "graft_persons_create": {
     "status": 200,
     "body": {
@@ -100,6 +153,49 @@
     "body": {
       "id": "<normalized>",
       "name": "Proceso caracterización (renombrado)"
+    }
+  },
+  "graft_series_create": {
+    "status": 200,
+    "body": {
+      "cargo_id": "<normalized>",
+      "code": "jefe",
+      "id": "<normalized>",
+      "source_type": "cargo",
+      "unit_type_id": "<normalized>"
+    }
+  },
+  "graft_series_origen_duplicado": {
+    "status": 400,
+    "body": {
+      "message": "Ya existe una serie con ese origen."
+    }
+  },
+  "graft_series_update": {
+    "status": 200,
+    "body": {
+      "cargo_id": "<normalized>",
+      "code": "jefe",
+      "id": "<normalized>",
+      "is_active": 0,
+      "source_type": "cargo",
+      "unit_type_id": "<normalized>"
+    }
+  },
+  "graft_target_rules_create": {
+    "status": 200,
+    "body": {
+      "cargo_id": "<normalized>",
+      "id": "<normalized>",
+      "process_definition_id": "<normalized>",
+      "recipient_policy": "all_matches",
+      "unit_scope_type": "all_units"
+    }
+  },
+  "graft_template_artifacts_create_prohibido": {
+    "status": 400,
+    "body": {
+      "message": "Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento."
     }
   },
   "graft_unit_positions_create": {

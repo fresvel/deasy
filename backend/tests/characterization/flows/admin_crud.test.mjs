@@ -522,6 +522,185 @@ test("PUT /admin/sql/cargos -> graft: renombrar refresca los nombres de configur
   await del("/admin/sql/cargos", { token, body: { keys: { id } } });
 });
 
+// --- 8. Grafts de ESTADO COMPLEJO (cadena proceso -> serie -> borrador -> hijos) --------------
+// Estos grafts no se pueden ejercitar sueltos: exigen un contexto de BORRADOR de configuración.
+// El test lo fabrica entero y lo destruye en orden inverso, así que sigue siendo autolimpiante.
+// Fija de una vez: identidad derivada de la serie, nombre y variation_key generados por el motor
+// de versionado, `ensureDraftDefinitionContext` de los tres hijos, el clonado transaccional con su
+// aviso, y el orden de los guards de activación (que corren DENTRO de la transacción).
+
+test("cadena de configuración -> grafts de process_definition_* sobre un borrador real", async () => {
+  const token = await tokenFor("admin");
+  const cargos = await get("/admin/sql/cargos?limit=5", { token });
+  const cargoId = cargos.body?.[0]?.id;
+  const termTypes = await get("/admin/sql/term_types?limit=5", { token });
+  const termTypeId = termTypes.body?.[0]?.id;
+  assert.ok(cargoId && termTypeId, "la fixture debe traer cargos y tipos de periodo");
+
+  const proceso = await post("/admin/sql/processes", {
+    token,
+    body: { name: "Proceso cadena caracterización", slug: "proceso-cadena-caract", is_active: 1 },
+  });
+  const procesoId = proceso.body?.id;
+  assert.ok(procesoId, "processes create debe devolver id");
+
+  // El graft de series DERIVA la identidad (code) del origen y rechaza duplicados de ese origen.
+  const serie = await post("/admin/sql/process_definition_series", {
+    token,
+    body: { source_type: "cargo", cargo_id: cargoId },
+  });
+  matchSnapshot(SUITE, "graft_series_create", {
+    status: serie.status,
+    body: normalize(serie.body, { maskIdKeys: true }),
+  });
+  assert.equal(serie.status, 200, `series create debe responder 200: ${JSON.stringify(serie.body)}`);
+  const serieId = serie.body?.id;
+
+  const serieDuplicada = await post("/admin/sql/process_definition_series", {
+    token,
+    body: { source_type: "cargo", cargo_id: cargoId },
+  });
+  matchSnapshot(SUITE, "graft_series_origen_duplicado", {
+    status: serieDuplicada.status,
+    body: normalize(serieDuplicada.body),
+  });
+
+  // El graft de versiones fuerza status=draft y GENERA name + variation_key desde la serie.
+  const version = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      process_id: procesoId,
+      series_id: serieId,
+      definition_version: "1.0.0",
+      effective_from: "2026-01-01",
+    },
+  });
+  matchSnapshot(SUITE, "graft_pdv_create_draft", {
+    status: version.status,
+    body: normalize(version.body, { maskIdKeys: true }),
+  });
+  assert.equal(version.status, 200, `pdv create debe responder 200: ${JSON.stringify(version.body)}`);
+  assert.equal(version.body?.status, "draft", "una configuración nueva nace siempre en draft");
+  assert.ok(version.body?.name, "el graft debe generar el nombre de la configuración");
+  const definicionId = version.body?.id;
+
+  // Crear directamente en 'active' está prohibido.
+  const versionActiva = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      process_id: procesoId,
+      series_id: serieId,
+      definition_version: "9.0.0",
+      effective_from: "2026-01-01",
+      status: "active",
+    },
+  });
+  matchSnapshot(SUITE, "graft_pdv_create_activa_rechazada", {
+    status: versionActiva.status,
+    body: normalize(versionActiva.body),
+  });
+
+  // Los tres hijos exigen que su configuración esté en borrador (ensureDraftDefinitionContext).
+  const regla = await post("/admin/sql/process_target_rules", {
+    token,
+    body: {
+      process_definition_id: definicionId,
+      unit_scope_type: "all_units",
+      recipient_policy: "all_matches",
+      cargo_id: cargoId,
+    },
+  });
+  matchSnapshot(SUITE, "graft_target_rules_create", {
+    status: regla.status,
+    body: normalize(regla.body, { maskIdKeys: true }),
+  });
+  const reglaId = regla.body?.id;
+
+  const periodo = await post("/admin/sql/process_definition_period_types", {
+    token,
+    body: { process_definition_id: definicionId, term_type_id: termTypeId },
+  });
+  matchSnapshot(SUITE, "graft_period_types_create", {
+    status: periodo.status,
+    body: normalize(periodo.body, { maskIdKeys: true }),
+  });
+  const periodoId = periodo.body?.id;
+
+  // Clonar: el INSERT y la copia de los hijos van en la MISMA transacción, y el resultado trae
+  // un __notice con el resumen de lo clonado.
+  const clon = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      process_id: procesoId,
+      series_id: serieId,
+      definition_version: "2.0.0",
+      effective_from: "2026-02-01",
+      source_process_definition_id: definicionId,
+    },
+  });
+  matchSnapshot(SUITE, "graft_pdv_create_clon", {
+    status: clon.status,
+    body: normalize(clon.body, { maskIdKeys: true }),
+  });
+  const clonId = clon.body?.id;
+
+  // Los guards de ACTIVACIÓN corren dentro de la transacción, en orden: reglas -> periodos ->
+  // publicar plantillas borrador -> artefactos. Esta configuración no tiene entregables, así que
+  // el golden fija en qué guard se detiene.
+  const activacion = await put("/admin/sql/process_definition_versions", {
+    token,
+    body: { keys: { id: definicionId }, data: { status: "active" } },
+  });
+  matchSnapshot(SUITE, "graft_pdv_update_activacion", {
+    status: activacion.status,
+    body: normalize(activacion.body, { maskIdKeys: true }),
+  });
+
+  // La identidad de una configuración es inmutable aunque esté en borrador.
+  const cambioSerie = await put("/admin/sql/process_definition_versions", {
+    token,
+    body: { keys: { id: definicionId }, data: { series_id: 999999 } },
+  });
+  matchSnapshot(SUITE, "graft_pdv_update_serie_inmutable", {
+    status: cambioSerie.status,
+    body: normalize(cambioSerie.body),
+  });
+
+  // La serie por defecto del sistema no se edita a mano; una normal sí (y renombrar su code
+  // arrastra el variation_key y los nombres de sus configuraciones).
+  const serieEditada = await put("/admin/sql/process_definition_series", {
+    token,
+    body: { keys: { id: serieId }, data: { is_active: 0 } },
+  });
+  matchSnapshot(SUITE, "graft_series_update", {
+    status: serieEditada.status,
+    body: normalize(serieEditada.body, { maskIdKeys: true }),
+  });
+
+  for (const [table, id] of [
+    ["process_definition_versions", clonId],
+    ["process_definition_period_types", periodoId],
+    ["process_target_rules", reglaId],
+    ["process_definition_versions", definicionId],
+    ["process_definition_series", serieId],
+    ["processes", procesoId],
+  ]) {
+    if (id) {
+      await del(`/admin/sql/${table}`, { token, body: { keys: { id } } });
+    }
+  }
+});
+
+// `template_artifacts` es el único graft que PROHÍBE la creación por CRUD admin de plano.
+test("POST /admin/sql/template_artifacts -> graft: creación prohibida por CRUD admin", async () => {
+  const token = await tokenFor("admin");
+  const res = await post("/admin/sql/template_artifacts", { token, body: { name: "X" } });
+  matchSnapshot(SUITE, "graft_template_artifacts_create_prohibido", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
 // Las tablas de RUNTIME (documents, document_versions, *_requests...) no las tocan los flujos de
 // la app — TaskGenerationService y compañía hacen INSERT directo. Su CRUD admin es funcionalidad
 // de borde, pero `document_versions` es valioso caracterizarlo porque su graft es TRANSACCIONAL:
