@@ -8,6 +8,7 @@
     "preview": "vite preview --host 0.0.0.0 --port 8080",
     "lint": "eslint . --ext .js,.vue",
     "test:unit": "vitest run",
+    "test:unit:coverage": "vitest run --coverage && sed -i 's|^SF:|SF:frontend/|' coverage/lcov.info",
     "test:unit:watch": "vitest"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",
     "@vitejs/plugin-vue": "^6.0.5",
+    "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.11",
     "eslint": "^10.2.0",
     "eslint-plugin-vue": "^10.8.0",

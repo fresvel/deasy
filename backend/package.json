@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node index.js",
     "test:unit": "node --test \"config/*.test.js\" \"services/**/*.test.js\" \"utils/**/*.test.js\" \"middlewares/**/*.test.js\" \"controllers/**/*.test.js\" \"errors/**/*.test.js\"",
+    "_comment:coverage": "test:unit:coverage corre desde la raiz del repo (cd ..) para que las rutas SF del lcov salgan como backend/... y SonarQube las resuelva. Si añades una carpeta a los globs de test:unit, añadela TAMBIEN aqui.",
+    "test:unit:coverage": "cd .. && mkdir -p backend/coverage && node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=backend/coverage/lcov.info \"backend/config/*.test.js\" \"backend/services/**/*.test.js\" \"backend/utils/**/*.test.js\" \"backend/middlewares/**/*.test.js\" \"backend/controllers/**/*.test.js\" \"backend/errors/**/*.test.js\"",
     "test:char": "node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs",
     "test:char:bootstrap": "node tests/characterization/setup/bootstrap_system.mjs",
     "test:char:seed": "node tests/characterization/setup/seed_execution.mjs",

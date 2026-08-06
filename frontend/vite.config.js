@@ -23,6 +23,17 @@ export default defineConfig({
     // que prueban, como *.test.js.
     test: {
         environment: 'node',
-        include: ['src/**/*.{test,spec}.{js,mjs}']
+        include: ['src/**/*.{test,spec}.{js,mjs}'],
+        // La cobertura la consume SonarQube (sonar.javascript.lcov.reportPaths). `all: true`
+        // es lo que hace que el informe cuente TODO src/, y no solo los ficheros que algún
+        // test llegó a importar: sin eso, la cobertura sale inflada y no mide nada.
+        coverage: {
+            provider: 'v8',
+            reporter: ['text-summary', 'lcov'],
+            reportsDirectory: 'coverage',
+            all: true,
+            include: ['src/**/*.{js,vue}'],
+            exclude: ['src/**/*.{test,spec}.{js,mjs}']
+        }
     }
 })

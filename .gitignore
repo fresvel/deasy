@@ -1,4 +1,7 @@
 node_modules
+# Informes de cobertura: se regeneran con `npm|pnpm run test:unit:coverage` y los lee
+# SonarQube (sonar.javascript.lcov.reportPaths). No se versionan.
+coverage/
 .env
 docker/.env.*.runtime
 testing

@@ -52,10 +52,18 @@ curl -s -u admin:admin "http://localhost:9002/api/measures/component?component=d
 SONAR_TOKEN=<token> bash scripts/sonar/scan.sh                       # ~1,5 min
 ```
 
-### 1.2 Cuatro huecos de configuración
+### 1.2 Cuatro huecos de configuración — **H1, H2 y H3 CERRADOS el 2026-08-06**
 
-Estos son defectos de la instalación, no del código. Cuestan poco y hasta que no se arreglen, las
-métricas de Sonar mienten en dos frentes.
+Estos eran defectos de la instalación, no del código. **La Fase A los cerró**; se conserva el
+diagnóstico porque explica de dónde salían las cifras viejas y qué hay que vigilar para que no
+vuelvan. Lo que queda vivo es **H4** (Sonar no corre en CI) y la contraseña `admin/admin`.
+
+| | Estado | Cómo se cerró |
+|---|---|---|
+| **H1** tests sin declarar | ✅ | `sonar.tests` + `sonar.test.inclusions`, con `sonar.exclusions` recortado para que los conjuntos sean disjuntos |
+| **H2** sin cobertura | ✅ | `test:unit:coverage` en backend y frontend → `sonar.javascript.lcov.reportPaths` |
+| **H3** gate inalcanzable | ✅ | Ya mide código: `new_coverage` **30,6 %** contra un umbral del 80 %, no `0.0` por falta de instrumentación |
+| **H4** Sonar fuera de CI | ⬜ | Pendiente (opcional) |
 
 **H1 — `sonar.tests=` está VACÍO.** Las 115 pruebas de caracterización y los 15 ficheros de test
 unitario se analizan **como código de producción** — Sonar indexa hoy 391 ficheros, 22 de ellos bajo
@@ -129,6 +137,28 @@ Serie histórica completa (`/api/measures/search_history`), útil para no volver
 
 En un mes: −393 de complejidad cognitiva (−4,3 %) y −961 min de deuda (−16 %). El grueso lo hizo el
 corte de `SqlAdminService` (05:14). Los tres escaneos de agosto están planos entre sí.
+
+> **⚠️ Discontinuidad de serie: el escaneo de las 20:18 no es comparable con los anteriores.** La
+> Fase A sacó 49 ficheros de test del código de producción, así que los denominadores cambian de
+> golpe **sin que se haya tocado una línea**. Cifras post-Fase A, que son las que valen de aquí en
+> adelante:
+>
+> | | 19:22 (pre-A) | **20:18 (post-A)** | |
+> |---|---:|---:|---|
+> | Cobertura | 0,0 % | **11,5 %** | ← el objetivo de la fase |
+> | Ficheros | 391 | **342** | −49 tests |
+> | NCLOC | 80 448 | 79 899 | |
+> | Cognitiva | 8 797 | 8 720 | los tests dejan de sumar |
+> | Ciclomática | 16 104 | 15 964 | |
+> | Incidencias abiertas | 832 | **822** | |
+> | — vulnerabilidades | 45 | **42** | las 3 `S2068` de fixtures |
+> | — code smells | 644 | 637 | |
+> | Severidad | 76 CRIT · 533 MAJ · 197 MIN · 26 INFO | 76 CRIT · 527 MAJ · 197 MIN · 22 INFO | |
+> | SQALE | 4 902 min | 4 872 min | |
+> | Duplicación | 3,1 % | 3,4 % | **sube**: los tests diluían el porcentaje |
+> | Notas | C / D / A | **C / D / A** | sin cambios |
+>
+> **El ranking de §3 sigue valiendo tal cual**: ninguno de los ficheros de esa lista es un test.
 
 *(El +5 en ficheros y +133 en NCLOC no lo explica el diff `75fe53d..514b67e`, que en `sources` es
 −2 ficheros netos. Es ruido de indexación de ±0,2 %; no afecta a ninguna conclusión, pero conviene no
@@ -350,11 +380,31 @@ renames, así que el código movido **no** entra como código nuevo. No hay que 
 Ordenado por retorno sobre esfuerzo, no por gravedad. Las fases A y B son baratas y desbloquean la
 medición; el resto ya no se puede medir bien sin ellas.
 
-### Fase A — Arreglar el instrumento (antes de tocar código)
+### Fase A — Arreglar el instrumento — ✅ **HECHA (2026-08-06)**
 
-Sin esto, cualquier mejora posterior es inmedible.
+Sin esto, cualquier mejora posterior es inmedible. Resultado medido tras aplicarla:
 
-1. **Declarar los tests** en `sonar-project.properties`. **La receta que traía este plan estaba mal**
+| Métrica | Antes | Después |
+|---|---:|---:|
+| **Cobertura** | **0,0 %** | **11,5 %** (33 815 líneas a cubrir, 29 334 sin cubrir) |
+| `new_coverage` (gate) | 0,0 | **30,6** |
+| Ficheros de producción | 391 | **342** (49 pasan a ser tests) |
+| NCLOC | 80 448 | 79 899 |
+| Vulnerabilidades | 45 | **42** — se van las 3 `S2068` de fixtures, exactamente lo previsto |
+| Incidencias abiertas | 832 | **822** |
+| `new_violations` | 176 | 171 |
+
+La cobertura del **11,5 %** es real, no optimista: el *Zero Coverage Sensor* de Sonar cuenta como
+**0 %** todo fichero analizado que no aparezca en ningún informe, así que los ~300 sin test tiran de
+la media hacia abajo como deben. El backend sí tiene un sesgo que hay que conocer: el runner de Node
+solo instrumenta los ficheros que **algún test llega a cargar** (21 de ~170), y `--test-coverage-include`
+no lo arregla —solo filtra los ya cargados—. El frontend no lo tiene, porque vitest va con `all: true`.
+Si algún día hace falta cobertura honesta *por fichero* en el backend, la respuesta es `c8`, no Node.
+
+**Lo que NO hay que volver a tocar:** `sonar.projectVersion` (mueve el New Code period y tira la serie
+histórica de §2) y las 4 marcas manuales vivas (§4.4-R1).
+
+1. ✅ **Declarar los tests** en `sonar-project.properties`. **La receta que traía este plan estaba mal**
    por dos motivos medidos: (a) los 15 ficheros de test unitario **no viven bajo `backend/tests`**,
    sino junto a su módulo (`services/**/*.test.js`, `config/*.test.js`, …), así que
    `sonar.tests=backend/tests` los seguiría contando como producción; (b) `sonar.sources` y
@@ -373,9 +423,20 @@ Sin esto, cualquier mejora posterior es inmedible.
    y con ellos **3** vulnerabilidades S2068 y las 3 marcas `S2871`. **No** las 4 que decía este plan,
    y **no** las otras 11 S2068, que son producción real (6 en `SystemBootstrapView.vue`).
    Verificar tras el cambio que el total de ficheros indexados baja de 391 a ~363.
-2. **Enchufar cobertura** (H2). Backend: `node --test --experimental-test-coverage` con reporter
-   `lcov` → `sonar.javascript.lcov.reportPaths`. Frontend: `vitest --coverage`. Es el prerrequisito
-   del Quality Gate.
+2. ✅ **Enchufar cobertura** (H2). Hecho con dos scripts nuevos, ambos emitiendo rutas `SF:` relativas
+   a la **raíz del repo** (si salen relativas al módulo, Sonar las descarta **en silencio** y la
+   cobertura vuelve a 0 sin avisar de nada):
+
+   ```bash
+   bash scripts/docker-env.sh dev exec -T backend  npm run test:unit:coverage
+   bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage
+   ```
+   - Backend: `node --test --experimental-test-coverage` con **doble reporter** (`spec` a stdout +
+     `lcov` a fichero), lanzado desde `cd ..` para que las rutas queden como `backend/…`.
+   - Frontend: `vitest run --coverage` (`@vitest/coverage-v8`, añadido como devDependency) con
+     `all: true` en `vite.config.js`, y un `sed` que antepone `frontend/` a las rutas `SF:`.
+   - **Regenerar ambos informes antes de cada escaneo**, o Sonar leerá la cobertura de la corrida
+     anterior sin quejarse.
 3. ~~**Re-marcar los falsos positivos.**~~ **HECHO / sin objeto.** El re-escaneo del 19:22 demuestra
    que las **7** marcas vivas sobrevivieron enteras al reempaquetado, incluida la de `tableHooks.js`
    que este plan daba por perdida (§4.4-R1). Vulnerabilidades **46 → 45**, seguridad **sigue en D**.
