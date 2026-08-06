@@ -47,6 +47,28 @@
       "message": "Selecciona una serie valida para la configuracion."
     }
   },
+  "graft_persons_create": {
+    "status": 200,
+    "body": {
+      "cedula": "9999999999",
+      "email": "caract-grafts@test.local",
+      "first_name": "Caracterizacion",
+      "id": "<normalized>",
+      "last_name": "Grafts",
+      "token": "<normalized>"
+    }
+  },
+  "graft_unit_positions_create": {
+    "status": 200,
+    "body": {
+      "cargo_id": "<normalized>",
+      "id": "<normalized>",
+      "is_unit_head": 0,
+      "position_type": "real",
+      "slot_no": 99,
+      "unit_id": "<normalized>"
+    }
+  },
   "list_cargo_role_map": {
     "status": 200,
     "isArray": true,

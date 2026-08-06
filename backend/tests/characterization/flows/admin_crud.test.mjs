@@ -260,3 +260,56 @@ for (const [key, path] of READ_SUBSYSTEM_CASES) {
     matchSnapshot(SUITE, `read_${key}`, readShape(res));
   });
 }
+
+// --- 7. SUCCESS de los grafts por-tabla (red para el registro de hooks del cut #7) ------------
+// create()/update() tienen ~20 ramas `if (tableName === X)` que TRANSFORMAN el payload por tabla
+// (hash de password, validación de cabeza de unidad, ids derivados...). El cut #7 las convertirá en
+// un registro de hooks; estos round-trips capturan la SALIDA OBSERVABLE del graft en su camino de
+// ÉXITO, que el refactor debe preservar. Son AUTOLIMPIANTES (crear -> fijar -> borrar) para no
+// alterar los conteos de las huellas `list_*` de la sección 5. El mapa de cobertura completo
+// (qué graft se cubre cómo, y la estrategia por-tabla del cut #7) está en
+// docs/auditoria-god-objects-2026-07.md.
+
+test("POST /admin/sql/persons -> graft: hashea la contraseña (no la devuelve) y genera token", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/persons", {
+    token,
+    body: {
+      cedula: "9999999999",
+      first_name: "Caracterizacion",
+      last_name: "Grafts",
+      email: "caract-grafts@test.local",
+      password: "Demo1234!",
+      cargo_id: 1,
+      role_id: 1,
+    },
+  });
+  matchSnapshot(SUITE, "graft_persons_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  const id = created.body?.id;
+  assert.ok(id, "persons create debe devolver el id de la fila insertada");
+  // El graft de persons es de SEGURIDAD: hashea la contraseña y NUNCA la devuelve, y genera un token.
+  assert.ok(!("password" in (created.body || {})), "la respuesta NO debe exponer 'password'");
+  assert.ok(!("password_hash" in (created.body || {})), "la respuesta NO debe exponer 'password_hash'");
+  assert.ok(created.body?.token, "el graft de persons debe generar un token");
+
+  await del("/admin/sql/persons", { token, body: { keys: { id } } });
+});
+
+test("POST /admin/sql/unit_positions -> graft: valida cabeza/tipo y crea el puesto", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: FIXTURE.unitId, cargo_id: 1, slot_no: 99, is_unit_head: 0, position_type: "real" },
+  });
+  matchSnapshot(SUITE, "graft_unit_positions_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  const id = created.body?.id;
+  assert.ok(id, "unit_positions create debe devolver el id de la fila insertada");
+
+  await del("/admin/sql/unit_positions", { token, body: { keys: { id } } });
+});

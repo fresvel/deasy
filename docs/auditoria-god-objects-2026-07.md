@@ -149,6 +149,30 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   tocan. `SqlAdminService.js` 3816 → **3441 L** (−375). **Acumulado #1-#6: 5924 → 3441 L (−2483, −42%).** Verificado: backend
   arranca, **char 119/119** (target-scope, resolvable-cargos, stuck), unit 177/177, smoke `resolvable-cargos` → 200.
 
+#### Preparación del cut #7 — mapa de cobertura de los grafts (2026-07-18)
+
+El cut #7 (convertir los ~20 injertos `if (tableName === X)` de `create()`/`update()` en un **registro de hooks por tabla**)
+es el de mayor valor y mayor riesgo. Antes de tocarlo se preparó la red de caracterización de sus **caminos de ÉXITO** (hoy
+solo había contratos de ERROR). **char 119 → 121.**
+
+**Hallazgo que fija la estrategia:** los grafts se alcanzan **SOLO por el CRUD admin** (`POST`/`PUT` `/admin/sql/:table`). Los
+flujos de la app (launch, ejecución, firma) **NO** pasan por `create()`/`update()`: `TaskGenerationService` y compañía hacen
+`INSERT INTO tasks/task_items/documents` **directo** (verificado). Así que caracterizar un graft = **round-trip admin
+autolimpiante** (crear → fijar la respuesta normalizada → borrar, para no alterar los conteos `list_*`).
+
+| Grupo | Tablas | Cobertura hoy |
+|---|---|---|
+| **Éxito caracterizado** (nuevos round-trips) | `persons` (hash de contraseña + token, con asserts de que NO devuelve la contraseña), `unit_positions` (validación cabeza/tipo) | ✅ golden + asserts |
+| **Solo contrato de error** | `unit_relations`, `process_definition_series`, `vacancies`, `cargos`, `unit_types`, `processes` | ⚠️ falta éxito (payloads simples, añadir en el cut) |
+| **Solo error + estado complejo** | `process_definition_versions`, `process_definition_templates`, `process_target_rules`, `process_definition_period_types`, `template_artifacts` | ⚠️ requieren contexto de **borrador de definición** (cascada); caracterizar con setup previo |
+| **Runtime, CRUD-admin-only** | `tasks`, `task_items`, `documents`, `document_versions`, `fill_/signature_flow_*`, `*_requests`, `document_signatures` | ⚠️ los flujos NO los ejercitan (usan SQL directo); su graft admin es funcionalidad de borde |
+
+**Estrategia recomendada para el cut #7: TABLA POR TABLA, no todo de golpe.** Para cada tabla grafted: (1) añadir su round-trip
+de éxito (patrón ya establecido con `persons`/`unit_positions`); (2) extraer su rama a un hook `{ beforeCreate/afterCreate/…}`;
+(3) verificar golden idéntico + arranque + char. Empezar por el grupo de payloads simples; las de estado complejo, con su setup;
+las runtime, valorar si su create admin merece hook o puede quedar en el catch-all. El registro de hooks es el equivalente
+backend de `FK_TABLE_MAP` que el §6 cita como buen diseño.
+
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
 | Fichero:línea | Qué hay | Baja a |
