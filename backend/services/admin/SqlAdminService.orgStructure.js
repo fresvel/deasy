@@ -5,6 +5,7 @@
 // (que llaman this.wouldCreateUnitCycle / this.assertUnitHeadAllowed) no se tocan.
 import { isUniqueViolation, isForeignKeyViolation } from "../../errors/sqlErrors.js";
 import { conflict } from "../../errors/HttpError.js";
+import { slugify } from "./SqlAdminService.primitives.js";
 
 export default class OrgStructureService {
   constructor(pool, { getByKeys } = {}) {

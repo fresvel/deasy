@@ -16,7 +16,8 @@ import {
   unzipToDirectory,
   walkFiles,
 } from "./SqlAdminService.storage.js";
-import { parseAvailableFormats } from "./SqlAdminService.artifacts.js";
+import { parseAvailableFormats, parseYamlDocument } from "./SqlAdminService.artifacts.js";
+import { bumpSemanticVersion } from "./SqlAdminService.versioning.js";
 
 // Config espejo del env (mismo valor que SqlAdminService.js). Deuda menor: unificar en un modulo de
 // constantes compartido. Son deterministas (env + literal), asi que ambos modulos leen lo mismo.

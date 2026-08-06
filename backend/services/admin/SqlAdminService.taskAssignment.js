@@ -4,7 +4,7 @@
 // (cut #6). Cluster AUTOCONTENIDO: solo this.pool + normalizeNumericId (import); cero colaboradores
 // inyectados. SqlAdminService mantiene delegadores; el controller, saveTemplateArtifactDraft y el
 // WorkflowSyncService (que llaman getCargoCodeMap/getProcessTargetScope/... via this.) no se tocan.
-import { normalizeNumericId } from "./SqlAdminService.primitives.js";
+import { normalizeNumericId, slugify } from "./SqlAdminService.primitives.js";
 
 export default class TaskAssignmentService {
   constructor(pool) {
