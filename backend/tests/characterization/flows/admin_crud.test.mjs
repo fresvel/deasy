@@ -313,3 +313,232 @@ test("POST /admin/sql/unit_positions -> graft: valida cabeza/tipo y crea el pues
 
   await del("/admin/sql/unit_positions", { token, body: { keys: { id } } });
 });
+
+// El graft de update de unit_positions NO es el mismo que el de create: calcula los valores
+// EFECTIVOS mezclando `updates` con la fila existente antes de validar. Aquí `position_type` no
+// viaja en el PUT, así que sale de `existing` — si el merge se rompiera, la validación de cabeza
+// de unidad se haría contra `undefined` y este 200 pasaría a 400.
+// Necesita una unidad SIN cabeza (la unidad de la fixture ya tiene una y chocaría con uq_unit_head),
+// así que fabrica la suya.
+test("PUT /admin/sql/unit_positions -> graft: valida cabeza/tipo sobre el merge con la fila existente", async () => {
+  const token = await tokenFor("admin");
+  const unitTypes = await get("/admin/sql/unit_types", { token });
+  const unitTypeId = unitTypes.body?.[0]?.id;
+  assert.ok(unitTypeId, "hace falta al menos un tipo de unidad en la fixture");
+
+  const unit = await post("/admin/sql/units", {
+    token,
+    body: { name: "Unidad caracterización puesto", slug: "unidad-caract-puesto", unit_type_id: unitTypeId },
+  });
+  const unitId = unit.body?.id;
+  assert.ok(unitId, "units create debe devolver id");
+
+  const created = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: unitId, cargo_id: 1, slot_no: 1, is_unit_head: 0, position_type: "real" },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "unit_positions create debe devolver id");
+
+  // `position_type` NO viaja en el PUT: sale de `existing`. Si el merge se rompiera, la validación
+  // correría contra `undefined` y este 200 pasaría a 400.
+  const updated = await put("/admin/sql/unit_positions", {
+    token,
+    body: { keys: { id }, data: { is_unit_head: 1 } },
+  });
+  matchSnapshot(SUITE, "graft_unit_positions_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+  assert.equal(updated.status, 200, `el merge debe permitir cabeza sobre un puesto real: ${JSON.stringify(updated.body)}`);
+
+  // Y el guard SÍ salta en el sentido contrario: el tipo llega en el PUT y la cabeza de `existing`.
+  const rejected = await put("/admin/sql/unit_positions", {
+    token,
+    body: { keys: { id }, data: { position_type: "simbolico" } },
+  });
+  matchSnapshot(SUITE, "graft_unit_positions_update_head_rechazada", {
+    status: rejected.status,
+    body: normalize(rejected.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/unit_positions", { token, body: { keys: { id } } });
+  await del("/admin/sql/units", { token, body: { keys: { id: unitId } } });
+});
+
+// `persons` tiene graft en AMBOS métodos y ambos son de seguridad. El de update rehashea la
+// contraseña que llega en claro y no debe devolverla nunca.
+test("PUT /admin/sql/persons -> graft: rehashea la contraseña y no la devuelve", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/persons", {
+    token,
+    body: {
+      cedula: "9999999998",
+      first_name: "Caracterizacion",
+      last_name: "GraftsUpdate",
+      email: "caract-grafts-upd@test.local",
+      password: "Demo1234!",
+      cargo_id: 1,
+      role_id: 1,
+    },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "persons create debe devolver id");
+
+  const updated = await put("/admin/sql/persons", {
+    token,
+    body: { keys: { id }, data: { password: "Otra1234!" } },
+  });
+  matchSnapshot(SUITE, "graft_persons_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+  assert.ok(!("password" in (updated.body || {})), "la respuesta NO debe exponer 'password'");
+  assert.ok(!("password_hash" in (updated.body || {})), "la respuesta NO debe exponer 'password_hash'");
+
+  await del("/admin/sql/persons", { token, body: { keys: { id } } });
+});
+
+// `unit_relations` valida jerarquía: unicidad de padre por tipo de relación y ausencia de ciclos.
+// Necesita una unidad hija SIN padre en ese tipo, así que la fabrica y la limpia.
+test("POST/PUT /admin/sql/unit_relations -> graft: padre único por tipo y sin ciclos", async () => {
+  const token = await tokenFor("admin");
+  const unitTypes = await get("/admin/sql/unit_types", { token });
+  const unitTypeId = unitTypes.body?.[0]?.id;
+  assert.ok(unitTypeId, "hace falta al menos un tipo de unidad en la fixture");
+
+  const childUnit = await post("/admin/sql/units", {
+    token,
+    body: { name: "Unidad caracterización rel", slug: "unidad-caract-rel", unit_type_id: unitTypeId },
+  });
+  const childUnitId = childUnit.body?.id;
+  assert.ok(childUnitId, "units create debe devolver id");
+
+  const created = await post("/admin/sql/unit_relations", {
+    token,
+    body: { parent_unit_id: FIXTURE.unitId, child_unit_id: childUnitId, relation_type_id: 1 },
+  });
+  matchSnapshot(SUITE, "graft_unit_relations_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  const relationId = created.body?.id;
+  assert.ok(relationId, "unit_relations create debe devolver id");
+
+  // Un segundo padre para la misma hija y tipo debe rechazarse (unicidad del graft).
+  const duplicated = await post("/admin/sql/unit_relations", {
+    token,
+    body: { parent_unit_id: 1, child_unit_id: childUnitId, relation_type_id: 1 },
+  });
+  matchSnapshot(SUITE, "graft_unit_relations_padre_duplicado", {
+    status: duplicated.status,
+    body: normalize(duplicated.body),
+  });
+
+  // Reasignar el padre por PUT sí es válido: el graft de update excluye la propia fila del duplicado.
+  const updated = await put("/admin/sql/unit_relations", {
+    token,
+    body: { keys: { id: relationId }, data: { parent_unit_id: 1 } },
+  });
+  matchSnapshot(SUITE, "graft_unit_relations_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/unit_relations", { token, body: { keys: { id: relationId } } });
+  await del("/admin/sql/units", { token, body: { keys: { id: childUnitId } } });
+});
+
+// `vacancies` es el ÚNICO graft que corre DESPUÉS de validateTableRules: el orden importa y este
+// caso lo fija (un puesto simbólico no admite vacante).
+test("POST /admin/sql/vacancies -> graft: solo puestos reales o de promoción", async () => {
+  const token = await tokenFor("admin");
+  const position = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: FIXTURE.unitId, cargo_id: 1, slot_no: 97, is_unit_head: 0, position_type: "real" },
+  });
+  const positionId = position.body?.id;
+  assert.ok(positionId, "unit_positions create debe devolver id");
+
+  const created = await post("/admin/sql/vacancies", {
+    token,
+    body: {
+      position_id: positionId,
+      title: "Vacante caracterización",
+      dedication: "TC",
+      relation_type: "dependencia",
+    },
+  });
+  matchSnapshot(SUITE, "graft_vacancies_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  assert.equal(created.status, 200, `la vacante sobre un puesto real debe crearse: ${JSON.stringify(created.body)}`);
+  const vacancyId = created.body?.id;
+
+  // El graft corre DESPUÉS de validateTableRules: con todos los campos presentes, el mensaje que
+  // emerge es el suyo, no el de "datos incompletos".
+  const inexistente = await post("/admin/sql/vacancies", {
+    token,
+    body: {
+      position_id: 999999,
+      title: "Vacante fantasma",
+      dedication: "TC",
+      relation_type: "dependencia",
+    },
+  });
+  matchSnapshot(SUITE, "graft_vacancies_puesto_inexistente", {
+    status: inexistente.status,
+    body: normalize(inexistente.body),
+  });
+
+  if (vacancyId) {
+    await del("/admin/sql/vacancies", { token, body: { keys: { id: vacancyId } } });
+  }
+  await del("/admin/sql/unit_positions", { token, body: { keys: { id: positionId } } });
+});
+
+// `cargos`, `unit_types` y `processes` comparten un graft POST-UPDATE en el camino genérico:
+// renombrarlos regenera los nombres de las configuraciones de proceso que dependen de ellos.
+// (`unit_types` ya lo ejercita el round-trip de la sección 3.)
+test("PUT /admin/sql/cargos -> graft: renombrar refresca los nombres de configuraciones", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/cargos", {
+    token,
+    body: { code: "CARACT", name: "Cargo caracterización", is_active: 1 },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "cargos create debe devolver id");
+
+  const updated = await put("/admin/sql/cargos", {
+    token,
+    body: { keys: { id }, data: { name: "Cargo caracterización (renombrado)" } },
+  });
+  matchSnapshot(SUITE, "graft_cargos_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/cargos", { token, body: { keys: { id } } });
+});
+
+test("PUT /admin/sql/processes -> graft: renombrar refresca los nombres de configuraciones", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/processes", {
+    token,
+    body: { name: "Proceso caracterización", slug: "proceso-caracterizacion", is_active: 1 },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "processes create debe devolver id");
+
+  const updated = await put("/admin/sql/processes", {
+    token,
+    body: { keys: { id }, data: { name: "Proceso caracterización (renombrado)" } },
+  });
+  matchSnapshot(SUITE, "graft_processes_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/processes", { token, body: { keys: { id } } });
+});

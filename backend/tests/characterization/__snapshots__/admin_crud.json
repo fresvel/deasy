@@ -47,6 +47,13 @@
       "message": "Selecciona una serie valida para la configuracion."
     }
   },
+  "graft_cargos_update": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "name": "Cargo caracterización (renombrado)"
+    }
+  },
   "graft_persons_create": {
     "status": 200,
     "body": {
@@ -58,6 +65,19 @@
       "token": "<normalized>"
     }
   },
+  "graft_persons_update": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>"
+    }
+  },
+  "graft_processes_update": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "name": "Proceso caracterización (renombrado)"
+    }
+  },
   "graft_unit_positions_create": {
     "status": 200,
     "body": {
@@ -67,6 +87,57 @@
       "position_type": "real",
       "slot_no": 99,
       "unit_id": "<normalized>"
+    }
+  },
+  "graft_unit_positions_update": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "is_unit_head": 1
+    }
+  },
+  "graft_unit_positions_update_head_rechazada": {
+    "status": 400,
+    "body": {
+      "message": "La cabeza de la unidad debe ser un puesto real o de promoción."
+    }
+  },
+  "graft_unit_relations_create": {
+    "status": 200,
+    "body": {
+      "child_unit_id": "<normalized>",
+      "id": "<normalized>",
+      "parent_unit_id": "<normalized>",
+      "relation_type_id": "<normalized>"
+    }
+  },
+  "graft_unit_relations_padre_duplicado": {
+    "status": 400,
+    "body": {
+      "message": "Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de crear otra."
+    }
+  },
+  "graft_unit_relations_update": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "parent_unit_id": "<normalized>"
+    }
+  },
+  "graft_vacancies_create": {
+    "status": 200,
+    "body": {
+      "dedication": "TC",
+      "id": "<normalized>",
+      "position_id": "<normalized>",
+      "relation_type": "dependencia",
+      "title": "Vacante caracterización"
+    }
+  },
+  "graft_vacancies_puesto_inexistente": {
+    "status": 400,
+    "body": {
+      "message": "El puesto seleccionado no existe."
     }
   },
   "list_cargo_role_map": {
