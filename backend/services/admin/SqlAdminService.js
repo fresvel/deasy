@@ -85,6 +85,11 @@ import ProcessDefinitionVersionService from "./SqlAdminService.processDefinition
 import WorkflowSyncService from "./SqlAdminService.workflowSync.js";
 import TaskAssignmentService from "./SqlAdminService.taskAssignment.js";
 import { assertPasswordPolicy } from "../../utils/passwordPolicy.js";
+import {
+  getTableHooks,
+  runInTransaction,
+  insertPayload,
+} from "./SqlAdminService.tableHooks.js";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
@@ -1074,6 +1079,23 @@ export default class SqlAdminService {
     this.ensurePool();
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
+    const hooks = getTableHooks(tableName);
+    const ctx = {
+      service: this,
+      pool: this.pool,
+      connection: null,
+      tableName,
+      config,
+      data,
+      payload,
+      state: {},
+      notice: ""
+    };
+
+    if (hooks.beforeCreate) {
+      await hooks.beforeCreate(ctx);
+    }
+
     if (tableName === "unit_positions") {
       this.assertUnitHeadAllowed(payload.is_unit_head, payload.position_type || "real");
     }
@@ -1351,6 +1373,10 @@ export default class SqlAdminService {
     validateFieldTypes(config, payload);
     validateTableRules(tableName, payload);
 
+    if (hooks.afterValidateCreate) {
+      await hooks.afterValidateCreate(ctx);
+    }
+
     if (tableName === "vacancies") {
       await this.ensureContractablePosition(payload.position_id ?? data?.position_id);
     }
@@ -1365,7 +1391,14 @@ export default class SqlAdminService {
     let result;
     let createNotice = "";
     try {
-      if (tableName === "process_definition_versions") {
+      if (hooks.beforeInsertTx || hooks.afterInsertTx) {
+        result = await runInTransaction(
+          this.pool,
+          ctx,
+          { before: hooks.beforeInsertTx, after: hooks.afterInsertTx },
+          (connection) => insertPayload(connection, ctx)
+        );
+      } else if (tableName === "process_definition_versions") {
         const connection = await this.pool.getConnection();
         try {
           await connection.beginTransaction();
@@ -1551,6 +1584,10 @@ export default class SqlAdminService {
         result = insertResult;
       }
     } catch (error) {
+      const mapped = hooks.mapCreateError ? hooks.mapCreateError(error, ctx) : null;
+      if (mapped) {
+        throw mapped;
+      }
       if (
         tableName === "process_definition_versions"
         && error?.code === "ER_DUP_ENTRY"
@@ -1567,10 +1604,11 @@ export default class SqlAdminService {
       throw error;
     }
     const created = { id: result.insertId, ...payload };
-    if (createNotice) {
+    const notice = createNotice || ctx.notice;
+    if (notice) {
       return {
         ...sanitizePersonRow(tableName, created),
-        __notice: createNotice
+        __notice: notice
       };
     }
     return sanitizePersonRow(tableName, created);
@@ -1586,6 +1624,28 @@ export default class SqlAdminService {
     const existing = await this.getByKeys(tableName, keyPayload);
     if (!existing) {
       throw new Error("Registro no encontrado.");
+    }
+
+    const hooks = getTableHooks(tableName);
+    const ctx = {
+      service: this,
+      pool: this.pool,
+      connection: null,
+      tableName,
+      config,
+      data,
+      keys,
+      keyPayload,
+      updates,
+      existing,
+      where,
+      params,
+      state: {},
+      notice: ""
+    };
+
+    if (hooks.beforeUpdate) {
+      await hooks.beforeUpdate(ctx);
     }
 
     if (tableName === "unit_positions") {
@@ -1928,8 +1988,23 @@ export default class SqlAdminService {
     validateFieldTypes(config, candidate);
     validateTableRules(tableName, candidate);
 
+    const runUpdate = (executor) => executor.query(
+      `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+      [...values, ...params]
+    );
+    const needsUpdateTx = hooks.needsUpdateTransaction
+      ? hooks.needsUpdateTransaction(ctx)
+      : Boolean(hooks.beforeUpdateTx || hooks.afterUpdateTx);
+
     try {
-      if (tableName === "process_definition_versions" && activateDraftVersion) {
+      if (needsUpdateTx) {
+        await runInTransaction(
+          this.pool,
+          ctx,
+          { before: hooks.beforeUpdateTx, after: hooks.afterUpdateTx },
+          runUpdate
+        );
+      } else if (tableName === "process_definition_versions" && activateDraftVersion) {
         const connection = await this.pool.getConnection();
         try {
           await connection.beginTransaction();
@@ -2057,10 +2132,10 @@ export default class SqlAdminService {
           connection.release();
         }
       } else {
-        await this.pool.query(
-          `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-          [...values, ...params]
-        );
+        await runUpdate(this.pool);
+        if (hooks.afterUpdate) {
+          await hooks.afterUpdate(ctx);
+        }
         if (tableName === "process_definition_series" && Object.hasOwn(updates, "code")) {
           await this.pool.query(
             `UPDATE process_definition_versions
@@ -2088,6 +2163,10 @@ export default class SqlAdminService {
         }
       }
     } catch (error) {
+      const mapped = hooks.mapUpdateError ? hooks.mapUpdateError(error, ctx) : null;
+      if (mapped) {
+        throw mapped;
+      }
       if (
         tableName === "process_definition_versions"
         && error?.code === "ER_DUP_ENTRY"
@@ -2098,10 +2177,11 @@ export default class SqlAdminService {
       throw error;
     }
     const updatedRow = sanitizePersonRow(tableName, { ...keyPayload, ...updates });
-    if (processDefinitionActivationNotice) {
+    const notice = processDefinitionActivationNotice || ctx.notice;
+    if (notice) {
       return {
         ...updatedRow,
-        __notice: processDefinitionActivationNotice
+        __notice: notice
       };
     }
     return updatedRow;
