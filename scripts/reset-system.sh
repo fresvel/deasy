@@ -10,7 +10,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # inicializacion de esquema y queda en modo bootstrap). Solo se tocan los que existan en el entorno.
 APP_SERVICES=("backend" "signer")
 
-# Proxy reverso de dev/qa-local: usa `proxy_pass http://backend:3030/` con resolución estática, es
+# Proxy reverso de dev: usa `proxy_pass http://backend:3030/` con resolución estática, es
 # decir resuelve la IP del backend UNA vez al arrancar y la cachea. Al reciclar el backend su IP puede
 # cambiar y el proxy queda apuntando a la IP vieja → 502 (connection refused). Tras reciclar hay que
 # recargarlo para que vuelva a resolver. Solo aplica si el servicio existe en el entorno.

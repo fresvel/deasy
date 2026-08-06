@@ -10,16 +10,13 @@ DEFAULT_SEED_FILE="/app/backend/scripts/seeds/pucese.seed.json"
 usage() {
   cat <<'EOF'
 Uso:
-  bash scripts/seed-db.sh <dev|qa-local|qa|prod> <capture|apply|rbac> [--file <ruta-en-contenedor>] [--full]
+  bash scripts/seed-db.sh <dev|qa|prod> <capture|apply|rbac> [--file <ruta-en-contenedor>] [--full]
 
 apply siembra por defecto el baseline estructural (organizacion, RBAC y catalogo de
 procesos); las plantillas se crean desde la UI. Usa --full para el snapshot completo (demo).
 
 Ejemplos:
   bash scripts/seed-db.sh dev capture
-  bash scripts/seed-db.sh qa-local apply            # baseline estructural
-  bash scripts/seed-db.sh qa-local apply --full     # snapshot completo (demo)
-  bash scripts/seed-db.sh qa-local rbac
   bash scripts/seed-db.sh qa apply --file /app/backend/scripts/seeds/pucese.seed.json
 
 Notas:

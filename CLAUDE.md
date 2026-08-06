@@ -35,7 +35,7 @@ bash scripts/docker-env.sh dev logs -f backend    # tail a service
 bash scripts/docker-env.sh dev ps
 bash scripts/docker-env.sh dev down
 ```
-`qa-local` is the equivalent mode for working against QA config with **locally built** images (use it, not `dev`, when you started the stack with `qa-local`). Plain `qa`/`prod`/`ingress` pull published GHCR images.
+`qa`/`prod`/`ingress` pull published GHCR images; local work happens in `dev`.
 
 **Builds/tests must run inside the containers via `scripts/docker-env.sh`, not with npm/npx on the host.**
 
@@ -74,7 +74,7 @@ El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenec
 Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. **routed no autora flujo** (es de runtime). Estado: single/replicated hechos; **routed está a medias** (hoy solo elige 1 destinatario vía atajo `document_owner` sembrado; falta el editor de flujo en runtime). Ver el doc para detalle y deuda técnica.
 
 ## Environments & ports
-`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). `qa-local` uses `9088`/`9443`. Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.
+`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.
 
 Env config: `docker/.env` + per-env `docker/.env.<env>`; reference model is `docker/.env_model`. Frontend uses `VITE_API_BASE_URL` (`/api` behind the Nginx proxy in Docker).
 

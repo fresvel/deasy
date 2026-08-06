@@ -46,49 +46,6 @@ Ver configuracion efectiva antes de levantar:
 bash scripts/docker-env.sh dev config
 ```
 
-## QA local para desarrollo
-
-Cuando se necesita trabajar con comportamiento de QA pero modificando el codigo
-local, usar `qa-local`. Este modo usa `docker/.env.qa`, puertos de QA y build
-local de `backend/`, `frontend/`, `signer` y `analytics`.
-
-```bash
-bash scripts/docker-env.sh qa-local up -d --build
-```
-
-URLs locales:
-
-- Aplicacion via proxy HTTP: `http://localhost:9088`
-- Aplicacion via proxy HTTPS: `https://localhost:9443`
-- API via proxy: `https://localhost:9443/api/deasy/v1`
-- Swagger UI: `https://localhost:9443/api/deasy/docs`
-- MinIO API: `http://localhost:9100`
-- MinIO Console: `http://localhost:9101`
-- RabbitMQ UI: `http://localhost:15673`
-- Signer: `http://localhost:14000`
-
-Ver estado:
-
-```bash
-bash scripts/docker-env.sh qa-local ps
-```
-
-Ver logs:
-
-```bash
-bash scripts/docker-env.sh qa-local logs -f backend
-bash scripts/docker-env.sh qa-local logs -f frontend
-```
-
-Apagar QA local:
-
-```bash
-bash scripts/docker-env.sh qa-local down
-```
-
-Nota: `qa-local` es para desarrollo con codigo local. El ambiente `qa` sin
-`-local` esta pensado para imagenes publicadas en GHCR y despliegue operativo.
-
 Ver servicios:
 
 ```bash
@@ -259,19 +216,12 @@ Aplicar seed en `dev`:
 bash scripts/seed-db.sh dev apply
 ```
 
-Si estas trabajando en QA local, usa `qa-local`, no `dev`:
-
-```bash
-bash scripts/seed-db.sh qa-local capture
-bash scripts/seed-db.sh qa-local apply
-```
-
 Si se debe usar una semilla base compartida y solo agregar permisos/roles sin
 reemplazar usuarios existentes, aplica primero la semilla y luego el patch RBAC:
 
 ```bash
-bash scripts/seed-db.sh qa-local apply
-bash scripts/seed-db.sh qa-local rbac
+bash scripts/seed-db.sh dev apply
+bash scripts/seed-db.sh dev rbac
 ```
 
 Aplicar seed especifico dentro del contenedor backend:
@@ -285,15 +235,12 @@ Notas importantes:
 - `capture` lee la base PostgreSQL actual y escribe el JSON de semilla.
 - `apply` borra y reinserta las tablas incluidas en el JSON; no lo uses sobre datos que quieras conservar.
 - `rbac` crea/actualiza roles, recursos, acciones, permisos, permisos por rol y asignaciones derivadas desde cargos existentes.
-- Si solo levantaste QA local con `bash scripts/docker-env.sh qa-local up -d --build`, el comando `bash scripts/seed-db.sh dev apply` no encuentra el backend de `dev`.
-- Para QA local el comando correcto es `bash scripts/seed-db.sh qa-local apply`.
 - Estos comandos no suben archivos de plantillas a MinIO.
 
-Aplicar semilla demo de cuentas, roles, workflow y dossier en QA local:
+Aplicar semilla demo de cuentas, roles, workflow y dossier:
 
-```powershell
-cd docker
-docker compose --env-file .env.qa -f compose.base.yml -f compose.proxy.yml -f compose.qa.local.yml exec -T backend node /app/backend/scripts/seed_demo_accounts.mjs
+```bash
+bash scripts/docker-env.sh dev exec -T backend node /app/backend/scripts/seed_demo_accounts.mjs
 ```
 
 La clave por defecto de los usuarios demo es `Deasy1234!`. Para cambiarla en una
@@ -335,14 +282,6 @@ Publicar plantillas generadas en `dev`:
 
 ```bash
 bash scripts/docker-env.sh dev --profile storage-publish run --rm --no-deps minio-publish
-```
-
-Equivalentes para QA local:
-
-```bash
-bash scripts/docker-env.sh qa-local --profile storage-init run --rm minio-bootstrap
-bash scripts/docker-env.sh qa-local --profile storage-publish-seeds run --rm --no-deps minio-publish-seeds
-bash scripts/docker-env.sh qa-local --profile storage-publish run --rm --no-deps minio-publish
 ```
 
 El comando `storage-publish-seeds` toma los archivos desde
