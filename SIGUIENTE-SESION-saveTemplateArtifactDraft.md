@@ -6,6 +6,18 @@
 >
 > State: `develop @039ecfb`, clean tree. God Object #1 CLOSED. Cut #10 CLOSED.
 
+> ⚠️ **UPDATED 2026-08-06 — PHASE 1 IS DONE. Start at PHASE 2.**
+> The safety net exists: `flows/zzz_artifact_draft.test.mjs` (13 cases), multipart support in
+> `lib/http.mjs`, `lib/db.mjs` for teardown. char is at **115 cases / 13 flows**, unit at 209.
+> Details in `docs/auditoria-god-objects-2026-07.md` §3.1.c. Two corrections to what follows:
+> - The flow is named **`zzz_artifact_draft`**, not `zz_artifact_draft` (§1.b below discusses the
+>   ordering problem; `zzz_` is the answer — it runs last and perturbs no earlier golden).
+> - **Sonar basic auth WORKS today**: `curl -u admin:admin http://localhost:9002/api/...` is enough
+>   to read metrics. The "SonarQube 26 removed it" note under *Sonar — READ THIS BEFORE TRYING* is
+>   no longer true. The session-token recipe still works but isn't needed.
+>
+> Master plan: `docs/plan-calidad-2026-08.md` (this handoff is its **phase C**).
+
 > **Note on language.** This handoff is in English, but the repository is not: code comments, commit
 > messages and the docs under `docs/` are all written in Spanish. Keep writing them in Spanish.
 
@@ -28,12 +40,14 @@ THE HARD PART IS NOT SPLITTING IT, IT IS THE SAFETY NET. Its route is multipart 
 it writes to five places (MinIO included), and it has no golden. On top of that the characterization
 harness cannot send multipart: `lib/http.mjs` forces Content-Type: application/json on every request.
 
-So the work splits in two phases, and PHASE 1 is the real deliverable:
-  PHASE 1  multipart support in the harness + a self-cleaning `zz_artifact_draft` flow pinning both
-           branches (POST create / PUT edit) and their error contracts. WITHOUT touching the service.
-  PHASE 2  decompose the function, with phase 1 green and the goldens IDENTICAL.
+The work splits in two phases, and PHASE 1 IS ALREADY DONE:
+  PHASE 1  DONE. Multipart support in lib/http.mjs, lib/db.mjs for teardown, and a self-cleaning
+           `zzz_artifact_draft` flow with 13 cases pinning both branches (POST create / PUT edit),
+           their error contracts, and the orphan-deliverable defect. char 115 cases / 13 flows.
+  PHASE 2  <- YOU ARE HERE. Decompose the function, with phase 1 green and the goldens IDENTICAL.
 
-Start with PHASE 1. Before writing any code, MEASURE the real state and propose the plan to me.
+Start with PHASE 2. Before writing any code, MEASURE the real state (run char and unit, confirm
+they are green, read the function) and propose the plan to me.
 
 Note: the repo is in Spanish. Write code comments and commit messages in Spanish.
 ```

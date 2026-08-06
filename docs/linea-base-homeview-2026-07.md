@@ -1,5 +1,12 @@
 # Línea base de HomeView — ANTES de refactorizar
 
+
+> 📌 **Contrato observable — VIVO.** Es la red de regresión de `HomeView.vue` antes de partirlo: si
+> algo de aquí cambia tras un refactor, es una regresión. Plan vigente:
+> **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**.
+>
+> ⚠️ El fichero medía 7 445 L cuando se escribió esto; hoy son **5 233 L**.
+
 **Fecha:** 2026-07-14 · **Usuario:** persona 3 (`1122334455` / `Demo1234!`) · **Datos:** `backend/scripts/seed_dev_rich.mjs`
 
 Recorrido en el navegador (Chrome DevTools), no a mano. Esto es el **contrato observable** de

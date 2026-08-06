@@ -4,8 +4,11 @@
 > Contexto: continúa el refactor del frontend descrito en `docs/plan-refactor-frontend.md`.
 > Las fases 0 a 4.2 están hechas y commiteadas en `develop`, y también la **3.5** (admin → subrutas).
 >
+> **Plan maestro:** `docs/plan-calidad-2026-08.md` (esta sesión es su **fase E**).
+>
 > **Track distinto del backend.** Para bajar complejidad en el backend (God Objects, registro de
-> hooks, Sonar) el handoff es `SIGUIENTE-SESION-complejidad-backend.md`. No los mezcles.
+> hooks, Sonar) el handoff es `SIGUIENTE-SESION-saveTemplateArtifactDraft.md`. No los mezcles.
+> *(Corregido el 2026-08-06: antes remitía a `SIGUIENTE-SESION-complejidad-backend.md`, borrado en `47f9784`.)*
 >
 > **Verificado el 2026-08-06 de que esto sigue vigente**: los dos `@layer components` en conflicto
 > siguen ahí (`.deasy-card` en :329, `.deasy-btn--primary` en :570), `AdminModalShell` y

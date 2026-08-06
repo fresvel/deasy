@@ -1,5 +1,16 @@
 # Plan de refactor y reorganización del frontend
 
+
+> 📌 **Referencia del frontend — VIVA.** Su diagnóstico detallado sigue valiendo. El plan por fases
+> revalidado (qué queda realmente pendiente) está en la fase E de
+> **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**.
+>
+> ⚠️ Correcciones verificadas el 2026-08-06: la **fase 3.5 está hecha a medias** (la ruta ya es
+> `/admin/:section?/:item?/:table?` y `useAdminTableReset.js` fue borrado, pero `AdminView` conserva
+> `selectedTable`/`selectedSection` como refs locales); la **fase 5 redujo su alcance**
+> (`useDeliverableView` NO entra: es proyección read-only, 0 asignaciones `.value =`); y
+> `AdminModalShell` tiene hoy **24** consumidores, no 21.
+
 > Auditoría completa de `frontend/src` (122 `.vue` + 62 `.js`) realizada el **16-07-2026** sobre `develop` (`ac515a7`).
 > Cada afirmación de este documento está respaldada por lectura directa del código y verificada de forma independiente.
 > Los nombres de smells y técnicas siguen la nomenclatura canónica de refactoring.guru.

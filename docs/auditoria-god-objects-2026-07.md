@@ -1,10 +1,20 @@
 # Auditoría de God Objects y tamaño — julio 2026 (re-medición)
 
+
+> 📌 **Bitácora histórica — VIVA.** Aquí está el *cómo se hizo* (los 10 cuts, los 3 defectos de
+> producción, la red de caracterización). Para el *qué hacer ahora* y la línea base vigente:
+> **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**.
+>
+> ⚠️ Dos afirmaciones de este documento quedaron desactualizadas y están corregidas en §4.2 del plan
+> nuevo: la fase 3.5 del frontend (§4 y §5 la dan por *sin ejecutar*; está **hecha a medias**) y el
+> acceso a Sonar por basic auth (**hoy `admin:admin` sí funciona**).
+
 > Re-escaneo **SonarQube 26.7** sobre `develop @ 090dd44` (código **actual**, con las fases de refactor
 > de `plan-refactor-frontend.md` 0–4.2, la partición de `user_controler` M1–M4 y la extracción de
 > `SqlAdminService` ya aplicadas) cruzado con lectura estructural directa del código.
 > Complementa —no sustituye— a `auditoria-refactor-2026-07.md` (línea base) y
-> `auditoria-refactor-user-controler-2026-07.md`.
+> `auditoria-refactor-user-controler-2026-07.md`, **hoy archivados** en
+> [`docs-md-antiguos/refactor-2026-07/`](./docs-md-antiguos/refactor-2026-07/).
 >
 > Reproducir: `docker compose -f scripts/sonar/compose.yml up -d` (Sonar en :9002) ·
 > `SONAR_TOKEN=<token> bash scripts/sonar/scan.sh` · dashboard `http://localhost:9002/dashboard?id=deasy`.
@@ -536,5 +546,3 @@ el God de la capa de servicio (§3.1). Reordenar fachadas sin partir `SqlAdminSe
 - **Instancia Sonar**: la contraseña de admin de julio se perdió (la generó un agente); se reseteó en la
   BD a `admin/admin`. **Cambiarla.** Token de análisis actual: `deasy-rescan` (revocable en *My Account →
   Security*).
-</content>
-</invoke>
