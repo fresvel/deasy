@@ -1,0 +1,145 @@
+{
+  "crear_efectos": {
+    "lifecycle_state": "draft",
+    "storage_version": "1.0.0",
+    "vinculado_al_proceso": true,
+    "item_mode": "single"
+  },
+  "crear_ok": {
+    "status": 200,
+    "body": {
+      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema. Flujos sincronizados (entrega: 1, firmas: 0).",
+      "available_formats": {
+        "jinja2": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
+        },
+        "pdf": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/pdf/"
+        }
+      },
+      "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
+      "content_hash": "f89e66dfe5a8bd04ace1ea183829f85944247463a3a4816be1523cbacefe68a5",
+      "description": null,
+      "display_name": "zzz char draft",
+      "id": "<normalized>",
+      "is_active": 1,
+      "meta_object_key": "System/draft_zzz-char-draft/1.0.0/meta.yaml",
+      "owner_person_id": 1,
+      "schema_object_key": "System/draft_zzz-char-draft/1.0.0/schema.json",
+      "storage_version": "1.0.0",
+      "template_code": "draft_zzz-char-draft",
+      "template_scope": "official",
+      "template_seed_id": 1,
+      "workflow_sync_failed": false
+    }
+  },
+  "defecto_deliverable_huerfano": {
+    "status": 400,
+    "body": {
+      "message": "El proceso destino seleccionado no existe."
+    },
+    "deliverable_superviviente": {
+      "code": "draft_zzz-char-huerfano",
+      "owner_process_id": null,
+      "owner_variation_key": null
+    }
+  },
+  "editar_ok": {
+    "status": 200,
+    "body": {
+      "__notice": "La plantilla de documento fue actualizada y cargada correctamente en MinIO. Flujos sincronizados (entrega: 1, firmas: 0).",
+      "available_formats": {
+        "jinja2": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
+        },
+        "pdf": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/pdf/"
+        }
+      },
+      "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
+      "content_hash": "44c90e17496729c18c3e7200012d82595e3b51d7e00942b98cc822585bbca20c",
+      "description": "editado por el characterization test",
+      "display_name": "zzz char draft",
+      "id": "<normalized>",
+      "is_active": 1,
+      "meta_object_key": "System/draft_zzz-char-draft/1.0.0/meta.yaml",
+      "owner_person_id": 1,
+      "schema_object_key": "System/draft_zzz-char-draft/1.0.0/schema.json",
+      "storage_version": "1.0.0",
+      "template_code": "draft_zzz-char-draft",
+      "template_scope": "official",
+      "template_seed_id": null,
+      "workflow_sync_failed": false
+    }
+  },
+  "error_artifact_inexistente": {
+    "status": 400,
+    "body": {
+      "message": "El artifact seleccionado no existe."
+    }
+  },
+  "error_publicada_inmutable": {
+    "status": 400,
+    "body": {
+      "message": "Esta plantilla está publicada (inmutable). Crea una nueva versión para editarla."
+    }
+  },
+  "error_sin_cedula": {
+    "status": 400,
+    "body": {
+      "message": "No se pudo inferir la cedula del usuario actual para crear el borrador."
+    }
+  },
+  "error_sin_documento": {
+    "status": 400,
+    "body": {
+      "message": "Debes adjuntar al menos un documento de referencia (PDF, Word, Excel o PowerPoint)."
+    }
+  },
+  "error_sin_nombre": {
+    "status": 400,
+    "body": {
+      "message": "Ingresa el nombre del artifact borrador."
+    }
+  },
+  "error_sin_paso_de_flujo": {
+    "status": 400,
+    "body": {
+      "message": "Debes definir al menos un paso en el flujo de entrega."
+    }
+  },
+  "error_sin_proceso": {
+    "status": 400,
+    "body": {
+      "message": "Debes seleccionar el proceso (o 'default') al que pertenece esta plantilla."
+    }
+  },
+  "routed_sin_flujo_ok": {
+    "status": 200,
+    "body": {
+      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.",
+      "available_formats": {
+        "jinja2": {
+          "entry_object_key": "System/draft_zzz-char-routed/1.0.0/template/jinja2/"
+        },
+        "pdf": {
+          "entry_object_key": "System/draft_zzz-char-routed/1.0.0/template/pdf/"
+        }
+      },
+      "base_object_prefix": "System/draft_zzz-char-routed/1.0.0/",
+      "content_hash": "608ddd7ff8fbca797e8c564db355596b3a6e8ed9c4b239e1866b79ba24bd14f7",
+      "description": null,
+      "display_name": "zzz char routed",
+      "id": "<normalized>",
+      "is_active": 1,
+      "meta_object_key": "System/draft_zzz-char-routed/1.0.0/meta.yaml",
+      "owner_person_id": 1,
+      "schema_object_key": "System/draft_zzz-char-routed/1.0.0/schema.json",
+      "storage_version": "1.0.0",
+      "template_code": "draft_zzz-char-routed",
+      "template_scope": "official",
+      "template_seed_id": 1,
+      "workflow_sync_failed": false
+    }
+  }
+}
