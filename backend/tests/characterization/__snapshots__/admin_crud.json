@@ -697,6 +697,31 @@
     },
     "configurationCount": 1
   },
+  "process_parent_ciclo": {
+    "status": 400,
+    "body": {
+      "message": "La relación crearía un ciclo en la jerarquía de procesos."
+    }
+  },
+  "process_parent_reasignado": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "parent_id": "<normalized>"
+    }
+  },
+  "process_with_parent_create": {
+    "status": 201,
+    "body": {
+      "id": "<normalized>"
+    }
+  },
+  "process_with_parent_slug_duplicado": {
+    "status": 409,
+    "body": {
+      "message": "Ya existe un proceso con ese identificador (slug)."
+    }
+  },
   "processes_graph": {
     "status": 200,
     "topLevelKeys": [

@@ -50,4 +50,5 @@ export async function request(method, path, { token, body, headers = {} } = {}) 
 export const get = (path, opts) => request("GET", path, opts);
 export const post = (path, opts) => request("POST", path, opts);
 export const put = (path, opts) => request("PUT", path, opts);
+export const patch = (path, opts) => request("PATCH", path, opts);
 export const del = (path, opts) => request("DELETE", path, opts);

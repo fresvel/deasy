@@ -19,7 +19,7 @@
 
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { get, post, put, del } from "../lib/http.mjs";
+import { get, post, put, patch, del } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { normalize, listFingerprint } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
@@ -755,6 +755,57 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
       await del(`/admin/sql/${table}`, { token, body: { keys: { id } } });
     }
   }
+});
+
+// --- 7c. Jerarquía de procesos (escritura) -----------------------------------------------------
+// `getProcessGraph`/`getProcessDetail` ya estaban fijados (sección 4, la guardia de FIELD()), pero
+// los dos caminos de ESCRITURA de la jerarquía —crear un proceso colgando de otro y reasignar su
+// padre— no tenían cobertura, incluida la detección de ciclos. Es la red del cut #9.
+
+test("POST/PATCH /admin/sql/processes -> crear con padre, reasignar y rechazar ciclos", async () => {
+  const token = await tokenFor("admin");
+
+  const hijo = await post("/admin/sql/processes/with-parent", {
+    token,
+    body: { name: "Proceso hijo caracterización", parent_id: FIXTURE.processId },
+  });
+  matchSnapshot(SUITE, "process_with_parent_create", {
+    status: hijo.status,
+    body: normalize(hijo.body, { maskIdKeys: true }),
+  });
+  assert.equal(hijo.status, 201, `with-parent debe responder 201: ${JSON.stringify(hijo.body)}`);
+  const hijoId = hijo.body?.id;
+
+  // El slug se deriva del nombre, así que repetir el nombre choca con la unicidad.
+  const duplicado = await post("/admin/sql/processes/with-parent", {
+    token,
+    body: { name: "Proceso hijo caracterización", parent_id: FIXTURE.processId },
+  });
+  matchSnapshot(SUITE, "process_with_parent_slug_duplicado", {
+    status: duplicado.status,
+    body: normalize(duplicado.body),
+  });
+
+  const nieto = await post("/admin/sql/processes/with-parent", {
+    token,
+    body: { name: "Proceso nieto caracterización", parent_id: hijoId },
+  });
+  const nietoId = nieto.body?.id;
+  assert.ok(nietoId, "el nieto debe crearse");
+
+  // Colgar el hijo de su propio nieto cerraría el ciclo.
+  const ciclo = await patch(`/admin/sql/processes/${hijoId}/parent`, { token, body: { parent_id: nietoId } });
+  matchSnapshot(SUITE, "process_parent_ciclo", { status: ciclo.status, body: normalize(ciclo.body) });
+
+  // Reasignar a la raíz sí vale.
+  const reasignado = await patch(`/admin/sql/processes/${nietoId}/parent`, { token, body: { parent_id: FIXTURE.processId } });
+  matchSnapshot(SUITE, "process_parent_reasignado", {
+    status: reasignado.status,
+    body: normalize(reasignado.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/processes", { token, body: { keys: { id: nietoId } } });
+  await del("/admin/sql/processes", { token, body: { keys: { id: hijoId } } });
 });
 
 // --- 8b. Injertos de remove() ------------------------------------------------------------------
