@@ -230,6 +230,7 @@ import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLaun
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
 import AdminOperationSummary from "@/modules/admin/components/tables/AdminOperationSummary.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
+import { DEFAULT_USER_PHOTO, resolveUserPhotoUrl } from "@/core/services/userPhotoService.js";
 import {
   canCreateAdminTable,
   canReadAdminTable,
@@ -298,7 +299,6 @@ const TABLE_TAB_LABEL_OVERRIDES = {
   process_definition_templates: "Procesos asignados"
 };
 
-const defaultPhoto = "/images/avatar.png";
 const router = useRouter();
 // Procesos es la unica vista cuyo menu arranca siempre cerrado; las otras tres lo abren en
 // escritorio. Se conserva tal cual: unificarlo es decision de producto, no de este refactor.
@@ -314,20 +314,9 @@ const selectedProcessItemKey = ref("");
 const adminManager = ref(null);
 const currentUser = ref(getStoredUser());
 
-const resolvePhotoUrl = (value) => {
-  if (!value || typeof value !== "string") return defaultPhoto;
-  if (/^(https?:)?\/\//.test(value) || value.startsWith("/")) return value;
-  return defaultPhoto;
-};
-
-const userPhoto = computed(() =>
-  resolvePhotoUrl(
-    currentUser.value?.photoUrl ||
-    currentUser.value?.photo_url ||
-    currentUser.value?.photo ||
-    currentUser.value?.avatar
-  )
-);
+// La foto se descarga del endpoint autenticado, asi que deja de ser un computed
+// sincrono: se resuelve al montar la vista y cae al avatar por defecto si falla.
+const userPhoto = ref(DEFAULT_USER_PHOTO);
 
 const userFullName = computed(() => {
   const firstName = currentUser.value?.first_name ?? "";
@@ -516,8 +505,9 @@ const fetchOperationStats = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   fetchMeta();
   fetchOperationStats();
+  userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
 });
 </script>

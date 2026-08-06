@@ -2126,6 +2126,7 @@ import AppDataTable from '@/shared/components/data/AppDataTable.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
 import FirmarPdf from '@/modules/firmas/components/FirmarPdf.vue';
 import UserMenuService from '@/core/services/UserMenuService.js';
+import { DEFAULT_USER_PHOTO, resolveUserPhotoUrl } from '@/core/services/userPhotoService.js';
 import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
 import SignatureFlowService from '@/modules/firmas/services/SignatureFlowService.js';
 import DossierService from '@/modules/dossier/services/DossierService.js';
@@ -2221,7 +2222,7 @@ const signatureFlowService = new SignatureFlowService();
 const WORKSPACE_CHAT_CONTEXT_KEY = 'deasy_workspace_chat_context';
 
 const currentUser = ref(null);
-const userPhoto = ref('/images/avatar.png');
+const userPhoto = ref(DEFAULT_USER_PHOTO);
 
 const { isClient, menuOpen: showMenu, showNotify, toggleMenu, closeMenu, closeNotify, revealSidebarForNav } =
   useWorkspaceChrome();
@@ -2930,17 +2931,6 @@ const homeActions = computed(() => {
   }
   return actions.slice(0, 4);
 });
-
-const resolvePhotoUrl = (value) => {
-  if (!value) {
-    return '/images/avatar.png';
-  }
-  if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) {
-    return value;
-  }
-  const sanitized = value.replace(/^\/+/, '');
-  return `${API_ROUTES.BASE.replace(/\/$/, '')}/${sanitized}`;
-};
 
 const applyMenuCargos = (cargos) => {
   menuCargos.value = (cargos ?? []).map((cargo, index) => ({
@@ -3976,7 +3966,7 @@ onMounted(async () => {
   if (userDataString) {
     try {
       currentUser.value = JSON.parse(userDataString);
-      userPhoto.value = resolvePhotoUrl(currentUser.value?.photoUrl);
+      userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
     } catch (error) {
       console.error('Error al cargar datos del usuario:', error);
     }

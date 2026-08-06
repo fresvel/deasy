@@ -31,6 +31,7 @@ import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { refreshToken } from "../controllers/users/refresh_token.js";
 import { updateUserPhoto } from "../controllers/users/user_controler.js";
+import { getUserPhoto } from "../controllers/users/user_photo_controller.js";
 import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validation_controller.js";
 import { validatePassword } from "../middlewares/val_password.js";
 import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";
@@ -280,6 +281,10 @@ router.post('/me/certificates', authMiddleware, loadAccessContext, requirePermis
 router.put('/me/certificates/:certificateId/default', authMiddleware, loadAccessContext, requirePermissions("signature_flows.update"), setMyDefaultCertificate);
 router.get('/me/certificates/:certificateId/download', authMiddleware, loadAccessContext, requirePermissions("signature_flows.read"), downloadMyCertificate);
 router.delete('/me/certificates/:certificateId', authMiddleware, loadAccessContext, requirePermissions("signature_flows.update"), deleteMyCertificate);
+
+// Lectura autenticada de la foto. Basta con tener sesion activa: los avatares se
+// muestran entre companeros, lo que se corta es el acceso anonimo por /uploads.
+router.get('/:cedula/photo', authMiddleware, loadAccessContext, getUserPhoto);
 
 router.put(
   '/:cedula/photo',

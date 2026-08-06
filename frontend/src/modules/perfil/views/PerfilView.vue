@@ -106,10 +106,14 @@ import {
 import { PROFILE_SECTIONS, PROFILE_CONTEXT } from '@/modules/perfil/profileSections.js';
 
     import { API_PREFIX, API_ROUTES } from '@/core/config/apiConfig';
+import {
+  DEFAULT_USER_PHOTO,
+  invalidateUserPhoto,
+  resolveUserPhotoUrl
+} from '@/core/services/userPhotoService.js';
 
 const router = useRouter();
     const route = useRoute();
-const API_BASE_URL = API_ROUTES.BASE;
 
 const goBackFromProfileHome = () => {
   if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -121,8 +125,7 @@ const goBackFromProfileHome = () => {
 
     // Obtener datos del usuario desde localStorage
     const currentUser = ref(null);
-    const defaultPhoto = '/images/avatar.png';
-    const userPhoto = ref(defaultPhoto);
+    const userPhoto = ref(DEFAULT_USER_PHOTO);
     const userFullName = computed(() => {
         if (currentUser.value) {
             const firstName = currentUser.value.first_name ?? '';
@@ -139,17 +142,6 @@ const goBackFromProfileHome = () => {
         const rawToken = currentUser.value?.signatureToken ?? currentUser.value?.token ?? '';
         return rawToken ? `!-${rawToken}-!` : '';
     });
-
-    const resolvePhotoUrl = (value) => {
-        if (!value) {
-            return defaultPhoto;
-        }
-        if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) {
-            return value;
-        }
-        const sanitized = value.replace(/^\/+/, '');
-        return `${API_BASE_URL.replace(/\/$/, '')}/${sanitized}`;
-    };
 
     const refreshCurrentUser = async () => {
         const token = localStorage.getItem('token');
@@ -170,7 +162,7 @@ const goBackFromProfileHome = () => {
                     ...data.user
                 };
                 currentUser.value = mergedUser;
-                userPhoto.value = resolvePhotoUrl(mergedUser.photoUrl);
+                userPhoto.value = await resolveUserPhotoUrl(mergedUser);
                 localStorage.setItem('user', JSON.stringify(mergedUser));
             }
         } catch (error) {
@@ -267,14 +259,14 @@ const goBackFromProfileHome = () => {
         }
     };
 
-    onMounted(() => {
+    onMounted(async () => {
         const userDataString = localStorage.getItem('user');
         if (userDataString) {
             try {
                 currentUser.value = JSON.parse(userDataString);
                 console.log('👤 Usuario cargado:', currentUser.value);
 
-                userPhoto.value = resolvePhotoUrl(currentUser.value?.photoUrl);
+                userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
                 refreshCurrentUser();
                 
                 if (currentUser.value.cedula) {
@@ -352,10 +344,11 @@ const profileContextSubtitle = computed(() =>
                 }
             );
 
-            const updatedPhoto = resolvePhotoUrl(data?.user?.photoUrl);
-            if (updatedPhoto) {
+            if (data?.user?.photoUrl) {
                 currentUser.value.photoUrl = data.user.photoUrl;
-                userPhoto.value = updatedPhoto;
+                // La foto anterior sigue cacheada bajo la misma cedula: hay que tirarla.
+                invalidateUserPhoto(currentUser.value.cedula);
+                userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
             }
             localStorage.setItem('user', JSON.stringify(currentUser.value));
         } catch (error) {
