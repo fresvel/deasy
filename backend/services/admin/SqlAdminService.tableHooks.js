@@ -45,6 +45,8 @@
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 import { assertPasswordPolicy } from "../../utils/passwordPolicy.js";
+import { isUniqueViolation, violatedConstraint } from "../../errors/sqlErrors.js";
+import { conflict } from "../../errors/HttpError.js";
 import {
   hydrateTaskFromDefinition,
   ensureProcessRun,
@@ -179,15 +181,15 @@ const TEMPLATE_CHILD_GUARDS = definitionChildGuards("las plantillas de configura
 const RULE_CHILD_GUARDS = definitionChildGuards("las reglas de alcance");
 const PERIOD_CHILD_GUARDS = definitionChildGuards("los periodos del proceso");
 
-// El remapeo de la unicidad "una sola activa por serie". OJO: ER_DUP_ENTRY es el código de MySQL y
-// la base es PostgreSQL desde la migración, así que esta rama YA ESTABA MUERTA antes del cut #7.
-// Se traslada tal cual para no cambiar comportamiento; arreglarla es otro trabajo.
+// El remapeo de la unicidad "una sola activa por serie". Se compara `error.constraint`, que el
+// driver de PostgreSQL da EXACTO, en vez de buscar la subcadena en el mensaje (que era lo que hacía
+// el injerto original, y además contra un código de error de MySQL que ya no llega nunca).
 const mapOneActivePerSeries = (error) => {
   if (
-    error?.code === "ER_DUP_ENTRY"
-    && String(error?.message || "").includes("uq_process_definition_one_active_series")
+    isUniqueViolation(error)
+    && violatedConstraint(error) === "uq_process_definition_one_active_series"
   ) {
-    return new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
+    return conflict("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
   }
   return null;
 };
@@ -760,8 +762,8 @@ export const TABLE_HOOKS = {
     },
 
     mapCreateError(error) {
-      if (error?.code === "ER_DUP_ENTRY") {
-        return new Error("Ya existe una instancia de tarea con esa configuracion, periodo y criterio de lanzamiento.");
+      if (isUniqueViolation(error)) {
+        return conflict("Ya existe una instancia de tarea con esa configuracion, periodo y criterio de lanzamiento.");
       }
       return null;
     },

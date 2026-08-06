@@ -3,6 +3,9 @@
 // solo usa this.pool + una lectura generica del motor (getByKeys), inyectada. SqlAdminService
 // mantiene delegadores finos con la misma firma, asi el controller y los grafts de create()/update()
 // (que llaman this.wouldCreateUnitCycle / this.assertUnitHeadAllowed) no se tocan.
+import { isUniqueViolation, isForeignKeyViolation } from "../../errors/sqlErrors.js";
+import { conflict } from "../../errors/HttpError.js";
+
 export default class OrgStructureService {
   constructor(pool, { getByKeys } = {}) {
     this.pool = pool;
@@ -259,8 +262,8 @@ export default class OrgStructureService {
       );
       return { id: Number(r.insertId) };
     } catch (error) {
-      if (error?.code === "ER_DUP_ENTRY") {
-        throw new Error("La unidad ya tiene una jefatura asignada (solo se permite una).");
+      if (isUniqueViolation(error)) {
+        throw conflict("La unidad ya tiene una jefatura asignada (solo se permite una).");
       }
       throw error;
     }
@@ -292,8 +295,8 @@ export default class OrgStructureService {
     try {
       await this.pool.query(`UPDATE unit_positions SET ${fields.join(", ")} WHERE id = ?`, params);
     } catch (error) {
-      if (error?.code === "ER_DUP_ENTRY") {
-        throw new Error("La unidad ya tiene una jefatura asignada (solo se permite una).");
+      if (isUniqueViolation(error)) {
+        throw conflict("La unidad ya tiene una jefatura asignada (solo se permite una).");
       }
       throw error;
     }
@@ -327,8 +330,8 @@ export default class OrgStructureService {
       return { id: pid };
     } catch (error) {
       await connection.rollback();
-      if (error?.code === "ER_ROW_IS_REFERENCED_2" || error?.code === "ER_ROW_IS_REFERENCED") {
-        throw new Error("No se puede eliminar: el puesto está referenciado (vacantes, contratos o reglas). Desactívalo en su lugar.");
+      if (isForeignKeyViolation(error)) {
+        throw conflict("No se puede eliminar: el puesto está referenciado (vacantes, contratos o reglas). Desactívalo en su lugar.");
       }
       throw error;
     } finally {
@@ -425,8 +428,8 @@ export default class OrgStructureService {
       return { unit_id: newUnitId, relation_id: relationId };
     } catch (error) {
       await connection.rollback();
-      if (error?.code === "ER_DUP_ENTRY") {
-        throw new Error("Ya existe una unidad con ese slug. Cambia el nombre o el slug.");
+      if (isUniqueViolation(error)) {
+        throw conflict("Ya existe una unidad con ese slug. Cambia el nombre o el slug.");
       }
       throw error;
     } finally {

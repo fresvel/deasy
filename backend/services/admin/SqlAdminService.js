@@ -35,6 +35,8 @@ import {
   runInTransaction,
   insertPayload,
 } from "./SqlAdminService.tableHooks.js";
+import { translateConstraintError, isUniqueViolation } from "../../errors/sqlErrors.js";
+import { conflict } from "../../errors/HttpError.js";
 
 const DEFAULT_LIMIT = 50;
 const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -877,8 +879,8 @@ export default class SqlAdminService {
       );
       return { id: Number(r.insertId) };
     } catch (error) {
-      if (error?.code === "ER_DUP_ENTRY") {
-        throw new Error("Ya existe un proceso con ese identificador (slug).");
+      if (isUniqueViolation(error)) {
+        throw conflict("Ya existe un proceso con ese identificador (slug).");
       }
       throw error;
     }
@@ -1064,6 +1066,12 @@ export default class SqlAdminService {
       if (mapped) {
         throw mapped;
       }
+      // Red genérica: sin esto, una violación de restricción en cualquiera de las ~44 tablas del
+      // admin se le enseña al usuario con el texto interno de PostgreSQL.
+      const constraintError = translateConstraintError(error, tableName);
+      if (constraintError) {
+        throw constraintError;
+      }
       throw error;
     }
     const created = { id: result.insertId, ...payload };
@@ -1152,6 +1160,10 @@ export default class SqlAdminService {
       const mapped = hooks.mapUpdateError ? hooks.mapUpdateError(error, ctx) : null;
       if (mapped) {
         throw mapped;
+      }
+      const constraintError = translateConstraintError(error, tableName);
+      if (constraintError) {
+        throw constraintError;
       }
       throw error;
     }
@@ -2399,6 +2411,12 @@ export default class SqlAdminService {
     }
   }
 
+  // Al BORRAR, la violación típica es de clave foránea (algo depende de esta fila). Sin esto el
+  // usuario ve el texto interno de PostgreSQL con nombres de tabla y de constraint.
+  #asConstraintError(error, tableName) {
+    return translateConstraintError(error, tableName, { deleting: true }) || error;
+  }
+
   async remove(tableName, keys) {
     this.ensurePool();
     const config = getConfig(tableName);
@@ -2486,14 +2504,18 @@ export default class SqlAdminService {
         await connection.commit();
       } catch (error) {
         await connection.rollback();
-        throw error;
+        throw this.#asConstraintError(error, tableName);
       } finally {
         connection.release();
       }
       return keyPayload;
     }
 
-    await this.pool.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
+    try {
+      await this.pool.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
+    } catch (error) {
+      throw this.#asConstraintError(error, tableName);
+    }
     return keyPayload;
   }
 }

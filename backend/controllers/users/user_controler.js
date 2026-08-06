@@ -61,6 +61,7 @@ import {
   resolveUserPositionInUnit
 } from "./user_controler.queries.js";
 import { buildUserProcessDefinitionPanel } from "./user_controler.panel.js";
+import { isUniqueViolation } from "../../errors/sqlErrors.js";
 
 
 const userRepository = new UserRepository();
@@ -124,11 +125,11 @@ export const createUser = async (req, res) => {
     console.log("Error Creating User");
     console.error(error);
 
-    if (error?.code === "ER_DUP_ENTRY") {
-      return res.status(409).send({
-        message: "La cédula o el correo ya existen",
-        error: error.message
-      });
+    if (isUniqueViolation(error)) {
+      // Sin `error: error.message`: ese campo devolvia el texto interno de PostgreSQL
+      // ("duplicate key value violates unique constraint \"persons_cedula_key\""), que expone el
+      // esquema al cliente y anula el sentido de tener un mensaje de negocio.
+      return res.status(409).send({ message: "La cédula o el correo ya existen" });
     }
 
     res.status(400).send({

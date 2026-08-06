@@ -19,7 +19,7 @@ export const getSqlMeta = (req, res) => {
     const tables = service.getMeta();
     res.json({ tables });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -28,7 +28,7 @@ export const getOperationStats = async (_req, res) => {
     const stats = await service.getOperationStats();
     res.json(stats);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -37,7 +37,7 @@ export const syncTemplateSeeds = async (_req, res) => {
     const result = await service.syncTemplateSeedsFromSource();
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -106,7 +106,7 @@ export const downloadTemplateArtifactArchive = async (req, res) => {
   } catch (error) {
     console.error("Error al descargar el ZIP del paquete de plantilla:", error);
     if (!res.headersSent) {
-      return res.status(500).json({ message: error.message || "No se pudo generar el ZIP del paquete." });
+      return res.status(error.statusCode || 500).json({ message: error.message || "No se pudo generar el ZIP del paquete." });
     }
     return res.end();
   }
@@ -146,7 +146,7 @@ export const downloadTemplateSeedArchive = async (req, res) => {
   } catch (error) {
     console.error("Error al descargar el ZIP del seed:", error);
     if (!res.headersSent) {
-      return res.status(500).json({ message: error.message || "No se pudo generar el ZIP del seed." });
+      return res.status(error.statusCode || 500).json({ message: error.message || "No se pudo generar el ZIP del seed." });
     }
     return res.end();
   }
@@ -190,7 +190,7 @@ export const downloadTemplateArtifactSource = async (req, res) => {
   } catch (error) {
     console.error("Error al descargar el source de la plantilla:", error);
     if (!res.headersSent) {
-      return res.status(500).json({ message: error.message || "No se pudo generar el ZIP del source." });
+      return res.status(error.statusCode || 500).json({ message: error.message || "No se pudo generar el ZIP del source." });
     }
     return res.end();
   }
@@ -224,7 +224,7 @@ export const createTemplateArtifactDraft = async (req, res) => {
     const created = await service.createTemplateArtifactDraft(req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
     res.json(created);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -233,7 +233,7 @@ export const updateTemplateArtifactDraft = async (req, res) => {
     const updated = await service.updateTemplateArtifactDraft(req.params.id, req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
     res.json(updated);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -242,7 +242,7 @@ export const getTemplateArtifactSchema = async (req, res) => {
     const result = await service.getTemplateArtifactSchema(req.params.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -251,7 +251,7 @@ export const setTemplateArtifactActive = async (req, res) => {
     const result = await service.setTemplateArtifactActive(req.params.id, req.body?.is_active);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -260,7 +260,7 @@ export const createTemplateArtifactVersion = async (req, res) => {
     const result = await service.createTemplateArtifactVersion(req.params.id, req.body?.bump_level);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -343,7 +343,7 @@ export const getTemplateArtifactSyncStatus = async (req, res) => {
     const result = await service.getArtifactWorkflowSyncStatus(req.params.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -354,7 +354,7 @@ export const resyncTemplateArtifactWorkflows = async (req, res) => {
     const status = await service.getArtifactWorkflowSyncStatus(req.params.id);
     res.json({ ok: true, summary, ...status });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -365,7 +365,7 @@ export const reconcileTemplateArtifactWorkflows = async (req, res) => {
     const summary = await service.reconcileArtifactWorkflows({ onlyStale });
     res.json({ ok: true, ...summary });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -376,7 +376,7 @@ export const getProcessTargetScope = async (req, res) => {
     const result = await service.getProcessTargetScope(req.params.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -390,7 +390,7 @@ export const listResolvableCargos = async (req, res) => {
     });
     res.json({ cargos: result });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -403,7 +403,7 @@ export const reconcileTaskItemAssignments = async (req, res) => {
     });
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -418,7 +418,7 @@ export const handoverTaskItem = async (req, res) => {
     });
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -432,7 +432,7 @@ export const listStuckTaskItems = async (req, res) => {
     });
     res.json({ items: result });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -445,7 +445,7 @@ export const getImmediateBoss = async (req, res) => {
     });
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -456,7 +456,7 @@ export const getProcessDefinitionSeriesScope = async (req, res) => {
     const result = await service.getProcessDefinitionSeriesScope(req.params.id);
     res.json(result || {});
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -465,7 +465,7 @@ export const getUnitGraph = async (req, res) => {
     const result = await service.getUnitGraph(req.query?.relation_type || "org");
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -474,7 +474,7 @@ export const createUnitWithParent = async (req, res) => {
     const result = await service.createUnitWithParent(req.body || {});
     res.status(201).json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -483,7 +483,7 @@ export const getUnitDetail = async (req, res) => {
     const result = await service.getUnitDetail(req.params.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -492,7 +492,7 @@ export const getProcessGraph = async (req, res) => {
     const result = await service.getProcessGraph();
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -501,7 +501,7 @@ export const getProcessDetail = async (req, res) => {
     const result = await service.getProcessDetail(req.params.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -510,7 +510,7 @@ export const createProcessWithParent = async (req, res) => {
     const result = await service.createProcessWithParent(req.body || {});
     res.status(201).json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -519,7 +519,7 @@ export const setProcessParent = async (req, res) => {
     const result = await service.setProcessParent(req.params.id, req.body?.parent_id ?? null);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -528,7 +528,7 @@ export const getUnitProcesses = async (req, res) => {
     const result = await service.getUnitProcesses(req.params.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -537,7 +537,7 @@ export const getUnitAttachableProcesses = async (req, res) => {
     const result = await service.getUnitAttachableProcesses(req.params.id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -546,7 +546,7 @@ export const addUnitPosition = async (req, res) => {
     const result = await service.addUnitPosition(req.params.id, req.body || {});
     res.status(201).json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -555,7 +555,7 @@ export const updateUnitPosition = async (req, res) => {
     const result = await service.updateUnitPosition(req.params.positionId, req.body || {});
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -564,7 +564,7 @@ export const removeUnitPosition = async (req, res) => {
     const result = await service.removeUnitPosition(req.params.positionId);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -573,7 +573,7 @@ export const assignUnitPosition = async (req, res) => {
     const result = await service.assignUnitPosition(req.params.positionId, req.body?.person_id);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -582,7 +582,7 @@ export const unassignUnitPosition = async (req, res) => {
     const result = await service.unassignUnitPosition(req.params.positionId);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -604,7 +604,7 @@ export const listSqlRows = async (req, res) => {
     });
     res.json(rows);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -614,7 +614,7 @@ export const createSqlRow = async (req, res) => {
     const created = await service.create(table, req.body ?? {});
     res.json(created);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -626,7 +626,7 @@ export const updateSqlRow = async (req, res) => {
     const updated = await service.update(table, keys, data);
     res.json(updated);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };
 
@@ -637,6 +637,6 @@ export const deleteSqlRow = async (req, res) => {
     const deleted = await service.remove(table, keys);
     res.json({ deleted });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.statusCode || 400).json({ message: error.message });
   }
 };

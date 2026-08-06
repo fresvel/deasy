@@ -522,6 +522,72 @@ test("PUT /admin/sql/cargos -> graft: renombrar refresca los nombres de configur
   await del("/admin/sql/cargos", { token, body: { keys: { id } } });
 });
 
+// --- 7b. Violaciones de restricción de la BD (contrato de mensaje al usuario) -----------------
+// El backend mapeaba estas violaciones a mensajes de negocio comparando `error.code` con códigos
+// de MySQL (`ER_DUP_ENTRY`, `ER_ROW_IS_REFERENCED`). La base es PostgreSQL desde la migración, que
+// usa SQLSTATE (`23505`, `23503`), así que TODOS esos mapeos llevan muertos desde entonces y el
+// usuario recibe el mensaje crudo del constraint. Estos goldens fijan qué ve hoy, para que el
+// arreglo se vea como un cambio DELIBERADO del golden y no se pueda colar una regresión después.
+
+test("POST /admin/sql/persons con cédula duplicada -> violación de unicidad", async () => {
+  const token = await tokenFor("admin");
+  const res = await post("/admin/sql/persons", {
+    token,
+    body: {
+      cedula: "1234567890",
+      first_name: "Duplicada",
+      last_name: "Caracterizacion",
+      email: "dup-caract@test.local",
+      password: "Demo1234!",
+      cargo_id: 1,
+      role_id: 1,
+    },
+  });
+  matchSnapshot(SUITE, "constraint_persons_cedula_duplicada", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
+test("POST /admin/sql/unit_positions con cargo inexistente -> violación de clave foránea", async () => {
+  const token = await tokenFor("admin");
+  const res = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: FIXTURE.unitId, cargo_id: 999999, slot_no: 96, is_unit_head: 0, position_type: "real" },
+  });
+  matchSnapshot(SUITE, "constraint_unit_positions_cargo_inexistente", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
+test("DELETE /admin/sql/cargos referenciado -> violación de clave foránea", async () => {
+  const token = await tokenFor("admin");
+  const res = await del("/admin/sql/cargos", { token, body: { keys: { id: 1 } } });
+  matchSnapshot(SUITE, "constraint_cargos_referenciado", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
+// El mismo defecto fuera del CRUD genérico: el endpoint de puestos tenía su propio mensaje
+// ("La unidad ya tiene una jefatura asignada") que tampoco dispara.
+test("POST /admin/sql/units/:id/positions con segunda jefatura -> violación de unicidad", async () => {
+  const token = await tokenFor("admin");
+  const res = await post(`/admin/sql/units/${FIXTURE.unitId}/positions`, {
+    token,
+    body: { cargo_id: 1, slot_no: 95, is_unit_head: 1, position_type: "real" },
+  });
+  matchSnapshot(SUITE, "constraint_segunda_jefatura", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+  // Si por lo que sea entró, no dejar basura en la fixture.
+  if (res.status === 200 && res.body?.id) {
+    await del(`/admin/sql/units/positions/${res.body.id}`, { token });
+  }
+});
+
 // --- 8. Grafts de ESTADO COMPLEJO (cadena proceso -> serie -> borrador -> hijos) --------------
 // Estos grafts no se pueden ejercitar sueltos: exigen un contexto de BORRADOR de configuración.
 // El test lo fabrica entero y lo destruye en orden inverso, así que sigue siendo autolimpiante.

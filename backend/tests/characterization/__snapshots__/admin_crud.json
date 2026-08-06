@@ -1,4 +1,28 @@
 {
+  "constraint_cargos_referenciado": {
+    "status": 409,
+    "body": {
+      "message": "No se puede eliminar: hay registros en «Puestos» que dependen de este."
+    }
+  },
+  "constraint_persons_cedula_duplicada": {
+    "status": 409,
+    "body": {
+      "message": "Ya existe otro registro con ese valor en «Cedula»."
+    }
+  },
+  "constraint_segunda_jefatura": {
+    "status": 409,
+    "body": {
+      "message": "La unidad ya tiene una jefatura asignada (solo se permite una)."
+    }
+  },
+  "constraint_unit_positions_cargo_inexistente": {
+    "status": 400,
+    "body": {
+      "message": "El valor de «Cargo» no corresponde a ningún registro de «Cargos»."
+    }
+  },
   "create_error_campo_requerido_ausente": {
     "status": 400,
     "body": {

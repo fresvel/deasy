@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test:unit": "node --test \"config/*.test.js\" \"services/**/*.test.js\" \"utils/**/*.test.js\" \"middlewares/**/*.test.js\" \"controllers/**/*.test.js\"",
+    "test:unit": "node --test \"config/*.test.js\" \"services/**/*.test.js\" \"utils/**/*.test.js\" \"middlewares/**/*.test.js\" \"controllers/**/*.test.js\" \"errors/**/*.test.js\"",
     "test:char": "node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs",
     "test:char:bootstrap": "node tests/characterization/setup/bootstrap_system.mjs",
     "test:char:seed": "node tests/characterization/setup/seed_execution.mjs",
