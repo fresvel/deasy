@@ -54,7 +54,7 @@ métrica que ordena a los God es la **complejidad cognitiva** acumulada por fich
 
 | CC | ncloc | Fichero | Veredicto |
 |---:|---:|---|---|
-| **1305** | 5295 | `backend/services/admin/SqlAdminService.js` | **God #1** — el 14 % de toda la CC del repo en un fichero |
+| **1305** | 5295 | `backend/services/admin/SqlAdminService.js` | **God #1** — el 14 % de toda la CC del repo en un fichero. **Cuts #1–#7 HECHOS: 5924 → 2538 L (−57 %), `create()`/`update()` sin injertos** (§3.1). Falta re-escanear con Sonar. |
 | **356** | 1190 | `signer/app.py` | 🆕 **God nunca auditado** (microservicio firmante Python) |
 | 352 | 4838 | `frontend/.../home/views/HomeView.vue` | God conocido, refactor en curso |
 | 345 | 1994 | `backend/controllers/users/user_controler.js` | God conocido — **partido pero no simplificado** |
@@ -173,6 +173,48 @@ de éxito (patrón ya establecido con `persons`/`unit_positions`); (2) extraer s
 las runtime, valorar si su create admin merece hook o puede quedar en el catch-all. El registro de hooks es el equivalente
 backend de `FK_TABLE_MAP` que el §6 cita como buen diseño.
 
+#### Cut #7 HECHO (2026-08-05) — `SqlAdminService.tableHooks.js`, 1060 L
+
+**`create()` y `update()` quedan SIN UN SOLO `if (tableName === X)`.** Son ya motores genéricos puros dirigidos por
+`sqlTables.js`. Las 20 tablas injertadas son ahora 20 entradas declarativas del registro.
+
+| | antes | después |
+|---|---:|---:|
+| `create()` | 506 L, 20 tablas, CC 163 | **81 L, 0 injertos** |
+| `update()` | 533 L, 22 tablas, **CC 218** (la peor función del repo) | **91 L, 0 injertos** |
+| `SqlAdminService.js` | 3440 L | **2538 L** (−902, −26 %) |
+
+**Acumulado God #1 (cuts #1–#7): 5924 → 2538 L (−57 %).** Falta re-escanear con Sonar para medir la CC real.
+
+**Hallazgo estructural que hizo esto seguro:** los injertos no vivían en un punto sino en **tres zonas** —pre-escritura,
+estrategia de escritura (transacción + efectos) y remapeo de error—, de ahí que el registro necesite más superficie que
+`beforeCreate/afterCreate`: `beforeCreate` · `afterValidateCreate` · `beforeInsertTx` · `afterInsertTx` · `mapCreateError` ·
+`beforeUpdate` · `needsUpdateTransaction` · `beforeUpdateTx` · `afterUpdateTx` · `afterUpdate` · `mapUpdateError`.
+Y el que permitió migrar **tabla por tabla sin big-bang**: el orden RELATIVO entre tablas distintas es irrelevante (las ramas
+son mutuamente excluyentes), así que basta un punto de despacho por zona y el registro convive con los `if` sin migrar.
+
+**Dónde paga de verdad:** las 7 ramas transaccionales de `create()` y las 6 de `update()` eran **idénticas salvo su efecto**
+(getConnection → begin → escribir → efecto → commit/rollback/release) y colapsan a un único `runInTransaction()`.
+
+**Red de caracterización: char 121 → 131**, en tres tandas, siempre **puramente aditiva** (0 borrados en el golden, prueba de
+que los round-trips autolimpiantes no mueven los conteos `list_*`). Lo nuevo: los dos sentidos del merge de `unit_positions`,
+el rehash de `persons` en PUT, la unicidad de padre de `unit_relations`, el orden post-`validateTableRules` de `vacancies`, el
+refresco de nombres de `cargos`/`processes`, el `document_versions` transaccional, y una **cadena completa
+proceso → serie → borrador → regla → periodo → clon** fabricada y destruida por el propio test (fija la identidad derivada, el
+nombre generado, el `__notice` del clonado y en qué guard se detiene la activación).
+
+**Tres cosas preexistentes que salieron al extraer** (todas preservadas, ninguna "arreglada" dentro del refactor):
+1. El injerto de `fill_flow_templates` asignaba `payload.process_definition_id` y lo borraba 3 líneas después: **código muerto**
+   (no es campo de la tabla en `sqlTables.js`, `pickPayload` nunca lo pone). No se trasladó; queda documentado en el hook.
+2. **Los remapeos de `ER_DUP_ENTRY` no disparan**: `ER_DUP_ENTRY` es código de **MySQL** y la base es PostgreSQL desde la
+   migración (verificado por smoke: emerge el mensaje crudo del constraint). Afecta a `tasks` y a
+   `uq_process_definition_one_active_series`. **Deuda abierta**: mapear los códigos de PG (`23505`).
+3. 23 imports huérfanos en `SqlAdminService.js` que arrastraban los cuts #1–#6 (el #7 no dejó ninguno). Podados en su propio
+   commit.
+
+**Verificación de cada tanda:** `node --check` + backend arranca ("Servidor iniciado") + char en modo compare con los goldens
+**idénticos** + unit 177/177 + smoke por API de los hooks que el char no alcanza (los tres de `tasks`).
+
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
 | Fichero:línea | Qué hay | Baja a |
@@ -262,8 +304,9 @@ el God de la capa de servicio (§3.1). Reordenar fachadas sin partir `SqlAdminSe
 
 1. **Admin front → subrutas (Fase 3.5)** — riesgo medio, gana funcionalidad (deep-link), borra
    `useAdminTableReset` y colapsa `AdminView`. *En curso.*
-2. **`SqlAdminService` (God #1)** — mayor retorno por CC, pero exige characterization tests HTTP primero.
-   *Extract Class* de subsistemas + registro de hooks por tabla.
+2. ~~**`SqlAdminService` (God #1)**~~ — ✅ **HECHO** (cuts #1–#7, §3.1): *Extract Class* de los 6 subsistemas +
+   registro de hooks por tabla. 5924 → 2538 L. Pendiente: re-escaneo Sonar y mapear los códigos de error de
+   PostgreSQL (los remapeos de `ER_DUP_ENTRY` están muertos desde la migración).
 3. **Firmas: `usePdfCanvas` + `useSignatureFieldPlacement` + `signatureService`** — mata ~250 L
    duplicadas y el sello fantasma en la raíz.
 4. **Controllers → services** (`FillRequestWorkflowService`, `BatchSigningService`, `GeneralTaskService`,
