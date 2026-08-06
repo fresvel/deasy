@@ -1,5 +1,11 @@
 # Auditoría de cobertura de tests unitarios — backend
 
+
+> ⚠️ **ARCHIVADO (2026-08-06).** Sustituido por el hallazgo H2 de
+> **[`docs/plan-calidad-2026-08.md`](../../plan-calidad-2026-08.md)**: Sonar nunca tuvo informe de
+> cobertura enchufado, así que la cobertura real está sin medir.
+> Motivo del archivo: [`README.md`](./README.md).
+
 Complemento de [`auditoria-refactor-2026-07.md`](./auditoria-refactor-2026-07.md).
 Mientras aquella mide *complejidad*, esta mide *qué de esa complejidad está sin red*.
 

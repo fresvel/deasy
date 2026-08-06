@@ -1,5 +1,10 @@
 # Auditoría de calidad y plan de refactorización — julio 2026
 
+
+> ⚠️ **ARCHIVADO (2026-08-06).** Documento histórico. Las cifras son de julio 2026 y ya no describen
+> el repositorio. Entrada única vigente: **[`docs/plan-calidad-2026-08.md`](../../plan-calidad-2026-08.md)**.
+> Motivo del archivo: [`README.md`](./README.md).
+
 Auditoría estática del monorepo con **SonarQube 26.7** (Community, levantado en Docker)
 cruzada con el catálogo de *code smells* y técnicas de **[refactoring.guru](https://refactoring.guru/refactoring)**
 (Fowler / Shvets).

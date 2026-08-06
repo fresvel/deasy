@@ -1,5 +1,11 @@
 # AdminTableManager Refactor
 
+
+> ⚠️ **ARCHIVADO (2026-08-06).** De marzo 2026, anterior a la reorganización a `modules/`. La ruta que
+> cita **ya no existe**. Veredicto actual sobre este fichero: §7 de
+> **[`docs/plan-calidad-2026-08.md`](../../plan-calidad-2026-08.md)**.
+> Motivo del archivo: [`README.md`](./README.md).
+
 ## Estado actual
 
 `frontend/src/views/admin/components/AdminTableManager.vue` concentra actualmente:

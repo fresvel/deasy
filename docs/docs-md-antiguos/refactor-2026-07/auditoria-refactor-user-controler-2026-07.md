@@ -1,5 +1,10 @@
 # Plan de refactor — `user_controler.js` (Fase 3, God Object #2)
 
+
+> ⚠️ **ARCHIVADO (2026-08-06).** Los cuatro módulos M1-M4 están hechos. Lo que queda de
+> `user_controler.js` se ataca en la fase D de **[`docs/plan-calidad-2026-08.md`](../../plan-calidad-2026-08.md)**.
+> Motivo del archivo: [`README.md`](./README.md).
+
 **Fecha:** 2026-07-10 · **Rama:** `refactor/auditoria-sonar`
 **Archivo:** `backend/controllers/users/user_controler.js` — **4118 L**
 **Antecedente del método:** `backend/index.js` 1327→234 L (golden-master byte-a-byte de `docs.json`) y `SqlAdminService.js` 6851→5925 L (extracción a módulos hermanos `.versioning/.validation/.workflows/.primitives/.artifacts`). Este plan replica **ese mismo patrón de módulos hermanos**, no una migración de capas.
