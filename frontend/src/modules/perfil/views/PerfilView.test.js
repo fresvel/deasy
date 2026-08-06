@@ -40,7 +40,17 @@ vi.mock("@/layouts/workspace/AppWorkspaceShell.vue", () => ({
   }
 }));
 vi.mock("@/shared/components/widgets/WorkspaceChatLauncher.vue", () => ({ default: stub("WorkspaceChatLauncher") }));
-vi.mock("axios", () => ({ default: { get: vi.fn().mockResolvedValue({ data: {} }), put: vi.fn().mockResolvedValue({ data: {} }) } }));
+// `interceptors` no lo usa la vista: lo usa `core/services/httpClient`, que se cuela en el grafo de
+// imports por `userPhotoService` y se ejecuta al CARGAR el modulo. Sin el, el mock no tiene la forma
+// del axios real y la suite muere al importar PerfilView.vue, sin llegar a ejecutar un solo caso.
+const interceptorStub = () => ({ use: vi.fn(), eject: vi.fn() });
+vi.mock("axios", () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: {} }),
+    put: vi.fn().mockResolvedValue({ data: {} }),
+    interceptors: { request: interceptorStub(), response: interceptorStub() }
+  }
+}));
 
 const { default: PerfilView } = await import("./PerfilView.vue");
 

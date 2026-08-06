@@ -77,7 +77,16 @@ vi.mock("@/modules/auth/services/SystemBootstrapService", () => ({
 }));
 
 const mockAxiosPost = vi.fn();
-vi.mock("axios", () => ({ default: { post: (...args) => mockAxiosPost(...args) } }));
+// `interceptors` no lo usa el router, pero cualquier modulo que entre en su grafo de imports y tire de
+// `core/services/httpClient` lo invoca al cargarse, y sin el la suite moriria al importar sin ejecutar
+// un solo caso. Le paso a PerfilView.test.js cuando la vista empezo a importar userPhotoService.
+const interceptorStub = () => ({ use: vi.fn(), eject: vi.fn() });
+vi.mock("axios", () => ({
+  default: {
+    post: (...args) => mockAxiosPost(...args),
+    interceptors: { request: interceptorStub(), response: interceptorStub() }
+  }
+}));
 vi.mock("@/core/config/apiConfig", () => ({ API_ROUTES: { USERS_LOGOUT: "/fake/logout" } }));
 
 const { default: router } = await import("./index.js");
