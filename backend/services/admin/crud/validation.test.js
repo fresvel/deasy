@@ -18,7 +18,7 @@ import {
   validateTableRules,
   ensureDateOrder,
   parseJsonObject,
-} from "./SqlAdminService.validation.js";
+} from "./validation.js";
 
 const throwsWith = (fn, fragment) =>
   assert.throws(fn, (error) => error.message.includes(fragment), `debía mencionar "${fragment}"`);

@@ -150,13 +150,13 @@ warnings de consola, son el 35 % del backlog de calidad y la nota entera de fiab
 | **356** | 300 | 1 190 | `signer/app.py` | **God nunca auditado.** El peor del repo |
 | 352 | 961 | 4 838 | `frontend/.../home/views/HomeView.vue` | God conocido, refactor a medias |
 | 345 | 536 | 1 992 | `backend/controllers/users/user_controler.js` | **God #2** — partido, no simplificado |
-| 300 | 295 | 1 271 | `backend/services/admin/SqlAdminService.templateLifecycle.js` | Contiene la peor función del backend |
+| 300 | 295 | 1 271 | `backend/services/admin/templates/templateLifecycle.js` | Contiene la peor función del backend |
 | 290 | 606 | 3 964 | `frontend/.../tables/AdminTableManager.vue` | **Motor legítimo**, no God |
 | 262 | 476 | 2 724 | `frontend/.../firmas/FirmarPdf.vue` | **God real** (6 responsabilidades) |
 | **241** | 168 | 391 | `backend/config/postgres.js` | **Densidad extrema**: 241 cogn. en 391 ncloc |
 | 204 | 335 | 1 172 | `backend/services/documents/DocumentSignatureWorkflowService.js` | God moderado |
-| 192 | 273 | 894 | `backend/services/admin/SqlAdminService.tableHooks.js` | Creado por el refactor, ya hotspot |
-| 169 | 251 | 505 | `backend/services/admin/SqlAdminService.workflows.js` | Ídem |
+| 192 | 273 | 894 | `backend/services/admin/crud/tableHooks.js` | Creado por el refactor, ya hotspot |
+| 169 | 251 | 505 | `backend/services/admin/templates/workflows.js` | Ídem |
 | 153 | 273 | 1 288 | `frontend/.../admin/views/AdminView.vue` | God por duplicación |
 | 144 | 253 | 853 | `backend/controllers/sign/sign_controller.js` | **Viola CLAUDE.md** (motor batch en controller) |
 
@@ -166,7 +166,7 @@ Esta es la cola de trabajo. Umbral de Sonar: 15.
 
 | Cogn. | Función / ubicación |
 |---:|---|
-| **158** | `SqlAdminService.templateLifecycle.js:966` → `saveTemplateArtifactDraft` |
+| **158** | `templates/templateLifecycle.js:966` → `saveTemplateArtifactDraft` |
 | 75 | `controllers/users/user_controler.js:1868` → `createGeneralTask` |
 | 67 | `frontend/.../composables/forms/useAdminSubmitFlow.js:30` |
 | 59 / 49 | `backend/config/postgres.js:111` y `:47` — reescrituras de dialecto SQL |
@@ -175,7 +175,7 @@ Esta es la cola de trabajo. Umbral de Sonar: 15.
 | 40 | `signer/app.py:519` |
 | 39 | `frontend/.../processes/useAdminDraftArtifactFlow.js:85` |
 | 36 | `backend/services/admin/SqlAdminService.js:261` → `list()` |
-| 33 | `backend/services/admin/TaskGenerationService.assignees.js:11` |
+| 33 | `backend/services/admin/generation/assignees.js:11` |
 | 33 | `backend/services/system/genericCatalog.js:376` |
 | 32 | `backend/scripts/seed_pucese.mjs:367` |
 | 31 | `frontend/.../data/useAdminTableDataSource.js:222` |

@@ -30,7 +30,7 @@ import {
 import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
 import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
-import { parseAvailableFormats } from "../../services/admin/SqlAdminService.artifacts.js";
+import { parseAvailableFormats } from "../../services/admin/templates/artifacts.js";
 import {
   sanitizeStorageSegment,
   buildCanonicalDocumentVersionBasePath,

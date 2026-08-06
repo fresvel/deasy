@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
-import { parseAvailableFormats } from "../../services/admin/SqlAdminService.artifacts.js";
+import { parseAvailableFormats } from "../../services/admin/templates/artifacts.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import {
   TEMPLATES_BUCKET,

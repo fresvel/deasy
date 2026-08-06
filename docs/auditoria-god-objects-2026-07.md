@@ -104,8 +104,8 @@ depende de la TÉCNICA. *Extract Class* mueve (cuts #1–#6, #8, #9). *Replace C
 
 | CC | Dónde |
 |---:|---|
-| **158** | `SqlAdminService.templateLifecycle.js:966` → `saveTemplateArtifactDraft` (needs caracterización multipart antes) |
-| ~~99~~ | ~~`SqlAdminService.validation.js` → `validateTableRules`~~ — **HECHO, cut #10** (ver abajo) |
+| **158** | `templates/templateLifecycle.js:966` → `saveTemplateArtifactDraft` (needs caracterización multipart antes) |
+| ~~99~~ | ~~`crud/validation.js` → `validateTableRules`~~ — **HECHO, cut #10** (ver abajo) |
 | 75 | `user_controler.js:1868` → `createGeneralTask` (ya listado en §3.2) |
 | 67 | `frontend/.../useAdminSubmitFlow.js:30` |
 | 59 / 49 | `backend/config/postgres.js:111` / `:47` → reescrituras de dialecto |
@@ -136,7 +136,7 @@ métrica que ordena a los God es la **complejidad cognitiva** acumulada por fich
 | 345 | 1994 | `backend/controllers/users/user_controler.js` | God conocido — **partido pero no simplificado** |
 | 287 | 4001 | `frontend/.../admin/components/tables/AdminTableManager.vue` | **Motor legítimo** (injertos, no God) |
 | 262 | 2724 | `frontend/.../firmas/components/FirmarPdf.vue` | **God real** (6 responsabilidades) |
-| **237** | 472 | `backend/services/admin/SqlAdminService.workflows.js` | 🆕 **hermano creado POR el refactor, ya hotspot** |
+| **237** | 472 | `backend/services/admin/templates/workflows.js` | 🆕 **hermano creado POR el refactor, ya hotspot** |
 | 204 | 1172 | `backend/services/documents/DocumentSignatureWorkflowService.js` | God moderado |
 | 144 | 853 | `backend/controllers/sign/sign_controller.js` | **Viola CLAUDE.md** (motor de batch en el controller) |
 | 140 | 850 | `frontend/.../home/composables/useDeliverableView.js` | Proyección read-only (ver nota §6) |
@@ -144,7 +144,7 @@ métrica que ordena a los God es la **complejidad cognitiva** acumulada por fich
 | 130 | 1198 | `frontend/.../admin/views/AdminView.vue` | **God por duplicación** (5 bloques ×5) |
 
 **Dos entradas que ninguna auditoría previa registró:** `signer/app.py` (CC 356, el segundo peor del repo)
-y `SqlAdminService.workflows.js` (CC 237) — el propio refactor engendró un hermano complejo (una función
+y `templates/workflows.js` (CC 237) — el propio refactor engendró un hermano complejo (una función
 en `:425` con CC 54). Ambos merecen su propio pase.
 
 ---
@@ -178,19 +178,19 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
 - **Caracterización ampliada** (char 86 → **119**): contrato de lectura del `list()` genérico (26 tablas) + 7 GET de
   subsistemas (activation-diff, target-scope, resolvable-cargos, series-scope, stuck, attachable-processes, artifact-versions).
   Es la red para los cuts. Puramente aditiva (goldens previos intactos).
-- **Cut #2 `OrgStructureService` HECHO** (`SqlAdminService.orgStructure.js`, 437 L): 13 métodos de unidades/puestos/grafo
+- **Cut #2 `OrgStructureService` HECHO** (`org/orgStructure.js`, 437 L): 13 métodos de unidades/puestos/grafo
   extraídos por script. El cluster era autocontenido (solo `this.pool` + `getByKeys` inyectado). `SqlAdminService` mantiene
   **12 delegadores** con la misma firma → controller y grafts de `create()`/`update()` (que llaman `this.wouldCreateUnitCycle`
   / `this.assertUnitHeadAllowed`) **no se tocan**. `SqlAdminService.js` 5924 → **5535 L** (−389). Verificado: `node --check`,
   backend arranca, **char 119/119**, unit 177/177, organigrama (15 nodos) en navegador, consola limpia.
-- **Cut #1 `MinioStorageService` HECHO** (`SqlAdminService.storage.js`, 266 L): 20 funciones de **nivel de módulo** (MinIO +
+- **Cut #1 `MinioStorageService` HECHO** (`kernel/storage.js`, 266 L): 20 funciones de **nivel de módulo** (MinIO +
   fs + zip) → patrón **módulo hermano** (no clase con estado): mover funciones + re-importar las 15 usadas fuera; el cliente
   MinIO es singleton privado del módulo. Único acoplamiento resuelto: `buildProtectedManifest` recibe ahora el prefijo editable
   por parámetro (no depende de `EDITABLE_CONTENT_SUBPATH`, const de dominio que se queda). Imports muertos podados (`Minio`,
   `spawn`). `SqlAdminService.js` 5535 → **5300 L** (−235). Verificado: `node --check`, backend arranca, **char 119/119**, unit
   177/177, y **smoke MinIO real**: `template_seeds/:id/download` → 200 (`downloadMinioPrefixToDirectory`+zip), preview ejercita
   `listMinioObjects` (404 preexistente por datos, no crash). **`SqlAdminService.js`: 5924 → 5300 L en los cuts #1+#2 (−624).**
-- **Cut #3 `TemplateArtifactService` HECHO** (`SqlAdminService.templateArtifact.js`, 544 L): ciclo de vida de artifacts
+- **Cut #3 `TemplateArtifactService` HECHO** (`templates/templateArtifact.js`, 544 L): ciclo de vida de artifacts
   (publicar/retirar/versionar, esquema, fuente, activación) — 12 métodos. **Alcance reducido a propósito**: se deja fuera
   `saveTemplateArtifactDraft` (542 L, God-method que llama 6 colaboradores de scope/workflow → necesita su propia
   descomposición). El cluster reducido solo depende de `ensurePool`+`getByKeys` (patrón clase con estado + 11 delegadores,
@@ -199,25 +199,25 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   `node --check`, backend arranca, **char 119/119** (schema+versions vía delegador→módulo), unit 177/177, smoke de escritura
   (`POST .../version` ejecuta el módulo hasta una regla de negocio preexistente, no crash). **Acumulado #1+#2+#3: 5924 → 4823
   L (−1101, −19%).**
-- **Cut #4 `ProcessDefinitionVersionService` HECHO** (`SqlAdminService.processDefinitionVersion.js`, 540 L): series, versionado,
+- **Cut #4 `ProcessDefinitionVersionService` HECHO** (`processes/processDefinitionVersion.js`, 540 L): series, versionado,
   clonado y contexto de borrador — 13 métodos. Cluster limpio: solo `ensurePool` + `getByKeys` + **`syncArtifactWorkflows`**
-  (1 dep de workflow, inyectada); helpers puros importados de `processDefinitionSeries.js` / `.versioning.js` / `.primitives.js`.
+  (1 dep de workflow, inyectada); helpers puros importados de `processes/processDefinitionSeries.js` / `.versioning.js` / `.primitives.js`.
   Patrón clase con estado + 13 delegadores → controller y los grafts de `create()`/`update()` (que llaman resolve/ensure/clone/
   refresh — las tablas más "grafted") **no se tocan**. `SqlAdminService.js` 4823 → **4341 L** (−482). **Acumulado #1-#4: 5924 →
   4341 L (−1583, −27%).** Verificado: backend arranca, **char 119/119** (series-scope + flujo de launch que ejercita versionado
   + grafts), unit 177/177.
   > ⚠️ **Lección de la ejecución**: `node --check` valida SINTAXIS, **no resolución de imports**. El primer intento importó
-  > `buildProcessDefinitionVersionName` de `.versioning.js` cuando en realidad vive en `processDefinitionSeries.js` → el backend
+  > `buildProcessDefinitionVersionName` de `.versioning.js` cuando en realidad vive en `processes/processDefinitionSeries.js` → el backend
   > **crasheó al arrancar** (`does not provide an export`), no en `node --check`. **Verificar SIEMPRE que el backend arranca
   > (logs "Servidor iniciado", sin SyntaxError) antes de correr char.**
-- **Cut #5 `WorkflowSyncService` HECHO** (`SqlAdminService.workflowSync.js`, 584 L): sincronización de flujos fill/firma de los
+- **Cut #5 `WorkflowSyncService` HECHO** (`templates/workflowSync.js`, 584 L): sincronización de flujos fill/firma de los
   artifacts con sus plantillas de proceso, estado y reconciliación — 13 métodos. Depende de `this.pool` + **4 colaboradores
   inyectados** (`getCargoCodeMap`, `getUnitTypeNameMap`, `getTemplateArtifact`, `loadTemplateArtifactMetaDocument` — los 2
   últimos ya delegadores del #3); helpers puros de `.artifacts.js`/`.workflows.js`. **Sin `getByKeys`.** Clase con estado + 4
   delegadores; los servicios #3/#4 que inyectan `syncArtifactWorkflows` siguen funcionando (su binding llama el delegador).
   `SqlAdminService.js` 4341 → **3816 L** (−525). **Acumulado #1-#5: 5924 → 3816 L (−2108, −36%).** Verificado: backend arranca,
   **char 119/119**, unit 177/177, **smoke** `GET sync-status` → 200 + `POST workflows/reconcile` → 200 (vía delegador→módulo).
-- **Cut #6 `TaskAssignmentService` HECHO** (`SqlAdminService.taskAssignment.js`, 413 L): asignación/reconciliación de task items,
+- **Cut #6 `TaskAssignmentService` HECHO** (`org/taskAssignment.js`, 413 L): asignación/reconciliación de task items,
   handover, atascados, jefe inmediato, + mapas de referencia (cargo/unit-type) y resolución de scope/cargos-resolubles — 10
   métodos. **El cut más limpio: cluster AUTOCONTENIDO, cero colaboradores** (solo `this.pool` + el import `normalizeNumericId`;
   las llamadas intra-cluster se quedan dentro) → **sin inyección**. Clase con estado + 9 delegadores; el controller,
@@ -249,7 +249,7 @@ de éxito (patrón ya establecido con `persons`/`unit_positions`); (2) extraer s
 las runtime, valorar si su create admin merece hook o puede quedar en el catch-all. El registro de hooks es el equivalente
 backend de `FK_TABLE_MAP` que el §6 cita como buen diseño.
 
-#### Cut #7 HECHO (2026-08-05) — `SqlAdminService.tableHooks.js`, 1060 L
+#### Cut #7 HECHO (2026-08-05) — `crud/tableHooks.js`, 1060 L
 
 **`create()` y `update()` quedan SIN UN SOLO `if (tableName === X)`.** Son ya motores genéricos puros dirigidos por
 `sqlTables.js`. Las 20 tablas injertadas son ahora 20 entradas declarativas del registro.
@@ -315,7 +315,7 @@ necesita su red antes. Sí quedó verificado por smoke en sus dos ramas (POST co
 
 #### Cut #10 — `validateTableRules` a registro (2026-08-06, `develop @9e91711`)
 
-El `switch (tableName)` de `SqlAdminService.validation.js`: 22 `case`, 159 ncloc, **CC 99**, la densidad más alta de la
+El `switch (tableName)` de `crud/validation.js`: 22 `case`, 159 ncloc, **CC 99**, la densidad más alta de la
 familia (0,49 CC/ncloc). Mismo olor que los cuts #7/#7b quitaron de create/update/remove, pero en forma de switch — por eso
 §3.1 lo pasó por alto en su momento ("no es un switch", dicho mirando el otro fichero).
 
@@ -324,7 +324,7 @@ familia (0,49 CC/ncloc). Mismo olor que los cuts #7/#7b quitaron de create/updat
 | | Antes | Después |
 |---|---:|---:|
 | función `validateTableRules` | **CC 99** | **bajo el umbral** — su `S3776` cerró como *FIXED*, ninguna función del fichero pasa de 15 |
-| fichero `SqlAdminService.validation.js` | ≈106 | **CC 50** |
+| fichero `crud/validation.js` | ≈106 | **CC 50** |
 | `validateTableRules` en ncloc | 185 | **10** |
 | complejidad cognitiva del proyecto | 8 840 | **8 781** (−59) |
 
@@ -531,7 +531,7 @@ el God de la capa de servicio (§3.1). Reordenar fachadas sin partir `SqlAdminSe
    duplicadas y el sello fantasma en la raíz.
 4. **Controllers → services** (`FillRequestWorkflowService`, `BatchSigningService`, `GeneralTaskService`,
    `UserMenuService`) — cierra la fuga de capa que CLAUDE.md prohíbe.
-5. **`signer/app.py`** (🆕 CC 356) y **`SqlAdminService.workflows.js`** (🆕 CC 237) — pases propios.
+5. **`signer/app.py`** (🆕 CC 356) y **`templates/workflows.js`** (🆕 CC 237) — pases propios.
 
 ---
 

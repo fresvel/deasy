@@ -12,7 +12,7 @@ import {
   parseArtifactSyncMarker,
   isArtifactFillWorkflowSyncEnabled,
   findPreferredPdfObject,
-} from "./SqlAdminService.artifacts.js";
+} from "./artifacts.js";
 
 // --- parseArtifactSyncMarker: detección de drift -----------------------------
 // Round-trip con buildArtifactSyncedFillDescription. El templateCode puede contener

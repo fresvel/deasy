@@ -4,7 +4,7 @@
 //
 // Todas reciben `connection` explícitamente: no abren conexiones ni tocan el pool. Eso
 // las hace trasladables tal cual a un repositorio si algún día se separa la capa.
-import { applyRecipientPolicy } from "./TaskGenerationService.primitives.js";
+import { applyRecipientPolicy } from "./primitives.js";
 
 
 export const getTermById = async (connection, termId) => {

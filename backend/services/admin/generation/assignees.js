@@ -5,8 +5,8 @@
 // Es el "quién hace el paso": traduce la declaración de un paso (cargo en tal ámbito,
 // puesto concreto, responsable de la tarea...) a personas de carne y hueso. Si esto se
 // equivoca, la tarea le llega a quien no toca.
-import { resolveScopeForStep } from "./TaskGenerationService.primitives.js";
-import { resolveCurrentPersonsForPosition } from "./TaskGenerationService.queries.js";
+import { resolveScopeForStep } from "./primitives.js";
+import { resolveCurrentPersonsForPosition } from "./queries.js";
 
 export const resolvePersonsForCargoInScope = async (connection, step, context = null) => {
   if (!step?.cargo_id) {

@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import {
   resolveScopeForStep,
   applyRecipientPolicy
-} from "./TaskGenerationService.primitives.js";
+} from "./primitives.js";
 
 // --- resolveScopeForStep ---
 

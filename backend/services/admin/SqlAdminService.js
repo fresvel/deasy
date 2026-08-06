@@ -1,3 +1,20 @@
+// FACHADA de SqlAdminService: el CRUD genérico de tablas admin + los delegadores a los
+// colaboradores que los cuts #1-#9 extrajeron (God Object #1, de 5924 L a las actuales).
+//
+// El directorio está empaquetado por dependencia, no por capricho: `kernel/` no importa a
+// nadie y todos importan de él; nada apunta "hacia arriba". Dónde vive cada cosa:
+//
+//   kernel/      primitives, versioning, constants, storage — puros, sin estado ni pool
+//   crud/        tableHooks (los injertos por tabla) y validation (el registro del cut #10)
+//   templates/   plantillas, entregables y flujos autorados (incluye templateLifecycle)
+//   processes/   series, versionado y grafo de configuraciones de proceso
+//   org/         unidades, puestos y resolución de cargos
+//   generation/  generación de tareas/entregables en runtime (fachada TaskGenerationService.js)
+//
+// La superficie pública del directorio son las DOS fachadas de este nivel: este fichero y
+// `TaskGenerationService.js`. Todo lo demás es interno.
+//
+// Ver docs/plan-calidad-2026-08.md
 import { getPostgresPool } from "../../config/postgres.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 import {
@@ -12,38 +29,38 @@ import {
   copyMinioObjectBinary,
   removeMinioPrefix,
   uploadDirectoryToMinio,
-} from "./SqlAdminService.storage.js";
-import OrgStructureService from "./SqlAdminService.orgStructure.js";
+} from "./kernel/storage.js";
+import OrgStructureService from "./org/orgStructure.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
 import { sanitizeStorageSegment } from "../../utils/templateArchive.js";
-import { resolveProcessDefinitionSeriesIdentity } from "./processDefinitionSeries.js";
-import { normalizeItemMode } from "./SqlAdminService.versioning.js";
-import { validateTableRules } from "./SqlAdminService.validation.js";
-import { slugify, humanizeSlug, normalizeNumericId } from "./SqlAdminService.primitives.js";
-import { buildWorkflowsYaml, collectAuthoredWorkflowIssues } from "./SqlAdminService.workflows.js";
-import { parseAvailableFormats, findPreferredPdfObject } from "./SqlAdminService.artifacts.js";
-import TemplateArtifactService from "./SqlAdminService.templateArtifact.js";
-import ProcessDefinitionVersionService from "./SqlAdminService.processDefinitionVersion.js";
-import WorkflowSyncService from "./SqlAdminService.workflowSync.js";
-import TaskAssignmentService from "./SqlAdminService.taskAssignment.js";
-import TemplateLifecycleService from "./SqlAdminService.templateLifecycle.js";
-import ProcessGraphService from "./SqlAdminService.processGraph.js";
+import { resolveProcessDefinitionSeriesIdentity } from "./processes/processDefinitionSeries.js";
+import { normalizeItemMode } from "./kernel/versioning.js";
+import { validateTableRules } from "./crud/validation.js";
+import { slugify, humanizeSlug, normalizeNumericId } from "./kernel/primitives.js";
+import { buildWorkflowsYaml, collectAuthoredWorkflowIssues } from "./templates/workflows.js";
+import { parseAvailableFormats, findPreferredPdfObject } from "./templates/artifacts.js";
+import TemplateArtifactService from "./templates/templateArtifact.js";
+import ProcessDefinitionVersionService from "./processes/processDefinitionVersion.js";
+import WorkflowSyncService from "./templates/workflowSync.js";
+import TaskAssignmentService from "./org/taskAssignment.js";
+import TemplateLifecycleService from "./templates/templateLifecycle.js";
+import ProcessGraphService from "./processes/processGraph.js";
 import {
   getTableHooks,
   runInTransaction,
   insertPayload,
-} from "./SqlAdminService.tableHooks.js";
+} from "./crud/tableHooks.js";
 import { translateConstraintError, isUniqueViolation } from "../../errors/sqlErrors.js";
 import { conflict } from "../../errors/HttpError.js";
 import {
   MINIO_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
   EDITABLE_CONTENT_SUBPATH,
-} from "./SqlAdminService.constants.js";
+} from "./kernel/constants.js";
 
 const DEFAULT_LIMIT = 50;
 

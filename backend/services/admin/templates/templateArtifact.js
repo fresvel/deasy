@@ -15,14 +15,14 @@ import {
   readMinioObjectAsText,
   unzipToDirectory,
   walkFiles,
-} from "./SqlAdminService.storage.js";
-import { parseAvailableFormats, parseYamlDocument } from "./SqlAdminService.artifacts.js";
-import { bumpSemanticVersion } from "./SqlAdminService.versioning.js";
+} from "../kernel/storage.js";
+import { parseAvailableFormats, parseYamlDocument } from "./artifacts.js";
+import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
   EDITABLE_CONTENT_SUBPATH,
-} from "./SqlAdminService.constants.js";
+} from "../kernel/constants.js";
 
 // Config espejo del env (mismo valor que SqlAdminService.js). Deuda menor: unificar en un modulo de
 // constantes compartido. Son deterministas (env + literal), asi que ambos modulos leen lo mismo.

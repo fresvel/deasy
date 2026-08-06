@@ -15,7 +15,7 @@ import {
   normalizeSignatureSteps,
   resolveStepCargoId,
   collectAuthoredWorkflowIssues,
-} from "./SqlAdminService.workflows.js";
+} from "./workflows.js";
 
 // --- buildStepResolver: qué campos emite según el tipo -----------------------
 

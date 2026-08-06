@@ -7,7 +7,7 @@
 
 import yaml from "js-yaml";
 
-import { normalizeBooleanFlag } from "./SqlAdminService.primitives.js";
+import { normalizeBooleanFlag } from "../kernel/primitives.js";
 
 // Marcas de procedencia que se escriben en la `description` de los flujos proyectados,
 // para poder reconocerlos y detectar drift más tarde.

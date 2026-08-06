@@ -32,17 +32,17 @@ import {
   copyMinioObjectBinary,
   removeMinioPrefix,
   uploadDirectoryToMinio,
-} from "./SqlAdminService.storage.js";
-import { sanitizeStorageSegment } from "../../utils/templateArchive.js";
-import { normalizeItemMode } from "./SqlAdminService.versioning.js";
-import { slugify, humanizeSlug, normalizeNumericId } from "./SqlAdminService.primitives.js";
-import { buildWorkflowsYaml, collectAuthoredWorkflowIssues } from "./SqlAdminService.workflows.js";
-import { parseAvailableFormats, findPreferredPdfObject } from "./SqlAdminService.artifacts.js";
+} from "../kernel/storage.js";
+import { sanitizeStorageSegment } from "../../../utils/templateArchive.js";
+import { normalizeItemMode } from "../kernel/versioning.js";
+import { slugify, humanizeSlug, normalizeNumericId } from "../kernel/primitives.js";
+import { buildWorkflowsYaml, collectAuthoredWorkflowIssues } from "./workflows.js";
+import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
 import {
   MINIO_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
   EDITABLE_CONTENT_SUBPATH,
-} from "./SqlAdminService.constants.js";
+} from "../kernel/constants.js";
 
 // Staging efimero de los borradores: se arma, se sube a MinIO y se borra dentro de la
 // misma peticion. Va al temporal del sistema, como el resto de subidas (certificados,

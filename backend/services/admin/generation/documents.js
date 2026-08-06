@@ -5,18 +5,18 @@
 // `ensureSignatureFlowForDocumentVersion` es hoy un delegador de una línea a
 // DocumentSignatureWorkflowService: la firma se movió allí, aquí solo queda el punto de
 // entrada que conservan los consumidores.
-import { transitionDocumentVersionState } from "../documents/DocumentStateService.js";
-import { ensureSignatureFlowForDocumentVersion as ensureDocumentSignatureWorkflowForDocumentVersion } from "../documents/DocumentSignatureWorkflowService.js";
+import { transitionDocumentVersionState } from "../../documents/DocumentStateService.js";
+import { ensureSignatureFlowForDocumentVersion as ensureDocumentSignatureWorkflowForDocumentVersion } from "../../documents/DocumentSignatureWorkflowService.js";
 import {
   getDocumentVersionFillContext,
   getActiveFillFlowTemplateForDefinitionTemplate,
   getFillFlowSteps,
   getTaskItemsForDocumentMaterialization
-} from "./TaskGenerationService.queries.js";
+} from "./queries.js";
 import {
   resolveFillStepAssignees,
   repairFillRequestsForFlow
-} from "./TaskGenerationService.assignees.js";
+} from "./assignees.js";
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {
   return ensureDocumentSignatureWorkflowForDocumentVersion(connection, documentVersionId);

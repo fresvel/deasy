@@ -6,9 +6,9 @@
 // `this.pool` y una lectura generica del motor, `getByKeys`, inyectada) y misma razon de ser: la
 // jerarquia es un subsistema propio, no parte del CRUD.
 
-import { slugify } from "./SqlAdminService.primitives.js";
-import { isUniqueViolation } from "../../errors/sqlErrors.js";
-import { conflict } from "../../errors/HttpError.js";
+import { slugify } from "../kernel/primitives.js";
+import { isUniqueViolation } from "../../../errors/sqlErrors.js";
+import { conflict } from "../../../errors/HttpError.js";
 
 export default class ProcessGraphService {
   constructor(pool, { getByKeys } = {}) {

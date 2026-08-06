@@ -6,8 +6,8 @@
 // (igualdad NULL-safe de MySQL, porque term_id es nullable). PostgreSQL NO tiene <=>;
 // lo traduce config/postgres.js. Sin esa traducción, lanzar un proceso devuelve 400
 // ("operator does not exist: integer <=> unknown") y la función queda MUERTA.
-import { getPostgresPool } from "../../config/postgres.js";
-import { notFound } from "../../errors/HttpError.js";
+import { getPostgresPool } from "../../../config/postgres.js";
+import { notFound } from "../../../errors/HttpError.js";
 import {
   getTermById,
   getActiveAutomaticDefinitions,
@@ -18,15 +18,15 @@ import {
   getActiveRunForDefinitionTerm,
   getPositionsForRule,
   getTaskAssignmentTargets
-} from "./TaskGenerationService.queries.js";
+} from "./queries.js";
 import {
   ensureTaskItemsForTask,
   ensureTaskItemsForTaskTargets,
   ensureTaskAssignmentsForDefinition,
   ensureUnitTaskAssignments
-} from "./TaskGenerationService.taskitems.js";
+} from "./taskitems.js";
 // Dependencia unidireccional: el lanzamiento materializa los documentos de la tarea.
-import { ensureDocumentsForTask } from "./TaskGenerationService.documents.js";
+import { ensureDocumentsForTask } from "./documents.js";
 
 export const ensureProcessRun = async ({
   connection,

@@ -12,12 +12,12 @@ import {
   parseArtifactSyncMarker,
   isArtifactFillWorkflowSyncEnabled,
   isArtifactSignatureWorkflowSyncEnabled,
-} from "./SqlAdminService.artifacts.js";
+} from "./artifacts.js";
 import {
   normalizeFillSteps,
   normalizeSignatureSteps,
   collectSignatureWorkflowNormalizationIssues,
-} from "./SqlAdminService.workflows.js";
+} from "./workflows.js";
 
 export default class WorkflowSyncService {
   constructor(pool, { getCargoCodeMap, getUnitTypeNameMap, getTemplateArtifact, loadTemplateArtifactMetaDocument } = {}) {

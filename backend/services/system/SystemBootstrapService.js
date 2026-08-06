@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
-import { buildProcessDefinitionVersionName } from "../admin/processDefinitionSeries.js";
+import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,

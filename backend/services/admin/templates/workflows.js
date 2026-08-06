@@ -18,7 +18,7 @@ import {
   slugify,
   normalizeNumericId,
   normalizeBooleanFlag,
-} from "./SqlAdminService.primitives.js";
+} from "../kernel/primitives.js";
 
 // --- Catálogos de tipos permitidos -------------------------------------------
 

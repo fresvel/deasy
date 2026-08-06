@@ -44,9 +44,9 @@
 
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
-import { assertPasswordPolicy } from "../../utils/passwordPolicy.js";
-import { isUniqueViolation, violatedConstraint } from "../../errors/sqlErrors.js";
-import { conflict } from "../../errors/HttpError.js";
+import { assertPasswordPolicy } from "../../../utils/passwordPolicy.js";
+import { isUniqueViolation, violatedConstraint } from "../../../errors/sqlErrors.js";
+import { conflict } from "../../../errors/HttpError.js";
 import {
   hydrateTaskFromDefinition,
   ensureProcessRun,
@@ -54,12 +54,12 @@ import {
   ensureDocumentForTaskItem,
   ensureFillFlowForDocumentVersion,
   ensureSignatureFlowForDocumentVersion
-} from "./TaskGenerationService.js";
+} from "../TaskGenerationService.js";
 import {
   syncDocumentProgressFromDocumentSignature,
   syncDocumentProgressFromFillRequest,
   syncDocumentProgressFromSignatureRequest,
-} from "../documents/DocumentProgressService.js";
+} from "../../documents/DocumentProgressService.js";
 
 /** Ejecuta una escritura dentro de una transacción, con hooks antes y después. */
 export async function runInTransaction(pool, ctx, { before, after }, execute) {

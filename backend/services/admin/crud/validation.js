@@ -27,9 +27,9 @@
 import {
   assertDocumentStatusValue,
   assertDocumentVersionStatusValue,
-} from "../documents/DocumentStateService.js";
-import { PROCESS_SERIES_SOURCE_TYPES } from "./processDefinitionSeries.js";
-import { SEMANTIC_VERSION_REGEX } from "./SqlAdminService.versioning.js";
+} from "../../documents/DocumentStateService.js";
+import { PROCESS_SERIES_SOURCE_TYPES } from "../processes/processDefinitionSeries.js";
+import { SEMANTIC_VERSION_REGEX } from "../kernel/versioning.js";
 
 export const parseJsonObject = (value, fieldLabel) => {
   if (value === null || value === undefined || value === "") {

@@ -3,9 +3,9 @@
 // solo usa this.pool + una lectura generica del motor (getByKeys), inyectada. SqlAdminService
 // mantiene delegadores finos con la misma firma, asi el controller y los grafts de create()/update()
 // (que llaman this.wouldCreateUnitCycle / this.assertUnitHeadAllowed) no se tocan.
-import { isUniqueViolation, isForeignKeyViolation } from "../../errors/sqlErrors.js";
-import { conflict } from "../../errors/HttpError.js";
-import { slugify } from "./SqlAdminService.primitives.js";
+import { isUniqueViolation, isForeignKeyViolation } from "../../../errors/sqlErrors.js";
+import { conflict } from "../../../errors/HttpError.js";
+import { slugify } from "../kernel/primitives.js";
 
 export default class OrgStructureService {
   constructor(pool, { getByKeys } = {}) {

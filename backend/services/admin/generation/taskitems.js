@@ -7,7 +7,7 @@ import {
   getPositionsForRule,
   getExistingTaskItemTemplateIds,
   getExistingTaskItemTargetKeys
-} from "./TaskGenerationService.queries.js";
+} from "./queries.js";
 
 export const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, executableTemplatesMap, startDate = null, endDate = null) => {
   // Solo las plantillas en modo `single` auto-generan su entregable de proceso.

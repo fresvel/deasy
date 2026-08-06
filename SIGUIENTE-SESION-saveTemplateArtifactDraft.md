@@ -31,7 +31,7 @@ I'm continuing to bring down complexity in the Deasy backend. Ten cuts closed Go
 into a registry: its S3776 closed as FIXED.
 
 One big target is left, and it is the worst in the backend by a factor of two:
-`saveTemplateArtifactDraft` (backend/services/admin/SqlAdminService.templateLifecycle.js:966),
+`saveTemplateArtifactDraft` (backend/services/admin/templates/templateLifecycle.js:966),
 541 lines, CC 158. Cut #8 moved it LITERALLY and said so in the commit; Sonar measures exactly that.
 
 Read docs/auditoria-god-objects-2026-07.md first (§1.b and cut #10), then this handoff.
@@ -60,7 +60,7 @@ After cut #10, the backend complexity leaderboard (Sonar at `@9e91711`):
 
 | CC | Where |
 |---:|---|
-| **158** | `SqlAdminService.templateLifecycle.js:966` → `saveTemplateArtifactDraft` |
+| **158** | `templates/templateLifecycle.js:966` → `saveTemplateArtifactDraft` |
 | 75 | `controllers/users/user_controler.js:1868` → `createGeneralTask` (God #2) |
 | 59 / 49 | `backend/config/postgres.js:111` / `:47` — SQL dialect rewrites |
 | 36 | `SqlAdminService.js:261` → `list()` |
@@ -269,7 +269,7 @@ SONAR_TOKEN=<token> bash scripts/sonar/scan.sh             # ~1.5 min
   `zz_` flow that mutates, with state shared across steps. This is the model to follow.
 - char harness: `backend/tests/characterization/` (`lib/http.mjs` ← the one to modify,
   `lib/snapshot.mjs`, `normalize.mjs`, `auth.mjs`; `config.mjs` with `FIXTURE` and users).
-- `backend/services/admin/SqlAdminService.tableHooks.js` — the CRUD hook contract.
-- `backend/services/admin/SqlAdminService.validation.js` — the cut #10 registry, in case it helps as a
+- `backend/services/admin/crud/tableHooks.js` — the CRUD hook contract.
+- `backend/services/admin/crud/validation.js` — the cut #10 registry, in case it helps as a
   model for "conditional into data".
 - **Different track, don't mix them in**: `SIGUIENTE-SESION-fase5-y-X.md` is the FRONTEND refactor.

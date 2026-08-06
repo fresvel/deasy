@@ -5,15 +5,15 @@
 // los 4 consumidores (task_generation_controller, user_controler, SqlAdminService,
 // DocumentWorkflowResetService) siguen importando de aquí y no se tocaron.
 //
-// Dónde vive ahora cada cosa:
-//   .primitives.js  decisiones de política puras (ámbito de un paso, reparto de una regla)
-//   .queries.js     lookups de solo lectura
-//   .assignees.js   el "quién hace el paso": de la declaración a personas concretas
-//   .taskitems.js   qué entregables existen en una tarea y a qué posiciones se asignan
-//   .documents.js   materialización del documento y flujo de llenado
-//   .launch.js      corrida (process_run), hidratación de tareas y estado de lanzamiento
+// Dónde vive ahora cada cosa (paquete `generation/`):
+//   primitives.js  decisiones de política puras (ámbito de un paso, reparto de una regla)
+//   queries.js     lookups de solo lectura
+//   assignees.js   el "quién hace el paso": de la declaración a personas concretas
+//   taskitems.js   qué entregables existen en una tarea y a qué posiciones se asignan
+//   documents.js   materialización del documento y flujo de llenado
+//   launch.js      corrida (process_run), hidratación de tareas y estado de lanzamiento
 //
-// Ver docs/auditoria-refactor-2026-07.md
+// Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 export {
   ensureSignatureFlowForDocumentVersion,
   ensureFillFlowForDocumentVersion,
@@ -22,7 +22,7 @@ export {
   materializeRuntimeFlowForTaskItem,
   ensureDocumentForTaskItem,
   ensureDocumentsForTask
-} from "./TaskGenerationService.documents.js";
+} from "./generation/documents.js";
 
 export {
   ensureProcessRun,
@@ -33,4 +33,4 @@ export {
   launchProcessDefinitionInTerm,
   getTermLaunchStatus,
   getDefinitionLaunchInfo
-} from "./TaskGenerationService.launch.js";
+} from "./generation/launch.js";

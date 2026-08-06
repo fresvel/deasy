@@ -8,8 +8,8 @@ import {
   buildProcessDefinitionVersionName,
   resolveProcessDefinitionSeriesIdentity,
 } from "./processDefinitionSeries.js";
-import { bumpSemanticVersion } from "./SqlAdminService.versioning.js";
-import { normalizeNumericId } from "./SqlAdminService.primitives.js";
+import { bumpSemanticVersion } from "../kernel/versioning.js";
+import { normalizeNumericId } from "../kernel/primitives.js";
 
 export default class ProcessDefinitionVersionService {
   constructor(pool, { getByKeys, syncArtifactWorkflows } = {}) {

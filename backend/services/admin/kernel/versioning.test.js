@@ -6,7 +6,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { bumpSemanticVersion, normalizeItemMode } from "./SqlAdminService.versioning.js";
+import { bumpSemanticVersion, normalizeItemMode } from "./versioning.js";
 
 test("bumpSemanticVersion incrementa el segmento pedido y pone a cero los menores", () => {
   assert.equal(bumpSemanticVersion("1.2.3", "major"), "2.0.0");
