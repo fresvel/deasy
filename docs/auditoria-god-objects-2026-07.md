@@ -351,9 +351,9 @@ mover: 0 BLOCKER, 46 vulnerabilidades, C/D — esta vez no hubo marcas manuales 
 > iteraciones, 64 bytes, con el **salt base64-DECODIFICADO** a bytes (no el string), y `crypted_password` = `100000$<b64>`.
 > Los tokens se generan por sesión: `POST /api/authentication/login` con cookie jar + cabecera `X-XSRF-TOKEN`.
 
-### 3.1.b Deuda encontrada al revisar (2026-08-06) — dos defectos de producción
+### 3.1.b Deuda encontrada al revisar (2026-08-06) — tres defectos de producción
 
-Revisando la deuda antes de re-escanear con Sonar aparecieron **dos fallos reales**, ninguno introducido por los cuts:
+Revisando la deuda antes de re-escanear con Sonar aparecieron **tres fallos reales**, ninguno introducido por los cuts:
 
 **1. Los mapeos de error hablaban MySQL sobre una base PostgreSQL.** Ocho `if (error.code === "ER_DUP_ENTRY")` /
 `"ER_ROW_IS_REFERENCED"` repartidos por cuatro ficheros llevaban muertos desde la migración: PostgreSQL usa **SQLSTATE**
@@ -376,6 +376,53 @@ ruta exacta. La lección registrada tras el cut #4 ("`node --check` no valida re
 **verificar el arranque tampoco basta.** Arreglo duradero: `npm run check:imports`
 (`scripts/check_missing_imports.mjs`), que construye el vocabulario de lo que exporta cada módulo y busca usos en ficheros
 que ni lo importan ni lo declaran. Verificado que caza los cuatro.
+
+**3. `saveTemplateArtifactDraft` compensaba de menos: la creación fallida dejaba el `deliverable` huérfano.** La función
+no corre en transacción; el `catch` compensa a mano y borraba la fila de `template_artifacts` y el prefijo de MinIO, pero
+**no** la fila de `deliverables` recién insertada ni el vínculo a la configuración. Reproducido contra dev: un POST con
+`process_definition_id` inexistente falla con "El proceso destino seleccionado no existe." (400) **después** del INSERT, y
+la fila sobrevive con `owner_process_id` NULL. El daño real no es la fila suelta: el alta busca el deliverable por `code`
+(`draft_<slug(display_name)>`), así que el siguiente intento con el mismo nombre **reusa la huérfana** y hereda sus NULL —
+aunque el artifact sí quede bien vinculado. Ese entregable se queda sin proceso dueño, en silencio y para siempre.
+Arreglado anotando lo que insertó *esa* llamada (`insertedDeliverableId`, `insertedLinkId`) y deshaciéndolo en orden
+inverso (vínculo → artifact → deliverable; ninguna FK cascadea). Se distingue **insertar de REUSAR**: un deliverable
+preexistente con ese `code` pertenece a versiones anteriores y no se toca. Es el caso de libro del patrón de esta sección:
+el golden se capturó primero con el comportamiento **roto** (`zzz_artifact_draft`, clave `defecto_deliverable_huerfano`,
+que **no se renombra** para no borrar la prueba) y el diff de ese golden —`{owner_process_id: null}` → `null`— **es** la
+evidencia del arreglo.
+
+### 3.1.c Red de seguridad para `saveTemplateArtifactDraft` (fase 1, 2026-08-06)
+
+Antes de partir la peor función del backend (`templateLifecycle.js:966`, 541 L, CC 158 — el doble que la siguiente) hacía
+falta la red, porque su ruta es **multipart con subida de ficheros**, escribe en **cinco sitios** (MinIO incluido) y no
+tenía ningún golden. **`char 148 → 161`**, con tres piezas nuevas:
+
+1. **Multipart en el harness.** `lib/http.mjs` forzaba `Content-Type: application/json` en cuanto había `body`. Se añade
+   una opción `form` que envía `FormData`; el camino JSON queda intacto. La trampa: **no fijar el `Content-Type` a mano** —
+   sin el `boundary` que genera `fetch`, multer rechaza la petición.
+2. **`lib/db.mjs`, SQL directo SOLO para teardown.** Excepción medida al harness HTTP-only, porque la limpieza **no se
+   puede hacer por HTTP**: `deliverables` no está en `config/sqlTables.js` ni tiene método de servicio que la borre (no
+   existe ninguna ruta que elimine esa fila); `DELETE process_definition_templates` responde 400 mientras la configuración
+   destino no esté en `draft` (la de la fixture está `active`); y sin borrar el vínculo, `DELETE template_artifacts`
+   responde 409 por FK. Se usa para **limpiar, nunca para asertar**.
+3. **`flows/zzz_artifact_draft.test.mjs`** — 13 casos: contratos de error de la validación, que `routed` **no** exige flujo
+   de entrega, los caminos felices de crear (POST) y editar (PUT), y el defecto de compensación de §3.1.b.
+
+**Prefijo `zzz_`, no `zz_`.** Los flows corren en orden alfabético; `zz_artifact_draft` habría corrido el **primero** de
+los `zz_` ("artifact" < "task" < "template") y habría movido secuencias y conteos que observan `zz_task_generation` y
+`zz_template_lifecycle`. Con `zzz_` corre el último y no puede perturbar ningún golden previo.
+
+**Solo se enmascara `id`** — y esto corrige el supuesto de partida. Medido: `storage_version` sale de la **base**
+(`getNextStorageVersionForTemplateCode` une `template_artifacts`→`deliverables` por `code`), **no de MinIO**, así que con
+el round-trip autolimpiante vuelve a `1.0.0` en cada corrida; y `content_hash` es **determinista** (idéntico entre corridas
+con la base reseteada y MinIO en distinto estado). Fijarlos literalmente convierte el golden en una **huella byte a byte**
+del `meta.yaml`, el `schema.json`, el contrato de la semilla y el fichero subido — mucho más fuerte que enmascararlos.
+
+**MinIO no se limpia, a propósito.** El prefijo es determinista y la subida lo reescribe idéntico en cada corrida; ningún
+golden lo observa. No hacía falta buscarle una ruta de borrado.
+
+Verificado: char 161/161, unit 209/209, diff de goldens **puramente aditivo** (0 borrados) en la fase 1, `check:imports`
+OK, arranque limpio y **cero residuos** en la base tras la corrida. **Pendiente: el corte (fase 2).**
 
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
