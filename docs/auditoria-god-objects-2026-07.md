@@ -47,6 +47,67 @@ y *Replace Conditional*, no más *Extract Function* de lo fácil.
 
 ---
 
+## 1.b RE-ESCANEO tras los cuts #1–#9 (2026-08-06, `develop @3721069`)
+
+**La pregunta que esta auditoría dejó abierta era si el refactor tocaba la complejidad o solo el tamaño. Ya hay respuesta, y
+es distinta según la técnica.**
+
+| Métrica | Jul (`@090dd44`) | **Hoy (`@3721069`)** | Δ |
+|---|---:|---:|---:|
+| Complejidad cognitiva total | 9 022 | **8 840** | −182 (−2 %) |
+| Deuda técnica (SQALE) | 5 350 min | **5 042 min** | −308 (−5,8 %) |
+| Code smells | 623 | 649 | +26 |
+| Bugs | 143 | **143** | = |
+| Vulnerabilidades | 46 | **46** | = |
+| Duplicación | 3,2 % | **3,2 %** | = |
+| Fiabilidad / Seguridad | C / D | **C / D** | = |
+| **BLOCKER** | **5** | **0** | −5 |
+| NCLOC | 79 964 | 80 306 | +342 |
+
+### Lo que sí bajó: la peor función del repositorio
+
+| | Jul | Hoy |
+|---|---:|---:|
+| `SqlAdminService.update()` | **CC 218** (la peor del repo) | **CC 16** (−93 %) |
+| `SqlAdminService.create()` | CC 163 | **CC 16** |
+| `SqlAdminService.remove()` | — | **bajo el umbral** (ya no aparece) |
+| fichero `SqlAdminService.js` | CC 1 305 | **CC 153** (−88 %) |
+
+El injerto más complejo que sobrevive es el hook `beforeUpdate` de `process_definition_versions` (**CC 25**): es la máquina de
+estados draft→active→retired, complejidad legítima, ahora aislada y con nombre en vez de diluida en un método de 533 L.
+
+### Lo que NO bajó, y por qué importa
+
+**La familia entera** (`SqlAdminService.*`) suma hoy **CC 1 444**; en julio eran ≈1 688 (los 1 305 del fichero + 237 de
+`.workflows.js` + los helpers puros que ya existían). Es decir **−14 % a nivel de familia frente a −88 % a nivel de fichero**:
+buena parte de la complejidad **se movió**, no desapareció. Los dos casos límite lo enseñan sin ambigüedad:
+
+- `saveTemplateArtifactDraft` — **CC 158**, hoy la peor de la familia. Se movió LITERAL en el cut #8 (documentado ahí
+  mismo): Sonar mide exactamente lo que ese commit dijo que no hacía.
+- `validateTableRules` — **CC 99**, intacta desde julio: nunca entró en el alcance.
+
+**Conclusión de método, que corrige la lectura de §1:** no es que "el refactor mueva tamaño y no complejidad" en general —
+depende de la TÉCNICA. *Extract Class* mueve (cuts #1–#6, #8, #9). *Replace Conditional with Registry* **simplifica** (cut #7:
+218→16). El §1 observó lo primero porque hasta entonces solo se había hecho *Extract Function/Class*.
+
+### Siguientes objetivos por complejidad (ya sin `SqlAdminService.update`)
+
+| CC | Dónde |
+|---:|---|
+| **158** | `SqlAdminService.templateLifecycle.js` → `saveTemplateArtifactDraft` (needs caracterización multipart antes) |
+| **99** | `SqlAdminService.validation.js` → `validateTableRules` (candidata clara a registro por tabla, como el cut #7) |
+| 75 | `user_controler.js:1868` → `createGeneralTask` (ya listado en §3.2) |
+| 67 | `frontend/.../useAdminSubmitFlow.js:30` |
+| 59 / 49 | `backend/config/postgres.js` → reescrituras de dialecto |
+
+> **Nota sobre el marcado manual.** Se confirmó otra vez lo que avisa §1: al mover `PERSON_TOKEN_CHARS` de
+> `SqlAdminService.js` a `.tableHooks.js`, su `S6418` marcado *won't fix* se cerró y **reapareció sin marcar en el fichero
+> nuevo**, llevándose la nota de seguridad de D a **E**. No era un defecto nuevo: re-marcado (como sus tres gemelos ya lo
+> estaban), vuelve a D y a 46 vulnerabilidades. **Las marcas manuales no sobreviven a que el código cambie de fichero** — hay
+> que revisarlas después de cada refactor.
+
+---
+
 ## 2. Ranking real de God (por complejidad cognitiva, no por LOC)
 
 El LOC engaña (`sqlTables.js` son 1009 L de datos; `AdminTableManager` es un motor grande y sano). La
