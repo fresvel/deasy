@@ -134,6 +134,13 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   > `buildProcessDefinitionVersionName` de `.versioning.js` cuando en realidad vive en `processDefinitionSeries.js` → el backend
   > **crasheó al arrancar** (`does not provide an export`), no en `node --check`. **Verificar SIEMPRE que el backend arranca
   > (logs "Servidor iniciado", sin SyntaxError) antes de correr char.**
+- **Cut #5 `WorkflowSyncService` HECHO** (`SqlAdminService.workflowSync.js`, 584 L): sincronización de flujos fill/firma de los
+  artifacts con sus plantillas de proceso, estado y reconciliación — 13 métodos. Depende de `this.pool` + **4 colaboradores
+  inyectados** (`getCargoCodeMap`, `getUnitTypeNameMap`, `getTemplateArtifact`, `loadTemplateArtifactMetaDocument` — los 2
+  últimos ya delegadores del #3); helpers puros de `.artifacts.js`/`.workflows.js`. **Sin `getByKeys`.** Clase con estado + 4
+  delegadores; los servicios #3/#4 que inyectan `syncArtifactWorkflows` siguen funcionando (su binding llama el delegador).
+  `SqlAdminService.js` 4341 → **3816 L** (−525). **Acumulado #1-#5: 5924 → 3816 L (−2108, −36%).** Verificado: backend arranca,
+  **char 119/119**, unit 177/177, **smoke** `GET sync-status` → 200 + `POST workflows/reconcile` → 200 (vía delegador→módulo).
 
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
