@@ -28,6 +28,120 @@ const throwsWith = (fn, fragment) =>
 test("validateTableRules no hace nada con una tabla sin reglas", () => {
   assert.doesNotThrow(() => validateTableRules("tabla_cualquiera", {}));
   assert.doesNotThrow(() => validateTableRules("vacancies", {}));
+  assert.doesNotThrow(() => validateTableRules("processes", {}));
+  assert.doesNotThrow(() => validateTableRules("role_assignments", {}));
+});
+
+// --- Tablas de reglas declarativas -------------------------------------------
+// Diez tablas cuya regla entera es "estos campos, en este orden, y opcionalmente
+// las fechas al final". Antes del cut #10 eran `case` de un switch sin ninguna
+// prueba propia; se fijan aquí porque el orden de los mensajes ES el contrato:
+// el primer campo ausente decide qué ve el usuario.
+
+test("validateTableRules exige los campos del periodo de una configuracion, en orden", () => {
+  throwsWith(
+    () => validateTableRules("process_definition_period_types", {}),
+    "Selecciona una configuracion de proceso.",
+  );
+  throwsWith(
+    () => validateTableRules("process_definition_period_types", { process_definition_id: 1 }),
+    "Selecciona el tipo de periodo en que corre el proceso.",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("process_definition_period_types", { process_definition_id: 1, term_type_id: 2 }),
+  );
+});
+
+test("validateTableRules exige configuracion y periodo antes de mirar las fechas de la tarea", () => {
+  throwsWith(() => validateTableRules("tasks", {}), "Selecciona una configuracion de proceso.");
+  throwsWith(
+    () => validateTableRules("tasks", { process_definition_id: 1 }),
+    "Selecciona un periodo para la tarea.",
+  );
+  // Con un requerido ausente gana su mensaje aunque las fechas también estén mal.
+  throwsWith(
+    () => validateTableRules("tasks", { process_definition_id: 1, start_date: "2026-06-01", end_date: "2026-01-01" }),
+    "Selecciona un periodo para la tarea.",
+  );
+  throwsWith(
+    () =>
+      validateTableRules("tasks", {
+        process_definition_id: 1,
+        term_id: 3,
+        start_date: "2026-06-01",
+        end_date: "2026-01-01",
+      }),
+    "en tareas",
+  );
+  assert.doesNotThrow(() => validateTableRules("tasks", { process_definition_id: 1, term_id: 3 }));
+});
+
+test("validateTableRules exige la plantilla de proceso configurado en los dos tipos de flujo", () => {
+  for (const table of ["fill_flow_templates", "signature_flow_templates"]) {
+    throwsWith(
+      () => validateTableRules(table, {}),
+      "Selecciona la plantilla de proceso configurado.",
+    );
+    assert.doesNotThrow(() => validateTableRules(table, { process_definition_template_id: 7 }));
+  }
+});
+
+test("validateTableRules exige plantilla y orden en un paso de entrega", () => {
+  throwsWith(() => validateTableRules("fill_flow_steps", {}), "Selecciona la plantilla de entrega.");
+  throwsWith(
+    () => validateTableRules("fill_flow_steps", { fill_flow_template_id: 4 }),
+    "Define el orden del paso.",
+  );
+  // Semántica falsy deliberada: el paso 0 NO es un orden válido hoy.
+  throwsWith(
+    () => validateTableRules("fill_flow_steps", { fill_flow_template_id: 4, step_order: 0 }),
+    "Define el orden del paso.",
+  );
+  assert.doesNotThrow(() => validateTableRules("fill_flow_steps", { fill_flow_template_id: 4, step_order: 1 }));
+});
+
+test("validateTableRules exige plantilla y version en una instancia de entrega", () => {
+  throwsWith(() => validateTableRules("document_fill_flows", {}), "Selecciona la plantilla de entrega.");
+  throwsWith(
+    () => validateTableRules("document_fill_flows", { fill_flow_template_id: 4 }),
+    "Selecciona la version de documento.",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("document_fill_flows", { fill_flow_template_id: 4, document_version_id: 9 }),
+  );
+});
+
+test("validateTableRules exige instancia y paso en una solicitud de entrega", () => {
+  throwsWith(() => validateTableRules("fill_requests", {}), "Selecciona la instancia de entrega.");
+  throwsWith(
+    () => validateTableRules("fill_requests", { document_fill_flow_id: 2 }),
+    "Selecciona el paso de entrega.",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("fill_requests", { document_fill_flow_id: 2, fill_flow_step_id: 5 }),
+  );
+});
+
+test("validateTableRules exige tarea y puesto en una asignacion", () => {
+  throwsWith(() => validateTableRules("task_assignments", {}), "Selecciona una tarea para asignar.");
+  throwsWith(
+    () => validateTableRules("task_assignments", { task_id: 1 }),
+    "Selecciona un puesto para la asignacion.",
+  );
+  assert.doesNotThrow(() => validateTableRules("task_assignments", { task_id: 1, position_id: 6 }));
+});
+
+test("validateTableRules valida las fechas de periodos y contratos con su propia etiqueta", () => {
+  throwsWith(
+    () => validateTableRules("terms", { start_date: "2026-06-01", end_date: "2026-01-01" }),
+    "en periodos",
+  );
+  throwsWith(
+    () => validateTableRules("contracts", { start_date: "2026-06-01", end_date: "2026-01-01" }),
+    "en contratos",
+  );
+  assert.doesNotThrow(() => validateTableRules("terms", {}));
+  assert.doesNotThrow(() => validateTableRules("contracts", { start_date: "2026-01-01", end_date: "2026-06-01" }));
 });
 
 // --- process_definition_series: origen excluyente ----------------------------

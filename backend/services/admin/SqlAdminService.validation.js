@@ -1,14 +1,21 @@
 // Validación de reglas de negocio del CRUD administrativo.
 //
 // Extraído de SqlAdminService.js. `validateTableRules` es la última barrera antes de
-// escribir en ~24 tablas del núcleo del motor de procesos; Sonar le mide una
-// complejidad cognitiva de 99, la cuarta más alta del repositorio. Aquí es pura
-// (no toca la base de datos) y por tanto testeable.
+// escribir en ~24 tablas del núcleo del motor de procesos. Aquí es pura (no toca la
+// base de datos) y por tanto testeable sin pool: esa propiedad es la razón de que las
+// reglas vivan en este módulo y no en `SqlAdminService.tableHooks.js`, cuyos hooks son
+// asíncronos y con conexión.
+//
+// El cut #10 la partió en dos mitades. `TABLE_RULES` es un registro declarativo (13
+// tablas cuya regla entera es "estos campos, en este orden, y las fechas al final");
+// el `switch` que queda abajo guarda las nueve tablas con condicionales compuestas,
+// mutación in-place o guards intercalados. Antes eran 22 `case` con complejidad
+// cognitiva 99, la cuarta más alta del repositorio.
 //
 // AVISO sobre el orden de los guards: `SqlAdminService.create()` comprueba los campos
 // requeridos ANTES de llamar aquí, y varias tablas tienen guards propios aún antes.
-// Por eso algunas ramas de este switch son inalcanzables desde `create()` — p. ej. la
-// de `unit_relations`, que create() corta con su propio mensaje. Los tests de
+// Por eso algunas ramas son inalcanzables desde `create()` — p. ej. la de
+// `unit_relations`, que create() corta con su propio mensaje. Los tests de
 // caracterización (`flows/admin_crud.test.mjs`) fijan el mensaje que emerge de verdad.
 
 import {
@@ -49,7 +56,102 @@ export const ensureDateOrder = (startDate, endDate, label) => {
   }
 };
 
+// -------------------------------------------------------------------------------------------
+// El registro de reglas por tabla (cut #10). Mismo movimiento que el cut #7 hizo con los
+// injertos de create/update, aquí sobre el `switch (tableName)`: la regla de cada tabla deja
+// de ser control-flow anidado y pasa a ser una LISTA DE REGLAS que se evalúan en orden.
+//
+// El ORDEN dentro de la lista es CONTRATO: el primer campo ausente decide el mensaje que ve el
+// usuario. Por eso las tablas que intercalan condicionales entre sus requeridos (p. ej.
+// `process_definition_versions`, que mete el semver en medio) NO son declarativas y siguen en
+// el switch de abajo.
+// -------------------------------------------------------------------------------------------
+
+/**
+ * Campos obligatorios, evaluados EN ORDEN. La comprobación es `!valor` a propósito: hoy un 0 o
+ * una cadena vacía cuentan como ausentes (`fill_flow_steps.step_order = 0` se rechaza), y eso
+ * está fijado por los tests.
+ */
+const requires = (...pairs) => (candidate) => {
+  for (const [field, message] of pairs) {
+    if (!candidate[field]) {
+      throw new Error(message);
+    }
+  }
+};
+
+const datesInOrder = (label) => (candidate) => {
+  ensureDateOrder(candidate.start_date, candidate.end_date, label);
+};
+
+const TABLE_RULES = {
+  terms: [
+    datesInOrder("periodos"),
+  ],
+  processes: [],
+  process_definition_period_types: [
+    requires(
+      ["process_definition_id", "Selecciona una configuracion de proceso."],
+      ["term_type_id", "Selecciona el tipo de periodo en que corre el proceso."],
+    ),
+  ],
+  tasks: [
+    requires(
+      ["process_definition_id", "Selecciona una configuracion de proceso."],
+      ["term_id", "Selecciona un periodo para la tarea."],
+    ),
+    datesInOrder("tareas"),
+  ],
+  fill_flow_templates: [
+    requires(["process_definition_template_id", "Selecciona la plantilla de proceso configurado."]),
+  ],
+  fill_flow_steps: [
+    requires(
+      ["fill_flow_template_id", "Selecciona la plantilla de entrega."],
+      ["step_order", "Define el orden del paso."],
+    ),
+  ],
+  document_fill_flows: [
+    requires(
+      ["fill_flow_template_id", "Selecciona la plantilla de entrega."],
+      ["document_version_id", "Selecciona la version de documento."],
+    ),
+  ],
+  fill_requests: [
+    requires(
+      ["document_fill_flow_id", "Selecciona la instancia de entrega."],
+      ["fill_flow_step_id", "Selecciona el paso de entrega."],
+    ),
+  ],
+  signature_flow_templates: [
+    requires(["process_definition_template_id", "Selecciona la plantilla de proceso configurado."]),
+  ],
+  task_assignments: [
+    requires(
+      ["task_id", "Selecciona una tarea para asignar."],
+      ["position_id", "Selecciona un puesto para la asignacion."],
+    ),
+  ],
+  vacancies: [],
+  contracts: [
+    datesInOrder("contratos"),
+  ],
+  role_assignments: [],
+};
+
 export const validateTableRules = (tableName, candidate) => {
+  // `Array.isArray` y no un `if (rules)` a secas: `tableName` viaja desde la URL y una clave
+  // heredada de Object.prototype ("constructor") devolvería algo no iterable.
+  const rules = TABLE_RULES[tableName];
+  if (Array.isArray(rules)) {
+    for (const rule of rules) {
+      rule(candidate);
+    }
+    return;
+  }
+
+  // Pendiente de convertir (tanda 2 del cut #10): las nueve tablas con condicionales
+  // compuestas, mutación in-place del candidato o guards intercalados.
   switch (tableName) {
     case "unit_relations":
       if (candidate.parent_unit_id && candidate.child_unit_id) {
@@ -57,11 +159,6 @@ export const validateTableRules = (tableName, candidate) => {
           throw new Error("La unidad padre y la unidad hija no pueden ser la misma.");
         }
       }
-      break;
-    case "terms":
-      ensureDateOrder(candidate.start_date, candidate.end_date, "periodos");
-      break;
-    case "processes":
       break;
     case "process_definition_versions":
       if (!candidate.process_id) {
@@ -115,23 +212,6 @@ export const validateTableRules = (tableName, candidate) => {
         throw new Error("El alcance por tipo requiere un tipo de unidad.");
       }
       break;
-    case "process_definition_period_types":
-      if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una configuracion de proceso.");
-      }
-      if (!candidate.term_type_id) {
-        throw new Error("Selecciona el tipo de periodo en que corre el proceso.");
-      }
-      break;
-    case "tasks":
-      if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una configuracion de proceso.");
-      }
-      if (!candidate.term_id) {
-        throw new Error("Selecciona un periodo para la tarea.");
-      }
-      ensureDateOrder(candidate.start_date, candidate.end_date, "tareas");
-      break;
     case "task_items":
       if (!candidate.task_id) {
         throw new Error("Selecciona una tarea.");
@@ -154,55 +234,6 @@ export const validateTableRules = (tableName, candidate) => {
       if (Object.hasOwn(candidate, "status")) {
         candidate.status = assertDocumentStatusValue(candidate.status);
       }
-      break;
-    case "fill_flow_templates":
-      if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso configurado.");
-      }
-      break;
-    case "fill_flow_steps":
-      if (!candidate.fill_flow_template_id) {
-        throw new Error("Selecciona la plantilla de entrega.");
-      }
-      if (!candidate.step_order) {
-        throw new Error("Define el orden del paso.");
-      }
-      break;
-    case "document_fill_flows":
-      if (!candidate.fill_flow_template_id) {
-        throw new Error("Selecciona la plantilla de entrega.");
-      }
-      if (!candidate.document_version_id) {
-        throw new Error("Selecciona la version de documento.");
-      }
-      break;
-    case "fill_requests":
-      if (!candidate.document_fill_flow_id) {
-        throw new Error("Selecciona la instancia de entrega.");
-      }
-      if (!candidate.fill_flow_step_id) {
-        throw new Error("Selecciona el paso de entrega.");
-      }
-      break;
-    case "signature_flow_templates":
-      if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso configurado.");
-      }
-      break;
-    case "task_assignments":
-      if (!candidate.task_id) {
-        throw new Error("Selecciona una tarea para asignar.");
-      }
-      if (!candidate.position_id) {
-        throw new Error("Selecciona un puesto para la asignacion.");
-      }
-      break;
-    case "vacancies":
-      break;
-    case "contracts":
-      ensureDateOrder(candidate.start_date, candidate.end_date, "contratos");
-      break;
-    case "role_assignments":
       break;
     case "document_versions":
       if (candidate.version !== undefined) {
