@@ -141,6 +141,13 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   delegadores; los servicios #3/#4 que inyectan `syncArtifactWorkflows` siguen funcionando (su binding llama el delegador).
   `SqlAdminService.js` 4341 → **3816 L** (−525). **Acumulado #1-#5: 5924 → 3816 L (−2108, −36%).** Verificado: backend arranca,
   **char 119/119**, unit 177/177, **smoke** `GET sync-status` → 200 + `POST workflows/reconcile` → 200 (vía delegador→módulo).
+- **Cut #6 `TaskAssignmentService` HECHO** (`SqlAdminService.taskAssignment.js`, 413 L): asignación/reconciliación de task items,
+  handover, atascados, jefe inmediato, + mapas de referencia (cargo/unit-type) y resolución de scope/cargos-resolubles — 10
+  métodos. **El cut más limpio: cluster AUTOCONTENIDO, cero colaboradores** (solo `this.pool` + el import `normalizeNumericId`;
+  las llamadas intra-cluster se quedan dentro) → **sin inyección**. Clase con estado + 9 delegadores; el controller,
+  `saveTemplateArtifactDraft` y `WorkflowSyncService` (que llaman `getCargoCodeMap`/`getProcessTargetScope`/… vía `this.`) no se
+  tocan. `SqlAdminService.js` 3816 → **3441 L** (−375). **Acumulado #1-#6: 5924 → 3441 L (−2483, −42%).** Verificado: backend
+  arranca, **char 119/119** (target-scope, resolvable-cargos, stuck), unit 177/177, smoke `resolvable-cargos` → 200.
 
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
