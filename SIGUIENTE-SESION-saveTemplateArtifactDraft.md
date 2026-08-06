@@ -1,250 +1,261 @@
-# Handoff — `saveTemplateArtifactDraft`: la red primero, el corte después
+# Handoff — `saveTemplateArtifactDraft`: the safety net first, the cut second
 
-> Copia el bloque "PROMPT" como primer mensaje de una sesión nueva. Todo lo necesario está aquí o en
-> `docs/auditoria-god-objects-2026-07.md` (§3.1 cuts #1–#9, el cut #10 y §3.1.b los dos defectos).
+> Paste the "PROMPT" block as the first message of a new session. Everything you need is either here
+> or in `docs/auditoria-god-objects-2026-07.md` (§3.1 covers cuts #1–#9 and cut #10, §3.1.b the two
+> production defects).
 >
-> Estado: `develop @039ecfb`, árbol limpio. God Object #1 CERRADO. Cut #10 CERRADO.
+> State: `develop @039ecfb`, clean tree. God Object #1 CLOSED. Cut #10 CLOSED.
+
+> **Note on language.** This handoff is in English, but the repository is not: code comments, commit
+> messages and the docs under `docs/` are all written in Spanish. Keep writing them in Spanish.
 
 ---
 
-## PROMPT (pégalo como primer mensaje)
+## PROMPT (paste this as your first message)
 
 ```
-Continúo bajando la complejidad del backend de Deasy. Diez cuts cerraron el God Object #1
-(SqlAdminService.js: 5924 -> 897 L) y el cut #10 convirtió `validateTableRules` de un switch
-CC 99 en un registro: su S3776 cerró como FIXED.
+I'm continuing to bring down complexity in the Deasy backend. Ten cuts closed God Object #1
+(SqlAdminService.js: 5924 -> 897 L), and cut #10 turned `validateTableRules` from a CC 99 switch
+into a registry: its S3776 closed as FIXED.
 
-Queda un solo objetivo grande y es el peor del backend por un factor de dos:
+One big target is left, and it is the worst in the backend by a factor of two:
 `saveTemplateArtifactDraft` (backend/services/admin/SqlAdminService.templateLifecycle.js:966),
-541 líneas y CC 158. Se movió LITERAL en el cut #8 y el commit lo dijo; Sonar mide exactamente eso.
+541 lines, CC 158. Cut #8 moved it LITERALLY and said so in the commit; Sonar measures exactly that.
 
-Lee primero docs/auditoria-god-objects-2026-07.md (§1.b y el cut #10) y luego este handoff.
+Read docs/auditoria-god-objects-2026-07.md first (§1.b and cut #10), then this handoff.
 
-LA DIFICULTAD NO ES PARTIRLO, ES LA RED. Su ruta es multipart con subida de ficheros, escribe en
-cinco sitios (incluido MinIO) y NO tiene golden. Además el harness de caracterización no sabe
-mandar multipart: `lib/http.mjs` fuerza Content-Type: application/json en toda petición.
+THE HARD PART IS NOT SPLITTING IT, IT IS THE SAFETY NET. Its route is multipart with file uploads,
+it writes to five places (MinIO included), and it has no golden. On top of that the characterization
+harness cannot send multipart: `lib/http.mjs` forces Content-Type: application/json on every request.
 
-Por eso el trabajo va en dos fases, y la FASE 1 es la entrega de verdad:
-  FASE 1  multipart en el harness + un flow `zz_artifact_draft` autolimpiante que fije las dos
-          ramas (POST crear / PUT editar) y sus contratos de error. SIN tocar el servicio.
-  FASE 2  descomponer la función, con la fase 1 en verde y los goldens IDÉNTICOS.
+So the work splits in two phases, and PHASE 1 is the real deliverable:
+  PHASE 1  multipart support in the harness + a self-cleaning `zz_artifact_draft` flow pinning both
+           branches (POST create / PUT edit) and their error contracts. WITHOUT touching the service.
+  PHASE 2  decompose the function, with phase 1 green and the goldens IDENTICAL.
 
-Empieza por la FASE 1. Antes de escribir código MIDE el estado real y proponme el plan.
+Start with PHASE 1. Before writing any code, MEASURE the real state and propose the plan to me.
+
+Note: the repo is in Spanish. Write code comments and commit messages in Spanish.
 ```
 
 ---
 
-## Por qué esta función y no otra
+## Why this function and not another
 
-Tras el cut #10, el top de complejidad del backend (Sonar `@9e91711`):
+After cut #10, the backend complexity leaderboard (Sonar at `@9e91711`):
 
-| CC | Dónde |
+| CC | Where |
 |---:|---|
 | **158** | `SqlAdminService.templateLifecycle.js:966` → `saveTemplateArtifactDraft` |
 | 75 | `controllers/users/user_controler.js:1868` → `createGeneralTask` (God #2) |
-| 59 / 49 | `backend/config/postgres.js:111` / `:47` — reescrituras de dialecto |
+| 59 / 49 | `backend/config/postgres.js:111` / `:47` — SQL dialect rewrites |
 | 36 | `SqlAdminService.js:261` → `list()` |
 
-Tiene **el doble** que la siguiente. Y en su propio fichero hay dos más pequeñas del mismo cluster
-(`:508` CC 18, `:643` CC 23) que probablemente caigan de rebote.
+It carries **twice** the complexity of the next one. And its own file holds two smaller members of the
+same cluster (`:508` CC 18, `:643` CC 23) that will likely fall out as a side effect.
 
 ---
 
-## Anatomía: 541 L en ocho fases
+## Anatomy: 541 lines in eight phases
 
-Se lee de arriba abajo y las fronteras son limpias — es un *Compose Method* de manual, no una maraña.
+It reads top to bottom and the boundaries are clean — this is a textbook *Compose Method*, not a
+tangle.
 
-| # | Líneas | Qué hace |
+| # | Lines | What it does |
 |---|---|---|
-| 1 | 969–1050 | **Validación de entrada.** displayName, cédula, `isEdit`, guard de inmutabilidad (solo se edita en borrador), proceso obligatorio, semilla por defecto, documento de referencia obligatorio, flujo de entrega obligatorio salvo `routed` |
-| 2 | 1052–1078 | **Resolución del propietario** (`ownerRef` / `ownerPersonId`) |
-| 3 | 1079–1102 | **Identidad y rutas**: `templateCode`, `storageVersion`, `baseObjectPrefix`, `draftDir` temporal |
-| 4 | 1105–1163 | **Materialización de la semilla** en `draftDir` (descarga de MinIO, rama LaTeX, preservación de formatos existentes) |
-| 5 | 1170–1203 | **Escritura de los ficheros subidos** y cálculo de `availableFormats` |
-| 6 | 1209–1240 | **Parseo** de `schema_fields`, meta y los dos workflows (JSON que puede venir como string) |
-| 7 | 1249–1310 | **Validación de los flujos personalizados**: cargos, ámbito del proceso, `workflowErrors`, avisos de autoría |
-| 8 | 1311–1505 | **Escritura**: meta.yaml + manifiesto, upload a MinIO, INSERT/UPDATE, vínculo a proceso, sync de flujos, y la compensación del `catch` |
+| 1 | 969–1050 | **Input validation.** displayName, national ID, `isEdit`, immutability guard (only drafts are editable), mandatory process, default seed, mandatory reference document, mandatory fill workflow unless `routed` |
+| 2 | 1052–1078 | **Owner resolution** (`ownerRef` / `ownerPersonId`) |
+| 3 | 1079–1102 | **Identity and paths**: `templateCode`, `storageVersion`, `baseObjectPrefix`, temporary `draftDir` |
+| 4 | 1105–1163 | **Seed materialization** into `draftDir` (MinIO download, LaTeX branch, preservation of existing formats) |
+| 5 | 1170–1203 | **Writing the uploaded files** and computing `availableFormats` |
+| 6 | 1209–1240 | **Parsing** `schema_fields`, meta and both workflows (JSON that may arrive as a string) |
+| 7 | 1249–1310 | **Custom workflow validation**: cargos, process scope, `workflowErrors`, authoring warnings |
+| 8 | 1311–1505 | **Writing**: meta.yaml + manifest, MinIO upload, INSERT/UPDATE, process link, workflow sync, and the `catch` compensation |
 
 ---
 
-## Lo que ESCRIBE (esto define la limpieza del round-trip)
+## What it WRITES (this defines the round-trip cleanup)
 
-Rama de creación, en orden:
+Create branch, in order:
 
-1. `deliverables` — INSERT, **o reutiliza** la fila existente con el mismo `code`
+1. `deliverables` — INSERT, **or reuses** the existing row with the same `code`
 2. `template_artifacts` — INSERT (`lifecycle_state = 'draft'`)
-3. `process_definition_templates` — INSERT del vínculo (o UPDATE del `item_mode` si ya existía)
-4. plantillas y pasos de flujo fill/firma, vía `_syncArtifactWorkflowsForTemplateArtifactId`
-5. **objetos en MinIO** bajo `baseObjectPrefix`, y un directorio temporal en `BACKEND_STORAGE_ROOT`
-   (este sí se borra siempre, en el `finally`)
+3. `process_definition_templates` — INSERT of the link (or UPDATE of `item_mode` if it already existed)
+4. fill/signature flow templates and steps, via `_syncArtifactWorkflowsForTemplateArtifactId`
+5. **MinIO objects** under `baseObjectPrefix`, plus a temporary directory under `BACKEND_STORAGE_ROOT`
+   (this one is always removed, in the `finally`)
 
-### Tres cosas que hay que saber antes de diseñar el test
+### Three things to know before designing the test
 
-**`templateCode` es determinista**: `draft_<slugify(display_name)>`. Dos corridas con el mismo
-`display_name` reutilizan la MISMA fila de `deliverables` (se busca por `code`), pero
-`_getNextStorageVersionForTemplateCode` **sube la versión** en cada corrida — así que el
-`baseObjectPrefix` cambia (`.../draft_x/1.0.0/`, `1.1.0/`…). Sin limpieza completa, cada corrida deja
-un artifact más y un prefijo más en MinIO, y cualquier golden que capture la versión deriva.
+**`templateCode` is deterministic**: `draft_<slugify(display_name)>`. Two runs with the same
+`display_name` reuse the SAME `deliverables` row (lookup is by `code`), but
+`_getNextStorageVersionForTemplateCode` **bumps the version** on every run — so `baseObjectPrefix`
+changes (`.../draft_x/1.0.0/`, `1.1.0/`…). Without full cleanup, every run leaves one more artifact
+and one more prefix in MinIO, and any golden capturing the version will drift.
 
-**No hay transacción de base de datos.** El bloque de la fase 8 usa `this.pool.query` directo, no
-`runInTransaction`. El `try/catch` es compensación manual, no atomicidad.
+**There is no database transaction.** The phase 8 block uses `this.pool.query` directly, not
+`runInTransaction`. The `try/catch` is manual compensation, not atomicity.
 
-**La compensación está incompleta — verifícalo antes de tocar nada.** El `catch` de creación borra
-la fila de `template_artifacts` y el prefijo de MinIO, pero **no** el `deliverables` que acaba de
-insertar, ni el vínculo, ni los flujos sincronizados. Si falla después del INSERT del deliverable —
-p. ej. por "El proceso destino seleccionado no existe." — queda un `deliverables` huérfano que la
-siguiente corrida reutilizará por `code`. **No lo doy por defecto confirmado: pruébalo.** Si lo es,
-el patrón de §3.1.b aplica — fijar primero el comportamiento roto con un golden, y luego arreglarlo,
-de modo que el diff del golden **sea** la prueba del arreglo.
+**The compensation looks incomplete — verify this before touching anything.** The create-branch
+`catch` deletes the `template_artifacts` row and the MinIO prefix, but **not** the `deliverables` row
+it just inserted, nor the link, nor the synced workflows. If it fails after the deliverable INSERT —
+say, on "El proceso destino seleccionado no existe." — an orphan `deliverables` row survives and the
+next run will reuse it by `code`. **I am not claiming this as a confirmed defect: test it.** If it is
+one, the §3.1.b pattern applies — pin the broken behavior with a golden first, then fix it, so that
+the golden diff **is** the proof of the fix.
 
 ---
 
-## Fase 1 — la red (la entrega de esta sesión)
+## Phase 1 — the safety net (this session's deliverable)
 
-### 1.a Multipart en el harness
+### 1.a Multipart in the harness
 
-`backend/tests/characterization/lib/http.mjs` pone `Content-Type: application/json` en cuanto hay
-`body`. Hace falta una vía nueva que mande `FormData`. Node 18+ ya trae `FormData`, `Blob` y `File`
-nativos y `fetch` los serializa solo.
+`backend/tests/characterization/lib/http.mjs` sets `Content-Type: application/json` as soon as there
+is a `body`. It needs a new path that sends `FormData`. Node 18+ ships native `FormData`, `Blob` and
+`File`, and `fetch` serializes them on its own.
 
-> **La trampa**: NO pongas `Content-Type` a mano cuando el body es `FormData`. Si lo haces, falta el
-> `boundary` y multer rechaza la petición. Hay que dejar que `fetch` lo ponga.
+> **The trap**: do NOT set `Content-Type` by hand when the body is `FormData`. If you do, the
+> `boundary` is missing and multer rejects the request. Let `fetch` set it.
 
-Toca añadir una opción (`form`) que conviva con la actual sin cambiar el comportamiento de las 148
-pruebas que ya pasan — `request()` debe seguir haciendo exactamente lo mismo cuando recibe `body`.
+You'll add an option (`form`) that coexists with the current one without changing the behavior of the
+148 tests that already pass — `request()` must keep doing exactly what it does today when given a
+`body`.
 
-### 1.b El flow `zz_artifact_draft`
+### 1.b The `zz_artifact_draft` flow
 
-**Prefijo `zz_` obligatorio.** Los flows corren en orden alfabético con `--test-concurrency=1`
-(`npm run test:char`) y este MUTA la base. `zz_template_lifecycle` existe por lo mismo; ordénalos
-entre ellos con cuidado (`artifact` < `task` < `template`, así que `zz_artifact_draft` correría
-ANTES que los otros dos — decide si eso te conviene o si necesitas otro nombre).
+**The `zz_` prefix is mandatory.** Flows run in alphabetical order with `--test-concurrency=1`
+(`npm run test:char`) and this one MUTATES the database. `zz_template_lifecycle` exists for the same
+reason; order them among themselves carefully (`artifact` < `task` < `template`, so
+`zz_artifact_draft` would run BEFORE the other two — decide whether that suits you or whether you
+need a different name).
 
-Rutas y permisos:
+Routes and permissions:
 
 ```
 POST /admin/sql/template_artifacts/draft        templates:create
 PUT  /admin/sql/template_artifacts/draft/:id    templates:update
 ```
 
-Ambas con `draftArtifactUpload.fields([pdf_file, docx_file, xlsx_file, pptx_file])`, `maxCount 1`
-cada una (`backend/routes/sql_admin_router.js:98-119`).
+Both wrapped in `draftArtifactUpload.fields([pdf_file, docx_file, xlsx_file, pptx_file])`, `maxCount 1`
+each (`backend/routes/sql_admin_router.js:98-119`).
 
-Qué fijar, como mínimo:
+What to pin, at minimum:
 
-- **POST feliz** con un PDF de referencia y un `fill_workflow` de un paso → 200, y el contrato de la
-  respuesta (`id`, `template_code`, `storage_version`, `available_formats`, `content_hash`,
-  `__notice`). Enmascara ids y hashes: `content_hash` cambia si cambia el contenido, y el
-  `storage_version` depende de cuántas veces se haya corrido.
-- **PUT feliz** (`isEdit`) sobre ese borrador → 200.
-- Los **contratos de error** de la fase 1, que son baratos y cubren la mitad de las ramas: sin
-  nombre, sin proceso, sin documento de referencia, sin paso de flujo (y que `routed` **no** lo
-  exige), y el guard de inmutabilidad sobre una plantilla publicada.
-- **Limpieza al final**: borra flujos → vínculo → artifact → deliverable → prefijo de MinIO. El
-  propio `catch` de la función (L1491-1502) es la receta de referencia, pero **le falta el
-  deliverable**. La señal de que salió bien es la de siempre: el diff del golden es **puramente
-  aditivo**, 0 borrados, y los conteos `list_*` de `admin_crud` no se mueven.
+- **Happy POST** with a reference PDF and a one-step `fill_workflow` → 200, plus the response contract
+  (`id`, `template_code`, `storage_version`, `available_formats`, `content_hash`, `__notice`). Mask
+  ids and hashes: `content_hash` changes when the content changes, and `storage_version` depends on
+  how many times it has been run.
+- **Happy PUT** (`isEdit`) against that draft → 200.
+- The **error contracts** of phase 1, which are cheap and cover half of its branches: no name, no
+  process, no reference document, no workflow step (and that `routed` does **not** require one), and
+  the immutability guard on a published template.
+- **Cleanup at the end**: delete workflows → link → artifact → deliverable → MinIO prefix. The
+  function's own `catch` (L1491-1502) is the reference recipe, but **it is missing the deliverable**.
+  The signal that it went well is the usual one: the golden diff is **purely additive**, 0 deletions,
+  and the `list_*` counts in `admin_crud` don't move.
 
-> El `DELETE` genérico del CRUD borra la fila de `template_artifacts` pero **no toca MinIO**
-> (`template_artifacts` no tiene `beforeRemove` en `tableHooks.js`). La limpieza del prefijo hay que
-> hacerla por otra vía; decide cuál y déjalo dicho en el commit.
+> The generic CRUD `DELETE` removes the `template_artifacts` row but **does not touch MinIO**
+> (`template_artifacts` has no `beforeRemove` in `tableHooks.js`). Prefix cleanup has to go through
+> some other path; decide which one and say so in the commit.
 
-Ya hay smoke verificado de las dos ramas (POST con PDF → 200 con el artifact en MinIO; PUT con
-`isEdit` → 200), así que **la función funciona**: si tu primer intento da error, sospecha del test
-antes que del servicio.
-
----
-
-## Fase 2 — el corte (solo con la fase 1 en verde)
-
-Las ocho fases de arriba son las candidatas naturales a *Extract Method*. Dos avisos:
-
-- **No es un registro.** El cut #10 dejó claro que *Replace Conditional with Registry* simplifica y
-  *Extract* mueve. Aquí no hay despacho por clave que registrar: es una secuencia. Espera que la
-  complejidad **baje menos en proporción** que en el cut #10 y no te engañes con la analogía.
-- Lo que sí baja de verdad es el anidamiento: buena parte de los 158 son `if` a dos y tres niveles
-  dentro del `try` gigante. Como funciones sueltas arrancan de cero.
-
-Las fases 1–3 son puras o casi (validación, resolución de propietario, cálculo de rutas): salen
-primero, son testeables sin pool y no tocan MinIO. La fase 8 es la que hay que dejar para el final.
+Both branches already have verified smoke coverage (POST with a PDF → 200 with the artifact in MinIO;
+PUT with `isEdit` → 200), so **the function works**: if your first attempt errors out, suspect the
+test before the service.
 
 ---
 
-## Reglas NO negociables (lecciones acumuladas de los diez cuts)
+## Phase 2 — the cut (only with phase 1 green)
 
-1. **Extraer por SCRIPT** (python), no a mano, y **verificando `count == 1`** antes de borrar cada
-   bloque. Si el script trocea código, dale un **invariante de reconstrucción** (que las piezas
-   reproduzcan el original línea a línea): en el cut #10 eso cazó un troceador que contaba llaves
-   pero no paréntesis y partía un `if` multilínea por la mitad.
-2. **`node --check` valida SINTAXIS, no imports. Y verificar el ARRANQUE tampoco basta.** Un símbolo
-   movido sin su `import` es sintaxis válida, el módulo **carga**, y revienta en tiempo de LLAMADA.
-   Así vivieron rotos tres semanas cuatro `ReferenceError` de los cuts #2/#3/#6. Por eso existe
-   **`npm run check:imports`** — **córrelo siempre después de mover código**.
-3. **char verde ANTES y DESPUÉS, con los goldens IDÉNTICOS.** Si un golden cambia en un refactor puro,
-   o rompiste algo o el test estaba mal. En un *fix* sí cambian — y entonces el diff del golden **es**
-   la prueba del arreglo.
-4. **Round-trips autolimpiantes**, para no mover los conteos `list_*`.
-5. **Preservar el ORDEN de los guards**: los contratos de error caracterizados lo fijan.
-6. **La red unitaria ve lo que char no ve.** En el cut #10 dos validaciones de fecha quedaron mudas
-   por un helper sin generalizar; char pasó igual, porque ninguna ruta caracterizada mandaba
-   vigencias invertidas. Si extraes una función pura, ponle su unit test.
-7. **No inyectar casos especiales en el camino genérico.**
-8. **Commits pequeños**, en `develop`, diciendo qué se verificó y **lo que NO se hizo**.
-9. El usuario tiene **commits propios intercalados en `develop`** (docs/skills) — normal.
+The eight phases above are the natural *Extract Method* candidates. Two warnings:
+
+- **This is not a registry.** Cut #10 made it clear that *Replace Conditional with Registry*
+  simplifies while *Extract* merely moves. There is no key-based dispatch to register here: it's a
+  sequence. Expect complexity to drop **proportionally less** than in cut #10, and don't fool yourself
+  with the analogy.
+- What does genuinely drop is nesting: a good share of those 158 are `if`s two and three levels deep
+  inside the giant `try`. As standalone functions they start from zero.
+
+Phases 1–3 are pure or nearly so (validation, owner resolution, path computation): extract them first,
+they are testable without a pool and never touch MinIO. Phase 8 is the one to leave for last.
 
 ---
 
-## Comandos (todo dentro de los contenedores)
+## NON-NEGOTIABLE rules (accumulated lessons from ten cuts)
+
+1. **Extract BY SCRIPT** (python), not by hand, and **verify `count == 1`** before deleting each
+   block. If the script chops code up, give it a **reconstruction invariant** (the pieces must
+   reproduce the original line by line): in cut #10 that caught a chopper that counted braces but not
+   parentheses and split a multi-line `if` down the middle.
+2. **`node --check` validates SYNTAX, not imports. And checking that it BOOTS isn't enough either.** A
+   symbol moved without its `import` is valid syntax, the module **loads**, and it blows up at CALL
+   time. That's how four `ReferenceError`s from cuts #2/#3/#6 stayed broken for three weeks. Hence
+   **`npm run check:imports`** — **always run it after moving code**.
+3. **char green BEFORE and AFTER, with IDENTICAL goldens.** If a golden changes during a pure
+   refactor, either you broke something or the test was wrong. In a *fix* they do change — and then
+   the golden diff **is** the proof of the fix.
+4. **Self-cleaning round-trips**, so the `list_*` counts don't move.
+5. **Preserve the ORDER of the guards**: the characterized error contracts pin it.
+6. **The unit net sees what char cannot.** In cut #10 two date validations went silent because a
+   helper hadn't been generalized; char passed anyway, because no characterized route sends inverted
+   validity dates. If you extract a pure function, give it a unit test.
+7. **Don't inject special cases into the generic path.**
+8. **Small commits**, on `develop`, stating what was verified and **what was NOT done**.
+9. The user has **their own commits interleaved on `develop`** (docs/skills) — normal.
+
+---
+
+## Commands (everything inside the containers)
 
 ```bash
-bash scripts/docker-env.sh dev exec -T backend npm run check:imports     # tras mover código
+bash scripts/docker-env.sh dev exec -T backend npm run check:imports     # after moving code
 bash scripts/docker-env.sh dev exec -T backend npm run test:char:run     # 148 (compare)
-bash scripts/docker-env.sh dev exec -T backend npm run test:char:capture # actualiza golden
+bash scripts/docker-env.sh dev exec -T backend npm run test:char:capture # updates the golden
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit         # 209
 
-# arranque (imprescindible, regla 2)
+# boot check (mandatory, rule 2)
 bash scripts/docker-env.sh dev restart backend
 bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor iniciado|SyntaxError|does not provide"
 ```
 
-`test:char:run` **RESETEA la BD dev** (reset+bootstrap+seed): normal para char, deja el fixture sembrado.
+`test:char:run` **RESETS the dev database** (reset+bootstrap+seed): normal for char, and it leaves the
+fixture seeded.
 
-### Sonar — LEE ESTO ANTES DE INTENTARLO
+### Sonar — READ THIS BEFORE TRYING
 
 ```bash
-docker compose -f scripts/sonar/compose.yml up -d          # :9002, ~30 s en levantar
-SONAR_TOKEN=<token> bash scripts/sonar/scan.sh             # ~1,5 min
+docker compose -f scripts/sonar/compose.yml up -d          # :9002, ~30 s to come up
+SONAR_TOKEN=<token> bash scripts/sonar/scan.sh             # ~1.5 min
 ```
 
-- **`admin:admin` NO funciona por basic-auth**: SonarQube 26 lo retiró de la API. La contraseña se
-  reseteó por base de datos el 2026-08-06 y **hoy es `admin`** otra vez.
-- **Los tokens se sacan por sesión**, no por basic-auth:
+- **`admin:admin` does NOT work over basic auth**: SonarQube 26 removed it from the API. The password
+  was reset through the database on 2026-08-06 and **today it is `admin`** again.
+- **Tokens are obtained through a session**, not basic auth:
   ```bash
   curl -s -c cj.txt -X POST "http://localhost:9002/api/authentication/login" -d "login=admin&password=admin"
   XSRF=$(grep XSRF-TOKEN cj.txt | awk '{print $7}')
   curl -s -b cj.txt -H "X-XSRF-TOKEN: $XSRF" -X POST "http://localhost:9002/api/user_tokens/generate" -d "name=x"
   ```
-  Con el token ya vale `-u "$TOKEN:"` en el resto de llamadas.
-- Si hay que volver a resetear la contraseña: **el snippet canónico que circula por internet NO vale
-  en esta versión**. El hash es PBKDF2-HMAC-SHA512, 100 000 iteraciones, 64 bytes, con el salt
-  **base64-DECODIFICADO a bytes** (no el string), y `crypted_password = "100000$<base64>"`.
-- **El historial por FICHERO está purgado** (Sonar solo conserva el de proyecto). Para comparar hay
-  que usar los valores documentados en la auditoría.
-- **Las marcas manuales *won't fix* NO sobreviven a que el código cambie de fichero.** Revisa los
-  BLOCKER tras cada refactor antes de leer las notas. Baseline hoy: **0 BLOCKER**, 46
-  vulnerabilidades, fiabilidad C / seguridad D, complejidad cognitiva del proyecto **8 781**.
+  Once you have the token, `-u "$TOKEN:"` works for every other call.
+- If the password ever needs resetting again: **the canonical snippet floating around the internet
+  does NOT work on this version**. The hash is PBKDF2-HMAC-SHA512, 100,000 iterations, 64 bytes, with
+  the salt **base64-DECODED to bytes** (not the string), and `crypted_password = "100000$<base64>"`.
+- **Per-FILE history is purged** (Sonar only keeps project-level history). To compare, use the values
+  documented in the audit.
+- **Manual *won't fix* marks do NOT survive code moving between files.** Review the BLOCKERs after
+  every refactor before reading the ratings. Today's baseline: **0 BLOCKER**, 46 vulnerabilities,
+  reliability C / security D, project cognitive complexity **8,781**.
 
 ---
 
-## Referencias
+## References
 
-- `docs/auditoria-god-objects-2026-07.md` — §1.b re-escaneo, §3.1 los diez cuts, §3.1.b los dos
-  defectos de producción. **Actualízalo al cerrar esto.**
-- `backend/tests/characterization/flows/zz_template_lifecycle.test.mjs` — el precedente más cercano:
-  flow `zz_` que muta, con estado compartido entre pasos. Es el modelo a seguir.
-- Harness char: `backend/tests/characterization/` (`lib/http.mjs` ← el que hay que tocar,
-  `lib/snapshot.mjs`, `normalize.mjs`, `auth.mjs`; `config.mjs` con `FIXTURE` y usuarios).
-- `backend/services/admin/SqlAdminService.tableHooks.js` — contrato de hooks del CRUD.
-- `backend/services/admin/SqlAdminService.validation.js` — el registro del cut #10, por si sirve de
-  modelo de "condicional a datos".
-- **Otro track, no lo mezcles**: `SIGUIENTE-SESION-fase5-y-X.md` es el refactor del FRONTEND.
+- `docs/auditoria-god-objects-2026-07.md` — §1.b the re-scan, §3.1 the ten cuts, §3.1.b the two
+  production defects. **Update it when you close this.**
+- `backend/tests/characterization/flows/zz_template_lifecycle.test.mjs` — the closest precedent: a
+  `zz_` flow that mutates, with state shared across steps. This is the model to follow.
+- char harness: `backend/tests/characterization/` (`lib/http.mjs` ← the one to modify,
+  `lib/snapshot.mjs`, `normalize.mjs`, `auth.mjs`; `config.mjs` with `FIXTURE` and users).
+- `backend/services/admin/SqlAdminService.tableHooks.js` — the CRUD hook contract.
+- `backend/services/admin/SqlAdminService.validation.js` — the cut #10 registry, in case it helps as a
+  model for "conditional into data".
+- **Different track, don't mix them in**: `SIGUIENTE-SESION-fase5-y-X.md` is the FRONTEND refactor.
