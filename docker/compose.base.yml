@@ -144,4 +144,3 @@ volumes:
   minio_data:
   backend_node_modules_v2:
   frontend_node_modules:
-  storage_data:

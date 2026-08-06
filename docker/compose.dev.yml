@@ -29,7 +29,6 @@ services:
     volumes:
       - ../backend:/app/backend
       - backend_node_modules_v2:/app/backend/node_modules
-      - storage_data:/app/backend/storage
 
   frontend:
     build:
@@ -68,8 +67,6 @@ volumes:
     name: deasy_dev_backend_node_modules
   frontend_node_modules:
     name: deasy_dev_frontend_node_modules
-  storage_data:
-    name: deasy_dev_storage_data
 
 networks:
   default:

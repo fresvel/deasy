@@ -17,8 +17,8 @@
 // descomposicion es un trabajo aparte, con su red antes.
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import {
   hasVisibleFiles,
@@ -44,9 +44,10 @@ import {
   EDITABLE_CONTENT_SUBPATH,
 } from "./SqlAdminService.constants.js";
 
-const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
-const BACKEND_STORAGE_ROOT = path.join(REPO_ROOT, "backend", "storage");
+// Staging efimero de los borradores: se arma, se sube a MinIO y se borra dentro de la
+// misma peticion. Va al temporal del sistema, como el resto de subidas (certificados,
+// dossier, fotos), asi no deja estado en el contenedor ni ensucia el repo en dev.
+const TEMPLATE_DRAFT_STAGING_ROOT = path.join(os.tmpdir(), "deasy", "template-drafts");
 const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
 // Semilla por defecto ("general") cuando se crea una plantilla sin elegir seed. Coincide con la del bootstrap.
 const DEFAULT_SEED_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
@@ -1089,9 +1090,7 @@ export default class TemplateLifecycleService {
       : `${MINIO_TEMPLATES_PREFIX}/${templateCode}/${storageVersion}/`;
     const baseObjectPrefix = String(existingArtifact?.base_object_prefix || defaultBaseObjectPrefix);
     const draftDir = path.join(
-      BACKEND_STORAGE_ROOT,
-      "minio-jobs",
-      "templates-drafts",
+      TEMPLATE_DRAFT_STAGING_ROOT,
       ownerRef || templateScope,
       templateCode,
       storageVersion
