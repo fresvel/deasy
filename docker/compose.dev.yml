@@ -31,17 +31,6 @@ services:
       - backend_node_modules_v2:/app/backend/node_modules
       - storage_data:/app/backend/storage
 
-  storage-uploader:
-    build:
-      context: ..
-      dockerfile: docker/backend/Dockerfile.dev
-    env_file:
-      - .env.dev
-    volumes:
-      - ../backend:/app/backend
-      - backend_node_modules_v2:/app/backend/node_modules
-      - storage_data:/app/backend/storage
-
   frontend:
     build:
       context: ..

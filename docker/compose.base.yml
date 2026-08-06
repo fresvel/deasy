@@ -98,7 +98,6 @@ services:
       RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
       RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
       RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
-      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
       RABBITMQ_URL: amqp://rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
@@ -108,31 +107,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
-  storage-uploader:
-    restart: unless-stopped
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_USE_SSL: 0
-      RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
-      RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
-      RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
-      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
-    command: ["node", "workers/storage_uploader.js"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      minio:
-        condition: service_started
 
   frontend:
     restart: unless-stopped
@@ -163,8 +137,6 @@ services:
     restart: unless-stopped
     profiles:
       - workers
-    volumes:
-      - storage_data:/data
 
 volumes:
   postgres_data:

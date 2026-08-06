@@ -8,7 +8,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Servicios de aplicacion que mantienen conexiones/estado contra PostgreSQL/MinIO/RabbitMQ y
 # que deben reciclarse tras el wipe para reconectar limpio (el backend ademas re-corre la
 # inicializacion de esquema y queda en modo bootstrap). Solo se tocan los que existan en el entorno.
-APP_SERVICES=("backend" "storage-uploader" "signer")
+APP_SERVICES=("backend" "signer")
 
 # Proxy reverso de dev/qa-local: usa `proxy_pass http://backend:3030/` con resolución estática, es
 # decir resuelve la IP del backend UNA vez al arrancar y la cachea. Al reciclar el backend su IP puede
@@ -25,7 +25,7 @@ Regresa el sistema al estado base (instalación virgen) para arrancar el bootstr
   - PostgreSQL: dropea todas las tablas y recrea el schema vacío (incluye dossier, chat, etc.)
   - MinIO:   vacía todos los buckets gestionados por la app
 
-Tras el wipe reinicia los servicios de app (backend, storage-uploader, signer) para que
+Tras el wipe reinicia los servicios de app (backend, signer) para que
 reconecten en limpio; el backend detecta la instalación virgen y la UI pide crear el primer
 administrador.
 
