@@ -209,24 +209,41 @@ test("POST draft con item_mode=routed y SIN flujo -> se permite (el flujo es de 
   assert.equal(res.status, 200, `routed sin flujo debe responder 200: ${JSON.stringify(res.body)}`);
 });
 
-// --- DEFECTO DE COMPENSACIÓN (comportamiento ROTO fijado a propósito) ----------------------------
+// --- COMPENSACIÓN DE UNA CREACIÓN FALLIDA --------------------------------------------------------
 
-test("POST draft con proceso inexistente -> falla PERO deja el deliverable huérfano", async () => {
+// La clave del golden se llama `defecto_deliverable_huerfano` a propósito y NO se renombra: fijó
+// primero el comportamiento ROTO (la fila `deliverables` sobrevivía a la creación fallida) y el
+// diff de ese golden — de la fila a `null` — ES la prueba del arreglo. Renombrarla la borraría.
+test("POST draft con proceso inexistente -> falla y NO deja el deliverable huérfano", async () => {
   const token = await tokenFor("admin");
   const res = await post(DRAFT_PATH, {
     token,
     form: draftForm({ display_name: NAMES.orphan, process_definition_id: "999999" }),
   });
 
-  // El `catch` de la función (compensación manual, no hay transacción) borra la fila de
-  // `template_artifacts` y el prefijo de MinIO, pero NO la fila de `deliverables` que acaba de
-  // insertar. Consecuencia: el siguiente intento con el mismo nombre la REUSA por `code` y se
-  // queda con `owner_process_id` NULL para siempre, aunque el artifact sí quede bien vinculado.
+  // Aquí no hay transacción: el `catch` compensa a mano. Debe deshacer TODO lo que insertó esta
+  // llamada — vínculo, artifact y deliverable — o el siguiente intento con el mismo nombre reusaría
+  // la fila por `code` y se quedaría con `owner_process_id` NULL para siempre.
   const huerfano = await findDeliverableByCode(CODES.orphan);
 
   matchSnapshot(SUITE, "defecto_deliverable_huerfano", {
     status: res.status,
     body: normalize(res.body),
     deliverable_superviviente: huerfano,
+  });
+  assert.equal(huerfano, null, "una creación fallida no debe dejar el deliverable atrás");
+});
+
+test("reintentar tras la creación fallida -> el deliverable nace con su proceso dueño", async () => {
+  const token = await tokenFor("admin");
+  // Este es el daño real que causaba el huérfano: el reintento lo reusaba por `code` y heredaba
+  // su `owner_process_id` NULL, aunque el artifact quedara bien vinculado. Silencioso y permanente.
+  const res = await post(DRAFT_PATH, { token, form: draftForm({ display_name: NAMES.orphan }) });
+  assert.equal(res.status, 200, `el reintento debe responder 200: ${JSON.stringify(res.body)}`);
+
+  const deliverable = await findDeliverableByCode(CODES.orphan);
+  matchSnapshot(SUITE, "reintento_tras_fallo", {
+    status: res.status,
+    deliverable_owner: deliverable,
   });
 });

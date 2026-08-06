@@ -1327,6 +1327,11 @@ export default class TemplateLifecycleService {
     );
     let createdId = isEdit ? Number(existingArtifact.id) : null;
     let uploadedToMinio = false;
+    // Compensación manual (aquí NO hay transacción): se anota lo que ESTA llamada insertó para
+    // poder deshacerlo en el `catch`. Se distingue insertar de REUSAR: un `deliverable` que ya
+    // existía con el mismo `code` pertenece a versiones anteriores y no debe borrarse.
+    let insertedDeliverableId = null;
+    let insertedLinkId = null;
 
     try {
       await uploadDirectoryToMinio(bucket, baseObjectPrefix, draftDir);
@@ -1384,6 +1389,7 @@ export default class TemplateLifecycleService {
             [templateCode, displayName, description, ownerProcessId, ownerVariationKey, templateScope, templateSeedId, ownerPersonId]
           );
           newDeliverableId = delivIns.insertId;
+          insertedDeliverableId = newDeliverableId;
         }
         const [result] = await this.pool.query(
           `INSERT INTO template_artifacts (
@@ -1426,12 +1432,13 @@ export default class TemplateLifecycleService {
           [requestedProcessDefinitionId, createdId]
         );
         if (!existingLink?.length) {
-          await this.pool.query(
+          const [linkInsert] = await this.pool.query(
             `INSERT INTO process_definition_templates
               (process_definition_id, template_artifact_id, sort_order, item_mode)
              VALUES (?, ?, 1, ?)`,
             [requestedProcessDefinitionId, createdId, requestedItemMode]
           );
+          insertedLinkId = linkInsert?.insertId ?? null;
         } else if (requestedItemMode !== "single") {
           // El link ya existía (p. ej. reintento): respeta el modo solicitado si no es el default.
           await this.pool.query(
@@ -1489,11 +1496,28 @@ export default class TemplateLifecycleService {
           : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.") + workflowNotice
       };
     } catch (error) {
-      // Rollback en creación: borra la fila SQL y limpia los objetos huérfanos subidos a MinIO.
-      // En edición no se limpia MinIO (los objetos pertenecen a un artifact existente que se conserva).
+      // Rollback en creación: deshace las filas que insertó ESTA llamada y limpia los objetos
+      // huérfanos subidos a MinIO. En edición no se limpia MinIO (los objetos pertenecen a un
+      // artifact existente que se conserva).
+      //
+      // El orden es el INVERSO al de creación porque ninguna FK cascadea (todas NO ACTION):
+      // vínculo → artifact → deliverable. Antes sólo se borraba el artifact, así que un fallo
+      // posterior al INSERT en `deliverables` (p. ej. "El proceso destino seleccionado no
+      // existe.") dejaba la fila huérfana; y como el alta busca por `code`, el siguiente intento
+      // con el mismo nombre la REUSABA y se quedaba con `owner_process_id` NULL para siempre.
+      //
+      // Sigue siendo best-effort (cada DELETE traga su error): si el fallo ocurriera después de
+      // sincronizar los flujos, las plantillas de flujo colgadas del vínculo lo bloquearían. No
+      // hay hoy ningún camino que lance ahí — el sync atrapa sus propios errores.
       if (!isEdit) {
+        if (insertedLinkId) {
+          await this.pool.query("DELETE FROM process_definition_templates WHERE id = ?", [insertedLinkId]).catch(() => {});
+        }
         if (createdId) {
           await this.pool.query("DELETE FROM template_artifacts WHERE id = ?", [createdId]).catch(() => {});
+        }
+        if (insertedDeliverableId) {
+          await this.pool.query("DELETE FROM deliverables WHERE id = ?", [insertedDeliverableId]).catch(() => {});
         }
         if (uploadedToMinio) {
           await removeMinioPrefix(bucket, baseObjectPrefix).catch(() => {});

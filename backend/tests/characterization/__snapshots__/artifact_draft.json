@@ -38,11 +38,7 @@
     "body": {
       "message": "El proceso destino seleccionado no existe."
     },
-    "deliverable_superviviente": {
-      "code": "draft_zzz-char-huerfano",
-      "owner_process_id": null,
-      "owner_variation_key": null
-    }
+    "deliverable_superviviente": null
   },
   "editar_ok": {
     "status": 200,
@@ -112,6 +108,14 @@
     "status": 400,
     "body": {
       "message": "Debes seleccionar el proceso (o 'default') al que pertenece esta plantilla."
+    }
+  },
+  "reintento_tras_fallo": {
+    "status": 200,
+    "deliverable_owner": {
+      "code": "draft_zzz-char-huerfano",
+      "owner_process_id": 1,
+      "owner_variation_key": "general"
     }
   },
   "routed_sin_flujo_ok": {
