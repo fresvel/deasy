@@ -1,12 +1,4 @@
 import { getPostgresPool } from "../../config/postgres.js";
-import {
-  hydrateTaskFromDefinition,
-  ensureProcessRun,
-  ensureDocumentsForTask,
-  ensureDocumentForTaskItem,
-  ensureFillFlowForDocumentVersion,
-  ensureSignatureFlowForDocumentVersion
-} from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 import {
   walkFiles,
@@ -33,11 +25,6 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
 import { sanitizeStorageSegment } from "../../utils/templateArchive.js";
-import {
-  syncDocumentProgressFromDocumentSignature,
-  syncDocumentProgressFromFillRequest,
-  syncDocumentProgressFromSignatureRequest,
-} from "../documents/DocumentProgressService.js";
 import {
   buildProcessDefinitionVersionName,
   resolveProcessDefinitionSeriesIdentity
@@ -1159,124 +1146,6 @@ export default class SqlAdminService {
       }
     }
 
-    if (tableName === "tasks") {
-      const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
-      if (!definition) {
-        throw new Error("La configuracion de proceso seleccionada no existe.");
-      }
-      if (String(definition.status || "") !== "active") {
-        throw new Error("Solo se pueden instanciar tareas desde configuraciones activas.");
-      }
-      await this.ensureDefinitionRunsInTermPeriodType(
-        payload.process_definition_id,
-        payload.term_id
-      );
-
-      if (payload.process_run_id) {
-        const processRun = await this.getProcessRun(payload.process_run_id);
-        if (!processRun) {
-          throw new Error("La corrida de proceso seleccionada no existe.");
-        }
-        if (Number(processRun.process_definition_id) !== Number(payload.process_definition_id)) {
-          throw new Error("La corrida de proceso no pertenece a la configuracion seleccionada.");
-        }
-        if (Number(processRun.term_id || 0) !== Number(payload.term_id || 0)) {
-          throw new Error("La corrida de proceso no pertenece al periodo seleccionado.");
-        }
-      }
-    }
-
-    if (tableName === "task_items" && payload.process_definition_template_id) {
-      const template = await this.getTaskTemplate(payload.process_definition_template_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
-      }
-      const task = await this.getByKeys("tasks", { id: payload.task_id });
-      if (!task) {
-        throw new Error("La tarea seleccionada no existe.");
-      }
-      if (Number(task.process_definition_id) !== Number(template.process_definition_id)) {
-        throw new Error("La plantilla seleccionada no pertenece a la configuracion de proceso de la tarea.");
-      }
-      payload.template_artifact_id = template.template_artifact_id;
-      if (!payload.start_date) {
-        payload.start_date = task.start_date;
-      }
-      if (payload.end_date === undefined || payload.end_date === "") {
-        payload.end_date = task.end_date ?? null;
-      }
-      if (payload.sort_order === undefined || payload.sort_order === null || payload.sort_order === "") {
-        payload.sort_order = template.sort_order;
-      }
-    }
-
-    if (tableName === "documents" && payload.task_item_id) {
-      const taskItem = await this.getTaskItem(payload.task_item_id);
-      if (!taskItem) {
-        throw new Error("El item de tarea seleccionado no existe.");
-      }
-      payload.origin_type = payload.origin_type || "task_item";
-    }
-
-    if (tableName === "documents" && !payload.task_item_id) {
-      if (!payload.owner_person_id) {
-        throw new Error("Los documentos standalone requieren un propietario.");
-      }
-      payload.origin_type = payload.origin_type || "standalone";
-    }
-
-    if (tableName === "fill_flow_templates" && payload.process_definition_template_id) {
-      const template = await this.getTaskTemplate(payload.process_definition_template_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
-      }
-      payload.process_definition_id = template.process_definition_id;
-      await this.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de entrega" }
-      );
-      delete payload.process_definition_id;
-    }
-
-    if (tableName === "fill_flow_steps" && payload.fill_flow_template_id) {
-      const fillFlowTemplate = await this.getFillFlowTemplate(payload.fill_flow_template_id);
-      if (!fillFlowTemplate) {
-        throw new Error("La plantilla de entrega seleccionada no existe.");
-      }
-      const template = await this.getTaskTemplate(fillFlowTemplate.process_definition_template_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso definida asociada no existe.");
-      }
-      await this.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los pasos de entrega" }
-      );
-    }
-
-    if (tableName === "document_versions" && payload.document_id) {
-      const document = await this.getByKeys("documents", { id: payload.document_id });
-      if (!document) {
-        throw new Error("El documento seleccionado no existe.");
-      }
-      if (!payload.template_artifact_id && document.task_item_id) {
-        const taskItem = await this.getTaskItem(document.task_item_id);
-        if (taskItem?.template_artifact_id) {
-          payload.template_artifact_id = taskItem.template_artifact_id;
-        }
-      }
-    }
-
-    if (tableName === "signature_flow_templates" && payload.process_definition_template_id) {
-      const template = await this.getTaskTemplate(payload.process_definition_template_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
-      }
-      await this.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de firma" }
-      );
-    }
-
     if (tableName === "template_artifacts") {
       throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento.");
     }
@@ -1362,63 +1231,6 @@ export default class SqlAdminService {
         } finally {
           connection.release();
         }
-      } else if (tableName === "tasks") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          if (!payload.process_run_id) {
-            payload.process_run_id = await ensureProcessRun({
-              connection,
-              processDefinitionId: Number(payload.process_definition_id),
-              termId: Number(payload.term_id),
-              runMode: "manual",
-              createdByUserId: payload.created_by_user_id || null,
-              status: "active"
-            });
-          }
-          const taskColumns = Object.keys(payload);
-          const taskPlaceholders = taskColumns.map(() => "?").join(", ");
-          const taskValues = taskColumns.map((key) => payload[key]);
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${taskColumns.join(", ")}) VALUES (${taskPlaceholders})`,
-            taskValues
-          );
-          result = insertResult;
-          await hydrateTaskFromDefinition({
-            connection,
-            taskId: insertResult.insertId,
-            processDefinitionId: Number(payload.process_definition_id),
-            termId: Number(payload.term_id)
-          });
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "task_items") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
-          );
-          result = insertResult;
-          const taskItem = await this.getTaskItem(insertResult.insertId, connection);
-          if (taskItem) {
-            await ensureDocumentForTaskItem(connection, taskItem);
-          } else {
-            await ensureDocumentsForTask(connection, Number(payload.task_id));
-          }
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
       } else if (tableName === "process_definition_templates") {
         const connection = await this.pool.getConnection();
         try {
@@ -1431,74 +1243,6 @@ export default class SqlAdminService {
           if (payload.template_artifact_id) {
             await this.syncArtifactWorkflowsForTemplateArtifactId(Number(payload.template_artifact_id), connection);
           }
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "document_versions") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
-          );
-          result = insertResult;
-          await ensureFillFlowForDocumentVersion(connection, Number(insertResult.insertId));
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "fill_requests") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
-          );
-          result = insertResult;
-          await syncDocumentProgressFromFillRequest(connection, Number(insertResult.insertId));
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "signature_requests") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
-          );
-          result = insertResult;
-          await syncDocumentProgressFromSignatureRequest(connection, Number(insertResult.insertId));
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "document_signatures") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
-          );
-          result = insertResult;
-          await syncDocumentProgressFromDocumentSignature(connection, Number(insertResult.insertId));
           await connection.commit();
         } catch (error) {
           await connection.rollback();
@@ -1524,12 +1268,6 @@ export default class SqlAdminService {
         && String(error?.message || "").includes("uq_process_definition_one_active_series")
       ) {
         throw new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
-      }
-      if (
-        tableName === "tasks"
-        && error?.code === "ER_DUP_ENTRY"
-      ) {
-        throw new Error("Ya existe una instancia de tarea con esa configuracion, periodo y criterio de lanzamiento.");
       }
       throw error;
     }
@@ -1578,114 +1316,6 @@ export default class SqlAdminService {
       await hooks.beforeUpdate(ctx);
     }
 
-    if (tableName === "tasks") {
-      if (
-        Object.hasOwn(updates, "process_definition_id")
-      ) {
-        if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
-          throw new Error("No se puede cambiar la configuracion de una tarea ya instanciada.");
-        }
-        delete updates.process_definition_id;
-      }
-      if (Object.hasOwn(updates, "term_id")) {
-        if (Number(updates.term_id) !== Number(existing.term_id)) {
-          throw new Error("No se puede cambiar el periodo de una tarea ya instanciada.");
-        }
-        delete updates.term_id;
-      }
-      if (Object.hasOwn(updates, "launch_mode")) {
-        delete updates.launch_mode;
-      }
-      if (Object.hasOwn(updates, "created_by_user_id")) {
-        if (Number(updates.created_by_user_id || 0) !== Number(existing.created_by_user_id || 0)) {
-          throw new Error("No se puede cambiar el usuario creador de una tarea existente.");
-        }
-        delete updates.created_by_user_id;
-      }
-      if (Object.hasOwn(updates, "process_run_id")) {
-        if (Number(updates.process_run_id || 0) !== Number(existing.process_run_id || 0)) {
-          throw new Error("No se puede cambiar la corrida de proceso de una tarea existente.");
-        }
-        delete updates.process_run_id;
-      }
-    }
-    if (tableName === "task_items") {
-      if (Object.hasOwn(updates, "task_id")) {
-        if (Number(updates.task_id) !== Number(existing.task_id)) {
-          throw new Error("No se puede cambiar la tarea asociada de un item.");
-        }
-        delete updates.task_id;
-      }
-      if (Object.hasOwn(updates, "process_definition_template_id")) {
-        if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un item.");
-        }
-        delete updates.process_definition_template_id;
-      }
-      if (Object.hasOwn(updates, "template_artifact_id")) {
-        if (Number(updates.template_artifact_id) !== Number(existing.template_artifact_id)) {
-          throw new Error("No se puede cambiar el paquete asociado de un item.");
-        }
-        delete updates.template_artifact_id;
-      }
-    }
-    if (tableName === "documents") {
-      if (Object.hasOwn(updates, "task_item_id")) {
-        if (Number(updates.task_item_id) !== Number(existing.task_item_id)) {
-          throw new Error("No se puede cambiar el item de tarea asociado de un documento.");
-        }
-        delete updates.task_item_id;
-      }
-    }
-    if (tableName === "signature_flow_templates") {
-      if (Object.hasOwn(updates, "process_definition_template_id")) {
-        if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un flujo de firma.");
-        }
-        delete updates.process_definition_template_id;
-      }
-      const template = await this.getTaskTemplate(existing.process_definition_template_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
-      }
-      await this.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de firma" }
-      );
-    }
-    if (tableName === "fill_flow_templates") {
-      if (Object.hasOwn(updates, "process_definition_template_id")) {
-        if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un flujo de entrega.");
-        }
-        delete updates.process_definition_template_id;
-      }
-      const template = await this.getTaskTemplate(existing.process_definition_template_id);
-      if (template) {
-        await this.ensureDraftDefinitionContext(
-          template.process_definition_id,
-          { entityLabel: "los flujos de entrega" }
-        );
-      }
-    }
-    if (tableName === "fill_flow_steps") {
-      if (Object.hasOwn(updates, "fill_flow_template_id")) {
-        if (Number(updates.fill_flow_template_id) !== Number(existing.fill_flow_template_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un paso de entrega.");
-        }
-        delete updates.fill_flow_template_id;
-      }
-      const fillFlowTemplate = await this.getFillFlowTemplate(existing.fill_flow_template_id);
-      if (fillFlowTemplate) {
-        const template = await this.getTaskTemplate(fillFlowTemplate.process_definition_template_id);
-        if (template) {
-          await this.ensureDraftDefinitionContext(
-            template.process_definition_id,
-            { entityLabel: "los pasos de entrega" }
-          );
-        }
-      }
-    }
     if (
       tableName === "process_definition_templates"
       || tableName === "process_target_rules"
@@ -1920,81 +1550,6 @@ export default class SqlAdminService {
           if (retiredCount > 0) {
             processDefinitionActivationNotice = "La configuracion activa anterior de la misma serie fue retirada automaticamente.";
           }
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "document_versions") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          await connection.query(
-            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-            [...values, ...params]
-          );
-          if (Object.hasOwn(updates, "status")) {
-            const nextStatus = String(updates.status || "").trim().toLowerCase();
-            if (nextStatus === "listo para firma") {
-              const documentVersionId = Number(existing.id ?? keyPayload.id);
-              const signatureFlowResult = await ensureSignatureFlowForDocumentVersion(connection, documentVersionId);
-              if (signatureFlowResult && !signatureFlowResult.ok) {
-                console.warn(
-                  `[SqlAdminService] DocumentVersion ${documentVersionId} cannot enter signature: ${signatureFlowResult.reason}`
-                );
-              }
-            }
-          }
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "fill_requests") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          await connection.query(
-            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-            [...values, ...params]
-          );
-          await syncDocumentProgressFromFillRequest(connection, Number(existing.id ?? keyPayload.id));
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "signature_requests") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          await connection.query(
-            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-            [...values, ...params]
-          );
-          await syncDocumentProgressFromSignatureRequest(connection, Number(existing.id ?? keyPayload.id));
-          await connection.commit();
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        } finally {
-          connection.release();
-        }
-      } else if (tableName === "document_signatures") {
-        const connection = await this.pool.getConnection();
-        try {
-          await connection.beginTransaction();
-          await connection.query(
-            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-            [...values, ...params]
-          );
-          await syncDocumentProgressFromDocumentSignature(connection, Number(existing.id ?? keyPayload.id));
-          await connection.commit();
         } catch (error) {
           await connection.rollback();
           throw error;

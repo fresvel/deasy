@@ -54,6 +54,30 @@
       "name": "Cargo caracterización (renombrado)"
     }
   },
+  "graft_document_versions_create": {
+    "status": 200,
+    "body": {
+      "document_id": "<normalized>",
+      "id": "<normalized>",
+      "status": "Borrador",
+      "version": "0.1"
+    }
+  },
+  "graft_documents_create_standalone": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "origin_type": "standalone",
+      "owner_person_id": "<normalized>",
+      "title": "Documento caracterización"
+    }
+  },
+  "graft_documents_update_task_item_inmutable": {
+    "status": 400,
+    "body": {
+      "message": "No se puede cambiar el item de tarea asociado de un documento."
+    }
+  },
   "graft_persons_create": {
     "status": 200,
     "body": {
