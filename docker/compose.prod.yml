@@ -34,11 +34,6 @@ services:
     restart: always
     security_opt:
       - no-new-privileges:true
-    # uploads_data estaba declarado pero sin montar: las fotos de perfil vivian en la capa
-    # escribible del contenedor y se perdian en cada redeploy (pull_policy: always).
-    # Temporal: desaparece cuando la migracion de fotos a MinIO termine (fase F4).
-    volumes:
-      - uploads_data:/app/backend/uploads
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3030/health').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"]
       interval: 30s
@@ -120,8 +115,6 @@ volumes:
     name: deasy_prod_backend_node_modules
   frontend_node_modules:
     name: deasy_prod_frontend_node_modules
-  uploads_data:
-    name: deasy_prod_uploads_data
   storage_data:
     name: deasy_prod_storage_data
 

@@ -1,21 +1,18 @@
-// Tests del resolver de referencias de foto de perfil.
-//
-// Se prueban las funciones puras: parsePhotoReference (decide que formato guarda
-// persons.photo_url) y resolveLegacyPhotoPath (confina las rutas heredadas dentro
-// de uploads/). openProfilePhoto es IO sobre MinIO/disco y se ejerce end-to-end.
+// Tests de las funciones puras del almacenamiento de fotos de perfil:
+// parsePhotoReference (lee la referencia de persons.photo_url), detectImageFormat
+// (decide el formato por la firma del fichero) y buildProfilePhotoObjectName.
+// storeProfilePhoto/openProfilePhoto/removeStoredPhoto son IO sobre MinIO y se
+// ejercen de extremo a extremo.
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import path from "node:path";
 
 import {
-  LEGACY_UPLOADS_ROOT,
   buildMinioReference,
   buildProfilePhotoObjectName,
   contentTypeForExtension,
   detectImageFormat,
-  parsePhotoReference,
-  resolveLegacyPhotoPath
+  parsePhotoReference
 } from "./profilePhotoStorage.js";
 
 const PNG_HEADER = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
@@ -33,67 +30,28 @@ test("parsePhotoReference devuelve null cuando no hay foto", () => {
   assert.equal(parsePhotoReference(undefined), null);
 });
 
-test("parsePhotoReference reconoce una referencia de MinIO", () => {
+test("parsePhotoReference lee una referencia de MinIO", () => {
   assert.deepEqual(parsePhotoReference("minio://deasy-users/users/123/profile/1.png"), {
-    kind: "minio",
     bucket: "deasy-users",
     objectName: "users/123/profile/1.png"
   });
 });
 
-test("parsePhotoReference descarta referencias de MinIO incompletas", () => {
+test("parsePhotoReference descarta lo que no sea una referencia válida", () => {
   assert.equal(parsePhotoReference("minio://deasy-users"), null, "sin objeto");
   assert.equal(parsePhotoReference("minio:///users/123/a.png"), null, "sin bucket");
+  assert.equal(parsePhotoReference("uploads/profile_photos/1.jpg"), null, "ruta de disco");
+  assert.equal(parsePhotoReference("data:image/png;base64,AAAA"), null, "data URI");
+  assert.equal(parsePhotoReference("https://cdn.example.org/a.png"), null, "URL externa");
 });
 
 test("buildMinioReference y parsePhotoReference son simétricos", () => {
   const reference = buildMinioReference("deasy-users", "/users/0987654321/profile/17.webp");
   assert.equal(reference, "minio://deasy-users/users/0987654321/profile/17.webp");
   assert.deepEqual(parsePhotoReference(reference), {
-    kind: "minio",
     bucket: "deasy-users",
     objectName: "users/0987654321/profile/17.webp"
   });
-});
-
-test("parsePhotoReference reconoce las data URI heredadas", () => {
-  assert.deepEqual(parsePhotoReference("data:image/png;base64,AAAA"), {
-    kind: "data-uri",
-    contentType: "image/png",
-    isBase64: true,
-    payload: "AAAA"
-  });
-});
-
-test("parsePhotoReference reconoce URLs externas", () => {
-  assert.deepEqual(parsePhotoReference("https://cdn.example.org/a.png"), {
-    kind: "external",
-    url: "https://cdn.example.org/a.png"
-  });
-});
-
-test("parsePhotoReference trata el resto como ruta heredada en disco", () => {
-  assert.deepEqual(parsePhotoReference("uploads/profile_photos/123_17.jpg"), {
-    kind: "legacy-file",
-    relativePath: "uploads/profile_photos/123_17.jpg"
-  });
-  assert.deepEqual(parsePhotoReference("/uploads/profile_photos/123_17.jpg"), {
-    kind: "legacy-file",
-    relativePath: "uploads/profile_photos/123_17.jpg"
-  });
-});
-
-test("resolveLegacyPhotoPath resuelve dentro de uploads/ con o sin el prefijo", () => {
-  const expected = path.join(LEGACY_UPLOADS_ROOT, "profile_photos", "123_17.jpg");
-  assert.equal(resolveLegacyPhotoPath("uploads/profile_photos/123_17.jpg"), expected);
-  assert.equal(resolveLegacyPhotoPath("profile_photos/123_17.jpg"), expected);
-});
-
-test("resolveLegacyPhotoPath rechaza cualquier escape del directorio", () => {
-  assert.equal(resolveLegacyPhotoPath("../../etc/passwd"), null);
-  assert.equal(resolveLegacyPhotoPath("uploads/../../etc/passwd"), null);
-  assert.equal(resolveLegacyPhotoPath("profile_photos/../../../.env"), null);
-  assert.equal(resolveLegacyPhotoPath(""), null);
 });
 
 test("detectImageFormat reconoce PNG, JPEG y WEBP por su firma", () => {

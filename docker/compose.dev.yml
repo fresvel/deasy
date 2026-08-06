@@ -29,7 +29,6 @@ services:
     volumes:
       - ../backend:/app/backend
       - backend_node_modules_v2:/app/backend/node_modules
-      - uploads_data:/app/backend/uploads
       - storage_data:/app/backend/storage
 
   storage-uploader:
@@ -80,8 +79,6 @@ volumes:
     name: deasy_dev_backend_node_modules
   frontend_node_modules:
     name: deasy_dev_frontend_node_modules
-  uploads_data:
-    name: deasy_dev_uploads_data
   storage_data:
     name: deasy_dev_storage_data
 

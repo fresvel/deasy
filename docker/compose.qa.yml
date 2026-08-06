@@ -28,10 +28,6 @@ services:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
     pull_policy: always
     env_file: *qa_runtime_env_file
-    # Ver nota en compose.prod.yml: sin este montaje las fotos de perfil se pierden
-    # en cada redeploy. Temporal hasta que la migracion a MinIO termine (fase F4).
-    volumes:
-      - uploads_data:/app/backend/uploads
     networks:
       default: {}
       public-ingress:
@@ -76,8 +72,6 @@ volumes:
     name: deasy_qa_backend_node_modules
   frontend_node_modules:
     name: deasy_qa_frontend_node_modules
-  uploads_data:
-    name: deasy_qa_uploads_data
   storage_data:
     name: deasy_qa_storage_data
 

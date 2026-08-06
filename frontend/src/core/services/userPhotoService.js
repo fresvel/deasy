@@ -1,8 +1,7 @@
 // Carga de fotos de perfil a traves del endpoint autenticado del backend.
 //
-// Antes el avatar se pedia a /uploads/... (estatico y publico). Ahora se descarga
-// con la sesion del usuario y se expone como object URL, igual que los PDFs del
-// dossier. Las fotos heredadas (data URI o URL externa) siguen usandose tal cual.
+// El avatar se descarga con la sesion del usuario y se expone como object URL,
+// igual que los PDFs del dossier: no hay ninguna URL publica que sirva la imagen.
 import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
@@ -26,13 +25,8 @@ export const invalidateUserPhoto = (cedula) => {
 };
 
 export const resolveUserPhotoUrl = async (user) => {
-  const value = photoValueOf(user);
-  if (!value) {
+  if (!photoValueOf(user)) {
     return DEFAULT_USER_PHOTO;
-  }
-  // Formatos heredados que el navegador puede pintar directamente.
-  if (/^(data:|https?:\/\/)/i.test(value)) {
-    return value;
   }
 
   const cedula = String(user?.cedula ?? "").trim();
