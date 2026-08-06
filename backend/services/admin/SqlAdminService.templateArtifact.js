@@ -18,12 +18,14 @@ import {
 } from "./SqlAdminService.storage.js";
 import { parseAvailableFormats, parseYamlDocument } from "./SqlAdminService.artifacts.js";
 import { bumpSemanticVersion } from "./SqlAdminService.versioning.js";
+import {
+  MINIO_TEMPLATES_BUCKET,
+  CONTRACT_FORMAT,
+  EDITABLE_CONTENT_SUBPATH,
+} from "./SqlAdminService.constants.js";
 
 // Config espejo del env (mismo valor que SqlAdminService.js). Deuda menor: unificar en un modulo de
 // constantes compartido. Son deterministas (env + literal), asi que ambos modulos leen lo mismo.
-const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
-const CONTRACT_FORMAT = "jinja2";
-const EDITABLE_CONTENT_SUBPATH = `template/${CONTRACT_FORMAT}/Contenido/`;
 
 export default class TemplateArtifactService {
   constructor(pool, { getByKeys } = {}) {

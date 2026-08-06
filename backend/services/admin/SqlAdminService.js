@@ -37,12 +37,16 @@ import {
 } from "./SqlAdminService.tableHooks.js";
 import { translateConstraintError, isUniqueViolation } from "../../errors/sqlErrors.js";
 import { conflict } from "../../errors/HttpError.js";
+import {
+  MINIO_TEMPLATES_BUCKET,
+  CONTRACT_FORMAT,
+  EDITABLE_CONTENT_SUBPATH,
+} from "./SqlAdminService.constants.js";
 
 const DEFAULT_LIMIT = 50;
 const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
 const BACKEND_STORAGE_ROOT = path.join(REPO_ROOT, "backend", "storage");
-const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
 const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
 // Semilla por defecto ("general") cuando se crea una plantilla sin elegir seed. Coincide con la del bootstrap.
 const DEFAULT_SEED_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
@@ -52,10 +56,6 @@ const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
 // latex = render derivable, el resto = documento de referencia. Es 1:1 con el formato, por eso es derivable.
 const FORMAT_ROLE = { jinja2: "contract", latex: "render" };
 const formatRole = (format) => FORMAT_ROLE[String(format || "").toLowerCase()] || "reference";
-// Formato del contrato ejecutable (único editable por el admin).
-const CONTRACT_FORMAT = "jinja2";
-// Único subárbol editable por el admin (contenido LaTeX). Todo lo demás del contrato es protegido (hash).
-const EDITABLE_CONTENT_SUBPATH = `template/${CONTRACT_FORMAT}/Contenido/`;
 const MINIO_TEMPLATES_SEEDS_PREFIX = (process.env.MINIO_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
 const TEMPLATE_USERS_PREFIX = (
   process.env.MINIO_TEMPLATES_USERS_PREFIX

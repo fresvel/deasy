@@ -171,3 +171,153 @@ test("buildWorkflowsYaml marca signatures.required solo si hay pasos de firma", 
   const sinFirmas = buildWorkflowsYaml({ signatureWorkflow: { required: true, steps: [] } });
   assert.match(sinFirmas, /required: false/, "sin pasos, la firma no es requerida");
 });
+
+// --- collectAuthoredWorkflowIssues -------------------------------------------------------------
+// 216 líneas de validación que decidían si se puede guardar un flujo autorado y NO tenían un solo
+// test. Es la puerta de todo el editor de flujos: un falso "válido" deja pasos que no resolverán
+// nunca, y un falso "inválido" bloquea al usuario sin motivo. Estos tests son su red antes de
+// partir la función.
+
+const collect = (overrides = {}) =>
+  collectAuthoredWorkflowIssues({
+    fillWorkflow: null,
+    signatureWorkflow: null,
+    ...overrides,
+  });
+
+const fillStep = (extra = {}) => ({ order: 1, resolver_type: "task_assignee", ...extra });
+
+test("collectAuthoredWorkflowIssues: sin flujos no hay nada que objetar", () => {
+  assert.deepEqual(collect(), { errors: [], warnings: [] });
+  assert.deepEqual(collect({ fillWorkflow: { steps: [] } }), { errors: [], warnings: [] });
+});
+
+test("collectAuthoredWorkflowIssues: el orden debe ser entero >= 1 y sin repetir", () => {
+  const sinOrden = collect({ fillWorkflow: { steps: [fillStep({ order: 0 })] } });
+  assert.match(sinOrden.errors[0], /el orden debe ser un entero/);
+
+  const duplicado = collect({
+    fillWorkflow: { steps: [fillStep({ order: 1 }), fillStep({ order: 1 })] },
+  });
+  assert.match(duplicado.errors[0], /orden duplicado \(1\)/);
+});
+
+test("collectAuthoredWorkflowIssues: el tipo de responsable depende del ámbito de la plantilla", () => {
+  const steps = [fillStep({ resolver_type: "specific_person", person_id: 1 })];
+  // `specific_person` solo existe en plantillas ad_hoc.
+  const oficial = collect({ fillWorkflow: { steps }, templateScope: "official" });
+  assert.match(oficial.errors[0], /responsable no permitido/);
+  assert.match(oficial.errors[0], /"Responsable del entregable" o "Por cargo"/);
+
+  const adHoc = collect({
+    fillWorkflow: { steps },
+    templateScope: "ad_hoc",
+    referenceIds: { personIds: new Set([1]) },
+  });
+  assert.deepEqual(adHoc.errors, []);
+});
+
+test("collectAuthoredWorkflowIssues: el ámbito de unidad también depende del tipo de plantilla", () => {
+  const steps = [fillStep({ resolver_type: "cargo_in_scope", cargo_id: 7, unit_scope_type: "unit_type", unit_type_id: 3 })];
+  // `unit_type` vale en official pero no en ad_hoc.
+  assert.deepEqual(
+    collect({ fillWorkflow: { steps }, templateScope: "official", referenceIds: { unitTypeIds: new Set([3]) } }).errors,
+    []
+  );
+  const adHoc = collect({ fillWorkflow: { steps }, templateScope: "ad_hoc" });
+  assert.match(adHoc.errors[0], /ámbito no permitido/);
+});
+
+test("collectAuthoredWorkflowIssues: valida que las referencias existan, pero solo si se le dio el catálogo", () => {
+  const steps = [fillStep({ resolver_type: "specific_person", person_id: 99 })];
+  const base = { fillWorkflow: { steps }, templateScope: "ad_hoc" };
+
+  // Con catálogo poblado y la persona fuera: error.
+  const conCatalogo = collect({ ...base, referenceIds: { personIds: new Set([1, 2]) } });
+  assert.match(conCatalogo.errors[0], /la persona seleccionada \(99\) no existe/);
+
+  // Sin catálogo (no se pudo cargar) NO se inventa el error: las FKs son el backstop.
+  assert.deepEqual(collect(base).errors, []);
+
+  // Y sin persona seleccionada, el error es de campo obligatorio.
+  const sinPersona = collect({
+    fillWorkflow: { steps: [fillStep({ resolver_type: "specific_person" })] },
+    templateScope: "ad_hoc",
+  });
+  assert.match(sinPersona.errors[0], /requiere seleccionar una persona/);
+});
+
+test("collectAuthoredWorkflowIssues: el ámbito de contexto no resuelve si el proceso no tiene reglas", () => {
+  const steps = [fillStep({ resolver_type: "cargo_in_scope", cargo_id: 7, unit_scope_type: "context_exact" })];
+  const sinReglas = collect({ fillWorkflow: { steps }, processScope: { has_rules: false } });
+  assert.match(sinReglas.errors[0], /no tiene reglas objetivo/);
+
+  assert.deepEqual(collect({ fillWorkflow: { steps }, processScope: { has_rules: true } }).errors, []);
+});
+
+test("collectAuthoredWorkflowIssues: un cargo sin puesto hoy es AVISO, no error (late-binding)", () => {
+  const steps = [fillStep({ resolver_type: "cargo_in_scope", cargo_id: 7, unit_scope_type: "context_exact" })];
+  const resultado = collect({
+    fillWorkflow: { steps },
+    processScope: { has_rules: true },
+    resolvableCargoIds: { ctx: new Set([1, 2]) },
+  });
+  // Clave: NO bloquea el guardado. El ocupante se enlaza después.
+  assert.deepEqual(resultado.errors, []);
+  assert.match(resultado.warnings[0], /quedará pendiente y se resolverá/);
+});
+
+test("collectAuthoredWorkflowIssues: la unidad específica exige unidad y que exista", () => {
+  const sinUnidad = collect({
+    fillWorkflow: { steps: [fillStep({ resolver_type: "cargo_in_scope", cargo_id: 7, unit_scope_type: "unit_exact" })] },
+  });
+  assert.match(sinUnidad.errors[0], /requiere seleccionar una unidad/);
+
+  const unidadInexistente = collect({
+    fillWorkflow: { steps: [fillStep({ resolver_type: "cargo_in_scope", cargo_id: 7, unit_scope_type: "unit_exact", unit_id: 42 })] },
+    referenceIds: { unitIds: new Set([8]) },
+  });
+  assert.match(unidadInexistente.errors[0], /la unidad seleccionada \(42\) no existe/);
+});
+
+test("collectAuthoredWorkflowIssues: en entrega solo valen los modos de selección automáticos", () => {
+  const manual = collect({ fillWorkflow: { steps: [fillStep({ selection_mode: "manual" })] } });
+  assert.match(manual.errors[0], /modo no permitido en entrega/);
+  assert.deepEqual(collect({ fillWorkflow: { steps: [fillStep({ selection_mode: "auto_all" })] } }).errors, []);
+});
+
+test("collectAuthoredWorkflowIssues: firma valida el modo de aprobación y cada firmante", () => {
+  const modoMalo = collect({
+    signatureWorkflow: { steps: [{ order: 1, approval_mode: "quizas", resolver_type: "cargo_in_scope", cargo_id: 7 }] },
+    processScope: { has_rules: true },
+  });
+  assert.match(modoMalo.errors[0], /modo de aprobación inválido \(quizas\)/);
+
+  // Multi-firmante: cada firmante se valida y el mensaje lo identifica.
+  const multi = collect({
+    signatureWorkflow: {
+      steps: [{
+        order: 1,
+        approval_mode: "and",
+        signers: [
+          { resolver_type: "cargo_in_scope", cargo_id: 7, unit_scope_type: "context_exact" },
+          { resolver_type: "specific_person", person_id: 5 },
+        ],
+      }],
+    },
+    processScope: { has_rules: true },
+    templateScope: "official",
+  });
+  assert.equal(multi.errors.length, 1, JSON.stringify(multi));
+  assert.match(multi.errors[0], /firmante 2: firmante no permitido/);
+});
+
+test("collectAuthoredWorkflowIssues: acepta el responsable anidado además del plano", () => {
+  // El formulario web manda los campos planos; la forma anidada se admite por robustez.
+  const anidado = collect({
+    fillWorkflow: { steps: [{ order: 1, resolver: { type: "specific_person", person_id: 99 } }] },
+    templateScope: "ad_hoc",
+    referenceIds: { personIds: new Set([1]) },
+  });
+  assert.match(anidado.errors[0], /la persona seleccionada \(99\) no existe/);
+});

@@ -360,6 +360,245 @@ export const resolveStepCargoId = (resolver = {}, fallbackCode = "", cargoCodeMa
 // Validación de contrato de flujo EN AUTORÍA (al guardar la plantilla), no solo al vincular: detecta
 // errores que de otro modo se "tragarían" silenciosamente en la normalización del sync (orden inválido/
 // duplicado, responsable/firmante desconocido, referencias faltantes). Devuelve lista de problemas.
+// --- Validación de flujos autorados -----------------------------------------------------------
+// `collectAuthoredWorkflowIssues` era una función de 216 líneas (la peor de este módulo según
+// Sonar) que mezclaba cuatro cosas: normalizar el contexto de referencia, acumular hallazgos,
+// validar el responsable de un paso y recorrer los pasos de entrega y de firma. Se parte en esas
+// cuatro, sin cambiar ni un mensaje.
+
+// issues = errores que ABORTAN el guardado (imposibilidades estructurales). warnings = avisos que NO
+// bloquean: el cargo no tiene HOY un puesto en la ubicación, pero el modelo es late-binding (el
+// ocupante se enlaza después) y los puestos son mutables: el paso quedará pendiente y se resolverá
+// cuando exista el puesto/ocupante (el runtime ya reconcilia huérfanos). Bloquear aquí impediría
+// modelar puestos temporalmente vacantes.
+const createIssueCollector = () => {
+  const errors = [];
+  const warnings = [];
+  return {
+    errors,
+    warnings,
+    error: (message) => errors.push(message),
+    warn: (message) => warnings.push(message),
+  };
+};
+
+const asSet = (value) => (value instanceof Set ? value : new Set());
+
+const normalizeAuthoringContext = ({
+  cargoCodeMap,
+  referenceIds,
+  processScope,
+  resolvableCargoIds,
+  templateScope,
+}) => ({
+  cargoCodeMap: cargoCodeMap instanceof Map ? cargoCodeMap : new Map(),
+  personIds: asSet(referenceIds?.personIds),
+  positionIds: asSet(referenceIds?.positionIds),
+  unitIds: asSet(referenceIds?.unitIds),
+  unitTypeIds: asSet(referenceIds?.unitTypeIds),
+  // Ámbito resoluble del proceso vinculado (reglas objetivo). Si no se pasó, no se aplican estas reglas.
+  scopeHasRules: processScope && typeof processScope === "object" ? Boolean(processScope.has_rules) : null,
+  // Cargos resolubles (con titular vigente) por ubicación: ctx = unión del alcance del proceso (para
+  // "misma unidad"); byUnit = mapa unidad→Set de cargos (para "unidad específica"). Si no se pasan, no se valida.
+  resolvableCtxCargoIds: resolvableCargoIds?.ctx instanceof Set ? resolvableCargoIds.ctx : null,
+  resolvableCargoIdsByUnit: resolvableCargoIds?.byUnit instanceof Map ? resolvableCargoIds.byUnit : null,
+  templateScope,
+});
+
+const checkStepOrders = (collector, steps, label) => {
+  const seen = new Set();
+  steps.forEach((step, index) => {
+    const order = Number(step?.order);
+    if (!Number.isInteger(order) || order < 1) {
+      collector.error(`${label} ${index + 1}: el orden debe ser un entero ≥ 1.`);
+    } else if (seen.has(order)) {
+      collector.error(`${label}: orden duplicado (${order}).`);
+    } else {
+      seen.add(order);
+    }
+  });
+};
+
+// El formulario web envía los campos del responsable de forma PLANA (step.resolver_type, step.person_id…),
+// igual que los lee buildWorkflowsYaml; se admite también la forma anidada (step.resolver.*) por robustez.
+const readStepResolver = (step) => {
+  const nested = (step && typeof step.resolver === "object" && step.resolver) ? step.resolver : {};
+  return {
+    type: step?.resolver_type || nested.type,
+    person_id: step?.person_id ?? nested.person_id,
+    position_id: step?.position_id ?? nested.position_id,
+    cargo_id: step?.cargo_id ?? nested.cargo_id,
+    cargo_code: step?.cargo_code ?? nested.cargo_code,
+    unit_scope_type: step?.unit_scope_type ?? nested.unit_scope_type,
+    unit_id: step?.unit_id ?? nested.unit_id,
+    unit_type_id: step?.unit_type_id ?? nested.unit_type_id,
+    relation_type_id: step?.relation_type_id ?? nested.relation_type_id,
+    selection_mode: step?.selection_mode ?? nested.selection_mode,
+  };
+};
+
+// Comprueba el ámbito de un responsable "cargo_in_scope": qué unidad resuelve y si es alcanzable.
+const checkCargoScope = (collector, context, resolver, label, resolvedCargoId) => {
+  const scope = String(resolver?.unit_scope_type || "context_exact");
+
+  // Aviso (no bloqueante): el cargo no tiene HOY un puesto en la ubicación. Por late-binding el paso queda
+  // pendiente y se resolverá cuando el puesto/ocupante exista (puesto temporalmente vacante o aún por crear).
+  if (resolvedCargoId && scope === "context_exact" && context.resolvableCtxCargoIds && !context.resolvableCtxCargoIds.has(resolvedCargoId)) {
+    collector.warn(`${label}: el cargo seleccionado aún no tiene un puesto en el alcance del proceso; el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante.`);
+  }
+  if (resolvedCargoId && scope === "unit_exact" && context.resolvableCargoIdsByUnit) {
+    const stepUnitId = normalizeNumericId(resolver?.unit_id);
+    const unitCargoSet = stepUnitId ? context.resolvableCargoIdsByUnit.get(stepUnitId) : null;
+    if (stepUnitId && (!unitCargoSet || !unitCargoSet.has(resolvedCargoId))) {
+      collector.warn(`${label}: el cargo seleccionado aún no tiene un puesto en la unidad indicada; el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante.`);
+    }
+  }
+
+  if (scope === "context_exact" || scope === "context_subtree") {
+    // Los ámbitos de contexto resuelven la unidad del proceso vía la posición responsable; si el
+    // proceso no tiene reglas objetivo, no se genera posición responsable → resolución null garantizada.
+    if (context.scopeHasRules === false) {
+      collector.error(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
+    }
+  }
+  if (scope === "unit_exact" || scope === "unit_subtree") {
+    // Unidad fija = ruteo a una oficina concreta (revisión/firma). Esa oficina puede estar FUERA del
+    // alcance del proceso (p. ej. una dirección superior), así que solo se exige que exista y esté activa.
+    const unitId = normalizeNumericId(resolver?.unit_id);
+    if (!unitId) {
+      collector.error(`${label}: el ámbito de unidad específica requiere seleccionar una unidad.`);
+    } else if (context.unitIds.size && !context.unitIds.has(unitId)) {
+      collector.error(`${label}: la unidad seleccionada (${unitId}) no existe o está inactiva.`);
+    }
+  }
+  if (scope === "unit_type") {
+    const unitTypeId = normalizeNumericId(resolver?.unit_type_id);
+    if (!unitTypeId) {
+      collector.error(`${label}: el ámbito "tipo de unidad" requiere seleccionar un tipo de unidad.`);
+    } else if (context.unitTypeIds.size && !context.unitTypeIds.has(unitTypeId)) {
+      collector.error(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
+    }
+  }
+  if (scope === "context_ancestor_type") {
+    // Sube por el grafo de la relación elegida (o 'org') hasta el ancestro más cercano. El tipo de unidad
+    // es opcional (sin tipo = el padre directo por esa relación); si se indica, se valida que exista.
+    const unitTypeId = normalizeNumericId(resolver?.unit_type_id);
+    if (unitTypeId && context.unitTypeIds.size && !context.unitTypeIds.has(unitTypeId)) {
+      collector.error(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
+    }
+    if (context.scopeHasRules === false) {
+      collector.error(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
+    }
+  }
+};
+
+// Valida existencia contra la DB solo si el set correspondiente está poblado (si no se pudo cargar,
+// no se inventan falsos negativos; las FKs siguen siendo el último backstop al materializar).
+const checkResolverRefs = (collector, context, resolver, type, label, fallbackCargoCode = "") => {
+  if (type === "specific_person") {
+    const personId = normalizeNumericId(resolver?.person_id);
+    if (!personId) {
+      collector.error(`${label}: "Persona específica" requiere seleccionar una persona.`);
+    } else if (context.personIds.size && !context.personIds.has(personId)) {
+      collector.error(`${label}: la persona seleccionada (${personId}) no existe o está inactiva.`);
+    }
+  }
+  if (type === "position") {
+    const positionId = normalizeNumericId(resolver?.position_id);
+    if (!positionId) {
+      collector.error(`${label}: "Posición" requiere seleccionar una posición.`);
+    } else if (context.positionIds.size && !context.positionIds.has(positionId)) {
+      collector.error(`${label}: la posición seleccionada (${positionId}) no existe o está inactiva.`);
+    }
+  }
+  if (type === "cargo_in_scope") {
+    const resolvedCargoId = resolveStepCargoId(resolver, fallbackCargoCode, context.cargoCodeMap);
+    if (!resolvedCargoId) {
+      collector.error(`${label}: "Cargo en ámbito" requiere seleccionar un cargo válido.`);
+    }
+    checkCargoScope(collector, context, resolver, label, resolvedCargoId);
+  }
+};
+
+const collectFillStepIssues = (collector, context, fillSteps) => {
+  checkStepOrders(collector, fillSteps, "Paso de entrega");
+  const allowedResolverTypes = webFillResolverTypesForScope(context.templateScope);
+  const allowedUnitScopeTypes = webFillUnitScopeTypesForScope(context.templateScope);
+  const isAdHocScope = String(context.templateScope) === "ad_hoc";
+
+  fillSteps.forEach((step, index) => {
+    const label = `Paso de entrega ${index + 1}`;
+    const resolver = readStepResolver(step);
+    const type = String(resolver.type || "task_assignee");
+    if (!allowedResolverTypes.has(type)) {
+      const allowed = isAdHocScope
+        ? '"Responsable del entregable", "Por cargo" o "Persona concreta"'
+        : '"Responsable del entregable" o "Por cargo"';
+      collector.error(`${label}: responsable no permitido para este tipo de plantilla. Usa ${allowed}.`);
+      return;
+    }
+    // La revisión no usa subárbol ni "todas las unidades" (eso es distribución, vive en las reglas).
+    if (type === "cargo_in_scope") {
+      const scope = String(resolver.unit_scope_type || "context_exact");
+      if (!allowedUnitScopeTypes.has(scope)) {
+        const allowed = isAdHocScope
+          ? "la unidad del entregable o una unidad específica"
+          : "la unidad del entregable, una unidad específica o un tipo de unidad";
+        collector.error(`${label}: ámbito no permitido para este tipo de plantilla. Usa ${allowed}.`);
+        return;
+      }
+    }
+    checkResolverRefs(collector, context, resolver, type, label);
+    const selection = resolver.selection_mode;
+    // En autoría de ENTREGA solo "uno cualquiera" / "todas". 'manual' no está implementado en entrega (el
+    // resolvedor lo trata como 'todas') → se rechaza para no engañar. (Firmas sí soporta 'manual' aparte.)
+    if (selection && !WEB_FILL_SELECTION_MODES.has(String(selection))) {
+      collector.error(`${label}: modo no permitido en entrega. Usa "Uno cualquiera" o "Todas".`);
+    }
+  });
+};
+
+const collectSignatureStepIssues = (collector, context, signatureSteps) => {
+  checkStepOrders(collector, signatureSteps, "Paso de firma");
+  // Mismo gating por tipo de plantilla que llenado (official: +tipo de unidad, sin persona; ad_hoc: +persona).
+  const allowedResolverTypes = webFillResolverTypesForScope(context.templateScope);
+  const allowedUnitScopeTypes = webFillUnitScopeTypesForScope(context.templateScope);
+
+  signatureSteps.forEach((step, index) => {
+    const label = `Paso de firma ${index + 1}`;
+    const approval = String(step.approval_mode || "and");
+    if (!SIGNATURE_APPROVAL_MODES.has(approval)) {
+      collector.error(`${label}: modo de aprobación inválido (${approval}).`);
+    }
+    // Multi-firmante: valida cada firmante del paso. Back-compat: si no hay lista, el paso es un firmante.
+    const signers = Array.isArray(step.signers) && step.signers.length ? step.signers : [step];
+    if (!signers.length) {
+      collector.error(`${label}: define al menos un firmante.`);
+      return;
+    }
+    signers.forEach((signer, signerIndex) => {
+      const signerLabel = signers.length > 1 ? `${label} · firmante ${signerIndex + 1}` : label;
+      const resolver = readStepResolver(signer);
+      const type = String(resolver.type || "cargo_in_scope");
+      if (!allowedResolverTypes.has(type)) {
+        collector.error(`${signerLabel}: firmante no permitido para este tipo de plantilla.`);
+        return;
+      }
+      if (type === "cargo_in_scope") {
+        const scope = String(resolver.unit_scope_type || "context_exact");
+        if (!allowedUnitScopeTypes.has(scope)) {
+          collector.error(`${signerLabel}: ámbito no permitido para este tipo de plantilla.`);
+          return;
+        }
+      }
+      checkResolverRefs(collector, context, resolver, type, signerLabel, signer.required_cargo_code);
+    });
+  });
+};
+
+const authoredSteps = (workflow) =>
+  (Array.isArray(workflow?.steps) ? workflow.steps.filter((step) => step && typeof step === "object") : []);
+
 export const collectAuthoredWorkflowIssues = ({
   fillWorkflow,
   signatureWorkflow,
@@ -369,209 +608,25 @@ export const collectAuthoredWorkflowIssues = ({
   resolvableCargoIds = null,
   templateScope = "official"
 } = {}) => {
-  const personIds = referenceIds?.personIds instanceof Set ? referenceIds.personIds : new Set();
-  const positionIds = referenceIds?.positionIds instanceof Set ? referenceIds.positionIds : new Set();
-  const unitIds = referenceIds?.unitIds instanceof Set ? referenceIds.unitIds : new Set();
-  const unitTypeIds = referenceIds?.unitTypeIds instanceof Set ? referenceIds.unitTypeIds : new Set();
-  // Ámbito resoluble del proceso vinculado (reglas objetivo). Si no se pasó, no se aplican estas reglas.
-  const hasProcessScope = processScope && typeof processScope === "object";
-  const scopeHasRules = hasProcessScope ? Boolean(processScope.has_rules) : null;
-  const scopeAllUnits = hasProcessScope ? Boolean(processScope.all_units) : false;
-  const scopeUnitIds = hasProcessScope && Array.isArray(processScope.unit_ids)
-    ? new Set(processScope.unit_ids.map((id) => Number(id)))
-    : new Set();
-  // Cargos resolubles (con titular vigente) por ubicación: ctx = unión del alcance del proceso (para
-  // "misma unidad"); byUnit = mapa unidad→Set de cargos (para "unidad específica"). Si no se pasan, no se valida.
-  const resolvableCtxCargoIds = resolvableCargoIds?.ctx instanceof Set ? resolvableCargoIds.ctx : null;
-  const resolvableCargoIdsByUnit = resolvableCargoIds?.byUnit instanceof Map ? resolvableCargoIds.byUnit : null;
-  // issues = errores que ABORTAN el guardado (imposibilidades estructurales). warnings = avisos que NO bloquean:
-  // el cargo no tiene HOY un puesto en la ubicación, pero el modelo es late-binding (el ocupante se enlaza
-  // después) y los puestos son mutables: el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante
-  // (el runtime ya reconcilia huérfanos). Bloquear aquí impediría modelar puestos temporalmente vacantes.
-  const issues = [];
-  const warnings = [];
-  const checkOrders = (steps, label) => {
-    const seen = new Set();
-    steps.forEach((step, index) => {
-      const order = Number(step?.order);
-      if (!Number.isInteger(order) || order < 1) {
-        issues.push(`${label} ${index + 1}: el orden debe ser un entero ≥ 1.`);
-      } else if (seen.has(order)) {
-        issues.push(`${label}: orden duplicado (${order}).`);
-      } else {
-        seen.add(order);
-      }
-    });
-  };
-  // El formulario web envía los campos del responsable de forma PLANA (step.resolver_type, step.person_id…),
-  // igual que los lee buildWorkflowsYaml; se admite también la forma anidada (step.resolver.*) por robustez.
-  const getStepResolver = (step) => {
-    const nested = (step && typeof step.resolver === "object" && step.resolver) ? step.resolver : {};
-    return {
-      type: step?.resolver_type || nested.type,
-      person_id: step?.person_id ?? nested.person_id,
-      position_id: step?.position_id ?? nested.position_id,
-      cargo_id: step?.cargo_id ?? nested.cargo_id,
-      cargo_code: step?.cargo_code ?? nested.cargo_code,
-      unit_scope_type: step?.unit_scope_type ?? nested.unit_scope_type,
-      unit_id: step?.unit_id ?? nested.unit_id,
-      unit_type_id: step?.unit_type_id ?? nested.unit_type_id,
-      relation_type_id: step?.relation_type_id ?? nested.relation_type_id,
-      selection_mode: step?.selection_mode ?? nested.selection_mode
-    };
-  };
-  // Valida existencia contra la DB solo si el set correspondiente está poblado (si no se pudo cargar,
-  // no se inventan falsos negativos; las FKs siguen siendo el último backstop al materializar).
-  const checkResolverRefs = (resolver, type, label, fallbackCargoCode = "") => {
-    if (type === "specific_person") {
-      const personId = normalizeNumericId(resolver?.person_id);
-      if (!personId) {
-        issues.push(`${label}: "Persona específica" requiere seleccionar una persona.`);
-      } else if (personIds.size && !personIds.has(personId)) {
-        issues.push(`${label}: la persona seleccionada (${personId}) no existe o está inactiva.`);
-      }
-    }
-    if (type === "position") {
-      const positionId = normalizeNumericId(resolver?.position_id);
-      if (!positionId) {
-        issues.push(`${label}: "Posición" requiere seleccionar una posición.`);
-      } else if (positionIds.size && !positionIds.has(positionId)) {
-        issues.push(`${label}: la posición seleccionada (${positionId}) no existe o está inactiva.`);
-      }
-    }
-    if (type === "cargo_in_scope") {
-      const resolvedCargoId = resolveStepCargoId(resolver, fallbackCargoCode, cargoCodeMap);
-      if (!resolvedCargoId) {
-        issues.push(`${label}: "Cargo en ámbito" requiere seleccionar un cargo válido.`);
-      }
-      const scope = String(resolver?.unit_scope_type || "context_exact");
-      // Aviso (no bloqueante): el cargo no tiene HOY un puesto en la ubicación. Por late-binding el paso queda
-      // pendiente y se resolverá cuando el puesto/ocupante exista (puesto temporalmente vacante o aún por crear).
-      if (resolvedCargoId && scope === "context_exact" && resolvableCtxCargoIds && !resolvableCtxCargoIds.has(resolvedCargoId)) {
-        warnings.push(`${label}: el cargo seleccionado aún no tiene un puesto en el alcance del proceso; el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante.`);
-      }
-      if (resolvedCargoId && scope === "unit_exact" && resolvableCargoIdsByUnit) {
-        const stepUnitId = normalizeNumericId(resolver?.unit_id);
-        const unitCargoSet = stepUnitId ? resolvableCargoIdsByUnit.get(stepUnitId) : null;
-        if (stepUnitId && (!unitCargoSet || !unitCargoSet.has(resolvedCargoId))) {
-          warnings.push(`${label}: el cargo seleccionado aún no tiene un puesto en la unidad indicada; el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante.`);
-        }
-      }
-      if (scope === "context_exact" || scope === "context_subtree") {
-        // Los ámbitos de contexto resuelven la unidad del proceso vía la posición responsable; si el
-        // proceso no tiene reglas objetivo, no se genera posición responsable → resolución null garantizada.
-        if (scopeHasRules === false) {
-          issues.push(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
-        }
-      }
-      if (scope === "unit_exact" || scope === "unit_subtree") {
-        // Unidad fija = ruteo a una oficina concreta (revisión/firma). Esa oficina puede estar FUERA del
-        // alcance del proceso (p. ej. una dirección superior), así que solo se exige que exista y esté activa.
-        const unitId = normalizeNumericId(resolver?.unit_id);
-        if (!unitId) {
-          issues.push(`${label}: el ámbito de unidad específica requiere seleccionar una unidad.`);
-        } else if (unitIds.size && !unitIds.has(unitId)) {
-          issues.push(`${label}: la unidad seleccionada (${unitId}) no existe o está inactiva.`);
-        }
-      }
-      if (scope === "unit_type") {
-        const unitTypeId = normalizeNumericId(resolver?.unit_type_id);
-        if (!unitTypeId) {
-          issues.push(`${label}: el ámbito "tipo de unidad" requiere seleccionar un tipo de unidad.`);
-        } else if (unitTypeIds.size && !unitTypeIds.has(unitTypeId)) {
-          issues.push(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
-        }
-      }
-      if (scope === "context_ancestor_type") {
-        // Sube por el grafo de la relación elegida (o 'org') hasta el ancestro más cercano. El tipo de unidad
-        // es opcional (sin tipo = el padre directo por esa relación); si se indica, se valida que exista.
-        const unitTypeId = normalizeNumericId(resolver?.unit_type_id);
-        if (unitTypeId && unitTypeIds.size && !unitTypeIds.has(unitTypeId)) {
-          issues.push(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
-        }
-        if (scopeHasRules === false) {
-          issues.push(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
-        }
-      }
-    }
-  };
+  const collector = createIssueCollector();
+  const context = normalizeAuthoringContext({
+    cargoCodeMap,
+    referenceIds,
+    processScope,
+    resolvableCargoIds,
+    templateScope,
+  });
 
-  const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps.filter((s) => s && typeof s === "object") : [];
+  const fillSteps = authoredSteps(fillWorkflow);
   if (fillSteps.length) {
-    checkOrders(fillSteps, "Paso de entrega");
-    const allowedResolverTypes = webFillResolverTypesForScope(templateScope);
-    const allowedUnitScopeTypes = webFillUnitScopeTypesForScope(templateScope);
-    const isAdHocScope = String(templateScope) === "ad_hoc";
-    fillSteps.forEach((step, index) => {
-      const label = `Paso de entrega ${index + 1}`;
-      const resolver = getStepResolver(step);
-      const type = String(resolver.type || "task_assignee");
-      if (!allowedResolverTypes.has(type)) {
-        const allowed = isAdHocScope
-          ? '"Responsable del entregable", "Por cargo" o "Persona concreta"'
-          : '"Responsable del entregable" o "Por cargo"';
-        issues.push(`${label}: responsable no permitido para este tipo de plantilla. Usa ${allowed}.`);
-        return;
-      }
-      // La revisión no usa subárbol ni "todas las unidades" (eso es distribución, vive en las reglas).
-      if (type === "cargo_in_scope") {
-        const scope = String(resolver.unit_scope_type || "context_exact");
-        if (!allowedUnitScopeTypes.has(scope)) {
-          const allowed = isAdHocScope
-            ? "la unidad del entregable o una unidad específica"
-            : "la unidad del entregable, una unidad específica o un tipo de unidad";
-          issues.push(`${label}: ámbito no permitido para este tipo de plantilla. Usa ${allowed}.`);
-          return;
-        }
-      }
-      checkResolverRefs(resolver, type, label);
-      const selection = resolver.selection_mode;
-      // En autoría de ENTREGA solo "uno cualquiera" / "todas". 'manual' no está implementado en entrega (el
-      // resolvedor lo trata como 'todas') → se rechaza para no engañar. (Firmas sí soporta 'manual' aparte.)
-      if (selection && !WEB_FILL_SELECTION_MODES.has(String(selection))) {
-        issues.push(`${label}: modo no permitido en entrega. Usa "Uno cualquiera" o "Todas".`);
-      }
-    });
+    collectFillStepIssues(collector, context, fillSteps);
   }
 
-  const signatureSteps = Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps.filter((s) => s && typeof s === "object") : [];
+  const signatureSteps = authoredSteps(signatureWorkflow);
   if (signatureSteps.length) {
-    checkOrders(signatureSteps, "Paso de firma");
-    // Mismo gating por tipo de plantilla que llenado (official: +tipo de unidad, sin persona; ad_hoc: +persona).
-    const sigAllowedResolverTypes = webFillResolverTypesForScope(templateScope);
-    const sigAllowedUnitScopeTypes = webFillUnitScopeTypesForScope(templateScope);
-    signatureSteps.forEach((step, index) => {
-      const label = `Paso de firma ${index + 1}`;
-      const approval = String(step.approval_mode || "and");
-      if (!SIGNATURE_APPROVAL_MODES.has(approval)) {
-        issues.push(`${label}: modo de aprobación inválido (${approval}).`);
-      }
-      // Multi-firmante: valida cada firmante del paso. Back-compat: si no hay lista, el paso es un firmante.
-      const signers = Array.isArray(step.signers) && step.signers.length ? step.signers : [step];
-      if (!signers.length) {
-        issues.push(`${label}: define al menos un firmante.`);
-        return;
-      }
-      signers.forEach((signer, si) => {
-        const signerLabel = signers.length > 1 ? `${label} · firmante ${si + 1}` : label;
-        const resolver = getStepResolver(signer);
-        const type = String(resolver.type || "cargo_in_scope");
-        if (!sigAllowedResolverTypes.has(type)) {
-          issues.push(`${signerLabel}: firmante no permitido para este tipo de plantilla.`);
-          return;
-        }
-        if (type === "cargo_in_scope") {
-          const scope = String(resolver.unit_scope_type || "context_exact");
-          if (!sigAllowedUnitScopeTypes.has(scope)) {
-            issues.push(`${signerLabel}: ámbito no permitido para este tipo de plantilla.`);
-            return;
-          }
-        }
-        checkResolverRefs(resolver, type, signerLabel, signer.required_cargo_code);
-      });
-    });
+    collectSignatureStepIssues(collector, context, signatureSteps);
   }
 
-  return { errors: issues, warnings };
+  return { errors: collector.errors, warnings: collector.warnings };
 };
 
