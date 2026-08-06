@@ -30,8 +30,7 @@ import {
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { refreshToken } from "../controllers/users/refresh_token.js";
-import { updateUserPhoto } from "../controllers/users/user_controler.js";
-import { getUserPhoto } from "../controllers/users/user_photo_controller.js";
+import { getUserPhoto, updateUserPhoto } from "../controllers/users/user_photo_controller.js";
 import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validation_controller.js";
 import { validatePassword } from "../middlewares/val_password.js";
 import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";

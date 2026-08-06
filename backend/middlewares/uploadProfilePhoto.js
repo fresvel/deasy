@@ -1,43 +1,24 @@
+// Recepcion de la foto de perfil. El fichero aterriza en un temporal del sistema y
+// de ahi sube a MinIO (profilePhotoStorage): no queda estado en el disco del backend.
+// Mismo patron que los certificados P12 y los PDF del dossier.
+//
+// El filtro por mimetype solo descarta lo evidente; el formato real se decide luego
+// por la firma del fichero, porque el mimetype lo declara el cliente.
 import multer from "multer";
-import path from "node:path";
-import fs from "fs-extra";
-import { fileURLToPath } from "node:url";
+import os from "node:os";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const uploadsRoot = path.resolve(process.cwd(), "uploads");
-const profilePhotosDir = path.join(uploadsRoot, "profile_photos");
-
-fs.ensureDirSync(profilePhotosDir);
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, profilePhotosDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "").toLowerCase();
-    const safeExt = [".png", ".jpg", ".jpeg", ".webp"].includes(ext) ? ext : ".png";
-    const identifier = (req.params?.cedula || "user").replace(/[^a-zA-Z0-9_-]/g, "");
-    const timestamp = Date.now();
-    cb(null, `${identifier}_${timestamp}${safeExt}`);
-  }
-});
+const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 
 const fileFilter = (_req, file, cb) => {
-  const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-  if (allowed.includes(file.mimetype)) {
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
-  } else {
-    cb(new Error("Formato de imagen no permitido. Usa PNG, JPG o WEBP."));
+    return;
   }
+  cb(new Error("Formato de imagen no permitido. Usa PNG, JPG o WEBP."));
 };
 
-export const profilePhotoRelativePath = (filename) =>
-  path.posix.join("uploads", "profile_photos", filename);
-
 export const uploadProfilePhoto = multer({
-  storage,
+  dest: os.tmpdir(),
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5 MB

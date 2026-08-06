@@ -162,41 +162,7 @@ export const getUsers = async (req, res) => {
   }
 };
 
-export const updateUserPhoto = async (req, res) => {
-  const { cedula } = req.params;
-  const file = req.file;
-
-  if (!file) {
-    return res.status(400).send({ message: "Debe adjuntar la foto en el campo 'photo'." });
-  }
-
-  try {
-    const existingUser = await userRepository.findByCedulaOrEmail({ cedula });
-    if (!existingUser) {
-      await fs.remove(file.path).catch(() => { });
-      return res.status(404).send({ message: "Usuario no encontrado" });
-    }
-
-    const relativePath = path.relative(process.cwd(), file.path).replace(/\\/g, "/");
-    const normalizedPath = relativePath.startsWith("uploads/") ? relativePath : `uploads/${relativePath}`;
-
-    const updatedUser = await userRepository.updatePhotoByCedula(cedula, normalizedPath);
-
-    const previousPath = existingUser.photo_url;
-    if (previousPath && !previousPath.startsWith("data:")) {
-      const absolutePrev = path.resolve(process.cwd(), previousPath.replace(/^\/+/, ""));
-      if (await fs.pathExists(absolutePrev)) {
-        await fs.remove(absolutePrev).catch(() => { });
-      }
-    }
-
-    res.json({ result: "ok", user: updatedUser });
-  } catch (error) {
-    await fs.remove(file.path).catch(() => { });
-    console.error("Error actualizando foto de usuario", error);
-    res.status(500).send({ message: "Error al actualizar la foto", error: error.message });
-  }
-};
+// updateUserPhoto vive ahora en user_photo_controller.js, junto a la lectura.
 
 export const getUserMenu = async (req, res) => {
   try {
