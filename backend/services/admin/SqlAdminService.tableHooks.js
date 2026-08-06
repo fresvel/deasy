@@ -174,6 +174,15 @@ const definitionChildGuards = (entityLabel) => ({
       delete ctx.updates.process_definition_id;
     }
     await ctx.service.ensureDraftDefinitionContext(ctx.existing.process_definition_id, { entityLabel });
+  },
+  // remove() no lee la fila antes de borrar (el motor solo necesita las claves), así que el hook
+  // la busca él mismo: sin ella no se sabe de qué configuración cuelga.
+  async beforeRemove(ctx) {
+    const existing = await ctx.service.getByKeys(ctx.tableName, ctx.keyPayload);
+    if (!existing) {
+      throw new Error("Registro no encontrado.");
+    }
+    await ctx.service.ensureDraftDefinitionContext(existing.process_definition_id, { entityLabel });
   }
 });
 
@@ -569,6 +578,19 @@ export const TABLE_HOOKS = {
       }
     },
 
+    // Una configuración solo se elimina en borrador. Sus tablas hijas ya lo validan por su cuenta,
+    // pero la definición en sí caía al DELETE genérico sin comprobar estado: una configuración
+    // ACTIVA (con corridas en curso que la referencian) era borrable por API.
+    async beforeRemove(ctx) {
+      const definition = await ctx.service.getProcessDefinitionVersion(ctx.keyPayload.id);
+      if (!definition) {
+        throw new Error("La configuracion de proceso seleccionada no existe.");
+      }
+      if (String(definition.status || "") !== "draft") {
+        throw new Error("Solo se pueden eliminar configuraciones de proceso cuando estan en draft.");
+      }
+    },
+
     // Solo la ACTIVACIÓN necesita transacción; el resto de ediciones del borrador son un UPDATE llano.
     needsUpdateTransaction: (ctx) => ctx.state.activateDraftVersion === true,
 
@@ -642,6 +664,38 @@ export const TABLE_HOOKS = {
 
     beforeUpdate: TEMPLATE_CHILD_GUARDS.beforeUpdate,
 
+    beforeRemove: TEMPLATE_CHILD_GUARDS.beforeRemove,
+
+    // Quitar una plantilla de la configuración: sus flujos derivados (entrega/firma) cuelgan del
+    // vínculo y sus FKs NO son ON DELETE CASCADE, así que hay que borrarlos ANTES, en la misma
+    // transacción. Solo aplica en draft (lo garantiza beforeRemove); en draft no existen instancias
+    // de runtime (requests/firmas), por eso basta con templates + pasos.
+    async beforeRemoveTx(ctx) {
+      const templateId = Number(ctx.keyPayload.id);
+      const [fillTemplates] = await ctx.connection.query(
+        "SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ?",
+        [templateId]
+      );
+      for (const template of fillTemplates) {
+        await ctx.connection.query("DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?", [template.id]);
+      }
+      await ctx.connection.query(
+        "DELETE FROM fill_flow_templates WHERE process_definition_template_id = ?",
+        [templateId]
+      );
+      const [signatureTemplates] = await ctx.connection.query(
+        "SELECT id FROM signature_flow_templates WHERE process_definition_template_id = ?",
+        [templateId]
+      );
+      for (const template of signatureTemplates) {
+        await ctx.connection.query("DELETE FROM signature_flow_steps WHERE template_id = ?", [template.id]);
+      }
+      await ctx.connection.query(
+        "DELETE FROM signature_flow_templates WHERE process_definition_template_id = ?",
+        [templateId]
+      );
+    },
+
     // Al reenlazar hay que resincronizar los flujos del artifact. El id sale de lo que se actualiza,
     // de la fila existente o de la propia clave, en ese orden.
     async afterUpdateTx(ctx) {
@@ -674,7 +728,9 @@ export const TABLE_HOOKS = {
           ctx.updates[key] = mergedRule[key];
         }
       }
-    }
+    },
+
+    beforeRemove: RULE_CHILD_GUARDS.beforeRemove
   },
 
   process_definition_period_types: {
@@ -686,7 +742,9 @@ export const TABLE_HOOKS = {
       }
     },
 
-    beforeUpdate: PERIOD_CHILD_GUARDS.beforeUpdate
+    beforeUpdate: PERIOD_CHILD_GUARDS.beforeUpdate,
+
+    beforeRemove: PERIOD_CHILD_GUARDS.beforeRemove
   },
 
   template_artifacts: {
@@ -1044,6 +1102,23 @@ export const TABLE_HOOKS = {
         delete ctx.updates.process_definition_template_id;
       }
       const template = await ctx.service.getTaskTemplate(ctx.existing.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
+      }
+      await ctx.service.ensureDraftDefinitionContext(
+        template.process_definition_id,
+        { entityLabel: "los flujos de firma" }
+      );
+    },
+
+    // Cuelga de la configuración a través de su plantilla, no por `process_definition_id` directo,
+    // así que no puede reutilizar el guard compartido de las tres hijas.
+    async beforeRemove(ctx) {
+      const existing = await ctx.service.getByKeys(ctx.tableName, ctx.keyPayload);
+      if (!existing) {
+        throw new Error("Registro no encontrado.");
+      }
+      const template = await ctx.service.getTaskTemplate(existing.process_definition_template_id);
       if (!template) {
         throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
       }

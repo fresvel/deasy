@@ -757,6 +757,70 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
   }
 });
 
+// --- 8b. Injertos de remove() ------------------------------------------------------------------
+// `remove()` tiene sus propios injertos por tabla (el cut #7 solo tocó create/update): guards de
+// "solo en borrador" para la configuración y sus hijas, y una rama TRANSACCIONAL que borra en
+// cascada los flujos derivados antes del vínculo. Esta sección es su red.
+
+const REMOVE_GUARD_CASES = [
+  ["configuracion_activa", "process_definition_versions", 1],
+  ["plantilla_de_configuracion_activa", "process_definition_templates", 1],
+  ["flujo_de_firma_de_configuracion_activa", "signature_flow_templates", 1],
+];
+
+for (const [key, table, id] of REMOVE_GUARD_CASES) {
+  test(`DELETE /admin/sql/${table} sobre configuración activa -> guard de borrador (${key})`, async () => {
+    const token = await tokenFor("admin");
+    const res = await del(`/admin/sql/${table}`, { token, body: { keys: { id } } });
+    matchSnapshot(SUITE, `remove_guard_${key}`, { status: res.status, body: normalize(res.body) });
+  });
+}
+
+// El camino de ÉXITO de la rama transaccional: quitar una plantilla de una configuración borra
+// primero sus flujos derivados (sus FKs NO son ON DELETE CASCADE, así que sin eso el DELETE del
+// vínculo falla). Se fabrica el borrador clonando la configuración sembrada — que se lleva consigo
+// la plantilla y sus flujos — y se destruye al final.
+test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flujos del vínculo", async () => {
+  const token = await tokenFor("admin");
+  const source = (await get("/admin/sql/process_definition_versions", { token })).body?.[0];
+  assert.ok(source?.id, "la fixture debe traer una configuración");
+
+  const clone = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      process_id: source.process_id,
+      series_id: source.series_id,
+      definition_version: "9.9.9",
+      effective_from: "2026-03-01",
+      source_process_definition_id: source.id,
+    },
+  });
+  assert.equal(clone.status, 200, `el clon debe crearse: ${JSON.stringify(clone.body)}`);
+  const cloneId = clone.body?.id;
+
+  const links = (await get("/admin/sql/process_definition_templates", { token })).body || [];
+  const link = links.find((row) => row.process_definition_id === cloneId);
+  assert.ok(link, "el clon debe traerse la plantilla de la configuración origen");
+
+  const flowsBefore = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
+    .filter((row) => row.process_definition_template_id === link.id);
+  assert.ok(flowsBefore.length > 0, "el vínculo clonado debe tener flujos de entrega colgando");
+
+  const removed = await del("/admin/sql/process_definition_templates", { token, body: { keys: { id: link.id } } });
+  matchSnapshot(SUITE, "remove_process_definition_templates_cascada", {
+    status: removed.status,
+    body: normalize(removed.body, { maskIdKeys: true }),
+  });
+  assert.equal(removed.status, 200, `el borrado debe funcionar: ${JSON.stringify(removed.body)}`);
+
+  // El efecto observable del injerto: los flujos derivados desaparecen con el vínculo.
+  const flowsAfter = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
+    .filter((row) => row.process_definition_template_id === link.id);
+  assert.equal(flowsAfter.length, 0, "los flujos de entrega del vínculo deben borrarse en cascada");
+
+  await del("/admin/sql/process_definition_versions", { token, body: { keys: { id: cloneId } } });
+});
+
 // `template_artifacts` es el único graft que PROHÍBE la creación por CRUD admin de plano.
 test("POST /admin/sql/template_artifacts -> graft: creación prohibida por CRUD admin", async () => {
   const token = await tokenFor("admin");

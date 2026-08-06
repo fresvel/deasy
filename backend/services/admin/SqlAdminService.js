@@ -2411,110 +2411,48 @@ export default class SqlAdminService {
     }
   }
 
-  // Al BORRAR, la violación típica es de clave foránea (algo depende de esta fila). Sin esto el
-  // usuario ve el texto interno de PostgreSQL con nombres de tabla y de constraint.
-  #asConstraintError(error, tableName) {
-    return translateConstraintError(error, tableName, { deleting: true }) || error;
-  }
-
   async remove(tableName, keys) {
     this.ensurePool();
     const config = getConfig(tableName);
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
 
-    // La configuración en sí: solo se puede eliminar en draft. Sus tablas hijas ya lo validan más abajo con
-    // ensureDraftDefinitionContext, pero la propia definición caía al DELETE genérico del final sin comprobar
-    // status, así que una configuración activa (con corridas en curso que la referencian) era borrable por API.
-    if (tableName === "process_definition_versions") {
-      const definition = await this.getProcessDefinitionVersion(keyPayload.id);
-      if (!definition) {
-        throw new Error("La configuracion de proceso seleccionada no existe.");
-      }
-      if (String(definition.status || "") !== "draft") {
-        throw new Error("Solo se pueden eliminar configuraciones de proceso cuando estan en draft.");
-      }
+    const hooks = getTableHooks(tableName);
+    const ctx = {
+      service: this,
+      pool: this.pool,
+      connection: null,
+      tableName,
+      config,
+      keys,
+      keyPayload,
+      where,
+      params,
+      state: {},
+      notice: ""
+    };
+
+    if (hooks.beforeRemove) {
+      await hooks.beforeRemove(ctx);
     }
 
-    if (
-      tableName === "process_definition_templates"
-      || tableName === "process_target_rules"
-      || tableName === "process_definition_period_types"
-    ) {
-      const existing = await this.getByKeys(tableName, keyPayload);
-      if (!existing) {
-        throw new Error("Registro no encontrado.");
-      }
-      await this.ensureDraftDefinitionContext(
-        existing.process_definition_id,
-        {
-          entityLabel:
-            tableName === "process_definition_templates"
-              ? "las plantillas de configuracion"
-              : tableName === "process_target_rules"
-                ? "las reglas de alcance"
-                : "los periodos del proceso"
-        }
-      );
-    }
-
-    if (tableName === "signature_flow_templates") {
-      const existing = await this.getByKeys(tableName, keyPayload);
-      if (!existing) {
-        throw new Error("Registro no encontrado.");
-      }
-      const template = await this.getTaskTemplate(existing.process_definition_template_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
-      }
-      await this.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de firma" }
-      );
-    }
-
-    // Quitar una plantilla de la configuración: sus flujos derivados (entrega/firma) cuelgan del vínculo y sus
-    // FKs NO son ON DELETE CASCADE, así que hay que borrarlos primero. Solo aplica en draft (validado arriba);
-    // en draft no existen instancias de runtime (requests/firmas), por eso basta con templates + pasos.
-    if (tableName === "process_definition_templates") {
-      const templateId = Number(keyPayload.id);
-      const connection = await this.pool.getConnection();
-      try {
-        await connection.beginTransaction();
-        // Flujos de ENTREGA del vínculo: pasos → template.
-        const [fillTpls] = await connection.query(
-          "SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ?",
-          [templateId]
-        );
-        for (const tpl of fillTpls) {
-          await connection.query("DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?", [tpl.id]);
-        }
-        await connection.query("DELETE FROM fill_flow_templates WHERE process_definition_template_id = ?", [templateId]);
-        // Flujos de FIRMA del vínculo: pasos → template.
-        const [sigTpls] = await connection.query(
-          "SELECT id FROM signature_flow_templates WHERE process_definition_template_id = ?",
-          [templateId]
-        );
-        for (const tpl of sigTpls) {
-          await connection.query("DELETE FROM signature_flow_steps WHERE template_id = ?", [tpl.id]);
-        }
-        await connection.query("DELETE FROM signature_flow_templates WHERE process_definition_template_id = ?", [templateId]);
-        // Finalmente el vínculo.
-        await connection.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
-        await connection.commit();
-      } catch (error) {
-        await connection.rollback();
-        throw this.#asConstraintError(error, tableName);
-      } finally {
-        connection.release();
-      }
-      return keyPayload;
-    }
+    const runDelete = (executor) => executor.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
 
     try {
-      await this.pool.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
+      if (hooks.beforeRemoveTx || hooks.afterRemoveTx) {
+        await runInTransaction(
+          this.pool,
+          ctx,
+          { before: hooks.beforeRemoveTx, after: hooks.afterRemoveTx },
+          runDelete
+        );
+      } else {
+        await runDelete(this.pool);
+      }
     } catch (error) {
-      throw this.#asConstraintError(error, tableName);
+      // Al BORRAR, la violación típica es de clave foránea (algo depende de esta fila). Sin esto el
+      // usuario ve el texto interno de PostgreSQL con nombres de tabla y de constraint.
+      throw translateConstraintError(error, tableName, { deleting: true }) || error;
     }
     return keyPayload;
   }

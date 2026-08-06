@@ -786,6 +786,32 @@
       ]
     }
   },
+  "remove_guard_configuracion_activa": {
+    "status": 400,
+    "body": {
+      "message": "Solo se pueden eliminar configuraciones de proceso cuando estan en draft."
+    }
+  },
+  "remove_guard_flujo_de_firma_de_configuracion_activa": {
+    "status": 400,
+    "body": {
+      "message": "Solo se pueden modificar los flujos de firma cuando la configuracion esta en draft."
+    }
+  },
+  "remove_guard_plantilla_de_configuracion_activa": {
+    "status": 400,
+    "body": {
+      "message": "Solo se pueden modificar las plantillas de configuracion cuando la configuracion esta en draft."
+    }
+  },
+  "remove_process_definition_templates_cascada": {
+    "status": 200,
+    "body": {
+      "deleted": {
+        "id": "<normalized>"
+      }
+    }
+  },
   "roundtrip_create": {
     "status": 200,
     "body": {
