@@ -54,7 +54,7 @@ métrica que ordena a los God es la **complejidad cognitiva** acumulada por fich
 
 | CC | ncloc | Fichero | Veredicto |
 |---:|---:|---|---|
-| **1305** | 5295 | `backend/services/admin/SqlAdminService.js` | **God #1** — el 14 % de toda la CC del repo en un fichero. **Cuts #1–#7 HECHOS: 5924 → 2538 L (−57 %), `create()`/`update()` sin injertos** (§3.1). Falta re-escanear con Sonar. |
+| **1305** | 5295 | `backend/services/admin/SqlAdminService.js` | **God #1 — CERRADO.** Cuts #1–#9: 5924 → **897 L (−85 %)**; `create()`/`update()`/`remove()` sin un solo injerto (§3.1). Falta re-escanear con Sonar. |
 | **356** | 1190 | `signer/app.py` | 🆕 **God nunca auditado** (microservicio firmante Python) |
 | 352 | 4838 | `frontend/.../home/views/HomeView.vue` | God conocido, refactor en curso |
 | 345 | 1994 | `backend/controllers/users/user_controler.js` | God conocido — **partido pero no simplificado** |
@@ -215,6 +215,54 @@ nombre generado, el `__notice` del clonado y en qué guard se detiene la activac
 **Verificación de cada tanda:** `node --check` + backend arranca ("Servidor iniciado") + char en modo compare con los goldens
 **idénticos** + unit 177/177 + smoke por API de los hooks que el char no alcanza (los tres de `tasks`).
 
+#### Cuts #7b, #8 y #9 — God #1 CERRADO (2026-08-06)
+
+| cut | qué | `SqlAdminService.js` |
+|---|---|---:|
+| **#7b** | `remove()` al registro (5 tablas + su rama en cascada) → 99 → **47 L, 0 injertos** | 2538 → 2459 |
+| **#8** | `TemplateLifecycleService` (ciclo de vida de plantillas/entregables): 14 métodos + 11 helpers de módulo, 1 507 L | 2459 → **1094** |
+| **#9** | `ProcessGraphService` (jerarquía y grafo de procesos, 5 métodos): gemelo exacto de `OrgStructureService` | 1094 → **897** |
+
+**Acumulado God #1 (cuts #1–#9): 5 924 → 897 L (−85 %).** Quedan 24 métodos propios (~640 L): el motor CRUD (~460 L, el
+"buen diseño" que §3.1 dice no tocar), los tres guards de activación y seis lecturas cortas que usan los hooks; más 68
+delegadores de una línea a los ocho servicios extraídos. Los 8 `tableName === X` que sobreviven están **solo en el motor de
+LECTURA** (`list` ×6, `getByKeys` ×1 + `sanitizePersonRow`): son fragmentos de SELECT/JOIN y overrides de orden, otra forma
+distinta, que necesitarían hooks propios.
+
+**Red de caracterización: char 121 → 148**, con un flow nuevo `zz_template_lifecycle` (prefijo `zz_` deliberado: muta la base)
+que fija el update guiado de punta a punta — crear borradores de plantilla + configuración clonada, y publicarlos, que es
+donde se encadena casi todo el cluster del cut #8.
+
+**`saveTemplateArtifactDraft` (542 L) sigue sin descomponer**, dicho claro: se movió LITERAL. Su ruta es multipart con subida
+de ficheros y no tiene caracterización propia; partirlo a ciegas sería el error que §1 señala. Es el siguiente trabajo, y
+necesita su red antes. Sí quedó verificado por smoke en sus dos ramas (POST con PDF de referencia y PUT `isEdit`).
+
+### 3.1.b Deuda encontrada al revisar (2026-08-06) — dos defectos de producción
+
+Revisando la deuda antes de re-escanear con Sonar aparecieron **dos fallos reales**, ninguno introducido por los cuts:
+
+**1. Los mapeos de error hablaban MySQL sobre una base PostgreSQL.** Ocho `if (error.code === "ER_DUP_ENTRY")` /
+`"ER_ROW_IS_REFERENCED"` repartidos por cuatro ficheros llevaban muertos desde la migración: PostgreSQL usa **SQLSTATE**
+(`23505`, `23503`). El usuario recibía el esquema de la base en la cara —
+`duplicate key value violates unique constraint "persons_cedula_key"`. Arreglado en `errors/sqlErrors.js`, que además
+aprovecha lo que el driver ya daba y nadie usaba: `constraint` (nombre exacto, sustituye al frágil
+`String(message).includes(...)`), `table` y `detail` (de donde salen las columnas), y las etiquetas de `sqlTables.js` para
+hablar el idioma del formulario. Se conectó una **red genérica en `create`/`update`/`remove`**: sin ella solo estaban
+cubiertas las tablas con mensaje propio y las otras ~40 seguían filtrando el texto crudo. Dos defectos adyacentes lo
+bloqueaban: `sql_admin_controller` tenía **39 de 47 catch con el status hardcodeado** (aplastaba a 400 no solo los 409
+nuevos, también seis `statusCode` deliberados —403 y 422— que ya existían), y `createUser` devolvía el mensaje crudo en un
+campo hermano.
+
+**2. Cuatro `ReferenceError` latentes de los cuts #2/#3/#6.** Helpers movidos a módulos hermanos sin su `import`:
+`slugify` en `orgStructure`(→`createUnitWithParent`) y en `taskAssignment`(→`getCargoCodeMap`), `parseYamlDocument` y
+`bumpSemanticVersion` en `templateArtifact` (→ meta de plantilla y update guiado). **Rotos en producción tres semanas.**
+Es una clase de fallo que se cuela por todas las puertas: `node --check` valida sintaxis y un identificador libre es sintaxis
+válida; el backend **arranca** sin quejarse porque el fallo es en tiempo de LLAMADA; y char/unit solo lo ven si cubren esa
+ruta exacta. La lección registrada tras el cut #4 ("`node --check` no valida resolución de imports") se quedaba corta:
+**verificar el arranque tampoco basta.** Arreglo duradero: `npm run check:imports`
+(`scripts/check_missing_imports.mjs`), que construye el vocabulario de lo que exporta cada módulo y busca usos en ficheros
+que ni lo importan ni lo declaran. Verificado que caza los cuatro.
+
 ### 3.2 Controllers que violan CLAUDE.md (lógica de negocio arriba)
 
 | Fichero:línea | Qué hay | Baja a |
@@ -304,9 +352,10 @@ el God de la capa de servicio (§3.1). Reordenar fachadas sin partir `SqlAdminSe
 
 1. **Admin front → subrutas (Fase 3.5)** — riesgo medio, gana funcionalidad (deep-link), borra
    `useAdminTableReset` y colapsa `AdminView`. *En curso.*
-2. ~~**`SqlAdminService` (God #1)**~~ — ✅ **HECHO** (cuts #1–#7, §3.1): *Extract Class* de los 6 subsistemas +
-   registro de hooks por tabla. 5924 → 2538 L. Pendiente: re-escaneo Sonar y mapear los códigos de error de
-   PostgreSQL (los remapeos de `ER_DUP_ENTRY` están muertos desde la migración).
+2. ~~**`SqlAdminService` (God #1)**~~ — ✅ **HECHO** (cuts #1–#9, §3.1): *Extract Class* de 8 subsistemas +
+   registro de hooks por tabla en los tres verbos de escritura. 5924 → 897 L (−85 %). Los códigos de error de
+   PostgreSQL ya están mapeados (§3.1.b). **Pendiente: re-escaneo Sonar** (el objetivo era complejidad, no
+   líneas, y solo Sonar lo confirma) y **descomponer `saveTemplateArtifactDraft`** (542 L, movido literal).
 3. **Firmas: `usePdfCanvas` + `useSignatureFieldPlacement` + `signatureService`** — mata ~250 L
    duplicadas y el sello fantasma en la raíz.
 4. **Controllers → services** (`FillRequestWorkflowService`, `BatchSigningService`, `GeneralTaskService`,
