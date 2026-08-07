@@ -454,7 +454,40 @@ histórica de §2) y las 4 marcas manuales vivas (§4.4-R1).
 **Criterio de cierre:** cobertura reportada > 0 y las condiciones del gate reflejan el código y no la
 falta de instrumentación.
 
-### Fase B — Etiquetado de formularios (35 % del backlog, y la nota C)
+### Fase B — Etiquetado de formularios — 🟡 **71 % hecha (2026-08-06)**
+
+| | Antes | Después |
+|---|---:|---:|
+| Etiquetado (`S6853` + `InputWithoutLabelCheck`) | 289 | **83** (−71 %) |
+| **Bugs** | 143 | **40** (−72 %) |
+| Incidencias abiertas | 734 | **528** |
+| Deuda (SQALE) | 4 709 min | **4 194 min** |
+| Fiabilidad | C | **C** — sigue en C: pasa a A solo con **0 bugs** |
+
+**103 pares `label`/control enlazados** con `for`/`id` en 11 ficheros. Los ids se generan con
+`fieldId(nombre)` sobre `useId()` de Vue 3.5, **no con literales**: dos instancias del mismo modal
+montadas a la vez tendrían ids duplicados, que es peor que no tener ninguno.
+
+**La hipótesis con la que nació la fase era falsa y conviene no repetirla:** esto no se arreglaba en
+`SInput`/`SSelect`. `SInput` ya emite `<label :for>` + `<input :id>` correctamente. El problema eran
+`<input>` sueltos en las vistas, y por eso hubo que ir fichero a fichero.
+
+#### Las 83 que quedan NO son un barrido — se parten en dos grupos
+
+Verificado leyendo el contexto de cada una. Ninguna se arregla con `for`/`id`, porque **no hay un
+`<label>` con el que emparejar**:
+
+| Nº | Grupo | Qué hace falta |
+|---:|---|---|
+| ~45 | **Control sin `<label>` ninguno.** El nombre visible es un `<h4>`, un `<span>`, la cabecera de una columna de tabla, o un `placeholder`. Incluye un `<input type="file">` oculto (`DossierSectionCrud.vue:78`) que se dispara por código | `aria-label`, o `aria-labelledby` apuntando al encabezado que ya existe. **Decisión de accesibilidad, una a una** |
+| ~33 | **`<label>` seguido de un COMPONENTE**, no de un control nativo: `AdminLookupField` (8), `s-select` (8), `AdminSelectField` (5), `SSelect` (4), `PdfDropField` (4), `AdminInputField` (3) | Que el componente acepte y reenvíe un `id` (o que emita su propio `<label>`, como ya hace `SInput`). **Cambia la API de 6 componentes compartidos**; aquí sí aplica el "arreglar en origen", pero sobre este conjunto, no sobre `SInput` |
+
+Ambos grupos piden criterio y **verificación en navegador** (que un lector de pantalla anuncie el
+nombre correcto), no un script. El segundo es el de mejor retorno: 6 componentes para 33 incidencias.
+
+<details><summary>Redacción original de la fase (referencia)</summary>
+
+#### Fase B — Etiquetado de formularios (35 % del backlog, y la nota C)
 
 289 incidencias, 141 de ellas clasificadas como BUG. **El conteo por fichero ya está hecho** (§2.1) y
 corrige la hipótesis con la que nació esta fase: no es principalmente cosa de `SInput`/`SSelect` ni de
@@ -477,6 +510,8 @@ es la hipótesis por defecto** — hay que abrir uno de los cinco y comprobar si
 compartido o `<input>` suelto antes de decidir por dónde entrar. Medir tras el primer fichero.
 
 **Retorno esperado:** fiabilidad **C → A**, backlog −35 %, y accesibilidad real, que es el punto.
+
+</details>
 
 ### Fase C — `saveTemplateArtifactDraft`, fase 2 (el corte)
 
