@@ -59,7 +59,7 @@ const capitalizeFirst = (value) => {
 };
 
 const prettifySeriesCode = (value) =>
-  capitalizeFirst(String(value || "").replaceAll(/-/g, " "));
+  capitalizeFirst(String(value || "").replaceAll("-", " "));
 
 const buildSeriesDisplayName = ({ sourceType, unitTypeName, cargoName, code } = {}) => {
   const unitTypeLabel = capitalizeFirst(unitTypeName);

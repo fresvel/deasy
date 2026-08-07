@@ -450,7 +450,7 @@ export default class TemplateArtifactService {
     try {
       await unzipToDirectory(zipFilePath, workDir);
       const uploaded = walkFiles(workDir)
-        .map((abs) => ({ abs, rel: path.relative(workDir, abs).replaceAll(/\\/g, "/") }))
+        .map((abs) => ({ abs, rel: path.relative(workDir, abs).replaceAll("\\", "/") }))
         .filter((entry) => !path.basename(entry.rel).startsWith("."));
       if (!uploaded.length) {
         throw new Error("El ZIP no contiene archivos.");

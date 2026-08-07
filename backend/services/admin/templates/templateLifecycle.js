@@ -1217,16 +1217,16 @@ export default class TemplateLifecycleService {
       "utf8"
     );
     const metaLines = [
-      `name: "${displayName.replaceAll(/"/g, '\\"')}"`,
-      `version: "${storageVersion.replaceAll(/"/g, '\\"')}"`,
-      `template_code: "${templateCode.replaceAll(/"/g, '\\"')}"`,
+      `name: "${displayName.replaceAll("\"", '\\"')}"`,
+      `version: "${storageVersion.replaceAll("\"", '\\"')}"`,
+      `template_code: "${templateCode.replaceAll("\"", '\\"')}"`,
       `template_scope: ${templateScope}`
     ];
     if (description) {
-      metaLines.push(`description: "${description.replaceAll(/"/g, '\\"')}"`);
+      metaLines.push(`description: "${description.replaceAll("\"", '\\"')}"`);
     }
     if (seedRow?.seed_code) {
-      metaLines.push(`seed_code: "${String(seedRow.seed_code).replaceAll(/"/g, '\\"')}"`);
+      metaLines.push(`seed_code: "${String(seedRow.seed_code).replaceAll("\"", '\\"')}"`);
     }
     // Flujos definidos desde el editor web (fill/signatures). Si no llegan, se usa el contrato vacío.
     let fillWorkflow = data.fill_workflow;

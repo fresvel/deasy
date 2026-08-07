@@ -87,7 +87,7 @@ class AdminPresentationService {
     if (value === null || value === undefined || value === "") {
       return "";
     }
-    const normalized = String(value).replaceAll(/\\/g, "/").replaceAll(/\/+$/g, "");
+    const normalized = String(value).replaceAll("\\", "/").replaceAll(/\/+$/g, "");
     const parts = normalized.split("/").filter(Boolean);
     const fileName = parts.length ? parts[parts.length - 1] : "";
     if (fileName.toLowerCase() === "src") {

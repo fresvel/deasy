@@ -27,7 +27,7 @@ const capitalizeFirst = (value) => {
 };
 
 const prettifySeriesCode = (value) =>
-  capitalizeFirst(String(value || "").replaceAll(/-/g, " "));
+  capitalizeFirst(String(value || "").replaceAll("-", " "));
 
 export const buildProcessDefinitionSeriesDisplayName = (series = {}) => {
   const sourceType = String(series?.source_type || "").trim();

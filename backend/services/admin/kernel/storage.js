@@ -42,7 +42,7 @@ const hashDirectory = (dirPath) => {
     .filter((filePath) => !path.basename(filePath).startsWith("."))
     .sort((left, right) => left.localeCompare(right));
   for (const filePath of files) {
-    const relative = path.relative(dirPath, filePath).replaceAll(/\\/g, "/");
+    const relative = path.relative(dirPath, filePath).replaceAll("\\", "/");
     hash.update(relative);
     hash.update(fs.readFileSync(filePath));
   }
@@ -55,7 +55,7 @@ const hashDirectory = (dirPath) => {
 // la re-subida del admin en la Fase 3.
 const buildProtectedManifest = (dirPath, editableSubpath) => {
   const relFiles = walkFiles(dirPath)
-    .map((filePath) => path.relative(dirPath, filePath).replaceAll(/\\/g, "/"))
+    .map((filePath) => path.relative(dirPath, filePath).replaceAll("\\", "/"))
     .filter((rel) => !path.basename(rel).startsWith(".") && rel !== "manifest.json")
     .sort((a, b) => a.localeCompare(b));
   const protectedHashes = {};
@@ -253,7 +253,7 @@ const uploadDirectoryToMinio = async (bucket, objectPrefix, sourceDir) => {
   await ensureMinioBucket(bucket);
   const files = walkFiles(sourceDir).filter((filePath) => !path.basename(filePath).startsWith("."));
   for (const filePath of files) {
-    const relativePath = path.relative(sourceDir, filePath).replaceAll(/\\/g, "/");
+    const relativePath = path.relative(sourceDir, filePath).replaceAll("\\", "/");
     const objectName = normalizeObjectName(objectPrefix, relativePath);
     await fPutObject(bucket, objectName, filePath);
   }

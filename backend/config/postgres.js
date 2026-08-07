@@ -346,7 +346,7 @@ async function ensureUniqueCols(executor) {
     Array.isArray(v) ? v : String(v).replace(/^{|}$/g, "").split(",").map((s) => s.replace(/^"|"$/g, ""));
   const map = new Map();
   for (const row of res.rows) {
-    const tbl = row.tbl.replace(/^[^.]*\./, "").replaceAll(/"/g, "").toLowerCase();
+    const tbl = row.tbl.replace(/^[^.]*\./, "").replaceAll("\"", "").toLowerCase();
     if (!map.has(tbl)) map.set(tbl, []);
     map.get(tbl).push(toArray(row.cols).map((c) => String(c).toLowerCase()));
   }
@@ -392,7 +392,7 @@ async function ensureGeneratedCols(executor) {
 export function applyOnConflict(sql, { uniqueIndexes = [], generatedCols = new Set() } = {}) {
   const m = sql.match(/INSERT\s+(?:IGNORE\s+)?INTO\s+`?(\w+)`?\s*\(([^)]*)\)/i);
   if (!m) return sql;
-  const insertCols = m[2].split(",").map((s) => s.trim().replaceAll(/`/g, "").toLowerCase());
+  const insertCols = m[2].split(",").map((s) => s.trim().replaceAll("`", "").toLowerCase());
 
   const strict = uniqueIndexes.filter((cols) => cols.every((c) => insertCols.includes(c)));
   let pool = strict;
