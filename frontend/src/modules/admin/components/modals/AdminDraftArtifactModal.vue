@@ -321,8 +321,8 @@
                 <input :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
               </div>
               <div class="col-span-3">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
-                <select :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
+                <label :for="fieldId('stepwhomode-step')" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
+                <select :id="fieldId('stepwhomode-step')" :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
                   <option value="task_assignee">Responsable del entregable</option>
                   <option value="scope">Por cargo</option>
                   <option v-if="isAdHoc" value="person">Persona concreta</option>
@@ -482,8 +482,8 @@
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
                 <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
-                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién firma</label>
-                  <select :value="stepWhoMode(signer)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureWho(index, si, $event.target.value)">
+                  <label :for="fieldId('stepwhomode-signer')" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién firma</label>
+                  <select :id="fieldId('stepwhomode-signer')" :value="stepWhoMode(signer)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureWho(index, si, $event.target.value)">
                     <option value="task_assignee">Responsable del entregable</option>
                     <option value="scope">Por cargo</option>
                     <option v-if="isAdHoc" value="person">Persona concreta</option>
@@ -568,7 +568,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, useId } from "vue";
 import axios from "axios";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
@@ -583,6 +583,11 @@ import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 // Configuraciones de proceso destino (para vincular la plantilla).
 const processDefinitionOptions = ref([]);
 const loadProcessDefinitionOptions = async () => {

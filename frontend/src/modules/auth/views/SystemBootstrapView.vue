@@ -30,33 +30,33 @@
         </label>
         <div class="grid gap-4 md:grid-cols-2">
           <div>
-            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
-            <input v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1234567890" />
+            <label :for="fieldId('cedula-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+            <input :id="fieldId('cedula-1')" v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1234567890" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-            <input v-model="form.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" />
+            <label :for="fieldId('email-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+            <input :id="fieldId('email-1')" v-model="form.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
-            <input v-model="form.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Administrador" />
+            <label :for="fieldId('first-name-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+            <input :id="fieldId('first-name-1')" v-model="form.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Administrador" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
-            <input v-model="form.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Principal" />
+            <label :for="fieldId('last-name-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+            <input :id="fieldId('last-name-1')" v-model="form.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Principal" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
-            <input v-model="form.whatsapp" type="text" inputmode="tel" autocomplete="off" class="deasy-auth-field" placeholder="0990000000" />
+            <label :for="fieldId('whatsapp')" class="mb-1.5 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
+            <input :id="fieldId('whatsapp')" v-model="form.whatsapp" type="text" inputmode="tel" autocomplete="off" class="deasy-auth-field" placeholder="0990000000" />
           </div>
           <div class="hidden md:block"></div>
           <div>
-            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
-            <input v-model="form.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Nueva contraseña" />
+            <label :for="fieldId('password-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+            <input :id="fieldId('password-1')" v-model="form.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Nueva contraseña" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-            <input v-model="form.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+            <label :for="fieldId('confirm-password-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+            <input :id="fieldId('confirm-password-1')" v-model="form.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
           </div>
         </div>
       </div>
@@ -78,28 +78,28 @@
           </label>
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
-              <input v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="0987654321" />
+              <label :for="fieldId('cedula-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+              <input :id="fieldId('cedula-2')" v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="0987654321" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-              <input v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="gestor@institucion.edu.ec" />
+              <label :for="fieldId('email-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+              <input :id="fieldId('email-2')" v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="gestor@institucion.edu.ec" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
-              <input v-model="gestorForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Gestor" />
+              <label :for="fieldId('first-name-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+              <input :id="fieldId('first-name-2')" v-model="gestorForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Gestor" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
-              <input v-model="gestorForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Procesos" />
+              <label :for="fieldId('last-name-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+              <input :id="fieldId('last-name-2')" v-model="gestorForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Procesos" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
-              <input v-model="gestorForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del gestor" />
+              <label :for="fieldId('password-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+              <input :id="fieldId('password-2')" v-model="gestorForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del gestor" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-              <input v-model="gestorForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+              <label :for="fieldId('confirm-password-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+              <input :id="fieldId('confirm-password-2')" v-model="gestorForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
             </div>
           </div>
         </div>
@@ -120,28 +120,28 @@
           </label>
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
-              <input v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1122334455" />
+              <label :for="fieldId('cedula-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+              <input :id="fieldId('cedula-3')" v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1122334455" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-              <input v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="usuario@institucion.edu.ec" />
+              <label :for="fieldId('email-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+              <input :id="fieldId('email-3')" v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="usuario@institucion.edu.ec" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
-              <input v-model="usuarioForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Usuario" />
+              <label :for="fieldId('first-name-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+              <input :id="fieldId('first-name-3')" v-model="usuarioForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Usuario" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
-              <input v-model="usuarioForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Prueba" />
+              <label :for="fieldId('last-name-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+              <input :id="fieldId('last-name-3')" v-model="usuarioForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Prueba" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
-              <input v-model="usuarioForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del usuario" />
+              <label :for="fieldId('password-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+              <input :id="fieldId('password-3')" v-model="usuarioForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del usuario" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-              <input v-model="usuarioForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+              <label :for="fieldId('confirm-password-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+              <input :id="fieldId('confirm-password-3')" v-model="usuarioForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
             </div>
           </div>
         </div>
@@ -329,13 +329,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, useId } from "vue";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import AuthLayout from '@/layouts/auth/AuthLayout.vue';
 import { useRouter } from "vue-router";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import SystemBootstrapService from "@/modules/auth/services/SystemBootstrapService";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 import {
   IconAlertCircle,
   IconAlertTriangle,

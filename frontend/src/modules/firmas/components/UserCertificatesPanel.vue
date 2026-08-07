@@ -86,8 +86,8 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-slate-700">Nombre visible</label>
-          <input
+          <label :for="fieldId('uploadlabel')" class="text-sm font-semibold text-slate-700">Nombre visible</label>
+          <input :id="fieldId('uploadlabel')"
             v-model="uploadLabel"
             type="text"
             class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch, useId } from "vue";
 import { IconCertificate } from "@tabler/icons-vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
@@ -131,6 +131,11 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 const props = defineProps({
   title: {
     type: String,

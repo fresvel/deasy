@@ -49,8 +49,8 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">Funciones, cátedras o actividades</label>
-      <textarea
+      <label :for="fieldId('actividades')" class="profile-field-label">Funciones, cátedras o actividades</label>
+      <textarea :id="fieldId('actividades')"
         class="profile-textarea"
         rows="3"
         v-model="form.actividades"
@@ -83,13 +83,18 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, defineEmits, watch, computed } from "vue";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
 
 import DossierService from "@/modules/dossier/services/DossierService";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 import SDate from "@/shared/components/forms/SDate.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 const props = defineProps({
   editingItem: {
     type: Object,

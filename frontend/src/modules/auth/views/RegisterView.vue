@@ -29,8 +29,8 @@
 
               <div class="deasy-form-grid">
                 <div>
-                  <label class="deasy-form-label">Nombres</label>
-                  <input
+                  <label :for="fieldId('first-name')" class="deasy-form-label">Nombres</label>
+                  <input :id="fieldId('first-name')"
                     v-model="newuser.first_name"
                     type="text"
                     required
@@ -40,8 +40,8 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Apellidos</label>
-                  <input
+                  <label :for="fieldId('last-name')" class="deasy-form-label">Apellidos</label>
+                  <input :id="fieldId('last-name')"
                     v-model="newuser.last_name"
                     type="text"
                     required
@@ -51,8 +51,8 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Cédula o Pasaporte</label>
-                  <input
+                  <label :for="fieldId('cedula')" class="deasy-form-label">Cédula o Pasaporte</label>
+                  <input :id="fieldId('cedula')"
                     v-model="newuser.cedula"
                     type="text"
                     required
@@ -65,8 +65,8 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Correo electrónico</label>
-                  <input
+                  <label :for="fieldId('email')" class="deasy-form-label">Correo electrónico</label>
+                  <input :id="fieldId('email')"
                     v-model="newuser.email"
                     type="email"
                     required
@@ -114,16 +114,16 @@
 
               <div class="deasy-form-grid--three">
                 <div>
-                  <label class="deasy-form-label">País</label>
-                  <select v-model="newuser.pais_residencia" required class="deasy-auth-field">
+                  <label :for="fieldId('pais-residencia')" class="deasy-form-label">País</label>
+                  <select :id="fieldId('pais-residencia')" v-model="newuser.pais_residencia" required class="deasy-auth-field">
                     <option value="" disabled>Selecciona un país</option>
                     <option v-for="c in countriesData" :key="c.es_name" :value="c.es_name">{{ c.es_name }}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Provincia / Estado</label>
-                  <input
+                  <label :for="fieldId('provincia-residencia')" class="deasy-form-label">Provincia / Estado</label>
+                  <input :id="fieldId('provincia-residencia')"
                     v-model="newuser.provincia_residencia"
                     type="text"
                     required
@@ -133,8 +133,8 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Ciudad</label>
-                  <input
+                  <label :for="fieldId('ciudad-residencia')" class="deasy-form-label">Ciudad</label>
+                  <input :id="fieldId('ciudad-residencia')"
                     v-model="newuser.ciudad_residencia"
                     type="text"
                     required
@@ -144,8 +144,8 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Calle primaria</label>
-                  <input
+                  <label :for="fieldId('calle-primaria')" class="deasy-form-label">Calle primaria</label>
+                  <input :id="fieldId('calle-primaria')"
                     v-model="newuser.calle_primaria"
                     type="text"
                     required
@@ -155,8 +155,8 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Calle secundaria</label>
-                  <input
+                  <label :for="fieldId('calle-secundaria')" class="deasy-form-label">Calle secundaria</label>
+                  <input :id="fieldId('calle-secundaria')"
                     v-model="newuser.calle_secundaria"
                     type="text"
                     required
@@ -166,8 +166,8 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Código postal</label>
-                  <input
+                  <label :for="fieldId('codigo-postal')" class="deasy-form-label">Código postal</label>
+                  <input :id="fieldId('codigo-postal')"
                     v-model="newuser.codigo_postal"
                     type="text"
                     required
@@ -374,7 +374,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted, useId } from "vue";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
@@ -385,6 +385,11 @@ import AppTag from "@/shared/components/data/AppTag.vue";
 import { countries, getPhoneCodeByCountry } from "@/core/constants/countries";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 import {
   IconUser,
   IconLock,

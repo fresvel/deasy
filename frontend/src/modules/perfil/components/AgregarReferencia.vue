@@ -17,8 +17,8 @@
     </div>
 
     <div class="w-full space-y-2" v-if="form.tipo === 'laboral'">
-      <label class="profile-field-label">Institución</label>
-      <input
+      <label :for="fieldId('institution')" class="profile-field-label">Institución</label>
+      <input :id="fieldId('institution')"
         type="text"
         class="profile-text-input"
         placeholder="Nombre de la institución o empresa"
@@ -27,8 +27,8 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">Nombres</label>
-      <input
+      <label :for="fieldId('nombre')" class="profile-field-label">Nombres</label>
+      <input :id="fieldId('nombre')"
         type="text"
         class="profile-text-input"
         placeholder="Nombres completos"
@@ -37,8 +37,8 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
-      <input
+      <label :for="fieldId('cargo-parentesco')" class="profile-field-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
+      <input :id="fieldId('cargo-parentesco')"
         type="text"
         class="profile-text-input"
         :placeholder="form.tipo === 'laboral' ? 'Cargo en la institución' : form.tipo === 'familiar' ? 'Ej: Padre, Madre, Hermano' : 'Cargo o parentesco'"
@@ -47,8 +47,8 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">Correo electrónico</label>
-      <input
+      <label :for="fieldId('email')" class="profile-field-label">Correo electrónico</label>
+      <input :id="fieldId('email')"
         type="email"
         class="profile-text-input"
         placeholder="usuario@dominio.com"
@@ -57,8 +57,8 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">Teléfono</label>
-      <input
+      <label :for="fieldId('telefono')" class="profile-field-label">Teléfono</label>
+      <input :id="fieldId('telefono')"
         type="text"
         class="profile-text-input"
         placeholder="+593987654321"
@@ -90,12 +90,17 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, defineEmits, watch, computed } from "vue";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
 
 import DossierService from "@/modules/dossier/services/DossierService";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 const props = defineProps({
   editingItem: {
     type: Object,

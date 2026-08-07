@@ -22,8 +22,8 @@
 
         <template v-else>
           <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</label>
-            <select
+            <label :for="fieldId('selectedtermid')" class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</label>
+            <select :id="fieldId('selectedtermid')"
               v-model="selectedTermId"
               class="h-10 rounded-xl border border-slate-200 px-3 text-sm"
             >
@@ -42,8 +42,8 @@
               {{ selectedTerm.launched ? "Este proceso ya está lanzado en el periodo seleccionado." : "Pendiente de lanzar en este periodo." }}
             </span>
             <div v-if="selectedTerm.launched" class="flex flex-col gap-2">
-              <label class="text-xs font-semibold text-slate-600">Motivo del relanzamiento (opcional)</label>
-              <input
+              <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-slate-600">Motivo del relanzamiento (opcional)</label>
+              <input :id="fieldId('relaunchreason')"
                 v-model="relaunchReason"
                 type="text"
                 class="h-10 rounded-xl border border-slate-200 px-3 text-sm"
@@ -98,11 +98,16 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, useId } from "vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 const emit = defineEmits(["notify", "changed", "close"]);
 
 const open = ref(false);
