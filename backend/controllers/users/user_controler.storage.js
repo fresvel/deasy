@@ -80,7 +80,7 @@ export const collectDeliverableTemplateResources = async (availableFormats) => {
       resources.push({
         format: normalizedFormat,
         objectName: cleanObjectName,
-        archiveName: relativeName.replace(/\\/g, "/")
+        archiveName: relativeName.replaceAll(/\\/g, "/")
       });
     }
   }

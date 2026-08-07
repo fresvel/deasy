@@ -66,7 +66,7 @@ export const collectFormatResources = async (availableFormats, { bucket = TEMPLA
       resources.push({
         format: normalizedFormat,
         objectName: cleanObjectName,
-        archiveName: relativeName.replace(/\\/g, "/")
+        archiveName: relativeName.replaceAll(/\\/g, "/")
       });
     }
   }
@@ -94,7 +94,7 @@ export const collectPrefixResources = async (prefixes, { bucket = TEMPLATES_BUCK
       if (!relativeName) {
         continue;
       }
-      resources.push({ objectName: cleanObjectName, archiveName: relativeName.replace(/\\/g, "/") });
+      resources.push({ objectName: cleanObjectName, archiveName: relativeName.replaceAll(/\\/g, "/") });
     }
   }
   return resources;

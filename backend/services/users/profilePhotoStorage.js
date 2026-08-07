@@ -79,7 +79,7 @@ export const openProfilePhoto = async (rawValue) => {
     contentType:
       stat?.metaData?.["content-type"] || contentTypeForExtension(path.extname(reference.objectName)),
     size: stat?.size ?? null,
-    etag: stat?.etag ? `"${String(stat.etag).replace(/"/g, "")}"` : null,
+    etag: stat?.etag ? `"${String(stat.etag).replaceAll(/"/g, "")}"` : null,
     lastModified: stat?.lastModified ?? null
   };
 };

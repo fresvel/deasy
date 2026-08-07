@@ -141,7 +141,7 @@ export const downloadTemplateSeedArchive = async (req, res) => {
     return await sendResourcesAsZip(res, {
       bucket: TEMPLATES_BUCKET,
       resources,
-      fileBaseName: (seed.seed_code || seed.display_name || `seed-${id}`).replace(/\//g, "-")
+      fileBaseName: (seed.seed_code || seed.display_name || `seed-${id}`).replaceAll(/\//g, "-")
     });
   } catch (error) {
     console.error("Error al descargar el ZIP del seed:", error);

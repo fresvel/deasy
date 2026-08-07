@@ -16,7 +16,7 @@ export function useSessionMonitor(sessionModalRef) {
   const decodeToken = (token) => {
     try {
       const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const base64 = base64Url.replaceAll(/-/g, '+').replaceAll(/_/g, '/');
       const jsonPayload = decodeURIComponent(
         atob(base64)
           .split('')

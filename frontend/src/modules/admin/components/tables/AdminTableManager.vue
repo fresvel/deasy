@@ -2864,7 +2864,7 @@ const handleDownloadRecordArchive = async () => {
     const response = await axios.get(url, { responseType: "blob" });
     const disposition = response.headers?.["content-disposition"] || "";
     const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
-    const fallbackName = `${row.template_code || row.seed_code || row.display_name || "formatos"}.zip`.replace(/\//g, "-");
+    const fallbackName = `${row.template_code || row.seed_code || row.display_name || "formatos"}.zip`.replaceAll(/\//g, "-");
     const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
     const blobUrl = URL.createObjectURL(response.data);
     const link = document.createElement("a");
