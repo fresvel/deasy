@@ -34,7 +34,9 @@ Reglas:
 - Un test unitario nuevo tiene que **caer dentro de los globs de `backend/package.json → test:unit`**
   (`config/`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`, `errors/**`). Si lo pones
   fuera, no lo ejecuta nadie y no te vas a enterar. Si el módulo vive en otra carpeta, **amplía el glob
-  en el mismo commit**.
+  en el mismo commit — y en los DOS sitios**: `test:unit` y `test:unit:coverage` llevan la misma lista
+  duplicada (el segundo con prefijo `backend/`, porque corre desde la raíz del repo para que las rutas
+  del lcov le valgan a Sonar). Si solo tocas uno, el test corre pero no cuenta para la cobertura.
 - No metas tests unitarios en `backend/tests/`: esa carpeta es del harness de caracterización
   (`config.mjs`, `lib/`, `setup/`, `__snapshots__/`).
 - Los tests del frontend van junto al componente/composable (`vitest` los descubre solo).
@@ -71,7 +73,8 @@ bash scripts/docker-env.sh dev down
 ### Frontend
 ```bash
 bash scripts/docker-env.sh dev exec -T frontend pnpm run lint       # eslint . --ext .js,.vue
-bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit  # vitest run — 12 ficheros, 208 casos
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit  # vitest run — 12 ficheros, 225 casos
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage  # lcov para SonarQube
 bash scripts/docker-env.sh dev exec -T frontend pnpm run build
 ```
 Para cambios de FE: **lint + `test:unit`**, y además verificar aspecto/comportamiento en el navegador.
@@ -82,9 +85,10 @@ Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor
 
 ### Backend
 ```bash
-bash scripts/docker-env.sh dev exec -T backend npm run test:unit       # 15 ficheros, 218 casos
-bash scripts/docker-env.sh dev exec -T backend npm run test:char:run   # 13 flows, 115 casos golden-master
-bash scripts/docker-env.sh dev exec -T backend npm run check:imports   # OBLIGATORIO tras mover código
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # 15 ficheros, 218 casos
+bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # 13 flows, 115 casos golden-master
+bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLIGATORIO tras mover código
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
 ```
 El backend **no tiene lint**, pero **sí tiene tests** — ejecútalos, no valides "a mano".
 `npm run start` (`node index.js`) sirve la API en `/deasy/v1`, Swagger en `/deasy/docs`.

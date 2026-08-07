@@ -29,7 +29,9 @@ export default defineConfig({
         // test llegó a importar: sin eso, la cobertura sale inflada y no mide nada.
         coverage: {
             provider: 'v8',
-            reporter: ['text-summary', 'lcov'],
+            // `lcovonly` y no `lcov`: este ultimo genera ademas un informe HTML en
+            // coverage/lcov-report/ que nadie lee y que eslint se pone a analizar.
+            reporter: ['text-summary', 'lcovonly'],
             reportsDirectory: 'coverage',
             all: true,
             include: ['src/**/*.{js,vue}'],

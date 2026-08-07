@@ -2,7 +2,7 @@ const vuePlugin = require("eslint-plugin-vue");
 
 module.exports = [
     {
-        ignores: ["dist/**", "node_modules/**"],
+        ignores: ["dist/**", "node_modules/**", "coverage/**"],
     },
     ...vuePlugin.configs["flat/essential"],
     {
