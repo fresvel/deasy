@@ -2122,7 +2122,6 @@ import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue'
 import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRouter, useRoute } from 'vue-router';
 import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
-import AppDataTable from '@/shared/components/data/AppDataTable.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
 import FirmarPdf from '@/modules/firmas/components/FirmarPdf.vue';
 import UserMenuService from '@/core/services/UserMenuService.js';
@@ -2138,8 +2137,6 @@ import SToggle from '@/shared/components/forms/SToggle.vue';
 import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 import DeliverableCard from '@/modules/home/components/DeliverableCard.vue';
-import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
-import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel.vue';
 import RoutedProcessPanel from '@/modules/home/components/RoutedProcessPanel.vue';
 import { useRecipientSearch } from '@/modules/home/composables/useRecipientSearch.js';
 import { useProcessPanels } from '@/modules/home/composables/useProcessPanels.js';
@@ -2155,8 +2152,6 @@ import DeliverableSignatureTab from '@/modules/home/components/DeliverableSignat
 import { useDeliverableView } from '@/modules/home/composables/useDeliverableView.js';
 import { useDeliverableFilePreview } from '@/modules/home/composables/useDeliverableFilePreview.js';
 import {
-  formatAttachmentSize,
-  formatDate,
   formatDateTime,
   formatWorkflowDateTime,
   getSignatureStepStatusCode,
@@ -2169,16 +2164,12 @@ import {
   getFillStepStatusTagVariant,
   getFillStepCardClass,
   getFillStepAccentClass,
-  getWorkflowStateTagVariant,
-  getDeliverableAccessTagVariant,
   getFillRequestStatusCode,
-  isCompletedSignatureRequestStatus,
   getFillStepResolverLabel,
   getSignatureStepResolverLabel,
 } from '@/modules/home/views/homeView.helpers.js';
 import {
   resolveWorkspaceProcessIcon,
-  resolveWorkspaceUnitGroupIcon,
   workspaceIconToneClass,
 } from '@/shared/utils/workspaceNavIcons.js';
 

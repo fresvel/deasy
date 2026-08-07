@@ -91,7 +91,7 @@
     <script setup>  
     
     
-import { ref, computed, onMounted, onBeforeUnmount, watch, provide } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, provide } from 'vue';
 import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';

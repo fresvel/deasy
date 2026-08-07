@@ -11,7 +11,7 @@ import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
 import { swaggerDefinition } from "./config/swagger/definition.js";
 import swaggerUi from "swagger-ui-express";
-import { API_PREFIX, PATHS, ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
+import { ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
 import sign_router from "./routes/sign_router.js";
 
 import program_router from "./routes/program_router.js";
