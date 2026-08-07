@@ -65,7 +65,7 @@ vuelvan. Lo que queda vivo es **H4** (Sonar no corre en CI) y la contraseña `ad
 | **H3** gate inalcanzable | ✅ | Ya mide código: `new_coverage` **30,6 %** contra un umbral del 80 %, no `0.0` por falta de instrumentación |
 | **H4** Sonar fuera de CI | ⬜ | Pendiente (opcional) |
 
-**H1 — `sonar.tests=` está VACÍO.** Las 115 pruebas de caracterización y los 15 ficheros de test
+**H1 — `sonar.tests=` está VACÍO.** Las 161 pruebas de caracterización y los 15 ficheros de test
 unitario se analizan **como código de producción** — Sonar indexa hoy 391 ficheros, 22 de ellos bajo
 `backend/tests`. Dos consecuencias medidas: las contraseñas de fixture de
 `backend/tests/characterization/config.mjs` aparecen como **3 vulnerabilidades S2068 de producción**
@@ -78,7 +78,7 @@ unitario se analizan **como código de producción** — Sonar indexa hoy 391 fi
 > tests no las toca.
 
 **H2 — no hay informe de cobertura enchufado.** `coverage = 0.0 %` pese a que existen 218 tests
-unitarios y 115 de caracterización. Sonar no miente: nunca se le ha dado un `lcov`.
+unitarios y 161 de caracterización. Sonar no miente: nunca se le ha dado un `lcov`.
 
 **H3 — el Quality Gate está en ERROR y es inalcanzable por construcción.** Gate `Sonar way` (el
 default). Estado actual:
@@ -318,7 +318,7 @@ Revalidé las afirmaciones operativas de los seis documentos de julio contra el 
 | God #1 cerrado: `SqlAdminService.js` 5 924 → 897 L | god-objects §3.1 | ⚠️ **Matizado.** Hoy **914 L**; sus `S3776` de CC 158 y CC 99 constan CLOSED/FIXED. Pero el fichero acumula **cogn. 153** y una función abierta de CC 36 → ver el aviso de §3.1 |
 | Cut #10: `validateTableRules` bajo umbral | god-objects §3.1 cut #10 | ✅ CLOSED/FIXED |
 | `saveTemplateArtifactDraft` sigue sin partir | god-objects §3.1.c | ✅ CC **164** (subió de 158), 563 L, la peor del backend |
-| Fase 1 de la red de `saveTemplateArtifactDraft` hecha | god-objects §3.1.c | ✅ `zzz_artifact_draft.test.mjs` existe (11,9 K), **115 casos char** en 13 flows |
+| Fase 1 de la red de `saveTemplateArtifactDraft` hecha | god-objects §3.1.c | ✅ `zzz_artifact_draft.test.mjs` existe (11,9 K), **161 casos char** en 13 flows (eran 115 cuando se escribió el plan) |
 | `S2189` del worker es falso positivo | auditoria-refactor §2.2 | ✅ era cierto (`for(;;)` = bucle del daemon), pero **ya no aplica**: el worker era código muerto y se borró en `7d39355`. El re-escaneo confirma que `backend/workers/` no existe |
 | Marcas *won't fix* no sobreviven a mover código | god-objects §1 | ❌ **REFUTADO por medición.** Ver §4.4 |
 
@@ -482,7 +482,7 @@ compartido o `<input>` suelto antes de decidir por dónde entrar. Medir tras el 
 
 La peor función del backend (**CC 164**, 563 L, el doble que la siguiente). **La red ya existe** — esto es lo que
 cambia respecto a todos los intentos anteriores: `zzz_artifact_draft.test.mjs` fija 13 casos, char
-está en 115 casos / 13 flows, y el harness ya habla multipart.
+está en 161 casos / 13 flows, y el harness ya habla multipart.
 
 Anatomía en 8 fases secuenciales documentada en el handoff (validación → resolución de propietario →
 identidad y rutas → materialización de semilla → escritura de ficheros → parseo → validación de flujo
@@ -553,7 +553,42 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
   funciones en `:47` y `:111` (CC 49 y 59) que reescriben dialecto SQL. Candidato a tabla de
   traducción declarativa.
 
-### Fase G — Barridos mecánicos
+### Fase G — Barridos mecánicos — ✅ **HECHA la parte mecánica de verdad (2026-08-06)**
+
+| Regla | Antes | Después | Qué se hizo |
+|---|---:|---:|---|
+| `S1128` imports sin usar | 43 | **0** | Retirados. 33 eran el rastro de los cuts #1-#9 en `SqlAdminService` |
+| `S7781` `replace`→`replaceAll` | 24 | **0** | Dos pasadas: método primero, y luego el regex de un carácter a literal |
+| `S1135` «TODO» | 21 | **0** | **Marcadas como falso positivo.** Ver el aviso de abajo — no había nada que arreglar |
+| `S3358` ternarios anidados | 51 | 51 | **No entra**: reescribirlos cambia estructura, no forma |
+| `S7780` `String.raw` | 17 | 17 | **No entra**: convención pura sobre escapado de strings, y 5 están en `templateLifecycle`, que la Fase C reescribe |
+| `S8786` backtracking | 28 | 28 | **No entra**, como ya decía el plan: uno a uno |
+
+**Resultado global:** incidencias abiertas **822 → 734** (−88), code smells 644 → **549**, deuda
+4 872 → **4 709 min**, y `new_violations` **176 → 101** (−43 %, la mitad del gate).
+
+> ### ⚠️ Las 21 `S1135` eran TODAS falsos positivos: la regla casa con la palabra española «todo»
+>
+> Ni uno solo de los 21 avisos era un marcador de tarea. Todos son prosa: *«**todo** entregable de
+> proceso admite carga manual»*, *«Singleton compartido por **todo** el backend»*, *«Casi **todo** por
+> la API de admin»*, *«**Todo** lo demás es interno»*. Un `grep` de `\bTODO\b` sobre `backend`,
+> `frontend/src`, `signer` y `scripts` **no devuelve un solo marcador real** — las tres únicas
+> apariciones en mayúsculas son la palabra española escrita con énfasis (*«deshacer TODO lo que
+> insertó»*).
+>
+> **Marcadas en bloque como FALSE-POSITIVE en Sonar, no "arregladas".** Reescribir comentarios en
+> castellano correctos para contentar a una regla que no entiende el idioma sería destrozar prosa
+> legible. Esto sube las marcas manuales vivas de 4 a 25 (§4.4-R1) y **entra en §7**.
+>
+> Corrige lo que decía este plan: «23 `TODO` (triar: convertir en issue o borrar)». No hay nada que
+> triar. Y explica de paso por qué `S1135` engorda en un repo con comentarios en español: cualquier
+> comentario nuevo que use la palabra «todo» reaparecerá. Si molesta, se desactiva la regla en el
+> perfil de calidad.
+
+Lo que queda (`S3358`, `S7780`, `S8786`) **ya no es barrido**: son 96 incidencias que piden criterio
+una a una. Ver la tabla de arriba.
+
+<details><summary>Redacción original de la fase (referencia)</summary>
 
 Baratos, sin riesgo, en cualquier momento entre fases: **43** imports sin usar (`S1128`), **51**
 ternarios anidados (`S3358`), **24** `replace()` → `replaceAll()` (`S7781`), **25** `TODO` (`S1135`,
@@ -564,6 +599,8 @@ lineal) **no** son mecánicos — hay que mirarlos uno a uno, incluyen el ReDoS 
 suspenden el gate (§1.2 H3), **43 son `S1128`, 19 `S1135`, 17 `S3358` y 11 `S7781` = 90 (51 %)**.
 Es decir, medio gate se cierra con un barrido sin riesgo. Hacerlo **después** de la Fase A-2
 (cobertura), porque hasta entonces el gate falla igual por `new_coverage`.
+
+</details>
 
 ---
 
@@ -604,7 +641,7 @@ No son consejos genéricos: cada una viene de un fallo real registrado en las au
 
 ```bash
 bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # tras mover código
-bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # 115 casos, 13 flows
+bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # 161 casos, 13 flows
 bash scripts/docker-env.sh dev exec -T backend npm run test:char:capture  # actualiza el golden
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # 218 (15 ficheros)
 bash scripts/docker-env.sh dev exec -T frontend pnpm run lint
@@ -629,6 +666,10 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 - **El núcleo CRUD de `SqlAdminService`** (~460 L): es el buen diseño que sostiene el registro de hooks.
 - **Los falsos positivos de §4.1** (`S6418` de alfabetos de tokens): marcar en Sonar, no "arreglar".
   `S2871` en particular rompería los golden-master.
+- **`S1135` («TODO») al completo.** Las 21 son la palabra española «todo» en comentarios en prosa; no
+  existe ni un marcador de tarea real en el repo. Están marcadas como FALSE-POSITIVE. **No reescribas
+  comentarios en castellano para silenciar la regla.** Si vuelven a aparecer al escribir comentarios
+  nuevos, márcalas otra vez o desactiva la regla en el perfil de calidad (§5-G).
 - **`UnitGraphView` / `ProcessGraphView`**: 17 % de similitud, dominio irreducible. Solo extraer
   fontanería y arreglar el selector global de `ProcessGraphView.vue:1098`, que apunta a
   `.unit-graph-canvas` ajeno.

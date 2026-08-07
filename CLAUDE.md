@@ -86,7 +86,7 @@ Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor
 ### Backend
 ```bash
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # 15 ficheros, 218 casos
-bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # 13 flows, 115 casos golden-master
+bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # 13 flows, 161 casos golden-master
 bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLIGATORIO tras mover código
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
 ```
