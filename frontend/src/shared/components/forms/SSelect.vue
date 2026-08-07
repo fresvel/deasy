@@ -24,9 +24,15 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed, ref, watch } from "vue";
+import { defineProps, defineEmits, computed, ref, watch, useId } from "vue";
 
 const props = defineProps({
+  // Id del <select> interno, para que el consumidor pueda enlazar su propio
+  // <label for>. Si no se pasa, se genera uno.
+  id: {
+    type: String,
+    default: ""
+  },
   label: {
     type: String,
     required: true
@@ -76,7 +82,8 @@ const columnClass = computed(() => {
   return props.wide ? wideMap[props.wide] || "deasy-col-12" : "deasy-col-12";
 });
 
-const selectId = computed(() => `select-${Math.random().toString(36).substr(2, 9)}`);
+const generatedId = useId();
+const selectId = computed(() => props.id || `select-${generatedId}`);
 
 const normalizedOptions = computed(() => {
   return props.options.map((option) => {

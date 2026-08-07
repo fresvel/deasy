@@ -3,6 +3,7 @@
     <div class="admin-lookup-field flex h-10 items-stretch gap-2">
       <input
         ref="inputRef"
+        :id="inputId"
         :value="displayValue"
         type="text"
         class="admin-input-field h-10 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-none transition-colors duration-150 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
@@ -83,6 +84,12 @@ import { computed, ref, useId, watch } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
 const props = defineProps({
+  // Id del <input> interno, para que el consumidor pueda enlazar su propio
+  // <label for>. Si no se pasa, se genera uno.
+  id: {
+    type: String,
+    default: ""
+  },
   modelValue: {
     type: String,
     default: ""
@@ -182,7 +189,9 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue", "focus", "blur", "clear", "search", "select"]);
 
-const listboxId = `admin-lookup-listbox-${useId()}`;
+const generatedId = useId();
+const listboxId = `admin-lookup-listbox-${generatedId}`;
+const inputId = computed(() => props.id || `admin-lookup-${generatedId}`);
 const optionId = (index) => `${listboxId}-opt-${index}`;
 
 const suggestEnabled = computed(() => typeof props.suggestProvider === "function");
