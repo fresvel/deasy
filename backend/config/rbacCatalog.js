@@ -142,20 +142,6 @@ export const ROLE_PERMISSION_MATRIX = {
   }
 };
 
-export const LEGACY_ROLE_RENAMES = {
-  Admin: "AdminSistema",
-  Gestor: "GestorProcesos"
-};
-
-export const CARGO_ROLE_MAP = {
-  coordinador: ["GestorProcesos"],
-  director: ["GestorProcesos"],
-  prorrector: ["GestorProcesos"],
-  jefe: ["GestorTalentoHumano"],
-  responsable: ["GestorProcesos"],
-  docente: ["Usuario"]
-};
-
 export const ADMIN_ROLES = ["AdminSistema"];
 export const MANAGEMENT_ROLES = ROLE_CATALOG
   .map((role) => role.name)

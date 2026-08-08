@@ -1,4 +1,4 @@
-// Catálogos GENÉRICOS reutilizables, curados a partir de la semilla de BD (pucese.seed.json).
+// Catálogos GENÉRICOS reutilizables, curados a partir de la semilla histórica de BD.
 // Solo datos institucionalmente neutros (tipos de unidad, relación, cargos y periodos), NO datos
 // PUCESE-específicos (unidades reales, personas, procesos). Se ofrecen como bloques opcionales en el
 // wizard de bootstrap y se siembran de forma idempotente.

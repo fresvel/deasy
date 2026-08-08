@@ -1,10 +1,10 @@
 // Construye la fixture del harness con el BOOTSTRAP real del sistema.
 //
-// Antes el golden-master se capturaba contra `scripts/seed-db.sh dev apply`, un
-// snapshot SQL paralelo a lo que produce una instalación de verdad. Eran dos
-// fuentes de verdad: el seed derivaba (su modo --full está roto) y, sobre todo,
-// dejaba vacía la capa de plantillas, así que el setup tenía que inyectarla
-// escribiendo directo al pool y saltándose el guard del endpoint.
+// Antes el golden-master se capturaba contra un seed SQL paralelo (ya eliminado)
+// en vez de contra lo que produce una instalación de verdad. Eran dos fuentes de
+// verdad: el seed derivaba (su modo --full estaba roto) y, sobre todo, dejaba
+// vacía la capa de plantillas, así que el setup tenía que inyectarla escribiendo
+// directo al pool y saltándose el guard del endpoint.
 //
 // El bootstrap sí es la fuente de verdad: es el camino que recorre una
 // instalación nueva, y ya siembra la capa de plantillas por la lógica real.
