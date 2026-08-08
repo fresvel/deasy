@@ -11,10 +11,15 @@
 // resolubles (cut #6) y el ciclo de vida del artifact (cut #3). La lista explicita es INFORMACION:
 // si un refactor futuro reduce ese acoplamiento, la lista encoge y se ve.
 //
-// LO QUE ESTE CUT **NO** HACE. `saveTemplateArtifactDraft` sigue siendo un metodo de 542 lineas.
-// Se ha movido LITERAL, no descompuesto: no tenia caracterizacion propia (su ruta es multipart con
-// subida de ficheros) y partirlo a ciegas seria exactamente el error que el audit senala. Su
-// descomposicion es un trabajo aparte, con su red antes.
+// ESTADO DE `saveTemplateArtifactDraft` (actualizado 2026-08-08). El cut #8 la movio LITERAL, sin
+// descomponer, y quedo en 542 lineas. La fase C del plan de calidad ya la partio a la mitad: hoy son
+// ~310 lineas y complejidad cognitiva 76 (era 164), tras extraer _resolveDraftOwner,
+// _validateAuthoredWorkflows, _materializeDraftFormats y _linkDraftToProcessDefinition.
+//
+// LO QUE SIGUE DENTRO es el try de persistencia con su rollback: comparte cuatro variables de
+// compensacion (createdId, uploadedToMinio, insertedDeliverableId, insertedLinkId) entre el try y el
+// catch, porque no hay transaccion. Extraerlo NO es mover codigo: exige decidir antes quien posee la
+// compensacion. Ver docs/plan-calidad-2026-08.md §5-C.
 
 import fs from "node:fs";
 import os from "node:os";

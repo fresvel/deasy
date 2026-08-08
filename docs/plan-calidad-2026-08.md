@@ -4,29 +4,36 @@
 > previos quedan archivados en `docs/docs-md-antiguos/refactor-2026-07/` (ver §7); lo que seguía vivo
 > en ellos está recogido aquí, revalidado contra el código y contra Sonar.
 >
-> **Medición:** SonarQube en `:9002`, análisis del **2026-08-06 19:22 UTC**, cruzado con lectura
+> **Medición:** SonarQube en `:9002`, análisis del **2026-08-08 17:27 UTC**, cruzado con lectura
 > directa del código y con un análisis propio de complejidad por función.
-> Rama `develop`, HEAD `514b67e` (SCM revision confirmada por el escáner).
+> Rama `develop`, HEAD `114651a` (SCM revision confirmada por el escáner).
 >
-> ### Estado al 2026-08-08
+> ### Estado al 2026-08-08 (re-medido tras las fases A, B, C, D, E, F-signer y G)
 >
 > | Fase | Estado |
 > |---|---|
 > | **A** instrumento | ✅ |
-> | **B** etiquetado de formularios | ✅ — fiabilidad **C → A**, cero bugs |
+> | **B** etiquetado de formularios | ✅ — fiabilidad **C → A**, cero bugs, **sostenido** en el re-escaneo |
 > | **G** barridos mecánicos | ✅ |
-> | **C** `saveTemplateArtifactDraft` | 🟡 CC 164 → **76** |
-> | **D** controllers → servicios | 🟡 las dos grandes hechas; faltan las tres de firma |
+> | **C** `saveTemplateArtifactDraft` | 🟡 CC 164 → **76**. Sigue siendo la peor del repo, ahora por **+9** sobre la segunda |
+> | **D** controllers → servicios | 🟡 las dos grandes hechas (`user_controler` cogn. 337 → **182**); faltan las tres de firma |
 > | **E** frontend | 🟡 puntos 1 y 3 hechos + fase X desbloqueada; faltan los forks y los colores |
 > | **F** signer | 🟡 auditado, con red de 229 pruebas y 3 riesgos cerrados; falta el corte de identidad |
-> | **F** `postgres.js` | ⬜ sin empezar |
+> | **F** `postgres.js` | ⬜ sin empezar — **intacto en 241 cogn., hoy el 6.º del ranking y el más denso** |
 >
-> **Seguridad:** era **D** y sigue en D por 38 incidencias sin triar, pero se cerró la que sí era
-> explotable: el broker de RabbitMQ estaba publicado en todas las interfaces en dev, qa **y prod**,
-> con `guest` administrador y la protección de loopback desactivada, y la contraseña del PKCS#12 del
-> firmante viaja en el cuerpo del mensaje. Ver el commit `b4a4231`.
+> **Lo que el re-escaneo del 17:27 demuestra:** incidencias abiertas **822 → 416** (−49 %), deuda
+> **4 872 → 3 708 min** (−24 %), complejidad cognitiva **8 720 → 8 334**, cobertura **11,5 → 14,2 %**,
+> y **0 bugs** con fiabilidad **A** sostenida. Notas **A / D / A**. Cifras completas en §2.
 >
-> **Cobertura:** 0 % → **14 %**. El plan para seguir es `docs/plan-cobertura-2026-08.md`.
+> **Seguridad: sigue en D, y ahora se sabe por qué exactamente.** No son «38 incidencias sin triar»:
+> son **34**, y la nota la fija **una sola** de ellas — la única CRITICAL, `python:S5443` en
+> `signer/app.py:59` (§5-H). La escala de Sonar es por peor severidad, no por volumen: basta 1
+> CRITICAL para D. Ya se cerró antes lo que sí era explotable: el broker de RabbitMQ estaba publicado
+> en todas las interfaces en dev, qa **y prod**, con `guest` administrador y la protección de loopback
+> desactivada (commit `b4a4231`). La contraseña del PKCS#12 del firmante sigue viajando en el cuerpo
+> del mensaje AMQP sin TLS (R-1, y son 4 de las 34).
+>
+> **Cobertura:** 0 % → **14,2 %**. El plan para seguir es `docs/plan-cobertura-2026-08.md`.
 >
 > **Este re-escaneo absorbe los cambios que la versión anterior del documento tenía pendientes**
 > (`e93cec4`, `7d39355`, `b357559`, `b86be28`, `514b67e`): ya no hay delta que arrastrar, todas las
@@ -79,9 +86,22 @@ curl -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9002/api/measures
 curl -u "$SONAR_TOKEN:" "http://localhost:9002/api/..."      # equivalente
 ```
 
-Genera uno nuevo desde *My Account → Security* en la UI. **Ojo:** `POST /api/user_tokens/generate`
-también exige estar autenticado, así que si no conservas ningún token vivo hay que pasar por la
-interfaz. La contraseña de admin **ya no es la de por defecto** — no está escrita en este repo.
+**Y sí se puede salir del atolladero sin abrir la UI** (corregido el 2026-08-08: este documento decía
+que había que pasar por la interfaz). Lo que murió al cambiar la contraseña es el **basic auth**, no
+la contraseña: el endpoint de sesión `POST /api/authentication/login` la sigue aceptando y devuelve
+una cookie con la que ya se puede emitir un token. Es la receta de arranque en frío, cuando no
+conservas ningún token vivo:
+
+```bash
+curl -s -c cj.txt -X POST "http://localhost:9002/api/authentication/login" \
+     -d "login=admin" --data-urlencode "password=<contraseña>"
+XSRF=$(awk '/XSRF-TOKEN/{print $7}' cj.txt)          # el token CSRF viaja en su propia cookie
+curl -s -b cj.txt -H "X-XSRF-TOKEN: $XSRF" -X POST \
+     "http://localhost:9002/api/user_tokens/generate" -d "name=deasy-scan-$(git rev-parse --short HEAD)"
+```
+
+El `X-XSRF-TOKEN` no es opcional: sin él el `POST` devuelve 401 aunque la cookie de sesión sea válida.
+La contraseña de admin **ya no es la de por defecto** — no está escrita en este repo.
 
 ```bash
 docker compose -f scripts/sonar/compose.yml up -d                    # :9002
@@ -122,90 +142,108 @@ unitarios y 161 de caracterización. Sonar no miente: nunca se le ha dado un `lc
 **H3 — el Quality Gate está en ERROR y es inalcanzable por construcción.** Gate `Sonar way` (el
 default). Estado actual:
 
-| Condición | Umbral | Real | |
-|---|---|---|---|
-| `new_coverage` | ≥ 80 % | **0.0** | ❌ falla por H2, no por el código |
-| `new_duplicated_lines_density` | ≤ 3 % | 1.80 | ✅ |
-| `new_violations` | 0 | **176** | ❌ |
+| Condición | Umbral | 08-06 (H2 vivo) | **08-08 17:27** | |
+|---|---|---|---|---|
+| `new_coverage` | ≥ 80 % | 0.0 | **34,5** | ❌ pero ya mide de verdad |
+| `new_duplicated_lines_density` | ≤ 3 % | 1.80 | **1,56** | ✅ |
+| `new_violations` | 0 | 176 | **105** | ❌ |
 
-El New Code period es `PREVIOUS_VERSION` con fecha **2026-07-09 14:17**. Las 176 son, en su mayoría,
-barrido mecánico de la Fase G: **43** `S1128` (imports sin usar), 21 `S3776`, 19 `S1135` (`TODO`),
-17 `S3358`, 17 `S8786`.
+El New Code period es `PREVIOUS_VERSION` con fecha **2026-07-09 14:17**.
 
-Mientras H2 no se arregle, el gate falla siempre por cobertura y deja de ser señal.
+**Lo que ha cambiado en la composición de `new_violations`, y es lo que importa:** las 176 de agosto-06
+eran barrido mecánico (43 `S1128`, 19 `S1135`, 17 `S3358`…). Las **105** de hoy son
+**23 `S3776` + 19 `S3358` + 17 `S8786` + 13 `S7780` = 72 (69 %)**, es decir, **complejidad y criterio**.
+Traducción operativa: **el gate ya no se cierra con un barrido**. Lo que queda de `new_violations` es
+el mismo trabajo de las fases C/E/F, contado en el New Code.
 
-**H4 — Sonar no corre en CI.** `.github/workflows/cd-multienv.yml` es el único workflow y no lo
-invoca. El análisis es manual y depende de que alguien se acuerde.
+Y el gate seguirá en ERROR aunque se cierren las 105, porque `new_coverage` está en 34,5 contra un
+umbral de 80. Eso ya no es un defecto del instrumento (H2 está cerrado): es el trabajo de
+`docs/plan-cobertura-2026-08.md`.
+
+**H4 — Sonar no corre en CI, pero el gancho ya existe** *(actualizado 2026-08-08)*.
+`.github/workflows/cd-multienv.yml` sigue siendo el único workflow y sigue sin invocar a Sonar, así
+que el análisis es manual. Lo que **ha cambiado** es que ese workflow ya dejó de ser solo de
+despliegue: desde `76d7011` corre `pnpm run lint`, `npm run check:imports` y `npm run test:unit` en
+un job previo (`:122-151`). Es decir, **ya hay un job de calidad donde enchufar el escáner**, y los
+`lcov` que Sonar necesita salen de los mismos runners que ya ejecutan las pruebas. H4 pasó de «montar
+CI» a «añadir un step», y con ello deja de ser opcional por coste.
 
 ---
 
-## 2. Línea base validada (2026-08-06 19:22, HEAD `514b67e`)
+## 2. Línea base validada (2026-08-08 17:27, HEAD `114651a`)
 
 **Ojo con `resolved=false` al consultar la API.** Por defecto `/api/issues/search` devuelve también
-las incidencias cerradas y las marcadas *won't fix*, y eso infla los conteos (una lectura sin filtrar
-da 6 BLOCKER y 58 vulnerabilidades donde en realidad hay 0 y 46). Todas las cifras de abajo son
-**abiertas**.
+las incidencias cerradas y las marcadas *won't fix*, y eso infla los conteos. Todas las cifras de
+abajo son **abiertas**.
 
-| Métrica | Valor | Δ vs. 14:00 |
+La columna Δ compara contra el **20:18 post-Fase A**, no contra el 19:22: es la última medición con
+los mismos denominadores (§2.0). Entre una y otra caben las fases B, C, D, E, F-signer y G enteras.
+
+| Métrica | Valor | Δ vs. 08-06 20:18 |
 |---|---:|---:|
-| NCLOC / ficheros | 80 448 / 391 | +133 / +5 |
-| **Complejidad cognitiva** | **8 797** | +16 |
-| Complejidad ciclomática | 16 104 | +12 |
-| Incidencias abiertas | **832** | −4 |
-| — code smells | 644 | −3 |
-| — bugs | 143 | = |
-| — vulnerabilidades | 45 | −1 |
-| Severidad | 0 BLOCKER · 76 CRITICAL · 533 MAJOR · 197 MINOR · 26 INFO | |
-| Deuda técnica (SQALE) | 4 902 min (≈ 82 h) | −41 min |
-| Duplicación | 3,1 % (193 bloques) | −0,1 pt |
-| Fiabilidad / Seguridad / Mantenibilidad | **C / D / A** | = |
-| Funciones sobre el umbral de complejidad cognitiva (15) | **71 abiertas** (63 JS + 8 Python) | = |
+| NCLOC / ficheros | 77 672 / 335 | −2 227 / −7 |
+| **Complejidad cognitiva** | **8 334** | **−386** |
+| Complejidad ciclomática | 15 601 | −363 |
+| Incidencias abiertas | **416** | **−406 (−49 %)** |
+| — code smells | 382 | −255 |
+| — **bugs** | **0** | **−143** |
+| — vulnerabilidades | 34 | −8 |
+| Severidad | 0 BLOCKER · 71 CRITICAL · 218 MAJOR · 125 MINOR · 2 INFO | |
+| Deuda técnica (SQALE) | **3 708 min** (≈ 62 h) | **−1 164 min (−24 %)** |
+| Duplicación | 3,0 % (178 bloques) | −0,4 pt |
+| Cobertura | **14,2 %** | +2,7 pt |
+| Fiabilidad / Seguridad / Mantenibilidad | **A / D / A** | **C → A** / = / = |
+| Funciones sobre el umbral de complejidad cognitiva (15) | **67 abiertas** (60 JS + 7 Python) | −4 |
 
-**Lectura del delta: el reempaquetado no movió la aguja.** Ninguna métrica cambia más de un 0,2 %, y
-las notas C/D/A son idénticas. Era lo esperado de un rename puro — y confirma que **la línea base del
-plan sigue siendo válida**: no hay que rehacer §3 ni reordenar las fases.
+**Lectura: el plan funciona, y el trabajo que queda ya no es barato.** La mitad del backlog se ha ido
+en dos días, la fiabilidad está en A con **cero bugs**, y la deuda baja una cuarta parte. Pero mirar
+la composición del resto (§2.2) dice lo importante: **de las 416 que quedan, las que se iban con un
+script ya se fueron.** Lo que queda pide criterio uno a uno — 60 `S3776` de complejidad, 48 ternarios
+anidados, 33 de contraste de color, 28 de backtracking. El siguiente tramo cuesta más por incidencia
+que todo lo hecho hasta ahora.
 
 Serie histórica completa (`/api/measures/search_history`), útil para no volver a discutir si algo mejoró:
 
-| | 07-09 14:17 | 07-09 17:14 | 07-17 | 08-06 05:14 | 08-06 14:00 | **08-06 19:22** |
-|---|---:|---:|---:|---:|---:|---:|
-| NCLOC | 80 668 | 80 506 | 79 964 | 80 306 | 80 315 | **80 448** |
-| Cognitiva | 9 190 | 9 181 | 9 022 | 8 840 | 8 781 | **8 797** |
-| Incidencias | 938 | 806 | 812 | 839 | 836 | **832** |
-| SQALE (min) | 5 863 | 5 356 | 5 350 | 5 042 | 4 943 | **4 902** |
+| | 07-09 14:17 | 07-17 | 08-06 20:18 | 08-07 16:01 | 08-08 01:33 | 08-08 03:48 | **08-08 17:27** |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| NCLOC | 80 668 | 79 964 | 79 899 | 79 880 | 79 972 | 79 599 | **77 672** |
+| Cognitiva | 9 190 | 9 022 | 8 720 | 8 720 | 8 720 | 8 543 | **8 334** |
+| Incidencias | 938 | 812 | 822 | 528 | 442 | 441 | **416** |
+| SQALE (min) | 5 863 | 5 350 | 4 872 | 4 194 | 3 969 | 3 831 | **3 708** |
+| Cobertura | 0,0 | 0,0 | 11,5 | 11,5 | 11,5 | 14,0 | **14,2** |
 
-En un mes: −393 de complejidad cognitiva (−4,3 %) y −961 min de deuda (−16 %). El grueso lo hizo el
-corte de `SqlAdminService` (05:14). Los tres escaneos de agosto están planos entre sí.
+En un mes: **−856 de complejidad cognitiva (−9,3 %)**, **−522 incidencias (−56 %)** y **−2 155 min de
+deuda (−37 %)**. Los saltos son identificables uno a uno: el 08-07 16:01 es la Fase B (bugs 143 → 40),
+el 08-08 01:33 la remata (→ 0) junto con la G, el 03:48 son las fases C y D, y el 17:27 recoge la
+limpieza de `backend/scripts/` (−1 927 ncloc, que es el grueso de la caída de NCLOC).
 
-> **⚠️ Discontinuidad de serie: el escaneo de las 20:18 no es comparable con los anteriores.** La
-> Fase A sacó 49 ficheros de test del código de producción, así que los denominadores cambian de
-> golpe **sin que se haya tocado una línea**. Cifras post-Fase A, que son las que valen de aquí en
-> adelante:
->
-> | | 19:22 (pre-A) | **20:18 (post-A)** | |
-> |---|---:|---:|---|
-> | Cobertura | 0,0 % | **11,5 %** | ← el objetivo de la fase |
-> | Ficheros | 391 | **342** | −49 tests |
-> | NCLOC | 80 448 | 79 899 | |
-> | Cognitiva | 8 797 | 8 720 | los tests dejan de sumar |
-> | Ciclomática | 16 104 | 15 964 | |
-> | Incidencias abiertas | 832 | **822** | |
-> | — vulnerabilidades | 45 | **42** | las 3 `S2068` de fixtures |
-> | — code smells | 644 | 637 | |
-> | Severidad | 76 CRIT · 533 MAJ · 197 MIN · 26 INFO | 76 CRIT · 527 MAJ · 197 MIN · 22 INFO | |
-> | SQALE | 4 902 min | 4 872 min | |
-> | Duplicación | 3,1 % | 3,4 % | **sube**: los tests diluían el porcentaje |
-> | Notas | C / D / A | **C / D / A** | sin cambios |
->
-> **El ranking de §3 sigue valiendo tal cual**: ninguno de los ficheros de esa lista es un test.
+### 2.0 Las dos discontinuidades de la serie — no compares a través de ellas
 
-*(El +5 en ficheros y +133 en NCLOC no lo explica el diff `75fe53d..514b67e`, que en `sources` es
-−2 ficheros netos. Es ruido de indexación de ±0,2 %; no afecta a ninguna conclusión, pero conviene no
-citar «386 ficheros» ni «80 315» como cifras estables.)*
+**(1) El 20:18 del 08-06 rompió los denominadores.** La Fase A sacó 49 ficheros de test del código de
+producción, así que las métricas cambian **sin que se haya tocado una línea**:
 
-### 2.1 El hallazgo nuevo: la nota C de fiabilidad es accesibilidad de formularios
+| | 19:22 (pre-A) | **20:18 (post-A)** | |
+|---|---:|---:|---|
+| Cobertura | 0,0 % | **11,5 %** | ← el objetivo de la fase |
+| Ficheros | 391 | **342** | −49 tests |
+| NCLOC | 80 448 | 79 899 | |
+| Cognitiva | 8 797 | 8 720 | los tests dejan de sumar |
+| Incidencias abiertas | 832 | **822** | |
+| — vulnerabilidades | 45 | **42** | las 3 `S2068` de fixtures |
+| Duplicación | 3,1 % | 3,4 % | **sube**: los tests diluían el porcentaje |
 
-**289 de las 832 incidencias abiertas (35 %) son dos reglas de etiquetado de formularios:**
+**(2) La duplicación del 17:27 tampoco es comparable hacia atrás por la misma razón, al revés.**
+Baja de 3,4 % a 3,0 %, pero parte de esa caída es que se borraron ficheros muy duplicados
+(`apply_rbac_patch.mjs`, 95 líneas al 18,1 %), no que el código restante se haya deduplicado. Ver §2.3.
+
+### 2.1 El hallazgo que explicaba la nota C — ✅ **cerrado, se conserva el diagnóstico**
+
+> **Cifras históricas del 08-06.** Hoy estas dos reglas están a **0** y los bugs a **0**: la Fase B lo
+> cerró y el re-escaneo del 17:27 confirma que **se sostiene** (fiabilidad **A**). Se conserva entero
+> porque explica de dónde salía la nota C y, sobre todo, porque **la hipótesis de partida era falsa** —
+> ese es el aprendizaje reutilizable, no el número.
+
+**289 de las 832 incidencias abiertas (35 %) eran dos reglas de etiquetado de formularios:**
 
 | Nº | Regla | Qué dice |
 |---:|---|---|
@@ -237,58 +275,95 @@ pendiente de confirmar en la Fase B):
 **5 ficheros concentran 203 de las 289 (70 %).** Solo uno es un `Agregar*.vue`: la hipótesis de que
 esto se arregla sobre todo en `SInput`/`SSelect` **no se sostiene tal cual** (§5-B corregida).
 
-### 2.2 Resto del backlog por regla
+### 2.2 El backlog que queda, por regla (17:27) — ya no hay barrido que hacer
 
 | Nº | Regla | Naturaleza |
 |---:|---|---|
-| 63 | `javascript:S3776` | Complejidad cognitiva — **el núcleo de este plan** (§3). +8 de `python:S3776` = 71 |
-| 51 | `javascript:S3358` | Ternarios anidados |
-| 43 | `javascript:S1128` | Imports sin usar — barrido mecánico |
-| 33 | `css:S7924` | Contraste texto/fondo insuficiente |
-| 29 | `javascript:S8786` | Regex con backtracking no lineal |
-| 25 | `javascript:S1135` | `TODO` en el código |
-| 24 | `javascript:S7781` | `replaceAll()` en vez de `replace()` con regex global |
-| 17 | `javascript:S7780` | `String.raw` para backslashes escapados |
-| 15 | `javascript:S7785` · 15 `javascript:S4624` | `await` de nivel superior · plantillas anidadas |
-| 14 | `javascript:S2068` | Contraseñas hardcodeadas — **3 son de fixtures** (ver H1); **11 son producción** → **9 hoy**, 2 ✅ cerradas por eliminación de scripts (`fc44559`) |
+| 60 | `javascript:S3776` | Complejidad cognitiva — **el núcleo de lo que queda** (§3). +7 de `python:S3776` = **67** |
+| 48 | `javascript:S3358` | Ternarios anidados — reescribirlos cambia estructura, no forma (§5-G) |
+| 33 | `css:S7924` | Contraste texto/fondo insuficiente — **ligado a la Fase X**, no se toca antes del sistema de diseño |
+| 28 | `javascript:S8786` | Regex con backtracking no lineal — uno a uno, incluye el ReDoS de `AgregarReferencia` |
+| 16 | `javascript:S7780` | `String.raw` — convención pura sobre escapado |
+| 13 | `javascript:S7770` · 13 `javascript:S4624` | Modernización de sintaxis · plantillas anidadas |
+| 11 | `javascript:S7776` · 10 `javascript:S6582` | Ídem (encadenamiento opcional y similares) |
+| 10 | `javascript:S2486` | Excepción capturada y silenciada — **el único grupo con olor a bug latente** |
+| 10 | `Web:S6819` | Roles ARIA sobre elementos con semántica propia |
+| 8 | `javascript:S2068` | Contraseñas hardcodeadas — **las credenciales demo**, triadas en §5-H |
+
+**Lo que esta tabla dice y la anterior no:** desaparecieron por completo `S1128` (43), `S7781` (24),
+`S1135` (25) y las dos de etiquetado (289). Es decir, **las cinco reglas que se cerraban en bloque ya
+están cerradas**. De las 416 restantes, las tres primeras filas (141) son las fases C/E/F de este plan,
+y el resto son decisiones de una en una. **Nadie va a volver a bajar 400 incidencias en dos días.**
+
+Y hay una fila nueva que merece mirada propia: los **10 `S2486`** (`catch` que se traga la excepción).
+Es la única regla del backlog que huele a defecto latente en vez de a estilo, y Sonar la clasifica como
+code smell, así que no aparece en la nota de fiabilidad. **Vale la pena triarlos antes que los 48
+ternarios**, aunque el conteo sea menor.
 
 ### 2.3 Duplicación concentrada
 
+Medido el 17:27. El total baja a 3,0 % / 178 bloques, pero el reparto es lo que importa:
+
 | Líneas dup. | % | Fichero |
 |---:|---:|---|
-| 534 | 52,9 % | `backend/config/sqlTables.js` — **son datos, es duplicación legítima. No tocar.** |
-| 288 | 13,1 % | `backend/controllers/users/user_controler.js` |
-| ~~95~~ | ~~18,1 %~~ | ~~`backend/scripts/apply_rbac_patch.mjs`~~ — ✅ **cerrado por eliminación** (`fc44559`) |
+| 534 | 52,9 % | `backend/config/sqlTables.js` — **son datos, es duplicación legítima. No tocar** (§7) |
+| 264 | **17,4 %** | `backend/controllers/users/user_controler.js` — ver el aviso de §5-D: **el % sube porque el denominador encogió** |
 | 75 | 27,5 % | `backend/services/whatsapp/WhatsAppBot.js` |
-| 74 | 8,2 % | `backend/services/system/SystemBootstrapService.js` |
-| 66 | 21,9 / 24,7 % | `AgregarCapacitacion.vue` / `AgregarExperiencia.vue` |
+| 66 | 21,2 / 23,9 % | `AgregarCapacitacion.vue` / `AgregarExperiencia.vue` |
 | 64 | 22,6 % | `backend/services/admin/generation/assignees.js` |
+| 64 | 5,0 % | `backend/services/documents/DocumentSignatureWorkflowService.js` |
+| 63 | 15,9 % | `frontend/.../modals/AdminDefinitionRulesPanel.vue` — **nuevo en el radar** |
+| 62 | **40,5 %** | `backend/utils/templateArchive.js` — **nuevo, y el peor ratio del repo tras `sqlTables`** |
+| 62 | 26,2 % | `backend/config/swagger/dossierPaths.js` — es *spec* declarativa, mismo caso que `sqlTables` |
+
+`SystemBootstrapService.js` (74 L, 8,2 %) **sale de la lista**. Entran tres que antes no estaban, y
+`templateArchive.js` con un **40,5 %** merece una mirada: es utilitario pequeño, así que ese ratio son
+probablemente dos funciones gemelas de empaquetado, no un God. Barato de arreglar si se confirma.
 
 ---
 
 ## 3. Ranking de complejidad — la lista de trabajo real
 
-### 3.1 Por fichero (complejidad cognitiva de Sonar)
+### 3.1 Por fichero (complejidad cognitiva de Sonar) — **re-medido el 17:27**
 
-| Cogn. | Ciclom. | NCLOC | Fichero | Veredicto |
-|---:|---:|---:|---|---|
-| **356** | 300 | 1 190 | `signer/app.py` | **God nunca auditado.** El peor del repo |
-| 350 | 956 | 4 829 | `frontend/.../home/views/HomeView.vue` | God conocido, refactor a medias |
-| 337 | 526 | 1 963 | `backend/controllers/users/user_controler.js` | **God #2** — partido, no simplificado |
-| 306 | 300 | 1 277 | `backend/services/admin/templates/templateLifecycle.js` | Contiene la peor función del backend. **Subió +6** |
-| 290 | 606 | 3 964 | `frontend/.../tables/AdminTableManager.vue` | **Motor legítimo**, no God |
-| 262 | 476 | 2 724 | `frontend/.../firmas/FirmarPdf.vue` | **God real** (6 responsabilidades) |
-| **241** | 168 | 391 | `backend/config/postgres.js` | **Densidad extrema**: 241 cogn. en 391 ncloc |
-| 204 | 335 | 1 172 | `backend/services/documents/DocumentSignatureWorkflowService.js` | God moderado |
-| 192 | 273 | 894 | `backend/services/admin/crud/tableHooks.js` | Creado por el refactor, ya hotspot |
-| 169 | 251 | 505 | `backend/services/admin/templates/workflows.js` | Ídem |
-| 153 | 273 | 1 288 | `frontend/.../admin/views/AdminView.vue` | God por duplicación |
-| **153** | 284 | 780 | `backend/services/admin/SqlAdminService.js` | ⚠️ **Faltaba en este ranking.** Ver aviso abajo |
-| 144 | 253 | 853 | `backend/controllers/sign/sign_controller.js` | **Viola CLAUDE.md** (motor batch en controller) |
-| 140 | 541 | 850 | `frontend/.../home/composables/useDeliverableView.js` | Composable-monolito (§3.3) |
-| 140 | 225 | 896 | `frontend/.../processes/useProcessDefinitionManager.js` | Composable-monolito (§3.3) |
-| 139 | 317 | 1 116 | `frontend/.../modals/AdminDraftArtifactModal.vue` | **Nuevo en el radar** — y 51 incidencias de etiquetado (§2.1) |
-| 138 | 321 | 1 254 | `frontend/.../firmas/MultiSignerPanel.vue` | **Nuevo en el radar** |
+La columna Δ es contra el ranking del 08-06 19:22, que es el que este documento traía antes.
+
+| Cogn. | Ciclom. | NCLOC | Δ | Fichero | Veredicto |
+|---:|---:|---:|---:|---|---|
+| **353** | 305 | 1 202 | −3 | `signer/app.py` | **Sigue siendo el peor del repo.** Ya auditado y con red (§5-F), pero **sin cortar** |
+| 350 | 955 | 4 807 | = | `frontend/.../home/views/HomeView.vue` | God conocido, refactor a medias. **Intacto** |
+| 290 | 607 | 3 972 | = | `frontend/.../tables/AdminTableManager.vue` | **Motor legítimo**, no God (§7) |
+| 277 | 296 | 1 326 | **−29** | `backend/services/admin/templates/templateLifecycle.js` | La Fase C se nota, pero el fichero **crece en ncloc** |
+| 262 | 477 | 2 727 | = | `frontend/.../firmas/FirmarPdf.vue` | **God real** (6 responsabilidades). Intacto |
+| **241** | 168 | 391 | = | `backend/config/postgres.js` | **Densidad extrema**: 241 cogn. en 391 ncloc. **El único ⬜ puro del plan** |
+| 204 | 335 | 1 172 | = | `backend/services/documents/DocumentSignatureWorkflowService.js` | God moderado |
+| 192 | 273 | 894 | = | `backend/services/admin/crud/tableHooks.js` | Creado por el refactor, ya hotspot |
+| **182** | 390 | 1 358 | **−155** | `backend/controllers/users/user_controler.js` | **La Fase D funcionó**: era God #2 en 337, hoy es un controller gordo |
+| 172 | 257 | 517 | **+3** | `backend/services/admin/templates/workflows.js` | **Subió**: recibió las puras de la Fase C. Efecto esperado |
+| 153 | 284 | 750 | = | `backend/services/admin/SqlAdminService.js` | Ver el aviso de abajo |
+| 144 | 253 | 853 | = | `backend/controllers/sign/sign_controller.js` | **Viola CLAUDE.md** (motor batch en controller). Lo que queda de la Fase D |
+| 140 | 541 | 850 | = | `frontend/.../home/composables/useDeliverableView.js` | Composable-monolito (§3.3). **No tocar** (§7) |
+| 140 | 225 | 896 | = | `frontend/.../processes/useProcessDefinitionManager.js` | Composable-monolito (§3.3) |
+| 139 | 318 | 1 123 | = | `frontend/.../modals/AdminDraftArtifactModal.vue` | Sus 51 de etiquetado se fueron con la Fase B; la complejidad sigue |
+| 138 | 321 | 1 254 | = | `frontend/.../firmas/MultiSignerPanel.vue` | Sin tocar |
+| 115 | 221 | 1 005 | **−38** | `frontend/.../admin/views/AdminView.vue` | **La fase 3.5 se nota** (§5-E.3): la URL manda y bajó un 25 % |
+| 109 / 107 | 266 / 253 | 1 103 / 1 222 | nuevos | `ProcessGraphView.vue` / `UnitGraphView.vue` | **Entran en el radar.** Ojo: §7 dice explícitamente **no fusionarlos** |
+| 100 | 112 | 377 | nuevo | `frontend/.../data/useAdminTableDataSource.js` | Entra en el radar |
+| 97 | 120 | 299 | nuevo | `backend/controllers/users/dossier_controler.js` | **Controller con lógica dentro** — mismo olor que la Fase D |
+| 95 | 71 | 360 | nuevo | `backend/services/admin/generation/documents.js` | Ciclomática 71 con cognitiva 95: muy anidado para su tamaño |
+
+**Tres lecturas del nuevo ranking:**
+
+1. **Los cuatro primeros no se han tocado nunca** (`app.py`, `HomeView`, `AdminTableManager`,
+   `FirmarPdf`), y suman **1 255 puntos, el 15 % de toda la complejidad del repo**. Todo el trabajo de
+   estos dos días ha ido a los puestos 4-11. La cabeza de la lista sigue intacta.
+2. **`postgres.js` ha subido al 6.º puesto sin cambiar una línea** — los de arriba bajaron. Y sigue
+   siendo, con diferencia, **el más denso: 0,62 puntos de complejidad por línea**, cuando `HomeView`
+   está en 0,07. Es el objetivo más rentable por línea leída que queda en el backend.
+3. **Aparecen cinco ficheros nuevos en el radar** que ningún documento había mirado nunca, dos de
+   ellos backend (`dossier_controler.js`, `generation/documents.js`). No es que hayan empeorado: es que
+   al bajar la marea se ven. `dossier_controler.js` con 97 en 299 ncloc es el mismo patrón que la
+   Fase D acaba de arreglar en `user_controler.js`.
 
 > **Corrección: `SqlAdminService.js` no está tan cerrado como decía §4.1.** Es verdad que sus dos
 > `S3776` (CC 158 y CC 99) constan CLOSED/FIXED y que pasó de 5 924 a 914 L. Pero el **fichero**
@@ -296,33 +371,47 @@ esto se arregla sobre todo en `SInput`/`SSelect` **no se sostiene tal cual** (§
 > y conserva una función abierta de CC 36 (`list()`, §3.2). «God #1 cerrado» significa *dejó de ser un
 > God*, no *dejó de ser complejo*. No es urgente, pero tampoco es terreno ganado del todo.
 
-### 3.2 Por función (`S3776` abiertas, las 14 peores)
+### 3.2 Por función (`S3776` abiertas, las 20 peores) — **re-medido el 17:27**
 
-Esta es la cola de trabajo. Umbral de Sonar: 15. **71 abiertas** (63 JS + 8 Python) — **hoy 70**: la
-de `seed_pucese.mjs:367` se cerró por eliminación del fichero (`fc44559`), no por refactor. Cifras y
-líneas del escaneo del 19:22, ya post-reempaquetado — no hay que aplicar ningún desplazamiento.
+Esta es la cola de trabajo. Umbral de Sonar: 15. **67 abiertas** (60 JS + 7 Python). Líneas del
+escaneo del 17:27: las de `templateLifecycle.js` y `FirmarPdf.vue` **se han desplazado** respecto a la
+versión anterior de esta tabla, así que no cites las viejas.
 
 | Cogn. | Función / ubicación | Δ |
 |---:|---|---:|
-| **164** | `templates/templateLifecycle.js:967` → `saveTemplateArtifactDraft` (**563 L**) | **+6** |
-| 75 | `controllers/users/user_controler.js:1834` → `createGeneralTask` (362 L) | = |
-| 67 | `frontend/.../composables/forms/useAdminSubmitFlow.js:30` | = |
+| **76** | `templates/templateLifecycle.js:1252` → `saveTemplateArtifactDraft` | **−88** (Fase C) |
+| **67** | `frontend/.../composables/forms/useAdminSubmitFlow.js:30` | = ← **la nueva segunda** |
 | 59 / 49 | `backend/config/postgres.js:111` (`bindParams`) y `:47` (`translatePlaceholders`) | = |
+| 44 | `frontend/.../firmas/FirmarPdf.vue:2488` → `confirmSign` | = |
 | 44 | `frontend/.../ui/useAdminPresentationAdapters.js:94` | = |
-| 44 | `frontend/.../firmas/FirmarPdf.vue:2482` → `confirmSign` | = |
-| 40 | `signer/app.py:519` | = |
+| 40 | `signer/app.py:534` | = |
 | 39 | `frontend/.../processes/useAdminDraftArtifactFlow.js:85` | = |
-| 36 | `backend/services/admin/SqlAdminService.js:278` → `list()` | = |
+| 36 | `backend/services/admin/SqlAdminService.js:248` → `list()` | = |
 | 33 | `backend/services/system/genericCatalog.js:376` · 33 `admin/generation/assignees.js:11` | = |
-| ~~32~~ | ~~`backend/scripts/seed_pucese.mjs:367`~~ — ✅ **cerrado por eliminación** (`fc44559`) | = |
 | 31 | `frontend/.../data/useAdminTableDataSource.js:222` | = |
-| 30 | `signer/app.py:968` · 30 `admin/generation/documents.js:210` | nuevas en la lista |
-| 28 | `frontend/src/core/router/index.js:84` · 28 `admin/templates/workflows.js:441` | nuevas en la lista |
+| 30 | `signer/app.py:1001` · 30 `admin/generation/documents.js:210` | = |
+| 28 | `frontend/src/core/router/index.js:84` · 28 `admin/templates/workflows.js:460` | = |
+| 26 | `backend/services/admin/processes/processDefinitionVersion.js:457` | nueva en la lista |
+| 25 | `frontend/.../perfil/AgregarInvestigacion.vue:492` · 25 `useAdminModalRegistry.js:77` | nuevas en la lista |
+| 25 | `backend/services/admin/crud/tableHooks.js:453` | nueva en la lista |
+| ~~75~~ | ~~`user_controler.js:1834` → `createGeneralTask`~~ | ✅ **fuera de la cola** (Fase D) |
 
-`saveTemplateArtifactDraft` sigue teniendo **más del doble** de complejidad que la siguiente — y ahora
-**más**: el staging a `os.tmpdir()` (`b86be28`) le sumó 6 puntos y la dejó en **563 líneas**. La
-cabecera del propio `templateLifecycle.js:14` todavía la describe como «un metodo de 542 lineas»:
-comentario desfasado. **La Fase C se encarece un poco cada vez que se toca sin partirla.**
+**Lo que cambia la estrategia:** `saveTemplateArtifactDraft` ya **no es el doble que la siguiente**.
+Bajó de 164 a 76 y `createGeneralTask` (75) salió de la lista entera, así que hoy la cola arranca
+**76 · 67 · 59 · 49 · 44**, que es una pendiente suave. Consecuencias prácticas:
+
+- **La segunda peor función del repo es de frontend** (`useAdminSubmitFlow.js`, CC 67) y **no tiene
+  fase asignada en este plan**. La Fase E habla de `useProcessPanels`, del sistema de diseño y de
+  `httpClient`, pero no de ella. Es un hueco real del plan, no una omisión inofensiva.
+- **`postgres.js` aporta dos de las cinco peores** (59 + 49 = 108 puntos en dos funciones). Partirlas
+  es, en puntos por hora, la mejor operación pendiente del backend.
+- **Terminar la Fase C ya no es prioritario por tamaño.** Los 76 que quedan son el núcleo
+  transaccional con su rollback, y §5-C explica por qué extraerlos **ya no es refactor**, es rediseñar
+  la compensación de errores. Con la función fuera del podio, el argumento de «hazlo antes de que
+  crezca» pierde fuerza frente a `postgres.js`.
+
+La cabecera de `templateLifecycle.js:14` describía la función como «un metodo de 542 lineas»:
+comprobar que la Fase C actualizó ese comentario, porque hoy son ~310.
 
 ### 3.3 Lo que el ranking de LOC dice y Sonar no
 
@@ -395,19 +484,30 @@ reempaquetado `514b67e` movió `SqlAdminService.tableHooks.js` → `crud/tableHo
 sobrevivieron sin excepción (**hoy quedan 6**: la de `seed_pucese.mjs:256` se fue con el fichero en
 `fc44559`, lo que **no** contradice R1 — borrar no es reescribir):
 
-| Regla | Resolución | Ubicación hoy |
-|---|---|---|
-| `S6418` | WONTFIX | `backend/services/admin/crud/tableHooks.js:111` ← **movido, y sobrevivió** |
-| `S6418` | WONTFIX | `backend/services/system/SystemBootstrapService.js:26` |
-| ~~`S6418`~~ | ~~WONTFIX~~ | ~~`backend/scripts/seed_pucese.mjs:256`~~ — ✅ **cerrada por eliminación del fichero** (`fc44559`), **no** por reescribir la línea: la regla de R1 sigue en pie |
-| `S6418` | WONTFIX | `backend/utils/tokenGenerator.js:4` |
-| `S2871` ×2 | FALSE-POSITIVE | `backend/tests/characterization/lib/normalize.mjs:52,94` |
-| `S2871` | FALSE-POSITIVE | `backend/tests/characterization/lib/snapshot.mjs:32` |
+> **El censo de marcas, medido el 2026-08-08 17:27 — son 28, no 3, ni 4, ni 6, ni 25.** Este
+> documento llegó a dar cinco cifras distintas en cinco sitios (§5-A decía «4 — 3 hoy», §5-G decía
+> «de 4 a 25», aquí decía «7 — 6 hoy») porque cada sección contaba un subconjunto y ninguna lo decía.
+> **Esta tabla es la única fuente**; el resto del documento remite aquí.
+
+| Nº | Regla | Resolución | Ubicación |
+|---:|---|---|---|
+| 23 | `javascript:S1135` | FALSE-POSITIVE | Repartidas por todo el repo — la palabra española «todo» (§5-G). **Eran 21 cuando se escribió esa fase: han crecido 2** |
+| 3 | `javascript:S6418` | WONTFIX | `crud/tableHooks.js:111` ← **movido, y sobrevivió** · `SystemBootstrapService.js:26` · `utils/tokenGenerator.js:4` |
+| 1 | `Web:InputWithoutLabelCheck` | FALSE-POSITIVE | `forms/AdminSelectField.vue` (Fase B) |
+| 1 | `Web:MouseEventWithoutKeyboardEquivalentCheck` | FALSE-POSITIVE | `layouts/workspace/AppWorkspaceShell.vue` (Fase B) |
+| ~~3~~ | ~~`S2871`~~ | ~~FALSE-POSITIVE~~ | ~~`tests/characterization/lib/`~~ — **ya no figuran**: la Fase A convirtió esos ficheros en tests y sus incidencias dejaron de existir |
+| ~~1~~ | ~~`S6418`~~ | ~~WONTFIX~~ | ~~`backend/scripts/seed_pucese.mjs:256`~~ — cerrada por eliminación del fichero (`fc44559`) |
+
+**Detalle que hay que retener sobre los `S2871`:** §7 sigue diciendo, con razón, que «arreglarlos»
+rompería los golden-master. Pero **la marca ya no existe** — desapareció sola al declarar los tests en
+la Fase A, no porque nadie la quitara. Si algún día se vuelve a analizar `backend/tests` como
+producción, esas 3 **reaparecerán sin marcar**. No es un problema hoy; es una trampa para el futuro.
 
 Sonar rastrea la incidencia por el **hash del contenido de la línea**, no por la ruta: un *rename*
 puro la conserva. Lo que la pierde es **reescribir la línea marcada**. La regla correcta no es «no
 sobreviven a moverse», es **«no sobreviven a reescribirse»** — que es lo que pasó en el cut #8, donde
-la línea sí cambió. (§6 regla 8 corregida.)
+la línea sí cambió. (§6 regla 8 corregida.) El re-escaneo del 17:27 lo vuelve a confirmar: las marcas
+sobrevivieron a dos días de refactor intenso.
 
 **R2 — «el reempaquetado vuelve incomparable la medición».** Falso. `new_violations` pasó de 172 a
 **176** (+4), no se disparó, y el New Code sigue anclado al 2026-07-09. El blame de git sigue los
@@ -420,6 +520,24 @@ renames, así que el código movido **no** entra como código nuevo. No hay que 
 
 Ordenado por retorno sobre esfuerzo, no por gravedad. Las fases A y B son baratas y desbloquean la
 medición; el resto ya no se puede medir bien sin ellas.
+
+> ### Qué toca ahora — reordenado con la medición del 2026-08-08 17:27
+>
+> Con A, B y G cerradas y C/D/E/F a medias, el orden por retorno **ya no es el que traía este
+> documento**. Lo que la medición cambia:
+>
+> | # | Trabajo | Por qué ahora |
+> |---|---|---|
+> | 1 | **Fase H** — la línea de `SIGNER_WORKSPACE_DIR` (§5-H) | Una línea de compose mueve la **seguridad de D a C**. Es el único punto del plan donde un cambio trivial mueve una nota |
+> | 2 | **H4** — Sonar en el job de CI que ya existe (§1.2) | Dejó de ser «montar CI»: el workflow ya corre lint + tests desde `76d7011`. Sin esto, la próxima medición vuelve a depender de que alguien se acuerde |
+> | 3 | **Fase F — `postgres.js`** | El **único ⬜ puro**, intacto en 241 cogn./391 ncloc (**0,62 puntos por línea**, el triple que cualquier otro). Aporta **2 de las 5 peores funciones** (59 + 49). Mejor retorno del backend |
+> | 4 | **Fase D** — las tres de firma | `sign_controller.js` sigue en 936 L con el motor de batch dentro: viola CLAUDE.md, y el patrón de corte ya está probado y documentado en la propia fase |
+> | 5 | Los **10 `S2486`** (§2.2) | Única regla del backlog con olor a defecto latente, y son 10, no 400 |
+> | — | **Fase C, el resto** | **Baja de prioridad**: ya no es el doble que nadie (§3.2), y lo que queda no es refactor sino rediseñar la compensación de errores |
+>
+> **Hueco del plan detectado al re-medir:** la **segunda peor función del repo** es
+> `useAdminSubmitFlow.js:30` (CC 67) y **ninguna fase la cubre** — la Fase E habla de otras tres cosas.
+> Hay que asignarla o decidir explícitamente que no se toca.
 
 ### Fase A — Arreglar el instrumento — ✅ **HECHA (2026-08-06)**
 
@@ -443,8 +561,8 @@ no lo arregla —solo filtra los ya cargados—. El frontend no lo tiene, porque
 Si algún día hace falta cobertura honesta *por fichero* en el backend, la respuesta es `c8`, no Node.
 
 **Lo que NO hay que volver a tocar:** `sonar.projectVersion` (mueve el New Code period y tira la serie
-histórica de §2) y las 4 marcas manuales vivas (§4.4-R1) — **3 hoy**, tras irse la de `seed_pucese.mjs`
-con el fichero (`fc44559`).
+histórica de §2) y **las 28 marcas manuales vivas** — el censo completo y actualizado está en §4.4-R1,
+que es la única fuente para ese número.
 
 1. ✅ **Declarar los tests** en `sonar-project.properties`. **La receta que traía este plan estaba mal**
    por dos motivos medidos: (a) los 15 ficheros de test unitario **no viven bajo `backend/tests`**,
@@ -579,7 +697,7 @@ Verificado leyendo el contexto de cada una. Ninguna se arregla con `for`/`id`, p
 Ambos grupos piden criterio y **verificación en navegador** (que un lector de pantalla anuncie el
 nombre correcto), no un script. El segundo es el de mejor retorno: 6 componentes para 33 incidencias.
 
-<details><summary>Redacción original de la fase (referencia)</summary>
+##### Y la redacción anterior a esa (el plan original de la fase)
 
 #### Fase B — Etiquetado de formularios (35 % del backlog, y la nota C)
 
@@ -609,8 +727,13 @@ compartido o `<input>` suelto antes de decidir por dónde entrar. Medir tras el 
 
 ### Fase C — `saveTemplateArtifactDraft` — 🟡 **cortada a la mitad (2026-08-06)**
 
-**CC 164 → 76 (−54 %), y de 563 a ~310 líneas.** Deja de ser el doble que la siguiente: hoy empata
-con `createGeneralTask` (75).
+**CC 164 → 76 (−54 %), y de 563 a ~310 líneas.** Deja de ser el doble que la siguiente.
+
+> **Corregido con la medición del 08-08 17:27:** este párrafo decía «hoy empata con `createGeneralTask`
+> (75)», y eso ya no es cierto — la Fase D sacó `createGeneralTask` de la cola de `S3776` el mismo día.
+> `saveTemplateArtifactDraft` **vuelve a ser la peor función del repo**, ahora por 9 puntos sobre
+> `useAdminSubmitFlow.js` (67). Lo que cambia no es el orden sino la urgencia: la pendiente de la cola
+> es hoy 76·67·59·49·44, sin escalón. Ver §3.2.
 
 | Extracción | Qué se llevó | CC propia |
 |---|---|---:|
@@ -779,15 +902,17 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
 >
 > **Marcadas en bloque como FALSE-POSITIVE en Sonar, no "arregladas".** Reescribir comentarios en
 > castellano correctos para contentar a una regla que no entiende el idioma sería destrozar prosa
-> legible. Esto sube las marcas manuales vivas de 4 a 25 (§4.4-R1) y **entra en §7**.
+> legible. Esto es lo que hace que las marcas manuales vivas sean hoy **28** (§4.4-R1) y **entra en §7**.
+> Medido el 08-08: **son 23, no 21** — han aparecido 2 nuevas en dos días, exactamente por el motivo
+> que predice el párrafo de abajo (comentarios nuevos en castellano con la palabra «todo»).
 >
 > Corrige lo que decía este plan: «23 `TODO` (triar: convertir en issue o borrar)». No hay nada que
 > triar. Y explica de paso por qué `S1135` engorda en un repo con comentarios en español: cualquier
 > comentario nuevo que use la palabra «todo» reaparecerá. Si molesta, se desactiva la regla en el
 > perfil de calidad.
 
-Lo que queda (`S3358`, `S7780`, `S8786`) **ya no es barrido**: son 96 incidencias que piden criterio
-una a una. Ver la tabla de arriba.
+Lo que queda (`S3358`, `S7780`, `S8786`) **ya no es barrido**: son **92** incidencias (medido el 08-08)
+que piden criterio una a una. Ver la tabla de arriba.
 
 <details><summary>Redacción original de la fase (referencia)</summary>
 
@@ -802,6 +927,51 @@ Es decir, medio gate se cierra con un barrido sin riesgo. Hacerlo **después** d
 (cobertura), porque hasta entonces el gate falla igual por `new_coverage`.
 
 </details>
+
+### Fase H — La nota D de seguridad, triada — ⬜ **nueva (2026-08-08)**
+
+Es la única nota que no está en A y el único apartado que este plan arrastraba sin abrir («38
+incidencias sin triar»). Ya está triado: **son 34, y ninguna es explotable tal como está desplegado**.
+Pero la nota no depende del total.
+
+> **La escala de seguridad de Sonar va por PEOR severidad, no por volumen:** A = 0 vulnerabilidades,
+> B = ≥1 MINOR, C = ≥1 MAJOR, D = ≥1 CRITICAL, E = ≥1 BLOCKER. Con 34 incidencias repartidas en
+> 1 CRITICAL + 22 MAJOR + 11 MINOR, **la D entera la fija una sola línea**. Cerrar las otras 33 no
+> movería la nota ni un escalón.
+
+**La única CRITICAL — `python:S5443`, `signer/app.py:59`:**
+
+```python
+SIGNER_WORKSPACE_DIR = os.getenv("SIGNER_WORKSPACE_DIR", "/tmp/deasy-signer-workspace")
+```
+
+Verificado: **esa variable no está definida en ningún compose ni Dockerfile**, así que el valor por
+defecto es el que corre en dev, qa y prod. Ahí es donde el firmante deja el PDF de entrada, el limpio,
+el firmado y el PKCS#12 desempaquetado. Atenuante medido: los ficheros no caen sueltos en el
+directorio raíz, sino dentro de `tempfile.TemporaryDirectory(dir=workspace_root)`
+(`app.py:1190` y `:1262`), que crea el subdirectorio en modo `0700`. Lo expuesto es solo la **raíz**,
+creada con `mkdir` y el umask por defecto, bajo un `/tmp` de escritura pública. En un contenedor de un
+solo proceso el riesgo real es cercano a cero; en un host compartido sería una carrera de symlinks.
+
+**Coste de cerrarla: una línea de compose** (`SIGNER_WORKSPACE_DIR=/var/lib/deasy-signer/workspace`,
+con su volumen), o marcarla como aceptada con este párrafo como justificación. **Cualquiera de las dos
+mueve la seguridad de D a C**, y es el mejor retorno por esfuerzo de todo el documento.
+
+**El resto, agrupado por qué son de verdad:**
+
+| Nº | Regla | Veredicto tras leer el código |
+|---:|---|---|
+| 8 | `S2068` contraseñas | **Son las credenciales demo documentadas**: `SystemBootstrapView.vue:389-397` (los 3 usuarios de ejemplo, contados x2 porque cada línea lleva `password` y `confirm_password`), `genericCatalog.js:283` (`DEMO_USER_PASSWORD`) y `generate_demo_certificates.mjs:26`. Reales y deliberadas — están hasta en CLAUDE.md. **Decisión pendiente**: sacarlas a variable de entorno con default, o marcarlas |
+| 7 | `S5693` límite de tamaño | **Falsos positivos.** La regla no dice «falta límite», dice «revisa que el límite sea seguro» — y **los 7 declaran `limits.fileSize`** (10/30/50 MB). El único discutible es `chat_router.js:27`: **100 MB × 5 ficheros = 500 MB por petición** |
+| 6 | `S2245` `Math.random` | **Falsos positivos de seguridad**, pero uno es deuda real: `SInput.vue:64` genera **ids del DOM** con `Math.random().toString(36).substr(2,9)` — justo lo que la Fase B sustituyó por `useId()` en todo lo demás, y con `substr` deprecado encima. Cambiarlo cierra la marca y alinea el componente |
+| 4 | `python:S5332` AMQP | **Es el riesgo R-1 ya conocido** de `docs/auditoria-signer-2026-08.md`: la contraseña del PKCS#12 viaja en el cuerpo del mensaje por AMQP sin TLS. No es hallazgo nuevo; es el mismo, contado cuatro veces |
+| 4 | `S4036` `PATH` en `execFile` | `kernel/storage.js:78`, `user_controler.storage.js:98`, `sign_controller.js:499`, `templateArchive.js:111`. **Piden lectura una a una** — es el único grupo del que no puedo afirmar que sea inocuo sin mirar cada invocación |
+| 3 | `javascript:S5332` `http://` | Endpoints internos de la red Docker (`minio_service.js`, `rabbitmq_http.js`, `mailer.js`). Inocuos dentro del compose; **dejan de serlo si algún día MinIO sale de la red interna** |
+| 1 | `S2612` permisos | `templateArchive.js:138` |
+
+**Orden recomendado:** la CRITICAL primero (una línea, sube la nota), después los 4 `S4036` (los
+únicos sin veredicto), y el resto es marcar con justificación. **No** «arreglar» los `S5693` ni los
+`S2245`: los límites ya están puestos y `Math.random` para un id de DOM no es criptografía.
 
 ---
 
@@ -866,7 +1036,12 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
   **invertiría** el acoplamiento.
 - **El núcleo CRUD de `SqlAdminService`** (~460 L): es el buen diseño que sostiene el registro de hooks.
 - **Los falsos positivos de §4.1** (`S6418` de alfabetos de tokens): marcar en Sonar, no "arreglar".
-  `S2871` en particular rompería los golden-master.
+  `S2871` en particular rompería los golden-master — aunque **su marca ya no figura**, porque la Fase A
+  convirtió esos ficheros en tests (§4.4-R1). El censo real de marcas vivas, **28**, está en §4.4-R1 y
+  es la única fuente para ese número.
+- **`S5693` (límite de tamaño de subida) y `S2245` (`Math.random`)**: verificado en §5-H que los 7
+  límites existen y que los `Math.random` generan ids de DOM, no secretos. **Marcar, no "arreglar"** —
+  salvo `SInput.vue:64`, que sí conviene pasar a `useId()` por coherencia con la Fase B.
 - **`S1135` («TODO») al completo.** Las 21 son la palabra española «todo» en comentarios en prosa; no
   existe ni un marcador de tarea real en el repo. Están marcadas como FALSE-POSITIVE. **No reescribas
   comentarios en castellano para silenciar la regla.** Si vuelven a aparecer al escribir comentarios
@@ -900,13 +1075,20 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 
 ```bash
 docker compose -f scripts/sonar/compose.yml up -d
-# Requiere un token (ver §1.1): el basic auth con contraseña ya no vale.
+# Requiere un token (ver §1.1): el basic auth con contraseña ya no vale, pero el login de sesión SÍ,
+# y con él se emite un token sin abrir la UI. Receta de arranque en frío en §1.1.
 S="curl -s -H \"Authorization: Bearer $SONAR_TOKEN\" http://localhost:9002"
 
-# re-escanear (~1 min). El token es de un solo uso práctico: generar uno por sesión
-TOKEN=$($S/api/user_tokens/generate -X POST -d "name=deasy-scan-$(git rev-parse --short HEAD)" \
-        | python3 -c 'import json,sys;print(json.load(sys.stdin)["token"])')   # necesita un token previo
+# REGENERAR LA COBERTURA ANTES DE ESCANEAR, o Sonar lee la de la corrida anterior sin quejarse (§5-A.2)
+bash scripts/docker-env.sh dev exec -T backend  npm run test:unit:coverage
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage
+
+# re-escanear (~1,5 min)
 SONAR_TOKEN=$TOKEN bash scripts/sonar/scan.sh
+
+# el escaneo devuelve un id de tarea: el servidor la PROCESA después de subirla, así que consultar
+# las métricas inmediatamente devuelve las viejas. Esperar a SUCCESS antes de medir:
+$S/api/ce/task?id=<task-id-que-imprime-el-escáner>
 
 # línea base (§2)
 $S/api/measures/component?component=deasy'&'metricKeys=ncloc,cognitive_complexity,complexity,code_smells,coverage,duplicated_lines_density,sqale_index
