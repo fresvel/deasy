@@ -327,7 +327,7 @@ describe("contrato de URL de /admin (fase 3.5)", () => {
 });
 
 describe("guard: el admin no entra en el espacio de usuario", () => {
-  // adminBlockedRouteNames. Documentado en CLAUDE.md: para probar dossier o firmas hay que entrar
+  // meta.blockedForAdmin. Documentado en CLAUDE.md: para probar dossier o firmas hay que entrar
   // como gestor o usuario. Al partir /home en tres paginas (fase 3) hay que preservar las tres.
   it.each([
     ["/home"],

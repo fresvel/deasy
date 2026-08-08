@@ -1104,7 +1104,7 @@ Convenciones:
 - ⚠️ `meta.title` sin declarar en `RouteMeta` → en TS estricto `to.meta.title` sería `unknown`. En JS este problema desaparece.
 - ⚠️ 2 rutas (`/line-chart`, `/bar-chart`) **no tienen `meta`** → `document.title` = "Vue.js undefined | …".
 
-**Para Deasy**: el router existente ya usa `meta` (p. ej. `adminBlockedRouteNames`) y rutas con nombre — no hay nada que importar de aquí; el patrón de TailAdmin es **más pobre** que el actual.
+**Para Deasy**: el router existente ya usa `meta` (p. ej. `meta.blockedForAdmin`) y rutas con nombre — no hay nada que importar de aquí; el patrón de TailAdmin es **más pobre** que el actual.
 
 ---
 

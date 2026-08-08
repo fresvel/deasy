@@ -235,7 +235,7 @@ El login es por **cédula**, no por correo.
 Ojo: la contraseña del gestor **no** es `Demo1234!`. El gestor conserva además el rol de usuario,
 así que sirve para probar el dossier.
 
-El router bloquea `/home` y `/perfil` para el admin (`adminBlockedRouteNames`): para probar el
+El router bloquea el espacio de usuario para el admin con `meta: { blockedForAdmin: true }`: para probar el
 dossier o las firmas hay que entrar como gestor o usuario.
 
 ## Reinstalar desde cero

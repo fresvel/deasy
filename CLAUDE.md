@@ -12,8 +12,10 @@ ejemplo"); no hay ningún seed SQL alternativo. Ojo: la contraseña del gestor N
     gestor  -> cédula 0987654321  /  Gestor1234!   (de momento tiene rol de usuario también)
     usuario -> cédula 1122334455  /  Demo1234!
 
-El router bloquea `/home` y `/perfil` para el admin (`adminBlockedRouteNames`), así que para
-probar el dossier o las firmas hay que entrar como gestor o usuario.
+El router bloquea el espacio de usuario para el admin con `meta: { blockedForAdmin: true }` (el
+guard lo redirige a `/admin`): `/home`, `/home/documentos`, `/home/firmas` y `/perfil` con todas
+sus hijas, porque vue-router hereda el `meta`. Así que para probar el dossier o las firmas hay que
+entrar como gestor o usuario.
 
 ### Dónde va cada test (y cómo se llama)
 
