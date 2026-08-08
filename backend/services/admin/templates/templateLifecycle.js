@@ -1082,6 +1082,123 @@ export default class TemplateLifecycleService {
     return workflowWarnings;
   }
 
+  // Deja en `draftDir` TODOS los formatos que va a tener el borrador y devuelve el mapa
+  // `available_formats` que se persiste. Tres fuentes, en este orden:
+  //
+  //   1. la semilla elegida (contrato jinja2 + defaults.yaml + el render latex, si lo publica),
+  //   2. los formatos que ya tenia el artifact, cuando NO se cambia de semilla,
+  //   3. los ficheros que suba el usuario, que ganan sobre lo anterior.
+  //
+  // Devuelve tambien `seedRow` porque quien llama lo necesita para el `seed_code` del meta.yaml.
+  async _materializeDraftFormats({
+    draftDir,
+    bucket,
+    baseObjectPrefix,
+    templateSeedId = null,
+    uploadedFiles = {},
+    existingAvailableFormats = {}
+  } = {}) {
+    const availableFormats = {};
+
+    const preserveExistingFormat = async (format) => {
+      const existingEntry = existingAvailableFormats?.[format];
+      if (!existingEntry?.entry_object_key) {
+        return false;
+      }
+      const targetDir = buildArtifactFormatDir(draftDir, format);
+      const existingObjectKey = String(existingEntry.entry_object_key);
+      if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+        const fileName = path.basename(existingObjectKey);
+        await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
+      } else {
+        await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
+      }
+      setAvailableFormatEntry(availableFormats, format, baseObjectPrefix);
+      return true;
+    };
+
+    let seedRow = null;
+    if (templateSeedId) {
+      seedRow = await this._getByKeys("template_seeds", { id: templateSeedId });
+      if (!seedRow) {
+        throw new Error("El seed seleccionado no existe.");
+      }
+      await downloadMinioPrefixToDirectory(
+        MINIO_TEMPLATES_BUCKET,
+        `${seedRow.source_path}src/`,
+        buildArtifactFormatDir(draftDir, CONTRACT_FORMAT)
+      );
+      setAvailableFormatEntry(availableFormats, CONTRACT_FORMAT, baseObjectPrefix);
+      const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
+      try {
+        await copyMinioObjectToFile(
+          MINIO_TEMPLATES_BUCKET,
+          defaultsObjectKey,
+          path.join(draftDir, "data.yaml")
+        );
+      } catch {
+        // Optional for non-latex seeds.
+      }
+      // El render compilado (formato latex) es opcional/derivable: si el seed no lo publica (p.ej. el seed
+      // base se empaqueta sin render/), se omite sin abortar. El contrato real es jinja2.
+      if (String(seedRow.seed_type || "").toLowerCase() === "latex") {
+        try {
+          await downloadMinioPrefixToDirectory(
+            MINIO_TEMPLATES_BUCKET,
+            `${seedRow.source_path}render/`,
+            buildArtifactFormatDir(draftDir, "latex")
+          );
+          setAvailableFormatEntry(availableFormats, "latex", baseObjectPrefix);
+        } catch {
+          // Sin render/ publicado: se omite el formato latex.
+        }
+      }
+    }
+
+    if (!seedRow) {
+      await preserveExistingFormat(CONTRACT_FORMAT);
+      await preserveExistingFormat("latex");
+    }
+
+    const fileFieldMap = {
+      pdf: "pdf",
+      docx: "docx",
+      xlsx: "xlsx",
+      pptx: "pptx"
+    };
+
+    for (const [format, file] of Object.entries(uploadedFiles)) {
+      const targetDir = buildArtifactFormatDir(draftDir, fileFieldMap[format]);
+      const existingEntry = existingAvailableFormats?.[fileFieldMap[format]];
+
+      if (file) {
+        const safeName = slugify(path.parse(file.originalname || format).name) || format;
+        const extension = path.extname(file.originalname || "") || `.${format}`;
+        const fallbackFileName = `${safeName}${extension.toLowerCase()}`;
+        const fileName = existingEntry?.entry_object_key
+          ? path.basename(existingEntry.entry_object_key)
+          : fallbackFileName;
+        fs.mkdirSync(targetDir, { recursive: true });
+        fs.writeFileSync(path.join(targetDir, fileName), file.buffer);
+        setAvailableFormatEntry(availableFormats, fileFieldMap[format], baseObjectPrefix);
+        continue;
+      }
+
+      if (existingEntry?.entry_object_key) {
+        const existingObjectKey = String(existingEntry.entry_object_key);
+        if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+          const fileName = path.basename(existingObjectKey);
+          await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
+        } else {
+          await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
+        }
+        setAvailableFormatEntry(availableFormats, fileFieldMap[format], baseObjectPrefix);
+      }
+    }
+
+    return { availableFormats, seedRow };
+  }
+
   async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
     this.ensurePool();
 
@@ -1191,103 +1308,14 @@ export default class TemplateLifecycleService {
     fs.rmSync(draftDir, { recursive: true, force: true });
     fs.mkdirSync(draftDir, { recursive: true });
     fs.mkdirSync(path.join(draftDir, "template"), { recursive: true });
-    const availableFormats = {};
-
-    const preserveExistingFormat = async (format) => {
-      const existingEntry = existingAvailableFormats?.[format];
-      if (!existingEntry?.entry_object_key) {
-        return false;
-      }
-      const targetDir = buildArtifactFormatDir(draftDir, format);
-      const existingObjectKey = String(existingEntry.entry_object_key);
-      if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
-        const fileName = path.basename(existingObjectKey);
-        await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
-      } else {
-        await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
-      }
-      setAvailableFormatEntry(availableFormats, format, baseObjectPrefix);
-      return true;
-    };
-
-    let seedRow = null;
-    if (templateSeedId) {
-      seedRow = await this._getByKeys("template_seeds", { id: templateSeedId });
-      if (!seedRow) {
-        throw new Error("El seed seleccionado no existe.");
-      }
-      await downloadMinioPrefixToDirectory(
-        MINIO_TEMPLATES_BUCKET,
-        `${seedRow.source_path}src/`,
-        buildArtifactFormatDir(draftDir, CONTRACT_FORMAT)
-      );
-      setAvailableFormatEntry(availableFormats, CONTRACT_FORMAT, baseObjectPrefix);
-      const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
-      try {
-        await copyMinioObjectToFile(
-          MINIO_TEMPLATES_BUCKET,
-          defaultsObjectKey,
-          path.join(draftDir, "data.yaml")
-        );
-      } catch {
-        // Optional for non-latex seeds.
-      }
-      // El render compilado (formato latex) es opcional/derivable: si el seed no lo publica (p.ej. el seed
-      // base se empaqueta sin render/), se omite sin abortar. El contrato real es jinja2.
-      if (String(seedRow.seed_type || "").toLowerCase() === "latex") {
-        try {
-          await downloadMinioPrefixToDirectory(
-            MINIO_TEMPLATES_BUCKET,
-            `${seedRow.source_path}render/`,
-            buildArtifactFormatDir(draftDir, "latex")
-          );
-          setAvailableFormatEntry(availableFormats, "latex", baseObjectPrefix);
-        } catch {
-          // Sin render/ publicado: se omite el formato latex.
-        }
-      }
-    }
-
-    if (!seedRow) {
-      await preserveExistingFormat(CONTRACT_FORMAT);
-      await preserveExistingFormat("latex");
-    }
-
-    const fileFieldMap = {
-      pdf: "pdf",
-      docx: "docx",
-      xlsx: "xlsx",
-      pptx: "pptx"
-    };
-
-    for (const [format, file] of Object.entries(uploadedFiles)) {
-      const targetDir = buildArtifactFormatDir(draftDir, fileFieldMap[format]);
-      const existingEntry = existingAvailableFormats?.[fileFieldMap[format]];
-
-      if (file) {
-        const safeName = slugify(path.parse(file.originalname || format).name) || format;
-        const extension = path.extname(file.originalname || "") || `.${format}`;
-        const fallbackFileName = `${safeName}${extension.toLowerCase()}`;
-        const fileName = existingEntry?.entry_object_key
-          ? path.basename(existingEntry.entry_object_key)
-          : fallbackFileName;
-        fs.mkdirSync(targetDir, { recursive: true });
-        fs.writeFileSync(path.join(targetDir, fileName), file.buffer);
-        setAvailableFormatEntry(availableFormats, fileFieldMap[format], baseObjectPrefix);
-        continue;
-      }
-
-      if (existingEntry?.entry_object_key) {
-        const existingObjectKey = String(existingEntry.entry_object_key);
-        if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
-          const fileName = path.basename(existingObjectKey);
-          await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
-        } else {
-          await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
-        }
-        setAvailableFormatEntry(availableFormats, fileFieldMap[format], baseObjectPrefix);
-      }
-    }
+    const { availableFormats, seedRow } = await this._materializeDraftFormats({
+      draftDir,
+      bucket,
+      baseObjectPrefix,
+      templateSeedId,
+      uploadedFiles,
+      existingAvailableFormats
+    });
 
     if (!Object.keys(availableFormats).length) {
       throw new Error("No se detectaron formatos disponibles para el borrador.");
