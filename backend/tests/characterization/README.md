@@ -51,12 +51,14 @@ Eran dos fuentes de verdad, y el seed era la peor de las dos:
 
 - Dejaba vacía la capa de plantillas, así que el setup tenía que inyectarla
   **escribiendo directo al pool**, saltándose el guard del endpoint.
-- Su modo `--full` está roto por drift de esquema.
+- Su modo `--full` estaba roto por drift de esquema.
 - Congelaba valores rancios: el golden guardaba `definition_name = "Proceso por
   defecto por General"`, un nombre que la aplicación **ya no genera**.
 
-`seed-db.sh` sigue existiendo para cargar datos demo a mano; simplemente el harness
-ya no depende de él.
+Ese snapshot y su wrapper `seed-db.sh` **ya no existen**: el bootstrap es la única
+fixture del sistema. Para cargar datos de ejecución a mano en dev queda
+`backend/scripts/seed_dev_rich.mjs`, que corre **sobre** un sistema ya bootstrapeado
+en vez de sustituirlo.
 
 ### Los dos scripts de setup
 

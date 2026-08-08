@@ -291,8 +291,6 @@ Wrappers actuales:
 - `scripts/deploy-env.sh`: compatibilidad para el flujo iniciado por GitHub
   Actions.
 - `scripts/docker-env.sh`: interfaz comun para ejecutar compose por ambiente.
-- `scripts/seed-db.sh`: ejecuta `seed_pucese.mjs` dentro del contenedor
-  `backend` por ambiente.
 - `scripts/reset-db.sh`: ejecuta el script de reset (resetea el esquema
   PostgreSQL) dentro del contenedor `backend` por ambiente.
 - `scripts/reset-system.sh`: regresa el sistema al estado base (vacia esquema
@@ -309,7 +307,7 @@ manual o programada desde el servidor.
 Ejemplos:
 
 ```bash
-bash scripts/seed-db.sh dev capture
+bash scripts/reset-system.sh dev
 bash scripts/reset-db.sh qa
 ```
 

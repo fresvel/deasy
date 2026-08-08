@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Reglas de Testing 
 Para realizar las pruebas debes considerar que todo el sistema está dockerizado.  En la ruta scripts está docker-env.sh que te permite levantar entornos y ejecutar comandos de manera rápida. 
 
-Los usuarios de referencia son los que **crea el bootstrap** (`/setup` → "usar datos de
-ejemplo"), no los de `seed-db.sh`. Ojo: la contraseña del gestor NO es `Demo1234!`.
+Los usuarios de referencia los **crea el bootstrap** (`/setup` → "usar datos de
+ejemplo"); no hay ningún seed SQL alternativo. Ojo: la contraseña del gestor NO es `Demo1234!`.
 
     admin   -> cédula 1234567890  /  Demo1234!
     gestor  -> cédula 0987654321  /  Gestor1234!   (de momento tiene rol de usuario también)
@@ -55,7 +55,7 @@ Each module has its own toolchain and package manager — do not mix them.
 - `docs/` — Astro Starlight documentation site. Uses **pnpm**.
 - `signer/` — Python (`pyhanko`) PDF signing microservice with a Node helper in `sigmaker/`; talks to the backend over RabbitMQ + MinIO.
 - `docker/` — multi-environment Compose stacks (`compose.base.yml` + overlays per env).
-- `scripts/` — operational wrappers for startup, deploy, seeds, reset, migrations.
+- `scripts/` — operational wrappers for startup, deploy, reset and migrations.
 
 ## Common commands
 

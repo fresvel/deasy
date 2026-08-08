@@ -40,6 +40,13 @@
 > | El staging a `os.tmpdir()` deja `saveTemplateArtifactDraft` intacta | ⚠️ **Casi.** Sigue siendo la peor función, pero su CC **subió de 158 a 164** (§3.2) |
 >
 > Entorno `qa-local` eliminado: los comandos `docker-env.sh qa-local` de cualquier doc ya no valen.
+>
+> **Ocho artefactos de `backend/scripts/` se eliminaron DESPUÉS de esta medición** (`fc44559`, ver
+> `docs/plan-limpieza-scripts-2026-08.md` §4.7). Las cifras de §2, §3 y §4.4 son **anteriores al
+> borrado** y se conservan intactas para que sigan siendo comparables con el próximo escaneo; los
+> ítems anotados como **cerrado por eliminación** ✅ **no son trabajo pendiente** — el próximo
+> escaneo los descontará solo. Efecto agregado esperado: **−1 `S3776`**, **−1 marca `S6418`
+> WONTFIX**, **−2 `S2068` de producción** y **−95 líneas duplicadas**.
 
 ---
 
@@ -105,7 +112,9 @@ unitario se analizan **como código de producción** — Sonar indexa hoy 391 fi
 > están junto a su módulo (`services/**/*.test.js`, `config/*.test.js`, …), como manda CLAUDE.md. Un
 > `sonar.tests=backend/tests` los dejaría fuera. Y las otras **11** S2068 son producción real
 > (6 en `SystemBootstrapView.vue`, el resto en `genericCatalog.js` y scripts de seed): declarar los
-> tests no las toca.
+> tests no las toca. **Hoy son 9**: dos eran la constante `"Deasy1234!"` de
+> `backend/scripts/apply_rbac_patch.mjs` y `backend/scripts/seed_demo_accounts.mjs`, ✅ **cerradas por
+> eliminación** (`fc44559`).
 
 **H2 — no hay informe de cobertura enchufado.** `coverage = 0.0 %` pese a que existen 218 tests
 unitarios y 161 de caracterización. Sonar no miente: nunca se le ha dado un `lcov`.
@@ -241,7 +250,7 @@ esto se arregla sobre todo en `SInput`/`SSelect` **no se sostiene tal cual** (§
 | 24 | `javascript:S7781` | `replaceAll()` en vez de `replace()` con regex global |
 | 17 | `javascript:S7780` | `String.raw` para backslashes escapados |
 | 15 | `javascript:S7785` · 15 `javascript:S4624` | `await` de nivel superior · plantillas anidadas |
-| 14 | `javascript:S2068` | Contraseñas hardcodeadas — **3 son de fixtures** (ver H1); **11 son producción** |
+| 14 | `javascript:S2068` | Contraseñas hardcodeadas — **3 son de fixtures** (ver H1); **11 son producción** → **9 hoy**, 2 ✅ cerradas por eliminación de scripts (`fc44559`) |
 
 ### 2.3 Duplicación concentrada
 
@@ -249,7 +258,7 @@ esto se arregla sobre todo en `SInput`/`SSelect` **no se sostiene tal cual** (§
 |---:|---:|---|
 | 534 | 52,9 % | `backend/config/sqlTables.js` — **son datos, es duplicación legítima. No tocar.** |
 | 288 | 13,1 % | `backend/controllers/users/user_controler.js` |
-| 95 | 18,1 % | `backend/scripts/apply_rbac_patch.mjs` |
+| ~~95~~ | ~~18,1 %~~ | ~~`backend/scripts/apply_rbac_patch.mjs`~~ — ✅ **cerrado por eliminación** (`fc44559`) |
 | 75 | 27,5 % | `backend/services/whatsapp/WhatsAppBot.js` |
 | 74 | 8,2 % | `backend/services/system/SystemBootstrapService.js` |
 | 66 | 21,9 / 24,7 % | `AgregarCapacitacion.vue` / `AgregarExperiencia.vue` |
@@ -289,8 +298,9 @@ esto se arregla sobre todo en `SInput`/`SSelect` **no se sostiene tal cual** (§
 
 ### 3.2 Por función (`S3776` abiertas, las 14 peores)
 
-Esta es la cola de trabajo. Umbral de Sonar: 15. **71 abiertas** (63 JS + 8 Python). Cifras y líneas
-del escaneo del 19:22, ya post-reempaquetado — no hay que aplicar ningún desplazamiento.
+Esta es la cola de trabajo. Umbral de Sonar: 15. **71 abiertas** (63 JS + 8 Python) — **hoy 70**: la
+de `seed_pucese.mjs:367` se cerró por eliminación del fichero (`fc44559`), no por refactor. Cifras y
+líneas del escaneo del 19:22, ya post-reempaquetado — no hay que aplicar ningún desplazamiento.
 
 | Cogn. | Función / ubicación | Δ |
 |---:|---|---:|
@@ -304,7 +314,7 @@ del escaneo del 19:22, ya post-reempaquetado — no hay que aplicar ningún desp
 | 39 | `frontend/.../processes/useAdminDraftArtifactFlow.js:85` | = |
 | 36 | `backend/services/admin/SqlAdminService.js:278` → `list()` | = |
 | 33 | `backend/services/system/genericCatalog.js:376` · 33 `admin/generation/assignees.js:11` | = |
-| 32 | `backend/scripts/seed_pucese.mjs:367` | = |
+| ~~32~~ | ~~`backend/scripts/seed_pucese.mjs:367`~~ — ✅ **cerrado por eliminación** (`fc44559`) | = |
 | 31 | `frontend/.../data/useAdminTableDataSource.js:222` | = |
 | 30 | `signer/app.py:968` · 30 `admin/generation/documents.js:210` | nuevas en la lista |
 | 28 | `frontend/src/core/router/index.js:84` · 28 `admin/templates/workflows.js:441` | nuevas en la lista |
@@ -382,13 +392,14 @@ porque una de ellas estaba a punto de generar trabajo inútil (§5-A.3 y §5-A.4
 **R1 — «las marcas de Sonar no sobreviven a mover código».** Falso como regla general. El
 reempaquetado `514b67e` movió `SqlAdminService.tableHooks.js` → `crud/tableHooks.js`, y su marca
 `S6418 WONTFIX` **sigue viva en `crud/tableHooks.js:111`**. Las **7** marcas manuales existentes
-sobrevivieron sin excepción:
+sobrevivieron sin excepción (**hoy quedan 6**: la de `seed_pucese.mjs:256` se fue con el fichero en
+`fc44559`, lo que **no** contradice R1 — borrar no es reescribir):
 
 | Regla | Resolución | Ubicación hoy |
 |---|---|---|
 | `S6418` | WONTFIX | `backend/services/admin/crud/tableHooks.js:111` ← **movido, y sobrevivió** |
 | `S6418` | WONTFIX | `backend/services/system/SystemBootstrapService.js:26` |
-| `S6418` | WONTFIX | `backend/scripts/seed_pucese.mjs:256` |
+| ~~`S6418`~~ | ~~WONTFIX~~ | ~~`backend/scripts/seed_pucese.mjs:256`~~ — ✅ **cerrada por eliminación del fichero** (`fc44559`), **no** por reescribir la línea: la regla de R1 sigue en pie |
 | `S6418` | WONTFIX | `backend/utils/tokenGenerator.js:4` |
 | `S2871` ×2 | FALSE-POSITIVE | `backend/tests/characterization/lib/normalize.mjs:52,94` |
 | `S2871` | FALSE-POSITIVE | `backend/tests/characterization/lib/snapshot.mjs:32` |
@@ -432,7 +443,8 @@ no lo arregla —solo filtra los ya cargados—. El frontend no lo tiene, porque
 Si algún día hace falta cobertura honesta *por fichero* en el backend, la respuesta es `c8`, no Node.
 
 **Lo que NO hay que volver a tocar:** `sonar.projectVersion` (mueve el New Code period y tira la serie
-histórica de §2) y las 4 marcas manuales vivas (§4.4-R1).
+histórica de §2) y las 4 marcas manuales vivas (§4.4-R1) — **3 hoy**, tras irse la de `seed_pucese.mjs`
+con el fichero (`fc44559`).
 
 1. ✅ **Declarar los tests** en `sonar-project.properties`. **La receta que traía este plan estaba mal**
    por dos motivos medidos: (a) los 15 ficheros de test unitario **no viven bajo `backend/tests`**,
@@ -451,7 +463,8 @@ histórica de §2) y las 4 marcas manuales vivas (§4.4-R1).
    ```
    Efecto esperado, ya acotado: **28 ficheros** salen de producción (15 unitarios + 13 flows de char)
    y con ellos **3** vulnerabilidades S2068 y las 3 marcas `S2871`. **No** las 4 que decía este plan,
-   y **no** las otras 11 S2068, que son producción real (6 en `SystemBootstrapView.vue`).
+   y **no** las otras 11 S2068, que son producción real (6 en `SystemBootstrapView.vue`) — **hoy 9**,
+   tras cerrarse por eliminación las de `apply_rbac_patch.mjs` y `seed_demo_accounts.mjs` (`fc44559`).
    Verificar tras el cambio que el total de ficheros indexados baja de 391 a ~363.
 2. ✅ **Enchufar cobertura** (H2). Hecho con dos scripts nuevos, ambos emitiendo rutas `SF:` relativas
    a la **raíz del repo** (si salen relativas al módulo, Sonar las descarta **en silencio** y la
@@ -468,7 +481,7 @@ histórica de §2) y las 4 marcas manuales vivas (§4.4-R1).
    - **Regenerar ambos informes antes de cada escaneo**, o Sonar leerá la cobertura de la corrida
      anterior sin quejarse.
 3. ~~**Re-marcar los falsos positivos.**~~ **HECHO / sin objeto.** El re-escaneo del 19:22 demuestra
-   que las **7** marcas vivas sobrevivieron enteras al reempaquetado, incluida la de `tableHooks.js`
+   que las **7** marcas vivas (**6 hoy**, §4.4) sobrevivieron enteras al reempaquetado, incluida la de `tableHooks.js`
    que este plan daba por perdida (§4.4-R1). Vulnerabilidades **46 → 45**, seguridad **sigue en D**.
    Sigue en pie lo único que importaba: **no "arreglar" ninguna** — los `S6418` son alfabetos de
    tokens, no secretos, y los `S2871` romperían los golden-master. Lo que sí hay que hacer es

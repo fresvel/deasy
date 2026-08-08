@@ -1,58 +1,68 @@
-# Usuarios del seed de desarrollo
+# Usuarios de desarrollo
 
-Este documento lista las cuentas incluidas en `backend/scripts/seeds/pucese.seed.json`.
-Estas credenciales son solo para entornos locales o de desarrollo. No deben usarse
-en QA, produccion ni ambientes con datos reales.
+Las cuentas de desarrollo **no vienen de un seed SQL**: las crea el **bootstrap del sistema**.
+Con la base vacia, el backend arranca en modo bootstrap y el frontend redirige a `/setup`
+(`SystemBootstrapView`); ahi se marca la casilla **"Usar datos de ejemplo"** en cada bloque
+(administrador, gestor y usuario) y se envia el formulario, que llama a
+`POST /deasy/v1/system/bootstrap/initialize`.
+
+> Estas credenciales son solo para entornos **locales o de desarrollo**. No deben usarse en QA,
+> produccion ni en ambientes con datos reales.
 
 ## Credenciales
 
-Contrasena comun para todos los usuarios del seed:
+El login es por **cedula**, no por correo. Los correos de ejemplo (`admin@institucion.edu.ec`,
+`gestor@institucion.edu.ec`, `usuario@institucion.edu.ec`) sirven para notificaciones, no para
+autenticarse.
 
-```text
-Deasy1234!
-```
+| Rol | Cedula | Contrasena |
+| --- | --- | --- |
+| Admin | `1234567890` | `Demo1234!` |
+| Gestor | `0987654321` | `Gestor1234!` |
+| Usuario | `1122334455` | `Demo1234!` |
 
-| ID | Usuario | Cedula | Nombre | Estado | Email verificado | Activo |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | `persona.demo1@pucese.edu.ec` | `1234567891` | Persona Demo Uno | Activo | No | Si |
-| 2 | `persona.demo2@pucese.edu.ec` | `0987654321` | Persona Demo Dos | Inactivo | No | Si |
-| 3 | `director.demo@pucese.edu.ec` | `1234567890` | Carlos Montalvo Pereira | Activo | Si | Si |
-| 4 | `asistente.docencia.demo@pucese.edu.ec` | `9000000004` | Asistente Docencia Demo | Activo | Si | Si |
-| 5 | `asistente.tthh.demo@pucese.edu.ec` | `9000000005` | Asistente Talento Demo | Activo | Si | Si |
-| 6 | `responsable.financiero.demo@pucese.edu.ec` | `9000000006` | Responsable Financiero Demo | Activo | Si | Si |
-| 7 | `director.escuela.demo@pucese.edu.ec` | `9000000007` | Director Escuela Demo | Activo | Si | Si |
-| 8 | `director.docencia.demo@pucese.edu.ec` | `9000000008` | Director Docencia Demo | Activo | Si | Si |
-| 9 | `jefa.talento.demo@pucese.edu.ec` | `9000000009` | Jefa Talento Demo | Activo | Si | Si |
-| 10 | `prorrector.demo@pucese.edu.ec` | `9000000010` | Prorrector Demo | Activo | Si | Si |
-| RBAC | `admin.demo@pucese.edu.ec` | `9000000001` | Administrador Demo | Activo | Si | Si |
+Dos avisos que ahorran tiempo perdido:
 
-La cuenta `admin.demo@pucese.edu.ec` se crea o actualiza al ejecutar el patch
-RBAC. Los usuarios con cargo de director conservan su rol operativo derivado del
-cargo, pero no reciben el rol `AdminSistema` por defecto.
+- **La contrasena del gestor no es `Demo1234!`**, es `Gestor1234!`. Es la unica que se sale del
+  patron.
+- El **gestor conserva ademas el rol de usuario** (`Usuario`, permisos `dossier.*`) aparte de
+  `GestorProcesos`. Por eso sirve para probar el dossier propio sin cambiar de cuenta.
 
-## Recarga del seed en dev
+## El admin no puede entrar a `/home` ni a `/perfil`
 
-Para limpiar y cargar los datos base en PostgreSQL:
+El router del frontend marca esas rutas con `meta: { blockedForAdmin: true }` y el guard
+redirige al admin a `/admin`. Estan bloqueadas para el admin:
+
+- `/home`
+- `/home/documentos`
+- `/home/firmas`
+- `/perfil` y todas sus rutas hijas (el `meta` se hereda)
+
+Es decir: **para probar el dossier o las firmas hay que entrar como gestor o como usuario**, no
+como admin.
+
+## Reinstalar desde cero
 
 ```bash
-bash scripts/seed-db.sh dev apply
-bash scripts/seed-db.sh dev rbac
+bash scripts/reset-system.sh dev
 ```
 
-El paso `rbac` es importante despues de aplicar el seed, porque crea o actualiza
-roles, permisos, mapeos cargo-rol y asignaciones derivadas necesarias para evitar
-respuestas `403` en usuarios demo con cargos operativos.
+Deja PostgreSQL y los buckets de MinIO vacios, recicla `backend` y `signer`, y el backend vuelve
+a modo bootstrap. No toca RabbitMQ.
+Despues, en el navegador: `/setup` → **"Usar datos de ejemplo"** en los tres bloques → enviar.
 
-## Usuario con procesos activos
+## Datos de ejecucion para probar HomeView
 
-Con la semilla actual, el usuario con procesos operativos activos es:
+El bootstrap deja un organigrama completo pero **muy poca carga operativa**: un solo proceso (el
+"Proceso por defecto", `routed`). Con eso `/home` no se puede verificar de verdad — no hay
+multiseleccion de procesos, ni encabezados de grupo, ni entregables `single`/`replicated`.
 
-```text
-persona.demo1@pucese.edu.ec
+Para poblar unidades, tareas y entregables de la **persona 3** (`1122334455`):
+
+```bash
+bash scripts/docker-env.sh dev exec -T backend node /app/backend/scripts/seed_dev_rich.mjs
 ```
 
-Procesos activos asociados:
-
-- Investigacion Productiva por Carrera
-- Investigacion Formativa Carreras
-- Requerimiento Docente
+⚠️ Los **tests de caracterizacion resetean la base de dev** (`test:char:run` hace reset +
+bootstrap + seed). Tras correrlos hay que volver a ejecutar `seed_dev_rich.mjs` o la persona 3 se
+queda sin datos de ejecucion.

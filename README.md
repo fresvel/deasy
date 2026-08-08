@@ -9,7 +9,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 - frontend/: interfaz web (Vue).
 - docker/: definiciones de contenedores y servicios.
 - scripts/: utilidades de arranque.
-- backend/scripts/: scripts de datos, seeds, reset y migraciones del backend.
+- backend/scripts/: scripts de datos, fixtures de desarrollo y reset del backend.
 - docs/: documentacion tecnica, arquitectura y modelos.
 - deploy/: unidades systemd de despliegue (server-pull).
 
@@ -35,8 +35,8 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 
 Operaciones DB con Docker por ambiente:
 
-- `bash scripts/seed-db.sh dev capture`
-- `bash scripts/reset-db.sh qa`
+- `bash scripts/reset-db.sh qa`: resetea el esquema PostgreSQL del ambiente.
+- `bash scripts/reset-system.sh dev`: vacia PostgreSQL + MinIO y deja el backend en modo bootstrap.
 
 ## Documentacion
 

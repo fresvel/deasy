@@ -196,64 +196,55 @@ Variables importantes del signer:
 - `SIGN_REQUEST_QUEUE`
 - `SIGN_VALIDATE_REQUEST_QUEUE`
 
-## Seeds, reset y migraciones
+## Reset y estado inicial
 
-### Seed SQL de PostgreSQL
+### El estado inicial lo produce el bootstrap
 
-Estos comandos trabajan con datos SQL, no con archivos de plantillas en MinIO.
-Sirven para capturar o aplicar el snapshot `backend/scripts/seeds/pucese.seed.json`
-contra la base PostgreSQL del ambiente indicado.
+Ya no hay seed SQL: no existe ningun snapshot que capturar ni aplicar. El estado
+inicial del sistema lo crea el **bootstrap**, desde la UI en `/setup` o llamando
+directamente a `POST /deasy/v1/system/bootstrap/initialize`. Sobre una base vacia
+el backend detecta la instalacion virgen y la UI pide crear el primer
+administrador.
 
-Capturar seed desde `dev`:
-
-```bash
-bash scripts/seed-db.sh dev capture
-```
-
-Aplicar seed en `dev`:
-
-```bash
-bash scripts/seed-db.sh dev apply
-```
-
-Si se debe usar una semilla base compartida y solo agregar permisos/roles sin
-reemplazar usuarios existentes, aplica primero la semilla y luego el patch RBAC:
-
-```bash
-bash scripts/seed-db.sh dev apply
-bash scripts/seed-db.sh dev rbac
-```
-
-Aplicar seed especifico dentro del contenedor backend:
-
-```bash
-bash scripts/seed-db.sh dev apply --file /app/backend/scripts/seeds/pucese.seed.json
-```
-
-Notas importantes:
-
-- `capture` lee la base PostgreSQL actual y escribe el JSON de semilla.
-- `apply` borra y reinserta las tablas incluidas en el JSON; no lo uses sobre datos que quieras conservar.
-- `rbac` crea/actualiza roles, recursos, acciones, permisos, permisos por rol y asignaciones derivadas desde cargos existentes.
-- Estos comandos no suben archivos de plantillas a MinIO.
-
-Aplicar semilla demo de cuentas, roles, workflow y dossier:
-
-```bash
-bash scripts/docker-env.sh dev exec -T backend node /app/backend/scripts/seed_demo_accounts.mjs
-```
-
-La clave por defecto de los usuarios demo es `Deasy1234!`. Para cambiarla en una
-ejecucion puntual, definir `DEASY_DEMO_PASSWORD` antes de correr el comando.
+Las credenciales de los usuarios que crea el bootstrap estan en
+`docs/03-backend/seed-users-dev.md`.
 
 El mecanismo de migraciones incrementales fue retirado con la
 migracion a PostgreSQL: `backend/database/postgres_schema.sql` es la unica fuente
 de verdad del esquema (se aplica al arrancar via `ensurePostgresSchema`).
 
-Reset de PostgreSQL:
+### Reset de PostgreSQL
+
+Resetea el esquema PostgreSQL del ambiente:
 
 ```bash
 bash scripts/reset-db.sh dev
+```
+
+### Reset total del sistema
+
+Dropea todas las tablas de PostgreSQL, vacia los buckets gestionados de MinIO y
+recicla los servicios de app (`backend` y `signer`) para que reconecten en limpio;
+el backend vuelve a modo bootstrap:
+
+```bash
+bash scripts/reset-system.sh dev
+```
+
+Flags soportados:
+
+- `--keep-db`: conserva PostgreSQL.
+- `--keep-minio`: conserva los buckets de MinIO.
+- `--rebuild`: reconstruye las imagenes y recrea los servicios en vez de solo reiniciarlos (para `qa`/`prod` o cuando cambien dependencias).
+- `--no-restart`: no toca los servicios; habra que reiniciar el backend a mano.
+
+### Fixture de desarrollo
+
+Carga un juego de datos rico (procesos, plantillas, entregables) sobre un sistema
+ya inicializado por el bootstrap. Solo para `dev`:
+
+```bash
+bash scripts/docker-env.sh dev exec -T backend node /app/backend/scripts/seed_dev_rich.mjs
 ```
 
 Notas de seguridad:
@@ -263,8 +254,8 @@ Notas de seguridad:
 
 ## Seeds de storage en MinIO
 
-Estos comandos son los que publican archivos de plantillas en MinIO. Son
-distintos a `seed-db.sh`.
+Estos comandos son los que publican archivos de plantillas en MinIO; no tocan
+datos de PostgreSQL.
 
 Inicializar buckets y estructura de MinIO en `dev`:
 
