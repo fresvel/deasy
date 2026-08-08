@@ -29,7 +29,7 @@ Tras el wipe reinicia los servicios de app (backend, signer) para que
 reconecten en limpio; el backend detecta la instalación virgen y la UI pide crear el primer
 administrador.
 
-Flags de wipe (se pasan a reset_system.mjs):
+Flags de wipe (se traducen a los objetivos de reset.mjs):
   --keep-db        conserva PostgreSQL
   --keep-minio     conserva los buckets de MinIO
 
@@ -58,7 +58,10 @@ ENVIRONMENT="$1"
 shift
 
 RESTART_MODE="restart"   # restart | rebuild | none
-NODE_ARGS=()
+# La interfaz de ESTE wrapper sigue siendo por exclusion (--keep-*), que es como esta
+# documentada. Se traduce a los objetivos positivos que espera reset.mjs.
+RESET_DB=1
+RESET_STORAGE=1
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -68,8 +71,11 @@ while [ "$#" -gt 0 ]; do
     --no-restart)
       RESTART_MODE="none"
       ;;
-    --keep-db|--keep-minio)
-      NODE_ARGS+=("$1")
+    --keep-db)
+      RESET_DB=0
+      ;;
+    --keep-minio)
+      RESET_STORAGE=0
       ;;
     --help|-h)
       usage
@@ -133,10 +139,18 @@ ensure_environment "$ENVIRONMENT"
 ensure_docker_ready
 ensure_backend_running "$ENVIRONMENT"
 
-if [ "${#NODE_ARGS[@]}" -gt 0 ]; then
-  run_in_backend "$ENVIRONMENT" node /app/backend/scripts/reset_system.mjs "${NODE_ARGS[@]}"
+TARGETS=()
+if [ "$RESET_DB" -eq 1 ]; then
+  TARGETS+=("db")
+fi
+if [ "$RESET_STORAGE" -eq 1 ]; then
+  TARGETS+=("storage")
+fi
+
+if [ "${#TARGETS[@]}" -eq 0 ]; then
+  echo "• Nada que borrar: --keep-db y --keep-minio a la vez."
 else
-  run_in_backend "$ENVIRONMENT" node /app/backend/scripts/reset_system.mjs
+  run_in_backend "$ENVIRONMENT" node /app/backend/scripts/reset.mjs "${TARGETS[@]}" --yes
 fi
 
 echo ""

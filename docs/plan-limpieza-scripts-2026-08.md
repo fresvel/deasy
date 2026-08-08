@@ -600,11 +600,54 @@ Fuera del alcance del borrado, tratada después en commits aparte.
    Verificado antes de commitear reproduciendo el job en un `node:25` limpio: `npm ci` compila
    `bcrypt` sin problemas y las 252 pruebas pasan desde cero.
 
+5. ✅ **Los tres scripts de reset colapsan en un CLI con objetivos positivos** — ver §8.
+
 ### Abierta
 
-5. **`reset_postgres.mjs` ≡ `reset_system.mjs --keep-minio`** — funcionalmente idénticos. Colapsarlos
-   son 2 líneas, pero convierte una garantía **estructural** ("reset-db no sabe purgar MinIO") en una
-   garantía por flag. Siendo la herramienta de trabajo diaria, el riesgo no compensa las ~15 líneas.
 6. **`bootstrap_admin_recovery.mjs` es poco descubrible** — `SystemBootstrapView.vue:293` lo cita por
    nombre pero termina en `...` sin enumerar los flags, y no dice que hay que entrar al contenedor.
    El arreglo barato es documentar los flags en el mensaje, no tocar el script.
+
+---
+
+## 8. Rediseño del reset
+
+El ítem 5 se abrió como *"¿colapsamos `reset_postgres.mjs` en `reset_system.mjs --keep-minio`?"* y se
+cerró con un diseño distinto, porque **el diagnóstico inicial estaba mal enfocado**. Se fijaba en la
+duplicación, que tras `557bc20` eran ya solo ~6 líneas. Los olores reales eran otros:
+
+1. **Default destructivo con opt-out.** `node reset_system.mjs` sin argumentos arrasaba PostgreSQL
+   *y* MinIO; las operaciones seguras exigían acordarse de `--keep-db` / `--keep-minio`.
+2. **Tres nombres para un concepto, con roles invisibles.** `reset_postgres` era CLI, `reset_storage`
+   librería y `reset_system` orquestador, y por el nombre no había forma de saberlo.
+3. La duplicación del cuerpo de reset de PG.
+4. `emptyMinioBucket` exportado pero usado solo dentro de su fichero.
+
+La objeción de conservar dos entradas iba en realidad contra el **flag negativo**, no contra
+unificar. Con objetivos positivos se unifica sin ese coste:
+
+```
+backend/scripts/reset.mjs             CLI único
+backend/scripts/lib/reset_targets.mjs implementación (resetPostgres, resetMinio, describeContents)
+
+  node scripts/reset.mjs              → uso y salida 1, sin tocar nada
+  node scripts/reset.mjs db
+  node scripts/reset.mjs storage
+  node scripts/reset.mjs db storage
+```
+
+`reset-db.sh` invoca `reset.mjs db` y **nunca nombra `storage`**, así que sigue sin poder purgar
+MinIO: la garantía se conserva, pero ahora es visible en el call site en vez de depender de qué
+fichero elegiste. Los wrappers de `scripts/` mantienen su interfaz por exclusión (`--keep-db`,
+`--keep-minio`), que es como está documentada, y la traducen a objetivos.
+
+**Confirmación.** Sin `--yes`, si la instancia tiene datos el CLI enumera qué hay y sale 1 sin tocar
+nada. Los wrappers pasan `--yes` porque ya tienen sus propios guards
+(`ensure_prod_approval_file` en `_backend_db_exec.sh`): la confirmación protege a quien invoque el
+`.mjs` **a mano** dentro del contenedor, que es justo donde esos guards no aplican.
+
+Verificado en ejecución, no solo compilando: sin argumentos no destruye; objetivo inválido rechaza;
+con datos y sin `--yes` se niega y las 43 personas siguen ahí; `storage --yes` purga 223 objetos
+dejando la base intacta; `test:char:run` 161/161 sin diffs de golden (ejercita `reset.mjs db --yes`);
+`reset-system.sh dev` completo resetea, recicla servicios y recarga el proxy; y
+`--keep-db --keep-minio` a la vez responde "nada que borrar" en vez de ejecutar un reset vacío.

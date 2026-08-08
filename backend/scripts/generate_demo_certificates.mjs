@@ -6,7 +6,7 @@
 //   node scripts/generate_demo_certificates.mjs --force         # reemite a todo el mundo
 //   node scripts/generate_demo_certificates.mjs --person 1122334455   # una persona (cédula o id)
 //
-// POR QUÉ EXISTE --force. `reset_storage.mjs` vacía el bucket `deasy-certificates` pero NO
+// POR QUÉ EXISTE --force. `reset.mjs storage` vacía el bucket `deasy-certificates` pero NO
 // borra las filas de `person_certificates`. Sin --force, el filtro por defecto
 // (HAVING COUNT = 0) da por "atendidas" a esas personas y no regenera nada: se quedan con un
 // certificado que la UI oculta porque su objeto ya no está en MinIO, y sin forma de recuperarlo.
