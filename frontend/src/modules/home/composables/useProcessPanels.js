@@ -1,32 +1,56 @@
+import { ref } from 'vue';
+
 // Carga de PANELES OPERATIVOS de proceso (singular, multi-proceso consolidado y refresco).
 // Extraído de HomeView.vue en la Fase B del refactor del God Object.
 //
-// Sigue el patrón del módulo admin: el composable NO posee estado, RECIBE los refs y las deps
-// que necesita y devuelve las funciones. Así los refs se quedan declarados en HomeView (sin
-// riesgo de zona muerta temporal) y aquí solo vive la lógica de carga.
+// El composable POSEE su estado (Fase E-1 del plan de calidad). Antes recibía los siete refs de
+// HomeView y les escribía encima: 28 asignaciones a refs ajenos, el patrón "Middle Man" invertido
+// que impide razonar sobre el estado y testearlo por separado. Ahora los declara aquí y los
+// devuelve, como useDeliverableFilePreview / useDocumentCenter / useDossierSection.
 //
-// La superficie de inyección es grande (17 deps) a propósito: es el reflejo honesto de cuánto
-// se entrelaza el estado de HomeView. Los orquestadores que cruzan conceptos
-// (clearSelectedProcess, selectConsolidatedCargo) se quedan en HomeView y llaman a estas.
+// Lo que SIGUE inyectándose es solo lo que NO es suyo:
+//  - contexto de alcance (unidad/cargo/proceso activo) que vive en el aside y el panel consolidado,
+//  - `processPanelService` (la dependencia de red),
+//  - `resetTaskListFilters` (los filtros de la lista de tareas son de HomeView).
+// Todas esas entradas son de SOLO LECTURA aquí: este módulo no escribe ni una.
 export function useProcessPanels({
   activeConsolidatedUnitTab,
-  activeProcessUnitTab,
   consolidatedCargoProcesses,
   currentUserId,
-  processActionMessage,
-  processPanelError,
-  processPanelLoading,
   processPanelService,
   resetTaskListFilters,
   selectedConsolidatedProcessIds,
   selectedGroupId,
   selectedProcessContext,
-  selectedProcessKey,
-  selectedProcessPanel,
-  selectedProcessPanels,
   showCargosPanel,
   showProcessesPanel,
 }) {
+  // --- Estado propio -------------------------------------------------------
+  const selectedProcessKey = ref(null);
+  const selectedProcessPanel = ref(null);
+  // En el panel consolidado pueden cargarse varios procesos a la vez (multi-selección).
+  const selectedProcessPanels = ref([]);
+  const processPanelLoading = ref(false);
+  const processPanelError = ref('');
+  const processActionMessage = ref(null);
+  const activeProcessUnitTab = ref('all');
+
+  const setProcessActionInfo = (text, type = 'success') => {
+    processActionMessage.value = { text, type };
+  };
+
+  // Deja el panel como recién abierto. Lo llama HomeView desde clearSelectedProcess(), que además
+  // limpia lo que sí es suyo (contexto, modal de lanzamiento, filtros).
+  const resetProcessPanelState = () => {
+    selectedProcessKey.value = null;
+    selectedProcessPanel.value = null;
+    selectedProcessPanels.value = [];
+    processPanelError.value = '';
+    processActionMessage.value = null;
+    activeProcessUnitTab.value = 'all';
+  };
+
+  // --- Carga ---------------------------------------------------------------
   // Carga (en paralelo) los paneles de todos los procesos seleccionados del cargo activo.
   const loadSelectedProcessPanels = async () => {
     const processes = consolidatedCargoProcesses.value.filter((p) =>
@@ -82,8 +106,6 @@ export function useProcessPanels({
   };
 
   // Carga en paralelo los paneles de varios procesos (multi-selección del panel consolidado).
-
-  // Carga en paralelo los paneles de varios procesos (multi-selección del panel consolidado).
   const loadProcessPanelsForProcesses = async (processes, { resetFilters = true } = {}) => {
     const userId = currentUserId.value;
     if (!userId) {
@@ -128,9 +150,6 @@ export function useProcessPanels({
 
   // Refresca el/los panel(es) activos tras una acción, preservando filtros y selección.
   // En modo consolidado recarga todos los procesos seleccionados; si no, el panel singular.
-
-  // Refresca el/los panel(es) activos tras una acción, preservando filtros y selección.
-  // En modo consolidado recarga todos los procesos seleccionados; si no, el panel singular.
   const refreshActiveProcessPanel = async () => {
     if (showProcessesPanel.value && selectedProcessPanels.value.length) {
       const processes = consolidatedCargoProcesses.value.filter((p) =>
@@ -147,9 +166,20 @@ export function useProcessPanels({
   };
 
   return {
+    // estado propio
+    activeProcessUnitTab,
+    processActionMessage,
+    processPanelError,
+    processPanelLoading,
+    selectedProcessKey,
+    selectedProcessPanel,
+    selectedProcessPanels,
+    // acciones
     loadProcessPanelsForProcesses,
     loadSelectedProcessPanel,
     loadSelectedProcessPanels,
     refreshActiveProcessPanel,
+    resetProcessPanelState,
+    setProcessActionInfo,
   };
 }

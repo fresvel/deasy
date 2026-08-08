@@ -351,7 +351,7 @@
 
 <script setup>
 
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 
 import { 
@@ -387,20 +387,13 @@ const isSigningView = ref(false);
 const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
-const selectedTable = ref(null);
 const pendingTableFilters = ref(null);
 // Organigrama como pestaña hermana de las tablas de Unidades (no una tabla real).
 const ORG_GRAPH_TAB_KEY = "__unit_graph__";
-const graphTabActive = ref(false);
 // Mapa de procesos como pestaña hermana de las tablas de Procesos (no una tabla real).
 const PROCESS_GRAPH_TAB_KEY = "__process_graph__";
-const processGraphTabActive = ref(false);
-const selectedSection = ref("");
-const selectedAcademyItem = ref("");
-const selectedGestionItem = ref("");
-const selectedUsuarioItem = ref("");
-const selectedContratoItem = ref("");
-const selectedSeguridadItem = ref("");
+// selectedTable / selectedSection / los cinco item / los dos grafos NO son refs: se DERIVAN de la
+// URL (fase 3.5, cierre). Ver el bloque "Estado derivado de la URL" más abajo.
 const openCategories = ref({});
 const adminManager = ref(null);
 
@@ -489,7 +482,6 @@ const SECTION_SLUG_BY_KEY = Object.fromEntries(GROUP_DEFS.map((group) => [group.
 const SECTION_KEY_BY_SLUG = Object.fromEntries(GROUP_DEFS.map((group) => [slugifySection(group.label), group.key]));
 
 const ACADEMY_GROUP_KEY = "estructura_academico";
-const ACADEMY_GROUP_LABEL = "Academia";
 const ACADEMY_INDEX_ITEMS = [
   {
     key: "unidades",
@@ -514,7 +506,6 @@ const ACADEMY_INDEX_ITEMS = [
   }
 ];
 const GESTION_GROUP_KEY = "procesos";
-const GESTION_GROUP_LABEL = "Gestiones";
 const GESTION_INDEX_ITEMS = [
   {
     key: "procesos",
@@ -568,7 +559,6 @@ const GESTION_INDEX_ITEMS = [
   }
 ];
 const USERS_GROUP_KEY = "usuarios";
-const USERS_GROUP_LABEL = "Usuarios";
 const USERS_INDEX_ITEMS = [
   {
     key: "personas",
@@ -579,7 +569,6 @@ const USERS_INDEX_ITEMS = [
   }
 ];
 const CONTRACT_GROUP_KEY = "contratacion";
-const CONTRACT_GROUP_LABEL = "Contratos";
 const CONTRACT_INDEX_ITEMS = [
   {
     key: "vacantes",
@@ -597,7 +586,6 @@ const CONTRACT_INDEX_ITEMS = [
   }
 ];
 const SECURITY_GROUP_KEY = "seguridad";
-const SECURITY_GROUP_LABEL = "Seguridad";
 const SECURITY_INDEX_ITEMS = [
   {
     key: "roles",
@@ -614,6 +602,17 @@ const SECURITY_INDEX_ITEMS = [
     tables: ["permissions", "role_permissions"]
   }
 ];
+
+// Índices de sección indexados por su clave de grupo. Sustituye a las cinco copias de cada
+// resolver / opener / flag "por sección": el orden de las claves ES el orden de resolución que
+// tenía la cadena if/else de selectTable (academia → gestiones → usuarios → contratos → seguridad).
+const SECTION_INDEX_ITEMS = {
+  [ACADEMY_GROUP_KEY]: ACADEMY_INDEX_ITEMS,
+  [GESTION_GROUP_KEY]: GESTION_INDEX_ITEMS,
+  [USERS_GROUP_KEY]: USERS_INDEX_ITEMS,
+  [CONTRACT_GROUP_KEY]: CONTRACT_INDEX_ITEMS,
+  [SECURITY_GROUP_KEY]: SECURITY_INDEX_ITEMS,
+};
 
 const TABLE_TAB_LABEL_OVERRIDES = {
   template_seeds: "Semillas",
@@ -681,6 +680,79 @@ const gestionMenuItems = computed(() => buildIndexMenuItems(GESTION_INDEX_ITEMS)
 const usersMenuItems = computed(() => buildIndexMenuItems(USERS_INDEX_ITEMS));
 const contractsMenuItems = computed(() => buildIndexMenuItems(CONTRACT_INDEX_ITEMS));
 const securityMenuItems = computed(() => buildIndexMenuItems(SECURITY_INDEX_ITEMS));
+
+// --- Estado derivado de la URL (fase 3.5, cierre) -----------------------------------------------
+// /admin/:section?/:item?/:table? ES el estado de navegación: no hay copia local que sincronizar.
+// Antes convivían refs locales (selectedTable, selectedSection y los cinco selectedXItem, más los
+// dos flags de grafo) con route.params: un watch empujaba de los refs a la URL (syncAdminUrl) y
+// hydrateFromRoute empujaba de vuelta al montar. Ese doble origen de verdad es lo que obligaba a
+// repetir el mismo bloque de asignaciones cinco veces, una por sección.
+// Ahora todo se DERIVA de route.params y navegar es un router.push. App.vue re-monta la vista por
+// route.fullPath, así que cada navegación reconstruye la vista desde la URL — igual que un F5.
+// La firma (isSigningView) sigue siendo overlay modal, NO ruta (por diseño).
+
+// El grafo se muestra SOBRE la tabla units/processes (force-graph); en la URL es su propio :table.
+const UNIT_GRAPH_SLUG = "organigrama";
+const PROCESS_GRAPH_SLUG = "mapa";
+
+const findTableByName = (name) => {
+  for (const group of groupedTables.value) {
+    const match = [...(group.mainTables || []), ...(group.supportTables || [])]
+      .find((candidate) => candidate.table === name);
+    if (match) return match;
+  }
+  return null;
+};
+
+// A qué sección/ítem pertenece una tabla. Es la cadena if/else de la antigua selectTable, sin repetir.
+const resolveSectionByTable = (tableName) => {
+  for (const [sectionKey, items] of Object.entries(SECTION_INDEX_ITEMS)) {
+    if (items.some((item) => item.tables.includes(tableName))) return sectionKey;
+  }
+  const group = groupedTables.value.find((candidate) =>
+    [...candidate.mainTables, ...candidate.supportTables].some((item) => item.table === tableName)
+  );
+  return group?.key || "";
+};
+
+const resolveItemByTable = (tableName) => {
+  for (const items of Object.values(SECTION_INDEX_ITEMS)) {
+    const match = items.find((item) => item.tables.includes(tableName));
+    if (match) return match.key;
+  }
+  return "";
+};
+
+const routeTableSlug = computed(() => route.params.table || "");
+const graphTabActive = computed(() => routeTableSlug.value === UNIT_GRAPH_SLUG);
+const processGraphTabActive = computed(() => routeTableSlug.value === PROCESS_GRAPH_SLUG);
+
+const selectedTable = computed(() => {
+  const tableName = graphTabActive.value
+    ? "units"
+    : processGraphTabActive.value
+      ? "processes"
+      : routeTableSlug.value;
+  return tableName ? findTableByName(tableName) : null;
+});
+
+// Con tabla, la sección y el ítem los manda la tabla (la URL puede traer un slug obsoleto); sin
+// tabla, los manda el slug de la URL. El "-" es el marcador posicional de ítem vacío.
+const selectedSection = computed(() => {
+  const table = selectedTable.value;
+  if (table) return resolveSectionByTable(table.table);
+  const slug = route.params.section || "";
+  // hasOwn y no un acceso a secas: el slug viene de la URL y "constructor"/"toString" darían un valor
+  // heredado del prototipo, que aquí pasaría por una sección válida.
+  return Object.hasOwn(SECTION_KEY_BY_SLUG, slug) ? SECTION_KEY_BY_SLUG[slug] : "";
+});
+
+const activeItemKey = computed(() => {
+  const table = selectedTable.value;
+  if (table) return resolveItemByTable(table.table);
+  const itemSlug = route.params.item || "";
+  return itemSlug === "-" ? "" : itemSlug;
+});
 
 const currentSiblingSourceItem = computed(() => {
   const tableName = selectedTable.value?.table;
@@ -789,34 +861,20 @@ const adminShellHeaderSubtitle = computed(() =>
     : adminHeroDescription.value
 );
 
+// Los grafos son un :table propio en la URL, así que cambiar de pestaña hermana es siempre navegar:
+// el guard de navigateAdmin sustituye al antiguo "si ya es la tabla activa, no hagas nada" (que con
+// los flags de grafo como refs había que combinar a mano).
 const handleSiblingTabChange = (tableName) => {
   if (tableName === ORG_GRAPH_TAB_KEY) {
-    const unitsTable = tableMap.value.units;
-    if (unitsTable) {
-      if (selectedTable.value?.table !== "units") {
-        selectTable(unitsTable);
-      }
-      graphTabActive.value = true;
-    }
+    if (tableMap.value.units) navigateToTable("units", UNIT_GRAPH_SLUG);
     return;
   }
   if (tableName === PROCESS_GRAPH_TAB_KEY) {
-    const processesTable = tableMap.value.processes;
-    if (processesTable) {
-      if (selectedTable.value?.table !== "processes") {
-        selectTable(processesTable);
-      }
-      processGraphTabActive.value = true;
-    }
+    if (tableMap.value.processes) navigateToTable("processes", PROCESS_GRAPH_SLUG);
     return;
   }
-  graphTabActive.value = false;
-  processGraphTabActive.value = false;
   const targetTable = tableMap.value[tableName];
-  if (!targetTable || targetTable.table === selectedTable.value?.table) {
-    return;
-  }
-  selectTable(targetTable);
+  if (targetTable) selectTable(targetTable);
 };
 
 const handleHeroBack = () => {
@@ -884,85 +942,29 @@ const isUsuariosGroup = (group) => group?.key === USERS_GROUP_KEY;
 const isContratosGroup = (group) => group?.key === CONTRACT_GROUP_KEY;
 const isSeguridadGroup = (group) => group?.key === SECURITY_GROUP_KEY;
 
-const resolveAcademyItemByTable = (tableName) =>
-  ACADEMY_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
-const resolveGestionItemByTable = (tableName) =>
-  GESTION_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
-const resolveUsersItemByTable = (tableName) =>
-  USERS_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
-const resolveContractsItemByTable = (tableName) =>
-  CONTRACT_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
-const resolveSecurityItemByTable = (tableName) =>
-  SECURITY_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
-
-const isAcademyItemActive = (item) => {
+// Un ítem del índice está activo si es el de la URL dentro de su sección, o si contiene la tabla
+// abierta. Las cinco funciones que el template llama por nombre son ya un alias de esta.
+const isSectionItemActive = (sectionKey, item) => {
   if (!item) {
     return false;
   }
-  if (selectedAcademyItem.value === item.key) {
+  if (selectedSection.value === sectionKey && activeItemKey.value === item.key) {
     return true;
   }
   return item.tables.includes(selectedTable.value?.table || "");
 };
-const isGestionItemActive = (item) => {
-  if (!item) {
-    return false;
-  }
-  if (selectedGestionItem.value === item.key) {
-    return true;
-  }
-  return item.tables.includes(selectedTable.value?.table || "");
-};
-const isUsersItemActive = (item) => {
-  if (!item) {
-    return false;
-  }
-  if (selectedUsuarioItem.value === item.key) {
-    return true;
-  }
-  return item.tables.includes(selectedTable.value?.table || "");
-};
-const isContractsItemActive = (item) => {
-  if (!item) {
-    return false;
-  }
-  if (selectedContratoItem.value === item.key) {
-    return true;
-  }
-  return item.tables.includes(selectedTable.value?.table || "");
-};
-const isSecurityItemActive = (item) => {
-  if (!item) {
-    return false;
-  }
-  if (selectedSeguridadItem.value === item.key) {
-    return true;
-  }
-  return item.tables.includes(selectedTable.value?.table || "");
-};
+const isAcademyItemActive = (item) => isSectionItemActive(ACADEMY_GROUP_KEY, item);
+const isGestionItemActive = (item) => isSectionItemActive(GESTION_GROUP_KEY, item);
+const isUsersItemActive = (item) => isSectionItemActive(USERS_GROUP_KEY, item);
+const isContractsItemActive = (item) => isSectionItemActive(CONTRACT_GROUP_KEY, item);
+const isSecurityItemActive = (item) => isSectionItemActive(SECURITY_GROUP_KEY, item);
 
 const openGroupIndex = (group) => {
   if (!group) {
     return;
   }
-  if (group.key === ACADEMY_GROUP_KEY) {
-    openAcademyIndex();
-    return;
-  }
-  if (group.key === GESTION_GROUP_KEY) {
-    openGestionIndex();
-    return;
-  }
-  if (group.key === USERS_GROUP_KEY) {
-    openUsersIndex();
-    return;
-  }
-  if (group.key === CONTRACT_GROUP_KEY) {
-    openContractsIndex();
-    return;
-  }
-  if (group.key === SECURITY_GROUP_KEY) {
-    openSecurityIndex();
+  if (SECTION_INDEX_ITEMS[group.key]) {
+    navigateAdmin({ section: group.key });
     return;
   }
   // Grupos sin índice de sección propio (p. ej. "Otros"): ir directo a su primera tabla.
@@ -985,219 +987,77 @@ const onGroupTitleClick = (group) => {
   }
 };
 
-const selectTable = (table, filters = null) => {
+// --- Navegación: escribir en la URL ---------------------------------------------------------
+// Toda acción de navegación acaba aquí. Antes cada opener asignaba los siete refs y un watch
+// traducía el resultado a una URL; ahora se construye la URL directamente y el estado se re-deriva.
+const buildAdminParams = ({ section = "", item = "", table = "" }) => {
+  const params = {};
+  if (section) params.section = SECTION_SLUG_BY_KEY[section] || section;
+  // El item es posicional: si hay tabla sin item resuelto, se usa "-" como marcador de hueco.
+  if (params.section && (item || table)) params.item = item || "-";
+  if (table) params.table = table;
+  return params;
+};
+
+const navigateAdmin = (target = {}) => {
   isSigningView.value = false;
+  const params = buildAdminParams(target);
+  const current = route.params;
+  if ((current.section || "") === (params.section || "")
+    && (current.item || "") === (params.item || "")
+    && (current.table || "") === (params.table || "")) {
+    return;
+  }
+  // push (no replace): cada accion de navegacion crea UNA entrada de historial para que el boton
+  // atras recorra tabla -> indice -> inicio.
+  router.push({ name: "admin", params }).catch(() => {});
+};
+
+// Navega a una tabla resolviendo su seccion/item. `slug` permite abrir un grafo (organigrama/mapa),
+// que en la URL es su propio :table sobre la misma tabla base.
+const navigateToTable = (tableName, slug = tableName) => {
+  navigateAdmin({
+    section: resolveSectionByTable(tableName),
+    item: resolveItemByTable(tableName),
+    table: slug,
+  });
+};
+
+const selectTable = (table, filters = null) => {
   if (!table) {
     return;
   }
-  graphTabActive.value = false;
-  processGraphTabActive.value = false;
   pendingTableFilters.value = filters;
-  selectedTable.value = table;
-  const group = groupedTables.value.find((candidate) =>
-    [...candidate.mainTables, ...candidate.supportTables].some((item) => item.table === table.table)
-  );
-  const academyItemKey = resolveAcademyItemByTable(table.table);
-  const gestionItemKey = resolveGestionItemByTable(table.table);
-  const usersItemKey = resolveUsersItemByTable(table.table);
-  const contractsItemKey = resolveContractsItemByTable(table.table);
-  const securityItemKey = resolveSecurityItemByTable(table.table);
-  if (academyItemKey) {
-    selectedSection.value = ACADEMY_GROUP_KEY;
-    selectedAcademyItem.value = academyItemKey;
-    selectedGestionItem.value = "";
-    selectedUsuarioItem.value = "";
-    selectedContratoItem.value = "";
-    selectedSeguridadItem.value = "";
-  } else if (gestionItemKey) {
-    selectedSection.value = GESTION_GROUP_KEY;
-    selectedGestionItem.value = gestionItemKey;
-    selectedAcademyItem.value = "";
-    selectedUsuarioItem.value = "";
-    selectedContratoItem.value = "";
-    selectedSeguridadItem.value = "";
-  } else if (usersItemKey) {
-    selectedSection.value = USERS_GROUP_KEY;
-    selectedUsuarioItem.value = usersItemKey;
-    selectedAcademyItem.value = "";
-    selectedGestionItem.value = "";
-    selectedContratoItem.value = "";
-    selectedSeguridadItem.value = "";
-  } else if (contractsItemKey) {
-    selectedSection.value = CONTRACT_GROUP_KEY;
-    selectedContratoItem.value = contractsItemKey;
-    selectedAcademyItem.value = "";
-    selectedGestionItem.value = "";
-    selectedUsuarioItem.value = "";
-    selectedSeguridadItem.value = "";
-  } else if (securityItemKey) {
-    selectedSection.value = SECURITY_GROUP_KEY;
-    selectedSeguridadItem.value = securityItemKey;
-    selectedAcademyItem.value = "";
-    selectedGestionItem.value = "";
-    selectedUsuarioItem.value = "";
-    selectedContratoItem.value = "";
-  } else {
-    selectedSection.value = group?.key || "";
-    selectedAcademyItem.value = "";
-    selectedGestionItem.value = "";
-    selectedUsuarioItem.value = "";
-    selectedContratoItem.value = "";
-    selectedSeguridadItem.value = "";
-  }
-  if (group && !openCategories.value[group.label]) {
-    openCategories.value[group.label] = true;
-  }
+  navigateToTable(table.table);
 };
 
-const openAcademyIndex = () => {
-  selectedSection.value = ACADEMY_GROUP_KEY;
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  selectedTable.value = null;
-  openCategories.value[ACADEMY_GROUP_LABEL] = true;
+// Un item del indice va DIRECTO a las pestanas (sin menu intermedio): abre su primera tabla.
+const openSectionItem = (sectionKey, item) => {
+  if (!item) {
+    return;
+  }
+  navigateAdmin({
+    section: sectionKey,
+    item: item.key,
+    table: item.availableTables?.[0]?.table || "",
+  });
 };
 
 const openAcademyItem = (item) => {
-  isSigningView.value = false;
   if (!item) {
     return;
   }
-  selectedSection.value = ACADEMY_GROUP_KEY;
-  selectedAcademyItem.value = item.key;
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  openCategories.value[ACADEMY_GROUP_LABEL] = true;
-  // Ir directo a las pestañas (sin menú intermedio). Si el subgrupo tiene unidades, abre el Organigrama por defecto.
-  const unitsTable = item.availableTables?.find((table) => table.table === "units");
-  const firstItemTable = item.availableTables?.[0];
-  if (unitsTable) {
-    selectTable(unitsTable);
-    graphTabActive.value = true;
-  } else if (firstItemTable) {
-    selectTable(firstItemTable);
-  } else {
-    selectedTable.value = null;
-  }
-};
-const openGestionIndex = () => {
-  selectedSection.value = GESTION_GROUP_KEY;
-  selectedGestionItem.value = "";
-  selectedAcademyItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  selectedTable.value = null;
-  openCategories.value[GESTION_GROUP_LABEL] = true;
-};
-const openGestionItem = (item) => {
-  isSigningView.value = false;
-  if (!item) {
+  // Unico desvio del camino generico: si el subgrupo tiene unidades, abre el Organigrama por defecto.
+  if (item.availableTables?.some((table) => table.table === "units")) {
+    navigateAdmin({ section: ACADEMY_GROUP_KEY, item: item.key, table: UNIT_GRAPH_SLUG });
     return;
   }
-  selectedSection.value = GESTION_GROUP_KEY;
-  selectedGestionItem.value = item.key;
-  selectedAcademyItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  openCategories.value[GESTION_GROUP_LABEL] = true;
-  const firstItemTable = item.availableTables?.[0];
-  if (firstItemTable) {
-    selectTable(firstItemTable);
-  } else {
-    selectedTable.value = null;
-  }
+  openSectionItem(ACADEMY_GROUP_KEY, item);
 };
-const openUsersIndex = () => {
-  selectedSection.value = USERS_GROUP_KEY;
-  selectedUsuarioItem.value = "";
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  selectedTable.value = null;
-  openCategories.value[USERS_GROUP_LABEL] = true;
-};
-const openUsersItem = (item) => {
-  if (!item) {
-    return;
-  }
-  selectedSection.value = USERS_GROUP_KEY;
-  selectedUsuarioItem.value = item.key;
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  openCategories.value[USERS_GROUP_LABEL] = true;
-  const firstItemTable = item.availableTables?.[0];
-  if (firstItemTable) {
-    selectTable(firstItemTable);
-  } else {
-    selectedTable.value = null;
-  }
-};
-const openContractsIndex = () => {
-  selectedSection.value = CONTRACT_GROUP_KEY;
-  selectedContratoItem.value = "";
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedSeguridadItem.value = "";
-  selectedTable.value = null;
-  openCategories.value[CONTRACT_GROUP_LABEL] = true;
-};
-const openContractsItem = (item) => {
-  if (!item) {
-    return;
-  }
-  selectedSection.value = CONTRACT_GROUP_KEY;
-  selectedContratoItem.value = item.key;
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedSeguridadItem.value = "";
-  openCategories.value[CONTRACT_GROUP_LABEL] = true;
-  const firstItemTable = item.availableTables?.[0];
-  if (firstItemTable) {
-    selectTable(firstItemTable);
-  } else {
-    selectedTable.value = null;
-  }
-};
-const openSecurityIndex = () => {
-  selectedSection.value = SECURITY_GROUP_KEY;
-  selectedSeguridadItem.value = "";
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedTable.value = null;
-  openCategories.value[SECURITY_GROUP_LABEL] = true;
-};
-const openSecurityItem = (item) => {
-  if (!item) {
-    return;
-  }
-  selectedSection.value = SECURITY_GROUP_KEY;
-  selectedSeguridadItem.value = item.key;
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  openCategories.value[SECURITY_GROUP_LABEL] = true;
-  const firstItemTable = item.availableTables?.[0];
-  if (firstItemTable) {
-    selectTable(firstItemTable);
-  } else {
-    selectedTable.value = null;
-  }
-};
+const openGestionItem = (item) => openSectionItem(GESTION_GROUP_KEY, item);
+const openUsersItem = (item) => openSectionItem(USERS_GROUP_KEY, item);
+const openContractsItem = (item) => openSectionItem(CONTRACT_GROUP_KEY, item);
+const openSecurityItem = (item) => openSectionItem(SECURITY_GROUP_KEY, item);
 
 const openGroupFromHome = (group) => {
   if (!group) {
@@ -1210,142 +1070,25 @@ const handleManagerGoBack = () => {
   if (!selectedTable.value) {
     return;
   }
-  // Volver de una tabla cae en el índice de sección (sus ítems), no en el índice por ítem (que era idéntico
-  // a las pestañas y se eliminó). Por eso se limpia el ítem activo y se conserva la sección.
-  selectedTable.value = null;
+  // Volver de una tabla cae en el indice de seccion (sus items), no en el indice por item (que era
+  // identico a las pestanas y se elimino). Sin seccion, cae en el inicio de administracion.
   pendingTableFilters.value = null;
-  graphTabActive.value = false;
-  processGraphTabActive.value = false;
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  if (!selectedSection.value) {
-    goAdminHome();
-  }
+  navigateAdmin({ section: selectedSection.value });
 };
 
-const isHomeActive = computed(() => {
-  return !selectedTable.value && !selectedSection.value && !selectedAcademyItem.value &&
-         !selectedGestionItem.value && !selectedUsuarioItem.value &&
-         !selectedContratoItem.value && !selectedSeguridadItem.value &&
-         !showAcademiaIndex.value && !showGestionesIndex.value && !showUsersIndex.value &&
-         !showContractsIndex.value && !showSecurityIndex.value;
-});
+// Sin tabla, sin seccion y sin item no hay nada abierto: los cinco showXIndex derivan de la seccion,
+// asi que comprobarlos aparte era redundante.
+const isHomeActive = computed(() =>
+  !selectedTable.value && !selectedSection.value && !activeItemKey.value
+);
 
 const goAdminHome = () => {
-  isSigningView.value = false;
-  selectedTable.value = null;
-  selectedSection.value = "";
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
   Object.keys(openCategories.value).forEach((key) => {
     openCategories.value[key] = false;
   });
+  navigateAdmin();
 };
 
-// --- Enrutado por URL (Fase 3.5a) ---------------------------------------------------------------
-// La ruta /admin/:section?/:item?/:table? refleja el estado de navegacion para dar deep-link, F5 y
-// boton atras. Los refs son la copia de trabajo intra-montaje: App.vue remonta la vista por
-// route.fullPath, asi que se re-derivan de la URL en cada navegacion (la URL es la fuente de verdad).
-// syncAdminUrl escribe la URL y hydrateFromRoute la reconstruye. Los grafos son :table propios
-// (organigrama/mapa, 3.5d). La firma (isSigningView) es overlay modal, NO ruta (por diseno).
-const activeItemKey = computed(() =>
-  selectedAcademyItem.value
-  || selectedGestionItem.value
-  || selectedUsuarioItem.value
-  || selectedContratoItem.value
-  || selectedSeguridadItem.value
-  || ""
-);
-
-// El grafo se muestra SOBRE la tabla units/processes (force-graph); en la URL es su propio :table.
-const UNIT_GRAPH_SLUG = "organigrama";
-const PROCESS_GRAPH_SLUG = "mapa";
-
-const syncAdminUrl = () => {
-  const params = {};
-  if (selectedSection.value) params.section = SECTION_SLUG_BY_KEY[selectedSection.value] || selectedSection.value;
-  const itemKey = activeItemKey.value;
-  const tableName = graphTabActive.value
-    ? UNIT_GRAPH_SLUG
-    : processGraphTabActive.value
-      ? PROCESS_GRAPH_SLUG
-      : (selectedTable.value?.table || "");
-  // El item es posicional: si hay tabla sin item resuelto, se usa "-" como marcador de hueco.
-  if (params.section && (itemKey || tableName)) params.item = itemKey || "-";
-  if (tableName) params.table = tableName;
-  const current = route.params;
-  if ((current.section || "") === (params.section || "")
-    && (current.item || "") === (params.item || "")
-    && (current.table || "") === (params.table || "")) {
-    return;
-  }
-  // push (no replace): cada accion de navegacion crea UNA entrada de historial —el watch coalesce las
-  // mutaciones sincronas de un mismo click en una sola llamada— para que el boton atras recorra
-  // tabla -> indice -> inicio. La hidratacion no duplica: el guard de arriba corta si ya coincide.
-  router.push({ name: "admin", params }).catch(() => {});
-};
-
-watch([selectedSection, selectedTable, activeItemKey, graphTabActive, processGraphTabActive], syncAdminUrl);
-
-const findTableByName = (name) => {
-  for (const group of groupedTables.value) {
-    const match = [...(group.mainTables || []), ...(group.supportTables || [])]
-      .find((candidate) => candidate.table === name);
-    if (match) return match;
-  }
-  return null;
-};
-
-const openSectionIndexByKey = (key) => {
-  const openers = {
-    [ACADEMY_GROUP_KEY]: openAcademyIndex,
-    [GESTION_GROUP_KEY]: openGestionIndex,
-    [USERS_GROUP_KEY]: openUsersIndex,
-    [CONTRACT_GROUP_KEY]: openContractsIndex,
-    [SECURITY_GROUP_KEY]: openSecurityIndex,
-  };
-  const opener = openers[key];
-  if (opener) opener();
-};
-
-// Reconstruye el estado desde la URL al cargar (deep-link / F5). Requiere el catalogo ya cargado.
-const hydrateFromRoute = () => {
-  const tableName = route.params.table;
-  // Los grafos son :table propios (organigrama/mapa): se muestran sobre units/processes con force-graph.
-  if (tableName === UNIT_GRAPH_SLUG) {
-    const unitsTable = findTableByName("units");
-    if (unitsTable) {
-      selectTable(unitsTable);
-      graphTabActive.value = true;
-      return;
-    }
-  }
-  if (tableName === PROCESS_GRAPH_SLUG) {
-    const processesTable = findTableByName("processes");
-    if (processesTable) {
-      selectTable(processesTable);
-      processGraphTabActive.value = true;
-      return;
-    }
-  }
-  if (tableName) {
-    const table = findTableByName(tableName);
-    if (table) {
-      selectTable(table);
-      return;
-    }
-  }
-  const sectionSlug = route.params.section;
-  if (sectionSlug) {
-    openSectionIndexByKey(SECTION_KEY_BY_SLUG[sectionSlug] || sectionSlug);
-  }
-};
 
 const fetchMeta = async () => {
   loadingMeta.value = true;
@@ -1358,7 +1101,13 @@ const fetchMeta = async () => {
         openCategories.value[group.label] = false;
       }
     });
-    hydrateFromRoute();
+    // El acordeon del aside NO vive en la URL (es chrome, no navegacion): se abre la categoria de la
+    // seccion activa. Es exactamente el estado en que quedaba tras hydrateFromRoute, que re-ejecutaba
+    // los openers en cada remontaje (App.vue re-monta la vista por route.fullPath).
+    const activeGroup = groupedTables.value.find((group) => group.key === selectedSection.value);
+    if (activeGroup) {
+      openCategories.value[activeGroup.label] = true;
+    }
   } catch (error) {
     metaError.value = error?.response?.data?.message || "No se pudo cargar el catalogo.";
   } finally {

@@ -2235,7 +2235,6 @@ const selectedConsolidatedProcessIds = ref([]);
 const showProcessMultiSelect = ref(false);
 const activeCargoPanelTab = ref(null);
 const activeUnitPanelTab = ref(null);
-const activeProcessUnitTab = ref('all');
 const showNavMenu = ref(false);
 const deliverableGridColumns = ref(resolveDeliverableGridColumns());
 
@@ -2277,14 +2276,9 @@ const selectedGroupId = ref(null);
 const showGroupDropdown = ref(false);
 const groupDropdownRef = ref(null);
 const processMultiSelectRef = ref(null);
-const selectedProcessKey = ref(null);
 const selectedProcessContext = ref(null);
-const selectedProcessPanel = ref(null);
-// En el panel consolidado pueden cargarse varios procesos a la vez (multi-selección).
-const selectedProcessPanels = ref([]);
-const processPanelLoading = ref(false);
-const processPanelError = ref('');
-const processActionMessage = ref(null);
+// selectedProcessKey / selectedProcessPanel(s) / processPanelLoading / processPanelError /
+// processActionMessage / activeProcessUnitTab los POSEE useProcessPanels (ver más abajo).
 const showTaskLaunchModal = ref(false);
 const taskLaunchSubmitting = ref(false);
 const taskLaunchError = ref('');
@@ -3007,14 +3001,9 @@ const closeTaskFiltersModal = () => {
 };
 
 const clearSelectedProcess = () => {
-  selectedProcessKey.value = null;
   selectedProcessContext.value = null;
-  selectedProcessPanel.value = null;
-  selectedProcessPanels.value = [];
-  processPanelError.value = '';
-  processActionMessage.value = null;
+  resetProcessPanelState();
   showTaskLaunchModal.value = false;
-  activeProcessUnitTab.value = 'all';
   resetTaskListFilters();
   resetTaskLaunchForm();
 };
@@ -3113,6 +3102,34 @@ const navigateToGlobalSignaturePage = async () => {
 
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
 
+// Va ANTES de useDeliverableView porque este consume `selectedProcessPanel`, que ahora nace aquí.
+const {
+  activeProcessUnitTab,
+  processActionMessage,
+  processPanelError,
+  processPanelLoading,
+  selectedProcessKey,
+  selectedProcessPanel,
+  selectedProcessPanels,
+  loadProcessPanelsForProcesses,
+  loadSelectedProcessPanel,
+  loadSelectedProcessPanels,
+  refreshActiveProcessPanel,
+  resetProcessPanelState,
+  setProcessActionInfo,
+} = useProcessPanels({
+  activeConsolidatedUnitTab,
+  consolidatedCargoProcesses,
+  currentUserId,
+  processPanelService,
+  resetTaskListFilters,
+  selectedConsolidatedProcessIds,
+  selectedGroupId,
+  selectedProcessContext,
+  showCargosPanel,
+  showProcessesPanel,
+});
+
 const {
   canApproveFillRequestForPayload,
   canPreviewInline,
@@ -3184,31 +3201,6 @@ const {
   unitGroups,
   userFullName,
   userUnits,
-});
-
-const {
-  loadProcessPanelsForProcesses,
-  loadSelectedProcessPanel,
-  loadSelectedProcessPanels,
-  refreshActiveProcessPanel,
-} = useProcessPanels({
-  activeConsolidatedUnitTab,
-  activeProcessUnitTab,
-  consolidatedCargoProcesses,
-  currentUserId,
-  processActionMessage,
-  processPanelError,
-  processPanelLoading,
-  processPanelService,
-  resetTaskListFilters,
-  selectedConsolidatedProcessIds,
-  selectedGroupId,
-  selectedProcessContext,
-  selectedProcessKey,
-  selectedProcessPanel,
-  selectedProcessPanels,
-  showCargosPanel,
-  showProcessesPanel,
 });
 
 const {
@@ -4077,10 +4069,6 @@ const navigateTo = (destination) => {
       router.push('/perfil');
       break;
   }
-};
-
-const setProcessActionInfo = (text, type = 'success') => {
-  processActionMessage.value = { text, type };
 };
 
 const {
