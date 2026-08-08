@@ -1,6 +1,25 @@
 # Signer — Servicio de Firma Digital
 
-Servicio HTTP que firma documentos PDF usando pyhanko, MinIO y canvas para el estampado.
+Servicio que firma documentos PDF usando pyhanko, MinIO y canvas para el estampado.
+
+> **El camino real en producción es RabbitMQ, no HTTP.** El backend habla con este servicio por las
+> colas `deasy.sign.request` y `deasy.sign.validate.request` y espera la respuesta en la cola que
+> él mismo indica en `responseQueue` (ver `backend/services/infrastructure/rabbit_signer.js`). Los
+> endpoints HTTP de abajo aceptan el mismo payload y son útiles para depurar, pero **hoy no tienen
+> ningún consumidor en el repositorio**.
+>
+> El mapa completo del microservicio —responsabilidades, contratos que no se pueden romper,
+> defectos conocidos y plan de refactor por fases— está en
+> [`docs/auditoria-signer-2026-08.md`](../docs/auditoria-signer-2026-08.md).
+
+## Pruebas
+
+```bash
+bash scripts/docker-env.sh dev exec -T signer sh -lc 'cd /app && python -m unittest discover -s tests -t . -v'
+```
+
+224 casos con `unittest` de la biblioteca estándar (la imagen no trae `pytest`). Ninguno abre red
+ni toca MinIO o RabbitMQ reales.
 
 ## Endpoints
 
@@ -129,13 +148,16 @@ Content-Type: application/json
 ## Flujo interno
 
 1. Valida el payload JSON
-2. Descarga el PDF desde MinIO al directorio temporal
-3. Descarga el certificado `.p12` desde MinIO al directorio temporal
-4. Escribe la contraseña en un archivo temporal (requerido por pyhanko)
-5. Genera la imagen del estampado con QR usando canvas
-6. Limpia el PDF con Ghostscript
-7. Obtiene coordenadas: directas o buscando el token en el PDF con pdfplumber
-8. Inserta el campo de firma con pyhanko
-9. Firma el documento con pyhanko usando el certificado `.p12`
-10. Sube el documento firmado a MinIO (reemplaza el original)
-11. Limpia el directorio temporal
+2. Crea un directorio temporal propio del job dentro de `SIGNER_WORKSPACE_DIR`
+3. Descarga el PDF y el certificado `.p12` desde MinIO a ese directorio
+4. Carga el `.p12` y **rechaza el job si el certificado está expirado o aún no es válido**
+5. Normaliza el PDF con Ghostscript, **salvo que ya contenga firmas embebidas** (aplanarlo las
+   destruiría)
+6. Obtiene coordenadas: directas o buscando el token en el PDF con pdfplumber
+7. Genera la imagen del estampado con QR invocando `sigmaker/cli.mjs`
+8. Inserta el campo de firma y firma con pyhanko (una vez por cada marca encontrada)
+9. Valida la firma resultante; si la cadena no es de confianza, aborta salvo que el payload lo
+   tolere (`allow_untrusted_signer`)
+10. Sube el documento firmado a MinIO **reemplazando el original**, y además a `finalPath` si es
+    distinto
+11. El directorio temporal se borra solo al salir del `with`

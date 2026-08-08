@@ -1329,6 +1329,29 @@ def publish_response(channel, response_queue: str, payload: dict[str, Any]):
     )
 
 
+def on_message(ch, method, properties, body):
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except Exception as exc:
+        logger.error("Payload RabbitMQ inválido: %s", exc)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+        return
+
+    response_queue = payload.get("responseQueue")
+    if not response_queue:
+        logger.error("Solicitud RabbitMQ sin responseQueue")
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+        return
+
+    if method.routing_key == VALIDATE_REQUEST_QUEUE:
+        result = process_validation_job(payload)
+    else:
+        result = process_job(payload)
+    result["correlationId"] = payload.get("correlationId")
+    publish_response(ch, response_queue, result)
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
 def start_rabbit_worker():
     while True:
         connection = None
@@ -1344,28 +1367,6 @@ def start_rabbit_worker():
             logger.info("RabbitMQ conectado en %s", RABBITMQ_URL)
             logger.info("Escuchando solicitudes en %s", SIGN_REQUEST_QUEUE)
             logger.info("Escuchando validaciones en %s", VALIDATE_REQUEST_QUEUE)
-
-            def on_message(ch, method, properties, body):
-                try:
-                    payload = json.loads(body.decode("utf-8"))
-                except Exception as exc:
-                    logger.error("Payload RabbitMQ inválido: %s", exc)
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
-                    return
-
-                response_queue = payload.get("responseQueue")
-                if not response_queue:
-                    logger.error("Solicitud RabbitMQ sin responseQueue")
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
-                    return
-
-                if method.routing_key == VALIDATE_REQUEST_QUEUE:
-                    result = process_validation_job(payload)
-                else:
-                    result = process_job(payload)
-                result["correlationId"] = payload.get("correlationId")
-                publish_response(ch, response_queue, result)
-                ch.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume(queue=SIGN_REQUEST_QUEUE, on_message_callback=on_message)
             channel.basic_consume(queue=VALIDATE_REQUEST_QUEUE, on_message_callback=on_message)
