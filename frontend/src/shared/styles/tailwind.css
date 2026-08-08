@@ -2,6 +2,28 @@
 @plugin "@tailwindcss/typography";
 
 @layer base {
+    /* ----------------------------------------------------------------------------------
+       TOKENS `--deasy-*` — capa SEMANTICA. La paleta canonica vive en `theme.css`
+       (`--brand-*`, `:root` sin capa) y es la que tiene consumidores fuera de este
+       fichero (`AdminTableManager.css`, `FirmarPdf.vue`, `BtnSera.vue`). `--deasy-*`
+       no ha salido nunca de `shared/styles/`.
+
+       [fusion-fase-X 2026-08-07] Colapso de los tokens duplicados entre los dos juegos:
+       los que declaraban el MISMO valor dos veces ahora referencian a `--brand-*`, que
+       queda como unica fuente de verdad; los duplicados sin ningun consumidor se han
+       borrado en vez de aliasarse.
+
+       Lo que NO se ha colapsado, y por que:
+       - `--deasy-surface-muted` (#f7f9fc) vs `--brand-surface-alt` (#f8fafc): mismo rol,
+         valores YA divergentes. Unificarlos cambiaria el aspecto en produccion, asi que
+         hace falta una decision de diseno, no un merge.
+       - `--deasy-radius-*` vs `--radius-*` de `theme.css`: escalas distintas (0.5rem vs
+         12px...) y ademas `--radius-*` secuestra el espacio de nombres de Tailwind
+         (theme.css:36-39 hace que `rounded-lg` valga 16px). Deshacerlo es otro paso.
+       - `--deasy-surface-page` / `--deasy-sidebar` / `--deasy-sidebar-strong`: el navy
+         `#071927` esta declarado tres veces, pero solo `--surface-page` tiene consumidores.
+         Sin gemelo `--brand-*` plano (solo existe dentro de `--brand-workspace-gradient`).
+       ---------------------------------------------------------------------------------- */
     :root {
         --deasy-shell-max-width: 2560px;
         --deasy-radius-xs: 0.25rem;
@@ -10,23 +32,19 @@
         --deasy-radius-lg: 0.75rem;
         --deasy-radius-xl: 1rem;
         --deasy-surface-page: #071927;
-        --deasy-surface-card: #ffffff;
         --deasy-surface-muted: #f7f9fc;
         --deasy-surface-soft: rgba(247, 249, 252, 0.92);
-        --deasy-border-soft: #e2e6f0;
+        /* = --brand-border (#e2e6f0), identico tambien bajo data-environment="local-dev" */
+        --deasy-border-soft: var(--brand-border);
         --deasy-border-strong: #cfd6e4;
         --deasy-text-strong: #343741;
         --deasy-text-body: #3f4254;
-        --deasy-text-muted: #7a7b80;
-        --deasy-primary: #5e4eff;
-        --deasy-primary-strong: #4a3ce8;
-        --deasy-primary-soft: rgba(94, 78, 255, 0.08);
-        --deasy-accent: #00b2a9;
-        --deasy-accent-strong: #008b85;
-        --deasy-accent-soft: rgba(0, 178, 169, 0.1);
+        /* = --brand-primary (#5e4eff) */
+        --deasy-primary: var(--brand-primary);
         --deasy-sidebar: #071927;
         --deasy-sidebar-strong: #061521;
-        --deasy-brand-gradient: linear-gradient(135deg, #5e4eff 0%, #3898ff 100%);
+        /* = --brand-gradient-angled (linear-gradient(135deg, #5e4eff 0%, #3898ff 100%)) */
+        --deasy-brand-gradient: var(--brand-gradient-angled);
         --deasy-brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
     }
 
@@ -326,44 +344,55 @@
         flex: 0 0 auto;
     }
 
+    /* [fusion-fase-X 2026-08-07] Estaba definida en los DOS @layer components (ex-L329 y ex-L1349).
+       Ganaba la segunda por orden de cascada dentro de la misma capa. Del bloque 1
+       (rounded-2xl + shadow-none) no sobrevivia ninguna declaracion. */
     .deasy-card {
-        @apply rounded-2xl border bg-white shadow-none;
+        @apply rounded-[8px] border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.04)];
         border-color: var(--deasy-border-soft);
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L334 + ex-L1354. El skin plano del bloque 2 pisaba TODO,
+       incluido `background: var(--deasy-surface-muted)`: hoy esta tarjeta es blanca. */
     .deasy-card-muted {
-        @apply rounded-xl border shadow-none;
+        @apply rounded-[8px] border bg-white shadow-sm;
         border-color: var(--deasy-border-soft);
-        background: var(--deasy-surface-muted);
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L340 + ex-L1354. Igual que .deasy-card-muted: el bloque 2
+       pisaba `background: var(--deasy-surface-soft)`; hoy es blanca. */
     .deasy-card-soft {
-        @apply rounded-xl border shadow-none;
+        @apply rounded-[8px] border bg-white shadow-sm;
         border-color: var(--deasy-border-soft);
-        background: var(--deasy-surface-soft);
     }
 
     .deasy-card-padding {
         @apply p-5 sm:p-6 lg:p-8;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L350 + ex-L1354. Del bloque 1 solo sobrevive `p-4`
+       (el skin del bloque 2 no declara padding). */
     .deasy-panel {
-        @apply rounded-2xl border bg-white p-4 shadow-none;
+        @apply rounded-[8px] border bg-white p-4 shadow-sm;
         border-color: var(--deasy-border-soft);
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L355 + ex-L1354. Sobrevive `p-4`; el fondo `--deasy-surface-muted`
+       lo pisaba `bg-white` del bloque 2. */
     .deasy-panel-muted {
-        @apply rounded-xl border p-4 shadow-none;
+        @apply rounded-[8px] border bg-white p-4 shadow-sm;
         border-color: var(--deasy-border-soft);
-        background: var(--deasy-surface-muted);
     }
 
     .deasy-section-shell {
         @apply mx-auto my-6 w-full max-w-[2560px] px-2 font-sans sm:px-6 lg:px-8;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L365 + ex-L1362. Sobreviven los paddings (`p-5 sm:p-6 lg:p-8`);
+       radio, sombra y borde los fijaba el bloque 2. */
     .deasy-section-card {
-        @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-none sm:p-6 lg:p-8;
+        @apply rounded-[8px] border bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6 lg:p-8;
+        border-color: var(--deasy-border-soft);
     }
 
     .deasy-section-header {
@@ -470,11 +499,14 @@
         @apply mb-2 block text-sm font-semibold text-slate-700;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L473 + ex-L1368. Del bloque 2 solo ganaban dos cosas:
+       `border-color: var(--deasy-border-strong)` (era -soft) y `placeholder:text-slate-400`.
+       El resto del bloque 2 repetia lo que ya decia el bloque 1. */
     .deasy-field-input,
     .deasy-field-select,
     .deasy-field-textarea {
-        @apply block w-full rounded-lg border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm;
-        border-color: var(--deasy-border-soft);
+        @apply block w-full rounded-lg border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-slate-400;
+        border-color: var(--deasy-border-strong);
         color: var(--deasy-text-body);
     }
 
@@ -555,87 +587,117 @@
         @apply border-sky-300 bg-sky-100 text-sky-800;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L558 + ex-L1482. Del bloque 1 solo sobrevive `backdrop-blur-sm`
+       (el bloque 2 no toca backdrop-filter); borde, fondo y color son los del skin plano. */
     .deasy-tag--contrast {
-        @apply border-white/20 bg-white/15 text-white backdrop-blur-sm;
+        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none backdrop-blur-sm;
+        background-image: none;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L562 + ex-L1483. Idem: solo sobrevive `backdrop-blur-sm`. El degradado
+       del bloque 1 lo mataba explicitamente el `background-image: none` del bloque 2. */
     .deasy-tag--hero {
-        @apply border-white/16 bg-[linear-gradient(180deg,rgba(245,249,254,0.22)_0%,rgba(226,242,250,0.12)_100%)] text-white shadow-[0_10px_22px_rgba(6,12,24,0.12)] backdrop-blur-sm;
+        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none backdrop-blur-sm;
+        background-image: none;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L566 + ex-L1376. El bloque 2 anadia `min-h-10`, `shadow-none` y
+       `focus:outline-none`; `rounded-lg` era identico en ambos.
+       OJO: `rounded-lg` vale 16px, no 8px, por el secuestro de --radius-* en theme.css:36-39. */
     .deasy-btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border font-semibold shadow-none transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
-    .deasy-btn--primary {
+    /* [fusion-fase-X 2026-08-07] Las 13 variantes de boton estaban definidas dos veces
+       (bloque 1 ex-L568..635, bloque 2 ex-L1379..1447). Ganaba SIEMPRE la del bloque 2,
+       que ademas es la que suma el gemelo `.admin-btn--*` que emite AppButton/AdminButton.
+       Del bloque 1 solo sobrevivia el `:hover` rojo de `--cancel` (0,2,0 gana al skin 0,1,0),
+       que se conserva abajo como regla propia. Todo lo demas del bloque 1 estaba muerto:
+       el degradado de `--primary`, los `--soft-*` con tokens `--deasy-*`, el `rounded-full`
+       de `--close` (lo pisaba `rounded-lg`) y los `hover:text-white` de los soft. */
+    .deasy-btn--primary,
+    .admin-btn--primary {
         @apply text-white;
         border-color: var(--deasy-primary);
-        background: var(--deasy-brand-gradient);
-        box-shadow: none;
+        background: var(--deasy-primary);
     }
 
-    .deasy-btn--secondary {
+    .deasy-btn--secondary,
+    .admin-btn--secondary {
         @apply bg-white;
-        border-color: var(--deasy-border-soft);
+        border-color: var(--deasy-border-strong);
         color: var(--deasy-text-body);
     }
 
+    /* Unico resto vivo del bloque 1 en los botones: el hover rojo de cancelar. Solo lo
+       llevaba la variante `deasy-*`, no la `admin-*`, asi que las dos NO se pueden agrupar.
+       Va con `@apply hover:` y no con un `:hover` a mano: Tailwind envuelve la variante
+       `hover:` en `@media (hover:hover)` y escribirlo a mano lo activaria tambien en tactil. */
     .deasy-btn--cancel {
-        @apply border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50;
+        @apply bg-white hover:border-red-300 hover:bg-red-50;
+        border-color: var(--deasy-border-strong);
+        color: var(--deasy-text-body);
     }
 
-    .deasy-btn--outline-primary {
+    .admin-btn--cancel {
         @apply bg-white;
-        border-color: rgba(94, 78, 255, 0.36);
+        border-color: var(--deasy-border-strong);
+        color: var(--deasy-text-body);
+    }
+
+    .deasy-btn--outline-primary,
+    .admin-btn--outline-primary {
+        @apply bg-white;
+        border-color: var(--deasy-primary);
         color: var(--deasy-primary);
     }
 
-    .deasy-btn--outline-danger {
-        @apply border-red-600 bg-white text-red-600 hover:bg-red-50;
+    .deasy-btn--outline-danger,
+    .admin-btn--outline-danger {
+        @apply border-red-600 bg-white text-red-700 hover:border-red-700 hover:bg-red-50 hover:text-red-800;
     }
 
     .deasy-btn--soft-primary {
-        @apply hover:text-white;
-        border-color: rgba(94, 78, 255, 0.2);
-        background: var(--deasy-primary-soft);
-        color: var(--deasy-primary);
+        @apply border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800;
     }
 
     .deasy-btn--soft-neutral {
-        @apply bg-white;
-        border-color: var(--deasy-border-soft);
-        color: var(--deasy-text-body);
+        @apply border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950;
     }
 
     .deasy-btn--soft-success {
-        @apply hover:text-white;
-        border-color: rgba(44, 173, 73, 0.2);
-        background: var(--deasy-accent-soft);
-        color: var(--deasy-accent-strong);
+        @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
     }
 
     .deasy-btn--soft-warning {
-        @apply border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-500 hover:bg-amber-500 hover:text-white;
+        @apply border-amber-200 bg-amber-50 text-amber-800 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-900;
     }
 
     .deasy-btn--soft-danger {
-        @apply border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-600 hover:bg-rose-600 hover:text-white;
+        @apply border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 hover:text-red-800;
     }
 
-    .deasy-btn--success {
+    .deasy-btn--success,
+    .admin-btn--success {
         @apply border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700;
     }
 
-    .deasy-btn--danger {
+    .deasy-btn--danger,
+    .admin-btn--danger {
         @apply border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700;
     }
 
-    .deasy-btn--close {
-        @apply h-9 w-9 rounded-full border border-slate-200 bg-white p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-700;
+    .deasy-btn--close,
+    .admin-btn--close {
+        @apply h-9 w-9 rounded-lg border border-slate-200 bg-white p-0 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
     }
 
+    /* [fusion-fase-X 2026-08-07] `rounded-[10px]` estaba MUERTO: `.deasy-btn` del bloque 2
+       (ex-L1376) llegaba despues con `rounded-lg` y ganaba, asi que el boton de menu mide
+       16px hoy. Se retira para que la fusion no lo resucite (AppButton/AdminButton siempre
+       emiten `.deasy-btn` junto a `.deasy-btn--menu`). */
     .deasy-btn--menu {
-        @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 rounded-[10px] border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
+        @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
         border-color: rgba(18, 63, 136, 0.14);
         background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
         color: var(--deasy-text-body);
@@ -664,10 +726,12 @@
         @apply h-9 w-9 p-0;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L667 + ex-L1449. Del bloque 1 solo sobrevive `overflow-hidden`:
+       el bloque 2 reemplazaba el degradado azul-verde por blanco plano (y lo remataba con
+       `background-image: none`), el radio, el padding, el color de texto y la sombra. */
     .deasy-hero-shell {
-        @apply overflow-hidden rounded-[14px] border p-4 text-white shadow-[0_20px_42px_rgba(11,31,63,0.18)] md:p-5;
-        border-color: rgba(255, 255, 255, 0.08);
-        background: linear-gradient(135deg, #0d2f68 0%, #124186 46%, #26a646 100%);
+        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:p-6;
+        background-image: none;
     }
 
     .deasy-hero-layout {
@@ -690,32 +754,40 @@
         @apply shrink-0;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L693 + ex-L1456. Sobreviven caja y radio; borde, fondo, color
+       y sombra los fijaba el skin plano del bloque 2. */
     .deasy-hero-media-card {
-        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-white/16 bg-white/12 text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)] sm:h-[4.5rem] sm:w-[4.5rem];
+        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
     }
 
     .deasy-hero-media-card--avatar {
         @apply h-auto w-auto p-2;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L701 + ex-L1456. Sobrevive todo menos borde, fondo, color y sombra. */
     .deasy-hero-kicker {
-        @apply inline-flex w-fit items-center gap-2 rounded-lg border border-white/16 bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)];
+        @apply inline-flex w-fit items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700 shadow-none;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L705 + ex-L1463: la copia del bloque 2 era identica
+       salvo que no repetia `shadow-none`. Se conserva la del bloque 1, que es superset. */
     .deasy-hero-kicker--ghost {
         @apply border-slate-200 bg-slate-50 text-blue-700 shadow-none;
     }
 
+    /* [fusion-fase-X 2026-08-07] Los tres textos del hero estaban duplicados
+       (ex-L709/713/717 + ex-L1467/1472/1477). Lo unico que aportaba el bloque 2 era el
+       COLOR: el hero dejo de ser oscuro, asi que el texto blanco del bloque 1 estaba muerto. */
     .deasy-hero-title {
-        @apply m-0 text-[1.25rem] font-bold leading-[1.05] tracking-tight text-white md:text-[1.45rem];
+        @apply m-0 text-[1.25rem] font-bold leading-[1.05] tracking-tight text-slate-950 md:text-[1.45rem];
     }
 
     .deasy-hero-meta {
-        @apply text-sm font-semibold uppercase tracking-[0.16em] text-white/72;
+        @apply text-sm font-semibold uppercase tracking-[0.16em] text-slate-500;
     }
 
     .deasy-hero-description {
-        @apply m-0 max-w-3xl text-[0.75rem] font-medium leading-4.5 text-white/80 md:text-[0.8rem];
+        @apply m-0 max-w-3xl text-[0.75rem] font-medium leading-4.5 text-slate-600 md:text-[0.8rem];
     }
 
     .deasy-hero-side {
@@ -726,12 +798,16 @@
         @apply w-full lg:w-auto;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L729/733 + ex-L1456. Del bloque 2 solo ganaban el fondo
+       (`bg-slate-50` sobre `bg-white`) y la sombra (`shadow-none` sobre `shadow-sm`) en el
+       boton, y borde/fondo/color en el icono. Los `hover:` del bloque 1 siguen vivos: son
+       0,2,0 y le ganan al skin plano (0,1,0). */
     .deasy-hero-back-button {
-        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-blue-500/10;
+        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-none transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-blue-500/10;
     }
 
     .deasy-hero-back-button__icon {
-        @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-white/16 bg-white/12 text-white;
+        @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-slate-200 bg-slate-50 text-slate-700 shadow-none;
     }
 
     .deasy-hero-stat-card {
@@ -758,8 +834,11 @@
         @apply shrink-0 text-base font-extrabold leading-none text-[#21517a] sm:text-lg;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L761 + ex-L1449. Del bloque 1 solo sobrevive `overflow-hidden`;
+       el degradado oscuro lo mataba `background-image: none` del bloque 2. */
     .deasy-page-intro {
-        @apply overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e293b_48%,#164e63_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.18)] md:p-8;
+        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:p-6;
+        background-image: none;
     }
 
     .deasy-page-intro__layout {
@@ -770,27 +849,33 @@
         @apply min-w-0 flex-1;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L773/777/781 + ex-L1467/1472/1477. Igual que en el hero:
+       del bloque 2 solo ganaba el color; el blanco del bloque 1 estaba muerto. */
     .deasy-page-intro__title {
-        @apply m-0 text-[1.75rem] font-bold leading-[0.95] tracking-tight text-white md:text-[2rem];
+        @apply m-0 text-[1.75rem] font-bold leading-[0.95] tracking-tight text-slate-950 md:text-[2rem];
     }
 
     .deasy-page-intro__meta {
-        @apply mt-1 text-sm font-semibold uppercase tracking-[0.16em] text-white/72;
+        @apply mt-1 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500;
     }
 
     .deasy-page-intro__description {
-        @apply mt-2 max-w-3xl text-[0.8rem] font-medium leading-4.5 text-white/82 md:text-[0.85rem];
+        @apply mt-2 max-w-3xl text-[0.8rem] font-medium leading-4.5 text-slate-600 md:text-[0.85rem];
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L785 + ex-L1449. Mismo caso que .deasy-page-intro: solo
+       sobrevive `overflow-hidden`. */
     .deasy-page-intro--home {
-        @apply overflow-hidden rounded-[14px] border p-6 text-white shadow-[0_24px_54px_rgba(11,31,63,0.18)] md:p-8;
-        border-color: rgba(255, 255, 255, 0.08);
-        background: linear-gradient(135deg, #0d2f68 0%, #124186 48%, #2bab47 100%);
+        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:p-6;
+        background-image: none;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L791 + ex-L1362. Sobreviven margenes y paddings; radio, sombra y
+       borde son los del bloque 2 (el `#e2e6f0` literal del bloque 1 es el mismo valor que
+       `var(--deasy-border-soft)`, asi que se colapsa al token). */
     .deasy-table-shell {
-        @apply mt-6 mb-6 rounded-2xl border bg-white p-4 shadow-none sm:p-5;
-        border-color: #e2e6f0;
+        @apply mt-6 mb-6 rounded-[8px] border bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-5;
+        border-color: var(--deasy-border-soft);
     }
 
     .deasy-table-header {
@@ -1259,9 +1344,11 @@
         @apply mt-2 text-sm font-medium leading-6 text-slate-500;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L1262 + ex-L1368. Lo unico que ganaba el bloque 2 era
+       `border-color: var(--deasy-border-strong)` (aqui era -soft). */
     .deasy-auth-field {
         @apply block w-full rounded-lg border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-slate-400;
-        border-color: var(--deasy-border-soft);
+        border-color: var(--deasy-border-strong);
         color: var(--deasy-text-body);
     }
 
@@ -1278,11 +1365,13 @@
         @apply pl-11;
     }
 
+    /* [fusion-fase-X 2026-08-07] ex-L1281 + ex-L1376 (iba agrupada con `.deasy-btn`). El bloque 2
+       anadia `min-h-10` y, sobre todo, `shadow-none`, que MATABA el `box-shadow` declarado
+       aqui abajo: el boton de login no tiene sombra hoy. Se retira la declaracion muerta. */
     .deasy-auth-button {
-        @apply inline-flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold text-white shadow-none transition-all focus:outline-none active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
+        @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold text-white shadow-none transition-all focus:outline-none active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
         border-color: var(--deasy-primary);
         background: var(--deasy-brand-gradient);
-        box-shadow: 0 10px 24px rgba(18, 63, 136, 0.18);
     }
 
     .deasy-auth-button--secondary {
@@ -1295,9 +1384,17 @@
         @apply text-sm font-semibold transition-colors hover:underline;
         color: var(--deasy-primary);
     }
-}
 
-@layer components {
+    /* ------------------------------------------------------------------------------
+       [fusion-fase-X 2026-08-07] Aqui empezaba el SEGUNDO `@layer components` del fichero
+       (ex-L1300). Estaba en la misma capa que el primero, asi que ganaba solo por venir
+       despues: 42 selectores tenian dos definiciones a mil lineas de distancia. Las 42
+       colisiones estan resueltas arriba, en la definicion unica de cada clase (busca
+       `[fusion-fase-X`). Lo que queda debajo son las reglas que SOLO existian en el
+       segundo bloque; se conservan aqui, al final de la capa, para no alterar el orden
+       de cascada que tenian frente al resto.
+       ------------------------------------------------------------------------------ */
+
     .deasy-ui-surface {
         @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.05)];
     }
@@ -1344,145 +1441,6 @@
 
     .deasy-inline-icon-button {
         @apply inline-flex items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
-    }
-
-    .deasy-card {
-        @apply rounded-[8px] border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.04)];
-        border-color: var(--deasy-border-soft);
-    }
-
-    .deasy-card-muted,
-    .deasy-card-soft,
-    .deasy-panel,
-    .deasy-panel-muted {
-        @apply rounded-[8px] border bg-white shadow-sm;
-        border-color: var(--deasy-border-soft);
-    }
-
-    .deasy-section-card,
-    .deasy-table-shell {
-        @apply rounded-[8px] border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)];
-        border-color: var(--deasy-border-soft);
-    }
-
-    .deasy-field-input,
-    .deasy-field-select,
-    .deasy-field-textarea,
-    .deasy-auth-field {
-        @apply rounded-lg bg-white shadow-none placeholder:text-slate-400;
-        border-color: var(--deasy-border-strong);
-    }
-
-    .deasy-btn,
-    .deasy-auth-button {
-        @apply min-h-10 rounded-lg shadow-none focus:outline-none;
-    }
-
-    .deasy-btn--primary,
-    .admin-btn--primary {
-        @apply text-white;
-        border-color: var(--deasy-primary);
-        background: var(--deasy-primary);
-    }
-
-    .deasy-btn--secondary,
-    .admin-btn--secondary {
-        @apply bg-white;
-        border-color: var(--deasy-border-strong);
-        color: var(--deasy-text-body);
-    }
-
-    .deasy-btn--cancel,
-    .admin-btn--cancel {
-        @apply bg-white;
-        border-color: var(--deasy-border-strong);
-        color: var(--deasy-text-body);
-    }
-
-    .deasy-btn--outline-primary,
-    .admin-btn--outline-primary {
-        @apply bg-white;
-        border-color: var(--deasy-primary);
-        color: var(--deasy-primary);
-    }
-
-    .deasy-btn--outline-danger,
-    .admin-btn--outline-danger {
-        @apply border-red-600 bg-white text-red-700 hover:border-red-700 hover:bg-red-50 hover:text-red-800;
-    }
-
-    .deasy-btn--soft-primary {
-        @apply border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800;
-    }
-
-    .deasy-btn--soft-neutral {
-        @apply border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950;
-    }
-
-    .deasy-btn--soft-success {
-        @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
-    }
-
-    .deasy-btn--soft-warning {
-        @apply border-amber-200 bg-amber-50 text-amber-800 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-900;
-    }
-
-    .deasy-btn--soft-danger {
-        @apply border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 hover:text-red-800;
-    }
-
-    .deasy-btn--success,
-    .admin-btn--success {
-        @apply border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700;
-    }
-
-    .deasy-btn--danger,
-    .admin-btn--danger {
-        @apply border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700;
-    }
-
-    .deasy-btn--close,
-    .admin-btn--close {
-        @apply h-9 w-9 rounded-lg border border-slate-200 bg-white p-0 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
-    }
-
-    .deasy-hero-shell,
-    .deasy-page-intro,
-    .deasy-page-intro--home {
-        @apply rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:p-6;
-        background-image: none;
-    }
-
-    .deasy-hero-media-card,
-    .deasy-hero-kicker,
-    .deasy-hero-back-button,
-    .deasy-hero-back-button__icon {
-        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none;
-    }
-
-    .deasy-hero-kicker--ghost {
-        @apply border-slate-200 bg-slate-50 text-blue-700;
-    }
-
-    .deasy-hero-title,
-    .deasy-page-intro__title {
-        @apply text-slate-950;
-    }
-
-    .deasy-hero-meta,
-    .deasy-page-intro__meta {
-        @apply text-slate-500;
-    }
-
-    .deasy-hero-description,
-    .deasy-page-intro__description {
-        @apply text-slate-600;
-    }
-
-    .deasy-tag--contrast,
-    .deasy-tag--hero {
-        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none;
-        background-image: none;
     }
 
     .deasy-dialog-root,

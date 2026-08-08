@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* [fusion-fase-X 2026-08-07] `--brand-*` es la PALETA CANONICA del proyecto: es el juego
+   con consumidores fuera de `shared/styles/` (AdminTableManager.css, FirmarPdf.vue,
+   BtnSera.vue) y el que usan los ~300 selectores de este fichero. Los tokens semanticos
+   `--deasy-*` de `tailwind.css` ya no reduplican valores: los que coincidian ahora
+   referencian a estos. Si cambias un color aqui, cambia en los dos juegos — a proposito.
+   Ojo con `--radius-*` (linea ~36): pisa el espacio de nombres de Tailwind y hace que
+   `rounded-lg` valga 16px en toda la app. Eso NO se toca en esta pasada. */
 :root {
   --brand-primary: #5e4eff;
   --brand-primary-strong: #4a3ce8;
