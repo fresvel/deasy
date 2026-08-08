@@ -30,19 +30,13 @@ export default defineConfig({
 		starlight({
 			title: 'Docs with Tailwind',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
-			sidebar: [
-				{
-					label: 'Guides',
-					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
-					],
-				},
-				{
-					label: 'Reference',
-					autogenerate: { directory: 'reference' },
-				},
-			],
+			// Sin sidebar: las paginas de ejemplo de la plantilla se retiraron el 2026-08-08.
+			// OJO: la documentacion real de este repositorio (03-backend/, 07-despliegue/,
+			// arquitecturas/, los planes...) vive FUERA de src/content/docs/, asi que este sitio
+			// NO la publica. Hoy es andamiaje: nadie lo construye ni en CI ni en ningun script.
+			// Antes de añadir entradas aqui hay que decidir si se mueve la documentacion dentro o
+			// si el sitio se retira.
+			sidebar: [],
 			customCss: ['./src/styles/global.css'],
 		}),
 	],

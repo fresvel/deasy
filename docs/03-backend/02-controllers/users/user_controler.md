@@ -14,6 +14,11 @@ Este archivo contiene el controlador para gestionar usuarios, incluyendo creaci�
 - **Descripción**: Actualiza la foto de perfil de un usuario por cédula.
 - **Parámetros**: `req` con cedula en params y archivo en req.file, `res`
 - **Retorna**: JSON con resultado o error.
+> **Desde el 2026-08-07 este controller es transporte, no logica.** `getUserMenu` y
+> `createGeneralTask` se extrajeron a `backend/services/users/UserMenuService.js` y
+> `backend/services/tasks/GeneralTaskService.js`. Lo que queda aqui valida la entrada, llama al
+> servicio y traduce el resultado a HTTP. Si buscas el comportamiento, esta en el servicio.
+
 ### getUserMenu
 - **Descripción**: Construye el menú del usuario basado en sus posiciones y procesos accesibles.
 - **Parámetros**: `req` con user_id, `res`

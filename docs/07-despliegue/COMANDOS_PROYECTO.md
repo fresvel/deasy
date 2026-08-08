@@ -80,7 +80,7 @@ Con el stack Docker de `dev`:
 - Aplicacion via proxy HTTPS: `https://localhost:8443`
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
-- RabbitMQ UI: `http://localhost:15672`
+- RabbitMQ UI: `http://127.0.0.1:15672` (**solo dev, y solo desde la propia maquina**)
 - Signer: `http://localhost:4000`
 
 Si el backend se ejecuta directamente en local:
@@ -379,8 +379,8 @@ Dev:
 - Backend interno: `3030`
 - Frontend interno: `8080`
 - PostgreSQL: `5432`
-- RabbitMQ AMQP: `5672`
-- RabbitMQ UI: `15672`
+- RabbitMQ AMQP: `5672` — **enlazado a `127.0.0.1`**
+- RabbitMQ UI: `15672` — **enlazado a `127.0.0.1`**
 - MinIO API: `9000`
 - MinIO Console: `9001`
 - Signer: `4000`
@@ -388,8 +388,7 @@ Dev:
 QA:
 
 - PostgreSQL: `15432`
-- RabbitMQ AMQP: `15672`
-- RabbitMQ UI: `15673`
+- RabbitMQ: **no se publica** (ver el aviso de abajo)
 - MinIO API: `9100`
 - MinIO Console: `9101`
 - Signer: `14000`
@@ -397,11 +396,32 @@ QA:
 Prod:
 
 - PostgreSQL: `25432`
-- RabbitMQ AMQP: `25672`
-- RabbitMQ UI: `25673`
+- RabbitMQ: **no se publica** (ver el aviso de abajo)
 - MinIO API: `9200`
 - MinIO Console: `9201`
 - Signer: `24000`
+
+> ### RabbitMQ ya NO se publica al host (2026-08-08)
+>
+> Hasta esa fecha el broker se publicaba en **todas** las interfaces en dev, qa y prod, con el
+> usuario `guest` como administrador y la proteccion de loopback desactivada. Como la interfaz de
+> gestion muestra el **cuerpo** de los mensajes, y la contrasena del PKCS#12 del firmante
+> (`certPassword`) viaja ahi dentro, eso dejaba las claves de firma al alcance de cualquiera que
+> llegase al puerto.
+>
+> Hoy: en **qa y prod no se publica ningun puerto** del broker, y en **dev van enlazados a
+> `127.0.0.1`**. Backend y signer lo alcanzan por la red interna de compose
+> (`rabbitmq:5672`, `http://rabbitmq:15672/api`), que es lo que ya hacian: los puertos del host no
+> daban servicio a nadie. El usuario `guest` esta retirado; se conectan con
+> `RABBITMQ_USER` / `RABBITMQ_PASSWORD`.
+>
+> En un entorno ya desplegado hay que crear el usuario **antes** de recrear los servicios, porque
+> `RABBITMQ_DEFAULT_USER` solo actua en el primer arranque con el volumen vacio:
+>
+> ```bash
+> bash scripts/rabbitmq-migrar-usuario.sh prod
+> bash scripts/docker-env.sh prod up -d backend signer   # `restart` NO vale: reutiliza el entorno viejo
+> ```
 
 ## CI/CD observado
 
