@@ -8,6 +8,26 @@
 > directa del código y con un análisis propio de complejidad por función.
 > Rama `develop`, HEAD `514b67e` (SCM revision confirmada por el escáner).
 >
+> ### Estado al 2026-08-08
+>
+> | Fase | Estado |
+> |---|---|
+> | **A** instrumento | ✅ |
+> | **B** etiquetado de formularios | ✅ — fiabilidad **C → A**, cero bugs |
+> | **G** barridos mecánicos | ✅ |
+> | **C** `saveTemplateArtifactDraft` | 🟡 CC 164 → **76** |
+> | **D** controllers → servicios | 🟡 las dos grandes hechas; faltan las tres de firma |
+> | **E** frontend | 🟡 puntos 1 y 3 hechos + fase X desbloqueada; faltan los forks y los colores |
+> | **F** signer | 🟡 auditado, con red de 229 pruebas y 3 riesgos cerrados; falta el corte de identidad |
+> | **F** `postgres.js` | ⬜ sin empezar |
+>
+> **Seguridad:** era **D** y sigue en D por 38 incidencias sin triar, pero se cerró la que sí era
+> explotable: el broker de RabbitMQ estaba publicado en todas las interfaces en dev, qa **y prod**,
+> con `guest` administrador y la protección de loopback desactivada, y la contraseña del PKCS#12 del
+> firmante viaja en el cuerpo del mensaje. Ver el commit `b4a4231`.
+>
+> **Cobertura:** 0 % → **14 %**. El plan para seguir es `docs/plan-cobertura-2026-08.md`.
+>
 > **Este re-escaneo absorbe los cambios que la versión anterior del documento tenía pendientes**
 > (`e93cec4`, `7d39355`, `b357559`, `b86be28`, `514b67e`): ya no hay delta que arrastrar, todas las
 > cifras de §2 y §3 son post-reorg. Lo que la medición dejó demostrado sobre aquellas previsiones:
@@ -854,8 +874,11 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 | `docs/plan-refactor-frontend.md` | **Vivo — referencia del frontend.** Su plan por fases se recoge en §5-E; el diagnóstico detallado sigue valiendo |
 | `docs/linea-base-homeview-2026-07.md` | **Vivo — contrato observable** de HomeView antes de partirlo. Es la red de regresión |
 | `docs/fotos-perfil-minio.md` | **Vivo — diseño.** Dónde y cómo se guardan las fotos de perfil, y por qué salieron del disco local |
-| `SIGUIENTE-SESION-fase5-y-X.md` | Handoff activo del frontend (§5-E) |
-| `SIGUIENTE-SESION-saveTemplateArtifactDraft.md` | Handoff activo del backend (§5-C), **con su fase 1 ya cerrada** |
+| `docs/plan-cobertura-2026-08.md` | **Vivo — plan ejecutable de cobertura.** El gate falla por `new_coverage`, y subir el global es otro problema. Lleva el reparto en cuatro agentes paralelos y las trampas medidas (los `.vue` son 2/3 del hueco; Node solo instrumenta lo que un test carga) |
+| `docs/auditoria-signer-2026-08.md` | **Vivo — auditoría del microservicio de firma.** Mapa por bandas, 12 riesgos y plan de corte por fases |
+| `docs/plan-limpieza-scripts-2026-08.md` | **Vivo** |
+| ~~`SIGUIENTE-SESION-fase5-y-X.md`~~ | **Archivado el 2026-08-08**: lo que pedía está hecho (§5-E) |
+| ~~`SIGUIENTE-SESION-saveTemplateArtifactDraft.md`~~ | **Archivado el 2026-08-08**: fase 1 cerrada y fase 2 hecha a medias y medida (§5-C) |
 | `docs/docs-md-antiguos/refactor-2026-07/` | **Archivados** (§7 del README de esa carpeta): la auditoría base de julio, el plan de `user_controler` con sus M1-M4 hechos, la auditoría de tests unitarios y el plan de `AdminTableManager` de marzo |
 
 ---
