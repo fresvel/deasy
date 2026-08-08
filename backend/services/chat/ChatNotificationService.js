@@ -16,7 +16,7 @@ export default class ChatNotificationService {
   async listForRecipient(personId, { limit = 20 } = {}) {
     const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
     const rows = await store.listNotifications(personId, safeLimit);
-    return rows.map(store.mapNotification);
+    return rows.map((row) => store.mapNotification(row));
   }
 
   async createForMessage({ conversation, message, recipientPersonIds = [] } = {}) {
@@ -51,7 +51,7 @@ export default class ChatNotificationService {
       notifications_count: created.length,
     });
 
-    return created.map(store.mapNotification);
+    return created.map((row) => store.mapNotification(row));
   }
 
   async markRead(personId, ids = []) {
@@ -62,7 +62,7 @@ export default class ChatNotificationService {
       throw error;
     }
     const rows = await store.markNotificationsRead(personId, validIds, new Date());
-    return rows.map(store.mapNotification);
+    return rows.map((row) => store.mapNotification(row));
   }
 
   async markConversationRead(personId, conversationId) {
@@ -79,6 +79,6 @@ export default class ChatNotificationService {
       notifications_count: rows.length,
     });
 
-    return rows.map(store.mapNotification);
+    return rows.map((row) => store.mapNotification(row));
   }
 }
