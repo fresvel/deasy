@@ -38,6 +38,18 @@ from find_marker import find_all_marker_coordinates, find_marker_coordinates
 
 PORT = int(os.getenv("SIGNER_PORT", "4000"))
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://rabbitmq:5672")
+
+
+def redact_amqp_url(url: str) -> str:
+    """Oculta la contrasena de una URL amqp:// para que no acabe en los logs.
+
+    La URL lleva credenciales desde que el broker dejo de aceptar `guest`, y el log de conexion
+    la escribia entera: la contrasena del broker quedaba en texto plano en `docker logs`, que es
+    justo lo que se acaba de cerrar en el transporte.
+    """
+    # `.*` GOLOSO a proposito: corta hasta el ULTIMO `@`. Con `[^@]*` una contrasena que
+    # contuviera `@` se redactaba solo hasta el primero y el resto se colaba al log.
+    return re.sub(r"://([^:/@]+):.*@", r"://\1:***@", url or "")
 SIGN_REQUEST_QUEUE = os.getenv("SIGN_REQUEST_QUEUE", "deasy.sign.request")
 VALIDATE_REQUEST_QUEUE = os.getenv("SIGN_VALIDATE_REQUEST_QUEUE", "deasy.sign.validate.request")
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
@@ -1385,7 +1397,7 @@ def start_rabbit_worker():
             channel.queue_declare(queue=SIGN_REQUEST_QUEUE, durable=True)
             channel.queue_declare(queue=VALIDATE_REQUEST_QUEUE, durable=True)
             channel.basic_qos(prefetch_count=1)
-            logger.info("RabbitMQ conectado en %s", RABBITMQ_URL)
+            logger.info("RabbitMQ conectado en %s", redact_amqp_url(RABBITMQ_URL))
             logger.info("Escuchando solicitudes en %s", SIGN_REQUEST_QUEUE)
             logger.info("Escuchando validaciones en %s", VALIDATE_REQUEST_QUEUE)
 

@@ -215,3 +215,24 @@ class PublicacionEnRabbit(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RedaccionDeCredencialesEnLogs(unittest.TestCase):
+    """La URL de AMQP lleva credenciales desde que el broker dejo de aceptar `guest`."""
+
+    def test_oculta_la_contrasena_conservando_el_usuario(self):
+        self.assertEqual(
+            app.redact_amqp_url("amqp://deasy:s3cr3t0@rabbitmq:5672"),
+            "amqp://deasy:***@rabbitmq:5672",
+        )
+
+    def test_una_url_sin_credenciales_no_se_toca(self):
+        self.assertEqual(app.redact_amqp_url("amqp://rabbitmq:5672"), "amqp://rabbitmq:5672")
+
+    def test_tolera_vacio(self):
+        self.assertEqual(app.redact_amqp_url(""), "")
+
+    def test_no_deja_pasar_una_contrasena_con_simbolos(self):
+        redactada = app.redact_amqp_url("amqps://usuario:p@ss/w:rd@broker:5671")
+        self.assertNotIn("w:rd", redactada)
+        self.assertIn(":***@", redactada)

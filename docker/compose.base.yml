@@ -19,6 +19,12 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     restart: unless-stopped
+    environment:
+      # OJO: RabbitMQ solo honra estas dos variables en el PRIMER arranque, con el volumen de
+      # datos vacio. En un despliegue que ya existe hay que crear el usuario a mano una vez:
+      # ver scripts/rabbitmq-migrar-usuario.sh
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
@@ -98,7 +104,7 @@ services:
       RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
       RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
       RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
-      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
       SIGN_RESPONSE_QUEUE_PREFIX: deasy.sign.response
@@ -122,7 +128,7 @@ services:
       MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
       SIGNER_PORT: "4000"
       SIGMAKER_DIR: /opt/sigmaker
-      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
       PYHANKO_TSA_URL: ${PYHANKO_TSA_URL:-}

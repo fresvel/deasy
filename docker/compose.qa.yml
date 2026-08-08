@@ -11,9 +11,9 @@ services:
 
   rabbitmq:
     env_file: *qa_runtime_env_file
-    ports:
-      - "15672:5672"
-      - "15673:15672"
+    # SIN `ports`: el broker solo se alcanza por la red interna de compose. Backend y signer usan
+    # `rabbitmq:5672` y `http://rabbitmq:15672/api`, asi que publicarlo al host no daba servicio a
+    # nadie: solo exponia la UI de gestion, que permite leer el cuerpo de los mensajes.
 
   minio:
     env_file: *qa_runtime_env_file

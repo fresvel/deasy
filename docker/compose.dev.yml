@@ -11,9 +11,13 @@ services:
       - "5432:5432"
 
   rabbitmq:
+    # Enlazado a 127.0.0.1 a proposito. Antes se publicaba en TODAS las interfaces, y con
+    # `loopback_users.guest = false` + usuario guest administrador eso dejaba la UI de gestion
+    # —que muestra el CUERPO de los mensajes, y ahi viaja `certPassword`— al alcance de la red.
+    # En dev se conserva el acceso local por comodidad; en qa y prod no se publica nada.
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
 
   minio:
     ports:
