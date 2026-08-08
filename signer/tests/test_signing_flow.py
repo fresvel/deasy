@@ -221,13 +221,28 @@ class PoliticaDeValidacionPosteriorALaFirma(unittest.TestCase):
         self.assertTrue(resultado["warningAccepted"])
         self.assertFalse(resultado["bottomLine"])
 
-    def test_un_informe_sin_bottomline_se_considera_correcto(self):
-        # `validate_signed_pdf` devuelve {"performed": False, ...} cuando el PDF
-        # no tiene firmas embebidas; ese informe NO lleva `bottomLine` y el
-        # `.get(..., True)` lo deja pasar. Documentado, no corregido.
+    def test_un_pdf_sin_firmas_embebidas_hace_fallar_el_trabajo(self):
+        # R-2, corregido. `validate_signed_pdf` devuelve {"performed": False, ...} cuando el PDF
+        # no tiene firmas embebidas, y ese informe NO lleva `bottomLine`. El `.get(..., True)` lo
+        # daba por bueno, asi que un documento SIN FIRMA terminaba el trabajo en verde. Ahora el
+        # caso se atiende primero y con su propio mensaje.
         informe = {"performed": False, "message": "El PDF firmado no contiene firmas embebidas."}
         with mock.patch.object(app, "validate_signed_pdf", return_value=informe):
-            self.assertEqual(app.validate_signed_pdf_with_policy(Path("/tmp/a.pdf"), {}), informe)
+            with self.assertRaises(ValueError) as ctx:
+                app.validate_signed_pdf_with_policy(Path("/tmp/a.pdf"), {})
+        self.assertIn("no contiene firmas embebidas", str(ctx.exception))
+
+    def test_un_pdf_sin_firmas_es_aviso_si_el_cliente_lo_acepta(self):
+        # El escape de siempre (`allow_untrusted_signer`) se respeta: quien lo pida recibe aviso
+        # en vez de error, pero con bottomLine en false, no colado como exito.
+        informe = {"performed": False, "message": "El PDF firmado no contiene firmas embebidas."}
+        with mock.patch.object(app, "validate_signed_pdf", return_value=informe):
+            resultado = app.validate_signed_pdf_with_policy(
+                Path("/tmp/a.pdf"), {"allow_untrusted_signer": True}
+            )
+        self.assertFalse(resultado["bottomLine"])
+        self.assertTrue(resultado["warningAccepted"])
+        self.assertIn("no contiene firmas embebidas", resultado["warning"])
 
 
 class ContratoDeRespuestaDelJobDeFirma(unittest.TestCase):

@@ -202,18 +202,17 @@ class DecodificacionDeExtensiones(unittest.TestCase):
     def test_binario_indescifrable_va_a_hexadecimal(self):
         self.assertEqual(app.decode_extension_bytes(b"\xff\xfe\xfd"), "fffefd")
 
-    def test_defecto_conocido_el_octet_string_no_se_desenvuelve(self):
-        # El código tiene una rama "quitar la envoltura OCTET STRING", pero
-        # nunca se ejecuta: el primer candidato (el DER completo) SÍ parsea
-        # como OctetString y devuelve el contenido crudo, con la cabecera del
-        # tipo interno pegada delante. Aquí la cédula sale con basura previa.
-        # Funciona en producción de milagro, porque `extract_cedula_from_values`
-        # la rescata después con una expresión regular.
+    def test_desenvuelve_el_octet_string_y_la_cedula_sale_limpia(self):
+        # R-3, corregido. Antes el candidato desenvuelto iba DETRAS del valor crudo, y como el
+        # crudo tambien parsea como OctetString el bucle retornaba en la primera vuelta: la
+        # cedula salia con la cabecera del tipo interno pegada delante y solo la rescataba
+        # despues `extract_cedula_from_values` con una regex. Ahora sale limpia de origen.
         self.assertEqual(
             app.decode_extension_bytes(b"\x04\x0c\x13\x0a1234567890"),
-            "\x13\n1234567890",
+            "1234567890",
         )
-        self.assertEqual(app.extract_cedula_from_values("\x13\n1234567890"), "1234567890")
+        # La regex de aguas abajo sigue siendo idempotente sobre el valor ya limpio.
+        self.assertEqual(app.extract_cedula_from_values("1234567890"), "1234567890")
 
 
 class NormalizacionDeAtributosDePersona(unittest.TestCase):

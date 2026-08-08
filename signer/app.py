@@ -480,11 +480,14 @@ def extract_cedula_from_values(*values: Any) -> str | None:
 
 
 def decode_extension_bytes(raw_value: bytes) -> Any:
-    candidates = [raw_value]
-    if raw_value and raw_value[0] == 0x04 and len(raw_value) > 2:
-        length = raw_value[1]
-        if length < len(raw_value):
-            candidates.append(raw_value[2:])
+    # R-3. El candidato DESENVUELTO va primero. Antes iba detras del valor crudo, y como el
+    # crudo tambien carga como ASN.1, el bucle retornaba en la primera vuelta y la rama de
+    # desenvolver no se alcanzaba nunca: la cedula salia con el envoltorio OCTET STRING y solo
+    # la limpiaba una regex rio abajo.
+    candidates: list[bytes] = []
+    if raw_value and raw_value[0] == 0x04 and len(raw_value) > 2 and raw_value[1] < len(raw_value):
+        candidates.append(raw_value[2:])
+    candidates.append(raw_value)
 
     for candidate in candidates:
         try:
@@ -952,7 +955,25 @@ def validate_signed_pdf_with_policy(signed_pdf: Path, data: dict[str, Any]) -> d
             }
         raise
 
-    if validation_info.get("bottomLine", True):
+    # R-2. Un PDF sin firmas embebidas NO es una validacion con exito: es una firma que no
+    # ocurrio. `validate_signed_pdf` devuelve ese caso SIN la clave `bottomLine`, y el defecto
+    # `True` del `.get` de abajo lo daba por bueno, asi que el trabajo terminaba en verde. Este
+    # caso se atiende primero y con mensaje propio: el generico ("no se pudo validar el
+    # certificado") despista sobre lo que de verdad paso.
+    if not validation_info.get("performed"):
+        motivo = validation_info.get("message") or "El PDF firmado no contiene firmas embebidas."
+        if is_validation_warning_allowed(data):
+            return {
+                **validation_info,
+                "bottomLine": False,
+                "warning": motivo,
+                "warningAccepted": True,
+                "details": motivo,
+            }
+        raise ValueError(motivo)
+
+    # Defecto `False` a proposito: si algun dia falta la clave, se trata como NO validado.
+    if validation_info.get("bottomLine", False):
         return validation_info
 
     if is_validation_warning_allowed(data):
