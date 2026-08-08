@@ -628,7 +628,29 @@ Antes de empezar, actualizar el comentario desfasado de `templateLifecycle.js:14
 
 </details>
 
-### Fase D — Controllers que violan CLAUDE.md
+### Fase D — Controllers que violan CLAUDE.md — 🟡 **las dos grandes, hechas (2026-08-07)**
+
+| | Antes | Después |
+|---|---:|---:|
+| `user_controler.js` cognitiva | 337 | **182** (−46 %) |
+| `user_controler.js` líneas | 1 963 | **1 513** |
+| `createGeneralTask` | CC **75**, 362 L | fuera de la cola de `S3776`; controller de **28 líneas** |
+| `getUserMenu` | 374 L | 24 líneas en el controller |
+
+Nacen `GeneralTaskService` (dueño de la transacción entera) y `UserMenuService` (proyección de solo
+lectura), con 34 tests nuevos junto al módulo.
+
+> **Aviso que vale para cualquier corte de este tipo:** mover una transacción del controller al
+> servicio **cambia dónde caen los errores**. Aquí `pool.getConnection()` estaba en el controller
+> **fuera** de su `try`, así que un fallo de la pool llegaba a Express como 500; al moverlo, pasaba a
+> salir como **400** — infraestructura disfrazada de culpa del cliente. Se conserva marcando
+> `statusCode` en el error y honrándolo en el controller (`error.statusCode ?? 400`), que es el patrón
+> que ya usaban `task_generation_controller` y `sign_workflow_controller`. **Ningún test caracterizado
+> cubría ese camino.**
+
+**Quedan las tres filas de firma** (`sign_controller.js` ×2 y `sign_workflow_controller.js`).
+
+<details><summary>Redacción original de la fase (referencia)</summary>
 
 Lógica de negocio que vive en la capa de controller. `DocumentWorkflowResetService.js` (258 L, una
 responsabilidad) es el estilo objetivo.
@@ -643,6 +665,12 @@ responsabilidad) es el estilo objetivo.
 
 Ataca a la vez el God #2 (`user_controler.js`, cogn. **337**) y su **13,1 %** de duplicación (288 L,
 el segundo peor del repo tras los datos de `sqlTables.js`).
+
+</details>
+
+> **Ojo al leer la duplicación después del corte:** la densidad de `user_controler.js` **sube** de
+> 13,1 % a 17,5 % aunque las líneas duplicadas **bajen** de 288 a 264. Es el denominador, que encogió
+> un 31 %. No es una regresión.
 
 ### Fase E — Frontend: las piezas pendientes del plan de julio
 
@@ -674,10 +702,21 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
 
 ### Fase F — Los dos nunca auditados
 
-- **`signer/app.py`** (cogn. **356**, el peor del repo, anidamiento máx. 14). Microservicio Python de
-  firma. Nunca ha tenido un pase. Su peor función está en `:519` (CC 40) — lo que significa que la
-  complejidad está **repartida por todo el fichero**, no concentrada: es un problema de estructura, no
-  de una función mala.
+- **`signer/app.py`** — 🟡 **auditado y con red (2026-08-07)**, ver `docs/auditoria-signer-2026-08.md`.
+  **El diagnóstico de este plan estaba invertido.** Se daba por hecho que lo temido era la firma; es al
+  revés: la firma real son **88 líneas con cognitiva 17**, y el **81 % de la complejidad marcada**
+  (148 de 183 puntos, 6 de las 8 funciones) está en **leer identidad de certificados ecuatorianos**,
+  430 líneas. Eso invierte la estrategia: ese bloque es el **más fácil** de cubrir con pruebas puras,
+  porque no toca red, disco ni criptografía.
+  - **Red: 224 casos** (`signer/tests/`, `unittest` de la stdlib, sin dependencias nuevas), validada
+    **por mutación**. No cubre firmar un PDF de verdad: pyHanko está sustituido por dobles.
+  - **Se fueron 762 líneas de código muerto**: un signer Node anterior que ni arrancaría.
+  - **Tres riesgos que no se arreglan moviendo código** y piden decisión: **R-1** la contraseña del
+    PKCS#12 viaja en claro por AMQP sin TLS; **R-2** `validate_signed_pdf_with_policy` da por válido un
+    PDF que salió **sin firmas embebidas** (el dict de ese caso no trae `bottomLine` y el
+    `.get(..., True)` lo da por bueno); **R-3** una rama inalcanzable deja salir la cédula sucia.
+  - Siguiente corte recomendado: las 430 líneas de identidad. **Tocar la firma está bloqueado** hasta
+    que exista una prueba que firme un PDF real y lo valide.
 - **`backend/config/postgres.js`** (cogn. **241 en 391 ncloc** — la densidad más alta del repo). Dos
   funciones en `:47` y `:111` (CC 49 y 59) que reescriben dialecto SQL. Candidato a tabla de
   traducción declarativa.
