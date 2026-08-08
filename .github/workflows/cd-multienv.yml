@@ -126,6 +126,30 @@ jobs:
         working-directory: frontend
         run: pnpm run lint
 
+  # El backend no tiene lint, pero sí tiene dos puertas que hasta ahora dependían de que
+  # alguien se acordara de correrlas a mano — que es justo el modo de fallo que dejó vivos
+  # cuatro ReferenceError durante semanas.
+  backend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+      # Detecta símbolos movidos sin su import: `node --check` no los ve (es sintaxis válida)
+      # y el backend arranca igual, porque el fallo es en tiempo de llamada.
+      - name: Check backend imports
+        working-directory: backend
+        run: npm run check:imports
+      - name: Backend unit tests
+        working-directory: backend
+        run: npm run test:unit
+
   compose-validate:
     runs-on: ubuntu-latest
     steps:
@@ -144,6 +168,7 @@ jobs:
     needs:
       - prepare
       - frontend-lint
+      - backend-checks
       - compose-validate
     runs-on: ubuntu-latest
     strategy:

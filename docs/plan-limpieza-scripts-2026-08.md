@@ -578,28 +578,33 @@ bash scripts/docker-env.sh dev exec -T backend node /app/backend/scripts/seed_de
 
 ---
 
-## 7. Deuda que este plan NO cierra
+## 7. Deuda detectada durante el inventario
 
-Detectada durante el inventario, fuera de alcance por diseño:
+Fuera del alcance del borrado, tratada después en commits aparte.
 
-1. **`loadEnv()` triplicado** — copiado byte a byte en `reset_postgres.mjs`, `reset_storage.mjs` y
-   `reset_system.mjs` (líneas 13-34 en los tres), con una cuarta variante en `seed_pucese.mjs` que se
-   va con el borrado. Y es un **no-op**: ni `backend/.env` ni `docker/.env` existen (los reales son
-   `.env.dev`/`.env.qa`/…, y `docker/` ni siquiera entra en la imagen). Lo natural es sustituirlo por
-   `import "dotenv/config"`, que ya usan `index.js`, `bootstrap_admin_recovery.mjs` y otros.
-2. **`main()` muerto en `reset_storage.mjs`** (líneas 132-150) — cascarón del CLI de la era Mongo, con
-   un flag `--keep-minio` que le pide al script que no haga lo único que hace. Nadie lo invoca
-   directamente. Podarlo lo deja como librería pura.
-3. **`reset_postgres.mjs` ≡ `reset_system.mjs --keep-minio`** — funcionalmente idénticos. Colapsarlos
+### Cerrada
+
+1. ✅ **`loadEnv()` triplicado** (`557bc20`) — estaba copiado byte a byte en los tres scripts de
+   reset y era un **no-op**: ni `backend/.env` ni `docker/.env` existen (los reales son
+   `.env.dev`/`.env.qa`/…, y `docker/` ni siquiera entra en la imagen). Sustituido por
+   `import "dotenv/config"`, que ya usaban `index.js` y `bootstrap_admin_recovery.mjs`.
+2. ✅ **`main()` muerto en `reset_storage.mjs`** (`557bc20`) — cascarón del CLI de la era Mongo, con
+   un flag `--keep-minio` que le pedía al script que no hiciera lo único que hace. Queda como
+   librería pura. Los dos cambios juntos: −124 líneas, +8.
+3. ✅ **`generate_demo_certificates.mjs`** (`6501a74`) — gana `--force` (que resuelve la trampa de
+   las filas huérfanas tras purgar el bucket), `--person <cédula|id>` (que absorbe el nicho del
+   script borrado, sin cablear a nadie) y aislamiento de fallos por persona. Descubrible vía
+   `npm run seed:certs`; `seed_dev_rich.mjs` vía `npm run seed:dev`.
+4. ✅ **`check_missing_imports.mjs` ahora es puerta de CI** (`.github/workflows/cd-multienv.yml`) —
+   nuevo job `backend-checks` con `check:imports` + `test:unit`, y `publish-images` depende de él.
+   Verificado antes de commitear reproduciendo el job en un `node:25` limpio: `npm ci` compila
+   `bcrypt` sin problemas y las 252 pruebas pasan desde cero.
+
+### Abierta
+
+5. **`reset_postgres.mjs` ≡ `reset_system.mjs --keep-minio`** — funcionalmente idénticos. Colapsarlos
    son 2 líneas, pero convierte una garantía **estructural** ("reset-db no sabe purgar MinIO") en una
-   garantía por flag. Siendo la herramienta de trabajo diaria, el riesgo no compensa los ~15 líneas.
-4. **`check_missing_imports.mjs` no está en CI** — su cabecera dice "sale con código 1 para poder
-   usarlo como puerta en CI"; esa puerta nunca se instaló. Hoy depende de disciplina manual, que es
-   justo el modo de fallo que la herramienta nació para eliminar.
-5. **`generate_demo_certificates.mjs` no es descubrible** — sin wrapper ni entrada en `package.json`.
-   Y tiene una trampa operativa: `reset_storage.mjs` vacía el bucket `deasy-certificates` pero no las
-   filas, y el `HAVING COUNT = 0` del script considera "atendidas" a esas personas, así que no
-   regenera. Un `--force` lo resolvería.
+   garantía por flag. Siendo la herramienta de trabajo diaria, el riesgo no compensa las ~15 líneas.
 6. **`bootstrap_admin_recovery.mjs` es poco descubrible** — `SystemBootstrapView.vue:293` lo cita por
    nombre pero termina en `...` sin enumerar los flags, y no dice que hay que entrar al contenedor.
    El arreglo barato es documentar los flags en el mensaje, no tocar el script.
