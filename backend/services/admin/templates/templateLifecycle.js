@@ -36,7 +36,12 @@ import {
 import { sanitizeStorageSegment } from "../../../utils/templateArchive.js";
 import { normalizeItemMode } from "../kernel/versioning.js";
 import { slugify, humanizeSlug, normalizeNumericId } from "../kernel/primitives.js";
-import { buildWorkflowsYaml, collectAuthoredWorkflowIssues } from "./workflows.js";
+import {
+  buildWorkflowsYaml,
+  collectAuthoredWorkflowIssues,
+  parseWorkflowPayload,
+  workflowHasSteps
+} from "./workflows.js";
 import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -964,6 +969,119 @@ export default class TemplateLifecycleService {
     return this.saveTemplateArtifactDraft(artifactId, data, files, actor);
   }
 
+  // Resuelve el propietario del borrador: su cedula (ownerRef) y su id de persona.
+  //
+  // La cedula ya NO se persiste como columna: se usa solo para construir la ruta MinIO ad_hoc al
+  // crear (Users/<cedula>/...) y para resolver owner_person_id. En edicion se reutiliza el
+  // base_object_prefix ya almacenado, asi que no hace falta.
+  //
+  // Precedencia: la persona pedida explicitamente gana; si no, la del artifact existente; y como
+  // ultimo recurso se busca por cedula.
+  async _resolveDraftOwner({ ownerCedula = "", requestedOwnerPersonId = null, existingArtifact = null } = {}) {
+    let ownerRef = String(ownerCedula || "").slice(0, 180);
+    let ownerPersonId = normalizeNumericId(existingArtifact?.owner_person_id);
+
+    if (!ownerRef && ownerPersonId) {
+      const ownerPersonRow = await this._getByKeys("persons", { id: ownerPersonId });
+      ownerRef = String(ownerPersonRow?.cedula || "").slice(0, 180);
+    }
+
+    if (requestedOwnerPersonId) {
+      const ownerPerson = await this._getByKeys("persons", { id: requestedOwnerPersonId });
+      if (!ownerPerson) {
+        throw new Error("La persona propietaria indicada no existe.");
+      }
+      return { ownerRef, ownerPersonId: requestedOwnerPersonId };
+    }
+
+    if (!ownerPersonId && ownerRef) {
+      const [ownerRows] = await this.pool.query(
+        `SELECT id
+         FROM persons
+         WHERE cedula = ?
+         LIMIT 1`,
+        [ownerRef]
+      );
+      if (ownerRows?.length) {
+        ownerPersonId = ownerRows[0].id;
+      }
+    }
+
+    return { ownerRef, ownerPersonId };
+  }
+
+  // Valida el contrato del flujo AUTORADO, antes de subir el meta.yaml, en vez de degradar en
+  // silencio durante la normalizacion del sync. Devuelve los avisos NO bloqueantes (p. ej. un cargo
+  // que hoy no tiene titular en la ubicacion); lanza 422 si hay errores de verdad.
+  async _validateAuthoredWorkflows({
+    fillWorkflow = null,
+    signatureWorkflow = null,
+    templateScope = "official",
+    processDefinitionId = null,
+    existingArtifactId = null
+  } = {}) {
+    // Proceso vinculado: en creación llega en el form; en edición se busca el vínculo existente.
+    let linkedDefinitionId = normalizeNumericId(processDefinitionId);
+    if (!linkedDefinitionId && existingArtifactId) {
+      const [linkRows] = await this.pool.query(
+        "SELECT process_definition_id FROM process_definition_templates WHERE template_artifact_id = ? LIMIT 1",
+        [Number(existingArtifactId)]
+      );
+      linkedDefinitionId = normalizeNumericId(linkRows?.[0]?.process_definition_id);
+    }
+    const [cargoCodeMap, referenceIds, processScope] = await Promise.all([
+      this._getCargoCodeMap(),
+      this._getWorkflowReferenceIdSets(),
+      this._getProcessTargetScope(linkedDefinitionId)
+    ]);
+    // Cargos resolubles por ubicación, para rechazar pasos por cargo que no tendrían titular: ctx (alcance,
+    // para "misma unidad") + byUnit (cada unidad fija usada en pasos "unidad específica").
+    const fillStepList = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
+    const unitExactUnitIds = [];
+    let needsCtxCargos = false;
+    // Considera tanto pasos de entrega (un resolutor) como firmantes de cada paso de firma (lista). Así los
+    // avisos "cargo sin puesto" se evalúan con el set de cargos resolubles correcto y no salen falsos.
+    const cargoScopeSources = [...fillStepList];
+    for (const step of (Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps : [])) {
+      const signers = Array.isArray(step?.signers) && step.signers.length ? step.signers : [step];
+      cargoScopeSources.push(...signers);
+    }
+    for (const step of cargoScopeSources) {
+      const resolverType = String(step?.resolver_type || step?.resolver?.resolver_type || "task_assignee");
+      if (resolverType !== "cargo_in_scope") continue;
+      const stepScope = String(step?.unit_scope_type || step?.resolver?.unit_scope_type || "context_exact");
+      if (stepScope === "unit_exact") {
+        const uid = normalizeNumericId(step?.unit_id ?? step?.resolver?.unit_id);
+        if (uid) unitExactUnitIds.push(uid);
+      } else if (stepScope === "context_exact") {
+        needsCtxCargos = true;
+      }
+    }
+    const [ctxCargos, resolvableByUnit] = await Promise.all([
+      needsCtxCargos && linkedDefinitionId ? this._listResolvableCargos(linkedDefinitionId) : Promise.resolve(null),
+      unitExactUnitIds.length ? this._getResolvableCargoIdsByUnit(this.pool, unitExactUnitIds) : Promise.resolve(new Map())
+    ]);
+    const resolvableCargoIds = {
+      ctx: ctxCargos ? new Set(ctxCargos.map((c) => c.id)) : null,
+      byUnit: resolvableByUnit
+    };
+    const { errors: workflowErrors, warnings: workflowWarnings } = collectAuthoredWorkflowIssues({
+      fillWorkflow,
+      signatureWorkflow,
+      cargoCodeMap,
+      referenceIds,
+      processScope,
+      resolvableCargoIds,
+      templateScope
+    });
+    if (workflowErrors.length) {
+      const error = new Error(`El flujo definido tiene errores:\n- ${workflowErrors.join("\n- ")}`);
+      error.statusCode = 422;
+      throw error;
+    }
+    return workflowWarnings;
+  }
+
   async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
     this.ensurePool();
 
@@ -1034,11 +1152,7 @@ export default class TemplateLifecycleService {
       // Toda plantilla single/replicated debe definir un flujo de entrega con al menos un paso
       // (fail-fast antes del upload). 'routed' NO autora flujo: se define al enviar (runtime).
       if (requestedItemMode !== "routed") {
-        let fillWorkflowCheck = data.fill_workflow;
-        if (typeof fillWorkflowCheck === "string") {
-          try { fillWorkflowCheck = JSON.parse(fillWorkflowCheck); } catch { fillWorkflowCheck = null; }
-        }
-        if (!fillWorkflowCheck || !Array.isArray(fillWorkflowCheck.steps) || !fillWorkflowCheck.steps.length) {
+        if (!workflowHasSteps(parseWorkflowPayload(data.fill_workflow))) {
           throw new Error("Debes definir al menos un paso en el flujo de entrega.");
         }
       }
@@ -1050,33 +1164,11 @@ export default class TemplateLifecycleService {
       throw new Error("Selecciona un seed o sube al menos un archivo para actualizar el borrador.");
     }
 
-    // La cédula del propietario (ownerRef) ya no se persiste como columna: se usa solo para construir la ruta
-    // MinIO ad_hoc al crear (Users/<cédula>/...) y para resolver owner_person_id. En edición se reutiliza el
-    // base_object_prefix ya almacenado, así que no es necesaria.
-    let ownerRef = ownerCedula.slice(0, 180);
-    let ownerPersonId = normalizeNumericId(existingArtifact?.owner_person_id);
-    if (!ownerRef && ownerPersonId) {
-      const ownerPersonRow = await this._getByKeys("persons", { id: ownerPersonId });
-      ownerRef = String(ownerPersonRow?.cedula || "").slice(0, 180);
-    }
-    if (requestedOwnerPersonId) {
-      const ownerPerson = await this._getByKeys("persons", { id: requestedOwnerPersonId });
-      if (!ownerPerson) {
-        throw new Error("La persona propietaria indicada no existe.");
-      }
-      ownerPersonId = requestedOwnerPersonId;
-    } else if (!ownerPersonId && ownerRef) {
-      const [ownerRows] = await this.pool.query(
-        `SELECT id
-         FROM persons
-         WHERE cedula = ?
-         LIMIT 1`,
-        [ownerRef]
-      );
-      if (ownerRows?.length) {
-        ownerPersonId = ownerRows[0].id;
-      }
-    }
+    const { ownerRef, ownerPersonId } = await this._resolveDraftOwner({
+      ownerCedula,
+      requestedOwnerPersonId,
+      existingArtifact
+    });
     const baseSlug = slugify(displayName) || "artifact";
     const templateCode = String(existingArtifact?.template_code || `draft_${baseSlug}`).slice(0, 180);
     const storageVersion = existingArtifact?.storage_version || await this._getNextStorageVersionForTemplateCode(templateCode);
@@ -1229,83 +1321,22 @@ export default class TemplateLifecycleService {
       metaLines.push(`seed_code: "${String(seedRow.seed_code).replaceAll("\"", '\\"')}"`);
     }
     // Flujos definidos desde el editor web (fill/signatures). Si no llegan, se usa el contrato vacío.
-    let fillWorkflow = data.fill_workflow;
-    let signatureWorkflow = data.signature_workflow;
-    if (typeof fillWorkflow === "string") {
-      try { fillWorkflow = JSON.parse(fillWorkflow); } catch { fillWorkflow = null; }
-    }
-    if (typeof signatureWorkflow === "string") {
-      try { signatureWorkflow = JSON.parse(signatureWorkflow); } catch { signatureWorkflow = null; }
-    }
-    const hasCustomWorkflows =
-      (fillWorkflow && Array.isArray(fillWorkflow.steps) && fillWorkflow.steps.length)
-      || (signatureWorkflow && Array.isArray(signatureWorkflow.steps) && signatureWorkflow.steps.length);
+    const fillWorkflow = parseWorkflowPayload(data.fill_workflow);
+    const signatureWorkflow = parseWorkflowPayload(data.signature_workflow);
+    const hasCustomWorkflows = workflowHasSteps(fillWorkflow) || workflowHasSteps(signatureWorkflow);
     // Avisos no bloqueantes de autoría (p. ej. cargo sin puesto hoy en la ubicación): se acumulan para
     // informarlos en la respuesta, sin abortar el guardado.
     let authoringWarnings = [];
     // Validación del contrato de flujo en autoría (no solo al vincular): falla rápido y claro antes de
     // subir el meta.yaml, en vez de degradar silenciosamente en la normalización del sync.
     if (hasCustomWorkflows) {
-      // Proceso vinculado: en creación llega en el form; en edición se busca el vínculo existente.
-      let linkedDefinitionId = normalizeNumericId(data.process_definition_id);
-      if (!linkedDefinitionId && isEdit && existingArtifact?.id) {
-        const [linkRows] = await this.pool.query(
-          "SELECT process_definition_id FROM process_definition_templates WHERE template_artifact_id = ? LIMIT 1",
-          [Number(existingArtifact.id)]
-        );
-        linkedDefinitionId = normalizeNumericId(linkRows?.[0]?.process_definition_id);
-      }
-      const [cargoCodeMap, referenceIds, processScope] = await Promise.all([
-        this._getCargoCodeMap(),
-        this._getWorkflowReferenceIdSets(),
-        this._getProcessTargetScope(linkedDefinitionId)
-      ]);
-      // Cargos resolubles por ubicación, para rechazar pasos por cargo que no tendrían titular: ctx (alcance,
-      // para "misma unidad") + byUnit (cada unidad fija usada en pasos "unidad específica").
-      const fillStepList = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
-      const unitExactUnitIds = [];
-      let needsCtxCargos = false;
-      // Considera tanto pasos de entrega (un resolutor) como firmantes de cada paso de firma (lista). Así los
-      // avisos "cargo sin puesto" se evalúan con el set de cargos resolubles correcto y no salen falsos.
-      const cargoScopeSources = [...fillStepList];
-      for (const step of (Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps : [])) {
-        const signers = Array.isArray(step?.signers) && step.signers.length ? step.signers : [step];
-        cargoScopeSources.push(...signers);
-      }
-      for (const step of cargoScopeSources) {
-        const resolverType = String(step?.resolver_type || step?.resolver?.resolver_type || "task_assignee");
-        if (resolverType !== "cargo_in_scope") continue;
-        const stepScope = String(step?.unit_scope_type || step?.resolver?.unit_scope_type || "context_exact");
-        if (stepScope === "unit_exact") {
-          const uid = normalizeNumericId(step?.unit_id ?? step?.resolver?.unit_id);
-          if (uid) unitExactUnitIds.push(uid);
-        } else if (stepScope === "context_exact") {
-          needsCtxCargos = true;
-        }
-      }
-      const [ctxCargos, resolvableByUnit] = await Promise.all([
-        needsCtxCargos && linkedDefinitionId ? this._listResolvableCargos(linkedDefinitionId) : Promise.resolve(null),
-        unitExactUnitIds.length ? this._getResolvableCargoIdsByUnit(this.pool, unitExactUnitIds) : Promise.resolve(new Map())
-      ]);
-      const resolvableCargoIds = {
-        ctx: ctxCargos ? new Set(ctxCargos.map((c) => c.id)) : null,
-        byUnit: resolvableByUnit
-      };
-      const { errors: workflowErrors, warnings: workflowWarnings } = collectAuthoredWorkflowIssues({
+      authoringWarnings = await this._validateAuthoredWorkflows({
         fillWorkflow,
         signatureWorkflow,
-        cargoCodeMap,
-        referenceIds,
-        processScope,
-        resolvableCargoIds,
-        templateScope
+        templateScope,
+        processDefinitionId: data.process_definition_id,
+        existingArtifactId: isEdit ? existingArtifact?.id : null
       });
-      if (workflowErrors.length) {
-        const error = new Error(`El flujo definido tiene errores:\n- ${workflowErrors.join("\n- ")}`);
-        error.statusCode = 422;
-        throw error;
-      }
-      authoringWarnings = workflowWarnings;
     }
     const workflowsYaml = hasCustomWorkflows
       ? buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })

@@ -98,6 +98,25 @@ export const CARGO_CODE_ALIASES = new Map([
 // --- Serialización y normalización -------------------------------------------
 
 // Resolver compartido (mismo modelo "Quién hace/firma el paso" para llenado y firmas): quién resuelve el paso.
+// Los flujos autorados llegan del formulario web: o ya como objeto, o como cadena JSON si el
+// formulario viaja en multipart. `null` ante JSON invalido, que aguas arriba se trata igual que
+// "no llego flujo". PURA: no toca base de datos ni ficheros.
+export const parseWorkflowPayload = (value) => {
+  if (typeof value !== "string") {
+    return value ?? null;
+  }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+// Un flujo "tiene pasos" si es un objeto con `steps` no vacio. Se usa tanto para el fail-fast de
+// creacion como para decidir si hay que validar y sincronizar la autoria.
+export const workflowHasSteps = (workflow) =>
+  Boolean(workflow && Array.isArray(workflow.steps) && workflow.steps.length);
+
 export const buildStepResolver = (step) => {
   const resolver = {
     type: step?.resolver_type || "task_assignee",
