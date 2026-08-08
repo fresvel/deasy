@@ -40,15 +40,25 @@ de julio-09 importan porque el New Code period (`PREVIOUS_VERSION`) está anclad
 —`projectVersion` lleva clavado en `1.0` desde entonces—, así que «código nuevo» significa hoy
 *todo lo tocado desde el 2026-07-09*.
 
-**Corrección al handoff anterior sobre el acceso.** `SIGUIENTE-SESION-saveTemplateArtifactDraft.md`
-afirma que «`admin:admin` NO funciona por basic auth: SonarQube 26 lo retiró de la API». **Hoy sí
-funciona** — toda la medición de este documento se hizo con `-u admin:admin` contra
-`/api/measures/*`, `/api/issues/search` y `/api/qualitygates/*`. El procedimiento de token por sesión
-que documenta ese handoff sigue siendo válido, pero no es necesario para leer métricas.
+**Acceso a la API: usa un TOKEN, no usuario/contraseña.** Mientras `admin` conservó la contraseña
+por defecto, el basic auth `-u admin:admin` funcionaba y con él se hizo la primera medición de este
+documento. **Al cambiar la contraseña dejó de funcionar del todo**: hoy `-u admin:<lo-que-sea>`
+devuelve **401** contra `/api/measures/*`, y `/api/authentication/validate` responde
+`{"valid":false}` incluso con la credencial correcta. Los **tokens sí** funcionan, por `Bearer` o
+como usuario del basic auth:
+
+```bash
+curl -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9002/api/measures/component?component=deasy&metricKeys=bugs"
+curl -u "$SONAR_TOKEN:" "http://localhost:9002/api/..."      # equivalente
+```
+
+Genera uno nuevo desde *My Account → Security* en la UI. **Ojo:** `POST /api/user_tokens/generate`
+también exige estar autenticado, así que si no conservas ningún token vivo hay que pasar por la
+interfaz. La contraseña de admin **ya no es la de por defecto** — no está escrita en este repo.
 
 ```bash
 docker compose -f scripts/sonar/compose.yml up -d                    # :9002
-curl -s -u admin:admin "http://localhost:9002/api/measures/component?component=deasy&metricKeys=ncloc,cognitive_complexity,code_smells"
+curl -s -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9002/api/measures/component?component=deasy&metricKeys=ncloc,cognitive_complexity,code_smells"
 SONAR_TOKEN=<token> bash scripts/sonar/scan.sh                       # ~1,5 min
 ```
 
@@ -327,7 +337,7 @@ Revalidé las afirmaciones operativas de los seis documentos de julio contra el 
 | Afirmación obsoleta | Realidad hoy |
 |---|---|
 | «Fase 3.5 (admin → subrutas) **sin ejecutar**» — god-objects §4 y §5 | **Hecha a medias.** La ruta ya es `/admin/:section?/:item?/:table?` y `useAdminTableReset.js` fue borrado, pero `AdminView.vue` conserva `selectedTable`/`selectedSection` como refs locales y solo usa `route.params` en 3 sitios. Es una ruta con params, no un layout con `children` |
-| «`admin:admin` no funciona por basic auth» — handoff saveTemplate | **Funciona hoy** (§1.1) |
+| «`admin:admin` no funciona por basic auth» — handoff saveTemplate | **El handoff tenía razón, por el motivo equivocado.** Funcionó mientras la contraseña fue la de por defecto; al cambiarla, el basic auth con contraseña dejó de valer del todo. Hoy **todo va por token** (§1.1) |
 | «FASE 1 es el entregable de esta sesión» — handoff saveTemplate | **Fase 1 cerrada.** Lo pendiente es la **fase 2**, el corte |
 | `AdminModalShell`: 21 consumidores — fase5-y-X | **24** (ha crecido) |
 | `backend/index.js`, 467 L duplicadas — auditoria-refactor §3.2 | **Resuelto**: 233 L |
@@ -447,8 +457,8 @@ histórica de §2) y las 4 marcas manuales vivas (§4.4-R1).
    el New Code sigue anclado al 2026-07-09 y las cifras son comparables. **No bumpear
    `sonar.projectVersion`** — hacerlo ahora movería el New Code period y perdería la serie histórica
    de §2, que es el único termómetro fiable que hay.
-5. **Cambiar la contraseña de admin de Sonar**, que sigue en `admin/admin` y así lleva desde julio.
-   Los tokens de análisis se generan con `POST /api/user_tokens/generate` (§9).
+5. ✅ **Contraseña de admin de Sonar cambiada** (2026-08-06). Efecto colateral que hay que conocer:
+   **el basic auth con contraseña dejó de funcionar** y toda la API pide token (§1.1).
 6. *(Opcional)* Sonar en CI sobre `develop` (H4).
 
 **Criterio de cierre:** cobertura reportada > 0 y las condiciones del gate reflejan el código y no la
@@ -782,11 +792,12 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 
 ```bash
 docker compose -f scripts/sonar/compose.yml up -d
-S='curl -s -u admin:admin http://localhost:9002'
+# Requiere un token (ver §1.1): el basic auth con contraseña ya no vale.
+S="curl -s -H \"Authorization: Bearer $SONAR_TOKEN\" http://localhost:9002"
 
 # re-escanear (~1 min). El token es de un solo uso práctico: generar uno por sesión
 TOKEN=$($S/api/user_tokens/generate -X POST -d "name=deasy-scan-$(git rev-parse --short HEAD)" \
-        | python3 -c 'import json,sys;print(json.load(sys.stdin)["token"])')
+        | python3 -c 'import json,sys;print(json.load(sys.stdin)["token"])')   # necesita un token previo
 SONAR_TOKEN=$TOKEN bash scripts/sonar/scan.sh
 
 # línea base (§2)
