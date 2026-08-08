@@ -1,40 +1,9 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import "dotenv/config";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const backendRoot = path.resolve(__dirname, "..");
-const projectRoot = path.resolve(backendRoot, "..");
-const envPaths = [
-  path.join(backendRoot, ".env"),
-  path.join(projectRoot, "docker", ".env")
-];
-
-const loadEnv = async () => {
-  for (const envPath of envPaths) {
-    try {
-      const raw = await readFile(envPath, "utf8");
-      raw.split("\n").forEach((line) => {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith("#")) {
-          return;
-        }
-        const [key, ...rest] = trimmed.split("=");
-        if (!key || process.env[key]) {
-          return;
-        }
-        process.env[key] = rest.join("=").trim();
-      });
-    } catch (error) {
-      if (error?.code !== "ENOENT") {
-        console.warn(`No se pudo leer ${envPath}: ${error.message}`);
-      }
-    }
-  }
-};
-
+// Los imports de abajo son DINÁMICOS a propósito: `config/postgres.js` lee las POSTGRES_*
+// al cargarse y construye el pool ahí mismo, así que el entorno tiene que estar completo
+// antes. En el contenedor lo aporta `env_file` del compose; fuera, el `.env` de backend/.
 const main = async () => {
-  await loadEnv();
   const { ensurePostgresSchema } = await import("../database/postgres_initializer.js");
   const { assertPostgresConnection, closePostgresPool } = await import("../config/postgres.js");
 

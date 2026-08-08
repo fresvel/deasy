@@ -1,37 +1,6 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const backendRoot = path.resolve(__dirname, "..");
-const projectRoot = path.resolve(backendRoot, "..");
-const envPaths = [
-  path.join(backendRoot, ".env"),
-  path.join(projectRoot, "docker", ".env")
-];
-
-const loadEnv = async () => {
-  for (const envPath of envPaths) {
-    try {
-      const raw = await readFile(envPath, "utf8");
-      raw.split("\n").forEach((line) => {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith("#")) {
-          return;
-        }
-        const [key, ...rest] = trimmed.split("=");
-        if (!key || process.env[key]) {
-          return;
-        }
-        process.env[key] = rest.join("=").trim();
-      });
-    } catch (error) {
-      if (error?.code !== "ENOENT") {
-        console.warn(`No se pudo leer ${envPath}: ${error.message}`);
-      }
-    }
-  }
-};
+// LIBRERÍA de purga de MinIO. No es un CLI: el único consumidor es `reset_system.mjs`, y
+// purgar solo el almacenamiento se hace con `reset_system.mjs --keep-db`. Por eso no carga
+// el entorno: cuando `resetMinio()` corre, quien la llamó ya lo tiene cargado.
 
 // Buckets gestionados por la aplicación (mismos defaults que el código que los usa).
 const resolveBuckets = () => [
@@ -128,23 +97,3 @@ export const resetMinio = async () => {
   }
   console.log(`✅ MinIO purgado: ${total} objeto(s) en ${buckets.length} bucket(s).`);
 };
-
-const main = async () => {
-  await loadEnv();
-  const args = new Set(process.argv.slice(2));
-  const keepMinio = args.has("--keep-minio");
-
-  if (!keepMinio) {
-    await resetMinio();
-  }
-  console.log("✅ Reset de almacenamiento finalizado.");
-};
-
-// Permite usar este módulo como librería (import) o como script CLI.
-const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
-if (invokedDirectly) {
-  main().catch((error) => {
-    console.error(`❌ No se pudo resetear el almacenamiento: ${error.message}`);
-    process.exitCode = 1;
-  });
-}

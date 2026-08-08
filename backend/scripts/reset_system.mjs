@@ -1,37 +1,4 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const backendRoot = path.resolve(__dirname, "..");
-const projectRoot = path.resolve(backendRoot, "..");
-const envPaths = [
-  path.join(backendRoot, ".env"),
-  path.join(projectRoot, "docker", ".env")
-];
-
-const loadEnv = async () => {
-  for (const envPath of envPaths) {
-    try {
-      const raw = await readFile(envPath, "utf8");
-      raw.split("\n").forEach((line) => {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith("#")) {
-          return;
-        }
-        const [key, ...rest] = trimmed.split("=");
-        if (!key || process.env[key]) {
-          return;
-        }
-        process.env[key] = rest.join("=").trim();
-      });
-    } catch (error) {
-      if (error?.code !== "ENOENT") {
-        console.warn(`No se pudo leer ${envPath}: ${error.message}`);
-      }
-    }
-  }
-};
+import "dotenv/config";
 
 // Reset integral del sistema al "estado base": deja PostgreSQL y MinIO vacíos para que,
 // al arrancar el backend, SystemBootstrapService detecte una instalación virgen (installationMode
@@ -41,7 +8,6 @@ const loadEnv = async () => {
 //   --keep-db       no recrea el schema de PostgreSQL
 //   --keep-minio    no purga los buckets de MinIO
 const main = async () => {
-  await loadEnv();
   const args = new Set(process.argv.slice(2));
   const keepDb = args.has("--keep-db");
   const keepMinio = args.has("--keep-minio");
