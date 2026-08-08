@@ -9,9 +9,9 @@
     @cancel="onCancel"
   >
     <div class="w-full space-y-2">
-      <label for="cert-tema" class="profile-field-label">Nombre de la certificación</label>
+      <label :for="fieldId('titulo')" class="profile-field-label">Nombre de la certificación</label>
       <textarea
-        id="cert-tema"
+        :id="fieldId('titulo')"
         class="profile-textarea"
         rows="2"
         v-model="form.titulo"
@@ -20,8 +20,9 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">Institución emisora</label>
+      <label :for="fieldId('institucion')" class="profile-field-label">Institución emisora</label>
       <s-select
+        :id="fieldId('institucion')"
         :options="instituciones"
         v-model="form.institucion"
         class="w-full mb-2"
@@ -30,14 +31,16 @@
         v-if="form.institucion === 'Otra'"
         type="text"
         class="profile-text-input"
+        aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Ámbito</label>
+      <label :for="fieldId('tipo')" class="profile-field-label">Ámbito</label>
       <s-select
+        :id="fieldId('tipo')"
         :options="['Nacional', 'Internacional']"
         v-model="form.tipo"
       />
@@ -57,9 +60,9 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label for="cert-descripcion" class="profile-field-label">Descripción (opcional)</label>
+      <label :for="fieldId('descripcion')" class="profile-field-label">Descripción (opcional)</label>
       <textarea
-        id="cert-descripcion"
+        :id="fieldId('descripcion')"
         class="profile-textarea"
         rows="2"
         v-model="form.descripcion"
@@ -91,13 +94,18 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, defineEmits, watch, computed } from "vue";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
 
 import DossierService from "@/modules/dossier/services/DossierService";
 import SInput from "@/shared/components/forms/SInput.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 import SDate from "@/shared/components/forms/SDate.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   editingItem: {

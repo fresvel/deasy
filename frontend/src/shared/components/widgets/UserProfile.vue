@@ -20,6 +20,7 @@
       ref="fileInput"
       type="file"
       accept="image/*"
+      aria-label="Selecciona una foto de perfil"
       class="hidden"
       @change="onFileChange"
     >
@@ -49,6 +50,7 @@
             ref="fileInput"
             type="file"
             accept="image/*"
+            aria-label="Selecciona una foto de perfil"
             class="hidden"
             @change="onFileChange"
           >

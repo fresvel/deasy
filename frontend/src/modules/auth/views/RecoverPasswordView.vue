@@ -19,9 +19,9 @@
     </div>
 
     <form v-if="step === 'request'" @submit.prevent="recoverPassword" class="space-y-6" autocomplete="off">
-      <input type="text" name="recover-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" />
+      <input type="text" name="recover-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de usuario" />
       <div>
-        <label for="email" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('email')" class="block text-sm font-semibold text-slate-700 mb-2">
           Correo Electrónico
         </label>
         <div class="relative">
@@ -29,7 +29,7 @@
             <IconMail class="h-5 w-5 text-slate-400" />
           </div>
           <input
-            id="email"
+            :id="fieldId('email')"
             type="email"
             v-model="email"
             name="recover-request-email"
@@ -59,14 +59,14 @@
     </form>
 
     <form v-else @submit.prevent="submitReset" class="space-y-6" autocomplete="off">
-      <input type="text" name="recover-reset-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" />
-      <input type="password" name="recover-reset-decoy-password" autocomplete="current-password" class="hidden" tabindex="-1" aria-hidden="true" />
+      <input type="text" name="recover-reset-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de usuario" />
+      <input type="password" name="recover-reset-decoy-password" autocomplete="current-password" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de contraseña" />
       <div>
-        <label for="email-confirmed" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('email-confirmed')" class="block text-sm font-semibold text-slate-700 mb-2">
           Correo Electrónico
         </label>
         <input
-          id="email-confirmed"
+          :id="fieldId('email-confirmed')"
           type="email"
           v-model="email"
           name="recover-reset-email"
@@ -77,11 +77,11 @@
       </div>
 
       <div>
-        <label for="code" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('code')" class="block text-sm font-semibold text-slate-700 mb-2">
           Código de recuperación
         </label>
         <input
-          id="code"
+          :id="fieldId('code')"
           type="text"
           v-model="code"
           name="recover-reset-code"
@@ -93,11 +93,11 @@
       </div>
 
       <div>
-        <label for="password" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('password')" class="block text-sm font-semibold text-slate-700 mb-2">
           Nueva contraseña
         </label>
         <input
-          id="password"
+          :id="fieldId('password')"
           type="password"
           v-model="password"
           name="recover-reset-new-password"
@@ -109,11 +109,11 @@
       </div>
 
       <div>
-        <label for="repassword" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('repassword')" class="block text-sm font-semibold text-slate-700 mb-2">
           Confirmar contraseña
         </label>
         <input
-          id="repassword"
+          :id="fieldId('repassword')"
           type="password"
           v-model="repassword"
           name="recover-reset-new-password-confirmation"
@@ -171,12 +171,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, useId } from 'vue';
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import AuthLayout from '@/layouts/auth/AuthLayout.vue';
 import AuthService from '@/modules/auth/services/AuthService';
 import AppLogo from '@/shared/components/layout/AppLogo.vue';
 import { IconArrowLeft, IconKey, IconMail, IconLoader2, IconAlertCircle, IconCheck } from '@tabler/icons-vue';
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const email = ref('');
 const code = ref('');

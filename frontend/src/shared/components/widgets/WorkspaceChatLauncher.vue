@@ -79,6 +79,7 @@
 
         <label
           v-if="view !== 'conversation'"
+          aria-label="Buscar conversación"
           class="mt-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10"
         >
           <IconSearch class="h-4 w-4 text-slate-400" />
@@ -156,7 +157,7 @@
               </span>
             </div>
             <div class="flex items-end gap-3">
-              <input ref="attachmentInputRef" type="file" class="hidden" multiple @change="handleAttachmentSelection">
+              <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
                 class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
@@ -170,6 +171,7 @@
                 ref="composerRef"
                 v-model="draft"
                 rows="1"
+                aria-label="Mensaje del chat"
                 class="max-h-40 min-h-13 flex-1 resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                 placeholder="Escribe un mensaje"
                 @input="resizeComposer"

@@ -11,12 +11,13 @@
     </div>
     <form class="grid gap-3 md:grid-cols-12">
       <div v-for="field in visibleFormFields" :key="field.name" class="md:col-span-6">
-        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
+        <label :for="fieldId(field.name)" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
           {{ field.label || field.name }}
           <span v-if="field.required" class="text-red-600">*</span>
         </label>
         <div v-if="isInputField(field) && isForeignKeyField(field)" class="relative">
           <AdminLookupField
+            :id="fieldId(field.name)"
             :model-value="fkDisplay[field.name]"
             :placeholder="field.placeholder || ''"
             :disabled="isFieldLocked(field)"
@@ -53,6 +54,7 @@
         </div>
         <AdminInputField
           v-else-if="isInputField(field)"
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           :type="inputType(field)"
           :placeholder="field.placeholder || ''"
@@ -61,6 +63,7 @@
         />
         <AdminInputField
           v-else-if="field.type === 'textarea'"
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           as="textarea"
           :rows="3"
@@ -69,6 +72,7 @@
         />
         <AdminSelectField
           v-else-if="field.type === 'select'"
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           :disabled="isFieldLocked(field)"
           @update:model-value="updateFormField(field.name, $event)"
@@ -81,6 +85,7 @@
         </AdminSelectField>
         <SToggle
           v-else-if="field.type === 'boolean'"
+          :id="fieldId(field.name)"
           :model-value="Number(formData[field.name]) === 1"
           :disabled="isFieldLocked(field)"
           label-position="end"
@@ -88,6 +93,7 @@
         />
         <AdminInputField
           v-else
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           :disabled="isFieldLocked(field)"
           @update:model-value="updateFormField(field.name, $event)"
@@ -233,7 +239,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, useId } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
@@ -242,6 +248,11 @@ import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   editorMode: { type: String, default: "create" },

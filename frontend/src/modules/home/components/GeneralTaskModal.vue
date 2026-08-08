@@ -73,12 +73,12 @@
             <span class="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400">Paso {{ si + 1 }}</span>
             <div class="flex items-center gap-1.5">
               <template v-if="step.signers.length > 1">
-                <select v-model="step.approval_mode" class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-semibold text-slate-600 outline-none focus:border-indigo-400">
+                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-semibold text-slate-600 outline-none focus:border-indigo-400">
                   <option value="and">Firman todas</option>
                   <option value="or">Cualquiera</option>
                   <option value="at_least">Mínimo</option>
                 </select>
-                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" class="w-14 rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] text-slate-700 outline-none focus:border-indigo-400" />
+                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] text-slate-700 outline-none focus:border-indigo-400" />
               </template>
               <button type="button" class="text-[0.7rem] font-semibold text-rose-500 hover:text-rose-600" @click="removeFirmaStep(si)">Quitar</button>
             </div>
@@ -107,6 +107,7 @@
           <input
             v-model="recipientQuery"
             type="text"
+            aria-label="Buscar persona por nombre, cédula o correo"
             placeholder="Busca por nombre, cédula o correo…"
             class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
             @input="searchRecipients"
@@ -124,11 +125,11 @@
 
         <div v-else class="flex flex-col gap-2">
           <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select v-model="flowCargoForm.cargoId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+            <select v-model="flowCargoForm.cargoId" aria-label="Cargo" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
               <option :value="null" disabled>Cargo…</option>
               <option v-for="c in flowCatalog.cargos" :key="`c-${c.id}`" :value="c.id">{{ c.name }}</option>
             </select>
-            <select v-model="flowCargoForm.unitId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+            <select v-model="flowCargoForm.unitId" aria-label="Unidad" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
               <option :value="null">Todas las unidades</option>
               <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
             </select>

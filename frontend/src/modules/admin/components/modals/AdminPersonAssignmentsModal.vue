@@ -36,8 +36,9 @@
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
-                  <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto</label>
+                  <label :for="fieldId('cargo-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto</label>
                   <AdminLookupField
+                    :id="fieldId('cargo-position')"
                     :model-value="personCargoLabels.position_id"
                     placeholder="Selecciona un puesto"
                     :suggest-provider="cargoPositionSuggestProvider"
@@ -47,14 +48,14 @@
                     @search="$emit('open-person-cargo-fk-search', 'position_id')"
                   />
                 </div>
-                <AdminFieldGroup label="Inicio" group-class="md:col-span-4">
-                  <AdminInputField :model-value="personCargoForm.start_date" type="date" @update:model-value="updateCargoField('start_date', $event)" />
+                <AdminFieldGroup label="Inicio" :label-for="fieldId('cargo-start-date')" group-class="md:col-span-4">
+                  <AdminInputField :id="fieldId('cargo-start-date')" :model-value="personCargoForm.start_date" type="date" @update:model-value="updateCargoField('start_date', $event)" />
                 </AdminFieldGroup>
-                <AdminFieldGroup label="Fin" group-class="md:col-span-4">
-                  <AdminInputField :model-value="personCargoForm.end_date" type="date" @update:model-value="updateCargoField('end_date', $event)" />
+                <AdminFieldGroup label="Fin" :label-for="fieldId('cargo-end-date')" group-class="md:col-span-4">
+                  <AdminInputField :id="fieldId('cargo-end-date')" :model-value="personCargoForm.end_date" type="date" @update:model-value="updateCargoField('end_date', $event)" />
                 </AdminFieldGroup>
-                <AdminFieldGroup label="Actual" group-class="md:col-span-4">
-                  <SToggle :model-value="Number(personCargoForm.is_current) === 1" label-position="end" @change="(value) => updateCargoField('is_current', value ? '1' : '0')" />
+                <AdminFieldGroup label="Actual" :label-for="fieldId('cargo-is-current')" group-class="md:col-span-4">
+                  <SToggle :id="fieldId('cargo-is-current')" :model-value="Number(personCargoForm.is_current) === 1" label-position="end" @change="(value) => updateCargoField('is_current', value ? '1' : '0')" />
                 </AdminFieldGroup>
               </div>
               <AdminFormActions
@@ -110,8 +111,9 @@
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
-                  <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Rol</label>
+                  <label :for="fieldId('role-role')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Rol</label>
                   <AdminLookupField
+                    :id="fieldId('role-role')"
                     :model-value="personRoleLabels.role_id"
                     placeholder="Selecciona un rol"
                     :suggest-provider="roleRoleSuggestProvider"
@@ -122,8 +124,9 @@
                   />
                 </div>
                 <div class="md:col-span-6">
-                  <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
+                  <label :for="fieldId('role-unit')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
                   <AdminLookupField
+                    :id="fieldId('role-unit')"
                     :model-value="personRoleLabels.unit_id"
                     placeholder="Selecciona una unidad"
                     :suggest-provider="roleUnitSuggestProvider"
@@ -178,8 +181,9 @@
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-4">
-                  <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto</label>
+                  <label :for="fieldId('contract-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto</label>
                   <AdminLookupField
+                    :id="fieldId('contract-position')"
                     :model-value="personContractLabels.position_id"
                     placeholder="Selecciona un puesto"
                     :suggest-provider="contractPositionSuggestProvider"
@@ -189,20 +193,20 @@
                     @search="$emit('open-person-contract-fk-search')"
                   />
                 </div>
-                <AdminFieldGroup label="Relacion" group-class="md:col-span-4">
-                  <AdminInputField :model-value="personContractForm.relation_type" @update:model-value="updateContractField('relation_type', $event)" />
+                <AdminFieldGroup label="Relacion" :label-for="fieldId('contract-relation-type')" group-class="md:col-span-4">
+                  <AdminInputField :id="fieldId('contract-relation-type')" :model-value="personContractForm.relation_type" @update:model-value="updateContractField('relation_type', $event)" />
                 </AdminFieldGroup>
-                <AdminFieldGroup label="Dedicacion" group-class="md:col-span-4">
-                  <AdminInputField :model-value="personContractForm.dedication" @update:model-value="updateContractField('dedication', $event)" />
+                <AdminFieldGroup label="Dedicacion" :label-for="fieldId('contract-dedication')" group-class="md:col-span-4">
+                  <AdminInputField :id="fieldId('contract-dedication')" :model-value="personContractForm.dedication" @update:model-value="updateContractField('dedication', $event)" />
                 </AdminFieldGroup>
-                <AdminFieldGroup label="Inicio" group-class="md:col-span-4">
-                  <AdminInputField :model-value="personContractForm.start_date" type="date" @update:model-value="updateContractField('start_date', $event)" />
+                <AdminFieldGroup label="Inicio" :label-for="fieldId('contract-start-date')" group-class="md:col-span-4">
+                  <AdminInputField :id="fieldId('contract-start-date')" :model-value="personContractForm.start_date" type="date" @update:model-value="updateContractField('start_date', $event)" />
                 </AdminFieldGroup>
-                <AdminFieldGroup label="Fin" group-class="md:col-span-4">
-                  <AdminInputField :model-value="personContractForm.end_date" type="date" @update:model-value="updateContractField('end_date', $event)" />
+                <AdminFieldGroup label="Fin" :label-for="fieldId('contract-end-date')" group-class="md:col-span-4">
+                  <AdminInputField :id="fieldId('contract-end-date')" :model-value="personContractForm.end_date" type="date" @update:model-value="updateContractField('end_date', $event)" />
                 </AdminFieldGroup>
-                <AdminFieldGroup label="Estado" group-class="md:col-span-4">
-                  <AdminSelectField :model-value="personContractForm.status" @update:model-value="updateContractField('status', $event)">
+                <AdminFieldGroup label="Estado" :label-for="fieldId('contract-status')" group-class="md:col-span-4">
+                  <AdminSelectField :id="fieldId('contract-status')" :model-value="personContractForm.status" @update:model-value="updateContractField('status', $event)">
                     <option value="activo">activo</option>
                     <option value="finalizado">finalizado</option>
                     <option value="cancelado">cancelado</option>
@@ -256,7 +260,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, useId } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
@@ -267,6 +271,11 @@ import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   personEditorId: { type: [String, Number], default: "" },

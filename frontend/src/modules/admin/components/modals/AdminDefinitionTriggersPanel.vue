@@ -28,8 +28,9 @@
     >
       <div class="grid gap-3 md:grid-cols-12">
         <div class="md:col-span-8">
-          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de periodo</label>
+          <label :for="fieldId('term-type')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de periodo</label>
           <AdminLookupField
+            :id="fieldId('term-type')"
             :model-value="labels.term_type_id"
             placeholder="Selecciona el tipo de periodo en que corre el proceso"
             :suggest-provider="suggestProvider"
@@ -41,8 +42,8 @@
             @search="$emit('open-fk-search')"
           />
         </div>
-        <AdminFieldGroup label="Activo" group-class="md:col-span-4">
-          <SToggle :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" @change="(value) => updateField('is_active', value ? '1' : '0')" />
+        <AdminFieldGroup label="Activo" :label-for="fieldId('is-active')" group-class="md:col-span-4">
+          <SToggle :id="fieldId('is-active')" :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" @change="(value) => updateField('is_active', value ? '1' : '0')" />
         </AdminFieldGroup>
       </div>
       <template #footer>
@@ -95,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, useId } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
@@ -104,6 +105,11 @@ import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, así el panel puede montarse dos veces sin duplicar ids.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   context: { type: Object, default: null },

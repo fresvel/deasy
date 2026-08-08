@@ -217,7 +217,7 @@
         <font-awesome-icon icon="rotate-right" />
         <span>{{ sourceBusy ? "Verificando…" : "Subir código editado" }}</span>
       </AdminButton>
-      <input ref="sourceInputRef" type="file" accept=".zip" class="hidden" @change="onSourcePicked" />
+      <input ref="sourceInputRef" type="file" accept=".zip" class="hidden" aria-label="Subir código editado (ZIP)" @change="onSourcePicked" />
       <AdminButton variant="secondary" @click="$emit('close')">Cerrar</AdminButton>
     </template>
   </AdminModalShell>

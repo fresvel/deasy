@@ -2,7 +2,7 @@
   <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
     <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div class="mb-3 flex items-center justify-between gap-3">
-        <label class="block text-sm font-bold text-slate-800">Campos de Firma</label>
+        <div class="block text-sm font-bold text-slate-800">Campos de Firma</div>
         <BtnDelete
           v-if="showFieldControls"
           :disabled="!canClearCurrentModeFields"
@@ -40,7 +40,7 @@
         </div>
 
         <div v-if="showPageReference" class="flex flex-col gap-2">
-          <label class="text-xs font-semibold text-slate-500">Referencia de página</label>
+          <div class="text-xs font-semibold text-slate-500">Referencia de página</div>
           <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
             <button
               v-if="showFieldControls"

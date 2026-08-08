@@ -2,7 +2,7 @@
   <div :class="wrapperClasses">
     <div v-if="title" class="deasy-dropzone__header">
       <h3 v-if="variant === 'card'" class="deasy-dropzone__title">{{ title }}</h3>
-      <label v-else class="deasy-dropzone__label">{{ title }}</label>
+      <label v-else :for="resolvedInputId" class="deasy-dropzone__label">{{ title }}</label>
     </div>
 
     <div

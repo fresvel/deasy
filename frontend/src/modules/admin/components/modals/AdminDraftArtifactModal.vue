@@ -85,11 +85,12 @@
 
     <!-- Pestaña: General -->
     <div v-show="activeTab === 'general'" class="mt-4 grid gap-3 md:grid-cols-12">
-      <AdminFieldGroup label="Semilla (base)" group-class="md:col-span-6">
+      <AdminFieldGroup label="Semilla (base)" :label-for="fieldId('template-seed-id')" group-class="md:col-span-6">
         <template #labelSuffix>
           <AppInfoTip>Toda plantilla nace de una semilla; por defecto se usa la general.</AppInfoTip>
         </template>
         <AdminSelectField
+          :id="fieldId('template-seed-id')"
           :model-value="draftArtifactForm.template_seed_id"
           @update:model-value="updateField('template_seed_id', $event)"
         >
@@ -115,15 +116,17 @@
           {{ isAdHoc ? "De usuario (ad-hoc)" : "De proceso (oficial)" }}
         </span>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Nombre de la plantilla" group-class="md:col-span-6">
+      <AdminFieldGroup label="Nombre de la plantilla" :label-for="fieldId('display-name')" group-class="md:col-span-6">
         <AdminInputField
+          :id="fieldId('display-name')"
           :model-value="draftArtifactForm.display_name"
           placeholder="Nombre de la plantilla"
           @update:model-value="updateField('display_name', $event)"
         />
       </AdminFieldGroup>
-      <AdminFieldGroup label="Descripcion" group-class="md:col-span-6">
+      <AdminFieldGroup label="Descripcion" :label-for="fieldId('description')" group-class="md:col-span-6">
         <AdminInputField
+          :id="fieldId('description')"
           :model-value="draftArtifactForm.description"
           placeholder="Descripcion breve"
           @update:model-value="updateField('description', $event)"
@@ -131,12 +134,13 @@
       </AdminFieldGroup>
       <!-- El vínculo a proceso se gestiona DESDE el proceso: no se muestra si viene por contexto ni al editar
            (el link se conserva). Solo aparecería en un alta standalone (hoy deshabilitada). -->
-      <AdminFieldGroup v-if="!hasPreselectedProcess && !draftArtifactEditId" label="Configuración destino" group-class="md:col-span-12">
+      <AdminFieldGroup v-if="!hasPreselectedProcess && !draftArtifactEditId" label="Configuración destino" :label-for="fieldId('process-definition-id')" group-class="md:col-span-12">
         <template #labelSuffix>
           <AppInfoTip>La plantilla quedará vinculada a esta configuración de proceso (o 'default' para tareas libres). ¿No existe? Créala con el wizard guiado.</AppInfoTip>
         </template>
         <div class="flex gap-2">
           <AdminSelectField
+            :id="fieldId('process-definition-id')"
             class="flex-1"
             :model-value="draftArtifactForm.process_definition_id"
             @update:model-value="updateField('process_definition_id', $event)"
@@ -154,11 +158,12 @@
         </div>
       </AdminFieldGroup>
       <!-- Modo de emisión del vínculo a proceso. Solo al crear; en edición se ajusta desde el proceso. -->
-      <AdminFieldGroup v-if="!draftArtifactEditId" label="Modo de emisión" group-class="md:col-span-12">
+      <AdminFieldGroup v-if="!draftArtifactEditId" label="Modo de emisión" :label-for="fieldId('item-mode')" group-class="md:col-span-12">
         <template #labelSuffix>
           <AppInfoTip>Cómo se emiten los entregables de esta plantilla en el proceso. Se puede reajustar luego desde la configuración del proceso.</AppInfoTip>
         </template>
         <AdminSelectField
+          :id="fieldId('item-mode')"
           :model-value="draftArtifactForm.item_mode || 'single'"
           @update:model-value="updateField('item_mode', $event)"
         >
@@ -178,23 +183,24 @@
         Adjunta al menos un documento de referencia (PDF, Word, Excel o PowerPoint) para poder crear la plantilla.
       </div>
       <div class="md:col-span-3">
-        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PDF</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" :filled="isDraftFileSelected('pdf')" accept=".pdf" input-id="draft-upload-pdf" @files-selected="emitDraftFiles('pdf', $event)" />
+        <label :for="fieldId('upload-pdf')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PDF</label>
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" :filled="isDraftFileSelected('pdf')" accept=".pdf" :input-id="fieldId('upload-pdf')" @files-selected="emitDraftFiles('pdf', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Word</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('docx')" :filled="isDraftFileSelected('docx')" accept=".doc,.docx" input-id="draft-upload-docx" @files-selected="emitDraftFiles('docx', $event)" />
+        <label :for="fieldId('upload-docx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Word</label>
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('docx')" :filled="isDraftFileSelected('docx')" accept=".doc,.docx" :input-id="fieldId('upload-docx')" @files-selected="emitDraftFiles('docx', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Excel</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('xlsx')" :filled="isDraftFileSelected('xlsx')" accept=".xls,.xlsx" input-id="draft-upload-xlsx" @files-selected="emitDraftFiles('xlsx', $event)" />
+        <label :for="fieldId('upload-xlsx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Excel</label>
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('xlsx')" :filled="isDraftFileSelected('xlsx')" accept=".xls,.xlsx" :input-id="fieldId('upload-xlsx')" @files-selected="emitDraftFiles('xlsx', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PowerPoint</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pptx')" :filled="isDraftFileSelected('pptx')" accept=".ppt,.pptx" input-id="draft-upload-pptx" @files-selected="emitDraftFiles('pptx', $event)" />
+        <label :for="fieldId('upload-pptx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PowerPoint</label>
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pptx')" :filled="isDraftFileSelected('pptx')" accept=".ppt,.pptx" :input-id="fieldId('upload-pptx')" @files-selected="emitDraftFiles('pptx', $event)" />
       </div>
       <div v-if="draftArtifactPreviewStatus !== 'idle'" class="md:col-span-12">
-        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</label>
+        <!-- Rotulo del preview: no es un <label> porque no hay control que etiquetar (es un iframe). -->
+        <span class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</span>
         <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-500">
           Cargando preview…
         </div>
@@ -321,8 +327,8 @@
                 <input :id="fieldId(`fill-name-${index}`)" :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
               </div>
               <div class="col-span-3">
-                <label :for="fieldId('stepwhomode-step')" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
-                <select :id="fieldId('stepwhomode-step')" :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
+                <label :for="fieldId(`fill-who-mode-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
+                <select :id="fieldId(`fill-who-mode-${index}`)" :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
                   <option value="task_assignee">Responsable del entregable</option>
                   <option value="scope">Por cargo</option>
                   <option v-if="isAdHoc" value="person">Persona concreta</option>
@@ -457,8 +463,8 @@
               <input :id="fieldId(`sig-name-${index}`)" :value="step.name" placeholder="ej. Firma de dirección" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
             <div class="col-span-5">
-              <label class="mb-1 inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
-              <select :value="step.approval_mode || 'and'" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
+              <label :for="fieldId(`sig-approval-mode-${index}`)" class="mb-1 inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
+              <select :id="fieldId(`sig-approval-mode-${index}`)" :value="step.approval_mode || 'and'" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
                 <option value="and">Todas</option>
                 <option value="or">Cualquiera</option>
                 <option value="at_least">Al menos…</option>
@@ -482,8 +488,8 @@
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
                 <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
-                  <label :for="fieldId('stepwhomode-signer')" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién firma</label>
-                  <select :id="fieldId('stepwhomode-signer')" :value="stepWhoMode(signer)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureWho(index, si, $event.target.value)">
+                  <label :for="fieldId(`signer-who-mode-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién firma</label>
+                  <select :id="fieldId(`signer-who-mode-${index}-${si}`)" :value="stepWhoMode(signer)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureWho(index, si, $event.target.value)">
                     <option value="task_assignee">Responsable del entregable</option>
                     <option value="scope">Por cargo</option>
                     <option v-if="isAdHoc" value="person">Persona concreta</option>

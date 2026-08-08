@@ -9,9 +9,9 @@
     @cancel="onCancel"
   >
     <div class="w-full space-y-2">
-      <label for="cap-tema" class="profile-field-label">Tema</label>
+      <label :for="fieldId('tema')" class="profile-field-label">Tema</label>
       <textarea
-        id="cap-tema"
+        :id="fieldId('tema')"
         class="profile-textarea"
         rows="2"
         v-model="form.tema"
@@ -20,8 +20,9 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">Institución</label>
+      <label :for="fieldId('institucion')" class="profile-field-label">Institución</label>
       <s-select
+        :id="fieldId('institucion')"
         :options="instituciones"
         v-model="form.institucion"
         class="w-full mb-2"
@@ -30,30 +31,34 @@
         v-if="form.institucion === 'Otra'"
         type="text"
         class="profile-text-input"
+        aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Tipo</label>
+      <label :for="fieldId('tipo')" class="profile-field-label">Tipo</label>
       <s-select
+        :id="fieldId('tipo')"
         :options="['Docente', 'Profesional']"
         v-model="form.tipo"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Rol</label>
+      <label :for="fieldId('rol')" class="profile-field-label">Rol</label>
       <s-select
+        :id="fieldId('rol')"
         :options="['Asistencia', 'Instructor', 'Aprobación']"
         v-model="form.rol"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">País</label>
+      <label :for="fieldId('pais')" class="profile-field-label">País</label>
       <s-select
+        :id="fieldId('pais')"
         :options="escountries"
         v-model="form.pais"
       />
@@ -108,7 +113,7 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, defineEmits, watch, computed } from "vue";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
 
 import DossierService from "@/modules/dossier/services/DossierService";
 import SInput from "@/shared/components/forms/SInput.vue";
@@ -116,6 +121,11 @@ import SSelect from "@/shared/components/forms/SSelect.vue";
 import SDate from "@/shared/components/forms/SDate.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import { escountries } from "@/core/constants/countries";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   editingItem: {

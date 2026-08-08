@@ -9,8 +9,9 @@
     @cancel="onCancel"
   >
     <div class="w-full">
-      <label class="profile-field-label">Tipo de referencia</label>
+      <label :for="fieldId('tipo')" class="profile-field-label">Tipo de referencia</label>
       <SSelect
+        :id="fieldId('tipo')"
         :options="['laboral', 'personal', 'familiar']"
         v-model="form.tipo"
       />

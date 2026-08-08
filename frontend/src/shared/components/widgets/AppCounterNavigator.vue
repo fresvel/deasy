@@ -19,6 +19,7 @@
         <div class="flex items-center justify-center gap-1 text-sm font-bold text-slate-700">
           <input
             :value="modelValue"
+            aria-label="Ir al número"
             class="w-10 rounded-lg border border-slate-100 bg-slate-50 px-1.5 py-1 text-center text-sm font-black text-slate-700 shadow-inner outline-none transition [appearance:textfield] focus:border-sky-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(14,165,233,0.12)] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             type="text"
             inputmode="numeric"

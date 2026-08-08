@@ -75,7 +75,8 @@
       </template>
     </AppModalShell>
 
-    <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect" />
+    <!-- Oculto y disparado desde JS (triggerFileUpload): no tiene rotulo visible, asi que su nombre accesible va en aria-label. -->
+    <input type="file" ref="fileInput" accept="application/pdf" aria-label="Seleccionar archivo PDF" style="display: none" @change="handleFileSelect" />
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>

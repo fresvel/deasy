@@ -76,10 +76,11 @@
                 </div>
 
                 <div class="md:col-span-2">
-                  <label class="deasy-form-label">Número de teléfono</label>
+                  <label :for="fieldId('telefono')" class="deasy-form-label">Número de teléfono</label>
                   <div class="grid grid-cols-[minmax(7rem,0.45fr)_minmax(0,1fr)] gap-2 sm:grid-cols-[minmax(9rem,0.32fr)_minmax(0,1fr)]">
                     <select
                       v-model="selectedCountryCode"
+                      aria-label="País del número de teléfono"
                       class="deasy-auth-field px-3"
                       @change="updatePhonePrefix"
                     >
@@ -90,6 +91,7 @@
                         {{ phonePrefix }}
                       </span>
                       <input
+                        :id="fieldId('telefono')"
                         v-model="phoneNumber"
                         type="tel"
                         maxlength="10"
@@ -178,7 +180,7 @@
               </div>
 
               <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                <label class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
                   Ubicación exacta
                   <span class="group relative inline-flex">
                     <IconHelp class="h-4 w-4 cursor-help text-blue-600" />
@@ -186,7 +188,7 @@
                       Marca tu ubicación exacta para completar la información geográfica de tu registro.
                     </span>
                   </span>
-                </label>
+                </div>
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <button
@@ -229,9 +231,10 @@
 
               <div class="deasy-form-grid">
                 <div>
-                  <label class="deasy-form-label">Contraseña</label>
+                  <label :for="fieldId('password')" class="deasy-form-label">Contraseña</label>
                   <div class="relative">
                     <input
+                      :id="fieldId('password')"
                       v-model="newuser.password"
                       :type="showPassword ? 'text' : 'password'"
                       required
@@ -262,9 +265,10 @@
                 </div>
 
                 <div>
-                  <label class="deasy-form-label">Confirmar contraseña</label>
+                  <label :for="fieldId('repassword')" class="deasy-form-label">Confirmar contraseña</label>
                   <div class="relative">
                     <input
+                      :id="fieldId('repassword')"
                       v-model="newuser.repassword"
                       :type="showConfirmPassword ? 'text' : 'password'"
                       required

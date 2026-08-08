@@ -222,6 +222,7 @@
             <template v-if="field.name === 'select'">
               <input
                 type="checkbox"
+                aria-label="Seleccionar documento"
                 class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                 :checked="isSelected(row)"
                 @change="toggleSelection(row)"

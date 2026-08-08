@@ -48,6 +48,7 @@
         <template v-else-if="field.name === 'item_mode'">
           <select
             v-if="canManage"
+            aria-label="Modo de emisión de la plantilla"
             :value="row.item_mode || 'single'"
             class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400"
             @change="$emit('set-item-mode', { row, itemMode: $event.target.value })"

@@ -43,6 +43,7 @@
         <input
           v-model="searchTerm"
           type="text"
+          aria-label="Buscar unidad"
           placeholder="Buscar unidad…"
           class="h-8 w-52 rounded-lg border border-slate-300 px-3 text-xs outline-none focus:border-indigo-400"
           @keyup.enter="searchAndCenter"
@@ -197,13 +198,13 @@
           <!-- Formulario de nuevo puesto -->
           <div v-if="editable && addingPosition" class="mb-3 rounded-xl border border-indigo-200 bg-indigo-50/40 p-3">
             <div class="flex flex-col gap-2">
-              <select v-model="positionForm.cargo_id" class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+              <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
                 <option value="">Cargo…</option>
                 <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
-              <input v-model="positionForm.title" type="text" placeholder="Título (opcional)" class="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" />
+              <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" />
               <div class="flex items-center gap-3">
-                <select v-model="positionForm.position_type" class="h-9 flex-1 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+                <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="h-9 flex-1 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
                   <option value="real">Real</option>
                   <option value="promocion">Promoción</option>
                   <option value="simbolico">Simbólico</option>
@@ -271,6 +272,7 @@
                 <input
                   v-model="personQuery"
                   type="text"
+                  aria-label="Buscar persona por nombre o cédula"
                   placeholder="Buscar persona (nombre o cédula)…"
                   class="h-8 w-full rounded-md border border-slate-300 px-2 text-xs outline-none focus:border-indigo-400"
                   @input="searchPersons"

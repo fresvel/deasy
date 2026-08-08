@@ -25,6 +25,7 @@
           v-for="(digit, index) in code"
           :key="index"
           ref="inputs"
+          :aria-label="`Dígito ${index + 1} del código de verificación`"
           type="text"
           inputmode="numeric"
           pattern="[0-9]*"

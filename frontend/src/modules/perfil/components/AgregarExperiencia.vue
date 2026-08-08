@@ -9,16 +9,18 @@
     @cancel="onCancel"
   >
     <div class="w-full">
-      <label class="profile-field-label">Tipo</label>
+      <label :for="fieldId('tipo')" class="profile-field-label">Tipo</label>
       <SSelect
+        :id="fieldId('tipo')"
         :options="['Docencia', 'Profesional']"
         v-model="form.tipo"
       />
     </div>
 
     <div class="w-full space-y-2">
-      <label class="profile-field-label">Institución</label>
+      <label :for="fieldId('institucion')" class="profile-field-label">Institución</label>
       <SSelect
+        :id="fieldId('institucion')"
         :options="instituciones"
         v-model="form.institucion"
         class="w-full mb-2"
@@ -27,14 +29,16 @@
         v-if="form.institucion === 'Otra'"
         type="text"
         class="profile-text-input"
+        aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Modalidad</label>
+      <label :for="fieldId('modalidad')" class="profile-field-label">Modalidad</label>
       <SSelect
+        :id="fieldId('modalidad')"
         :options="['Presencial', 'Semipresencial', 'Virtual', 'Híbrido']"
         v-model="form.modalidad"
       />

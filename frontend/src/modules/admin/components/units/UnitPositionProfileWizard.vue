@@ -21,10 +21,11 @@
 
     <!-- Paso de sección -->
     <div v-if="currentSection">
-      <h4 class="m-0 text-base font-bold text-slate-800">{{ currentSection.label }}</h4>
+      <h4 :id="sectionTitleId" class="m-0 text-base font-bold text-slate-800">{{ currentSection.label }}</h4>
       <p class="m-0 mt-1 mb-3 text-sm text-slate-500">{{ currentSection.hint }}</p>
       <textarea
         v-model="form[currentSection.key]"
+        :aria-labelledby="sectionTitleId"
         rows="5"
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400"
         :placeholder="currentSection.placeholder"
@@ -59,10 +60,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, useId } from "vue";
 import { IconCheck } from "@tabler/icons-vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+
+// El nombre visible del textarea es el <h4> del paso; se enlaza por aria-labelledby.
+// useId() da un prefijo distinto por instancia para no duplicar el id.
+const uid = useId();
+const sectionTitleId = `${uid}-section-title`;
 
 const props = defineProps({
   open: { type: Boolean, default: false },

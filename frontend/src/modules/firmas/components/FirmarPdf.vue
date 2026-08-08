@@ -795,11 +795,12 @@
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
         <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
-          <label class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
+          <label :for="fieldId('validationcedula')" class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
             <IconSearch class="w-4 h-4 text-sky-600" /> Buscar cédula en las firmas
           </label>
           <div class="relative max-w-full md:max-w-sm">
             <input
+              :id="fieldId('validationcedula')"
               v-model="validationCedula"
               type="text"
               class="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-50"
