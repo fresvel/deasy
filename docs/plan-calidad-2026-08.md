@@ -574,7 +574,38 @@ compartido o `<input>` suelto antes de decidir por dónde entrar. Medir tras el 
 
 </details>
 
-### Fase C — `saveTemplateArtifactDraft`, fase 2 (el corte)
+### Fase C — `saveTemplateArtifactDraft` — 🟡 **cortada a la mitad (2026-08-06)**
+
+**CC 164 → 76 (−54 %), y de 563 a ~310 líneas.** Deja de ser el doble que la siguiente: hoy empata
+con `createGeneralTask` (75).
+
+| Extracción | Qué se llevó | CC propia |
+|---|---|---:|
+| `parseWorkflowPayload` + `workflowHasSteps` | JSON.parse defensivo del flujo, en `workflows.js` (puras). Se fue una duplicación: estaba escrito dos veces | — |
+| `_resolveDraftOwner` | Cédula + id de persona, con su precedencia y sus 3 consultas | <15 |
+| `_validateAuthoredWorkflows` | Cargos resolubles por ubicación + `collectAuthoredWorkflowIssues` | 22 |
+| `_materializeDraftFormats` | Semilla, preservación de formatos y ficheros subidos — el bloque mayor | 23 |
+| `_linkDraftToProcessDefinition` | Vínculo con la configuración de proceso destino | <15 |
+
+**El aviso del plan se cumplió:** no es un registro, y la caída (54 %) es proporcionalmente menor que
+el 100 % del cut #10. Lo que bajó fue el anidamiento, como estaba previsto.
+
+**Sutileza que los cortes tuvieron que conservar:** `_linkDraftToProcessDefinition` devuelve el id del
+vínculo **solo si lo insertó esa llamada**, y `null` si ya existía. Quien llama lo necesita así porque
+su `catch` compensa a mano —no hay transacción— y solo debe borrar lo que insertó él.
+
+**Lo que queda dentro (los 76):** el `try` de persistencia con su rollback. Es el núcleo transaccional
+y comparte cuatro variables de compensación (`createdId`, `uploadedToMinio`, `insertedDeliverableId`,
+`insertedLinkId`) entre el `try` y el `catch`. Extraerlo exige decidir antes **quién posee la
+compensación**, y eso ya no es mover código: es rediseñar el manejo de errores. Candidatos claros si
+se sigue: la rama de creación (`deliverable` + `template_artifact`) y la identidad/rutas de storage.
+
+Verde en cada corte: `node --check`, `check:imports`, unit 218/218 y **caracterización 161/161 con los
+goldens intactos**, que es la prueba de que son refactor puro.
+
+<details><summary>Redacción original de la fase (referencia)</summary>
+
+#### Fase C — `saveTemplateArtifactDraft`, fase 2 (el corte)
 
 La peor función del backend (**CC 164**, 563 L, el doble que la siguiente). **La red ya existe** — esto es lo que
 cambia respecto a todos los intentos anteriores: `zzz_artifact_draft.test.mjs` fija 13 casos, char
@@ -594,6 +625,8 @@ y tres niveles dentro del `try` gigante). Esperar una caída **proporcionalmente
 el staging a `os.tmpdir()`) pasó de CC 158 a 164 y de 542 a 563 líneas. Es el sumidero por defecto de
 cualquier cambio que roce los borradores. Cada mes que se posponga esta fase, el corte cuesta más.
 Antes de empezar, actualizar el comentario desfasado de `templateLifecycle.js:14` («542 lineas»).
+
+</details>
 
 ### Fase D — Controllers que violan CLAUDE.md
 
