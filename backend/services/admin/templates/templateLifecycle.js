@@ -1199,6 +1199,56 @@ export default class TemplateLifecycleService {
     return { availableFormats, seedRow };
   }
 
+  // Materializa el vinculo de la plantilla con su configuracion de proceso destino.
+  //
+  // Devuelve el id del vinculo SOLO si lo inserto esta llamada, y null si no habia destino o si el
+  // vinculo ya existia. Quien llama lo necesita asi: en el `catch` solo debe borrar lo que inserto
+  // el, nunca un vinculo que ya estaba.
+  //
+  // El requisito de vinculo obligatorio al crear ya se valido en el fail-fast de mas arriba; en
+  // edicion el vinculo previo se conserva. Aqui solo se materializa si llega un destino.
+  async _linkDraftToProcessDefinition({
+    processDefinitionId = null,
+    templateArtifactId = null,
+    itemMode = "single"
+  } = {}) {
+    const definitionId = processDefinitionId ? Number(processDefinitionId) : null;
+    if (!definitionId || !templateArtifactId) {
+      return null;
+    }
+
+    const def = await this._getByKeys("process_definition_versions", { id: definitionId });
+    if (!def) {
+      throw new Error("El proceso destino seleccionado no existe.");
+    }
+
+    const [existingLink] = await this.pool.query(
+      `SELECT id FROM process_definition_templates
+       WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
+      [definitionId, templateArtifactId]
+    );
+
+    if (!existingLink?.length) {
+      const [linkInsert] = await this.pool.query(
+        `INSERT INTO process_definition_templates
+          (process_definition_id, template_artifact_id, sort_order, item_mode)
+         VALUES (?, ?, 1, ?)`,
+        [definitionId, templateArtifactId, itemMode]
+      );
+      return linkInsert?.insertId ?? null;
+    }
+
+    if (itemMode !== "single") {
+      // El link ya existía (p. ej. reintento): respeta el modo solicitado si no es el default.
+      await this.pool.query(
+        `UPDATE process_definition_templates SET item_mode = ?
+         WHERE process_definition_id = ? AND template_artifact_id = ?`,
+        [itemMode, definitionId, templateArtifactId]
+      );
+    }
+    return null;
+  }
+
   async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
     this.ensurePool();
 
@@ -1478,34 +1528,11 @@ export default class TemplateLifecycleService {
       // su plantilla debe colgar de un proceso ya definido o de 'default'. Opcional para diseñadores.
       // El requisito de vínculo obligatorio para ejecutores al crear ya se validó arriba (fail-fast);
       // en edición el vínculo previo se conserva. Aquí solo se materializa el vínculo si llega un destino.
-      const requestedProcessDefinitionId = data.process_definition_id ? Number(data.process_definition_id) : null;
-      if (requestedProcessDefinitionId && createdId) {
-        const def = await this._getByKeys("process_definition_versions", { id: requestedProcessDefinitionId });
-        if (!def) {
-          throw new Error("El proceso destino seleccionado no existe.");
-        }
-        const [existingLink] = await this.pool.query(
-          `SELECT id FROM process_definition_templates
-           WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
-          [requestedProcessDefinitionId, createdId]
-        );
-        if (!existingLink?.length) {
-          const [linkInsert] = await this.pool.query(
-            `INSERT INTO process_definition_templates
-              (process_definition_id, template_artifact_id, sort_order, item_mode)
-             VALUES (?, ?, 1, ?)`,
-            [requestedProcessDefinitionId, createdId, requestedItemMode]
-          );
-          insertedLinkId = linkInsert?.insertId ?? null;
-        } else if (requestedItemMode !== "single") {
-          // El link ya existía (p. ej. reintento): respeta el modo solicitado si no es el default.
-          await this.pool.query(
-            `UPDATE process_definition_templates SET item_mode = ?
-             WHERE process_definition_id = ? AND template_artifact_id = ?`,
-            [requestedItemMode, requestedProcessDefinitionId, createdId]
-          );
-        }
-      }
+      insertedLinkId = await this._linkDraftToProcessDefinition({
+        processDefinitionId: data.process_definition_id,
+        templateArtifactId: createdId,
+        itemMode: requestedItemMode
+      });
 
       // Si se definieron flujos y el artifact ya está vinculado a configuraciones de proceso,
       // sincroniza inmediatamente fill/signature flow templates desde el meta.yaml recién subido.
