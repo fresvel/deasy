@@ -454,7 +454,58 @@ histórica de §2) y las 4 marcas manuales vivas (§4.4-R1).
 **Criterio de cierre:** cobertura reportada > 0 y las condiciones del gate reflejan el código y no la
 falta de instrumentación.
 
-### Fase B — Etiquetado de formularios — 🟡 **71 % hecha (2026-08-06)**
+### Fase B — Etiquetado de formularios — ✅ **HECHA (2026-08-06)**
+
+**Fiabilidad C → A. Cero bugs.** Que era el objetivo entero de la fase.
+
+| | Antes | Después |
+|---|---:|---:|
+| Etiquetado (`S6853` + `InputWithoutLabelCheck`) | 289 | **0** |
+| **Bugs** | 143 | **0** |
+| **Fiabilidad** | **C** | **A** |
+| Incidencias abiertas | 734 | **442** |
+| Deuda (SQALE) | 4 709 min | **3 969 min** |
+
+**186 pares `label`/control enlazados** en 39 ficheros, más ~30 `aria-label`/`aria-labelledby`.
+
+#### Las tres técnicas, y cuándo toca cada una
+
+1. **`for`/`id`** cuando hay un `<label>` con texto y un control al que apuntar. **Siempre con
+   `fieldId()` sobre `useId()`, jamás ids literales:** estos modales y widgets se montan varias veces
+   en la misma página y un id duplicado es peor que ninguno. Si el control está en un `v-for`, el id
+   lleva el índice; si hay bucles anidados, los dos.
+2. **`aria-label`** cuando el nombre visible no es un `<label>` sino un `<h4>`, un `<span>`, la
+   cabecera de una columna o un `placeholder`, y en los inputs ocultos que se disparan por código.
+   **Tiene que ser estático, no `:aria-label`**: la comprobación busca el atributo por nombre literal
+   y un binding no cierra la incidencia.
+3. **Cambiar la etiqueta HTML** en los rótulos **huérfanos** — los que encabezan un mapa, un grupo de
+   botones o un `<iframe>`. Un `<label>` sin control que asociar no se arregla con `aria-*`. Pasan a
+   `<div>`/`<span>` conservando las clases exactas.
+
+#### Lo que hay que retener
+
+- **La hipótesis con la que nació la fase era falsa.** No se arreglaba en `SInput`/`SSelect`: `SInput`
+  ya emitía `<label :for>` + `<input :id>`. El problema eran `<input>` sueltos en las vistas.
+- **De los 6 componentes compartidos implicados, solo 2 necesitaban cambio.** `AdminSelectField`
+  (`inheritAttrs:false` + `v-bind`), `AdminInputField` (fallthrough al elemento raíz) y `PdfDropField`
+  (prop `input-id`) ya dejaban pasar un id; sus consumidores nunca se lo pasaron.
+- **`AdminFieldGroup` necesitó API nueva** (prop `labelFor`): un envoltorio genérico no puede saber a
+  qué control apunta su `<label>`.
+- **Los 3 bugs finales eran falsos positivos**, verificados uno a uno: `S7727` sobre
+  `map(store.mapNotification)` (aridad 1, sin `this` — aun así se hizo explícita, y el guardia
+  descubrió que eran 4 llamadas y no 3); `InputWithoutLabelCheck` en `AdminSelectField` (la etiqueta
+  vive en el consumidor y Sonar analiza fichero a fichero); y
+  `MouseEventWithoutKeyboardEquivalentCheck` sobre `<SHeader @onclick>`, que es un componente cuyo
+  interior es un `<button>` real. Los dos últimos **marcados**, no "arreglados" (§7).
+
+#### Deuda que queda anotada
+
+**`SSelect` declara `label` como `required: true` y ninguno de sus 15 usos la pasa** — Vue emite un
+warning de prop obligatoria en los 15 y el `<label>` interno se renderiza vacío. El arreglo natural es
+`v-if="label"`, pero `deasy-field-label` lleva `mb-2 block`: quitarlo **sube el select 8 px** en los 5
+formularios del dossier. Es cambio de aspecto y pide navegador delante.
+
+<details><summary>Redacción original de la fase (referencia)</summary>
 
 | | Antes | Después |
 |---|---:|---:|
