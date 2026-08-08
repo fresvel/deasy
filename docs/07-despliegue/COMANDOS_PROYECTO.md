@@ -252,6 +252,35 @@ Notas de seguridad:
 - `qa` y `prod` tambien son soportados por estos scripts.
 - `prod` exige `DEASY_PROD_DB_APPROVAL_FILE` apuntando a un archivo dentro del repo e ignorado por git.
 
+### Recuperacion administrativa
+
+Cuando la instancia se queda **sin ningun administrador activo pero CON datos operativos**
+(tareas, documentos, firmas...), `getBootstrapStatus` la marca como `recovery_required` y
+`/setup` responde 409: reinicializar desde la UI ya no es seguro y queda bloqueado.
+
+Este es el **unico** camino de vuelta. No existe endpoint equivalente:
+
+```bash
+bash scripts/docker-env.sh <env> exec -T backend \
+  npm run recover:admin -- \
+    --cedula 1234567890 \
+    --first-name Nombre --last-name Apellido \
+    --email admin@tu-dominio \
+    --password 'TuClaveSegura1!'
+```
+
+Flags: `--cedula`, `--first-name`, `--last-name`, `--email` y `--password` son obligatorios;
+`--whatsapp` y `--confirm-password` son opcionales (si no se pasa, la confirmacion se asume
+igual a la contrasena).
+
+Cada flag tiene su variable de entorno equivalente (`DEASY_BOOTSTRAP_ADMIN_CEDULA`,
+`..._FIRST_NAME`, `..._LAST_NAME`, `..._EMAIL`, `..._WHATSAPP`, `..._PASSWORD`,
+`..._CONFIRM_PASSWORD`). **En `prod` usa las variables**, no los flags: un `--password` en la
+linea de comandos queda en el historial del shell y en la tabla de procesos.
+
+La operacion es idempotente: si la persona ya existe se reactiva y se le resetea la contrasena
+conservando su token; ademas resiembra el catalogo RBAC base y reasigna el rol `AdminSistema`.
+
 ## Seeds de storage en MinIO
 
 Estos comandos son los que publican archivos de plantillas en MinIO; no tocan

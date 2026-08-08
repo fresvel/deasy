@@ -602,11 +602,15 @@ Fuera del alcance del borrado, tratada después en commits aparte.
 
 5. ✅ **Los tres scripts de reset colapsan en un CLI con objetivos positivos** — ver §8.
 
-### Abierta
+6. ✅ **`bootstrap_admin_recovery.mjs` ya es descubrible** — el script no se toca, como estaba
+   previsto; lo que se arregla es el camino hasta él. `SystemBootstrapView.vue` pasa de citar
+   `node scripts/bootstrap_admin_recovery.mjs ...` a mostrar el comando completo con sus flags y con
+   el `docker-env.sh <env> exec` que hacía falta para llegar al contenedor. Se añade
+   `npm run recover:admin`, y `COMANDOS_PROYECTO.md` gana la sección "Recuperación administrativa"
+   —antes no mencionaba el rescate en absoluto— con las variables de entorno equivalentes, que son
+   la vía recomendada en `prod` para no dejar la contraseña en el historial del shell.
 
-6. **`bootstrap_admin_recovery.mjs` es poco descubrible** — `SystemBootstrapView.vue:293` lo cita por
-   nombre pero termina en `...` sin enumerar los flags, y no dice que hay que entrar al contenedor.
-   El arreglo barato es documentar los flags en el mensaje, no tocar el script.
+Con esto la lista queda cerrada.
 
 ---
 

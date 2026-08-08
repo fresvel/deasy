@@ -289,9 +289,25 @@
         <div class="space-y-2">
           <p class="m-0 font-semibold">La instancia requiere recuperación administrativa.</p>
           <p class="m-0">
-            Existen datos operativos en la base y ya no es seguro reinicializar desde la UI. Usa el comando
-            <code class="rounded bg-white/80 px-1.5 py-0.5 text-[13px]">node scripts/bootstrap_admin_recovery.mjs ...</code>
-            desde el backend.
+            Existen datos operativos en la base y ya no es seguro reinicializar desde la UI. Hay que
+            recrear el administrador desde el contenedor del backend, sustituyendo
+            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">&lt;env&gt;</code> por el ambiente
+            (<code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">dev</code>,
+            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">qa</code> o
+            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">prod</code>):
+          </p>
+          <pre
+            class="m-0 overflow-x-auto rounded bg-white/80 p-3 text-[12px] leading-relaxed"
+          ><code>bash scripts/docker-env.sh &lt;env&gt; exec -T backend \
+  npm run recover:admin -- \
+    --cedula 1234567890 \
+    --first-name Nombre --last-name Apellido \
+    --email admin@tu-dominio \
+    --password 'TuClaveSegura1!'</code></pre>
+          <p class="m-0">
+            El procedimiento completo, con la alternativa por variables de entorno para no dejar la
+            contraseña en el historial del shell, está en
+            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">docs/07-despliegue/COMANDOS_PROYECTO.md</code>.
           </p>
         </div>
       </div>
