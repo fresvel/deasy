@@ -316,7 +316,8 @@ tercer argumento (lo que acaba en el QR) es `finalPath` **o**, si no viene, `min
 - `SIGNER_TRUST_DIR` (`/app/trust`) con subcarpetas `roots/` y `extra/`; extensiones aceptadas
   `.pem`, `.crt`, `.cer`, `.der`; **no recursivo**. Si no hay subcarpetas, cualquier certificado
   suelto en `trust/` se trata como raíz de confianza (compatibilidad).
-- `SIGNER_WORKSPACE_DIR` (`/tmp/deasy-signer-workspace`) como raíz de los temporales de cada job.
+- `SIGNER_WORKSPACE_DIR` (`/var/lib/deasy-signer/workspace`) como raíz de los temporales de cada job.
+  **Era `/tmp/deasy-signer-workspace` hasta el 2026-08-08**; se movió al cerrar R-11.
 - Ghostscript (`gs`) en el `PATH`, instalado por el Dockerfile.
 - El bind mount de dev es `../signer:/app`, así que lo que se escriba en `signer/` está vivo en el
   contenedor sin reconstruir.
@@ -348,7 +349,7 @@ actual, para que arreglarlos sea después un diff visible.
 | ~~**R-8**~~ | `app.py:1332` (antes clausura en `:1348`) | ✅ **CERRADO en esta pasada.** `on_message` era una **clausura** dentro del worker: el enrutado firma/validación —la única decisión de negocio del transporte— no se podía probar sin levantar el worker. Se sacó a función de módulo (**movimiento puro, cuerpo idéntico verificado línea a línea**) y se cubrió con 7 pruebas. `start_rabbit_worker` baja de 50 a 28 líneas, CC 9→6 y anidamiento 5→4. |
 | **R-9** | `on_message:1336` | `logger.error` dentro de un `except` donde toca `logger.exception` (Sonar `S8572`): se pierde el *traceback* del payload ilegible. |
 | **R-10** | puerto 4000 | Servidor HTTP sin autenticación, publicado al host, con `POST /sign` operativo y sin ningún consumidor legítimo (§6.7). |
-| **R-11** | `SIGNER_WORKSPACE_DIR` | `/tmp/deasy-signer-workspace` es un directorio públicamente escribible (Sonar `S5443`). Mitigado en la imagen (`chown appuser`), no en el código. |
+| ~~**R-11**~~ | `SIGNER_WORKSPACE_DIR` | ✅ **CERRADO el 2026-08-08.** Era `/tmp/deasy-signer-workspace`, un directorio públicamente escribible (Sonar `S5443`, **la única vulnerabilidad CRITICAL del repo**: ella sola fijaba la nota D de seguridad). Hoy `/var/lib/deasy-signer/workspace`, con el default cambiado **en `app.py` y en `compose.base.yml`** —hay que hacer las dos cosas: Sonar analiza el fuente, y el literal seguiría marcado aunque el compose lo sobreescriba—, el directorio creado en el Dockerfile con dueño `appuser` y modo `0700`, y los `mkdir` del código en `mode=0o700`. Ver `plan-calidad-2026-08.md` §5-H. **Deuda residual**: `prod` tenía `tmpfs: - /tmp`, que ya no cubre el workspace. |
 | **R-12** | modo token con N marcas | `sign_pdf_document` firma N veces reabriendo y reescribiendo el PDF entero en cada vuelta, con un temporal intermedio por firma. Coste O(N) en escrituras completas. No es un defecto, es una factura que conviene conocer antes de subir el número de marcas por documento. |
 
 ### 7.1 Código muerto: el signer Node anterior — ✅ retirado

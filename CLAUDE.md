@@ -75,7 +75,7 @@ bash scripts/docker-env.sh dev down
 ### Frontend
 ```bash
 bash scripts/docker-env.sh dev exec -T frontend pnpm run lint       # eslint . --ext .js,.vue
-bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit  # vitest run — 12 ficheros, 225 casos
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit  # vitest run
 bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage  # lcov para SonarQube
 bash scripts/docker-env.sh dev exec -T frontend pnpm run build
 ```
@@ -87,8 +87,8 @@ Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor
 
 ### Backend
 ```bash
-bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # 15 ficheros, 218 casos
-bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # 13 flows, 161 casos golden-master
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # unitarios, junto a su módulo
+bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # contrato HTTP contra goldens
 bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLIGATORIO tras mover código
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
 ```
@@ -106,8 +106,8 @@ no lo lances si tienes datos que quieras conservar. Para actualizar los goldens:
 y traduce el resultado a HTTP. La lógica de negocio, las transacciones de varios pasos, las máquinas de
 estados y cualquier bucle de trabajo viven en `backend/services/`.
 
-`backend/services/documents/DocumentWorkflowResetService.js` (258 L, una responsabilidad) es el estilo
-objetivo. Los infractores conocidos están listados en `docs/plan-calidad-2026-08.md` §5-D; no añadas
+`backend/services/documents/DocumentWorkflowResetService.js` es el estilo objetivo: **una sola
+responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/plan-calidad-2026-08.md` §5-D; no añadas
 más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
 
 ### Reglas al mover código
@@ -119,12 +119,72 @@ más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extr
    que el backend arranca **no** sustituye a ejecutarlo.
 3. **No injertes casos especiales en el camino genérico.** Es el olor que hizo God a `AdminTableManager`.
 4. **Extrae por script, no a mano**, y verifica `count == 1` antes de borrar cada bloque.
+5. **El SQL no lo valida NADIE hasta que se ejecuta esa rama.** `node --check` no lo mira,
+   `check:imports` tampoco, y el backend arranca igual: es una cadena de texto. Así sobrevivieron
+   meses **cuatro** `UPDATE ... INNER JOIN ... SET` (sintaxis multi-tabla de MySQL que PostgreSQL
+   rechaza) y dejaron `POST /sign/fill-requests/:id/return` **roto para todo el mundo**.
+   PostgreSQL quiere `UPDATE tabla alias SET col = ... FROM otra WHERE union AND filtros`, con las
+   columnas del `SET` **sin cualificar**. Al escribir SQL nuevo: pruébalo con `PREPARE` en psql, y
+   recuerda que **`grep "UPDATE.*JOIN"` no encuentra nada** porque el SQL ocupa varias líneas.
 
 ### Plan de calidad
 
 `docs/plan-calidad-2026-08.md` es el **documento maestro** de deuda técnica y complejidad: línea base de
 SonarQube, ranking de ficheros/funciones, fases de trabajo y la lista de **lo que NO hay que tocar**
 (§7 — `sqlTables.js` y los falsos positivos de Sonar entran ahí). Léelo antes de proponer un refactor.
+
+### SonarQube — cómo está montado
+
+**Aquí va solo lo que no cambia.** Las cifras (complejidad, incidencias, cobertura, ranking) viven en
+`docs/plan-calidad-2026-08.md` y **cambian con cada escaneo**: no las repliques en este fichero.
+
+| Pieza | Dónde |
+|---|---|
+| Stack | `scripts/sonar/compose.yml` — SonarQube **community** + PostgreSQL 16, proyecto compose `deasy-sonar`, puerto **9002 → 9000** |
+| Lanzador | `scripts/sonar/scan.sh` — `sonar-scanner-cli` dockerizado |
+| Config | `sonar-project.properties` — `projectKey=deasy`; `sources=backend,frontend/src,signer,scripts`, con los tests **declarados aparte** |
+| CI | `.github/workflows/sonar.yml` — `workflow_dispatch` |
+
+```bash
+docker compose -f scripts/sonar/compose.yml up -d           # levanta el servidor en :9002
+SONAR_TOKEN=<token> bash scripts/sonar/scan.sh              # escanea (~1,5 min)
+```
+
+**Credenciales:** usuario `admin`, contraseña `Demo1234!Demo`.
+
+**Pero la API NO acepta esa contraseña por basic auth** — desde que dejó de ser la de por defecto,
+`-u admin:<pass>` devuelve 401 contra `/api/measures/*` y `/api/authentication/validate` responde
+`{"valid":false}` incluso siendo correcta. **Todo va por token.** Para emitir uno sin abrir la UI:
+
+```bash
+curl -s -c cj.txt -X POST "http://localhost:9002/api/authentication/login" \
+     -d "login=admin" --data-urlencode "password=Demo1234!Demo"
+XSRF=$(awk '/XSRF-TOKEN/{print $7}' cj.txt)
+curl -s -b cj.txt -H "X-XSRF-TOKEN: $XSRF" -X POST \
+     "http://localhost:9002/api/user_tokens/generate" -d "name=deasy-scan-$(git rev-parse --short HEAD)"
+```
+El `X-XSRF-TOKEN` no es opcional: sin él el `POST` da 401 aunque la cookie sea válida.
+
+**Cuatro cosas que se olvidan y cuestan una medición entera:**
+
+1. **Regenera los DOS informes de cobertura ANTES de escanear** (`test:unit:coverage` en backend y
+   frontend). Si no, Sonar lee los de la corrida anterior **sin quejarse**. Y si las rutas `SF:` del
+   lcov no son relativas a la raíz del repo, los descarta **en silencio** y la cobertura vuelve a 0.
+2. **Al consultar la API, filtra con `resolved=false`.** Por defecto `/api/issues/search` incluye las
+   cerradas y las *won't fix*, y los conteos salen inflados.
+3. **El escaneo se PROCESA después de subirse.** Consultar métricas justo al terminar devuelve las
+   viejas: espera a que `/api/ce/task?id=<id>` diga `SUCCESS`.
+4. **No toques `sonar.projectVersion`.** Mueve el New Code period y tira la serie histórica, que es el
+   único termómetro fiable que hay.
+
+**El servidor es solo local.** No es alcanzable desde un runner de GitHub, así que Sonar en CI está
+pendiente de una decisión de infraestructura (publicarlo con TLS o migrar a SonarCloud), no de código.
+El workflow ya está escrito y hace *skip* en verde mientras falten los secrets `SONAR_HOST_URL` y
+`SONAR_TOKEN`.
+
+**Marcar no es arreglar.** Los falsos positivos se marcan en Sonar con justificación; hay varios que
+**no** hay que "corregir" (§7 del plan). Sonar rastrea la incidencia por el **hash de la línea**: un
+rename puro conserva la marca, reescribir la línea la pierde.
 
 ### Process engine (core domain)
 Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in PostgreSQL. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.

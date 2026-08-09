@@ -8,30 +8,48 @@
 > directa del código y con un análisis propio de complejidad por función.
 > Rama `develop`, HEAD `114651a` (SCM revision confirmada por el escáner).
 >
-> ### Estado al 2026-08-08 (re-medido tras las fases A, B, C, D, E, F-signer y G)
+> ### Estado al 2026-08-09
+>
+> **El mapa completo —qué es cada fase y qué le queda— está en §5.0.** Aviso para no perderse: las
+> letras son **el orden en que se descubrieron**, no prioridad ni tema. Usa el nombre, no la letra.
 >
 > | Fase | Estado |
 > |---|---|
-> | **A** instrumento | ✅ |
-> | **B** etiquetado de formularios | ✅ — fiabilidad **C → A**, cero bugs, **sostenido** en el re-escaneo |
-> | **G** barridos mecánicos | ✅ |
-> | **C** `saveTemplateArtifactDraft` | 🟡 CC 164 → **76**. Sigue siendo la peor del repo, ahora por **+9** sobre la segunda |
-> | **D** controllers → servicios | 🟡 las dos grandes hechas (`user_controler` cogn. 337 → **182**); faltan las tres de firma |
-> | **E** frontend | 🟡 puntos 1 y 3 hechos + fase X desbloqueada; faltan los forks y los colores |
-> | **F** signer | 🟡 auditado, con red de 229 pruebas y 3 riesgos cerrados; falta el corte de identidad |
-> | **F** `postgres.js` | ⬜ sin empezar — **intacto en 241 cogn., hoy el 6.º del ranking y el más denso** |
+> | **A** · arreglar el instrumento de medida | ✅ |
+> | **B** · etiquetado de formularios | ✅ — fiabilidad **C → A**, cero bugs, **sostenido** en el re-escaneo |
+> | **G** · barridos mecánicos | ✅ |
+> | **F** · `postgres.js` | ✅ **(08-08)** — las dos peores funciones, **108 → 15 puntos**; 60 casos + fuzz de 200 000 entradas |
+> | **H** · la nota D de seguridad | ✅ **(08-08)** — cerrada la única CRITICAL: seguridad **D → C** |
+> | **I** · residuos de la migración a PostgreSQL | ✅ **(08-09)** — 4 `UPDATE … JOIN` de MySQL, uno con **una función rota para todos los usuarios** |
+> | **C** · partir `saveTemplateArtifactDraft` | 🟡 CC 164 → **76**. Lo que queda no es refactor: es rediseñar la compensación de errores |
+> | **D** · controllers → servicios | 🟡 **2 de 5** (`user_controler` cogn. 337 → **182**); faltan las tres de firma, **ya con red** |
+> | **E** · frontend | 🟡 **3 de 5**; faltan `httpClient` y los colores/forks |
+> | **F** · `signer/app.py` | 🟡 auditado, 229 pruebas y 3 riesgos cerrados; falta el corte de identidad |
 >
-> **Lo que el re-escaneo del 17:27 demuestra:** incidencias abiertas **822 → 416** (−49 %), deuda
-> **4 872 → 3 708 min** (−24 %), complejidad cognitiva **8 720 → 8 334**, cobertura **11,5 → 14,2 %**,
-> y **0 bugs** con fiabilidad **A** sostenida. Notas **A / D / A**. Cifras completas en §2.
+> **Dos días de trabajo, medidos** (última medición: 08-09 02:09):
 >
-> **Seguridad: sigue en D, y ahora se sabe por qué exactamente.** No son «38 incidencias sin triar»:
-> son **34**, y la nota la fija **una sola** de ellas — la única CRITICAL, `python:S5443` en
-> `signer/app.py:59` (§5-H). La escala de Sonar es por peor severidad, no por volumen: basta 1
-> CRITICAL para D. Ya se cerró antes lo que sí era explotable: el broker de RabbitMQ estaba publicado
-> en todas las interfaces en dev, qa **y prod**, con `guest` administrador y la protección de loopback
-> desactivada (commit `b4a4231`). La contraseña del PKCS#12 del firmante sigue viajando en el cuerpo
-> del mensaje AMQP sin TLS (R-1, y son 4 de las 34).
+> | | Línea base | Ahora |
+> |---|---:|---:|
+> | Incidencias abiertas | 832 | **381** |
+> | Bugs | 143 | **0** |
+> | Vulnerabilidades | 45 | **9** |
+> | Deuda (SQALE) | 4 902 min | **3 028 min** |
+> | Complejidad cognitiva | 8 797 | **8 205** |
+> | Cobertura | 0 % | **16,2 %** |
+> | Seguridad | D | **C** |
+>
+> **Seguridad D → C: la fijaba UNA sola incidencia.** No eran «38 sin triar»: eran 34, y la escala de
+> Sonar va por **peor severidad, no por volumen** (basta 1 CRITICAL para D). La única CRITICAL era el
+> workspace del firmante bajo `/tmp`; cerrada (§5-H). Antes ya se había cerrado lo que sí era
+> explotable: el broker de RabbitMQ publicado en todas las interfaces en dev, qa **y prod**, con
+> `guest` administrador (`b4a4231`). Sigue abierto que la contraseña del PKCS#12 viaje por AMQP sin
+> TLS (R-1, 4 de las 34).
+>
+> **Y la cobertura era en parte un espejismo.** El signer tenía **229 pruebas que contaban como 0 %**
+> porque nunca se conectó `sonar.python.coverage.reportPaths`: `app.py`, el fichero más complejo del
+> repo, está en realidad al **88 %**. Conectarlo subió el global de 14,2 a 16,2 % sin escribir un solo
+> test. Ojo con la lectura del 16 %: **el gate no pide 80 % global** —eso sí serían años— sino 80 % de
+> lo nuevo. Ver `docs/plan-cobertura-2026-08.md` §0.1.
 >
 > **Cobertura:** 0 % → **14,2 %**. El plan para seguir es `docs/plan-cobertura-2026-08.md`.
 >
@@ -160,13 +178,38 @@ Y el gate seguirá en ERROR aunque se cierren las 105, porque `new_coverage` est
 umbral de 80. Eso ya no es un defecto del instrumento (H2 está cerrado): es el trabajo de
 `docs/plan-cobertura-2026-08.md`.
 
-**H4 — Sonar no corre en CI, pero el gancho ya existe** *(actualizado 2026-08-08)*.
-`.github/workflows/cd-multienv.yml` sigue siendo el único workflow y sigue sin invocar a Sonar, así
-que el análisis es manual. Lo que **ha cambiado** es que ese workflow ya dejó de ser solo de
-despliegue: desde `76d7011` corre `pnpm run lint`, `npm run check:imports` y `npm run test:unit` en
-un job previo (`:122-151`). Es decir, **ya hay un job de calidad donde enchufar el escáner**, y los
-`lcov` que Sonar necesita salen de los mismos runners que ya ejecutan las pruebas. H4 pasó de «montar
-CI» a «añadir un step», y con ello deja de ser opcional por coste.
+**H4 — Sonar no corre en CI, y NO es «añadir un step»: falta un servidor alcanzable**
+*(diagnosticado y corregido el 2026-08-08)*.
+
+> **Este documento llegó a decir que H4 «pasó de montar CI a añadir un step». Es falso, y conviene
+> que quede escrito por qué**, porque la versión optimista llevaba derecha a un CI en rojo permanente.
+
+Es cierto que el gancho existe: desde `76d7011`, `cd-multienv.yml` ya corre `pnpm run lint`,
+`npm run check:imports` y `npm run test:unit` (`:122-151`). Lo que **no** existe es un SonarQube al que
+un runner pueda llegar:
+
+- `scripts/sonar/compose.yml` publica el servidor en `9002:9000` **solo en la máquina del
+  desarrollador**: sin ingress, sin TLS y con la base de datos en `sonar/sonar`.
+- `scripts/sonar/scan.sh` tenía `SONAR_HOST_URL="http://sonarqube:9000"` **cableado**, y corría con
+  `--network deasy-sonar_default`: ese nombre solo resuelve dentro de la red de compose local.
+- No hay ni una referencia a instancia remota en todo el repo, ni secrets `SONAR_*` declarados.
+
+Un step de Sonar en el job de calidad **fallaría en todos los push, para siempre, sin producir una sola
+medición**. Lo que falta no es trabajo de CI: es una decisión de infraestructura — publicar el
+SonarQube (y antes arreglarle credenciales por defecto y TLS) o migrar a SonarCloud.
+
+**Lo que sí queda hecho**, para que el día que haya servidor sea encender un interruptor:
+
+| Pieza | Estado |
+|---|---|
+| `.github/workflows/sonar.yml` | ✅ Nuevo, `workflow_dispatch`. Un **guard** que hace *skip* limpio y **verde** si faltan `SONAR_HOST_URL`/`SONAR_TOKEN`, en vez de rojo permanente |
+| `fetch-depth: 0` en el checkout | ✅ Sin blame de git, el escáner no distingue código nuevo y el New Code period deja de medir |
+| Regeneración de los dos `lcov` antes de escanear | ✅ Requisito de §5-A.2 |
+| **Verificador de `lcov`** | ✅ Falla si un informe está vacío o si sus rutas `SF:` no empiezan por `backend/`/`frontend/`. Es el fallo silencioso que documenta §5-A.2: Sonar descarta el informe **sin quejarse** |
+| `scripts/sonar/scan.sh` parametrizado | ✅ Sin `SONAR_HOST_URL` se comporta **exactamente igual que antes** (modo local); con ella, modo remoto sin `--network` |
+
+**Para activarlo** hacen falta dos secrets de repositorio: `SONAR_HOST_URL` (una URL alcanzable desde
+internet — **no** `http://localhost:9002`) y `SONAR_TOKEN`.
 
 ---
 
@@ -295,10 +338,32 @@ esto se arregla sobre todo en `SInput`/`SSelect` **no se sostiene tal cual** (§
 están cerradas**. De las 416 restantes, las tres primeras filas (141) son las fases C/E/F de este plan,
 y el resto son decisiones de una en una. **Nadie va a volver a bajar 400 incidencias en dos días.**
 
-Y hay una fila nueva que merece mirada propia: los **10 `S2486`** (`catch` que se traga la excepción).
-Es la única regla del backlog que huele a defecto latente en vez de a estilo, y Sonar la clasifica como
-code smell, así que no aparece en la nota de fiabilidad. **Vale la pena triarlos antes que los 48
-ternarios**, aunque el conteo sea menor.
+Y hay una fila que merecía mirada propia: los **10 `S2486`** (`catch` que se traga la excepción). Era la
+única regla del backlog que olía a defecto latente en vez de a estilo, y Sonar la clasifica como code
+smell, así que no contaba para la nota de fiabilidad.
+
+> **✅ Triados uno a uno el 2026-08-08, y la corazonada era correcta: había un defecto real.**
+>
+> **`RealtimeGateway.js:85`** envolvía en el mismo `catch` dos cosas incompatibles: `jwt.verify` (fallo
+> esperado) y `await userRepository.findById(userId)` (fallo de infraestructura). **Con la base de datos
+> caída, todos los usuarios recibían «Token inválido» en el WebSocket y el servidor no dejaba ni una
+> línea de traza.** Un chat y unas notificaciones muertos se habrían diagnosticado como «problema de
+> sesión». Arreglado con log, sin tocar el mensaje al cliente.
+>
+> Y aparece un segundo del mismo tipo, **`sign_controller.js:114`**, que traduce cualquier fallo de
+> `statMinioObject` a *«El certificado seleccionado ya no está disponible… vuelve a cargar tus
+> certificados»*: con MinIO caído se le dice al usuario que su certificado desapareció y se le invita a
+> resubirlo. Es infraestructura disfrazada de error de datos — **el mismo patrón que §5-D documenta**
+> con el 500 que se convertía en 400. Queda para la Fase D, que es quien toca ese fichero.
+>
+> Reparto final: **1 defecto real + 3 leves** arreglados con traza, **3 mudos intencionales**
+> documentados con `catch {` y un comentario del porqué, **2 falsos positivos** marcados, 1 delegado.
+> Ningún contrato de error alterado.
+>
+> **Dato útil sobre la regla, medido:** `S2486` dispara cuando **existe el binding `catch (error)` y no
+> se referencia dentro del bloque**. Los `} catch {` sin binding **no** se marcan — y ya hay 86 en el
+> frontend. Por eso los dos remedios legítimos son usar el error o quitar el binding, y por eso la regla
+> no mide «catch vacíos» sino «bindings sin usar».
 
 ### 2.3 Duplicación concentrada
 
@@ -400,9 +465,9 @@ versión anterior de esta tabla, así que no cites las viejas.
 Bajó de 164 a 76 y `createGeneralTask` (75) salió de la lista entera, así que hoy la cola arranca
 **76 · 67 · 59 · 49 · 44**, que es una pendiente suave. Consecuencias prácticas:
 
-- **La segunda peor función del repo es de frontend** (`useAdminSubmitFlow.js`, CC 67) y **no tiene
-  fase asignada en este plan**. La Fase E habla de `useProcessPanels`, del sistema de diseño y de
-  `httpClient`, pero no de ella. Es un hueco real del plan, no una omisión inofensiva.
+- ~~**La segunda peor función del repo es de frontend** (`useAdminSubmitFlow.js`, CC 67) y **no tiene
+  fase asignada**~~ → ✅ **CERRADA el 2026-08-08** como **Fase E-5** (§5-E.5). Era un hueco real del
+  plan, detectado solo al re-medir: **67 → ~7-9**.
 - **`postgres.js` aporta dos de las cinco peores** (59 + 49 = 108 puntos en dos funciones). Partirlas
   es, en puntos por hora, la mejor operación pendiente del backend.
 - **Terminar la Fase C ya no es prioritario por tamaño.** Los 76 que quedan son el núcleo
@@ -518,8 +583,49 @@ renames, así que el código movido **no** entra como código nuevo. No hay que 
 
 ## 5. Plan por fases
 
-Ordenado por retorno sobre esfuerzo, no por gravedad. Las fases A y B son baratas y desbloquean la
-medición; el resto ya no se puede medir bien sin ellas.
+> ### ⚠️ Antes de nada: las letras no significan nada
+>
+> Las fases se llaman A, B, C… **por el orden en que se descubrieron**, no por prioridad, ni por
+> dependencia, ni por tema. La letra no te dice de qué trata la fase ni si está hecha. Es un defecto
+> de este documento, heredado de haber crecido a trozos. **Usa siempre el nombre, no la letra**, y si
+> escribes una fase nueva, ponle nombre antes que letra.
+
+### 5.0 Mapa de fases — qué es cada una y cómo va
+
+| Fase | En una frase | Estado |
+|---|---|---|
+| **A · Arreglar el instrumento** | Sonar medía mal: los tests contaban como código de producción y no había cobertura enchufada. Sin esto, cualquier mejora es inmedible | ✅ **Hecha** |
+| **B · Etiquetado de formularios** | 289 incidencias de accesibilidad (`label` sin control asociado). Eran el 35 % del backlog y **la nota entera de fiabilidad** | ✅ **Hecha** — C → A, cero bugs |
+| **C · Partir `saveTemplateArtifactDraft`** | La peor función del backend: 563 líneas que crecían solas con cada cambio | 🟡 **A medias** — 164 → 76. Lo que queda **no es refactor**, es rediseñar la compensación de errores |
+| **D · Controllers → servicios** | Lógica de negocio viviendo en la capa de transporte, contra la regla no negociable de CLAUDE.md | 🟡 **2 de 5** — hechas las dos de `user_controler`; **faltan las tres de firma** |
+| **E · Frontend** | Cinco deudas sueltas: estado mal repartido, sistema de diseño, la URL como fuente de verdad, `httpClient`, y la 2.ª peor función del repo | 🟡 **3 de 5** — faltan `httpClient` y los colores/forks |
+| **F · Los dos nunca auditados** | `signer/app.py` (el peor fichero del repo) y `postgres.js` (el más denso) | 🟡 **1 de 2** — `postgres.js` ✅ hecho (108 → 15); del signer falta el corte de identidad |
+| **G · Barridos mecánicos** | Imports sin usar, `replace`→`replaceAll`, y 21 falsos `TODO` | ✅ **Hecha** — y lo que sobró **no es barrido**: pide criterio uno a uno |
+| **H · La nota D de seguridad** | 34 incidencias sin triar, y una sola CRITICAL fijando la nota | ✅ **Hecha** — seguridad **D → C** |
+| **I · Residuos de la migración** | SQL de MySQL vivo en PostgreSQL: cuatro `UPDATE … JOIN` que reventaban al ejecutarse | ✅ **Hecha** — incluía **una función rota para todos los usuarios** |
+
+**Fuera de este documento**, porque es otro problema: la **cobertura** tiene su propio plan ejecutable
+en `docs/plan-cobertura-2026-08.md`.
+
+#### Lo único que queda pendiente, en orden
+
+1. **Fase D** — las tres de firma. `sign_controller.js` sigue en 936 líneas con el motor de batch
+   dentro. **Ya se puede hacer con red**: la caracterización pasó de 161 a 238 casos y congela el
+   orden de los guards.
+2. **Defectos que esa red destapó** — `requestSign` devuelve 500 donde debería devolver 400; una
+   solicitud sin responsable da 500 a cualquiera; el `fileFilter` de multer suelta el **stack trace
+   completo** en HTML.
+3. **Fase F** — el corte de identidad del signer (430 líneas, 6 de sus 8 funciones complejas).
+4. **Fase C** — el núcleo transaccional. Pide **decidir** quién posee la compensación (§5-C).
+5. **Fase E** — `httpClient` (31 ficheros) y los colores, que van detrás del sistema de diseño.
+
+Lo demás del backlog (48 ternarios anidados, 28 regex, 33 de contraste) **no está asignado a ninguna
+fase a propósito**: son decisiones de una en una y no compensan como campaña.
+
+---
+
+Ordenado por retorno sobre esfuerzo, no por gravedad. Las fases A y B eran baratas y desbloqueaban la
+medición; el resto no se podía medir bien sin ellas.
 
 > ### Qué toca ahora — reordenado con la medición del 2026-08-08 17:27
 >
@@ -529,7 +635,7 @@ medición; el resto ya no se puede medir bien sin ellas.
 > | # | Trabajo | Por qué ahora |
 > |---|---|---|
 > | 1 | **Fase H** — la línea de `SIGNER_WORKSPACE_DIR` (§5-H) | Una línea de compose mueve la **seguridad de D a C**. Es el único punto del plan donde un cambio trivial mueve una nota |
-> | 2 | **H4** — Sonar en el job de CI que ya existe (§1.2) | Dejó de ser «montar CI»: el workflow ya corre lint + tests desde `76d7011`. Sin esto, la próxima medición vuelve a depender de que alguien se acuerde |
+> | 2 | ~~**H4** — Sonar en CI~~ → **decisión de infraestructura, no de código** (§1.2) | El workflow ya está escrito y verificado, pero **el SonarQube es local y ningún runner lo alcanza**. Lo pendiente es publicar el servidor (con TLS y credenciales propias) o migrar a SonarCloud. No es trabajo de programación |
 > | 3 | **Fase F — `postgres.js`** | El **único ⬜ puro**, intacto en 241 cogn./391 ncloc (**0,62 puntos por línea**, el triple que cualquier otro). Aporta **2 de las 5 peores funciones** (59 + 49). Mejor retorno del backend |
 > | 4 | **Fase D** — las tres de firma | `sign_controller.js` sigue en 936 L con el motor de batch dentro: viola CLAUDE.md, y el patrón de corte ya está probado y documentado en la propia fase |
 > | 5 | Los **10 `S2486`** (§2.2) | Única regla del backlog con olor a defecto latente, y son 10, no 400 |
@@ -855,6 +961,27 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
    por transitividad en `:113`).
    **Coste:** tocar los 31 ficheros. **No es un arreglo de paso, es un refactor con nombre propio.**
    **Síntoma ya cobrado:** rompió la suite de `PerfilView` durante semanas (ver §6 regla 11).
+5. **`useAdminSubmitFlow` y los ids de formulario** — ✅ **HECHA (2026-08-08)**. *Fase que no existía:
+   salió del re-escaneo, no del plan de julio.*
+   - `submitForm`: **CC 67 → ~7-9**. Se extrajeron 12 helpers puros y 5 unidades con nombre
+     (`runPreSaveGuards`, `persistForm`, `closeEditorAfterSave`, `runCreationFollowUps`,
+     `handleSaveError`). Los cuatro bloques `{...payload, ...responseRow}` repetidos literalmente para
+     persona/definición/proceso/periodo colapsan en una tabla `CREATED_ROW_BY_TABLE`.
+   - **Red nueva de 38 casos escrita ANTES del corte** y verde después **sin editar ni uno**.
+   - `SInput`/`SDate`/`SToggle` pasan de `Math.random().toString(36).substr(2,9)` al patrón `fieldId()`
+     sobre `useId()` de la Fase B, con 15 casos que verifican que `label[for] === input[id]`, que el id
+     **no cambia entre renders** (lo que el `computed` con `Math.random` sí hacía) y que dos instancias
+     no colisionan. `SToggle` conserva la precedencia de `props.id`.
+
+   > **Dos aprendizajes de método que valen para el resto del plan:**
+   >
+   > 1. **Montar dos veces con `mount()` NO detecta colisiones de id**: `useId()` reinicia su contador
+   >    por aplicación y ambas instancias devuelven `v-0-input`. La colisión real —la que tenía
+   >    `Math.random`— solo se reproduce montando las dos instancias **dentro del mismo árbol**.
+   > 2. **SonarJS mide la complejidad de cada función SIN agregar las anidadas.** Comprobado
+   >    calibrando una calculadora AST propia contra cuatro funciones de valor conocido de §3.2:
+   >    `useAdminTableDataSource.js:222` da 36 propia y 59 con anidadas, y Sonar reporta 31. Útil para
+   >    no perseguir un número que Sonar nunca va a contar.
 
 ### Fase F — Los dos nunca auditados
 
@@ -873,9 +1000,51 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
     `.get(..., True)` lo da por bueno); **R-3** una rama inalcanzable deja salir la cédula sucia.
   - Siguiente corte recomendado: las 430 líneas de identidad. **Tocar la firma está bloqueado** hasta
     que exista una prueba que firme un PDF real y lo valide.
-- **`backend/config/postgres.js`** (cogn. **241 en 391 ncloc** — la densidad más alta del repo). Dos
-  funciones en `:47` y `:111` (CC 49 y 59) que reescriben dialecto SQL. Candidato a tabla de
-  traducción declarativa.
+- **`backend/config/postgres.js`** — ✅ **HECHA (2026-08-08). 108 → 15 puntos de complejidad.**
+
+  | Función | Antes | Después |
+  |---|---:|---:|
+  | `translatePlaceholders` (`:47`) | **49** | **0** — dos líneas |
+  | `bindParams` (`:111`) | **59** | **~1** — seis líneas |
+  | *(nueva)* `scanSql` | — | 5 |
+  | *(nueva)* `findSpanEnd` | — | 6 |
+  | *(nueva)* `expandParam` | — | 3 |
+
+  **Ninguna supera el umbral de 15**, y la mayor es un 6. El fichero debería caer de 241 a ~148, con lo
+  que deja de ser el más denso del repo. *(Cifras del «después» calculadas a mano con las reglas de
+  `S3776`, no medidas: re-escanear con agentes trabajando en paralelo habría publicado un análisis con
+  el árbol a medias.)*
+
+  **La hipótesis del plan era correcta pero se quedaba corta.** No es que fueran «candidatas a tabla
+  declarativa»: es que **las dos funciones eran el mismo autómata copiado palabra por palabra** —cinco
+  banderas (`inSingle`/`inDouble`/`inBacktick`/`inLine`/`inBlock`) y diez ramas de `continue` cada una.
+  Hoy las cinco banderas son cinco filas de `PROTECTED_SPANS` y un único `scanSql(sql, onPlaceholder)`
+  recorre el SQL; las dos funciones se diferencian **solo en la lambda** que emite cada `?`. La
+  duplicación era la causa de la mitad de la complejidad, y no estaba anotada en ningún sitio.
+
+  **La red, que es lo que hace esto un refactor y no una apuesta:** `backend/config/postgres.test.js`,
+  **60 casos** escritos y verdes **antes** de tocar el código y no modificados después, con entradas
+  sacadas de consultas reales del repo (`IN (?)` de `RbacService`, `LIMIT ? OFFSET ?` de
+  `SqlAdminService`, backticks, `<=>`, `ON DUPLICATE KEY`, casts `::`, `->>`). Además **fuzz diferencial
+  contra una copia literal de la implementación original: 200 000 entradas, cero divergencias.**
+
+  > **Seis rarezas congeladas, no arregladas** — están marcadas `RAREZA CONGELADA` en el test, para que
+  > el día que se arreglen el diff del golden **sea** la prueba del arreglo. Dos merecen atención propia:
+  >
+  > - **`translatePlaceholders` es código muerto.** Cero llamadas en todo el repo (`FNDA:0` en el lcov);
+  >   `runQuery` usa solo `bindParams`. Ya lo decía la auditoría de tests de julio. Se ha mantenido
+  >   exportada porque borrar un export no es refactor — **bórrala en un commit aparte**.
+  > - **Faltan parámetros → `undefined` silencioso, y es un bug latente real.**
+  >   `bindParams("SELECT ?,?,?", [1])` produce `values: [1, undefined, undefined]`, y `pg` los manda
+  >   como NULL: **la consulta no falla, ejecuta con NULLs**. Un error de programación se convierte en
+  >   datos silenciosamente equivocados.
+  >
+  > Las otras cuatro: comentario de bloque sin cerrar deja `?` crudos; fila vacía en bulk insert genera
+  > `VALUES ()`; solo se inspecciona el primer elemento para decidir si es bulk; y `/*/` cuenta como
+  > bloque ya cerrado.
+
+  **Corrección al encargo:** el módulo **sí** tenía test propio (`postgres.dialect.test.js`, 38 casos).
+  Lo que no tenía cobertura era `translatePlaceholders`, que no se ejecutaba ni una vez.
 
 ### Fase G — Barridos mecánicos — ✅ **HECHA la parte mecánica de verdad (2026-08-06)**
 
@@ -928,7 +1097,46 @@ Es decir, medio gate se cierra con un barrido sin riesgo. Hacerlo **después** d
 
 </details>
 
-### Fase H — La nota D de seguridad, triada — ⬜ **nueva (2026-08-08)**
+### Fase H — La nota D de seguridad — ✅ **TRIADA Y EJECUTADA (2026-08-08)**
+
+> **Resultado.** La única CRITICAL está cerrada, 3 de los 4 `S4036` arreglados (el 4.º espera a que la
+> Fase D libere `sign_controller.js`), los 6 `S2245` **arreglados en vez de marcados**, y 15
+> incidencias marcadas como falso positivo con justificación escrita en Sonar. El diagnóstico de abajo
+> se conserva porque es el que sostiene cada decisión.
+>
+> | Qué | Cómo se cerró |
+> |---|---|
+> | `python:S5443` (la CRITICAL) | Default de `SIGNER_WORKSPACE_DIR` movido a `/var/lib/deasy-signer/workspace` **en `app.py` Y en `compose.base.yml`**, dir creado en `docker/signer/Dockerfile` con dueño `appuser` y modo `0700`, y los dos `mkdir` del código pasan a `mode=0o700` |
+> | 3 × `S4036` | `spawn("zip"/"unzip")` → ruta absoluta `/usr/bin/…`, y `unzip` declarado explícito en los Dockerfiles del backend (venía por herencia de la imagen base) |
+> | 6 × `S2245` | Arreglados: `useId()` en `SInput`/`SDate`/`SToggle`, `randomUUID()` en `dossier_router` y `ChatAttachmentService`, secuencia monotónica en `MultiSignerPanel` |
+> | 7 × `S5693` + 8 × `S2068` | Marcadas FALSE-POSITIVE con justificación (§7) |
+>
+> **Corrección a lo que decía este documento:** «se cierra con una línea de compose» era **inexacto**.
+> Sonar analiza el **fuente**, así que el literal `/tmp/…` de `app.py:59` seguiría marcado por mucho
+> que el compose lo sobreescriba. Hay que cambiar el default en el código *además* de fijarlo en el
+> compose. Es un error de razonamiento que conviene no repetir con otras reglas de este tipo.
+>
+> **Y un hallazgo que el triaje inicial no vio: los `S4036` sí eran riesgo real, pero solo en producción.**
+> El PATH de la imagen es todo `root:root` y no lo muta nadie, así que parecían inocuos. Pero el CMD de
+> `docker/backend/Dockerfile` es **`npm run start`**, y npm antepone al PATH
+> `/app/backend/node_modules/.bin`, que es `drwxr-xr-x node node` — **escribible por el mismo uid que
+> corre el backend**. Es literalmente la precondición de la regla, y falla solo en la imagen de
+> producción (en dev el CMD es `node --watch` directo, sin npm). No es una escalada por sí sola —
+> requiere una primitiva de escritura previa— pero el arreglo costaba una línea.
+>
+> **Deuda abierta que deja esta fase, anotada para no perderla:**
+> 1. `prod` tenía `tmpfs: - /tmp` en el signer, que **ya no cubre el workspace**: los PDF y el PKCS#12
+>    desempaquetado pasan de RAM a la capa de escritura del contenedor (se siguen borrando al salir del
+>    `with`). Volver a RAM exige `--mount type=tmpfs,tmpfs-mode=0700` con uid, porque la sintaxis corta
+>    de `tmpfs:` no admite `uid`/`gid` y dejaría la raíz `root:root 1777` — justo el problema que esta
+>    fase cierra.
+> 2. Los Dockerfiles del backend **no se reconstruyeron** (había agentes usando el contenedor). El
+>    `unzip` explícito está sin verificar por build: hace falta un `up -d --build backend`.
+> 3. `createZipArchive` está **duplicado byte a byte** en `templateArchive.js` y
+>    `user_controler.storage.js`, y casi igual en `sign_controller.js`. Es el 40,5 % de duplicación que
+>    §2.3 señalaba. Unificarlo es trabajo de la Fase D, que ya toca el tercero.
+
+#### El diagnóstico (conservado)
 
 Es la única nota que no está en A y el único apartado que este plan arrastraba sin abrir («38
 incidencias sin triar»). Ya está triado: **son 34, y ninguna es explotable tal como está desplegado**.
@@ -939,7 +1147,8 @@ Pero la nota no depende del total.
 > 1 CRITICAL + 22 MAJOR + 11 MINOR, **la D entera la fija una sola línea**. Cerrar las otras 33 no
 > movería la nota ni un escalón.
 
-**La única CRITICAL — `python:S5443`, `signer/app.py:59`:**
+**La única CRITICAL — `python:S5443`, `signer/app.py:59`.** Así estaba **antes** del arreglo (el código
+de hoy usa `/var/lib/deasy-signer/workspace`; se cita el original porque es lo que explica el hallazgo):
 
 ```python
 SIGNER_WORKSPACE_DIR = os.getenv("SIGNER_WORKSPACE_DIR", "/tmp/deasy-signer-workspace")
@@ -974,6 +1183,58 @@ mueve la seguridad de D a C**, y es el mejor retorno por esfuerzo de todo el doc
 `S2245`: los límites ya están puestos y `Math.random` para un id de DOM no es criptografía.
 
 ---
+
+### Fase I — Residuos de la migración a PostgreSQL — ✅ **CUATRO SITIOS CORREGIDOS (2026-08-09)**
+
+*Fase que no estaba en ningún plan. La destapó la red de caracterización de firma, no un escaneo.*
+
+**`POST /sign/fill-requests/:id/return` estaba roto para todo el mundo.**
+`DocumentProgressService.syncDocumentProgressFromFillRequest` ejecutaba un
+`UPDATE fill_requests fr INNER JOIN fill_flow_steps ... SET ...`: sintaxis **multi-tabla de MySQL**
+que PostgreSQL rechaza con `syntax error at or near "INNER"`. Respondía **500** y deshacía la
+transacción entera — ni siquiera se guardaba el motivo de la devolución. Con flujos de un solo paso
+la rama se toma **siempre**, así que devolver un entregable no funcionaba nunca.
+
+**Y no era un caso aislado: eran CUATRO.** Un `grep` de una línea no los encuentra (el SQL es
+multilínea, y por eso llevaban meses invisibles):
+
+| Fichero | Qué hacía |
+|---|---|
+| `services/documents/DocumentProgressService.js:109` | Reactivar el paso al devolver — **el 500 confirmado** |
+| `services/documents/DocumentWorkflowResetService.js:159` | Cancelar solicitudes de firma al resetear. **Es el fichero que CLAUDE.md pone de ejemplo de buen estilo** |
+| `services/admin/templates/templateLifecycle.js:355` | Repuntar el enlace de plantilla de una configuración |
+| `services/admin/org/taskAssignment.js:205` | Reconciliar responsables por puesto vigente |
+
+**La conversión.** PostgreSQL usa `UPDATE … SET … FROM … WHERE`; la tabla que se actualiza **no se
+repite** en el `FROM` y su condición de unión pasa al `WHERE`. Dos detalles que se escapan:
+
+- **Las columnas del `SET` van SIN cualificar.** `SET fr.status = …` es error de sintaxis en PG,
+  aunque `fr.` sí valga en la parte derecha (`COALESCE(sr.responded_at, NOW())`).
+- **El `FROM` se evalúa contra los valores VIEJOS**, así que buscar por `ta.id = pdt.template_artifact_id`
+  y reasignar esa misma columna es correcto y conserva la semántica de MySQL.
+
+**Por qué no lo cazó nada hasta ahora, que es la lección de verdad:**
+
+> **`node --check` no lo ve, `check:imports` no lo ve, y el backend arranca tan feliz.** Es SQL
+> dentro de una cadena: **solo revienta cuando esa rama se ejecuta**. Es la misma familia que los
+> cuatro `ReferenceError` que estuvieron vivos tres semanas (§6 regla 2), un escalón más abajo: ahí
+> el símbolo faltaba en tiempo de llamada; aquí la sintaxis falla en tiempo de **consulta**. Ninguna
+> herramienta estática del proyecto cubre este hueco — **solo una prueba que recorra esa rama**.
+>
+> **Cómo buscar los que queden**, porque `grep "UPDATE.*JOIN"` **no vale** (el SQL ocupa varias
+> líneas): hay que escanear con una expresión multilínea sobre el fichero entero. Lo mismo aplica a
+> `DELETE … JOIN`, que hoy no tiene ningún caso.
+
+**Verificación en cuatro niveles**, porque la caracterización solo alcanza al primero:
+
+1. `PREPARE` en psql de las cuatro consultas → sintaxis, tablas y columnas válidas.
+2. Ejecución real de las otras tres dentro de una transacción **deshecha**: `UPDATE 1`, `UPDATE 2`,
+   `UPDATE 0`. Afectan filas de verdad, no solo compilan.
+3. **Caracterización: los dos goldens del defecto ROMPIERON, y solo esos dos** (236 de 238 seguían
+   verdes). Ese diff **es** la prueba del arreglo, según §6 regla 3. Reescritos a `return_ok` /
+   `return_efecto` (200, `status: returned`, `flowStatus: pending`, motivo guardado) y **eliminadas
+   las claves huérfanas** — un golden que ya no comprueba nadie es ruido.
+4. `check:imports` OK y 312/312 unitarios.
 
 ## 6. Reglas de trabajo (destiladas de diez cuts)
 
