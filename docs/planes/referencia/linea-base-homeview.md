@@ -3,7 +3,7 @@
 
 > 📌 **Contrato observable — VIVO.** Es la red de regresión de `HomeView.vue` antes de partirlo: si
 > algo de aquí cambia tras un refactor, es una regresión. Plan vigente:
-> **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**.
+> **[`docs/planes/referencia/calidad-y-medicion.md`](./calidad-y-medicion.md)**.
 >
 > ⚠️ El fichero medía 7 445 L cuando se escribió esto; hoy son **5 233 L**.
 

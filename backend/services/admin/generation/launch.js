@@ -1,6 +1,6 @@
 // LANZAMIENTO de procesos: crear la corrida (process_run), hidratar las tareas de una
 // definición en un periodo y exponer el estado de lanzamiento.
-// Extraído de TaskGenerationService en la Fase 3. Ver docs/auditoria-refactor-2026-07.md
+// Extraído de TaskGenerationService en la Fase 3. Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 //
 // OJO (bug histórico, ver commit a53a6de): `ensureProcessRun` compara `term_id <=> ?`
 // (igualdad NULL-safe de MySQL, porque term_id es nullable). PostgreSQL NO tiene <=>;

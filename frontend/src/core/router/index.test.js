@@ -5,7 +5,7 @@
  *
  * NO describen el router que queremos: describen el que HAY, incluidas sus rarezas. Existen para que el
  * split de HomeView en paginas enrutadas y la introduccion de layouts por ruta
- * (docs/plan-refactor-frontend.md, fases 2 y 3) puedan afirmar que no cambiaron el comportamiento
+ * (docs/planes/referencia/frontend.md, fases 2 y 3) puedan afirmar que no cambiaron el comportamiento
  * observable. Si un cambio rompe uno de estos tests, o es un bug o es una decision deliberada que hay
  * que reflejar aqui a proposito.
  *

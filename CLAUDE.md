@@ -107,7 +107,7 @@ y traduce el resultado a HTTP. La lógica de negocio, las transacciones de vario
 estados y cualquier bucle de trabajo viven en `backend/services/`.
 
 `backend/services/documents/DocumentWorkflowResetService.js` es el estilo objetivo: **una sola
-responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/plan-calidad-2026-08.md` §5-D; no añadas
+responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
 más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
 
 ### Reglas al mover código
@@ -129,7 +129,7 @@ más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extr
 
 ### Plan de calidad
 
-`docs/plan-calidad-2026-08.md` es el **documento maestro** de deuda técnica y complejidad: **mapa de
+`docs/planes/referencia/calidad-y-medicion.md` es el **documento maestro** de deuda técnica y complejidad: **mapa de
 fases con su estado (§5.0)**, línea base de SonarQube, ranking de ficheros/funciones y la lista de
 **lo que NO hay que tocar** (§7 — `sqlTables.js` y los falsos positivos de Sonar entran ahí). Léelo
 antes de proponer un refactor. Aviso: las fases se llaman A…I por **el orden en que se descubrieron**,
@@ -137,16 +137,16 @@ no por prioridad ni por tema.
 
 Dos documentos satélite, cada uno con su problema:
 
-- `docs/plan-cobertura-2026-08.md` — **la cobertura**. Y lo primero que dice: el gate **no pide 80 %
+- `docs/planes/referencia/cobertura.md` — **la cobertura**. Y lo primero que dice: el gate **no pide 80 %
   global** (eso sería trabajo de años), pide 80 % de lo nuevo.
-- `docs/patrones-diseno-2026-08.md` — **cuándo usar un patrón de diseño y cuándo no**. En este repo la
+- `docs/planes/referencia/patrones-diseno.md` — **cuándo usar un patrón de diseño y cuándo no**. En este repo la
   complejidad se cura con tablas y extracción, no con jerarquías; hay tres sitios donde un patrón GoF
   sí se gana el sueldo y una lista de dónde sería sobreingeniería. Léelo antes de proponer uno.
 
 ### SonarQube — cómo está montado
 
 **Aquí va solo lo que no cambia.** Las cifras (complejidad, incidencias, cobertura, ranking) viven en
-`docs/plan-calidad-2026-08.md` y **cambian con cada escaneo**: no las repliques en este fichero.
+`docs/planes/referencia/calidad-y-medicion.md` y **cambian con cada escaneo**: no las repliques en este fichero.
 
 | Pieza | Dónde |
 |---|---|
@@ -199,7 +199,7 @@ rename puro conserva la marca, reescribir la línea la pierde.
 ### Process engine (core domain)
 Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in PostgreSQL. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.
 
-### Modos de emisión de entregables (single / replicated / routed) — LEER `docs/modelo-emision-entregables.md`
+### Modos de emisión de entregables (single / replicated / routed) — LEER `docs/arquitecturas/modelo-emision-entregables.md`
 Cada plantilla ligada declara su modo en `process_definition_templates.item_mode`:
 - **single**: entregable + flujo (entrega/firma) **predefinidos en la plantilla**; 1 instancia al lanzar.
 - **replicated**: flujo **predefinido**; el responsable crea N réplicas etiquetadas que **heredan** ese flujo.
@@ -207,7 +207,7 @@ Cada plantilla ligada declara su modo en `process_definition_templates.item_mode
 
 El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenecen a ningún proceso** (cualquier usuario, en cualquier momento; p. ej. "haz el informe de este evento"). **NO es "memorandums".**
 
-Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. **routed no autora flujo** (es de runtime). Estado: single/replicated hechos; **routed está a medias** (hoy solo elige 1 destinatario vía atajo `document_owner` sembrado; falta el editor de flujo en runtime). Ver el doc para detalle y deuda técnica.
+Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`; siguen en el ENUM por legado, pero fuera de la autoría web. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`) y el atajo `document_owner` sembrado **se retiró** (P1.4). Ver el doc para el detalle.
 
 ## Environments & ports
 `dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.

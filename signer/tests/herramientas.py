@@ -1,6 +1,6 @@
 """Herramientas de medición del microservicio. No son pruebas.
 
-Se usan para reproducir las cifras de `docs/auditoria-signer-2026-08.md` y para
+Se usan para reproducir las cifras de `docs/planes/referencia/signer.md` y para
 comprobar, después de cada fase de refactor, que la complejidad baja de verdad
 y que la red sigue cubriendo lo mismo.
 

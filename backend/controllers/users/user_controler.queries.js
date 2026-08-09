@@ -1,6 +1,6 @@
 // Acceso a datos (solo LECTURA) de user_controler.js: las queries que alimentan el
 // panel operativo, el centro de documentos, el centro de firmas y las bandejas.
-// Extraído en la Fase 3 (God Object #2). Ver docs/auditoria-refactor-user-controler-2026-07.md
+// Extraído en la Fase 3 (God Object #2). Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
 //
 // Todas reciben `pool`/`connection` explícitamente: no capturan estado de módulo ni
 // abren conexiones propias. Por eso este módulo NO importa nada — es el candidato

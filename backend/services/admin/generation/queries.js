@@ -1,6 +1,6 @@
 // Acceso a datos (solo LECTURA) de TaskGenerationService: los lookups que alimentan la
 // generación de tareas, la materialización de documentos y los flujos de llenado/firma.
-// Extraído en la Fase 3. Ver docs/auditoria-refactor-2026-07.md
+// Extraído en la Fase 3. Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 //
 // Todas reciben `connection` explícitamente: no abren conexiones ni tocan el pool. Eso
 // las hace trasladables tal cual a un repositorio si algún día se separa la capa.

@@ -14,7 +14,7 @@
 // La superficie pública del directorio son las DOS fachadas de este nivel: este fichero y
 // `TaskGenerationService.js`. Todo lo demás es interno.
 //
-// Ver docs/plan-calidad-2026-08.md
+// Ver docs/planes/referencia/calidad-y-medicion.md
 import { getPostgresPool } from "../../config/postgres.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 import OrgStructureService from "./org/orgStructure.js";

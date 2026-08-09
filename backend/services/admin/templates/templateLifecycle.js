@@ -25,7 +25,7 @@
 // a "se cumplen solas":
 //   · solo se deshace lo que ESTA llamada hizo (un `deliverable` reusado no registra nada);
 //   · se deshace en orden INVERSO al de creacion, obligatorio porque ninguna FK cascadea.
-// La compensacion la posee el paso que causo el efecto. Ver docs/patrones-diseno-2026-08.md §3.1.
+// La compensacion la posee el paso que causo el efecto. Ver docs/planes/referencia/patrones-diseno.md §3.1.
 
 import fs from "node:fs";
 import os from "node:os";

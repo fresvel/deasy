@@ -6,9 +6,9 @@
 > método sigue siendo la mejor referencia del repositorio. **Pero sus cifras son de julio de 2026 y
 > ninguna vale ya.**
 >
-> Para el estado actual y el *qué hacer*: **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**
+> Para el estado actual y el *qué hacer*: **[`docs/planes/referencia/calidad-y-medicion.md`](./calidad-y-medicion.md)**
 > —mapa de fases en §5.0—. Para elegir o descartar un patrón:
-> **[`docs/patrones-diseno-2026-08.md`](./patrones-diseno-2026-08.md)**.
+> **[`docs/planes/referencia/patrones-diseno.md`](./patrones-diseno.md)**.
 >
 > ⚠️ **Cuatro afirmaciones de este documento son FALSAS hoy.** Se dejan sin borrar para que el relato
 > se entienda, pero no las cites:
@@ -21,7 +21,7 @@
 > | Las marcas *won't fix* no sobreviven a mover código | **Refutado por medición**: sobreviven a un *rename*; lo que las tumba es **reescribir la línea** (§4.4-R1 del plan) |
 
 > Re-escaneo **SonarQube 26.7** sobre `develop @ 090dd44` (código **actual**, con las fases de refactor
-> de `plan-refactor-frontend.md` 0–4.2, la partición de `user_controler` M1–M4 y la extracción de
+> de `frontend.md` 0–4.2, la partición de `user_controler` M1–M4 y la extracción de
 > `SqlAdminService` ya aplicadas) cruzado con lectura estructural directa del código.
 > Complementa —no sustituye— a `auditoria-refactor-2026-07.md` (línea base) y
 > `auditoria-refactor-user-controler-2026-07.md`, **hoy archivados** en
@@ -479,7 +479,7 @@ Mapa verificado: `FirmarPdf:1293-1417,1517-1604` ≡ `MultiSignerPanel:736-944,1
 fork. **Insuficiente sin un tercer entregable**: `signatureService`/`useSignatureSubmission()` que absorba
 `confirmSign` + polling + los 17 `fetch` (lo que de verdad viola "no business logic en el frontend").
 
-> **Corrección al diagnóstico previo del sello fantasma** (§3.2 de `plan-refactor-frontend.md`): en
+> **Corrección al diagnóstico previo del sello fantasma** (§3.2 de `frontend.md`): en
 > `MultiSignerPanel` el ref `isMouseOverPdf` **sí se lee** (`:169`); el mecanismo real del bug es que
 > `handlePointerMove` (`:906-911`) reescribe `previewBoxStyle` **sin** la clave `display`, dejando
 > `display !== 'none'` permanentemente verdadero. Reverificar antes de escribir el test de caracterización.
@@ -506,7 +506,7 @@ fork. **Insuficiente sin un tercer entregable**: `signatureService`/`useSignatur
 
 ## 4. Admin → subrutas
 
-**Frontend: SÍ. Es la Fase 3.5 de `plan-refactor-frontend.md` sin ejecutar** — el último gran bloque sin
+**Frontend: SÍ. Es la Fase 3.5 de `frontend.md` sin ejecutar** — el último gran bloque sin
 migrar (`/home/*` y `/perfil/*` ya son rutas reales).
 
 - `/admin` es una **ruta plana** (`core/router/index.js:61`), sin `children`.

@@ -2,7 +2,7 @@
 
 > Censo realizado el **16-07-2026** sobre `backend/` (`develop`). Los números salen de analizar todas las
 > respuestas `res.status(4xx|5xx).json|send({...})` y extraer sus claves de primer nivel.
-> Surge de la fase 2.1 de `plan-refactor-frontend.md`, al descubrir por qué las vistas de auth leían el
+> Surge de la fase 2.1 de `frontend.md`, al descubrir por qué las vistas de auth leían el
 > error de cinco maneras distintas.
 
 ## 1. El problema, en una frase
@@ -77,7 +77,7 @@ Reglas:
 2. **El detalle técnico no viaja.** Va a `console.error` en el servidor, donde ya va hoy. Mandarlo al
    cliente no ayuda a quien lo lee y expone interioridades.
 3. **`ok` y `success` sobran.** El código HTTP ya dice si falló. Dos fuentes de verdad para lo mismo es
-   como acabaron `--deasy-*` y `--brand-*` en el CSS (ver `plan-refactor-frontend.md` §3.4).
+   como acabaron `--deasy-*` y `--brand-*` en el CSS (ver `frontend.md` §3.4).
 4. **`code` sólo si un cliente necesita ramificar.** Hoy lo usa `login_user.js`; que siga.
 5. **Nada de claves ad-hoc en la raíz.** `requires_document_selection`, `context`, `use`, `details`… si
    hacen falta datos, van bajo una clave `data`, no sueltas junto a `message`.

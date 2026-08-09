@@ -4,7 +4,7 @@
 // política del motor de generación (qué unidad aplica a un paso, a cuántas personas se
 // reparte una regla), y una rama mal puesta aquí asigna tareas a quien no toca.
 //
-// Ver docs/auditoria-refactor-2026-07.md
+// Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 
 import test from "node:test";
 import assert from "node:assert/strict";

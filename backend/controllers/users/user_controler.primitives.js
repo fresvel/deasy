@@ -1,5 +1,5 @@
 // Helpers puros de user_controler.js (sin acceso a datos ni estado de módulo).
-// Extraídos en la Fase 3 (God Object #2). Ver docs/auditoria-refactor-user-controler-2026-07.md
+// Extraídos en la Fase 3 (God Object #2). Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
 import { randomUUID } from "node:crypto";
 
 // --- Rutas de almacenamiento (construcción, sin IO) ---

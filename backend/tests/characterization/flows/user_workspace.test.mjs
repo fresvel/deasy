@@ -8,7 +8,7 @@
 // del controller. Extraer ese código sin golden-master sería refactorizar a ciegas.
 //
 // Estos snapshots fijan el contrato ANTES de mover una sola línea (módulos M3/M4 del
-// plan). Ver docs/auditoria-refactor-user-controler-2026-07.md
+// plan). Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
 //
 // REQUIERE: seed baseline + setup/seed_execution.mjs (igual que execution.test.mjs).
 // Un panel vacío no invalida el golden: fija la forma de la respuesta, que es lo que

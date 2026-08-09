@@ -1,6 +1,6 @@
 // Acceso a almacenamiento de user_controler.js: resolución de objetos en MinIO,
 // recolección de recursos de plantilla y empaquetado ZIP.
-// Extraído en la Fase 3 (God Object #2). Ver docs/auditoria-refactor-user-controler-2026-07.md
+// Extraído en la Fase 3 (God Object #2). Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
 //
 // Aquí viven las constantes de bucket porque `resolveStoredDocumentObject` depende de
 // ellas (por eso NO pudo ir a .primitives.js). Los handlers de la raíz las reimportan

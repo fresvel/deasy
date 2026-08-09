@@ -4,7 +4,7 @@
 > 📌 **Referencia del frontend — VIVA, pero PARCIALMENTE EJECUTADA.** El diagnóstico (§1-§4) sigue
 > valiendo y es la mejor descripción que hay del frontend. **El plan por fases (§5) está a medias**, y
 > el estado real —revalidado y medido— manda desde la **fase E de
-> [`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md) §5.0**. Si este documento y aquel se
+> [`docs/planes/referencia/calidad-y-medicion.md`](./calidad-y-medicion.md) §5.0**. Si este documento y aquel se
 > contradicen, **gana aquel**.
 >
 > ### Estado de las fases de §5 (actualizado 2026-08-09)
@@ -14,7 +14,7 @@
 > | **0** · Bugs y código muerto | ✅ hecha (16-07) |
 > | **1** · Red de seguridad | ✅ hecha (16-07) |
 > | **2** · Layouts de ruta | ⬜ **sin empezar** |
-> | **3** · Split de páginas | ⬜ **sin empezar** — `HomeView.vue` sigue en 350 de complejidad, intacto. Su red de regresión es `docs/linea-base-homeview-2026-07.md` |
+> | **3** · Split de páginas | ⬜ **sin empezar** — `HomeView.vue` sigue en 350 de complejidad y en **un solo componente**. Ojo, **no está «intacto»**: bajó de 7 445 a **5 215 L** en ~15 commits, y eso invalida dos filas de su contrato (el aside se rediseñó en `54e2f78`). Lo que no se ha hecho es **partirlo**. Red de regresión: [`linea-base-homeview.md`](./linea-base-homeview.md) |
 > | **3.5** · La URL como fuente de verdad | ✅ hecha (08-07): `AdminView` bajó de 153 a 115 |
 > | **4** · Colapsar duplicación | 🟡 parcial: se fueron dos componentes muertos y su CSS (08-09) |
 > | **5** · Deuda de composables | ✅ hecha, con alcance reducido: `useProcessPanels` posee su estado. **`useDeliverableView` NO entra** — es proyección read-only, 0 asignaciones `.value =` |
@@ -419,7 +419,7 @@ backend**; mientras tanto la traducción vive en un sitio en vez de en cinco.
 > 📄 **El problema es más grande de lo que se ve desde auth**: el censo completo dio **284 respuestas de
 > error con 13 formas distintas**, y **113 sitios del frontend** que las leen a mano en 30 ficheros. El
 > estado, el contrato objetivo y el plan de migración (que **no rompe nada** porque el helper ya actúa de
-> amortiguador) están en **`docs/contrato-errores-api.md`**.
+> amortiguador) están en **`docs/planes/referencia/contrato-errores-api.md`**.
 
 **Verificación — comparación de capturas contra golden master, no sólo "compila"**:
 

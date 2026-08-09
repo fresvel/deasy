@@ -9,7 +9,7 @@
 > en el skill `refactoring-guru`. Aquí solo está lo que aplica **a este repositorio**, con la
 > evidencia medida que lo respalda.
 >
-> Complementa a `docs/plan-calidad-2026-08.md`, que es el documento maestro y manda si hay conflicto.
+> Complementa a `docs/planes/referencia/calidad-y-medicion.md`, que es el documento maestro y manda si hay conflicto.
 > Escrito el **2026-08-09**.
 
 ---
@@ -27,7 +27,7 @@ Cuatro casos de este repositorio, todos con cifras de Sonar antes y después:
 | `validateTableRules` (cut #10) | 99 → **0** | *Replace Conditional with Registry* |
 | `postgres.js` (fase F) | 108 → **15** | Tabla de *spans* + un solo recorrido |
 | `useAdminSubmitFlow` (fase E-5) | 67 → **~7** | Tabla `CREATED_ROW_BY_TABLE` + *Extract* |
-| `saveTemplateArtifactDraft` (fase C) | 164 → **76** | *Extract Method* puro |
+| `saveTemplateArtifactDraft` (fase C) | 164 → **21** | *Extract Method* y, para el núcleo, **Command** (§3.1) |
 
 **El caso de `postgres.js` es el que mejor lo enseña.** Se atacó pensando «esto reescribe dialecto
 SQL, hazlo declarativo». El hallazgo real fue que **las dos funciones eran el mismo autómata copiado
@@ -211,9 +211,9 @@ qué hace algo, no es un refactor — es un cambio, va en otro commit y puede mo
 
 | Documento | Rol |
 |---|---|
-| `docs/plan-calidad-2026-08.md` | **Documento maestro.** Estado de las fases (§5.0), ranking de complejidad y lo que NO hay que tocar (§7) |
-| `docs/plan-cobertura-2026-08.md` | **La cobertura tiene plan propio**, porque es otro problema |
-| `docs/auditoria-signer-2026-08.md` | Mapa por bandas de `signer/app.py` y sus 12 riesgos |
-| `docs/auditoria-god-objects-2026-07.md` | Bitácora de los 10 cortes: aquí está el *qué*, allí el *cómo se hizo* |
+| `docs/planes/referencia/calidad-y-medicion.md` | **Documento maestro.** Estado de las fases (§5.0), ranking de complejidad y lo que NO hay que tocar (§7) |
+| `docs/planes/referencia/cobertura.md` | **La cobertura tiene plan propio**, porque es otro problema |
+| `docs/planes/referencia/signer.md` | Mapa por bandas de `signer/app.py` y sus 12 riesgos |
+| `docs/planes/referencia/god-objects-2026-07.md` | Bitácora de los 10 cortes: aquí está el *qué*, allí el *cómo se hizo* |
 | skill `refactoring-guru` | El catálogo completo: 22 patrones, 66 técnicas, 23 olores |
 | skill `tailadmin-ui` | Antes de tocar estilos: tres colisiones activas que rompen las recetas |

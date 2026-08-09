@@ -1,7 +1,7 @@
 # Plan de cobertura — agosto 2026
 
 > **Documento ejecutable.** Escrito para que una sesión nueva pueda arrancar sin contexto previo.
-> Complementa a `docs/plan-calidad-2026-08.md`, que es el documento maestro de calidad; este solo
+> Complementa a `docs/planes/referencia/calidad-y-medicion.md`, que es el documento maestro de calidad; este solo
 > trata cobertura. Si hay conflicto, manda el maestro.
 >
 > **Medición:** SonarQube en `:9002`, rama `develop`. **Actualizado el 2026-08-09.**
@@ -281,7 +281,7 @@ de la lista pese a su tamaño.
 | `utils/login/generate_token.js`, `utils/tokenGenerator.js` | 52 | Puros |
 
 Los controllers son transporte: sus tests son sobre **códigos de estado y forma de la respuesta**, con
-el servicio doblado. Hay un contrato escrito en `docs/contrato-errores-api.md` — **léelo antes**, y no
+el servicio doblado. Hay un contrato escrito en `docs/planes/referencia/contrato-errores-api.md` — **léelo antes**, y no
 inventes contratos nuevos.
 
 ### 4.1 Qué se le pide a cada agente

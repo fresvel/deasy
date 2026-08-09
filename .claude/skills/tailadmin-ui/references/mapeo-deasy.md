@@ -86,7 +86,7 @@ var(--brand-*) fuera de shared/styles/ → 3 ficheros
 - `modules/firmas/components/FirmarPdf.vue`
 - `shared/components/buttons/BtnSera.vue`
 
-> **Corrige a `plan-refactor-frontend.md` §3.4.** El doc dice «Sólo 3 archivos de 144 usan un token
+> **Corrige a `frontend.md` §3.4.** El doc dice «Sólo 3 archivos de 144 usan un token
 > `var(--deasy-*)`». Son **0**: los 3 ficheros usan `--brand-*`, no `--deasy-*`. `--deasy-*` es un
 > **detalle interno de `tailwind.css`** — no ha salido nunca de su fichero.
 >
@@ -96,7 +96,7 @@ var(--brand-*) fuera de shared/styles/ → 3 ficheros
 
 ### 1.5 **[PROBADO]** `theme.css:36-39` reescribe la escala de radios de Tailwind
 
-Éste no aparece en `plan-refactor-frontend.md` y está **activo hoy en toda la app**.
+Éste no aparece en `frontend.md` y está **activo hoy en toda la app**.
 
 `theme.css:36-39` declara `--radius-lg/-md/-sm` en un `:root` **sin capa**. Tailwind v4 declara
 **esos mismos nombres** dentro de `@layer theme`. Por la cascada CSS, **lo no-capado gana a lo
@@ -367,6 +367,6 @@ En orden. Los pasos 1-3 son bloqueantes: sin ellos, cada receta importada nace r
 **Orden sugerido**: 2 → 3 → 4 (aditivos, sin riesgo visual; ya permiten pegar una receta de prueba)
 → 1 → 5 → 6 → 7 (cambios de aspecto, uno a uno con capturas).
 
-> El paso 1 y la §3.6 del plan chocan: `plan-refactor-frontend.md` §Fase X dice «no migrar los 1269
+> El paso 1 y la §3.6 del plan chocan: `frontend.md` §Fase X dice «no migrar los 1269
 > hardcodes antes de esto». Con 2818 utilidades crudas y **0 tests de componente**, la Fase X necesita
 > capturas golden-master (el método que ya se usó en la Fase 2.1) antes de tocar `--radius-*`.

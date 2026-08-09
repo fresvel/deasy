@@ -42,7 +42,7 @@
 > **Quality Gate: sigue en ERROR, y es correcto que lo esté.** `new_violations` 114 y `new_coverage`
 > 39,2 % contra un umbral del 80 %. No mide el código viejo: mide lo tocado desde el 2026-07-09, que
 > es casi todo el trabajo de estos días. El gate se cierra escribiendo test de lo nuevo, no
-> persiguiendo el global (ver `docs/plan-cobertura-2026-08.md` §0.1).
+> persiguiendo el global (ver `docs/planes/referencia/cobertura.md` §0.1).
 >
 > Los tests pasaron de 218+161 a **389 unitarios + 238 de caracterización + 304 de frontend +
 > 266 del signer**.
@@ -58,9 +58,9 @@
 > porque nunca se conectó `sonar.python.coverage.reportPaths`: `app.py`, el fichero más complejo del
 > repo, está en realidad al **88 %**. Conectarlo subió el global de 14,2 a 16,2 % sin escribir un solo
 > test. Ojo con la lectura del 16 %: **el gate no pide 80 % global** —eso sí serían años— sino 80 % de
-> lo nuevo. Ver `docs/plan-cobertura-2026-08.md` §0.1.
+> lo nuevo. Ver `docs/planes/referencia/cobertura.md` §0.1.
 >
-> **Cobertura:** 0 % → **14,2 %**. El plan para seguir es `docs/plan-cobertura-2026-08.md`.
+> **Cobertura:** 0 % → **14,2 %**. El plan para seguir es `docs/planes/referencia/cobertura.md`.
 >
 > **Este re-escaneo absorbe los cambios que la versión anterior del documento tenía pendientes**
 > (`e93cec4`, `7d39355`, `b357559`, `b86be28`, `514b67e`): ya no hay delta que arrastrar, todas las
@@ -185,7 +185,7 @@ el mismo trabajo de las fases C/E/F, contado en el New Code.
 
 Y el gate seguirá en ERROR aunque se cierren las 105, porque `new_coverage` está en 34,5 contra un
 umbral de 80. Eso ya no es un defecto del instrumento (H2 está cerrado): es el trabajo de
-`docs/plan-cobertura-2026-08.md`.
+`docs/planes/referencia/cobertura.md`.
 
 **H4 — Sonar no corre en CI, y NO es «añadir un step»: falta un servidor alcanzable**
 *(diagnosticado y corregido el 2026-08-08)*.
@@ -559,7 +559,7 @@ a "arreglar":
 
 - ~~`SIGUIENTE-SESION-fase5-y-X.md:8` remite a `SIGUIENTE-SESION-complejidad-backend.md`~~ → **hecho**:
   hoy remite a `SIGUIENTE-SESION-saveTemplateArtifactDraft.md` y deja constancia del cambio.
-- ~~`docs/auditoria-god-objects-2026-07.md` termina con basura XML~~ → **hecho**: `grep` de
+- ~~`docs/planes/referencia/god-objects-2026-07.md` termina con basura XML~~ → **hecho**: `grep` de
   `</content>|</invoke>` da **0 coincidencias**.
 
 ### 4.4 Lo que este re-escaneo REFUTÓ
@@ -629,7 +629,7 @@ renames, así que el código movido **no** entra como código nuevo. No hay que 
 | **I · Residuos de la migración** | SQL de MySQL vivo en PostgreSQL: cuatro `UPDATE … JOIN` que reventaban al ejecutarse | ✅ **Hecha** — incluía **una función rota para todos los usuarios** |
 
 **Fuera de este documento**, porque es otro problema: la **cobertura** tiene su propio plan ejecutable
-en `docs/plan-cobertura-2026-08.md`.
+en `docs/planes/referencia/cobertura.md`.
 
 #### Lo único que queda pendiente, en orden
 
@@ -868,7 +868,7 @@ compartido o `<input>` suelto antes de decidir por dónde entrar. Medir tras el 
 > variables (`createdId`, `uploadedToMinio`, `insertedDeliverableId`, `insertedLinkId`) compartidas
 > entre el `try` y el `catch` porque no hay transacción. Es el olor **Temporary Field**.
 >
-> La respuesta fue **Command** (`docs/patrones-diseno-2026-08.md` §3.1): **cada paso registra su
+> La respuesta fue **Command** (`docs/planes/referencia/patrones-diseno.md` §3.1): **cada paso registra su
 > propio deshacer en cuanto tiene éxito**, y el `catch` solo desapila. Tres de las cuatro variables
 > desaparecen —`createdId` se queda porque es el resultado, no compensación— y **dos invariantes
 > pasan de "hay que acordarse" a "se cumplen solas"**:
@@ -1039,7 +1039,7 @@ el segundo peor del repo tras los datos de `sqlTables.js`).
 
 ### Fase E — Frontend: las piezas pendientes del plan de julio
 
-Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda nueva (E-4):
+Lo que sobrevive de `frontend.md` tras revalidarlo, más una deuda nueva (E-4):
 
 1. **Fase 5 (alcance reducido)** — `useProcessPanels.js` pasa a poseer su estado (155 L, 28
    asignaciones a refs ajenos). Imitar `useDeliverableFilePreview` / `useDocumentCenter` /
@@ -1136,7 +1136,7 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
 
 ### Fase F — Los dos nunca auditados
 
-- **`signer/app.py`** — 🟡 **auditado y con red (2026-08-07)**, ver `docs/auditoria-signer-2026-08.md`.
+- **`signer/app.py`** — 🟡 **auditado y con red (2026-08-07)**, ver `docs/planes/referencia/signer.md`.
   **El diagnóstico de este plan estaba invertido.** Se daba por hecho que lo temido era la firma; es al
   revés: la firma real son **88 líneas con cognitiva 17**, y el **81 % de la complejidad marcada**
   (148 de 183 puntos, 6 de las 8 funciones) está en **leer identidad de certificados ecuatorianos**,
@@ -1348,7 +1348,7 @@ mueve la seguridad de D a C**, y es el mejor retorno por esfuerzo de todo el doc
 | 8 | `S2068` contraseñas | **Son las credenciales demo documentadas**: `SystemBootstrapView.vue:389-397` (los 3 usuarios de ejemplo, contados x2 porque cada línea lleva `password` y `confirm_password`), `genericCatalog.js:283` (`DEMO_USER_PASSWORD`) y `generate_demo_certificates.mjs:26`. Reales y deliberadas — están hasta en CLAUDE.md. **Decisión pendiente**: sacarlas a variable de entorno con default, o marcarlas |
 | 7 | `S5693` límite de tamaño | **Falsos positivos.** La regla no dice «falta límite», dice «revisa que el límite sea seguro» — y **los 7 declaran `limits.fileSize`** (10/30/50 MB). El único discutible es `chat_router.js:27`: **100 MB × 5 ficheros = 500 MB por petición** |
 | 6 | `S2245` `Math.random` | **Falsos positivos de seguridad**, pero uno es deuda real: `SInput.vue:64` genera **ids del DOM** con `Math.random().toString(36).substr(2,9)` — justo lo que la Fase B sustituyó por `useId()` en todo lo demás, y con `substr` deprecado encima. Cambiarlo cierra la marca y alinea el componente |
-| 4 | `python:S5332` AMQP | **Es el riesgo R-1 ya conocido** de `docs/auditoria-signer-2026-08.md`: la contraseña del PKCS#12 viaja en el cuerpo del mensaje por AMQP sin TLS. No es hallazgo nuevo; es el mismo, contado cuatro veces |
+| 4 | `python:S5332` AMQP | **Es el riesgo R-1 ya conocido** de `docs/planes/referencia/signer.md`: la contraseña del PKCS#12 viaja en el cuerpo del mensaje por AMQP sin TLS. No es hallazgo nuevo; es el mismo, contado cuatro veces |
 | 4 | `S4036` `PATH` en `execFile` | `kernel/storage.js:78`, `user_controler.storage.js:98`, `sign_controller.js:499`, `templateArchive.js:111`. **Piden lectura una a una** — es el único grupo del que no puedo afirmar que sea inocuo sin mirar cada invocación |
 | 3 | `javascript:S5332` `http://` | Endpoints internos de la red Docker (`minio_service.js`, `rabbitmq_http.js`, `mailer.js`). Inocuos dentro del compose; **dejan de serlo si algún día MinIO sale de la red interna** |
 | 1 | `S2612` permisos | `templateArchive.js:138` |
@@ -1497,24 +1497,24 @@ había vivos, **uno se archivó por estar ejecutado** y dos llevan ahora su esta
 
 | Documento | Rol y qué queda |
 |---|---|
-| `docs/plan-cobertura-2026-08.md` | **La cobertura, que es otro problema.** Su **Fase 0 está hecha** (la de Python, +2,2 puntos gratis); quedan las fases 1 y 2. Lo primero que dice, y hay que retenerlo: **el gate no pide 80 % global**, pide 80 % de lo nuevo |
-| `docs/plan-refactor-frontend.md` | **Referencia del frontend.** El diagnóstico vale entero; el plan por fases **está a medias** y su cabecera lleva la tabla de estado. Pendientes de verdad: **layouts de ruta**, **split de `HomeView`** y **colapsar los tokens** del sistema de diseño |
-| `docs/auditoria-signer-2026-08.md` | **El microservicio de firma.** El corte de identidad está hecho; quedan el traslado a fichero propio (F4) y los riesgos que piden decisión, entre ellos **R-1: la contraseña del PKCS#12 viaja por AMQP sin TLS** |
+| `docs/planes/referencia/cobertura.md` | **La cobertura, que es otro problema.** Su **Fase 0 está hecha** (la de Python, +2,2 puntos gratis); quedan las fases 1 y 2. Lo primero que dice, y hay que retenerlo: **el gate no pide 80 % global**, pide 80 % de lo nuevo |
+| `docs/planes/referencia/frontend.md` | **Referencia del frontend.** El diagnóstico vale entero; el plan por fases **está a medias** y su cabecera lleva la tabla de estado. Pendientes de verdad: **layouts de ruta**, **split de `HomeView`** y **colapsar los tokens** del sistema de diseño |
+| `docs/planes/referencia/signer.md` | **El microservicio de firma.** El corte de identidad está hecho; quedan el traslado a fichero propio (F4) y los riesgos que piden decisión, entre ellos **R-1: la contraseña del PKCS#12 viaja por AMQP sin TLS** |
 
 ### Referencia y criterio — consúltalos, no hay nada que ejecutar
 
 | Documento | Rol |
 |---|---|
-| `docs/patrones-diseno-2026-08.md` | **Cuándo un patrón sí y cuándo no**, con la evidencia medida de este repo: aquí la complejidad se cura con tablas y extracción, no con jerarquías. Léelo **antes** de proponer un patrón |
-| `docs/linea-base-homeview-2026-07.md` | **Contrato observable de `HomeView` antes de partirlo.** Sigue vivo justamente porque **HomeView no se ha tocado**: es la red de regresión del día que se haga |
-| `docs/contrato-errores-api.md` | La forma de los errores HTTP. Se usó para arreglar el `fileFilter` de multer |
-| `docs/modelo-emision-entregables.md` · `docs/fotos-perfil-minio.md` | Diseño de dominio |
+| `docs/planes/referencia/patrones-diseno.md` | **Cuándo un patrón sí y cuándo no**, con la evidencia medida de este repo: aquí la complejidad se cura con tablas y extracción, no con jerarquías. Léelo **antes** de proponer un patrón |
+| `docs/planes/referencia/linea-base-homeview.md` | **Contrato observable de `HomeView` antes de partirlo.** Sigue vivo porque **no se ha PARTIDO** — que no es lo mismo que «no se ha tocado»: bajó de 7 445 a 5 215 L y dos de sus filas ya no son ciertas. Es la red de regresión del día que se parta, y hay que revalidarla antes de usarla |
+| `docs/planes/referencia/contrato-errores-api.md` | La forma de los errores HTTP. Se usó para arreglar el `fileFilter` de multer |
+| `docs/arquitecturas/modelo-emision-entregables.md` · `docs/03-backend/fotos-perfil-minio.md` | Diseño de dominio |
 
 ### Cerrados y archivados
 
 | Documento | Por qué |
 |---|---|
-| `docs/auditoria-god-objects-2026-07.md` | **Bitácora cerrada.** El *cómo se hizo* de los 10 cuts sigue siendo la mejor referencia de método, pero **sus cifras son de julio y ninguna vale**. Su cabecera lista las cuatro afirmaciones que hoy son falsas |
+| `docs/planes/referencia/god-objects-2026-07.md` | **Bitácora cerrada.** El *cómo se hizo* de los 10 cuts sigue siendo la mejor referencia de método, pero **sus cifras son de julio y ninguna vale**. Su cabecera lista las cuatro afirmaciones que hoy son falsas |
 | `docs/docs-md-antiguos/planes-cerrados-2026-08/plan-limpieza-scripts-2026-08.md` | **Archivado el 2026-08-09**: ejecutado por completo. `backend/scripts/` tiene hoy los 5 artefactos previstos + `lib/` |
 | ~~`SIGUIENTE-SESION-fase5-y-X.md`~~ · ~~`SIGUIENTE-SESION-saveTemplateArtifactDraft.md`~~ | Archivados el 2026-08-08; ambos cumplidos (§5-E y §5-C) |
 | `docs/docs-md-antiguos/refactor-2026-07/` | La auditoría base de julio, el plan de `user_controler` con sus M1-M4, la auditoría de tests unitarios y el plan de `AdminTableManager` de marzo |

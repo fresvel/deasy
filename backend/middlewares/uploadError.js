@@ -7,7 +7,7 @@
 // fuga de información, y además el cliente recibe HTML donde espera JSON. Lo destapó
 // `tests/characterization/flows/zzzz_sign_batch.test.mjs` (`sign_mimetype_rechazado`).
 //
-// CONTRATO. Responde con la forma objetivo de `docs/contrato-errores-api.md` §4: `{ message, code }`,
+// CONTRATO. Responde con la forma objetivo de `docs/planes/referencia/contrato-errores-api.md` §4: `{ message, code }`,
 // mensaje en español para la persona y código estable para que el cliente ramifique. El detalle
 // técnico se queda en el log del servidor, que es su sitio.
 //

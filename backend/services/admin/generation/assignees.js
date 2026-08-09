@@ -1,6 +1,6 @@
 // Resolución de RESPONSABLES de los pasos de flujo, y reparación de las solicitudes de
 // llenado cuando el flujo cambia. Extraído de TaskGenerationService en la Fase 3.
-// Ver docs/auditoria-refactor-2026-07.md
+// Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 //
 // Es el "quién hace el paso": traduce la declaración de un paso (cargo en tal ámbito,
 // puesto concreto, responsable de la tarea...) a personas de carne y hueso. Si esto se

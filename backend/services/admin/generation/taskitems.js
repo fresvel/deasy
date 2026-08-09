@@ -1,5 +1,5 @@
 // Materialización de TASK_ITEMS y de las asignaciones de una tarea.
-// Extraído de TaskGenerationService en la Fase 3. Ver docs/auditoria-refactor-2026-07.md
+// Extraído de TaskGenerationService en la Fase 3. Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 //
 // Aquí se decide qué entregables (task_items) existen en una tarea y a qué posiciones se
 // asigna, aplicando las reglas de reparto (process_target_rules) del proceso.

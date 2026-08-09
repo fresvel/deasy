@@ -1,5 +1,5 @@
 // Helpers puros de TaskGenerationService (sin `connection`, sin estado de módulo).
-// Extraídos en la Fase 3. Ver docs/auditoria-refactor-2026-07.md
+// Extraídos en la Fase 3. Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 //
 // Son las tres decisiones "de política" del motor de generación: qué ámbito de unidad
 // aplica a un paso, si un contexto debe inferir flujo de firma, y cómo se recorta la

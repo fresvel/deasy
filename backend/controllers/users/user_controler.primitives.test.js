@@ -5,7 +5,7 @@
 // tests de los endpoints. Aquí se prueban aisladas, que es donde vive su lógica de
 // ramas (resolución de jerarquías, coincidencia de reglas, permiso de reinicio).
 //
-// Ver docs/auditoria-refactor-user-controler-2026-07.md
+// Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
 
 import test from "node:test";
 import assert from "node:assert/strict";

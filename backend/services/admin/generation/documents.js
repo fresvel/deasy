@@ -1,6 +1,6 @@
 // DOCUMENTOS y FLUJO DE LLENADO de una tarea: materializar el documento de un
 // task_item, resolver su propietario/unidad de origen y montar el flujo de llenado.
-// Extraído de TaskGenerationService en la Fase 3. Ver docs/auditoria-refactor-2026-07.md
+// Extraído de TaskGenerationService en la Fase 3. Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
 //
 // `ensureSignatureFlowForDocumentVersion` es hoy un delegador de una línea a
 // DocumentSignatureWorkflowService: la firma se movió allí, aquí solo queda el punto de

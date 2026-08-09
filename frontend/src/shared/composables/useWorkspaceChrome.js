@@ -22,7 +22,7 @@ const DESKTOP_BREAKPOINT = 1280;
  *   abierto, cerrar paneles) y solo despues cae en la misma logica. Por eso se expone la pieza compartida
  *   y no el handler completo: home la llama al final del suyo.
  *
- * Cuando el shell pase a ser layout de ruta (ver docs/plan-refactor-frontend.md, fase 3), este estado
+ * Cuando el shell pase a ser layout de ruta (ver docs/planes/referencia/frontend.md, fase 3), este estado
  * subira al layout y las paginas dejaran de verlo. Este composable es el paso intermedio que quita la
  * duplicacion sin tocar el router todavia.
  */

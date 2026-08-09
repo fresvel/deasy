@@ -10,7 +10,7 @@ Servicio que firma documentos PDF usando pyhanko, MinIO y canvas para el estampa
 >
 > El mapa completo del microservicio —responsabilidades, contratos que no se pueden romper,
 > defectos conocidos y plan de refactor por fases— está en
-> [`docs/auditoria-signer-2026-08.md`](../docs/auditoria-signer-2026-08.md).
+> [`docs/planes/referencia/signer.md`](../docs/planes/referencia/signer.md).
 
 ## Pruebas
 

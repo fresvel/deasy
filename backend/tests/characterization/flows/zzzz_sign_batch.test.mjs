@@ -226,7 +226,7 @@ test("POST /sign con un no-PDF en el campo pdf -> 400 JSON, sin HTML ni stack tr
     esJson: typeof res.body === "object" && res.body !== null,
     filtra_stack_trace: cuerpo.includes("at fileFilter") || cuerpo.includes("/app/backend/"),
     menciona_el_campo: cuerpo.includes("Tipo de archivo no permitido"),
-    // El contrato objetivo de `docs/contrato-errores-api.md` §4: mensaje humano + código estable.
+    // El contrato objetivo de `docs/planes/referencia/contrato-errores-api.md` §4: mensaje humano + código estable.
     claves: typeof res.body === "object" && res.body !== null ? Object.keys(res.body).sort() : null,
   });
 });

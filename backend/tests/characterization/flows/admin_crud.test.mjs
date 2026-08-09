@@ -268,7 +268,7 @@ for (const [key, path] of READ_SUBSYSTEM_CASES) {
 // ÉXITO, que el refactor debe preservar. Son AUTOLIMPIANTES (crear -> fijar -> borrar) para no
 // alterar los conteos de las huellas `list_*` de la sección 5. El mapa de cobertura completo
 // (qué graft se cubre cómo, y la estrategia por-tabla del cut #7) está en
-// docs/auditoria-god-objects-2026-07.md.
+// docs/planes/referencia/god-objects-2026-07.md.
 
 test("POST /admin/sql/persons -> graft: hashea la contraseña (no la devuelve) y genera token", async () => {
   const token = await tokenFor("admin");

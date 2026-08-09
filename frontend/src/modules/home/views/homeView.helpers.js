@@ -2,7 +2,7 @@
 // Extraidos en la Fase A del refactor del God Object (HomeView.vue, 7445 L). Son
 // formateadores de fecha/tamano y traductores de estado/etiqueta/clase de los flujos de
 // entrega y firma. Al no tocar refs ni el DOM, son testeables con Vitest en aislamiento.
-// Ver docs/linea-base-homeview-2026-07.md
+// Ver docs/planes/referencia/linea-base-homeview.md
 
 export const formatAttachmentSize = (bytes) => {
   const value = Number(bytes || 0);

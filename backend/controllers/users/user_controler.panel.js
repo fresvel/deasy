@@ -1,5 +1,5 @@
 // Ensamblado del PANEL OPERATIVO del usuario para una configuración de proceso.
-// Extraído en la Fase 3 (God Object #2). Ver docs/auditoria-refactor-user-controler-2026-07.md
+// Extraído en la Fase 3 (God Object #2). Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
 //
 // Es la función más compleja del controller (~400 L): orquesta ~17 queries de
 // .queries.js y las primitivas de resolución de reglas para responder "qué ve este
