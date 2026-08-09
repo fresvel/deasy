@@ -352,7 +352,7 @@ test("una solicitud manual sin responsable se auto-asigna a quien la opera", asy
   assert.equal(update.params[0], 4, "el UPDATE debe poner al operador como responsable");
 });
 
-test("aprobar el último paso sin PDF en working aborta y deshace la transacción", async () => {
+test("aprobar el último paso sin PDF en working es 409, no 500, y deshace la transacción", async () => {
   const connection = fakeConnection((sql) => {
     if (sql.includes("FROM fill_requests fr")) {
       return [[contextoDe({
@@ -371,7 +371,9 @@ test("aprobar el último paso sin PDF en working aborta y deshace la transacció
       { userId: 9, requestId: 1, action: "approve", nextStatus: "approved" },
       { pool: poolCon(connection), findUserById: usuario },
     ),
-    /requiere un PDF en working/,
+    // El código ES el contrato: era 500 (defecto 1.2) y ahora es 409, como los otros dos guards de
+    // estado del mismo servicio. Sin esta aserción, cambiarlo a `new Error` otra vez pasaría mudo.
+    (error) => error.statusCode === 409 && /requiere un PDF en working/.test(error.message),
   );
   assert.equal(connection.queries.at(-2).sql, "ROLLBACK");
   assert.equal(connection.queries.at(-1).sql, "RELEASE");

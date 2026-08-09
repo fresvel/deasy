@@ -10,7 +10,7 @@
 // `tests/characterization/flows/zzzz_sign_workflow.test.mjs`:
 //   pool caído (500) -> actor inválido (500) -> id inválido (400) -> no existe (404) ->
 //   no es tuya (403) -> sin responsable resoluble (409) -> transición ilegal (409) ->
-//   (solo approve) falta el PDF en working (500).
+//   (solo approve) falta el PDF en working (409).
 //
 // Los errores de NEGOCIO llevan `statusCode` (ver `errors/HttpError.js`); los que no lo llevan son
 // fallos de verdad y el controller los devuelve como 500. Ese contrato es el que impide que un
@@ -129,6 +129,27 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
     return false;
   }
 
+  // MIRA LA EXTENSIÓN A PROPÓSITO, NO QUE EL OBJETO EXISTA EN MinIO. Se evaluó añadir un
+  // `statMinioObject` aquí (fila 1.2 del plan maestro) y se descartó, por este orden:
+  //   1. La comprobación que GARANTIZA algo ya existe, en el punto de uso: `PdfSigningService.js`
+  //      hace `statMinioObject` justo antes de mandar el PDF a firmar. Repetirla aquí no cierra
+  //      nada — entre aprobar y firmar el objeto puede desaparecer igual (TOCTOU), así que este
+  //      `stat` sería orientativo, nunca una garantía.
+  //   2. Invertiría las capas. Este servicio no sabe en qué bucket vive la ruta; para saberlo
+  //      necesita `resolveStoredDocumentObject` y las constantes de bucket, que viven en
+  //      `controllers/users/user_controler.storage.js`. Un servicio importando de un controller
+  //      rompe la regla de capas; copiar aquí el mapeo ruta→bucket lo duplica.
+  //   3. Iría DENTRO de la transacción abierta por `updateFillRequestStatus`. Medido contra el
+  //      MinIO de dev: 24 ms en frío, 3 ms en caliente — barato, sí, pero es una llamada a un
+  //      servicio externo sosteniendo una conexión de PostgreSQL, y `minio_service.js` no fija
+  //      ningún timeout: si MinIO se degrada, la transacción se queda abierta lo que él tarde.
+  //   4. El error no mejoraría. Para el usuario, "la ruta no es un PDF" y "la ruta es .pdf pero el
+  //      objeto no está" tienen el MISMO remedio (volver a subir el archivo) y hoy ya salen los dos
+  //      con un 409 accionable.
+  //   5. El camino normal no produce ese estado: la única escritura de `working_file_path` desde el
+  //      usuario (`user_controler.js`) sube el objeto a MinIO ANTES de tocar la base, y la escritura
+  //      es transaccional. Una ruta viva con el objeto ausente exige editar `document_versions` por
+  //      el CRUD de admin o borrar el objeto a mano.
   const workingPath = String(context.working_file_path || "").trim().toLowerCase();
   return !workingPath.endsWith(".pdf");
 };
@@ -201,7 +222,12 @@ export const updateFillRequestStatus = async (
     if (action === "approve") {
       const requiresPdf = await requiresSignaturePdfForFinalFillApproval(connection, context);
       if (requiresPdf) {
-        throw new Error(
+        // 409 y no 500: la petición está bien formada y el servidor está sano; lo que no admite la
+        // operación es el ESTADO del recurso (el archivo de trabajo no es un PDF y el último paso
+        // desemboca en firma). Mismo razonamiento —y mismo código— que el guard de "sin responsable
+        // resoluble" de justo arriba y que el de transición ilegal. 400 diría "arregla tu petición",
+        // y esta petición no tiene nada que arreglar: no lleva cuerpo, y el remedio es subir el PDF.
+        throw conflict(
           "El último paso del flujo de entrega requiere un PDF en working para habilitar la firma."
         );
       }

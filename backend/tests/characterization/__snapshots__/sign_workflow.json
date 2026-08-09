@@ -45,6 +45,12 @@
       "status": "approved"
     }
   },
+  "approve_sin_pdf": {
+    "status": 409,
+    "body": {
+      "error": "El último paso del flujo de entrega requiere un PDF en working para habilitar la firma."
+    }
+  },
   "approve_sin_pdf_rollback": {
     "status": "pending"
   },
@@ -56,12 +62,6 @@
       "flowStatus": "pending",
       "message": "Solicitud de entrega actualizada.",
       "status": "cancelled"
-    }
-  },
-  "defecto_approve_sin_pdf": {
-    "status": 500,
-    "body": {
-      "error": "El último paso del flujo de entrega requiere un PDF en working para habilitar la firma."
     }
   },
   "id_cero": {

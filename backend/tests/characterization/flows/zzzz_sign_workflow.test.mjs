@@ -14,7 +14,7 @@
 //   5. el actor no es el asignado              -> 403  "No puedes operar una solicitud ... otro usuario."
 //   6. sin responsable y no manual             -> 409  "...no tiene un responsable resoluble."
 //   7. la transición no está permitida         -> 409  "La solicitud no puede pasar de X usando Y."
-//   8. (solo approve) falta el PDF en working  -> 500  "El último paso ... requiere un PDF ..."
+//   8. (solo approve) falta el PDF en working  -> 409  "El último paso ... requiere un PDF ..."
 // El 404 va ANTES del 403: una solicitud inexistente y una ajena se distinguen por el código.
 //
 // ⚠️ PREFIJO "zzzz_" DELIBERADO, y este es el flow MÁS destructivo del harness. Corre el último de
@@ -51,8 +51,18 @@
 //   fallo del servidor, es un conflicto con el estado del recurso (§4 de este fichero). Los goldens
 //   pasaron a llamarse `sin_responsable_usuario` / `sin_responsable_gestor`.
 //
+// ✅ DEFECTO 2, ARREGLADO EL 2026-08-09 (fila 1.2 del plan maestro). "Falta el PDF en working" es una
+//   regla de NEGOCIO y salía como 500. Hoy sale 409, igual que los otros dos guards de estado de este
+//   mismo servicio: la petición está bien formada (no lleva ni cuerpo) y el servidor está sano; lo que
+//   no admite la operación es el estado del recurso. El diff del golden (500 -> 409, y la clave
+//   renombrada de `defecto_approve_sin_pdf` a `approve_sin_pdf`) ES la prueba.
+//   El SEGUNDO matiz de esa fila —"el guard mira solo la extensión, no que el objeto exista en
+//   MinIO"— se evaluó y se DESCARTÓ a propósito; el porqué, con las cinco razones y la medición de
+//   latencia, está escrito encima de la propia consulta en `FillRequestWorkflowService.js`. La
+//   consecuencia visible aquí es que el caso feliz de la §5 aprueba con una ruta `.pdf` FABRICADA,
+//   sin objeto detrás: si algún día se añade el `stat`, ese golden se cae y hay que sembrar MinIO.
+//
 // DEFECTOS CONGELADOS A PROPÓSITO (patrón §3.1.b: el diff del golden será la prueba del arreglo):
-//   2. La regla de negocio "falta el PDF en working" sale como 500, no como 409/400.
 //   4. Con `is_manual = 1` y sin responsable, CUALQUIER usuario con `fill_flows.update` se apropia
 //      de la solicitud al iniciarla (el UPDATE le pone su propio id).
 
@@ -259,12 +269,15 @@ test("cancelled -> approve -> 409 (cancelar también es terminal)", async () => 
 
 // ─── 3. El guard propio de `approve` ────────────────────────────────────────────────────────────
 
-// 🔴 DEFECTO 2 — regla de negocio devuelta como error de servidor. Sin `assert`: el golden manda.
-test("approve del último paso sin PDF en working -> 500 (DEFECTO: debería ser 409/400)", async () => {
+// ✅ Antes DEFECTO 2 (arreglado el 2026-08-09). La regla de negocio "el último paso desemboca en
+// firma y el archivo de trabajo no es un PDF" salía como 500. Ahora hay `assert`: el contrato dejó de
+// ser "revienta" y pasó a ser el mismo 409 que la transición ilegal y que "sin responsable resoluble".
+test("approve del último paso sin PDF en working -> 409 (no 500: es regla de negocio)", async () => {
   await ponerEnEstado({ status: "pending", responded_at: null, response_note: null });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "approve"), { token });
-  matchSnapshot(SUITE, "defecto_approve_sin_pdf", snapshotShape(res, OBJ_OPTS));
+  assert.equal(res.status, 409, "aprobar sin PDF es un conflicto de estado, no un fallo del servidor");
+  matchSnapshot(SUITE, "approve_sin_pdf", snapshotShape(res, OBJ_OPTS));
 });
 
 test("el approve fallido no cambió el estado de la solicitud", async () => {
@@ -328,7 +341,9 @@ test("con PDF en working, el responsable aprueba -> 200 approved (flowStatus=app
     response_note: null,
   });
   // El guard de `approve` mira la EXTENSIÓN de `working_file_path`, no que el objeto exista en
-  // MinIO: basta con que termine en .pdf. Ese es el contrato, y es más laxo de lo que parece.
+  // MinIO: basta con que termine en .pdf. Ese es el contrato, y es DELIBERADO (razones medidas en
+  // `FillRequestWorkflowService.requiresSignaturePdfForFinalFillApproval`). Por eso esta ruta puede
+  // ser inventada: no hay ningún objeto detrás y aun así el caso feliz aprueba.
   const dv = await put("/admin/sql/document_versions", {
     token: admin,
     body: {
