@@ -77,15 +77,17 @@ vi.mock("@/modules/auth/services/SystemBootstrapService", () => ({
 }));
 
 const mockAxiosPost = vi.fn();
-// `interceptors` no lo usa el router, pero cualquier modulo que entre en su grafo de imports y tire de
-// `core/services/httpClient` lo invoca al cargarse, y sin el la suite moriria al importar sin ejecutar
-// un solo caso. Le paso a PerfilView.test.js cuando la vista empezo a importar userPhotoService.
+// El router ya no importa `axios` a pelo: usa la instancia de `core/services/httpClient`, que se fabrica
+// con `axios.create()` y le engancha su interceptor al CARGARSE el modulo. Por eso el doble necesita las
+// dos cosas: `create` y unos `interceptors` con forma. Si falta cualquiera de ellas la suite muere al
+// importar, sin ejecutar un solo caso, y Vitest la marca *Failed Suite* con 0 tests (§6 regla 11).
 const interceptorStub = () => ({ use: vi.fn(), eject: vi.fn() });
+const httpClientStub = {
+  post: (...args) => mockAxiosPost(...args),
+  interceptors: { request: interceptorStub(), response: interceptorStub() }
+};
 vi.mock("axios", () => ({
-  default: {
-    post: (...args) => mockAxiosPost(...args),
-    interceptors: { request: interceptorStub(), response: interceptorStub() }
-  }
+  default: { ...httpClientStub, create: () => httpClientStub }
 }));
 vi.mock("@/core/config/apiConfig", () => ({ API_ROUTES: { USERS_LOGOUT: "/fake/logout" } }));
 

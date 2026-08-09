@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_PREFIX } from "@/core/config/apiConfig";
 import AuthService from "@/modules/auth/services/AuthService";
 

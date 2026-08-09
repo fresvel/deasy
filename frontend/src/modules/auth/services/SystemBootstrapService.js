@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 // Clave legacy: antes se persistía el estado de bootstrap en sessionStorage, lo que hacía que un

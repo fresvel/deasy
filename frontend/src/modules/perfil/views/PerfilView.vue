@@ -94,7 +94,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, provide } from 'vue';
 import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRoute, useRouter } from 'vue-router';
-import axios from 'axios';
+import axios from '@/core/services/httpClient';
     import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
     import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 import {

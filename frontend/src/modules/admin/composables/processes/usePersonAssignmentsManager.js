@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import { personAssignmentsAdminService } from "@/modules/admin/services/PersonAssignmentsAdminService";
 

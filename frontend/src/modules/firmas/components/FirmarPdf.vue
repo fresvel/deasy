@@ -346,7 +346,7 @@
     
   </div>
 
-    <AdminModalShell
+    <AppModalShell
       controlled
       :open="showSignaturesModal"
       @close="showSignaturesModal = false"
@@ -420,9 +420,9 @@
           </button>
         </div>
       </div>
-    </AdminModalShell>
+    </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="deleteModal"
     id="deleteFieldsModal"
     labelled-by="delete-fields-modal-title"
@@ -480,9 +480,9 @@
         </div>
       </div>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="assignSignerModal"
     labelled-by="assign-signer-title"
     title="Asignar firmante"
@@ -586,9 +586,9 @@
         Guardar y Asignar
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="confirmDeleteModal"
     labelled-by="confirm-delete-signature-title"
     title="Eliminar firma"
@@ -605,9 +605,9 @@
         Eliminar
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="signCertModal"
     labelled-by="sign-cert-modal-title"
     :title="multiBatchRequest ? 'Iniciar firma masiva' : signMode === 'token' ? 'Firmar documento por token' : 'Firmar documento'"
@@ -730,9 +730,9 @@
         {{ isSigning ? "Firmando..." : "Confirmar firma" }}
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="signResultModal"
     labelled-by="sign-result-modal-title"
     :title="signSuccess ? 'Documento firmado' : 'Error al firmar'"
@@ -753,9 +753,9 @@
     <template #footer>
       <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="certificatesManagerModal"
     labelled-by="certificates-manager-modal-title"
     title="Gestionar certificados"
@@ -773,9 +773,9 @@
     <template #footer>
       <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="validationResultModal"
     labelled-by="validation-result-modal-title"
     title="Validar documento"
@@ -952,9 +952,9 @@
         </template>
       </AppDataTable>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="certificateAuthorityModal"
     labelled-by="certificate-authority-modal-title"
     title="Entidad certificadora"
@@ -988,12 +988,12 @@
         <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
       </div>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h, useId } from "vue";
   import { useRouter } from 'vue-router';
-  import axios from 'axios';
+  import axios from '@/core/services/httpClient';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
   import { IconArrowLeft, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconListCheck, IconInbox } from '@tabler/icons-vue';
@@ -1004,7 +1004,7 @@
   import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
   import SignatureBox from '@/modules/firmas/components/SignatureBox.vue';
   import UserCertificatesPanel from '@/modules/firmas/components/UserCertificatesPanel.vue';
-  import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
+  import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
   import AdminButton from '@/shared/components/buttons/AppButton.vue';
   import SToggle from '@/shared/components/forms/SToggle.vue';
   import Loading from '@/shared/components/feedback/Loading.vue';

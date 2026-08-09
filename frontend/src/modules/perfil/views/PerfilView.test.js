@@ -40,16 +40,19 @@ vi.mock("@/layouts/workspace/AppWorkspaceShell.vue", () => ({
   }
 }));
 vi.mock("@/shared/components/widgets/WorkspaceChatLauncher.vue", () => ({ default: stub("WorkspaceChatLauncher") }));
-// `interceptors` no lo usa la vista: lo usa `core/services/httpClient`, que se cuela en el grafo de
-// imports por `userPhotoService` y se ejecuta al CARGAR el modulo. Sin el, el mock no tiene la forma
-// del axios real y la suite muere al importar PerfilView.vue, sin llegar a ejecutar un solo caso.
+// Ni `create` ni `interceptors` los usa la vista: los usa `core/services/httpClient`, que ahora fabrica
+// su propia instancia con `axios.create()` y le engancha el interceptor al CARGAR el modulo. La vista
+// entra en ese grafo por partida doble (su propio import y el de `userPhotoService`). Si el doble no
+// trae las dos cosas, la suite muere al importar PerfilView.vue sin ejecutar un solo caso: *Failed
+// Suite* con 0 tests, que no es un cero, es un fallo (§6 regla 11 del plan de calidad).
 const interceptorStub = () => ({ use: vi.fn(), eject: vi.fn() });
+const httpClientStub = {
+  get: vi.fn().mockResolvedValue({ data: {} }),
+  put: vi.fn().mockResolvedValue({ data: {} }),
+  interceptors: { request: interceptorStub(), response: interceptorStub() }
+};
 vi.mock("axios", () => ({
-  default: {
-    get: vi.fn().mockResolvedValue({ data: {} }),
-    put: vi.fn().mockResolvedValue({ data: {} }),
-    interceptors: { request: interceptorStub(), response: interceptorStub() }
-  }
+  default: { ...httpClientStub, create: () => httpClientStub }
 }));
 
 const { default: PerfilView } = await import("./PerfilView.vue");

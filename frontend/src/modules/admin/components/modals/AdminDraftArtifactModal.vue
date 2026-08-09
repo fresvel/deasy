@@ -575,13 +575,13 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, useId } from "vue";
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInlineShell from "@/shared/components/modals/AppInlineShell.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
@@ -695,7 +695,7 @@ const lifecycleBadgeClass = computed(() => {
 // se guarda; el strip ofrece "Nueva versión" para crear una versión editable.
 const isReadOnly = computed(() => !!props.draftArtifactEditId && lifecycleState.value !== "draft");
 const modalRef = ref(null);
-const shellComponent = computed(() => (props.embedded ? AppInlineShell : AdminModalShell));
+const shellComponent = computed(() => (props.embedded ? AppInlineShell : AppModalShell));
 
 // Tipo de plantilla: 'official' (de proceso) | 'ad_hoc' (de usuario). Gatea las opciones de autoría de pasos.
 const templateScope = computed(() => (String(props.draftArtifactForm.template_scope || "official") === "ad_hoc" ? "ad_hoc" : "official"));

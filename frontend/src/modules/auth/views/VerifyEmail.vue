@@ -67,7 +67,7 @@ import { ref, computed, nextTick } from 'vue'
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import AuthLayout from '@/layouts/auth/AuthLayout.vue';
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '@/core/services/httpClient'
 import { API_ROUTES } from '@/core/config/apiConfig'
 import AppLogo from '@/shared/components/layout/AppLogo.vue'
 import { 

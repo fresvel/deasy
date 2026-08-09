@@ -49,7 +49,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import axios from '@/core/services/httpClient';
 import { API_ROUTES } from '@/core/config/apiConfig';
 import { clearAuthData } from '@/core/utils/tokenUtils';
 import { IconAlertTriangle, IconLogout, IconRefresh } from '@tabler/icons-vue';

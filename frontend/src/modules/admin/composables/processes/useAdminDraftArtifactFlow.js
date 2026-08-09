@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { Modal } from "@/shared/utils/modalController";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";

@@ -365,7 +365,7 @@ import {
   IconHome,
 } from '@tabler/icons-vue'
 
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { useRoute, useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";

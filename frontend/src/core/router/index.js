@@ -26,7 +26,7 @@ import {
   getDefaultAuthenticatedRoute,
   isAdminUser
 } from "@/core/utils/accessControl.js";
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import SystemBootstrapService from "@/modules/auth/services/SystemBootstrapService";
 

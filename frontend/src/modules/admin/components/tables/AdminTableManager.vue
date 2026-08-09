@@ -410,7 +410,7 @@
       @confirm="confirmDeleteProcessEditorConfiguration"
     />
 
-    <AdminModalShell
+    <AppModalShell
       ref="retireDefinitionModal"
       labelled-by="retireDefinitionModalLabel"
       title="Retirar configuración"
@@ -428,7 +428,7 @@
         <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
         <AdminButton variant="outlineDanger" @click="confirmRetireProcessDefinition">Retirar</AdminButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
     <AdminDefinitionCreatedPromptModal
       ref="definitionArtifactsPromptModal"
@@ -1059,7 +1059,7 @@ import { useAdminSearchFilters } from "@/modules/admin/composables/data/useAdmin
 import { useAdminTableDataSource } from "@/modules/admin/composables/data/useAdminTableDataSource";
 import { useProcessDefinitionActivationFlow } from "@/modules/admin/composables/processes/useProcessDefinitionActivationFlow";
 import { useProcessDefinitionManager } from "@/modules/admin/composables/processes/useProcessDefinitionManager";
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { useProcessWizard } from "@/modules/admin/composables/processes/useProcessWizard";
 import { useAdminSubmitFlow } from "@/modules/admin/composables/forms/useAdminSubmitFlow";
 import { API_ROUTES } from "@/core/config/apiConfig";
@@ -1128,7 +1128,7 @@ import AdminUnassignedArtifactsSection from "@/modules/admin/components/tables/A
 import AdminVacantPositionsSection from "@/modules/admin/components/tables/AdminVacantPositionsSection.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
