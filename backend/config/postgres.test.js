@@ -1,0 +1,208 @@
+// Red de CARACTERIZACIÓN del escáner de SQL del adaptador mysql2 -> PostgreSQL.
+//
+// Cubre las dos funciones más densas del repositorio: `translatePlaceholders`
+// (que hasta hoy no ejecutaba NI UNA vez en la suite: `FNDA:0` en el lcov) y
+// `bindParams`, que es la que de verdad usa `runQuery` para todo el SQL del
+// sistema.
+//
+// QUÉ ES ESTE FICHERO: una red, no una especificación. Cada valor esperado se
+// capturó ejecutando el código TAL COMO ESTABA antes del refactor de la Fase F.
+// Varios casos congelan rarezas que NO son deseables (están marcados con
+// «RAREZA CONGELADA»); si algún día se arreglan, el diff de este fichero es la
+// prueba del arreglo. Mientras tanto, que un cambio los mueva significa que el
+// refactor cambió comportamiento.
+//
+// El complemento está en `postgres.dialect.test.js`, que cubre la reescritura
+// de dialecto (GROUP_CONCAT, FIELD, IF, ON DUPLICATE KEY...).
+
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import { translatePlaceholders, bindParams, translateDialect } from "./postgres.js";
+
+// --- translatePlaceholders ----------------------------------------------------
+//
+// Numera TODOS los `?` como $1..$n sin consultar parámetros, respetando
+// literales, identificadores y comentarios. [nombre, entrada, salida esperada]
+
+const PLACEHOLDER_CASES = [
+  ["cadena vacía", "", ""],
+  ["SQL sin placeholders", "SELECT 1", "SELECT 1"],
+  ["numera en orden de aparición", "SELECT * FROM t WHERE a = ? AND b = ?", "SELECT * FROM t WHERE a = $1 AND b = $2"],
+  ["pasa de $9 a $10 sin saltos", "SELECT ?,?,?,?,?,?,?,?,?,?", "SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10"],
+  ["un `?` suelto es $1", "?", "$1"],
+  ["dos `?` pegados", "??", "$1$2"],
+
+  // Literales de cadena: intocables.
+  ["no toca un `?` dentro de un literal", "SELECT '¿?' AS q, ? AS p", "SELECT '¿?' AS q, $1 AS p"],
+  ["respeta la comilla escapada ''", "SELECT 'it''s a ? test', ?", "SELECT 'it''s a ? test', $1"],
+  ["un literal sin cerrar se traga el resto", "SELECT 'abc ? ", "SELECT 'abc ? "],
+  ["un literal que acaba en '' sigue abierto", "SELECT 'abc''", "SELECT 'abc''"],
+  ["un `--` dentro de un literal no abre comentario", "SELECT '-- ?' , ?", "SELECT '-- ?' , $1"],
+
+  // Identificadores entrecomillados (PG) y con backtick (MySQL).
+  ['no toca un `?` dentro de "identificador"', 'SELECT "col?umn", ?', 'SELECT "col?umn", $1'],
+  ['respeta la comilla doble escapada ""', 'SELECT "a""?b", ?', 'SELECT "a""?b", $1'],
+  ["no toca un `?` dentro de `backticks`", "SELECT `co?l`, ? FROM `t`", "SELECT `co?l`, $1 FROM `t`"],
+  ["un backtick sin cerrar se traga el resto", "SELECT `co?l", "SELECT `co?l"],
+
+  // Comentarios.
+  ["ignora los `?` de un comentario de línea", "SELECT ? -- ?\n, ?", "SELECT $1 -- ?\n, $2"],
+  ["un comentario de línea sin salto llega al final", "SELECT ? -- ?", "SELECT $1 -- ?"],
+  ["ignora los `?` de un comentario de bloque", "SELECT ? /* ? */, ?", "SELECT $1 /* ? */, $2"],
+  ["un bloque sin cerrar se traga el resto", "SELECT ? /* ? ", "SELECT $1 /* ? "],
+  ["un bloque vacío no rompe la numeración", "SELECT ?/**/?", "SELECT $1/**/$2"],
+  ["una comilla dentro de un comentario no abre literal", "-- it's ?\nSELECT ?", "-- it's ?\nSELECT $1"],
+  ["un guion suelto no es comentario", "SELECT a-?-b", "SELECT a-$1-b"],
+  ["una barra suelta no es comentario", "SELECT a/?/b", "SELECT a/$1/b"],
+  // RAREZA CONGELADA: `/*/` se toma por un bloque YA CERRADO (la barra de cierre
+  // se busca desde el propio `*` de apertura), así que lo que sigue vuelve a ser
+  // código. Es SQL degenerado que ninguna consulta del repo escribe.
+  ["RAREZA: `/*/` cuenta como bloque cerrado", "SELECT ? /*/ ?", "SELECT $1 /*/ $2"],
+
+  // Sintaxis PostgreSQL que ya viaja en las consultas.
+  ["deja pasar los casts ::", "SELECT ?::int, ?::text[]", "SELECT $1::int, $2::text[]"],
+  ["LIMIT / OFFSET", "SELECT * FROM t ORDER BY id LIMIT ? OFFSET ?", "SELECT * FROM t ORDER BY id LIMIT $1 OFFSET $2"],
+  ["operador JSON ->> con literal", "SELECT data->>'k' FROM t WHERE id = ?", "SELECT data->>'k' FROM t WHERE id = $1"],
+  ["igualdad NULL-safe <=>", "WHERE term_id <=> ?", "WHERE term_id <=> $1"],
+
+  // Formas reales del repositorio.
+  ["IN con varios placeholders", "SELECT * FROM t WHERE id IN (?, ?, ?)", "SELECT * FROM t WHERE id IN ($1, $2, $3)"],
+  [
+    "consulta multilínea real (RbacService)",
+    "SELECT DISTINCT p.code\n       FROM role_permissions rp\n       WHERE rp.role_id IN (?)\n         AND p.is_active = 1",
+    "SELECT DISTINCT p.code\n       FROM role_permissions rp\n       WHERE rp.role_id IN ($1)\n         AND p.is_active = 1",
+  ],
+  [
+    "ON DUPLICATE KEY UPDATE (aquí solo se numera)",
+    "INSERT INTO t (a,b) VALUES (?,?) ON DUPLICATE KEY UPDATE b = VALUES(b)",
+    "INSERT INTO t (a,b) VALUES ($1,$2) ON DUPLICATE KEY UPDATE b = VALUES(b)",
+  ],
+  [
+    "INSERT IGNORE con backticks",
+    "INSERT IGNORE INTO `t` (`a`) VALUES (?)",
+    "INSERT IGNORE INTO `t` (`a`) VALUES ($1)",
+  ],
+];
+
+for (const [name, input, expected] of PLACEHOLDER_CASES) {
+  test(`translatePlaceholders: ${name}`, () => {
+    assert.equal(translatePlaceholders(input), expected);
+  });
+}
+
+// --- bindParams ---------------------------------------------------------------
+//
+// Mismo escaneo que arriba, pero consumiendo parámetros y expandiendo arrays
+// como hace mysql2. [nombre, sql, params, texto esperado, valores esperados]
+
+const BIND_CASES = [
+  ["escalares en orden", "SELECT * FROM t WHERE a = ? AND b = ?", [1, 2], "SELECT * FROM t WHERE a = $1 AND b = $2", [1, 2]],
+  ["expande un array en IN (?)", "SELECT * FROM t WHERE id IN (?)", [[10, 20, 30]], "SELECT * FROM t WHERE id IN ($1, $2, $3)", [10, 20, 30]],
+  ["un array de un elemento no lleva comas", "WHERE id IN (?)", [[5]], "WHERE id IN ($1)", [5]],
+  ["array vacío -> NULL sin consumir parámetros", "SELECT * FROM t WHERE id IN (?)", [[]], "SELECT * FROM t WHERE id IN (NULL)", []],
+  ["dos arrays numeran de corrido", "WHERE a IN (?) AND b IN (?)", [[1, 2], [3]], "WHERE a IN ($1, $2) AND b IN ($3)", [1, 2, 3]],
+  ["array y escalar mezclados", "WHERE a = ? AND b IN (?)", [9, [1, 2]], "WHERE a = $1 AND b IN ($2, $3)", [9, 1, 2]],
+  ["bulk insert con array de arrays", "INSERT INTO t (a,b) VALUES ?", [[[1, 2], [3, 4]]], "INSERT INTO t (a,b) VALUES ($1, $2), ($3, $4)", [1, 2, 3, 4]],
+  ["bulk insert con filas de distinta longitud", "INSERT INTO t VALUES ?", [[[1, 2], [3]]], "INSERT INTO t VALUES ($1, $2), ($3)", [1, 2, 3]],
+
+  // Valores límite.
+  ["null y undefined viajan tal cual", "SELECT ?, ?", [null, undefined], "SELECT $1, $2", [null, undefined]],
+  ["los falsy no se confunden con vacío", "SELECT ?, ?, ?", [0, "", false], "SELECT $1, $2, $3", [0, "", false]],
+  ["sobran parámetros: se ignoran los de más", "SELECT ?", [1, 2, 3], "SELECT $1", [1]],
+  ["sin argumento de parámetros", "SELECT ?", undefined, "SELECT $1", [undefined]],
+
+  // Protección de literales, identificadores y comentarios (mismo escáner).
+  ["no toca un `?` de un literal", "SELECT '¿?' AS q, ? AS p", ["x"], "SELECT '¿?' AS q, $1 AS p", ["x"]],
+  ["respeta la comilla escapada ''", "SELECT 'it''s a ? test', ?", [7], "SELECT 'it''s a ? test', $1", [7]],
+  ["no consume parámetros en un comentario de línea", "SELECT ? -- ?\n, ?", [1, 2], "SELECT $1 -- ?\n, $2", [1, 2]],
+  ["no consume parámetros en un comentario de bloque", "SELECT ? /* ? */, ?", [1, 2], "SELECT $1 /* ? */, $2", [1, 2]],
+  ["no toca un `?` entre backticks", "SELECT `co?l`, ?", ["v"], "SELECT `co?l`, $1", ["v"]],
+  ['no toca un `?` entre comillas dobles', 'SELECT "c?ol", ?', ["v"], 'SELECT "c?ol", $1', ["v"]],
+  ["LIMIT / OFFSET", "SELECT * FROM t LIMIT ? OFFSET ?", [10, 20], "SELECT * FROM t LIMIT $1 OFFSET $2", [10, 20]],
+  ["cast :: pegado al placeholder", "SELECT ?::int", [3], "SELECT $1::int", [3]],
+];
+
+for (const [name, sql, params, expectedText, expectedValues] of BIND_CASES) {
+  test(`bindParams: ${name}`, () => {
+    const { text, values } = params === undefined ? bindParams(sql) : bindParams(sql, params);
+    assert.equal(text, expectedText);
+    assert.deepEqual(values, expectedValues);
+  });
+}
+
+// --- Rarezas congeladas de bindParams -----------------------------------------
+//
+// Producen SQL inválido o parámetros silenciosamente incorrectos. Ninguna
+// consulta del repositorio las provoca hoy; se fijan para que el refactor no
+// las mueva sin querer y para dejar constancia de que EXISTEN.
+
+test("RAREZA: faltan parámetros y se envían `undefined` en vez de fallar", () => {
+  // pg convierte `undefined` en NULL, así que una llamada con menos parámetros
+  // de la cuenta no explota: ejecuta con NULLs. Debería ser un error.
+  const { text, values } = bindParams("SELECT ?, ?, ?", [1]);
+  assert.equal(text, "SELECT $1, $2, $3");
+  assert.deepEqual(values, [1, undefined, undefined]);
+});
+
+test("RAREZA: un bloque sin cerrar deja `?` literales en el texto final", () => {
+  // El `?` que queda dentro del comentario no se numera Y el parámetro no se
+  // consume: el SQL sale con un `?` crudo que PostgreSQL no entiende.
+  const { text, values } = bindParams("SELECT ? /* ? , ?", [1, 2]);
+  assert.equal(text, "SELECT $1 /* ? , ?");
+  assert.deepEqual(values, [1]);
+});
+
+test("RAREZA: una fila vacía en un bulk insert produce `()`", () => {
+  const { text, values } = bindParams("INSERT INTO t VALUES ?", [[[], [1]]]);
+  assert.equal(text, "INSERT INTO t VALUES (), ($1)");
+  assert.deepEqual(values, [1]);
+});
+
+test("RAREZA: un array de una sola fila vacía deja `VALUES ()`", () => {
+  const { text, values } = bindParams("INSERT INTO t VALUES ?", [[[]]]);
+  assert.equal(text, "INSERT INTO t VALUES ()");
+  assert.deepEqual(values, []);
+});
+
+test("RAREZA: solo se mira si el PRIMER elemento es array", () => {
+  // [1, [2, 3]] no se ve como bulk (el primero no es array), así que el array
+  // anidado se empuja como si fuera un valor escalar.
+  const { text, values } = bindParams("SELECT ?", [[1, [2, 3]]]);
+  assert.equal(text, "SELECT $1, $2");
+  assert.deepEqual(values, [1, [2, 3]]);
+});
+
+// --- Invariante entre las dos funciones ---------------------------------------
+//
+// `translatePlaceholders` es el subconjunto de `bindParams` sin expansión de
+// arrays: con parámetros escalares las dos tienen que producir EXACTAMENTE el
+// mismo texto. Es lo que permite que compartan escáner.
+
+test("translatePlaceholders y bindParams producen el mismo texto con escalares", () => {
+  const scalars = new Array(20).fill(0).map((_, k) => k);
+  for (const [, input] of PLACEHOLDER_CASES) {
+    assert.equal(
+      bindParams(input, scalars).text,
+      translatePlaceholders(input),
+      `divergen para: ${JSON.stringify(input)}`,
+    );
+  }
+});
+
+// --- La tubería real: translateDialect y luego bindParams ---------------------
+
+test("tubería completa: backticks traducidos y placeholders enlazados", () => {
+  const { text, values } = bindParams(
+    translateDialect("SELECT `name` FROM `users` WHERE `id` = ? AND status <=> ?"),
+    [7, null],
+  );
+  assert.equal(text, 'SELECT "name" FROM "users" WHERE "id" = $1 AND status IS NOT DISTINCT FROM $2');
+  assert.deepEqual(values, [7, null]);
+});
+
+test("tubería completa: el `?` de un literal sobrevive al enmascarado", () => {
+  const { text, values } = bindParams(translateDialect("SELECT '¿todo bien? ' AS s, IFNULL(a, ?)"), [1]);
+  assert.equal(text, "SELECT '¿todo bien? ' AS s, COALESCE(a, $1)");
+  assert.deepEqual(values, [1]);
+});

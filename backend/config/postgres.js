@@ -43,63 +43,89 @@ const pool = missingEnvVars.length
       max: Number(process.env.POSTGRES_CONNECTION_LIMIT || 10),
     });
 
-// --- Traducción de placeholders ?  ->  $1..$n (respeta strings/identificadores/comentarios) ---
-export function translatePlaceholders(sql) {
+// --- Escáner de SQL ------------------------------------------------------------
+//
+// Recorrer SQL saltándose lo que NO es código es la operación que necesitan tanto
+// translatePlaceholders como bindParams. Antes cada una llevaba su propia copia del
+// autómata, con cinco banderas de estado (inSingle/inDouble/inBacktick/inLine/inBlock)
+// y una rama por bandera. Aquí esas cinco banderas son cinco FILAS de una tabla:
+//
+//   open     el prefijo que abre el tramo protegido
+//   close    lo que lo cierra; si no aparece, el tramo llega al final del SQL
+//   doubled  el cierre repetido es un escape y NO cierra (los '' y "" de SQL)
+//
+// El tramo se copia literalmente a la salida: dentro no se traduce nada.
+const PROTECTED_SPANS = [
+  { open: "--", close: "\n", doubled: false }, // comentario de línea
+  { open: "/*", close: "*/", doubled: false }, // comentario de bloque
+  { open: "'", close: "'", doubled: true }, // literal de cadena
+  { open: '"', close: '"', doubled: true }, // identificador entrecomillado (PostgreSQL)
+  { open: "`", close: "`", doubled: false }, // identificador con backtick (MySQL)
+];
+
+// Fin (exclusivo) del tramo abierto en `start`. El cierre se busca desde el carácter
+// SIGUIENTE al de apertura, no desde el final del `open`: por eso `/*/` cuenta como un
+// bloque ya cerrado. Es SQL degenerado y ninguna consulta del repo lo escribe, pero el
+// autómata anterior se comportaba así y la red lo fija.
+function findSpanEnd(sql, start, span) {
+  let from = start + 1;
+  while (from < sql.length) {
+    const at = sql.indexOf(span.close, from);
+    if (at === -1) break;
+    const after = at + span.close.length;
+    if (span.doubled && sql[after] === span.close) {
+      from = after + 1; // '' escapado: sigue dentro del tramo
+      continue;
+    }
+    return after;
+  }
+  return sql.length; // tramo sin cerrar: se traga el resto del SQL
+}
+
+// Copia el SQL sustituyendo cada `?` de CÓDIGO por lo que devuelva `onPlaceholder()`.
+// Los `?` que caen dentro de un tramo protegido salen intactos.
+function scanSql(sql, onPlaceholder) {
   let out = "";
-  let n = 1;
   let i = 0;
-  let inSingle = false; // '...'
-  let inDouble = false; // "..."
-  let inBacktick = false; // `...` (identificadores mysql; se dejan tal cual aquí)
-  let inLine = false; // -- ...
-  let inBlock = false; // /* ... */
-
   while (i < sql.length) {
-    const c = sql[i];
-    const c2 = sql[i + 1];
-
-    if (inLine) {
-      out += c;
-      if (c === "\n") inLine = false;
+    const span = PROTECTED_SPANS.find((s) => sql.startsWith(s.open, i));
+    if (span) {
+      const end = findSpanEnd(sql, i, span);
+      out += sql.slice(i, end);
+      i = end;
+    } else if (sql[i] === "?") {
+      out += onPlaceholder();
       i++;
-      continue;
-    }
-    if (inBlock) {
-      out += c;
-      if (c === "*" && c2 === "/") { out += c2; i += 2; inBlock = false; continue; }
+    } else {
+      out += sql[i];
       i++;
-      continue;
     }
-    if (inSingle) {
-      out += c;
-      if (c === "'") { if (c2 === "'") { out += c2; i += 2; continue; } inSingle = false; }
-      i++;
-      continue;
-    }
-    if (inDouble) {
-      out += c;
-      if (c === '"') { if (c2 === '"') { out += c2; i += 2; continue; } inDouble = false; }
-      i++;
-      continue;
-    }
-    if (inBacktick) {
-      out += c;
-      if (c === "`") inBacktick = false;
-      i++;
-      continue;
-    }
-
-    if (c === "-" && c2 === "-") { inLine = true; out += c; i++; continue; }
-    if (c === "/" && c2 === "*") { inBlock = true; out += c; i++; continue; }
-    if (c === "'") { inSingle = true; out += c; i++; continue; }
-    if (c === '"') { inDouble = true; out += c; i++; continue; }
-    if (c === "`") { inBacktick = true; out += c; i++; continue; }
-    if (c === "?") { out += "$" + n++; i++; continue; }
-
-    out += c;
-    i++;
   }
   return out;
+}
+
+// --- Traducción de placeholders ?  ->  $1..$n (respeta strings/identificadores/comentarios) ---
+export function translatePlaceholders(sql) {
+  let n = 1;
+  return scanSql(sql, () => "$" + n++);
+}
+
+// Expansión mysql2 de UN parámetro, según su forma:
+//   escalar        -> $n
+//   []             -> NULL          (IN (NULL) no casa con nada)
+//   [1,2,3]        -> $1, $2, $3    (IN (?))
+//   [[1,2],[3,4]]  -> ($1, $2), ($3, $4)   (bulk insert; solo se mira el PRIMER elemento)
+// `pushScalar` registra el valor y devuelve su `$n`.
+function expandParam(value, pushScalar) {
+  if (!Array.isArray(value)) return pushScalar(value);
+  if (value.length === 0) return "NULL";
+  if (Array.isArray(value[0])) {
+    // La lambda explicita NO es ruido: `.map` pasa (elemento, indice, array), y aunque hoy
+    // `pushScalar` tiene aridad 1 y los ignora, pasarla directa deja el fallo armado para el dia
+    // que alguien le anada un segundo parametro. Sonar lo marca como BUG (S7727).
+    return value.map((row) => `(${row.map((v) => pushScalar(v)).join(", ")})`).join(", ");
+  }
+  return value.map((v) => pushScalar(v)).join(", ");
 }
 
 // Enlaza `?` -> `$n` Y expande parámetros array como hace mysql2:
@@ -109,52 +135,13 @@ export function translatePlaceholders(sql) {
 // Devuelve { text, values } con los valores aplanados en el orden correcto.
 // Respeta strings/identificadores/comentarios (no toca `?` literales).
 export function bindParams(sql, params = []) {
-  let out = "";
-  let i = 0;
-  let paramIndex = 0;
-  let pg = 1;
   const values = [];
-  let inSingle = false, inDouble = false, inBacktick = false, inLine = false, inBlock = false;
+  let paramIndex = 0;
+  let placeholder = 1;
+  const pushScalar = (v) => { values.push(v); return "$" + placeholder++; };
 
-  const pushScalar = (v) => { values.push(v); return "$" + pg++; };
-
-  while (i < sql.length) {
-    const c = sql[i];
-    const c2 = sql[i + 1];
-
-    if (inLine) { out += c; if (c === "\n") inLine = false; i++; continue; }
-    if (inBlock) { out += c; if (c === "*" && c2 === "/") { out += c2; i += 2; inBlock = false; continue; } i++; continue; }
-    if (inSingle) { out += c; if (c === "'") { if (c2 === "'") { out += c2; i += 2; continue; } inSingle = false; } i++; continue; }
-    if (inDouble) { out += c; if (c === '"') { if (c2 === '"') { out += c2; i += 2; continue; } inDouble = false; } i++; continue; }
-    if (inBacktick) { out += c; if (c === "`") inBacktick = false; i++; continue; }
-
-    if (c === "-" && c2 === "-") { inLine = true; out += c; i++; continue; }
-    if (c === "/" && c2 === "*") { inBlock = true; out += c; i++; continue; }
-    if (c === "'") { inSingle = true; out += c; i++; continue; }
-    if (c === '"') { inDouble = true; out += c; i++; continue; }
-    if (c === "`") { inBacktick = true; out += c; i++; continue; }
-
-    if (c === "?") {
-      const val = params[paramIndex++];
-      if (Array.isArray(val)) {
-        if (val.length === 0) {
-          out += "NULL";
-        } else if (Array.isArray(val[0])) {
-          out += val.map((inner) => `(${inner.map(pushScalar).join(", ")})`).join(", ");
-        } else {
-          out += val.map(pushScalar).join(", ");
-        }
-      } else {
-        out += pushScalar(val);
-      }
-      i++;
-      continue;
-    }
-
-    out += c;
-    i++;
-  }
-  return { text: out, values };
+  const text = scanSql(sql, () => expandParam(params[paramIndex++], pushScalar));
+  return { text, values };
 }
 
 const isInsert = (sql) => /^\s*insert\b/i.test(sql);
