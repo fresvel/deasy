@@ -1323,6 +1323,7 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 | `docs/plan-refactor-frontend.md` | **Vivo — referencia del frontend.** Su plan por fases se recoge en §5-E; el diagnóstico detallado sigue valiendo |
 | `docs/linea-base-homeview-2026-07.md` | **Vivo — contrato observable** de HomeView antes de partirlo. Es la red de regresión |
 | `docs/fotos-perfil-minio.md` | **Vivo — diseño.** Dónde y cómo se guardan las fotos de perfil, y por qué salieron del disco local |
+| `docs/patrones-diseno-2026-08.md` | **Vivo — criterio de diseño.** Dónde un patrón GoF se gana el sueldo en este repo (son **tres**) y, sobre todo, dónde NO. Con la evidencia medida de que aquí la complejidad se cura con tablas y extracción, no con jerarquías. Léelo antes de proponer un patrón |
 | `docs/plan-cobertura-2026-08.md` | **Vivo — plan ejecutable de cobertura.** El gate falla por `new_coverage`, y subir el global es otro problema. Lleva el reparto en cuatro agentes paralelos y las trampas medidas (los `.vue` son 2/3 del hueco; Node solo instrumenta lo que un test carga) |
 | `docs/auditoria-signer-2026-08.md` | **Vivo — auditoría del microservicio de firma.** Mapa por bandas, 12 riesgos y plan de corte por fases |
 | `docs/plan-limpieza-scripts-2026-08.md` | **Vivo** |

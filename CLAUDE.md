@@ -129,9 +129,19 @@ más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extr
 
 ### Plan de calidad
 
-`docs/plan-calidad-2026-08.md` es el **documento maestro** de deuda técnica y complejidad: línea base de
-SonarQube, ranking de ficheros/funciones, fases de trabajo y la lista de **lo que NO hay que tocar**
-(§7 — `sqlTables.js` y los falsos positivos de Sonar entran ahí). Léelo antes de proponer un refactor.
+`docs/plan-calidad-2026-08.md` es el **documento maestro** de deuda técnica y complejidad: **mapa de
+fases con su estado (§5.0)**, línea base de SonarQube, ranking de ficheros/funciones y la lista de
+**lo que NO hay que tocar** (§7 — `sqlTables.js` y los falsos positivos de Sonar entran ahí). Léelo
+antes de proponer un refactor. Aviso: las fases se llaman A…I por **el orden en que se descubrieron**,
+no por prioridad ni por tema.
+
+Dos documentos satélite, cada uno con su problema:
+
+- `docs/plan-cobertura-2026-08.md` — **la cobertura**. Y lo primero que dice: el gate **no pide 80 %
+  global** (eso sería trabajo de años), pide 80 % de lo nuevo.
+- `docs/patrones-diseno-2026-08.md` — **cuándo usar un patrón de diseño y cuándo no**. En este repo la
+  complejidad se cura con tablas y extracción, no con jerarquías; hay tres sitios donde un patrón GoF
+  sí se gana el sueldo y una lista de dónde sería sobreingeniería. Léelo antes de proponer uno.
 
 ### SonarQube — cómo está montado
 
