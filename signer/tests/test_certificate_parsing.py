@@ -337,5 +337,145 @@ class ConversionAsn1(unittest.TestCase):
         self.assertIsNone(app.to_asn1_certificate(ValorVolcable(b"no soy un certificado")))
 
 
+class LaTablaDeExtractores(unittest.TestCase):
+    """El motor `_primer_resultado`, que hoy recorren cuatro tablas del módulo.
+
+    Lo que fija esta clase no es sólo que elija bien: es que el motor **no**
+    atrapa excepciones. El `try` vive en cada productor que puede fallar, que es
+    donde estaba antes del refactor. Si alguien mueve el `try` al motor, un paso
+    que hoy debe propagar su error empezaría a fallar en silencio.
+    """
+
+    def test_gana_la_primera_fila_que_reconoce(self):
+        tabla = (
+            (lambda v: isinstance(v, int), lambda v: "entero"),
+            (app._siempre, lambda v: "comodin"),
+        )
+        self.assertEqual(app._primer_resultado(tabla, 3), "entero")
+
+    def test_las_guardas_que_no_reconocen_se_saltan(self):
+        tabla = (
+            (lambda v: isinstance(v, int), lambda v: "entero"),
+            (app._siempre, lambda v: "comodin"),
+        )
+        self.assertEqual(app._primer_resultado(tabla, "texto"), "comodin")
+
+    def test_siguiente_cede_el_turno_a_la_fila_de_abajo(self):
+        tabla = (
+            (app._siempre, lambda v: app._SIGUIENTE),
+            (app._siempre, lambda v: "la segunda"),
+        )
+        self.assertEqual(app._primer_resultado(tabla, None), "la segunda")
+
+    def test_si_ninguna_fila_sabe_devuelve_el_por_defecto(self):
+        tabla = ((app._siempre, lambda v: app._SIGUIENTE),)
+        self.assertIsNone(app._primer_resultado(tabla, None))
+        self.assertEqual(app._primer_resultado(tabla, None, "nada"), "nada")
+
+    def test_una_tabla_vacia_devuelve_el_por_defecto(self):
+        self.assertEqual(app._primer_resultado((), "x", "nada"), "nada")
+
+    def test_un_valor_falsy_producido_es_un_resultado_valido(self):
+        # Sólo `_SIGUIENTE` cede el turno: `None`, `""`, `0` y `{}` son respuestas.
+        for producido in (None, "", 0, {}, False):
+            with self.subTest(producido=producido):
+                tabla = ((app._siempre, lambda v: producido), (app._siempre, lambda v: "no llega"))
+                self.assertEqual(app._primer_resultado(tabla, None, "tampoco"), producido)
+
+    def test_el_motor_no_atrapa_lo_que_reviente_el_productor(self):
+        def revienta(_valor):
+            raise RuntimeError("boom")
+
+        tabla = ((app._siempre, revienta), (app._siempre, lambda v: "no deberia llegar"))
+        with self.assertRaises(RuntimeError):
+            app._primer_resultado(tabla, None)
+
+    def test_el_motor_no_atrapa_lo_que_reviente_la_guarda(self):
+        def guarda_rota(_valor):
+            raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError):
+            app._primer_resultado(((guarda_rota, lambda v: "x"),), None)
+
+
+class ComodinPerezosoDeLaSerializacion(unittest.TestCase):
+    """`str(value)` es el último recurso de `safe_serialize`, y se evalúa sólo si
+    hace falta: hay objetos de pyHanko cuyo `__str__` revienta y que sí saben dar
+    su `.native`."""
+
+    def test_un_str_que_revienta_no_impide_leer_el_native(self):
+        class NativoConStrRoto:
+            native = "1234567890"
+
+            def __str__(self):
+                raise RuntimeError("este objeto no se deja imprimir")
+
+        self.assertEqual(app.safe_serialize(NativoConStrRoto()), "1234567890")
+
+    def test_si_no_queda_nada_el_error_del_str_se_propaga(self):
+        # Comportamiento original conservado: el comodín no está protegido.
+        class TodoRoto:
+            def __str__(self):
+                raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError):
+            app.safe_serialize(TodoRoto())
+
+
+class UltimoRecursoDeLaRepresentacionTextual(unittest.TestCase):
+    """La última fila de `_NOMBRES_A_TEXTO`, que no ejercía nadie.
+
+    El hueco ya existía: al vivir dentro de `stringify_name` la función contaba
+    como cubierta y la rama no. Sacarla a su propia fila lo hizo visible.
+    """
+
+    def test_un_nombre_que_solo_sabe_imprimirse(self):
+        # Ni `rfc4514_string`, ni `human_friendly`, ni `native`: sólo `__str__`.
+        self.assertEqual(app.stringify_name(NombreNoIterable("CN=Ana,O=PUCESE")), "CN=Ana,O=PUCESE")
+
+    def test_boquete_conocido_la_rama_que_devuelve_none_es_inalcanzable(self):
+        # `_texto_serializado` cede el turno si `safe_serialize` devuelve `None`,
+        # y eso sólo ocurre cuando el nombre ES `None` — caso que `stringify_name`
+        # ya ha atajado arriba. Se documenta, no se "arregla": es la misma clase
+        # de rama muerta que R-3, y quitarla sería cambiar comportamiento.
+        self.assertIsNone(app.safe_serialize(None))
+        self.assertIsNone(app.stringify_name(None))
+        self.assertIsNotNone(app._texto_serializado(NombreNoIterable("x")))
+
+
+class PartidoEnParesDelDistinguishedName(unittest.TestCase):
+    """Las dos piezas que sacaron a `parse_distinguished_name_text` de su
+    duplicación: qué pares hay (`_pares_del_dn`) va aparte de cómo se acumulan."""
+
+    def test_igual_separa_clave_y_valor(self):
+        self.assertEqual(app._par_del_fragmento("CN=Ana"), ("CN", "Ana"))
+
+    def test_dos_puntos_tambien(self):
+        self.assertEqual(app._par_del_fragmento("common name: Ana"), ("common name", " Ana"))
+
+    def test_los_dos_puntos_ganan_al_igual(self):
+        # Precedencia heredada del original: se miraba `":"` antes que `"="`.
+        self.assertEqual(app._par_del_fragmento("CN=A:B"), ("CN=A", "B"))
+
+    def test_solo_se_parte_por_el_primer_separador(self):
+        self.assertEqual(app._par_del_fragmento("a=b=c"), ("a", "b=c"))
+
+    def test_un_fragmento_sin_separador_no_es_un_par(self):
+        self.assertIsNone(app._par_del_fragmento("solo texto"))
+
+    def test_un_diccionario_aporta_sus_propios_pares(self):
+        self.assertEqual(list(app._pares_del_dn({"cn": "Ana"})), [("cn", "Ana")])
+
+    def test_sin_texto_no_hay_pares(self):
+        self.assertEqual(list(app._pares_del_dn(None)), [])
+        self.assertEqual(list(app._pares_del_dn("")), [])
+
+    def test_del_texto_salen_los_fragmentos_con_separador_y_solo_esos(self):
+        self.assertEqual(
+            list(app._pares_del_dn("CN=Ana, ,solo texto,O=PUCESE")),
+            [("CN", "Ana"), ("O", "PUCESE")],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

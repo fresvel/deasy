@@ -76,6 +76,8 @@ SIGNER_TRUST_DIR = Path(os.getenv("SIGNER_TRUST_DIR", "/app/trust"))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("signer")
 CedulaPattern = re.compile(r"\b\d{10,13}\b")
+OID_COMMON_NAME = "2.5.4.3"
+OID_SUBJECT_ALT_NAME = "2.5.29.17"
 SECURITY_DATA_EXTENSION_OIDS = {
     "1.3.6.1.4.1.37746.3.1": "cedula",
     "1.3.6.1.4.1.37746.3.2": "first_names",
@@ -310,7 +312,7 @@ def load_certificate_info(cert_path: Path, cert_password: str) -> dict[str, Any]
             (
                 attr.value
                 for attr in cert.subject
-                if attr.oid.dotted_string == "2.5.4.3"
+                if attr.oid.dotted_string == OID_COMMON_NAME
             ),
             cert.subject.rfc4514_string(),
         ),
@@ -318,32 +320,83 @@ def load_certificate_info(cert_path: Path, cert_password: str) -> dict[str, Any]
     }
 
 
+# ---------------------------------------------------------------------------
+# LECTURA DE IDENTIDAD DEL CERTIFICADO
+#
+# Todo lo que sigue responde a la misma pregunta con la misma forma: «este dato
+# puede venir de varios sitios, ninguno esta garantizado y algunos revientan al
+# leerlos; prueba en orden y quedate con el primero que salga». Por eso no hay
+# cascadas de `if` defensivos sino TABLAS de filas `(reconoce, produce)` que
+# recorre `_primer_resultado`.
+#
+# Una fila declina de dos maneras: su guarda no reconoce el valor, o su
+# productor devuelve `_SIGUIENTE`. El `try` vive DENTRO del productor que puede
+# fallar, no en el motor: asi se ve de un vistazo cuales pueden fallar, y un
+# paso que hoy no tolera excepciones sigue sin tolerarlas.
+# ---------------------------------------------------------------------------
+
+_SIGUIENTE = object()
+"""Lo devuelve el productor que no ha sabido: la tabla continua con la fila siguiente."""
+
+
+def _siempre(_valor: Any) -> bool:
+    """Guarda de las filas que no discriminan por forma (el comodin del final)."""
+    return True
+
+
+def _primer_resultado(tabla: Any, valor: Any, por_defecto: Any = None) -> Any:
+    """Recorre la tabla y devuelve lo que produzca la primera fila que sepa."""
+    for reconoce, produce in tabla:
+        if reconoce(valor):
+            resultado = produce(valor)
+            if resultado is not _SIGUIENTE:
+                return resultado
+    return por_defecto
+
+
+def _texto_de_bytes(value: bytes) -> str:
+    try:
+        return value.decode("utf-8")
+    except Exception:
+        return value.hex()
+
+
+def _desde_native(value: Any) -> Any:
+    try:
+        return safe_serialize(value.native)
+    except Exception:
+        return _SIGUIENTE
+
+
+def _desde_dump(value: Any) -> Any:
+    try:
+        dumped = value.dump()
+        return dumped.hex() if isinstance(dumped, bytes) else safe_serialize(dumped)
+    except Exception:
+        return _SIGUIENTE
+
+
+# El ORDEN es el contrato: `bytes` antes que las secuencias, y `.native` antes que
+# `.dump()` porque asn1crypto expone los dos y solo el primero da valores legibles.
+_SERIALIZADORES = (
+    (lambda v: v is None or isinstance(v, (str, int, float, bool)), lambda v: v),
+    (lambda v: isinstance(v, bytes), _texto_de_bytes),
+    (lambda v: isinstance(v, datetime), lambda v: v.isoformat()),
+    (lambda v: isinstance(v, (list, tuple, set)), lambda v: [safe_serialize(item) for item in v]),
+    (lambda v: isinstance(v, dict), lambda v: {str(k): safe_serialize(item) for k, item in v.items()}),
+    (lambda v: hasattr(v, "native"), _desde_native),
+    (lambda v: hasattr(v, "dump"), _desde_dump),
+)
+
+
 def safe_serialize(value: Any) -> Any:
-    if value is None or isinstance(value, (str, int, float, bool)):
-        return value
-    if isinstance(value, bytes):
-        try:
-            return value.decode("utf-8")
-        except Exception:
-            return value.hex()
-    if isinstance(value, datetime):
-        return value.isoformat()
-    if isinstance(value, (list, tuple, set)):
-        return [safe_serialize(item) for item in value]
-    if isinstance(value, dict):
-        return {str(key): safe_serialize(item) for key, item in value.items()}
-    if hasattr(value, "native"):
-        try:
-            return safe_serialize(value.native)
-        except Exception:
-            pass
-    if hasattr(value, "dump"):
-        try:
-            dumped = value.dump()
-            return dumped.hex() if isinstance(dumped, bytes) else safe_serialize(dumped)
-        except Exception:
-            pass
-    return str(value)
+    """Cualquier cosa convertida a algo que `json.dumps` acepte.
+
+    Comodin final `str(value)`, evaluado solo si ninguna fila sabe: hay objetos
+    de pyHanko cuyo `__str__` revienta y que si saben dar su `.native`.
+    """
+    resultado = _primer_resultado(_SERIALIZADORES, value, _SIGUIENTE)
+    return str(value) if resultado is _SIGUIENTE else resultado
 
 
 def extract_common_name(name: Any) -> str | None:
@@ -351,7 +404,7 @@ def extract_common_name(name: Any) -> str | None:
         return None
     try:
         for attr in name:
-            if getattr(getattr(attr, "oid", None), "dotted_string", "") == "2.5.4.3":
+            if getattr(getattr(attr, "oid", None), "dotted_string", "") == OID_COMMON_NAME:
                 return str(attr.value)
     except Exception:
         pass
@@ -363,9 +416,9 @@ def extract_common_name(name: Any) -> str | None:
         return None
 
 
-def parse_distinguished_name_text(value: Any) -> dict[str, str]:
-    attributes: dict[str, str] = {}
-    aliases = {
+# Como etiqueta cada libreria los atributos de un DN, y el nombre canonico que usa
+# este modulo. Es una tabla de datos, no logica; antes se reconstruia en CADA llamada.
+_DN_ALIASES = {
         "common name": "commonName",
         "cn": "commonName",
         "common_name": "commonName",
@@ -393,38 +446,64 @@ def parse_distinguished_name_text(value: Any) -> dict[str, str]:
         "organizationalunit": "organizationalUnit",
         "ou": "organizationalUnit",
         "organizational_unit_name": "organizationalUnit",
-    }
+}
+_DN_SEPARADORES = (":", "=")
 
-    text = safe_serialize(value)
-    if isinstance(text, dict):
-        for key, raw_value in text.items():
-            normalized_key = aliases.get(str(key).strip().lower())
-            clean_value = str(raw_value).strip() if raw_value not in (None, "") else ""
-            if normalized_key and clean_value and normalized_key not in attributes:
-                attributes[normalized_key] = clean_value
-        return attributes
 
-    if text in (None, ""):
-        return attributes
+def _par_del_fragmento(fragmento: str) -> tuple[str, str] | None:
+    """`CN=Ana` o `common name: Ana` -> `("CN", "Ana")`. `None` si no hay separador."""
+    for separador in _DN_SEPARADORES:
+        if separador in fragmento:
+            clave, valor = fragmento.split(separador, 1)
+            return clave, valor
+    return None
 
-    parts = [part.strip() for part in str(text).split(",") if part.strip()]
 
-    for part in parts:
-        if ":" in part:
-            key, raw_value = part.split(":", 1)
-        elif "=" in part:
-            key, raw_value = part.split("=", 1)
-        else:
-            continue
-        normalized_key = aliases.get(key.strip().lower())
-        clean_value = raw_value.strip()
-        if normalized_key and clean_value and normalized_key not in attributes:
-            attributes[normalized_key] = clean_value
+def _pares_del_dn(texto: Any) -> Any:
+    """Los pares clave/valor de un DN, venga como diccionario o como texto plano.
 
+    Separar QUE pares hay de COMO se acumulan es lo que quita el bulto de esta
+    funcion: los dos caminos tenian el mismo bucle de acumulacion copiado.
+    """
+    if isinstance(texto, dict):
+        return texto.items()
+    if texto in (None, ""):
+        return ()
+    fragmentos = (parte.strip() for parte in str(texto).split(","))
+    return [par for par in map(_par_del_fragmento, fragmentos) if par]
+
+
+def parse_distinguished_name_text(value: Any) -> dict[str, str]:
+    """DN -> atributos canonicos. Gana la PRIMERA aparicion de cada clave."""
+    attributes: dict[str, str] = {}
+    for clave, bruto in _pares_del_dn(safe_serialize(value)):
+        canonica = _DN_ALIASES.get(str(clave).strip().lower())
+        limpio = "" if bruto in (None, "") else str(bruto).strip()
+        if canonica and limpio and canonica not in attributes:
+            attributes[canonica] = limpio
     return attributes
 
 
+# Puente entre el nombre canonico que devuelve `parse_distinguished_name_text` y su
+# OID, para cuando el DN no se deja iterar. Eran ocho `if` identicos seguidos.
+_DN_OIDS_DE_RESPALDO = {
+    "commonName": OID_COMMON_NAME,
+    "serialNumber": "2.5.4.5",
+    "locality": "2.5.4.7",
+    "organization": "2.5.4.10",
+    "organizationalUnit": "2.5.4.11",
+    "country": "2.5.4.6",
+    "surname": "2.5.4.4",
+    "givenName": "2.5.4.42",
+}
+
+
 def extract_name_attributes(name: Any) -> dict[str, Any]:
+    """Los atributos del DN indexados por OID.
+
+    Si el nombre no se deja iterar (o no aporta nada), se reconstruyen releyendo
+    su representacion textual.
+    """
     attributes: dict[str, Any] = {}
     if name is None:
         return attributes
@@ -433,51 +512,47 @@ def extract_name_attributes(name: Any) -> dict[str, Any]:
         for attr in name:
             oid = getattr(getattr(attr, "oid", None), "dotted_string", None)
             value = safe_serialize(getattr(attr, "value", None))
-            if not oid or value in (None, ""):
-                continue
-            attributes[oid] = value
+            if oid and value not in (None, ""):
+                attributes[oid] = value
     except Exception:
         pass
 
-    if not attributes:
-        fallback_attributes = parse_distinguished_name_text(name)
-        if fallback_attributes.get("commonName"):
-            attributes["2.5.4.3"] = fallback_attributes["commonName"]
-        if fallback_attributes.get("serialNumber"):
-            attributes["2.5.4.5"] = fallback_attributes["serialNumber"]
-        if fallback_attributes.get("locality"):
-            attributes["2.5.4.7"] = fallback_attributes["locality"]
-        if fallback_attributes.get("organization"):
-            attributes["2.5.4.10"] = fallback_attributes["organization"]
-        if fallback_attributes.get("organizationalUnit"):
-            attributes["2.5.4.11"] = fallback_attributes["organizationalUnit"]
-        if fallback_attributes.get("country"):
-            attributes["2.5.4.6"] = fallback_attributes["country"]
-        if fallback_attributes.get("surname"):
-            attributes["2.5.4.4"] = fallback_attributes["surname"]
-        if fallback_attributes.get("givenName"):
-            attributes["2.5.4.42"] = fallback_attributes["givenName"]
+    if attributes:
+        return attributes
 
-    return attributes
+    respaldo = parse_distinguished_name_text(name)
+    return {
+        oid: respaldo[clave]
+        for clave, oid in _DN_OIDS_DE_RESPALDO.items()
+        if respaldo.get(clave)
+    }
+
+
+def _texto_rfc4514(name: Any) -> Any:
+    try:
+        return name.rfc4514_string()
+    except Exception:
+        return _SIGUIENTE
+
+
+def _texto_serializado(name: Any) -> Any:
+    serializado = safe_serialize(name)
+    return str(serializado) if serializado is not None else _SIGUIENTE
+
+
+_NOMBRES_A_TEXTO = (
+    (lambda n: callable(getattr(n, "rfc4514_string", None)), _texto_rfc4514),
+    (lambda n: bool(getattr(n, "human_friendly", None)), lambda n: str(n.human_friendly)),
+    (lambda n: getattr(n, "native", None) is not None, lambda n: str(n.native)),
+    (_siempre, _texto_serializado),
+)
 
 
 def stringify_name(name: Any) -> str | None:
+    """El DN como texto. Se prefiere RFC 4514; si no, lo que sepa dar el objeto."""
     if name is None:
         return None
-    rfc4514 = getattr(name, "rfc4514_string", None)
-    if callable(rfc4514):
-        try:
-            return rfc4514()
-        except Exception:
-            pass
-    human_friendly = getattr(name, "human_friendly", None)
-    if human_friendly:
-        return str(human_friendly)
-    native = getattr(name, "native", None)
-    if native is not None:
-        return str(native)
-    serialized = safe_serialize(name)
-    return str(serialized) if serialized is not None else None
+    return _primer_resultado(_NOMBRES_A_TEXTO, name)
 
 
 def extract_cedula_from_values(*values: Any) -> str | None:
@@ -518,74 +593,108 @@ def decode_extension_bytes(raw_value: bytes) -> Any:
         return raw_value.hex()
 
 
+def _recargar_asn1(certificate: Any, volcado: str) -> Any:
+    """Vuelca el certificado con `volcado()` y lo relee como ASN.1."""
+    try:
+        return asn1_x509.Certificate.load(getattr(certificate, volcado)())
+    except Exception:
+        return _SIGUIENTE
+
+
+_CERTIFICADOS_ASN1 = (
+    (lambda c: isinstance(c, asn1_x509.Certificate), lambda c: c),
+    (lambda c: hasattr(c, "dump"), lambda c: _recargar_asn1(c, "dump")),
+    (lambda c: hasattr(c, "public_bytes"), lambda c: _recargar_asn1(c, "public_bytes")),
+)
+
+
 def to_asn1_certificate(certificate: Any) -> asn1_x509.Certificate | None:
+    """El certificado como objeto de asn1crypto, venga de donde venga."""
     if certificate is None:
         return None
-    if isinstance(certificate, asn1_x509.Certificate):
-        return certificate
-    if hasattr(certificate, "dump"):
-        try:
-            return asn1_x509.Certificate.load(certificate.dump())
-        except Exception:
-            pass
-    if hasattr(certificate, "public_bytes"):
-        try:
-            return asn1_x509.Certificate.load(certificate.public_bytes())
-        except Exception:
-            pass
-    return None
+    return _primer_resultado(_CERTIFICADOS_ASN1, certificate)
+
+
+def _othernames_del_san(extension_value: Any) -> dict[str, Any]:
+    """Los `OtherName` del subjectAltName, indexados por su OID.
+
+    Se queda APARTE del camino generico a proposito: las ACs ecuatorianas meten
+    los datos de la persona aqui dentro, no en extensiones propias, asi que esta
+    unica extension aporta varios atributos de golpe. Si algo no se deja leer se
+    descarta el lote entero y la extension se trata como cualquier otra.
+    """
+    try:
+        return {
+            other_name.type_id.dotted_string: decode_extension_bytes(other_name.value)
+            for other_name in extension_value.get_values_for_type(crypto_x509.OtherName)
+        }
+    except Exception:
+        return {}
+
+
+def _valor_de_extension(extension_value: Any) -> Any:
+    raw_value = getattr(extension_value, "value", None)
+    if isinstance(raw_value, bytes):
+        return decode_extension_bytes(raw_value)
+    return safe_serialize(extension_value)
+
+
+def _leer_con_cryptography(certificate: Any, extensions: dict[str, Any]) -> None:
+    """Primera fuente: la API de `cryptography`.
+
+    Escribe sobre el acumulador compartido; si el recorrido revienta a mitad se
+    conserva lo ya leido, que es como venia funcionando.
+    """
+    crypto_extensions = getattr(certificate, "extensions", None)
+    if crypto_extensions is None:
+        return
+    try:
+        for extension in crypto_extensions:
+            oid = getattr(getattr(extension, "oid", None), "dotted_string", None)
+            if not oid:
+                continue
+            extension_value = getattr(extension, "value", None)
+            othernames = (
+                _othernames_del_san(extension_value) if oid == OID_SUBJECT_ALT_NAME else {}
+            )
+            if othernames:
+                extensions.update(othernames)
+                continue
+            extensions[oid] = _valor_de_extension(extension_value)
+    except Exception:
+        pass
+
+
+def _leer_con_asn1(certificate: Any, extensions: dict[str, Any]) -> None:
+    """Segunda fuente: el TBS crudo por asn1crypto, para los OID que `cryptography`
+    no supo mapear. No pisa nada de lo que aportara la primera."""
+    asn1_certificate = to_asn1_certificate(certificate)
+    if asn1_certificate is None:
+        return
+    try:
+        for extension in asn1_certificate["tbs_certificate"]["extensions"]:
+            oid = safe_serialize(extension["extn_id"].dotted)
+            if not oid or oid in extensions:
+                continue
+            extn_value = extension["extn_value"]
+            raw_value = extn_value.contents if hasattr(extn_value, "contents") else extn_value.dump()
+            extensions[oid] = decode_extension_bytes(raw_value)
+    except Exception:
+        pass
+
+
+# Las dos APIs que saben leer extensiones, en orden de preferencia. Estaban
+# entrelazadas en una sola funcion de 51 lineas y anidamiento 6.
+_FUENTES_DE_EXTENSIONES = (_leer_con_cryptography, _leer_con_asn1)
 
 
 def extract_certificate_extensions(certificate: Any) -> dict[str, Any]:
+    """Todas las extensiones del certificado indexadas por OID."""
     extensions: dict[str, Any] = {}
     if certificate is None:
         return extensions
-
-    asn1_certificate = to_asn1_certificate(certificate)
-
-    crypto_extensions = getattr(certificate, "extensions", None)
-    if crypto_extensions is not None:
-        try:
-            for extension in crypto_extensions:
-                oid = getattr(getattr(extension, "oid", None), "dotted_string", None)
-                if not oid:
-                    continue
-                if oid == "2.5.29.17":
-                    extension_value = getattr(extension, "value", None)
-                    parsed_san = {}
-                    try:
-                        for other_name in extension_value.get_values_for_type(crypto_x509.OtherName):
-                            parsed_value = decode_extension_bytes(other_name.value)
-                            parsed_san[other_name.type_id.dotted_string] = parsed_value
-                    except Exception:
-                        parsed_san = {}
-                    if parsed_san:
-                        extensions.update(parsed_san)
-                        continue
-                extension_value = getattr(extension, "value", None)
-                raw_value = getattr(extension_value, "value", None)
-                if isinstance(raw_value, bytes):
-                    value = decode_extension_bytes(raw_value)
-                else:
-                    value = safe_serialize(extension_value)
-                extensions[oid] = value
-        except Exception:
-            pass
-
-    if asn1_certificate is not None:
-        try:
-            tbs_certificate = asn1_certificate["tbs_certificate"]
-            for extension in tbs_certificate["extensions"]:
-                oid = safe_serialize(extension["extn_id"].dotted)
-                if not oid or oid in extensions:
-                    continue
-                extn_value = extension["extn_value"]
-                raw_value = extn_value.contents if hasattr(extn_value, "contents") else extn_value.dump()
-                value = decode_extension_bytes(raw_value)
-                extensions[oid] = value
-        except Exception:
-            pass
-
+    for leer in _FUENTES_DE_EXTENSIONES:
+        leer(certificate, extensions)
     return extensions
 
 
