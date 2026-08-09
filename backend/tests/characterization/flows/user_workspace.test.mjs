@@ -16,7 +16,7 @@
 
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { get } from "../lib/http.mjs";
+import { get, post } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { snapshotShape } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
@@ -146,4 +146,31 @@ test("GET /users/:otro/my-sends -> no expone la bandeja ajena", async () => {
   const res = await get(`/users/${FIXTURE.gestorPersonId}/my-sends`, { token });
   assert.ok(res.status >= 400, `debería denegar, devolvió ${res.status}`);
   matchSnapshot(SUITE, "my_sends_ajeno_denegado", snapshotShape(res, OBJ_OPTS));
+});
+
+// --- Subida rechazada por el fileFilter: JSON, no la página HTML de Express ---
+//
+// `user_router` monta TRES multer (certificado, entregable y anexo) y los tres rechazan con
+// `cb(error)`. Si nadie recoge ese error, Express contesta con SU página HTML, que incluye el stack
+// trace completo: rutas absolutas dentro del contenedor, números de línea y nombres de fichero del
+// servidor. Es una fuga de información, y encima el cliente recibe HTML donde espera JSON.
+//
+// Igual que en `zzzz_sign_batch.test.mjs` (`sign_mimetype_rechazado`), lo que se fija NO es el texto
+// exacto sino LA FORMA: que sea JSON, que no lleve HTML ni stack trace, y que diga de qué se queja.
+test("POST /users/me/certificates con un no-p12 -> JSON, sin HTML ni stack trace", async () => {
+  const token = await tokenFor("usuario");
+  const res = await post("/users/me/certificates", {
+    token,
+    form: { certificate: { filename: "malicioso.txt", contentType: "text/plain", content: "no soy un p12" } },
+  });
+  const cuerpo = typeof res.body === "string" ? res.body : JSON.stringify(res.body ?? "");
+  matchSnapshot(SUITE, "certificado_mimetype_rechazado", {
+    status: res.status,
+    esHtml: cuerpo.includes("<!DOCTYPE html>"),
+    esJson: typeof res.body === "object" && res.body !== null,
+    filtra_stack_trace: cuerpo.includes("at fileFilter") || cuerpo.includes("/app/backend/"),
+    menciona_el_motivo: cuerpo.includes("Solo se permiten certificados .p12"),
+    // El contrato objetivo de `docs/planes/referencia/contrato-errores-api.md` §4: mensaje humano + código estable.
+    claves: typeof res.body === "object" && res.body !== null ? Object.keys(res.body).sort() : null,
+  });
 });

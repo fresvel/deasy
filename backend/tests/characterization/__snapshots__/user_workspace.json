@@ -22,6 +22,14 @@
       "task_id": "<normalized>"
     }
   },
+  "certificado_mimetype_rechazado": {
+    "status": 500,
+    "esHtml": true,
+    "esJson": false,
+    "filtra_stack_trace": true,
+    "menciona_el_motivo": true,
+    "claves": null
+  },
   "flow_catalog_usuario": {
     "status": 200,
     "body": {

@@ -1,4 +1,12 @@
 {
+  "dossier_mimetype_rechazado": {
+    "status": 500,
+    "esHtml": true,
+    "esJson": false,
+    "filtra_stack_trace": true,
+    "menciona_el_motivo": true,
+    "claves": null
+  },
   "dossier_no_token": {
     "status": 401,
     "body": {
