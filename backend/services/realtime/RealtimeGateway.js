@@ -4,7 +4,7 @@ import { getAccessTokenSecret } from "../../utils/login/generate_token.js";
 import UserRepository from "../auth/UserRepository.js";
 import ChatConversationService from "../chat/ChatConversationService.js";
 import ChatAuthorizationService from "../chat/ChatAuthorizationService.js";
-import { logChatInfo } from "../chat/chat_logging.js";
+import { logChatInfo, logChatError } from "../chat/chat_logging.js";
 
 const userRoom = (personId) => `user:${personId}`;
 const conversationRoom = (conversationId) => `conversation:${conversationId}`;
@@ -83,6 +83,15 @@ class RealtimeGateway {
       socket.data.personId = Number(person.id);
       return next();
     } catch (error) {
+      // Al cliente siempre se le responde "Token inválido" (no se filtra el motivo),
+      // pero aquí caen dos cosas muy distintas: un JWT caducado/manipulado (normal, el
+      // frontend refresca) y un fallo de `userRepository.findById` (base de datos caída).
+      // Sin esta traza el segundo caso era invisible: todos los usuarios veían "token
+      // inválido" y el servidor no dejaba ni una línea.
+      logChatError("realtime.auth.rejected", {
+        reason: error?.name || "Error",
+        message: error?.message
+      });
       return next(new Error("Token inválido"));
     }
   }

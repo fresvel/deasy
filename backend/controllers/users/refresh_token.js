@@ -44,7 +44,11 @@ export const refreshToken = async (req, res) => {
       }
 
       decoded = jwt.verify(refreshToken, secret);
-    } catch (error) {
+    } catch {
+      // Se ignora el detalle a propósito: este `try` interno envuelve solo a `jwt.verify`,
+      // y que el refresh token esté caducado es el final normal de una sesión, no una
+      // avería. Cualquier otro fallo del controlador cae en el `catch` exterior, que sí
+      // lo registra con `console.error`.
       return res.status(401).json({
         message: 'Refresh token inválido o expirado',
         code: 401

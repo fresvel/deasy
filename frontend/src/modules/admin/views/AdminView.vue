@@ -1120,7 +1120,11 @@ onMounted(() => {
   if (userDataString) {
     try {
       currentUser.value = JSON.parse(userDataString);
-    } catch (error) {
+    } catch {
+      // Se ignora a propósito: el `user` de localStorage es un dato del cliente que puede
+      // estar corrupto o venir de una versión anterior. Quedarse sin usuario en memoria es
+      // la degradación correcta (la vista lo trata como no cargado); no hay nada que
+      // diagnosticar en el servidor ni nada que contarle al usuario.
       currentUser.value = null;
     }
   }

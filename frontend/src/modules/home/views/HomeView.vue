@@ -4979,6 +4979,9 @@ const loadDeliverableObservations = async (payload) => {
     deliverableObservations.value = Array.isArray(data?.observations) ? data.observations : [];
     observationsCanAdd.value = Boolean(data?.can_add);
   } catch (error) {
+    // El panel degrada a "sin observaciones", que es indistinguible de un entregable que
+    // realmente no tiene ninguna: sin esta traza un fallo del endpoint era invisible.
+    console.error('Error al cargar las observaciones del entregable:', error);
     deliverableObservations.value = [];
     observationsCanAdd.value = false;
   } finally {

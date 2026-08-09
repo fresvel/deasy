@@ -1876,6 +1876,9 @@ const fieldId = (name) => `${uid}-${name}`;
         signerUnitTypeOptions.value = unitTypesResponse.data || [];
         signerCargoOptions.value = cargosResponse.data || [];
       } catch (error) {
+        // Los desplegables quedan vacíos, que se ve igual que "no hay tipos de unidad ni
+        // cargos configurados": sin traza no había forma de distinguir el fallo del vacío.
+        console.error('No se pudieron cargar los filtros de firmantes:', error);
         signerUnitTypeOptions.value = [];
         signerCargoOptions.value = [];
       } finally {
@@ -1898,6 +1901,9 @@ const fieldId = (name) => `${uid}-${name}`;
         });
         signerUnitOptions.value = response.data || [];
       } catch (error) {
+        // Mismo caso que loadSignerFilterOptions: la lista vacía no distingue "ese tipo de
+        // unidad no tiene unidades" de "la petición falló".
+        console.error('No se pudieron cargar las unidades del filtro de firmantes:', error);
         signerUnitOptions.value = [];
       } finally {
         isLoadingSignerOptions.value = false;
