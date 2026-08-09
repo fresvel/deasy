@@ -15,9 +15,13 @@
 </template>
   
   <script setup>
-  import { defineProps, defineEmits, computed } from 'vue';
+  import { defineProps, defineEmits, computed, useId } from 'vue';
 
-  
+  // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+  // instancia, para que dos montajes simultaneos no compartan el mismo id.
+  const uid = useId();
+  const fieldId = (name) => `${uid}-${name}`;
+
   const props = defineProps({
     label: {
       type: String,
@@ -40,8 +44,8 @@
   
   const emit = defineEmits(['update:modelValue']);
   
-  // Generar ID único para el input
-  const dateId = computed(() => `date-${Math.random().toString(36).substr(2, 9)}`);
+  // Id estable por instancia para enlazar el <label for> con el <input id>.
+  const dateId = fieldId("date");
   
   // Formatear el valor para el input type="date" (YYYY-MM-DD)
   const formattedValue = computed(() => {

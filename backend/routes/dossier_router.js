@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import os from 'node:os';
+import { randomUUID } from 'node:crypto';
 import * as dossierController from '../controllers/users/dossier_controler.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { loadAccessContext, requireDossierAccess } from '../middlewares/rbac.js';
@@ -12,8 +13,9 @@ const storage = multer.diskStorage({
         cb(null, os.tmpdir());
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + '-' + file.originalname);
+        // randomUUID en vez de Math.random: el nombre cae en os.tmpdir(), que es compartido, y un
+        // sufijo predecible admite colision. No es criptografia, es unicidad sin adivinanza.
+        cb(null, `${Date.now()}-${randomUUID()}-${file.originalname}`);
     }
 });
 

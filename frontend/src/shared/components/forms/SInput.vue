@@ -15,7 +15,12 @@
 </template>
   
   <script setup>
-  import { ref, watch, defineProps, defineEmits, computed } from 'vue';
+  import { ref, watch, defineProps, defineEmits, computed, useId } from 'vue';
+
+  // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+  // instancia, para que dos montajes simultaneos no compartan el mismo id.
+  const uid = useId();
+  const fieldId = (name) => `${uid}-${name}`;
   
   const props = defineProps({
     label: {
@@ -60,8 +65,8 @@
       return props.wide ? wideMap[props.wide] || 'deasy-col-12' : 'deasy-col-12';
   });
   
-  // Generar ID único para el input
-  const inputId = computed(() => `input-${Math.random().toString(36).substr(2, 9)}`);
+  // Id estable por instancia para enlazar el <label for> con el <input id>.
+  const inputId = fieldId("input");
 
   const emit = defineEmits(['update:modelValue']);
   

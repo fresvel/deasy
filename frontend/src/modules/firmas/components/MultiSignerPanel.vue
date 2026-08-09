@@ -823,10 +823,15 @@ const updateFieldCoordinates = (updatedField) => {
   }
 };
 
+// Secuencia monotona para los ids de campo. Sustituye a Math.random: aqui solo hace falta unicidad
+// dentro de la sesion, y un contador la garantiza sin depender del azar ni de crypto (que no existe
+// fuera de contexto seguro).
+let fieldSequence = 0;
+
 const appendField = (selection) => {
   if (!selection) return;
   const field = {
-    id: `multi-field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `multi-field-${Date.now()}-${(fieldSequence += 1)}`,
     page: selection.page,
     pageReference: batchMode.value === "shared-coordinates" ? sharedPageReference.value : "start",
     // Página absoluta: se guarda siempre, la lea o no `pageReference` (ver resolveFieldPage).

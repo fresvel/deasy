@@ -1,4 +1,5 @@
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import {
   ensureBucketExists,
   getMinioObjectStream,
@@ -24,7 +25,7 @@ const buildAttachmentObjectName = ({ conversationId, personId, originalName }) =
   const sanitizedName = sanitizeFileName(originalName);
   const now = new Date();
   const monthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const uniqueSuffix = `${Date.now()}-${randomUUID()}`;
   return `${MINIO_CHAT_PREFIX}/conversations/${conversationId}/${monthKey}/${personId}-${uniqueSuffix}-${sanitizedName}`;
 };
 

@@ -33,7 +33,12 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, useId } from "vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   modelValue: {
@@ -93,9 +98,8 @@ const rootClass = computed(() => {
   return props.labelPosition === "end" ? "inline-block" : "w-full";
 });
 
-const toggleId = computed(
-  () => props.id || `toggle-${Math.random().toString(36).substr(2, 9)}`
-);
+// La prop `id` manda; el id por instancia de useId() es solo el respaldo estable.
+const toggleId = computed(() => props.id || fieldId("toggle"));
 
 function onChange(event) {
   const value = event.target.checked;
