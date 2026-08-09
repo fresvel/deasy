@@ -14,7 +14,7 @@ decía si tenía trabajo pendiente o era historia**. Saber por dónde empezar co
 
 | Fichero | Qué es | ¿Hay que hacer algo? |
 |---|---|---|
-| **[`plan-maestro-2026-08.md`](./plan-maestro-2026-08.md)** | **Los 7 frentes pendientes**, ordenados por retorno sobre esfuerzo, cada uno con su criterio de cierre | **SÍ. Es el único.** |
+| **[`plan-maestro-2026-08.md`](./plan-maestro-2026-08.md)** | **Los 8 frentes pendientes**, ordenados por retorno sobre esfuerzo, cada uno con su criterio de cierre. Incluye además **por qué la pregunta arquitectónica está cerrada** (se evaluaron 15 arquitecturas el 2026-08-09 y ninguna baja la complejidad) | **SÍ. Es el único.** |
 | [`referencia/metodo.md`](./referencia/metodo.md) | Las 13 reglas de trabajo, los comandos, y **lo que NO hay que tocar** | Léelo **antes** de tocar código |
 | [`referencia/patrones-diseno.md`](./referencia/patrones-diseno.md) | Cuándo un patrón de diseño sí y cuándo no, con la evidencia medida de este repo | Léelo **antes** de proponer un patrón |
 | [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) | La bitácora de las nueve fases cerradas, la línea base de Sonar y su serie histórica | Consulta. Es el *cómo se midió* |

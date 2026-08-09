@@ -466,10 +466,15 @@ Esta es la cola de trabajo. Umbral de Sonar: 15. **67 abiertas** (60 JS + 7 Pyth
 escaneo del 17:27: las de `templateLifecycle.js` y `FirmarPdf.vue` **se han desplazado** respecto a la
 versión anterior de esta tabla, así que no cites las viejas.
 
+> ⚠️ **Esta tabla es una foto del escaneo de las 17:27 y se quedó un paso corta.** El commit
+> `f37ada2` cerró la Fase C **después** de medirla, dejando `saveTemplateArtifactDraft` en **21**
+> (no en 76). No la reescribo entera con cifras inventadas: la fila va tachada, como se hizo con
+> `createGeneralTask`. **Al citar de aquí, comprueba primero contra Sonar.** Revisado el 2026-08-09.
+
 | Cogn. | Función / ubicación | Δ |
 |---:|---|---:|
-| **76** | `templates/templateLifecycle.js:1252` → `saveTemplateArtifactDraft` | **−88** (Fase C) |
-| **67** | `frontend/.../composables/forms/useAdminSubmitFlow.js:30` | = ← **la nueva segunda** |
+| ~~76~~ | ~~`templates/templateLifecycle.js:1252` → `saveTemplateArtifactDraft`~~ | ✅ **fuera de la cola** — `f37ada2` la dejó en **21** (164 → 76 → 21) |
+| **67** | `frontend/.../composables/forms/useAdminSubmitFlow.js:30` | = ← **la peor del repo tras cerrar la Fase C** |
 | 59 / 49 | `backend/config/postgres.js:111` (`bindParams`) y `:47` (`translatePlaceholders`) | = |
 | 44 | `frontend/.../firmas/FirmarPdf.vue:2488` → `confirmSign` | = |
 | 44 | `frontend/.../ui/useAdminPresentationAdapters.js:94` | = |
@@ -486,8 +491,9 @@ versión anterior de esta tabla, así que no cites las viejas.
 | ~~75~~ | ~~`user_controler.js:1834` → `createGeneralTask`~~ | ✅ **fuera de la cola** (Fase D) |
 
 **Lo que cambia la estrategia:** `saveTemplateArtifactDraft` ya **no es el doble que la siguiente**.
-Bajó de 164 a 76 y `createGeneralTask` (75) salió de la lista entera, así que hoy la cola arranca
-**76 · 67 · 59 · 49 · 44**, que es una pendiente suave. Consecuencias prácticas:
+Bajó de 164 a 76 —y `f37ada2` la remató en **21**—, y `createGeneralTask` (75) salió de la lista
+entera, así que **hoy la cola arranca en 67 · 59 · 49 · 44 · 44**: no queda ninguna función por encima
+de 70 y la pendiente es suave. Consecuencias prácticas:
 
 - ~~**La segunda peor función del repo es de frontend** (`useAdminSubmitFlow.js`, CC 67) y **no tiene
   fase asignada**~~ → ✅ **CERRADA el 2026-08-08** como **Fase E-5** (§5-E.5). Era un hueco real del

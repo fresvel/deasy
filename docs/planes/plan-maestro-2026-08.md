@@ -38,9 +38,18 @@ cuando el defecto muere, su golden cambia, y ese diff **es** la prueba.
 | 1.6 | `translatePlaceholders` es **código muerto** | `backend/config/postgres.js` | Cero llamadas (`FNDA:0`). Borrar en un commit propio: quitar un export no es refactor |
 | 1.7 | **El «sello fantasma»: un guard permanentemente verdadero** | `MultiSignerPanel.vue` | `previewBoxStyle` nace `{display:'none'}` pero la asignación de `:911` **no incluye `display`**, así que tras el primer `pointermove` el `v-if` de `:169` es siempre cierto: código muerto. Ojo — [`referencia/frontend.md`](./referencia/frontend.md) afirma lo contrario (que `isMouseOverPdf` «nunca se lee», y sí se lee en `:169`); el único diagnóstico correcto está en [`referencia/god-objects-2026-07.md`](./referencia/god-objects-2026-07.md) §3.4 |
 | 1.8 | **Dos documentos del repo mandan formas de error contrarias** | `backend/errors/HttpError.js:20` | Su cabecera recomienda `res.json({ error: error.message })`, mientras el contrato objetivo —y `middlewares/uploadError.js`, que ya lo implementa— es `{ message, code }`. Mientras eso no se reconcilie, cada controller nuevo elige mal la mitad de las veces |
+| 1.9 | **El arreglo del IDOR se aplicó copia por copia y una copia se quedó atrás** | `backend/services/chat/ChatAuthorizationService.js:61-73` | El guard canónico es `AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)`, documentado en `user_controler.queries.js:121-124` («verificado: 15 de 18 eran ajenos»). Ese `EXISTS` sobre `task_assignments` **no lo lleva**, aunque el mismo `SELECT` hace `LEFT JOIN task_items ti`. Alcance menor que el IDOR original (resuelve acceso al **hilo de chat**, no descarga de documento), pero **es el mismo modo de fallo**. Comprobado en el árbol el 2026-08-09 |
+| 1.10 | **La única bitácora de auditoría del sistema la puentea el camino automático** | `backend/database/postgres_schema.sql:1330-1344` | `trg_position_assignments_after_update_fn` reasigna `task_items.assigned_person_id` (a `NULL` al cerrar la ocupación, y a la persona nueva al abrirla) **sin escribir ni una fila en `task_item_handovers`**. En todo el backend hay **un solo INSERT** a esa tabla (`services/admin/org/taskAssignment.js:254`, el camino manual), así que **dos de los tres valores de su `CHECK` —`occupancy_end` y `position_deactivated`— son inalcanzables**. Es decir: los relevos que ocurren solos, que son justo los que nadie recuerda, no dejan rastro |
 
 **Criterio de cierre:** cada uno con su golden actualizado y su clave renombrada si decía «defecto»
 (el modelo es `return_ok`/`return_efecto`, commit `2b07180`).
+
+> **Dos candidatos que se descartaron tras comprobarlos** (2026-08-09), para que no vuelvan a
+> proponerse: `generation/launch.js:224` (`UPDATE tasks SET process_run_id`) **no es una pérdida de
+> trazabilidad**, es la «Opción X» deliberada —el código lo dice en su comentario y el modelo de
+> `process_runs` se diseñó así—; y `controllers/tareas/tareas_controler.js:79` **no es otra copia del
+> IDOR**: lista *tareas* vía `task_assignments` y solo expone un agregado (`task_item_count`,
+> `task_item_names`), no entregables individuales. Si algún día se revisa, es por otro motivo.
 
 ---
 
@@ -68,7 +77,13 @@ R-1 por escrito con su justificación. Detalle en [`referencia/signer.md`](./ref
 
 ## Frente 3 · Complejidad: lo que queda son tres componentes Vue — 🟡
 
-De los **58 `S3776`** abiertos, la cabeza ya no está en el backend.
+De los **~60 `S3776`** abiertos, la cabeza ya no está en el backend.
+
+> **No cites ese número sin re-medirlo.** Al revisar el plan el 2026-08-09 había **tres cifras vivas y
+> distintas** para lo mismo: 58 aquí, **67** en `referencia/calidad-y-medicion.md` §3.2, y **61** en la
+> consulta directa a la API (`resolved=false`). Es deriva normal entre escaneos, pero el contador de
+> `S3776` **no es un indicador de progreso** —los buenos están al final de este documento—, así que
+> vale más re-medirlo el día que se necesite que mantenerlo sincronizado en tres sitios.
 
 | Cogn. | Dónde | Qué hacer |
 |---:|---|---|
@@ -160,6 +175,34 @@ Pequeña, pero es la que hace que lo demás no se degrade.
 | **26 ficheros migrados a `httpClient` sin red unitaria** | Tres no se pudieron ejercitar ni en navegador: `FirmarPdf.vue`, `VerifyEmail.vue`, `SessionExpiryModal.vue` |
 | **El contrato de errores no se cumple** | El backend usa hoy **15 formas distintas** de responder un error en 309 respuestas, y **han aparecido dos nuevas** desde el censo. El plan está en [`referencia/contrato-errores-api.md`](./referencia/contrato-errores-api.md) §6, fases B–G, **ninguna empezada**: quedan ~114 lecturas manuales de `.data.error`/`.data.message` en 33 ficheros del frontend |
 | **Duplicación de `createZipArchive`** | Copiado en `templateArchive.js` y `user_controler.storage.js`. Es el 40,5 % de duplicación de `templateArchive` |
+| **`deasy-analytics` es un contenedor vacío desplegado en QA y en producción** | `docker/analytics/Dockerfile` son 9 líneas que acaban en `CMD ["sleep","infinity"]`: sin `COPY`, sin `pip install`, y **no existe ningún directorio `analytics/` en el repo**. Aun así se construye en cada push, se publica en GHCR y corre con `restart: always` (`docker/compose.prod.yml:92`). **Decidir: construirlo o sacarlo del pipeline.** Mantener el sobre vacío cuesta build, superficie en prod y confusión documental |
+| **El bot de WhatsApp no puede arrancar en las imágenes publicadas** | `docker/backend/Dockerfile` fija `PUPPETEER_SKIP_DOWNLOAD=true` (líneas 4 y 31) y **no instala Chromium en ninguna de las dos etapas** — las libs de `apt` que sí instala son las de `node-canvas` (cairo/pango/jpeg/gif/rsvg), no las de un navegador. `services/whatsapp/WhatsAppBot.js` levanta Puppeteer en proceso, así que en QA y prod hay **6 rutas HTTP vivas sobre código que no puede iniciarse**. Decidir: instalar Chromium, o retirar el bot y sus rutas |
+| **`amqplib` es dependencia muerta, y el signer habla por la API de *management*** | Está en `backend/package.json:27` con **cero imports en todo el backend**. Lo que se usa de verdad es `services/infrastructure/rabbitmq_http.js`, que publica y consume por la **API HTTP de gestión** de RabbitMQ (`POST /exchanges/.../publish`, `POST /queues/.../get`), con `rabbit_signer.js:27-41` haciendo *busy-polling* cada segundo hasta 120 s. RabbitMQ documenta que `basic.get` por management API no es un consumidor de producción. Efecto medido: hasta ~240 llamadas HTTP por firma, y **una cola durable huérfana por cada timeout** (`rabbit_signer.js:20` las crea `auto_delete:false` y nadie las borra) |
+
+---
+
+## Frente 8 · Deuda de volumen que el plan no registra — ⬜
+
+Descubierto al medir el repo entero el **2026-08-09** (99 039 líneas de código: frontend 54 074 ·
+backend 40 350 · signer 4 341). El plan maestro publica **una sola** cifra de líneas —HomeView, 5 215—
+y es **exacta al dígito**. El problema no es que mienta: es que **no cubre**. Hay ~16 000 líneas en
+ficheros grandes que solo aparecen en `referencia/`, y `referencia/` **se consulta, no se ejecuta**.
+Resultado: masa sin ruta de trabajo asignada.
+
+| Qué | L | Por qué está aquí |
+|---|---:|---|
+| `backend/services/admin/templates/templateLifecycle.js` | **1 749** | **4.º fichero del repo** y cero menciones en este documento. Su carpeta (`services/admin/templates/`, 4 128 L) es el **6.º directorio**. Contradice de frente el «la cabeza ya no está en el backend» del frente 3 |
+| `frontend/src/shared/components/widgets/WorkspaceChatLauncher.vue` | 813 | **Deuda 100 % invisible: no aparece en NINGÚN fichero de `docs/planes/`.** Componente compartido, 517 L de script |
+| `backend/controllers/users/user_controler.queries.js` | 1 091 | **Fuga de capa autodeclarada**: su propia cabecera dice que es «el candidato natural a promoverse a `services/users/UserWorkspaceRepository.js` cuando se corrija la fuga de capa (SQL crudo en un controller)». El código pide el arreglo y ningún plan lo recoge. Ojo: su CC es ≈0 (824 de sus líneas son literales SQL), así que **esto no es trabajo de complejidad, es de capas** |
+| `backend/services/admin/crud/tableHooks.js` | 1 137 | **El caso que hay que decidir, no asumir.** Su cabecera lo presenta como «el equivalente backend de `FK_TABLE_MAP`» —o sea datos declarativos— pero contiene ~180 bloques de función. No está declarado no-tocar en ninguna parte |
+
+**Y una corrección a la receta del frente 3, medida:** «un `<template>` de 2 000 líneas» **solo aplica
+a HomeView** (2 118 L de marcado frente a 3 011 de script). En los otros diez `.vue` grandes el
+`<script>` es el **60–75 %** — `AdminTableManager` es 1 037 / 3 184. Tratarlos igual desperdicia
+esfuerzo: HomeView pide extraer **componentes**; los demás, **composables**.
+
+**Criterio de cierre:** los cuatro con una decisión escrita (atacar, o declarar no-tocar con su
+motivo). No hace falta refactorizarlos para cerrar el frente; hace falta que dejen de ser invisibles.
 
 ---
 
@@ -174,6 +217,54 @@ lo que ya está bien:
 - **`_resolveDraftRequest`** (CC 25): es una cascada de guardas y **su ORDEN es contrato** —caracterizado, y el frontend distingue los mensajes—. Convertirla en tabla es tentador y arriesgado.
 - **Los falsos positivos ya marcados** (§7 de la referencia): 28 marcas vivas, entre ellas las 23 de `S1135`, que son la palabra española «todo» en comentarios.
 - **Las 48 incidencias de ternarios anidados y las 28 de regex**: sin fase **a propósito**. Reescribir un ternario cambia estructura, no forma; las regex piden mirarse una a una y solo el ReDoS de `AgregarReferencia` tiene riesgo real. **Es deuda decidida, no olvidada.** Si se atacan, que sea por un motivo concreto, no por bajar el contador.
+
+---
+
+## La pregunta arquitectónica está cerrada (2026-08-09)
+
+Se evaluaron **quince arquitecturas** contra este repo, con medición y no con doctrina: monolítica,
+monolito modular, en capas, N-capas, SOA, microservicios, serverless, event-driven, P2P, space-based,
+hexagonal, clean, onion, DDD, y los patrones CQRS / Event Sourcing / Pipes & Filters / Blackboard /
+Broker. **Ninguna baja la complejidad cognitiva de este sistema.** Queda escrito aquí para que no
+vuelva a plantearse de cero dentro de tres meses.
+
+**Las tres pruebas son internas, no teóricas:**
+
+1. **El signer ya está distribuido al máximo** —proceso propio, runtime propio, RabbitMQ + MinIO— y es
+   **el peor fichero del repositorio** (`app.py`, cogn ~353). La separación no le quitó un punto, y le
+   añadió R-1 y R-10, que **existen únicamente porque está fuera**.
+2. **El realtime se distribuyó y se deshizo, y salió bien.** EMQX exigía un sistema de credenciales y
+   ACL espejo del de la app que nunca se construyó; al colapsarlo dentro (`RealtimeGateway.js:14-20`)
+   la autorización se **reutiliza** en vez de duplicarse.
+3. **`deasy-analytics` es el aviso**: un microservicio sin código lleva meses desplegado en QA y prod.
+   En este repo el sobre del microservicio se paga aunque esté vacío (ver frente 7).
+
+**Lo que impide cualquier corte, medido:** el **45 % de las FKs** cruzan cualquier frontera de dominio
+que se dibuje; hay **ciclos de FK bidireccionales** entre procesos ↔ plantillas ↔ firma, así que
+ningún lado puede ser dueño del dato; y de los **18 puntos de `beginTransaction`, cero quedan dentro
+de un solo subdominio** —todos abarcan 3 o 4—. Cada corte convierte transacciones ACID en sagas, sin
+tracing, sin métricas, sin logging estructurado y con un mantenedor.
+
+**Y las que «sí aplican» ya están implementadas.** Monolito modular y capas: 0 violaciones
+`routes→services`, 0 `services→controllers`, 0 `req`/`res` filtrados a `services/`. Hexagonal/Clean:
+la inyección ya existe (`constructor(pool = getPostgresPool())`), y **sin TypeScript un «puerto» es un
+comentario**. Adoptarlas formalmente es reetiquetar carpetas: **0 puntos de complejidad**.
+
+**El dato que reencuadra el problema:** `HomeView.vue`, con ~350 de complejidad agregada, tiene **cero
+incidencias `S3776` abiertas**. Su complejidad no está en ninguna función —está repartida en cientos
+de ramas planas y 2 118 líneas de `<template>`—, y **ninguna arquitectura opera a esa escala**. Lo que
+sí funcionó aquí está medido cuatro veces y es intra-función: `validateTableRules` 99→0,
+`postgres.js` 108→15, `useAdminSubmitFlow` 67→7, `saveTemplateArtifactDraft` 164→21.
+
+> Esto **extiende** la postura de [`referencia/patrones-diseno.md`](./referencia/patrones-diseno.md)
+> un piso hacia arriba: si los patrones GoF solo se ganan el sueldo en tres sitios de este repo, los
+> patrones **arquitectónicos** no se lo ganan en ninguno.
+
+**Lo único de las quince con retorno medible en complejidad**, y llega por la puerta que este repo ya
+aprueba (quitar duplicación, no añadir jerarquía): **extraer el CTE del subárbol organizacional**,
+hoy duplicado **8 veces en 5 ficheros**, con **dos bloques byte-idénticos dentro de una sola función**
+(`services/admin/generation/assignees.js:11`, cogn 33). Vale **−30 a −50 puntos**. Si se ataca, el SQL
+va probado con `PREPARE` antes de borrar cada copia, y los goldens **no se mueven**.
 
 ---
 
