@@ -5,6 +5,8 @@ import { randomUUID } from 'node:crypto';
 import * as dossierController from '../controllers/users/dossier_controler.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { loadAccessContext, requireDossierAccess } from '../middlewares/rbac.js';
+import { handleUploadError } from '../middlewares/uploadError.js';
+import { badRequest } from '../errors/HttpError.js';
 
 const router = express.Router();
 
@@ -24,10 +26,12 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype === 'application/pdf') {
-            cb(null, true);
-        } else {
-            cb(new Error('Solo se permiten archivos PDF'));
+            return cb(null, true);
         }
+        // 400 explicito: rechazar un fichero es culpa del cliente, no del servidor. Lo recoge
+        // `handleUploadError` al final de este router; antes nadie lo recogia y Express contestaba su
+        // pagina HTML con el stack trace completo.
+        cb(badRequest('Solo se permiten archivos PDF'));
     }
 });
 
@@ -74,5 +78,8 @@ router.get('/:cedula/documentos/:tipoDocumento/:registroId', requireDossierAcces
 
 // Ruta para eliminar documento PDF del dossier (sin eliminar el registro)
 router.delete('/:cedula/documentos/:tipoDocumento/:registroId', requireDossierAccess('delete'), dossierController.deleteDossierDocumentOnly);
+
+// Va al final a proposito: recoge lo que multer rechaza en CUALQUIERA de las rutas de arriba.
+router.use(handleUploadError);
 
 export default router;

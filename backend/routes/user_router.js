@@ -34,6 +34,8 @@ import { getUserPhoto, updateUserPhoto } from "../controllers/users/user_photo_c
 import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validation_controller.js";
 import { validatePassword } from "../middlewares/val_password.js";
 import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";
+import { handleUploadError } from "../middlewares/uploadError.js";
+import { badRequest } from "../errors/HttpError.js";
 import { authMiddleware } from "../middlewares/auth.js";
 import {
   loadAccessContext,
@@ -52,6 +54,10 @@ import {
 } from "../controllers/users/user_certificate_controller.js";
 
 const router=new Router();
+
+// 400 explicito en los tres `fileFilter` de este router: rechazar un fichero es culpa del cliente,
+// no del servidor. Los recoge `handleUploadError`, montado al final; antes nadie los recogia y
+// Express contestaba su pagina HTML con el stack trace completo.
 const uploadCertificate = multer({
   dest: os.tmpdir(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -63,7 +69,7 @@ const uploadCertificate = multer({
     if (file.fieldname === "certificate" && isP12) {
       return cb(null, true);
     }
-    cb(new Error("Solo se permiten certificados .p12"));
+    cb(badRequest("Solo se permiten certificados .p12"));
   }
 });
 
@@ -86,7 +92,7 @@ const uploadDeliverable = multer({
     if (file.fieldname === "file" && isAllowed) {
       return cb(null, true);
     }
-    cb(new Error("Solo se permiten archivos PDF, Word o Excel"));
+    cb(badRequest("Solo se permiten archivos PDF, Word o Excel"));
   }
 });
 
@@ -104,7 +110,7 @@ const uploadAttachment = multer({
     if (file.fieldname === "file" && allowedExtensions.some((ext) => lowerName.endsWith(ext))) {
       return cb(null, true);
     }
-    cb(new Error("Formato de anexo no permitido."));
+    cb(badRequest("Formato de anexo no permitido."));
   }
 });
 
@@ -303,5 +309,10 @@ router.put(
 
 router.get('/validate/cedula/:cedula', verifyCedulaEc);
 router.get('/validate/whatsapp/:phone', verifyWhatsappEc);
+
+// Va al final a proposito: recoge lo que multer rechaza en CUALQUIERA de las rutas de arriba.
+// La foto de perfil NO pasa por aqui: `PUT /:cedula/photo` envuelve su propio multer y ya
+// responde JSON por su cuenta.
+router.use(handleUploadError);
 
 export default router
