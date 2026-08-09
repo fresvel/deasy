@@ -1,8 +1,8 @@
 {
   "batch_download_ajeno": {
-    "status": 403,
+    "status": 404,
     "body": {
-      "error": "No tienes acceso a este job batch."
+      "error": "Job batch no encontrado."
     }
   },
   "batch_download_inexistente": {
@@ -39,9 +39,9 @@
     }
   },
   "batch_status_ajeno": {
-    "status": 403,
+    "status": 404,
     "body": {
-      "error": "No tienes acceso a este job batch."
+      "error": "Job batch no encontrado."
     }
   },
   "batch_status_inexistente": {

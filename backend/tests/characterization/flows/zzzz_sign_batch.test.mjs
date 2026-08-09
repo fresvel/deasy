@@ -37,6 +37,8 @@
 //   2. El `fileFilter` de multer rechazaba con un `Error` pelado que nadie capturaba: Express
 //      contestaba con su página HTML por defecto **y el stack trace completo**, revelando rutas del
 //      contenedor. Hoy el router monta `handleUploadError` y responde JSON `{ message, code }`.
+//   3. (2026-08-09, plan maestro 1.4) Consultar o descargar un lote AJENO daba 403 y uno inexistente
+//      404: esa diferencia enumeraba los lotes de los demás. Hoy los dos son el mismo 404. Ver §5.
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -272,10 +274,14 @@ test("POST /sign/batch/start con certificado inexistente -> 404 y NO deja job hu
 
 // ─── 5. Guards de consulta y descarga del lote ──────────────────────────────────────────────────
 //
-// Orden congelado: existencia (404) ANTES que propiedad (403), y propiedad ANTES que el estado del
-// lote (400 "sin documentos firmados"). Un job inexistente NO debe distinguirse de uno ajeno por el
-// código de estado... y hoy SÍ se distingue: 404 vs 403 permite enumerar jobs de otros usuarios.
-// Se congela tal cual: es el comportamiento actual, no una recomendación.
+// Orden congelado: existencia Y propiedad (404, indistinguibles) ANTES que el estado del lote
+// (400 "sin documentos firmados").
+//
+// ✅ DEFECTO 3 (plan maestro 1.4), ARREGLADO: hasta el 2026-08-09 un lote ajeno respondía 403 y uno
+// inexistente 404, y esa diferencia era un oráculo de existencia — probando jobIds se ENUMERABAN
+// los lotes de los demás. Ahora los dos casos van por `getOwnedBatchJob` y salen con el MISMO 404.
+// El diff de `batch_status_ajeno` y `batch_download_ajeno` (403 -> 404, y el mensaje "No tienes
+// acceso a este job batch." -> "Job batch no encontrado.") ES la prueba del arreglo.
 
 test("GET /sign/batch/:jobId propio -> 200 con el contrato de forma del job", async () => {
   await sembrarJobsDeLote();
@@ -287,19 +293,22 @@ test("GET /sign/batch/:jobId propio -> 200 con el contrato de forma del job", as
   matchSnapshot(SUITE, "batch_status_propio", snapshotShape(res, OBJ_OPTS));
 });
 
-test("GET /sign/batch/:jobId inexistente -> 404 (la existencia se comprueba ANTES que la propiedad)", async () => {
+test("GET /sign/batch/:jobId inexistente -> 404", async () => {
   const token = await tokenFor("usuario");
   const res = await get("/sign/batch/no-existe-este-job", { token });
   assert.equal(res.status, 404);
   matchSnapshot(SUITE, "batch_status_inexistente", snapshotShape(res, OBJ_OPTS));
 });
 
-test("GET /sign/batch/:jobId de OTRO usuario -> 403", async () => {
+test("GET /sign/batch/:jobId de OTRO usuario -> 404 IDÉNTICO al del inexistente", async () => {
   await sembrarJobsDeLote();
   const token = await tokenFor("usuario");
-  const res = await get(`/sign/batch/${JOB_AJENO}`, { token });
-  assert.equal(res.status, 403, "el job de otro es 403, no 200 ni 404");
-  matchSnapshot(SUITE, "batch_status_ajeno", snapshotShape(res, OBJ_OPTS));
+  const ajeno = await get(`/sign/batch/${JOB_AJENO}`, { token });
+  assert.equal(ajeno.status, 404, "el job de otro no se distingue de uno que no existe");
+  // La igualdad ES el contrato: si el cuerpo o el código divergieran, volvería el oráculo.
+  const inexistente = await get("/sign/batch/no-existe-este-job", { token });
+  assert.deepEqual(ajeno.body, inexistente.body, "ajeno e inexistente deben responder lo mismo");
+  matchSnapshot(SUITE, "batch_status_ajeno", snapshotShape(ajeno, OBJ_OPTS));
 });
 
 test("GET /sign/batch/:jobId/download inexistente -> 404", async () => {
@@ -308,12 +317,14 @@ test("GET /sign/batch/:jobId/download inexistente -> 404", async () => {
   matchSnapshot(SUITE, "batch_download_inexistente", snapshotShape(res, OBJ_OPTS));
 });
 
-test("GET /sign/batch/:jobId/download de OTRO usuario -> 403 (antes de tocar el almacenamiento)", async () => {
+test("GET /sign/batch/:jobId/download de OTRO usuario -> 404 IDÉNTICO al del inexistente (antes de tocar el almacenamiento)", async () => {
   await sembrarJobsDeLote();
   const token = await tokenFor("usuario");
-  const res = await get(`/sign/batch/${JOB_AJENO}/download`, { token });
-  assert.equal(res.status, 403);
-  matchSnapshot(SUITE, "batch_download_ajeno", snapshotShape(res, OBJ_OPTS));
+  const ajeno = await get(`/sign/batch/${JOB_AJENO}/download`, { token });
+  assert.equal(ajeno.status, 404);
+  const inexistente = await get("/sign/batch/no-existe-este-job/download", { token });
+  assert.deepEqual(ajeno.body, inexistente.body, "ajeno e inexistente deben responder lo mismo");
+  matchSnapshot(SUITE, "batch_download_ajeno", snapshotShape(ajeno, OBJ_OPTS));
 });
 
 test("GET /sign/batch/:jobId/download de un lote sin firmados -> 400", async () => {

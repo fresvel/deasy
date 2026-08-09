@@ -153,10 +153,36 @@ export const updateBatchJob = async (jobId, updater) => {
   return next;
 };
 
-export const getBatchJob = async (jobId) => {
+// SIN exportar a propósito: leer un lote por id y sin dueño es justo lo que abría el oráculo de
+// existencia. Fuera del módulo solo se ofrece `getOwnedBatchJob`.
+const getBatchJob = async (jobId) => {
   const [rows] = await pool.query("SELECT * FROM signature_batch_jobs WHERE job_id = ? LIMIT 1", [jobId]);
   return rowToBatchJob(rows?.[0]);
 };
+
+// El job de OTRO usuario y un job INEXISTENTE valen lo mismo: null.
+//
+// Antes eran dos respuestas distintas (404 "no encontrado" vs 403 "no tienes acceso") y esa
+// diferencia era un oráculo de existencia: probando jobIds contra `GET /sign/batch/:jobId` se podía
+// ENUMERAR los lotes de los demás — el 403 confirma que el job existe, y de paso que su dueño no
+// eres tú. No filtra el contenido, pero sí el censo.
+//
+// Se unifica en 404 (y no en 403) por dos motivos: es el código que NO confirma existencia, y ya
+// era el que se devolvía en el camino frecuente, así que el contrato que ve el cliente no se
+// ensancha. El frontend no ramifica por código —`FirmarPdf.vue` solo pinta `data.error`—, así que
+// el cambio es invisible para el dueño legítimo del lote.
+//
+// Predicado puro y separado de la consulta a propósito: es lo único con reglas (la comparación
+// numérica, el job ausente) y así se puede probar sin base de datos.
+export const selectOwnedBatchJob = (job, userId) => {
+  if (!job) return null;
+  const owner = Number(job.userId);
+  const requester = Number(userId);
+  if (!Number.isFinite(owner) || !Number.isFinite(requester)) return null;
+  return owner === requester ? job : null;
+};
+
+export const getOwnedBatchJob = async (jobId, userId) => selectOwnedBatchJob(await getBatchJob(jobId), userId);
 
 const streamMinioObjectToFile = async (bucket, objectName, destinationPath) => {
   const stream = await getMinioObjectStream(bucket, objectName);

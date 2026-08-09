@@ -30,7 +30,7 @@ import {
 import {
   buildSignedBatchArchive,
   createBatchJob,
-  getBatchJob,
+  getOwnedBatchJob,
   parseBatchDocumentContexts,
   parseBatchDocumentFields,
   selectSignedResults,
@@ -175,12 +175,11 @@ export const getSignBatchStatus = async (req, res) => {
   try {
     const user = await resolveSigningUser(req.user?.uid);
     const jobId = String(req.params?.jobId || "");
-    const job = await getBatchJob(jobId);
+    // Existencia y propiedad se resuelven JUNTAS: un lote ajeno responde igual que uno inexistente
+    // para no confirmar cuáles existen (ver `selectOwnedBatchJob`).
+    const job = await getOwnedBatchJob(jobId, user.id);
     if (!job) {
       return res.status(404).json({ error: "Job batch no encontrado." });
-    }
-    if (Number(job.userId) !== Number(user.id)) {
-      return res.status(403).json({ error: "No tienes acceso a este job batch." });
     }
     return res.json(job);
   } catch (error) {
@@ -194,12 +193,11 @@ export const downloadSignBatch = async (req, res) => {
   try {
     const user = await resolveSigningUser(req.user?.uid);
     const jobId = String(req.params?.jobId || "");
-    const job = await getBatchJob(jobId);
+    // Mismo criterio que en `getSignBatchStatus`: ajeno e inexistente son indistinguibles, y ambos
+    // se cortan ANTES de tocar el almacenamiento.
+    const job = await getOwnedBatchJob(jobId, user.id);
     if (!job) {
       return res.status(404).json({ error: "Job batch no encontrado." });
-    }
-    if (Number(job.userId) !== Number(user.id)) {
-      return res.status(403).json({ error: "No tienes acceso a este job batch." });
     }
 
     const signedResults = selectSignedResults(job);

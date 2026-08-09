@@ -11,6 +11,7 @@ import {
   parseBatchDocumentFields,
   rowToBatchJob,
   sanitizeRelativePdfPath,
+  selectOwnedBatchJob,
   selectSignedResults,
 } from "./BatchSigningService.js";
 
@@ -98,6 +99,34 @@ test("un job sin resultados no revienta", () => {
   assert.deepEqual(selectSignedResults({}), []);
   assert.deepEqual(selectSignedResults({ results: "roto" }), []);
   assert.deepEqual(selectSignedResults(null), []);
+});
+
+// --- selectOwnedBatchJob: existencia y propiedad, indistinguibles -------------------------------
+//
+// La regla que se prueba aquí es de SEGURIDAD, no de forma: el lote ajeno y el inexistente deben
+// devolver EXACTAMENTE lo mismo (null), porque distinguirlos permitía enumerar los lotes de otros.
+
+test("el lote propio se devuelve tal cual", () => {
+  const job = { jobId: "j-1", userId: 7 };
+  assert.equal(selectOwnedBatchJob(job, 7), job);
+});
+
+test("un lote ajeno y un lote inexistente son indistinguibles: los dos son null", () => {
+  assert.equal(selectOwnedBatchJob({ jobId: "j-1", userId: 8 }, 7), null);
+  assert.equal(selectOwnedBatchJob(null, 7), null);
+  assert.equal(selectOwnedBatchJob(undefined, 7), null);
+});
+
+test("el dueño se compara por valor numérico: el texto de la fila no niega la propiedad", () => {
+  const job = { jobId: "j-1", userId: "7" };
+  assert.equal(selectOwnedBatchJob(job, 7), job);
+  assert.equal(selectOwnedBatchJob({ jobId: "j-1", userId: 7 }, "7").jobId, "j-1");
+});
+
+test("un dueño o un solicitante sin id no otorga propiedad (dos NaN no son la misma persona)", () => {
+  assert.equal(selectOwnedBatchJob({ jobId: "j-1", userId: null }, undefined), null);
+  assert.equal(selectOwnedBatchJob({ jobId: "j-1", userId: "abc" }, "abc"), null);
+  assert.equal(selectOwnedBatchJob({ jobId: "j-1", userId: 7 }, undefined), null);
 });
 
 // --- parseBatchDocumentFields -------------------------------------------------------------------
