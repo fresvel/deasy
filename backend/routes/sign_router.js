@@ -3,6 +3,8 @@ import multer from "multer";
 import os from "node:os";
 import { authMiddleware } from "../middlewares/auth.js";
 import { loadAccessContext, requirePermissions } from "../middlewares/rbac.js";
+import { handleUploadError } from "../middlewares/uploadError.js";
+import { badRequest } from "../errors/HttpError.js";
 import {
   downloadSignBatch,
   downloadSigned,
@@ -30,7 +32,10 @@ const upload = multer({
     if (file.fieldname === "pdf" && file.mimetype === "application/pdf") {
       return cb(null, true);
     }
-    cb(new Error(`Tipo de archivo no permitido: ${file.fieldname}`));
+    // 400 explícito: rechazar un fichero es culpa del cliente, no del servidor. Lo recoge
+    // `handleUploadError` al final de este router; antes nadie lo recogía y Express contestaba su
+    // página HTML con el stack trace completo.
+    cb(badRequest(`Tipo de archivo no permitido en "${file.fieldname}": solo se aceptan PDF.`));
   }
 });
 
@@ -81,5 +86,8 @@ router.post("/fill-requests/:requestId/cancel", authMiddleware, loadAccessContex
 
 router.get("/download", authMiddleware, loadAccessContext, requirePermissions("signature_flows.read"), downloadSigned);
 router.get("/documents/:documentVersionId/signature-flow", authMiddleware, loadAccessContext, requirePermissions("signature_flows.read"), getSignatureFlow);
+
+// Va al final a propósito: recoge lo que multer rechaza en CUALQUIERA de las rutas de arriba.
+router.use(handleUploadError);
 
 export default router;

@@ -64,18 +64,6 @@
       "error": "El último paso del flujo de entrega requiere un PDF en working para habilitar la firma."
     }
   },
-  "defecto_sin_responsable_gestor": {
-    "status": 500,
-    "body": {
-      "error": "La solicitud de entrega no tiene un responsable resoluble."
-    }
-  },
-  "defecto_sin_responsable_usuario": {
-    "status": 500,
-    "body": {
-      "error": "La solicitud de entrega no tiene un responsable resoluble."
-    }
-  },
   "id_cero": {
     "status": 400,
     "body": {
@@ -178,6 +166,18 @@
       "flowStatus": "pending",
       "message": "Solicitud de entrega actualizada.",
       "status": "returned"
+    }
+  },
+  "sin_responsable_gestor": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud de entrega no tiene un responsable resoluble."
+    }
+  },
+  "sin_responsable_usuario": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud de entrega no tiene un responsable resoluble."
     }
   },
   "sin_token_approve": {

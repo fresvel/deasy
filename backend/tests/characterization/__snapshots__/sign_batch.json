@@ -26,7 +26,7 @@
     }
   },
   "batch_start_certificado_inexistente": {
-    "status": 500,
+    "status": 404,
     "body": {
       "error": "Certificado no encontrado para este usuario."
     },
@@ -97,34 +97,38 @@
     }
   },
   "sign_certificado_inexistente": {
-    "status": 500,
+    "status": 404,
     "body": {
       "details": null,
       "error": "Certificado no encontrado para este usuario.",
-      "error_name": "Error"
+      "error_name": "HttpError"
     }
   },
   "sign_mimetype_rechazado": {
-    "status": 500,
-    "esHtml": true,
-    "esJson": false,
-    "filtra_stack_trace": true,
-    "menciona_el_campo": true
+    "status": 400,
+    "esHtml": false,
+    "esJson": true,
+    "filtra_stack_trace": false,
+    "menciona_el_campo": true,
+    "claves": [
+      "code",
+      "message"
+    ]
   },
   "sign_sin_certificado": {
-    "status": 500,
+    "status": 400,
     "body": {
       "details": null,
       "error": "Debes seleccionar un certificado guardado.",
-      "error_name": "Error"
+      "error_name": "HttpError"
     }
   },
   "sign_sin_password": {
-    "status": 500,
+    "status": 400,
     "body": {
       "details": null,
       "error": "Debes ingresar la contraseña del certificado.",
-      "error_name": "Error"
+      "error_name": "HttpError"
     }
   },
   "sign_sin_pdf": {
@@ -134,11 +138,11 @@
     }
   },
   "sign_sin_sello": {
-    "status": 500,
+    "status": 400,
     "body": {
       "details": null,
       "error": "Debes indicar el texto del sello.",
-      "error_name": "Error"
+      "error_name": "HttpError"
     }
   },
   "signature_flow_id_cero": {

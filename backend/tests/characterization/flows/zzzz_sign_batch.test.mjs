@@ -25,13 +25,18 @@
 //   · `validateSignedDocument` más allá del 400: subiría al spool de MinIO y llamaría al firmante.
 //   · El ZIP de `downloadSignBatch` con documentos reales.
 //
-// DEFECTOS CONGELADOS A PROPÓSITO (patrón §3.1.b: se fija lo roto, y el diff del golden será la
-// prueba del arreglo):
-//   1. TODA la validación de entrada de `requestSign` sale como **500**, no como 400: falta el
-//      certificado, la contraseña o el sello son culpa del cliente y se le responden como error de
-//      servidor. Mismo olor que el 500→400 que documenta §5-D.
-//   2. El `fileFilter` de multer rechaza con un `Error` pelado que nadie captura: Express contesta
-//      con su página HTML por defecto **y el stack trace completo**, revelando rutas del contenedor.
+// ✅ DEFECTOS 1 y 2, ARREGLADOS EL 2026-08-09 junto con el corte de la fase D. Se deja escrito
+// porque el método vale para los que queden:
+//   1. TODA la validación de entrada de `requestSign` salía como **500**: faltar el certificado, la
+//      contraseña o el sello es culpa del cliente y se respondía como error de servidor. Ahora los
+//      errores de negocio llevan `statusCode` (`errors/HttpError.js`) y el controller los honra:
+//      400 para lo que falta, 404 para un certificado que no es tuyo (no se distingue de uno
+//      inexistente, a propósito). El diff de `sign_sin_*` y `sign_certificado_inexistente`
+//      (500 -> 400/404) ES la prueba del arreglo. Lo que NO lleva `statusCode` —MinIO o PostgreSQL
+//      caídos— sigue saliendo 500, que es lo que es.
+//   2. El `fileFilter` de multer rechazaba con un `Error` pelado que nadie capturaba: Express
+//      contestaba con su página HTML por defecto **y el stack trace completo**, revelando rutas del
+//      contenedor. Hoy el router monta `handleUploadError` y responde JSON `{ message, code }`.
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -176,47 +181,53 @@ test("POST /sign con cuerpo JSON (sin multipart) -> 400", async () => {
   matchSnapshot(SUITE, "sign_body_json", snapshotShape(res, OBJ_OPTS));
 });
 
-test("POST /sign sin certificate_id -> 500 (defecto: validación de entrada como error de servidor)", async () => {
+test("POST /sign sin certificate_id -> 400", async () => {
   const token = await tokenFor("usuario");
   const res = await post("/sign", { token, form: signForm({ certificate_id: undefined }) });
-  assert.equal(res.status, 500, "hoy es 500; si pasa a 400 el diff de este golden ES el arreglo");
+  assert.equal(res.status, 400, "falta un dato del cliente: 400, no 500");
   matchSnapshot(SUITE, "sign_sin_certificado", snapshotShape(res, OBJ_OPTS));
 });
 
-test("POST /sign sin password -> 500", async () => {
+test("POST /sign sin password -> 400", async () => {
   const token = await tokenFor("usuario");
   const res = await post("/sign", { token, form: signForm({ password: undefined }) });
+  assert.equal(res.status, 400);
   matchSnapshot(SUITE, "sign_sin_password", snapshotShape(res, OBJ_OPTS));
 });
 
-test("POST /sign sin texto de sello -> 500", async () => {
+test("POST /sign sin texto de sello -> 400", async () => {
   const token = await tokenFor("usuario");
   const res = await post("/sign", { token, form: signForm({ stampText: undefined }) });
+  assert.equal(res.status, 400);
   matchSnapshot(SUITE, "sign_sin_sello", snapshotShape(res, OBJ_OPTS));
 });
 
-test("POST /sign con certificado inexistente -> 500 (y no revela si existe de otro dueño)", async () => {
+test("POST /sign con certificado inexistente -> 404 (y no revela si existe de otro dueño)", async () => {
   const token = await tokenFor("usuario");
   const res = await post("/sign", { token, form: signForm() });
+  assert.equal(res.status, 404, "el certificado de otro y uno inexistente son el MISMO 404");
   matchSnapshot(SUITE, "sign_certificado_inexistente", snapshotShape(res, OBJ_OPTS));
 });
 
-// El `fileFilter` del router lanza un Error pelado y NADIE lo captura: sale el manejador por defecto
-// de Express, en HTML y con el stack. No se fija el cuerpo (lleva rutas del contenedor y números de
-// línea del router: cualquier refactor lo movería), se fija LA FORMA del defecto.
-test("POST /sign con un no-PDF en el campo pdf -> error de multer sin manejar (HTML + stack)", async () => {
+// El `fileFilter` del router rechaza el fichero y `handleUploadError` lo convierte en JSON. Lo que
+// se fija NO es el texto exacto (cambiaría con cualquier retoque de redacción) sino LA FORMA: que
+// sea JSON, que NO lleve HTML ni stack trace, y que diga de qué se queja. Antes de arreglarlo esto
+// mismo devolvía `esHtml: true` y `filtra_stack_trace: true`.
+test("POST /sign con un no-PDF en el campo pdf -> 400 JSON, sin HTML ni stack trace", async () => {
   const token = await tokenFor("usuario");
   const res = await post("/sign", {
     token,
     form: signForm({ pdf: { filename: "malicioso.txt", contentType: "text/plain", content: "no soy un pdf" } }),
   });
-  const cuerpo = typeof res.body === "string" ? res.body : "";
+  const cuerpo = typeof res.body === "string" ? res.body : JSON.stringify(res.body ?? "");
   matchSnapshot(SUITE, "sign_mimetype_rechazado", {
     status: res.status,
     esHtml: cuerpo.includes("<!DOCTYPE html>"),
     esJson: typeof res.body === "object" && res.body !== null,
-    filtra_stack_trace: cuerpo.includes("at fileFilter"),
+    filtra_stack_trace: cuerpo.includes("at fileFilter") || cuerpo.includes("/app/backend/"),
     menciona_el_campo: cuerpo.includes("Tipo de archivo no permitido"),
+    // El contrato objetivo de `docs/contrato-errores-api.md` §4: mensaje humano + código estable.
+    claves: typeof res.body === "object" && res.body !== null ? Object.keys(res.body).sort() : null,
   });
 });
 
@@ -246,7 +257,7 @@ test("POST /sign/batch/start sin ficheros -> 400", async () => {
 // El orden importa MUCHO aquí: si el refactor mueve `createBatchJob` por delante de
 // `buildSignContext`, cada intento fallido dejaría un job huérfano "processing" para siempre.
 // Esto lo fija: la validación va primero y la tabla no crece.
-test("POST /sign/batch/start con certificado inexistente -> 500 y NO deja job huérfano", async () => {
+test("POST /sign/batch/start con certificado inexistente -> 404 y NO deja job huérfano", async () => {
   const token = await tokenFor("usuario");
   const antes = await countSignatureBatchJobs();
   const res = await post("/sign/batch/start", { token, form: signForm() });

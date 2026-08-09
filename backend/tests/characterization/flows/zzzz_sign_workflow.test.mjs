@@ -12,7 +12,7 @@
 //   3. id de la solicitud no numérico o cero   -> 400  "Solicitud de entrega inválida."
 //   4. la solicitud no existe                  -> 404  "Solicitud de entrega no encontrada."
 //   5. el actor no es el asignado              -> 403  "No puedes operar una solicitud ... otro usuario."
-//   6. sin responsable y no manual             -> 500  "...no tiene un responsable resoluble."
+//   6. sin responsable y no manual             -> 409  "...no tiene un responsable resoluble."
 //   7. la transición no está permitida         -> 409  "La solicitud no puede pasar de X usando Y."
 //   8. (solo approve) falta el PDF en working  -> 500  "El último paso ... requiere un PDF ..."
 // El 404 va ANTES del 403: una solicitud inexistente y una ajena se distinguen por el código.
@@ -46,10 +46,13 @@
 //   `taskAssignment`), corregidos en el mismo commit.
 //   El diff de los goldens `return_ok` / `return_efecto` (500 -> 200) fue la prueba del arreglo.
 //
+// ✅ DEFECTO 3, ARREGLADO EL 2026-08-09, junto con el corte de la fase D. Una solicitud sin
+//   responsable resoluble respondía 500 a cualquier usuario autenticado. Hoy responde 409: no es un
+//   fallo del servidor, es un conflicto con el estado del recurso (§4 de este fichero). Los goldens
+//   pasaron a llamarse `sin_responsable_usuario` / `sin_responsable_gestor`.
+//
 // DEFECTOS CONGELADOS A PROPÓSITO (patrón §3.1.b: el diff del golden será la prueba del arreglo):
 //   2. La regla de negocio "falta el PDF en working" sale como 500, no como 409/400.
-//   3. Una solicitud sin responsable resoluble responde 500 A CUALQUIER usuario autenticado: la
-//      comprobación de propiedad se salta cuando `assigned_person_id` es NULL.
 //   4. Con `is_manual = 1` y sin responsable, CUALQUIER usuario con `fill_flows.update` se apropia
 //      de la solicitud al iniciarla (el UPDATE le pone su propio id).
 
@@ -271,19 +274,28 @@ test("el approve fallido no cambió el estado de la solicitud", async () => {
 
 // ─── 4. Solicitudes sin responsable resoluble ───────────────────────────────────────────────────
 
-// 🔴 DEFECTO 3 — con `assigned_person_id` NULL el guard de propiedad NO se evalúa, así que este 500
-// se lo lleva cualquiera. Se fija con DOS actores distintos para que quede claro que no hay filtro.
-test("sin responsable y sin modo manual -> 500 para el responsable original", async () => {
+// ✅ Antes DEFECTO 3 (arreglado el 2026-08-09, con el corte a `FillRequestWorkflowService`).
+// Con `assigned_person_id` NULL no hay a quién comparar, así que el guard de propiedad no puede
+// pronunciarse... y la condición salía como 500. No lo es: la petición está bien formada y el
+// servidor está sano; lo que pasa es que la solicitud está mal configurada. Ahora es 409, el mismo
+// código que la transición ilegal de justo debajo. El diff de estos dos goldens (500 -> 409, y las
+// claves renombradas de `defecto_sin_responsable_*` a `sin_responsable_*`) ES la prueba.
+// Sigue fijándose con DOS actores: el 409 no distingue quién pregunta, y eso es deliberado —la
+// existencia de la solicitud ya la revela el par 404/403 de la sección 1, así que responder lo
+// mismo a los dos no filtra nada nuevo.
+test("sin responsable y sin modo manual -> 409 para el responsable original", async () => {
   await ponerEnEstado({ assigned_person_id: null, status: "pending" });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "start"), { token });
-  matchSnapshot(SUITE, "defecto_sin_responsable_usuario", snapshotShape(res, OBJ_OPTS));
+  assert.equal(res.status, 409, "una solicitud sin responsable es un conflicto de estado, no un 500");
+  matchSnapshot(SUITE, "sin_responsable_usuario", snapshotShape(res, OBJ_OPTS));
 });
 
-test("sin responsable y sin modo manual -> el MISMO 500 para un tercero (no hay guard de propiedad)", async () => {
+test("sin responsable y sin modo manual -> el MISMO 409 para un tercero (no hay guard de propiedad)", async () => {
   const token = await tokenFor("gestor");
   const res = await post(ruta(miSolicitud, "start"), { token });
-  matchSnapshot(SUITE, "defecto_sin_responsable_gestor", snapshotShape(res, OBJ_OPTS));
+  assert.equal(res.status, 409);
+  matchSnapshot(SUITE, "sin_responsable_gestor", snapshotShape(res, OBJ_OPTS));
 });
 
 // 🔴 DEFECTO 4 — la solicitud manual se la queda quien la inicie. Es el comportamiento buscado para
