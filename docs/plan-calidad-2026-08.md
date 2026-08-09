@@ -26,19 +26,23 @@
 > | **E** · frontend | 🟡 **4 de 5** — `httpClient` cerrado (08-09); falta solo colores/forks |
 > | **F** · `signer/app.py` | ✅ **(08-09)** — corte de identidad hecho: bloque **142 → 84**; 266 pruebas, cobertura **89,4 %**. Queda el traslado a fichero propio |
 >
-> **Dos días de trabajo, medidos** (última medición: **08-09 04:0x**, HEAD `5d5482c`, tras cerrar
-> D, E-4, F e I):
+> **Dos días de trabajo, medidos** (última medición: **2026-08-09**, con las NUEVE fases cerradas):
 >
 > | | Línea base | **Ahora** | Δ |
 > |---|---:|---:|---:|
-> | Incidencias abiertas | 832 | **375** | **−55 %** |
+> | Incidencias abiertas | 832 | **373** | **−55 %** |
 > | Bugs | 143 | **0** | −143 |
 > | Vulnerabilidades | 45 | **8** | −82 % |
-> | Deuda (SQALE) | 4 902 min | **2 906 min** | **−41 %** |
-> | Complejidad cognitiva | 8 797 | **8 138** | −659 |
+> | Deuda (SQALE) | 4 902 min | **2 846 min** | **−42 %** |
+> | Complejidad cognitiva | 8 797 | **8 124** | −673 |
 > | Cobertura | 0 % | **17,7 %** | |
 > | Duplicación | 3,1 % | **2,9 %** | |
 > | Fiabilidad / Seguridad / Mantenibilidad | C / D / A | **A / C / A** | |
+>
+> **Quality Gate: sigue en ERROR, y es correcto que lo esté.** `new_violations` 114 y `new_coverage`
+> 39,2 % contra un umbral del 80 %. No mide el código viejo: mide lo tocado desde el 2026-07-09, que
+> es casi todo el trabajo de estos días. El gate se cierra escribiendo test de lo nuevo, no
+> persiguiendo el global (ver `docs/plan-cobertura-2026-08.md` §0.1).
 >
 > Los tests pasaron de 218+161 a **389 unitarios + 238 de caracterización + 304 de frontend +
 > 266 del signer**.
@@ -72,7 +76,7 @@
 > Entorno `qa-local` eliminado: los comandos `docker-env.sh qa-local` de cualquier doc ya no valen.
 >
 > **Ocho artefactos de `backend/scripts/` se eliminaron DESPUÉS de esta medición** (`fc44559`, ver
-> `docs/plan-limpieza-scripts-2026-08.md` §4.7). Las cifras de §2, §3 y §4.4 son **anteriores al
+> `docs/docs-md-antiguos/planes-cerrados-2026-08/plan-limpieza-scripts-2026-08.md` §4.7). Las cifras de §2, §3 y §4.4 son **anteriores al
 > borrado** y se conservan intactas para que sigan siendo comparables con el próximo escaneo; los
 > ítems anotados como **cerrado por eliminación** ✅ **no son trabajo pendiente** — el próximo
 > escaneo los descontará solo. Efecto agregado esperado: **−1 `S3776`**, **−1 marca `S6418`
@@ -323,25 +327,40 @@ pendiente de confirmar en la Fase B):
 **5 ficheros concentran 203 de las 289 (70 %).** Solo uno es un `Agregar*.vue`: la hipótesis de que
 esto se arregla sobre todo en `SInput`/`SSelect` **no se sostiene tal cual** (§5-B corregida).
 
-### 2.2 El backlog que queda, por regla (17:27) — ya no hay barrido que hacer
+### 2.2 El backlog que queda, por regla — **373 incidencias, y NINGUNA es barrido**
 
-| Nº | Regla | Naturaleza |
-|---:|---|---|
-| 60 | `javascript:S3776` | Complejidad cognitiva — **el núcleo de lo que queda** (§3). +7 de `python:S3776` = **67** |
-| 48 | `javascript:S3358` | Ternarios anidados — reescribirlos cambia estructura, no forma (§5-G) |
-| 33 | `css:S7924` | Contraste texto/fondo insuficiente — **ligado a la Fase X**, no se toca antes del sistema de diseño |
-| 28 | `javascript:S8786` | Regex con backtracking no lineal — uno a uno, incluye el ReDoS de `AgregarReferencia` |
-| 16 | `javascript:S7780` | `String.raw` — convención pura sobre escapado |
-| 13 | `javascript:S7770` · 13 `javascript:S4624` | Modernización de sintaxis · plantillas anidadas |
-| 11 | `javascript:S7776` · 10 `javascript:S6582` | Ídem (encadenamiento opcional y similares) |
-| 10 | `javascript:S2486` | Excepción capturada y silenciada — **el único grupo con olor a bug latente** |
-| 10 | `Web:S6819` | Roles ARIA sobre elementos con semántica propia |
-| 8 | `javascript:S2068` | Contraseñas hardcodeadas — **las credenciales demo**, triadas en §5-H |
+Medido el **2026-08-09**, con todas las fases cerradas. Esta es la lista de trabajo real que hereda
+quien siga.
 
-**Lo que esta tabla dice y la anterior no:** desaparecieron por completo `S1128` (43), `S7781` (24),
-`S1135` (25) y las dos de etiquetado (289). Es decir, **las cinco reglas que se cerraban en bloque ya
-están cerradas**. De las 416 restantes, las tres primeras filas (141) son las fases C/E/F de este plan,
-y el resto son decisiones de una en una. **Nadie va a volver a bajar 400 incidencias en dos días.**
+| Nº | Regla | Naturaleza | ¿Tiene fase? |
+|---:|---|---|---|
+| **58** | `javascript:S3776` | Complejidad cognitiva. Las 4 peores son `FirmarPdf.vue` (44), `useAdminPresentationAdapters` (44), `useAdminDraftArtifactFlow` (39) y `SqlAdminService.list()` (36) | Parcial: los SFC son §5 y §3.3 |
+| **48** | `javascript:S3358` | **Ternarios anidados.** No entran: reescribirlos cambia estructura, no forma | ❌ a propósito |
+| **33** | `css:S7924` | **Contraste texto/fondo.** Es accesibilidad real, no cosmética, pero va **detrás del sistema de diseño**: tocarlos antes es recodificar el conflicto | ⛔ bloqueada por la Fase X |
+| **28** | `javascript:S8786` | **Regex con backtracking no lineal.** Uno a uno; incluye el ReDoS de `AgregarReferencia`, que es el único con riesgo real | ❌ pide criterio |
+| 13 · 13 | `S7770` · `S4624` | Modernización de sintaxis · plantillas anidadas | ❌ |
+| 12 · 12 | `S7780` · `S7776` | `String.raw` · encadenamiento opcional | ❌ |
+| 10 · 10 | `S6582` · `Web:S6819` | Ídem · roles ARIA sobre elementos con semántica propia | ❌ |
+| 9 · 7 · 7 | `S6594` · `Web:S1827` · `S7773` | Cola de convenciones | ❌ |
+| **8** | `javascript:S2068` | Contraseñas — **las credenciales demo**, ya triadas y marcadas (§5-H). Son las 8 vulnerabilidades que quedan | ✅ cerrado |
+| 87 | (reglas con <5 casos) | Cola larga | ❌ |
+
+**Severidad:** 64 CRITICAL · 196 MAJOR · 107 MINOR · 6 INFO. **Tipos:** 365 code smells + 8
+vulnerabilidades, **0 bugs**.
+
+**Lo que esta tabla dice y conviene entender antes de atacarla:**
+
+1. **Se acabó el barrido.** Desaparecieron enteras `S1128` (43), `S7781` (24), `S1135` (25), `S2486`
+   (10) y las dos de etiquetado (289). **Las seis reglas que se cerraban en bloque ya están cerradas.**
+   Nadie va a volver a bajar 400 incidencias en dos días, y esperarlo es la vía rápida a la
+   frustración.
+2. **Las tres filas grandes que quedan —48 + 33 + 28 = 109— están SIN fase a propósito**, y cada una
+   por un motivo distinto: los ternarios porque reescribirlos es cambiar estructura; el contraste
+   porque depende del sistema de diseño; las regex porque hay que mirarlas de una en una. **No son
+   deuda olvidada: son deuda decidida.** Si alguna se ataca, que sea por un motivo (un ReDoS real, un
+   informe de accesibilidad), no por bajar el contador.
+3. **La única que sigue siendo trabajo de ingeniería es `S3776`**, y ahí el 11 % vive en tres
+   componentes Vue que ningún patrón arregla (§5 del documento de patrones).
 
 Y hay una fila que merecía mirada propia: los **10 `S2486`** (`catch` que se traga la excepción). Era la
 única regla del backlog que olía a defecto latente en vez de a estilo, y Sonar la clasifica como code
@@ -1471,21 +1490,34 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 
 ## 8. Mapa documental
 
-**Este documento es la entrada única.** Lo demás:
+**Este documento es la entrada única.** Revisado y podado el **2026-08-09**: de los cuatro planes que
+había vivos, **uno se archivó por estar ejecutado** y dos llevan ahora su estado real en la cabecera.
+
+### Con trabajo pendiente — actúa aquí
+
+| Documento | Rol y qué queda |
+|---|---|
+| `docs/plan-cobertura-2026-08.md` | **La cobertura, que es otro problema.** Su **Fase 0 está hecha** (la de Python, +2,2 puntos gratis); quedan las fases 1 y 2. Lo primero que dice, y hay que retenerlo: **el gate no pide 80 % global**, pide 80 % de lo nuevo |
+| `docs/plan-refactor-frontend.md` | **Referencia del frontend.** El diagnóstico vale entero; el plan por fases **está a medias** y su cabecera lleva la tabla de estado. Pendientes de verdad: **layouts de ruta**, **split de `HomeView`** y **colapsar los tokens** del sistema de diseño |
+| `docs/auditoria-signer-2026-08.md` | **El microservicio de firma.** El corte de identidad está hecho; quedan el traslado a fichero propio (F4) y los riesgos que piden decisión, entre ellos **R-1: la contraseña del PKCS#12 viaja por AMQP sin TLS** |
+
+### Referencia y criterio — consúltalos, no hay nada que ejecutar
 
 | Documento | Rol |
 |---|---|
-| `docs/auditoria-god-objects-2026-07.md` | **Vivo — bitácora histórica.** El detalle de los 10 cuts, los 3 defectos de producción y la red de caracterización. Aquí está el *qué hacer*; allí, el *cómo se hizo* |
-| `docs/plan-refactor-frontend.md` | **Vivo — referencia del frontend.** Su plan por fases se recoge en §5-E; el diagnóstico detallado sigue valiendo |
-| `docs/linea-base-homeview-2026-07.md` | **Vivo — contrato observable** de HomeView antes de partirlo. Es la red de regresión |
-| `docs/fotos-perfil-minio.md` | **Vivo — diseño.** Dónde y cómo se guardan las fotos de perfil, y por qué salieron del disco local |
-| `docs/patrones-diseno-2026-08.md` | **Vivo — criterio de diseño.** Dónde un patrón GoF se gana el sueldo en este repo (son **tres**) y, sobre todo, dónde NO. Con la evidencia medida de que aquí la complejidad se cura con tablas y extracción, no con jerarquías. Léelo antes de proponer un patrón |
-| `docs/plan-cobertura-2026-08.md` | **Vivo — plan ejecutable de cobertura.** El gate falla por `new_coverage`, y subir el global es otro problema. Lleva el reparto en cuatro agentes paralelos y las trampas medidas (los `.vue` son 2/3 del hueco; Node solo instrumenta lo que un test carga) |
-| `docs/auditoria-signer-2026-08.md` | **Vivo — auditoría del microservicio de firma.** Mapa por bandas, 12 riesgos y plan de corte por fases |
-| `docs/plan-limpieza-scripts-2026-08.md` | **Vivo** |
-| ~~`SIGUIENTE-SESION-fase5-y-X.md`~~ | **Archivado el 2026-08-08**: lo que pedía está hecho (§5-E) |
-| ~~`SIGUIENTE-SESION-saveTemplateArtifactDraft.md`~~ | **Archivado el 2026-08-08**: fase 1 cerrada y fase 2 hecha a medias y medida (§5-C) |
-| `docs/docs-md-antiguos/refactor-2026-07/` | **Archivados** (§7 del README de esa carpeta): la auditoría base de julio, el plan de `user_controler` con sus M1-M4 hechos, la auditoría de tests unitarios y el plan de `AdminTableManager` de marzo |
+| `docs/patrones-diseno-2026-08.md` | **Cuándo un patrón sí y cuándo no**, con la evidencia medida de este repo: aquí la complejidad se cura con tablas y extracción, no con jerarquías. Léelo **antes** de proponer un patrón |
+| `docs/linea-base-homeview-2026-07.md` | **Contrato observable de `HomeView` antes de partirlo.** Sigue vivo justamente porque **HomeView no se ha tocado**: es la red de regresión del día que se haga |
+| `docs/contrato-errores-api.md` | La forma de los errores HTTP. Se usó para arreglar el `fileFilter` de multer |
+| `docs/modelo-emision-entregables.md` · `docs/fotos-perfil-minio.md` | Diseño de dominio |
+
+### Cerrados y archivados
+
+| Documento | Por qué |
+|---|---|
+| `docs/auditoria-god-objects-2026-07.md` | **Bitácora cerrada.** El *cómo se hizo* de los 10 cuts sigue siendo la mejor referencia de método, pero **sus cifras son de julio y ninguna vale**. Su cabecera lista las cuatro afirmaciones que hoy son falsas |
+| `docs/docs-md-antiguos/planes-cerrados-2026-08/plan-limpieza-scripts-2026-08.md` | **Archivado el 2026-08-09**: ejecutado por completo. `backend/scripts/` tiene hoy los 5 artefactos previstos + `lib/` |
+| ~~`SIGUIENTE-SESION-fase5-y-X.md`~~ · ~~`SIGUIENTE-SESION-saveTemplateArtifactDraft.md`~~ | Archivados el 2026-08-08; ambos cumplidos (§5-E y §5-C) |
+| `docs/docs-md-antiguos/refactor-2026-07/` | La auditoría base de julio, el plan de `user_controler` con sus M1-M4, la auditoría de tests unitarios y el plan de `AdminTableManager` de marzo |
 
 ---
 

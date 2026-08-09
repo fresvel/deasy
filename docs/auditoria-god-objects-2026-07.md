@@ -1,13 +1,24 @@
 # Auditoría de God Objects y tamaño — julio 2026 (re-medición)
 
 
-> 📌 **Bitácora histórica — VIVA.** Aquí está el *cómo se hizo* (los 10 cuts, los 3 defectos de
-> producción, la red de caracterización). Para el *qué hacer ahora* y la línea base vigente:
-> **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**.
+> 📌 **BITÁCORA HISTÓRICA — CERRADA. No hay nada que ejecutar aquí.** Este documento es el *cómo se
+> hizo* (los 10 cuts, los 3 defectos de producción, el nacimiento de la red de caracterización), y como
+> método sigue siendo la mejor referencia del repositorio. **Pero sus cifras son de julio de 2026 y
+> ninguna vale ya.**
 >
-> ⚠️ Dos afirmaciones de este documento quedaron desactualizadas y están corregidas en §4.2 del plan
-> nuevo: la fase 3.5 del frontend (§4 y §5 la dan por *sin ejecutar*; está **hecha a medias**) y el
-> acceso a Sonar por basic auth (**hoy `admin:admin` sí funciona**).
+> Para el estado actual y el *qué hacer*: **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**
+> —mapa de fases en §5.0—. Para elegir o descartar un patrón:
+> **[`docs/patrones-diseno-2026-08.md`](./patrones-diseno-2026-08.md)**.
+>
+> ⚠️ **Cuatro afirmaciones de este documento son FALSAS hoy.** Se dejan sin borrar para que el relato
+> se entienda, pero no las cites:
+>
+> | Dice | Realidad |
+> |---|---|
+> | `admin:admin` funciona por basic auth contra la API de Sonar | **Falso.** La contraseña cambió y el basic auth murió del todo: **todo va por token** (`CLAUDE.md`, sección SonarQube) |
+> | La fase 3.5 del frontend está sin ejecutar | **Hecha** (08-07) |
+> | `saveTemplateArtifactDraft` sigue sin partir, CC 164 | **Partida.** CC **21** desde el 08-09 |
+> | Las marcas *won't fix* no sobreviven a mover código | **Refutado por medición**: sobreviven a un *rename*; lo que las tumba es **reescribir la línea** (§4.4-R1 del plan) |
 
 > Re-escaneo **SonarQube 26.7** sobre `develop @ 090dd44` (código **actual**, con las fases de refactor
 > de `plan-refactor-frontend.md` 0–4.2, la partición de `user_controler` M1–M4 y la extracción de

@@ -1,15 +1,36 @@
 # Plan de refactor y reorganización del frontend
 
 
-> 📌 **Referencia del frontend — VIVA.** Su diagnóstico detallado sigue valiendo. El plan por fases
-> revalidado (qué queda realmente pendiente) está en la fase E de
-> **[`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md)**.
+> 📌 **Referencia del frontend — VIVA, pero PARCIALMENTE EJECUTADA.** El diagnóstico (§1-§4) sigue
+> valiendo y es la mejor descripción que hay del frontend. **El plan por fases (§5) está a medias**, y
+> el estado real —revalidado y medido— manda desde la **fase E de
+> [`docs/plan-calidad-2026-08.md`](./plan-calidad-2026-08.md) §5.0**. Si este documento y aquel se
+> contradicen, **gana aquel**.
 >
-> ⚠️ Correcciones verificadas el 2026-08-06: la **fase 3.5 está hecha a medias** (la ruta ya es
-> `/admin/:section?/:item?/:table?` y `useAdminTableReset.js` fue borrado, pero `AdminView` conserva
-> `selectedTable`/`selectedSection` como refs locales); la **fase 5 redujo su alcance**
-> (`useDeliverableView` NO entra: es proyección read-only, 0 asignaciones `.value =`); y
-> `AdminModalShell` tiene hoy **24** consumidores, no 21.
+> ### Estado de las fases de §5 (actualizado 2026-08-09)
+>
+> | Fase de este documento | Estado |
+> |---|---|
+> | **0** · Bugs y código muerto | ✅ hecha (16-07) |
+> | **1** · Red de seguridad | ✅ hecha (16-07) |
+> | **2** · Layouts de ruta | ⬜ **sin empezar** |
+> | **3** · Split de páginas | ⬜ **sin empezar** — `HomeView.vue` sigue en 350 de complejidad, intacto. Su red de regresión es `docs/linea-base-homeview-2026-07.md` |
+> | **3.5** · La URL como fuente de verdad | ✅ hecha (08-07): `AdminView` bajó de 153 a 115 |
+> | **4** · Colapsar duplicación | 🟡 parcial: se fueron dos componentes muertos y su CSS (08-09) |
+> | **5** · Deuda de composables | ✅ hecha, con alcance reducido: `useProcessPanels` posee su estado. **`useDeliverableView` NO entra** — es proyección read-only, 0 asignaciones `.value =` |
+> | **X** · Sistema de diseño | 🟡 **desbloqueada**: los dos `@layer components` fusionados (`63b901e`) y los forks eliminados (08-09). Falta **colapsar los tokens `--deasy-*` / `--brand-*`** y, después, los ~1 269 colores |
+>
+> ### Tres correcciones que este documento tenía mal
+>
+> 1. **`AdminModalShell` y `AdminDataTable` NO eran forks con 24 y 11 consumidores** (§3.5). Eran
+>    **código muerto con CERO importadores**: los 35 consumidores ya apuntaban a `shared/AppModalShell`
+>    y `shared/AppDataTable`. El conteo salió de grepear el **identificador**, no el import. Eliminados
+>    el 2026-08-09.
+> 2. **El fork de verdad es otro**: `AdminButton.vue`, con un consumidor, y es el único emisor vivo de
+>    la familia de selectores `admin-btn--*`. Diverge de `AppButton` en cosas que **cambian aspecto**
+>    (aplica la clase de tamaño incluso con `icon-only`), así que su cierre necesita navegador.
+> 3. **La red de seguridad ya no «no existe»** (§3.6): hoy hay **18 ficheros / 304 casos** de vitest en
+>    el frontend, más 238 de caracterización HTTP en el backend.
 
 > Auditoría completa de `frontend/src` (122 `.vue` + 62 `.js`) realizada el **16-07-2026** sobre `develop` (`ac515a7`).
 > Cada afirmación de este documento está respaldada por lectura directa del código y verificada de forma independiente.

@@ -4,9 +4,16 @@
 > Complementa a `docs/plan-calidad-2026-08.md`, que es el documento maestro de calidad; este solo
 > trata cobertura. Si hay conflicto, manda el maestro.
 >
-> **Medición de partida:** SonarQube en `:9002`, análisis del **2026-08-08**, rama `develop`.
-> **Cobertura global: 14,0 %.** El Quality Gate está en ERROR por `new_coverage` **34,9 %** contra un
-> umbral del 80 %.
+> **Medición:** SonarQube en `:9002`, rama `develop`. **Actualizado el 2026-08-09.**
+> **Cobertura global: 17,7 %** (era 14,0 al escribir este plan). El Quality Gate sigue en ERROR por
+> `new_coverage` **39,2 %** contra un umbral del 80 %.
+>
+> **La Fase 0 está HECHA** (§3) y fue justo lo que prometía: la mejor relación resultado/esfuerzo del
+> documento. Las fases 1 y 2 siguen pendientes.
+>
+> **Antes de leer nada más, retén esto**, porque es lo que más desanima al mirar un 17,7 %: **el gate
+> NO pide 80 % global.** Pide 80 % de lo nuevo. Llevar el global al 80 % es trabajo de años y **no es
+> el objetivo de nadie** (§0.1).
 
 ---
 
@@ -26,13 +33,22 @@ global del 14 % al 80 % es trabajo de años y **no es el objetivo**. El objetivo
 Todo lo que sigue es para reducir el riesgo del código que YA existe, que es un problema distinto y
 sin fecha.
 
-### 0.2 El signer tiene 229 pruebas y aporta CERO
+### 0.2 El signer tenía 229 pruebas y aportaba CERO — ✅ **RESUELTO (2026-08-09)**
 
-`signer/tests/` tiene **229 casos** que ejercen 51 de 55 funciones, validados por mutación. Y
-`signer/app.py` figura con **0,0 % sobre 884 líneas**, porque **nunca se conectó la cobertura de
-Python**: `sonar.python.coverage.reportPaths` no existe en `sonar-project.properties`.
+`signer/tests/` tenía **229 casos** validados por mutación, y `signer/app.py` figuraba con **0,0 %**,
+porque **nunca se conectó la cobertura de Python**: `sonar.python.coverage.reportPaths` no existía en
+`sonar-project.properties`.
 
-**Es la mejor relación resultado/esfuerzo de todo el plan y va primero** (Fase 0).
+**La realidad medida al conectarlo: estaba al 88 %**, no al 0. El fichero más complejo del repositorio
+parecía no tener ni una prueba. Hoy, tras el corte de identidad, va por el **89,4 %** con **266 casos**.
+
+**Fue la mejor relación resultado/esfuerzo del plan, como estaba previsto:** +2,2 puntos de cobertura
+global sin escribir un solo test. Ver Fase 0 (§3).
+
+> **La lección general, que sigue viva:** antes de dar por buena una cifra de cobertura, comprueba que
+> el informe **llega** a Sonar. Los tres modos de fallo de este repo —lcov con rutas relativas al
+> módulo, informe de la corrida anterior, y formato no declarado— **son todos silenciosos**. Nadie
+> avisa: solo sale un cero, y un cero se interpreta como «no hay pruebas».
 
 ### 0.3 El agujero del frontend son los `.vue`, y perseguirlos es una trampa
 
@@ -72,12 +88,15 @@ El frontend no tiene este sesgo: vitest va con `all: true`.
 |---|---:|---:|---:|---:|---:|
 | **Backend** | 137 | 17 465 | 5 295 | **30,3 %** | 104 |
 | **Frontend** | 200 | 18 475 | 714 | **3,9 %** | 166 |
-| **Signer** | 4 | 884 | 0 | **0,0 %** | 4 |
+| **Signer** | 4 | 884 | **~790** | ✅ **89,4 %** | 0 |
 | **Total** | 341 | 36 824 | 6 009 | — | 274 |
 
-> La cobertura global que publica Sonar (**14,0 %**) no coincide con 6 009/36 824 porque su fórmula
-> mezcla líneas y condiciones. Para medir progreso usa **siempre el número de Sonar**; las líneas de
-> esta tabla sirven para repartir trabajo, no para presumir.
+> ⚠️ **Esta tabla es del 2026-08-08 salvo la fila del signer.** Backend y frontend han cambiado desde
+> entonces (389 unitarios y 304 de frontend, frente a 312 y 246). Sirve para **repartir trabajo por
+> zonas**, no como marcador: para eso está el número de Sonar.
+
+> Y ojo: la cobertura global que publica Sonar **no** coincide con dividir estas dos columnas, porque
+> su fórmula mezcla líneas y condiciones.
 
 ### 1.1 Ranking de riesgo — complejidad cognitiva × líneas sin cubrir
 
@@ -88,7 +107,7 @@ Lo que más duele si se rompe y nadie se entera:
 | 350 | 1 920 | `frontend/.../home/views/HomeView.vue` |
 | 290 | 1 371 | `frontend/.../tables/AdminTableManager.vue` |
 | 262 | 1 351 | `frontend/.../firmas/FirmarPdf.vue` |
-| 353 | 777 | `signer/app.py` ← **ya tiene red; solo falta conectarla** |
+| ~~353~~ 297 | ~~777~~ **~94** | ~~`signer/app.py`~~ ✅ **fuera del ranking**: red conectada y bloque de identidad cortado (08-09) |
 | 204 | 1 138 | `backend/services/documents/DocumentSignatureWorkflowService.js` |
 | 277 | 596 | `backend/services/admin/templates/templateLifecycle.js` |
 | 182 | 642 | `backend/controllers/users/user_controler.js` |
@@ -114,11 +133,12 @@ Vienen de fallos reales de este repositorio. Romperlas cuesta más que el trabaj
 5. **Un test no cambia el código de producción.** Si para poder testear hay que refactorizar, eso es
    otro trabajo: anótalo, no lo mezcles. Excepción tolerada: extraer una función pura a un módulo
    hermano, y **solo** si la caracterización y los unitarios siguen verdes.
-6. **Regenera AMBOS lcov antes de cada escaneo**, o Sonar leerá la cobertura de la corrida anterior
-   sin quejarse:
+6. **Regenera los TRES informes antes de cada escaneo** (no dos: el de Python se olvida igual de
+   fácil), o Sonar leerá la cobertura de la corrida anterior sin quejarse:
    ```bash
    bash scripts/docker-env.sh dev exec -T backend  npm run test:unit:coverage
    bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage
+   bash scripts/signer-coverage.sh
    ```
 7. **Todo dentro de los contenedores**, nunca `npm`/`npx`/`pytest` en el host.
 8. **Tests que prueban comportamiento, no implementación.** Un test que solo repite el código que
@@ -135,8 +155,10 @@ curl -H "Authorization: Bearer $SONAR_TOKEN" "http://localhost:9002/api/measures
 SONAR_TOKEN=<token> bash scripts/sonar/scan.sh
 ```
 
-Genera el token en *My Account → Security*. **`POST /api/user_tokens/generate` también exige estar
-autenticado**, así que sin ningún token vivo hay que pasar por la interfaz.
+Genera el token en *My Account → Security*. **Y si no conservas ninguno vivo, NO hace falta abrir la
+interfaz** (esto lo decía mal este documento): lo que murió es el *basic auth*, no la contraseña. El
+endpoint de sesión la sigue aceptando y con su cookie se emite un token — la receta completa está en
+`CLAUDE.md`, sección «SonarQube». El `X-XSRF-TOKEN` no es opcional.
 
 SonarQube se cayó **tres veces** en la sesión del 2026-08-06/08. Si la API da *connection refused*:
 ```bash
@@ -145,7 +167,34 @@ docker compose -f scripts/sonar/compose.yml up -d
 
 ---
 
-## 3. Fase 0 — Conectar la cobertura de Python (BLOQUEANTE, hazla primero)
+## 3. Fase 0 — Conectar la cobertura de Python — ✅ **HECHA (2026-08-09)**
+
+> **Resultado: la sospecha se quedó corta.** No era que 884 líneas probadas contaran como cero: es que
+> **`signer/app.py` estaba al 88 %** y figuraba a 0,0 %. El fichero **más complejo del repositorio**
+> parecía no tener ni una prueba. Conectarlo subió el global de **14,0 a 16,2 %** sin escribir un solo
+> test (hoy, tras el corte de identidad del signer, el módulo va por el **89,4 %** y el global por el
+> **17,7 %**).
+>
+> **Cómo quedó, con las dos trampas que costaron tiempo:**
+>
+> | Pieza | Dónde |
+> |---|---|
+> | Dependencia | `signer/requirements-dev.txt` (`coverage`), instalada en `docker/signer/Dockerfile` |
+> | Generador | **`scripts/signer-coverage.sh`** — el equivalente a `test:unit:coverage` del backend |
+> | Config | `sonar.python.coverage.reportPaths=signer/coverage/coverage.xml` |
+>
+> 1. **El fichero de datos NO puede caer en `/app`**: en dev es un bind mount y el contenedor corre
+>    como `appuser`, que no puede escribir ahí. Por eso `COVERAGE_FILE` apunta a `/tmp` y el XML sale
+>    por stdout.
+> 2. **`coverage.py` escribe `<source>/app</source>`**, que es la ruta *dentro del contenedor*. El
+>    escáner no resolvería ni un fichero y la cobertura habría vuelto a 0 **en silencio** — exactamente
+>    el modo de fallo que este documento avisaba. El script la reescribe a `signer` y **falla si no lo
+>    consigue**, en vez de dejarlo pasar.
+>
+> **Y hay que regenerar los TRES informes antes de cada escaneo**, no dos. El de Python se olvida
+> igual de fácil que los otros.
+
+<details><summary>Redacción original de la fase (referencia)</summary>
 
 Sin esto, cualquier medición de progreso del plan está mal, porque 884 líneas ya probadas cuentan como
 cero.
@@ -169,6 +218,8 @@ cero.
 
 **Criterio de cierre:** `signer/app.py` deja de figurar a 0,0 % y la cobertura global sube.
 **Si no sube, NO sigas con las demás fases**: significa que las rutas no resuelven.
+
+</details>
 
 ---
 
