@@ -111,3 +111,93 @@ export async function findDeliverableByCode(code) {
   );
   return rows[0] ?? null;
 }
+
+// --- Jobs de firma masiva: SEMBRAR la precondición, no asertar sobre ella -----------------------
+//
+// Segunda excepción a la regla HTTP-only, y por el mismo motivo que la primera: no hay otra vía.
+// `signature_batch_jobs` NO está en `config/sqlTables.js`, así que no la expone el CRUD de admin, y
+// el único camino HTTP que crea un job es `POST /sign/batch/start`, que exige un certificado PKCS#12
+// real en MinIO y arranca de inmediato un bucle que habla con el firmante por RabbitMQ. Caracterizar
+// los guards de `getSignBatchStatus`/`downloadSignBatch` (404 antes que 403, y el 400 del lote sin
+// firmados) por esa vía sería atar el golden al microservicio de firma.
+//
+// Se siembra la fila, se ejercitan los guards por HTTP y se borra en el `after`. La ASERCIÓN sigue
+// siendo el contrato HTTP; esto solo pone la precondición.
+export async function upsertSignatureBatchJob(job) {
+  await query(
+    `INSERT INTO signature_batch_jobs
+       (job_id, user_id, sign_mode, status, total, processed, success_count, failed_count, results)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+     ON CONFLICT (job_id) DO UPDATE SET
+       user_id = EXCLUDED.user_id, sign_mode = EXCLUDED.sign_mode, status = EXCLUDED.status,
+       total = EXCLUDED.total, processed = EXCLUDED.processed,
+       success_count = EXCLUDED.success_count, failed_count = EXCLUDED.failed_count,
+       results = EXCLUDED.results`,
+    [
+      job.jobId,
+      job.userId ?? null,
+      job.signMode ?? "coordinates",
+      job.status ?? "completed",
+      job.total ?? 0,
+      job.processed ?? 0,
+      job.successCount ?? 0,
+      job.failedCount ?? 0,
+      JSON.stringify(job.results ?? []),
+    ],
+  );
+}
+
+export async function deleteSignatureBatchJob(jobId) {
+  await query("DELETE FROM signature_batch_jobs WHERE job_id = $1", [jobId]);
+}
+
+export async function countSignatureBatchJobs() {
+  const rows = await query("SELECT COUNT(*)::int AS total FROM signature_batch_jobs");
+  return Number(rows[0]?.total ?? 0);
+}
+
+// --- Restauración de la solicitud de entrega usada por zzzz_sign_workflow -----------------------
+//
+// La máquina de estados de `fill_requests` NO tiene marcha atrás por HTTP: de `approved` no se sale,
+// y el CRUD de admin rechaza el `UPDATE` porque su hook re-sincroniza el progreso documental y la
+// transición inversa de `document_versions` es ilegal. Así que la vuelta al estado inicial se hace
+// por SQL, igual que la limpieza del borrador de plantilla.
+//
+// Restaura SOLO las dos filas cuyos valores leen los golden de otros flows (la solicitud y su
+// versión documental). Lo que este teardown NO deshace, y por eso el flow lleva prefijo `zzzz_` y
+// debe seguir corriendo el último: `document_observations`, `task_items.user_started_at`,
+// `document_fill_flows.status/current_step_order` y las instancias de flujo de firma que crea una
+// aprobación.
+export async function captureFillRequestFixture(fillRequestId) {
+  const rows = await query(
+    `SELECT fr.id, fr.assigned_person_id, fr.status, fr.is_manual, fr.responded_at, fr.response_note,
+            dv.id AS document_version_id, dv.status AS dv_status, dv.working_file_path
+       FROM fill_requests fr
+       INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+       INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+      WHERE fr.id = $1`,
+    [fillRequestId],
+  );
+  return rows[0] ?? null;
+}
+
+export async function restoreFillRequestFixture(snapshot) {
+  if (!snapshot) return;
+  await query(
+    `UPDATE fill_requests
+        SET assigned_person_id = $2, status = $3, is_manual = $4, responded_at = $5, response_note = $6
+      WHERE id = $1`,
+    [
+      snapshot.id,
+      snapshot.assigned_person_id,
+      snapshot.status,
+      snapshot.is_manual,
+      snapshot.responded_at,
+      snapshot.response_note,
+    ],
+  );
+  await query(
+    "UPDATE document_versions SET status = $2, working_file_path = $3 WHERE id = $1",
+    [snapshot.document_version_id, snapshot.dv_status, snapshot.working_file_path],
+  );
+}

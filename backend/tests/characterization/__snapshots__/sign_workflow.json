@@ -1,0 +1,295 @@
+{
+  "ajena_admin_approve": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+    }
+  },
+  "ajena_admin_cancel": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+    }
+  },
+  "ajena_admin_reject": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+    }
+  },
+  "ajena_admin_return": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+    }
+  },
+  "ajena_admin_start": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+    }
+  },
+  "ajena_gestor_start": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+    }
+  },
+  "approve_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "fillRequestId": "<normalized>",
+      "flowStatus": "approved",
+      "message": "Solicitud de entrega actualizada.",
+      "status": "approved"
+    }
+  },
+  "approve_sin_pdf_rollback": {
+    "status": "pending"
+  },
+  "cancel_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "fillRequestId": "<normalized>",
+      "flowStatus": "pending",
+      "message": "Solicitud de entrega actualizada.",
+      "status": "cancelled"
+    }
+  },
+  "defecto_approve_sin_pdf": {
+    "status": 500,
+    "body": {
+      "error": "El último paso del flujo de entrega requiere un PDF en working para habilitar la firma."
+    }
+  },
+  "defecto_sin_responsable_gestor": {
+    "status": 500,
+    "body": {
+      "error": "La solicitud de entrega no tiene un responsable resoluble."
+    }
+  },
+  "defecto_sin_responsable_usuario": {
+    "status": 500,
+    "body": {
+      "error": "La solicitud de entrega no tiene un responsable resoluble."
+    }
+  },
+  "id_cero": {
+    "status": 400,
+    "body": {
+      "error": "Solicitud de entrega inválida."
+    }
+  },
+  "id_no_numerico_approve": {
+    "status": 400,
+    "body": {
+      "error": "Solicitud de entrega inválida."
+    }
+  },
+  "id_no_numerico_cancel": {
+    "status": 400,
+    "body": {
+      "error": "Solicitud de entrega inválida."
+    }
+  },
+  "id_no_numerico_reject": {
+    "status": 400,
+    "body": {
+      "error": "Solicitud de entrega inválida."
+    }
+  },
+  "id_no_numerico_return": {
+    "status": 400,
+    "body": {
+      "error": "Solicitud de entrega inválida."
+    }
+  },
+  "id_no_numerico_start": {
+    "status": 400,
+    "body": {
+      "error": "Solicitud de entrega inválida."
+    }
+  },
+  "inexistente_approve": {
+    "status": 404,
+    "body": {
+      "error": "Solicitud de entrega no encontrada."
+    }
+  },
+  "inexistente_cancel": {
+    "status": 404,
+    "body": {
+      "error": "Solicitud de entrega no encontrada."
+    }
+  },
+  "inexistente_reject": {
+    "status": 404,
+    "body": {
+      "error": "Solicitud de entrega no encontrada."
+    }
+  },
+  "inexistente_return": {
+    "status": 404,
+    "body": {
+      "error": "Solicitud de entrega no encontrada."
+    }
+  },
+  "inexistente_start": {
+    "status": 404,
+    "body": {
+      "error": "Solicitud de entrega no encontrada."
+    }
+  },
+  "manual_autoasignacion": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "fillRequestId": "<normalized>",
+      "flowStatus": "in_progress",
+      "message": "Solicitud de entrega actualizada.",
+      "status": "in_progress"
+    }
+  },
+  "manual_autoasignacion_efecto": {
+    "reclamada_por_el_gestor": true,
+    "status": "in_progress"
+  },
+  "reject_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "fillRequestId": "<normalized>",
+      "flowStatus": "rejected",
+      "message": "Solicitud de entrega actualizada.",
+      "status": "rejected"
+    }
+  },
+  "return_efecto": {
+    "status": "pending",
+    "response_note": "faltan datos en el formulario"
+  },
+  "return_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "fillRequestId": "<normalized>",
+      "flowStatus": "pending",
+      "message": "Solicitud de entrega actualizada.",
+      "status": "returned"
+    }
+  },
+  "sin_token_approve": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_cancel": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_reject": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_return": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_start": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "start_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "fillRequestId": "<normalized>",
+      "flowStatus": "in_progress",
+      "message": "Solicitud de entrega actualizada.",
+      "status": "in_progress"
+    }
+  },
+  "start_repetido_409": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de in_progress usando la acción start."
+    }
+  },
+  "terminal_approved_approve": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de approved usando la acción approve."
+    }
+  },
+  "terminal_approved_cancel": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de approved usando la acción cancel."
+    }
+  },
+  "terminal_approved_reject": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de approved usando la acción reject."
+    }
+  },
+  "terminal_approved_return": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de approved usando la acción return."
+    }
+  },
+  "terminal_approved_start": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de approved usando la acción start."
+    }
+  },
+  "terminal_cancelled_approve": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de cancelled usando la acción approve."
+    }
+  },
+  "terminal_rejected_approve": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rejected usando la acción approve."
+    }
+  },
+  "terminal_rejected_cancel": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rejected usando la acción cancel."
+    }
+  },
+  "terminal_rejected_reject": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rejected usando la acción reject."
+    }
+  },
+  "terminal_rejected_return": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rejected usando la acción return."
+    }
+  },
+  "terminal_rejected_start": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rejected usando la acción start."
+    }
+  }
+}

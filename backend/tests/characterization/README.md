@@ -38,6 +38,8 @@ tests/characterization/
     signature.test.mjs  # estado de firma / entregables (usuario admin)
     chat.test.mjs       # conversaciones, mensajes, notificaciones
     execution.test.mjs  # capa de ejecución poblada (requiere el setup)
+    zzzz_sign_batch.test.mjs     # /sign: validación, lote y descargas (guards de sign_controller)
+    zzzz_sign_workflow.test.mjs  # máquina de estados de fill_requests (MUTA; corre el ÚLTIMO)
   __snapshots__/        # golden-master versionado (el diff en git = evidencia)
 ```
 
@@ -157,3 +159,11 @@ En particular **no hay cobertura** de `SqlAdminService.create()` ni `update()` (
 dos funciones más complejas del repositorio), ni del grafo de unidades, ni del de
 procesos, ni del ciclo de borrador/publicación de plantillas. Ampliarla es requisito
 previo para partir `SqlAdminService`.
+
+Del **dominio de firma** (Fase D del plan de calidad) queda fuera todo lo que exige el
+microservicio Python: el camino feliz de `requestSign` y de `POST /sign/batch/start`, y
+`validateSignedDocument` más allá de su 400. El bootstrap **no siembra certificados**
+(`person_certificates` vacía), así que `buildSignContext` siempre corta en «Certificado no
+encontrado» y los guards posteriores (el `statMinioObject` del certificado y «Modo de firma
+inválido») no tienen golden. Tampoco lo tiene `reactivatePreviousFillStepIfNeeded`: los
+flujos de entrega de la fixture tienen **un solo paso**.

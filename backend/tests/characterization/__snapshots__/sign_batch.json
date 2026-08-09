@@ -1,0 +1,227 @@
+{
+  "batch_download_ajeno": {
+    "status": 403,
+    "body": {
+      "error": "No tienes acceso a este job batch."
+    }
+  },
+  "batch_download_inexistente": {
+    "status": 404,
+    "body": {
+      "error": "Job batch no encontrado."
+    }
+  },
+  "batch_download_sin_firmados": {
+    "status": 400,
+    "body": {
+      "error": "Este lote no tiene documentos firmados para descargar."
+    }
+  },
+  "batch_legacy_gone": {
+    "status": 410,
+    "body": {
+      "code": "SIGN_BATCH_LEGACY_GONE",
+      "error": "Endpoint de firma masiva legacy retirado. Usa POST /sign/batch/start (procesa de forma asíncrona y persiste evidencia).",
+      "use": "/sign/batch/start"
+    }
+  },
+  "batch_start_certificado_inexistente": {
+    "status": 500,
+    "body": {
+      "error": "Certificado no encontrado para este usuario."
+    },
+    "jobs_creados": 0
+  },
+  "batch_start_sin_ficheros": {
+    "status": 400,
+    "body": {
+      "error": "Debes cargar al menos un PDF para la firma masiva."
+    }
+  },
+  "batch_status_ajeno": {
+    "status": 403,
+    "body": {
+      "error": "No tienes acceso a este job batch."
+    }
+  },
+  "batch_status_inexistente": {
+    "status": 404,
+    "body": {
+      "error": "Job batch no encontrado."
+    }
+  },
+  "batch_status_propio": {
+    "status": 200,
+    "body": {
+      "createdAt": "<normalized>",
+      "failedCount": 1,
+      "jobId": "<normalized>",
+      "processed": 1,
+      "results": [
+        {
+          "error": "fallo simulado",
+          "fileName": "documento.pdf",
+          "status": "error"
+        }
+      ],
+      "signMode": "coordinates",
+      "status": "completed",
+      "successCount": 0,
+      "total": 1,
+      "updatedAt": "<normalized>",
+      "userId": "<normalized>"
+    }
+  },
+  "download_ruta_ajena": {
+    "status": 403,
+    "body": {
+      "error": "No tienes acceso a este documento firmado."
+    }
+  },
+  "download_ruta_propia_inexistente": {
+    "status": 404,
+    "body": {
+      "error": "Archivo firmado no encontrado."
+    }
+  },
+  "download_sin_path": {
+    "status": 400,
+    "body": {
+      "error": "Falta el parámetro 'path'."
+    }
+  },
+  "sign_body_json": {
+    "status": 400,
+    "body": {
+      "error": "Se requiere el archivo PDF."
+    }
+  },
+  "sign_certificado_inexistente": {
+    "status": 500,
+    "body": {
+      "details": null,
+      "error": "Certificado no encontrado para este usuario.",
+      "error_name": "Error"
+    }
+  },
+  "sign_mimetype_rechazado": {
+    "status": 500,
+    "esHtml": true,
+    "esJson": false,
+    "filtra_stack_trace": true,
+    "menciona_el_campo": true
+  },
+  "sign_sin_certificado": {
+    "status": 500,
+    "body": {
+      "details": null,
+      "error": "Debes seleccionar un certificado guardado.",
+      "error_name": "Error"
+    }
+  },
+  "sign_sin_password": {
+    "status": 500,
+    "body": {
+      "details": null,
+      "error": "Debes ingresar la contraseña del certificado.",
+      "error_name": "Error"
+    }
+  },
+  "sign_sin_pdf": {
+    "status": 400,
+    "body": {
+      "error": "Se requiere el archivo PDF."
+    }
+  },
+  "sign_sin_sello": {
+    "status": 500,
+    "body": {
+      "details": null,
+      "error": "Debes indicar el texto del sello.",
+      "error_name": "Error"
+    }
+  },
+  "signature_flow_id_cero": {
+    "status": 400,
+    "body": {
+      "error": "Versión documental inválida."
+    }
+  },
+  "signature_flow_id_no_numerico": {
+    "status": 400,
+    "body": {
+      "error": "Versión documental inválida."
+    }
+  },
+  "signature_flow_inexistente": {
+    "status": 200,
+    "body": {
+      "canOperate": false,
+      "currentSignatureStepOrder": null,
+      "currentStatus": "Borrador",
+      "documentVersionId": "<normalized>",
+      "readiness": {
+        "ok": false,
+        "reason": "document_version_not_found"
+      },
+      "responsableActual": null,
+      "signatureFlow": null,
+      "signatureRequests": [],
+      "signatureSteps": []
+    }
+  },
+  "sin_token_GET__sign_batch_cualquiera": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_GET__sign_batch_cualquiera_download": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_GET__sign_documents_1_signature_flow": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_GET__sign_download_path_cualquiera": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_POST__sign": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_POST__sign_batch": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_POST__sign_batch_start": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_POST__sign_validate": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "validate_sin_pdf": {
+    "status": 400,
+    "body": {
+      "error": "Se requiere el archivo PDF."
+    }
+  }
+}
