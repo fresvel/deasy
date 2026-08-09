@@ -106,13 +106,18 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
     const allReturned = currentStepRows.length > 0 && currentStepRows.every((row) => normalizeCode(row.request_status) === "returned");
     if (allReturned) {
       await connection.query(
+        // PostgreSQL no admite `UPDATE ... INNER JOIN ... SET` (eso es multi-tabla de MySQL): usa
+        // `UPDATE ... SET ... FROM ... WHERE`, y las columnas del SET van SIN cualificar.
+        // Estuvo con la sintaxis vieja desde la migracion y reventaba con
+        // `syntax error at or near "INNER"`, dejando `return` inservible. Ver zzzz_sign_workflow.
         `UPDATE fill_requests fr
-         INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
-         SET fr.status = 'pending',
-             fr.responded_at = NULL
-         WHERE fr.document_fill_flow_id = ?
-           AND ffs.step_order = ?
-           AND fr.status = 'returned'`,
+            SET status = 'pending',
+                responded_at = NULL
+           FROM fill_flow_steps ffs
+          WHERE ffs.id = fr.fill_flow_step_id
+            AND fr.document_fill_flow_id = ?
+            AND ffs.step_order = ?
+            AND fr.status = 'returned'`,
         [context.document_fill_flow_id, nextStepOrder]
       );
 

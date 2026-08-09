@@ -202,13 +202,17 @@ export default class TaskAssignmentService {
       params.push(pid);
     }
     const [result] = await connection.query(
+      // `UPDATE ... SET ... FROM`, no `UPDATE ... INNER JOIN ... SET` (eso es MySQL y PostgreSQL
+      // lo rechaza al ejecutarlo). Las condiciones del JOIN pasan al WHERE. No multiplica filas:
+      // el indice unico `uq_position_current (position_id, current_flag)` garantiza como mucho una
+      // asignacion vigente por puesto.
       `UPDATE task_items ti
-         INNER JOIN position_assignments pa
-            ON pa.position_id = ti.responsible_position_id
-           AND pa.is_current = 1
-           AND pa.person_id IS NOT NULL
-          SET ti.assigned_person_id = pa.person_id
-        WHERE ti.responsible_position_id IS NOT NULL
+          SET assigned_person_id = pa.person_id
+         FROM position_assignments pa
+        WHERE pa.position_id = ti.responsible_position_id
+          AND pa.is_current = 1
+          AND pa.person_id IS NOT NULL
+          AND ti.responsible_position_id IS NOT NULL
           AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
           AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)
           AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> pa.person_id)

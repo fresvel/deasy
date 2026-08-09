@@ -352,11 +352,17 @@ export default class TemplateLifecycleService {
   async repointConfigTemplateLink(definitionId, templateCode, targetArtifactId, connection = this.pool) {
     await this.assertDeliverableBelongsToConfigLine(definitionId, targetArtifactId, connection);
     const [result] = await connection.query(
+      // `UPDATE ... SET ... FROM`: la forma `UPDATE ... INNER JOIN ... SET` es de MySQL y
+      // PostgreSQL la rechaza al ejecutarla. La tabla que se actualiza NO se repite en el FROM;
+      // su condicion de union pasa al WHERE. Se evalua contra los valores VIEJOS, asi que buscar
+      // por `ta.id = pdt.template_artifact_id` y reasignar esa misma columna es correcto.
       `UPDATE process_definition_templates pdt
-         INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
-         INNER JOIN deliverables d ON d.id = ta.deliverable_id
-          SET pdt.template_artifact_id = ?
-        WHERE pdt.process_definition_id = ? AND d.code = ?`,
+          SET template_artifact_id = ?
+         FROM template_artifacts ta
+         JOIN deliverables d ON d.id = ta.deliverable_id
+        WHERE ta.id = pdt.template_artifact_id
+          AND pdt.process_definition_id = ?
+          AND d.code = ?`,
       [Number(targetArtifactId), Number(definitionId), String(templateCode)]
     );
     if (result?.affectedRows) {

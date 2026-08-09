@@ -156,12 +156,16 @@ const cancelOpenSignatureRequests = async (connection, documentVersionId) => {
   }
 
   await connection.query(
+    // `UPDATE ... SET ... FROM`, no `UPDATE ... INNER JOIN ... SET`: lo segundo es MySQL y
+    // PostgreSQL lo rechaza en tiempo de EJECUCION, no de carga. Las columnas del SET van sin
+    // cualificar; en la parte derecha si vale `sr.`.
     `UPDATE signature_requests sr
-     INNER JOIN signature_request_statuses srs ON srs.id = sr.status_id
-     SET sr.status_id = ?,
-         sr.responded_at = COALESCE(sr.responded_at, NOW())
-     WHERE sr.instance_id = ?
-       AND LOWER(srs.code) IN ('pendiente', 'en_progreso')`,
+        SET status_id = ?,
+            responded_at = COALESCE(sr.responded_at, NOW())
+       FROM signature_request_statuses srs
+      WHERE srs.id = sr.status_id
+        AND sr.instance_id = ?
+        AND LOWER(srs.code) IN ('pendiente', 'en_progreso')`,
     [cancelledStatusId, instanceId]
   );
 
