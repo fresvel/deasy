@@ -45,10 +45,11 @@ const pool = missingEnvVars.length
 
 // --- Escáner de SQL ------------------------------------------------------------
 //
-// Recorrer SQL saltándose lo que NO es código es la operación que necesitan tanto
-// translatePlaceholders como bindParams. Antes cada una llevaba su propia copia del
-// autómata, con cinco banderas de estado (inSingle/inDouble/inBacktick/inLine/inBlock)
-// y una rama por bandera. Aquí esas cinco banderas son cinco FILAS de una tabla:
+// Recorrer SQL saltándose lo que NO es código es la operación que necesita `bindParams`
+// (y que necesitaba también `translatePlaceholders`, ya retirada por muerta). Antes cada
+// una llevaba su propia copia del autómata, con cinco banderas de estado
+// (inSingle/inDouble/inBacktick/inLine/inBlock) y una rama por bandera. Aquí esas cinco
+// banderas son cinco FILAS de una tabla:
 //
 //   open     el prefijo que abre el tramo protegido
 //   close    lo que lo cierra; si no aparece, el tramo llega al final del SQL
@@ -102,12 +103,6 @@ function scanSql(sql, onPlaceholder) {
     }
   }
   return out;
-}
-
-// --- Traducción de placeholders ?  ->  $1..$n (respeta strings/identificadores/comentarios) ---
-export function translatePlaceholders(sql) {
-  let n = 1;
-  return scanSql(sql, () => "$" + n++);
 }
 
 // Expansión mysql2 de UN parámetro, según su forma:

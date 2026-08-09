@@ -1,9 +1,14 @@
 // Red de CARACTERIZACIÓN del escáner de SQL del adaptador mysql2 -> PostgreSQL.
 //
-// Cubre las dos funciones más densas del repositorio: `translatePlaceholders`
-// (que hasta hoy no ejecutaba NI UNA vez en la suite: `FNDA:0` en el lcov) y
-// `bindParams`, que es la que de verdad usa `runQuery` para todo el SQL del
-// sistema.
+// Cubre `bindParams`, que es la que de verdad usa `runQuery` para todo el SQL del
+// sistema, y a través de ella el escáner `scanSql` que comparten todas las
+// traducciones.
+//
+// Este fichero cubría también `translatePlaceholders`, retirada por código muerto
+// (defecto 1.6). Sus 33 casos NO se perdieron: caracterizan el ESCÁNER, no la función
+// borrada, así que se re-apuntaron a `bindParams`. El cambio es seguro porque este
+// mismo fichero demostraba que las dos producían EXACTAMENTE el mismo texto con
+// parámetros escalares; ese test de invariante desaparece por tautológico.
 //
 // QUÉ ES ESTE FICHERO: una red, no una especificación. Cada valor esperado se
 // capturó ejecutando el código TAL COMO ESTABA antes del refactor de la Fase F.
@@ -18,12 +23,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { translatePlaceholders, bindParams, translateDialect } from "./postgres.js";
+import { bindParams, translateDialect } from "./postgres.js";
 
-// --- translatePlaceholders ----------------------------------------------------
+// --- El escáner: numeración de `?` -> $1..$n ----------------------------------
 //
-// Numera TODOS los `?` como $1..$n sin consultar parámetros, respetando
-// literales, identificadores y comentarios. [nombre, entrada, salida esperada]
+// Numera los `?` de CÓDIGO como $1..$n, respetando literales, identificadores y
+// comentarios. [nombre, entrada, salida esperada]
 
 const PLACEHOLDER_CASES = [
   ["cadena vacía", "", ""],
@@ -85,9 +90,14 @@ const PLACEHOLDER_CASES = [
   ],
 ];
 
+// Con escalares de sobra: `bindParams` tolera los parámetros que sobran, y así cada caso
+// mide SOLO la numeración del escáner, sin que el chequeo de parámetros que faltan (1.5)
+// se cuele en un test que no va de eso. El caso con más `?` tiene 10.
+const SOBRAN_ESCALARES = new Array(32).fill(0).map((_, k) => k);
+
 for (const [name, input, expected] of PLACEHOLDER_CASES) {
-  test(`translatePlaceholders: ${name}`, () => {
-    assert.equal(translatePlaceholders(input), expected);
+  test(`escáner: ${name}`, () => {
+    assert.equal(bindParams(input, SOBRAN_ESCALARES).text, expected);
   });
 }
 
@@ -237,22 +247,11 @@ test("RAREZA: solo se mira si el PRIMER elemento es array", () => {
   assert.deepEqual(values, [1, [2, 3]]);
 });
 
-// --- Invariante entre las dos funciones ---------------------------------------
-//
-// `translatePlaceholders` es el subconjunto de `bindParams` sin expansión de
-// arrays: con parámetros escalares las dos tienen que producir EXACTAMENTE el
-// mismo texto. Es lo que permite que compartan escáner.
-
-test("translatePlaceholders y bindParams producen el mismo texto con escalares", () => {
-  const scalars = new Array(20).fill(0).map((_, k) => k);
-  for (const [, input] of PLACEHOLDER_CASES) {
-    assert.equal(
-      bindParams(input, scalars).text,
-      translatePlaceholders(input),
-      `divergen para: ${JSON.stringify(input)}`,
-    );
-  }
-});
+// El test de invariante «translatePlaceholders y bindParams producen el mismo texto con
+// escalares» vivía aquí. Al retirar `translatePlaceholders` se vuelve tautológico (compararía
+// `bindParams` consigo misma), así que se elimina — pero es él quien justifica que los 33 casos
+// de arriba se hayan podido re-apuntar a `bindParams` sin perder cobertura: demostraba que las
+// dos coincidían EXACTAMENTE en las 33 entradas.
 
 // --- La tubería real: translateDialect y luego bindParams ---------------------
 
