@@ -26,17 +26,22 @@
 > | **E** · frontend | 🟡 **4 de 5** — `httpClient` cerrado (08-09); falta solo colores/forks |
 > | **F** · `signer/app.py` | ✅ **(08-09)** — corte de identidad hecho: bloque **142 → 84**; 266 pruebas, cobertura **89,4 %**. Queda el traslado a fichero propio |
 >
-> **Dos días de trabajo, medidos** (última medición: 08-09 02:09):
+> **Dos días de trabajo, medidos** (última medición: **08-09 04:0x**, HEAD `5d5482c`, tras cerrar
+> D, E-4, F e I):
 >
-> | | Línea base | Ahora |
-> |---|---:|---:|
-> | Incidencias abiertas | 832 | **381** |
-> | Bugs | 143 | **0** |
-> | Vulnerabilidades | 45 | **9** |
-> | Deuda (SQALE) | 4 902 min | **3 028 min** |
-> | Complejidad cognitiva | 8 797 | **8 205** |
-> | Cobertura | 0 % | **16,2 %** |
-> | Seguridad | D | **C** |
+> | | Línea base | **Ahora** | Δ |
+> |---|---:|---:|---:|
+> | Incidencias abiertas | 832 | **375** | **−55 %** |
+> | Bugs | 143 | **0** | −143 |
+> | Vulnerabilidades | 45 | **8** | −82 % |
+> | Deuda (SQALE) | 4 902 min | **2 906 min** | **−41 %** |
+> | Complejidad cognitiva | 8 797 | **8 138** | −659 |
+> | Cobertura | 0 % | **17,7 %** | |
+> | Duplicación | 3,1 % | **2,9 %** | |
+> | Fiabilidad / Seguridad / Mantenibilidad | C / D / A | **A / C / A** | |
+>
+> Los tests pasaron de 218+161 a **389 unitarios + 238 de caracterización + 304 de frontend +
+> 266 del signer**.
 >
 > **Seguridad D → C: la fijaba UNA sola incidencia.** No eran «38 sin triar»: eran 34, y la escala de
 > Sonar va por **peor severidad, no por volumen** (basta 1 CRITICAL para D). La única CRITICAL era el
