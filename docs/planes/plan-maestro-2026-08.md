@@ -22,6 +22,176 @@ cuesta más que el trabajo que ahorran— y la lista de **lo que NO hay que toca
 
 ---
 
+## Frente 0 · Limpiar el modelo antes de seguir refactorizando — ⬜ ← **EMPIEZA AQUÍ**
+
+Abierto el **2026-08-09**, y va delante de todo lo demás por un motivo que no es de gravedad sino de
+orden: **el resto del plan refactoriza sobre un modelo que todavía se contradice a sí mismo**. Mientras
+eso siga así, cada decisión técnica se toma sobre arena.
+
+El diagnóstico de fondo, en una frase: **el código contiene su propia necrológica y la desmiente a la
+vez.** El caso testigo es `document_owner`, declarado retirado en un comentario y vivo 250 líneas más
+arriba en el mismo fichero. No es anécdota: un agente con acceso completo al repo leyó ese comentario,
+lo dio por bueno, y salió con el modelo equivocado. Hizo falta consultar la base de datos para verlo.
+
+**Lo que NO es este frente:** no es reescribir el modelo ni cambiar el diseño. La migración que se
+quiso hacer —de «el código YAML siembra la base» a «la web/base manda y genera el código»— **está
+hecha**, y `workflowSync.js` es el materializador del modelo NUEVO, no un resto del viejo: el
+`meta.yaml` que lee **lo acaba de escribir el formulario web**. Lo que queda son residuos concretos.
+
+### 0.1 · El propietario del entregable se resuelve con el puesto equivocado — ⬜ **defecto vivo**
+
+**Confirmado con datos de dev el 2026-08-09.** `getTaskItemsForDocumentMaterialization`
+(`backend/services/admin/generation/queries.js:375`) selecciona `t.responsible_position_id` —el de la
+**tarea**— cuando `task_items` **tiene su propia columna con el mismo nombre**. El alias la eclipsa en
+silencio, y `resolveOwnerPersonIdForTaskItem` (`services/admin/generation/documents.js:127`) cree
+estar leyendo la del entregable.
+
+| item | puesto del **ITEM** | puesto de la **TAREA** | dueño del documento | ocupa el puesto del ITEM |
+|---|---|---|---|---|
+| 2 | **25** (Docente) | 21 (Coordinador) | **24** | **3** |
+
+O sea: **el entregable del Docente acabó en la bandeja del Coordinador**. La consulta ya trae
+`ti.target_position_id` (`queries.js:373`) y el resolver **nunca lo mira**.
+
+**Arreglo:** `COALESCE(ti.responsible_position_id, t.responsible_position_id)`. Es una línea, y
+**desbloquea 0.2**. Antes de tocarlo, comprobar si algún golden depende del comportamiento actual: si
+se mueve un golden, ese diff **es** la prueba.
+
+> La única lectura bajo la que esto sería intencional es que el dueño del documento deba seguir al
+> responsable de la **tarea** y no al del **entregable**. El código no la sostiene: la función se llama
+> `…ForTaskItem` y su cascada ya cae a «cualquier asignación de la tarea» cuando falta el dato de ítem.
+
+### 0.2 · ¿Hace falta el resolver `document_owner`? — ⬜ **decisión, bloqueada por 0.1**
+
+**Hoy no se puede quitar**, aunque convenga: en los casos repartidos por puesto `task_assignee`
+devuelve **NULL**, porque `task_items.assigned_person_id` está vacío y la caída es a
+`tasks.created_by_user_id`. **Los dos resolvers están rotos por la misma causa de 0.1.**
+
+Con 0.1 arreglado, `task_assignee` cubre el 100 % de los casos **y mejora**: pasa de *early-binding*
+(el dueño se congela al crear el documento y no se entera de las reasignaciones por vacante) a
+*late-binding*.
+
+- `document_owner` **no es autorable desde la web**: `WEB_FILL_RESOLVER_TYPES_BY_SCOPE`
+  (`services/admin/templates/workflows.js:34-37`) solo admite `task_assignee` y `cargo_in_scope` en
+  `official`. Sí aparece en el CRUD genérico de tablas (`config/sqlTables.js:707`, `:847`), pero
+  **cualquier edición ahí la borra el siguiente sync** (`workflowSync.js:240` hace `DELETE`+`INSERT`).
+- **Aviso importante:** la **columna** `documents.owner_person_id` **se queda**. La usan los guards de
+  permisos (`ChatAuthorizationService.js:63-77`, `user_controler.js:422,469,522`), que leen la columna
+  y **no el resolver**. Lo que sobra es el resolver homónimo.
+
+### 0.3 · `BASE_META_YAML`: la puerta trasera del bootstrap — ⬜
+
+`services/system/SystemBootstrapService.js:277-305` es un `meta.yaml` **escrito a mano como literal de
+código**, subido en `:389`. Es **el único productor vivo de `document_owner`** y contradice la regla
+del modelo nuevo («todo se autora por CRUD»). El comentario de `:553` dice que el atajo se retiró
+(P1.4): **retiró un sitio y dejó este**.
+
+Y **se auto-replica**: `createTemplateArtifactVersion` (`templateArtifact.js:362-368`) copia MinIO en
+binario, así que la v1.1.0 heredó el `document_owner` de la v1.0.0 sin pasar por la web. Cada versión
+nueva lo arrastra otra vez.
+
+**Criterio de cierre:** el proceso por defecto se siembra por el mismo camino que todo lo demás.
+
+### 0.4 · Falta el generador del código base desde los campos configurados — ⬜ **hueco, no defecto**
+
+Es **la mitad que falta** del ciclo objetivo *configurar en web → descargar base → editar → subir*.
+
+Hoy `_materializeDraftFormats` (`templateLifecycle.js:1138-1152`) copia `<seed>/src/` **verbatim**. Los
+valores configurados en la web sí llegan al paquete de MinIO — pero **solo a `meta.yaml` y
+`schema.json`, que son exactamente los dos ficheros que el ZIP de descarga NO incluye**
+(`GET /template_artifacts/:id/source` zipea solo `template/jinja2/`, `sql_admin_controller.js:177`).
+El `.tex.j2` que abres para editar es el del seed, **sin una sola referencia a tus campos**: hay que
+escribir los `{{ … }}` a mano adivinando las claves.
+
+Lo que falta, por impacto: (1) **generar el Jinja/LaTeX base desde `schema_fields`**; (2) incluir
+`meta.yaml`+`schema.json` en el ZIP en modo lectura, para ver contra qué contrato se escribe;
+(3) validar **sintaxis Jinja** al subir —hoy solo se sanea LaTeX (`artifacts.js:28-51`), y una
+plantilla con `{% for %}` sin cerrar se publica y revienta en render—; (4) `fileFilter` en los
+adjuntos de referencia (`sql_admin_router.js:59-62` no tiene ninguno).
+
+> Lo que **sí** funciona y conviene no tocar: la subida por ZIP valida integridad SHA-256 del
+> manifiesto, zona editable acotada a `Contenido/`, path traversal, y saneo LaTeX (`\write18`,
+> `\directlua`, `\openout`, `\ShellEscape`). Está bien hecho.
+
+### 0.5 · El vocabulario del entregable — ⬜ **tema propio**
+
+**Cuatro nombres, cuatro cosas distintas.** No es sinonimia, y confundirlos es la primera fuente de
+error al leer este repo:
+
+| Nombre | Qué es | Tabla |
+|---|---|---|
+| `deliverable` | El entregable como **tipo**: identidad, código y dueño | `deliverables` |
+| `template_artifact` | Una **edición** de ese tipo, con sus ficheros en MinIO | `template_artifacts` |
+| `process_definition_template` | El **vínculo** configuración↔edición. **Aquí vive `item_mode`** | `process_definition_templates` |
+| `task_item` | La **instancia con dueño**: lo que una persona debe entregar | `task_items` |
+
+`artifact` a secas **no es una entidad**: es abreviatura de `template_artifact`. Y hay un quinto
+eslabón antes de todos: `template_seed`. La cadena completa es
+**seed → deliverable → template_artifact → (vínculo) → task_item → document → document_version**.
+
+Dos cosas que los datos de dev revelan y hay que decidir:
+
+- **Un vínculo puede apuntar a una edición RETIRADA.** Hoy el vínculo 1 usa la v1.0.0 `retired`
+  mientras la v1.1.0 está `published` en otro proceso — y de ese vínculo salen **los tres entregables
+  del sistema**. ¿Debe permitirse? ¿Publicar una edición debería arrastrar los vínculos?
+- El mismo entregable enlazado dos veces **con modos distintos** (`routed` y `single`). Esto **sí
+  funciona como debe**: confirma que `item_mode` es del vínculo, no de la plantilla.
+
+Los estados también tienen tres convenciones conviviendo (`"Pendiente de llenado"` en prosa castellana,
+`"pendiente"` snake castellano, `"pending"` snake inglés) y **se filtran al frontend**. Cierre del
+punto: un **glosario** concepto → nombre canónico en código → tabla → literal de estado.
+
+### 0.6 · Censo de fósiles del camino viejo — ⬜
+
+Cosas que el YAML/CLI sembraba y la web no puede producir ni editar. **Cada una necesita una decisión
+—retirar o cablear—, no un refactor.** Verificadas el 2026-08-09:
+
+| Elemento | Estado |
+|---|---|
+| `seeds/informe-general/workflow.yaml` | **Fósil entero: nadie lo parsea.** `SystemBootstrapService.js:387` lo excluye. Sus `field_refs` usan rutas punteadas y el `schema.json` hermano usa claves planas — convenciones incompatibles |
+| `source: "artifact"` | **Muerto** (write-only): lo escriben 4 sitios, **cero lectores**, y no hay columna |
+| `field_refs` | **Fósil**: no existe columna, el frontend lo fija a `[]`, ningún consumidor runtime |
+| `anchor_refs` | **Fósil con columna viva**: se escribe siempre `[]`, se lee en `DocumentSignatureWorkflowService.js:177,207` y no se consume. Sustituido por slots/token |
+| `position` (resolver) | **Muerto**: nadie lo escribe. `assignees.js:153` es rama inalcanzable |
+| `manual_pick` | **Vivo solo como fallback** de tipo desconocido (`workflows.js:236`); devuelve `[]` |
+| `render_engine`, `payload_object_path` | **Muertos**: nadie les asigna valor; solo se copia el `NULL` de versión en versión |
+| `sync_mode` | **Vivo pero constante degenerada**: gate real que nunca vale otra cosa |
+| `can_reject` del YAML | **Fósil parcial**: el valor se deriva del orden e ignora el input |
+| `dependencies:` | **Fósil con guardián**: solo se comprueba por regex que la línea exista |
+| `unit_scope_type` `context_*` | **Implementados en runtime, no emitibles desde la web**; y el CRUD crudo (`sqlTables.js:713`) omite justo los `context_*`, que sí están en el `CHECK` |
+| Claves de `defaults.yaml` (`brand_rgb`, `palette`, `layout*`…) | **Vivas pero fuera del CRUD**: las consume el render LaTeX y **el usuario no puede tocarlas desde la aplicación**. Misma familia de dolor |
+
+Y un bloque que sería inejecutable aunque se leyera: las firmas de `workflow.yaml:74-104` ponen
+`required_cargo_code` **a nivel de paso**, y el único lector lo busca **dentro** del resolver/firmante.
+
+### 0.7 · La documentación miente en dos direcciones — ⬜
+
+**30 desfases en 7 ficheros**, y no son ruido uniforme:
+
+- **~14 dicen «pendiente» y están hechos** (servicios de flujo, paneles de firma, centro documental,
+  observaciones, el editor de flujo runtime). **Abrir esos documentos buscando qué falta enseña una
+  montaña ya escalada.** Es el desfase que más desmoraliza.
+- **~7 dicen «vigente» o «hecho» y no lo están** — mandan a trabajar sobre cosas que no existen: un
+  `artifact_stage` de cinco estados (la columna real es `lifecycle_state` con tres), endpoints
+  inventados, un `usage_role` inexistente.
+- **~9 son rutas y símbolos muertos**, con citas `fichero:línea` a un fichero que hoy tiene 36 líneas.
+
+**Tres documentos se contradicen a sí mismos dentro del propio fichero**, sin fecha ni tachado: gana el
+párrafo que se lea primero. `referencia/patrones-diseno.md:135-138` llega a tener una cifra
+**invertida** (dice 31 ficheros importando axios crudo y 2 el `httpClient`; es exactamente al revés) dos
+párrafos después de declararlo resuelto.
+
+**Lo urgente y barato:** `CLAUDE.md:212` afirma que el `document_owner` sembrado «se retiró». **Es
+falso** (ver 0.3), y es el único desfase que se propaga activamente a todo el que llega al repo.
+
+**Criterio de cierre:** un documento de modelo vigente en `docs/arquitecturas/`, las actas de sesión
+fechadas archivadas en `docs/docs-md-antiguos/`, y `CLAUDE.md` corregido.
+
+**Orden sugerido:** 0.1 (desbloquea 0.2) → 0.7 solo la línea de `CLAUDE.md` → el documento de modelo →
+0.3 → 0.2 → 0.5 → 0.4 y 0.6, que son los más grandes y ya no bloquean a nadie.
+
+---
+
 ## Frente 1 · Defectos conocidos y sin arreglar — ⬜
 
 **Lo más rentable que queda, y con diferencia**, porque no es deuda estética: son fallos que un
@@ -204,6 +374,30 @@ esfuerzo: HomeView pide extraer **componentes**; los demás, **composables**.
 
 **Criterio de cierre:** los cuatro con una decisión escrita (atacar, o declarar no-tocar con su
 motivo). No hace falta refactorizarlos para cerrar el frente; hace falta que dejen de ser invisibles.
+
+---
+
+## Frente 9 · La capa de datos — ⬜ · vive en [`plan_data/`](./plan_data/)
+
+**El único frente con carpeta propia**, porque trae su propia referencia medida del esquema. Nació el
+**2026-08-09** al contestar *«¿conviene una clase por cada tabla?»* —la respuesta es **no**, razonada
+con cifras en su §0—, pero la pregunta obligó a mirar la persistencia entera y aparecieron seis
+problemas que ningún frente de aquí cubría. **Las tareas están allí**, no en este documento:
+
+| | Fase | Por qué |
+|---|---|---|
+| **D1** | Un solo `withTransaction` | **20 `beginTransaction` a mano en 11 ficheros**, cada uno con su ciclo. El helper correcto ya existe (`crud/tableHooks.js:65-92`) y solo lo usa el CRUD admin |
+| **D2** | Un vocabulario de estados, no cinco | `task_items.status` está definido en **5 sitios con 3 alfabetos**, y los dos grupos **no comparten ni un literal**. Efecto vivo: el panel cuenta `completada` como cerrado; el motor de relevos lo reasigna |
+| **D3** | Migraciones versionadas | El esquema se reaplica entero en cada arranque (`postgres_initializer.js:23-40`). Idempotente para crear, **incapaz de alterar**. Es el mayor riesgo operativo de la capa |
+| **D4** | Repositorios **por agregado** (10, no 67) | Cierra la fuga de capa del frente 8: `user_controler.queries.js` → `UserWorkspaceRepository` |
+| **D5** | Matar el traductor de dialecto | `config/postgres.js`: **241 cognitiva en 391 ncloc**, el más denso del repo, y los defectos 1.5/1.6/1.11 salieron todos de ahí. **D5-b está ⛔ hasta censar los call sites del 1.11** |
+| **D6** | Validación por esquema en el borde | 0 dependencias de validación; tres capas artesanales desconectadas, y las rutas fuera del CRUD admin sin ninguna |
+
+**No contradice nada de lo de abajo.** Rechaza la clase por tabla y el ORM por el mismo criterio que
+cierra la pregunta arquitectónica: tablas y extracción, no jerarquías. Y respeta la lista de no-tocar
+—el núcleo CRUD de `SqlAdminService` y `sqlTables.js` como datos—: D2 y D4 trabajan **alrededor**.
+
+**Criterio de cierre:** las seis fases cerradas con sus criterios, y la carpeta archivada.
 
 ---
 

@@ -207,7 +207,15 @@ Cada plantilla ligada declara su modo en `process_definition_templates.item_mode
 
 El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenecen a ningún proceso** (cualquier usuario, en cualquier momento; p. ej. "haz el informe de este evento"). **NO es "memorandums".**
 
-Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`; siguen en el ENUM por legado, pero fuera de la autoría web. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`) y el atajo `document_owner` sembrado **se retiró** (P1.4). Ver el doc para el detalle.
+Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`; siguen en el ENUM por legado, pero fuera de la autoría web. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`).
+
+⚠️ **`document_owner` NO está retirado: sigue vivo y es el resolver más usado de la base de dev.** Este
+párrafo afirmaba lo contrario y era falso — **corregido el 2026-08-09 tras comprobarlo en la base**. P1.4
+retiró el atajo del *proceso por defecto* (`SystemBootstrapService.js:553`) pero dejó el de
+`BASE_META_YAML`, un `meta.yaml` escrito a mano como literal de código **250 líneas más arriba, en el
+mismo fichero** (`:277-305`). Y se auto-replica: `createTemplateArtifactVersion` copia MinIO en binario,
+así que cada versión nueva lo hereda. **No lo des por muerto sin consultar `fill_flow_steps`.** El plan
+para retirarlo es el **frente 0** de `docs/planes/plan-maestro-2026-08.md` (§0.2 y §0.3).
 
 ## Environments & ports
 `dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.

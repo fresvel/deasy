@@ -14,7 +14,8 @@ decía si tenía trabajo pendiente o era historia**. Saber por dónde empezar co
 
 | Fichero | Qué es | ¿Hay que hacer algo? |
 |---|---|---|
-| **[`plan-maestro-2026-08.md`](./plan-maestro-2026-08.md)** | **Los 8 frentes pendientes**, ordenados por retorno sobre esfuerzo, cada uno con su criterio de cierre. Incluye además **por qué la pregunta arquitectónica está cerrada** (se evaluaron 15 arquitecturas el 2026-08-09 y ninguna baja la complejidad) | **SÍ. Es el único.** |
+| **[`plan-maestro-2026-08.md`](./plan-maestro-2026-08.md)** | **Los frentes pendientes**, ordenados por retorno sobre esfuerzo, cada uno con su criterio de cierre. Empieza por el **frente 0**, que va delante de todo: limpia las contradicciones del modelo de dominio antes de seguir refactorizando. Incluye además **por qué la pregunta arquitectónica está cerrada** (se evaluaron 15 arquitecturas el 2026-08-09 y ninguna baja la complejidad) | **SÍ. Es la puerta de entrada.** |
+| **[`plan_data/`](./plan_data/)** | El **plan de la capa de datos**: 6 fases (D1–D6), más el retrato medido del esquema. Es el **frente 9** del maestro, con carpeta propia porque trae su propia referencia. Incluye **por qué se descarta una clase por tabla** | **SÍ**, vía frente 9 |
 | [`referencia/metodo.md`](./referencia/metodo.md) | Las 13 reglas de trabajo, los comandos, y **lo que NO hay que tocar** | Léelo **antes** de tocar código |
 | [`referencia/patrones-diseno.md`](./referencia/patrones-diseno.md) | Cuándo un patrón de diseño sí y cuándo no, con la evidencia medida de este repo | Léelo **antes** de proponer un patrón |
 | [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) | La bitácora de las nueve fases cerradas, la línea base de Sonar y su serie histórica | Consulta. Es el *cómo se midió* |
