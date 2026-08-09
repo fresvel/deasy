@@ -33,6 +33,24 @@ export default class ChatAuthorizationService {
       throw error;
     }
 
+    // AQUÍ NO VA el guard del IDOR de entregables
+    // (`AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)`,
+    // ver `controllers/users/user_controler.queries.js:124`). No es una copia que se quedó atrás:
+    // se evaluó el 2026-08-09 (plan maestro 1.9) y se descartó, por tres motivos.
+    //
+    // 1. Aquel guard responde «¿es TUYO este entregable?» y protege consultas cuya FILA es un
+    //    entregable. Esta no lo es: el thread es del PROCESO en una unidad. El `LEFT JOIN
+    //    task_items` solo abanica filas, y lo único que se proyecta —`scope_unit_id`, que sale de
+    //    `t.responsible_position_id` vía `task_pos`— es IDÉNTICO en todas las filas de una tarea.
+    // 2. La lista de participantes de más abajo mete a TODOS los `task_assignments` de la unidad
+    //    sin filtrar por responsable de entregable. Añadir el guard SOLO aquí dejaría gente dentro
+    //    del hilo (recibe los mensajes) y con 403 al abrirlo.
+    // 3. Medido contra la base de dev: no recorta el conjunto de unidades de nadie, lo VACÍA. Ocho
+    //    de las diez personas asignadas a la tarea 8 (proceso 1, unidad 8) pasaban de `{8}` a
+    //    ninguna unidad accesible. Y el corte dependería de datos ajenos: en la tarea 9 (misma
+    //    forma, 10 asignados, 0 entregables) el `LEFT JOIN` deja `ti` a NULL y las diez conservan
+    //    el acceso, así que el hilo se le caería a ocho de ellas en cuanto un COMPAÑERO creara el
+    //    primer entregable.
     const [accessRows] = await this.pool.query(
       `SELECT DISTINCT
          t.id AS task_id,
@@ -59,6 +77,8 @@ export default class ChatAuthorizationService {
            OR d.owner_person_id = ?
            OR ti.assigned_person_id = ?
            OR EXISTS (
+             -- Alcance de TAREA a propósito, no de entregable: ver el comentario sobre el guard
+             -- del IDOR justo encima de esta consulta.
              SELECT 1
              FROM task_assignments ta
              LEFT JOIN position_assignments pa
