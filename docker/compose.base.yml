@@ -128,6 +128,10 @@ services:
       MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
       SIGNER_PORT: "4000"
       SIGMAKER_DIR: /opt/sigmaker
+      # Ruta propia del servicio (la crea la imagen con dueno appuser y modo 0700). Explicita a
+      # proposito: el default historico caia en /tmp, de escritura publica, y ahi se desempaqueta
+      # el PKCS#12 ademas de los PDF de entrada, limpio y firmado.
+      SIGNER_WORKSPACE_DIR: /var/lib/deasy-signer/workspace
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request

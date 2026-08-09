@@ -93,9 +93,15 @@ export const writeMinioObjectToFile = async (bucket, objectName, destinationPath
   await pipeline(stream, fs.createWriteStream(destinationPath));
 };
 
+// Ruta ABSOLUTA a proposito (S4036): con `npm run start` -el CMD de la imagen de produccion- npm
+// antepone `node_modules/.bin` al PATH, y ese directorio pertenece al mismo uid que corre el
+// backend, asi que el PATH del proceso NO son solo directorios no escribibles. En la imagen del
+// backend (node:25, base Debian) el paquete `zip` instala el binario en /usr/bin.
+const ZIP_BINARY = "/usr/bin/zip";
+
 export const createZipArchive = async (cwd, outputPath) =>
   new Promise((resolve, reject) => {
-    const zipProcess = spawn("zip", ["-rq", outputPath, "."], { cwd, stdio: ["ignore", "ignore", "pipe"] });
+    const zipProcess = spawn(ZIP_BINARY, ["-rq", outputPath, "."], { cwd, stdio: ["ignore", "ignore", "pipe"] });
     let stderr = "";
     zipProcess.stderr.on("data", (chunk) => {
       stderr += String(chunk || "");

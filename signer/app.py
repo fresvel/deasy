@@ -56,7 +56,12 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "deasy_minio")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "deasy_minio_secret")
 MINIO_SPOOL_BUCKET = os.getenv("MINIO_SPOOL_BUCKET", "deasy-spool")
-SIGNER_WORKSPACE_DIR = os.getenv("SIGNER_WORKSPACE_DIR", "/tmp/deasy-signer-workspace")
+# Directorio de trabajo del firmante: aqui aterrizan el PDF de entrada, el limpio, el firmado y el
+# PKCS#12 desempaquetado. NO puede vivir bajo `/tmp`: es un directorio de escritura publica y la raiz
+# del workspace se creaba con el umask por defecto, asi que en un host compartido era una carrera de
+# symlinks. Se usa una ruta propia del servicio, creada en la imagen con dueno `appuser` y modo 0700
+# (ver `docker/signer/Dockerfile`) y fijada explicitamente en `docker/compose.base.yml`.
+SIGNER_WORKSPACE_DIR = os.getenv("SIGNER_WORKSPACE_DIR", "/var/lib/deasy-signer/workspace")
 PYHANKO_TSA_URL = os.getenv("PYHANKO_TSA_URL", "").strip()
 PYHANKO_DEFAULT_TSA_URL = os.getenv("PYHANKO_DEFAULT_TSA_URL", "https://freetsa.org/tsr").strip()
 SIGNER_EMBED_VALIDATION_INFO = os.getenv("SIGNER_EMBED_VALIDATION_INFO", "1").strip() == "1"
@@ -1186,7 +1191,9 @@ def process_validation_job(data: dict[str, Any]) -> dict[str, Any]:
     job_id = str(uuid4())
     requested_cedula = str(data.get("cedula") or "").strip() or None
     workspace_root = Path(SIGNER_WORKSPACE_DIR)
-    workspace_root.mkdir(parents=True, exist_ok=True)
+    # 0700: la raiz del workspace es solo del proceso firmante (los subdirectorios por job ya los crea
+    # `TemporaryDirectory` en 0700). Si el directorio ya existe -lo crea la imagen- el modo se ignora.
+    workspace_root.mkdir(parents=True, mode=0o700, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix=f"{job_id}-", dir=workspace_root) as temp_dir_name:
         temp_dir = Path(temp_dir_name)
@@ -1258,7 +1265,9 @@ def process_job(data: dict[str, Any]) -> dict[str, Any]:
 
     job_id = str(uuid4())
     workspace_root = Path(SIGNER_WORKSPACE_DIR)
-    workspace_root.mkdir(parents=True, exist_ok=True)
+    # 0700: la raiz del workspace es solo del proceso firmante (los subdirectorios por job ya los crea
+    # `TemporaryDirectory` en 0700). Si el directorio ya existe -lo crea la imagen- el modo se ignora.
+    workspace_root.mkdir(parents=True, mode=0o700, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix=f"{job_id}-", dir=workspace_root) as temp_dir_name:
         temp_dir = Path(temp_dir_name)

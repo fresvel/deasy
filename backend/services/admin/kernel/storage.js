@@ -73,9 +73,15 @@ const buildProtectedManifest = (dirPath, editableSubpath) => {
   };
 };
 
+// Ruta ABSOLUTA a proposito (S4036): con `npm run start` -el CMD de la imagen de produccion- npm
+// antepone `node_modules/.bin` al PATH, y ese directorio pertenece al mismo uid que corre el
+// backend, asi que el PATH del proceso NO son solo directorios no escribibles. En la imagen del
+// backend (node:25, base Debian) `unzip` vive en /usr/bin.
+const UNZIP_BINARY = "/usr/bin/unzip";
+
 // Descomprime un ZIP a un directorio destino (usa el binario unzip).
 const unzipToDirectory = (zipPath, destDir) => new Promise((resolve, reject) => {
-  const proc = spawn("unzip", ["-o", "-qq", zipPath, "-d", destDir], { stdio: ["ignore", "ignore", "pipe"] });
+  const proc = spawn(UNZIP_BINARY, ["-o", "-qq", zipPath, "-d", destDir], { stdio: ["ignore", "ignore", "pipe"] });
   let stderr = "";
   proc.stderr.on("data", (chunk) => { stderr += String(chunk || ""); });
   proc.on("error", reject);

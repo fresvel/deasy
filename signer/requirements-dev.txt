@@ -1,0 +1,9 @@
+# Dependencias solo de desarrollo/pruebas del signer.
+#
+# `coverage` no es opcional aunque no la use el runtime: sin ella, las 229 pruebas de `signer/tests/`
+# NO producen informe, y SonarQube publica `signer/app.py` como **0,0 % cubierto** aunque en realidad
+# esté al 88 %. Es un fallo silencioso: nadie avisa, solo sale un cero.
+#
+# Se instala en la imagen porque las pruebas se ejecutan dentro del contenedor
+# (`scripts/docker-env.sh dev exec -T signer ...`), que es la regla del proyecto.
+coverage
