@@ -23,8 +23,8 @@
 > | **I** · residuos de la migración a PostgreSQL | ✅ **(08-09)** — 4 `UPDATE … JOIN` de MySQL, uno con **una función rota para todos los usuarios** |
 > | **C** · partir `saveTemplateArtifactDraft` | 🟡 CC 164 → **76**. Lo que queda no es refactor: es rediseñar la compensación de errores |
 > | **D** · controllers → servicios | 🟡 **2 de 5** (`user_controler` cogn. 337 → **182**); faltan las tres de firma, **ya con red** |
-> | **E** · frontend | 🟡 **3 de 5**; faltan `httpClient` y los colores/forks |
-> | **F** · `signer/app.py` | 🟡 auditado, 229 pruebas y 3 riesgos cerrados; falta el corte de identidad |
+> | **E** · frontend | 🟡 **4 de 5** — `httpClient` cerrado (08-09); falta solo colores/forks |
+> | **F** · `signer/app.py` | ✅ **(08-09)** — corte de identidad hecho: bloque **142 → 84**; 266 pruebas, cobertura **89,4 %**. Queda el traslado a fichero propio |
 >
 > **Dos días de trabajo, medidos** (última medición: 08-09 02:09):
 >
@@ -597,9 +597,9 @@ renames, así que el código movido **no** entra como código nuevo. No hay que 
 | **A · Arreglar el instrumento** | Sonar medía mal: los tests contaban como código de producción y no había cobertura enchufada. Sin esto, cualquier mejora es inmedible | ✅ **Hecha** |
 | **B · Etiquetado de formularios** | 289 incidencias de accesibilidad (`label` sin control asociado). Eran el 35 % del backlog y **la nota entera de fiabilidad** | ✅ **Hecha** — C → A, cero bugs |
 | **C · Partir `saveTemplateArtifactDraft`** | La peor función del backend: 563 líneas que crecían solas con cada cambio | 🟡 **A medias** — 164 → 76. Lo que queda **no es refactor**, es rediseñar la compensación de errores |
-| **D · Controllers → servicios** | Lógica de negocio viviendo en la capa de transporte, contra la regla no negociable de CLAUDE.md | 🟡 **2 de 5** — hechas las dos de `user_controler`; **faltan las tres de firma** |
-| **E · Frontend** | Cinco deudas sueltas: estado mal repartido, sistema de diseño, la URL como fuente de verdad, `httpClient`, y la 2.ª peor función del repo | 🟡 **3 de 5** — faltan `httpClient` y los colores/forks |
-| **F · Los dos nunca auditados** | `signer/app.py` (el peor fichero del repo) y `postgres.js` (el más denso) | 🟡 **1 de 2** — `postgres.js` ✅ hecho (108 → 15); del signer falta el corte de identidad |
+| **D · Controllers → servicios** | Lógica de negocio viviendo en la capa de transporte, contra la regla no negociable de CLAUDE.md | ✅ **Hecha (5 de 5)** — las dos de `user_controler` (08-07) y las tres de firma (08-09) |
+| **E · Frontend** | Cinco deudas sueltas: estado mal repartido, sistema de diseño, la URL como fuente de verdad, `httpClient`, y la 2.ª peor función del repo | 🟡 **4 de 5** — falta solo colores/forks |
+| **F · Los dos nunca auditados** | `signer/app.py` (el peor fichero del repo) y `postgres.js` (el más denso) | ✅ **Los dos** — `postgres.js` 108 → 15, y el corte de identidad del signer 142 → 84 |
 | **G · Barridos mecánicos** | Imports sin usar, `replace`→`replaceAll`, y 21 falsos `TODO` | ✅ **Hecha** — y lo que sobró **no es barrido**: pide criterio uno a uno |
 | **H · La nota D de seguridad** | 34 incidencias sin triar, y una sola CRITICAL fijando la nota | ✅ **Hecha** — seguridad **D → C** |
 | **I · Residuos de la migración** | SQL de MySQL vivo en PostgreSQL: cuatro `UPDATE … JOIN` que reventaban al ejecutarse | ✅ **Hecha** — incluía **una función rota para todos los usuarios** |
@@ -609,15 +609,17 @@ en `docs/plan-cobertura-2026-08.md`.
 
 #### Lo único que queda pendiente, en orden
 
-1. **Fase D** — las tres de firma. `sign_controller.js` sigue en 936 líneas con el motor de batch
-   dentro. **Ya se puede hacer con red**: la caracterización pasó de 161 a 238 casos y congela el
-   orden de los guards.
-2. **Defectos que esa red destapó** — `requestSign` devuelve 500 donde debería devolver 400; una
-   solicitud sin responsable da 500 a cualquiera; el `fileFilter` de multer suelta el **stack trace
-   completo** en HTML.
-3. **Fase F** — el corte de identidad del signer (430 líneas, 6 de sus 8 funciones complejas).
+1. ~~**Fase D** — las tres de firma~~ ✅ hecha el 08-09. `sign_controller.js` baja de **853 a 263
+   ncloc**; nacen `PdfSigningService`, `BatchSigningService` y `FillRequestWorkflowService`.
+2. ~~**Defectos que esa red destapó**~~ ✅ arreglados en el mismo corte: `requestSign` ya devuelve
+   400/404 en la validación de entrada, la solicitud sin responsable pasa de 500 a **409**, y el
+   `fileFilter` de multer deja de soltar el stack trace (JSON `{ message, code }` vía
+   `middlewares/uploadError.js`). Quedan vivos, congelados, los defectos 2 y 4 de
+   `zzzz_sign_workflow` (approve sin PDF sale 500; una solicitud manual sin responsable se la queda
+   quien la inicie).
+3. ~~**Fase F** — el corte de identidad del signer~~ ✅ hecho el 08-09. Queda solo el **traslado** de ese bloque a `signer/certificates.py` (F4 de la auditoría), que ya es mecánico.
 4. **Fase C** — el núcleo transaccional. Pide **decidir** quién posee la compensación (§5-C).
-5. **Fase E** — `httpClient` (31 ficheros) y los colores, que van detrás del sistema de diseño.
+5. **Fase E** — los colores, que van detrás de limpiar los forks. (`httpClient` ✅ cerrado el 08-09.)
 
 Lo demás del backlog (48 ternarios anidados, 28 regex, 33 de contraste) **no está asignado a ninguna
 fase a propósito**: son decisiones de una en una y no compensan como campaña.
@@ -910,7 +912,42 @@ lectura), con 34 tests nuevos junto al módulo.
 > que ya usaban `task_generation_controller` y `sign_workflow_controller`. **Ningún test caracterizado
 > cubría ese camino.**
 
-**Quedan las tres filas de firma** (`sign_controller.js` ×2 y `sign_workflow_controller.js`).
+**Las tres filas de firma — ✅ HECHAS (2026-08-09).**
+
+| | Antes | Después |
+|---|---:|---:|
+| `sign_controller.js` ncloc | 853 | **263** (−69 %) |
+| `sign_controller.js` funciones | 34 | **8** (los 8 endpoints) |
+| `sign_workflow_controller.js` ncloc | 225 | **27** |
+
+Nacen tres servicios: `services/sign/PdfSigningService.js` (contexto de firma, plan de
+almacenamiento, firma del PDF, evidencia de workflow y el guard de acceso a un documento firmado),
+`services/sign/BatchSigningService.js` (ciclo de vida del job de lote, bucle `setImmediate` y ZIP) y
+`services/documents/FillRequestWorkflowService.js` (la máquina de estados de `fill_requests`), con
+**77 tests unitarios nuevos** junto a cada módulo.
+
+El corte se hizo con la red puesta y en dos tiempos, y eso es lo que lo hace comprobable: el
+refactor dejó los 238 goldens **idénticos**, y los 8 que se movieron después lo hicieron por los
+FIXES, no por el traslado. Los defectos que la red había congelado a propósito:
+
+| Defecto | Antes | Ahora | Golden que lo prueba |
+|---|---|---|---|
+| Validación de entrada de `requestSign` | 500 | **400** | `sign_sin_certificado`, `sign_sin_password`, `sign_sin_sello` |
+| Certificado que no es tuyo / no existe | 500 | **404** | `sign_certificado_inexistente`, `batch_start_certificado_inexistente` |
+| Solicitud de entrega sin responsable resoluble | 500 a cualquiera | **409** | `sin_responsable_usuario`, `sin_responsable_gestor` (renombrados desde `defecto_*`) |
+| `fileFilter` de multer sin manejar | HTML + stack trace | **JSON `{ message, code }`** | `sign_mimetype_rechazado` |
+| `statMinioObject` del certificado | mentía ("vuelve a cargar tus certificados") | mismo mensaje, **causa real en el log y en `details`** | — (sin golden: el bootstrap no siembra certificados) |
+| `spawn("zip", …)` (`S4036`) | nombre corto | `/usr/bin/zip` | — |
+
+Dos aprendizajes de método:
+
+1. **Un fallo de infraestructura no puede heredar el `statusCode` del camino de negocio.** El catch
+   del controller es `error.statusCode ?? 500`, y los errores de pool/MinIO/firmante se lanzan **sin**
+   `statusCode` a propósito. Hay tests unitarios que lo fijan explícitamente (que la pool caída NO
+   lleve `statusCode`), porque es justo lo que se rompió en `user_controler` y char no lo ve.
+2. **`node --watch` no siempre recarga.** Durante el corte, el router quedó cargado a medias
+   (`ReferenceError: badRequest is not defined`) y una tanda de char midió el backend viejo. Antes de
+   capturar goldens, `restart backend` y comprobar `Servidor iniciado`.
 
 <details><summary>Redacción original de la fase (referencia)</summary>
 
@@ -948,6 +985,26 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
    > Antes de adoptar tokens de TailAdmin, leer las tres colisiones activas documentadas en el skill
    > `tailadmin-ui` (`rounded-lg` = 16px por escala invertida, ausencia de `@theme`, `dark:` se
    > autoactivaría).
+   >
+   > **Los forks: ✅ CERRADOS el 2026-08-08 — y el diagnóstico de este plan era falso.**
+   > `AdminModalShell` y `AdminDataTable` **no tenían consumidores: tenían cero.** Los 24 + 11 que
+   > contaba este documento eran `grep` del *identificador*, no del import: los 35 ficheros hacían
+   > `import AdminModalShell from "@/shared/components/modals/AppModalShell.vue"`. La unificación ya
+   > había ocurrido en `e8fc739` (reorganización del frontend); lo que quedó fue el **fichero viejo
+   > huérfano** y un **alias de import que mentía**. `git log -S` sobre la ruta del fork no devuelve
+   > ni un commit. Lo hecho: borrados los dos ficheros muertos, renombrados los 35 alias a
+   > `AppModalShell` / `AppDataTable`, y retirada la familia de selectores CSS **muerta** que sólo
+   > ellos emitían (`.admin-dialog-*` en `theme.css` y `tailwind.css`, `.table-actions-scroll`
+   > duplicada) — todos eran alias pegados al `.deasy-dialog-*` gemelo en la **misma** regla, así que
+   > el borrado es demostrablemente cero-cambio visual (verificado en navegador: 0 elementos casan
+   > los selectores retirados).
+   >
+   > **Queda un tercer fork, éste real: `modules/admin/components/ui/AdminButton.vue`** — 1 consumidor
+   > (`perfil/components/DossierDocumentActions.vue`) y divergencia de comportamiento frente a
+   > `AppButton`: no pinta el icono de `variant="close"`, no tiene las variantes `soft*`, y aplica
+   > clase de tamaño **también** con `icon-only` (`AppButton` no). Es el único emisor vivo de la
+   > familia de alias `admin-btn--*`, así que el CSS de botones no se puede colapsar hasta cerrarlo.
+   > Swap no trivial: cambia el padding de 6 botones del dossier.
 3. **Terminar la fase 3.5** — `AdminView` conserva `selectedTable`/`selectedSection` como estado local
    junto a los `route.params`. Mientras conviva el doble origen de verdad, la duplicación ×5 de
    `AdminView` (CC 153) no colapsa.
@@ -961,6 +1018,34 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
    por transitividad en `:113`).
    **Coste:** tocar los 31 ficheros. **No es un arreglo de paso, es un refactor con nombre propio.**
    **Síntoma ya cobrado:** rompió la suite de `PerfilView` durante semanas (ver §6 regla 11).
+
+   > ✅ **HECHO el 2026-08-09.** Hoy `axios` se importa en **un solo sitio de producción**
+   > (`httpClient.js`), que es una instancia propia de `axios.create()` con su interceptor; los **30
+   > consumidores** importan el cliente. Ya no hay orden de carga del que depender: quien importe
+   > axios a pelo se queda sin token y falla **en claro** (401) en vez de funcionar por suerte, y hay
+   > un test que lo fija.
+   >
+   > **Lo que hizo segura la migración mecánica**, y conviene repetir antes de una así: se verificó
+   > que **ningún fichero usaba estáticos de axios** (`isAxiosError`, `CancelToken`, `all`, `spread`,
+   > `defaults`…). Importa porque **las instancias de `axios.create()` NO los llevan**: si alguno
+   > estuviera en uso, la migración lo habría roto en silencio. El inventario real era solo
+   > `get` (92), `post` (43), `put` (8) y `delete` (8).
+   >
+   > **`baseURL` se dejó SIN fijar, y es una decisión.** La base ya está centralizada en
+   > `core/config/apiConfig.js` (`API_PREFIX`), y el 100 % de las llamadas pasan una URL absoluta
+   > construida desde ahí. Un `baseURL` sería **inerte** (axios lo ignora con URL absoluta) y crearía
+   > una segunda fuente de verdad.
+   >
+   > **Los dos `vi.mock("axios")` del repo hubo que ajustarlos**: el doble tenía forma del singleton y
+   > el módulo ahora llama a `create()`, que el doble no tenía — sin eso, las dos suites morían **al
+   > importar**, que es exactamente la regla 11 otra vez. Verde: **18 ficheros / 304 casos**, build OK,
+   > y comprobado en navegador con gestor y admin que la cabecera `Authorization` viaja de verdad.
+   >
+   > **Deuda que queda:** 26 de los 30 ficheros migrados **no tienen red unitaria**; el cambio es de
+   > una línea y homogéneo, pero tres no se pudieron ejercitar en navegador por exigir datos o
+   > acciones destructivas (`FirmarPdf.vue`, `VerifyEmail.vue`, `SessionExpiryModal.vue`). Y falta la
+   > barrera dura: una regla `no-restricted-imports` sobre `"axios"` en `frontend/eslint.config.cjs`,
+   > con excepción para `httpClient.js`, que impida la recaída.
 5. **`useAdminSubmitFlow` y los ids de formulario** — ✅ **HECHA (2026-08-08)**. *Fase que no existía:
    salió del re-escaneo, no del plan de julio.*
    - `submitForm`: **CC 67 → ~7-9**. Se extrajeron 12 helpers puros y 5 unidades con nombre
@@ -998,8 +1083,32 @@ Lo que sobrevive de `plan-refactor-frontend.md` tras revalidarlo, más una deuda
     PKCS#12 viaja en claro por AMQP sin TLS; **R-2** `validate_signed_pdf_with_policy` da por válido un
     PDF que salió **sin firmas embebidas** (el dict de ese caso no trae `bottomLine` y el
     `.get(..., True)` lo da por bueno); **R-3** una rama inalcanzable deja salir la cédula sucia.
-  - Siguiente corte recomendado: las 430 líneas de identidad. **Tocar la firma está bloqueado** hasta
-    que exista una prueba que firme un PDF real y lo valide.
+  - ✅ **El corte de identidad, HECHO el 2026-08-09.** Bloque **142 → 84** puntos; fichero **355 → 297**.
+    `extract_certificate_extensions` **40 → 2**, y con ella **desaparece el anidamiento máximo del
+    repo** (era 14): hoy es un bucle de dos filas. Ninguna función del bloque pasa de 9.
+    - El patrón es una tabla de filas `(reconoce, produce)` con un motor de 6 líneas. **Pero lo que
+      quitó el bulto fue la duplicación que el patrón dejó ver**: el mismo bucle de acumulación
+      escrito dos veces en `parse_distinguished_name_text`, dos `try/except` idénticos en
+      `to_asn1_certificate`, ocho `if` consecutivos que eran un diccionario en
+      `extract_name_attributes`, y `_DN_ALIASES` (26 entradas) reconstruyéndose en **cada llamada**.
+    - **El `try` se dejó en cada productor, no en el motor**, para que un paso que hoy no tolera
+      excepciones siga sin tolerarlas. Meterlo en el motor era más elegante y cambiaba comportamiento
+      en silencio. Hay un test que lo fija.
+    - Red: **229 → 266 casos**, ninguno existente modificado (0 líneas borradas), con certificados
+      **reales** de las tres ACs ecuatorianas. Cobertura **85,6 → 89,4 %**. Más una prueba diferencial
+      de un solo uso contra la implementación anterior: **778 comparaciones, 0 divergencias**.
+    - **Lo que NO se tocó, con criterio:** `get_status_attr` **parece** duplicado de sus cuatro
+      parientes pero usa `hasattr` (presencia) y se detiene en un atributo que existe valiendo `None`,
+      mientras los otros usan «el primero no nulo». Unificarlos cambiaría comportamiento.
+    - ⚠️ **Hallazgo nuevo, previo a este cambio y confirmado por el diferencial:** las dos fuentes de
+      extensiones son **asimétricas**. Un certificado de `asn1crypto` —el que entrega pyHanko— no
+      expone `.extensions`, así que corre la fuente 2; y **la fuente 2 no desenvuelve los `OtherName`
+      del SAN**: vuelca el SAN entero en hexadecimal. Consecuencia práctica: **una AC que meta la
+      cédula en un `OtherName` da `signerCedula = None` al validar un PDF.** Congelado en el test
+      `AsimetriaEntreLasDosFuentes`, sin arreglar.
+  - Sigue pendiente el **movimiento físico** a `signer/certificates.py` (F4 de la auditoría), ahora
+    más fácil. Y **tocar la firma sigue bloqueado** hasta que exista una prueba que firme un PDF real
+    y lo valide.
 - **`backend/config/postgres.js`** — ✅ **HECHA (2026-08-08). 108 → 15 puntos de complejidad.**
 
   | Función | Antes | Después |

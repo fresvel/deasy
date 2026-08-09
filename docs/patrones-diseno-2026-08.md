@@ -87,7 +87,23 @@ su propio commit, con la caracterización delante y `zzz_artifact_draft` como re
 
 ### 3.2 · **Cadena de extractores** para la identidad de certificados del signer
 
-**Estado: en curso (fase F).**
+**Estado: ✅ HECHO el 2026-08-09 (fase F).** El bloque pasa de **142 a 84** puntos y el fichero de
+**355 a 297**; `extract_certificate_extensions` cae de **40 a 2** y con ella desaparece el anidamiento
+máximo del repo. Ninguna función del bloque supera 9.
+
+Se confirmó el patrón —una tabla de filas `(reconoce, produce)` recorrida por un motor de 6 líneas—
+**y se confirmó otra vez la tesis de este documento: el bulto no lo quitó el patrón, lo quitó la
+duplicación que el patrón dejó ver.** `parse_distinguished_name_text` tenía el mismo bucle de
+acumulación escrito dos veces; `to_asn1_certificate`, dos `try/except` idénticos; y
+`extract_name_attributes`, ocho `if` consecutivos que eran un diccionario.
+
+**Un detalle de diseño que merece copiarse:** el `try` vive **en cada productor, no en el motor**, para
+que un paso que hoy no tolera excepciones siga sin tolerarlas. Meterlo en el motor habría sido más
+elegante y habría cambiado comportamiento en silencio. Hay un test que fija justo eso.
+
+**Y dos casi-duplicados que NO se fusionaron**, que es la otra mitad del criterio: `get_status_attr`
+usa `hasattr` (presencia) y se detiene en un atributo que existe y vale `None`, mientras que sus
+cuatro parientes usan «el primero no nulo». Se parecen; no son lo mismo.
 
 430 líneas, **6 de las 8 funciones complejas** del peor fichero del repositorio, y todas hacen lo
 mismo: *«dado un certificado con forma impredecible, prueba varias maneras de sacar este dato»*.
@@ -101,7 +117,9 @@ red, ni disco, ni criptografía**, así que es trivial de cubrir con pruebas pur
 
 ### 3.3 · **Instancia propia** (Adapter) para `httpClient`
 
-**Estado: en curso (fase E-4).**
+**Estado: ✅ HECHO el 2026-08-09 (fase E-4).** De 30 importadores de axios crudo a **uno solo**, que
+es el propio módulo. Confirmó la tesis de este documento: **no hacía falta un patrón, hacía falta el
+objeto** — `axios.create()` y el problema se disuelve. Detalle y deuda residual en §5-E.4 del plan.
 
 `core/services/httpClient.js` **no es un cliente**: no llama a `axios.create()`, registra el
 interceptor sobre el **singleton global** y reexporta el mismo objeto. 31 ficheros importan axios
