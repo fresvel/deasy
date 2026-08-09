@@ -1443,33 +1443,27 @@
         @apply inline-flex items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
     }
 
-    .deasy-dialog-root,
-    .admin-dialog-root {
+    .deasy-dialog-root {
         @apply bg-slate-950/45 backdrop-blur-[2px];
     }
 
-    .deasy-dialog-panel,
-    .admin-dialog-panel {
+    .deasy-dialog-panel {
         @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)];
     }
 
-    .deasy-dialog-header,
-    .admin-dialog-header {
+    .deasy-dialog-header {
         @apply border-b border-slate-200 bg-white px-5 py-4 sm:px-6;
     }
 
-    .deasy-dialog-title,
-    .admin-dialog-title {
+    .deasy-dialog-title {
         @apply text-base font-semibold tracking-tight text-slate-950 sm:text-lg;
     }
 
-    .deasy-dialog-body,
-    .admin-dialog-body {
+    .deasy-dialog-body {
         @apply px-5 py-5 text-slate-700 sm:px-6;
     }
 
-    .deasy-dialog-footer,
-    .admin-dialog-footer {
+    .deasy-dialog-footer {
         @apply border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6;
     }
 }

@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="sqlEditorModalLabel"
     :title="editorMode === 'create' ? `Añadir ${table?.label || 'registro'}` : 'Editar registro'"
@@ -132,7 +132,7 @@
       <div v-if="processConfigurationLoading" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-medium text-slate-500">
         Cargando configuraciones vinculadas...
       </div>
-      <AdminDataTable
+      <AppDataTable
         v-else
         :fields="processConfigurationTableFields"
         :rows="processConfigurationRows"
@@ -163,7 +163,7 @@
             @delete="$emit('delete-process-configuration', row)"
           />
         </template>
-      </AdminDataTable>
+      </AppDataTable>
       <p
         v-if="canDeleteProcessConfiguration && processConfigurationRows.some((row) => !canDeleteProcessConfigurationRow(row))"
         class="m-0 mt-2 text-xs font-medium text-slate-500"
@@ -235,16 +235,16 @@
         Guardar y agregar configuracion
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { computed, ref, useId } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";

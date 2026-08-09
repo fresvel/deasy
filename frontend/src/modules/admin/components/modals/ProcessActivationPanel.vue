@@ -59,7 +59,7 @@
         </div>
 
         <div v-else-if="view === 'rules'" class="mt-3">
-          <AdminDataTable
+          <AppDataTable
             v-if="rules.length"
             :fields="ruleTableFields"
             :rows="rules"
@@ -88,12 +88,12 @@
                 @view="$emit('view-row', { table: 'process_target_rules', row })"
               />
             </template>
-          </AdminDataTable>
+          </AppDataTable>
           <div v-else class="text-sm text-slate-500">Sin reglas registradas.</div>
         </div>
 
         <div v-else-if="view === 'triggers'" class="mt-3">
-          <AdminDataTable
+          <AppDataTable
             v-if="triggers.length"
             :fields="triggerTableFields"
             :rows="triggers"
@@ -122,12 +122,12 @@
                 @view="$emit('view-row', { table: 'process_definition_period_types', row })"
               />
             </template>
-          </AdminDataTable>
+          </AppDataTable>
           <div v-else class="text-sm text-slate-500">Sin periodos registrados.</div>
         </div>
 
         <div v-else class="mt-3">
-          <AdminDataTable
+          <AppDataTable
             v-if="artifacts.length"
             :fields="artifactTableFields"
             :rows="artifacts"
@@ -153,7 +153,7 @@
                 @view="$emit('view-row', { table: 'process_definition_templates', row })"
               />
             </template>
-          </AdminDataTable>
+          </AppDataTable>
           <div v-else class="text-sm text-slate-500">Sin plantillas vinculadas.</div>
         </div>
       </div>
@@ -164,7 +164,7 @@
 <script setup>
 import { computed } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const props = defineProps({

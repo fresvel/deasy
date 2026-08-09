@@ -577,10 +577,6 @@
   border-color: rgba(var(--brand-highlight-rgb), 0.46);
 }
 
-.table-actions-scroll {
-  position: relative;
-}
-
 .table-institutional.table-actions .admin-action-col {
   position: sticky;
   right: 0;

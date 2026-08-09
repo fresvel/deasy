@@ -59,7 +59,7 @@
     </AppDialogOverlay>
 
     <div v-if="loading" class="text-sm text-slate-500">Cargando periodos del proceso...</div>
-    <AdminDataTable
+    <AppDataTable
       v-else
       :fields="tableFields"
       :rows="rows"
@@ -91,14 +91,14 @@
           @delete="$emit('delete-row', row)"
         />
       </template>
-    </AdminDataTable>
+    </AppDataTable>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, useId } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";

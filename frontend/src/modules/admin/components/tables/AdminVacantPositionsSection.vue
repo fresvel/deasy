@@ -69,7 +69,7 @@
 
           <div v-if="loading" class="text-sm text-slate-500">Cargando puestos sin ocupaciones...</div>
           <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
-          <AdminDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `vacant-${row.id}`" empty-text="No hay puestos disponibles sin ocupaciones.">
+          <AppDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `vacant-${row.id}`" empty-text="No hay puestos disponibles sin ocupaciones.">
             <template #cell="{ row, field }">
               <template v-if="field.name === '__unit_type_id'">
                 {{ formatFkListCell(row, { name: "__unit_type_id" }) }}
@@ -97,7 +97,7 @@
                 </AdminButton>
               </div>
             </template>
-          </AdminDataTable>
+          </AppDataTable>
       </div>
   </section>
 </template>
@@ -105,7 +105,7 @@
 <script setup>
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 

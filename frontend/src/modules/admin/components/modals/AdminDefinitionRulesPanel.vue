@@ -164,7 +164,7 @@
     </AppDialogOverlay>
 
     <div v-if="loading" class="text-sm text-slate-500">Cargando reglas vinculadas...</div>
-    <AdminDataTable
+    <AppDataTable
       v-else
       :fields="tableFields"
       :rows="rows"
@@ -193,14 +193,14 @@
           @delete="$emit('delete-row', row)"
         />
       </template>
-    </AdminDataTable>
+    </AppDataTable>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";

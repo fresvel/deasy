@@ -23,7 +23,7 @@ const montar = (props = {}, slots = {}) =>
     props,
     slots,
     global: {
-      stubs: { AdminModalShell: AppModalShellStub, AppButton: { template: "<button><slot /></button>" } }
+      stubs: { AppModalShell: AppModalShellStub, AppButton: { template: "<button><slot /></button>" } }
     }
   });
 

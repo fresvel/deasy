@@ -337,7 +337,7 @@
       </aside>
     </div>
 
-    <AdminModalShell
+    <AppModalShell
       :open="showBatchProgressModal"
       body-class="p-0"
       content-class="max-h-[calc(100vh-4rem)]"
@@ -378,7 +378,7 @@
         :success-count="successCount"
         @download-batch="emit('download-batch')"
       />
-    </AdminModalShell>
+    </AppModalShell>
   </div>
 </template>
 
@@ -403,7 +403,7 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import MultiSignerBatchStatusPanel from "@/modules/firmas/components/MultiSignerBatchStatusPanel.vue";
 const props = defineProps({
   batchJob: {

@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell ref="modalRef" labelled-by="personAssignmentsModalLabel" title="Asignaciones del usuario" size="xl">
+  <AppModalShell ref="modalRef" labelled-by="personAssignmentsModalLabel" title="Asignaciones del usuario" size="xl">
     <div class="person-assignment-panel">
       <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
         Usa el boton de asignaciones en la fila de una persona para empezar.
@@ -68,7 +68,7 @@
             </div>
 
             <div class="mt-3 person-assignment-table">
-              <AdminDataTable :fields="personCargoTableFields" :rows="personCargoRows" :row-key="rowKey" empty-text="Sin ocupaciones asignadas.">
+              <AppDataTable :fields="personCargoTableFields" :rows="personCargoRows" :row-key="rowKey" empty-text="Sin ocupaciones asignadas.">
                 <template #cell="{ row, field }">
                   <template v-if="field.name === 'position_id'">
                     {{ formatCell(row.position_id, { name: "position_id" }) }}
@@ -98,7 +98,7 @@
                     @delete="$emit('delete-person-cargo', row)"
                   />
                 </template>
-              </AdminDataTable>
+              </AppDataTable>
             </div>
           </div>
 
@@ -147,7 +147,7 @@
             </div>
 
             <div class="mt-3 person-assignment-table">
-              <AdminDataTable :fields="personRoleTableFields" :rows="personRoleRows" :row-key="rowKey" empty-text="Sin roles asignados.">
+              <AppDataTable :fields="personRoleTableFields" :rows="personRoleRows" :row-key="rowKey" empty-text="Sin roles asignados.">
                 <template #cell="{ row, field }">
                   <template v-if="field.name === 'role_id'">
                     {{ formatCell(row.role_id, { name: "role_id" }) }}
@@ -168,7 +168,7 @@
                     @delete="$emit('delete-person-role', row)"
                   />
                 </template>
-              </AdminDataTable>
+              </AppDataTable>
             </div>
           </div>
 
@@ -223,7 +223,7 @@
             </div>
 
             <div class="mt-3 person-assignment-table">
-              <AdminDataTable :fields="personContractTableFields" :rows="personContractRows" :row-key="rowKey" empty-text="Sin contratos asignados.">
+              <AppDataTable :fields="personContractTableFields" :rows="personContractRows" :row-key="rowKey" empty-text="Sin contratos asignados.">
                 <template #cell="{ row, field }">
                   <template v-if="field.name === 'position_id'">
                     {{ formatCell(row.position_id, { name: "position_id" }) }}
@@ -247,7 +247,7 @@
                     @delete="$emit('delete-person-contract', row)"
                   />
                 </template>
-              </AdminDataTable>
+              </AppDataTable>
             </div>
           </div>
         </div>
@@ -256,18 +256,18 @@
     <template #footer>
       <AdminButton variant="outlineDanger" data-modal-dismiss>Cerrar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { ref, useId } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";

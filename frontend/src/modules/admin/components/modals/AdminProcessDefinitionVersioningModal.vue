@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="processDefinitionVersioningModalLabel"
     title="Crear nueva version"
@@ -13,13 +13,13 @@
       <AdminButton variant="cancel" @click="$emit('cancel-edit')">Cancelar edicion</AdminButton>
       <AdminButton variant="primary" @click="$emit('promote')">Crear nueva version</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 defineEmits(["close", "cancel-edit", "promote"]);
 const modalRef = ref(null);
 defineExpose({

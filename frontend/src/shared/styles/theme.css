@@ -744,10 +744,6 @@ a:hover {
   background: #f5f7fb;
 }
 
-.table-actions-scroll {
-  overflow-x: auto;
-}
-
 .table-institutional.table-actions {
   overflow: visible;
 }
@@ -1192,19 +1188,16 @@ a:hover {
   color: #0f172a;
 }
 
-.deasy-dialog-root,
-.admin-dialog-root {
+.deasy-dialog-root {
   background: rgba(15, 23, 42, 0.48) !important;
   backdrop-filter: blur(3px);
 }
 
-.deasy-dialog-shell,
-.admin-dialog-shell {
+.deasy-dialog-shell {
   padding-block: 0.5rem;
 }
 
 .deasy-dialog-panel,
-.admin-dialog-panel,
 .profile-dialog-panel {
   border-radius: 0.95rem !important;
   border: 1px solid rgba(148, 163, 184, 0.28) !important;
@@ -1212,16 +1205,14 @@ a:hover {
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22) !important;
 }
 
-.deasy-dialog-header,
-.admin-dialog-header {
+.deasy-dialog-header {
   min-height: 3.75rem;
   background: #f8fafc !important;
   border-bottom: 1px solid rgba(148, 163, 184, 0.24) !important;
   padding: 1rem 1.25rem !important;
 }
 
-.deasy-dialog-title,
-.admin-dialog-title {
+.deasy-dialog-title {
   margin: 0;
   color: #0f172a !important;
   font-size: 1rem !important;
@@ -1229,8 +1220,7 @@ a:hover {
   line-height: 1.35;
 }
 
-.deasy-dialog-body,
-.admin-dialog-body {
+.deasy-dialog-body {
   background: #ffffff !important;
   color: #334155 !important;
   font-size: 0.95rem !important;
@@ -1238,21 +1228,18 @@ a:hover {
   padding: 1.25rem !important;
 }
 
-.deasy-dialog-footer,
-.admin-dialog-footer {
+.deasy-dialog-footer {
   background: #f8fafc !important;
   border-top: 1px solid rgba(148, 163, 184, 0.2) !important;
   padding: 1rem 1.25rem !important;
 }
 
 .deasy-dialog-panel .profile-admin-skin,
-.admin-dialog-panel .profile-admin-skin,
 .profile-dialog-panel .profile-admin-skin {
   background: transparent;
 }
 
 .deasy-dialog-panel .deasy-btn--close,
-.admin-dialog-panel .admin-btn--close,
 .profile-dialog-panel [data-modal-dismiss][aria-label="Close"],
 .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"] {
   border-radius: 0.55rem !important;
@@ -1262,7 +1249,6 @@ a:hover {
 }
 
 .deasy-dialog-panel .deasy-btn--close:hover,
-.admin-dialog-panel .admin-btn--close:hover,
 .profile-dialog-panel [data-modal-dismiss][aria-label="Close"]:hover,
 .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"]:hover {
   background: #f1f5f9 !important;
@@ -1750,7 +1736,6 @@ html[data-environment="local-dev"] .deasy-auth-card,
 html[data-environment="local-dev"] .admin-workspace-frame,
 html[data-environment="local-dev"] .admin-surface-frame,
 html[data-environment="local-dev"] .deasy-dialog-panel,
-html[data-environment="local-dev"] .admin-dialog-panel,
 html[data-environment="local-dev"] .profile-table-shell,
 html[data-environment="local-dev"] .profile-dialog-panel,
 html[data-environment="local-dev"] .table-institutional {
@@ -1767,14 +1752,12 @@ html[data-environment="local-dev"] .deasy-auth-page {
 }
 
 html[data-environment="local-dev"] .deasy-auth-panel,
-html[data-environment="local-dev"] .deasy-dialog-body,
-html[data-environment="local-dev"] .admin-dialog-body {
+html[data-environment="local-dev"] .deasy-dialog-body {
   background-color: #ffffff;
 }
 
 html[data-environment="local-dev"] .deasy-auth-visual,
-html[data-environment="local-dev"] .deasy-dialog-footer,
-html[data-environment="local-dev"] .admin-dialog-footer {
+html[data-environment="local-dev"] .deasy-dialog-footer {
   background-color: #f7fafc !important;
 }
 
@@ -1783,7 +1766,6 @@ html[data-environment="local-dev"] .border-slate-200,
 html[data-environment="local-dev"] .deasy-card,
 html[data-environment="local-dev"] .deasy-section-card,
 html[data-environment="local-dev"] .deasy-dialog-panel,
-html[data-environment="local-dev"] .admin-dialog-panel,
 html[data-environment="local-dev"] .admin-workspace-frame,
 html[data-environment="local-dev"] .admin-surface-frame,
 html[data-environment="local-dev"] .profile-table-shell,

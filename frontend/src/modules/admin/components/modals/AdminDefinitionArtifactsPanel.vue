@@ -30,7 +30,7 @@
     </div>
 
     <div v-if="loading" class="text-sm text-slate-500">Cargando plantillas vinculadas...</div>
-    <AdminDataTable
+    <AppDataTable
       v-else
       class="person-assignment-table"
       :fields="displayTableFields"
@@ -77,13 +77,13 @@
           @delete="$emit('delete-row', row)"
         />
       </template>
-    </AdminDataTable>
+    </AppDataTable>
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 

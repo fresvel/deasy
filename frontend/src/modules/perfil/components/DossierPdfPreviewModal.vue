@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     title="Vista previa del PDF"
     labelled-by="dossier-pdf-preview-modal-title"
@@ -16,13 +16,13 @@
         No hay PDF disponible para visualizar.
       </div>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { onBeforeUnmount, ref } from "vue";
 import { Modal } from "@/shared/utils/modalController";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 const modalRef = ref(null);
 const pdfUrl = ref("");

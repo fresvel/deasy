@@ -4,7 +4,7 @@
     v-bind="panelBindings"
     v-on="panelListeners"
   />
-  <AdminModalShell
+  <AppModalShell
     v-else
     ref="modalRef"
     labelled-by="definitionArtifactsModalLabel"
@@ -21,13 +21,13 @@
       <AdminButton variant="outlineDanger" @click="$emit('close')">Cerrar</AdminButton>
       <AdminButton variant="outlinePrimary" @click="$emit('accept')">Aceptar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminDefinitionArtifactsPanel from "@/modules/admin/components/modals/AdminDefinitionArtifactsPanel.vue";
 
 const props = defineProps({

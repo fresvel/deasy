@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell ref="modalRef" labelled-by="definitionArtifactsPromptModalLabel" title="Configuracion creada">
+  <AppModalShell ref="modalRef" labelled-by="definitionArtifactsPromptModalLabel" title="Configuracion creada">
     <p class="mb-0 text-sm text-slate-700">
       La configuracion se creo correctamente.
       <span v-if="context?.name">
@@ -14,13 +14,13 @@
       <AdminButton variant="outlinePrimary" @click="$emit('open-artifacts')">Paquetes</AdminButton>
       <AdminButton variant="primary" @click="$emit('open-wizard')">Continuar guiado →</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 defineProps({
   context: { type: Object, default: null }
 });

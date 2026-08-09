@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="sqlFkModalLabel"
     :title="modalTitle"
@@ -224,7 +224,7 @@
 
     <div v-if="fkLoading" class="text-sm text-slate-500">Cargando...</div>
     <div v-else-if="fkError" class="admin-inline-error" role="alert">{{ fkError }}</div>
-    <AdminDataTable
+    <AppDataTable
       v-else
       :fields="fkSearchTableFields"
       :rows="fkRows"
@@ -289,7 +289,7 @@
           </AdminButton>
         </div>
       </template>
-    </AdminDataTable>
+    </AppDataTable>
     </div>
     <template #footer>
       <template v-if="!createTabEnabled || activeTab === 'select'">
@@ -318,16 +318,16 @@
         Cerrar
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({

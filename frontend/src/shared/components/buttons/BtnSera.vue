@@ -10,7 +10,7 @@
     <span class="tooltip">{{ statusLabel }}</span>
   </button>
 
-  <AdminModalShell
+  <AppModalShell
     v-if="showStatusModal"
     ref="modalRef"
     :title="modalTitle"
@@ -35,14 +35,14 @@
         Cerrar
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { computed, nextTick, ref } from "vue";
 import { IconAlertTriangle, IconChecks, IconClock, IconRosetteDiscountCheck } from "@tabler/icons-vue";
 import { Modal } from "@/shared/utils/modalController";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
 const props = defineProps({

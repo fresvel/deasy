@@ -1,5 +1,5 @@
 <template>
-<AdminModalShell
+<AppModalShell
   ref="shellRef"
   labelled-by="general-task-modal-title"
   :title="generalTaskModalTitle"
@@ -176,7 +176,7 @@
             : (generalTaskForm.mode === 'derived' ? 'Crear entregable' : 'Crear tarea'))) }}
     </AppButton>
   </template>
-</AdminModalShell>
+</AppModalShell>
 </template>
 
 <script setup>
@@ -184,12 +184,12 @@
 // destinatarios. Extraido de HomeView.vue en la Fase C (paso 2). La LOGICA vive en el composable
 // useGeneralTask (paso 1); este componente es PRESENTACIONAL.
 //
-// El AdminModalShell se queda AQUI y su ref (que controla el show/hide via Bootstrap) se recibe
+// El AppModalShell se queda AQUI y su ref (que controla el show/hide via Bootstrap) se recibe
 // como prop `modalRef` y se enlaza con :ref, para que useGeneralTask (en HomeView) siga abriendo
 // y cerrando el modal sin cambios. Los objetos reactivos (generalTaskForm, flowCargoForm, pasos
 // de flowFirma) se pasan como props y sus campos se v-modelan por mutacion anidada (reactivo en
 // Vue). Los dos v-model de PRIMITIVOS (recipientQuery, flowPickerMode) usan defineModel.
-import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
+import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
 import { ref } from 'vue';
@@ -226,7 +226,7 @@ defineProps({
 defineEmits(['submit']);
 
 // El show/hide del modal lo gobierna useGeneralTask (en HomeView) via el `.el` del
-// AdminModalShell. Se expone aqui para que el padre, con ref en <GeneralTaskModal>, lo alcance.
+// AppModalShell. Se expone aqui para que el padre, con ref en <GeneralTaskModal>, lo alcance.
 const shellRef = ref(null);
 defineExpose({ get el() { return shellRef.value?.el ?? null; } });
 </script>

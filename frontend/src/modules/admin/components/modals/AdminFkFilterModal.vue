@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="sqlFkFilterModalLabel"
     :title="`Buscar referencia ${fkTable?.label || ''}`"
@@ -69,7 +69,7 @@
         <font-awesome-icon icon="search" />
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
@@ -77,7 +77,7 @@ import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({

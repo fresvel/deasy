@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="recordViewerModalLabel"
     :title="`Detalle de ${recordViewerTable?.label || 'registro'}`"
@@ -19,7 +19,7 @@
         </span>
         <div class="min-w-0">
           <p class="m-0 text-xs font-semibold text-slate-500">{{ recordViewerTable?.label || "Registro" }}</p>
-          <h5 id="recordViewerModalLabel" class="deasy-dialog-title admin-dialog-title truncate">
+          <h5 id="recordViewerModalLabel" class="deasy-dialog-title truncate">
             {{ primaryValue }}
           </h5>
         </div>
@@ -142,7 +142,7 @@
               {{ processConfigurationEmptyText }}
             </p>
           </div>
-          <AdminDataTable
+          <AppDataTable
             v-else
             :fields="relatedSectionFields(section)"
             :rows="section.rows"
@@ -164,7 +164,7 @@
                 @view="$emit('view-related-record', { row: sectionRow, tableMeta: section.tableMeta })"
               />
             </template>
-          </AdminDataTable>
+          </AppDataTable>
         </section>
       </div>
       <div v-else class="flex min-h-40 items-center justify-center text-sm font-medium text-slate-500">
@@ -220,7 +220,7 @@
       <input ref="sourceInputRef" type="file" accept=".zip" class="hidden" aria-label="Subir código editado (ZIP)" @change="onSourcePicked" />
       <AdminButton variant="secondary" @click="$emit('close')">Cerrar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
@@ -232,8 +232,8 @@ import {
   IconSettings
 } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["template_artifacts", "template_seeds"]);

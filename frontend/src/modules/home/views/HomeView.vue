@@ -918,7 +918,7 @@
         </template>
   </AppWorkspaceShell>
 
-    <AdminModalShell
+    <AppModalShell
       controlled
       :open="showTaskLaunchModal"
       labelled-by="task-launch-modal-title"
@@ -1139,9 +1139,9 @@
           {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="taskFiltersModal"
       labelled-by="task-filters-modal-title"
       title="Filtrar tareas y entregables"
@@ -1225,9 +1225,9 @@
         <AppButton variant="secondary" @click="closeTaskFiltersModal">Cerrar</AppButton>
         <AppButton variant="primary" class-name="deasy-filter-btn" @click="closeTaskFiltersModal">Aplicar</AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="documentSignModal"
       labelled-by="document-sign-modal-title"
       title="Firmar documento"
@@ -1241,10 +1241,10 @@
           Cerrar
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
 
-    <AdminModalShell
+    <AppModalShell
       ref="deliverableWorkspaceModal"
       labelled-by="deliverable-workspace-modal-title"
       :title="deliverableWorkspaceTitle"
@@ -1442,7 +1442,7 @@
           Cerrar
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
     <GeneralTaskModal
       ref="generalTaskModal"
@@ -1473,7 +1473,7 @@
       @submit="submitGeneralTask"
     />
 
-    <AdminModalShell
+    <AppModalShell
       ref="mySendsModal"
       labelled-by="my-sends-modal-title"
       title="Mis envíos"
@@ -1516,9 +1516,9 @@
       <template #footer>
         <AppButton variant="secondary" data-modal-dismiss>Cerrar</AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="fillWorkflowModal"
       labelled-by="fill-workflow-modal-title"
       title="Flujo de entrega"
@@ -1714,9 +1714,9 @@
           Cerrar
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="signatureFlowModal"
       labelled-by="signature-flow-modal-title"
       title="Flujo de firmas"
@@ -1896,9 +1896,9 @@
           Cerrar
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="deliverableUploadModal"
       labelled-by="deliverable-upload-modal-title"
       :title="deliverableUploadModalTitle"
@@ -1933,9 +1933,9 @@
           {{ isUploadingDeliverable ? 'Subiendo archivo...' : 'Subir archivo' }}
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="deliverableOperationModal"
       labelled-by="deliverable-operation-modal-title"
       :title="deliverableOperationState.title"
@@ -1963,9 +1963,9 @@
           Cerrar
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="deliverableSignResultModal"
       labelled-by="deliverable-sign-result-modal-title"
       :title="deliverableSignResultState.success ? 'Documento firmado' : 'Error al firmar'"
@@ -1994,9 +1994,9 @@
           Cerrar
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
-    <AdminModalShell
+    <AppModalShell
       ref="deliverableResetModal"
       labelled-by="deliverable-reset-modal-title"
       title="Resetear flujo del entregable"
@@ -2029,7 +2029,7 @@
           {{ deliverableResetState.submitting ? 'Reseteando...' : 'Resetear flujo' }}
         </AppButton>
       </template>
-    </AdminModalShell>
+    </AppModalShell>
 
     <DeliverablePreviewModal
       ref="deliverablePreviewModal"
@@ -2131,7 +2131,7 @@ import SignatureFlowService from '@/modules/firmas/services/SignatureFlowService
 import DossierService from '@/modules/dossier/services/DossierService.js';
 import { API_ROUTES } from '@/core/config/apiConfig';
 import { Modal } from '@/shared/utils/modalController';
-import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
+import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import SToggle from '@/shared/components/forms/SToggle.vue';
 import PdfDropField from '@/shared/components/forms/PdfDropField.vue';

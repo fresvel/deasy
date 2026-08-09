@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     :controlled="controlled"
     :open="open"
@@ -61,12 +61,12 @@
     <template #footer>
       <slot name="footer" />
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { computed, ref } from "vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 const props = defineProps({
   controlled: { type: Boolean, default: false },

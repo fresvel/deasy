@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="shellRef"
     labelled-by="deliverable-preview-modal-title"
     :title="name || 'Vista previa del archivo'"
@@ -35,7 +35,7 @@
         </div>
       </div>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
@@ -53,7 +53,7 @@
  * comportamiento por construccion en vez de por casualidad.
  */
 import { ref } from "vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 
 defineProps({

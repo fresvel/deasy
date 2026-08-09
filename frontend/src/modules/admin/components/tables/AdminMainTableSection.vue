@@ -188,7 +188,7 @@
 
           <div v-if="loading" class="text-sm text-slate-500">Cargando datos...</div>
           <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
-          <AdminDataTable v-else :fields="tableListFields" :rows="rows" :row-key="rowKey">
+          <AppDataTable v-else :fields="tableListFields" :rows="rows" :row-key="rowKey">
             <template #cell="{ row, field }">
               <template v-if="field.name === 'available_formats'">
                 <div class="available-formats-cell">
@@ -330,7 +330,7 @@
                 </template>
               </AdminTableActions>
             </template>
-          </AdminDataTable>
+          </AppDataTable>
     </div>
   </section>
 </template>
@@ -338,7 +338,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
