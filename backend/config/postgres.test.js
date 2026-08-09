@@ -110,7 +110,7 @@ const BIND_CASES = [
   ["null y undefined viajan tal cual", "SELECT ?, ?", [null, undefined], "SELECT $1, $2", [null, undefined]],
   ["los falsy no se confunden con vacío", "SELECT ?, ?, ?", [0, "", false], "SELECT $1, $2, $3", [0, "", false]],
   ["sobran parámetros: se ignoran los de más", "SELECT ?", [1, 2, 3], "SELECT $1", [1]],
-  ["sin argumento de parámetros", "SELECT ?", undefined, "SELECT $1", [undefined]],
+  ["sin argumento de parámetros y sin `?`", "SELECT 1", undefined, "SELECT 1", []],
 
   // Protección de literales, identificadores y comentarios (mismo escáner).
   ["no toca un `?` de un literal", "SELECT '¿?' AS q, ? AS p", ["x"], "SELECT '¿?' AS q, $1 AS p", ["x"]],
@@ -137,12 +137,76 @@ for (const [name, sql, params, expectedText, expectedValues] of BIND_CASES) {
 // consulta del repositorio las provoca hoy; se fijan para que el refactor no
 // las mueva sin querer y para dejar constancia de que EXISTEN.
 
-test("RAREZA: faltan parámetros y se envían `undefined` en vez de fallar", () => {
-  // pg convierte `undefined` en NULL, así que una llamada con menos parámetros
-  // de la cuenta no explota: ejecuta con NULLs. Debería ser un error.
-  const { text, values } = bindParams("SELECT ?, ?, ?", [1]);
-  assert.equal(text, "SELECT $1, $2, $3");
-  assert.deepEqual(values, [1, undefined, undefined]);
+// --- Faltan parámetros: ahora FALLA (defecto 1.5, arreglado) -------------------
+//
+// Antes esto era una "RAREZA" congelada: pg convierte `undefined` en NULL, así que
+// una llamada con menos parámetros de la cuenta NO explotaba, ejecutaba con NULLs y
+// devolvía resultados equivocados sin decir nada. Ahora lanza.
+//
+// Se comprobó antes de cambiarlo que ningún call site vivo dependía del comportamiento
+// anterior: 429 llamadas `.query(`/`.execute(` con SQL y parámetros literales dan 0
+// desajustes, y una sonda en `bindParams` no registró ni un caso en los 240 flujos de
+// caracterización.
+
+test("faltan parámetros: lanza en vez de mandar `undefined` (que pg convertiría en NULL)", () => {
+  assert.throws(
+    () => bindParams("SELECT ?, ?, ?", [1]),
+    (err) => {
+      assert.match(err.message, /3 placeholders/, "dice cuántos placeholders esperaba");
+      assert.match(err.message, /1 parametros/, "dice cuántos parámetros recibió");
+      assert.match(err.message, /Faltan 2/, "dice cuántos faltan");
+      // El SQL NO viaja en el mensaje: varios controllers responden `error.message`.
+      assert.ok(!err.message.includes("SELECT"), "el mensaje no filtra el SQL");
+      return true;
+    },
+  );
+});
+
+test("falta UN solo parámetro: también lanza", () => {
+  assert.throws(() => bindParams("SELECT * FROM t WHERE a = ? AND b = ?", [1]), /2 placeholders/);
+});
+
+test("sin argumento de parámetros pero con `?`: lanza", () => {
+  assert.throws(() => bindParams("SELECT ?"), /1 placeholders .* 0 parametros/s);
+});
+
+test("un `params` que no es array cuenta como cero parámetros y lanza", () => {
+  // `query(sql, 7)` es un error de llamada frecuente: antes daba `7[0] === undefined` -> NULL.
+  assert.throws(() => bindParams("SELECT ?", 7), /0 parametros/);
+});
+
+test("justo los necesarios NO lanza (no hay error por un off-by-one)", () => {
+  const { text, values } = bindParams("SELECT ?, ?", [1, 2]);
+  assert.equal(text, "SELECT $1, $2");
+  assert.deepEqual(values, [1, 2]);
+});
+
+test("los `?` de literales y comentarios no cuentan para el chequeo", () => {
+  // Un `?` protegido no consume parámetro, así que tampoco puede exigir uno: si contara,
+  // esta consulta perfectamente válida empezaría a fallar.
+  const { text, values } = bindParams("SELECT '¿?' AS q, ? -- ?\n", ["x"]);
+  assert.equal(text, "SELECT '¿?' AS q, $1 -- ?\n");
+  assert.deepEqual(values, ["x"]);
+});
+
+test("un array vacío satisface su placeholder (IN (?) -> IN (NULL)) y no lanza", () => {
+  // `[]` consume el parámetro aunque no empuje ningún valor: NO es un placeholder huérfano.
+  const { text, values } = bindParams("SELECT * FROM t WHERE id IN (?)", [[]]);
+  assert.equal(text, "SELECT * FROM t WHERE id IN (NULL)");
+  assert.deepEqual(values, []);
+});
+
+test("sobrar parámetros se sigue tolerando (mysql2 hacía lo mismo)", () => {
+  const { text, values } = bindParams("SELECT ?", [1, 2, 3]);
+  assert.equal(text, "SELECT $1");
+  assert.deepEqual(values, [1]);
+});
+
+test("un `undefined` EXPLÍCITO en la lista sigue pasando: se pidió NULL a propósito", () => {
+  // La diferencia es intención: `[undefined]` es un NULL pedido; un hueco no lo es.
+  const { text, values } = bindParams("SELECT ?, ?", [null, undefined]);
+  assert.equal(text, "SELECT $1, $2");
+  assert.deepEqual(values, [null, undefined]);
 });
 
 test("RAREZA: un bloque sin cerrar deja `?` literales en el texto final", () => {

@@ -134,6 +134,16 @@ function expandParam(value, pushScalar) {
 //   IN (?)      con []             -> IN (NULL)                   (no matchea nada)
 // Devuelve { text, values } con los valores aplanados en el orden correcto.
 // Respeta strings/identificadores/comentarios (no toca `?` literales).
+//
+// FALLA RUIDOSAMENTE SI FALTAN PARÁMETROS, y ese es el punto. Antes, un `?` sin su
+// parámetro recibía `undefined`; pg lo manda como NULL y la consulta **no fallaba**: se
+// ejecutaba con datos equivocados. Un `WHERE id = ?` sin parámetro no casa con nada (NULL
+// no es igual a nada, ni siquiera a NULL) y un `UPDATE ... SET col = ?` machaca la columna
+// con NULL. Los dos son silenciosos: ni excepción, ni log, ni fila de más o de menos que
+// delate el fallo. Es preferible un 500 en el sitio exacto que una corrupción muda.
+//
+// Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran y hay
+// call sites que reutilizan un array de argumentos más largo que la consulta.
 export function bindParams(sql, params = []) {
   const values = [];
   let paramIndex = 0;
@@ -141,6 +151,19 @@ export function bindParams(sql, params = []) {
   const pushScalar = (v) => { values.push(v); return "$" + placeholder++; };
 
   const text = scanSql(sql, () => expandParam(params[paramIndex++], pushScalar));
+
+  // `paramIndex` acabó valiendo el número de `?` de CÓDIGO (los de literales y comentarios
+  // no consumen). Un `params` que no sea array no aporta ninguno: cuenta como cero.
+  const provided = Array.isArray(params) ? params.length : 0;
+  if (paramIndex > provided) {
+    // El mensaje NO lleva el SQL: varios controllers responden `error.message` al cliente y
+    // eso filtraría el esquema. El sitio exacto ya lo da el stack trace en el log.
+    throw new Error(
+      `bindParams: la consulta tiene ${paramIndex} placeholders "?" y solo se recibieron ` +
+      `${provided} parametros. Faltan ${paramIndex - provided}: sin este error se enviarian ` +
+      `como NULL y la consulta se ejecutaria con datos equivocados.`
+    );
+  }
   return { text, values };
 }
 
