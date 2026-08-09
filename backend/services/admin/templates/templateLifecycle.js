@@ -11,15 +11,21 @@
 // resolubles (cut #6) y el ciclo de vida del artifact (cut #3). La lista explicita es INFORMACION:
 // si un refactor futuro reduce ese acoplamiento, la lista encoge y se ve.
 //
-// ESTADO DE `saveTemplateArtifactDraft` (actualizado 2026-08-08). El cut #8 la movio LITERAL, sin
-// descomponer, y quedo en 542 lineas. La fase C del plan de calidad ya la partio a la mitad: hoy son
-// ~310 lineas y complejidad cognitiva 76 (era 164), tras extraer _resolveDraftOwner,
-// _validateAuthoredWorkflows, _materializeDraftFormats y _linkDraftToProcessDefinition.
+// ESTADO DE `saveTemplateArtifactDraft` (actualizado 2026-08-09, fase C CERRADA). El cut #8 la movio
+// LITERAL y quedo en 542 lineas con complejidad 164. Hoy es ~150 lineas: validacion, preparacion del
+// paquete y una secuencia de pasos que persisten. La logica esta en _resolveDraftOwner,
+// _validateAuthoredWorkflows, _materializeDraftFormats, _linkDraftToProcessDefinition,
+// _persistDraftEdit y _persistDraftCreation.
 //
-// LO QUE SIGUE DENTRO es el try de persistencia con su rollback: comparte cuatro variables de
-// compensacion (createdId, uploadedToMinio, insertedDeliverableId, insertedLinkId) entre el try y el
-// catch, porque no hay transaccion. Extraerlo NO es mover codigo: exige decidir antes quien posee la
-// compensacion. Ver docs/plan-calidad-2026-08.md §5-C.
+// COMO SE RESOLVIO LA COMPENSACION, que era lo que bloqueaba el ultimo corte. Aqui NO hay
+// transaccion, asi que habia cuatro variables (createdId, uploadedToMinio, insertedDeliverableId,
+// insertedLinkId) compartidas entre el `try` y el `catch`, y el `catch` tenia que acordarse de
+// mirarlas en el orden correcto. Ahora CADA PASO REGISTRA SU PROPIO DESHACER en cuanto tiene exito
+// (`registrarDeshacer`), y el `catch` solo desapila. Dos invariantes pasan de "hay que recordarlas"
+// a "se cumplen solas":
+//   · solo se deshace lo que ESTA llamada hizo (un `deliverable` reusado no registra nada);
+//   · se deshace en orden INVERSO al de creacion, obligatorio porque ninguna FK cascadea.
+// La compensacion la posee el paso que causo el efecto. Ver docs/patrones-diseno-2026-08.md §3.1.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -1260,15 +1266,131 @@ export default class TemplateLifecycleService {
     return null;
   }
 
-  async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
-    this.ensurePool();
+  // Persistencia de una EDICIÓN. No registra compensación: la fila y sus objetos de MinIO ya
+  // existían antes de esta llamada y se conservan pase lo que pase. Devuelve el id, que no cambia.
+  async _persistDraftEdit({ existingArtifact, almacenamiento, identidad }) {
+    const artifactId = Number(existingArtifact.id);
 
-    const displayName = String(data.display_name || "").trim();
-    const description = String(data.description || "").trim() || null;
-    const ownerCedula = String(data.owner_cedula || "").trim();
-    const requestedOwnerPersonId = normalizeNumericId(data.owner_person_id);
-    let templateSeedId = data.template_seed_id ? Number(data.template_seed_id) : null;
+    await this.pool.query(
+      `UPDATE template_artifacts
+       SET base_object_prefix = ?,
+           available_formats = ?,
+           schema_object_key = ?,
+           meta_object_key = ?,
+           content_hash = ?,
+           is_active = 1
+       WHERE id = ?`,
+      [
+        almacenamiento.baseObjectPrefix,
+        JSON.stringify(almacenamiento.availableFormats),
+        almacenamiento.schemaObjectKey,
+        almacenamiento.metaObjectKey,
+        almacenamiento.contentHash,
+        artifactId
+      ]
+    );
+
+    if (existingArtifact?.deliverable_id) {
+      await this.pool.query(
+        `UPDATE deliverables
+         SET display_name = ?, description = ?, template_scope = ?, template_seed_id = ?, owner_person_id = ?
+         WHERE id = ?`,
+        [
+          identidad.displayName,
+          identidad.description,
+          identidad.templateScope,
+          identidad.templateSeedId,
+          identidad.ownerPersonId,
+          existingArtifact.deliverable_id
+        ]
+      );
+    }
+
+    return artifactId;
+  }
+
+  // Persistencia de una CREACIÓN. Modelo entregable/ediciones: el `deliverable` se crea (o se REUSA)
+  // PRIMERO —su dueño es la pareja (proceso, variación) de la configuración destino— y luego se
+  // inserta la edición con su `deliverable_id`. Devuelve el id del `template_artifact` nuevo.
+  //
+  // Registra su propia compensación, y solo la suya: si el `deliverable` se reusó porque ya existía
+  // con el mismo `code` (pertenece a ediciones anteriores), NO se apunta para borrar.
+  async _persistDraftCreation({ processDefinitionId, almacenamiento, identidad, registrarDeshacer }) {
+    let ownerProcessId = null;
+    let ownerVariationKey = null;
+    const destDefId = processDefinitionId ? Number(processDefinitionId) : null;
+    if (destDefId) {
+      const [dRows] = await this.pool.query(
+        "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
+        [destDefId]
+      );
+      ownerProcessId = dRows?.[0]?.process_id ?? null;
+      ownerVariationKey = dRows?.[0]?.variation_key ?? null;
+    }
+
+    const [delivExisting] = await this.pool.query(
+      "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
+      [identidad.templateCode]
+    );
+    let deliverableId = delivExisting?.[0]?.id;
+    if (!deliverableId) {
+      const [delivIns] = await this.pool.query(
+        `INSERT INTO deliverables
+           (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          identidad.templateCode,
+          identidad.displayName,
+          identidad.description,
+          ownerProcessId,
+          ownerVariationKey,
+          identidad.templateScope,
+          identidad.templateSeedId,
+          identidad.ownerPersonId
+        ]
+      );
+      deliverableId = delivIns.insertId;
+      registrarDeshacer(() => this.pool.query("DELETE FROM deliverables WHERE id = ?", [deliverableId]));
+    }
+
+    const [result] = await this.pool.query(
+      `INSERT INTO template_artifacts (
+        storage_version,
+        lifecycle_state,
+        base_object_prefix,
+        available_formats,
+        schema_object_key,
+        meta_object_key,
+        content_hash,
+        deliverable_id,
+        is_active
+      ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        almacenamiento.storageVersion,
+        almacenamiento.baseObjectPrefix,
+        JSON.stringify(almacenamiento.availableFormats),
+        almacenamiento.schemaObjectKey,
+        almacenamiento.metaObjectKey,
+        almacenamiento.contentHash,
+        deliverableId
+      ]
+    );
+    const artifactId = result.insertId;
+    registrarDeshacer(() => this.pool.query("DELETE FROM template_artifacts WHERE id = ?", [artifactId]));
+
+    return artifactId;
+  }
+
+  // Normaliza la entrada y aplica TODAS las guardas de admision, en bloque y antes de tocar disco o
+  // MinIO. Es fail-fast a proposito: cuando esto devuelve, el borrador es admisible y el resto de
+  // `saveTemplateArtifactDraft` ya no vuelve a validar entrada.
+  //
+  // EL ORDEN DE LAS GUARDAS ES CONTRATO, no estilo: esta caracterizado en zzz_artifact_draft y hay
+  // mensajes que el frontend distingue. No lo reordenes.
+  async _resolveDraftRequest(artifactId, data, files) {
     const isEdit = artifactId !== null && artifactId !== undefined && artifactId !== "";
+    const displayName = String(data.display_name || "").trim();
+    const ownerCedula = String(data.owner_cedula || "").trim();
 
     if (!displayName) {
       throw new Error("Ingresa el nombre del artifact borrador.");
@@ -1306,8 +1428,8 @@ export default class TemplateLifecycleService {
     // Modo de emisión del vínculo a proceso (single/replicated/routed). Se fija AL CREAR el link;
     // default 'single'. 'routed' no autora flujo predefinido: se define al enviar (runtime).
     const requestedItemMode = normalizeItemMode(data.item_mode);
-
     const existingAvailableFormats = parseAvailableFormats(existingArtifact?.available_formats);
+    let templateSeedId = data.template_seed_id ? Number(data.template_seed_id) : null;
 
     // Toda plantilla nace de una semilla: si al crear no se eligió ninguna, se usa la general (default).
     if (!isEdit && !templateSeedId) {
@@ -1321,18 +1443,15 @@ export default class TemplateLifecycleService {
       templateSeedId = Number(defaultSeedRows[0].id);
     }
 
-    // Al crear, siempre se exige al menos un documento de referencia (word/excel/pdf/pptx).
     if (!isEdit) {
-      const hasReferenceDoc = REFERENCE_DOC_FORMATS.some((format) => uploadedFiles[format]);
-      if (!hasReferenceDoc) {
+      // Al crear, siempre se exige al menos un documento de referencia (word/excel/pdf/pptx).
+      if (!REFERENCE_DOC_FORMATS.some((format) => uploadedFiles[format])) {
         throw new Error("Debes adjuntar al menos un documento de referencia (PDF, Word, Excel o PowerPoint).");
       }
       // Toda plantilla single/replicated debe definir un flujo de entrega con al menos un paso
       // (fail-fast antes del upload). 'routed' NO autora flujo: se define al enviar (runtime).
-      if (requestedItemMode !== "routed") {
-        if (!workflowHasSteps(parseWorkflowPayload(data.fill_workflow))) {
-          throw new Error("Debes definir al menos un paso en el flujo de entrega.");
-        }
+      if (requestedItemMode !== "routed" && !workflowHasSteps(parseWorkflowPayload(data.fill_workflow))) {
+        throw new Error("Debes definir al menos un paso en el flujo de entrega.");
       }
     } else if (
       !templateSeedId
@@ -1341,6 +1460,112 @@ export default class TemplateLifecycleService {
     ) {
       throw new Error("Selecciona un seed o sube al menos un archivo para actualizar el borrador.");
     }
+
+    return {
+      isEdit,
+      existingArtifact,
+      displayName,
+      description: String(data.description || "").trim() || null,
+      ownerCedula,
+      requestedOwnerPersonId: normalizeNumericId(data.owner_person_id),
+      templateSeedId,
+      uploadedFiles,
+      requestedItemMode,
+      existingAvailableFormats
+    };
+  }
+
+  // Escribe en `draftDir` los tres ficheros que acompanan al contenido —schema.json, meta.yaml y
+  // manifest.json—, valida el paquete y calcula su hash. Todo en disco: NO toca base de datos ni
+  // MinIO, asi que si lanza no hay nada que compensar.
+  //
+  // EL ORDEN IMPORTA y es la razon de que esto sea un solo metodo: el manifiesto se escribe DESPUES
+  // del content_hash (para no alterarlo) pero ANTES del upload (para que viaje con el paquete).
+  async _writeDraftPackage({ draftDir, data, availableFormats, seedRow, identidad, existingArtifactId }) {
+    const { displayName, description, templateCode, templateScope, storageVersion } = identidad;
+    const comillas = (valor) => String(valor).replaceAll("\"", '\\"');
+
+    // Campos definidos desde la web (editor de schema). Si no llegan o vienen rotos, se conserva {}.
+    let schemaFields = data.schema_fields;
+    if (typeof schemaFields === "string") {
+      try { schemaFields = JSON.parse(schemaFields); } catch { schemaFields = null; }
+    }
+    const schemaJson = Array.isArray(schemaFields) && schemaFields.length
+      ? buildSchemaJsonFromFields(schemaFields)
+      : null;
+    fs.writeFileSync(
+      path.join(draftDir, "schema.json"),
+      schemaJson ? `${JSON.stringify(schemaJson, null, 2)}\n` : "{}\n",
+      "utf8"
+    );
+
+    const metaLines = [
+      `name: "${comillas(displayName)}"`,
+      `version: "${comillas(storageVersion)}"`,
+      `template_code: "${comillas(templateCode)}"`,
+      `template_scope: ${templateScope}`
+    ];
+    if (description) {
+      metaLines.push(`description: "${comillas(description)}"`);
+    }
+    if (seedRow?.seed_code) {
+      metaLines.push(`seed_code: "${comillas(seedRow.seed_code)}"`);
+    }
+
+    // Flujos definidos desde el editor web (fill/signatures). Si no llegan, se usa el contrato vacío.
+    const fillWorkflow = parseWorkflowPayload(data.fill_workflow);
+    const signatureWorkflow = parseWorkflowPayload(data.signature_workflow);
+    const hasCustomWorkflows = workflowHasSteps(fillWorkflow) || workflowHasSteps(signatureWorkflow);
+    // Avisos no bloqueantes de autoría (p. ej. cargo sin puesto hoy en la ubicación): se acumulan para
+    // informarlos en la respuesta, sin abortar el guardado. La validación del contrato de flujo se hace
+    // AQUÍ, en autoría, y no solo al vincular: falla rápido y claro antes de subir el meta.yaml, en vez
+    // de degradar silenciosamente en la normalización del sync.
+    const authoringWarnings = hasCustomWorkflows
+      ? await this._validateAuthoredWorkflows({
+          fillWorkflow,
+          signatureWorkflow,
+          templateScope,
+          processDefinitionId: data.process_definition_id,
+          existingArtifactId
+        })
+      : [];
+
+    const workflowsYaml = hasCustomWorkflows
+      ? buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })
+      : ARTIFACT_WORKFLOW_CONTRACT;
+    fs.writeFileSync(
+      path.join(draftDir, "meta.yaml"),
+      `${metaLines.join("\n")}\n${workflowsYaml}\n`,
+      "utf8"
+    );
+
+    validatePackagedArtifactDraft(draftDir, availableFormats);
+
+    const contentHash = hashDirectory(draftDir);
+    fs.writeFileSync(
+      path.join(draftDir, "manifest.json"),
+      `${JSON.stringify(buildProtectedManifest(draftDir, EDITABLE_CONTENT_SUBPATH), null, 2)}\n`,
+      "utf8"
+    );
+
+    return { contentHash, hasCustomWorkflows, authoringWarnings };
+  }
+
+  async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
+    this.ensurePool();
+
+    const {
+      isEdit,
+      existingArtifact,
+      displayName,
+      description,
+      ownerCedula,
+      requestedOwnerPersonId,
+      templateSeedId,
+      uploadedFiles,
+      requestedItemMode,
+      existingAvailableFormats
+    } = await this._resolveDraftRequest(artifactId, data, files);
 
     const { ownerRef, ownerPersonId } = await this._resolveDraftOwner({
       ownerCedula,
@@ -1384,166 +1609,72 @@ export default class TemplateLifecycleService {
 
     const schemaObjectKey = `${baseObjectPrefix}schema.json`;
     const metaObjectKey = `${baseObjectPrefix}meta.yaml`;
-    // Campos definidos desde la web (editor de schema). Si no llegan, se conserva {}.
-    let schemaFields = data.schema_fields;
-    if (typeof schemaFields === "string") {
-      try { schemaFields = JSON.parse(schemaFields); } catch { schemaFields = null; }
-    }
-    const schemaJson = Array.isArray(schemaFields) && schemaFields.length
-      ? buildSchemaJsonFromFields(schemaFields)
-      : null;
-    fs.writeFileSync(
-      path.join(draftDir, "schema.json"),
-      schemaJson ? `${JSON.stringify(schemaJson, null, 2)}\n` : "{}\n",
-      "utf8"
-    );
-    const metaLines = [
-      `name: "${displayName.replaceAll("\"", '\\"')}"`,
-      `version: "${storageVersion.replaceAll("\"", '\\"')}"`,
-      `template_code: "${templateCode.replaceAll("\"", '\\"')}"`,
-      `template_scope: ${templateScope}`
-    ];
-    if (description) {
-      metaLines.push(`description: "${description.replaceAll("\"", '\\"')}"`);
-    }
-    if (seedRow?.seed_code) {
-      metaLines.push(`seed_code: "${String(seedRow.seed_code).replaceAll("\"", '\\"')}"`);
-    }
-    // Flujos definidos desde el editor web (fill/signatures). Si no llegan, se usa el contrato vacío.
-    const fillWorkflow = parseWorkflowPayload(data.fill_workflow);
-    const signatureWorkflow = parseWorkflowPayload(data.signature_workflow);
-    const hasCustomWorkflows = workflowHasSteps(fillWorkflow) || workflowHasSteps(signatureWorkflow);
-    // Avisos no bloqueantes de autoría (p. ej. cargo sin puesto hoy en la ubicación): se acumulan para
-    // informarlos en la respuesta, sin abortar el guardado.
-    let authoringWarnings = [];
-    // Validación del contrato de flujo en autoría (no solo al vincular): falla rápido y claro antes de
-    // subir el meta.yaml, en vez de degradar silenciosamente en la normalización del sync.
-    if (hasCustomWorkflows) {
-      authoringWarnings = await this._validateAuthoredWorkflows({
-        fillWorkflow,
-        signatureWorkflow,
-        templateScope,
-        processDefinitionId: data.process_definition_id,
-        existingArtifactId: isEdit ? existingArtifact?.id : null
-      });
-    }
-    const workflowsYaml = hasCustomWorkflows
-      ? buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })
-      : ARTIFACT_WORKFLOW_CONTRACT;
-    fs.writeFileSync(
-      path.join(draftDir, "meta.yaml"),
-      `${metaLines.join("\n")}\n${workflowsYaml}\n`,
-      "utf8"
-    );
-    validatePackagedArtifactDraft(draftDir, availableFormats);
+    const { contentHash, hasCustomWorkflows, authoringWarnings } = await this._writeDraftPackage({
+      draftDir,
+      data,
+      availableFormats,
+      seedRow,
+      identidad: { displayName, description, templateCode, templateScope, storageVersion },
+      existingArtifactId: isEdit ? existingArtifact?.id : null
+    });
 
-    const contentHash = hashDirectory(draftDir);
-    // Manifiesto de integridad (después del content_hash para no alterarlo; antes del upload para que viaje).
-    fs.writeFileSync(
-      path.join(draftDir, "manifest.json"),
-      `${JSON.stringify(buildProtectedManifest(draftDir, EDITABLE_CONTENT_SUBPATH), null, 2)}\n`,
-      "utf8"
-    );
     let createdId = isEdit ? Number(existingArtifact.id) : null;
-    let uploadedToMinio = false;
-    // Compensación manual (aquí NO hay transacción): se anota lo que ESTA llamada insertó para
-    // poder deshacerlo en el `catch`. Se distingue insertar de REUSAR: un `deliverable` que ya
-    // existía con el mismo `code` pertenece a versiones anteriores y no debe borrarse.
-    let insertedDeliverableId = null;
-    let insertedLinkId = null;
+
+    // Compensación manual: aquí NO hay transacción, así que cada paso que deja rastro registra su
+    // propio deshacer en cuanto ha tenido éxito. Antes esto eran cuatro variables compartidas entre
+    // el `try` y el `catch`, y el `catch` tenía que acordarse de mirarlas en el orden correcto.
+    //
+    // Dos invariantes que la pila garantiza por construcción, y que antes había que sostener a mano:
+    //   · SOLO se deshace lo que ESTA llamada hizo. Un `deliverable` REUSADO (ya existía con el
+    //     mismo `code`, de una versión anterior) no registra nada, así que no se puede borrar.
+    //   · El orden de deshacer es el INVERSO al de creación, que es obligatorio porque ninguna FK
+    //     cascadea (todas NO ACTION): vínculo → artifact → deliverable → MinIO. Se cumple solo por
+    //     desapilar, en vez de por mantener sincronizado el orden del `catch`.
+    //
+    // En EDICIÓN no se compensa nada (los objetos de MinIO pertenecen a un artifact que se conserva),
+    // así que `registrarDeshacer` no apila.
+    const compensaciones = [];
+    const registrarDeshacer = (deshacer) => {
+      if (!isEdit) compensaciones.push(deshacer);
+    };
 
     try {
       await uploadDirectoryToMinio(bucket, baseObjectPrefix, draftDir);
-      uploadedToMinio = true;
+      registrarDeshacer(() => removeMinioPrefix(bucket, baseObjectPrefix));
 
-      if (isEdit) {
-        // Storage en template_artifacts; identidad/scope/owner/seed/nombre en el `deliverable`.
-        await this.pool.query(
-          `UPDATE template_artifacts
-           SET base_object_prefix = ?,
-               available_formats = ?,
-               schema_object_key = ?,
-               meta_object_key = ?,
-               content_hash = ?,
-               is_active = 1
-           WHERE id = ?`,
-          [
-            baseObjectPrefix,
-            JSON.stringify(availableFormats),
-            schemaObjectKey,
-            metaObjectKey,
-            contentHash,
-            createdId
-          ]
-        );
-        if (existingArtifact?.deliverable_id) {
-          await this.pool.query(
-            `UPDATE deliverables
-             SET display_name = ?, description = ?, template_scope = ?, template_seed_id = ?, owner_person_id = ?
-             WHERE id = ?`,
-            [displayName, description, templateScope, templateSeedId, ownerPersonId, existingArtifact.deliverable_id]
-          );
-        }
-      } else {
-        // Modelo entregable/ediciones: crear (o reusar) el `deliverable` PRIMERO (dueño = (proceso, variación) de
-        // la configuración destino) y luego insertar la versión con su deliverable_id.
-        let ownerProcessId = null;
-        let ownerVariationKey = null;
-        const destDefId = data.process_definition_id ? Number(data.process_definition_id) : null;
-        if (destDefId) {
-          const [dRows] = await this.pool.query(
-            "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
-            [destDefId]
-          );
-          ownerProcessId = dRows?.[0]?.process_id ?? null;
-          ownerVariationKey = dRows?.[0]?.variation_key ?? null;
-        }
-        const [delivExisting] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [templateCode]);
-        let newDeliverableId = delivExisting?.[0]?.id;
-        if (!newDeliverableId) {
-          const [delivIns] = await this.pool.query(
-            `INSERT INTO deliverables
-               (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [templateCode, displayName, description, ownerProcessId, ownerVariationKey, templateScope, templateSeedId, ownerPersonId]
-          );
-          newDeliverableId = delivIns.insertId;
-          insertedDeliverableId = newDeliverableId;
-        }
-        const [result] = await this.pool.query(
-          `INSERT INTO template_artifacts (
-            storage_version,
-            lifecycle_state,
-            base_object_prefix,
-            available_formats,
-            schema_object_key,
-            meta_object_key,
-            content_hash,
-            deliverable_id,
-            is_active
-          ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
-          [
-            storageVersion,
-            baseObjectPrefix,
-            JSON.stringify(availableFormats),
-            schemaObjectKey,
-            metaObjectKey,
-            contentHash,
-            newDeliverableId
-          ]
-        );
-        createdId = result.insertId;
-      }
+      // El corte en dos objetos NO es cosmético: es el modelo. El ALMACENAMIENTO vive en
+      // `template_artifacts` (una fila por edición) y la IDENTIDAD en `deliverables` (una por
+      // entregable, compartida por sus ediciones). Cada método toca la tabla que le toca.
+      const almacenamiento = {
+        storageVersion, baseObjectPrefix, availableFormats, schemaObjectKey, metaObjectKey, contentHash
+      };
+      const identidad = {
+        templateCode, displayName, description, templateScope, templateSeedId, ownerPersonId
+      };
+
+      createdId = isEdit
+        ? await this._persistDraftEdit({ existingArtifact, almacenamiento, identidad })
+        : await this._persistDraftCreation({
+            processDefinitionId: data.process_definition_id,
+            almacenamiento,
+            identidad,
+            registrarDeshacer
+          });
 
       // Vínculo a proceso destino. Obligatorio para ejecutores (GestorEjecucionProcesos):
       // su plantilla debe colgar de un proceso ya definido o de 'default'. Opcional para diseñadores.
       // El requisito de vínculo obligatorio para ejecutores al crear ya se validó arriba (fail-fast);
       // en edición el vínculo previo se conserva. Aquí solo se materializa el vínculo si llega un destino.
-      insertedLinkId = await this._linkDraftToProcessDefinition({
+      // Devuelve el id SOLO si lo insertó esta llamada, y `null` si el vínculo ya existía: por eso
+      // se puede registrar el deshacer sin comprobar nada más.
+      const insertedLinkId = await this._linkDraftToProcessDefinition({
         processDefinitionId: data.process_definition_id,
         templateArtifactId: createdId,
         itemMode: requestedItemMode
       });
+      if (insertedLinkId) {
+        registrarDeshacer(() => this.pool.query("DELETE FROM process_definition_templates WHERE id = ?", [insertedLinkId]));
+      }
 
       // Si se definieron flujos y el artifact ya está vinculado a configuraciones de proceso,
       // sincroniza inmediatamente fill/signature flow templates desde el meta.yaml recién subido.
@@ -1592,31 +1723,22 @@ export default class TemplateLifecycleService {
           : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.") + workflowNotice
       };
     } catch (error) {
-      // Rollback en creación: deshace las filas que insertó ESTA llamada y limpia los objetos
-      // huérfanos subidos a MinIO. En edición no se limpia MinIO (los objetos pertenecen a un
-      // artifact existente que se conserva).
+      // Desapila: deshacer en orden inverso al de creación es obligatorio porque ninguna FK cascadea
+      // (todas NO ACTION), y aquí sale gratis. Antes sólo se borraba el artifact, así que un fallo
+      // posterior al INSERT en `deliverables` (p. ej. "El proceso destino seleccionado no existe.")
+      // dejaba la fila huérfana; y como el alta busca por `code`, el siguiente intento con el mismo
+      // nombre la REUSABA y se quedaba con `owner_process_id` NULL para siempre.
       //
-      // El orden es el INVERSO al de creación porque ninguna FK cascadea (todas NO ACTION):
-      // vínculo → artifact → deliverable. Antes sólo se borraba el artifact, así que un fallo
-      // posterior al INSERT en `deliverables` (p. ej. "El proceso destino seleccionado no
-      // existe.") dejaba la fila huérfana; y como el alta busca por `code`, el siguiente intento
-      // con el mismo nombre la REUSABA y se quedaba con `owner_process_id` NULL para siempre.
-      //
-      // Sigue siendo best-effort (cada DELETE traga su error): si el fallo ocurriera después de
-      // sincronizar los flujos, las plantillas de flujo colgadas del vínculo lo bloquearían. No
-      // hay hoy ningún camino que lance ahí — el sync atrapa sus propios errores.
-      if (!isEdit) {
-        if (insertedLinkId) {
-          await this.pool.query("DELETE FROM process_definition_templates WHERE id = ?", [insertedLinkId]).catch(() => {});
-        }
-        if (createdId) {
-          await this.pool.query("DELETE FROM template_artifacts WHERE id = ?", [createdId]).catch(() => {});
-        }
-        if (insertedDeliverableId) {
-          await this.pool.query("DELETE FROM deliverables WHERE id = ?", [insertedDeliverableId]).catch(() => {});
-        }
-        if (uploadedToMinio) {
-          await removeMinioPrefix(bucket, baseObjectPrefix).catch(() => {});
+      // Best-effort a propósito: cada compensación traga su error para que un fallo al deshacer no
+      // tape el error ORIGINAL, que es el que se relanza. Si el fallo ocurriera después de
+      // sincronizar los flujos, las plantillas de flujo colgadas del vínculo bloquearían su borrado;
+      // hoy no hay ningún camino que lance ahí, porque el sync atrapa sus propios errores.
+      while (compensaciones.length) {
+        const deshacer = compensaciones.pop();
+        try {
+          await deshacer();
+        } catch {
+          // Deliberado: se pierde el fallo al compensar, no el original.
         }
       }
       throw error;

@@ -21,7 +21,7 @@
 > | **F** · `postgres.js` | ✅ **(08-08)** — las dos peores funciones, **108 → 15 puntos**; 60 casos + fuzz de 200 000 entradas |
 > | **H** · la nota D de seguridad | ✅ **(08-08)** — cerrada la única CRITICAL: seguridad **D → C** |
 > | **I** · residuos de la migración a PostgreSQL | ✅ **(08-09)** — 4 `UPDATE … JOIN` de MySQL, uno con **una función rota para todos los usuarios** |
-> | **C** · partir `saveTemplateArtifactDraft` | 🟡 CC 164 → **76**. Lo que queda no es refactor: es rediseñar la compensación de errores |
+> | **C** · partir `saveTemplateArtifactDraft` | ✅ **(08-09)** — CC 164 → **21**. La compensación pasa a poseerla cada paso (Command) |
 > | **D** · controllers → servicios | 🟡 **2 de 5** (`user_controler` cogn. 337 → **182**); faltan las tres de firma, **ya con red** |
 > | **E** · frontend | 🟡 **4 de 5** — `httpClient` cerrado (08-09); falta solo colores/forks |
 > | **F** · `signer/app.py` | ✅ **(08-09)** — corte de identidad hecho: bloque **142 → 84**; 266 pruebas, cobertura **89,4 %**. Queda el traslado a fichero propio |
@@ -601,7 +601,7 @@ renames, así que el código movido **no** entra como código nuevo. No hay que 
 |---|---|---|
 | **A · Arreglar el instrumento** | Sonar medía mal: los tests contaban como código de producción y no había cobertura enchufada. Sin esto, cualquier mejora es inmedible | ✅ **Hecha** |
 | **B · Etiquetado de formularios** | 289 incidencias de accesibilidad (`label` sin control asociado). Eran el 35 % del backlog y **la nota entera de fiabilidad** | ✅ **Hecha** — C → A, cero bugs |
-| **C · Partir `saveTemplateArtifactDraft`** | La peor función del backend: 563 líneas que crecían solas con cada cambio | 🟡 **A medias** — 164 → 76. Lo que queda **no es refactor**, es rediseñar la compensación de errores |
+| **C · Partir `saveTemplateArtifactDraft`** | La peor función del backend: 563 líneas que crecían solas con cada cambio | ✅ **Hecha** — 164 → **21**; ya no es la peor del repo |
 | **D · Controllers → servicios** | Lógica de negocio viviendo en la capa de transporte, contra la regla no negociable de CLAUDE.md | ✅ **Hecha (5 de 5)** — las dos de `user_controler` (08-07) y las tres de firma (08-09) |
 | **E · Frontend** | Cinco deudas sueltas: estado mal repartido, sistema de diseño, la URL como fuente de verdad, `httpClient`, y la 2.ª peor función del repo | 🟡 **4 de 5** — falta solo colores/forks |
 | **F · Los dos nunca auditados** | `signer/app.py` (el peor fichero del repo) y `postgres.js` (el más denso) | ✅ **Los dos** — `postgres.js` 108 → 15, y el corte de identidad del signer 142 → 84 |
@@ -623,7 +623,7 @@ en `docs/plan-cobertura-2026-08.md`.
    `zzzz_sign_workflow` (approve sin PDF sale 500; una solicitud manual sin responsable se la queda
    quien la inicie).
 3. ~~**Fase F** — el corte de identidad del signer~~ ✅ hecho el 08-09. Queda solo el **traslado** de ese bloque a `signer/certificates.py` (F4 de la auditoría), que ya es mecánico.
-4. **Fase C** — el núcleo transaccional. Pide **decidir** quién posee la compensación (§5-C).
+4. ~~**Fase C** — el núcleo transaccional~~ ✅ cerrada el 08-09 con Command. Queda `_resolveDraftRequest` en 25, y **no** se toca: el orden de sus guardas es contrato.
 5. **Fase E** — los colores, que van detrás de limpiar los forks. (`httpClient` ✅ cerrado el 08-09.)
 
 Lo demás del backlog (48 ternarios anidados, 28 regex, 33 de contraste) **no está asignado a ninguna
@@ -838,7 +838,47 @@ compartido o `<input>` suelto antes de decidir por dónde entrar. Medir tras el 
 
 </details>
 
-### Fase C — `saveTemplateArtifactDraft` — 🟡 **cortada a la mitad (2026-08-06)**
+### Fase C — `saveTemplateArtifactDraft` — ✅ **CERRADA (2026-08-09)**
+
+> **Resultado final: CC 164 → 21 (−87 %).** Ya no es la peor función del repositorio ni está cerca:
+> la peor hoy es `FirmarPdf.vue` con 44. La segunda pasada (08-09) la llevó de **76 a 21** extrayendo
+> `_persistDraftEdit`, `_persistDraftCreation`, `_resolveDraftRequest` y `_writeDraftPackage`.
+>
+> **Cómo se desbloqueó lo que este plan daba por no-refactorizable.** §5-C decía, con razón, que el
+> núcleo transaccional no se podía extraer sin **decidir antes quién posee la compensación**: cuatro
+> variables (`createdId`, `uploadedToMinio`, `insertedDeliverableId`, `insertedLinkId`) compartidas
+> entre el `try` y el `catch` porque no hay transacción. Es el olor **Temporary Field**.
+>
+> La respuesta fue **Command** (`docs/patrones-diseno-2026-08.md` §3.1): **cada paso registra su
+> propio deshacer en cuanto tiene éxito**, y el `catch` solo desapila. Tres de las cuatro variables
+> desaparecen —`createdId` se queda porque es el resultado, no compensación— y **dos invariantes
+> pasan de "hay que acordarse" a "se cumplen solas"**:
+>
+> 1. Solo se deshace lo que **esta** llamada hizo: un `deliverable` REUSADO no registra nada, así que
+>    es imposible borrarlo por error.
+> 2. Se deshace en orden **inverso** al de creación —obligatorio, porque ninguna FK cascadea— por el
+>    simple hecho de desapilar, en vez de por mantener a mano el orden del `catch`.
+>
+> **Y el `catch` traga el fallo al compensar a propósito**, para no tapar el error original, que es el
+> que se relanza.
+>
+> **Prueba de que es refactor puro:** char **238/238 con los goldens byte a byte intactos** en las tres
+> pasadas, incluidos los dos casos que existen justo para esto —«POST draft con proceso inexistente →
+> falla y NO deja el deliverable huérfano» y «reintentar tras la creación fallida → el deliverable
+> nace con su proceso dueño»—. Más 389 unitarios y `check:imports`.
+>
+> **Lo que NO cuadró, y conviene saberlo antes de repetir el método:** extraer `_resolveDraftRequest`
+> llevó la función de **59 a 32**, pero el extraído se quedó en **25** — es decir, **la primera
+> extracción apenas movió el total (59 → 57 repartido)**. Mejoró la legibilidad, no la métrica: esa
+> ramificación es **inherente** (una cascada de guardas de admisión), no anidamiento duplicado. Lo que
+> sí bajó el total fue separar responsabilidades de verdad (disco / base de datos / compensación).
+>
+> **Deuda que queda anotada:** `_resolveDraftRequest` sigue en **25**. Es una cascada de guardas y
+> **el ORDEN de esas guardas es contrato** —está caracterizado y el frontend distingue los mensajes—,
+> así que convertirla en tabla es tentador y arriesgado. Se deja como está, con el aviso escrito en el
+> propio método.
+
+<details><summary>Estado intermedio tras la primera pasada (2026-08-06), conservado</summary>
 
 **CC 164 → 76 (−54 %), y de 563 a ~310 líneas.** Deja de ser el doble que la siguiente.
 
@@ -871,6 +911,8 @@ se sigue: la rama de creación (`deliverable` + `template_artifact`) y la identi
 
 Verde en cada corte: `node --check`, `check:imports`, unit 218/218 y **caracterización 161/161 con los
 goldens intactos**, que es la prueba de que son refactor puro.
+
+</details>
 
 <details><summary>Redacción original de la fase (referencia)</summary>
 

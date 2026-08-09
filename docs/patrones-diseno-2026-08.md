@@ -59,7 +59,18 @@ Tres. Solo tres.
 
 ### 3.1 · **Command** para la compensación de `saveTemplateArtifactDraft` — el mejor encaje del repo
 
-**Estado: pendiente. Es la fase C del plan maestro, y este patrón es la respuesta a su pregunta abierta.**
+**Estado: ✅ HECHO el 2026-08-09 (fase C). CC 164 → 21**, y deja de ser la peor función del repo. El
+patrón hizo exactamente lo que se esperaba: **respondió a la pregunta de diseño que bloqueaba el
+corte**, y con ella tres de las cuatro variables compartidas desaparecieron.
+
+Lo que más valor tiene, y que no se ve en la métrica: **dos invariantes pasaron de «hay que
+acordarse» a «se cumplen solas»** — solo se deshace lo que esta llamada hizo, y se deshace en orden
+inverso. Antes eran dos comentarios pidiendo cuidado; ahora son consecuencia de desapilar.
+
+**El aviso que sí se cumplió**, y conviene retener para el próximo: extraer la cascada de validación
+llevó la función de 59 a 32 **pero el extraído se quedó en 25** — o sea, el total apenas se movió.
+Separar por *responsabilidad* (disco / base de datos / compensación) bajó la métrica; separar por
+*tamaño* solo la repartió.
 
 §5-C dice que lo que queda (CC 76) no se puede extraer porque *«hay que decidir antes **quién posee la
 compensación**»*. Hoy el `try` de persistencia comparte con su `catch` cuatro variables
