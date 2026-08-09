@@ -1,0 +1,170 @@
+# Análisis de SonarQube — MANUAL a propósito (workflow_dispatch), no en cada push.
+#
+# ── Por qué no está enchufado al job de calidad de cd-multienv.yml ────────────────────────
+# El SonarQube de este proyecto está AUTOALOJADO en la máquina del desarrollador
+# (`scripts/sonar/compose.yml`, publicado en http://localhost:9002). Un runner de GitHub
+# Actions no tiene ninguna ruta de red hasta ese host, así que un step de Sonar en el
+# workflow de push fallaría en rojo en TODOS los commits, para siempre, sin aportar una sola
+# medición. Este workflow es la versión que sí se sostiene: existe, está listo, y se activa
+# el día que haya un servidor alcanzable — sin ensuciar el CI mientras tanto.
+#
+# ── Qué hay que crear para activarlo ──────────────────────────────────────────────────────
+# Dos secrets del repositorio (Settings > Secrets and variables > Actions > New repository secret):
+#
+#   SONAR_HOST_URL   URL del servidor Sonar alcanzable DESDE INTERNET.
+#                    Ej.: https://sonarcloud.io  ó  https://sonar.tudominio.ec
+#                    NO vale http://localhost:9002 (véase arriba).
+#   SONAR_TOKEN      Token de usuario del proyecto `deasy`.
+#                    Administration > Security > Users > Tokens, o por API:
+#                    curl -u admin:<pass> -X POST "$SONAR_HOST_URL/api/user_tokens/generate" \
+#                         -d "name=deasy-ci"
+#
+# Mientras falte cualquiera de los dos, el job termina en VERDE con un aviso en el resumen:
+# es un skip explícito, no un fallo. Así el estado del CI sigue significando algo.
+#
+# ── Publicar el servidor local NO es gratis ───────────────────────────────────────────────
+# Si se opta por exponer el SonarQube de `scripts/sonar/compose.yml`, hay que arreglar antes
+# lo que hoy es aceptable solo porque escucha en local: la base de datos va con
+# `sonar/sonar` y el servicio no tiene TLS. Alternativa sin operar nada: SonarCloud
+# (gratis en repos públicos), que solo cambia el valor de SONAR_HOST_URL.
+#
+# ── Cobertura ─────────────────────────────────────────────────────────────────────────────
+# Los dos informes lcov se REGENERAN aquí antes de escanear. No es opcional: Sonar no avisa
+# cuando el lcov es de una corrida anterior, se limita a publicar una cobertura falsa
+# (plan-calidad-2026-08 §5-A.2). Los scripts `test:unit:coverage` de cada módulo ya emiten
+# las rutas `SF:` relativas a la RAÍZ DEL REPO — el backend corriendo desde `..`, el frontend
+# con un `sed` sobre el lcov —, que es como `sonar-project.properties` las espera.
+
+name: SonarQube
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: sonar-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analizar con SonarQube
+    runs-on: ubuntu-latest
+    steps:
+      # Sin esto el job se pondría rojo en todos los repos que aún no tienen servidor.
+      # Un skip explícito y verde dice la verdad; un fallo permanente entrena a ignorar el CI.
+      - name: Comprobar que hay un servidor Sonar configurado
+        id: guard
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "${SONAR_HOST_URL:-}" ] || [ -z "${SONAR_TOKEN:-}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### SonarQube: análisis omitido"
+              echo
+              echo "Faltan los secrets \`SONAR_HOST_URL\` y/o \`SONAR_TOKEN\`."
+              echo
+              echo "El SonarQube del proyecto está autoalojado en \`localhost:9002\` y un runner"
+              echo "de GitHub no puede alcanzarlo. Para activar este workflow hace falta un"
+              echo "servidor accesible por internet (SonarCloud o un SonarQube publicado) y"
+              echo "declarar los dos secrets en *Settings > Secrets and variables > Actions*."
+              echo
+              echo "Mientras tanto el análisis se sigue lanzando a mano:"
+              echo '```bash'
+              echo 'docker compose -f scripts/sonar/compose.yml up -d'
+              echo 'bash scripts/docker-env.sh dev exec -T backend  npm run test:unit:coverage'
+              echo 'bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage'
+              echo 'SONAR_TOKEN=<token> bash scripts/sonar/scan.sh'
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice title=SonarQube omitido::Faltan SONAR_HOST_URL y/o SONAR_TOKEN; no hay servidor que escanear."
+            exit 0
+          fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      # fetch-depth: 0 no es cosmético. Con el clon superficial que hace checkout por defecto
+      # el escáner no puede leer el blame de git, y sin blame no sabe qué es "código nuevo":
+      # el New Code period (PREVIOUS_VERSION, anclado al 2026-07-09) dejaría de medir.
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.configured == 'true'
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        if: steps.guard.outputs.configured == 'true'
+        with:
+          version: 10.17.1
+
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.configured == 'true'
+        with:
+          node-version: 25
+
+      - name: Install backend dependencies
+        if: steps.guard.outputs.configured == 'true'
+        working-directory: backend
+        run: npm ci
+
+      # `test:unit:coverage` hace `cd ..` y lanza los globs como `backend/**`, para que las
+      # rutas SF del lcov salgan relativas a la raíz del repo. Ejecutarlo desde otro sitio
+      # rompe esa propiedad y Sonar descarta el informe en silencio.
+      - name: Backend coverage (lcov)
+        if: steps.guard.outputs.configured == 'true'
+        working-directory: backend
+        run: npm run test:unit:coverage
+
+      - name: Install frontend dependencies
+        if: steps.guard.outputs.configured == 'true'
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Frontend coverage (lcov)
+        if: steps.guard.outputs.configured == 'true'
+        working-directory: frontend
+        run: pnpm run test:unit:coverage
+
+      # Comprobación barata que evita el modo de fallo caro: escanear con un lcov ausente o
+      # heredado y publicar una cobertura que nadie va a cuestionar.
+      - name: Verificar que los dos informes existen y son de esta corrida
+        if: steps.guard.outputs.configured == 'true'
+        run: |
+          set -euo pipefail
+          status=0
+          for report in backend/coverage/lcov.info frontend/coverage/lcov.info; do
+            if [ ! -s "$report" ]; then
+              echo "::error title=Cobertura ausente::$report no existe o está vacío."
+              status=1
+              continue
+            fi
+            echo "$report: $(grep -c '^SF:' "$report") ficheros instrumentados."
+            # Las rutas SF han de ser relativas a la raíz del repo (backend/... , frontend/...).
+            if grep -q '^SF:' "$report" && ! grep -qE '^SF:(backend|frontend)/' "$report"; then
+              echo "::error title=Rutas SF inválidas::$report no usa rutas relativas a la raíz del repo; Sonar las descartaría."
+              status=1
+            fi
+          done
+          exit $status
+
+      # Se reutiliza el escáner dockerizado que ya usa el proyecto en vez de una acción de
+      # terceros: misma imagen, mismo comportamiento en local y en CI, una dependencia menos.
+      - name: Ejecutar sonar-scanner
+        if: steps.guard.outputs.configured == 'true'
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: bash scripts/sonar/scan.sh
+
+      - name: Resumen
+        if: steps.guard.outputs.configured == 'true'
+        run: |
+          {
+            echo "### SonarQube: análisis enviado"
+            echo
+            echo "Revisión: \`${GITHUB_SHA}\` (\`${GITHUB_REF_NAME}\`)"
+            echo
+            echo "El servidor procesa la tarea DESPUÉS de recibirla, así que las métricas"
+            echo "tardan un poco en reflejarse en el dashboard del proyecto \`deasy\`."
+          } >> "$GITHUB_STEP_SUMMARY"
