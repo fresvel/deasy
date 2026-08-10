@@ -1,0 +1,2212 @@
+% =====================================================================
+%  Arquitectura del repositorio Deasy (PUCE Sede Esmeraldas)
+%  Documento de lectura. Compilar con:  pdflatex -interaction=nonstopmode
+%  (dos pasadas para el indice)
+% =====================================================================
+\documentclass[11pt,a4paper,oneside]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.4cm]{geometry}
+
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{framed}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------------
+% Columnas para tablas
+% ---------------------------------------------------------------------
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% ---------------------------------------------------------------------
+% Cajas de aviso / concepto / nota
+% ---------------------------------------------------------------------
+\newenvironment{concepto}[1][Concepto para juniors]{%
+  \par\medskip
+  \colorlet{shadecolor}{blue!7}%
+  \begin{shaded}\noindent\textbf{\color{blue!55!black}#1.}\ \ignorespaces}%
+  {\end{shaded}\par\medskip}
+
+\newenvironment{aviso}[1][Aviso]{%
+  \par\medskip
+  \colorlet{shadecolor}{orange!14}%
+  \begin{shaded}\noindent\textbf{\color{orange!45!black}#1.}\ \ignorespaces}%
+  {\end{shaded}\par\medskip}
+
+\newenvironment{nota}[1][Nota]{%
+  \par\medskip
+  \colorlet{shadecolor}{black!6}%
+  \begin{shaded}\noindent\textbf{#1.}\ \ignorespaces}%
+  {\end{shaded}\par\medskip}
+
+% ---------------------------------------------------------------------
+% Codigo y diagramas ASCII
+% ---------------------------------------------------------------------
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\definecolor{codekw}{rgb}{0.35,0.10,0.55}
+\definecolor{codecm}{rgb}{0.30,0.45,0.30}
+\definecolor{codestr}{rgb}{0.55,0.20,0.10}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecm}\itshape,
+  stringstyle=\color{codestr},
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{black!25},
+  xleftmargin=6pt,
+  xrightmargin=2pt,
+  aboveskip=8pt,
+  belowskip=8pt,
+  tabsize=2,
+}
+
+% Entorno para diagramas ASCII (sin resaltado, sin ajuste de linea)
+\lstnewenvironment{diagrama}[1][]
+  {\lstset{basicstyle=\ttfamily\scriptsize,language={},breaklines=false,#1}}
+  {}
+
+% Atajo para identificadores en linea
+\newcommand{\rt}[1]{\texttt{#1}}
+
+% ---------------------------------------------------------------------
+% Cabeceras
+% ---------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\nouppercase{\leftmark}}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+
+\title{\Huge\bfseries Arquitectura del sistema \textsc{Deasy}\\[0.4cm]
+       \large Guia de lectura completa del repositorio}
+\author{PUCE Sede Esmeraldas}
+\date{9 de agosto de 2026}
+
+\begin{document}
+
+\pagenumbering{roman}
+\maketitle
+
+\begin{center}
+\begin{minipage}{0.85\textwidth}
+\small
+\textbf{Sobre este documento.} Es una explicacion detallada y didactica de la arquitectura
+del monorepo \textsc{Deasy}, escrita asumiendo cero contexto previo. Recorre el negocio,
+las ocho piezas que corren en contenedores, el camino completo de una peticion HTTP, el
+backend capa por capa, el modelo de datos y el motor de procesos, el frontend, el
+microservicio de firma, la infraestructura y el despliegue, la estrategia de pruebas, las
+trampas conocidas del repositorio y una ruta de lectura sugerida.
+
+Todo lo que se afirma aqui procede de la lectura directa del codigo: rutas de fichero,
+nombres de tabla, numeros de linea y conteos son reales en el momento de escribirlo.
+\end{minipage}
+\end{center}
+
+\vfill
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+% =====================================================================
+\chapter{Que es Deasy (el problema de negocio)}
+% =====================================================================
+
+Antes de la arquitectura, el \textbf{para que}. Deasy es una plataforma de la
+\textbf{PUCE Sede Esmeraldas} para gestionar los \textbf{tramites documentales recurrentes}
+de la universidad: informes de gestion docente, requerimientos, informes de investigacion
+formativa, memorandos, etc.
+
+Hoy, sin Deasy, esos tramites viven en Word y PDF por correo: nadie sabe quien debe
+entregar que, en que periodo, ni quien falta por firmar. Deasy modela cuatro cosas:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}P{3.2cm}L@{}}
+\toprule
+\textbf{Pregunta} & \textbf{Como la modela} \\
+\midrule
+?`Quien?           & Organigrama: unidades $\rightarrow$ puestos $\rightarrow$ personas ocupandolos \\
+?`Que?             & Plantillas de documento, versionadas \\
+?`Cuando?          & Periodos academicos (\rt{terms}) \\
+?`Con que recorrido? & Flujos de \emph{entrega} (quien llena y revisa) y de \emph{firma} (quien firma y en que orden) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Y encima de todo eso, \textbf{firma electronica real} (PAdES, con certificados \rt{.p12} de
+las autoridades certificadoras ecuatorianas: Security Data, ICERT y Firmasegura).
+
+% =====================================================================
+\chapter{Vista de pajaro: ocho piezas en contenedores}
+% =====================================================================
+
+Todo el sistema esta \textbf{dockerizado}. No hay un ``servidor'' monolitico, sino ocho
+procesos que se hablan por red.
+
+\begin{diagrama}
+                        Navegador
+                            | HTTPS
+                            v
+                  +--------------------+
+                  |   nginx (proxy)    |  <- el portero: TLS + reparto de trafico
+                  +----------+---------+
+                     /                \
+              "/"   /                  \  "/api/..."
+                   v                    v
+          +--------------+     +------------------+
+          |   frontend   |     |     backend      |  Node 25 + Express 5
+          |    Vue 3     |     |    (API REST)    |  + Socket.IO (tiempo real)
+          +--------------+     +--+------+------+-+
+                                  |      |      |
+             +--------------------+      |      +--------------------+
+             v                           v                           v
+    +-----------------+       +-------------------+       +-----------------+
+    |  PostgreSQL 17  |       |       MinIO       |       |    RabbitMQ     |
+    |  (los datos)    |       |  (los ficheros)   |       |   (la cola)     |
+    +-----------------+       +---------+---------+       +--------+--------+
+                                        |                          |
+                                        +------------+-------------+
+                                                     v
+                                          +----------------------+
+                                          |        signer        |  Python + pyHanko
+                                          |     (firma PDFs)     |  + helper Node "sigmaker"
+                                          +----------------------+
+\end{diagrama}
+
+Traduccion de cada pieza para alguien que empieza:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{nginx}: el ``portero'' del edificio. Es lo unico expuesto a internet.
+        Termina el HTTPS (descifra) y, segun la URL, manda la peticion al frontend o al
+        backend. Tambien es lo que permite que el frontend llame a \rt{/api/...} sin
+        problemas de CORS.
+  \item \textbf{frontend}: la aplicacion web (Vue 3). En produccion es HTML, JS y CSS
+        estatico servido por un nginx pequenito dentro de su propia imagen.
+  \item \textbf{backend}: la API. Recibe peticiones HTTP, decide que se puede hacer, guarda
+        en PostgreSQL, sube ficheros a MinIO y encola trabajos de firma en RabbitMQ.
+  \item \textbf{PostgreSQL}: la base de datos relacional. \textbf{Es el unico motor de
+        datos}: MariaDB y MongoDB fueron retirados. Veras comentarios ``ex-MongoDB'' en el
+        codigo; son cicatrices de esa migracion.
+  \item \textbf{MinIO}: almacenamiento de objetos compatible con S3. Los PDFs, plantillas,
+        fotos de perfil y certificados \textbf{no} se guardan en la base de datos ni en el
+        disco del backend: van aqui, en \emph{buckets} (contenedores de primer nivel).
+  \item \textbf{RabbitMQ}: una cola de mensajes. Sirve para que el backend le pida al signer
+        ``firma este PDF'' \textbf{sin quedarse bloqueado} esperando.
+  \item \textbf{signer}: microservicio Python que hace la firma criptografica real.
+  \item \textbf{analytics}: hoy es un marcador de posicion (\rt{CMD ["sleep","infinity"]}),
+        no hace nada.
+\end{itemize}
+
+\begin{concepto}[Por que esa separacion importa]
+Si la firma se hiciera dentro del backend, un PDF de 200 paginas bloquearia el servidor para
+todos los usuarios mientras se procesa. Al ponerlo detras de una cola, el backend delega el
+trabajo pesado y sigue atendiendo peticiones normalmente.
+\end{concepto}
+
+% =====================================================================
+\chapter{El recorrido completo de una peticion}
+% =====================================================================
+
+Esto es lo que mas ayuda a orientarse en un repositorio nuevo. Sigue una peticion desde el
+clic del usuario hasta la respuesta:
+
+\begin{diagrama}
+1. El navegador pide  https://localhost:8443/api/deasy/v1/users/me
+                                             \___/\__________/
+                                             nginx    backend
+
+2. nginx (nginx/app-conf.d/default.conf.template):
+   location /api/ { proxy_pass http://backend:3030/; }
+                                                   ^
+                           esa barra final BORRA el prefijo /api
+
+3. El backend recibe   /deasy/v1/users/me
+   (el prefijo /deasy/v1 se define en backend/config/apiPaths.js)
+
+4. backend/index.js  ->  app.use(ROUTES.USERS, user_router)
+
+5. backend/routes/user_router.js  ->  authMiddleware
+                                  ->  loadAccessContext
+                                  ->  requirePermissions("account.read")
+                                  ->  controlador
+
+6. backend/controllers/users/user_controler.js  ->  llama a UN servicio
+
+7. backend/services/...  ->  SQL contra PostgreSQL via getPostgresPool()
+
+8. Vuelta:  res.json({...})  ->  nginx  ->  navegador
+\end{diagrama}
+
+Ese es el noventa por ciento del sistema. Todo lo demas son variaciones sobre este mismo
+esqueleto.
+
+% =====================================================================
+\chapter{El backend en detalle}
+% =====================================================================
+
+Es la pieza mas grande: unas 30.000 lineas de JavaScript \textbf{ESM} (\rt{import} y
+\rt{export}, no \rt{require}), Express 5, sin ORM.
+
+\section{Las capas y la regla no negociable del proyecto}
+
+\begin{diagrama}
+routes/       "que URL?"       Solo define paths y encadena middlewares
+   |
+   v
+controllers/  "transporte"     Valida entrada, llama a UN servicio, responde HTTP
+   |
+   v
+services/     "la logica"      Reglas de negocio, transacciones, maquinas de estado
+   |
+   v
+config/postgres.js             Acceso a datos (pool de conexiones)
+\end{diagrama}
+
+El fichero \rt{CLAUDE.md} del repositorio lo dice sin rodeos: \textbf{``Los controllers son
+transporte, no logica''}. Si un controller pasa de unas 40 lineas o abre una transaccion,
+hay que extraer un servicio. Esto no siempre se ha respetado --- hay infractores historicos
+como \rt{user\_controler.js} con 1.513 lineas --- y estan catalogados como deuda tecnica en
+\rt{docs/planes/referencia/calidad-y-medicion.md}.
+
+\subsection{Que hay dentro de cada capa}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{\rt{routes/}}: 14 ficheros planos (\rt{user\_router.js}, \rt{sign\_router.js},
+        \rt{admin\_router.js}, \rt{chat\_router.js}, \rt{dossier\_router.js}, etc.). Todos
+        cuelgan del prefijo \rt{/deasy/v1}.
+  \item \textbf{\rt{controllers/}}: 8 subcarpetas por dominio (\rt{users/}, \rt{admin/},
+        \rt{sign/}, \rt{chat/}, \rt{tareas/}, \rt{system/}, \rt{whatsapp/}, \rt{empresa/}),
+        27 ficheros en total.
+  \item \textbf{\rt{services/}}: 18 subcarpetas, unos 66 ficheros. Aqui estan los dominios
+        reales: \rt{admin/} (con sub-subcarpetas \rt{kernel/}, \rt{crud/}, \rt{templates/},
+        \rt{processes/}, \rt{org/}, \rt{generation/}), \rt{auth/}, \rt{chat/},
+        \rt{documents/}, \rt{sign/}, \rt{system/}, \rt{tasks/}, \rt{users/}, \rt{mail/},
+        \rt{storage/}, \rt{realtime/}, \rt{infrastructure/}, \rt{whatsapp/}, \rt{external/}.
+  \item \textbf{\rt{database/}}: solo dos ficheros --- \rt{postgres\_initializer.js} y
+        \rt{postgres\_schema.sql}. No es una capa de repositorios, es el arranque del esquema.
+\end{itemize}
+
+Un detalle de diseno elegante en \rt{services/admin/}: la carpeta \rt{kernel/} \textbf{no
+importa a nadie} y todos importan de ella. Nada apunta ``hacia arriba''. Eso evita
+dependencias circulares, que en JavaScript producen errores dificilisimos de diagnosticar en
+tiempo de ejecucion.
+
+\subsection{Inventario de routers}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{4.2cm}P{3.1cm}P{1.3cm}L@{}}
+\toprule
+\textbf{Router} & \textbf{Montaje} & \textbf{Lineas} & \textbf{Autenticacion} \\
+\midrule
+\rt{user\_router.js}           & \rt{/users}         & 318 & mixta (login y create son publicos) \\
+\rt{admin\_router.js}          & \rt{/admin}         & 32  & \rt{authMiddleware} + \rt{loadAccessContext} a nivel de router \\
+\rt{sql\_admin\_router.js}     & \rt{/admin/sql}     & 139 & hereda del padre + \rt{requireSqlAdminPermission} \\
+\rt{sign\_router.js}           & \rt{/sign}          & 93  & por ruta \\
+\rt{dossier\_router.js}        & \rt{/dossier}       & 85  & \rt{authMiddleware} + \rt{loadAccessContext} \\
+\rt{chat\_router.js}           & \rt{/chat}          & 53  & \rt{authMiddleware} (sin RBAC) \\
+\rt{whatsapp\_router.js}       & \rt{/whatsapp}      & 25  & \textbf{ninguna} \\
+\rt{tarea\_router.js}          & \rt{/tarea}         & 15  & solo en \rt{/supervised-stuck} \\
+\rt{reset\_password\_router.js}& \rt{/reset-password}& 14  & publica \\
+\rt{notification\_router.js}   & \rt{/notifications} & 12  & \rt{authMiddleware} \\
+\rt{email\_router.js}          & \rt{/email}         & 9   & publica \\
+\rt{program\_router.js}        & \rt{/program}       & 9   & \textbf{ninguna} \\
+\rt{unit\_router.js}           & \rt{/units}         & 9   & \textbf{ninguna} \\
+\rt{system\_router.js}         & \rt{/system}        & 9   & publica (bootstrap) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{nota}[Duplicaciones reales]
+\rt{program\_router.js} y \rt{unit\_router.js} son \emph{identicos}: ambos exponen
+\rt{getPrograms} y \rt{createProgram} del mismo controlador. Y \rt{notification\_router.js}
+duplica dos endpoints que ya estan en \rt{chat\_router.js}.
+\end{nota}
+
+\section{El punto de entrada: \rt{backend/index.js}}
+
+Monta los middlewares en este orden exacto:
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{0.8cm}P{5.6cm}L@{}}
+\toprule
+\textbf{\#} & \textbf{Que monta} & \textbf{Detalle} \\
+\midrule
+0 & \rt{import "dotenv/config"} & primera linea del fichero \\
+1 & \rt{app.set("trust proxy", 1)} & va detras de nginx \\
+2 & \rt{app.use(cors(...))} & envuelto en un middleware propio; loguea el origen en \emph{cada} peticion \\
+3 & \rt{app.use(express.json())} & parser JSON global \\
+4 & \rt{app.use(cookieParser())} & necesario para la cookie \rt{refreshToken} \\
+5 & \rt{app.get("/health")} & llama a \rt{assertPostgresConnection()}; 200 o 503 \\
+6 & Swagger UI & en \rt{/deasy/docs} \\
+7 & \rt{/deasy/docs.json} & el JSON crudo del spec \\
+8 & Los 14 routers & ver tabla anterior \\
+9 & \rt{express.static("public")} & la carpeta \rt{backend/public/} esta vacia \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+El arranque (\rt{startServer()}) hace, en secuencia:
+
+\begin{diagrama}
+startServer()
+ |- initializeDatabaseWithRetry()      // bucle de reintentos
+ |    |- assertPostgresConnection()    // config/postgres.js
+ |    +- ensurePostgresSchema({reset}) // database/postgres_initializer.js
+ |- http.createServer(app)
+ |- realtimeGateway.init(httpServer, { corsOrigin, credentials: true })
+ |- httpServer.listen(PORT)            // PORT || 3030
+ +- IIFE async: SqlAdminService().reconcileArtifactWorkflows({ onlyStale: true })
+\end{diagrama}
+
+Los reintentos se parametrizan con \rt{DB\_INIT\_MAX\_ATTEMPTS} (20),
+\rt{DB\_INIT\_RETRY\_DELAY\_MS} (3000) y \rt{DB\_RESET\_SCHEMA\_ON\_START}. Si se agotan los
+reintentos, \textbf{el backend no aborta}: loguea el fallo y sigue escuchando.
+
+\begin{nota}[Que NO se conecta al arrancar]
+RabbitMQ no abre conexion (se usa su API HTTP bajo demanda). MinIO construye el cliente al
+importar el modulo, pero no crea buckets al arrancar. El bot de WhatsApp solo se inicializa
+por peticion explicita. Y Swagger se configura con \rt{apis: []}, o sea que \textbf{no}
+escanea anotaciones JSDoc: todo el spec es un objeto estatico en
+\rt{backend/config/swagger/definition.js} (581 lineas).
+\end{nota}
+
+\section{El acceso a datos: un adaptador peculiar}
+
+Aqui hay algo que confunde si no se explica. El fichero \rt{backend/config/postgres.js}
+(512 lineas) \textbf{no es un cliente de PostgreSQL normal}. Es un \textbf{adaptador que
+finge ser \rt{mysql2/promise}}.
+
+?`Por que? El proyecto \textbf{migro de MariaDB a PostgreSQL}. Habia unos 881 sitios en el
+codigo escribiendo SQL en estilo MySQL. Reescribirlos todos era inviable, asi que se escribio
+una capa que traduce al vuelo. Hace tres cosas.
+
+\subsection{\rt{bindParams}: traduce los marcadores de posicion}
+
+MySQL usa \rt{?}; PostgreSQL usa \rt{\$1}, \rt{\$2}:
+
+\begin{lstlisting}[language=Java]
+// Lo que escribe el programador:
+pool.query("SELECT * FROM persons WHERE cedula = ? AND status = ?", [ced, "Activo"])
+
+// Lo que llega a PostgreSQL:
+"SELECT * FROM persons WHERE cedula = $1 AND status = $2"
+\end{lstlisting}
+
+Y es cuidadoso: no toca los \rt{?} que estan dentro de comentarios (\rt{--}, \rt{/* */}) o de
+literales de texto, porque mantiene una tabla de ``tramos protegidos''. Ademas expande
+parametros de tipo array igual que hacia mysql2: un escalar da \rt{\$n}; un array vacio da
+\rt{NULL}; \rt{[1,2,3]} da \rt{\$1, \$2, \$3}; y \rt{[[1,2],[3,4]]} da \rt{(\$1,\$2), (\$3,\$4)}.
+
+Un cambio reciente e importante: \textbf{falla ruidosamente si faltan parametros}. Antes
+mandaba \rt{NULL} en silencio, que es peor porque el fallo aparece lejos de su causa. El
+mensaje de error, a proposito, \emph{no} incluye el SQL: varios controllers responden
+\rt{error.message} directamente al cliente.
+
+\subsection{\rt{translateDialect}: traduce funciones}
+
+\rt{IFNULL} $\rightarrow$ \rt{COALESCE}; \rt{GROUP\_CONCAT} $\rightarrow$ \rt{string\_agg};
+\rt{CURDATE()} y \rt{CURTIME()} $\rightarrow$ sus equivalentes; \rt{FROM DUAL} desaparece;
+\rt{<=>} $\rightarrow$ \rt{IS NOT DISTINCT FROM}; \rt{INSERT IGNORE} $\rightarrow$
+\rt{ON CONFLICT DO NOTHING}; \rt{IF()} $\rightarrow$ \rt{CASE WHEN}; \rt{FIELD()}
+$\rightarrow$ un \rt{CASE} posicional; \rt{YEAR()}, \rt{MONTH()} $\rightarrow$ \rt{EXTRACT}.
+
+El caso mas delicado es \rt{ON DUPLICATE KEY UPDATE} $\rightarrow$
+\rt{ON CONFLICT (...) DO UPDATE SET}, porque PostgreSQL exige que le digas \emph{sobre que
+columnas} es el conflicto. El adaptador lo \textbf{infiere consultando el catalogo} de
+PostgreSQL (\rt{pg\_index}) y cachea el resultado en memoria.
+
+\subsection{Transacciones al estilo mysql2}
+
+\begin{lstlisting}[language=Java]
+const conn = await pool.getConnection();
+await conn.beginTransaction();     // ejecuta BEGIN
+try {
+  await conn.query("INSERT ...");
+  await conn.query("UPDATE ...");
+  await conn.commit();
+} catch (e) {
+  await conn.rollback();
+} finally {
+  conn.release();                  // devuelve la conexion al pool
+}
+\end{lstlisting}
+
+Hay 11 ficheros de produccion que usan transacciones, entre ellos
+\rt{services/admin/generation/launch.js}, \rt{services/admin/templates/templateLifecycle.js},
+\rt{services/documents/FillRequestWorkflowService.js}, \rt{services/sign/PdfSigningService.js}
+y \rt{services/system/SystemBootstrapService.js}.
+
+\begin{concepto}[Que es un ``pool'' de conexiones]
+Abrir una conexion a la base de datos es caro (decenas de milisegundos: handshake de red,
+autenticacion, negociacion). Un \emph{pool} mantiene N conexiones ya abiertas y te presta una
+cuando la necesitas. Aqui \rt{max = 10}. Por eso es \textbf{critico} llamar siempre a
+\rt{release()}: si te olvidas, se agotan las diez y la aplicacion entera se cuelga esperando
+una conexion que nunca vuelve.
+\end{concepto}
+
+\begin{aviso}[El SQL no lo valida nadie hasta que se ejecuta esa rama]
+Textual del \rt{CLAUDE.md}. El SQL es una cadena de texto: \rt{node --check} no la mira, el
+detector de imports tampoco, y el backend arranca igual. Asi sobrevivieron meses \emph{cuatro}
+sentencias \rt{UPDATE ... INNER JOIN ... SET} (sintaxis multi-tabla de MySQL que PostgreSQL
+\textbf{rechaza}) que dejaron el endpoint \rt{POST /sign/fill-requests/:id/return}
+\textbf{roto para todo el mundo}.
+
+PostgreSQL quiere \rt{UPDATE tabla alias SET col = ... FROM otra WHERE union AND filtros}, con
+las columnas del \rt{SET} \textbf{sin cualificar}. Y \rt{grep "UPDATE.*JOIN"} \emph{no
+encuentra nada}, porque el SQL ocupa varias lineas.
+\end{aviso}
+
+\subsection{Donde vive el SQL}
+
+\rt{getPostgresPool} se importa en \textbf{28 ficheros}: 17 en \rt{services/}, 5 en
+\rt{controllers/}, y el resto en \rt{config/}, \rt{database/} y \rt{utils/}. Es decir,
+\textbf{no hay una capa de repositorios unica} --- es una deuda conocida. Solo
+\rt{services/auth/} tiene repositorios nominales (\rt{UserRepository.js},
+\rt{UserCertificateRepository.js}).
+
+\section{El CRUD generico de administracion}
+
+Esta es una de las piezas mas ingeniosas del backend. En vez de escribir un controlador para
+cada una de las 46 tablas administrables, hay tres ficheros que colaboran:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{\rt{backend/config/sqlTables.js}} (1.009 lineas): un \textbf{catalogo
+        declarativo} de metadatos. Para cada tabla describe sus campos, etiquetas humanas,
+        tipos, cuales son obligatorios y cuales de solo lectura.
+  \item \textbf{\rt{backend/services/admin/SqlAdminService.js}} (884 lineas): lee ese catalogo
+        y \textbf{construye los SELECT, INSERT, UPDATE y DELETE dinamicamente}.
+  \item \textbf{\rt{backend/services/admin/crud/tableHooks.js}} (1.137 lineas): los
+        ``injertos'' --- la logica especial que necesita cada tabla concreta.
+\end{itemize}
+
+Una entrada del catalogo tiene esta forma:
+
+\begin{lstlisting}[language=Java]
+{
+  table: "unit_types",
+  label: "Tipos de unidad",
+  category: "Estructura",
+  primaryKeys: ["id"],
+  fields: [
+    { name: "name", label: "Nombre", type: "text", required: true },
+    ...
+  ],
+  searchFields: ["name"]
+}
+\end{lstlisting}
+
+\textbf{Ventaja}: anadir una tabla al panel de administracion es anadir una entrada al
+catalogo, no escribir un CRUD entero. \textbf{Desventaja}: \rt{tableHooks.js} se ha convertido
+en un cajon de sastre. El \rt{CLAUDE.md} avisa: \emph{``No injertes casos especiales en el
+camino generico. Es el olor que hizo God a AdminTableManager''}.
+
+\section{Autenticacion y autorizacion}
+
+Son \textbf{dos cosas distintas} y conviene no confundirlas nunca:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Autenticacion} = ``?`quien eres?'' $\rightarrow$ JWT
+  \item \textbf{Autorizacion} = ``?`puedes hacer esto?'' $\rightarrow$ RBAC
+\end{itemize}
+
+\subsection{Autenticacion (JWT)}
+
+\begin{diagrama}
+POST /users/login  { cedula, password }
+   |
+   v
+AuthService.login()  ->  bcrypt.compare(password, password_hash)
+   |
+   v
+Devuelve DOS tokens:
+   * access token   -> 2 horas   -> en el JSON; el frontend lo guarda en localStorage
+   * refresh token  -> 30 dias   -> en una COOKIE httpOnly (el JS no puede leerla)
+\end{diagrama}
+
+\begin{concepto}[Por que dos tokens]
+El \emph{access token} viaja en cada peticion, asi que si te lo roban el dano dura poco (dos
+horas). El \emph{refresh token} solo se usa para pedir uno nuevo, y al ser una cookie
+\rt{httpOnly}, un script malicioso inyectado en la pagina \textbf{no puede leerlo} desde
+JavaScript. Es defensa en profundidad: dos secretos con exposiciones distintas.
+\end{concepto}
+
+Detalles concretos: el access token se firma con \rt{JWT\_SECRET} y expira en
+\rt{60*60*2} segundos; el refresh con \rt{JWT\_REFRESH} y expira en \rt{60*60*24*30}. La
+cookie lleva \rt{httpOnly: true} y \rt{secure} activo salvo en modo desarrollador.
+
+El payload del JWT es \textbf{solo \rt{\{ uid \}}}. Nada de roles ni permisos dentro. Eso es
+deliberado: si metieras los permisos en el token, revocarle un rol a alguien no tendria efecto
+hasta que expirase. Aqui los permisos se resuelven \textbf{contra la base de datos en cada
+peticion}.
+
+La politica de contrasenas vive en \rt{backend/utils/passwordPolicy.js}
+(\rt{evaluatePasswordPolicy}, exige 3 de 5 criterios) y la aplica
+\rt{backend/middlewares/val\_password.js}, que ademas \emph{hashea en el sitio}
+\rt{req.body.password} con bcrypt y salt 10 antes de llamar a \rt{next()}.
+
+\subsection{Autorizacion (RBAC)}
+
+RBAC son las siglas de \emph{Role-Based Access Control}, control de acceso basado en roles.
+El modelo es:
+
+\begin{diagrama}
+resources x actions  -->  permissions ("dossier.read", "signature_flows.update", ...)
+                                |
+                                v
+                          role_permissions  -->  roles
+                                                   |
+                                                   v
+                                            role_assignments (persona + rol + UNIDAD)
+                                                   ^ derived_from_assignment_id
+                                            position_assignments  <--  cargo_role_map
+\end{diagrama}
+
+Trece recursos (\rt{account}, \rt{dossier}, \rt{security}, \rt{people}, \rt{units},
+\rt{academic\_terms}, \rt{process\_definitions}, \rt{process\_execution}, \rt{templates},
+\rt{documents}, \rt{fill\_flows}, \rt{signature\_flows}, \rt{contracts}) por cinco acciones
+(\rt{read}, \rt{create}, \rt{update}, \rt{delete}, \rt{manage}) dan \textbf{65 permisos}. Y hay
+\textbf{13 roles}.
+
+Dos sutilezas importantes:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Los roles son contextuales a una unidad.} Puedes ser \rt{GestorProcesos} en la
+        Facultad de Ingenieria y nadie en el resto de la universidad. La tabla
+        \rt{role\_assignments} lleva \rt{unit\_id} y un \rt{max\_depth}: hasta que profundidad
+        del subarbol organizativo se hereda el rol.
+  \item \textbf{Hay roles derivados automaticamente del puesto.} La tabla \rt{cargo\_role\_map}
+        dice, por ejemplo, ``el cargo DOCENTE otorga el rol GestorEjecucionProcesos''. Y un
+        \textbf{trigger de PostgreSQL} (\rt{trg\_position\_assignments\_after\_insert}) crea
+        esas asignaciones con \rt{source='derived'} cuando alguien ocupa el puesto, y las
+        revoca cuando lo deja. Ese mismo trigger \textbf{reasigna los entregables abiertos} al
+        nuevo ocupante.
+\end{enumerate}
+
+Los middlewares estan en \rt{backend/middlewares/rbac.js}:
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{6.2cm}L@{}}
+\toprule
+\textbf{Middleware} & \textbf{Que comprueba} \\
+\midrule
+\rt{loadAccessContext}                & Carga roles y permisos en \rt{req.auth} / \rt{req.access}; 401 si el usuario no existe o esta inactivo \\
+\rt{requirePermissions(reqs, \{all\})}& Que tenga el permiso (OR por defecto, AND con \rt{\{all:true\}}) \\
+\rt{requireAnyRole(roles)}            & Que tenga alguno de los roles indicados \\
+\rt{requireRouteUserAccess(\{...\})}  & Que sea \textbf{el dueno} del recurso \textbf{o} tenga rol elevado, \emph{y} ademas el permiso \\
+\rt{requireCedulaAccess(\{...\})}     & Igual, pero comparando por cedula \\
+\rt{requireDossierAccess(action)}     & Azucar sintactico sobre el anterior con \rt{resource: "dossier"} \\
+\rt{requireSqlAdminPermission(...)}   & Deduce el recurso desde \rt{req.params.table} y la accion desde el metodo HTTP \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{aviso}[Por que existe \rt{requireDossierAccess}]
+Por un \textbf{IDOR} real y cerrado. IDOR (\emph{Insecure Direct Object Reference}) es el fallo
+donde cambiando un identificador en la URL accedes a datos que no son tuyos. Aqui el guard
+miraba \emph{la tarea} en vez de \emph{el entregable}, y un docente podia descargar el
+documento de otro.
+\end{aviso}
+
+El catalogo canonico esta en \rt{backend/config/rbacCatalog.js} (229 lineas) y es tambien la
+\textbf{fuente de siembra}: \rt{SystemBootstrapService.js} lo importa para poblar roles y
+permisos en la base de datos, borrando y reescribiendo \rt{role\_permissions} en cada arranque.
+O sea que \textbf{el catalogo del codigo es la fuente de verdad}, no la base de datos.
+
+\section{Manejo de errores}
+
+Hay una decision de diseno explicita: \textbf{no hay un middleware de error global}. Cada
+controller hace su propio \rt{catch}:
+
+\begin{lstlisting}[language=Java]
+catch (error) {
+  res.status(error.statusCode ?? 500).json({ message: error.message });
+}
+\end{lstlisting}
+
+\rt{backend/errors/HttpError.js} define la clase y las fabricas: \rt{notFound()} (404),
+\rt{forbidden()} (403), \rt{conflict()} (409), \rt{badRequest()} (400). El comentario de
+cabecera del fichero dice literalmente que \emph{``un error SIN statusCode sigue siendo un 500
+--- y eso esta bien''}.
+
+Aparte, \rt{backend/errors/sqlErrors.js} traduce los codigos SQLSTATE de PostgreSQL a mensajes
+humanos: \rt{23505} (violacion de UNIQUE) da ``ya existe una persona con esa cedula''. Y lo
+hace comparando por \textbf{nombre de constraint} (\rt{error.constraint}), no buscando
+subcadenas en el mensaje, que es fragil y se rompe al cambiar de idioma o de version.
+
+Un cuarto elemento: \rt{backend/middlewares/uploadError.js} traduce los siete codigos de error
+de \rt{multer} a mensajes en espanol y \textbf{oculta el mensaje si es un 5xx}. Se monta con
+\rt{router.use(handleUploadError)} \emph{despues} de las rutas, en tres routers
+(\rt{user\_router}, \rt{dossier\_router}, \rt{sign\_router}). Existe porque sin el, Express
+devolvia HTML con el stack trace completo, incluidas las rutas absolutas dentro del contenedor.
+
+\section{Integraciones externas}
+
+\subsection{RabbitMQ, con sorpresa}
+
+Aunque \rt{amqplib} figura en \rt{package.json}, \textbf{no se usa en ningun sitio}. Toda la
+comunicacion va por la \textbf{API HTTP de gestion} de RabbitMQ
+(\rt{backend/services/infrastructure/rabbitmq\_http.js}). El patron es \textbf{RPC con
+polling}:
+
+\begin{diagrama}
+Backend genera correlationId = randomUUID()
+  -> crea la cola de respuesta   deasy.sign.response.<uuid>
+  -> publica el trabajo en       deasy.sign.request
+  -> hace polling cada SIGN_POLL_MS (1000 ms) de la cola de respuesta
+     hasta SIGN_TIMEOUT_MS (120000 ms)
+\end{diagrama}
+
+Las tres colas: \rt{deasy.sign.request}, \rt{deasy.sign.validate.request} y el prefijo
+\rt{deasy.sign.response}. No hay consumidores persistentes en el backend: el consumidor real es
+el microservicio signer.
+
+\subsection{MinIO: siete buckets}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{4.0cm}P{5.2cm}L@{}}
+\toprule
+\textbf{Bucket} & \textbf{Variable de entorno} & \textbf{Contenido} \\
+\midrule
+\rt{deasy-templates}    & \rt{MINIO\_TEMPLATES\_BUCKET}    & plantillas y semillas \\
+\rt{deasy-documents}    & \rt{MINIO\_DOCUMENTS\_BUCKET}    & documentos generados \\
+\rt{deasy-dossier}      & \rt{MINIO\_DOSSIER\_BUCKET}      & respaldos del CV personal \\
+\rt{deasy-spool}        & \rt{MINIO\_SPOOL\_BUCKET}        & area temporal de firma \\
+\rt{deasy-chat}         & \rt{MINIO\_CHAT\_BUCKET}         & adjuntos del chat \\
+\rt{deasy-users}        & \rt{MINIO\_USERS\_BUCKET}        & fotos de perfil \\
+\rt{deasy-certificates} & \rt{MINIO\_CERTIFICATES\_BUCKET} & certificados \rt{.p12} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+La lista canonica esta en \rt{backend/scripts/lib/reset\_targets.mjs}.
+
+\subsection{Socket.IO (tiempo real)}
+
+\rt{services/realtime/RealtimeGateway.js} (179 lineas) esta montado sobre el \textbf{mismo
+servidor HTTP} que Express, en el path \rt{/socket.io}. Sustituyo a un broker MQTT (EMQX).
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Autenticacion}: con \textbf{el mismo JWT} que la API, leido de
+        \rt{socket.handshake.auth.token}. Al cliente siempre se le dice ``Token invalido''; el
+        motivo real va al log.
+  \item \textbf{Rooms} (mapeo uno a uno de los antiguos topics MQTT): \rt{user:\{personId\}}
+        (join automatico), \rt{conversation:\{id\}}, \rt{process:\{id\}}.
+  \item \textbf{Eventos entrantes}: \rt{conversation:subscribe}, \rt{conversation:unsubscribe},
+        \rt{process:subscribe}, \rt{process:unsubscribe}, todos con callback de confirmacion.
+        La suscripcion \textbf{reutiliza la autorizacion REST}, no la reimplementa.
+  \item \textbf{Eventos salientes}: \rt{chat.message.created} y \rt{chat.notification.created}.
+\end{itemize}
+
+\subsection{Correo, WhatsApp y servicios ecuatorianos}
+
+\rt{backend/lib/mailer.js} son once lineas de \rt{nodemailer} con el host SMTP
+\textbf{escrito a fuego} en el codigo. El bot de WhatsApp
+(\rt{services/whatsapp/WhatsAppBot.js}, 272 lineas) usa \rt{whatsapp-web.js} sobre Puppeteer
+headless y muestra el QR de vinculacion por terminal; se inicializa manualmente y sus seis
+endpoints \textbf{no llevan autenticacion}. Y \rt{services/external/webservices\_ec.js} valida
+cedulas y numeros ecuatorianos contra un servicio externo.
+
+\section{Los scripts del backend}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{5.0cm}P{0.9cm}L@{}}
+\toprule
+\textbf{Fichero} & \textbf{L.} & \textbf{Para que} \\
+\midrule
+\rt{reset.mjs} & 114 &
+  CLI de reset con \textbf{objetivos positivos y explicitos}:
+  \rt{node scripts/reset.mjs <db|storage> [--yes]}. Sin argumentos imprime el uso y sale
+  \textbf{sin tocar nada}. Antes eran tres ficheros con borrado por defecto y opt-out
+  (\rt{--keep-db}); se invirtio la logica. \\
+\rt{lib/reset\_targets.mjs} & 155 &
+  Libreria: \rt{resetPostgres()}, \rt{resetMinio()} (vacia los 7 buckets) y
+  \rt{describeContents()} (inventario previo al borrado). \\
+\rt{bootstrap\_admin\_recovery.mjs} & 46 &
+  Recupera o recrea el administrador. \rt{npm run recover:admin}. \\
+\rt{check\_missing\_imports.mjs} & 124 &
+  \textbf{Detector de ``simbolo movido pero no importado''}. Ver el aviso de abajo. \\
+\rt{seed\_dev\_rich.mjs} & 284 &
+  Fixture rica de desarrollo: crea un segundo proceso en modo \rt{single} y lo lanza, porque
+  con el proceso unico del bootstrap la pantalla \rt{/home} no se puede verificar. \\
+\rt{generate\_demo\_certificates.mjs} & 220 &
+  Genera certificados PKCS\#12 autofirmados con openssl y los sube a
+  \rt{deasy-certificates}, porque la interfaz solo permite \emph{subir} un \rt{.p12}. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{aviso}[\rt{npm run check:imports} es obligatorio tras mover codigo]
+\rt{node --check} valida \textbf{sintaxis, no imports}. Un simbolo movido sin su \rt{import} es
+sintaxis perfectamente valida, el modulo \textbf{carga sin quejarse}, y revienta en tiempo de
+\textbf{llamada}. Asi estuvieron rotos tres semanas cuatro \rt{ReferenceError} en produccion
+(\rt{createUnitWithParent}, \rt{getCargoCodeMap},
+\rt{getNextStorageVersionForTemplateCode}, \rt{loadTemplateArtifactMetaDocument}).
+
+Comprobar que el backend arranca \textbf{no sustituye} a ejecutar este script. Esta en CI.
+\end{aviso}
+
+\begin{nota}[No hay migraciones incrementales]
+No existe nada tipo Flyway o Knex. El esquema se aplica \textbf{entero} en cada arranque desde
+\rt{backend/database/postgres\_schema.sql}, apoyandose en que es idempotente
+(\rt{CREATE TABLE IF NOT EXISTS}, \rt{CREATE OR REPLACE FUNCTION}, siembras con
+\rt{ON CONFLICT}).
+\end{nota}
+
+% =====================================================================
+\chapter{La base de datos y el motor de procesos}
+% =====================================================================
+
+\textbf{67 tablas} y una vista, en un unico fichero:
+\rt{backend/database/postgres\_schema.sql} (1.398 lineas).
+
+\begin{aviso}[Consecuencia de no tener migraciones]
+El esquema entero se reaplica en cada arranque. Es simple y funciona bien sin datos de
+produccion, pero significa que \textbf{no puedes hacer un \rt{ALTER TABLE} evolutivo} de forma
+comoda: cualquier cambio de columna hay que pensarlo como idempotente o pasa por un reset.
+\end{aviso}
+
+\section{Vocabulario del dominio}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{2.9cm}LP{3.6cm}@{}}
+\toprule
+\textbf{Termino} & \textbf{Que es en Deasy} & \textbf{Donde vive} \\
+\midrule
+\textbf{Proceso} &
+  El tramite institucional en abstracto (``Informe de Gestion Docente''). Es solo un nombre y
+  una jerarquia; el comportamiento esta en sus \emph{configuraciones}. &
+  \rt{processes} \\
+\textbf{Configuracion} &
+  La version vigente del proceso: a quien alcanza, en que periodos corre, que entregables
+  produce. Se activa y se retira. &
+  \rt{process\_definition\_versions} \\
+\textbf{Serie} &
+  El \emph{eje} por el que un proceso se declina: por tipo de unidad, por cargo, o
+  \rt{default} (sin variacion). &
+  \rt{process\_definition\_series} \\
+\textbf{Regla} &
+  Quien recibe el proceso: que unidades, que cargo o puesto, con que politica de reparto. &
+  \rt{process\_target\_rules} \\
+\textbf{Corrida (run)} &
+  El acto de \emph{lanzar} la configuracion en un periodo. Genera las tareas. &
+  \rt{process\_runs} \\
+\textbf{Tarea} &
+  La instancia del proceso para un ambito concreto (una unidad, un periodo). Es el contenedor. &
+  \rt{tasks} \\
+\textbf{Entregable} &
+  Cada documento concreto a producir dentro de la tarea, con responsable, vencimiento y estado. &
+  \rt{task\_items} \\
+\textbf{Plantilla} &
+  El \emph{molde} del documento: schema de campos + cuerpo (Jinja2/LaTeX u ofimatico) +
+  formatos, versionado y almacenado en MinIO. &
+  \rt{deliverables} + \rt{template\_artifacts} \\
+\textbf{Flujo de entrega} &
+  Cadena de pasos ``quien llena y aprueba el documento antes de firmarlo''. &
+  \rt{fill\_flow\_*} / \rt{fill\_requests} \\
+\textbf{Firma} &
+  Firma electronica PAdES sobre el PDF, con certificado \rt{.p12} del firmante. &
+  \rt{signature\_flow\_*} / \rt{document\_signatures} \\
+\textbf{Dossier} &
+  El \textbf{expediente o CV personal} (titulos, experiencia, publicaciones). \emph{No} es el
+  expediente de un proceso. &
+  \rt{dossiers} + \rt{dossier\_items} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{El motor de procesos: serie, regla y flujo}
+
+Esta es \textbf{la parte central del dominio} y la que mas cuesta al principio. La frase
+mnemotecnica del proyecto:
+
+\begin{center}
+\emph{la \textbf{serie} nombra el proceso, la \textbf{regla} reparte el proceso,
+el \textbf{flujo} reparte los pasos.}
+\end{center}
+
+\begin{diagrama}
+processes                          "Informe de Gestion Docente"  (solo un nombre)
+   |
+   +--> process_definition_versions      LA CONFIGURACION (draft / active / retired)
+          |    ^ series_id -> process_definition_series   <- LA SERIE (el eje de variacion)
+          |
+          +--> process_target_rules              <- LA REGLA: a que unidades y cargos alcanza
+          +--> process_definition_period_types   <- en que tipos de periodo corre
+          +--> process_definition_templates      <- que documentos produce (+ item_mode)
+          |
+          +--> process_runs                      <- EL LANZAMIENTO en un periodo concreto
+                 |
+                 +--> tasks                      <- una por (definicion x periodo x unidad)
+                        |
+                        +--> task_items          <- LOS ENTREGABLES concretos
+                               |
+                               +--> documents -> document_versions
+                                      |
+                                      +--> document_fill_flows / fill_requests      (entrega)
+                                      +--> signature_flow_instances / signature_requests (firma)
+\end{diagrama}
+
+\subsection{Tabla por tabla}
+
+\paragraph{\rt{processes}.} Solo identidad: \rt{name}, \rt{slug} unico, \rt{parent\_id}
+autorreferencial, \rt{is\_active}. \textbf{Sin comportamiento.} Se hizo \rt{DROP} de
+\rt{unit\_id}, \rt{program\_id}, \rt{person\_id} y \rt{term\_id} por vestigiales.
+
+\paragraph{\rt{process\_definition\_series} --- la serie.}
+\rt{source\_type} puede ser \rt{unit\_type}, \rt{cargo} o \rt{default}. Es el \textbf{eje de
+variacion}: el mismo proceso puede tener una configuracion distinta por tipo de unidad o por
+cargo. La funcion \rt{buildProcessDefinitionVersionName} genera el nombre resultante:
+\emph{``<Proceso> por <Serie>''}, salvo en \rt{default}, que usa el nombre del proceso a secas.
+
+\paragraph{\rt{process\_definition\_versions} --- la configuracion.}
+Tiene \rt{status} (\rt{draft}, \rt{active}, \rt{retired}) y vigencia
+(\rt{effective\_from} / \rt{effective\_to}). Dos mecanismos de integridad:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item Una \textbf{columna generada} \rt{active\_series\_flag} mas un indice UNIQUE sobre
+        \rt{(process\_id, variation\_key, active\_series\_flag)} garantiza \textbf{a nivel de
+        base de datos} que solo hay una version activa por linea.
+  \item Un \textbf{trigger} (\rt{trg\_process\_definition\_versions\_before\_update}) impide
+        activarla si no tiene al menos una regla activa \emph{y} un tipo de periodo, lanzando
+        una excepcion con mensaje en espanol.
+\end{itemize}
+
+\begin{concepto}[Reglas de negocio dentro de la base de datos]
+Es poco habitual y merece la pena entender el porque: si la regla ``no se puede activar sin
+reglas de alcance'' viviera solo en el codigo, cualquier script, migracion o consulta manual
+podria saltarsela. Al ponerla en un trigger, \textbf{es imposible dejar la base de datos en un
+estado invalido}, venga la escritura de donde venga.
+\end{concepto}
+
+\paragraph{\rt{process\_target\_rules} --- la regla.}
+Reparte el alcance con tres piezas: \rt{unit\_scope\_type} (\rt{unit\_exact},
+\rt{unit\_subtree}, \rt{unit\_type}, \rt{all\_units}), el \rt{cargo\_id} o \rt{position\_id}
+dentro de la unidad, y una \rt{recipient\_policy} (\rt{all\_matches}, \rt{one\_per\_unit},
+\rt{exact\_position}). Ademas \rt{priority} y vigencia.
+
+\paragraph{\rt{process\_definition\_templates} --- el paquete de entregables.}
+Vincula configuracion con plantilla: \rt{process\_definition\_id} + \rt{template\_artifact\_id},
+mas \rt{sort\_order} y, sobre todo, \rt{item\_mode}.
+
+\paragraph{\rt{process\_runs} --- la corrida.}
+\rt{run\_mode} (\rt{automatic} o \rt{manual}), \rt{source\_run\_id} autorreferencial para
+relanzamientos, \rt{created\_by\_user\_id}, \rt{reason} y \rt{status}. Relanzar es \textbf{una
+corrida nueva}, no sobrescribir la anterior.
+
+\paragraph{\rt{tasks}.}
+Con un UNIQUE sobre \rt{(process\_definition\_id, term\_id, normalized\_scope\_unit\_id)} ---
+donde la ultima es una columna generada \rt{COALESCE(scope\_unit\_id, 0)} --- que garantiza
+\textbf{idempotencia del lanzamiento}: lanzar dos veces no duplica tareas.
+
+\section{\rt{item\_mode}: los tres modos de emision}
+
+Vive en \rt{process\_definition\_templates.item\_mode}, es decir, \textbf{en el vinculo
+plantilla-proceso}, no en la plantilla. Es un matiz importante. Define \emph{cuando} nace el
+entregable y \emph{de donde sale su flujo}:
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{2.2cm}P{3.4cm}LP{3.4cm}@{}}
+\toprule
+\textbf{Modo} & \textbf{Flujo} & \textbf{Instanciacion} & \textbf{Ejemplo} \\
+\midrule
+\rt{single} &
+  Predefinido en la plantilla (entrega y firma) &
+  Una instancia automatica al lanzar, por cada responsable que resuelvan las reglas &
+  Informe de Investigacion Formativa \\
+\rt{replicated} &
+  Predefinido &
+  \textbf{Sin fan-out automatico}: el responsable crea N replicas etiquetadas que
+  \textbf{heredan} el flujo del original &
+  Un requerimiento por cada docente nuevo \\
+\rt{routed} &
+  \textbf{Ninguno} &
+  El usuario define entrega y firma \textbf{al instanciar} (en tiempo de ejecucion) &
+  Tareas ad-hoc \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Truco de implementacion para distinguirlos en la base de datos: los flujos \emph{de plantilla}
+tienen \rt{task\_item\_id IS NULL}; los flujos creados en tiempo de ejecucion tienen
+\rt{task\_item\_id != NULL}. Los materializa \rt{materializeRuntimeFlowForTaskItem}.
+
+Las replicas son \rt{task\_items} con \rt{origin\_kind='user\_added'} enlazadas por
+\rt{source\_task\_item\_id} al original.
+
+El \textbf{``Proceso por defecto''} (slug \rt{default}, sembrado por el bootstrap) es un
+\rt{routed} comodin para tareas ad-hoc que no pertenecen a ningun proceso (por ejemplo, ``haz
+el informe de este evento''). El \rt{CLAUDE.md} insiste: \textbf{no es ``memorandums''}.
+
+\begin{nota}[Resolutores de flujo autorables]
+Solo \rt{task\_assignee} (``Responsable del entregable'') y \rt{cargo\_in\_scope} (``Por
+cargo'') en plantillas \emph{official}; \rt{specific\_person} se anade en \emph{ad\_hoc}.
+Estan \textbf{deprecados en la autoria web} \rt{document\_owner}, \rt{position} y
+\rt{manual\_pick}: siguen en el ENUM por legado.
+\end{nota}
+
+\begin{aviso}[\rt{document\_owner} NO esta retirado: sigue vivo]
+Es el resolver \textbf{mas usado} de la base de dev. La fase P1.4 retiro el atajo del
+\emph{proceso por defecto} (\rt{SystemBootstrapService.js}), pero dejo el de
+\rt{BASE\_META\_YAML} --- un \rt{meta.yaml} escrito a mano como literal de codigo unas 250
+lineas mas arriba, \textbf{en el mismo fichero}. Y ademas \textbf{se auto-replica}:
+\rt{createTemplateArtifactVersion} copia los objetos de MinIO en binario, asi que cada version
+nueva lo hereda.
+
+\textbf{No lo des por muerto sin consultar \rt{fill\_flow\_steps}.} El plan para retirarlo es el
+frente 0 de \rt{docs/planes/plan-maestro-2026-08.md}.
+\end{aviso}
+
+\section{Plantillas: el modelo ``libro y ediciones''}
+
+\begin{diagrama}
+template_seeds       (semillas del catalogo: source_path, preview_path, seed_type)
+      |
+      v
+deliverables         EL LIBRO    -> code UNIQUE, display_name, owner_process_id,
+                                    template_scope (official | ad_hoc), owner_person_id
+      |  1:N
+      v
+template_artifacts   LA EDICION  -> storage_version, lifecycle_state, base_object_prefix,
+                                    available_formats, schema_object_key, content_hash,
+                                    parent_version_id (autorreferencial = linaje)
+\end{diagrama}
+
+Con UNIQUE sobre \rt{(deliverable\_id, storage\_version)}. El esquema lleva comentarios
+explicitos: la identidad, el proceso propietario, el scope, la semilla y la persona propietaria
+viven en \rt{deliverables}; \rt{template\_artifacts} guarda \textbf{solo} el estado y el
+almacenamiento de cada version.
+
+\begin{aviso}[La palabra ``entregable'' significa dos cosas]
+En \rt{sqlTables.js} la tabla \rt{task\_items} se etiqueta ``Entregables'' (la \emph{instancia}
+a producir). En el esquema, \rt{deliverables} es ``el libro'': la \emph{identidad de la
+plantilla}. Es una fuente real de confusion al leer el codigo; siempre hay que mirar el
+contexto.
+\end{aviso}
+
+\subsection{El contenido: Jinja2 sobre LaTeX}
+
+El cuerpo del documento es un \textbf{contrato Jinja2 + LaTeX} empaquetado en MinIO, no en la
+base de datos. El bootstrap publica la semilla \rt{backend/services/system/seeds/informe-general}
+con \rt{schema.json}, \rt{meta.yaml}, \rt{data.yaml}, \rt{main.tex.j2} y \rt{make.sh}, y valida
+el pipeline: render Jinja2 con \rt{StrictUndefined} $\rightarrow$ \rt{pdflatex} $\rightarrow$ PDF.
+
+La \textbf{propiedad} se expresa por el prefijo dentro de MinIO, en \rt{base\_object\_prefix}:
+\rt{System/...} para las plantillas curadas por el administrador, \rt{Users/\{cedula\}/...}
+para las subidas por un gestor. El pipeline de maduracion documentado es:
+
+\begin{center}
+\rt{office} (Word/Excel/PDF subido por el gestor) $\longrightarrow$
+\rt{jinja2} (curado por el administrador)
+\end{center}
+
+\begin{nota}[Deuda declarada]
+Falta \emph{cablear} el render Jinja2 a PDF en tiempo de ejecucion: hoy \rt{render\_seed.py} es
+utileria de linea de comandos, y el backend no lo invoca.
+\end{nota}
+
+\subsection{Ciclo de vida y versionado}
+
+\rt{template\_artifacts.lifecycle\_state} admite \rt{draft}, \rt{published} y \rt{retired}
+(por defecto \rt{published}). El versionado es \textbf{por linaje}: una fila nueva con
+\rt{storage\_version} nuevo y \rt{parent\_version\_id} apuntando a la anterior.
+\rt{templateLifecycle.js} retira la version publicada previa del mismo codigo al publicar, y
+valida que haya al menos un paso de entrega. Ese ultimo requisito \textbf{se relaja para
+\rt{routed}}, que por definicion no autora flujo.
+
+\section{Firmas}
+
+\begin{diagrama}
+signature_flow_templates  ->  signature_flow_steps  ->  signature_flow_instances
+                                                              |
+                                                              v
+                                          signature_requests  ->  document_signatures
+\end{diagrama}
+
+\rt{signature\_flow\_steps} soporta \textbf{multiples firmantes por paso} (columna
+\rt{signers} de tipo JSONB) con quorum configurable via \rt{approval\_mode}:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \rt{and}: firman \textbf{todos} los del paso.
+  \item \rt{or}: basta \textbf{cualquiera}.
+  \item \rt{at\_least}: un minimo de N, indicado en \rt{required\_signers\_min}.
+\end{itemize}
+
+La columna \rt{anchor\_refs} (JSONB) enlaza el paso con anclas visuales dentro del PDF, es
+decir, donde se dibuja la firma.
+
+Los catalogos de estado se siembran en el propio esquema:
+\rt{signature\_statuses} (\rt{firmado}, \rt{fallido}, \rt{invalido}, \rt{cancelado}) y
+\rt{signature\_request\_statuses} (\rt{pendiente}, \rt{en\_progreso}, \rt{completado},
+\rt{rechazado}, \rt{cancelado}).
+
+\subsection{El flujo de firma en lote}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{5.4cm}L@{}}
+\toprule
+\textbf{Endpoint} & \textbf{Funcion} \\
+\midrule
+\rt{POST /sign/}                       & Firma individual \\
+\rt{POST /sign/validate}               & Validacion de un PDF ya firmado \\
+\rt{POST /sign/batch}                  & \textbf{Retirado} --- devuelve error y redirige a \rt{/batch/start} \\
+\rt{POST /sign/batch/start}            & Arranca el trabajo asincrono (hasta 30 PDFs) \\
+\rt{GET /sign/batch/:jobId}            & Estado del trabajo \\
+\rt{GET /sign/batch/:jobId/download}   & Descarga el ZIP con los resultados \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+El estado se persiste en \rt{signature\_batch\_jobs} (clave \rt{job\_id}, mas \rt{status},
+\rt{total}, \rt{processed}, \rt{success\_count}, \rt{failed\_count} y \rt{results} JSONB), con
+un comentario revelador en el esquema: \emph{``persistido para sobrevivir reinicios del backend
+(antes vivia en un Map en memoria)''}.
+
+Separacion de responsabilidades: \rt{BatchSigningService.js} gestiona el ciclo del trabajo y el
+bucle en segundo plano, pero \textbf{no} decide donde se guarda el PDF ni habla con el firmante
+--- eso es de \rt{PdfSigningService.js}, que llama documento a documento. El ZIP se empaqueta
+con \rt{/usr/bin/zip} (ruta absoluta a proposito).
+
+Ademas del PDF, cada documento del lote lleva metadatos de contexto
+(\rt{signatureRequestId}, \rt{documentVersionId}, \rt{processName}, \rt{unitLabel},
+\rt{termName}, \rt{stepName}), que es lo que permite persistir la evidencia del flujo de
+trabajo y no limitarse a firmar ficheros sueltos.
+
+\section{El dossier (ex-MongoDB)}
+
+El dossier es el CV o expediente personal: titulos, experiencia, publicaciones. Antes vivia en
+MongoDB; ahora son \textbf{dos tablas}:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \rt{dossiers}: la raiz, UNIQUE por \rt{person\_id}, con la \rt{cedula} desnormalizada e
+        indexada.
+  \item \rt{dossier\_items}: \rt{dossier\_id} (con borrado en cascada) + \rt{section} +
+        \textbf{\rt{data} JSONB} + \rt{url\_documento}.
+\end{itemize}
+
+Se conservo la flexibilidad de documento usando JSONB. La justificacion esta en el comentario
+del esquema: \emph{``documento heterogeneo (CV con secciones) accedido siempre como arbol
+completo por cedula''}.
+
+Las antiguas ``colecciones'' de Mongo son ahora valores de \rt{section}: \rt{titulos},
+\rt{experiencia}, \rt{referencias}, \rt{formacion}, \rt{certificaciones}, \rt{articulos},
+\rt{libros}, \rt{ponencias}, \rt{tesis}, \rt{proyectos}.
+
+Por compatibilidad, los \rt{\_id} se exponen como \textbf{String} para preservar el contrato
+que tenia Mongo, y los valores por defecto de cada seccion replican exactamente los del antiguo
+esquema de Mongoose.
+
+\section{Los demas dominios de tablas}
+
+\subsection{Identidad y personas}
+\rt{persons} (con \rt{cedula}, \rt{email} y \rt{token} unicos, \rt{password\_hash},
+\rt{status}), \rt{person\_certificates} (los \rt{.p12} en MinIO, con \rt{is\_default}),
+\rt{email\_verification\_codes}, \rt{password\_reset\_codes}.
+
+\subsection{Organizacion, unidades y puestos}
+\rt{unit\_types}, \rt{units}, \rt{relation\_unit\_types}, \rt{unit\_relations},
+\rt{cargos}, \rt{unit\_positions}, \rt{position\_assignments}. Dos garantias elegantes por
+columna generada:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \rt{unit\_positions.head\_flag} garantiza \textbf{un solo jefe por unidad}.
+  \item \rt{position\_assignments.current\_flag} garantiza \textbf{un solo ocupante actual por
+        puesto}.
+\end{itemize}
+
+Y una vista, \rt{unit\_org\_levels}, que con una CTE recursiva sobre \rt{unit\_relations}
+calcula el nivel organizativo, la unidad raiz y las unidades de nivel 2 y 3 de cada unidad.
+
+Como subdominio propio esta la \textbf{contratacion}: \rt{vacancies}, \rt{aplications},
+\rt{offers}, \rt{contracts}, \rt{contract\_origins} (con herencia por tabla) y
+\rt{vacancy\_visibility}.
+
+\subsection{Entregables, tareas y documentos}
+\rt{tasks}, \rt{task\_items}, \rt{task\_assignments}, \rt{task\_item\_handovers} (bitacora de
+traspaso de responsable), \rt{documents} (1:1 con \rt{task\_items}), \rt{document\_versions}
+(con \rt{version} de tipo \rt{DECIMAL(4,1)}), \rt{document\_attachments} y
+\rt{document\_workflow\_observations} (observaciones, devoluciones y rechazos).
+
+\subsection{Chat y notificaciones}
+\rt{chat\_conversations} (con tipos \rt{direct}, \rt{group}, \rt{thread}, \rt{process\_thread},
+\rt{unit}), \rt{chat\_conversation\_participants}, \rt{chat\_messages},
+\rt{chat\_message\_attachments}, \rt{chat\_message\_reads} y \rt{chat\_notifications}.
+
+\begin{nota}[Decision de diseno explicita]
+En el dominio de chat, \rt{person\_id}, \rt{process\_id} y \rt{unit\_id} son \textbf{claves
+foraneas logicas sin constraint}, ``para no acoplar''. Y \rt{last\_message\_id} tampoco lleva FK,
+para evitar un ciclo de dependencias entre tablas.
+\end{nota}
+
+\subsection{Auditoria}
+\textbf{No existe una tabla de auditoria general} (nada de \rt{audit\_log} o \rt{bitacora}). La
+trazabilidad es \textbf{especifica por dominio}: \rt{task\_item\_handovers} para los traspasos,
+\rt{document\_workflow\_observations} para devoluciones, \rt{role\_assignments.revoked\_at} y
+\rt{revoked\_reason} para revocaciones, \rt{signature\_batch\_jobs.results} para el resultado
+por fichero, y \rt{created\_at} / \rt{updated\_at} con trigger \rt{set\_updated\_at()} en la
+mayoria de tablas.
+
+% =====================================================================
+\chapter{El frontend}
+% =====================================================================
+
+\textbf{Vue 3 + Vite 8 + vue-router 5 + Tailwind v4 + Vitest}, sin TypeScript. 216 ficheros
+en \rt{src/}: 126 \rt{.vue}, 87 \rt{.js} y 3 \rt{.css}.
+
+\section{Organizacion: modular por dominio}
+
+\begin{diagrama}
+src/
++-- core/       infraestructura transversal (router, httpClient, apiConfig, accessControl)
++-- layouts/    esqueletos de pagina (AppWorkspaceShell, headers, menus)
++-- modules/    LOS DOMINIOS
+|   +-- admin/     (~80 ficheros)  panel de administracion + grafos
+|   +-- home/      (26)            bandeja de tareas y entregables
+|   +-- perfil/    (28)            el dossier del usuario
+|   +-- firmas/    (8)             firma de PDFs
+|   +-- auth/      (8)             login, registro, bootstrap
+|   +-- dossier/   (1)             solo el servicio
+|   +-- procesos/  (1)
++-- shared/     componentes y utilidades reutilizables
+\end{diagrama}
+
+\begin{nota}[Lo que NO existe]
+No hay carpeta \rt{src/assets/} (los estaticos viven en \rt{frontend/public/}), ni
+\rt{src/views/} ni \rt{src/components/} de nivel raiz: todo esta bajo \rt{modules/} y
+\rt{shared/}. Y el \textbf{chat no es un modulo}: vive como widget compartido en
+\rt{shared/components/widgets/WorkspaceChatLauncher.vue}.
+\end{nota}
+
+\section{El arranque}
+
+\rt{src/main.js} tiene 569 bytes y hace lo minimo: crea la app, registra globalmente un unico
+componente (\rt{font-awesome-icon}), importa los dos CSS globales, marca el entorno local en un
+atributo del DOM, y monta el router.
+
+\rt{App.vue} solo tiene dos cosas: un \rt{<router-view :key="route.fullPath">} y un
+\rt{SessionExpiryModal} global gobernado por \rt{useSessionMonitor}.
+
+Sobre Vite: no hay \rt{server.proxy} --- el proxy es nginx, externo. El alias \rt{@} apunta a
+\rt{src}. Y de Tailwind v4 \textbf{no hay \rt{tailwind.config.js} ni \rt{postcss.config.js}}: se
+usa el plugin de Vite mas directivas dentro del propio CSS
+(\rt{@import "tailwindcss";} en \rt{shared/styles/tailwind.css}).
+
+\section{Estado: no hay Pinia ni Vuex}
+
+Esto sorprende viniendo de cualquier tutorial de Vue. El patron real es de tres capas:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Composables que poseen su propio estado.} Una funcion \rt{useXxx()} declara sus
+        \rt{ref} y los devuelve. Ejemplo: \rt{useFlowBuilder.js} tiene seis \rt{ref} propios y
+        solo recibe tres dependencias inyectadas. Los comentarios documentan una migracion
+        deliberada desde el antipatron ``recibir refs ajenos y escribirlos''.
+  \item \textbf{La sesion vive en \rt{localStorage}}: la clave \rt{token} (el JWT) y \rt{user}
+        (el usuario serializado como JSON). Las escribe \rt{AuthService.js} y las limpia
+        \rt{clearAuthData()} de \rt{core/utils/tokenUtils.js}.
+  \item \textbf{Eventos del \rt{window} como bus informal}: \rt{"dossier-updated"},
+        \rt{"workspace-chat:context-updated"}, \rt{"workspace-chat:open-process"}.
+\end{enumerate}
+
+\begin{aviso}[Consecuencia real que hay que conocer]
+Como el usuario esta en \rt{localStorage} y no en un store reactivo, \textbf{los cambios de
+sesion no propagan por Vue}. De ahi el truco \rt{<router-view :key="route.fullPath">} en
+\rt{App.vue}, que fuerza a remontar el componente entero en cada navegacion.
+\end{aviso}
+
+\section{La capa HTTP}
+
+\rt{src/core/services/httpClient.js} es una instancia \emph{propia} de axios (no el singleton
+global; el comentario del fichero lo documenta como correccion de un bug de orden de imports)
+con \textbf{un solo interceptor de request}, que anade
+\rt{Authorization: Bearer <localStorage.token>} si no viene ya puesta.
+
+\begin{aviso}[No hay interceptor de response]
+Es decir, \textbf{no hay refresh automatico ante un 401}. El refresh es manual y explicito:
+\rt{useSessionMonitor.js} hace polling cada 60 segundos y, cinco minutos antes de que expire el
+JWT, abre \rt{SessionExpiryModal.vue}, que llama a \rt{/users/refresh-token} con
+\rt{withCredentials: true} (para que viaje la cookie \rt{refreshToken}). Si falla, cierra sesion.
+\end{aviso}
+
+Las URLs se construyen en \rt{src/core/config/apiConfig.js}, que expone un objeto
+\rt{API\_ROUTES} con unas 110 entradas (unas son cadenas, otras funciones):
+
+\begin{lstlisting}[language=Java]
+const API_PORT = import.meta.env.VITE_API_PORT || "3030";
+const RAW_API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "").trim();
+const API_BASE_URL = RAW_API_BASE_URL || `${protocol}//${hostname}:${API_PORT}`;
+export const API_PREFIX = `${NORMALIZED_API_BASE_URL}/deasy/v1`;   // -> "/api/deasy/v1"
+\end{lstlisting}
+
+Regla documentada en el propio fichero: \emph{``en \rt{frontend/src} no se importa \rt{axios} a
+pelo''}. Y no se fija \rt{baseURL} a proposito: todas las llamadas pasan la URL completa
+construida desde \rt{apiConfig}.
+
+Hay 17 ficheros de servicio, todos clases con metodos asincronos sobre \rt{httpClient}. El mas
+grande es \rt{core/services/ProcessDefinitionPanelService.js} (16,5 KB).
+
+\section{El router y sus guards}
+
+Todo en \textbf{un solo fichero}: \rt{src/core/router/index.js}. Doce rutas de primer nivel mas
+ocho hijas bajo \rt{/perfil}. \textbf{Sin lazy-loading}: todas las vistas se importan
+estaticamente (el \rt{import()} diferido solo se usa para los dos grafos de admin).
+
+El \rt{router.beforeEach} hace, en este orden:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Consulta el estado de bootstrap del sistema (?`esta instalado?). Si el modo no es
+        \rt{normal}, limpia la sesion y fuerza \rt{/setup}. Si la llamada falla, avisa por
+        consola y \textbf{deja pasar} (que el backend este caido no bloquea el enrutado).
+  \item Si no hay token valido y la ruta es privada, limpia la sesion y va a \rt{/}.
+  \item Si el usuario es administrador y la ruta tiene \rt{meta.blockedForAdmin}, redirige a
+        \rt{/admin}.
+  \item Comprueba \rt{meta.requiresProcessManagementAccess} y \rt{meta.requiresAdminAccess}.
+\end{enumerate}
+
+\begin{concepto}[Por que se usa \rt{meta} y no nombres de ruta]
+Porque vue-router \textbf{hereda el \rt{meta} a las rutas hijas}. \rt{/perfil} tiene ocho hijas
+(\rt{formacion}, \rt{experiencia}, \rt{referencias}, \rt{capacitacion}, \rt{certificacion},
+\rt{investigacion}, \rt{certificados-firma}...). Marcando solo el padre con
+\rt{blockedForAdmin: true}, las ocho quedan protegidas automaticamente. Si se comprobara por
+nombre de ruta, habria que acordarse de anadir cada hija nueva a una lista.
+\end{concepto}
+
+Las rutas publicas son \rt{/}, \rt{/register}, \rt{/recover-password}, \rt{/terminos} y
+\rt{/setup}. La ruta \rt{/logout} no tiene componente: solo un \rt{beforeEnter} que llama al
+backend, limpia y devuelve \rt{/}.
+
+\begin{nota}[Coste a tener en cuenta]
+El guard hace una peticion HTTP (el estado de bootstrap) antes de \emph{cada} navegacion, sin
+cache.
+\end{nota}
+
+\rt{src/core/utils/accessControl.js} es un \textbf{espejo declarado} de \rt{RbacService.js} del
+backend: \rt{hasAnyRole}, \rt{hasPermission} (donde \rt{AdminSistema} pasa todo),
+\rt{canAccessResource(resource, action)} con respaldo a \rt{.manage}, y un mapa de unas 50
+tablas a su recurso RBAC.
+
+\begin{aviso}[El RBAC del frontend es solo cosmetico]
+Sirve para \emph{ocultar botones} y no ensenar opciones que van a fallar. La autorizacion real
+la hace \textbf{siempre} el backend. Nunca confies en un control de acceso que corre en el
+navegador del usuario: es codigo que el usuario controla.
+\end{aviso}
+
+\section{Composables destacados}
+
+El patron comun: una funcion \rt{useXxx(\{ deps \})} que \textbf{declara y devuelve sus propios
+\rt{ref}}, con dependencias inyectadas de solo lectura. Nada de \rt{provide}/\rt{inject}, nada
+de singletons reactivos.
+
+\rt{useFlowBuilder.js} (modulo \rt{home}) es el constructor del \emph{flujo routed}: quien
+elabora (\rt{flowEntrega}) y quien firma (\rt{flowFirma}, con pasos ordenados que llevan
+\rt{signers}, \rt{approval\_mode} y \rt{required\_min}). Fue extraido de \rt{HomeView.vue}
+durante la fase B del refactor del God Object.
+
+Otros: \rt{useProcessPanels.js}, \rt{useDeliverableView.js} (41 KB, el mayor),
+\rt{useDocumentCenter.js}, \rt{useGeneralTask.js}, \rt{useRecipientSearch.js},
+\rt{useWorkspaceChrome.js} (estado del \emph{chrome} compartido por las cuatro vistas que montan
+\rt{AppWorkspaceShell}), y 24 composables en el modulo admin repartidos en seis subcarpetas
+(\rt{data/}, \rt{fk/}, \rt{forms/}, \rt{modals/}, \rt{processes/}, \rt{ui/}).
+
+\section{Tiempo real en el cliente}
+
+Un unico cliente: \rt{src/core/services/realtimeClient.js} (clase \rt{RealtimeClient} exportada
+como singleton).
+
+\begin{itemize}[leftmargin=1.4em]
+  \item Autentica con \rt{auth: \{ token: localStorage.token \}} --- el mismo JWT que el
+        \rt{httpClient}.
+  \item Resuelve el destino segun la base: si es absoluta, \rt{io(base, \{path: "/socket.io"\})};
+        si es relativa (\rt{/api}, detras de nginx), \rt{io(\{path: "/api/socket.io"\})} sobre
+        el mismo origen.
+  \item Reconexion infinita con backoff de 1 a 8 segundos; \rt{connect()} es idempotente y
+        \textbf{reconecta si el token cambio}.
+\end{itemize}
+
+Su unico consumidor es \rt{WorkspaceChatLauncher.vue}, que escucha
+\rt{chat.message.created} y \rt{chat.notification.created}.
+
+\begin{nota}[Codigo muerto detectado]
+\rt{subscribeProcess} y \rt{unsubscribeProcess} estan definidos en el cliente pero
+\textbf{no tienen ningun llamador} en \rt{src/}.
+\end{nota}
+
+\section{Vue Flow y dagre: los dos grafos}
+
+Se usan \textbf{solo} en el modulo admin, para dos grafos interactivos:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Organigrama de unidades} --- \rt{modules/admin/components/units/UnitGraphView.vue}
+        (57 KB), con nodos y aristas propios (\rt{UnitNode.vue}, \rt{UnitEdge.vue}).
+  \item \textbf{Mapa de procesos} --- \rt{ProcessGraphView.vue} (55 KB), con \rt{ProcessNode.vue},
+        \rt{ProcessConfigNode.vue} y \rt{ProcessTemplateNode.vue}.
+\end{itemize}
+
+\rt{dagre} calcula el layout jerarquico de arriba a abajo automaticamente, asi no hay que
+posicionar nodos a mano. Ambos se cargan con \rt{defineAsyncComponent(() => import(...))}, de
+modo que Vue Flow y dagre \textbf{quedan fuera del bundle inicial} y solo se descargan al abrir
+esas dos pantallas.
+
+Se alcanzan por URL: \rt{/admin/academia/unidades/organigrama} y
+\rt{/admin/gestiones/procesos/mapa}.
+
+\begin{nota}
+El constructor de flujos de firma \textbf{no} usa Vue Flow: es un formulario de listas
+(\rt{useFlowBuilder.js}).
+\end{nota}
+
+\section{Los ``God Objects'' (deuda tecnica visible)}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}LP{2.6cm}@{}}
+\toprule
+\textbf{Fichero} & \textbf{Tamano} \\
+\midrule
+\rt{modules/home/views/HomeView.vue}                       & \textbf{236 KB} (unas 5.600 lineas) \\
+\rt{modules/admin/components/tables/AdminTableManager.vue}  & 158 KB \\
+\rt{modules/firmas/components/FirmarPdf.vue}                & 120 KB \\
+\rt{modules/admin/components/modals/AdminDraftArtifactModal.vue} & 77 KB \\
+\rt{modules/admin/components/units/UnitGraphView.vue}       & 58 KB \\
+\rt{modules/admin/components/units/ProcessGraphView.vue}    & 56 KB \\
+\rt{modules/firmas/components/MultiSignerPanel.vue}         & 52 KB \\
+\rt{modules/admin/views/AdminView.vue}                      & 46 KB \\
+\rt{modules/home/composables/useDeliverableView.js}         & 41 KB \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Estan en el plan de calidad y se estan troceando extrayendo composables --- asi nacio
+\rt{useFlowBuilder.js}.
+
+\begin{concepto}[Que es un ``God Object'']
+Un objeto (aqui, un componente) que sabe y hace demasiado: acumula responsabilidades de varios
+dominios hasta que nadie puede cambiarlo sin miedo. El sintoma es el tamano, pero el problema
+real es que \emph{cualquier} cambio lo toca, asi que todos los cambios entran en conflicto y
+ningun test lo cubre entero. La cura no es partirlo por lineas, sino \textbf{extraer
+responsabilidades completas} (un composable con su estado propio) una a una.
+\end{concepto}
+
+% =====================================================================
+\chapter{El microservicio signer}
+% =====================================================================
+
+Es la pieza mas especializada del sistema: Python 3.14 mas \textbf{pyHanko}, la biblioteca de
+firma de PDF.
+
+\section{Arquitectura interna}
+
+\rt{signer/app.py} (1.545 lineas) arranca \textbf{dos cosas a la vez}:
+
+\begin{lstlisting}[language=Python]
+rabbit_thread = threading.Thread(target=start_rabbit_worker, daemon=True)
+rabbit_thread.start()      # <- el camino REAL de produccion
+start_http_server()        # <- solo para depurar (POST /sign, /validate, GET /health)
+\end{lstlisting}
+
+El worker de RabbitMQ escucha dos colas (\rt{deasy.sign.request} y
+\rt{deasy.sign.validate.request}) con \rt{prefetch\_count=1}: \textbf{un trabajo a la vez}, para
+no saturar la memoria con PDFs grandes. Ante cualquier excepcion, registra el error, duerme 5
+segundos y reintenta la conexion en un bucle infinito.
+
+Un detalle de higiene: la URL de conexion pasa por \rt{redact\_amqp\_url()} antes de aparecer en
+los logs, sustituyendo la contrasena por asteriscos.
+
+\section{El flujo completo de una firma, paso a paso}
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item El frontend llama a \rt{/api/deasy/v1/sign/...}
+  \item El backend genera un \rt{correlationId}, crea la cola de respuesta
+        \rt{deasy.sign.response.<uuid>}, publica el trabajo y entra en polling.
+  \item El signer recibe el mensaje y \textbf{valida el payload}: exige \rt{signType},
+        \rt{minioPdfPath}, \rt{stampText}, \rt{finalPath}, \rt{minioCertPath} y
+        \rt{certPassword}; \rt{signType} debe ser \rt{coordinates} o \rt{token}.
+  \item Crea un directorio temporal con permisos \rt{0700} \textbf{fuera de \rt{/tmp}} ---
+        porque ahi se desempaqueta el certificado \rt{.p12} descifrado.
+  \item Descarga de MinIO el PDF y el certificado.
+  \item Abre el \rt{.p12} y \textbf{rechaza el trabajo si el certificado esta expirado o aun no
+        es valido}, con mensajes explicitos en espanol.
+  \item Si el PDF \textbf{ya tiene firmas embebidas}, salta el paso de limpieza con Ghostscript
+        --- aplanarlo destruiria las firmas existentes.
+  \item Resuelve donde firmar: coordenadas explicitas, o busca un \textbf{token de texto} dentro
+        del PDF con \rt{pdfplumber} (\rt{find\_marker.py} recorre las palabras de cada pagina y
+        devuelve sus posiciones).
+  \item \textbf{Llama a Node} para generar la imagen del sello (ver seccion siguiente).
+  \item Por cada coordenada, pyHanko crea un campo \rt{sig\_<uuid>} e inserta la firma: PAdES,
+        SHA-256, con sellado de tiempo opcional. Con varias firmas, \textbf{cada iteracion parte
+        del PDF firmado anterior} (firmas encadenadas).
+  \item Valida la firma resultante contra el contexto de confianza construido desde
+        \rt{signer/trust/}, y aborta salvo tolerancia explicita en el payload.
+  \item Sube el PDF firmado a MinIO, reemplazando \rt{minioPdfPath}, y tambien a \rt{finalPath}
+        si es distinto.
+  \item Publica el resultado en la cola de respuesta; el backend, que estaba haciendo polling,
+        lo recoge.
+  \item Al salir del bloque \rt{with}, \textbf{todo el material temporal se borra}, incluido el
+        \rt{.p12}.
+\end{enumerate}
+
+\section{\rt{sigmaker/}: por que hay Node dentro de un servicio Python}
+
+Porque la imagen del sello (QR + nombre del firmante + logo de la PUCE + fecha) se genera con
+las bibliotecas \rt{canvas} y \rt{qrcode} de Node, mejores para eso que las alternativas de
+Python. Python lo invoca como subproceso:
+
+\begin{lstlisting}[language=Python]
+subprocess.run(["node", SIGMAKER_DIR + "/cli.mjs",
+                stamp_png, stamp_text, final_path, logo_path], check=True)
+\end{lstlisting}
+
+El QR codifica \textbf{la URL publica del documento firmado}, para que quien reciba el PDF
+impreso pueda verificarlo escaneandolo. La fecha se calcula en la zona horaria
+\rt{America/Guayaquil} y el PNG se escribe con fondo transparente.
+
+Por eso el \rt{docker/signer/Dockerfile} instala \rt{nodejs} y \rt{npm} dentro de una imagen
+Python, y hace un \rt{npm install} separado en \rt{/opt/sigmaker}.
+
+\section{\rt{trust/}: la cadena de confianza}
+
+\begin{diagrama}
+trust/roots/   <- CAs raiz acreditadas en Ecuador
+                  firmasegura-root-ca-1.pem
+                  icert-ec-root.pem
+                  security-data-root-ca-2.pem
+
+trust/extra/   <- sus subordinadas (se cargan como other_certs, NO como anclas)
+                  firmasegura-subca-1.pem
+                  icert-ec-subordinate.pem
+                  security-data-subca-2.pem
+\end{diagrama}
+
+El contexto de validacion se construye con \rt{allow\_fetching=True} y
+\rt{revocation\_mode="soft-fail"}.
+
+\begin{concepto}[Por que ``raiz'' y ``subordinada'' van en sitios distintos]
+Una \emph{ancla de confianza} (trust anchor) es un certificado que decides creer sin
+demostracion: es el final de la cadena. Las subordinadas, en cambio, son eslabones intermedios:
+hay que \emph{poder verificarlas} contra una raiz, no confiar en ellas por decreto. Si metieras
+una subordinada como ancla, aceptarias como valida una cadena que en realidad no llega a
+ninguna raiz acreditada.
+\end{concepto}
+
+\section{Los OIDs ecuatorianos: 500 lineas de \rt{app.py}}
+
+Casi un tercio del fichero esta dedicado a \textbf{extraer la cedula y el nombre del firmante}
+de los certificados, porque \textbf{cada emisor ecuatoriano usa OIDs propietarios distintos}:
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{4.0cm}L@{}}
+\toprule
+\textbf{Emisor} & \textbf{Prefijo de OID} \\
+\midrule
+Security Data & \rt{1.3.6.1.4.1.37746.3.*} \\
+ICERT         & \rt{1.3.6.1.4.1.43745.1.3.*} \\
+Firmasegura   & \rt{1.3.6.1.4.1.61305.3.*} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+No hay estandar comun: hay que conocer los tres. Ademas se leen por \textbf{dos vias distintas}
+(\rt{cryptography} y \rt{asn1crypto} sobre el TBS crudo) porque ninguna cubre todos los casos.
+
+\section{Pruebas del signer}
+
+Todas en \rt{signer/tests/}, con \rt{unittest} de la biblioteca estandar (no hay pytest en la
+imagen). \textbf{266 metodos \rt{test\_}} repartidos en nueve ficheros:
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{5.4cm}P{1.4cm}L@{}}
+\toprule
+\textbf{Fichero} & \textbf{Casos} & \textbf{Que fija} \\
+\midrule
+\rt{test\_certificate\_parsing.py}    & 72 & DN, extensiones, cedula: quien firmo \\
+\rt{test\_signing\_flow.py}           & 36 & Caja del sello, offset del modo token, firmas encadenadas \\
+\rt{test\_payload\_validation.py}     & 34 & Orden de guards y mensajes de error \\
+\rt{test\_pdf\_metadata.py}           & 33 & Lectura del diccionario \rt{/Sig}, fechas \\
+\rt{test\_transport.py}               & 24 & Servidor HTTP y publicacion por RabbitMQ \\
+\rt{test\_validation\_report.py}      & 21 & Forma exacta del informe que consume el frontend \\
+\rt{test\_plumbing.py}                & 20 & MinIO, material de confianza, Ghostscript, temporales \\
+\rt{test\_certificate\_extensions.py} & 17 & Las dos fuentes de extensiones, con certificados reales \\
+\rt{test\_certificate\_loading.py}    & 9  & Carga del PKCS\#12 y guards de vigencia \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Como apoyo hay \rt{tests/dobles.py} (objetos ``pato'' que solo exponen lo que \rt{app.py}
+consulta) y \rt{tests/herramientas.py}, que \textbf{no son pruebas}: miden complejidad
+ciclomatica y anidamiento via AST.
+
+\begin{nota}[Los conteos no cuadran entre si]
+\rt{signer/README.md} dice 224 casos, \rt{requirements-dev.txt} y \rt{sonar-project.properties}
+dicen 229, y el conteo real hoy es 266. Los documentos van por detras del codigo.
+\end{nota}
+
+% =====================================================================
+\chapter{Infraestructura y despliegue}
+% =====================================================================
+
+\section{Docker: base mas overlays}
+
+En vez de un \rt{docker-compose.yml} por entorno (duplicando todo), hay \textbf{un fichero base
+y un overlay} que lo modifica:
+
+\begin{diagrama}
+dev     = compose.base.yml + compose.proxy.yml + compose.dev.yml
+qa      = compose.base.yml + compose.qa.yml
+prod    = compose.base.yml + compose.prod.yml
+ingress = compose.ingress.yml              (stack independiente)
+ingress-bootstrap = compose.ingress.bootstrap.yml   (solo HTTP, para el desafio ACME)
+\end{diagrama}
+
+\begin{concepto}[Que es un ``overlay'' de compose]
+Docker Compose permite pasar varios \rt{-f}. Los ficheros se \textbf{fusionan} en orden: lo que
+define el segundo pisa o completa lo del primero. Asi, el base declara los servicios y sus
+variables comunes, y cada overlay solo dice lo que cambia (puertos, si se construye la imagen o
+se descarga, montajes de codigo, politicas de reinicio). Evita mantener cuatro ficheros casi
+identicos que se desincronizan.
+\end{concepto}
+
+Consecuencia concreta: \rt{qa} y \rt{prod} \textbf{no cargan} \rt{compose.proxy.yml}, asi que
+no tienen \rt{nginx-proxy}; su entrada publica es el stack \rt{ingress}, separado y compartido.
+
+\subsection{Diferencias por entorno}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{3.2cm}LL@{}}
+\toprule
+ & \textbf{dev} & \textbf{qa / prod} \\
+\midrule
+Imagenes de la app  & se \textbf{construyen} localmente (\rt{Dockerfile.dev}) & se \textbf{descargan} de GHCR con \rt{pull\_policy: always} \\
+Codigo              & \textbf{bind mount} (editas y se recarga) & dentro de la imagen \\
+Proxy               & \rt{nginx-proxy} en el propio stack & un stack \rt{ingress} separado \\
+Puertos del proxy   & 8088 / 8443 & el ingress publica 80 / 443 \\
+PostgreSQL          & 5432 & 15432 (qa) / 25432 (prod) \\
+MinIO               & 9000 / 9001 & 9100 / 9101 y 9200 / 9201 \\
+Buckets             & \rt{deasy-*} & \rt{deasy-qa-*} y \rt{deasy-prod-*} \\
+PAdES-LTA           & desactivado & \textbf{activado en prod} \\
+Endurecimiento      & --- & \rt{no-new-privileges}, \rt{read\_only} en frontend, \rt{tmpfs}, healthchecks propios \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{aviso}[RabbitMQ solo se publica en dev, y atado a \rt{127.0.0.1}]
+El comentario del compose explica el motivo: la interfaz de gestion de RabbitMQ
+\textbf{muestra el cuerpo de los mensajes}, y ahi viaja \rt{certPassword}, la contrasena del
+certificado de firma. En qa y prod los puertos no se publican en absoluto.
+\end{aviso}
+
+\subsection{Los servicios del fichero base}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{2.9cm}P{4.4cm}L@{}}
+\toprule
+\textbf{Servicio} & \textbf{Imagen} & \textbf{Notas} \\
+\midrule
+\rt{postgres}        & \rt{postgres:17} & healthcheck \rt{pg\_isready}; unico motor de datos \\
+\rt{rabbitmq}        & \rt{rabbitmq:3-management} & healthcheck \rt{rabbitmq-diagnostics ping} \\
+\rt{minio}           & \rt{minio/minio:...} & \rt{server /data --console-address ":9001"} \\
+\rt{minio-bootstrap} & \rt{minio/mc:...} & perfil \rt{storage-init}; crea los buckets y hace \rt{mc mirror} de las semillas \\
+\rt{backend}         & sin imagen en base & la define cada overlay \\
+\rt{frontend}        & sin imagen en base & idem \\
+\rt{signer}          & sin imagen en base & \rt{SIGNER\_PORT=4000}, \rt{SIGMAKER\_DIR=/opt/sigmaker} \\
+\rt{analytics}       & sin imagen en base & perfil \rt{workers}; hoy es un marcador de posicion \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{\rt{scripts/docker-env.sh}: la interfaz comun}
+
+Es \textbf{la unica forma correcta} de tocar el stack. Todo lo que va despues del entorno se
+reenvia literalmente a \rt{docker compose}:
+
+\begin{lstlisting}[language=bash]
+bash scripts/docker-env.sh dev up -d --build
+bash scripts/docker-env.sh dev logs -f backend
+bash scripts/docker-env.sh dev ps
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit
+bash scripts/docker-env.sh dev down
+\end{lstlisting}
+
+Resuelve el fichero \rt{.env} correcto (con \rt{DEASY\_ENV\_FILE} como gancho para apuntar al
+\rt{.runtime} en despliegues), valida que existan todos los ficheros antes de invocar nada,
+exporta \rt{DEASY\_CONTAINER\_ENV\_FILE} y hasta convierte rutas si detecta \rt{cygpath} en
+Windows.
+
+\begin{aviso}[Regla del proyecto]
+\emph{``Builds y tests deben correr dentro de los contenedores via \rt{scripts/docker-env.sh},
+no con npm o npx en el host''}. Y al \textbf{anadir dependencias al frontend} hay que instalar
+\textbf{dentro del contenedor}: el volumen de \rt{node\_modules} sombrea el de la imagen, asi
+que un \rt{pnpm install} en el host \textbf{no se ve} dentro.
+\end{aviso}
+
+\subsection{Los demas scripts operativos}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{4.4cm}L@{}}
+\toprule
+\textbf{Script} & \textbf{Que hace} \\
+\midrule
+\rt{apply-env.sh}       & Motor comun de despliegue. Aplica el tag de imagen, crea la red externa si falta, limpia contenedores antiguos que retengan los puertos 80/443, y levanta el stack. Soporta \rt{DEASY\_DRY\_RUN=1}. \\
+\rt{deploy-env.sh}      & Envoltorio fino que llama a \rt{apply-env.sh} en modo \rt{gh-actions}. Es lo que ejecuta el workflow por SSH. \\
+\rt{server-pull-deploy.sh} & Modo \emph{server-pull}: exige rama correcta y arbol limpio, hace \rt{git pull --ff-only} y despliega. \\
+\rt{\_backend\_db\_exec.sh} & Libreria compartida. Para produccion exige un fichero de aprobacion \textbf{dentro del repo e ignorado por git}. \\
+\rt{reset-db.sh}        & Resetea solo la base de datos dentro del contenedor. \\
+\rt{reset-system.sh}    & Reset completo a instalacion virgen: base + almacenamiento, recicla backend y signer, y \textbf{recarga nginx} (porque el proxy de dev cachea la IP del backend). \\
+\rt{rabbitmq-migrar-usuario.sh} & Crea el usuario real de RabbitMQ y \textbf{despues borra \rt{guest}}. Idempotente. \\
+\rt{bootstrap-ingress-cert.sh} & Emite el certificado publico con certbot (ver mas abajo). \\
+\rt{signer-coverage.sh} & Genera el informe de cobertura de Python para Sonar, reescribiendo las rutas para que las resuelva. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{nginx: dos configuraciones distintas}
+
+\subsection{Mecanica de plantillas}
+
+\textbf{No existe un directorio \rt{nginx/conf.d/} en el repositorio.} Los tres directorios
+\rt{*-conf.d/} se montan como \rt{/etc/nginx/templates}, y el entrypoint oficial de la imagen
+\rt{nginx} aplica \rt{envsubst} a cada \rt{*.template} generando los \rt{.conf} finales. De ahi
+que las plantillas usen variables \rt{\$\{VAR\}} literales.
+
+\subsection{Desarrollo}
+
+\rt{nginx/app-conf.d/default.conf.template}: un \rt{server\_name \_} que no discrimina.
+
+\begin{lstlisting}[language=bash]
+location = /api   { return 301 /api/; }
+location /api/    { proxy_pass http://${BACKEND_UPSTREAM}/; }
+location /        { proxy_pass http://${FRONTEND_UPSTREAM}; }
+\end{lstlisting}
+
+\begin{concepto}[La barra final del \rt{proxy\_pass}]
+Es la diferencia entre que funcione y que no. Con \rt{proxy\_pass http://backend:3030/;} (con
+barra), nginx \textbf{sustituye} la parte que casó (\rt{/api/}) por la barra, asi que
+\rt{/api/deasy/v1/users} llega al backend como \rt{/deasy/v1/users}. \emph{Sin} la barra final,
+la ruta se pasaria integra y el backend recibiria \rt{/api/deasy/v1/users}, que no tiene
+ninguna ruta registrada: 404.
+\end{concepto}
+
+El puerto 80 sirve solo tres cosas: \rt{/healthz}, el desafio ACME
+(\rt{/.well-known/acme-challenge/}) y una redireccion 301 a HTTPS.
+
+\subsection{Produccion y QA}
+
+\rt{nginx/ingress-conf.d/default.conf.template} es un \textbf{ingress compartido} que reparte
+\textbf{por cabecera \rt{Host}}: \rt{fresvel.com} y \rt{www.fresvel.com} van a prod,
+\rt{qa.fresvel.com} va a qa. Un cuarto bloque \rt{default\_server} devuelve \textbf{404} a
+cualquier Host no reconocido. Aqui la reescritura se hace con
+\rt{rewrite \^{}/api/(.*)\$ /\$1 break;}.
+
+Detalle importante: los upstreams se asignan a \textbf{variables} junto con
+\rt{resolver 127.0.0.11 ipv6=off valid=10s}. Eso fuerza a nginx a \textbf{re-resolver el DNS de
+Docker cada 10 segundos} en vez de cachear la IP al arrancar. Es justo el problema que sufre el
+proxy de dev (resolucion estatica), y por eso \rt{reset-system.sh} tiene que recargarlo tras
+reciclar el backend.
+
+\subsection{Rutas efectivas}
+
+nginx \textbf{solo conoce dos prefijos}: \rt{/api/} y \rt{/}. Todo lo demas son rutas internas
+de Express:
+
+\begin{diagrama}
+https://host/api/deasy/v1/users   ->  nginx quita /api  ->  backend /deasy/v1/users
+https://host/api/deasy/docs       ->  nginx quita /api  ->  backend /deasy/docs   (Swagger UI)
+https://host/api/socket.io        ->  nginx quita /api  ->  backend /socket.io    (WebSocket)
+\end{diagrama}
+
+El upgrade a WebSocket funciona gracias a las cabeceras \rt{Upgrade} y \rt{Connection} y al
+\rt{map \$http\_upgrade \$connection\_upgrade} definido en \rt{nginx/nginx.conf}.
+
+\subsection{Certificados y ACME}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \rt{nginx/certs/dev/} y \rt{nginx/certs/qa/}: \textbf{autofirmados versionados} en git
+        (generables con \rt{nginx/scripts/generate-self-signed.sh}).
+  \item \rt{nginx/certs/public/}: \textbf{no versionado}; ahi deja
+        \rt{scripts/bootstrap-ingress-cert.sh} el certificado de Let's Encrypt.
+  \item \rt{nginx/acme/}: el \emph{webroot} del desafio HTTP-01; montado de solo lectura en
+        proxy e ingress, y de \textbf{lectura-escritura} en el bootstrap, para que certbot pueda
+        escribir el fichero de reto.
+\end{itemize}
+
+\begin{concepto}[Por que existe un ``ingress-bootstrap'']
+Let's Encrypt verifica que controlas el dominio pidiendote colocar un fichero en
+\rt{http://tudominio/.well-known/acme-challenge/xxx}. Pero el ingress normal solo escucha en
+HTTPS con un certificado... que aun no tienes. Es el problema del huevo y la gallina. La
+solucion: un nginx minimo, \textbf{solo HTTP}, que sirve el reto; se emite el certificado, se
+copia, se baja el bootstrap y se levanta el ingress definitivo.
+\end{concepto}
+
+\section{CI/CD}
+
+\subsection{\rt{cd-multienv.yml}: ocho jobs}
+
+\begin{diagrama}
+prepare (rama -> entorno)
+   |-- frontend-lint        (pnpm run lint)
+   |-- backend-checks       (npm run check:imports + npm run test:unit)
+   +-- compose-validate     (docker-env.sh <env> config, para los 4 entornos)
+              |
+              v
+        publish-images      (matriz de 4 imagenes -> GHCR)
+              |             tags: :dev|:qa|:prod  y  :sha-XXXXXXX
+              v
+        deploy-app-push / deploy-app-manual / deploy-ingress
+              (rsync de docker/ y nginx/ + SSH, solo si DEPLOY_DELIVERY_MODE == 'gh-actions')
+\end{diagrama}
+
+Mapeo de ramas: \rt{develop} $\rightarrow$ dev (publica imagenes, \textbf{no despliega});
+\rt{qa} $\rightarrow$ qa; \rt{main} $\rightarrow$ prod. El trabajo se hace en \rt{develop};
+\rt{main} es la rama de produccion.
+
+El \rt{rsync} solo sube \rt{docker/}, \rt{nginx/} (excluyendo \rt{certs/}) y cuatro scripts. El
+fichero de variables reales llega como secreto de GitHub y se vuelca en
+\rt{docker/.env.<env>.runtime} en el servidor.
+
+\subsection{Dos modos de entrega}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Push}: GitHub Actions entra por SSH y despliega.
+  \item \textbf{Pull}: unidades systemd en el servidor
+        (\rt{deploy/systemd/deasy-server-pull@.timer}) que cada \textbf{15 minutos} hacen
+        \rt{git pull} y redespliegan (\rt{OnBootSec=5m}, \rt{OnUnitActiveSec=15m},
+        \rt{Persistent=true}).
+\end{itemize}
+
+El segundo modo existe para servidores \textbf{sin IP publica estable}, donde GitHub no puede
+iniciar la conexion.
+
+\subsection{\rt{sonar.yml}: solo manual, y en verde si falta configuracion}
+
+Se dispara solo con \rt{workflow\_dispatch}. Un primer paso \emph{guard} comprueba si existen
+los secretos \rt{SONAR\_HOST\_URL} y \rt{SONAR\_TOKEN}; si faltan, escribe una explicacion en el
+resumen del workflow y \textbf{termina en verde}.
+
+\begin{nota}[La razon documentada]
+El SonarQube del proyecto esta autoalojado en \rt{localhost:9002} y \textbf{un runner de GitHub
+no puede alcanzarlo}. Poner el analisis en el workflow de push lo dejaria en rojo para siempre,
+lo que entrena a todo el mundo a ignorar los fallos de CI. Sonar en CI esta pendiente de una
+decision de infraestructura (publicarlo con TLS o migrar a SonarCloud), no de codigo.
+\end{nota}
+
+\section{SonarQube: como esta montado}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{2.6cm}L@{}}
+\toprule
+\textbf{Pieza} & \textbf{Donde} \\
+\midrule
+Stack     & \rt{scripts/sonar/compose.yml} --- SonarQube \emph{community} + PostgreSQL 16, puerto \textbf{9002} \\
+Lanzador  & \rt{scripts/sonar/scan.sh} --- \rt{sonar-scanner-cli} dockerizado \\
+Config    & \rt{sonar-project.properties} --- \rt{projectKey=deasy}; fuentes \rt{backend}, \rt{frontend/src}, \rt{signer}, \rt{scripts}, con los tests \textbf{declarados aparte} \\
+CI        & \rt{.github/workflows/sonar.yml} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{aviso}[Cuatro cosas que cuestan una medicion entera]
+\begin{enumerate}[leftmargin=1.4em,nosep]
+  \item \textbf{Regenera los DOS informes de cobertura antes de escanear.} Si no, Sonar lee los
+        de la corrida anterior \textbf{sin quejarse}. Y si las rutas \rt{SF:} del lcov no son
+        relativas a la raiz del repo, los descarta \textbf{en silencio} y la cobertura vuelve a
+        cero.
+  \item \textbf{Al consultar la API, filtra con \rt{resolved=false}.} Por defecto incluye las
+        cerradas y las \emph{won't fix}, y los conteos salen inflados.
+  \item \textbf{El escaneo se procesa despues de subirse.} Consultar metricas justo al terminar
+        devuelve las viejas: espera a que la tarea diga \rt{SUCCESS}.
+  \item \textbf{No toques \rt{sonar.projectVersion}.} Mueve el periodo de New Code y tira la
+        serie historica, que es el unico termometro fiable que hay.
+\end{enumerate}
+\end{aviso}
+
+\begin{nota}[Marcar no es arreglar]
+Los falsos positivos se marcan en Sonar con justificacion; hay varios que \textbf{no} hay que
+``corregir''. Sonar rastrea la incidencia por el \textbf{hash de la linea}: un renombrado puro
+conserva la marca, pero reescribir la linea la pierde.
+\end{nota}
+
+% =====================================================================
+\chapter{Testing: dos niveles que no se mezclan}
+% =====================================================================
+
+Esta es una regla dura del proyecto, y la ubicacion de los ficheros \textbf{no es estetica}:
+\rt{sonar-project.properties} distingue tests de codigo de produccion \textbf{por patron}, y un
+fichero mal colocado o mal nombrado se analiza \textbf{como codigo de produccion}. Asi es como
+las contrasenas de fixture acabaron contando como vulnerabilidades del sistema.
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{2.6cm}P{4.6cm}P{3.0cm}L@{}}
+\toprule
+\textbf{Nivel} & \textbf{Donde} & \textbf{Nombre} & \textbf{Que prueba} \\
+\midrule
+\textbf{Unitario} &
+  \textbf{junto al modulo} que prueba &
+  \rt{<modulo>.test.js} (\rt{.test.mjs} si el modulo es ESM \rt{.mjs}) &
+  Una unidad, sin red ni base de datos \\
+\textbf{Caracterizacion} &
+  \rt{backend/tests/characterization/flows/} &
+  \rt{<flujo>.test.mjs} &
+  Contrato HTTP extremo a extremo contra \emph{goldens} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Reglas de ubicacion}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \rt{*.test.js} y \rt{*.test.mjs} son los \textbf{unicos sufijos validos}. \textbf{No uses
+        \rt{*.spec.js}}: no hay ni uno en el repositorio, y anadirlo obliga a mantener un patron
+        muerto en la configuracion de Sonar y en los globs de \rt{test:unit}.
+  \item Un test unitario nuevo tiene que \textbf{caer dentro de los globs de
+        \rt{backend/package.json} $\rightarrow$ \rt{test:unit}} (\rt{config/}, \rt{services/**},
+        \rt{utils/**}, \rt{middlewares/**}, \rt{controllers/**}, \rt{errors/**}). Si lo pones
+        fuera, \textbf{no lo ejecuta nadie} y no te vas a enterar.
+  \item Si el modulo vive en otra carpeta, \textbf{amplia el glob en el mismo commit y en los DOS
+        sitios}: \rt{test:unit} y \rt{test:unit:coverage} llevan la misma lista duplicada (el
+        segundo con prefijo \rt{backend/}, porque corre desde la raiz del repo para que las rutas
+        del lcov le valgan a Sonar). Si solo tocas uno, el test corre pero \textbf{no cuenta para
+        la cobertura}.
+  \item No metas tests unitarios en \rt{backend/tests/}: esa carpeta es del harness de
+        caracterizacion.
+  \item Los tests del frontend van junto al componente o composable (vitest los descubre solo).
+\end{itemize}
+
+\begin{aviso}[Una suite que no arranca cuenta como fallo, no como ``0 tests'']
+Vitest marca \emph{Failed Suite} con 0 casos cuando el error ocurre \textbf{al importar} ---
+tipicamente un \rt{vi.mock} incompleto de un modulo que ahora tira de otro. \textbf{Mira la
+linea \rt{Test Files}}, no solo la de \rt{Tests}.
+\end{aviso}
+
+\section{Los tests unitarios}
+
+\textbf{Backend}: 22 ficheros, \textbf{361 casos}, con \rt{node --test} --- el runner nativo de
+Node, sin Jest ni Vitest. Los mas nutridos:
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}LP{1.6cm}@{}}
+\toprule
+\textbf{Fichero} & \textbf{Casos} \\
+\midrule
+\rt{config/postgres.dialect.test.js}                        & 38 \\
+\rt{services/documents/FillRequestWorkflowService.test.js}  & 37 \\
+\rt{services/admin/crud/validation.test.js}                 & 33 \\
+\rt{services/admin/templates/workflows.test.js}             & 28 \\
+\rt{services/sign/PdfSigningService.test.js}                & 27 \\
+\rt{services/sign/BatchSigningService.test.js}              & 21 \\
+\rt{controllers/users/user\_controler.primitives.test.js}   & 21 \\
+\rt{services/tasks/GeneralTaskService.test.js}              & 19 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Frontend}: 18 ficheros, unos \textbf{261 casos} con Vitest y \rt{@vue/test-utils}. La
+configuracion vive en el bloque \rt{test:} de \rt{vite.config.js} (no hay \rt{vitest.config.js}).
+El entorno por defecto es \rt{node}; los once tests que montan componentes ponen la pragma
+\rt{// @vitest-environment jsdom} en la primera linea. \textbf{No hay pruebas E2E} (ni Playwright
+ni Cypress).
+
+\section{Los characterization tests (golden master)}
+
+\begin{concepto}[Que es un golden master]
+En vez de escribir ``espero que devuelva \rt{\{x: 1\}}'', \textbf{grabas} lo que devuelve hoy y
+lo guardas en un JSON. En cada ejecucion comparas contra el JSON grabado. Si cambia, el test
+falla y \textbf{el diff de git es la evidencia} de lo que cambiaste.
+
+Sirve para \textbf{blindar refactors} en codigo que no entiendes del todo: no documentas lo que
+\emph{deberia} hacer, sino lo que \emph{hace}, rarezas incluidas. Es la red de seguridad ideal
+cuando heredas un sistema.
+\end{concepto}
+
+En Deasy son \textbf{15 suites, 150 tests y 256 claves de snapshot}, sin dependencias externas:
+\rt{fetch} nativo mas \rt{node:test} y \rt{node:assert/strict}.
+
+\subsection{Anatomia del harness}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{3.0cm}L@{}}
+\toprule
+\textbf{Pieza} & \textbf{Que hace} \\
+\midrule
+\rt{config.mjs} &
+  Todo parametrizable por entorno: \rt{API\_PREFIX}, \rt{BASE\_URL}, timeouts,
+  \rt{SNAPSHOT\_MODE} (\rt{compare} o \rt{update}), los tres usuarios de referencia y la
+  \rt{FIXTURE} con los IDs esperados. \\
+\rt{lib/http.mjs} &
+  \rt{request/get/post/put/patch/del}; devuelve siempre \rt{\{status, ok, headers, body\}} y
+  \textbf{nunca lanza por codigo de estado}. \\
+\rt{lib/auth.mjs} &
+  \rt{login(user)} y \rt{tokenFor(userKey)} con cache por ejecucion. \\
+\rt{lib/snapshot.mjs} &
+  El motor: \rt{matchSnapshot(suite, key, actual)}. En modo \rt{update} escribe y pasa; en
+  \rt{compare} falla, \textbf{y tambien falla si la clave no existe}. \\
+\rt{lib/normalize.mjs} &
+  Enmascara lo volatil (timestamps, \rt{iat}, \rt{exp}, tokens) con \rt{"<normalized>"}. Los IDs
+  \textbf{se conservan} a proposito. \\
+\rt{lib/readiness.mjs} &
+  Polling cada 2 segundos hasta que el sistema responde. \\
+\rt{lib/db.mjs} &
+  \textbf{Excepcion declarada}: pool de PostgreSQL directo \textbf{solo para limpieza}. La regla
+  escrita es \emph{``se usa para LIMPIAR, nunca para ASERTAR''}. \\
+\rt{setup/bootstrap\_system.mjs} &
+  Construye la fixture con el \textbf{bootstrap real por HTTP}, no con un seed SQL paralelo (que
+  era la fuente de verdad anterior y derivaba). Idempotente, y falla si los IDs divergen. \\
+\rt{setup/seed\_execution.mjs} &
+  Siembra datos de ejecucion via API. \\
+\rt{\_\_snapshots\_\_/} &
+  15 JSON, uno por suite, con claves ordenadas alfabeticamente e indentacion 2, para que el
+  \textbf{diff de git sea legible}. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{El ciclo de trabajo}
+
+\begin{lstlisting}[language=bash]
+test:char:fixture  = reset.mjs db --yes && test:char:bootstrap && test:char:seed
+test:char:run      = test:char:fixture && test:char
+test:char:capture  = test:char:fixture && SNAPSHOT_MODE=update npm run test:char
+test:char          = node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs
+\end{lstlisting}
+
+Los prefijos \rt{zz}, \rt{zzz} y \rt{zzzz} en los nombres de fichero \textbf{fuerzan el orden
+alfabetico} de ejecucion (el runner corre con \rt{--test-concurrency=1}), poniendo al final las
+suites que \emph{escriben} datos: \rt{zz\_task\_generation}, \rt{zz\_template\_lifecycle},
+\rt{zzz\_artifact\_draft}, \rt{zzzz\_sign\_batch}, \rt{zzzz\_sign\_workflow}.
+
+\begin{aviso}[\rt{test:char:run} RESETEA la base de dev]
+Hace reset, bootstrap y seed. Es lo normal para caracterizacion, pero \textbf{no lo lances si
+tienes datos que quieras conservar}. Para actualizar los goldens: \rt{test:char:capture}.
+\end{aviso}
+
+\begin{aviso}[La regla de oro]
+\textbf{Un refactor no cambia un golden.} Si un snapshot se mueve durante un refactor puro, o
+rompiste algo o el test estaba mal. En un \emph{fix}, el diff del golden \textbf{es} la prueba
+del arreglo.
+\end{aviso}
+
+\section{Comandos de validacion por modulo}
+
+\begin{lstlisting}[language=bash]
+# Frontend: lint + tests unitarios, y ademas verificar en el navegador
+bash scripts/docker-env.sh dev exec -T frontend pnpm run lint
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage
+bash scripts/docker-env.sh dev exec -T frontend pnpm run build
+
+# Backend: no tiene lint, pero SI tiene tests
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit
+bash scripts/docker-env.sh dev exec -T backend npm run test:char:run
+bash scripts/docker-env.sh dev exec -T backend npm run check:imports   # OBLIGATORIO tras mover codigo
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage
+\end{lstlisting}
+
+\section{Las reglas al mover codigo}
+
+Del \rt{CLAUDE.md}, porque cada una nacio de un incidente real:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Refactor = mover codigo, NO reescribir comportamiento.} Si cambias que hace algo,
+        no es un refactor.
+  \item \textbf{\rt{node --check} valida SINTAXIS, no imports.} Por eso \rt{check:imports} es
+        obligatorio, y comprobar que el backend arranca \textbf{no} lo sustituye.
+  \item \textbf{No injertes casos especiales en el camino generico.}
+  \item \textbf{Extrae por script, no a mano}, y verifica \rt{count == 1} antes de borrar cada
+        bloque.
+  \item \textbf{El SQL no lo valida nadie} hasta que se ejecuta esa rama. Pruebalo con
+        \rt{PREPARE} en psql.
+\end{enumerate}
+
+% =====================================================================
+\chapter{Cosas que te van a confundir (y no son bugs)}
+% =====================================================================
+
+Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
+
+\begin{enumerate}[leftmargin=1.8em,itemsep=6pt]
+  \item \textbf{\rt{backend/README.md} esta obsoleto.} Habla de MongoDB (\rt{URI\_MONGO}),
+        MariaDB y puerto 3000. El codigo usa PostgreSQL y el puerto 3030.
+        \textbf{El \rt{CLAUDE.md} es la fuente fiable}, no los README.
+
+  \item \textbf{El \rt{README.md} raiz enlaza documentos que ya no existen}
+        (\rt{docs/02-dominio-datos/modelo-datos.md}, \rt{MER\_SQL.sql},
+        \rt{docs/01-arquitectura/}). Estan en \rt{docs/docs-md-antiguos/}. Lo unico que hay hoy
+        en \rt{docs/02-dominio-datos/} es \rt{consolidado.dbml} (31 KB, con unas 205 relaciones).
+
+  \item \textbf{\rt{amqplib} esta en \rt{package.json} pero no se importa en ningun sitio.} Es
+        una dependencia muerta: la integracion real con RabbitMQ es por su API HTTP de gestion.
+
+  \item \textbf{\rt{sqlTables.js} declara campos de \rt{template\_artifacts} que ya no son
+        columnas de esa tabla} (\rt{template\_code}, \rt{display\_name}, \rt{description},
+        \rt{template\_scope}, \rt{template\_seed\_id}, \rt{owner\_person\_id}). \textbf{No es un
+        bug}: \rt{SqlAdminService} los rutea por JOIN a \rt{deliverables}, exponiendolos con los
+        mismos nombres (\rt{d.code AS template\_code}). Es una fachada deliberada.
+
+  \item \textbf{``Entregable'' significa dos cosas} segun el contexto: \rt{task\_items} (la
+        instancia) y \rt{deliverables} (la identidad de la plantilla).
+
+  \item \textbf{Las fases del plan de calidad se llaman A, B, C... por el orden en que se
+        descubrieron}, no por prioridad ni por tema.
+
+  \item \textbf{\rt{test:char:run} resetea la base de dev.}
+
+  \item \textbf{\rt{rounded-lg} vale 16px} en este frontend, no lo que dice la documentacion de
+        Tailwind: \rt{theme.css} pisa el espacio de nombres de radios de Tailwind. La escala esta
+        efectivamente invertida.
+
+  \item \textbf{La contrasena del gestor NO es \rt{Demo1234!}}, es \rt{Gestor1234!}.
+
+  \item \textbf{No existe \rt{artifact\_stage}} pese a estar descrito en la documentacion de
+        arquitectura. La realidad es \rt{template\_artifacts.lifecycle\_state} con tres valores.
+
+  \item \textbf{No hay tabla de auditoria transversal.} Solo bitacoras especificas por dominio.
+
+  \item \textbf{\rt{docker/docs/Dockerfile} es una imagen huerfana}: no la referencia ningun
+        compose ni el workflow.
+
+  \item \textbf{\rt{docker/README.md} documenta puertos de RabbitMQ en qa y prod que los
+        overlays ya no publican.}
+
+  \item \textbf{\rt{program\_router.js} y \rt{unit\_router.js} son literalmente el mismo router
+        duplicado}, y \rt{notification\_router.js} duplica dos endpoints de \rt{chat\_router.js}.
+
+  \item \textbf{\rt{backend/public/} esta vacia} pese a montarse con \rt{express.static}.
+
+  \item \textbf{Coexisten dos configuraciones de ESLint en el frontend}:
+        \rt{eslint.config.cjs} (flat config, la efectiva con ESLint 10) y \rt{.eslintrc.js}
+        (legacy, residual e inerte).
+
+  \item \textbf{No hay \rt{.env} dentro de \rt{frontend/} ni de \rt{backend/}}: viven en
+        \rt{docker/}, y el modelo de referencia es \rt{docker/.env\_model}.
+\end{enumerate}
+
+\section{Usuarios y accesos de referencia}
+
+Los crea el \textbf{bootstrap} (\rt{/setup} $\rightarrow$ ``usar datos de ejemplo''). \textbf{No
+hay ningun seed SQL alternativo.}
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{2.4cm}P{3.4cm}P{3.0cm}L@{}}
+\toprule
+\textbf{Perfil} & \textbf{Cedula} & \textbf{Contrasena} & \textbf{Notas} \\
+\midrule
+admin   & \rt{1234567890} & \rt{Demo1234!}   & bloqueado en el espacio de usuario \\
+gestor  & \rt{0987654321} & \rt{Gestor1234!} & de momento tiene tambien rol de usuario \\
+usuario & \rt{1122334455} & \rt{Demo1234!}   & \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{aviso}[El admin no puede probar el dossier ni las firmas]
+El router bloquea el espacio de usuario para el administrador con
+\rt{meta: \{ blockedForAdmin: true \}} (el guard lo redirige a \rt{/admin}): \rt{/home},
+\rt{/home/documentos}, \rt{/home/firmas} y \rt{/perfil} con todas sus hijas, porque vue-router
+hereda el \rt{meta}. \textbf{Para probar el dossier o las firmas hay que entrar como gestor o
+como usuario.}
+\end{aviso}
+
+Puertos de \rt{dev}: proxy HTTP \textbf{8088} y HTTPS \textbf{8443} (la API bajo
+\rt{/api/deasy/v1}); el puerto directo del backend es \textbf{3030}. Credenciales de SonarQube:
+usuario \rt{admin}, contrasena \rt{Demo1234!Demo} --- pero \textbf{la API no acepta esa
+contrasena por basic auth}: todo va por token.
+
+% =====================================================================
+\chapter{Por donde empezar a leer}
+% =====================================================================
+
+Ruta de lectura sugerida, de menor a mayor dificultad:
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{0.8cm}P{6.4cm}L@{}}
+\toprule
+\textbf{\#} & \textbf{Fichero} & \textbf{Por que} \\
+\midrule
+1  & \rt{CLAUDE.md} & Las reglas del proyecto, y es lo mas actualizado \\
+2  & \rt{backend/index.js} & El arranque completo en unas 200 lineas \\
+3  & \rt{backend/config/apiPaths.js} & El mapa de URLs de toda la API \\
+4  & \rt{backend/services/documents/DocumentWorkflowResetService.js} & \textbf{El estilo objetivo}: una sola responsabilidad, se lee de una sentada \\
+5  & \rt{backend/config/rbacCatalog.js} & Entiendes el modelo de permisos entero \\
+6  & \rt{backend/database/postgres\_schema.sql} & Los comentarios explican el porque de cada decision \\
+7  & \rt{docs/arquitecturas/modelo-emision-entregables.md} & La fuente de verdad de \rt{item\_mode} \\
+8  & \rt{docs/planes/referencia/calidad-y-medicion.md} & Que esta mal, que se esta arreglando, y \textbf{que NO hay que tocar} \\
+9  & \rt{frontend/src/core/router/index.js} & El mapa del frontend \\
+10 & \rt{signer/app.py} & Dejalo para el final: es denso \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Los tres documentos maestros}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \rt{docs/planes/referencia/calidad-y-medicion.md} --- el \textbf{documento maestro} de
+        deuda tecnica y complejidad: mapa de fases con su estado, linea base de SonarQube,
+        ranking de ficheros y funciones, y la lista de \textbf{lo que NO hay que tocar}
+        (\rt{sqlTables.js} y los falsos positivos entran ahi). \textbf{Leelo antes de proponer un
+        refactor.}
+  \item \rt{docs/planes/referencia/cobertura.md} --- la cobertura. Y lo primero que dice: el gate
+        \textbf{no pide 80\,\% global} (eso seria trabajo de anos), pide \textbf{80\,\% de lo
+        nuevo}.
+  \item \rt{docs/planes/referencia/patrones-diseno.md} --- \textbf{cuando usar un patron de
+        diseno y cuando no}. En este repositorio la complejidad se cura con \textbf{tablas y
+        extraccion}, no con jerarquias; hay tres sitios donde un patron GoF si se gana el sueldo,
+        y una lista de donde seria sobreingenieria.
+\end{itemize}
+
+\section{Las tres cosas que mas cuestan}
+
+Si algo se te atraviesa, casi seguro es una de estas tres:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{El motor de procesos} (serie $\rightarrow$ regla $\rightarrow$ flujo, y los tres
+        \rt{item\_mode}). Capitulo 5 de este documento.
+  \item \textbf{El flujo de firma completo}, desde el clic hasta el PDF firmado en MinIO, pasando
+        por la cola. Capitulos 4 y 7.
+  \item \textbf{El panel de administracion generico} (\rt{sqlTables.js} +
+        \rt{SqlAdminService.js} + \rt{tableHooks.js}, y su contraparte
+        \rt{AdminTableManager.vue}). Capitulos 4 y 6.
+\end{enumerate}
+
+\vfill
+\begin{center}
+\rule{0.4\textwidth}{0.4pt}\\[6pt]
+\small Documento generado a partir del analisis directo del repositorio.\\
+Las cifras (lineas, conteos de tests, tamanos de fichero) son fotos del momento y cambian.
+\end{center}
+
+\end{document}
