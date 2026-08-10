@@ -57,6 +57,7 @@
          pero con los MISMOS valores por defecto. Hoy son inocuos; se dejan anotados.
          (Los `--radius-*`, que si hacian daño, se retiraron en la fase 4.)
        ---------------------------------------------------------------------------------- */
+    /* stylelint-disable color-no-hex -- definicion de tokens, ver theme.css */
     :root {
         /* El navy del workspace. Antes estaba escrito tres veces y no tenia token
            `--brand-*` plano: solo existia dentro de `--brand-workspace-gradient`. */
@@ -68,6 +69,7 @@
         --brand-text-body: #3f4254;
         --brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
     }
+    /* stylelint-enable color-no-hex */
 
     html {
         @apply bg-[var(--brand-navy-deep)];

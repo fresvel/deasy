@@ -15,6 +15,9 @@
    declarar un token nuevo, comprueba antes que su nombre no sea un namespace de Tailwind
    v4 (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`,
    `--breakpoint-*`): el fallo es silencioso y global. */
+/* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
+   DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta,
+   y por eso `color-no-hex` esta activa en el resto del fichero. */
 :root {
   --brand-primary: #5e4eff;
   --brand-accent: #00b2a9;
@@ -44,6 +47,7 @@
   --line-height-base: 1.5;
   --line-height-heading: 1.2;
 }
+/* stylelint-enable color-no-hex */
 
 .theme-gradient-tile.is-active {
   color: #ffffff;

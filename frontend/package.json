@@ -6,7 +6,8 @@
     "dev": "vite --host 0.0.0.0 --port 8080",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 8080",
-    "lint": "eslint . --ext .js,.vue",
+    "lint": "eslint .",
+    "lint:css": "stylelint \"src/**/*.css\"",
     "test:unit": "vitest run",
     "test:unit:coverage": "vitest run --coverage && sed -i 's|^SF:|SF:frontend/|' coverage/lcov.info",
     "test:unit:watch": "vitest"
@@ -36,6 +37,8 @@
     "eslint": "^10.2.0",
     "eslint-plugin-vue": "^10.8.0",
     "jsdom": "^26.1.0",
+    "stylelint": "^17.14.1",
+    "stylelint-config-standard": "^40.0.0",
     "tailwindcss": "^4.2.2",
     "unplugin-swc": "^1.5.9",
     "vite": "^8.0.3",
