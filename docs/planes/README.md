@@ -19,6 +19,7 @@ decía si tenía trabajo pendiente o era historia**. Saber por dónde empezar co
 | [`referencia/patrones-diseno.md`](./referencia/patrones-diseno.md) | Cuándo un patrón de diseño sí y cuándo no, con la evidencia medida de este repo | Léelo **antes** de proponer un patrón |
 | [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) | La bitácora de las nueve fases cerradas, la línea base de Sonar y su serie histórica | Consulta. Es el *cómo se midió* |
 | [`referencia/cobertura.md`](./referencia/cobertura.md) | El plan de cobertura. Su Fase 0 está hecha; quedan la 1 y la 2 | Sí, vía frente 5 del maestro |
+| [`sistema-diseno/`](./sistema-diseno/) | **El frente 4 desarrollado**: auditoría medida del CSS, plan por fases y bitácora. Las fases 1-6 se ejecutaron el 2026-08-09 | Sí, vía frente 4 |
 | [`referencia/frontend.md`](./referencia/frontend.md) | Diagnóstico del frontend y sus fases. Layouts y split de `HomeView` sin empezar | Sí, vía frentes 3 y 4 |
 | [`referencia/signer.md`](./referencia/signer.md) | Auditoría del microservicio de firma. **8 de sus 12 riesgos siguen abiertos** | Sí, vía frente 6 |
 | [`referencia/contrato-errores-api.md`](./referencia/contrato-errores-api.md) | La forma que deberían tener las respuestas de error. Hoy conviven 15 | Sí, vía frentes 1 y 7 |
