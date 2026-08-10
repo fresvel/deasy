@@ -99,7 +99,3 @@ const displayName = computed(() => {
   return `${firstName} ${lastName}`.trim() || "Usuario";
 });
 </script>
-
-<style scoped>
-/* Scoped styles removed in favor of Tailwind CSS */
-</style>

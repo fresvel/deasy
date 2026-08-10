@@ -79,7 +79,3 @@
     emit('update:modelValue', value);
   }
   </script>
-  
-  <style scoped>
-  /* Agrega tus estilos aquí */
-  </style>

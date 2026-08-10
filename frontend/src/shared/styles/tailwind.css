@@ -25,12 +25,6 @@
          Sin gemelo `--brand-*` plano (solo existe dentro de `--brand-workspace-gradient`).
        ---------------------------------------------------------------------------------- */
     :root {
-        --deasy-shell-max-width: 2560px;
-        --deasy-radius-xs: 0.25rem;
-        --deasy-radius-sm: 0.375rem;
-        --deasy-radius-md: 0.5rem;
-        --deasy-radius-lg: 0.75rem;
-        --deasy-radius-xl: 1rem;
         --deasy-surface-page: #071927;
         --deasy-surface-muted: #f7f9fc;
         --deasy-surface-soft: rgba(247, 249, 252, 0.92);
@@ -41,8 +35,6 @@
         --deasy-text-body: #3f4254;
         /* = --brand-primary (#5e4eff) */
         --deasy-primary: var(--brand-primary);
-        --deasy-sidebar: #071927;
-        --deasy-sidebar-strong: #061521;
         /* = --brand-gradient-angled (linear-gradient(135deg, #5e4eff 0%, #3898ff 100%)) */
         --deasy-brand-gradient: var(--brand-gradient-angled);
         --deasy-brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
@@ -62,14 +54,6 @@
 }
 
 @layer components {
-    .deasy-shell {
-        @apply mx-auto w-full max-w-640;
-    }
-
-    .deasy-section-gap {
-        @apply space-y-6;
-    }
-
     .deasy-workspace {
         @apply min-h-screen bg-[var(--deasy-surface-page)] font-sans text-[var(--deasy-text-body)];
     }
@@ -110,40 +94,6 @@
 
     .deasy-context-header__subtitle {
         @apply mt-0.5 truncate text-[0.8rem] leading-tight text-white/55;
-    }
-
-    .deasy-primary-nav {
-        @apply flex min-w-max shrink-0 items-center gap-2 rounded-lg border px-2.5 py-2 shadow-none;
-        border-color: rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-    }
-
-    .deasy-primary-nav__item {
-        @apply inline-flex min-h-13 items-center gap-3 rounded-md border border-transparent px-5 py-3 text-[17px] font-semibold transition-all focus:outline-none;
-        color: rgba(74, 140, 255, 0.7);
-    }
-
-    .deasy-primary-nav__item--active {
-        color: rgba(74, 140, 255, 0.82);
-        background: rgba(255, 255, 255, 0.12);
-        box-shadow: none;
-    }
-
-    .deasy-primary-nav__icon {
-        @apply inline-flex h-5.5 w-5.5 items-center justify-center text-white/82;
-    }
-
-    .deasy-primary-nav__item--active .deasy-primary-nav__icon {
-        @apply text-white;
-    }
-
-    .deasy-primary-nav__label {
-        @apply min-w-0 truncate text-[1.08rem];
-        color: rgba(74, 140, 255, 0.7);
-    }
-
-    .deasy-primary-nav__item--active .deasy-primary-nav__label {
-        color: rgba(74, 140, 255, 0.82);
     }
 
     .deasy-secondary-nav {
@@ -198,18 +148,6 @@
         @apply inline-flex items-center justify-center;
     }
 
-    .deasy-secondary-tabs {
-        @apply flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
-    }
-
-    .deasy-secondary-tab {
-        @apply inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
-    }
-
-    .deasy-secondary-tab--active {
-        @apply border-blue-200 bg-blue-50 text-blue-700;
-    }
-
     .deasy-inline-tabs {
         @apply mb-5 flex overflow-x-auto border-b border-[#e2e6f0] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
     }
@@ -253,10 +191,6 @@
 
     .deasy-filter-search-span {
         @apply xl:col-span-2;
-    }
-
-    .deasy-filter-label {
-        @apply text-xs font-medium text-[#343741];
     }
 
     .deasy-filter-field {
@@ -347,100 +281,19 @@
     /* [fusion-fase-X 2026-08-07] Estaba definida en los DOS @layer components (ex-L329 y ex-L1349).
        Ganaba la segunda por orden de cascada dentro de la misma capa. Del bloque 1
        (rounded-2xl + shadow-none) no sobrevivia ninguna declaracion. */
-    .deasy-card {
-        @apply rounded-[8px] border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.04)];
-        border-color: var(--deasy-border-soft);
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L334 + ex-L1354. El skin plano del bloque 2 pisaba TODO,
        incluido `background: var(--deasy-surface-muted)`: hoy esta tarjeta es blanca. */
-    .deasy-card-muted {
-        @apply rounded-[8px] border bg-white shadow-sm;
-        border-color: var(--deasy-border-soft);
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L340 + ex-L1354. Igual que .deasy-card-muted: el bloque 2
        pisaba `background: var(--deasy-surface-soft)`; hoy es blanca. */
-    .deasy-card-soft {
-        @apply rounded-[8px] border bg-white shadow-sm;
-        border-color: var(--deasy-border-soft);
-    }
-
-    .deasy-card-padding {
-        @apply p-5 sm:p-6 lg:p-8;
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L350 + ex-L1354. Del bloque 1 solo sobrevive `p-4`
        (el skin del bloque 2 no declara padding). */
-    .deasy-panel {
-        @apply rounded-[8px] border bg-white p-4 shadow-sm;
-        border-color: var(--deasy-border-soft);
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L355 + ex-L1354. Sobrevive `p-4`; el fondo `--deasy-surface-muted`
        lo pisaba `bg-white` del bloque 2. */
-    .deasy-panel-muted {
-        @apply rounded-[8px] border bg-white p-4 shadow-sm;
-        border-color: var(--deasy-border-soft);
-    }
-
-    .deasy-section-shell {
-        @apply mx-auto my-6 w-full max-w-[2560px] px-2 font-sans sm:px-6 lg:px-8;
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L365 + ex-L1362. Sobreviven los paddings (`p-5 sm:p-6 lg:p-8`);
        radio, sombra y borde los fijaba el bloque 2. */
     .deasy-section-card {
         @apply rounded-[8px] border bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6 lg:p-8;
         border-color: var(--deasy-border-soft);
-    }
-
-    .deasy-section-header {
-        @apply mb-6 flex flex-col items-start justify-between gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center;
-    }
-
-    .deasy-section-header__body {
-        @apply min-w-0 flex-1;
-    }
-
-    .deasy-section-header__title {
-        @apply m-0 text-lg font-bold tracking-tight text-slate-800 sm:text-xl;
-    }
-
-    .deasy-section-header__subtitle {
-        @apply mt-1 text-sm font-medium text-slate-500;
-    }
-
-    .deasy-heading-hero {
-        @apply text-2xl font-bold tracking-tight text-slate-800 md:text-3xl;
-    }
-
-    .deasy-heading-section {
-        @apply text-lg font-bold tracking-tight text-slate-800 sm:text-xl;
-    }
-
-    .deasy-heading-card {
-        @apply text-base font-bold leading-tight text-slate-800;
-    }
-
-    .deasy-text-body {
-        @apply text-sm leading-relaxed font-medium text-slate-600;
-    }
-
-    .deasy-text-muted {
-        @apply text-sm font-medium text-slate-500;
-    }
-
-    .deasy-text-caption {
-        @apply text-xs font-medium text-slate-500;
-    }
-
-    .deasy-divider {
-        @apply border-slate-100;
-    }
-
-    .deasy-row {
-        @apply -mx-2 flex flex-wrap;
     }
 
     .deasy-field-wrapper {
@@ -782,10 +635,6 @@
         @apply m-0 text-[1.25rem] font-bold leading-[1.05] tracking-tight text-slate-950 md:text-[1.45rem];
     }
 
-    .deasy-hero-meta {
-        @apply text-sm font-semibold uppercase tracking-[0.16em] text-slate-500;
-    }
-
     .deasy-hero-description {
         @apply m-0 max-w-3xl text-[0.75rem] font-medium leading-4.5 text-slate-600 md:text-[0.8rem];
     }
@@ -810,66 +659,12 @@
         @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-slate-200 bg-slate-50 text-slate-700 shadow-none;
     }
 
-    .deasy-hero-stat-card {
-        @apply flex min-h-[3.85rem] w-full items-center justify-between gap-2.5 rounded-[0.95rem] border border-[#d6e4f2]/65 bg-white/92 px-3 py-2.25 text-left text-slate-800 shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:bg-white hover:shadow-[0_12px_24px_rgba(70,110,150,0.12)];
-    }
-
-    .deasy-hero-stat-card__lead {
-        @apply flex min-w-0 items-center gap-2.5;
-    }
-
-    .deasy-hero-stat-card__icon {
-        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.8rem] border border-[#d6e4f2] bg-[#f8fbfe] text-[#4f6c84];
-    }
-
-    .deasy-hero-stat-card__body {
-        @apply flex min-w-0 flex-col;
-    }
-
-    .deasy-hero-stat-card__title {
-        @apply text-[0.82rem] font-semibold leading-tight text-slate-700;
-    }
-
-    .deasy-hero-stat-card__value {
-        @apply shrink-0 text-base font-extrabold leading-none text-[#21517a] sm:text-lg;
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L761 + ex-L1449. Del bloque 1 solo sobrevive `overflow-hidden`;
        el degradado oscuro lo mataba `background-image: none` del bloque 2. */
-    .deasy-page-intro {
-        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:p-6;
-        background-image: none;
-    }
-
-    .deasy-page-intro__layout {
-        @apply grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start;
-    }
-
-    .deasy-page-intro__body {
-        @apply min-w-0 flex-1;
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L773/777/781 + ex-L1467/1472/1477. Igual que en el hero:
        del bloque 2 solo ganaba el color; el blanco del bloque 1 estaba muerto. */
-    .deasy-page-intro__title {
-        @apply m-0 text-[1.75rem] font-bold leading-[0.95] tracking-tight text-slate-950 md:text-[2rem];
-    }
-
-    .deasy-page-intro__meta {
-        @apply mt-1 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500;
-    }
-
-    .deasy-page-intro__description {
-        @apply mt-2 max-w-3xl text-[0.8rem] font-medium leading-4.5 text-slate-600 md:text-[0.85rem];
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L785 + ex-L1449. Mismo caso que .deasy-page-intro: solo
        sobrevive `overflow-hidden`. */
-    .deasy-page-intro--home {
-        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:p-6;
-        background-image: none;
-    }
-
     /* [fusion-fase-X 2026-08-07] ex-L791 + ex-L1362. Sobreviven margenes y paddings; radio, sombra y
        borde son los del bloque 2 (el `#e2e6f0` literal del bloque 1 es el mismo valor que
        `var(--deasy-border-soft)`, asi que se colapsa al token). */
@@ -1087,45 +882,6 @@
         background: rgba(255, 255, 255, 0.08);
     }
 
-    .deasy-nav-meta {
-        @apply px-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/52;
-    }
-
-    .deasy-nav-select {
-        @apply block w-full appearance-none rounded-[1rem] border border-[#d7e4f1] bg-white/80 py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.07)] outline-none transition-all;
-    }
-
-    .deasy-nav-select:focus {
-        @apply border-[#bfd7ee] bg-white ring-2 ring-[#78abd6]/20;
-    }
-
-    .deasy-nav-select-icon {
-        @apply pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#486178];
-    }
-
-    .deasy-nav-select-trigger {
-        @apply flex w-full items-center justify-between gap-3 rounded-[1rem] border border-[#d7e4f1] bg-white/80 px-4 py-3 text-left text-sm font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.07)] transition-all;
-    }
-
-    .deasy-nav-select-trigger:focus-visible {
-        @apply border-[#bfd7ee] bg-white outline-none ring-2 ring-[#78abd6]/20;
-    }
-
-    .deasy-nav-select-panel {
-        @apply absolute left-0 right-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-[12px] border bg-[linear-gradient(180deg,#fbfdff_0%,#f1f6fb_100%)] p-2 shadow-[0_18px_34px_rgba(6,12,24,0.18)] ring-1 ring-white/70;
-        border-color: rgba(197, 211, 226, 0.72);
-    }
-
-    .deasy-nav-select-option {
-        @apply flex w-full items-center justify-between gap-3 rounded-[1rem] px-3.5 py-3 text-left text-sm font-semibold text-slate-700 transition-all hover:bg-white hover:text-slate-900 hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)];
-    }
-
-    .deasy-nav-select-option--active {
-        @apply border text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
-        border-color: rgba(18, 63, 136, 0.12);
-        background: var(--deasy-brand-gradient-soft);
-    }
-
     .deasy-nav-feedback {
         @apply rounded-xl px-3 py-2 text-sm font-medium;
     }
@@ -1143,32 +899,6 @@
         border-color: rgba(120, 179, 223, 0.28);
     }
 
-    .deasy-nav-chip {
-        @apply inline-flex items-center justify-center gap-2 rounded-xl px-2 py-2 text-white/95 transition-all shrink-0 hover:-translate-y-[1px];
-    }
-
-    .deasy-nav-chip--active {
-        @apply border text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
-        border-color: rgba(136, 176, 213, 0.5);
-        background: linear-gradient(90deg, rgba(120, 171, 214, 0.34) 0%, rgba(226, 242, 250, 0.98) 100%);
-    }
-
-    .deasy-nav-chip--idle {
-        @apply bg-white/92 text-slate-700 hover:bg-white hover:text-slate-900;
-    }
-
-    .deasy-nav-chip__icon {
-        @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg;
-    }
-
-    .deasy-nav-chip__icon--active {
-        @apply bg-white/15;
-    }
-
-    .deasy-nav-chip__icon--idle {
-        @apply bg-slate-100;
-    }
-
     .deasy-nav-action {
         @apply flex shrink-0 items-center justify-center rounded-md border border-white/8 bg-white/[0.04] text-white/78 shadow-none transition-all hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[rgba(226,242,250,0.16)];
     }
@@ -1177,26 +907,6 @@
         @apply border text-white shadow-[0_10px_22px_rgba(3,96,101,0.24)];
         border-color: rgba(226, 242, 250, 0.14);
         background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.18) 100%);
-    }
-
-    .deasy-surface-selectable {
-        @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-sky-200 hover:shadow-md;
-    }
-
-    .deasy-state-info {
-        @apply rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900;
-    }
-
-    .deasy-state-success {
-        @apply rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800;
-    }
-
-    .deasy-state-warning {
-        @apply rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800;
-    }
-
-    .deasy-state-danger {
-        @apply rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
     }
 
     .deasy-dropzone {
@@ -1308,34 +1018,6 @@
         border-color: var(--deasy-border-soft);
     }
 
-    .deasy-auth-panel {
-        @apply flex flex-col justify-center p-7 sm:p-10 lg:p-12;
-    }
-
-    .deasy-auth-visual {
-        @apply relative hidden overflow-hidden border-r p-10 text-[var(--deasy-text-strong)] md:flex md:flex-col md:justify-between;
-        border-color: var(--deasy-border-soft);
-        background:
-            linear-gradient(180deg, #fafdff 0%, #f4f8fc 100%);
-    }
-
-    .deasy-auth-visual::before {
-        content: "";
-        @apply absolute inset-0 opacity-60;
-        background:
-            linear-gradient(120deg, rgba(255, 255, 255, 0.52), transparent 28%),
-            radial-gradient(circle at 18% 18%, rgba(18, 63, 136, 0.08), transparent 16rem),
-            radial-gradient(circle at 90% 82%, rgba(44, 173, 73, 0.08), transparent 18rem);
-    }
-
-    .deasy-auth-brand {
-        @apply relative z-10 inline-flex w-fit items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold uppercase tracking-[0.16em] text-slate-900;
-    }
-
-    .deasy-auth-brand-mark {
-        @apply inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-950 shadow-sm;
-    }
-
     .deasy-auth-title {
         @apply text-3xl font-semibold tracking-tight text-[var(--deasy-text-strong)];
     }
@@ -1395,14 +1077,6 @@
        de cascada que tenian frente al resto.
        ------------------------------------------------------------------------------ */
 
-    .deasy-ui-surface {
-        @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.05)];
-    }
-
-    .deasy-ui-subtle-surface {
-        @apply rounded-xl border border-slate-200 bg-slate-50/70 shadow-none;
-    }
-
     .deasy-form-section {
         @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5;
     }
@@ -1435,10 +1109,6 @@
         @apply mb-1.5 block text-sm font-semibold text-slate-700;
     }
 
-    .deasy-form-help {
-        @apply mt-1 text-xs font-medium text-slate-500;
-    }
-
     .deasy-inline-icon-button {
         @apply inline-flex items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
     }
@@ -1469,10 +1139,6 @@
 }
 
 @layer utilities {
-    .rounded-4xl {
-        border-radius: 1.25rem !important;
-    }
-
     .shadow-xl {
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06) !important;
     }
