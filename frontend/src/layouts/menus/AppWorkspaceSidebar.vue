@@ -27,8 +27,7 @@
       </div>
 
       <div
-        :class="[
-          'deasy-sidebar__flyout',
+        class="deasy-sidebar__flyout" :class="[
           containerClass,
           // Cerrado en escritorio => xl:hidden (fuera del flujo), para que el contenido
           // RECUPERE el espacio. Con invisible/opacity-0 seguia ocupando su columna.

@@ -28,7 +28,9 @@
     --color-brand-white: var(--brand-white);
     --color-brand-border: var(--brand-border);
     --color-brand-border-strong: var(--brand-border-strong);
+    --color-brand-border-field: var(--brand-border-field);
     --color-brand-surface-muted: var(--brand-surface-muted);
+    --color-brand-surface-alt: var(--brand-surface-alt);
     --color-brand-text-strong: var(--brand-text-strong);
     --color-brand-text-body: var(--brand-text-body);
     --color-state-success: var(--state-success);
@@ -230,7 +232,7 @@
 
     .deasy-filter-control {
         @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
-        border-color: #d7deea;
+        border-color: var(--brand-border-field);
     }
 
     .deasy-filter-control:focus {
@@ -248,7 +250,7 @@
 
     .deasy-filter-search-input {
         @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
-        border-color: #d7deea;
+        border-color: var(--brand-border-field);
         min-width: 0;
     }
 
@@ -281,7 +283,7 @@
 
     .deasy-filter-btn.deasy-btn--secondary,
     .deasy-filter-btn.deasy-btn--soft-neutral {
-        border-color: #d7deea;
+        border-color: var(--brand-border-field);
         background: #fff;
         color: #343741;
     }

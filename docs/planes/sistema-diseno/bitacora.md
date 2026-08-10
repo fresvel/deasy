@@ -127,37 +127,138 @@ perdían la cascada.
 | `/admin/usuarios/personas/persons` | 3 233 | 0 |
 | El mismo, con el modal de asignaciones abierto | 3 339 | 0 |
 
-### Fase 3 · Colapsar tokens
+### Fase 3 · Colapsar tokens — ✅ *(paso 3 del maestro)*
 
-_(pendiente)_
+**Ya no hay dos juegos de tokens.** 54 sustituciones y `--deasy-*` desaparece.
 
-### Fase 4 · Radios
+La distinción que gobierna la fase: **colapsar el espacio de nombres no es fusionar valores.** Lo
+primero es mecánico y no mueve un píxel; lo segundo es una decisión de diseño.
 
-_(pendiente)_
+- Los tres que ya eran alias (`--deasy-border-soft`, `--deasy-primary`, `--deasy-brand-gradient`) se
+  sustituyen por su destino y la indirección desaparece.
+- Los otros siete **no tenían gemelo con el mismo valor**, así que se **renombran** conservándolo.
+- `--brand-navy-deep` es nuevo: el navy `#071927` estaba escrito tres veces y no tenía token plano.
 
-### Fase 5 · Barandilla
+> **Trampa si se repite el colapso en otro sitio:** sustituir el nombre a secas deja
+> `--brand-border: var(--brand-border)`, que es una **autorreferencia** y en CSS invalida la
+> declaración. Los tres alias hay que **borrarlos**, no renombrarlos. Pasó y se corrigió.
 
-_(pendiente)_
+**Además, `@theme`.** El proyecto usaba Tailwind v4 como si fuera v3 — cero `@theme`, con lo que
+Tailwind no conocía ni un token y la única forma de usar un color de marca en una plantilla era
+escribir el hex a mano. **Sin esto la fase 6 no tiene destino al que migrar.**
 
-### Fase 6 · Colores (parcial)
+Verificado con una **sonda temporal** en `App.vue`, porque Tailwind es JIT y no emite lo que no ve
+usado — inyectar la clase en runtime da un falso negativo:
 
-_(pendiente)_
+```
+.bg-brand-primary{background-color:var(--color-brand-primary)}
+--color-brand-primary:var(--brand-primary);
+```
+
+### Fase 4 · Radios — ✅
+
+**224 usos reescritos, mismo aspecto.** Los cuatro `--radius-*` fuera.
+
+```
+rounded-lg (16px) -> rounded-2xl (16px)   170
+rounded-md (12px) -> rounded-xl  (12px)    52
+rounded-sm ( 8px) -> rounded-lg  ( 8px)     2
+```
+
+**El orden importa**, y por eso no se hizo con tres `sed` seguidos: si `sm→lg` va antes que
+`lg→2xl`, el resultado del primero lo captura el segundo y los 8px acaban en 16.
+`scripts/css-radios.mjs` lo resuelve con **una** pasada por regex alternada.
+
+Escala resultante, leída de `:root` en el navegador — **monótona**:
+
+```
+sm 4px  <  md 6px  <  lg 8px  <  xl 12px  <  2xl 16px
+```
+
+> **Efecto colateral que hubo que deshacer a mano:** el script también reescribió **4 comentarios**
+> que describían el comportamiento *antiguo*, dejándolos diciendo lo contrario de lo que pasó
+> ("hacen que `rounded-2xl` valga 16px"). Un reemplazo masivo sobre código fuente también toca la
+> prosa; hay que revisarla.
+
+### Fase 5 · Barandilla — ✅
+
+**stylelint** + `stylelint-config-standard`, con las reglas cosméticas apagadas para que quede señal
+y no ruido. Se apagó `color-function-alias-notation` (106 avisos de `rgba`→`rgb`), `color-hex-length`
+y compañía: son estilo de escritura, no deuda.
+
+`color-no-hex` está acotada con `stylelint-disable` **sólo sobre la declaración de la paleta**. Ahí un
+hex es correcto — es donde se *define* el token; en cualquier otro sitio es una fuga.
+
+**`pnpm run lint:css` sale en rojo a propósito y NO entra en el gate de CI** hasta llegar a cero. Lo
+que importa es que no **suba**.
+
+En ESLint, `vue/no-static-inline-styles` y `vue/prefer-separate-static-class`. Entraron en `warn` con
+6 infracciones, se arreglaron las 6 en el mismo commit y quedan en **`error`**.
+
+De paso, `lint` pierde el `--ext .js,.vue`, eliminado en ESLint 9 con flat config. No rompía nada
+(verificado: sí analiza los `.vue`), pero era una trampa esperando.
+
+### Fase 6 · Colores (parcial) — ✅ *(paso 5 del maestro, arañado)*
+
+Sólo el subconjunto de mayor valor: hex en **componentes compartidos** que duplican **exactamente**
+un token. Ahí el cambio es demostrablemente cero y el retorno máximo, porque son los que se copian.
+
+| Qué | Dónde |
+|---|---|
+| `#5e4eff` → `brand-primary` | `AdminSelectField.vue`, `SToggle.vue` |
+| `#071927` → `brand-navy-deep` | `SHeader.vue`, `SMenu.vue`, `UserProfile.vue` |
+| `#343741` → `brand-text-strong` | `AdminSelectField.vue` |
+| `#d7deea` → `brand-border-field` **(token nuevo)** | 6 sitios |
+| `#f8fafc` → `brand-surface-alt` **(token nuevo)** | 7 sitios |
+| 21 labels → `.deasy-form-label` | `LoginView`, `SystemBootstrapView` |
+| `style="display: none"` → `class="hidden"` | `DossierSectionCrud.vue:79` |
+| `{ borderWidth: '2px' }` → `border-2` | `SignatureBox.vue` |
+
+`#d7deea` y `#f8fafc` recibieron token porque aparecían 6 y 7 veces con un **papel claro** (borde de
+control de formulario, superficie alterna). `#7a869a` aparece **una** vez: no es un valor sistémico y
+se dejó — un token por cada color de un único uso es una paleta que no dice nada.
+
+Los 21 labels son el caso más doloroso del informe: **`.deasy-form-label` ya existía en
+`tailwind.css` con exactamente ese `@apply`, byte por byte**. El design system estaba ahí y se
+ignoraba.
 
 ---
 
 ## Cifras
 
-| Métrica | Antes | Tras F1+F2 |
+| Métrica | Antes | Después | Δ |
+|---|---|---|---|
+| Líneas `theme.css` | 1 914 | **875** | −54 % |
+| Líneas `tailwind.css` | 1 479 | **1 179** | −20 % |
+| Líneas `AdminTableManager.css` | 604 | **0** | borrado |
+| **Total CSS** | **3 997** | **2 054** | **−49 %** |
+| Tokens declarados | 71 | **52** | −27 % |
+| Juegos de tokens | **2** | **1** | — |
+| `rounded-*` con valor secuestrado | 224 | **0** | — |
+| Escala de radios | invertida | **monótona** | — |
+| `@theme` | no existía | **16 colores** | — |
+| Hex en `.vue` | 98 | **87** | −11 |
+| Incidencias `lint:css` | (no había linter) | **151 + 103** | línea base |
+| Linters de estilo | **0** | **2** | — |
+
+Lo que **no** se movió, y era esperable: 221 strings de clase de más de 120 caracteres y 441
+*arbitrary values*. Eso es el paso 5 completo del maestro y la utility soup de `HomeView`/`FirmarPdf`;
+son varias sesiones y van con el frente 3 (partir `HomeView`).
+
+## Verificación
+
+Huella de `getComputedStyle` (34 propiedades) + `getBoundingClientRect` por nodo, antes/después:
+
+| Vista | Nodos | Diferencias |
 |---|---|---|
-| Líneas `theme.css` | 1 914 | **863** |
-| Líneas `tailwind.css` | 1 479 | **1 145** |
-| Líneas `AdminTableManager.css` | 604 | **0** (borrado) |
-| **Total CSS** | **3 997** | **2 008** (−50 %) |
-| Tokens declarados | 71 | 39 |
-| Usos `rounded-lg` / `md` / `sm` | 173 / 52 / 2 | sin tocar (fase 4) |
-| Hex en `.vue` | 98 | sin tocar (fase 6) |
-| Strings de clase >120 chars | 221 | sin tocar (fase 6) |
-| Arbitrary values | 452 | sin tocar |
+| `/login` | — | **PNG idéntico byte a byte** (`cmp`) |
+| `/home` | 954 | **0** |
+| `/perfil` | 390 | **0** |
+| `/admin` | 403 | **0** |
+| `/admin/usuarios/personas/persons` | 3 233 | **0** |
+| … con el modal de asignaciones abierto | 3 339 | **0** |
+
+Build OK · `lint` **limpio** · 18 suites / **304 tests**.
 
 ---
 
