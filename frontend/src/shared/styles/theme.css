@@ -7,10 +7,14 @@
    Lo que hay aqui es la paleta; lo que `theme.css` no tenia se declara en `tailwind.css`
    (`--brand-navy-deep`, `--brand-text-body`, `--brand-border-strong`...).
 
-   ⚠️ `--radius-sm/md/lg` (justo debajo) PISAN el espacio de nombres de Tailwind v4: hacen
-   que `rounded-lg` valga 16px y `rounded-md` 12px en toda la app, con lo que la escala
-   queda invertida (`rounded-lg` > `rounded-xl`). Se deshace en la fase 4, no aqui: son
-   227 usos y mueve el aspecto si se hace mal. Ver docs/planes/sistema-diseno/. */
+   [fase-4 2026-08-09] Aqui vivian `--radius-sm/md/lg`, que PISABAN el espacio de nombres de
+   Tailwind v4 y hacian que `rounded-lg` valiera 16px y `rounded-md` 12px en toda la app —
+   con la escala invertida, porque `rounded-lg` (16) salia mayor que `rounded-xl` (12).
+   Ya no estan: los 224 usos se reescribieron al utility que pinta ese mismo valor
+   (lg->2xl, md->xl, sm->lg) y la escala de Tailwind vuelve a ser la suya. Si vas a
+   declarar un token nuevo, comprueba antes que su nombre no sea un namespace de Tailwind
+   v4 (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`,
+   `--breakpoint-*`): el fallo es silencioso y global. */
 :root {
   --brand-primary: #5e4eff;
   --brand-accent: #00b2a9;
@@ -30,10 +34,6 @@
   --state-danger: #dc3545;
   --state-gold: #d4af37;
 
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-  --radius-button: 8px;
 
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;
@@ -116,7 +116,7 @@ a:hover {
 }
 
 .card {
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   border: 0;
   box-shadow: var(--brand-shadow);
 }
@@ -497,7 +497,7 @@ a:hover {
 
 .theme-info-panel {
   background-color: var(--brand-info-soft);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   border: 1px solid rgba(3, 49, 100, 0.1);
 }
 

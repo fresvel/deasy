@@ -1,6 +1,6 @@
 <template>
   <div
-    class="signature-box absolute flex flex-col items-center justify-center p-1 rounded-sm backdrop-blur-[1px] transition-colors group z-20"
+    class="signature-box absolute flex flex-col items-center justify-center p-1 rounded-lg backdrop-blur-[1px] transition-colors group z-20"
     :class="[
       isActive ? 'border-sky-500 bg-sky-500/20 ring-4 ring-sky-500 ring-opacity-30 border-solid' : 'border-dashed border-sky-400 bg-sky-400/10 hover:border-sky-500 hover:bg-sky-500/20',
       isPreview ? 'pointer-events-none opacity-60 z-30' : 'pointer-events-auto custom-drag-cursor',

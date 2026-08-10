@@ -13,7 +13,7 @@
               class="multisigner-upload-card"
               @files-selected="onFilesSelected"
             />
-            <p v-if="uploadError" class="rounded-lg bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-rose-600">
+            <p v-if="uploadError" class="rounded-2xl bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-rose-600">
               {{ uploadError }}
             </p>
           </div>
@@ -206,7 +206,7 @@
 
                 <template #navigation>
                   <div class="grid w-full grid-cols-2 gap-1.5">
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-lg border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
                         class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -230,7 +230,7 @@
                       </button>
                     </div>
 
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-lg border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
                         class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -259,7 +259,7 @@
 
               <div
                 v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
-                class="pointer-events-none absolute z-20 rounded-sm border-2 border-dashed border-rose-500 bg-rose-500/20 mix-blend-multiply"
+                class="pointer-events-none absolute z-20 rounded-lg border-2 border-dashed border-rose-500 bg-rose-500/20 mix-blend-multiply"
                 :style="activeSelectionBox"
               >
                 <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-sm">

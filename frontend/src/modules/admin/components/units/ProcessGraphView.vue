@@ -22,7 +22,7 @@
       </div>
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+        <div class="inline-flex items-center gap-0.5 rounded-2xl border border-slate-200 bg-slate-50 p-0.5">
           <button type="button" class="proc-toggle" :class="showInactive ? 'proc-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
           <button type="button" class="proc-toggle" :class="showConfigs ? 'proc-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
           <button type="button" class="proc-toggle" :class="showTemplates ? 'proc-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
@@ -97,11 +97,11 @@
       <div class="flex flex-col gap-3">
         <label class="block text-sm font-medium text-slate-700">
           Nombre
-          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre del proceso" />
+          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre del proceso" />
         </label>
         <label class="block text-sm font-medium text-slate-700">
           Identificador (slug) <span class="font-normal text-slate-400">(opcional)</span>
-          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="se deriva del nombre" />
+          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="se deriva del nombre" />
         </label>
       </div>
       <template #footer>
@@ -115,15 +115,15 @@
       <div class="flex flex-col gap-3">
         <label class="block text-sm font-medium text-slate-700">
           Nombre
-          <input v-model="editForm.name" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre del proceso" />
+          <input v-model="editForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre del proceso" />
         </label>
         <label class="block text-sm font-medium text-slate-700">
           Identificador (slug)
-          <input v-model="editForm.slug" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="identificador" />
+          <input v-model="editForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="identificador" />
         </label>
         <label class="block text-sm font-medium text-slate-700">
           Proceso padre
-          <select v-model="editForm.parent_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+          <select v-model="editForm.parent_id" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
             <option value="">— Sin padre (raíz) —</option>
             <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
           </select>
@@ -176,17 +176,17 @@
                 <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
-                    <span class="ml-auto inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1" :class="configStatusClass(cfg.status)">{{ configStatusLabel(cfg.status) }}</span>
+                    <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="configStatusClass(cfg.status)">{{ configStatusLabel(cfg.status) }}</span>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ seriesLabel(cfg) }}</span>
-                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.variation_key }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ seriesLabel(cfg) }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.variation_key }}</span>
                     <span>v{{ cfg.definition_version }}</span>
                   </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
-                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.rules_count }} reglas</span>
-                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.templates_count }} plantillas</span>
-                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.runs_count }} corridas</span>
+                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.rules_count }} reglas</span>
+                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.templates_count }} plantillas</span>
+                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.runs_count }} corridas</span>
                   </div>
                   <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                     <template v-if="editable && cfg.status === 'draft'">
@@ -220,7 +220,7 @@
                     <span class="truncate text-sm font-semibold text-slate-800">{{ ch.name }}</span>
                     <span v-if="!ch.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
                     <span
-                      class="ml-auto inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1"
+                      class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
                       :class="ch.active_count ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : (ch.definitions_count ? 'bg-amber-50 text-amber-700 ring-amber-200' : 'bg-slate-100 text-slate-500 ring-slate-200')"
                     >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</span>
                   </div>
@@ -243,11 +243,11 @@
                 <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-slate-200 px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800">{{ run.term_name || "Sin periodo" }}</span>
-                    <span class="ml-auto inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="runStatusClass(run.status)">{{ run.status }}</span>
+                    <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="runStatusClass(run.status)">{{ run.status }}</span>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                     <span class="truncate">{{ run.definition_name }} · v{{ run.definition_version }}</span>
-                    <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
                     <span v-if="run.source_run_id" class="italic text-slate-400">relanzamiento</span>
                   </div>
                 </li>
@@ -306,8 +306,8 @@
             >
               <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-slate-800">v{{ v.storage_version }}</span>
-                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1" :class="versionStateClass(v.lifecycle_state)">{{ versionStateLabel(v.lifecycle_state) }}</span>
-                <span v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" class="inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-200" title="Versión vinculada a esta configuración">Vinculada aquí</span>
+                <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="versionStateClass(v.lifecycle_state)">{{ versionStateLabel(v.lifecycle_state) }}</span>
+                <span v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" class="inline-flex items-center rounded-xl bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-200" title="Versión vinculada a esta configuración">Vinculada aquí</span>
                 <span class="ml-auto text-[11px] font-semibold text-indigo-600">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
               </div>
               <div class="mt-1 flex items-center justify-between gap-2">
@@ -315,7 +315,7 @@
                 <button
                   v-if="editable && v.lifecycle_state !== 'retired' && String(v.id) !== String(templateDetail.pinnedArtifactId)"
                   type="button"
-                  class="rounded-md border border-violet-200 px-2 py-0.5 text-[11px] font-semibold text-violet-700 transition-colors hover:bg-violet-100"
+                  class="rounded-xl border border-violet-200 px-2 py-0.5 text-[11px] font-semibold text-violet-700 transition-colors hover:bg-violet-100"
                   :title="templateDetail.configStatus === 'active' ? 'Prepara un borrador de la configuración con esta versión' : 'La configuración (borrador) usará esta versión'"
                   @click.stop="useVersionInConfig(v)"
                 >Usar en esta config</button>

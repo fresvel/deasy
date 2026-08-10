@@ -184,7 +184,7 @@
                   Ubicación exacta
                   <span class="group relative inline-flex">
                     <IconHelp class="h-4 w-4 cursor-help text-blue-600" />
-                    <span class="invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg bg-slate-950 p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                    <span class="invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-2xl bg-slate-950 p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
                       Marca tu ubicación exacta para completar la información geográfica de tu registro.
                     </span>
                   </span>

@@ -69,7 +69,7 @@ const onCardClick = (event) => {
         >
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
-              <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg" :class="h.getDeliverableCardTone(deliverable.item).iconChip">
+              <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-2xl" :class="h.getDeliverableCardTone(deliverable.item).iconChip">
                 <component :is="h.getDeliverableStateIcon(deliverable.item)" class="h-3.5 w-3.5" />
               </span>
               <span class="truncate text-[0.7rem] font-semibold uppercase tracking-[0.14em]" :class="h.getDeliverableCardTone(deliverable.item).responsibilityLabel">

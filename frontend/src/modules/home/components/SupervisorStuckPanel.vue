@@ -13,7 +13,7 @@
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50"
+        class="inline-flex items-center gap-1 rounded-2xl border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50"
         :disabled="loading"
         @click="load"
       >↻ Actualizar</button>

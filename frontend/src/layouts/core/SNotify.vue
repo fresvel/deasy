@@ -17,7 +17,7 @@
           <h3 class="m-0 text-sm font-semibold leading-tight">Notificaciones</h3>
         </div>
         <button
-          class="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:hidden"
+          class="rounded-2xl p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:hidden"
           aria-label="Cerrar notificaciones"
           @click="$emit('close')"
         >

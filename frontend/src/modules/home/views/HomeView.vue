@@ -92,7 +92,7 @@
                   >
                     <button
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
                       @click="toggleAllConsolidatedProcesses"
                     >
                       <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
@@ -105,7 +105,7 @@
                       v-for="process in consolidatedCargoProcesses"
                       :key="process.process_definition_id || process.id"
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50"
                       @click="toggleConsolidatedProcess(process.process_definition_id || process.id)"
                     >
                       <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
@@ -203,7 +203,7 @@
                     </div>
                     <div v-for="group in deliverableGroups" :key="group.id" class="flex flex-col gap-3">
                       <div v-if="showDeliverableGroupHeaders" class="flex items-center gap-2 px-1">
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><IconChecklist class="h-3.5 w-3.5" /></span>
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700"><IconChecklist class="h-3.5 w-3.5" /></span>
                         <h3 class="m-0 text-sm font-bold text-slate-700">{{ group.name }}</h3>
                         <span class="text-xs font-semibold text-slate-400">{{ group.items.length }}</span>
                       </div>
@@ -365,7 +365,7 @@
                         </div>
                         <span
                           v-if="pos.positionType"
-                          class="shrink-0 inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
+                          class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
                           :class="{
                             'bg-emerald-100 text-emerald-700': pos.positionType === 'real',
                             'bg-sky-100 text-sky-700': pos.positionType === 'simbolico',
@@ -619,7 +619,7 @@
                     class="flex items-center gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm"
                   >
                     <span
-                      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
                       :class="{
                         'bg-sky-100 text-sky-600': stat.tone === 'sky',
                         'bg-emerald-100 text-emerald-600': stat.tone === 'emerald',
@@ -1486,7 +1486,7 @@
           <p class="m-0 text-sm font-medium text-slate-500">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
           <label v-if="mySendsTypes.length > 1" class="flex items-center gap-2 text-sm">
             <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Tipo</span>
-            <select v-model="mySendsTypeFilter" class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+            <select v-model="mySendsTypeFilter" class="rounded-2xl border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
               <option value="all">Todos</option>
               <option v-for="t in mySendsTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>

@@ -21,7 +21,7 @@
           Relación
           <select
             v-model="activeRelationType"
-            class="h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400"
+            class="h-8 rounded-2xl border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400"
           >
             <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
             <option value="all">Todos los tipos</option>
@@ -45,7 +45,7 @@
           type="text"
           aria-label="Buscar unidad"
           placeholder="Buscar unidad…"
-          class="h-8 w-52 rounded-lg border border-slate-300 px-3 text-xs outline-none focus:border-indigo-400"
+          class="h-8 w-52 rounded-2xl border border-slate-300 px-3 text-xs outline-none focus:border-indigo-400"
           @keyup.enter="searchAndCenter"
         />
         <AppButton variant="secondary" size="sm" @click="searchAndCenter">Buscar</AppButton>
@@ -53,7 +53,7 @@
       <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
         <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-slate-300 text-amber-600" />
         Resaltar pendientes
-        <span v-if="pendingCount" class="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">{{ pendingCount }}</span>
+        <span v-if="pendingCount" class="inline-flex items-center rounded-xl bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">{{ pendingCount }}</span>
       </label>
       <AppButton variant="secondary" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
@@ -127,7 +127,7 @@
       <p class="m-0 mb-3 text-sm text-slate-600">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
       <label class="block text-sm font-medium text-slate-700">
         Tipo de relación
-        <select v-model="editingTypeCode" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+        <select v-model="editingTypeCode" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
           <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
         </select>
       </label>
@@ -148,18 +148,18 @@
       <div class="flex flex-col gap-3">
         <label class="block text-sm font-medium text-slate-700">
           Nombre
-          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre de la unidad" />
+          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre de la unidad" />
         </label>
         <label class="block text-sm font-medium text-slate-700">
           Tipo de unidad
-          <select v-model="createForm.unit_type_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+          <select v-model="createForm.unit_type_id" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
             <option value="">Selecciona…</option>
             <option v-for="ut in unitTypes" :key="ut.id" :value="ut.id">{{ ut.name }}</option>
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">
           Slug <span class="font-normal text-slate-400">(opcional)</span>
-          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="se deriva del nombre" />
+          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="se deriva del nombre" />
         </label>
       </div>
       <template #footer>
@@ -198,13 +198,13 @@
           <!-- Formulario de nuevo puesto -->
           <div v-if="editable && addingPosition" class="mb-3 rounded-xl border border-indigo-200 bg-indigo-50/40 p-3">
             <div class="flex flex-col gap-2">
-              <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+              <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="h-9 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
                 <option value="">Cargo…</option>
                 <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
-              <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" />
+              <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="h-9 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" />
               <div class="flex items-center gap-3">
-                <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="h-9 flex-1 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+                <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="h-9 flex-1 rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
                   <option value="real">Real</option>
                   <option value="promocion">Promoción</option>
                   <option value="simbolico">Simbólico</option>
@@ -243,7 +243,7 @@
               </div>
               <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <template v-if="pos.person_id">
-                  <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 ring-1 ring-emerald-200">Ocupado</span>
+                  <span class="inline-flex items-center rounded-xl bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 ring-1 ring-emerald-200">Ocupado</span>
                   <span class="truncate text-slate-600">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                   <template v-if="editable">
                     <button type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openAssign(pos.id)">Cambiar</button>
@@ -251,7 +251,7 @@
                   </template>
                 </template>
                 <template v-else>
-                  <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
+                  <span class="inline-flex items-center rounded-xl bg-slate-100 px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
                   <button v-if="editable" type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openAssign(pos.id)">Asignar</button>
                 </template>
               </div>
@@ -260,7 +260,7 @@
               <button
                 v-if="editable"
                 type="button"
-                class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                class="mt-2 inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
                 @click="openProfileWizard(pos)"
               >
                 <IconFileDescription class="h-3.5 w-3.5" />
@@ -268,19 +268,19 @@
               </button>
 
               <!-- Buscador de persona para asignar -->
-              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
                 <input
                   v-model="personQuery"
                   type="text"
                   aria-label="Buscar persona por nombre o cédula"
                   placeholder="Buscar persona (nombre o cédula)…"
-                  class="h-8 w-full rounded-md border border-slate-300 px-2 text-xs outline-none focus:border-indigo-400"
+                  class="h-8 w-full rounded-xl border border-slate-300 px-2 text-xs outline-none focus:border-indigo-400"
                   @input="searchPersons"
                 />
                 <div v-if="personSearching" class="mt-1 px-1 text-[11px] text-slate-400">Buscando…</div>
                 <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
                   <li v-for="per in personResults" :key="per.id">
-                    <button type="button" class="flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-indigo-50" @click="pickPerson(per.id)">
+                    <button type="button" class="flex w-full items-center justify-between rounded-xl px-2 py-1 text-left text-xs hover:bg-indigo-50" @click="pickPerson(per.id)">
                       <span class="truncate text-slate-700">{{ per.first_name }} {{ per.last_name }}</span>
                       <span class="ml-2 shrink-0 text-slate-400">{{ per.cedula }}</span>
                     </button>
@@ -309,12 +309,12 @@
               <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
                 <div class="flex items-center gap-2">
                   <span class="truncate text-sm font-semibold text-slate-800">{{ proc.process_name }}</span>
-                  <span class="ml-auto inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1" :class="processOriginMeta(proc.origin).class">{{ processOriginMeta(proc.origin).label }}</span>
-                  <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="processStatusClass(proc.status)">{{ proc.status }}</span>
+                  <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="processOriginMeta(proc.origin).class">{{ processOriginMeta(proc.origin).label }}</span>
+                  <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="processStatusClass(proc.status)">{{ proc.status }}</span>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span class="truncate">{{ proc.definition_name }} · v{{ proc.definition_version }}</span>
-                  <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
+                  <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <span class="text-slate-500">Destinatario: <span class="font-medium text-slate-700">{{ recipientSummary(proc) }}</span></span>
@@ -347,18 +347,18 @@
       <div class="flex flex-col gap-3">
         <label class="block text-sm font-medium text-slate-700">
           Cargo
-          <select v-model="editPositionForm.cargo_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+          <select v-model="editPositionForm.cargo_id" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
             <option value="">Selecciona…</option>
             <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">
           Título <span class="font-normal text-slate-400">(opcional)</span>
-          <input v-model="editPositionForm.title" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Título del puesto" />
+          <input v-model="editPositionForm.title" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Título del puesto" />
         </label>
         <label class="block text-sm font-medium text-slate-700">
           Tipo
-          <select v-model="editPositionForm.position_type" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+          <select v-model="editPositionForm.position_type" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
             <option value="real">Real</option>
             <option value="promocion">Promoción</option>
             <option value="simbolico">Simbólico</option>
@@ -397,7 +397,7 @@
           <select
             v-model="processForm.process_definition_id"
             :disabled="Boolean(processEditingRuleId)"
-            class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-100"
+            class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-100"
           >
             <option value="">Selecciona…</option>
             <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
@@ -411,7 +411,7 @@
 
         <label class="block text-sm font-medium text-slate-700">
           Alcance
-          <select v-model="processForm.unit_scope_type" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+          <select v-model="processForm.unit_scope_type" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
             <option value="unit_exact">Solo esta unidad</option>
             <option value="unit_subtree">Esta unidad y sus dependientes</option>
           </select>
@@ -419,7 +419,7 @@
 
         <label class="block text-sm font-medium text-slate-700">
           Entrega (destinatario)
-          <select v-model="processForm.recipient_policy" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+          <select v-model="processForm.recipient_policy" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
             <option value="all_matches">Todos los del cargo</option>
             <option value="one_per_unit">Jefatura de la unidad</option>
             <option value="exact_position">Puesto exacto</option>
@@ -428,12 +428,12 @@
 
         <!-- Cargo: fijado por la serie (variación por cargo) o seleccionable (variación default) -->
         <div v-if="processForm.recipient_policy !== 'exact_position'">
-          <div v-if="seriesLockedCargo" class="rounded-lg border border-violet-200 bg-violet-50/50 px-3 py-2 text-xs text-violet-700">
+          <div v-if="seriesLockedCargo" class="rounded-2xl border border-violet-200 bg-violet-50/50 px-3 py-2 text-xs text-violet-700">
             Cargo fijado por la serie: <span class="font-semibold">{{ seriesLockedCargo.name }}</span>
           </div>
           <label v-else class="block text-sm font-medium text-slate-700">
             Cargo destinatario
-            <select v-model="processForm.cargo_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <select v-model="processForm.cargo_id" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
               <option value="">Selecciona…</option>
               <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
@@ -443,7 +443,7 @@
         <!-- Puesto exacto: de los puestos de esta unidad -->
         <label v-else class="block text-sm font-medium text-slate-700">
           Puesto de la unidad
-          <select v-model="processForm.position_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+          <select v-model="processForm.position_id" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
             <option value="">Selecciona…</option>
             <option v-for="pos in detailPositions" :key="pos.id" :value="pos.id">
               {{ pos.cargo_name || pos.title || 'Puesto' }} #{{ pos.slot_no }}

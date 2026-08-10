@@ -40,13 +40,13 @@
       <span v-if="data.collapsed" class="text-[11px] font-semibold text-indigo-500">▸</span>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
-      <span class="inline-flex max-w-[10.5rem] items-center truncate rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200" :title="data.slug">
+      <span class="inline-flex max-w-[10.5rem] items-center truncate rounded-xl bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200" :title="data.slug">
         {{ data.slug }}
       </span>
       <button
         v-if="data.definitions_count"
         type="button"
-        class="nodrag inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1 transition-colors hover:brightness-95"
+        class="nodrag inline-flex items-center gap-0.5 rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1 transition-colors hover:brightness-95"
         :class="configBadgeClass"
         :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
         @click.stop="data.onToggleConfigs?.(data.id)"
@@ -54,7 +54,7 @@
         <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
         {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
-      <span v-else class="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-400 ring-1 ring-slate-200">Sin config.</span>
+      <span v-else class="inline-flex items-center rounded-xl bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-400 ring-1 ring-slate-200">Sin config.</span>
       <span v-if="!data.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
     </p>
     <Handle type="source" :position="Position.Bottom" class="unit-node__handle" />

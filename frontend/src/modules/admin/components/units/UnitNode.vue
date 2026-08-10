@@ -48,12 +48,12 @@
       <span v-if="data.collapsed" class="text-[11px] font-semibold text-indigo-500">▸</span>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
-      <span class="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+      <span class="inline-flex items-center rounded-xl bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
         {{ data.unit_type_name || 'Sin tipo' }}
       </span>
       <span
         v-if="data.positions_count"
-        class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1"
+        class="inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
         :class="positionsBadgeClass"
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</span>

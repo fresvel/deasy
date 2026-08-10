@@ -160,7 +160,7 @@
               <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
                 aria-label="Adjuntar archivos"
                 title="Adjuntar archivos"
                 @click="attachmentInputRef?.click?.()"
@@ -172,7 +172,7 @@
                 v-model="draft"
                 rows="1"
                 aria-label="Mensaje del chat"
-                class="max-h-40 min-h-13 flex-1 resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                class="max-h-40 min-h-13 flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                 placeholder="Escribe un mensaje"
                 @input="resizeComposer"
                 @keydown.enter.exact.prevent="sendMessage"
@@ -180,7 +180,7 @@
               <AppButton
                 variant="primary"
                 size="sm"
-                class-name="h-[52px] shrink-0 rounded-lg px-4"
+                class-name="h-[52px] shrink-0 rounded-2xl px-4"
                 :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
                 @click="sendMessage"
               >

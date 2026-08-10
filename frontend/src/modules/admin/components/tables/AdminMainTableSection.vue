@@ -206,7 +206,7 @@
                 </div>
               </template>
               <template v-else-if="isDefinitionStatusField(field) && row[field.name]">
-                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadge(row[field.name]).class">
+                <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadge(row[field.name]).class">
                   {{ definitionStatusBadge(row[field.name]).label }}
                 </span>
               </template>

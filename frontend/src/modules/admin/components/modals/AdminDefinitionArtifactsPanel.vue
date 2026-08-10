@@ -3,10 +3,10 @@
     <div v-if="!embedded && context" class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm text-emerald-950">{{ context.name || `Configuracion #${context.id}` }}</strong>
-        <span class="inline-flex items-center rounded-md bg-white/80 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
           {{ context.variation_key || "—" }}
         </span>
-        <span class="inline-flex items-center rounded-md bg-white/80 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
           {{ context.definition_version || "—" }}
         </span>
       </div>
@@ -50,7 +50,7 @@
             v-if="canManage"
             aria-label="Modo de emisión de la plantilla"
             :value="row.item_mode || 'single'"
-            class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400"
+            class="rounded-2xl border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400"
             @change="$emit('set-item-mode', { row, itemMode: $event.target.value })"
           >
             <option value="single">Simple (1 entregable)</option>

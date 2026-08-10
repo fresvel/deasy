@@ -1,6 +1,6 @@
 <template>
   <div
-    class="tpl-node relative rounded-md border border-violet-200 border-l-4 border-l-violet-400 bg-violet-50/50 px-2.5 py-1.5 shadow-sm transition-all"
+    class="tpl-node relative rounded-xl border border-violet-200 border-l-4 border-l-violet-400 bg-violet-50/50 px-2.5 py-1.5 shadow-sm transition-all"
     :class="data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : ''"
     :title="data.display_name"
     @mouseenter="hover = true"

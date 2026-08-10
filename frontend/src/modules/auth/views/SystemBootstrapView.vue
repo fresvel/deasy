@@ -155,7 +155,7 @@
         <fieldset
           v-for="group in selectableCatalogGroups"
           :key="group.key"
-          class="rounded-lg border border-slate-200 p-4"
+          class="rounded-2xl border border-slate-200 p-4"
         >
           <legend class="sr-only">{{ group.label }}</legend>
           <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -177,7 +177,7 @@
             <label
               v-for="option in group.options"
               :key="option.id"
-              class="flex min-h-11 items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors"
+              class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors"
               :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-white'"
             >
               <input
@@ -194,7 +194,7 @@
           </div>
         </fieldset>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.relation_unit_types">
@@ -205,7 +205,7 @@
           </SToggle>
         </div>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.example_units">
@@ -216,7 +216,7 @@
           </SToggle>
         </div>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.example_positions">
@@ -227,7 +227,7 @@
           </SToggle>
         </div>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.example_users">

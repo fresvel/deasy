@@ -11,7 +11,7 @@
 
           <router-link
             to="/register"
-            class="inline-flex w-fit shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
+            class="inline-flex w-fit shrink-0 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
           >
             <IconArrowLeft class="h-5 w-5" />
             Volver al registro
@@ -28,7 +28,7 @@
         <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-red-500">
           <IconAlertCircle class="mb-4 h-12 w-12" />
           <p class="text-lg font-medium">{{ error }}</p>
-          <button @click="fetchTerms" class="mt-6 flex items-center gap-2 rounded-lg bg-blue-50 px-6 py-2 font-semibold text-blue-700 transition-colors hover:bg-blue-100">
+          <button @click="fetchTerms" class="mt-6 flex items-center gap-2 rounded-2xl bg-blue-50 px-6 py-2 font-semibold text-blue-700 transition-colors hover:bg-blue-100">
             <IconRefresh class="h-5 w-5" /> Intentar de nuevo
           </button>
         </div>
@@ -43,7 +43,7 @@
           </p>
           <router-link
             :to="{ path: '/register', query: { terms: 'accepted' } }"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white transition-all hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 sm:w-auto"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-8 py-3 text-base font-semibold text-white transition-all hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 sm:w-auto"
           >
             Entendido
           </router-link>

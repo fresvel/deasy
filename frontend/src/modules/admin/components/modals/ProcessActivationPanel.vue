@@ -18,7 +18,7 @@
         <div class="flex items-center justify-between gap-2">
           <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Requisitos para activar</span>
           <span
-            class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold ring-1"
+            class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold ring-1"
             :class="allRequirementsMet ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-slate-100 text-slate-600 ring-slate-200'"
           >{{ completedRequirements }}/3</span>
         </div>
