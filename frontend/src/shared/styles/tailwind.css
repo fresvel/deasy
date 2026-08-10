@@ -1,61 +1,91 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* ------------------------------------------------------------------------------------
+   [fase-3 2026-08-09] REGISTRO DE LA PALETA EN TAILWIND.
+
+   Hasta hoy el proyecto usaba Tailwind v4 como si fuera v3: cero `@theme`, con lo que
+   Tailwind NO conocia ni un token del proyecto. Consecuencia practica: no existian
+   `bg-brand-primary` ni `text-brand-ink`, y el unico modo de usar un color de marca en
+   una plantilla era escribir el hex a mano. De ahi salen los `bg-[#071927]` de
+   `SHeader.vue` y los `focus:border-[#5e4eff]` de `AdminSelectField.vue`.
+
+   Esto es ADITIVO: registra nombres nuevos bajo el namespace `--color-*`, no redefine
+   ninguno de Tailwind. Los valores no se duplican, se referencian — la fuente de verdad
+   sigue siendo la paleta de `theme.css`.
+
+   ⚠️ NO añadir aqui `--color-*` pensando en modo oscuro. Este repo no declara
+   `@custom-variant dark`, asi que Tailwind v4 compila `dark:` a
+   `@media (prefers-color-scheme: dark)` y una receta pegada de TailAdmin pintaria
+   componentes en oscuro sobre una app en claro. Fallo silencioso.
+   ------------------------------------------------------------------------------------ */
+@theme {
+    --color-brand-primary: var(--brand-primary);
+    --color-brand-accent: var(--brand-accent);
+    --color-brand-navy: var(--brand-navy);
+    --color-brand-navy-deep: var(--brand-navy-deep);
+    --color-brand-ink: var(--brand-ink);
+    --color-brand-white: var(--brand-white);
+    --color-brand-border: var(--brand-border);
+    --color-brand-border-strong: var(--brand-border-strong);
+    --color-brand-surface-muted: var(--brand-surface-muted);
+    --color-brand-text-strong: var(--brand-text-strong);
+    --color-brand-text-body: var(--brand-text-body);
+    --color-state-success: var(--state-success);
+    --color-state-danger: var(--state-danger);
+    --color-state-gold: var(--state-gold);
+}
+
 @layer base {
     /* ----------------------------------------------------------------------------------
-       TOKENS `--deasy-*` — capa SEMANTICA. La paleta canonica vive en `theme.css`
-       (`--brand-*`, `:root` sin capa) y es la que tiene consumidores fuera de este
-       fichero (`AdminTableManager.css`, `FirmarPdf.vue`, `BtnSera.vue`). `--deasy-*`
-       no ha salido nunca de `shared/styles/`.
+       [fase-3 2026-08-09] YA NO HAY DOS JUEGOS DE TOKENS. El juego `--deasy-*` se ha
+       colapsado entero sobre `--brand-*`, que era la paleta canonica declarada y la
+       unica con consumidores fuera de `shared/styles/`. La declaracion de cada token
+       vive donde le corresponde: la PALETA en `theme.css`, y aqui solo lo que el
+       propio `theme.css` no tenia.
 
-       [fusion-fase-X 2026-08-07] Colapso de los tokens duplicados entre los dos juegos:
-       los que declaraban el MISMO valor dos veces ahora referencian a `--brand-*`, que
-       queda como unica fuente de verdad; los duplicados sin ningun consumidor se han
-       borrado en vez de aliasarse.
+       Como se hizo, porque no es obvio: colapsar el espacio de nombres NO es fusionar
+       valores. Los tres que ya eran alias (`--deasy-border-soft`, `--deasy-primary`,
+       `--deasy-brand-gradient`) se sustituyeron por su destino y la indireccion
+       desaparecio. Los demas NO tenian gemelo con el mismo valor, asi que se
+       RENOMBRARON conservando su valor. Fusionar `#f7f9fc` con `#f8fafc` porque
+       "son casi el mismo gris" habria sido un cambio de aspecto colado dentro de un
+       refactor que promete no tener ninguno.
 
-       Lo que NO se ha colapsado, y por que:
-       - `--deasy-surface-muted` (#f7f9fc) vs `--brand-surface-alt` (#f8fafc): mismo rol,
-         valores YA divergentes. Unificarlos cambiaria el aspecto en produccion, asi que
-         hace falta una decision de diseno, no un merge.
-       - `--deasy-radius-*` vs `--radius-*` de `theme.css`: escalas distintas (0.5rem vs
-         12px...) y ademas `--radius-*` secuestra el espacio de nombres de Tailwind
-         (theme.css:36-39 hace que `rounded-lg` valga 16px). Deshacerlo es otro paso.
-       - `--deasy-surface-page` / `--deasy-sidebar` / `--deasy-sidebar-strong`: el navy
-         `#071927` esta declarado tres veces, pero solo `--surface-page` tiene consumidores.
-         Sin gemelo `--brand-*` plano (solo existe dentro de `--brand-workspace-gradient`).
+       Lo que sigue pendiente, y por que no se toca aqui:
+       - `--radius-sm/md/lg` de `theme.css` secuestran el espacio de nombres de Tailwind
+         y hacen que `rounded-lg` valga 16px. Deshacerlo mueve 227 usos: es la fase 4.
+       - `--font-weight-medium/semibold` tambien pisan el namespace, pero con los MISMOS
+         valores por defecto de Tailwind. Hoy son inocuos; se dejan anotados.
        ---------------------------------------------------------------------------------- */
     :root {
-        --deasy-surface-page: #071927;
-        --deasy-surface-muted: #f7f9fc;
-        --deasy-surface-soft: rgba(247, 249, 252, 0.92);
-        /* = --brand-border (#e2e6f0), identico tambien bajo data-environment="local-dev" */
-        --deasy-border-soft: var(--brand-border);
-        --deasy-border-strong: #cfd6e4;
-        --deasy-text-strong: #343741;
-        --deasy-text-body: #3f4254;
-        /* = --brand-primary (#5e4eff) */
-        --deasy-primary: var(--brand-primary);
-        /* = --brand-gradient-angled (linear-gradient(135deg, #5e4eff 0%, #3898ff 100%)) */
-        --deasy-brand-gradient: var(--brand-gradient-angled);
-        --deasy-brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
+        /* El navy del workspace. Antes estaba escrito tres veces y no tenia token
+           `--brand-*` plano: solo existia dentro de `--brand-workspace-gradient`. */
+        --brand-navy-deep: #071927;
+        --brand-surface-muted: #f7f9fc;
+        --brand-surface-soft: rgba(247, 249, 252, 0.92);
+        --brand-border-strong: #cfd6e4;
+        --brand-text-strong: #343741;
+        --brand-text-body: #3f4254;
+        --brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
     }
 
     html {
-        @apply bg-[var(--deasy-surface-page)];
+        @apply bg-[var(--brand-navy-deep)];
     }
 
     body {
-        @apply bg-[var(--deasy-surface-page)] text-[var(--deasy-text-body)] antialiased;
+        @apply bg-[var(--brand-navy-deep)] text-[var(--brand-text-body)] antialiased;
     }
 
     #app {
-        @apply min-h-screen bg-[var(--deasy-surface-page)];
+        @apply min-h-screen bg-[var(--brand-navy-deep)];
     }
 }
 
 @layer components {
     .deasy-workspace {
-        @apply min-h-screen bg-[var(--deasy-surface-page)] font-sans text-[var(--deasy-text-body)];
+        @apply min-h-screen bg-[var(--brand-navy-deep)] font-sans text-[var(--brand-text-body)];
     }
 
     .deasy-workspace-layout {
@@ -282,18 +312,18 @@
        Ganaba la segunda por orden de cascada dentro de la misma capa. Del bloque 1
        (rounded-2xl + shadow-none) no sobrevivia ninguna declaracion. */
     /* [fusion-fase-X 2026-08-07] ex-L334 + ex-L1354. El skin plano del bloque 2 pisaba TODO,
-       incluido `background: var(--deasy-surface-muted)`: hoy esta tarjeta es blanca. */
+       incluido `background: var(--brand-surface-muted)`: hoy esta tarjeta es blanca. */
     /* [fusion-fase-X 2026-08-07] ex-L340 + ex-L1354. Igual que .deasy-card-muted: el bloque 2
-       pisaba `background: var(--deasy-surface-soft)`; hoy es blanca. */
+       pisaba `background: var(--brand-surface-soft)`; hoy es blanca. */
     /* [fusion-fase-X 2026-08-07] ex-L350 + ex-L1354. Del bloque 1 solo sobrevive `p-4`
        (el skin del bloque 2 no declara padding). */
-    /* [fusion-fase-X 2026-08-07] ex-L355 + ex-L1354. Sobrevive `p-4`; el fondo `--deasy-surface-muted`
+    /* [fusion-fase-X 2026-08-07] ex-L355 + ex-L1354. Sobrevive `p-4`; el fondo `--brand-surface-muted`
        lo pisaba `bg-white` del bloque 2. */
     /* [fusion-fase-X 2026-08-07] ex-L365 + ex-L1362. Sobreviven los paddings (`p-5 sm:p-6 lg:p-8`);
        radio, sombra y borde los fijaba el bloque 2. */
     .deasy-section-card {
         @apply rounded-[8px] border bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6 lg:p-8;
-        border-color: var(--deasy-border-soft);
+        border-color: var(--brand-border);
     }
 
     .deasy-field-wrapper {
@@ -353,14 +383,14 @@
     }
 
     /* [fusion-fase-X 2026-08-07] ex-L473 + ex-L1368. Del bloque 2 solo ganaban dos cosas:
-       `border-color: var(--deasy-border-strong)` (era -soft) y `placeholder:text-slate-400`.
+       `border-color: var(--brand-border-strong)` (era -soft) y `placeholder:text-slate-400`.
        El resto del bloque 2 repetia lo que ya decia el bloque 1. */
     .deasy-field-input,
     .deasy-field-select,
     .deasy-field-textarea {
         @apply block w-full rounded-lg border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-slate-400;
-        border-color: var(--deasy-border-strong);
-        color: var(--deasy-text-body);
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
     }
 
     .deasy-field-input:focus,
@@ -466,20 +496,20 @@
        que ademas es la que suma el gemelo `.admin-btn--*` que emite AppButton/AdminButton.
        Del bloque 1 solo sobrevivia el `:hover` rojo de `--cancel` (0,2,0 gana al skin 0,1,0),
        que se conserva abajo como regla propia. Todo lo demas del bloque 1 estaba muerto:
-       el degradado de `--primary`, los `--soft-*` con tokens `--deasy-*`, el `rounded-full`
+       el degradado de `--primary`, los `--soft-*` con tokens semanticos, el `rounded-full`
        de `--close` (lo pisaba `rounded-lg`) y los `hover:text-white` de los soft. */
     .deasy-btn--primary,
     .admin-btn--primary {
         @apply text-white;
-        border-color: var(--deasy-primary);
-        background: var(--deasy-primary);
+        border-color: var(--brand-primary);
+        background: var(--brand-primary);
     }
 
     .deasy-btn--secondary,
     .admin-btn--secondary {
         @apply bg-white;
-        border-color: var(--deasy-border-strong);
-        color: var(--deasy-text-body);
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
     }
 
     /* Unico resto vivo del bloque 1 en los botones: el hover rojo de cancelar. Solo lo
@@ -488,21 +518,21 @@
        `hover:` en `@media (hover:hover)` y escribirlo a mano lo activaria tambien en tactil. */
     .deasy-btn--cancel {
         @apply bg-white hover:border-red-300 hover:bg-red-50;
-        border-color: var(--deasy-border-strong);
-        color: var(--deasy-text-body);
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
     }
 
     .admin-btn--cancel {
         @apply bg-white;
-        border-color: var(--deasy-border-strong);
-        color: var(--deasy-text-body);
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
     }
 
     .deasy-btn--outline-primary,
     .admin-btn--outline-primary {
         @apply bg-white;
-        border-color: var(--deasy-primary);
-        color: var(--deasy-primary);
+        border-color: var(--brand-primary);
+        color: var(--brand-primary);
     }
 
     .deasy-btn--outline-danger,
@@ -553,14 +583,14 @@
         @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
         border-color: rgba(18, 63, 136, 0.14);
         background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
-        color: var(--deasy-text-body);
+        color: var(--brand-text-body);
     }
 
     .deasy-btn--menu.is-active {
         @apply shadow-[0_0_0_2px_rgba(18,63,136,0.08)];
         border-color: rgba(18, 63, 136, 0.22);
-        background: var(--deasy-brand-gradient-soft);
-        color: var(--deasy-primary);
+        background: var(--brand-gradient-soft);
+        color: var(--brand-primary);
     }
 
     .deasy-btn--sm {
@@ -667,10 +697,10 @@
        sobrevive `overflow-hidden`. */
     /* [fusion-fase-X 2026-08-07] ex-L791 + ex-L1362. Sobreviven margenes y paddings; radio, sombra y
        borde son los del bloque 2 (el `#e2e6f0` literal del bloque 1 es el mismo valor que
-       `var(--deasy-border-soft)`, asi que se colapsa al token). */
+       `var(--brand-border)`, asi que se colapsa al token). */
     .deasy-table-shell {
         @apply mt-6 mb-6 rounded-[8px] border bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-5;
-        border-color: var(--deasy-border-soft);
+        border-color: var(--brand-border);
     }
 
     .deasy-table-header {
@@ -775,7 +805,7 @@
 
     .deasy-table tbody td:first-child {
         @apply font-semibold;
-        color: var(--deasy-text-strong);
+        color: var(--brand-text-strong);
     }
 
     .deasy-nav-shell {
@@ -1015,11 +1045,11 @@
 
     .deasy-auth-card {
         @apply w-full overflow-hidden rounded-[12px] border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03),0_24px_56px_rgba(11,31,63,0.08)];
-        border-color: var(--deasy-border-soft);
+        border-color: var(--brand-border);
     }
 
     .deasy-auth-title {
-        @apply text-3xl font-semibold tracking-tight text-[var(--deasy-text-strong)];
+        @apply text-3xl font-semibold tracking-tight text-[var(--brand-text-strong)];
     }
 
     .deasy-auth-copy {
@@ -1027,17 +1057,17 @@
     }
 
     /* [fusion-fase-X 2026-08-07] ex-L1262 + ex-L1368. Lo unico que ganaba el bloque 2 era
-       `border-color: var(--deasy-border-strong)` (aqui era -soft). */
+       `border-color: var(--brand-border-strong)` (aqui era -soft). */
     .deasy-auth-field {
         @apply block w-full rounded-lg border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-slate-400;
-        border-color: var(--deasy-border-strong);
-        color: var(--deasy-text-body);
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
     }
 
     .deasy-auth-field:-webkit-autofill,
     .deasy-auth-field:-webkit-autofill:hover,
     .deasy-auth-field:-webkit-autofill:focus {
-        -webkit-text-fill-color: var(--deasy-text-body);
+        -webkit-text-fill-color: var(--brand-text-body);
         -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
         box-shadow: 0 0 0px 1000px #ffffff inset;
         transition: background-color 9999s ease-in-out 0s;
@@ -1052,19 +1082,19 @@
        aqui abajo: el boton de login no tiene sombra hoy. Se retira la declaracion muerta. */
     .deasy-auth-button {
         @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold text-white shadow-none transition-all focus:outline-none active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
-        border-color: var(--deasy-primary);
-        background: var(--deasy-brand-gradient);
+        border-color: var(--brand-primary);
+        background: var(--brand-gradient-angled);
     }
 
     .deasy-auth-button--secondary {
         @apply bg-white shadow-none;
-        border-color: var(--deasy-border-soft);
-        color: var(--deasy-text-body);
+        border-color: var(--brand-border);
+        color: var(--brand-text-body);
     }
 
     .deasy-auth-link {
         @apply text-sm font-semibold transition-colors hover:underline;
-        color: var(--deasy-primary);
+        color: var(--brand-primary);
     }
 
     /* ------------------------------------------------------------------------------
