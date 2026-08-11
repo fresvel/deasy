@@ -38,7 +38,27 @@ quiso hacer —de «el código YAML siembra la base» a «la web/base manda y ge
 hecha**, y `workflowSync.js` es el materializador del modelo NUEVO, no un resto del viejo: el
 `meta.yaml` que lee **lo acaba de escribir el formulario web**. Lo que queda son residuos concretos.
 
-### 0.1 · El propietario del entregable se resuelve con el puesto equivocado — ⬜ **defecto vivo**
+> **Progreso (2026-08-10).** La limpieza se ejecuta en **cuatro pasos**, cada uno con sus commits y
+> sus pruebas. **Pasos 1 y 2 cerrados**; quedan el 3 y el 4.
+>
+> | Paso | Qué | Estado |
+> |---|---|---|
+> | 1A | El eclipse de alias del propietario (§0.1) | ✅ `0790c7c` |
+> | 1B | `NOT EXISTS(documents)` → `user_started_at IS NULL` en los 4 guards del relevo | ✅ `fcaeea6` |
+> | 2 | Retirar el documento suelto (`origin_type` y su camino) | ✅ `c811bbb` |
+> | 3 | Eliminar `documents.owner_person_id` (un solo «quién») | ⬜ |
+> | 4 | Fusionar `task_items` con `documents` | ⬜ |
+>
+> **Restricciones vigentes de esta tanda:** no se toca `frontend/`, y al terminar **no queda ningún
+> alias ni parche de compatibilidad** — ni `documents` como vista, ni `documentId` como alias. Diseño
+> limpio o nada. Aviso: el paso 4 **sí** tocaría el frontend (unos 5 sitios usan `documentId` como
+> señal de existencia), así que habrá que replantear su alcance al llegar.
+>
+> **Nota de método:** el contenedor `deasy-dev-backend-1` puede estar montado sobre **otro worktree**.
+> Comprobarlo con `docker inspect` antes de fiarse de cualquier resultado de prueba — dos corridas se
+> midieron contra código ajeno antes de detectarlo.
+
+### 0.1 · El propietario del entregable se resuelve con el puesto equivocado — ✅ **CERRADO (`0790c7c`)**
 
 **Confirmado con datos de dev el 2026-08-09.** `getTaskItemsForDocumentMaterialization`
 (`backend/services/admin/generation/queries.js:375`) selecciona `t.responsible_position_id` —el de la
@@ -53,9 +73,17 @@ estar leyendo la del entregable.
 O sea: **el entregable del Docente acabó en la bandeja del Coordinador**. La consulta ya trae
 `ti.target_position_id` (`queries.js:373`) y el resolver **nunca lo mira**.
 
-**Arreglo:** `COALESCE(ti.responsible_position_id, t.responsible_position_id)`. Es una línea, y
-**desbloquea 0.2**. Antes de tocarlo, comprobar si algún golden depende del comportamiento actual: si
-se mueve un golden, ese diff **es** la prueba.
+**Cómo se arregló:** con `ti.responsible_position_id` **a secas, sin `COALESCE`** — y de paso se quitó
+el `LEFT JOIN tasks`, que quedaba sin uso. El respaldo a nivel de tarea **ya existía aguas abajo** y
+estaba tapado (rama 4 de `resolveOwnerPersonIdForTaskItem`, y rama 2 de
+`resolveOriginUnitIdForTaskItem`, que además prefiere `t.scope_unit_id`, más correcto que la unidad del
+puesto). Un `COALESCE` habría duplicado esas ramas dentro del camino genérico.
+
+Medido con el pipeline real antes y después: `{"item":2,"ti_pos":21,"owner":24}` →
+`{"item":2,"ti_pos":25,"owner":3}`. **Ningún golden se movió**, que es lo esperado: el defecto no era
+observable por HTTP. La red es un unitario nuevo (`generation/documents.test.js`) cuya conexión falsa
+**emula el eclipse** —devuelve el valor del ítem o el de la tarea según el alias del SELECT—, así que
+5 de sus 6 casos fallan contra la consulta vieja.
 
 > La única lectura bajo la que esto sería intencional es que el dueño del documento deba seguir al
 > responsable de la **tarea** y no al del **entregable**. El código no la sostiene: la función se llama
