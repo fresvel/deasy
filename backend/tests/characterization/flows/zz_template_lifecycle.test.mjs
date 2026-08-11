@@ -22,19 +22,53 @@
 // Los ids se enmascaran: las secuencias de PostgreSQL NO retroceden al borrar, así que los
 // round-trips autolimpiantes de `admin_crud` las hacen avanzar y el id concreto no es estable.
 
-import { test, before } from "node:test";
+import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { get, post } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { normalize } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
-import { FIXTURE } from "../config.mjs";
+import { cleanupDraftArtifactByCode, closeDb } from "../lib/db.mjs";
+import { FIXTURE, USERS } from "../config.mjs";
 
 const SUITE = "template_lifecycle";
 
+// Segundo entregable que se cuela en el borrador de configuración durante el update guiado (1.12).
+// El `code` es determinista: `draft_<slugify(display_name)>`.
+const COLADO = {
+  name: "zz char colado",
+  code: "draft_zz-char-colado",
+};
+
+// PDF mínimo pero válido en estructura (mismos bytes que `zzz_artifact_draft`, para que el
+// `content_hash` sea estable si algún día se fija).
+const REFERENCE_PDF = {
+  filename: "referencia.pdf",
+  contentType: "application/pdf",
+  content:
+    "%PDF-1.4\n" +
+    "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
+    "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
+    "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n" +
+    "trailer<</Root 1 0 R>>\n" +
+    "%%EOF\n",
+};
+
+// Un paso de entrega válido: sin él la plantilla no supera el readiness de publicación.
+const FILL_WORKFLOW = JSON.stringify({
+  steps: [{ order: 1, resolver_type: "task_assignee", selection_mode: "auto_one" }],
+});
+
 before(async () => {
   await waitForReady();
+  // Idempotencia: si una corrida anterior murió a medias, los restos se limpian antes de empezar.
+  await cleanupDraftArtifactByCode(COLADO.code);
+});
+
+after(async () => {
+  await cleanupDraftArtifactByCode(COLADO.code);
+  await closeDb();
 });
 
 // Estado compartido entre los pasos del update guiado (son un flujo, no casos sueltos).
@@ -95,6 +129,34 @@ test("GET /admin/sql/process_definitions/:id/activation-diff -> diff del borrado
   });
 });
 
+// --- Defecto 1.12: un segundo entregable SIN PUBLICAR dentro del borrador de configuración -------
+//
+// El update guiado versiona UNA plantilla, pero nada impide añadir otro entregable al borrador de
+// configuración mientras dura la edición. Ese entregable nace en `draft` y el `finish` no lo mira:
+// publica solo la suya, y el gate de activación comprueba `is_active`, no `lifecycle_state`.
+test("POST draft vinculado al borrador de configuración -> segundo entregable en borrador", async () => {
+  const token = await tokenFor("admin");
+  assert.ok(guided.configDraftId, "depende del paso anterior");
+
+  const res = await post("/admin/sql/template_artifacts/draft", {
+    token,
+    form: {
+      display_name: COLADO.name,
+      owner_cedula: USERS.admin.identifier,
+      process_definition_id: String(guided.configDraftId),
+      fill_workflow: FILL_WORKFLOW,
+      pdf_file: REFERENCE_PDF,
+    },
+  });
+  matchSnapshot(SUITE, "colado_creado", {
+    status: res.status,
+    template_code: res.body?.template_code ?? null,
+  });
+  assert.equal(res.status, 200, `crear el segundo borrador debe responder 200: ${JSON.stringify(res.body)}`);
+  guided.coladoId = res.body?.id;
+  assert.ok(guided.coladoId, "debe devolverse el id del segundo entregable");
+});
+
 test("POST /admin/sql/template_artifacts/guided-update/finish -> publica la plantilla y activa la configuración", async () => {
   const token = await tokenFor("admin");
   assert.ok(guided.templateDraftId, "depende del paso anterior");
@@ -110,6 +172,26 @@ test("POST /admin/sql/template_artifacts/guided-update/finish -> publica la plan
   assert.equal(res.body?.template_lifecycle_state, "published");
   assert.equal(res.body?.config_status, "active");
   assert.equal(res.body?.retired_previous_config, 1, "la configuración activa anterior debe retirarse");
+});
+
+// La clave del golden se llama `defecto_borrador_colado_en_activacion` a propósito y NO se renombra
+// al cerrarlo (mismo criterio que `defecto_deliverable_huerfano` en `zzz_artifact_draft`): fijó
+// primero el comportamiento ROTO —la configuración quedaba ACTIVA con un entregable en `draft`
+// dentro, y `launch.js` no mira `lifecycle_state` en ningún sitio— y el diff de ese golden,
+// de "draft" a "published", ES la prueba del arreglo. Renombrarla la borraría.
+test("defecto 1.12: la configuración se activa con el segundo entregable aún en borrador", async () => {
+  const token = await tokenFor("admin");
+  assert.ok(guided.coladoId, "depende del paso anterior");
+
+  const artifacts = await get("/admin/sql/template_artifacts", { token });
+  const colado = (artifacts.body || []).find((row) => Number(row.id) === Number(guided.coladoId));
+  const definitions = await get("/admin/sql/process_definition_versions", { token });
+  const config = (definitions.body || []).find((row) => Number(row.id) === Number(guided.configDraftId));
+
+  matchSnapshot(SUITE, "defecto_borrador_colado_en_activacion", {
+    config_status: config?.status ?? null,
+    colado_lifecycle_state: colado?.lifecycle_state ?? null,
+  });
 });
 
 test("tras publicar, la configuración anterior queda retirada y la nueva activa", async () => {

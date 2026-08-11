@@ -17,6 +17,14 @@
       "message": "La configuración no existe."
     }
   },
+  "colado_creado": {
+    "status": 200,
+    "template_code": "draft_zz-char-colado"
+  },
+  "defecto_borrador_colado_en_activacion": {
+    "config_status": "active",
+    "colado_lifecycle_state": "draft"
+  },
   "estado_configuraciones_tras_publicar": {
     "status": 200,
     "byStatus": {
