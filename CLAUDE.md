@@ -88,32 +88,44 @@ Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor
 
 ### Estilos — dónde va cada cosa
 
-Los ficheros son **dos**, ambos en `frontend/src/shared/styles/` (no en `frontend/src/styles/`, que
-no existe), y los carga `main.js`:
+Los estilos viven en `frontend/src/shared/styles/` (no en `frontend/src/styles/`, que no existe) y
+son **15 módulos por familia**. `main.js` importa **sólo `index.css`**, que los encadena.
 
-| Fichero | Qué va aquí |
+| Módulo | Qué va aquí |
 |---|---|
-| `theme.css` | La **paleta** (`--brand-*`, `--state-*`) y el skin en CSS plano |
-| `tailwind.css` | El `@theme` que registra la paleta en Tailwind, y las clases `.deasy-*` de `@layer components` |
+| `tokens.css` | La **paleta** (`--brand-*`, `--state-*`, `--action-*`) y el `@theme` que la registra en Tailwind |
+| `base.css` | Reset, tipografía, `html`/`body`/`#app` |
+| `layout.css` · `nav.css` · `surfaces.css` | Armazón, navegación, tarjetas |
+| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` | Un fichero por familia de componente |
+| `overrides.css` | El repintado de utilidades de Tailwind a la marca. **Va el último a propósito** |
 
-**Un solo juego de tokens: `--brand-*`.** El juego paralelo `--deasy-*` se colapsó sobre él el
-2026-08-09. Si necesitas un color, **usa el token**; si el token no existe, decláralo en la paleta,
-no en el sitio donde lo gastas.
+⚠️ **El orden de los `@import` de `index.css` es parte del diseño, no es alfabético.** En CSS dos
+reglas de la misma especificidad se resuelven por orden de aparición. Está explicado en el propio
+fichero; si mueves un import, verifícalo en el navegador.
 
-Tres cosas que cuestan caro y no son evidentes:
+**Un solo juego de tokens.** El juego paralelo `--deasy-*` se colapsó sobre `--brand-*` el
+2026-08-09. **Y no queda ni un color suelto en el CSS**: si necesitas uno, usa el token; si no
+existe, decláralo en `tokens.css` **con su familia**, no en el sitio donde lo gastas.
 
-1. **`pnpm run lint:css` sale en ROJO a propósito** (159 hex pendientes de migrar). Es la línea base
-   de la fase 6 del frente 4, **no entra en el gate de CI** hasta que llegue a cero, y **no debe
-   subir**. Si tu cambio añade incidencias, has metido un hex nuevo.
+Cuatro cosas que cuestan caro y no son evidentes:
+
+1. **`pnpm run lint:css` está en CERO errores y ahí se queda.** Si tu cambio lo sube, has metido un
+   color suelto. Ojo: la regla `color-no-hex` **no ve** los hex dentro de `@apply` ni los
+   `rgb()/rgba()` con triplete numérico — el contador en verde no significa que no haya deuda.
 2. **Antes de declarar un token, comprueba que su nombre no sea un namespace de Tailwind v4**
    (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`, `--breakpoint-*`).
    `--radius-lg` hizo durante meses que `rounded-lg` valiera 16px en toda la app, con la escala
    invertida. El fallo es **silencioso y global**.
-3. **Ni el build, ni el lint, ni los tests ven que rompiste un estilo.** Se demostró: borrar dos
-   clases dejó los 304 tests en verde y la barra lateral sin color. Para un cambio de CSS, la
-   verificación es el navegador — y si es amplio, una huella de `getComputedStyle` antes/después.
+3. **La tipografía se carga desde `index.html`, no desde el CSS.** Un `@import` remoto anidado
+   dentro de un módulo lo descarta Vite en silencio y la app entera se queda con la fuente de
+   reserva. Ya pasó.
+4. **Ni el build, ni el lint, ni los tests ven que rompiste un estilo.** Está demostrado cuatro
+   veces: borrar dos clases dejó los 304 tests en verde y la barra lateral sin color. Para un cambio
+   de CSS la verificación es el navegador — y si es amplio, una **huella de `getComputedStyle` +
+   `getBoundingClientRect` de cada nodo**, comparada antes/después. Espera a `document.fonts.ready`
+   antes de medir o los anchos mienten.
 
-El plan y la bitácora del sistema de diseño están en **`docs/planes/sistema-diseno/`**.
+El plan, la bitácora y las dos auditorías están en **`docs/planes/sistema-diseno/`**.
 
 ### Backend
 ```bash
