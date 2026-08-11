@@ -1,6 +1,6 @@
 <template>
   <div
-    class="cfg-node relative rounded-lg border-l-4 px-2.5 py-1.5 shadow-sm transition-all"
+    class="cfg-node relative rounded-2xl border-l-4 px-2.5 py-1.5 shadow-sm transition-all"
     :class="[statusBorderClass, data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : '']"
     :title="data.definition_name"
     @mouseenter="hover = true"

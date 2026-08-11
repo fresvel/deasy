@@ -492,27 +492,47 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 
 ---
 
-## Frente 4 · Sistema de diseño — ⛔ desbloqueado a medias, y bloquea a otros
+## Frente 4 · Sistema de diseño — 🟢 desbloqueado del todo
+
+> **Plan, evidencia y bitácora: [`sistema-diseno/`](./sistema-diseno/).** El frente ocupaba 20 líneas
+> aquí y necesitaba más: la medición del 2026-08-09 encontró **tres cosas que no estaban en ningún
+> plan** y que iban *antes* de los pasos ya escritos.
 
 El orden **no es negociable**, porque hacerlo al revés significa recodificar el conflicto en 1 269
-sitios:
+sitios. Y la sesión del 2026-08-09 le añadió un principio: **borrar antes de migrar** — tokenizar
+reglas que no aplican a ningún nodo es trabajo que se tira.
 
 1. ✅ Fusionar los dos `@layer components` en conflicto — hecho (`63b901e`)
 2. ✅ Eliminar los componentes muertos y su CSS — hecho (2026-08-09)
-3. ⬜ **Colapsar los tokens duplicados `--deasy-*` / `--brand-*`** ← *aquí estamos*
+3. ✅ **Colapsar los tokens duplicados `--deasy-*` / `--brand-*`** — hecho (`6e60d74`). Ya no hay dos
+   juegos, y `@theme` registra la paleta en Tailwind, que es lo que le da destino al paso 5
 4. ⬜ Cerrar el **fork real**: `AdminButton.vue` (un consumidor, único emisor vivo de `admin-btn--*`).
    Diverge de `AppButton` en que **aplica la clase de tamaño incluso con `icon-only`**, así que
-   cambiarlo mueve el aspecto: pide navegador
-5. ⬜ Migrar los ~**1 269 colores** hardcodeados
+   cambiarlo mueve el aspecto: pide navegador ← *aquí estamos*
+5. 🟡 Migrar los ~1 269 colores — **arañado** (`192e09d`): hecho el subconjunto de componentes
+   compartidos que duplicaban un token exacto. Queda el grueso, y va con el frente 3
 6. ⬜ Y solo entonces, las **33 incidencias de contraste** (`css:S7924`), que son accesibilidad real
 
-> **Antes de adoptar tokens de TailAdmin**, lee las tres colisiones activas del skill `tailadmin-ui`:
-> `rounded-lg` vale 16 px por una escala invertida, no hay `@theme`, y `dark:` se autoactivaría.
+**Lo que la sesión del 2026-08-09 cerró de más, y no estaba escrito aquí:**
+
+- **CSS total 3 997 → 2 054 líneas (−49 %).** Más de la mitad estaba muerto o era inerte.
+- **`AdminTableManager.css` borrado entero**: 604 líneas cargadas `<style scoped src>` sin un solo
+  `:deep()`. Medido en navegador: **0 de sus 86 reglas aplicaban**. La columna de acciones declara
+  `position: sticky` y el DOM devuelve `static` — se diseñó y nunca funcionó.
+- **La colisión `--radius-*` deshecha**: 224 usos reescritos preservando el aspecto, y la escala de
+  radios vuelve a ser monótona (`sm 4 < md 6 < lg 8 < xl 12 < 2xl 16`).
+- **Barandilla**: stylelint + dos reglas de `eslint-plugin-vue`, donde no había ninguna.
+  `pnpm run lint:css` sale en rojo a propósito (151 hex) y **no debe subir**.
+
+> Las tres colisiones del skill `tailadmin-ui` están **resueltas a medias**: `rounded-lg` ya vale 8 px
+> y `@theme` ya existe. **Sigue viva la tercera**: no hay `@custom-variant dark`, así que pegar una
+> receta con `dark:` pintaría en oscuro sobre la app en claro. Fallo silencioso.
 
 **Defecto visual detectado y no arreglado:** en el modal «Agregar título académico» la cabecera sale
-casi negra. Causa: `theme.css:1841`, un `html[data-environment="local-dev"] header { … !important }`
-que golpea **cualquier `<header>`**, incluido uno dentro del cuerpo de un modal. Solo afecta a dev,
-que es justo lo que lo hace traicionero: **dev ≠ prod**.
+casi negra. Causa: un `html[data-environment="local-dev"] header { … !important }` que golpea
+**cualquier `<header>`**, incluido uno dentro del cuerpo de un modal. Solo afecta a dev, que es justo
+lo que lo hace traicionero: **dev ≠ prod**. El bloque `local-dev` entero (220 líneas, 105
+`!important`) sigue ahí; retirarlo es una decisión aparte, anotada en `sistema-diseno/`.
 
 ---
 

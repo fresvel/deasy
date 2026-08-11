@@ -15,7 +15,7 @@
           <button
             v-if="showFieldControls"
             type="button"
-            class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+            class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
             title="Modo anterior"
             @click="$emit('previous-batch-mode')"
           >
@@ -31,7 +31,7 @@
           <button
             v-if="showFieldControls"
             type="button"
-            class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+            class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
             title="Siguiente modo"
             @click="$emit('next-batch-mode')"
           >
@@ -45,7 +45,7 @@
             <button
               v-if="showFieldControls"
               type="button"
-              class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+              class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
               title="Referencia anterior"
               @click="$emit('previous-page-reference')"
             >
@@ -61,7 +61,7 @@
             <button
               v-if="showFieldControls"
               type="button"
-              class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+              class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
               title="Siguiente referencia"
               @click="$emit('next-page-reference')"
             >
@@ -72,7 +72,7 @@
 
         <div
           v-if="currentModeFieldsCount"
-          class="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
         >
           <IconCheck class="h-4 w-4" />
           {{ currentModeFieldsCount }} preparada(s)
@@ -109,7 +109,7 @@
             {{ progressLabel }}
           </div>
         </div>
-        <div class="rounded-lg bg-sky-100 px-2.5 py-1 text-sm font-black text-sky-600">
+        <div class="rounded-2xl bg-sky-100 px-2.5 py-1 text-sm font-black text-sky-600">
           {{ progressPercent }}%
         </div>
       </div>

@@ -4221,4 +4221,3 @@ defineExpose({
 });
 </script>
 
-<style scoped src="./AdminTableManager.css"></style>

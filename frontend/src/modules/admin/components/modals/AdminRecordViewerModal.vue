@@ -14,7 +14,7 @@
   >
     <template #header>
       <div class="flex min-w-0 items-center gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-600">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-600">
           <IconFileDescription class="h-5 w-5" />
         </span>
         <div class="min-w-0">
@@ -30,7 +30,7 @@
       <div v-if="loading" class="flex min-h-40 items-center justify-center text-sm font-medium text-slate-500">
         Cargando informacion del registro...
       </div>
-      <div v-else-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+      <div v-else-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
         {{ error }}
       </div>
       <div v-else-if="recordViewerTable && recordViewerRow" class="space-y-7">
@@ -44,7 +44,7 @@
             </div>
             <span
               v-if="activeValue"
-              class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-bold"
+              class="inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold"
               :class="activeValue === 'Si'
                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                 : 'border-slate-200 bg-slate-100 text-slate-600'"
@@ -90,7 +90,7 @@
                 v-else
                 class="block min-w-0 whitespace-pre-wrap break-words"
                 :class="isLongValue(row)
-                  ? 'max-h-48 overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs font-medium text-slate-600'
+                  ? 'max-h-48 overflow-auto rounded-xl bg-slate-50 p-2 font-mono text-xs font-medium text-slate-600'
                   : ''"
               >
                 {{ getFormattedViewerValue(row) }}
@@ -103,7 +103,7 @@
         <section v-for="section in relatedSections" :key="section.key" class="border-t border-slate-200 pt-5">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600">
                 <IconSettings class="h-4.5 w-4.5" />
               </span>
               <div class="min-w-0">
@@ -127,7 +127,7 @@
             </AdminButton>
           </div>
 
-          <div v-if="section.error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <div v-if="section.error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
             {{ section.error }}
           </div>
           <div
@@ -148,7 +148,7 @@
             :rows="section.rows"
             :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-lg border border-slate-200 bg-white"
+            responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white"
             scroll-class=""
             actions-label="Accion"
           >

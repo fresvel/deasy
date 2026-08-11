@@ -1,0 +1,70 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--brand-navy);
+  background-color: var(--brand-navy-deep);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+  font-family: var(--font-base);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-heading);
+  letter-spacing: -0.01em;
+}
+
+.admin-typography,
+.home-typography {
+  font-family: var(--font-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.admin-typography h1,
+.admin-typography h2,
+.admin-typography h3,
+.admin-typography h4,
+.admin-typography h5,
+.admin-typography h6,
+.home-typography h1,
+.home-typography h2,
+.home-typography h3,
+.home-typography h4,
+.home-typography h5,
+.home-typography h6 {
+  font-family: var(--font-base);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-heading);
+}
+
+a {
+  color: var(--brand-accent);
+}
+
+a:hover {
+  color: var(--brand-primary);
+}
+
+body,
+#app {
+  background: var(--brand-navy-deep);
+  color: var(--brand-text-strong);
+}

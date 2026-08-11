@@ -3,7 +3,7 @@
     <AppLogo size="lg" class-name="mb-8" />
     
     <!-- Go back button -->
-    <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded-lg pr-2">
+    <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded-2xl pr-2">
       <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
       Volver al login
     </router-link>

@@ -1,0 +1,97 @@
+@layer components {
+.deasy-workspace {
+        @apply min-h-screen bg-brand-navy-deep font-sans text-brand-text-body;
+    }
+
+    .deasy-workspace-layout {
+        @apply mx-auto flex w-full max-w-[2560px] flex-1 flex-col items-stretch bg-white xl:flex-row;
+    }
+
+    .deasy-workspace-content {
+        @apply min-w-0 flex-1 bg-white;
+    }
+
+    .deasy-workspace-header {
+        @apply flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-1 py-1 shadow-none;
+        border-color: rgba(255, 255, 255, 0.08);
+        background: transparent;
+    }
+
+    .deasy-workspace-header__context {
+        @apply flex min-w-0 flex-1 items-center gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+    }
+
+    .deasy-workspace-header__actions {
+        @apply flex shrink-0 items-center gap-1.5 sm:gap-2;
+    }
+
+    .deasy-context-header {
+        @apply flex min-w-0 items-center gap-3;
+    }
+
+    .deasy-context-header__copy {
+        @apply min-w-0;
+    }
+
+    .deasy-context-header__title {
+        @apply truncate text-[1.05rem] font-semibold leading-tight text-white;
+    }
+
+    .deasy-context-header__subtitle {
+        @apply mt-0.5 truncate text-[0.8rem] leading-tight text-white/55;
+    }
+
+    .deasy-secondary-nav {
+        @apply mt-4 min-h-0 flex-1 overflow-y-auto border-t border-white/8 pt-4 pr-1 [scrollbar-width:thin];
+    }
+
+    .deasy-sidebar {
+        @apply relative flex h-full min-h-0 w-full flex-col xl:w-auto xl:flex-row;
+    }
+
+    .deasy-sidebar__rail {
+        @apply hidden h-full w-20 shrink-0 flex-col items-center gap-4 px-3 py-4 xl:flex;
+    }
+
+    .deasy-sidebar__flyout {
+        @apply flex h-full min-h-0 w-full flex-col gap-3 p-3;
+    }
+
+    /* En escritorio el panel NO flota sobre el contenido: es una COLUMNA del layout.
+       Antes era `absolute left-full z-50`, asi que se superponia a la primera columna de
+       tarjetas y las hacia inalcanzables con el raton (el toggle si funcionaba, pero el
+       panel arranca abierto en escritorio). Ahora entra en el flujo: al abrirlo DESPLAZA el
+       contenido y al cerrarlo (xl:hidden en AppWorkspaceSidebar) el contenido recupera el
+       espacio. */
+    @media (min-width: 1280px) {
+        .deasy-sidebar__flyout {
+            @apply visible relative h-full w-[21.5rem] shrink-0 translate-x-0 overflow-y-auto border-l p-3 opacity-100 [scrollbar-width:thin];
+            border-color: rgba(255, 255, 255, 0.08);
+            background: var(--brand-navy-deep);
+        }
+    }
+
+    .deasy-sidebar__rail-mobile {
+        @apply mb-2 border-b border-white/8 pb-3;
+    }
+
+    .deasy-sidebar-rail-nav {
+        @apply flex flex-col items-center gap-2.5;
+    }
+
+    .deasy-sidebar-rail-nav__item {
+        @apply inline-flex h-12 w-12 items-center justify-center rounded-xl border border-transparent text-white/72 transition-all hover:bg-white/8 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/16;
+    }
+
+    .deasy-sidebar-rail-nav__item--active {
+        @apply border text-white;
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .deasy-sidebar-rail-nav__icon {
+        @apply inline-flex items-center justify-center;
+    }
+
+    
+}

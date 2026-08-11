@@ -5,6 +5,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/brand/deasy-logo.png" />
+
+    <!-- Inter, la tipografia del sistema de diseño. Va AQUI y no como `@import` en el CSS
+         por dos razones. La primera es que dejo de funcionar: al trocear los estilos en
+         modulos, el `@import` remoto quedo anidado dentro de otro fichero y Vite lo
+         descarto, dejando la app entera con la tipografia de reserva. No lo vio el build
+         ni el lint — lo vio la huella de estilos, por un `<h1>` que medía 14 px menos con
+         todos sus estilos computados identicos.
+         La segunda es que un `@import` remoto es mas lento por diseño: encadena la
+         peticion de la fuente detras de la descarga y el parseo del CSS. Desde el HTML
+         el navegador la puede pedir en paralelo. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+
     <title>DEASY</title>
 </head>
 

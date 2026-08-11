@@ -145,7 +145,7 @@
         <template #cell="{ row, field }">
           <span
             v-if="field.name === 'status'"
-            class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold"
+            class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold"
             :class="processConfigurationStatusClass(row[field.name])"
           >
             {{ processConfigurationStatusLabel(row[field.name]) }}

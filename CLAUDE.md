@@ -74,7 +74,8 @@ bash scripts/docker-env.sh dev down
 
 ### Frontend
 ```bash
-bash scripts/docker-env.sh dev exec -T frontend pnpm run lint       # eslint . --ext .js,.vue
+bash scripts/docker-env.sh dev exec -T frontend pnpm run lint       # eslint .
+bash scripts/docker-env.sh dev exec -T frontend pnpm run lint:css   # stylelint src/**/*.css
 bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit  # vitest run
 bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage  # lcov para SonarQube
 bash scripts/docker-env.sh dev exec -T frontend pnpm run build
@@ -84,6 +85,35 @@ Lint solo no es la puerta de validación: hay vitest + `@vue/test-utils` y hay q
 
 Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor** — el volumen de
 `node_modules` sombrea el de la imagen y un `pnpm install` en el host no se ve dentro.
+
+### Estilos — dónde va cada cosa
+
+Los ficheros son **dos**, ambos en `frontend/src/shared/styles/` (no en `frontend/src/styles/`, que
+no existe), y los carga `main.js`:
+
+| Fichero | Qué va aquí |
+|---|---|
+| `theme.css` | La **paleta** (`--brand-*`, `--state-*`) y el skin en CSS plano |
+| `tailwind.css` | El `@theme` que registra la paleta en Tailwind, y las clases `.deasy-*` de `@layer components` |
+
+**Un solo juego de tokens: `--brand-*`.** El juego paralelo `--deasy-*` se colapsó sobre él el
+2026-08-09. Si necesitas un color, **usa el token**; si el token no existe, decláralo en la paleta,
+no en el sitio donde lo gastas.
+
+Tres cosas que cuestan caro y no son evidentes:
+
+1. **`pnpm run lint:css` sale en ROJO a propósito** (159 hex pendientes de migrar). Es la línea base
+   de la fase 6 del frente 4, **no entra en el gate de CI** hasta que llegue a cero, y **no debe
+   subir**. Si tu cambio añade incidencias, has metido un hex nuevo.
+2. **Antes de declarar un token, comprueba que su nombre no sea un namespace de Tailwind v4**
+   (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`, `--breakpoint-*`).
+   `--radius-lg` hizo durante meses que `rounded-lg` valiera 16px en toda la app, con la escala
+   invertida. El fallo es **silencioso y global**.
+3. **Ni el build, ni el lint, ni los tests ven que rompiste un estilo.** Se demostró: borrar dos
+   clases dejó los 304 tests en verde y la barra lateral sin color. Para un cambio de CSS, la
+   verificación es el navegador — y si es amplio, una huella de `getComputedStyle` antes/después.
+
+El plan y la bitácora del sistema de diseño están en **`docs/planes/sistema-diseno/`**.
 
 ### Backend
 ```bash

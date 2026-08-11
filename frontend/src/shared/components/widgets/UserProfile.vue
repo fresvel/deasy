@@ -8,10 +8,10 @@
       :aria-label="`Perfil de ${username}`"
       @click="handleImageClick"
     >
-      <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-lg bg-white object-cover">
+      <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-2xl bg-white object-cover">
       <span
         v-if="signatureMarker"
-        class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-[#071927] bg-emerald-400"
+        class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-brand-navy-deep bg-emerald-400"
         aria-hidden="true"
       ></span>
     </button>
@@ -63,7 +63,7 @@
           <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58">
             {{ subtitle }}
           </p>
-          <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5">
+          <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-2xl border border-white/10 bg-white/8 px-2.5 py-1.5">
             <p class="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-white/52">Token firma</p>
             <p class="mt-1 truncate font-mono text-xs text-white/92">
               {{ signatureMarker }}

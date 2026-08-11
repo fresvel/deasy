@@ -27,7 +27,7 @@
         v-model="form[currentSection.key]"
         :aria-labelledby="sectionTitleId"
         rows="5"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+        class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400"
         :placeholder="currentSection.placeholder"
       ></textarea>
     </div>
@@ -36,7 +36,7 @@
     <div v-else>
       <h4 class="m-0 mb-3 text-base font-bold text-slate-800">Revisión</h4>
       <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
-        <li v-for="section in SECTIONS" :key="section.key" class="rounded-lg border border-slate-200 px-3 py-2">
+        <li v-for="section in SECTIONS" :key="section.key" class="rounded-2xl border border-slate-200 px-3 py-2">
           <span class="block text-xs font-bold uppercase tracking-wide text-slate-400">{{ section.label }}</span>
           <p class="m-0 mt-0.5 whitespace-pre-line text-sm" :class="form[section.key] ? 'text-slate-700' : 'italic text-slate-400'">
             {{ form[section.key] || 'Sin especificar' }}

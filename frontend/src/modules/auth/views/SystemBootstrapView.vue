@@ -30,32 +30,32 @@
         </label>
         <div class="grid gap-4 md:grid-cols-2">
           <div>
-            <label :for="fieldId('cedula-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+            <label :for="fieldId('cedula-1')" class="deasy-form-label">Cédula</label>
             <input :id="fieldId('cedula-1')" v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1234567890" />
           </div>
           <div>
-            <label :for="fieldId('email-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+            <label :for="fieldId('email-1')" class="deasy-form-label">Correo electrónico</label>
             <input :id="fieldId('email-1')" v-model="form.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" />
           </div>
           <div>
-            <label :for="fieldId('first-name-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+            <label :for="fieldId('first-name-1')" class="deasy-form-label">Nombres</label>
             <input :id="fieldId('first-name-1')" v-model="form.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Administrador" />
           </div>
           <div>
-            <label :for="fieldId('last-name-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+            <label :for="fieldId('last-name-1')" class="deasy-form-label">Apellidos</label>
             <input :id="fieldId('last-name-1')" v-model="form.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Principal" />
           </div>
           <div>
-            <label :for="fieldId('whatsapp')" class="mb-1.5 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
+            <label :for="fieldId('whatsapp')" class="deasy-form-label">WhatsApp (opcional)</label>
             <input :id="fieldId('whatsapp')" v-model="form.whatsapp" type="text" inputmode="tel" autocomplete="off" class="deasy-auth-field" placeholder="0990000000" />
           </div>
           <div class="hidden md:block"></div>
           <div>
-            <label :for="fieldId('password-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+            <label :for="fieldId('password-1')" class="deasy-form-label">Contraseña</label>
             <input :id="fieldId('password-1')" v-model="form.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Nueva contraseña" />
           </div>
           <div>
-            <label :for="fieldId('confirm-password-1')" class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+            <label :for="fieldId('confirm-password-1')" class="deasy-form-label">Confirmar contraseña</label>
             <input :id="fieldId('confirm-password-1')" v-model="form.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
           </div>
         </div>
@@ -78,27 +78,27 @@
           </label>
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label :for="fieldId('cedula-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+              <label :for="fieldId('cedula-2')" class="deasy-form-label">Cédula</label>
               <input :id="fieldId('cedula-2')" v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="0987654321" />
             </div>
             <div>
-              <label :for="fieldId('email-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+              <label :for="fieldId('email-2')" class="deasy-form-label">Correo electrónico</label>
               <input :id="fieldId('email-2')" v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="gestor@institucion.edu.ec" />
             </div>
             <div>
-              <label :for="fieldId('first-name-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+              <label :for="fieldId('first-name-2')" class="deasy-form-label">Nombres</label>
               <input :id="fieldId('first-name-2')" v-model="gestorForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Gestor" />
             </div>
             <div>
-              <label :for="fieldId('last-name-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+              <label :for="fieldId('last-name-2')" class="deasy-form-label">Apellidos</label>
               <input :id="fieldId('last-name-2')" v-model="gestorForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Procesos" />
             </div>
             <div>
-              <label :for="fieldId('password-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+              <label :for="fieldId('password-2')" class="deasy-form-label">Contraseña</label>
               <input :id="fieldId('password-2')" v-model="gestorForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del gestor" />
             </div>
             <div>
-              <label :for="fieldId('confirm-password-2')" class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+              <label :for="fieldId('confirm-password-2')" class="deasy-form-label">Confirmar contraseña</label>
               <input :id="fieldId('confirm-password-2')" v-model="gestorForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
             </div>
           </div>
@@ -120,27 +120,27 @@
           </label>
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label :for="fieldId('cedula-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+              <label :for="fieldId('cedula-3')" class="deasy-form-label">Cédula</label>
               <input :id="fieldId('cedula-3')" v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1122334455" />
             </div>
             <div>
-              <label :for="fieldId('email-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+              <label :for="fieldId('email-3')" class="deasy-form-label">Correo electrónico</label>
               <input :id="fieldId('email-3')" v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="usuario@institucion.edu.ec" />
             </div>
             <div>
-              <label :for="fieldId('first-name-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+              <label :for="fieldId('first-name-3')" class="deasy-form-label">Nombres</label>
               <input :id="fieldId('first-name-3')" v-model="usuarioForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Usuario" />
             </div>
             <div>
-              <label :for="fieldId('last-name-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+              <label :for="fieldId('last-name-3')" class="deasy-form-label">Apellidos</label>
               <input :id="fieldId('last-name-3')" v-model="usuarioForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Prueba" />
             </div>
             <div>
-              <label :for="fieldId('password-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+              <label :for="fieldId('password-3')" class="deasy-form-label">Contraseña</label>
               <input :id="fieldId('password-3')" v-model="usuarioForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del usuario" />
             </div>
             <div>
-              <label :for="fieldId('confirm-password-3')" class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+              <label :for="fieldId('confirm-password-3')" class="deasy-form-label">Confirmar contraseña</label>
               <input :id="fieldId('confirm-password-3')" v-model="usuarioForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
             </div>
           </div>
@@ -155,7 +155,7 @@
         <fieldset
           v-for="group in selectableCatalogGroups"
           :key="group.key"
-          class="rounded-lg border border-slate-200 p-4"
+          class="rounded-2xl border border-slate-200 p-4"
         >
           <legend class="sr-only">{{ group.label }}</legend>
           <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -177,7 +177,7 @@
             <label
               v-for="option in group.options"
               :key="option.id"
-              class="flex min-h-11 items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors"
+              class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors"
               :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-white'"
             >
               <input
@@ -194,7 +194,7 @@
           </div>
         </fieldset>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.relation_unit_types">
@@ -205,7 +205,7 @@
           </SToggle>
         </div>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.example_units">
@@ -216,7 +216,7 @@
           </SToggle>
         </div>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.example_positions">
@@ -227,7 +227,7 @@
           </SToggle>
         </div>
         <div
-          class="rounded-lg border p-3.5 transition-colors"
+          class="rounded-2xl border p-3.5 transition-colors"
           :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
         >
           <SToggle v-model="preconfig.example_users">
@@ -326,8 +326,7 @@
     >
       <div
         v-if="message"
-        :class="[
-          'mt-6 flex rounded-xl border p-4',
+        class="mt-6 flex rounded-xl border p-4" :class="[
           isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-emerald-700'
         ]"
       >

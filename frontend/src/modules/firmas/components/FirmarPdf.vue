@@ -149,7 +149,7 @@
         </div>
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -280,7 +280,7 @@
 
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -374,7 +374,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
             
             <div class="flex items-start gap-4">
-              <div class="shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center font-bold">
+              <div class="shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center font-bold">
                 <IconSignature class="w-5 h-5" />
               </div>
               <div>
@@ -397,7 +397,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-slate-100 sm:pl-5">
-              <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-center">
+              <div class="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1.5 text-center">
                 <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pág</span>
                 <span class="block text-lg font-bold text-slate-800 leading-none mt-0.5">{{ field.page }}</span>
               </div>
@@ -413,7 +413,7 @@
           <button
             v-if="signMode !== 'token'"
             @click.stop="requestDeleteField(field.id)"
-            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
+            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
             title="Eliminar campo"
           >
             <IconTrash class="w-5 h-5" stroke-width="1.5" />
@@ -434,7 +434,7 @@
     <div v-else class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
         <label :for="fieldId('filterpage')" class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
-        <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+        <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-2xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
             Pagina {{ page }}
@@ -452,7 +452,7 @@
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-slate-800">{{ field.name }}</span>
-              <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
             </div>
             <span class="text-slate-500 text-xs font-medium">
               {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
@@ -462,7 +462,7 @@
           <div class="flex items-center gap-2 sm:self-center self-end">
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
               @click.stop="goToFieldLocation(field.id)"
             >
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -470,7 +470,7 @@
             </button>
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2 focus:ring-red-200" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2 focus:ring-red-200" 
               @click.stop="requestDeleteField(field.id)"
             >
               <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -495,7 +495,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
           <label :for="fieldId('statusfilter')" class="font-semibold text-sm text-slate-700 mb-0">Estado</label>
-          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
             <option value="all">Todos</option>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
@@ -514,7 +514,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunittypefilter')" class="font-semibold text-sm text-slate-700 mb-0">Tipo de unidad</label>
-          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
             <option value="">Todos</option>
             <option v-for="option in signerUnitTypeOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -523,7 +523,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunitfilter')" class="font-semibold text-sm text-slate-700 mb-0">Unidad</label>
-          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
+          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
             <option v-for="option in signerUnitOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -532,7 +532,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signercargofilter')" class="font-semibold text-sm text-slate-700 mb-0">Cargo</label>
-          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="isLoadingSignerOptions">
+          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
             <option v-for="option in signerCargoOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -569,9 +569,9 @@
               <span>{{ user.email }}</span>
             </div>
             <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-slate-600 mt-2 flex flex-wrap gap-2">
-              <span v-if="user.unit_type_name" class="bg-white border border-slate-200 rounded-md px-2 py-1">{{ user.unit_type_name }}</span>
-              <span v-if="user.unit_name" class="bg-white border border-slate-200 rounded-md px-2 py-1">{{ user.unit_name }}</span>
-              <span v-if="user.cargo_name" class="bg-white border border-slate-200 rounded-md px-2 py-1">{{ user.cargo_name }}</span>
+              <span v-if="user.unit_type_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.unit_type_name }}</span>
+              <span v-if="user.unit_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.unit_name }}</span>
+              <span v-if="user.cargo_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.cargo_name }}</span>
             </div>
           </button>
         </div>
@@ -829,7 +829,7 @@
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-slate-500 mb-1 z-10">
-            <div class="p-1.5 bg-slate-100 rounded-lg"><IconSignature class="w-4 h-4" /></div>
+            <div class="p-1.5 bg-slate-100 rounded-2xl"><IconSignature class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Firmas Detectadas</div>
           </div>
           <div class="text-3xl font-black text-slate-800 z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
@@ -838,7 +838,7 @@
         <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-emerald-700 mb-1 z-10">
-            <div class="p-1.5 bg-emerald-100 rounded-lg"><IconCheck class="w-4 h-4" /></div>
+            <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Firmas Válidas</div>
           </div>
           <div class="text-3xl font-black text-emerald-900 z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
@@ -847,7 +847,7 @@
         <div class="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-cyan-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-cyan-700 mb-1 z-10">
-            <div class="p-1.5 bg-cyan-100 rounded-lg"><IconSearch class="w-4 h-4" /></div>
+            <div class="p-1.5 bg-cyan-100 rounded-2xl"><IconSearch class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Coincidencias</div>
           </div>
           <div class="text-3xl font-black text-cyan-900 z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
@@ -855,7 +855,7 @@
 
         <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm flex flex-col justify-center relative overflow-hidden">
           <div class="flex items-center gap-2 text-indigo-700 mb-2 z-10">
-            <div class="p-1.5 bg-indigo-100 rounded-lg"><IconFileCheck class="w-4 h-4" /></div>
+            <div class="p-1.5 bg-indigo-100 rounded-2xl"><IconFileCheck class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Documento Activo</div>
           </div>
           <div class="text-sm font-bold text-indigo-900 truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
@@ -898,10 +898,10 @@
         <template #cell="{ row, field }">
           <template v-if="field.name === 'validLabel'">
             <div class="flex items-center justify-center">
-              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
+              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
                 <IconCheck class="w-3.5 h-3.5" /> Válida
               </span>
-              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
+              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
                 <IconX class="w-3.5 h-3.5" /> Inválida
               </span>
             </div>

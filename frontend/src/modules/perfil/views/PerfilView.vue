@@ -67,7 +67,7 @@
                         <component :is="sectionIconMeta(section).icon" class="h-4.5 w-4.5 shrink-0" />
                       </span>
                       <span class="deasy-nav-item__label">{{ section.label }}</span>
-                      <span v-if="section.countKey" class="ml-auto inline-flex items-center rounded-lg border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-[10px] font-bold text-[#21517a] shrink-0">
+                      <span v-if="section.countKey" class="ml-auto inline-flex items-center rounded-2xl border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-[10px] font-bold text-[#21517a] shrink-0">
                         {{ dossierCounts[section.countKey] ?? 0 }}
                       </span>
                     </router-link>

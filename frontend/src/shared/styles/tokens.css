@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
+
+/* ------------------------------------------------------------------------------------
+   [fase-3 2026-08-09] REGISTRO DE LA PALETA EN TAILWIND.
+
+   Hasta hoy el proyecto usaba Tailwind v4 como si fuera v3: cero `@theme`, con lo que
+   Tailwind NO conocia ni un token del proyecto. Consecuencia practica: no existian
+   `bg-brand-primary` ni `text-brand-ink`, y el unico modo de usar un color de marca en
+   una plantilla era escribir el hex a mano. De ahi salieron los `bg-[#071927]` de
+   `SHeader.vue` y los `focus:border-[#5e4eff]` de `AdminSelectField.vue`, ya migrados.
+
+   Esto es ADITIVO: registra nombres nuevos bajo el namespace `--color-*`, no redefine
+   ninguno de Tailwind. Los valores no se duplican, se referencian — la fuente de verdad
+   sigue siendo la paleta de `theme.css`.
+
+   ⚠️ NO añadir aqui `--color-*` pensando en modo oscuro. Este repo no declara
+   `@custom-variant dark`, asi que Tailwind v4 compila `dark:` a
+   `@media (prefers-color-scheme: dark)` y una receta pegada de TailAdmin pintaria
+   componentes en oscuro sobre una app en claro. Fallo silencioso.
+   ------------------------------------------------------------------------------------ */
+@theme {
+    --color-brand-primary: var(--brand-primary);
+    --color-brand-accent: var(--brand-accent);
+    --color-brand-navy: var(--brand-navy);
+    --color-brand-navy-deep: var(--brand-navy-deep);
+    --color-brand-ink: var(--brand-ink);
+    --color-brand-white: var(--brand-white);
+    --color-brand-border: var(--brand-border);
+    --color-brand-border-strong: var(--brand-border-strong);
+    --color-brand-border-field: var(--brand-border-field);
+    --color-brand-surface-muted: var(--brand-surface-muted);
+    --color-brand-surface-alt: var(--brand-surface-alt);
+    --color-brand-text-strong: var(--brand-text-strong);
+    --color-brand-text-body: var(--brand-text-body);
+    --color-state-success: var(--state-success);
+    --color-state-danger: var(--state-danger);
+    --color-state-gold: var(--state-gold);
+}
+
+@layer base {
+    /* ----------------------------------------------------------------------------------
+       [fase-3 2026-08-09] YA NO HAY DOS JUEGOS DE TOKENS. El juego `--deasy-*` se ha
+       colapsado entero sobre `--brand-*`, que era la paleta canonica declarada y la
+       unica con consumidores fuera de `shared/styles/`. La declaracion de cada token
+       vive donde le corresponde: la PALETA en `theme.css`, y aqui solo lo que el
+       propio `theme.css` no tenia.
+
+       Como se hizo, porque no es obvio: colapsar el espacio de nombres NO es fusionar
+       valores. Los tres que ya eran alias (`--deasy-border-soft`, `--deasy-primary`,
+       `--deasy-brand-gradient`) se sustituyeron por su destino y la indireccion
+       desaparecio. Los demas NO tenian gemelo con el mismo valor, asi que se
+       RENOMBRARON conservando su valor. Fusionar el `var(--brand-surface-muted)` de uno con el `var(--brand-surface-alt)` de otro porque
+       "son casi el mismo gris" habria sido un cambio de aspecto colado dentro de un
+       refactor que promete no tener ninguno.
+
+       Lo que sigue pendiente, y por que no se toca aqui:
+       - `--font-weight-medium/semibold` de `theme.css` pisan el namespace de Tailwind,
+         pero con los MISMOS valores por defecto. Hoy son inocuos; se dejan anotados.
+         (Los `--radius-*`, que si hacian daño, se retiraron en la fase 4.)
+       ---------------------------------------------------------------------------------- */
+    /* stylelint-disable color-no-hex -- definicion de tokens, ver theme.css */
+    :root {
+        /* El navy del workspace. Antes estaba escrito tres veces y no tenia token
+           `--brand-*` plano: solo existia dentro de `--brand-workspace-gradient`. */
+        --brand-navy-deep: #071927;
+        --brand-surface-muted: #f7f9fc;
+        --brand-surface-soft: rgba(247, 249, 252, 0.92);
+        --brand-border-strong: #cfd6e4;
+        --brand-text-strong: #343741;
+        --brand-text-body: #3f4254;
+        --brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
+    }
+    /* stylelint-enable color-no-hex */
+
+    html {
+        @apply bg-brand-navy-deep;
+    }
+
+    body {
+        @apply bg-brand-navy-deep text-brand-text-body antialiased;
+    }
+
+    #app {
+        @apply min-h-screen bg-brand-navy-deep;
+    }
+}
+
+
+/* `--brand-*` es la PALETA CANONICA del proyecto, y desde la fase 3 (2026-08-09) es la
+   UNICA: el juego paralelo `--deasy-*` se colapso entero sobre esta. Ya no hay dos sitios
+   donde cambiar un color.
+
+   Lo que hay aqui es la paleta; lo que `theme.css` no tenia se declara en `tailwind.css`
+   (`--brand-navy-deep`, `--brand-text-body`, `--brand-border-strong`...).
+
+   [fase-4 2026-08-09] Aqui vivian `--radius-sm/md/lg`, que PISABAN el espacio de nombres de
+   Tailwind v4 y hacian que `rounded-lg` valiera 16px y `rounded-md` 12px en toda la app —
+   con la escala invertida, porque `rounded-lg` (16) salia mayor que `rounded-xl` (12).
+   Ya no estan: los 224 usos se reescribieron al utility que pinta ese mismo valor
+   (lg->2xl, md->xl, sm->lg) y la escala de Tailwind vuelve a ser la suya. Si vas a
+   declarar un token nuevo, comprueba antes que su nombre no sea un namespace de Tailwind
+   v4 (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`,
+   `--breakpoint-*`): el fallo es silencioso y global. */
+/* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
+   DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta,
+   y por eso `color-no-hex` esta activa en el resto del fichero. */
+:root {
+  --brand-primary: #5e4eff;
+  --brand-accent: #00b2a9;
+  --brand-highlight: #5e4eff;
+  --brand-highlight-rgb: 94, 78, 255;
+  --brand-navy: #111827;
+  --brand-ink: #1f2937;
+  --brand-info-soft: rgba(37, 99, 235, 0.1);
+  --brand-white: #ffffff;
+  /* Ancla para oscurecer con color-mix(). No es un color de superficie: no
+     pintes nada directamente con el. */
+  --brand-black: #000000;
+  --brand-border: #e2e6f0;
+  /* El borde de los controles de formulario. Estaba escrito a mano 6 veces. */
+  --brand-border-field: #d7deea;
+  /* Superficie alterna (fondos apagados de cabecera, addon de select, hover suave). 7 veces. */
+  --brand-surface-alt: #f8fafc;
+  --brand-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --brand-gradient-angled: linear-gradient(135deg, #5e4eff 0%, #3898ff 100%);
+  --brand-primary-rgb: 94, 78, 255;
+  --brand-accent-rgb: 0, 178, 169;
+
+  --state-success: #28a745;
+  --state-danger: #dc3545;
+  --state-gold: #d4af37;
+
+  /* Botones de accion de las tablas. UN color por accion: el del icono.
+     El fondo NO se declara, se calcula mezclandolo con blanco (~10%), que es
+     de donde salia el hex que habia escrito a mano. El borde si es un valor
+     propio — es mas saturado que cualquier mezcla — y vive junto a su regla. */
+  --action-neutral: #23384f;
+  --action-view: #075985;
+  --action-assign: #047857;
+  --action-upload: #3751a3;
+  --action-delete: #b42318;
+  --action-warning: #b45309;
+
+  /* Texto secundario: subtitulos, notas al pie, pestañas inactivas. Habia TRES
+     grises para este papel (#5a5f6f, #697081, #64748b) separados entre si por
+     ΔE 3.8-8.7. Se unifican en el mas oscuro, que es el unico con margen comodo
+     sobre AA: 6.36:1 sobre blanco frente a 4.96 y 4.76 de los otros dos. */
+  --brand-text-muted: #5a5f6f;
+
+  /* Iconos de accion secundaria (la ✕ de los dialogos). */
+  --brand-icon: #475569;
+
+  /* Borde de cada boton de accion. NO se deriva del color de la accion: es mas
+     saturado que cualquier mezcla con blanco (medido: ΔE hasta 11.9 en el ambar),
+     asi que es un valor propio. El fondo si se deriva; ver mas arriba. */
+  --action-neutral-line: #b8cadc;
+  --action-view-line: #8ec6df;
+  --action-assign-line: #8ed6b2;
+  --action-upload-line: #aabef4;
+  --action-delete-line: #f3aaa0;
+  --action-warning-line: #f4c26f;
+
+  --input-height: 52px;
+  --font-base: 'Inter', sans-serif;
+  --font-size-base: 1rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --line-height-base: 1.5;
+  --line-height-heading: 1.2;
+}
+/* stylelint-enable color-no-hex */

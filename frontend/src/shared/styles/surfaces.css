@@ -1,0 +1,64 @@
+@layer components {
+.deasy-section-card {
+        @apply rounded-[8px] border bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6 lg:p-8;
+        border-color: var(--brand-border);
+    }
+
+    
+}
+@layer components {
+.deasy-col-1 {
+        @apply md:w-[8.333333%];
+    }
+
+    .deasy-col-2 {
+        @apply md:w-[16.666667%];
+    }
+
+    .deasy-col-3 {
+        @apply md:w-1/4;
+    }
+
+    .deasy-col-4 {
+        @apply md:w-1/3;
+    }
+
+    .deasy-col-5 {
+        @apply md:w-[41.666667%];
+    }
+
+    .deasy-col-6 {
+        @apply md:w-1/2;
+    }
+
+    .deasy-col-7 {
+        @apply md:w-[58.333333%];
+    }
+
+    .deasy-col-8 {
+        @apply md:w-2/3;
+    }
+
+    .deasy-col-9 {
+        @apply md:w-3/4;
+    }
+
+    .deasy-col-10 {
+        @apply md:w-[83.333333%];
+    }
+
+    .deasy-col-11 {
+        @apply md:w-[91.666667%];
+    }
+
+    .deasy-col-12 {
+        @apply w-full;
+    }
+
+    
+}
+.card {
+  border-radius: 16px;
+  border: 0;
+  box-shadow: var(--brand-shadow);
+}

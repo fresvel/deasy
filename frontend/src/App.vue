@@ -50,29 +50,3 @@ watch(() => route.path, (newPath) => {
   }
 });
 </script>
-    
-<style lang="postcss">
-
-  #app{
-      min-height: 100vh;
-  }
-
-  .large{
-    font-size: large;
-  }
-
-  .medium{
-    font-size: medium;
-  }
-
-  .Large{
-    font-size: x-large;
-  }
-
-
-  .LARGE{
-    font-size: xx-large;
-  }
-
-</style>
-    

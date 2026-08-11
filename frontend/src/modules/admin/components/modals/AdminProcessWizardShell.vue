@@ -48,10 +48,10 @@
       class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800"
     >
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
-      <span class="inline-flex items-center rounded-md bg-white/70 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+      <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
         {{ definitionContext.definition_version || "—" }}
       </span>
-      <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadgeClass">
+      <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadgeClass">
         {{ definitionStatusLabel }}
       </span>
     </div>

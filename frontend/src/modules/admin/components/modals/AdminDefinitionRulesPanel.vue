@@ -42,7 +42,7 @@
         <span
           v-for="chip in seriesFixedChips"
           :key="chip.label"
-          class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600 ring-1 ring-slate-200"
+          class="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-2 py-0.5 font-medium text-slate-600 ring-1 ring-slate-200"
         >
           {{ chip.label }}: <strong class="font-bold text-slate-700">{{ chip.value }}</strong>
         </span>

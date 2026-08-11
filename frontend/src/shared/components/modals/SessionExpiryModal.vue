@@ -39,7 +39,7 @@
         @click="handleKeepAlive"
         :disabled="loading"
       >
-        <IconRefresh :class="['w-4 h-4', { 'animate-spin': loading }]" />
+        <IconRefresh class="w-4 h-4" :class="[{ 'animate-spin': loading }]" />
         {{ loading ? 'Renovando...' : 'Mantener activa' }}
       </AppButton>
     </template>

@@ -10,7 +10,7 @@
           v-if="showLogo"
           to="/home"
           size="sm"
-          class-name="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white/8 p-1"
+          class-name="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white/8 p-1"
           image-class="max-h-8 max-w-8 object-contain"
         />
         <UserProfile
@@ -27,8 +27,7 @@
       </div>
 
       <div
-        :class="[
-          'deasy-sidebar__flyout',
+        class="deasy-sidebar__flyout" :class="[
           containerClass,
           // Cerrado en escritorio => xl:hidden (fuera del flujo), para que el contenido
           // RECUPERE el espacio. Con invisible/opacity-0 seguia ocupando su columna.

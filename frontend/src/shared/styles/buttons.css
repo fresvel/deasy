@@ -1,0 +1,360 @@
+@layer components {
+.deasy-filter-btn {
+        @apply inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 py-0 text-sm font-medium shadow-none;
+    }
+
+    .deasy-filter-btn.deasy-btn--secondary,
+    .deasy-filter-btn.deasy-btn--soft-neutral {
+        border-color: var(--brand-border-field);
+        background: var(--brand-white);
+        color: var(--brand-text-strong);
+    }
+
+    .deasy-filter-btn.deasy-btn--outline-primary {
+        border-color: color-mix(in srgb, var(--brand-primary) 33%, var(--brand-white));
+        background: var(--brand-white);
+        color: var(--brand-primary);
+    }
+
+    .deasy-filter-btn.deasy-btn--soft-primary,
+    .deasy-filter-btn.deasy-btn--primary {
+        border-color: transparent;
+        background: var(--brand-primary);
+        color: var(--brand-white);
+    }
+
+    .deasy-filter-btn--icon {
+        @apply h-10 w-10 rounded-[10px] px-0 py-0 justify-center;
+    }
+
+    .deasy-filter-btn .deasy-fa-icon {
+        width: 1rem;
+        height: 1rem;
+        flex: 0 0 auto;
+    }
+
+    /* [fusion-fase-X 2026-08-07] Estaba definida en los DOS @layer components (ex-L329 y ex-L1349).
+       Ganaba la segunda por orden de cascada dentro de la misma capa. Del bloque 1
+       (rounded-2xl + shadow-none) no sobrevivia ninguna declaracion. */
+    /* [fusion-fase-X 2026-08-07] ex-L334 + ex-L1354. El skin plano del bloque 2 pisaba TODO,
+       incluido `background: var(--brand-surface-muted)`: hoy esta tarjeta es blanca. */
+    /* [fusion-fase-X 2026-08-07] ex-L340 + ex-L1354. Igual que .deasy-card-muted: el bloque 2
+       pisaba `background: var(--brand-surface-soft)`; hoy es blanca. */
+    /* [fusion-fase-X 2026-08-07] ex-L350 + ex-L1354. Del bloque 1 solo sobrevive `p-4`
+       (el skin del bloque 2 no declara padding). */
+    /* [fusion-fase-X 2026-08-07] ex-L355 + ex-L1354. Sobrevive `p-4`; el fondo `--brand-surface-muted`
+       lo pisaba `bg-white` del bloque 2. */
+    /* [fusion-fase-X 2026-08-07] ex-L365 + ex-L1362. Sobreviven los paddings (`p-5 sm:p-6 lg:p-8`);
+       radio, sombra y borde los fijaba el bloque 2. */
+    
+}
+@layer components {
+.deasy-btn {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border font-semibold shadow-none transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    /* [fusion-fase-X 2026-08-07] Las 13 variantes de boton estaban definidas dos veces
+       (bloque 1 ex-L568..635, bloque 2 ex-L1379..1447). Ganaba SIEMPRE la del bloque 2,
+       que ademas es la que suma el gemelo `.admin-btn--*` que emite AppButton/AdminButton.
+       Del bloque 1 solo sobrevivia el `:hover` rojo de `--cancel` (0,2,0 gana al skin 0,1,0),
+       que se conserva abajo como regla propia. Todo lo demas del bloque 1 estaba muerto:
+       el degradado de `--primary`, los `--soft-*` con tokens semanticos, el `rounded-full`
+       de `--close` (lo pisaba el radio de `.deasy-btn`) y los `hover:text-white` de los soft. */
+    .deasy-btn--primary,
+    .admin-btn--primary {
+        @apply text-white;
+        border-color: var(--brand-primary);
+        background: var(--brand-primary);
+    }
+
+    .deasy-btn--secondary,
+    .admin-btn--secondary {
+        @apply bg-white;
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
+    }
+
+    /* Unico resto vivo del bloque 1 en los botones: el hover rojo de cancelar. Solo lo
+       llevaba la variante `deasy-*`, no la `admin-*`, asi que las dos NO se pueden agrupar.
+       Va con `@apply hover:` y no con un `:hover` a mano: Tailwind envuelve la variante
+       `hover:` en `@media (hover:hover)` y escribirlo a mano lo activaria tambien en tactil. */
+    .deasy-btn--cancel {
+        @apply bg-white hover:border-red-300 hover:bg-red-50;
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
+    }
+
+    .admin-btn--cancel {
+        @apply bg-white;
+        border-color: var(--brand-border-strong);
+        color: var(--brand-text-body);
+    }
+
+    .deasy-btn--outline-primary,
+    .admin-btn--outline-primary {
+        @apply bg-white;
+        border-color: var(--brand-primary);
+        color: var(--brand-primary);
+    }
+
+    .deasy-btn--outline-danger,
+    .admin-btn--outline-danger {
+        @apply border-red-600 bg-white text-red-700 hover:border-red-700 hover:bg-red-50 hover:text-red-800;
+    }
+
+    .deasy-btn--soft-primary {
+        @apply border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800;
+    }
+
+    .deasy-btn--soft-neutral {
+        @apply border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950;
+    }
+
+    .deasy-btn--soft-success {
+        @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
+    }
+
+    .deasy-btn--soft-warning {
+        @apply border-amber-200 bg-amber-50 text-amber-800 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-900;
+    }
+
+    .deasy-btn--soft-danger {
+        @apply border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 hover:text-red-800;
+    }
+
+    .deasy-btn--success,
+    .admin-btn--success {
+        @apply border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700;
+    }
+
+    .deasy-btn--danger,
+    .admin-btn--danger {
+        @apply border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700;
+    }
+
+    .deasy-btn--close,
+    .admin-btn--close {
+        @apply h-9 w-9 rounded-2xl border border-slate-200 bg-white p-0 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+    }
+
+    /* [fusion-fase-X 2026-08-07] `rounded-[10px]` estaba MUERTO: `.deasy-btn` del bloque 2
+       (ex-L1376) llegaba despues con `rounded-2xl` y ganaba, asi que el boton de menu mide
+       16px hoy. Se retira para que la fusion no lo resucite (AppButton/AdminButton siempre
+       emiten `.deasy-btn` junto a `.deasy-btn--menu`). */
+    .deasy-btn--menu {
+        @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
+        border-color: rgba(18, 63, 136, 0.14);
+        background: linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-alt) 100%);
+        color: var(--brand-text-body);
+    }
+
+    .deasy-btn--menu.is-active {
+        @apply shadow-[0_0_0_2px_rgba(18,63,136,0.08)];
+        border-color: rgba(18, 63, 136, 0.22);
+        background: var(--brand-gradient-soft);
+        color: var(--brand-primary);
+    }
+
+    .deasy-btn--sm {
+        @apply px-3 py-1.5 text-sm;
+    }
+
+    .deasy-btn--md {
+        @apply px-4 py-2 text-sm;
+    }
+
+    .deasy-btn--lg {
+        @apply px-5 py-2.5 text-base;
+    }
+
+    .deasy-btn--icon {
+        @apply h-9 w-9 p-0;
+    }
+
+    /* [fusion-fase-X 2026-08-07] ex-L667 + ex-L1449. Del bloque 1 solo sobrevive `overflow-hidden`:
+       el bloque 2 reemplazaba el degradado azul-verde por blanco plano (y lo remataba con
+       `background-image: none`), el radio, el padding, el color de texto y la sombra. */
+    
+}
+@layer components {
+.deasy-table-shell .deasy-btn,
+    .deasy-table-responsive .deasy-btn {
+        @apply rounded-xl px-3 py-1.5 text-[13px] font-medium shadow-none;
+        min-height: 2rem;
+    }
+
+    .deasy-table-shell .deasy-btn--secondary,
+    .deasy-table-responsive .deasy-btn--secondary {
+        border-color: var(--brand-border-strong);
+        background: var(--brand-white);
+        color: var(--brand-text-strong);
+    }
+
+    .deasy-table-shell .deasy-btn--secondary:hover,
+    .deasy-table-responsive .deasy-btn--secondary:hover {
+        border-color: var(--brand-border-strong);
+        background: var(--brand-surface-muted);
+        color: var(--brand-navy);
+    }
+
+    .deasy-table-shell .deasy-btn--soft-primary,
+    .deasy-table-responsive .deasy-btn--soft-primary,
+    .deasy-table-shell .deasy-btn--outline-primary,
+    .deasy-table-responsive .deasy-btn--outline-primary {
+        border-color: color-mix(in srgb, var(--brand-primary) 25%, var(--brand-white));
+        background: var(--brand-white);
+        color: var(--brand-primary);
+    }
+
+    .deasy-table-shell .deasy-btn--soft-primary:hover,
+    .deasy-table-responsive .deasy-btn--soft-primary:hover,
+    .deasy-table-shell .deasy-btn--outline-primary:hover,
+    .deasy-table-responsive .deasy-btn--outline-primary:hover {
+        border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--brand-white));
+        background: var(--brand-surface-muted);
+        color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
+    }
+
+    .deasy-table-shell .deasy-btn--primary,
+    .deasy-table-responsive .deasy-btn--primary {
+        border-color: var(--brand-primary);
+        background: var(--brand-primary);
+        color: var(--brand-white);
+        box-shadow: none;
+    }
+
+    .deasy-table-shell .deasy-btn--primary:hover,
+    .deasy-table-responsive .deasy-btn--primary:hover {
+        border-color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
+        background: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
+    }
+
+    
+}
+@layer components {
+.deasy-auth-button {
+        @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold text-white shadow-none transition-all focus:outline-none active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
+        border-color: var(--brand-primary);
+        background: var(--brand-gradient-angled);
+    }
+
+    .deasy-auth-button--secondary {
+        @apply bg-white shadow-none;
+        border-color: var(--brand-border);
+        color: var(--brand-text-body);
+    }
+
+    
+}
+.hope-action-btn {
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  margin: 0 0.15rem;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.hope-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.hope-action-edit {
+  color: var(--state-success);
+  background: rgba(40, 167, 69, 0.1);
+  border-color: rgba(40, 167, 69, 0.26);
+}
+
+.hope-action-edit:hover {
+  color: color-mix(in srgb, var(--action-assign) 85%, var(--brand-black));
+  background: rgba(40, 167, 69, 0.12);
+  border-color: rgba(40, 167, 69, 0.4);
+}
+
+.hope-action-delete {
+  background: rgba(192, 50, 33, 0.1);
+  border-color: rgba(192, 50, 33, 0.26);
+}
+
+.hope-action-delete:hover {
+  color: color-mix(in srgb, var(--action-delete) 85%, var(--brand-black));
+  background: rgba(192, 50, 33, 0.12);
+  border-color: rgba(192, 50, 33, 0.4);
+}
+
+.hope-action-delete-strong {
+  color: var(--action-delete);
+  background: rgba(228, 59, 44, 0.14);
+  border-color: rgba(228, 59, 44, 0.34);
+}
+
+.hope-action-delete-strong:hover {
+  color: color-mix(in srgb, var(--action-delete) 85%, var(--brand-black));
+  background: rgba(228, 59, 44, 0.18);
+  border-color: rgba(228, 59, 44, 0.46);
+}
+
+.hope-action-view {
+  color: var(--brand-accent);
+  background: rgba(var(--brand-accent-rgb), 0.11);
+  border-color: rgba(var(--brand-accent-rgb), 0.3);
+}
+
+.hope-action-view:hover {
+  color: color-mix(in srgb, var(--action-view) 85%, var(--brand-black));
+  background: rgba(var(--brand-accent-rgb), 0.16);
+  border-color: rgba(var(--brand-accent-rgb), 0.42);
+}
+
+.hope-action-download {
+  color: var(--brand-navy);
+  background: rgba(var(--brand-primary-rgb), 0.11);
+  border-color: rgba(var(--brand-primary-rgb), 0.28);
+}
+
+.hope-action-download:hover {
+  color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
+  background: rgba(var(--brand-primary-rgb), 0.16);
+  border-color: rgba(var(--brand-primary-rgb), 0.4);
+}
+
+.hope-action-upload {
+  color: var(--brand-highlight);
+  background: rgba(var(--brand-highlight-rgb), 0.12);
+  border-color: rgba(var(--brand-highlight-rgb), 0.28);
+}
+
+.hope-action-upload:hover {
+  color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
+  background: rgba(var(--brand-highlight-rgb), 0.18);
+  border-color: rgba(var(--brand-highlight-rgb), 0.42);
+}
+
+.hope-action-delete-pdf {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.26);
+}
+
+.hope-action-delete-pdf:hover {
+  color: color-mix(in srgb, var(--action-warning) 85%, var(--brand-black));
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.admin-page-header__actions .admin-btn {
+  min-height: 2.45rem;
+}
+
+.admin-page-header__actions .deasy-btn--sm {
+  padding-inline: 0.9rem;
+  font-size: 0.88rem;
+}
+
+.admin-page-header__actions .deasy-btn--md {
+  padding-inline: 1rem;
+  font-size: 0.94rem;
+}

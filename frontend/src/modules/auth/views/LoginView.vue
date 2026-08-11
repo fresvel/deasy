@@ -8,7 +8,7 @@
 
     <form @submit.prevent="loginFunction" class="space-y-5">
       <div>
-        <label for="identifier" class="mb-1.5 block text-sm font-semibold text-slate-700">Usuario</label>
+        <label for="identifier" class="deasy-form-label">Usuario</label>
         <div class="relative">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
             <IconUser class="h-5 w-5 text-slate-400" />
@@ -25,7 +25,7 @@
       </div>
 
       <div>
-        <label for="password" class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+        <label for="password" class="deasy-form-label">Contraseña</label>
         <div class="relative">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
             <IconLock class="h-5 w-5 text-slate-400" />
