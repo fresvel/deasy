@@ -1,6 +1,6 @@
 ---
 name: tailadmin-ui
-description: Referencia de estilos de TailAdmin (dashboard Tailwind v4) para construir UI en el frontend Vue de Deasy — tokens, recetas de clases verificadas de botones/inputs/tablas/modales/cards/charts, shell de layout y patrones de página. Úsala al crear o rediseñar cualquier componente visual, al buscar "cómo se hace un X bonito", al elegir colores/sombras/tipografía, o antes de adoptar tokens de TailAdmin (hay tres colisiones activas en Deasy que rompen las recetas si no se arreglan primero).
+description: Referencia de estilos de TailAdmin (dashboard Tailwind v4) para construir UI en el frontend Vue de Deasy — tokens, recetas de clases verificadas de botones/inputs/tablas/modales/cards/charts, shell de layout y patrones de página. Úsala al crear o rediseñar cualquier componente visual, al buscar "cómo se hace un X bonito", o al elegir colores/sombras/tipografía. El mapa de Deasy está al día a 2026-08-11: la paleta ya está unificada y con @theme, así que las recetas se pegan casi directas — pero queda UNA trampa viva, `dark:`, que se activa sola y pinta en oscuro sobre la app en claro.
 ---
 
 # TailAdmin como fuente de referencia visual para Deasy
@@ -10,37 +10,55 @@ construir componentes en Deasy con un lenguaje visual coherente. **No es una gu�
 código de TailAdmin** — su código es peor que el de Deasy (ver §5). Es una fuente de **recetas de
 clases y decisiones de diseño**.
 
-## Antes que nada: las 3 trampas de Deasy
+## Antes que nada: de las 3 trampas de Deasy, quedan 1½
 
-Estos tres puntos están **probados en navegador** (compilando el Tailwind 4.2.2 del propio repo).
-Si pegas una receta de TailAdmin sin resolverlos, **nace rota**. Detalle en `references/mapeo-deasy.md` §4.
+> **Actualizado el 2026-08-11 sobre `develop` @ `18e8942`.** Esta sección describía el repo de antes
+> del frente 4. Dos de las tres trampas se arreglaron; los ficheros que citaba (`theme.css`,
+> `tailwind.css`) **ya no existen**. Detalle en `references/mapeo-deasy.md`.
 
-1. **`rounded-*` miente hoy en Deasy.** `theme.css:36-39` declara `--radius-lg/md/sm` en un `:root`
-   **sin capa**, y lo no-capado gana a `@layer theme` de Tailwind → **`rounded-lg`=16px** (no 8px),
-   **`rounded-md`=12px**, y la escala queda **invertida**: `rounded-lg` (16px) > `rounded-xl` (12px).
-   Toda receta de TailAdmin usa `rounded-*` a discreción.
-2. **`dark:` se activaría solo.** Deasy **no tiene `@custom-variant dark`**, así que Tailwind v4
-   compila `dark:` a `@media (prefers-color-scheme: dark)`. Las recetas de TailAdmin van saturadas de
-   `dark:`: pegadas hoy, a un usuario con el SO en oscuro se le pintarían las tarjetas nuevas en
-   oscuro **sobre el resto de la app en claro**. Fallo silencioso, invisible en una máquina en claro.
-3. **Dev y prod no renderizan igual.** `html[data-environment="local-dev"]` (`theme.css:1700-1925`)
-   cuelga **105 reglas** con `!important` sobre `.bg-white`/`.bg-slate-*`/`.shadow-*`. Lo que valides
-   en localhost no es lo que verá producción.
+| Trampa | Estado |
+|---|---|
+| `rounded-*` mentía: `rounded-lg`=16px y la escala invertida | ✅ **arreglada** — la escala de Tailwind está intacta |
+| No había `@theme`: Tailwind no conocía ningún token | ✅ **arreglada** — 16 colores registrados |
+| Dev y prod no renderizaban igual (105 reglas `!important` bajo `local-dev`) | ✅ **arreglada** — el gate se retiró; lo que ves es lo que hay |
+| **`dark:` se activaría solo** | ⚠️ **SIGUE VIVA** |
 
-**Orden de adopción** (los 3 primeros son aditivos y sin riesgo visual — ya permiten probar una receta):
+### La que queda, y es la peor
 
-```
-1. @custom-variant dark (&:is(.dark *))   en tailwind.css
-2. retirar @layer utilities (tailwind.css:1519-1527) — .rounded-4xl/.shadow-xl con !important
-3. añadir UN bloque @theme, anclando --color-brand-500: #5e4eff  ← ver aviso abajo
-   ─── a partir de aquí hay cambio de aspecto: uno a uno, con capturas ───
-4. deshacer el secuestro de --radius-* · 5. acotar local-dev · 6. fusionar los dos @layer components
-7. colapsar --deasy-*/--brand-*
-```
+**Deasy no declara `@custom-variant dark`**, así que Tailwind v4 compila `dark:` a
+`@media (prefers-color-scheme: dark)`. Las recetas de TailAdmin van **saturadas** de `dark:`.
 
-> **Al copiar el `@theme` de TailAdmin, omite las dos líneas `--font-*: initial` y
+Pegadas hoy: a quien tenga el sistema operativo en oscuro se le pintan los componentes nuevos **en
+oscuro sobre el resto de la app en claro**. No lo verás en una máquina en claro, ni lo ve el build,
+ni el lint, ni los tests.
+
+**Decide antes de copiar la primera receta:**
+
+- **Opción A — limpiar los `dark:` al pegar.** Cero riesgo, cero infraestructura. Es lo correcto si
+  el modo oscuro no está en el plan.
+- **Opción B — declarar el modo oscuro de verdad**: `@custom-variant dark (&:where(.dark, .dark *))`
+  en `tokens.css` **más** un conmutador que ponga la clase. Sin el conmutador, el `@custom-variant`
+  a secas desactiva el comportamiento automático — que es lo que quieres — pero deja los `dark:`
+  inertes y acumulando.
+
+**Media trampa que no estaba en la lista:** al adaptar una receta, prefiere el utility con nombre
+(`border-brand-border`) a `border-[var(--brand-border)]`. En Tailwind v4 `border-[X]`, `text-[X]` y
+`ring-[X]` son **ambiguos** entre color y tamaño: con `var()` no puede deducir y elige mal.
+
+### Media hoja de ruta que ya no hace falta
+
+El orden de adopción que había aquí (7 pasos: `@theme`, radios, `local-dev`, colapsar tokens…)
+**está ejecutado**. Hoy el punto de partida es: paleta única, `@theme` registrado, escala de radios
+correcta, cero literales de color en el CSS y dos linters vigilando.
+
+Lo único que queda por decidir antes de adoptar es `dark:`.
+
+> **Si copias un `@theme` de TailAdmin, omite las líneas `--font-*: initial` y
 > `--breakpoint-*: initial`.** Son destructivas (borran `font-sans`/`font-mono` y **todos** los
-> breakpoints). Sin ellas los tokens quedan **puramente aditivos**: no tocan ni una clase existente.
+> breakpoints). Sin ellas los tokens quedan **puramente aditivos**.
+>
+> Y **no dupliques la paleta**: Deasy ya tiene la suya en `tokens.css` con su `@theme`. Añade sólo
+> lo que falte, referenciando los tokens existentes.
 
 > **Ancla `--color-brand-500: #5e4eff`** (el primario real de Deasy). El de TailAdmin es `#465fff`.
 > No hay colisión técnica (`--brand-primary` ≠ `--color-brand-500`, son espacios distintos), pero sin
