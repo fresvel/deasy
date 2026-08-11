@@ -273,12 +273,26 @@ no crea una pila nueva, repunta la de siempre a tu código. Está explicado en e
 
 ## 8. Deuda conocida, para no redescubrirla
 
+**«Cero colores a mano» vale para los ficheros `.css`. Los `.vue` siguen sucios**, y ahí es donde
+está toda la deuda que queda:
+
 | Qué | Cuánto | Dónde |
 |---|---:|---|
-| Hex en `.vue` (sobre todo `<style scoped>` de Vue Flow) | 87 | `modules/admin/components/units/` |
+| Color a mano **dentro de `<style scoped>`** | **108** | Es CSS puro, y **stylelint no lo mira**: su glob es `src/**/*.css` |
+| Color a mano en plantilla o script | 67 | *Arbitrary values* y mapas de tono en JS |
+| Color a mano en `.js` | 20 | `useDeliverableView.js`, `homeView.helpers.js`, `AdminPresentationService.js` |
+| **Total fuera del CSS** | **195** | |
 | Strings de clase >120 caracteres | 221 | `HomeView.vue`, `FirmarPdf.vue` |
 | *Arbitrary values* (`text-[11px]`…) | 443 | 8 tamaños distintos por debajo de `text-sm` |
 | `!important` con motivo escrito | 6 | `dialogs.css`, `overrides.css` |
 | Sin `@custom-variant dark` | — | Pegar una receta con `dark:` pintaría en oscuro sobre la app en claro |
+
+**Dónde se concentra**: 78 de los 175 de `.vue` están en los seis componentes de Vue Flow
+(`modules/admin/components/units/`), y 30 en `HomeView.vue`.
+
+> **Antes de tokenizar los nodos del grafo, mira si son copias.** `ProcessNode.vue` estila
+> `.unit-node__btn`, `.unit-node__handle` y `.unit-node__toolbar` — **los mismos selectores que
+> `UnitNode.vue`**. Es una copia literal. El arreglo ahí no es dar token a cada valor cuatro veces:
+> es extraer una clase compartida y borrar tres copias.
 
 El plan, la bitácora y las dos auditorías están en **`docs/planes/sistema-diseno/`**.
