@@ -16,7 +16,7 @@ Project firmas {
   Note: '''Firma electrónica — El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.'''
 }
 
-Table "signature_batch_jobs" {
+Table "signature_batch_jobs" [headercolor: #1E7A38] {
   "job_id" bpchar(36) [pk, not null]
   "user_id" int8
   "sign_mode" varchar(40)
@@ -35,7 +35,7 @@ Table "signature_batch_jobs" {
   }
 }
 
-Table "signature_flow_instances" {
+Table "signature_flow_instances" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "template_id" int4 [not null]
   "document_version_id" int4 [unique, not null]
@@ -43,7 +43,7 @@ Table "signature_flow_instances" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "signature_flow_steps" {
+Table "signature_flow_steps" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "template_id" int4 [not null]
   "step_order" int4 [not null]
@@ -75,7 +75,7 @@ Table "signature_flow_steps" {
   }
 }
 
-Table "signature_flow_templates" {
+Table "signature_flow_templates" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "process_definition_template_id" int4
   "task_item_id" int4
@@ -91,7 +91,7 @@ Table "signature_flow_templates" {
   }
 }
 
-Table "signature_request_statuses" {
+Table "signature_request_statuses" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(80) [not null]
@@ -100,7 +100,7 @@ Table "signature_request_statuses" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "signature_requests" {
+Table "signature_requests" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "instance_id" int4 [not null]
   "step_id" int4 [not null]
@@ -117,7 +117,7 @@ Table "signature_requests" {
   }
 }
 
-Table "signature_statuses" {
+Table "signature_statuses" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(80) [not null]

@@ -12,7 +12,7 @@
 <g id="position_assignments" class="node">
 <title>position_assignments</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2242.05" cy="-644.37" rx="323.71" ry="427.19"/>
-<polygon fill="#1d71b8" stroke="transparent" points="2015.05,-884.37 2015.05,-944.37 2469.05,-944.37 2469.05,-884.37 2015.05,-884.37"/>
+<polygon fill="#bf2d33" stroke="transparent" points="2015.05,-884.37 2015.05,-944.37 2469.05,-944.37 2469.05,-884.37 2015.05,-884.37"/>
 <polygon fill="none" stroke="#29235c" points="2015.05,-884.37 2015.05,-944.37 2469.05,-944.37 2469.05,-884.37 2015.05,-884.37"/>
 <text text-anchor="start" x="2025.98" y="-905.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;position_assignments &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2015.05,-824.37 2015.05,-884.37 2469.05,-884.37 2469.05,-824.37 2015.05,-824.37"/>
@@ -72,7 +72,7 @@
 <g id="relation_unit_types" class="node">
 <title>relation_unit_types</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="934.73" cy="-1639.37" rx="335.75" ry="342.48"/>
-<polygon fill="#1d71b8" stroke="transparent" points="699.73,-1819.37 699.73,-1879.37 1170.73,-1879.37 1170.73,-1819.37 699.73,-1819.37"/>
+<polygon fill="#bf2d33" stroke="transparent" points="699.73,-1819.37 699.73,-1879.37 1170.73,-1879.37 1170.73,-1819.37 699.73,-1819.37"/>
 <polygon fill="none" stroke="#29235c" points="699.73,-1819.37 699.73,-1879.37 1170.73,-1879.37 1170.73,-1819.37 699.73,-1819.37"/>
 <text text-anchor="start" x="738.72" y="-1840.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;relation_unit_types &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="699.73,-1759.37 699.73,-1819.37 1170.73,-1819.37 1170.73,-1759.37 699.73,-1759.37"/>
@@ -122,7 +122,7 @@
 <g id="unit_relations" class="node">
 <title>unit_relations</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1594.4" cy="-1384.37" rx="281.36" ry="257.27"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1397.4,-1504.37 1397.4,-1564.37 1791.4,-1564.37 1791.4,-1504.37 1397.4,-1504.37"/>
+<polygon fill="#bf2d33" stroke="transparent" points="1397.4,-1504.37 1397.4,-1564.37 1791.4,-1564.37 1791.4,-1504.37 1397.4,-1504.37"/>
 <polygon fill="none" stroke="#29235c" points="1397.4,-1504.37 1397.4,-1564.37 1791.4,-1564.37 1791.4,-1504.37 1397.4,-1504.37"/>
 <text text-anchor="start" x="1437.02" y="-1525.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;unit_relations &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1397.4,-1444.37 1397.4,-1504.37 1791.4,-1504.37 1791.4,-1444.37 1397.4,-1444.37"/>
@@ -171,7 +171,7 @@
 <g id="unit_positions" class="node">
 <title>unit_positions</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1594.4" cy="-554.37" rx="287.59" ry="554.24"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1393.4,-884.37 1393.4,-944.37 1796.4,-944.37 1796.4,-884.37 1393.4,-884.37"/>
+<polygon fill="#bf2d33" stroke="transparent" points="1393.4,-884.37 1393.4,-944.37 1796.4,-944.37 1796.4,-884.37 1393.4,-884.37"/>
 <polygon fill="none" stroke="#29235c" points="1393.4,-884.37 1393.4,-944.37 1796.4,-944.37 1796.4,-884.37 1393.4,-884.37"/>
 <text text-anchor="start" x="1434.85" y="-905.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;unit_positions &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1393.4,-824.37 1393.4,-884.37 1796.4,-884.37 1796.4,-824.37 1393.4,-824.37"/>
@@ -256,7 +256,7 @@
 <g id="unit_types" class="node">
 <title>unit_types</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="281.43" cy="-1014.37" rx="281.36" ry="214.92"/>
-<polygon fill="#1d71b8" stroke="transparent" points="84.43,-1104.37 84.43,-1164.37 478.43,-1164.37 478.43,-1104.37 84.43,-1104.37"/>
+<polygon fill="#bf2d33" stroke="transparent" points="84.43,-1104.37 84.43,-1164.37 478.43,-1164.37 478.43,-1104.37 84.43,-1104.37"/>
 <polygon fill="none" stroke="#29235c" points="84.43,-1104.37 84.43,-1164.37 478.43,-1164.37 478.43,-1104.37 84.43,-1104.37"/>
 <text text-anchor="start" x="146.26" y="-1125.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;unit_types &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="84.43,-1044.37 84.43,-1104.37 478.43,-1104.37 478.43,-1044.37 84.43,-1044.37"/>
@@ -290,7 +290,7 @@
 <g id="units" class="node">
 <title>units</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="934.73" cy="-894.37" rx="287.59" ry="384.83"/>
-<polygon fill="#1d71b8" stroke="transparent" points="733.73,-1104.37 733.73,-1164.37 1136.73,-1164.37 1136.73,-1104.37 733.73,-1104.37"/>
+<polygon fill="#bf2d33" stroke="transparent" points="733.73,-1104.37 733.73,-1164.37 1136.73,-1164.37 1136.73,-1104.37 733.73,-1104.37"/>
 <polygon fill="none" stroke="#29235c" points="733.73,-1104.37 733.73,-1164.37 1136.73,-1164.37 1136.73,-1104.37 733.73,-1104.37"/>
 <text text-anchor="start" x="839.2" y="-1125.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;units &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="733.73,-1044.37 733.73,-1104.37 1136.73,-1104.37 1136.73,-1044.37 733.73,-1044.37"/>

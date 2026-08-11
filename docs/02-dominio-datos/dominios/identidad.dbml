@@ -16,7 +16,7 @@ Project identidad {
   Note: '''Identidad, personas y RBAC — Quién es cada quien y qué puede hacer. `persons` es la identidad única del sistema; el expediente (dossier) cuelga de ella.'''
 }
 
-Table "actions" {
+Table "actions" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(120) [not null]
@@ -26,7 +26,7 @@ Table "actions" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "cargo_role_map" {
+Table "cargo_role_map" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "role_id" int4 [not null]
   "cargo_id" int4 [not null]
@@ -36,7 +36,7 @@ Table "cargo_role_map" {
   }
 }
 
-Table "cargos" {
+Table "cargos" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "code" varchar(120) [unique, not null]
   "name" varchar(120) [unique, not null]
@@ -46,7 +46,7 @@ Table "cargos" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "dossier_items" {
+Table "dossier_items" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "dossier_id" int8 [not null]
   "section" varchar(20) [not null]
@@ -59,7 +59,7 @@ Table "dossier_items" {
   }
 }
 
-Table "dossiers" {
+Table "dossiers" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [unique, not null]
   "cedula" varchar(20)
@@ -73,7 +73,7 @@ Table "dossiers" {
   Note: '''El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.'''
 }
 
-Table "email_verification_codes" {
+Table "email_verification_codes" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [not null]
   "code_hash" varchar(255) [not null]
@@ -86,7 +86,7 @@ Table "email_verification_codes" {
   }
 }
 
-Table "password_reset_codes" {
+Table "password_reset_codes" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [not null]
   "code_hash" varchar(255) [not null]
@@ -100,7 +100,7 @@ Table "password_reset_codes" {
   }
 }
 
-Table "permissions" {
+Table "permissions" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "resource_id" int4 [not null]
   "action_id" int4 [not null]
@@ -117,7 +117,7 @@ Table "permissions" {
   }
 }
 
-Table "person_certificates" {
+Table "person_certificates" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
   "label" varchar(180) [not null]
@@ -134,7 +134,7 @@ Table "person_certificates" {
   }
 }
 
-Table "persons" {
+Table "persons" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "cedula" varchar(20) [unique]
   "first_name" varchar(120) [not null]
@@ -160,7 +160,7 @@ Table "persons" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "resources" {
+Table "resources" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "code" varchar(80) [unique, not null]
   "name" varchar(120) [not null]
@@ -170,7 +170,7 @@ Table "resources" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "role_assignment_relation_types" {
+Table "role_assignment_relation_types" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "relation_type_id" int4 [not null]
   "role_assignment_id" int4 [not null]
@@ -180,7 +180,7 @@ Table "role_assignment_relation_types" {
   }
 }
 
-Table "role_assignments" {
+Table "role_assignments" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "role_id" int4 [not null]
   "unit_id" int4 [not null]
@@ -203,7 +203,7 @@ Table "role_assignments" {
   }
 }
 
-Table "role_permissions" {
+Table "role_permissions" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "role_id" int4 [not null]
   "permission_id" int4 [not null]
@@ -213,7 +213,7 @@ Table "role_permissions" {
   }
 }
 
-Table "roles" {
+Table "roles" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "name" varchar(120) [unique, not null]
   "description" varchar(255)

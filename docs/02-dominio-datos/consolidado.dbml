@@ -13,10 +13,10 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 67 tablas.'''
+  Note: '''Modelo de datos de Deasy. 67 tablas. El color de cabecera indica el dominio.'''
 }
 
-Table "actions" {
+Table "actions" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(120) [not null]
@@ -26,7 +26,7 @@ Table "actions" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "aplications" {
+Table "aplications" [headercolor: #6B7207] {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
   "vacancy_id" int4 [not null]
@@ -44,7 +44,7 @@ Table "aplications" {
   }
 }
 
-Table "cargo_role_map" {
+Table "cargo_role_map" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "role_id" int4 [not null]
   "cargo_id" int4 [not null]
@@ -54,7 +54,7 @@ Table "cargo_role_map" {
   }
 }
 
-Table "cargos" {
+Table "cargos" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "code" varchar(120) [unique, not null]
   "name" varchar(120) [unique, not null]
@@ -64,7 +64,7 @@ Table "cargos" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "chat_conversation_participants" {
+Table "chat_conversation_participants" [headercolor: #B02F80] {
   "id" int8 [pk, not null, increment]
   "conversation_id" int8 [not null]
   "person_id" int4 [not null]
@@ -78,7 +78,7 @@ Table "chat_conversation_participants" {
   }
 }
 
-Table "chat_conversations" {
+Table "chat_conversations" [headercolor: #B02F80] {
   "id" int8 [pk, not null, increment]
   "type" text [not null, check: `type = ANY (ARRAY['direct'::text, 'group'::text, 'thread'::text, 'process_thread'::text, 'unit'::text])`]
   "title" text
@@ -101,7 +101,7 @@ Table "chat_conversations" {
   }
 }
 
-Table "chat_message_attachments" {
+Table "chat_message_attachments" [headercolor: #B02F80] {
   "id" int8 [pk, not null, increment]
   "message_id" int8 [not null]
   "sort_order" int4 [not null, default: 0]
@@ -115,7 +115,7 @@ Table "chat_message_attachments" {
   }
 }
 
-Table "chat_message_reads" {
+Table "chat_message_reads" [headercolor: #B02F80] {
   "message_id" int8 [not null]
   "person_id" int4 [not null]
   "read_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
@@ -125,7 +125,7 @@ Table "chat_message_reads" {
   }
 }
 
-Table "chat_messages" {
+Table "chat_messages" [headercolor: #B02F80] {
   "id" int8 [pk, not null, increment]
   "conversation_id" int8 [not null]
   "sender_person_id" int4 [not null]
@@ -143,7 +143,7 @@ Table "chat_messages" {
   }
 }
 
-Table "chat_notifications" {
+Table "chat_notifications" [headercolor: #B02F80] {
   "id" int8 [pk, not null, increment]
   "recipient_person_id" int4 [not null]
   "type" varchar(80) [not null]
@@ -163,14 +163,14 @@ Table "chat_notifications" {
   }
 }
 
-Table "contract_origin_recruitment" {
+Table "contract_origin_recruitment" [headercolor: #6B7207] {
   "contract_id" int4 [pk, not null]
   "offer_id" int4 [unique, not null]
   "vacancy_id" int4 [unique, not null]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "contract_origin_renewal" {
+Table "contract_origin_renewal" [headercolor: #6B7207] {
   "contract_id" int4 [pk, not null]
   "renewed_from_contract_id" int4 [not null]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
@@ -180,13 +180,13 @@ Table "contract_origin_renewal" {
   }
 }
 
-Table "contract_origins" {
+Table "contract_origins" [headercolor: #6B7207] {
   "contract_id" int4 [pk, not null]
   "origin_type" text [not null, check: `origin_type = ANY (ARRAY['recruitment'::text, 'renewal'::text])`]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "contracts" {
+Table "contracts" [headercolor: #6B7207] {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
   "position_id" int4 [not null]
@@ -204,7 +204,7 @@ Table "contracts" {
   }
 }
 
-Table "deliverables" {
+Table "deliverables" [headercolor: #A85A0E] {
   "id" int4 [pk, not null, increment]
   "code" varchar(180) [unique, not null]
   "display_name" varchar(180) [not null]
@@ -223,7 +223,7 @@ Table "deliverables" {
   Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
 }
 
-Table "document_attachments" {
+Table "document_attachments" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "document_version_id" int4 [not null]
   "kind" text [not null, check: `kind = ANY (ARRAY['annex'::text, 'evidence'::text, 'source'::text, 'other'::text])`, default: 'annex']
@@ -242,7 +242,7 @@ Table "document_attachments" {
   }
 }
 
-Table "document_fill_flows" {
+Table "document_fill_flows" [headercolor: #A85A0E] {
   "id" int4 [pk, not null, increment]
   "fill_flow_template_id" int4 [not null]
   "document_version_id" int4 [unique, not null]
@@ -252,7 +252,7 @@ Table "document_fill_flows" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "document_signatures" {
+Table "document_signatures" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "signature_request_id" int4
   "document_version_id" int4 [not null]
@@ -264,7 +264,7 @@ Table "document_signatures" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "document_versions" {
+Table "document_versions" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "document_id" int4 [not null]
   "version" numeric(4,1) [not null, default: 0.1]
@@ -284,7 +284,7 @@ Table "document_versions" {
   }
 }
 
-Table "document_workflow_observations" {
+Table "document_workflow_observations" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [not null]
   "document_version_id" int4 [not null]
@@ -309,7 +309,7 @@ Table "document_workflow_observations" {
   }
 }
 
-Table "documents" {
+Table "documents" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [unique]
   "owner_person_id" int4
@@ -326,7 +326,7 @@ Table "documents" {
   }
 }
 
-Table "dossier_items" {
+Table "dossier_items" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "dossier_id" int8 [not null]
   "section" varchar(20) [not null]
@@ -339,7 +339,7 @@ Table "dossier_items" {
   }
 }
 
-Table "dossiers" {
+Table "dossiers" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [unique, not null]
   "cedula" varchar(20)
@@ -353,7 +353,7 @@ Table "dossiers" {
   Note: '''El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.'''
 }
 
-Table "email_verification_codes" {
+Table "email_verification_codes" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [not null]
   "code_hash" varchar(255) [not null]
@@ -366,7 +366,7 @@ Table "email_verification_codes" {
   }
 }
 
-Table "fill_flow_steps" {
+Table "fill_flow_steps" [headercolor: #A85A0E] {
   "id" int4 [pk, not null, increment]
   "fill_flow_template_id" int4 [not null]
   "step_order" int4 [not null]
@@ -388,7 +388,7 @@ Table "fill_flow_steps" {
   }
 }
 
-Table "fill_flow_templates" {
+Table "fill_flow_templates" [headercolor: #A85A0E] {
   "id" int4 [pk, not null, increment]
   "process_definition_template_id" int4
   "task_item_id" int4
@@ -406,7 +406,7 @@ Table "fill_flow_templates" {
   Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).'''
 }
 
-Table "fill_requests" {
+Table "fill_requests" [headercolor: #A85A0E] {
   "id" int4 [pk, not null, increment]
   "document_fill_flow_id" int4 [not null]
   "fill_flow_step_id" int4 [not null]
@@ -423,7 +423,7 @@ Table "fill_requests" {
   }
 }
 
-Table "offers" {
+Table "offers" [headercolor: #6B7207] {
   "id" int4 [pk, not null, increment]
   "application_id" int4 [not null]
   "status" text [not null, check: `status = ANY (ARRAY['enviada'::text, 'aceptada'::text, 'rechazada'::text, 'retractada'::text, 'expirada'::text])`, default: 'enviada']
@@ -440,7 +440,7 @@ Table "offers" {
   }
 }
 
-Table "password_reset_codes" {
+Table "password_reset_codes" [headercolor: #1F5FC7] {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [not null]
   "code_hash" varchar(255) [not null]
@@ -454,7 +454,7 @@ Table "password_reset_codes" {
   }
 }
 
-Table "permissions" {
+Table "permissions" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "resource_id" int4 [not null]
   "action_id" int4 [not null]
@@ -471,7 +471,7 @@ Table "permissions" {
   }
 }
 
-Table "person_certificates" {
+Table "person_certificates" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
   "label" varchar(180) [not null]
@@ -488,7 +488,7 @@ Table "person_certificates" {
   }
 }
 
-Table "persons" {
+Table "persons" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "cedula" varchar(20) [unique]
   "first_name" varchar(120) [not null]
@@ -514,7 +514,7 @@ Table "persons" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "position_assignments" {
+Table "position_assignments" [headercolor: #BF2D33] {
   "id" int4 [pk, not null, increment]
   "position_id" int4 [not null]
   "person_id" int4 [not null]
@@ -531,7 +531,7 @@ Table "position_assignments" {
   }
 }
 
-Table "process_definition_period_types" {
+Table "process_definition_period_types" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "term_type_id" int4 [not null]
@@ -545,7 +545,7 @@ Table "process_definition_period_types" {
   }
 }
 
-Table "process_definition_series" {
+Table "process_definition_series" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "source_type" text [not null, check: `source_type = ANY (ARRAY['unit_type'::text, 'cargo'::text, 'default'::text])`, default: 'default']
   "unit_type_id" int4
@@ -559,7 +559,7 @@ Table "process_definition_series" {
   }
 }
 
-Table "process_definition_templates" {
+Table "process_definition_templates" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "template_artifact_id" int4 [not null]
@@ -574,7 +574,7 @@ Table "process_definition_templates" {
   Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
 }
 
-Table "process_definition_versions" {
+Table "process_definition_versions" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "process_id" int4 [not null]
   "series_id" int4 [not null]
@@ -595,7 +595,7 @@ Table "process_definition_versions" {
   }
 }
 
-Table "process_runs" {
+Table "process_runs" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "term_id" int4
@@ -613,7 +613,7 @@ Table "process_runs" {
   }
 }
 
-Table "process_target_rules" {
+Table "process_target_rules" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text])`, default: 'unit_exact']
@@ -636,7 +636,7 @@ Table "process_target_rules" {
   Note: '''El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.'''
 }
 
-Table "processes" {
+Table "processes" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "name" varchar(180) [not null]
   "slug" varchar(180) [unique, not null]
@@ -647,7 +647,7 @@ Table "processes" {
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
 }
 
-Table "relation_unit_types" {
+Table "relation_unit_types" [headercolor: #BF2D33] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(40) [not null]
@@ -657,7 +657,7 @@ Table "relation_unit_types" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "resources" {
+Table "resources" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "code" varchar(80) [unique, not null]
   "name" varchar(120) [not null]
@@ -667,7 +667,7 @@ Table "resources" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "role_assignment_relation_types" {
+Table "role_assignment_relation_types" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "relation_type_id" int4 [not null]
   "role_assignment_id" int4 [not null]
@@ -677,7 +677,7 @@ Table "role_assignment_relation_types" {
   }
 }
 
-Table "role_assignments" {
+Table "role_assignments" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "role_id" int4 [not null]
   "unit_id" int4 [not null]
@@ -700,7 +700,7 @@ Table "role_assignments" {
   }
 }
 
-Table "role_permissions" {
+Table "role_permissions" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "role_id" int4 [not null]
   "permission_id" int4 [not null]
@@ -710,14 +710,14 @@ Table "role_permissions" {
   }
 }
 
-Table "roles" {
+Table "roles" [headercolor: #1F5FC7] {
   "id" int4 [pk, not null, increment]
   "name" varchar(120) [unique, not null]
   "description" varchar(255)
   "is_active" int2 [not null, default: 1]
 }
 
-Table "signature_batch_jobs" {
+Table "signature_batch_jobs" [headercolor: #1E7A38] {
   "job_id" bpchar(36) [pk, not null]
   "user_id" int8
   "sign_mode" varchar(40)
@@ -736,7 +736,7 @@ Table "signature_batch_jobs" {
   }
 }
 
-Table "signature_flow_instances" {
+Table "signature_flow_instances" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "template_id" int4 [not null]
   "document_version_id" int4 [unique, not null]
@@ -744,7 +744,7 @@ Table "signature_flow_instances" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "signature_flow_steps" {
+Table "signature_flow_steps" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "template_id" int4 [not null]
   "step_order" int4 [not null]
@@ -776,7 +776,7 @@ Table "signature_flow_steps" {
   }
 }
 
-Table "signature_flow_templates" {
+Table "signature_flow_templates" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "process_definition_template_id" int4
   "task_item_id" int4
@@ -792,7 +792,7 @@ Table "signature_flow_templates" {
   }
 }
 
-Table "signature_request_statuses" {
+Table "signature_request_statuses" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(80) [not null]
@@ -801,7 +801,7 @@ Table "signature_request_statuses" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "signature_requests" {
+Table "signature_requests" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "instance_id" int4 [not null]
   "step_id" int4 [not null]
@@ -818,7 +818,7 @@ Table "signature_requests" {
   }
 }
 
-Table "signature_statuses" {
+Table "signature_statuses" [headercolor: #1E7A38] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(80) [not null]
@@ -827,7 +827,7 @@ Table "signature_statuses" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "task_assignments" {
+Table "task_assignments" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
   "position_id" int4 [not null]
@@ -842,7 +842,7 @@ Table "task_assignments" {
   }
 }
 
-Table "task_item_handovers" {
+Table "task_item_handovers" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [not null]
   "from_person_id" int4
@@ -857,7 +857,7 @@ Table "task_item_handovers" {
   }
 }
 
-Table "task_items" {
+Table "task_items" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
   "process_definition_template_id" int4
@@ -897,7 +897,7 @@ Table "task_items" {
   }
 }
 
-Table "tasks" {
+Table "tasks" [headercolor: #7A3FBF] {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "process_run_id" int4
@@ -921,7 +921,7 @@ Table "tasks" {
   }
 }
 
-Table "template_artifacts" {
+Table "template_artifacts" [headercolor: #A85A0E] {
   "id" int4 [pk, not null, increment]
   "deliverable_id" int4 [not null]
   "storage_version" varchar(20) [not null]
@@ -944,7 +944,7 @@ Table "template_artifacts" {
   Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.'''
 }
 
-Table "template_seeds" {
+Table "template_seeds" [headercolor: #A85A0E] {
   "id" int4 [pk, not null, increment]
   "seed_code" varchar(180) [unique, not null]
   "display_name" varchar(180) [not null]
@@ -956,7 +956,7 @@ Table "template_seeds" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "term_types" {
+Table "term_types" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(80) [unique, not null]
@@ -966,7 +966,7 @@ Table "term_types" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "terms" {
+Table "terms" [headercolor: #00795C] {
   "id" int4 [pk, not null, increment]
   "name" varchar(60) [unique, not null]
   "term_type_id" int4 [not null]
@@ -979,7 +979,7 @@ Table "terms" {
   }
 }
 
-Table "unit_positions" {
+Table "unit_positions" [headercolor: #BF2D33] {
   "id" int4 [pk, not null, increment]
   "unit_id" int4 [not null]
   "slot_no" int4 [not null]
@@ -1000,7 +1000,7 @@ Table "unit_positions" {
   }
 }
 
-Table "unit_relations" {
+Table "unit_relations" [headercolor: #BF2D33] {
   "id" int4 [pk, not null, increment]
   "relation_type_id" int4 [not null]
   "parent_unit_id" int4 [not null]
@@ -1015,14 +1015,14 @@ Table "unit_relations" {
   }
 }
 
-Table "unit_types" {
+Table "unit_types" [headercolor: #BF2D33] {
   "id" int4 [pk, not null, increment]
   "name" varchar(120) [not null]
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "units" {
+Table "units" [headercolor: #BF2D33] {
   "id" int4 [pk, not null, increment]
   "name" varchar(180) [not null]
   "label" varchar(75)
@@ -1037,7 +1037,7 @@ Table "units" {
   }
 }
 
-Table "vacancies" {
+Table "vacancies" [headercolor: #6B7207] {
   "id" int4 [pk, not null, increment]
   "title" varchar(180) [not null]
   "category" varchar(120)
@@ -1058,7 +1058,7 @@ Table "vacancies" {
   }
 }
 
-Table "vacancy_visibility" {
+Table "vacancy_visibility" [headercolor: #6B7207] {
   "id" int4 [pk, not null, increment]
   "vacancy_id" int4 [not null]
   "unit_id" int4

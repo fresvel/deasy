@@ -142,19 +142,24 @@ const CABECERA = (extra) => `// ================================================
 
 `;
 
+// El color de cabecera identifica el DOMINIO al que pertenece la tabla. En el consolidado
+// eso hace legible el modelo completo (se ve por bloques); en cada fichero de dominio es
+// la marca de agua de esa seccion.
+//
+// La paleta esta en `dominios.json`, validada con el criterio de color categorico:
+// `dbml-renderer` pinta el nombre en BLANCO sobre este color, asi que cada uno pasa
+// 4.5:1 con blanco -- ese es el requisito duro, y descarta cualquier tono claro.
 const bloqueTabla = (nombre) => {
   const t = tablas.get(nombre);
-  return `Table "${nombre}" {\n${t.cuerpo.replace(/\s*$/, '')}\n}\n`;
+  const dom = asignadas.get(nombre);
+  const color = dom ? dominios[dom]?.color : null;
+  const attr = color ? ` [headercolor: ${color}]` : '';
+  return `Table "${nombre}"${attr} {\n${t.cuerpo.replace(/\s*$/, '')}\n}\n`;
 };
 
-// ── Consolidado ────────────────────────────────────────────────────────────────────────────
-const nombresOrdenados = [...tablas.keys()].sort();
-let consolidado = CABECERA(`Diagramas por dominio: docs/02-dominio-datos/dominios/`);
-consolidado += `Project deasy {\n  database_type: 'PostgreSQL'\n  Note: '''Modelo de datos de Deasy. ${tablas.size} tablas.'''\n}\n\n`;
-consolidado += nombresOrdenados.map(bloqueTabla).join('\n');
-consolidado += '\n' + refs.map(r => r.texto).join('\n') + '\n';
-
-// ── 4. Dominios ────────────────────────────────────────────────────────────────────────────
+// ── 4. Reparto por dominios ────────────────────────────────────────────────────────────────
+// Va ANTES de construir el consolidado: `bloqueTabla` necesita saber a qué dominio pertenece
+// cada tabla para pintarle su color. Al revés el consolidado salía sin colorear, en silencio.
 const asignadas = new Map();
 for (const [clave, dom] of Object.entries(dominios)) {
   if (clave.startsWith('_')) continue;
@@ -167,6 +172,13 @@ for (const [clave, dom] of Object.entries(dominios)) {
 for (const t of tablas.keys()) {
   if (!asignadas.has(t)) fallos.push(`La tabla '${t}' no está en ningún dominio. Añádela a scripts/docs/dominios.json`);
 }
+
+// ── Consolidado ────────────────────────────────────────────────────────────────────────────
+const nombresOrdenados = [...tablas.keys()].sort();
+let consolidado = CABECERA(`Diagramas por dominio: docs/02-dominio-datos/dominios/`);
+consolidado += `Project deasy {\n  database_type: 'PostgreSQL'\n  Note: '''Modelo de datos de Deasy. ${tablas.size} tablas. El color de cabecera indica el dominio.'''\n}\n\n`;
+consolidado += nombresOrdenados.map(bloqueTabla).join('\n');
+consolidado += '\n' + refs.map(r => r.texto).join('\n') + '\n';
 
 if (fallos.length) {
   console.error('\n✖ El post-procesado del DBML falló:\n');

@@ -12,7 +12,7 @@
 <g id="actions" class="node">
 <title>actions</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="287.79" cy="-3566.06" rx="287.59" ry="342.48"/>
-<polygon fill="#1d71b8" stroke="transparent" points="86.79,-3746.06 86.79,-3806.06 489.79,-3806.06 489.79,-3746.06 86.79,-3746.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="86.79,-3746.06 86.79,-3806.06 489.79,-3806.06 489.79,-3746.06 86.79,-3746.06"/>
 <polygon fill="none" stroke="#29235c" points="86.79,-3746.06 86.79,-3806.06 489.79,-3806.06 489.79,-3746.06 86.79,-3746.06"/>
 <text text-anchor="start" x="175.36" y="-3767.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;actions &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="86.79,-3686.06 86.79,-3746.06 489.79,-3746.06 489.79,-3686.06 86.79,-3686.06"/>
@@ -62,7 +62,7 @@
 <g id="permissions" class="node">
 <title>permissions</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="989.18" cy="-4196.06" rx="287.59" ry="384.83"/>
-<polygon fill="#1d71b8" stroke="transparent" points="788.18,-4406.06 788.18,-4466.06 1191.18,-4466.06 1191.18,-4406.06 788.18,-4406.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="788.18,-4406.06 788.18,-4466.06 1191.18,-4466.06 1191.18,-4406.06 788.18,-4406.06"/>
 <polygon fill="none" stroke="#29235c" points="788.18,-4406.06 788.18,-4466.06 1191.18,-4466.06 1191.18,-4406.06 788.18,-4406.06"/>
 <text text-anchor="start" x="842.1" y="-4427.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;permissions &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="788.18,-4346.06 788.18,-4406.06 1191.18,-4406.06 1191.18,-4346.06 788.18,-4346.06"/>
@@ -127,7 +127,7 @@
 <g id="cargo_role_map" class="node">
 <title>cargo_role_map</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1772.59" cy="-3608.06" rx="269.32" ry="172.57"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1584.59,-3668.06 1584.59,-3728.06 1961.59,-3728.06 1961.59,-3668.06 1584.59,-3668.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="1584.59,-3668.06 1584.59,-3728.06 1961.59,-3728.06 1961.59,-3668.06 1584.59,-3668.06"/>
 <polygon fill="none" stroke="#29235c" points="1584.59,-3668.06 1584.59,-3728.06 1961.59,-3728.06 1961.59,-3668.06 1584.59,-3668.06"/>
 <text text-anchor="start" x="1595.26" y="-3689.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;cargo_role_map &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1584.59,-3608.06 1584.59,-3668.06 1961.59,-3668.06 1961.59,-3608.06 1584.59,-3608.06"/>
@@ -155,7 +155,7 @@
 <g id="cargos" class="node">
 <title>cargos</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="989.18" cy="-3003.06" rx="287.59" ry="342.48"/>
-<polygon fill="#1d71b8" stroke="transparent" points="788.18,-3183.06 788.18,-3243.06 1191.18,-3243.06 1191.18,-3183.06 788.18,-3183.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="788.18,-3183.06 788.18,-3243.06 1191.18,-3243.06 1191.18,-3183.06 788.18,-3183.06"/>
 <polygon fill="none" stroke="#29235c" points="788.18,-3183.06 788.18,-3243.06 1191.18,-3243.06 1191.18,-3183.06 788.18,-3183.06"/>
 <text text-anchor="start" x="879.42" y="-3204.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;cargos &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="788.18,-3123.06 788.18,-3183.06 1191.18,-3183.06 1191.18,-3123.06 788.18,-3123.06"/>
@@ -214,7 +214,7 @@
 <g id="dossier_items" class="node">
 <title>dossier_items</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="989.18" cy="-4898.06" rx="281.36" ry="299.63"/>
-<polygon fill="#1d71b8" stroke="transparent" points="792.18,-5048.06 792.18,-5108.06 1186.18,-5108.06 1186.18,-5048.06 792.18,-5048.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="792.18,-5048.06 792.18,-5108.06 1186.18,-5108.06 1186.18,-5048.06 792.18,-5048.06"/>
 <polygon fill="none" stroke="#29235c" points="792.18,-5048.06 792.18,-5108.06 1186.18,-5108.06 1186.18,-5048.06 792.18,-5048.06"/>
 <text text-anchor="start" x="828.26" y="-5069.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;dossier_items &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="792.18,-4988.06 792.18,-5048.06 1186.18,-5048.06 1186.18,-4988.06 792.18,-4988.06"/>
@@ -261,7 +261,7 @@
 <title>dossiers</title>
 <g id="a_dossiers"><a xlink:title="dossiers&#10;El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="287.79" cy="-4928.06" rx="287.59" ry="257.27"/>
-<polygon fill="#1d71b8" stroke="transparent" points="86.79,-5048.06 86.79,-5108.06 489.79,-5108.06 489.79,-5048.06 86.79,-5048.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="86.79,-5048.06 86.79,-5108.06 489.79,-5108.06 489.79,-5048.06 86.79,-5048.06"/>
 <polygon fill="none" stroke="#29235c" points="86.79,-5048.06 86.79,-5108.06 489.79,-5108.06 489.79,-5048.06 86.79,-5048.06"/>
 <text text-anchor="start" x="166.48" y="-5069.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;dossiers &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="86.79,-4988.06 86.79,-5048.06 489.79,-5048.06 489.79,-4988.06 86.79,-4988.06"/>
@@ -310,7 +310,7 @@
 <g id="email_verification_codes" class="node">
 <title>email_verification_codes</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1772.59" cy="-1863.06" rx="353.61" ry="257.27"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1524.59,-1983.06 1524.59,-2043.06 2020.59,-2043.06 2020.59,-1983.06 1524.59,-1983.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="1524.59,-1983.06 1524.59,-2043.06 2020.59,-2043.06 2020.59,-1983.06 1524.59,-1983.06"/>
 <polygon fill="none" stroke="#29235c" points="1524.59,-1983.06 1524.59,-2043.06 2020.59,-2043.06 2020.59,-1983.06 1524.59,-1983.06"/>
 <text text-anchor="start" x="1535.21" y="-2004.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;email_verification_codes &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1524.59,-1923.06 1524.59,-1983.06 2020.59,-1983.06 2020.59,-1923.06 1524.59,-1923.06"/>
@@ -348,7 +348,7 @@
 <g id="password_reset_codes" class="node">
 <title>password_reset_codes</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1772.59" cy="-1288.06" rx="338.91" ry="299.63"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1535.59,-1438.06 1535.59,-1498.06 2010.59,-1498.06 2010.59,-1438.06 1535.59,-1438.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="1535.59,-1438.06 1535.59,-1498.06 2010.59,-1498.06 2010.59,-1438.06 1535.59,-1438.06"/>
 <polygon fill="none" stroke="#29235c" points="1535.59,-1438.06 1535.59,-1498.06 2010.59,-1498.06 2010.59,-1438.06 1535.59,-1438.06"/>
 <text text-anchor="start" x="1546.35" y="-1459.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;password_reset_codes &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1535.59,-1378.06 1535.59,-1438.06 2010.59,-1438.06 2010.59,-1378.06 1535.59,-1378.06"/>
@@ -390,7 +390,7 @@
 <g id="role_permissions" class="node">
 <title>role_permissions</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1772.59" cy="-4159.06" rx="277.37" ry="172.57"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1578.59,-4219.06 1578.59,-4279.06 1966.59,-4279.06 1966.59,-4219.06 1578.59,-4219.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="1578.59,-4219.06 1578.59,-4279.06 1966.59,-4279.06 1966.59,-4219.06 1578.59,-4219.06"/>
 <polygon fill="none" stroke="#29235c" points="1578.59,-4219.06 1578.59,-4279.06 1966.59,-4279.06 1966.59,-4219.06 1578.59,-4219.06"/>
 <text text-anchor="start" x="1589.45" y="-4240.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;role_permissions &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1578.59,-4159.06 1578.59,-4219.06 1966.59,-4219.06 1966.59,-4159.06 1578.59,-4159.06"/>
@@ -427,7 +427,7 @@
 <g id="person_certificates" class="node">
 <title>person_certificates</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1772.59" cy="-543.06" rx="369.63" ry="427.19"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1513.59,-783.06 1513.59,-843.06 2032.59,-843.06 2032.59,-783.06 1513.59,-783.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="1513.59,-783.06 1513.59,-843.06 2032.59,-843.06 2032.59,-783.06 1513.59,-783.06"/>
 <polygon fill="none" stroke="#29235c" points="1513.59,-783.06 1513.59,-843.06 2032.59,-843.06 2032.59,-783.06 1513.59,-783.06"/>
 <text text-anchor="start" x="1576.59" y="-804.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;person_certificates &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1513.59,-723.06 1513.59,-783.06 2032.59,-783.06 2032.59,-723.06 1513.59,-723.06"/>
@@ -491,7 +491,7 @@
 <g id="persons" class="node">
 <title>persons</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="989.18" cy="-1021.06" rx="377.69" ry="1021.12"/>
-<polygon fill="#1d71b8" stroke="transparent" points="724.18,-1681.06 724.18,-1741.06 1254.18,-1741.06 1254.18,-1681.06 724.18,-1681.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="724.18,-1681.06 724.18,-1741.06 1254.18,-1741.06 1254.18,-1681.06 724.18,-1681.06"/>
 <polygon fill="none" stroke="#29235c" points="724.18,-1681.06 724.18,-1741.06 1254.18,-1741.06 1254.18,-1681.06 724.18,-1681.06"/>
 <text text-anchor="start" x="870.03" y="-1702.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;persons &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="724.18,-1621.06 724.18,-1681.06 1254.18,-1681.06 1254.18,-1621.06 724.18,-1621.06"/>
@@ -636,7 +636,7 @@
 <g id="role_assignments" class="node">
 <title>role_assignments</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1772.59" cy="-2778.06" rx="369.63" ry="639.45"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1513.59,-3168.06 1513.59,-3228.06 2032.59,-3228.06 2032.59,-3168.06 1513.59,-3168.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="1513.59,-3168.06 1513.59,-3228.06 2032.59,-3228.06 2032.59,-3168.06 1513.59,-3168.06"/>
 <polygon fill="none" stroke="#29235c" points="1513.59,-3168.06 1513.59,-3228.06 2032.59,-3228.06 2032.59,-3168.06 1513.59,-3168.06"/>
 <text text-anchor="start" x="1585.49" y="-3189.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;role_assignments &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1513.59,-3108.06 1513.59,-3168.06 2032.59,-3168.06 2032.59,-3108.06 1513.59,-3108.06"/>
@@ -729,7 +729,7 @@
 <g id="resources" class="node">
 <title>resources</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="287.79" cy="-4268.06" rx="287.59" ry="342.48"/>
-<polygon fill="#1d71b8" stroke="transparent" points="86.79,-4448.06 86.79,-4508.06 489.79,-4508.06 489.79,-4448.06 86.79,-4448.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="86.79,-4448.06 86.79,-4508.06 489.79,-4508.06 489.79,-4448.06 86.79,-4448.06"/>
 <polygon fill="none" stroke="#29235c" points="86.79,-4448.06 86.79,-4508.06 489.79,-4508.06 489.79,-4448.06 86.79,-4448.06"/>
 <text text-anchor="start" x="155.81" y="-4469.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;resources &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="86.79,-4388.06 86.79,-4448.06 489.79,-4448.06 489.79,-4388.06 86.79,-4388.06"/>
@@ -788,7 +788,7 @@
 <g id="role_assignment_relation_types" class="node">
 <title>role_assignment_relation_types</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2604.09" cy="-3108.06" rx="425.86" ry="172.57"/>
-<polygon fill="#1d71b8" stroke="transparent" points="2305.09,-3168.06 2305.09,-3228.06 2903.09,-3228.06 2903.09,-3168.06 2305.09,-3168.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="2305.09,-3168.06 2305.09,-3228.06 2903.09,-3228.06 2903.09,-3168.06 2305.09,-3168.06"/>
 <polygon fill="none" stroke="#29235c" points="2305.09,-3168.06 2305.09,-3228.06 2903.09,-3228.06 2903.09,-3168.06 2305.09,-3168.06"/>
 <text text-anchor="start" x="2316.01" y="-3189.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;role_assignment_relation_types &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2305.09,-3108.06 2305.09,-3168.06 2903.09,-3168.06 2903.09,-3108.06 2305.09,-3108.06"/>
@@ -825,7 +825,7 @@
 <g id="roles" class="node">
 <title>roles</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="989.18" cy="-3578.06" rx="280.94" ry="214.92"/>
-<polygon fill="#1d71b8" stroke="transparent" points="793.18,-3668.06 793.18,-3728.06 1186.18,-3728.06 1186.18,-3668.06 793.18,-3668.06"/>
+<polygon fill="#1f5fc7" stroke="transparent" points="793.18,-3668.06 793.18,-3728.06 1186.18,-3728.06 1186.18,-3668.06 793.18,-3668.06"/>
 <polygon fill="none" stroke="#29235c" points="793.18,-3668.06 793.18,-3728.06 1186.18,-3728.06 1186.18,-3668.06 793.18,-3668.06"/>
 <text text-anchor="start" x="892.76" y="-3689.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;roles &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="793.18,-3608.06 793.18,-3668.06 1186.18,-3668.06 1186.18,-3608.06 793.18,-3608.06"/>

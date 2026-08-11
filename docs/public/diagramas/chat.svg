@@ -12,7 +12,7 @@
 <g id="chat_conversation_participants" class="node">
 <title>chat_conversation_participants</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1165.25" cy="-1397.08" rx="417.8" ry="299.63"/>
-<polygon fill="#1d71b8" stroke="transparent" points="872.25,-1547.08 872.25,-1607.08 1459.25,-1607.08 1459.25,-1547.08 872.25,-1547.08"/>
+<polygon fill="#b02f80" stroke="transparent" points="872.25,-1547.08 872.25,-1607.08 1459.25,-1607.08 1459.25,-1547.08 872.25,-1547.08"/>
 <polygon fill="none" stroke="#29235c" points="872.25,-1547.08 872.25,-1607.08 1459.25,-1607.08 1459.25,-1547.08 872.25,-1547.08"/>
 <text text-anchor="start" x="882.99" y="-1568.28" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;chat_conversation_participants &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="872.25,-1487.08 872.25,-1547.08 1459.25,-1547.08 1459.25,-1487.08 872.25,-1487.08"/>
@@ -56,7 +56,7 @@
 <g id="chat_conversations" class="node">
 <title>chat_conversations</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="355.67" cy="-724.08" rx="355.85" ry="724.15"/>
-<polygon fill="#1d71b8" stroke="transparent" points="106.67,-1174.08 106.67,-1234.08 605.67,-1234.08 605.67,-1174.08 106.67,-1174.08"/>
+<polygon fill="#b02f80" stroke="transparent" points="106.67,-1174.08 106.67,-1234.08 605.67,-1234.08 605.67,-1174.08 106.67,-1174.08"/>
 <polygon fill="none" stroke="#29235c" points="106.67,-1174.08 106.67,-1234.08 605.67,-1234.08 605.67,-1174.08 106.67,-1174.08"/>
 <text text-anchor="start" x="156.11" y="-1195.28" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;chat_conversations &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="106.67,-1114.08 106.67,-1174.08 605.67,-1174.08 605.67,-1114.08 106.67,-1114.08"/>
@@ -149,7 +149,7 @@
 <g id="chat_messages" class="node">
 <title>chat_messages</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1165.25" cy="-592.08" rx="315.24" ry="469.54"/>
-<polygon fill="#1d71b8" stroke="transparent" points="944.25,-862.08 944.25,-922.08 1386.25,-922.08 1386.25,-862.08 944.25,-862.08"/>
+<polygon fill="#b02f80" stroke="transparent" points="944.25,-862.08 944.25,-922.08 1386.25,-922.08 1386.25,-862.08 944.25,-862.08"/>
 <polygon fill="none" stroke="#29235c" points="944.25,-862.08 944.25,-922.08 1386.25,-922.08 1386.25,-862.08 944.25,-862.08"/>
 <text text-anchor="start" x="990.97" y="-883.28" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;chat_messages &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="944.25,-802.08 944.25,-862.08 1386.25,-862.08 1386.25,-802.08 944.25,-802.08"/>
@@ -220,7 +220,7 @@
 <g id="chat_message_attachments" class="node">
 <title>chat_message_attachments</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2008.06" cy="-1039.08" rx="388.82" ry="342.48"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1735.06,-1219.08 1735.06,-1279.08 2281.06,-1279.08 2281.06,-1219.08 1735.06,-1219.08"/>
+<polygon fill="#b02f80" stroke="transparent" points="1735.06,-1219.08 1735.06,-1279.08 2281.06,-1279.08 2281.06,-1219.08 1735.06,-1219.08"/>
 <polygon fill="none" stroke="#29235c" points="1735.06,-1219.08 1735.06,-1279.08 2281.06,-1279.08 2281.06,-1219.08 1735.06,-1219.08"/>
 <text text-anchor="start" x="1745.74" y="-1240.28" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;chat_message_attachments &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1735.06,-1159.08 1735.06,-1219.08 2281.06,-1219.08 2281.06,-1159.08 1735.06,-1159.08"/>
@@ -270,7 +270,7 @@
 <g id="chat_message_reads" class="node">
 <title>chat_message_reads</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2008.06" cy="-506.08" rx="322.38" ry="172.57"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1782.06,-566.08 1782.06,-626.08 2234.06,-626.08 2234.06,-566.08 1782.06,-566.08"/>
+<polygon fill="#b02f80" stroke="transparent" points="1782.06,-566.08 1782.06,-626.08 2234.06,-626.08 2234.06,-566.08 1782.06,-566.08"/>
 <polygon fill="none" stroke="#29235c" points="1782.06,-566.08 1782.06,-626.08 2234.06,-626.08 2234.06,-566.08 1782.06,-566.08"/>
 <text text-anchor="start" x="1792.87" y="-587.28" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;chat_message_reads &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1782.06,-506.08 1782.06,-566.08 2234.06,-566.08 2234.06,-506.08 1782.06,-506.08"/>
@@ -326,7 +326,7 @@
 <g id="chat_notifications" class="node">
 <title>chat_notifications</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="355.67" cy="-2020.08" rx="304.11" ry="554.24"/>
-<polygon fill="#1d71b8" stroke="transparent" points="142.67,-2350.08 142.67,-2410.08 568.67,-2410.08 568.67,-2350.08 142.67,-2350.08"/>
+<polygon fill="#b02f80" stroke="transparent" points="142.67,-2350.08 142.67,-2410.08 568.67,-2410.08 568.67,-2350.08 142.67,-2350.08"/>
 <polygon fill="none" stroke="#29235c" points="142.67,-2350.08 142.67,-2410.08 568.67,-2410.08 568.67,-2350.08 142.67,-2350.08"/>
 <text text-anchor="start" x="169.83" y="-2371.28" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;chat_notifications &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="142.67,-2290.08 142.67,-2350.08 568.67,-2350.08 568.67,-2290.08 142.67,-2290.08"/>

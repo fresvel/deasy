@@ -13,7 +13,7 @@
 <title>deliverables</title>
 <g id="a_deliverables"><a xlink:title="deliverables&#10;El ENTREGABLE como identidad estable (el \&#39;libro\&#39;). Sus versiones son `template_artifacts` (las \&#39;ediciones\&#39;): la identidad vive aquí y sólo aquí.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1090.3" cy="-1202.65" rx="378.1" ry="469.54"/>
-<polygon fill="#1d71b8" stroke="transparent" points="825.3,-1472.65 825.3,-1532.65 1356.3,-1532.65 1356.3,-1472.65 825.3,-1472.65"/>
+<polygon fill="#a85a0e" stroke="transparent" points="825.3,-1472.65 825.3,-1532.65 1356.3,-1532.65 1356.3,-1472.65 825.3,-1472.65"/>
 <polygon fill="none" stroke="#29235c" points="825.3,-1472.65 825.3,-1532.65 1356.3,-1532.65 1356.3,-1472.65 825.3,-1472.65"/>
 <text text-anchor="start" x="943.2" y="-1493.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;deliverables &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="825.3,-1412.65 825.3,-1472.65 1356.3,-1472.65 1356.3,-1412.65 825.3,-1412.65"/>
@@ -76,7 +76,7 @@
 <title>template_artifacts</title>
 <g id="a_template_artifacts"><a xlink:title="template_artifacts&#10;Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1903.41" cy="-1142.65" rx="398.62" ry="554.24"/>
-<polygon fill="#1d71b8" stroke="transparent" points="1623.41,-1472.65 1623.41,-1532.65 2183.41,-1532.65 2183.41,-1472.65 1623.41,-1472.65"/>
+<polygon fill="#a85a0e" stroke="transparent" points="1623.41,-1472.65 1623.41,-1532.65 2183.41,-1532.65 2183.41,-1472.65 1623.41,-1472.65"/>
 <polygon fill="none" stroke="#29235c" points="1623.41,-1472.65 1623.41,-1532.65 2183.41,-1532.65 2183.41,-1472.65 1623.41,-1472.65"/>
 <text text-anchor="start" x="1714.91" y="-1493.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;template_artifacts &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1623.41,-1412.65 1623.41,-1472.65 2183.41,-1472.65 2183.41,-1412.65 1623.41,-1412.65"/>
@@ -165,7 +165,7 @@
 <g id="document_fill_flows" class="node">
 <title>document_fill_flows</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="3478.01" cy="-1723.65" rx="321.97" ry="342.48"/>
-<polygon fill="#1d71b8" stroke="transparent" points="3253.01,-1903.65 3253.01,-1963.65 3704.01,-1963.65 3704.01,-1903.65 3253.01,-1903.65"/>
+<polygon fill="#a85a0e" stroke="transparent" points="3253.01,-1903.65 3253.01,-1963.65 3704.01,-1963.65 3704.01,-1903.65 3253.01,-1903.65"/>
 <polygon fill="none" stroke="#29235c" points="3253.01,-1903.65 3253.01,-1963.65 3704.01,-1963.65 3704.01,-1903.65 3253.01,-1903.65"/>
 <text text-anchor="start" x="3276.69" y="-1924.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;document_fill_flows &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="3253.01,-1843.65 3253.01,-1903.65 3704.01,-1903.65 3704.01,-1843.65 3253.01,-1843.65"/>
@@ -215,7 +215,7 @@
 <g id="fill_requests" class="node">
 <title>fill_requests</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="4158.89" cy="-1322.65" rx="323.3" ry="427.19"/>
-<polygon fill="#1d71b8" stroke="transparent" points="3932.89,-1562.65 3932.89,-1622.65 4385.89,-1622.65 4385.89,-1562.65 3932.89,-1562.65"/>
+<polygon fill="#a85a0e" stroke="transparent" points="3932.89,-1562.65 3932.89,-1622.65 4385.89,-1622.65 4385.89,-1562.65 3932.89,-1562.65"/>
 <polygon fill="none" stroke="#29235c" points="3932.89,-1562.65 3932.89,-1622.65 4385.89,-1622.65 4385.89,-1562.65 3932.89,-1562.65"/>
 <text text-anchor="start" x="4011.8" y="-1583.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;fill_requests &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="3932.89,-1502.65 3932.89,-1562.65 4385.89,-1562.65 4385.89,-1502.65 3932.89,-1502.65"/>
@@ -282,7 +282,7 @@
 <g id="fill_flow_steps" class="node">
 <title>fill_flow_steps</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="3478.01" cy="-681.65" rx="310.34" ry="681.8"/>
-<polygon fill="#1d71b8" stroke="transparent" points="3261.01,-1101.65 3261.01,-1161.65 3696.01,-1161.65 3696.01,-1101.65 3261.01,-1101.65"/>
+<polygon fill="#a85a0e" stroke="transparent" points="3261.01,-1101.65 3261.01,-1161.65 3696.01,-1161.65 3696.01,-1101.65 3261.01,-1101.65"/>
 <polygon fill="none" stroke="#29235c" points="3261.01,-1101.65 3261.01,-1161.65 3696.01,-1161.65 3696.01,-1101.65 3261.01,-1101.65"/>
 <text text-anchor="start" x="3316.7" y="-1122.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;fill_flow_steps &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="3261.01,-1041.65 3261.01,-1101.65 3696.01,-1101.65 3696.01,-1041.65 3261.01,-1041.65"/>
@@ -380,7 +380,7 @@
 <title>fill_flow_templates</title>
 <g id="a_fill_flow_templates"><a xlink:title="fill_flow_templates&#10;Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2729.24" cy="-1262.65" rx="391.06" ry="384.83"/>
-<polygon fill="#1d71b8" stroke="transparent" points="2455.24,-1472.65 2455.24,-1532.65 3004.24,-1532.65 3004.24,-1472.65 2455.24,-1472.65"/>
+<polygon fill="#a85a0e" stroke="transparent" points="2455.24,-1472.65 2455.24,-1532.65 3004.24,-1532.65 3004.24,-1472.65 2455.24,-1472.65"/>
 <polygon fill="none" stroke="#29235c" points="2455.24,-1472.65 2455.24,-1532.65 3004.24,-1532.65 3004.24,-1472.65 2455.24,-1472.65"/>
 <text text-anchor="start" x="2536.82" y="-1493.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;fill_flow_templates &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2455.24,-1412.65 2455.24,-1472.65 3004.24,-1472.65 3004.24,-1412.65 2455.24,-1412.65"/>
@@ -468,7 +468,7 @@
 <g id="template_seeds" class="node">
 <title>template_seeds</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="338" cy="-1232.65" rx="337.99" ry="427.19"/>
-<polygon fill="#1d71b8" stroke="transparent" points="101,-1472.65 101,-1532.65 575,-1532.65 575,-1472.65 101,-1472.65"/>
+<polygon fill="#a85a0e" stroke="transparent" points="101,-1472.65 101,-1532.65 575,-1532.65 575,-1472.65 101,-1472.65"/>
 <polygon fill="none" stroke="#29235c" points="101,-1472.65 101,-1532.65 575,-1532.65 575,-1472.65 101,-1472.65"/>
 <text text-anchor="start" x="162.82" y="-1493.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;template_seeds &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="101,-1412.65 101,-1472.65 575,-1472.65 575,-1412.65 101,-1412.65"/>
