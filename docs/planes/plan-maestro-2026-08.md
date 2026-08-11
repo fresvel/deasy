@@ -354,6 +354,32 @@ endpoints `sync-status`/`resync`/`workflows/reconcile` y el reconcile de arranqu
 `collectSignatureWorkflowNormalizationIssues` (aunque no su papel de traductor) ·
 `materializeRuntimeFlowForTaskItem`, intacto · el ZIP, el manifiesto y el saneo LaTeX.
 
+#### Decisión de modelo: los entregables SE COMPARTEN entre configuraciones (2026-08-10)
+
+Se planteó la alternativa —«un entregable pertenece a una sola configuración, y el borrador de la
+config gobierna todo»— y **se descartó**. Queda escrito para que no se reabra:
+
+- **El esquema ya permite compartir**: `uq_process_definition_templates` es
+  `(process_definition_id, template_artifact_id)`, o sea **una vez por config, configuraciones
+  ilimitadas**. Nada impide el mismo entregable en varias.
+- **Y se comparte por diseño, no por accidente**: `cloneProcessDefinitionChildren`
+  (`services/admin/processes/processDefinitionVersion.js:280-320`) copia los `template_artifact_id` de
+  la config origen a la destino **apuntando a los mismos artifacts**, con un remap solo para el que se
+  actualiza. Durante una actualización guiada, la config **activa** y la **borrador** comparten todos
+  los entregables menos uno. `forkDeliverableForConfig` existe justo para bifurcar cuando no quieres eso.
+- **Por eso `lifecycle_state` vive en el entregable y no en la config**: si el mismo artifact está a la
+  vez en una activa y en una borrador, el estado de la config no puede decidir si es editable.
+- **Lo que costaría la alternativa:** la actualización guiada **depende** de compartir. Bajo «uno por
+  config» habría que bifurcar todas las plantillas en cada clonado, lo que multiplica filas y rompe la
+  identidad del entregable entre versiones. Y `template_artifacts` dejaría de tener sentido como tabla.
+
+**Consecuencia para el §0.8:** el portador `template_artifact_id` del flujo es correcto — un entregable
+compartido lleva su flujo consigo a todas las configuraciones donde esté enlazado, que es lo que el
+sync hace hoy abanicando el YAML.
+
+**Y el `lifecycle_state` queda como estado propio, con dos defectos a cerrar antes del §0.8** (ver
+[Frente 1](#frente-1--defectos-conocidos-y-sin-arreglar--) 1.12 y 1.13).
+
 #### Riesgos
 
 - **El paquete deja de ser autocontenido.** Hoy prefijo + meta = plantilla reproducible desde MinIO sin
@@ -394,6 +420,8 @@ cuando el defecto muere, su golden cambia, y ese diff **es** la prueba.
 | 1.7 | **El «sello fantasma»: un guard permanentemente verdadero** | `MultiSignerPanel.vue` | `previewBoxStyle` nace `{display:'none'}` pero la asignación de `:911` **no incluye `display`**, así que tras el primer `pointermove` el `v-if` de `:169` es siempre cierto: código muerto. Ojo — [`referencia/frontend.md`](./referencia/frontend.md) afirma lo contrario (que `isMouseOverPdf` «nunca se lee», y sí se lee en `:169`); el único diagnóstico correcto está en [`referencia/god-objects-2026-07.md`](./referencia/god-objects-2026-07.md) §3.4 |
 | 1.8 | **Dos documentos del repo mandan formas de error contrarias** | `backend/errors/HttpError.js:20` | Su cabecera recomienda `res.json({ error: error.message })`, mientras el contrato objetivo —y `middlewares/uploadError.js`, que ya lo implementa— es `{ message, code }`. Mientras eso no se reconcilie, cada controller nuevo elige mal la mitad de las veces |
 | ~~1.9~~ | ~~**El arreglo del IDOR se aplicó copia por copia y una copia se quedó atrás**~~ | `backend/services/chat/ChatAuthorizationService.js` | ❌ **NO ERA UN DEFECTO (2026-08-09). No apliques el guard ahí.** El diagnóstico confundía el nivel de la fila: el guard canónico responde «¿es TUYO este entregable?» y protege consultas cuya FILA es un entregable; esta resuelve el hilo del **proceso en una unidad**, donde el `LEFT JOIN task_items` solo abanica filas y lo único proyectado —`scope_unit_id`, que sale de `t.responsible_position_id`— es idéntico en todas las filas de una tarea. Tres razones, la última **medida** contra la base de dev: (a) no cierra ninguna fuga —el guard nunca RECORTA el conjunto de unidades accesibles, lo VACÍA—; (b) la lista de participantes del hilo se construye de `task_assignments` **sin** filtrar por responsable de entregable, así que aplicarlo solo en el acceso dejaría gente dentro del hilo y con 403 al abrirlo; (c) 8 de las 10 personas asignadas a la tarea 8 (proceso 1, unidad 8) pasaban de `{8}` a **ninguna** unidad accesible, y el corte dependería de datos ajenos: en la tarea 9 (misma forma, 10 asignados, **0 entregables**) el `LEFT JOIN` deja `ti` a NULL y las diez conservan el acceso, luego el hilo se le caería a ocho de ellas **en cuanto un compañero creara el primer entregable**. Queda escrito en el propio fichero, encima de la consulta, para que no se «arregle» otra vez |
+| 1.12 | **Se puede activar una configuración con una plantilla SIN PUBLICAR enlazada** | `templateLifecycle.js:941-946` y `SqlAdminService.js:548` | El camino normal es seguro: el CRUD llama a `publishDraftTemplatesForDefinition` **antes** del gate (`tableHooks.js:605-606`) y publica todos los borradores enlazados. Pero **`finishTemplateUpdate` no la llama**: publica solo la plantilla que actualiza y pasa al gate, que comprueba **`is_active`, no `lifecycle_state`**, y solo exige **≥1** activa. Así que si el borrador de la config tiene otro vínculo a una plantilla en borrador, la config se activa con ella dentro — y **`launch.js` no mira `lifecycle_state` en ningún sitio**, así que se lanzan documentos contra una plantilla que nunca pasó el gate de publicación. Camino estrecho (exige añadir un vínculo durante una actualización guiada) pero real. **Diagnosticado leyendo el código, no ejecutado.** Bloquea el sub-paso 5 del §0.8: la invariante «lo publicado es inmutable» no se sostiene mientras esto exista |
+| 1.13 | **`template_artifacts.lifecycle_state` nace `published` por defecto** | `postgres_schema.sql:523` | `NOT NULL DEFAULT 'published'`. Una fila creada por el CRUD genérico nace **publicada**, mientras que `createTemplateArtifactVersion` pone `draft` explícitamente. El valor seguro es el contrario: lo que nace, nace sin publicar |
 | 1.10 | **La única bitácora de auditoría del sistema la puentea el camino automático** | `backend/database/postgres_schema.sql:1330-1344` | `trg_position_assignments_after_update_fn` reasigna `task_items.assigned_person_id` (a `NULL` al cerrar la ocupación, y a la persona nueva al abrirla) **sin escribir ni una fila en `task_item_handovers`**. En todo el backend hay **un solo INSERT** a esa tabla (`services/admin/org/taskAssignment.js:254`, el camino manual), así que **dos de los tres valores de su `CHECK` —`occupancy_end` y `position_deactivated`— son inalcanzables**. Es decir: los relevos que ocurren solos, que son justo los que nadie recuerda, no dejan rastro |
 
 **Criterio de cierre:** cada uno con su golden actualizado y su clave renombrada si decía «defecto»
