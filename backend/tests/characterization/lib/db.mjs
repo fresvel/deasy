@@ -17,12 +17,13 @@
 // EXCEPCIÓN, con nombre y fecha: `flows/zzzzzz_flow_steps_db.test.mjs` (2026-08-10) SÍ asierta
 // contra SQL, y usa el `query` de aquí para hacerlo. No es una grieta en la regla, es su límite:
 // el §0.8 del plan maestro va a mover el flujo del `meta.yaml` a la base, y NO EXISTE contrato HTTP
-// que observe el resultado. `GET /template_artifacts/:id/schema` parece servir y no sirve — devuelve
-// el flujo leyéndolo del `meta.yaml` (`templateArtifact.js:127-181`), o sea justo lo que se va a
-// eliminar—, y lo que hoy se fija por HTTP es el `content_hash` del paquete de MinIO, que INCLUYE
-// ese fichero y por tanto cambiará por construcción sin decir nada del flujo. Cuando lo que hay que
-// caracterizar es el estado que un cambio va a reescribir, y ninguna ruta lo expone, el oráculo es
-// la base. Fuera de ese flow, sigue valiendo la regla.
+// que observe el resultado. `GET /template_artifacts/:id/schema` parece servir y no sirve, y desde el
+// sub-paso 5 sigue sin servir aunque ya lea de la base: devuelve el flujo APLANADO en forma de
+// formulario, colapsa los dos portadores en una sola vista y no dice de cuál leyó, así que no puede
+// observar la escritura doble ni el `can_reject` derivado. Y lo que se fija por HTTP del paquete es
+// el `content_hash` de MinIO, que INCLUYE el `meta.yaml` y cambiará por construcción sin decir nada
+// del flujo. Cuando lo que hay que caracterizar es el estado que un cambio va a reescribir, y
+// ninguna ruta lo expone, el oráculo es la base. Fuera de ese flow, sigue valiendo la regla.
 
 import pg from "pg";
 

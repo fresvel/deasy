@@ -14,10 +14,12 @@
 // goldens deben salir IDÉNTICOS. Si salen idénticos, la inversión no cambió el comportamiento; si se
 // mueven, el diff señala el paso y la columna exactos.
 //
-// ⚠️ EL ORÁCULO NO PUEDE SER `GET /template_artifacts/:id/schema`. Ese endpoint devuelve el flujo en
-// forma de formulario, pero HOY LO LEE DEL `meta.yaml` (`templateArtifact.js:127-181`): mediría justo
-// lo que vamos a cambiar y se movería entero en el sub-paso 3 sin que nada del comportamiento se
-// hubiera roto. El oráculo es la BASE.
+// ⚠️ EL ORÁCULO NO PUEDE SER `GET /template_artifacts/:id/schema`. Cuando se escribió esto, ese
+// endpoint leía el flujo del `meta.yaml`: habría medido justo lo que el sub-paso 3 iba a cambiar.
+// Desde el sub-paso 5 ya lee de la base, y SIGUE sin servir de oráculo — devuelve el flujo APLANADO
+// en forma de formulario, colapsa los dos portadores en una vista sola sin decir de cuál leyó, y no
+// expone `can_reject`. Su ida y vuelta se caracteriza aparte, en `zzzzzzz_schema_flow_reread`. El
+// oráculo de ESTE flow es la BASE.
 //
 // ⚠️ EL PREFIJO "zzzzzz_" ES DELIBERADO (seis zetas, una más que `zzzzz_task_item_relay`). Los flows
 // corren en orden alfabético con --test-concurrency=1 y la colación del contenedor es POSIX (byte a
