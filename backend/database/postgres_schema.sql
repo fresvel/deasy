@@ -1290,6 +1290,13 @@ BEFORE UPDATE ON process_definition_versions
 FOR EACH ROW EXECUTE FUNCTION trg_pdv_before_update_fn();
 
 -- 2) Ocupación de puesto: deriva role_assignments y enlaza task_items abiertos.
+--
+-- "Abierto y NO INICIADO" es `ti.user_started_at IS NULL`. Antes se preguntaba por la ausencia de
+-- documento, y eso NUNCA se cumplía: el documento se crea al lanzar, en la misma transacción que el
+-- entregable (los cinco caminos que insertan en `task_items` llaman a `ensureDocumentForTaskItem`
+-- antes de confirmar). La condición significaba "no toques nada que se haya lanzado", y todo lo
+-- estaba: la rama era código muerto. `user_started_at` se sella una sola vez, en el `start` de un
+-- paso de entrega (FillRequestWorkflowService), que es de verdad el momento en que alguien empieza.
 CREATE OR REPLACE FUNCTION trg_position_assignments_after_insert_fn() RETURNS trigger AS $$
 BEGIN
   IF NEW.is_current = 1 THEN
@@ -1305,7 +1312,7 @@ BEGIN
        SET assigned_person_id = NEW.person_id
      WHERE ti.responsible_position_id = NEW.position_id
        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-       AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)
+       AND ti.user_started_at IS NULL
        AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id);
   END IF;
   RETURN NULL;
@@ -1332,14 +1339,14 @@ BEGIN
      WHERE ti.responsible_position_id = NEW.position_id
        AND ti.assigned_person_id = OLD.person_id
        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-       AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id);
+       AND ti.user_started_at IS NULL;
   END IF;
   IF NEW.is_current = 1 THEN
     UPDATE task_items ti
        SET assigned_person_id = NEW.person_id
      WHERE ti.responsible_position_id = NEW.position_id
        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-       AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)
+       AND ti.user_started_at IS NULL
        AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id);
   END IF;
   RETURN NULL;

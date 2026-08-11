@@ -190,9 +190,14 @@ export default class TaskAssignmentService {
   }
 
 
-  // F-B (backfill idempotente): reconcilia los task_items ABIERTOS y NO INICIADOS (sin documento) al ocupante
-  // vigente de su puesto. El trigger de `position_assignments` reconcilia hacia adelante; esto arregla huérfanos
-  // creados con el puesto vacante. No toca cerradas ni YA INICIADAS (no romper la cadena). `positionId` acota.
+  // F-B (backfill idempotente): reconcilia los task_items ABIERTOS y NO INICIADOS al ocupante vigente de su
+  // puesto. El trigger de `position_assignments` reconcilia hacia adelante; esto arregla huérfanos creados con
+  // el puesto vacante. No toca cerradas ni YA INICIADAS (no romper la cadena). `positionId` acota.
+  //
+  // "No iniciada" es `ti.user_started_at IS NULL`. Antes se preguntaba por la ausencia de documento, y eso
+  // NUNCA se cumplía: el documento nace en la misma transacción que el entregable, así que este backfill
+  // devolvía 0 siempre. `user_started_at` lo sella el `start` de un paso de entrega, que es de verdad el
+  // momento en que alguien empieza.
   async reconcileOpenTaskItemAssignments({ positionId = null } = {}, connection = this.pool) {
     const pid = normalizeNumericId(positionId);
     const params = [];
@@ -214,7 +219,7 @@ export default class TaskAssignmentService {
           AND pa.person_id IS NOT NULL
           AND ti.responsible_position_id IS NOT NULL
           AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-          AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)
+          AND ti.user_started_at IS NULL
           AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> pa.person_id)
           ${posFilter}`,
       params

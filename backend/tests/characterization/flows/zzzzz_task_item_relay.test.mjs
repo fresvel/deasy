@@ -1,0 +1,103 @@
+// Characterization: el RELEVO de un entregable cuando cambia quién ocupa su puesto.
+//
+// Qué se fija aquí y por qué no estaba antes. La condición que protegía a los entregables
+// "ya empezados" preguntaba por la ausencia de documento
+// (`NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)`), y eso NUNCA se cumplía:
+// el documento se crea al lanzar, en la misma transacción que el entregable. El backfill devolvía
+// `{"reconciled":0}` SIEMPRE y los dos triggers de `position_assignments` no movían una sola fila.
+// La señal correcta es `task_items.user_started_at`, que sella el `start` de un paso de entrega.
+//
+// `POST /admin/sql/task-items/reconcile-assignments` es la superficie HTTP de ese guard
+// (`TaskAssignmentService.reconcileOpenTaskItemAssignments`), y comparte predicado literal con las
+// tres sentencias de los triggers. Los dos sentidos del contrato quedan fijados: reasigna lo NO
+// iniciado, y NO toca lo iniciado.
+//
+// Va el ÚLTIMO del orden alfabético a propósito: es el único flow que reasigna responsables de la
+// fixture, y así no mueve las huellas `list_*` de admin_crud ni el espacio de trabajo de usuario.
+// Es autolimpiante: el único cambio que introduce a mano (el responsable del entregable iniciado)
+// se restaura, y el resto es idempotente por definición.
+
+import { test, before } from "node:test";
+import assert from "node:assert/strict";
+import { get, post, put } from "../lib/http.mjs";
+import { matchSnapshot } from "../lib/snapshot.mjs";
+import { waitForReady } from "../lib/readiness.mjs";
+import { tokenFor } from "../lib/auth.mjs";
+
+const SUITE = "task_item_relay";
+
+const RECONCILE = "/admin/sql/task-items/reconcile-assignments";
+
+const listTaskItems = async (token) => {
+  const res = await get("/admin/sql/task_items", { token });
+  assert.equal(res.status, 200, `list task_items debe responder 200: ${JSON.stringify(res.body)}`);
+  const rows = Array.isArray(res.body) ? res.body : (res.body?.rows ?? res.body?.data ?? []);
+  assert.ok(rows.length, "la fixture debe tener entregables");
+  return rows;
+};
+
+const started = (rows) => {
+  const row = rows.find((r) => r.user_started_at);
+  assert.ok(row, "la fixture debe tener un entregable INICIADO (user_started_at sellado)");
+  return row;
+};
+
+const notStarted = (rows) => rows.filter((r) => !r.user_started_at);
+
+before(async () => {
+  await waitForReady();
+});
+
+test("el backfill reasigna los entregables abiertos y NO iniciados al ocupante de su puesto", async () => {
+  const token = await tokenFor("admin");
+  const res = await post(RECONCILE, { token, body: {} });
+  // Antes del arreglo esto era {"reconciled":0} en cualquier fixture y en cualquier base:
+  // la condición del documento no se cumplía nunca.
+  matchSnapshot(SUITE, "reconcile_first_pass", { status: res.status, body: res.body });
+  assert.ok(res.body?.reconciled > 0, "el backfill debe mover al menos un entregable");
+
+  const rows = await listTaskItems(token);
+  for (const row of notStarted(rows)) {
+    assert.ok(
+      row.assigned_person_id,
+      `el entregable ${row.id} (no iniciado) debe quedar con responsable tras el backfill`,
+    );
+  }
+});
+
+test("el backfill es idempotente: la segunda pasada no mueve nada", async () => {
+  const token = await tokenFor("admin");
+  const res = await post(RECONCILE, { token, body: {} });
+  matchSnapshot(SUITE, "reconcile_second_pass", { status: res.status, body: res.body });
+});
+
+test("un entregable YA INICIADO no lo toca el backfill, aunque su responsable no ocupe el puesto", async () => {
+  const token = await tokenFor("admin");
+  const antes = started(await listTaskItems(token));
+  const original = antes.assigned_person_id;
+
+  // Se le pone un responsable que NO es el ocupante vigente de su puesto: sin el guard, el
+  // backfill lo devolvería al ocupante. Cualquier otra persona de la fixture vale.
+  const intruso = Number(original) === 1 ? 2 : 1;
+  const cambio = await put("/admin/sql/task_items", {
+    token,
+    body: { keys: { id: antes.id }, data: { assigned_person_id: intruso } },
+  });
+  assert.equal(cambio.status, 200, `no se pudo preparar el caso: ${JSON.stringify(cambio.body)}`);
+
+  const res = await post(RECONCILE, { token, body: {} });
+  matchSnapshot(SUITE, "reconcile_skips_started_item", { status: res.status, body: res.body });
+
+  const despues = started(await listTaskItems(token));
+  assert.equal(
+    Number(despues.assigned_person_id),
+    intruso,
+    "el entregable iniciado debe conservar su responsable: el relevo automático no le aplica",
+  );
+
+  // Round-trip autolimpiante.
+  await put("/admin/sql/task_items", {
+    token,
+    body: { keys: { id: antes.id }, data: { assigned_person_id: original } },
+  });
+});
