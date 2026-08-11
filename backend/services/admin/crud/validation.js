@@ -166,11 +166,12 @@ const processDefinedNeedsTemplate = (candidate) => {
   }
 };
 
-const documentOwnerAndStatus = (candidate) => {
-  if (!candidate.task_item_id && !candidate.owner_person_id) {
-    throw new Error("Selecciona el item de tarea o define un propietario para el documento.");
-  }
-
+// Solo el estado. La otra mitad de esta regla —"item de tarea O propietario"— sostenía el
+// "documento suelto", retirado: un documento no existe sin su entregable, así que `task_item_id`
+// pasó a ser un requerido más y vive abajo, en `TABLE_RULES`. Lo que NO se puede perder es la
+// normalización in-place del estado: muta el candidato y sin ella la escritura guarda el literal
+// legacy sin que ningún error lo delate.
+const documentStatusValue = (candidate) => {
   if (Object.hasOwn(candidate, "status")) {
     candidate.status = assertDocumentStatusValue(candidate.status);
   }
@@ -287,7 +288,8 @@ const TABLE_RULES = {
     datesInOrder("items de tarea"),
   ],
   documents: [
-    documentOwnerAndStatus,
+    requires(["task_item_id", "Selecciona el item de tarea del documento."]),
+    documentStatusValue,
   ],
   document_versions: [
     documentVersionNumberAndStatus,

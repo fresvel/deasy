@@ -722,7 +722,6 @@ CREATE TABLE IF NOT EXISTS documents (
   task_item_id INT NULL,
   owner_person_id INT NULL,
   origin_unit_id INT NULL,
-  origin_type TEXT CHECK (origin_type IN ('task_item', 'standalone', 'imported', 'generated')) NOT NULL DEFAULT 'task_item',
   title VARCHAR(180) NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
   comments_thread_ref VARCHAR(64) NULL,
@@ -735,7 +734,6 @@ CREATE TABLE IF NOT EXISTS documents (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_documents_task_item ON documents (task_item_id);
 CREATE INDEX IF NOT EXISTS idx_documents_owner_person ON documents (owner_person_id);
 CREATE INDEX IF NOT EXISTS idx_documents_origin_unit ON documents (origin_unit_id);
-CREATE INDEX IF NOT EXISTS idx_documents_origin_type ON documents (origin_type);
 
 
 CREATE TABLE IF NOT EXISTS document_versions (

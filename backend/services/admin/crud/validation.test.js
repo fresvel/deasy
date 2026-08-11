@@ -258,13 +258,13 @@ test("validateTableRules exige el entregable solo si el item nace del proceso", 
 // sin preservar la mutación rompería la escritura sin que ningún error lo delate.
 
 test("validateTableRules normaliza el estado del documento in-place", () => {
-  const candidate = { owner_person_id: 3, status: "rechazado" };
+  const candidate = { task_item_id: 1, status: "rechazado" };
   validateTableRules("documents", candidate);
   assert.equal(candidate.status, "Observado", "el estado legacy debe quedar normalizado en el candidato");
 });
 
 test("validateTableRules no inventa un estado si el candidato no lo trae", () => {
-  const candidate = { owner_person_id: 3 };
+  const candidate = { task_item_id: 1 };
   validateTableRules("documents", candidate);
   assert.equal("status" in candidate, false);
 });
@@ -275,8 +275,11 @@ test("validateTableRules normaliza el estado de la versión documental in-place"
   assert.equal(candidate.status, "Final");
 });
 
-test("validateTableRules exige un documento con item de tarea o propietario", () => {
-  throwsWith(() => validateTableRules("documents", {}), "item de tarea o define un propietario");
+// El "documento suelto" (con propietario y sin entregable) se retiró: `task_item_id` es
+// obligatorio y un propietario ya no lo sustituye.
+test("validateTableRules exige el item de tarea del documento", () => {
+  throwsWith(() => validateTableRules("documents", {}), "Selecciona el item de tarea del documento.");
+  throwsWith(() => validateTableRules("documents", { owner_person_id: 3 }), "Selecciona el item de tarea del documento.");
   assert.doesNotThrow(() => validateTableRules("documents", { task_item_id: 1 }));
 });
 

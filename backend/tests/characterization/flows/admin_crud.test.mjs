@@ -64,7 +64,7 @@ const CREATE_ERROR_CASES = [
   ["version_sin_serie", "process_definition_versions", {}],
   ["regla_sin_configuracion", "process_target_rules", {}],
   ["tarea_sin_configuracion", "tasks", {}],
-  ["documento_sin_propietario", "documents", {}],
+  ["documento_sin_item", "documents", {}],
 ];
 
 for (const [key, table, body] of CREATE_ERROR_CASES) {
@@ -884,49 +884,32 @@ test("POST /admin/sql/template_artifacts -> graft: creación prohibida por CRUD 
 
 // Las tablas de RUNTIME (documents, document_versions, *_requests...) no las tocan los flujos de
 // la app — TaskGenerationService y compañía hacen INSERT directo. Su CRUD admin es funcionalidad
-// de borde, pero `document_versions` es valioso caracterizarlo porque su graft es TRANSACCIONAL:
-// el INSERT y el efecto (crear el flujo de entrega) van en la misma transacción. Es el caso que
-// prueba de verdad el helper de escritura transaccional del registro de hooks.
-test("POST /admin/sql/documents+document_versions -> grafts: origen standalone y flujo en la misma tx", async () => {
+// de borde.
+//
+// Desde que se retiró el "documento suelto", un documento SOLO existe colgado de su entregable, y
+// cada entregable estrena el suyo al insertarse (`task_items.afterInsertTx` +
+// `uq_documents_task_item`). O sea: por CRUD admin ya no se puede crear un documento nuevo, y lo
+// único que queda por caracterizar del graft de create es su guard. Los dos casos siguientes usan
+// el documento que trae la fixture, y NINGUNO escribe: así no mueven los conteos de las suites de
+// ejecución, que comparten base con esta.
+test("POST /admin/sql/documents -> graft: el item de tarea del documento debe existir", async () => {
   const token = await tokenFor("admin");
-  const document = await post("/admin/sql/documents", {
+  const rechazado = await post("/admin/sql/documents", {
     token,
-    body: { owner_person_id: FIXTURE.usuarioPersonId, title: "Documento caracterización" },
+    body: { task_item_id: 999999, title: "Documento caracterización" },
   });
-  matchSnapshot(SUITE, "graft_documents_create_standalone", {
-    status: document.status,
-    body: normalize(document.body, { maskIdKeys: true }),
+  matchSnapshot(SUITE, "graft_documents_create_item_inexistente", {
+    status: rechazado.status,
+    body: normalize(rechazado.body, { maskIdKeys: true }),
   });
-  assert.equal(document.status, 200, `documents create debe responder 200: ${JSON.stringify(document.body)}`);
-  // El graft deriva el origen cuando no viene task_item_id.
-  assert.equal(document.body?.origin_type, "standalone", "sin task_item_id el origen debe ser standalone");
-  const documentId = document.body?.id;
-
-  const version = await post("/admin/sql/document_versions", {
-    token,
-    body: { document_id: documentId, version: "0.1", status: "Borrador" },
-  });
-  matchSnapshot(SUITE, "graft_document_versions_create", {
-    status: version.status,
-    body: normalize(version.body, { maskIdKeys: true }),
-  });
-  const versionId = version.body?.id;
-
-  if (versionId) {
-    await del("/admin/sql/document_versions", { token, body: { keys: { id: versionId } } });
-  }
-  await del("/admin/sql/documents", { token, body: { keys: { id: documentId } } });
 });
 
 // El guard de update de `documents` es de INMUTABILIDAD: el item de tarea asociado no se cambia.
 test("PUT /admin/sql/documents -> graft: el item de tarea asociado es inmutable", async () => {
   const token = await tokenFor("admin");
-  const document = await post("/admin/sql/documents", {
-    token,
-    body: { owner_person_id: FIXTURE.usuarioPersonId, title: "Documento caracterización PUT" },
-  });
-  const documentId = document.body?.id;
-  assert.ok(documentId, "documents create debe devolver id");
+  const documentos = (await get("/admin/sql/documents", { token })).body || [];
+  const documentId = documentos[0]?.id;
+  assert.ok(documentId, "la fixture debe traer al menos un documento");
 
   const rechazado = await put("/admin/sql/documents", {
     token,
@@ -936,8 +919,6 @@ test("PUT /admin/sql/documents -> graft: el item de tarea asociado es inmutable"
     status: rechazado.status,
     body: normalize(rechazado.body, { maskIdKeys: true }),
   });
-
-  await del("/admin/sql/documents", { token, body: { keys: { id: documentId } } });
 });
 
 test("PUT /admin/sql/processes -> graft: renombrar refresca los nombres de configuraciones", async () => {

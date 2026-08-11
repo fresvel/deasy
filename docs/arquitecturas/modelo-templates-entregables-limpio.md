@@ -106,7 +106,7 @@ La cadena real (verificada en el esquema) es de **molde → instancia → result
 template_artifacts                 (EL MOLDE: schema, render, flujos, kind, propiedad)
   └─ process_definition_templates  (vínculo definición↔artifact; creates_task)
        └─ task_items               (EL ENTREGABLE: process_definition_template_id + template_artifact_id)
-            └─ documents           (contenedor; origin_type: task_item|standalone|imported|generated)
+            └─ documents           (contenedor; SIEMPRE cuelga de su entregable)
                  └─ document_versions      (template_artifact_id = con qué plantilla se generó)
                       ├─ archivo principal  (working_file_path / final_file_path)
                       └─ document_attachments  (ANEXOS ad-hoc: kind=annex/evidence/source/other)
@@ -118,8 +118,11 @@ Claves para despejar la duda del usuario:
   definición). Esto **no cambió** con los anexos.
 - **Los anexos cuelgan de `document_versions`, un nivel por debajo del entregable.** Son archivos
   *adicionales al resultado*, no redefinen la plantilla.
-- **`documents.origin_type`** distingue cómo nació el documento: `task_item` (proceso programado),
-  `standalone` (creación abierta / tarea libre), etc.
+- **Un documento no existe sin su entregable.** `documents.origin_type` (`task_item | standalone |
+  imported | generated`) se retiró el **2026-08-10**: el «documento suelto» venía del roadmap de
+  marzo («los documentos huérfanos no deben usar tareas falsas») y ese caso de uso **se resolvió por
+  otra vía**, el **Proceso por defecto** de §4bis, del que cuelga como entregable normal todo lo que
+  no pertenece a un proceso. No quedaba ni un productor ni un lector del discriminador.
 
 ## 4bis. Proceso por defecto `default` (sembrado en bootstrap)
 

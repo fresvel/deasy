@@ -104,7 +104,6 @@
       "comments_thread_ref",
       "created_at",
       "id",
-      "origin_type",
       "owner_person_id",
       "status",
       "task_item_id",

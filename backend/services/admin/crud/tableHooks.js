@@ -924,20 +924,19 @@ export const TABLE_HOOKS = {
   },
 
   documents: {
-    // El origen se DERIVA: con item de tarea es `task_item`; sin él es standalone y exige dueño.
+    // Un documento es el CONTENEDOR de un entregable: sin item de tarea no existe. El "documento
+    // suelto" (`origin_type = standalone`, documento con dueño y sin entregable) se retiró: lo que
+    // no pertenece a ningún proceso cuelga del Proceso por defecto, que crea su entregable como
+    // cualquier otro. Aquí solo se comprueba que el item EXISTA; que venga es requisito de
+    // `TABLE_RULES` (crud/validation.js), donde viven los campos obligatorios del resto de tablas.
     async beforeCreate(ctx) {
-      if (ctx.payload.task_item_id) {
-        const taskItem = await ctx.service.getTaskItem(ctx.payload.task_item_id);
-        if (!taskItem) {
-          throw new Error("El item de tarea seleccionado no existe.");
-        }
-        ctx.payload.origin_type = ctx.payload.origin_type || "task_item";
+      if (!ctx.payload.task_item_id) {
         return;
       }
-      if (!ctx.payload.owner_person_id) {
-        throw new Error("Los documentos standalone requieren un propietario.");
+      const taskItem = await ctx.service.getTaskItem(ctx.payload.task_item_id);
+      if (!taskItem) {
+        throw new Error("El item de tarea seleccionado no existe.");
       }
-      ctx.payload.origin_type = ctx.payload.origin_type || "standalone";
     },
 
     beforeUpdate(ctx) {

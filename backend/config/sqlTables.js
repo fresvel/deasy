@@ -605,13 +605,6 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "task_item_id", label: "Item de tarea", type: "number" },
       { name: "owner_person_id", label: "Propietario", type: "number" },
-      {
-        name: "origin_type",
-        label: "Origen",
-        type: "select",
-        options: ["task_item", "standalone", "imported", "generated"],
-        defaultValue: "task_item"
-      },
       { name: "title", label: "Titulo", type: "text" },
       {
         name: "status",
@@ -624,7 +617,7 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["origin_type", "title", "status"]
+    searchFields: ["title", "status"]
   },
   {
     table: "document_versions",

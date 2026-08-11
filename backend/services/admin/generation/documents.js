@@ -327,15 +327,13 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
          task_item_id,
          owner_person_id,
          origin_unit_id,
-         origin_type,
          title,
          status
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?)`,
       [
         taskItem.id,
         ownerPersonId,
         originUnitId,
-        "task_item",
         taskItem.template_artifact_name || `Documento ${taskItem.id}`,
         "Inicial"
       ]

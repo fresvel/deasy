@@ -29,10 +29,10 @@
       "message": "Datos incompletos: Nombre"
     }
   },
-  "create_error_documento_sin_propietario": {
+  "create_error_documento_sin_item": {
     "status": 400,
     "body": {
-      "message": "Los documentos standalone requieren un propietario."
+      "message": "Selecciona el item de tarea del documento."
     }
   },
   "create_error_regla_sin_configuracion": {
@@ -78,22 +78,10 @@
       "name": "Cargo caracterización (renombrado)"
     }
   },
-  "graft_document_versions_create": {
-    "status": 200,
+  "graft_documents_create_item_inexistente": {
+    "status": 400,
     "body": {
-      "document_id": "<normalized>",
-      "id": "<normalized>",
-      "status": "Borrador",
-      "version": "0.1"
-    }
-  },
-  "graft_documents_create_standalone": {
-    "status": 200,
-    "body": {
-      "id": "<normalized>",
-      "origin_type": "standalone",
-      "owner_person_id": "<normalized>",
-      "title": "Documento caracterización"
+      "message": "El item de tarea seleccionado no existe."
     }
   },
   "graft_documents_update_task_item_inmutable": {
@@ -333,7 +321,6 @@
       "comments_thread_ref",
       "created_at",
       "id",
-      "origin_type",
       "owner_person_id",
       "status",
       "task_item_id",
