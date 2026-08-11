@@ -13,7 +13,7 @@
 
     .deasy-workspace-header {
         @apply flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-1 py-1 shadow-none;
-        border-color: rgba(255, 255, 255, 0.08);
+        border-color: rgba(var(--brand-white-rgb), 0.08);
         background: transparent;
     }
 
@@ -66,7 +66,7 @@
     @media (min-width: 1280px) {
         .deasy-sidebar__flyout {
             @apply visible relative h-full w-[21.5rem] shrink-0 translate-x-0 overflow-y-auto border-l p-3 opacity-100 [scrollbar-width:thin];
-            border-color: rgba(255, 255, 255, 0.08);
+            border-color: rgba(var(--brand-white-rgb), 0.08);
             background: var(--brand-navy-deep);
         }
     }
@@ -85,8 +85,8 @@
 
     .deasy-sidebar-rail-nav__item--active {
         @apply border text-white;
-        border-color: rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(var(--brand-white-rgb), 0.1);
+        background: rgba(var(--brand-white-rgb), 0.1);
     }
 
     .deasy-sidebar-rail-nav__icon {

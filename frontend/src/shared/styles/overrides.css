@@ -109,7 +109,7 @@ textarea {
 
 .admin-select-field:focus {
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+  box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
 }
 
 .deasy-table thead tr,
@@ -133,13 +133,13 @@ textarea {
 }
 
 .deasy-nav-shell {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(var(--brand-white-rgb), 0.12) 0%, rgba(var(--brand-white-rgb), 0.08) 100%);
+  border-color: rgba(var(--brand-white-rgb), 0.08);
 }
 
 header {
   background-color: var(--brand-navy-deep);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(var(--brand-white-rgb), 0.1);
 }
 
 .deasy-fa-icon {
@@ -160,8 +160,8 @@ header {
 .admin-btn--secondary:hover,
 .admin-btn--cancel:hover {
   color: var(--brand-primary);
-  background-color: rgba(94, 78, 255, 0.06);
-  border-color: rgba(94, 78, 255, 0.18);
+  background-color: rgba(var(--brand-primary-rgb), 0.06);
+  border-color: rgba(var(--brand-primary-rgb), 0.18);
 }
 
 .hope-action-btn {

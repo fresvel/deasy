@@ -2,7 +2,7 @@
 .deasy-auth-page {
         @apply min-h-screen px-4 py-6 font-sans text-slate-900 sm:px-6 lg:px-8;
         background-image:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(243, 247, 251, 0.98) 48%, var(--brand-surface-muted) 100%),
+            linear-gradient(180deg, rgba(var(--brand-white-rgb), 0.99) 0%, rgba(243, 247, 251, 0.98) 48%, var(--brand-surface-muted) 100%),
             radial-gradient(circle at top left, rgba(18, 63, 136, 0.08), transparent 28rem),
             radial-gradient(circle at bottom right, rgba(44, 173, 73, 0.08), transparent 24rem);
     }

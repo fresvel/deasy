@@ -109,12 +109,11 @@
 :root {
   --brand-primary: #5e4eff;
   --brand-accent: #00b2a9;
-  --brand-highlight: #5e4eff;
-  --brand-highlight-rgb: 94, 78, 255;
   --brand-navy: #111827;
   --brand-ink: #1f2937;
   --brand-info-soft: rgba(37, 99, 235, 0.1);
   --brand-white: #ffffff;
+  --brand-white-rgb: 255, 255, 255;
   /* Ancla para oscurecer con color-mix(). No es un color de superficie: no
      pintes nada directamente con el. */
   --brand-black: #000000;

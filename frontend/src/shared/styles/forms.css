@@ -31,7 +31,7 @@
 
     .deasy-filter-control:focus {
         border-color: var(--brand-primary);
-        box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+        box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
     }
 
     .admin-select-field.deasy-filter-control {
@@ -50,7 +50,7 @@
 
     .deasy-filter-search-input:focus {
         border-color: var(--brand-primary);
-        box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+        box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
     }
 
     .deasy-filter-toolbar {
@@ -100,8 +100,8 @@
     .deasy-field-select:focus,
     .deasy-field-textarea:focus {
         @apply bg-white ring-4;
-        border-color: rgba(94, 78, 255, 0.44);
-        --tw-ring-color: rgba(94, 78, 255, 0.12);
+        border-color: rgba(var(--brand-primary-rgb), 0.44);
+        --tw-ring-color: rgba(var(--brand-primary-rgb), 0.12);
     }
 
     .deasy-field-input--icon-left {
