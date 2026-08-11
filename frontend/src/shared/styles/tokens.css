@@ -128,9 +128,13 @@
   --brand-primary-rgb: 94, 78, 255;
   --brand-accent-rgb: 0, 178, 169;
 
-  --state-success: #28a745;
-  --state-danger: #dc3545;
-  --state-gold: #d4af37;
+  /* UN color por estado, y es el OSCURO. Es el unico que cumple WCAG en los dos
+     usos: icono (3:1) y texto (4.5:1). Los brillantes que habia antes —#28a745,
+     #dc3545, #f59e0b— daban 2.85, 4.08 y 1.99 sobre blanco. */
+  --state-success: #047857;   /* 5.00:1 */
+  --state-danger: #b42318;    /* 5.93:1 */
+  --state-warning: #b45309;   /* 4.68:1 */
+  --state-gold: #d4af37;      /* solo BtnSera */
 
   /* Botones de accion de las tablas. UN color por accion: el del icono.
      El fondo NO se declara, se calcula mezclandolo con blanco (~10%), que es
@@ -138,10 +142,7 @@
      propio — es mas saturado que cualquier mezcla — y vive junto a su regla. */
   --action-neutral: #23384f;
   --action-view: #075985;
-  --action-assign: #047857;
   --action-upload: #3751a3;
-  --action-delete: #b42318;
-  --action-warning: #b45309;
 
   /* Texto secundario: subtitulos, notas al pie, pestañas inactivas. Habia TRES
      grises para este papel (#5a5f6f, #697081, #64748b) separados entre si por
@@ -157,10 +158,10 @@
      asi que es un valor propio. El fondo si se deriva; ver mas arriba. */
   --action-neutral-line: #b8cadc;
   --action-view-line: #8ec6df;
-  --action-assign-line: #8ed6b2;
+  --state-success-line: #8ed6b2;
   --action-upload-line: #aabef4;
-  --action-delete-line: #f3aaa0;
-  --action-warning-line: #f4c26f;
+  --state-danger-line: #f3aaa0;
+  --state-warning-line: #f4c26f;
 
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;

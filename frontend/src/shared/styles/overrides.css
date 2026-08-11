@@ -180,9 +180,9 @@ header {
 .hope-action-edit,
 .hope-action-select,
 .hope-action-assign {
-  background-color: color-mix(in srgb, var(--action-assign) 10%, var(--brand-white));
-  border-color: var(--action-assign-line);
-  color: var(--action-assign);
+  background-color: color-mix(in srgb, var(--state-success) 10%, var(--brand-white));
+  border-color: var(--state-success-line);
+  color: var(--state-success);
 }
 
 .hope-action-version,
@@ -195,15 +195,15 @@ header {
 
 .hope-action-delete,
 .hope-action-delete-strong {
-  background-color: color-mix(in srgb, var(--action-delete) 9%, var(--brand-white));
-  border-color: var(--action-delete-line);
-  color: var(--action-delete);
+  background-color: color-mix(in srgb, var(--state-danger) 9%, var(--brand-white));
+  border-color: var(--state-danger-line);
+  color: var(--state-danger);
 }
 
 .hope-action-delete-pdf {
-  background-color: color-mix(in srgb, var(--action-warning) 9%, var(--brand-white));
-  border-color: var(--action-warning-line);
-  color: var(--action-warning);
+  background-color: color-mix(in srgb, var(--state-warning) 9%, var(--brand-white));
+  border-color: var(--state-warning-line);
+  color: var(--state-warning);
 }
 
 .hope-action-btn:hover {
