@@ -313,7 +313,7 @@
       "description": "artifact_sync_fill:2:tpl_informe_general:1.1.0",
       "id": "<normalized>",
       "is_active": 1,
-      "item_mode": "single",
+      "item_mode": "routed",
       "lifecycle_state": "published",
       "name": "Flujo de entrega - Informe general",
       "process_definition_id": 5,

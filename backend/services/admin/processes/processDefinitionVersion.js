@@ -300,8 +300,15 @@ export default class ProcessDefinitionVersionService {
       throw new Error("Solo se puede clonar desde una configuracion del mismo proceso.");
     }
 
+    // `item_mode` VIAJA CON EL VÍNCULO, y no es opcional. La columna es NOT NULL DEFAULT 'single'
+    // (`database/postgres_schema.sql:555`), así que dejarla fuera del clon no da error: convierte en
+    // `single` — EN SILENCIO — todo entregable `routed` o `replicated` de la configuración clonada.
+    // Como clonar es lo que hace la actualización guiada de plantillas, cada actualización deshacía
+    // el modo de emisión. Le pasó al Proceso por defecto en la base de dev: el vínculo original decía
+    // `routed` y el de la configuración ACTIVA decía `single`. Al añadir una columna de datos a esta
+    // tabla, añádela también aquí y al INSERT de abajo.
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, sort_order
+      `SELECT template_artifact_id, sort_order, item_mode
        FROM process_definition_templates
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
@@ -327,12 +334,14 @@ export default class ProcessDefinitionVersionService {
         `INSERT INTO process_definition_templates (
           process_definition_id,
           template_artifact_id,
-          sort_order
-        ) VALUES (?, ?, ?)`,
+          sort_order,
+          item_mode
+        ) VALUES (?, ?, ?, ?)`,
         [
           normalizedTargetId,
           targetArtifactId,
-          row.sort_order
+          row.sort_order,
+          row.item_mode
         ]
       );
 

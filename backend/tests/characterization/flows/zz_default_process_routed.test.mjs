@@ -27,17 +27,20 @@
 //     fill_requests). Va detrás de todo lo que fotografía la fixture entera —`admin_crud`,
 //     `execution`, `tasks`, `user_workspace`—, que es lo que le da la `zz_`.
 //
-//   · **Suelo (por qué no al final, y esto se descubrió midiendo):** `zz_template_lifecycle` ejecuta
-//     el UPDATE GUIADO del Proceso por defecto — clona la configuración v1.0.0 en una v1.1.0, la
-//     activa y JUBILA la anterior. Y `cloneProcessDefinitionChildren`
-//     (`services/admin/processes/processDefinitionVersion.js:304-309`) copia del vínculo solo
-//     `template_artifact_id` y `sort_order`: **`item_mode` NO se clona y la columna cae a su valor
-//     por defecto, `single`**. O sea que a partir de ese flow la configuración ACTIVA del Proceso por
-//     defecto ya no tiene ningún vínculo `routed`: el modo derivado responde «Este entregable es de
-//     instancia única: no admite réplicas ni envíos» y el libre instancia el vínculo equivocado.
-//     **El camino que esta prueba existe para cubrir deja de ser alcanzable.**
+//   · **Suelo — YA NO, y conviene saber por qué lo hubo.** `zz_template_lifecycle` ejecuta el UPDATE
+//     GUIADO del Proceso por defecto: clona la configuración v1.0.0 en una v1.1.0, la activa y JUBILA
+//     la anterior. Y `cloneProcessDefinitionChildren` copiaba del vínculo solo `template_artifact_id`
+//     y `sort_order`, así que **`item_mode` no viajaba y la columna caía a su `DEFAULT 'single'`**:
+//     a partir de ese flow la configuración ACTIVA del Proceso por defecto no tenía ya ningún vínculo
+//     `routed`, el modo derivado respondía «Este entregable es de instancia única: no admite réplicas
+//     ni envíos» y el camino que esta prueba existe para cubrir dejaba de ser alcanzable. **Corregido:
+//     el clon conserva `item_mode`** (`processDefinitionVersion.js`, con unitarios propios en
+//     `processDefinitionVersion.test.js`). El golden que lo demuestra es
+//     `flow_steps_db :: plantilla_entrega`, donde la configuración clonada (`process_definition_id: 5`)
+//     pasó de `single` a `routed`. **No muevas este fichero de sitio igualmente**: renombrarlo cambia
+//     las claves de sus goldens, y el techo de abajo sigue mandando.
 //
-// La ventana que queda es `user_workspace` < **ESTE** < `zz_task_generation` < `zz_template_lifecycle`
+// La ventana es `user_workspace` < **ESTE** < `zz_task_generation` < `zz_template_lifecycle`
 // ('d' < 'ta' < 'te'), y sirve porque los dos `zz_*` siguientes no leen nada de lo que esta prueba
 // escribe: lanzan la definición en el término sentinela, y el periodo Custom que crea la tarea libre
 // es suyo y no aparece en ningún catálogo.
@@ -47,9 +50,11 @@
 // que corren DESPUÉS —incluido `zzzzzz_flow_steps_db`, que fotografía TODOS los flujos de runtime
 // sin filtrar por entregable— no ven ni una fila de esta prueba.
 //
-// ⚠️ El `item_mode` que se pierde al clonar es un DEFECTO de producción, no un detalle del arnés:
-// actualizar un proceso convierte en `single` todos sus entregables `routed` y `replicated`. Queda
-// anotado aquí porque es lo que fija la ventana de esta prueba; arreglarlo es otro commit.
+// ⚠️ El `item_mode` que se perdía al clonar era un DEFECTO de producción, no un detalle del arnés:
+// actualizar un proceso convertía en `single` todos sus entregables `routed` y `replicated`, en
+// silencio. Ya está arreglado (ver el «Suelo» de arriba). Lo que el arreglo NO hace es reparar las
+// filas que ya se convirtieron en una instalación existente; en dev da igual, porque
+// `test:char:run` resetea y re-siembra la fixture entera antes de cada tanda.
 //
 // EL ORÁCULO ES LA BASE, y aquí no hay alternativa: la respuesta del endpoint es una lista de ids.
 // La propiedad que define el modo `routed` —de QUÉ cuelga el flujo materializado— no la expone
