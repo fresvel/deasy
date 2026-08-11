@@ -942,6 +942,22 @@ export default class TemplateLifecycleService {
         [tplId]
       );
 
+      // 1.12 — y AHORA el resto de borradores de la config, igual que hace el camino del CRUD
+      // (`tableHooks.js:605`). Activar una configuración PUBLICA sus plantillas en borrador: esa es la
+      // semántica del modelo ("activa la config + publica la plantilla"), no un detalle del CRUD. Sin
+      // esto, un entregable añadido al borrador de configuración durante la actualización guiada se
+      // colaba dentro de una config ACTIVA todavía en `draft`.
+      //
+      // Va DESPUÉS del UPDATE de arriba y no lo pisa: la consulta filtra por `lifecycle_state = 'draft'`
+      // y `tplId` ya está publicada, así que la dependencia del comentario anterior (publicar la suya
+      // primero para que pase el check de artefactos ACTIVOS) queda intacta —
+      // `publishDraftTemplatesForDefinition` no toca `is_active`.
+      //
+      // Lee MinIO dentro de la transacción abierta (readiness del meta.yaml). Es lo mismo que ya hace
+      // el camino del CRUD desde `beforeUpdateTx`, y es el precio de que publicar y activar sean
+      // atómicos: si un borrador no está listo, esto lanza y NO queda nada a medias.
+      await this.publishDraftTemplatesForDefinition(cfgId, connection);
+
       // Ahora sí, el check de artefactos activos de la config pasa (la nueva plantilla ya está activa).
       await this._ensureDefinitionHasArtifactsForActivation(cfgId, connection);
 

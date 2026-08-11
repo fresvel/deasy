@@ -545,6 +545,19 @@ export default class SqlAdminService {
     }
   }
 
+  // ÚNICO punto por el que pasan los DOS caminos de activación (el CRUD genérico via
+  // `tableHooks.beforeUpdateTx` y el update guiado via `finishTemplateUpdate`), así que aquí vive la
+  // invariante: una configuración ACTIVA no puede llevar dentro un entregable SIN PUBLICAR.
+  //
+  // Los dos llamadores publican los borradores ANTES de llegar aquí, así que el tercer guard no
+  // debería dispararse nunca por los caminos de hoy — y ESO es el punto: es la invariante escrita en
+  // el sitio por el que hay que pasar, no un atajo del camino que la cumple. Sin ella, un tercer
+  // camino de activación (o uno de los dos que se olvide de publicar primero) reintroduce el 1.12 en
+  // silencio, y `launch.js` no comprueba `lifecycle_state` en ningún sitio: lanzaría documentos
+  // contra una plantilla que nunca pasó el gate de publicación.
+  //
+  // EL ORDEN DE LOS TRES GUARDS ES CONTRATO (los mensajes están caracterizados): el de borradores va
+  // el ÚLTIMO para no mover los dos que ya existían.
   async ensureDefinitionHasArtifactsForActivation(definitionId, connection = this.pool) {
     const normalizedDefinitionId = Number(definitionId);
     if (!normalizedDefinitionId) {
@@ -554,15 +567,22 @@ export default class SqlAdminService {
     const [rows] = await connection.query(
       `SELECT
          COUNT(*) AS total,
-         SUM(CASE WHEN ta.is_active = 1 THEN 1 ELSE 0 END) AS active_total
+         SUM(CASE WHEN ta.is_active = 1 THEN 1 ELSE 0 END) AS active_total,
+         SUM(CASE WHEN ta.lifecycle_state = 'draft' THEN 1 ELSE 0 END) AS draft_total,
+         STRING_AGG(
+           CASE WHEN ta.lifecycle_state = 'draft' THEN COALESCE(d.display_name, d.code) END,
+           ', ' ORDER BY ta.id
+         ) AS draft_names
        FROM process_definition_templates pdt
        INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+       LEFT JOIN deliverables d ON d.id = ta.deliverable_id
        WHERE pdt.process_definition_id = ?`,
       [normalizedDefinitionId]
     );
 
     const total = Number(rows?.[0]?.total || 0);
     const activeTotal = Number(rows?.[0]?.active_total || 0);
+    const draftTotal = Number(rows?.[0]?.draft_total || 0);
     if (total < 1) {
       throw new Error(
         "No se puede activar una configuracion si no tiene al menos un paquete (plantilla) vinculado."
@@ -571,6 +591,12 @@ export default class SqlAdminService {
     if (activeTotal < 1) {
       throw new Error(
         "No se puede activar: la configuracion debe tener al menos una plantilla vinculada y activa."
+      );
+    }
+    if (draftTotal > 0) {
+      const nombres = String(rows?.[0]?.draft_names || "").trim();
+      throw new Error(
+        `No se puede activar: la configuracion tiene ${draftTotal} entregable(s) sin publicar${nombres ? ` (${nombres})` : ""}. Publicalos o desvinculalos antes de activar.`
       );
     }
   }

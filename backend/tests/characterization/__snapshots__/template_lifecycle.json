@@ -23,7 +23,7 @@
   },
   "defecto_borrador_colado_en_activacion": {
     "config_status": "active",
-    "colado_lifecycle_state": "draft"
+    "colado_lifecycle_state": "published"
   },
   "estado_configuraciones_tras_publicar": {
     "status": 200,
