@@ -46,8 +46,13 @@ hecha**, y `workflowSync.js` es el materializador del modelo NUEVO, no un resto 
 > | 1A | El eclipse de alias del propietario (§0.1) | ✅ `0790c7c` |
 > | 1B | `NOT EXISTS(documents)` → `user_started_at IS NULL` en los 4 guards del relevo | ✅ `fcaeea6` |
 > | 2 | Retirar el documento suelto (`origin_type` y su camino) | ✅ `c811bbb` |
-> | 3 | Eliminar `documents.owner_person_id` (un solo «quién») | ⬜ |
-> | 4 | Fusionar `task_items` con `documents` | ⬜ |
+> | 3 | Eliminar `documents.owner_person_id` (un solo «quién») | ⬜ **aplazado tras §0.8** |
+> | 4 | Fusionar `task_items` con `documents` | ⬜ **aplazado tras §0.8** |
+>
+> **Reordenado el 2026-08-10.** Los pasos 3 y 4 se aplazan detrás de **§0.8, invertir la dirección del
+> flujo**. Motivo: al planificar el paso 3 se propuso *editar el `meta.yaml` del bootstrap* para
+> cambiar un resolver — es decir, se planificó **dentro de la dirección que el diseño elimina**. La
+> inversión va primero; después, §0.2 y §0.3 se cierran casi solas.
 >
 > **Restricciones vigentes de esta tanda:** no se toca `frontend/`, y al terminar **no queda ningún
 > alias ni parche de compatibilidad** — ni `documents` como vista, ni `documentId` como alias. Diseño
@@ -215,8 +220,159 @@ falso** (ver 0.3), y es el único desfase que se propaga activamente a todo el q
 **Criterio de cierre:** un documento de modelo vigente en `docs/arquitecturas/`, las actas de sesión
 fechadas archivadas en `docs/docs-md-antiguos/`, y `CLAUDE.md` corregido.
 
-**Orden sugerido:** 0.1 (desbloquea 0.2) → 0.7 solo la línea de `CLAUDE.md` → el documento de modelo →
-0.3 → 0.2 → 0.5 → 0.4 y 0.6, que son los más grandes y ya no bloquean a nadie.
+### 0.8 · Invertir la dirección del flujo: la base manda, el YAML se va — ⬜ **el que desbloquea a los demás**
+
+**La doctrina, en palabras del dueño:** *«El `meta.yaml` YA NO DEBE INFLUIR SOBRE EL FLUJO. Todo se
+modela primero en la base de datos y de la base de datos se va al YAML, no al revés.»*
+
+Hoy **no se cumple en ninguna plantilla**, y no por descuido: por una razón estructural.
+
+#### Por qué el YAML sigue vivo
+
+Hay **exactamente dos** escritores de `fill_flow_steps` / `signature_flow_steps`:
+
+| Escritor | De dónde saca el flujo |
+|---|---|
+| `services/admin/templates/workflowSync.js:246,304` | **Del `meta.yaml` de MinIO** |
+| `services/admin/generation/documents.js:258,288` (`materializeRuntimeFlowForTaskItem`) | **Directo de la base** |
+
+**El flujo de runtime (`routed`) ya cumple la doctrina. El de las plantillas no.** El formulario web
+no escribe la base: escribe el `meta.yaml`, lo sube a MinIO y el sync lo proyecta con `DELETE`+`INSERT`.
+
+Y la causa de fondo está en el esquema: **las tablas de flujo cuelgan del VÍNCULO, no de la plantilla.**
+`fill_flow_templates.process_definition_template_id` es `NOT NULL` (`postgres_schema.sql:825`; firma en
+`:919`) y **no existe ninguna columna `template_artifact_id`**. El formulario autora **un** flujo para
+una plantilla y el sync lo abanica a los N vínculos. **El `meta.yaml` es el único sitio donde vive esa
+copia única.** Para quitarlo hay que darle un portador en la base.
+
+#### La doctrina ya se rompe, y se ve
+
+El sync **no mira `item_mode`**: proyecta sobre todos los vínculos, incluido el del Proceso por
+defecto, que es `routed` y cuyo propio bootstrap declara que **no siembra flujo**
+(`SystemBootstrapService.js:545-547`). En la base de dev:
+
+```
+ id | vinculo | description                                    | item_mode
+  2 |       1 | artifact_sync_fill:1:tpl_informe_general:1.0.0  | routed   ← no debería existir
+  4 |       3 | artifact_sync_fill:2:tpl_informe_general:1.1.0  | single
+```
+
+Ese es el `document_owner` de §0.2 y §0.3. La v1.1.0 lo heredó por la copia binaria de MinIO, **sin que
+nadie lo autorara**.
+
+#### El `meta.yaml` no tiene otra razón de ser — verificado
+
+**No hay motor de render en el repo** (cero `pdflatex`/`latexmk`/`jinja2.Environment`). El `signer/`
+no lee YAML. Ningún script lo toca. **No sale en ninguna descarga**: vive en la raíz del prefijo y los
+ZIP solo empaquetan `template/jinja2/`. Sus otras seis claves son copias literales de columnas de
+`deliverables`, `template_artifacts` y `template_seeds`.
+
+**Y los tokens de firma ya están en la base.** El diseño está escrito en `workflows.js:180-182`:
+*«cada paso lleva su SLOT de token (= su code); el jinja generado embebe ahí el token del firmante
+resuelto (`{{ signatures.<slot>.token }}`)»*. `slot` **es columna** (`postgres_schema.sql:937`) y se
+lee en runtime. `anchor_refs` (`:950`) es su **predecesor muerto** — el «Sin anclas» del comentario—:
+se escribe siempre `[]` y no se consume.
+
+**Efecto colateral que se arregla solo:** los cuatro gates que deciden si una plantilla se puede
+publicar leen el meta de MinIO con un `catch {}` mudo (`templateArtifact.js:224,278`;
+`templateLifecycle.js:248,920`). Hoy **un MinIO caído se traduce en «esta plantilla no define flujo» y
+bloquea la publicación por una razón falsa**. Contra la base ese modo de fallo desaparece.
+
+#### Decisiones tomadas (2026-08-10)
+
+1. **Los seis que se quedarían sin productor SE RETIRAN.** Hoy el YAML es lo único que puede crear
+   `document_owner`, `specific_person` en plantillas *official*, `position`, `manual_pick`, y los
+   ámbitos `context_subtree` y `context_ancestor_type`. La web solo autora `task_assignee` y
+   `cargo_in_scope` con tres ámbitos (`workflows.js:34-42`). **Criterio: lo que la web no autora, no
+   existe.** Esto convierte §0.6 de censo opcional en **requisito bloqueante** del sub-paso 7.
+2. **El `meta.yaml` se elimina del paquete**, no se conserva generado. Nada lo lee, y mantenerlo
+   obligaría además a rechazarlo explícitamente al re-subir un ZIP o vuelve la grieta.
+3. **`schema.json` es tema aparte, y es más grande.** Los campos del formulario **no tienen tabla** —
+   comprobado: no existe ninguna `template_fields` ni equivalente; viven solo como fichero en MinIO
+   (`template_artifacts.schema_object_key`, `:526`). Son justo los que el PDF autogenerado sustituiría.
+   Modelarlos exige diseñar tipo, obligatoriedad, orden, agrupación y valores por defecto. **No entra
+   aquí**: duplicaría el tamaño del cambio y escondería los dos.
+4. **Cuando exista el generador de código base (§0.4), leerá de la base.** Campos y slots en la base,
+   contrato Jinja en MinIO. El YAML no participa en ninguno.
+
+#### El diseño objetivo
+
+**Portador: el artifact.** Añadir `template_artifact_id INT NULL` a las dos tablas de flujo y relajar
+`process_definition_template_id` a `NULL`. Quedan tres portadores excluyentes:
+
+- `task_item_id` → flujo de runtime (`routed`) — **ya existe y ya funciona**
+- `template_artifact_id` → **el flujo autorado de la plantilla** (nuevo)
+- `process_definition_template_id` → por vínculo, si alguna vez hace falta
+
+El runtime (`generation/queries.js:192-220` y su gemela de firma) gana un tercer escalón detrás de los
+dos actuales: task_item → vínculo → artifact del vínculo.
+
+*Descartado:* escribir N filas, una por vínculo. Reproduce el problema del sync —N copias que
+reconciliar— sin el YAML de por medio. El punto de la inversión es que haya **una**.
+
+**Validación: se queda igual.** `_validateAuthoredWorkflows` (`templateLifecycle.js:1033-1098`) **ya
+valida contra la base** que cargos, unidades, puestos y personas existan. Pasa de guardia previo al
+upload a guardia previo al `INSERT`: mismo sitio, semántica más fuerte.
+
+**Transacción:** `saveTemplateArtifactDraft` no tiene una — usa compensación manual con pila de
+deshacer (`:1633-1642`). El flujo **no puede escribirse así**: hay que extraer un
+`replaceAuthoredFlowForArtifact(connection, artifactId, …)` y meterlo en la misma transacción que el
+UPSERT de `template_artifacts`.
+
+#### Los ocho sub-pasos
+
+| # | Qué | ¿Reversible? | Qué lo verifica |
+|---|---|---|---|
+| 0 | **Golden que observe el flujo EN LA BASE**, no el hash del paquete. Hoy `zzz_artifact_draft` fija `content_hash`, que incluye el meta; sin un oráculo sobre `fill_flow_steps` el paso 3 no tiene contra qué compararse | Sí | `test:char:capture` + `run` |
+| 1 | `ALTER`: `template_artifact_id INT NULL` + FK + índice en las dos tablas; `process_definition_template_id` a `NULL` | Sí | Arranque + char sin diffs |
+| 2 | El runtime lee el tercer escalón, **detrás** de los dos actuales. Aún no hay filas de ese tipo → sin cambio de comportamiento | Sí | Unitario + char sin diffs |
+| 3 | **La inversión.** `_writeDraftPackage` deja de emitir `workflows:`; `saveTemplateArtifactDraft` llama al escritor dentro de la transacción; deja de llamar al sync | **No** | Los goldens de `artifact_draft` se mueven (cambia `content_hash`) y **ese diff es la prueba**; el golden del paso 0 debe mostrar los mismos pasos |
+| 4 | Los cuatro gates pasan a `count(*)` | **No** | Goldens de `zz_template_lifecycle` |
+| 5 | **El versionado copia FILAS, no bytes**: `createTemplateArtifactVersion` (`templateArtifact.js:336-409`) y `forkDeliverableForConfig` (`templateLifecycle.js:531-610`) | **No** | Char nuevo: versionar con flujo → la hija tiene los mismos pasos con ids distintos. **Debe cubrir entrega Y firma** |
+| 6 | Borrar `BASE_META_YAML` y su upload (`SystemBootstrapService.js:277-305`, `:389`) | **No** | Bootstrap limpio y `count(*)` de flujos del vínculo por defecto = **0** (hoy 1). Es el criterio de cierre de §0.3 |
+| 7 | Borrar el andamiaje **y retirar los seis resolvers de la decisión 1** | **No** | `check:imports` **obligatorio** + `test:unit` + `test:char:run` |
+| 8 | Frontend: quitar badge y botón de sync (~30 L en 3 ficheros) | Sí | `lint` + `test:unit` + navegador |
+
+⚠️ **El sub-paso 8 toca `frontend/`, que está fuera del alcance de esta tanda.** Se deja anotado y se
+ejecuta aparte.
+
+⚠️ **Orden crítico en el 7:** `normalizeFillSteps` convierte **cualquier tipo desconocido** en
+`manual_pick`, que resuelve a nadie (`workflows.js:236`). Retirar un resolver del catálogo antes de
+quitar su productor **degrada los pasos en silencio** en vez de fallar.
+
+#### Qué cae y qué sobrevive
+
+**Cae:** `sync_mode` y sus dos predicados (`artifacts.js:102-112`) · `source: "artifact"` · los
+marcadores `artifact_sync_*` y su parser (`artifacts.js:14-100`) · `WorkflowSyncService` entero
+(583 L) **salvo `getWorkflowReferenceIdSets`** (`:221-235`), que se muda con la validación · los
+endpoints `sync-status`/`resync`/`workflows/reconcile` y el reconcile de arranque (`index.js:215-229`)
+· `BASE_META_YAML` · `buildWorkflowsYaml`/`buildStepResolver` (`workflows.js:120-208`) ·
+`ARTIFACT_WORKFLOW_CONTRACT` y el regex de `validatePackagedArtifactDraft` · `meta_object_key` ·
+`anchor_refs` · `seeds/informe-general/workflow.yaml` (ya muerto, se borra por higiene).
+
+**Sobrevive:** `_validateAuthoredWorkflows` · las **reglas** de
+`collectSignatureWorkflowNormalizationIssues` (aunque no su papel de traductor) ·
+`materializeRuntimeFlowForTaskItem`, intacto · el ZIP, el manifiesto y el saneo LaTeX.
+
+#### Riesgos
+
+- **El paquete deja de ser autocontenido.** Hoy prefijo + meta = plantilla reproducible desde MinIO sin
+  base. Después, un paquete sin sus filas es una plantilla sin flujo. Afecta a cualquier exportación
+  futura entre instalaciones.
+- **La invariante de `hasFillFlowTemplateRuntimeUsage`** (`workflowSync.js:281-293`) protege que *una
+  instancia en curso no cambie sus pasos bajo los pies*. Se sustituye por la inmutabilidad de
+  `published` — **pero eso descansa en que un `draft` no pueda tener instancias, y eso NO está
+  verificado.** Es el único punto del diseño que se apoya en un razonamiento y no en una lectura.
+- **`normalizeSignatureSteps` descarta en silencio** firmantes sin cargo resoluble y los pasos que
+  quedan vacíos (`workflows.js:9-11`). Al escribir directo eso pasa a ser error de autoría: mejor, pero
+  **es cambio de comportamiento** — commit y golden propios.
+- **Fuera del backend no depende nada** (verificado: `signer/`, `scripts/`, `docker/`).
+
+---
+
+**Orden sugerido:** ✅ 0.1 → ✅ el documento de modelo y `CLAUDE.md` → **0.8 (aquí estamos)** → 0.3 y
+0.2, que 0.8 cierra casi solos → los pasos 3 y 4 de la fusión `task_items`/`documents` → 0.5 → 0.4 y
+0.6, ya sin bloqueos. §0.7 (la documentación) al final, cuando lo demás haya dejado de moverse.
 
 ---
 
