@@ -7,8 +7,8 @@
    Hasta hoy el proyecto usaba Tailwind v4 como si fuera v3: cero `@theme`, con lo que
    Tailwind NO conocia ni un token del proyecto. Consecuencia practica: no existian
    `bg-brand-primary` ni `text-brand-ink`, y el unico modo de usar un color de marca en
-   una plantilla era escribir el hex a mano. De ahi salen los `bg-[#071927]` de
-   `SHeader.vue` y los `focus:border-[#5e4eff]` de `AdminSelectField.vue`.
+   una plantilla era escribir el hex a mano. De ahi salieron los `bg-[var(--brand-navy-deep)]` de
+   `SHeader.vue` y los `focus:border-[var(--brand-primary)]` de `AdminSelectField.vue`, ya migrados.
 
    Esto es ADITIVO: registra nombres nuevos bajo el namespace `--color-*`, no redefine
    ninguno de Tailwind. Los valores no se duplican, se referencian — la fuente de verdad
@@ -50,7 +50,7 @@
        valores. Los tres que ya eran alias (`--deasy-border-soft`, `--deasy-primary`,
        `--deasy-brand-gradient`) se sustituyeron por su destino y la indireccion
        desaparecio. Los demas NO tenian gemelo con el mismo valor, asi que se
-       RENOMBRARON conservando su valor. Fusionar `#f7f9fc` con `#f8fafc` porque
+       RENOMBRARON conservando su valor. Fusionar el `var(--brand-surface-muted)` de uno con el `var(--brand-surface-alt)` de otro porque
        "son casi el mismo gris" habria sido un cambio de aspecto colado dentro de un
        refactor que promete no tener ninguno.
 
@@ -74,21 +74,21 @@
     /* stylelint-enable color-no-hex */
 
     html {
-        @apply bg-[var(--brand-navy-deep)];
+        @apply bg-brand-navy-deep;
     }
 
     body {
-        @apply bg-[var(--brand-navy-deep)] text-[var(--brand-text-body)] antialiased;
+        @apply bg-brand-navy-deep text-brand-text-body antialiased;
     }
 
     #app {
-        @apply min-h-screen bg-[var(--brand-navy-deep)];
+        @apply min-h-screen bg-brand-navy-deep;
     }
 }
 
 @layer components {
     .deasy-workspace {
-        @apply min-h-screen bg-[var(--brand-navy-deep)] font-sans text-[var(--brand-text-body)];
+        @apply min-h-screen bg-brand-navy-deep font-sans text-brand-text-body;
     }
 
     .deasy-workspace-layout {
@@ -182,16 +182,16 @@
     }
 
     .deasy-inline-tabs {
-        @apply mb-5 flex overflow-x-auto border-b border-[#e2e6f0] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+        @apply mb-5 flex overflow-x-auto border-b border-brand-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
     }
 
     .deasy-inline-tab {
-        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-[#5a5f6f] transition-colors hover:text-[#192144] focus:outline-none focus:ring-2 focus:ring-[#5e4eff]/15;
+        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-[#5a5f6f] transition-colors hover:text-[#192144] focus:outline-none focus:ring-2 focus:ring-brand-primary/15;
     }
 
     .deasy-inline-tab--active {
-        color: #5e4eff;
-        border-bottom-color: #5e4eff;
+        color: var(--brand-primary);
+        border-bottom-color: var(--brand-primary);
     }
 
     .deasy-inline-tab__badge {
@@ -202,12 +202,12 @@
 
     .deasy-inline-tab__badge--active {
         background: #efedff;
-        color: #5e4eff;
+        color: var(--brand-primary);
     }
 
     .deasy-filter-shell {
         @apply rounded-xl border bg-white p-4 shadow-none md:p-4;
-        border-color: #e2e6f0;
+        border-color: var(--brand-border);
     }
 
     .deasy-filter-shell--embedded {
@@ -231,12 +231,12 @@
     }
 
     .deasy-filter-control {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[#8a93a8];
         border-color: var(--brand-border-field);
     }
 
     .deasy-filter-control:focus {
-        border-color: #5e4eff;
+        border-color: var(--brand-primary);
         box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
     }
 
@@ -249,13 +249,13 @@
     }
 
     .deasy-filter-search-input {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[#8a93a8];
         border-color: var(--brand-border-field);
         min-width: 0;
     }
 
     .deasy-filter-search-input:focus {
-        border-color: #5e4eff;
+        border-color: var(--brand-primary);
         box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
     }
 
@@ -284,21 +284,21 @@
     .deasy-filter-btn.deasy-btn--secondary,
     .deasy-filter-btn.deasy-btn--soft-neutral {
         border-color: var(--brand-border-field);
-        background: #fff;
-        color: #343741;
+        background: var(--brand-white);
+        color: var(--brand-text-strong);
     }
 
     .deasy-filter-btn.deasy-btn--outline-primary {
         border-color: #c9c5ff;
-        background: #fff;
-        color: #5e4eff;
+        background: var(--brand-white);
+        color: var(--brand-primary);
     }
 
     .deasy-filter-btn.deasy-btn--soft-primary,
     .deasy-filter-btn.deasy-btn--primary {
         border-color: transparent;
-        background: #5e4eff;
-        color: #fff;
+        background: var(--brand-primary);
+        color: var(--brand-white);
     }
 
     .deasy-filter-btn--icon {
@@ -586,7 +586,7 @@
     .deasy-btn--menu {
         @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
         border-color: rgba(18, 63, 136, 0.14);
-        background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+        background: linear-gradient(180deg, var(--brand-white) 0%, #f7fafc 100%);
         color: var(--brand-text-body);
     }
 
@@ -700,7 +700,7 @@
     /* [fusion-fase-X 2026-08-07] ex-L785 + ex-L1449. Mismo caso que .deasy-page-intro: solo
        sobrevive `overflow-hidden`. */
     /* [fusion-fase-X 2026-08-07] ex-L791 + ex-L1362. Sobreviven margenes y paddings; radio, sombra y
-       borde son los del bloque 2 (el `#e2e6f0` literal del bloque 1 es el mismo valor que
+       borde son los del bloque 2 (el `var(--brand-border)` literal del bloque 1 es el mismo valor que
        `var(--brand-border)`, asi que se colapsa al token). */
     .deasy-table-shell {
         @apply mt-6 mb-6 rounded-[8px] border bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-5;
@@ -719,7 +719,7 @@
 
     .deasy-table-responsive {
         @apply overflow-x-auto rounded-2xl border bg-white;
-        border-color: #e2e6f0;
+        border-color: var(--brand-border);
     }
 
     .deasy-table {
@@ -728,7 +728,7 @@
 
     .deasy-table thead tr {
         @apply border-b;
-        border-color: #e2e6f0;
+        border-color: var(--brand-border);
         background: #eef0f5;
     }
 
@@ -739,7 +739,7 @@
 
     .deasy-table td {
         @apply px-4 py-3 text-sm leading-5;
-        color: #343741;
+        color: var(--brand-text-strong);
     }
 
     .deasy-table tbody tr {
@@ -764,8 +764,8 @@
     .deasy-table-shell .deasy-btn--secondary,
     .deasy-table-responsive .deasy-btn--secondary {
         border-color: #d0d4dc;
-        background: #ffffff;
-        color: #343741;
+        background: var(--brand-white);
+        color: var(--brand-text-strong);
     }
 
     .deasy-table-shell .deasy-btn--secondary:hover,
@@ -780,8 +780,8 @@
     .deasy-table-shell .deasy-btn--outline-primary,
     .deasy-table-responsive .deasy-btn--outline-primary {
         border-color: #d7d3ff;
-        background: #ffffff;
-        color: #5e4eff;
+        background: var(--brand-white);
+        color: var(--brand-primary);
     }
 
     .deasy-table-shell .deasy-btn--soft-primary:hover,
@@ -795,9 +795,9 @@
 
     .deasy-table-shell .deasy-btn--primary,
     .deasy-table-responsive .deasy-btn--primary {
-        border-color: #5e4eff;
-        background: #5e4eff;
-        color: #ffffff;
+        border-color: var(--brand-primary);
+        background: var(--brand-primary);
+        color: var(--brand-white);
         box-shadow: none;
     }
 
@@ -911,7 +911,7 @@
     .deasy-nav-item--active .deasy-nav-item__icon,
     .deasy-nav-item--subtle-active .deasy-nav-glyph,
     .deasy-nav-item.router-link-active .deasy-nav-item__icon {
-        color: #ffffff;
+        color: var(--brand-white);
         border-color: rgba(255, 255, 255, 0.14);
         background: rgba(255, 255, 255, 0.08);
     }
@@ -1053,7 +1053,7 @@
     }
 
     .deasy-auth-title {
-        @apply text-3xl font-semibold tracking-tight text-[var(--brand-text-strong)];
+        @apply text-3xl font-semibold tracking-tight text-brand-text-strong;
     }
 
     .deasy-auth-copy {
@@ -1072,8 +1072,8 @@
     .deasy-auth-field:-webkit-autofill:hover,
     .deasy-auth-field:-webkit-autofill:focus {
         -webkit-text-fill-color: var(--brand-text-body);
-        -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
-        box-shadow: 0 0 0px 1000px #ffffff inset;
+        -webkit-box-shadow: 0 0 0px 1000px var(--brand-white) inset;
+        box-shadow: 0 0 0px 1000px var(--brand-white) inset;
         transition: background-color 9999s ease-in-out 0s;
     }
 

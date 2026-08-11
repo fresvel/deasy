@@ -169,16 +169,30 @@ function isUsed(cls) {
 
 /* ------------------------------------------------------------- clasificación */
 
-/** Un bloque es podable si menciona ≥1 clase y NINGUNA de ellas tiene consumidor. */
+/**
+ * ¿Este selector NO puede casar con nada?
+ *
+ * La regla correcta es "si CUALQUIER clase esta muerta", no "si TODAS lo estan". En
+ * `.table-institutional .deasy-btn`, `.deasy-btn` esta vivisima — pero `.table-institutional`
+ * no existe en ningun DOM, asi que el descendiente nunca se alcanza y la regla entera es
+ * inerte. Lo mismo con un compuesto: `.list-group-item.active` exige AMBAS en el mismo
+ * elemento; si una no existe, no casa.
+ *
+ * La primera version usaba "si TODAS", y por eso sobrevivieron ~40 reglas que mezclaban una
+ * clase muerta con una viva — arrastrando su hex y sus `!important` con ellas.
+ *
+ * `:not(.x)` se excluye a proposito: ahi que `.x` no exista no impide casar, al reves.
+ */
 function isDeadRule(head) {
   const selectors = head.split(",").map((s) => s.trim()).filter(Boolean);
   if (!selectors.length) return false;
   let sawClass = false;
   for (const sel of selectors) {
-    const cls = classesIn(sel);
+    const limpio = sel.replace(/:not\([^)]*\)/g, "");
+    const cls = classesIn(limpio);
     if (!cls.length) return false; // toca un elemento/atributo: no se juzga por clases
     sawClass = true;
-    if (cls.some((c) => isUsed(c))) return false;
+    if (cls.every((c) => isUsed(c))) return false;
   }
   return sawClass;
 }

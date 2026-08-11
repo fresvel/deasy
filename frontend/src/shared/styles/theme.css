@@ -41,7 +41,6 @@
   --state-danger: #dc3545;
   --state-gold: #d4af37;
 
-
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;
   --font-size-base: 1rem;
@@ -52,11 +51,6 @@
   --line-height-heading: 1.2;
 }
 /* stylelint-enable color-no-hex */
-
-.theme-gradient-tile.is-active {
-  color: #ffffff;
-  box-shadow: 0 14px 24px rgba(var(--brand-primary-rgb), 0.35);
-}
 
 *,
 *::before,
@@ -70,7 +64,7 @@ body {
   font-size: var(--font-size-base);
   line-height: var(--line-height-base);
   color: var(--brand-navy);
-  background-color: #071927;
+  background-color: var(--brand-navy-deep);
 }
 
 h1,
@@ -127,17 +121,6 @@ a:hover {
   border-radius: 16px;
   border: 0;
   box-shadow: var(--brand-shadow);
-}
-
-.btn-icon .btn-inner {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-icon .btn-inner svg {
-  width: 1.25rem;
-  height: 1.25rem;
 }
 
 .hope-action-btn {
@@ -241,10 +224,6 @@ a:hover {
   border-color: rgba(245, 158, 11, 0.4);
 }
 
-.btn-group .hope-action-btn {
-  flex: 0 0 auto;
-}
-
 .profile-field-label {
   font-weight: 600;
   color: var(--brand-ink);
@@ -257,7 +236,7 @@ a:hover {
   width: 100%;
   border-radius: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.45);
-  background: #fff;
+  background: var(--brand-white);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
   font-size: 0.95rem;
   font-weight: 500;
@@ -304,7 +283,7 @@ a:hover {
 .admin-surface-frame {
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 1rem;
-  background: #ffffff;
+  background: var(--brand-white);
   box-shadow: none;
   padding: 0.95rem;
 }
@@ -313,17 +292,6 @@ a:hover {
   .admin-surface-frame {
     padding: 1rem 1.1rem 1.1rem;
   }
-}
-
-.profile-dialog-root.show {
-  display: block;
-}
-
-.navbar .avatar {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-  color: #c6c9c5;
 }
 
 .admin-table-manager {
@@ -378,15 +346,9 @@ a:hover {
   justify-content: center;
   background: #eef4ff;
   border: 1px solid rgba(94, 78, 255, 0.14);
-  color: #5e4eff;
+  color: var(--brand-primary);
   flex: 0 0 auto;
   font-size: 0.78rem;
-}
-
-.admin-page-header__icon.is-template-artifacts {
-  background: #eef4ff;
-  border-color: rgba(94, 78, 255, 0.16);
-  color: #5e4eff;
 }
 
 .admin-page-header__actions {
@@ -438,101 +400,10 @@ a:hover {
   background: #eef0f5;
 }
 
-.table-institutional .deasy-btn,
-.table-institutional .admin-btn,
-.profile-table-shell .deasy-btn,
-.profile-table-shell .admin-btn {
-  min-height: 2rem;
-  padding: 0.35rem 0.75rem !important;
-  border-radius: 4px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  box-shadow: none !important;
-}
-
-.table-institutional .deasy-btn--secondary,
-.table-institutional .admin-btn--secondary,
-.profile-table-shell .deasy-btn--secondary,
-.profile-table-shell .admin-btn--secondary {
-  border-color: #d0d4dc !important;
-  background: #ffffff !important;
-  color: #343741 !important;
-}
-
-.table-institutional .deasy-btn--secondary:hover,
-.table-institutional .admin-btn--secondary:hover,
-.profile-table-shell .deasy-btn--secondary:hover,
-.profile-table-shell .admin-btn--secondary:hover {
-  border-color: #bcc2cd !important;
-  background: #f8f9fc !important;
-  color: #192144 !important;
-}
-
-.table-institutional .deasy-btn--outline-primary,
-.table-institutional .admin-btn--outline-primary,
-.profile-table-shell .deasy-btn--outline-primary,
-.profile-table-shell .admin-btn--outline-primary {
-  border-color: #d7d3ff !important;
-  background: #ffffff !important;
-  color: #5e4eff !important;
-}
-
-.table-institutional .deasy-btn--outline-primary:hover,
-.table-institutional .admin-btn--outline-primary:hover,
-.profile-table-shell .deasy-btn--outline-primary:hover,
-.profile-table-shell .admin-btn--outline-primary:hover {
-  border-color: #c3bcff !important;
-  background: #f7f5ff !important;
-  color: #5143dc !important;
-}
-
-.table-institutional .deasy-btn--primary,
-.table-institutional .admin-btn--primary,
-.profile-table-shell .deasy-btn--primary,
-.profile-table-shell .admin-btn--primary {
-  border-color: #5e4eff !important;
-  background: #5e4eff !important;
-  color: #ffffff !important;
-}
-
-.table-institutional .deasy-btn--primary:hover,
-.table-institutional .admin-btn--primary:hover,
-.profile-table-shell .deasy-btn--primary:hover,
-.profile-table-shell .admin-btn--primary:hover {
-  border-color: #5143dc !important;
-  background: #5143dc !important;
-}
-
 .theme-info-panel {
   background-color: var(--brand-info-soft);
   border-radius: 12px;
   border: 1px solid rgba(3, 49, 100, 0.1);
-}
-
-.admin-menu .user-profile .card {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  backdrop-filter: none;
-  padding: 0.25rem 0.15rem 0.2rem;
-}
-
-.admin-menu .menu-section-body .list-group-item.active {
-  background: var(--brand-white);
-  color: var(--brand-primary);
-  box-shadow: 0 12px 18px -12px rgba(var(--brand-primary-rgb), 0.45);
-}
-
-.admin-menu .menu-section-body .list-group-item.active .menu-item-icon {
-  background: rgba(var(--brand-highlight-rgb), 0.1);
-  color: var(--brand-highlight);
-}
-
-.admin-menu .menu-section-body .list-group-item.active .menu-indicator {
-  background: linear-gradient(180deg, #d5f8ea 0%, #b9ecd8 100%);
-  border-color: #89d7ba;
-  color: #0d6544;
-  box-shadow: none;
 }
 
 .deasy-dialog-root .deasy-dialog-body,
@@ -553,7 +424,7 @@ a:hover {
 }
 
 .deasy-dialog-root .deasy-dialog-header button {
-  background: #ffffff;
+  background: var(--brand-white);
   color: #475569;
   border: 1px solid rgba(148, 163, 184, 0.36);
 }
@@ -576,7 +447,7 @@ a:hover {
 .profile-dialog-panel {
   border-radius: 0.95rem !important;
   border: 1px solid rgba(148, 163, 184, 0.28) !important;
-  background: #ffffff !important;
+  background: var(--brand-white) !important;
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22) !important;
 }
 
@@ -596,7 +467,7 @@ a:hover {
 }
 
 .deasy-dialog-body {
-  background: #ffffff !important;
+  background: var(--brand-white) !important;
   color: #334155 !important;
   font-size: 0.95rem !important;
   line-height: 1.55;
@@ -619,7 +490,7 @@ a:hover {
 .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"] {
   border-radius: 0.55rem !important;
   border-color: rgba(148, 163, 184, 0.34) !important;
-  background: #ffffff !important;
+  background: var(--brand-white) !important;
   color: #475569 !important;
 }
 
@@ -655,27 +526,32 @@ a:hover {
   color: var(--brand-ink);
 }
 
-html[data-environment="local-dev"] {
-  --brand-border: #e2e6f0;
-  --brand-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
+/* Aqui habia un `html[data-environment="local-dev"] { --brand-border; --brand-shadow }`
+   que REDECLARABA los dos tokens con EXACTAMENTE los mismos valores de `:root`. Era un
+   no-op que solo servia para tener la paleta escrita dos veces. Borrado.
 
+   Y de paso una leccion cara: al sustituir hex por `var(--token)` en masa, esta
+   redeclaracion se convirtio en `--brand-border: var(--brand-border)`. Una
+   autorreferencia deja la variable SIN VALOR, asi que todo lo que la usaba cayo a
+   `currentColor` — 114 nodos con el borde cambiado, y solo en desarrollo, porque el
+   selector es `local-dev`. Al hacer sustituciones masivas de color hay que excluir
+   TODA linea que declare el token, no solo el bloque `:root`. */
 html[data-environment="local-dev"],
 html[data-environment="local-dev"] body,
 html[data-environment="local-dev"] #app {
-  background: #071927;
-  color: #343741;
+  background: var(--brand-navy-deep);
+  color: var(--brand-text-strong);
 }
 
 html[data-environment="local-dev"] .min-h-screen.bg-slate-100,
 html[data-environment="local-dev"] .bg-slate-100 {
-  background-color: #f7f9fc !important;
+  background-color: var(--brand-surface-muted) !important;
 }
 
 html[data-environment="local-dev"] .bg-slate-50,
 html[data-environment="local-dev"] .bg-slate-50\/70,
 html[data-environment="local-dev"] .bg-slate-50\/80 {
-  background-color: #f7f9fc !important;
+  background-color: var(--brand-surface-muted) !important;
 }
 
 html[data-environment="local-dev"] .bg-white,
@@ -700,7 +576,7 @@ html[data-environment="local-dev"] .deasy-dialog-panel,
 html[data-environment="local-dev"] .profile-table-shell,
 html[data-environment="local-dev"] .profile-dialog-panel,
 html[data-environment="local-dev"] .table-institutional {
-  background-color: #ffffff !important;
+  background-color: var(--brand-white) !important;
 }
 
 html[data-environment="local-dev"] .admin-workspace-frame--table {
@@ -709,12 +585,12 @@ html[data-environment="local-dev"] .admin-workspace-frame--table {
 
 html[data-environment="local-dev"] .deasy-auth-page {
   background:
-    linear-gradient(180deg, #ffffff 0%, #f7f9fc 46%, #f3f5fa 100%) !important;
+    linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-muted) 46%, #f3f5fa 100%) !important;
 }
 
 html[data-environment="local-dev"] .deasy-auth-panel,
 html[data-environment="local-dev"] .deasy-dialog-body {
-  background-color: #ffffff;
+  background-color: var(--brand-white);
 }
 
 html[data-environment="local-dev"] .deasy-auth-visual,
@@ -731,7 +607,7 @@ html[data-environment="local-dev"] .admin-workspace-frame,
 html[data-environment="local-dev"] .admin-surface-frame,
 html[data-environment="local-dev"] .profile-table-shell,
 html[data-environment="local-dev"] .table-institutional {
-  border-color: #e2e6f0 !important;
+  border-color: var(--brand-border) !important;
 }
 
 html[data-environment="local-dev"] .shadow-xl,
@@ -760,8 +636,8 @@ html[data-environment="local-dev"] .profile-textarea,
 html[data-environment="local-dev"] input,
 html[data-environment="local-dev"] select,
 html[data-environment="local-dev"] textarea {
-  background-color: #ffffff;
-  border-color: #e2e6f0;
+  background-color: var(--brand-white);
+  border-color: var(--brand-border);
   border-radius: 0.5rem;
 }
 
@@ -771,7 +647,7 @@ html[data-environment="local-dev"] .admin-select-field {
 }
 
 html[data-environment="local-dev"] .admin-select-field:focus {
-  border-color: #5e4eff;
+  border-color: var(--brand-primary);
   box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
 }
 
@@ -791,8 +667,8 @@ html[data-environment="local-dev"] .deasy-btn--cancel,
 html[data-environment="local-dev"] .deasy-auth-button--secondary,
 html[data-environment="local-dev"] .admin-btn--secondary,
 html[data-environment="local-dev"] .admin-btn--cancel {
-  background-color: #ffffff !important;
-  border-color: #e2e6f0 !important;
+  background-color: var(--brand-white) !important;
+  border-color: var(--brand-border) !important;
 }
 
 html[data-environment="local-dev"] .deasy-nav-shell {
@@ -801,7 +677,7 @@ html[data-environment="local-dev"] .deasy-nav-shell {
 }
 
 html[data-environment="local-dev"] header {
-  background-color: #071927 !important;
+  background-color: var(--brand-navy-deep) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
@@ -815,14 +691,14 @@ html[data-environment="local-dev"] .deasy-btn--cancel,
 html[data-environment="local-dev"] .deasy-auth-button--secondary,
 html[data-environment="local-dev"] .admin-btn--secondary,
 html[data-environment="local-dev"] .admin-btn--cancel {
-  color: #343741 !important;
+  color: var(--brand-text-strong) !important;
 }
 
 html[data-environment="local-dev"] .deasy-btn--secondary:hover,
 html[data-environment="local-dev"] .deasy-btn--cancel:hover,
 html[data-environment="local-dev"] .admin-btn--secondary:hover,
 html[data-environment="local-dev"] .admin-btn--cancel:hover {
-  color: #5e4eff !important;
+  color: var(--brand-primary) !important;
   background-color: rgba(94, 78, 255, 0.06) !important;
   border-color: rgba(94, 78, 255, 0.18) !important;
 }
