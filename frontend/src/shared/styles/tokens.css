@@ -133,6 +133,7 @@
   --state-success: #047857;   /* 5.00:1 */
   --state-danger: #b42318;    /* 5.93:1 */
   --state-warning: #b45309;   /* 4.68:1 */
+  --state-pending: #b8432b;   /* 5.42:1 — 'pendiente', ni exito ni fallo */
   --state-gold: #d4af37;      /* solo BtnSera */
 
   /* Botones de accion de las tablas. UN color por accion: el del icono.

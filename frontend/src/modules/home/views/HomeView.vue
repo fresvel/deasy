@@ -5208,8 +5208,11 @@ const toggleNotify = () => {
 }
 
 .deliverable-due-tag--salmon {
-  background: rgb(255 236 230) !important;
-  border-color: rgb(254 205 190) !important;
-  color: rgb(195 83 62) !important;
+  /* Este es el MISMO estado "pendiente" que pinta `.deasy-tag--salmon`, y estaba
+     escrito con otros valores: dos paletas para un solo significado. Ahora los dos
+     salen de `--state-pending`. */
+  background: color-mix(in srgb, var(--state-pending) 10%, var(--brand-white)) !important;
+  border-color: color-mix(in srgb, var(--state-pending) 71%, var(--brand-white)) !important;
+  color: var(--state-pending) !important;
 }
 </style>

@@ -25,7 +25,7 @@
     }
 
     .deasy-filter-control {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[#8a93a8];
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[var(--brand-text-muted)];
         border-color: var(--brand-border-field);
     }
 
@@ -43,7 +43,7 @@
     }
 
     .deasy-filter-search-input {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[#8a93a8];
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[var(--brand-text-muted)];
         border-color: var(--brand-border-field);
         min-width: 0;
     }

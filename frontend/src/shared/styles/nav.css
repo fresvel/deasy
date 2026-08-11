@@ -135,11 +135,11 @@
     }
 
     .deasy-nav-feedback--info {
-        @apply border border-[#d6e4f2] bg-white/90 text-slate-700;
+        @apply border border-[var(--brand-border-field)] bg-white/90 text-slate-700;
     }
 
     .deasy-nav-feedback--muted {
-        @apply border border-[#d6e4f2] bg-white/85 text-slate-600;
+        @apply border border-[var(--brand-border-field)] bg-white/85 text-slate-600;
     }
 
     .deasy-nav-tree {
