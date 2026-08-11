@@ -115,6 +115,9 @@
   --brand-ink: #1f2937;
   --brand-info-soft: rgba(37, 99, 235, 0.1);
   --brand-white: #ffffff;
+  /* Ancla para oscurecer con color-mix(). No es un color de superficie: no
+     pintes nada directamente con el. */
+  --brand-black: #000000;
   --brand-border: #e2e6f0;
   /* El borde de los controles de formulario. Estaba escrito a mano 6 veces. */
   --brand-border-field: #d7deea;
@@ -139,6 +142,25 @@
   --action-upload: #3751a3;
   --action-delete: #b42318;
   --action-warning: #b45309;
+
+  /* Texto secundario: subtitulos, notas al pie, pestañas inactivas. Habia TRES
+     grises para este papel (#5a5f6f, #697081, #64748b) separados entre si por
+     ΔE 3.8-8.7. Se unifican en el mas oscuro, que es el unico con margen comodo
+     sobre AA: 6.36:1 sobre blanco frente a 4.96 y 4.76 de los otros dos. */
+  --brand-text-muted: #5a5f6f;
+
+  /* Iconos de accion secundaria (la ✕ de los dialogos). */
+  --brand-icon: #475569;
+
+  /* Borde de cada boton de accion. NO se deriva del color de la accion: es mas
+     saturado que cualquier mezcla con blanco (medido: ΔE hasta 11.9 en el ambar),
+     asi que es un valor propio. El fondo si se deriva; ver mas arriba. */
+  --action-neutral-line: #b8cadc;
+  --action-view-line: #8ec6df;
+  --action-assign-line: #8ed6b2;
+  --action-upload-line: #aabef4;
+  --action-delete-line: #f3aaa0;
+  --action-warning-line: #f4c26f;
 
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;

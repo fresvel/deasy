@@ -48,14 +48,14 @@
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.25;
-  color: #192144;
+  color: var(--brand-navy);
 }
 
 .admin-page-header__subtitle {
   margin: 0.35rem 0 0;
   font-size: 0.84rem;
   line-height: 1.4;
-  color: #697081;
+  color: var(--brand-text-muted);
 }
 
 .admin-page-header__icon {

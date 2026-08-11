@@ -59,12 +59,12 @@
     }
 
     .deasy-filter-summary {
-        @apply text-sm font-medium text-[#697081];
+        @apply text-sm font-medium text-[var(--brand-text-muted)];
     }
 
     .deasy-filter-summary strong,
     .deasy-filter-summary span.font-bold {
-        color: #192144;
+        color: var(--brand-navy);
     }
 
     .deasy-filter-actions {
@@ -301,5 +301,5 @@
   display: block;
   margin-top: 0.4rem;
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--brand-text-muted);
 }

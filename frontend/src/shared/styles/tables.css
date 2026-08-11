@@ -10,7 +10,7 @@
 
     .deasy-table-title {
         @apply m-0 text-[0.95rem] font-semibold tracking-tight sm:text-base;
-        color: #192144;
+        color: var(--brand-navy);
     }
 
     .deasy-table-responsive {
@@ -29,7 +29,7 @@
 
     .deasy-table th {
         @apply px-4 py-3 text-[12px] font-semibold uppercase tracking-[0.04em];
-        color: #192144;
+        color: var(--brand-navy);
     }
 
     .deasy-table td {
@@ -46,8 +46,6 @@
         border-bottom: 0;
     }
 
-    .deasy-table tbody tr:hover {
-    }
 
     
 }
@@ -79,5 +77,5 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #192144;
+  color: var(--brand-navy);
 }

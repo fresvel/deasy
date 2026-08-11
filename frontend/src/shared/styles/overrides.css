@@ -165,44 +165,44 @@ header {
 }
 
 .hope-action-btn {
-  background-color: color-mix(in srgb, var(--action-neutral) 3%, #fff);
-  border-color: #b8cadc;
+  background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--brand-white));
+  border-color: var(--action-neutral-line);
   color: var(--action-neutral);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .hope-action-view {
-  background-color: color-mix(in srgb, var(--action-view) 11%, #fff);
-  border-color: #8ec6df;
+  background-color: color-mix(in srgb, var(--action-view) 11%, var(--brand-white));
+  border-color: var(--action-view-line);
   color: var(--action-view);
 }
 
 .hope-action-edit,
 .hope-action-select,
 .hope-action-assign {
-  background-color: color-mix(in srgb, var(--action-assign) 10%, #fff);
-  border-color: #8ed6b2;
+  background-color: color-mix(in srgb, var(--action-assign) 10%, var(--brand-white));
+  border-color: var(--action-assign-line);
   color: var(--action-assign);
 }
 
 .hope-action-version,
 .hope-action-download,
 .hope-action-upload {
-  background-color: color-mix(in srgb, var(--action-upload) 11%, #fff);
-  border-color: #aabef4;
+  background-color: color-mix(in srgb, var(--action-upload) 11%, var(--brand-white));
+  border-color: var(--action-upload-line);
   color: var(--action-upload);
 }
 
 .hope-action-delete,
 .hope-action-delete-strong {
-  background-color: color-mix(in srgb, var(--action-delete) 9%, #fff);
-  border-color: #f3aaa0;
+  background-color: color-mix(in srgb, var(--action-delete) 9%, var(--brand-white));
+  border-color: var(--action-delete-line);
   color: var(--action-delete);
 }
 
 .hope-action-delete-pdf {
-  background-color: color-mix(in srgb, var(--action-warning) 9%, #fff);
-  border-color: #f4c26f;
+  background-color: color-mix(in srgb, var(--action-warning) 9%, var(--brand-white));
+  border-color: var(--action-warning-line);
   color: var(--action-warning);
 }
 

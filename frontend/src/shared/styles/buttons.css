@@ -11,7 +11,7 @@
     }
 
     .deasy-filter-btn.deasy-btn--outline-primary {
-        border-color: #c9c5ff;
+        border-color: color-mix(in srgb, var(--brand-primary) 33%, var(--brand-white));
         background: var(--brand-white);
         color: var(--brand-primary);
     }
@@ -192,16 +192,16 @@
 
     .deasy-table-shell .deasy-btn--secondary:hover,
     .deasy-table-responsive .deasy-btn--secondary:hover {
-        border-color: #bcc2cd;
+        border-color: var(--brand-border-strong);
         background: var(--brand-surface-muted);
-        color: #192144;
+        color: var(--brand-navy);
     }
 
     .deasy-table-shell .deasy-btn--soft-primary,
     .deasy-table-responsive .deasy-btn--soft-primary,
     .deasy-table-shell .deasy-btn--outline-primary,
     .deasy-table-responsive .deasy-btn--outline-primary {
-        border-color: #d7d3ff;
+        border-color: color-mix(in srgb, var(--brand-primary) 25%, var(--brand-white));
         background: var(--brand-white);
         color: var(--brand-primary);
     }
@@ -210,9 +210,9 @@
     .deasy-table-responsive .deasy-btn--soft-primary:hover,
     .deasy-table-shell .deasy-btn--outline-primary:hover,
     .deasy-table-responsive .deasy-btn--outline-primary:hover {
-        border-color: #c3bcff;
+        border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--brand-white));
         background: var(--brand-surface-muted);
-        color: #5143dc;
+        color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
     }
 
     .deasy-table-shell .deasy-btn--primary,
@@ -225,8 +225,8 @@
 
     .deasy-table-shell .deasy-btn--primary:hover,
     .deasy-table-responsive .deasy-btn--primary:hover {
-        border-color: #5143dc;
-        background: #5143dc;
+        border-color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
+        background: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
     }
 
     
@@ -270,7 +270,7 @@
 }
 
 .hope-action-edit:hover {
-  color: #218838;
+  color: color-mix(in srgb, var(--action-assign) 85%, var(--brand-black));
   background: rgba(40, 167, 69, 0.12);
   border-color: rgba(40, 167, 69, 0.4);
 }
@@ -281,19 +281,19 @@
 }
 
 .hope-action-delete:hover {
-  color: #af2818;
+  color: color-mix(in srgb, var(--action-delete) 85%, var(--brand-black));
   background: rgba(192, 50, 33, 0.12);
   border-color: rgba(192, 50, 33, 0.4);
 }
 
 .hope-action-delete-strong {
-  color: #b42318;
+  color: var(--action-delete);
   background: rgba(228, 59, 44, 0.14);
   border-color: rgba(228, 59, 44, 0.34);
 }
 
 .hope-action-delete-strong:hover {
-  color: #991b1b;
+  color: color-mix(in srgb, var(--action-delete) 85%, var(--brand-black));
   background: rgba(228, 59, 44, 0.18);
   border-color: rgba(228, 59, 44, 0.46);
 }
@@ -305,7 +305,7 @@
 }
 
 .hope-action-view:hover {
-  color: #1d6da0;
+  color: color-mix(in srgb, var(--action-view) 85%, var(--brand-black));
   background: rgba(var(--brand-accent-rgb), 0.16);
   border-color: rgba(var(--brand-accent-rgb), 0.42);
 }
@@ -317,7 +317,7 @@
 }
 
 .hope-action-download:hover {
-  color: #0f3153;
+  color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
   background: rgba(var(--brand-primary-rgb), 0.16);
   border-color: rgba(var(--brand-primary-rgb), 0.4);
 }
@@ -329,7 +329,7 @@
 }
 
 .hope-action-upload:hover {
-  color: #3730a3;
+  color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
   background: rgba(var(--brand-highlight-rgb), 0.18);
   border-color: rgba(var(--brand-highlight-rgb), 0.42);
 }
@@ -340,7 +340,7 @@
 }
 
 .hope-action-delete-pdf:hover {
-  color: #d97706; /* amber-600 */
+  color: color-mix(in srgb, var(--action-warning) 85%, var(--brand-black));
   background: rgba(245, 158, 11, 0.12);
   border-color: rgba(245, 158, 11, 0.4);
 }

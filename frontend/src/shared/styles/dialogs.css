@@ -42,7 +42,7 @@
 
 .deasy-dialog-root .deasy-dialog-header button {
   background: var(--brand-white);
-  color: #475569;
+  color: var(--brand-icon);
   border: 1px solid rgba(148, 163, 184, 0.36);
 }
 
@@ -109,7 +109,7 @@
   border-radius: 0.55rem;
   border-color: rgba(148, 163, 184, 0.34) !important; /* gana a .deasy-dialog-header button (0,2,1) */
   background: var(--brand-white);
-  color: #475569;
+  color: var(--brand-icon);
 }
 
 .deasy-dialog-panel .deasy-btn--close:hover,

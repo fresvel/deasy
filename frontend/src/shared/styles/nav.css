@@ -4,7 +4,7 @@
     }
 
     .deasy-inline-tab {
-        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-[#5a5f6f] transition-colors hover:text-[#192144] focus:outline-none focus:ring-2 focus:ring-brand-primary/15;
+        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-[var(--brand-text-muted)] transition-colors hover:text-[var(--brand-navy)] focus:outline-none focus:ring-2 focus:ring-brand-primary/15;
     }
 
     .deasy-inline-tab--active {
@@ -15,11 +15,11 @@
     .deasy-inline-tab__badge {
         @apply inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold;
         background: var(--brand-surface-muted);
-        color: #5a5f6f;
+        color: var(--brand-text-muted);
     }
 
     .deasy-inline-tab__badge--active {
-        background: #efedff;
+        background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
         color: var(--brand-primary);
     }
 
