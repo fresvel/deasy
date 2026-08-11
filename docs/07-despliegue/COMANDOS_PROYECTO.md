@@ -464,6 +464,6 @@ Imagenes publicadas:
 - El unico stack es `docker/compose.base.yml` con overlays por ambiente; se ejecuta via `scripts/docker-env.sh`.
 - El motor de datos es PostgreSQL unicamente (MariaDB y MongoDB fueron retirados).
 - `backend/README.md` menciona `backend/.env_model`, pero el archivo real encontrado esta en `docker/.env_model`.
-- El `README.md` principal referencia documentacion en rutas como `docs/07-despliegue/docker.md`; en el arbol actual esas versiones estan bajo `docs/docs-md-antiguos/`.
+- El `README.md` principal referenciaba 34 rutas de documentacion y las 34 estaban muertas (apuntaban al arbol previo a la reorganizacion, hoy en `docs/docs-md-antiguos/`). **Corregido el 2026-08-11**, con un comprobador de enlaces en CI para que no se repita.
 - El frontend tiene lint configurado; el backend no declara lint ni tests en `package.json`.
 - Para cambios frontend, el comando de validacion principal es `cd frontend && pnpm run lint`.

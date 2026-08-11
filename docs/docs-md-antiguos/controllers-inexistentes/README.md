@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Documentación de controllers que no existen
 
 Archivados el 2026-08-08. Estas tres páginas describían controllers que **no están en el

@@ -197,7 +197,7 @@ Esto permite:
 
 Archivo:
 
-- [`.github/workflows/cd-multienv.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/.github/workflows/cd-multienv.yml)
+- [`.github/workflows/cd-multienv.yml`](../../.github/workflows/cd-multienv.yml)
 
 Este archivo define toda la automatización de CI/CD.
 
@@ -205,7 +205,7 @@ Este archivo define toda la automatización de CI/CD.
 
 Archivo:
 
-- [`scripts/docker-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/docker-env.sh)
+- [`scripts/docker-env.sh`](../../scripts/docker-env.sh)
 
 Este script simplifica la ejecución de Docker Compose por ambiente.
 
@@ -221,7 +221,7 @@ bash scripts/docker-env.sh prod down
 
 Archivo:
 
-- [`scripts/apply-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/apply-env.sh)
+- [`scripts/apply-env.sh`](../../scripts/apply-env.sh)
 
 Este script concentra la logica comun de despliegue para `qa` y `prod`.
 
@@ -245,7 +245,7 @@ Modos actuales previstos:
 
 Archivo:
 
-- [`scripts/deploy-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/deploy-env.sh)
+- [`scripts/deploy-env.sh`](../../scripts/deploy-env.sh)
 
 Este script ya no contiene la logica principal; ahora actua como wrapper de
 compatibilidad para el flujo iniciado desde GitHub Actions y delega en
@@ -255,7 +255,7 @@ compatibilidad para el flujo iniciado desde GitHub Actions y delega en
 
 Archivo:
 
-- [`docker/compose.base.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.base.yml)
+- [`docker/compose.base.yml`](../../docker/compose.base.yml)
 
 Contiene lo comun a todos los ambientes.
 
@@ -263,11 +263,11 @@ Contiene lo comun a todos los ambientes.
 
 Archivos:
 
-- [`docker/compose.proxy.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.proxy.yml)
-- [`docker/compose.ingress.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.ingress.yml)
-- [`docker/compose.dev.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.dev.yml)
-- [`docker/compose.qa.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.qa.yml)
-- [`docker/compose.prod.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.prod.yml)
+- [`docker/compose.proxy.yml`](../../docker/compose.proxy.yml)
+- [`docker/compose.ingress.yml`](../../docker/compose.ingress.yml)
+- [`docker/compose.dev.yml`](../../docker/compose.dev.yml)
+- [`docker/compose.qa.yml`](../../docker/compose.qa.yml)
+- [`docker/compose.prod.yml`](../../docker/compose.prod.yml)
 
 Diferencias principales:
 
@@ -282,9 +282,9 @@ Diferencias principales:
 
 Archivos:
 
-- [`docker/.env.dev`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/.env.dev)
-- [`docker/.env.qa`](/home/fresvel/Documentos/Pucese/deasy/docker/.env.qa)
-- [`docker/.env.prod`](/home/fresvel/Documentos/Pucese/deasy/docker/.env.prod)
+- [`docker/.env.dev`](../../docker/.env.dev)
+- [`docker/.env.qa`](../../docker/.env.qa)
+- [`docker/.env.prod`](../../docker/.env.prod)
 
 ## 6. Como funciona el workflow
 
@@ -477,7 +477,7 @@ Por eso:
 
 Archivo principal:
 
-- [`scripts/server-pull-deploy.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/server-pull-deploy.sh)
+- [`scripts/server-pull-deploy.sh`](../../scripts/server-pull-deploy.sh)
 
 Este script agrega la parte que GitHub Actions no necesita:
 
@@ -537,8 +537,8 @@ para mostrar los comandos que ejecutarían sin tocar contenedores ni git.
 
 Se dejaron ejemplos listos en:
 
-- [`deploy/systemd/deasy-server-pull@.service`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.service)
-- [`deploy/systemd/deasy-server-pull@.timer`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.timer)
+- [`deploy/systemd/deasy-server-pull@.service`](../../deploy/systemd/deasy-server-pull@.service)
+- [`deploy/systemd/deasy-server-pull@.timer`](../../deploy/systemd/deasy-server-pull@.timer)
 
 La idea sigue la buena practica de Context7 para `systemd`:
 

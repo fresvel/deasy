@@ -25,7 +25,7 @@
 > `SqlAdminService` ya aplicadas) cruzado con lectura estructural directa del código.
 > Complementa —no sustituye— a `auditoria-refactor-2026-07.md` (línea base) y
 > `auditoria-refactor-user-controler-2026-07.md`, **hoy archivados** en
-> [`docs-md-antiguos/refactor-2026-07/`](./docs-md-antiguos/refactor-2026-07/).
+> [`docs-md-antiguos/refactor-2026-07/`](../../docs-md-antiguos/refactor-2026-07/).
 >
 > Reproducir: `docker compose -f scripts/sonar/compose.yml up -d` (Sonar en :9002) ·
 > `SONAR_TOKEN=<token> bash scripts/sonar/scan.sh` · dashboard `http://localhost:9002/dashboard?id=deasy`.

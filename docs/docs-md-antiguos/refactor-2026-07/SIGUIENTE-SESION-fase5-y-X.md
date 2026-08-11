@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Prompt para la siguiente sesión — Fases 5 y X del refactor del FRONTEND
 
 > Copia el bloque de abajo como primer mensaje de una sesión nueva de Claude Code.

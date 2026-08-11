@@ -1,0 +1,89 @@
+# Comprobador de enlaces de la documentación.
+#
+# ── Por qué existe ────────────────────────────────────────────────────────────────────────
+# Hasta el 2026-08-11 la documentación era la ÚNICA capa del repositorio sin ninguna puerta:
+# el código tiene tests unitarios, characterization, `check:imports`, `lint:css` y Sonar, pero
+# nada fallaba cuando un documento mentía. El resultado medido en esa fecha:
+#
+#   · 23 enlaces con rutas ABSOLUTAS a `/home/fresvel/Sharepoint/DIR/Deploy/deasy/...`,
+#     una máquina que ya no aloja el repositorio.
+#   · Las 34 rutas de documentación del `README.md` raíz — la puerta de entrada — muertas.
+#     Las 34. Apuntaban al árbol anterior a la reorganización de `docs/`.
+#
+# Ninguna de las dos cosas rompía nada, y por eso sobrevivieron meses. Este workflow es la
+# puerta que faltaba: a partir de aquí, un enlace roto es un CI en rojo.
+#
+# ── Por qué SOLO enlaces locales (--offline) ──────────────────────────────────────────────
+# Comprobar URLs externas en cada PR suena mejor de lo que es: los 429 de GitHub, los 503
+# transitorios y los sitios tras Cloudflare ponen el CI en rojo por motivos que no tienen
+# nada que ver con el cambio. Una puerta en la que no se confía se ignora, y una puerta que
+# se ignora no es una puerta. Así que el gate bloqueante mira SOLO enlaces a ficheros del
+# repositorio — que es exactamente la clase de rotura que se midió — y las URLs externas se
+# revisan aparte, semanalmente y sin bloquear (segundo job).
+name: docs-links
+
+on:
+  pull_request:
+    paths: ['**/*.md', '.lycheeignore', '.github/workflows/docs-links.yml']
+  push:
+    branches: [develop, main]
+    paths: ['**/*.md', '.lycheeignore', '.github/workflows/docs-links.yml']
+  schedule:
+    # Lunes 06:00 UTC — solo para el job de enlaces externos.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Bloqueante: enlaces a ficheros del repositorio ──────────────────────────────────────
+  enlaces-internos:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar enlaces relativos
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --offline: no sale a la red; resuelve enlaces relativos contra el árbol.
+          #
+          # Exclusiones, y el motivo de cada una:
+          #   docs/docs-md-antiguos/**  el archivo. Está lleno de referencias muertas A
+          #                             PROPÓSITO (describe el sistema de antes); gatear sobre
+          #                             él sería ruido puro y empujaría a "arreglar" historia.
+          #   docs/src/**               el contenido del sitio Astro. Sus enlaces son RUTAS DE
+          #                             PÁGINA (`/guias/entorno-dev/`), no ficheros, así que
+          #                             lychee los daría por rotos. El build de Astro ya los
+          #                             valida; cuando aterrice la F2 esto se revisa con --base.
+          args: >-
+            --offline
+            --no-progress
+            --include-fragments
+            --exclude-path docs/docs-md-antiguos
+            --exclude-path docs/src
+            --exclude-path node_modules
+            "**/*.md"
+          fail: true
+
+  # ── No bloqueante: URLs externas ────────────────────────────────────────────────────────
+  enlaces-externos:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar URLs externas (informativo)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --max-retries 3
+            --timeout 20
+            --accept 200,203,206,429
+            --exclude-path docs/docs-md-antiguos
+            --exclude-path node_modules
+            "**/*.md"
+          fail: false

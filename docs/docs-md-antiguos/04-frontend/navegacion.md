@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Frontend - Estructura y Navegación de Archivos (Técnico)
 
 Este documento detalla cómo está organizada la arquitectura del frontend dentro del repositorio, tras la migración a un modelo **Feature-Driven (basado en módulos funcionales)** con el objetivo de promover escalabilidad y orden en las importaciones.

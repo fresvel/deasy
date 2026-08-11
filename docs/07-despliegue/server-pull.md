@@ -27,11 +27,11 @@ Este modo es especialmente util cuando:
 
 En el repositorio ya existe la base necesaria:
 
-- [`scripts/apply-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/apply-env.sh)
-- [`scripts/server-pull-deploy.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/server-pull-deploy.sh)
-- [`scripts/docker-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/docker-env.sh)
-- [`deploy/systemd/deasy-server-pull@.service`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.service)
-- [`deploy/systemd/deasy-server-pull@.timer`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.timer)
+- [`scripts/apply-env.sh`](../../scripts/apply-env.sh)
+- [`scripts/server-pull-deploy.sh`](../../scripts/server-pull-deploy.sh)
+- [`scripts/docker-env.sh`](../../scripts/docker-env.sh)
+- [`deploy/systemd/deasy-server-pull@.service`](../../deploy/systemd/deasy-server-pull@.service)
+- [`deploy/systemd/deasy-server-pull@.timer`](../../deploy/systemd/deasy-server-pull@.timer)
 
 ### Lo que debes configurar tu en el servidor
 
@@ -310,8 +310,8 @@ Esto muestra que comandos correria, pero sin ejecutar cambios reales.
 
 El repo ya incluye estos templates:
 
-- [`deploy/systemd/deasy-server-pull@.service`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.service)
-- [`deploy/systemd/deasy-server-pull@.timer`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.timer)
+- [`deploy/systemd/deasy-server-pull@.service`](../../deploy/systemd/deasy-server-pull@.service)
+- [`deploy/systemd/deasy-server-pull@.timer`](../../deploy/systemd/deasy-server-pull@.timer)
 
 ### Importante sobre la ruta
 

@@ -37,7 +37,9 @@ Código relevante revisado:
 - [backend/controllers/users/user_controler.js](../../backend/controllers/users/user_controler.js)
 - [backend/controllers/tareas/tareas_controler.js](../../backend/controllers/tareas/tareas_controler.js)
 - [frontend/src/modules/admin/services/AdminTableManagerConfig.js](../../frontend/src/modules/admin/services/AdminTableManagerConfig.js)
-- [tools/templates/README.md](../../tools/templates/README.md)
+- `tools/templates/README.md` — **carpeta eliminada** en `3ac3db7`: la autoría de plantillas migró
+  a MinIO y al editor web. Lo que se revisó entonces vive hoy en
+  [backend/services/admin/templates/](../../backend/services/admin/templates/)
 
 > Nota (2026-06): rutas actualizadas a la ubicación vigente del repo. Para el estado actual de
 > entregables/plantillas ver [redisenio-entregables-2026-06.md](./redisenio-entregables-2026-06.md).

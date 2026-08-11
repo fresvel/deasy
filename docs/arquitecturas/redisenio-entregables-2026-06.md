@@ -78,7 +78,8 @@ programados (punto 3c), ni derivaciones puntuales de un entregable (punto 3b).
 
 ### Modelo
 Se reutiliza todo el pipeline existente mediante un **proceso raíz "General"** sembrado de forma
-idempotente con [backend/scripts/seed_general_process.mjs](../../backend/scripts/seed_general_process.mjs):
+idempotente con `backend/scripts/seed_general_process.mjs` — **script retirado** en `0b4ce0c`
+(auditoría de 8 hallazgos); la siembra la hace hoy el bootstrap del sistema:
 
 - `processes(slug='general')` → `process_definition_versions` "Tarea general" (active, `has_document=0`)
 - artifact contenedor `tpl_general_tarea_libre` (`artifact_origin='general'`, sin render real)
