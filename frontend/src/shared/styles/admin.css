@@ -1,8 +1,8 @@
 .admin-workspace-frame {
-  border: 1px solid rgba(148, 163, 184, 0.26);
+  border: 1px solid var(--brand-border);
   border-radius: 0.95rem;
   background: var(--brand-surface-alt);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--brand-shadow);
   padding: 0.5rem;
 }
 
@@ -15,7 +15,7 @@
 }
 
 .admin-surface-frame {
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  border: 1px solid var(--brand-border);
   border-radius: 1rem;
   background: var(--brand-white);
   box-shadow: none;
@@ -66,7 +66,7 @@
   align-items: center;
   justify-content: center;
   background: var(--brand-border);
-  border: 1px solid rgba(94, 78, 255, 0.14);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
   color: var(--brand-primary);
   flex: 0 0 auto;
   font-size: 0.78rem;

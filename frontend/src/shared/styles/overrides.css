@@ -1,6 +1,6 @@
 @layer utilities {
     .shadow-xl {
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+        box-shadow: var(--shadow-raised) !important;
     }
 }
 .min-h-screen.bg-slate-100,
@@ -78,7 +78,7 @@
 .admin-workspace-frame,
 .admin-surface-frame,
 .profile-table-shell {
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--brand-shadow);
 }
 
 .admin-workspace-frame--table {
@@ -109,7 +109,7 @@ textarea {
 
 .admin-select-field:focus {
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .deasy-table thead tr,
@@ -133,13 +133,13 @@ textarea {
 }
 
 .deasy-nav-shell {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(var(--brand-white-rgb), 0.12) 0%, rgba(var(--brand-white-rgb), 0.08) 100%);
+  border-color: rgba(var(--brand-white-rgb), 0.08);
 }
 
 header {
   background-color: var(--brand-navy-deep);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(var(--brand-white-rgb), 0.1);
 }
 
 .deasy-fa-icon {
@@ -160,50 +160,50 @@ header {
 .admin-btn--secondary:hover,
 .admin-btn--cancel:hover {
   color: var(--brand-primary);
-  background-color: rgba(94, 78, 255, 0.06);
-  border-color: rgba(94, 78, 255, 0.18);
+  background-color: rgba(var(--brand-primary-rgb), 0.06);
+  border-color: rgba(var(--brand-primary-rgb), 0.18);
 }
 
 .hope-action-btn {
   background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--brand-white));
-  border-color: var(--action-neutral-line);
+  border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--brand-white));
   color: var(--action-neutral);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--brand-shadow);
 }
 
 .hope-action-view {
   background-color: color-mix(in srgb, var(--action-view) 11%, var(--brand-white));
-  border-color: var(--action-view-line);
+  border-color: color-mix(in srgb, var(--action-view) 71%, var(--brand-white));
   color: var(--action-view);
 }
 
 .hope-action-edit,
 .hope-action-select,
 .hope-action-assign {
-  background-color: color-mix(in srgb, var(--action-assign) 10%, var(--brand-white));
-  border-color: var(--action-assign-line);
-  color: var(--action-assign);
+  background-color: color-mix(in srgb, var(--state-success) 10%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--state-success) 71%, var(--brand-white));
+  color: var(--state-success);
 }
 
 .hope-action-version,
 .hope-action-download,
 .hope-action-upload {
   background-color: color-mix(in srgb, var(--action-upload) 11%, var(--brand-white));
-  border-color: var(--action-upload-line);
+  border-color: color-mix(in srgb, var(--action-upload) 71%, var(--brand-white));
   color: var(--action-upload);
 }
 
 .hope-action-delete,
 .hope-action-delete-strong {
-  background-color: color-mix(in srgb, var(--action-delete) 9%, var(--brand-white));
-  border-color: var(--action-delete-line);
-  color: var(--action-delete);
+  background-color: color-mix(in srgb, var(--state-danger) 9%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--state-danger) 71%, var(--brand-white));
+  color: var(--state-danger);
 }
 
 .hope-action-delete-pdf {
-  background-color: color-mix(in srgb, var(--action-warning) 9%, var(--brand-white));
-  border-color: var(--action-warning-line);
-  color: var(--action-warning);
+  background-color: color-mix(in srgb, var(--state-warning) 9%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--state-warning) 71%, var(--brand-white));
+  color: var(--state-warning);
 }
 
 .hope-action-btn:hover {

@@ -66,6 +66,7 @@
            `--brand-*` plano: solo existia dentro de `--brand-workspace-gradient`. */
         --brand-navy-deep: #071927;
         --brand-surface-muted: #f7f9fc;
+  --brand-surface-muted-rgb: 247, 249, 252;
         --brand-surface-soft: rgba(247, 249, 252, 0.92);
         --brand-border-strong: #cfd6e4;
         --brand-text-strong: #343741;
@@ -109,12 +110,11 @@
 :root {
   --brand-primary: #5e4eff;
   --brand-accent: #00b2a9;
-  --brand-highlight: #5e4eff;
-  --brand-highlight-rgb: 94, 78, 255;
   --brand-navy: #111827;
   --brand-ink: #1f2937;
   --brand-info-soft: rgba(37, 99, 235, 0.1);
   --brand-white: #ffffff;
+  --brand-white-rgb: 255, 255, 255;
   /* Ancla para oscurecer con color-mix(). No es un color de superficie: no
      pintes nada directamente con el. */
   --brand-black: #000000;
@@ -123,14 +123,37 @@
   --brand-border-field: #d7deea;
   /* Superficie alterna (fondos apagados de cabecera, addon de select, hover suave). 7 veces. */
   --brand-surface-alt: #f8fafc;
-  --brand-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  /* ELEVACION. Habia ONCE valores de sombra, pero no eran once niveles: eran DOS
+     niveles escritos de muchas formas (0.03/0.04/0.06 estan a ΔE<=1.3 entre si),
+     mas cosas que no son sombras aunque usen la misma propiedad. */
+  --brand-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);           /* tarjetas y marcos */
+  --shadow-raised: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06);
+  --shadow-modal: 0 1px 2px rgba(15, 23, 42, 0.04), 0 24px 64px rgba(15, 23, 42, 0.16);
+
+  /* El anillo de foco. Es la señal de "aqui esta el teclado", asi que es UNO.
+     Habia tres tamaños (2px, 3px, 4px) y tres colores (sky, navy, primario);
+     se queda el dominante, que ademas es el de marca. */
+  --focus-ring: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
+
+  /* El velo del modal. Estaba contado como "sombra" y no lo es: es un fondo. */
+  --overlay-backdrop: rgba(15, 23, 42, 0.48);
+
+  /* El azul del boton de menu. Es su color y no esta en ninguna otra familia. */
+  --brand-navy-menu: #123f88;
+  --brand-navy-menu-rgb: 18, 63, 136;
   --brand-gradient-angled: linear-gradient(135deg, #5e4eff 0%, #3898ff 100%);
   --brand-primary-rgb: 94, 78, 255;
   --brand-accent-rgb: 0, 178, 169;
 
-  --state-success: #28a745;
-  --state-danger: #dc3545;
-  --state-gold: #d4af37;
+  /* UN color por estado, y es el OSCURO. Es el unico que cumple WCAG en los dos
+     usos: icono (3:1) y texto (4.5:1). Los brillantes que habia antes —#28a745,
+     #dc3545, #f59e0b— daban 2.85, 4.08 y 1.99 sobre blanco. */
+  --state-success: #047857;   /* 5.00:1 */
+  --state-success-rgb: 4, 120, 87;
+  --state-danger: #b42318;    /* 5.93:1 */
+  --state-warning: #b45309;   /* 4.68:1 */
+  --state-pending: #b8432b;   /* 5.42:1 — 'pendiente', ni exito ni fallo */
+  --state-gold: #d4af37;      /* solo BtnSera */
 
   /* Botones de accion de las tablas. UN color por accion: el del icono.
      El fondo NO se declara, se calcula mezclandolo con blanco (~10%), que es
@@ -138,10 +161,7 @@
      propio — es mas saturado que cualquier mezcla — y vive junto a su regla. */
   --action-neutral: #23384f;
   --action-view: #075985;
-  --action-assign: #047857;
   --action-upload: #3751a3;
-  --action-delete: #b42318;
-  --action-warning: #b45309;
 
   /* Texto secundario: subtitulos, notas al pie, pestañas inactivas. Habia TRES
      grises para este papel (#5a5f6f, #697081, #64748b) separados entre si por
@@ -152,15 +172,12 @@
   /* Iconos de accion secundaria (la ✕ de los dialogos). */
   --brand-icon: #475569;
 
-  /* Borde de cada boton de accion. NO se deriva del color de la accion: es mas
-     saturado que cualquier mezcla con blanco (medido: ΔE hasta 11.9 en el ambar),
-     asi que es un valor propio. El fondo si se deriva; ver mas arriba. */
-  --action-neutral-line: #b8cadc;
-  --action-view-line: #8ec6df;
-  --action-assign-line: #8ed6b2;
-  --action-upload-line: #aabef4;
-  --action-delete-line: #f3aaa0;
-  --action-warning-line: #f4c26f;
+  /* Aqui vivian seis tokens de borde, uno por accion. Ya no: el borde se deriva
+     del color de la accion como el resto. La clave es el porcentaje — al 35% el
+     borde salia MAS CLARO que el que habia y el boton se veia peor; al 71% los
+     seis llegan a 3:1 contra la fila blanca, que es lo que pide WCAG 1.4.11 para
+     el limite de un componente. Los valores anteriores daban 1.64-1.90: ninguno
+     cumplia, y eso son 172 botones en una tabla llena. */
 
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;
