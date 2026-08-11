@@ -1,0 +1,149 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Firma electrónica. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project firmas {
+  database_type: 'PostgreSQL'
+  Note: '''Firma electrónica — El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.'''
+}
+
+Table "signature_batch_jobs" {
+  "job_id" bpchar(36) [pk, not null]
+  "user_id" int8
+  "sign_mode" varchar(40)
+  "status" varchar(20) [not null, default: 'queued']
+  "total" int4 [not null, default: 0]
+  "processed" int4 [not null, default: 0]
+  "success_count" int4 [not null, default: 0]
+  "failed_count" int4 [not null, default: 0]
+  "results" jsonb
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    status [type: btree, name: "idx_signature_batch_jobs_status"]
+    user_id [type: btree, name: "idx_signature_batch_jobs_user"]
+  }
+}
+
+Table "signature_flow_instances" {
+  "id" int4 [pk, not null, increment]
+  "template_id" int4 [not null]
+  "document_version_id" int4 [unique, not null]
+  "status_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "signature_flow_steps" {
+  "id" int4 [pk, not null, increment]
+  "template_id" int4 [not null]
+  "step_order" int4 [not null]
+  "code" varchar(120)
+  "name" varchar(180)
+  "slot" varchar(80)
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'document_owner'::text, 'specific_person'::text, 'position'::text, 'cargo_in_scope'::text, 'manual_pick'::text])`, default: 'cargo_in_scope']
+  "assigned_person_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text, 'context_subtree'::text, 'context_ancestor_type'::text])`, default: 'context_exact']
+  "unit_id" int4
+  "unit_type_id" int4
+  "position_id" int4
+  "required_cargo_id" int4
+  "selection_mode" varchar(20) [not null, default: 'auto_all']
+  "approval_mode" text [not null, check: `approval_mode = ANY (ARRAY['and'::text, 'or'::text, 'at_least'::text])`, default: 'and']
+  "required_signers_min" int4
+  "required_signers_max" int4
+  "is_required" int2 [not null, default: 1]
+  "anchor_refs" jsonb
+  "signers" jsonb
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (template_id, step_order) [type: btree, unique, name: "uq_signature_flow_steps"]
+    assigned_person_id [type: btree, name: "idx_signature_flow_steps_person"]
+    position_id [type: btree, name: "idx_signature_flow_steps_position"]
+    unit_id [type: btree, name: "idx_signature_flow_steps_unit"]
+    unit_type_id [type: btree, name: "idx_signature_flow_steps_unit_type"]
+  }
+}
+
+Table "signature_flow_templates" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_template_id" int4
+  "task_item_id" int4
+  "template_artifact_id" int4
+  "name" varchar(180) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    template_artifact_id [type: btree, name: "idx_signature_flow_templates_artifact"]
+    task_item_id [type: btree, name: "idx_signature_flow_templates_task_item"]
+  }
+}
+
+Table "signature_request_statuses" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "signature_requests" {
+  "id" int4 [pk, not null, increment]
+  "instance_id" int4 [not null]
+  "step_id" int4 [not null]
+  "assigned_person_id" int4
+  "status_id" int4 [not null]
+  "is_manual" int2 [not null, default: 0]
+  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "notified_at" timestamp
+  "responded_at" timestamp
+
+  Indexes {
+    (instance_id, step_id, assigned_person_id) [type: btree, unique, name: "uq_signature_requests"]
+    (instance_id, step_id) [type: btree, name: "idx_signature_requests_step"]
+  }
+}
+
+Table "signature_statuses" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Ref "fk_signature_flow_instances_status":"signature_request_statuses"."id" <? "signature_flow_instances"."status_id"
+Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
+Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signature_flow_steps"."template_id"
+Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
+Ref "fk_signature_requests_status":"signature_request_statuses"."id" <? "signature_requests"."status_id"
+Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_requests"."step_id"
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   signature_requests -> document_signatures   [tareas]
+//   signature_statuses -> document_signatures   [tareas]
+//   signature_requests -> document_workflow_observations   [tareas]
+//   document_versions -> signature_flow_instances   [tareas]
+//   cargos -> signature_flow_steps   [identidad]
+//   persons -> signature_flow_steps   [identidad]
+//   unit_positions -> signature_flow_steps   [organizacion]
+//   unit_types -> signature_flow_steps   [organizacion]
+//   units -> signature_flow_steps   [organizacion]
+//   template_artifacts -> signature_flow_templates   [plantillas]
+//   process_definition_templates -> signature_flow_templates   [procesos]
+//   task_items -> signature_flow_templates   [tareas]
+//   persons -> signature_requests   [identidad]

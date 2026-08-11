@@ -1,0 +1,32 @@
+{
+  "_readme": [
+    "Lo ÚNICO de este directorio que se escribe a mano.",
+    "",
+    "`consolidado.dbml` y `dominios/*.dbml` son ARTEFACTOS: los produce",
+    "`scripts/docs/gen-dbml.sh` introspeccionando PostgreSQL, y cualquier edición manual",
+    "se pierde en la siguiente regeneración (y la puerta de CI la detecta).",
+    "",
+    "Aquí va lo que la base NO puede contar de sí misma: qué SIGNIFICA una columna, por qué",
+    "existe, qué invariante sostiene. El generador lo inyecta como `Note` en el DBML, de modo",
+    "que la explicación viaja pegada al diagrama en vez de vivir en un .md que se descuelga.",
+    "",
+    "Formato: `tablas` lleva notas de tabla; `columnas` las lleva por `tabla.columna`.",
+    "Si nombras una tabla o columna que no existe, el generador FALLA a propósito: una",
+    "anotación huérfana es documentación que ya no describe nada."
+  ],
+
+  "tablas": {
+    "processes": "Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.",
+    "process_target_rules": "El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.",
+    "process_definition_templates": "El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.",
+    "deliverables": "El ENTREGABLE como identidad estable (el 'libro'). Sus versiones son `template_artifacts` (las 'ediciones'): la identidad vive aquí y sólo aquí.",
+    "template_artifacts": "Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.",
+    "fill_flow_templates": "Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).",
+    "dossiers": "El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula."
+  },
+
+  "columnas": {
+    "process_definition_templates.item_mode": "Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).",
+    "fill_flow_templates.template_artifact_id": "El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe."
+  }
+}

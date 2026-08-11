@@ -1,927 +1,1213 @@
-// Modelo de datos de Deasy — PostgreSQL
-// Generado desde backend/database/postgres_schema.sql (introspección de information_schema).
-// Fuente de verdad: postgres_schema.sql. Regenerar con tools de introspección si el schema cambia.
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Diagramas por dominio: docs/02-dominio-datos/dominios/
+// ============================================================================
 
 Project deasy {
   database_type: 'PostgreSQL'
+  Note: '''Modelo de datos de Deasy. 67 tablas.'''
 }
 
-Table actions {
-  id integer [pk, increment]
-  code varchar(40) [not null, unique]
-  name varchar(120) [not null]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "actions" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(120) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table aplications {
-  id integer [pk, increment]
-  person_id integer [not null]
-  vacancy_id integer [not null]
-  status text [not null, default: 'aplicado']
-  selected_flag smallint [note: "columna generada (STORED)"]
-  applied_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  note varchar(255)
-}
+Table "aplications" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "vacancy_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['aplicado'::text, 'preseleccionado'::text, 'entrevista'::text, 'rechazado'::text, 'retirado'::text, 'seleccionado'::text])`, default: 'aplicado']
+  "selected_flag" int2 [note: "columna generada (STORED)"]
+  "applied_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "note" varchar(255)
 
-Table cargo_role_map {
-  id integer [pk, increment]
-  role_id integer [not null]
-  cargo_id integer [not null]
-}
-
-Table cargos {
-  id integer [pk, increment]
-  code varchar(120) [not null, unique]
-  name varchar(120) [not null, unique]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table chat_conversation_participants {
-  id bigint [pk, increment]
-  conversation_id bigint [not null]
-  person_id integer [not null]
-  role varchar(20) [not null, default: 'member']
-  joined_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  left_at timestamp
-}
-
-Table chat_conversations {
-  id bigint [pk, increment]
-  type text [not null]
-  title text
-  process_id integer
-  scope_process_id integer
-  scope_unit_id integer
-  stable_key varchar(255)
-  scope_current_definition_id integer
-  scope_origin_definition_id integer
-  created_by integer [not null]
-  last_message_id bigint
-  last_message_at timestamp
-  archived_at timestamp
-  mobile_summary text
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table chat_message_attachments {
-  id bigint [pk, increment]
-  message_id bigint [not null]
-  sort_order integer [not null, default: 0]
-  path varchar(500) [not null]
-  filename varchar(255) [not null]
-  mime varchar(120)
-  size bigint [not null, default: 0]
-}
-
-Table chat_message_reads {
-  message_id bigint [not null]
-  person_id integer [not null]
-  read_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (message_id, person_id) [pk]
+  Indexes {
+    (vacancy_id, person_id) [type: btree, unique, name: "uq_application_once"]
+    (vacancy_id, selected_flag) [type: btree, unique, name: "uq_one_selected_per_vacancy"]
+    (person_id, applied_at) [type: btree, name: "idx_applications_person_time"]
+    (vacancy_id, status) [type: btree, name: "idx_applications_vacancy_status"]
   }
 }
 
-Table chat_messages {
-  id bigint [pk, increment]
-  conversation_id bigint [not null]
-  sender_person_id integer [not null]
-  content text [not null, default: '']
-  content_type varchar(20) [not null, default: 'text']
-  reply_to_message_id bigint
-  edited_at timestamp
-  deleted_at timestamp
-  delivery_state varchar(20)
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "cargo_role_map" {
+  "id" int4 [pk, not null, increment]
+  "role_id" int4 [not null]
+  "cargo_id" int4 [not null]
+
+  Indexes {
+    (cargo_id, role_id) [type: btree, unique, name: "uq_cargo_role_map"]
+  }
 }
 
-Table chat_notifications {
-  id bigint [pk, increment]
-  recipient_person_id integer [not null]
-  type varchar(80) [not null]
-  title text [not null]
-  body text [not null]
-  entity_type varchar(40)
-  entity_id varchar(64)
-  conversation_id bigint
-  message_id bigint
-  channel varchar(20) [not null, default: 'in_app']
-  read_at timestamp
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "cargos" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(120) [unique, not null]
+  "name" varchar(120) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table contract_origin_recruitment {
-  contract_id integer [pk]
-  offer_id integer [not null, unique]
-  vacancy_id integer [not null, unique]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "chat_conversation_participants" {
+  "id" int8 [pk, not null, increment]
+  "conversation_id" int8 [not null]
+  "person_id" int4 [not null]
+  "role" varchar(20) [not null, default: 'member']
+  "joined_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "left_at" timestamp
+
+  Indexes {
+    (conversation_id, person_id) [type: btree, unique, name: "uq_chat_participant"]
+    (person_id, conversation_id) [type: btree, name: "idx_chat_participant_person"]
+  }
 }
 
-Table contract_origin_renewal {
-  contract_id integer [pk]
-  renewed_from_contract_id integer [not null]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "chat_conversations" {
+  "id" int8 [pk, not null, increment]
+  "type" text [not null, check: `type = ANY (ARRAY['direct'::text, 'group'::text, 'thread'::text, 'process_thread'::text, 'unit'::text])`]
+  "title" text
+  "process_id" int4
+  "scope_process_id" int4
+  "scope_unit_id" int4
+  "stable_key" varchar(255) [unique]
+  "scope_current_definition_id" int4
+  "scope_origin_definition_id" int4
+  "created_by" int4 [not null]
+  "last_message_id" int8
+  "last_message_at" timestamp
+  "archived_at" timestamp
+  "mobile_summary" text
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (type, process_id) [type: btree, name: "idx_chat_conversations_process"]
+  }
 }
 
-Table contract_origins {
-  contract_id integer [pk]
-  origin_type text [not null]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "chat_message_attachments" {
+  "id" int8 [pk, not null, increment]
+  "message_id" int8 [not null]
+  "sort_order" int4 [not null, default: 0]
+  "path" varchar(500) [not null]
+  "filename" varchar(255) [not null]
+  "mime" varchar(120)
+  "size" int8 [not null, default: 0]
+
+  Indexes {
+    (message_id, sort_order) [type: btree, name: "idx_chat_attachments_message"]
+  }
 }
 
-Table contracts {
-  id integer [pk, increment]
-  person_id integer [not null]
-  position_id integer [not null]
-  relation_type varchar(60) [not null]
-  dedication varchar(30) [not null]
-  start_date date [not null]
-  end_date date
-  status text [not null, default: 'activo']
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "chat_message_reads" {
+  "message_id" int8 [not null]
+  "person_id" int4 [not null]
+  "read_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (message_id, person_id) [pk, type: btree, name: "chat_message_reads_pkey"]
+  }
 }
 
-Table deliverables {
-  id integer [pk, increment]
-  code varchar(180) [not null]
-  display_name varchar(180) [not null]
-  description varchar(255)
-  owner_process_id integer
-  owner_variation_key varchar(120)
-  template_scope text [not null, default: 'official']
-  template_seed_id integer
-  owner_person_id integer
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "chat_messages" {
+  "id" int8 [pk, not null, increment]
+  "conversation_id" int8 [not null]
+  "sender_person_id" int4 [not null]
+  "content" text [not null, default: '']
+  "content_type" varchar(20) [not null, check: `(content_type)::text = ANY ((ARRAY['text'::character varying, 'system'::character varying, 'attachment'::character varying])::text[])`, default: 'text']
+  "reply_to_message_id" int8
+  "edited_at" timestamp
+  "deleted_at" timestamp
+  "delivery_state" varchar(20)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (conversation_id, created_at) [type: btree, name: "idx_chat_messages_conversation"]
+    (sender_person_id, created_at) [type: btree, name: "idx_chat_messages_sender"]
+  }
 }
 
-Table document_attachments {
-  id integer [pk, increment]
-  document_version_id integer [not null]
-  kind text [not null, default: 'annex']
-  file_path varchar(255) [not null]
-  file_name varchar(255) [not null]
-  mime_type varchar(120)
-  size_bytes bigint
-  description varchar(255)
-  uploaded_by_person_id integer
-  sort_order integer [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "chat_notifications" {
+  "id" int8 [pk, not null, increment]
+  "recipient_person_id" int4 [not null]
+  "type" varchar(80) [not null]
+  "title" text [not null]
+  "body" text [not null]
+  "entity_type" varchar(40)
+  "entity_id" varchar(64)
+  "conversation_id" int8
+  "message_id" int8
+  "channel" varchar(20) [not null, default: 'in_app']
+  "read_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (recipient_person_id, created_at) [type: btree, name: "idx_chat_notif_recipient_created"]
+    (recipient_person_id, read_at) [type: btree, name: "idx_chat_notif_recipient_read"]
+  }
 }
 
-Table document_fill_flows {
-  id integer [pk, increment]
-  fill_flow_template_id integer [not null]
-  document_version_id integer [not null]
-  status text [not null, default: 'pending']
-  current_step_order integer
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "contract_origin_recruitment" {
+  "contract_id" int4 [pk, not null]
+  "offer_id" int4 [unique, not null]
+  "vacancy_id" int4 [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table document_signatures {
-  id integer [pk, increment]
-  signature_request_id integer
-  document_version_id integer [not null]
-  signer_user_id integer [not null]
-  signature_status_id integer [not null]
-  note_short varchar(255)
-  signed_file_path varchar(255)
-  signed_at timestamp
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "contract_origin_renewal" {
+  "contract_id" int4 [pk, not null]
+  "renewed_from_contract_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    renewed_from_contract_id [type: btree, name: "idx_renewed_from_contract"]
+  }
 }
 
-Table document_versions {
-  id integer [pk, increment]
-  document_id integer [not null]
-  version numeric(4,1) [not null, default: 0.1]
-  template_artifact_id integer
-  payload_hash varchar(64)
-  payload_object_path varchar(255)
-  working_file_path varchar(255)
-  final_file_path varchar(255)
-  format varchar(40)
-  render_engine varchar(80)
-  status varchar(30) [not null, default: 'Borrador']
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "contract_origins" {
+  "contract_id" int4 [pk, not null]
+  "origin_type" text [not null, check: `origin_type = ANY (ARRAY['recruitment'::text, 'renewal'::text])`]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table document_workflow_observations {
-  id integer [pk, increment]
-  task_item_id integer [not null]
-  document_version_id integer [not null]
-  fill_request_id integer
-  signature_request_id integer
-  phase text [not null]
-  kind text [not null, default: 'observation']
-  message text [not null]
-  author_person_id integer [not null]
-  target_person_id integer
-  resolved_by_person_id integer
-  resolved_at timestamp
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "contracts" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "position_id" int4 [not null]
+  "relation_type" varchar(60) [not null]
+  "dedication" varchar(30) [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "status" text [not null, check: `status = ANY (ARRAY['activo'::text, 'finalizado'::text, 'cancelado'::text])`, default: 'activo']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, status) [type: btree, name: "idx_contracts_person_status"]
+    (position_id, status) [type: btree, name: "idx_contracts_position_status"]
+  }
 }
 
-Table documents {
-  id integer [pk, increment]
-  task_item_id integer
-  owner_person_id integer
-  origin_unit_id integer
-  origin_type text [not null, default: 'task_item']
-  title varchar(180)
-  status varchar(30) [not null, default: 'Inicial']
-  comments_thread_ref varchar(64)
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp
+Table "deliverables" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "display_name" varchar(180) [not null]
+  "description" varchar(255)
+  "owner_process_id" int4
+  "owner_variation_key" varchar(120)
+  "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
+  "template_seed_id" int4
+  "owner_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (owner_process_id, owner_variation_key) [type: btree, name: "idx_deliverables_owner"]
+  }
+
+  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
 }
 
-Table dossier_items {
-  id bigint [pk, increment]
-  dossier_id bigint [not null]
-  section varchar(20) [not null]
-  data jsonb [not null, default: '{}']
-  url_documento text [not null, default: '']
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "document_attachments" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "kind" text [not null, check: `kind = ANY (ARRAY['annex'::text, 'evidence'::text, 'source'::text, 'other'::text])`, default: 'annex']
+  "file_path" varchar(255) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120)
+  "size_bytes" int8
+  "description" varchar(255)
+  "uploaded_by_person_id" int4
+  "sort_order" int4 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    uploaded_by_person_id [type: btree, name: "idx_document_attachments_uploader"]
+    (document_version_id, sort_order) [type: btree, name: "idx_document_attachments_version"]
+  }
 }
 
-Table dossiers {
-  id bigint [pk, increment]
-  person_id integer [not null]
-  cedula varchar(20)
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "document_fill_flows" {
+  "id" int4 [pk, not null, increment]
+  "fill_flow_template_id" int4 [not null]
+  "document_version_id" int4 [unique, not null]
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'approved'::text, 'rejected'::text, 'cancelled'::text])`, default: 'pending']
+  "current_step_order" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table email_verification_codes {
-  id bigint [pk, increment]
-  person_id integer [not null]
-  code_hash varchar(255) [not null]
-  expires_at timestamp [not null]
-  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+Table "document_signatures" {
+  "id" int4 [pk, not null, increment]
+  "signature_request_id" int4
+  "document_version_id" int4 [not null]
+  "signer_user_id" int4 [not null]
+  "signature_status_id" int4 [not null]
+  "note_short" varchar(255)
+  "signed_file_path" varchar(255)
+  "signed_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table fill_flow_steps {
-  id integer [pk, increment]
-  fill_flow_template_id integer [not null]
-  step_order integer [not null]
-  resolver_type text [not null, default: 'task_assignee']
-  assigned_person_id integer
-  unit_scope_type text [not null, default: 'unit_exact']
-  unit_id integer
-  unit_type_id integer
-  relation_type_id integer
-  cargo_id integer
-  position_id integer
-  selection_mode text [not null, default: 'auto_one']
-  is_required smallint [not null, default: 1]
-  can_reject smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "document_versions" {
+  "id" int4 [pk, not null, increment]
+  "document_id" int4 [not null]
+  "version" numeric(4,1) [not null, default: 0.1]
+  "template_artifact_id" int4
+  "payload_hash" varchar(64)
+  "payload_object_path" varchar(255)
+  "working_file_path" varchar(255)
+  "final_file_path" varchar(255)
+  "format" varchar(40)
+  "render_engine" varchar(80)
+  "status" varchar(30) [not null, default: 'Borrador']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (document_id, version) [type: btree, unique, name: "uq_document_versions"]
+    template_artifact_id [type: btree, name: "idx_document_versions_artifact"]
+  }
 }
 
-Table fill_flow_templates {
-  id integer [pk, increment]
-  process_definition_template_id integer [not null]
-  task_item_id integer
-  name varchar(180) [not null]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "document_workflow_observations" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "document_version_id" int4 [not null]
+  "fill_request_id" int4
+  "signature_request_id" int4
+  "phase" text [not null, check: `phase = ANY (ARRAY['review'::text, 'signature'::text])`]
+  "kind" text [not null, check: `kind = ANY (ARRAY['observation'::text, 'return_reason'::text, 'rejection_reason'::text, 'internal_note'::text])`, default: 'observation']
+  "message" text [not null]
+  "author_person_id" int4 [not null]
+  "target_person_id" int4
+  "resolved_by_person_id" int4
+  "resolved_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    author_person_id [type: btree, name: "idx_document_workflow_observations_author"]
+    fill_request_id [type: btree, name: "idx_document_workflow_observations_fill_request"]
+    (task_item_id, created_at) [type: btree, name: "idx_document_workflow_observations_item"]
+    signature_request_id [type: btree, name: "idx_document_workflow_observations_signature_request"]
+    target_person_id [type: btree, name: "idx_document_workflow_observations_target"]
+    (document_version_id, created_at) [type: btree, name: "idx_document_workflow_observations_version"]
+  }
 }
 
-Table fill_requests {
-  id integer [pk, increment]
-  document_fill_flow_id integer [not null]
-  fill_flow_step_id integer [not null]
-  assigned_person_id integer
-  status text [not null, default: 'pending']
-  is_manual smallint [not null, default: 0]
-  requested_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  responded_at timestamp
-  response_note varchar(255)
+Table "documents" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [unique]
+  "owner_person_id" int4
+  "origin_unit_id" int4
+  "title" varchar(180)
+  "status" varchar(30) [not null, default: 'Inicial']
+  "comments_thread_ref" varchar(64)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp
+
+  Indexes {
+    origin_unit_id [type: btree, name: "idx_documents_origin_unit"]
+    owner_person_id [type: btree, name: "idx_documents_owner_person"]
+  }
 }
 
-Table offers {
-  id integer [pk, increment]
-  application_id integer [not null]
-  status text [not null, default: 'enviada']
-  active_flag smallint [note: "columna generada (STORED)"]
-  terms_snapshot text
-  sent_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  responded_at timestamp
-  expires_at timestamp
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "dossier_items" {
+  "id" int8 [pk, not null, increment]
+  "dossier_id" int8 [not null]
+  "section" varchar(20) [not null]
+  "data" jsonb [not null, default: `{}`]
+  "url_documento" text [not null, default: '']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (dossier_id, section, id) [type: btree, name: "idx_dossier_items"]
+  }
 }
 
-Table password_reset_codes {
-  id bigint [pk, increment]
-  person_id integer [not null]
-  code_hash varchar(255) [not null]
-  expires_at timestamp [not null]
-  used smallint [default: 0]
-  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+Table "dossiers" {
+  "id" int8 [pk, not null, increment]
+  "person_id" int4 [unique, not null]
+  "cedula" varchar(20)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    cedula [type: btree, name: "idx_dossiers_cedula"]
+  }
+
+  Note: '''El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.'''
 }
 
-Table permissions {
-  id integer [pk, increment]
-  resource_id integer [not null]
-  action_id integer [not null]
-  code varchar(120) [not null]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "email_verification_codes" {
+  "id" int8 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "code_hash" varchar(255) [not null]
+  "expires_at" timestamp [not null]
+  "created_at" timestamp [default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    expires_at [type: btree, name: "idx_evc_expires_at"]
+    person_id [type: btree, name: "idx_evc_person_id"]
+  }
 }
 
-Table person_certificates {
-  id integer [pk, increment]
-  person_id integer [not null]
-  label varchar(180) [not null]
-  original_filename varchar(255) [not null]
-  bucket varchar(120) [not null]
-  object_name varchar(500) [not null]
-  is_default smallint [not null, default: 0]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "fill_flow_steps" {
+  "id" int4 [pk, not null, increment]
+  "fill_flow_template_id" int4 [not null]
+  "step_order" int4 [not null]
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'document_owner'::text, 'specific_person'::text, 'position'::text, 'cargo_in_scope'::text, 'manual_pick'::text])`, default: 'task_assignee']
+  "assigned_person_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text, 'context_subtree'::text, 'context_ancestor_type'::text])`, default: 'unit_exact']
+  "unit_id" int4
+  "unit_type_id" int4
+  "relation_type_id" int4
+  "cargo_id" int4
+  "position_id" int4
+  "selection_mode" text [not null, check: `selection_mode = ANY (ARRAY['auto_one'::text, 'auto_all'::text, 'manual'::text])`, default: 'auto_one']
+  "is_required" int2 [not null, default: 1]
+  "can_reject" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (fill_flow_template_id, step_order) [type: btree, unique, name: "uq_fill_flow_steps"]
+  }
 }
 
-Table persons {
-  id integer [pk, increment]
-  cedula varchar(20) [unique]
-  first_name varchar(120) [not null]
-  last_name varchar(120) [not null]
-  email varchar(180) [unique]
-  whatsapp varchar(30)
-  direccion varchar(255)
-  pais varchar(80)
-  pais_residencia varchar(80)
-  provincia_residencia varchar(120)
-  ciudad_residencia varchar(120)
-  calle_primaria varchar(180)
-  calle_secundaria varchar(180)
-  codigo_postal varchar(30)
-  password_hash varchar(255) [not null]
-  status text [default: 'Inactivo']
-  verify_email smallint [default: 0]
-  verify_whatsapp smallint [default: 0]
-  photo_url text
-  is_active smallint [not null, default: 1]
-  token varchar(10) [not null, unique]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "fill_flow_templates" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_template_id" int4
+  "task_item_id" int4
+  "template_artifact_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
+  "name" varchar(180) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    template_artifact_id [type: btree, name: "idx_fill_flow_templates_artifact"]
+    task_item_id [type: btree, name: "idx_fill_flow_templates_task_item"]
+  }
+
+  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).'''
 }
 
-Table position_assignments {
-  id integer [pk, increment]
-  position_id integer [not null]
-  person_id integer [not null]
-  start_date date [not null]
-  end_date date
-  is_current smallint [not null, default: 1]
-  current_flag smallint [note: "columna generada (STORED)"]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "fill_requests" {
+  "id" int4 [pk, not null, increment]
+  "document_fill_flow_id" int4 [not null]
+  "fill_flow_step_id" int4 [not null]
+  "assigned_person_id" int4
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'approved'::text, 'rejected'::text, 'returned'::text, 'cancelled'::text])`, default: 'pending']
+  "is_manual" int2 [not null, default: 0]
+  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "responded_at" timestamp
+  "response_note" varchar(255)
+
+  Indexes {
+    (document_fill_flow_id, fill_flow_step_id, assigned_person_id) [type: btree, unique, name: "uq_fill_requests"]
+    (document_fill_flow_id, fill_flow_step_id) [type: btree, name: "idx_fill_requests_step"]
+  }
 }
 
-Table process_definition_period_types {
-  id integer [pk, increment]
-  process_definition_id integer [not null]
-  term_type_id integer [not null]
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "offers" {
+  "id" int4 [pk, not null, increment]
+  "application_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['enviada'::text, 'aceptada'::text, 'rechazada'::text, 'retractada'::text, 'expirada'::text])`, default: 'enviada']
+  "active_flag" int2 [note: "columna generada (STORED)"]
+  "terms_snapshot" text
+  "sent_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "responded_at" timestamp
+  "expires_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (application_id, active_flag) [type: btree, unique, name: "uq_one_active_offer_per_application"]
+    (application_id, status) [type: btree, name: "idx_offers_application_status"]
+  }
 }
 
-Table process_definition_series {
-  id integer [pk, increment]
-  source_type text [not null, default: 'default']
-  unit_type_id integer
-  cargo_id integer
-  code varchar(120) [not null]
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "password_reset_codes" {
+  "id" int8 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "code_hash" varchar(255) [not null]
+  "expires_at" timestamp [not null]
+  "used" int2 [default: 0]
+  "created_at" timestamp [default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    expires_at [type: btree, name: "idx_prc_expires_at"]
+    person_id [type: btree, name: "idx_prc_person_id"]
+  }
 }
 
-Table process_definition_templates {
-  id integer [pk, increment]
-  process_definition_id integer [not null]
-  template_artifact_id integer [not null]
-  sort_order integer [not null, default: 1]
-  item_mode text [not null, default: 'single']
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "permissions" {
+  "id" int4 [pk, not null, increment]
+  "resource_id" int4 [not null]
+  "action_id" int4 [not null]
+  "code" varchar(120) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (resource_id, action_id) [type: btree, unique, name: "uq_permissions_resource_action"]
+    action_id [type: btree, name: "idx_permissions_action"]
+    resource_id [type: btree, name: "idx_permissions_resource"]
+  }
 }
 
-Table process_definition_versions {
-  id integer [pk, increment]
-  process_id integer [not null]
-  series_id integer [not null]
-  variation_key varchar(120) [not null, default: 'general']
-  definition_version varchar(20) [not null]
-  name varchar(180) [not null]
-  description varchar(255)
-  status text [not null, default: 'draft']
-  active_series_flag smallint [note: "columna generada (STORED)"]
-  effective_from date [not null]
-  effective_to date
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "person_certificates" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "label" varchar(180) [not null]
+  "original_filename" varchar(255) [not null]
+  "bucket" varchar(120) [not null]
+  "object_name" varchar(500) [not null]
+  "is_default" int2 [not null, default: 0]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, is_default) [type: btree, name: "idx_person_certificates_default"]
+    person_id [type: btree, name: "idx_person_certificates_person"]
+  }
 }
 
-Table process_runs {
-  id integer [pk, increment]
-  process_definition_id integer [not null]
-  term_id integer
-  run_mode text [not null, default: 'manual']
-  source_run_id integer
-  created_by_user_id integer
-  reason varchar(255)
-  status text [not null, default: 'active']
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "persons" {
+  "id" int4 [pk, not null, increment]
+  "cedula" varchar(20) [unique]
+  "first_name" varchar(120) [not null]
+  "last_name" varchar(120) [not null]
+  "email" varchar(180) [unique]
+  "whatsapp" varchar(30)
+  "direccion" varchar(255)
+  "pais" varchar(80)
+  "pais_residencia" varchar(80)
+  "provincia_residencia" varchar(120)
+  "ciudad_residencia" varchar(120)
+  "calle_primaria" varchar(180)
+  "calle_secundaria" varchar(180)
+  "codigo_postal" varchar(30)
+  "password_hash" varchar(255) [not null]
+  "status" text [check: `status = ANY (ARRAY['Inactivo'::text, 'Activo'::text, 'Verificado'::text, 'Reportado'::text])`, default: 'Inactivo']
+  "verify_email" int2 [default: 0]
+  "verify_whatsapp" int2 [default: 0]
+  "photo_url" text
+  "is_active" int2 [not null, default: 1]
+  "token" varchar(10) [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table process_target_rules {
-  id integer [pk, increment]
-  process_definition_id integer [not null]
-  unit_scope_type text [not null, default: 'unit_exact']
-  unit_id integer
-  unit_type_id integer
-  cargo_id integer
-  position_id integer
-  recipient_policy text [not null, default: 'all_matches']
-  priority integer [not null, default: 1]
-  is_active smallint [not null, default: 1]
-  effective_from date
-  effective_to date
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "position_assignments" {
+  "id" int4 [pk, not null, increment]
+  "position_id" int4 [not null]
+  "person_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "is_current" int2 [not null, default: 1]
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, current_flag) [type: btree, unique, name: "uq_position_current"]
+    (person_id, is_current) [type: btree, name: "idx_assignments_person_current"]
+  }
 }
 
-Table processes {
-  id integer [pk, increment]
-  name varchar(180) [not null]
-  slug varchar(180) [not null, unique]
-  parent_id integer
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "process_definition_period_types" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_type_id" int4 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_type_id) [type: btree, unique, name: "uq_process_definition_period_types"]
+    (process_definition_id, is_active) [type: btree, name: "idx_process_definition_period_types_lookup"]
+    term_type_id [type: btree, name: "idx_process_definition_period_types_term_type"]
+  }
 }
 
-Table relation_unit_types {
-  id integer [pk, increment]
-  code varchar(40) [not null, unique]
-  name varchar(40) [not null]
-  description varchar(255)
-  is_inheritance_allowed smallint [not null, default: 0]
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "process_definition_series" {
+  "id" int4 [pk, not null, increment]
+  "source_type" text [not null, check: `source_type = ANY (ARRAY['unit_type'::text, 'cargo'::text, 'default'::text])`, default: 'default']
+  "unit_type_id" int4
+  "cargo_id" int4
+  "code" varchar(120) [unique, not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    is_active [type: btree, name: "idx_process_definition_series_state"]
+  }
 }
 
-Table resources {
-  id integer [pk, increment]
-  code varchar(80) [not null, unique]
-  name varchar(120) [not null]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "process_definition_templates" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "template_artifact_id" int4 [not null]
+  "sort_order" int4 [not null, default: 1]
+  "item_mode" text [not null, check: `item_mode = ANY (ARRAY['single'::text, 'replicated'::text, 'routed'::text])`, default: 'single', note: '''Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, template_artifact_id) [type: btree, unique, name: "uq_process_definition_templates"]
+  }
+
+  Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
 }
 
-Table role_assignment_relation_types {
-  id integer [pk, increment]
-  relation_type_id integer [not null]
-  role_assignment_id integer [not null]
+Table "process_definition_versions" {
+  "id" int4 [pk, not null, increment]
+  "process_id" int4 [not null]
+  "series_id" int4 [not null]
+  "variation_key" varchar(120) [not null, default: 'general']
+  "definition_version" varchar(20) [not null]
+  "name" varchar(180) [not null]
+  "description" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['draft'::text, 'active'::text, 'retired'::text])`, default: 'draft']
+  "active_series_flag" int2 [note: "columna generada (STORED)"]
+  "effective_from" date [not null]
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, variation_key, active_series_flag) [type: btree, unique, name: "uq_process_definition_one_active_series"]
+    (process_id, variation_key, definition_version) [type: btree, unique, name: "uq_process_definition_versions_series"]
+    (process_id, variation_key, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
+  }
 }
 
-Table role_assignments {
-  id integer [pk, increment]
-  role_id integer [not null]
-  unit_id integer [not null]
-  derived_from_assignment_id integer
-  source text [not null, default: 'manual']
-  person_id integer [not null]
-  max_depth integer [not null]
-  start_date date [not null]
-  end_date date
-  is_current smallint [not null, default: 1]
-  current_flag smallint [note: "columna generada (STORED)"]
-  assigned_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  revoked_at timestamp
-  revoked_reason varchar(255)
+Table "process_runs" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_id" int4
+  "run_mode" text [not null, check: `run_mode = ANY (ARRAY['automatic'::text, 'manual'::text])`, default: 'manual']
+  "source_run_id" int4
+  "created_by_user_id" int4
+  "reason" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'active'::text, 'completed'::text, 'cancelled'::text])`, default: 'active']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, status) [type: btree, name: "idx_process_runs_definition"]
+    term_id [type: btree, name: "idx_process_runs_term"]
+  }
 }
 
-Table role_permissions {
-  id integer [pk, increment]
-  role_id integer [not null]
-  permission_id integer [not null]
+Table "process_target_rules" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text])`, default: 'unit_exact']
+  "unit_id" int4
+  "unit_type_id" int4
+  "cargo_id" int4
+  "position_id" int4
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'one_per_unit'::text, 'exact_position'::text])`, default: 'all_matches']
+  "priority" int4 [not null, default: 1]
+  "is_active" int2 [not null, default: 1]
+  "effective_from" date
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, is_active) [type: btree, name: "idx_process_target_rules_definition"]
+    (unit_scope_type, unit_id, unit_type_id) [type: btree, name: "idx_process_target_rules_scope"]
+  }
+
+  Note: '''El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.'''
 }
 
-Table roles {
-  id integer [pk, increment]
-  name varchar(120) [not null, unique]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
+Table "processes" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "slug" varchar(180) [unique, not null]
+  "parent_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
 }
 
-Table signature_batch_jobs {
-  job_id char(36) [pk]
-  user_id bigint
-  sign_mode varchar(40)
-  status varchar(20) [not null, default: 'queued']
-  total integer [not null, default: 0]
-  processed integer [not null, default: 0]
-  success_count integer [not null, default: 0]
-  failed_count integer [not null, default: 0]
-  results jsonb
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "relation_unit_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(40) [not null]
+  "description" varchar(255)
+  "is_inheritance_allowed" int2 [not null, default: 0]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table signature_flow_instances {
-  id integer [pk, increment]
-  template_id integer [not null]
-  document_version_id integer [not null]
-  status_id integer [not null]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "resources" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(80) [unique, not null]
+  "name" varchar(120) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table signature_flow_steps {
-  id integer [pk, increment]
-  template_id integer [not null]
-  step_order integer [not null]
-  code varchar(120)
-  name varchar(180)
-  slot varchar(80)
-  resolver_type text [not null, default: 'cargo_in_scope']
-  assigned_person_id integer
-  unit_scope_type text [not null, default: 'context_exact']
-  unit_id integer
-  unit_type_id integer
-  position_id integer
-  required_cargo_id integer
-  selection_mode varchar(20) [not null, default: 'auto_all']
-  approval_mode text [not null, default: 'and']
-  required_signers_min integer
-  required_signers_max integer
-  is_required smallint [not null, default: 1]
-  anchor_refs jsonb
-  signers jsonb
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "role_assignment_relation_types" {
+  "id" int4 [pk, not null, increment]
+  "relation_type_id" int4 [not null]
+  "role_assignment_id" int4 [not null]
+
+  Indexes {
+    (role_assignment_id, relation_type_id) [type: btree, name: "idx_role_assignment_relation_types"]
+  }
 }
 
-Table signature_flow_templates {
-  id integer [pk, increment]
-  process_definition_template_id integer [not null]
-  task_item_id integer
-  name varchar(180) [not null]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "role_assignments" {
+  "id" int4 [pk, not null, increment]
+  "role_id" int4 [not null]
+  "unit_id" int4 [not null]
+  "derived_from_assignment_id" int4
+  "source" text [not null, check: `source = ANY (ARRAY['manual'::text, 'derived'::text])`, default: 'manual']
+  "person_id" int4 [not null]
+  "max_depth" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "is_current" int2 [not null, default: 1]
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "assigned_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "revoked_at" timestamp
+  "revoked_reason" varchar(255)
+
+  Indexes {
+    (person_id, role_id, unit_id, source, current_flag) [type: btree, unique, name: "uq_role_assignment_current"]
+    person_id [type: btree, name: "idx_role_assignments_person"]
+    unit_id [type: btree, name: "idx_role_assignments_unit"]
+  }
 }
 
-Table signature_request_statuses {
-  id integer [pk, increment]
-  code varchar(40) [not null, unique]
-  name varchar(80) [not null]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "role_permissions" {
+  "id" int4 [pk, not null, increment]
+  "role_id" int4 [not null]
+  "permission_id" int4 [not null]
+
+  Indexes {
+    (role_id, permission_id) [type: btree, unique, name: "uq_role_permissions"]
+  }
 }
 
-Table signature_requests {
-  id integer [pk, increment]
-  instance_id integer [not null]
-  step_id integer [not null]
-  assigned_person_id integer
-  status_id integer [not null]
-  is_manual smallint [not null, default: 0]
-  requested_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  notified_at timestamp
-  responded_at timestamp
+Table "roles" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(120) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
 }
 
-Table signature_statuses {
-  id integer [pk, increment]
-  code varchar(40) [not null, unique]
-  name varchar(80) [not null]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "signature_batch_jobs" {
+  "job_id" bpchar(36) [pk, not null]
+  "user_id" int8
+  "sign_mode" varchar(40)
+  "status" varchar(20) [not null, default: 'queued']
+  "total" int4 [not null, default: 0]
+  "processed" int4 [not null, default: 0]
+  "success_count" int4 [not null, default: 0]
+  "failed_count" int4 [not null, default: 0]
+  "results" jsonb
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    status [type: btree, name: "idx_signature_batch_jobs_status"]
+    user_id [type: btree, name: "idx_signature_batch_jobs_user"]
+  }
 }
 
-Table task_assignments {
-  id integer [pk, increment]
-  task_id integer [not null]
-  position_id integer [not null]
-  assigned_person_id integer
-  status varchar(30) [not null, default: 'pendiente']
-  assigned_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  unassigned_at timestamp
+Table "signature_flow_instances" {
+  "id" int4 [pk, not null, increment]
+  "template_id" int4 [not null]
+  "document_version_id" int4 [unique, not null]
+  "status_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table task_item_handovers {
-  id integer [pk, increment]
-  task_item_id integer [not null]
-  from_person_id integer
-  to_person_id integer
-  reason varchar(255)
-  trigger_kind text [not null, default: 'manual']
-  performed_by_user_id bigint
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "signature_flow_steps" {
+  "id" int4 [pk, not null, increment]
+  "template_id" int4 [not null]
+  "step_order" int4 [not null]
+  "code" varchar(120)
+  "name" varchar(180)
+  "slot" varchar(80)
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'document_owner'::text, 'specific_person'::text, 'position'::text, 'cargo_in_scope'::text, 'manual_pick'::text])`, default: 'cargo_in_scope']
+  "assigned_person_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text, 'context_subtree'::text, 'context_ancestor_type'::text])`, default: 'context_exact']
+  "unit_id" int4
+  "unit_type_id" int4
+  "position_id" int4
+  "required_cargo_id" int4
+  "selection_mode" varchar(20) [not null, default: 'auto_all']
+  "approval_mode" text [not null, check: `approval_mode = ANY (ARRAY['and'::text, 'or'::text, 'at_least'::text])`, default: 'and']
+  "required_signers_min" int4
+  "required_signers_max" int4
+  "is_required" int2 [not null, default: 1]
+  "anchor_refs" jsonb
+  "signers" jsonb
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (template_id, step_order) [type: btree, unique, name: "uq_signature_flow_steps"]
+    assigned_person_id [type: btree, name: "idx_signature_flow_steps_person"]
+    position_id [type: btree, name: "idx_signature_flow_steps_position"]
+    unit_id [type: btree, name: "idx_signature_flow_steps_unit"]
+    unit_type_id [type: btree, name: "idx_signature_flow_steps_unit_type"]
+  }
 }
 
-Table task_items {
-  id integer [pk, increment]
-  task_id integer [not null]
-  process_definition_template_id integer
-  template_artifact_id integer [not null]
-  origin_kind text [not null, default: 'process_defined']
-  title varchar(180)
-  sort_order integer [not null, default: 1]
-  created_by_person_id integer
-  source_task_item_id integer
-  target_unit_id integer
-  target_position_id integer
-  target_person_id integer
-  process_definition_template_key integer [note: "columna generada (STORED)"]
-  target_position_key integer [note: "columna generada (STORED)"]
-  target_person_key integer [note: "columna generada (STORED)"]
-  responsible_position_id integer
-  assigned_person_id integer
-  start_date date [not null]
-  end_date date
-  user_started_at timestamp
-  status varchar(30) [not null, default: 'pendiente']
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "signature_flow_templates" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_template_id" int4
+  "task_item_id" int4
+  "template_artifact_id" int4
+  "name" varchar(180) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    template_artifact_id [type: btree, name: "idx_signature_flow_templates_artifact"]
+    task_item_id [type: btree, name: "idx_signature_flow_templates_task_item"]
+  }
 }
 
-Table tasks {
-  id integer [pk, increment]
-  process_definition_id integer [not null]
-  process_run_id integer
-  term_id integer [not null]
-  scope_unit_id integer
-  normalized_scope_unit_id integer [note: "columna generada (STORED)"]
-  created_by_user_id integer
-  responsible_position_id integer
-  description text
-  comments_thread_ref varchar(64)
-  start_date date [not null]
-  end_date date
-  status varchar(30) [not null, default: 'pendiente']
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "signature_request_statuses" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table template_artifacts {
-  id integer [pk, increment]
-  deliverable_id integer [not null]
-  storage_version varchar(20) [not null]
-  lifecycle_state text [not null, default: 'published']
-  base_object_prefix varchar(255) [not null]
-  available_formats jsonb [not null]
-  schema_object_key varchar(255) [not null]
-  meta_object_key varchar(255) [not null]
-  content_hash varchar(64)
-  parent_version_id integer
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "signature_requests" {
+  "id" int4 [pk, not null, increment]
+  "instance_id" int4 [not null]
+  "step_id" int4 [not null]
+  "assigned_person_id" int4
+  "status_id" int4 [not null]
+  "is_manual" int2 [not null, default: 0]
+  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "notified_at" timestamp
+  "responded_at" timestamp
+
+  Indexes {
+    (instance_id, step_id, assigned_person_id) [type: btree, unique, name: "uq_signature_requests"]
+    (instance_id, step_id) [type: btree, name: "idx_signature_requests_step"]
+  }
 }
 
-Table template_seeds {
-  id integer [pk, increment]
-  seed_code varchar(180) [not null]
-  display_name varchar(180) [not null]
-  description varchar(255)
-  seed_type varchar(40) [not null]
-  source_path varchar(255) [not null]
-  preview_path varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "signature_statuses" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table term_types {
-  id integer [pk, increment]
-  code varchar(40) [not null, unique]
-  name varchar(80) [not null, unique]
-  description varchar(255)
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "task_assignments" {
+  "id" int4 [pk, not null, increment]
+  "task_id" int4 [not null]
+  "position_id" int4 [not null]
+  "assigned_person_id" int4
+  "status" varchar(30) [not null, default: 'pendiente']
+  "assigned_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "unassigned_at" timestamp
+
+  Indexes {
+    (task_id, position_id) [type: btree, unique, name: "uq_task_assignment_position"]
+    assigned_person_id [type: btree, name: "idx_task_assignments_person"]
+  }
 }
 
-Table terms {
-  id integer [pk, increment]
-  name varchar(60) [not null, unique]
-  term_type_id integer [not null]
-  start_date date [not null]
-  end_date date [not null]
-  is_active smallint [not null, default: 1]
+Table "task_item_handovers" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "from_person_id" int4
+  "to_person_id" int4
+  "reason" varchar(255)
+  "trigger_kind" text [not null, check: `trigger_kind = ANY (ARRAY['occupancy_end'::text, 'position_deactivated'::text, 'manual'::text])`, default: 'manual']
+  "performed_by_user_id" int8
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    task_item_id [type: btree, name: "idx_task_item_handovers_item"]
+  }
 }
 
-Table unit_positions {
-  id integer [pk, increment]
-  unit_id integer [not null]
-  slot_no integer [not null]
-  title varchar(180)
-  profile jsonb
-  position_type text [not null, default: 'real']
-  is_active smallint [not null, default: 1]
-  is_unit_head smallint [not null, default: 0]
-  head_flag smallint [note: "columna generada (STORED)"]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  cargo_id integer [not null]
+Table "task_items" {
+  "id" int4 [pk, not null, increment]
+  "task_id" int4 [not null]
+  "process_definition_template_id" int4
+  "template_artifact_id" int4 [not null]
+  "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
+  "title" varchar(180)
+  "sort_order" int4 [not null, default: 1]
+  "created_by_person_id" int4
+  "source_task_item_id" int4
+  "target_unit_id" int4
+  "target_position_id" int4
+  "target_person_id" int4
+  "process_definition_template_key" int4 [note: "columna generada (STORED)"]
+  "target_position_key" int4 [note: "columna generada (STORED)"]
+  "target_person_key" int4 [note: "columna generada (STORED)"]
+  "responsible_position_id" int4
+  "assigned_person_id" int4
+  "start_date" date [not null]
+  "end_date" date
+  "user_started_at" timestamp
+  "status" varchar(30) [not null, default: 'pendiente']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_id, process_definition_template_key, target_position_key, target_person_key) [type: btree, unique, name: "uq_task_items_defined_target"]
+    template_artifact_id [type: btree, name: "idx_task_items_artifact"]
+    created_by_person_id [type: btree, name: "idx_task_items_created_by"]
+    (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
+    process_definition_template_id [type: btree, name: "idx_task_items_definition_template"]
+    origin_kind [type: btree, name: "idx_task_items_origin"]
+    source_task_item_id [type: btree, name: "idx_task_items_source"]
+    target_person_id [type: btree, name: "idx_task_items_target_person"]
+    target_position_id [type: btree, name: "idx_task_items_target_position"]
+    target_unit_id [type: btree, name: "idx_task_items_target_unit"]
+    (task_id, sort_order) [type: btree, name: "idx_task_items_task"]
+    user_started_at [type: btree, name: "idx_task_items_user_started"]
+  }
 }
 
-Table unit_relations {
-  id integer [pk, increment]
-  relation_type_id integer [not null]
-  parent_unit_id integer [not null]
-  child_unit_id integer [not null]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "tasks" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "process_run_id" int4
+  "term_id" int4 [not null]
+  "scope_unit_id" int4
+  "normalized_scope_unit_id" int4 [note: "columna generada (STORED)"]
+  "created_by_user_id" int4
+  "responsible_position_id" int4
+  "description" text
+  "comments_thread_ref" varchar(64)
+  "start_date" date [not null]
+  "end_date" date
+  "status" varchar(30) [not null, default: 'pendiente']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_id, normalized_scope_unit_id) [type: btree, unique, name: "uq_tasks_definition_term_scope"]
+    (process_definition_id, term_id) [type: btree, name: "idx_tasks_definition_term"]
+    process_run_id [type: btree, name: "idx_tasks_process_run"]
+    scope_unit_id [type: btree, name: "idx_tasks_scope_unit"]
+  }
 }
 
-Table unit_types {
-  id integer [pk, increment]
-  name varchar(120) [not null]
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "template_artifacts" {
+  "id" int4 [pk, not null, increment]
+  "deliverable_id" int4 [not null]
+  "storage_version" varchar(20) [not null]
+  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
+  "base_object_prefix" varchar(255) [not null]
+  "available_formats" jsonb [not null]
+  "schema_object_key" varchar(255) [not null]
+  "meta_object_key" varchar(255) [not null]
+  "content_hash" varchar(64)
+  "parent_version_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (deliverable_id, storage_version) [type: btree, unique, name: "uq_template_artifacts_storage"]
+    deliverable_id [type: btree, name: "idx_template_artifacts_deliverable"]
+    lifecycle_state [type: btree, name: "idx_template_artifacts_state"]
+  }
+
+  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.'''
 }
 
-Table units {
-  id integer [pk, increment]
-  name varchar(180) [not null]
-  label varchar(75)
-  slug varchar(180) [not null]
-  unit_type_id integer [not null]
-  is_active smallint [not null, default: 1]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "template_seeds" {
+  "id" int4 [pk, not null, increment]
+  "seed_code" varchar(180) [unique, not null]
+  "display_name" varchar(180) [not null]
+  "description" varchar(255)
+  "seed_type" varchar(40) [not null]
+  "source_path" varchar(255) [not null]
+  "preview_path" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table vacancies {
-  id integer [pk, increment]
-  title varchar(180) [not null]
-  category varchar(120)
-  dedication varchar(30) [not null]
-  relation_type varchar(60) [not null]
-  status text [not null, default: 'abierta']
-  open_flag smallint [note: "columna generada (STORED)"]
-  profile_ref varchar(64)
-  opened_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  closed_at timestamp
-  position_id integer [not null]
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "term_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table vacancy_visibility {
-  id integer [pk, increment]
-  vacancy_id integer [not null]
-  unit_id integer
-  role_id integer
-  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+Table "terms" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(60) [unique, not null]
+  "term_type_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date [not null]
+  "is_active" int2 [not null, default: 1]
+
+  Indexes {
+    term_type_id [type: btree, name: "idx_terms_term_type"]
+  }
 }
 
-// ── Relaciones (claves foráneas) ──
-Ref: aplications.person_id > persons.id
-Ref: aplications.vacancy_id > vacancies.id
-Ref: cargo_role_map.cargo_id > cargos.id
-Ref: cargo_role_map.role_id > roles.id
-Ref: chat_message_attachments.message_id > chat_messages.id
-Ref: chat_messages.conversation_id > chat_conversations.id
-Ref: chat_messages.reply_to_message_id > chat_messages.id
-Ref: chat_conversation_participants.conversation_id > chat_conversations.id
-Ref: chat_message_reads.message_id > chat_messages.id
-Ref: contract_origin_recruitment.contract_id > contract_origins.contract_id
-Ref: contract_origin_recruitment.offer_id > offers.id
-Ref: contract_origin_recruitment.vacancy_id > vacancies.id
-Ref: contract_origin_renewal.contract_id > contract_origins.contract_id
-Ref: contract_origin_renewal.renewed_from_contract_id > contracts.id
-Ref: contract_origins.contract_id > contracts.id
-Ref: contracts.person_id > persons.id
-Ref: contracts.position_id > unit_positions.id
-Ref: deliverables.owner_person_id > persons.id
-Ref: deliverables.owner_process_id > processes.id
-Ref: deliverables.template_seed_id > template_seeds.id
-Ref: document_attachments.uploaded_by_person_id > persons.id
-Ref: document_attachments.document_version_id > document_versions.id
-Ref: document_fill_flows.document_version_id > document_versions.id
-Ref: document_fill_flows.fill_flow_template_id > fill_flow_templates.id
-Ref: document_signatures.document_version_id > document_versions.id
-Ref: document_signatures.signature_request_id > signature_requests.id
-Ref: document_signatures.signer_user_id > persons.id
-Ref: document_signatures.signature_status_id > signature_statuses.id
-Ref: document_versions.template_artifact_id > template_artifacts.id
-Ref: document_versions.document_id > documents.id
-Ref: document_workflow_observations.author_person_id > persons.id
-Ref: document_workflow_observations.fill_request_id > fill_requests.id
-Ref: document_workflow_observations.task_item_id > task_items.id
-Ref: document_workflow_observations.resolved_by_person_id > persons.id
-Ref: document_workflow_observations.signature_request_id > signature_requests.id
-Ref: document_workflow_observations.target_person_id > persons.id
-Ref: document_workflow_observations.document_version_id > document_versions.id
-Ref: documents.origin_unit_id > units.id
-Ref: documents.owner_person_id > persons.id
-Ref: documents.task_item_id > task_items.id
-Ref: dossier_items.dossier_id > dossiers.id
-Ref: email_verification_codes.person_id > persons.id
-Ref: fill_flow_steps.cargo_id > cargos.id
-Ref: fill_flow_steps.assigned_person_id > persons.id
-Ref: fill_flow_steps.position_id > unit_positions.id
-Ref: fill_flow_steps.relation_type_id > relation_unit_types.id
-Ref: fill_flow_steps.fill_flow_template_id > fill_flow_templates.id
-Ref: fill_flow_steps.unit_id > units.id
-Ref: fill_flow_steps.unit_type_id > unit_types.id
-Ref: fill_flow_templates.process_definition_template_id > process_definition_templates.id
-Ref: fill_flow_templates.task_item_id > task_items.id
-Ref: fill_requests.document_fill_flow_id > document_fill_flows.id
-Ref: fill_requests.assigned_person_id > persons.id
-Ref: fill_requests.fill_flow_step_id > fill_flow_steps.id
-Ref: offers.application_id > aplications.id
-Ref: password_reset_codes.person_id > persons.id
-Ref: permissions.action_id > actions.id
-Ref: permissions.resource_id > resources.id
-Ref: person_certificates.person_id > persons.id
-Ref: position_assignments.person_id > persons.id
-Ref: position_assignments.position_id > unit_positions.id
-Ref: process_definition_period_types.process_definition_id > process_definition_versions.id
-Ref: process_definition_period_types.term_type_id > term_types.id
-Ref: process_definition_series.cargo_id > cargos.id
-Ref: process_definition_series.unit_type_id > unit_types.id
-Ref: process_definition_templates.template_artifact_id > template_artifacts.id
-Ref: process_definition_templates.process_definition_id > process_definition_versions.id
-Ref: process_definition_versions.process_id > processes.id
-Ref: process_definition_versions.series_id > process_definition_series.id
-Ref: process_runs.created_by_user_id > persons.id
-Ref: process_runs.process_definition_id > process_definition_versions.id
-Ref: process_runs.source_run_id > process_runs.id
-Ref: process_runs.term_id > terms.id
-Ref: process_target_rules.cargo_id > cargos.id
-Ref: process_target_rules.process_definition_id > process_definition_versions.id
-Ref: process_target_rules.position_id > unit_positions.id
-Ref: process_target_rules.unit_id > units.id
-Ref: process_target_rules.unit_type_id > unit_types.id
-Ref: processes.parent_id > processes.id
-Ref: role_assignment_relation_types.relation_type_id > relation_unit_types.id
-Ref: role_assignment_relation_types.role_assignment_id > role_assignments.id
-Ref: role_assignments.person_id > persons.id
-Ref: role_assignments.derived_from_assignment_id > position_assignments.id
-Ref: role_assignments.role_id > roles.id
-Ref: role_assignments.unit_id > units.id
-Ref: role_permissions.permission_id > permissions.id
-Ref: role_permissions.role_id > roles.id
-Ref: signature_flow_instances.document_version_id > document_versions.id
-Ref: signature_flow_instances.status_id > signature_request_statuses.id
-Ref: signature_flow_instances.template_id > signature_flow_templates.id
-Ref: signature_flow_steps.required_cargo_id > cargos.id
-Ref: signature_flow_steps.assigned_person_id > persons.id
-Ref: signature_flow_steps.position_id > unit_positions.id
-Ref: signature_flow_steps.template_id > signature_flow_templates.id
-Ref: signature_flow_steps.unit_id > units.id
-Ref: signature_flow_steps.unit_type_id > unit_types.id
-Ref: signature_flow_templates.process_definition_template_id > process_definition_templates.id
-Ref: signature_flow_templates.task_item_id > task_items.id
-Ref: signature_requests.instance_id > signature_flow_instances.id
-Ref: signature_requests.assigned_person_id > persons.id
-Ref: signature_requests.status_id > signature_request_statuses.id
-Ref: signature_requests.step_id > signature_flow_steps.id
-Ref: task_assignments.assigned_person_id > persons.id
-Ref: task_assignments.position_id > unit_positions.id
-Ref: task_assignments.task_id > tasks.id
-Ref: task_item_handovers.from_person_id > persons.id
-Ref: task_item_handovers.task_item_id > task_items.id
-Ref: task_item_handovers.to_person_id > persons.id
-Ref: task_items.assigned_person_id > persons.id
-Ref: task_items.created_by_person_id > persons.id
-Ref: task_items.process_definition_template_id > process_definition_templates.id
-Ref: task_items.responsible_position_id > unit_positions.id
-Ref: task_items.source_task_item_id > task_items.id
-Ref: task_items.target_person_id > persons.id
-Ref: task_items.target_position_id > unit_positions.id
-Ref: task_items.target_unit_id > units.id
-Ref: task_items.task_id > tasks.id
-Ref: task_items.template_artifact_id > template_artifacts.id
-Ref: tasks.created_by_user_id > persons.id
-Ref: tasks.process_definition_id > process_definition_versions.id
-Ref: tasks.process_run_id > process_runs.id
-Ref: tasks.responsible_position_id > unit_positions.id
-Ref: tasks.scope_unit_id > units.id
-Ref: tasks.term_id > terms.id
-Ref: template_artifacts.deliverable_id > deliverables.id
-Ref: template_artifacts.parent_version_id > template_artifacts.id
-Ref: terms.term_type_id > term_types.id
-Ref: unit_positions.cargo_id > cargos.id
-Ref: unit_positions.unit_id > units.id
-Ref: unit_relations.child_unit_id > units.id
-Ref: unit_relations.parent_unit_id > units.id
-Ref: unit_relations.relation_type_id > relation_unit_types.id
-Ref: units.unit_type_id > unit_types.id
-Ref: vacancies.position_id > unit_positions.id
-Ref: vacancy_visibility.role_id > roles.id
-Ref: vacancy_visibility.unit_id > units.id
-Ref: vacancy_visibility.vacancy_id > vacancies.id
+Table "unit_positions" {
+  "id" int4 [pk, not null, increment]
+  "unit_id" int4 [not null]
+  "slot_no" int4 [not null]
+  "title" varchar(180)
+  "profile" jsonb
+  "position_type" text [not null, check: `position_type = ANY (ARRAY['real'::text, 'promocion'::text, 'simbolico'::text])`, default: 'real']
+  "is_active" int2 [not null, default: 1]
+  "is_unit_head" int2 [not null, default: 0]
+  "head_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "cargo_id" int4 [not null]
+
+  Indexes {
+    (unit_id, cargo_id, slot_no) [type: btree, unique, name: "uq_unit_cargo_slot"]
+    (unit_id, head_flag) [type: btree, unique, name: "uq_unit_head"]
+    (unit_id, cargo_id, is_active) [type: btree, name: "idx_positions_unit_cargo_active"]
+  }
+}
+
+Table "unit_relations" {
+  "id" int4 [pk, not null, increment]
+  "relation_type_id" int4 [not null]
+  "parent_unit_id" int4 [not null]
+  "child_unit_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (parent_unit_id, child_unit_id, relation_type_id) [type: btree, unique, name: "unit_relations_uq"]
+    (child_unit_id, relation_type_id) [type: btree, unique, name: "uq_unit_relations_child_type"]
+    child_unit_id [type: btree, name: "idx_unit_relations_child"]
+    parent_unit_id [type: btree, name: "idx_unit_relations_parent"]
+  }
+}
+
+Table "unit_types" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "units" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "label" varchar(75)
+  "slug" varchar(180) [not null]
+  "unit_type_id" int4 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    unit_type_id [type: btree, name: "idx_units_unit_type"]
+  }
+}
+
+Table "vacancies" {
+  "id" int4 [pk, not null, increment]
+  "title" varchar(180) [not null]
+  "category" varchar(120)
+  "dedication" varchar(30) [not null]
+  "relation_type" varchar(60) [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['abierta'::text, 'cubierta'::text, 'cerrada'::text, 'cancelada'::text])`, default: 'abierta']
+  "open_flag" int2 [note: "columna generada (STORED)"]
+  "profile_ref" varchar(64)
+  "opened_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "closed_at" timestamp
+  "position_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, open_flag) [type: btree, unique, name: "uq_one_open_vacancy_per_position"]
+    (position_id, status) [type: btree, name: "idx_vacancies_position_status"]
+  }
+}
+
+Table "vacancy_visibility" {
+  "id" int4 [pk, not null, increment]
+  "vacancy_id" int4 [not null]
+  "unit_id" int4
+  "role_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    role_id [type: btree, name: "idx_vacancy_visibility_role"]
+    unit_id [type: btree, name: "idx_vacancy_visibility_unit"]
+    vacancy_id [type: btree, name: "idx_vacancy_visibility_vacancy"]
+  }
+}
+
+Ref "fk_applications_person":"persons"."id" <? "aplications"."person_id"
+Ref "fk_applications_vacancy":"vacancies"."id" <? "aplications"."vacancy_id"
+Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
+Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
+Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
+Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachments"."message_id" [delete: cascade]
+Ref "fk_chat_reads_message":"chat_messages"."id" <? "chat_message_reads"."message_id" [delete: cascade]
+Ref "fk_chat_messages_conversation":"chat_conversations"."id" <? "chat_messages"."conversation_id" [delete: cascade]
+Ref "fk_chat_messages_reply":"chat_messages"."id" ?<? "chat_messages"."reply_to_message_id" [delete: set null]
+Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
+Ref "fk_contract_origin_recruitment_offer":"offers"."id" <? "contract_origin_recruitment"."offer_id"
+Ref "fk_contract_origin_recruitment_vacancy":"vacancies"."id" <? "contract_origin_recruitment"."vacancy_id"
+Ref "fk_contract_origin_renewal_contract":"contract_origins"."contract_id" <? "contract_origin_renewal"."contract_id" [delete: cascade]
+Ref "fk_contract_origin_renewal_from":"contracts"."id" <? "contract_origin_renewal"."renewed_from_contract_id"
+Ref "fk_contract_origins_contract":"contracts"."id" <? "contract_origins"."contract_id" [delete: cascade]
+Ref "fk_contracts_person":"persons"."id" <? "contracts"."person_id"
+Ref "fk_contracts_position":"unit_positions"."id" <? "contracts"."position_id"
+Ref "fk_deliverables_owner_person":"persons"."id" ?<? "deliverables"."owner_person_id"
+Ref "fk_deliverables_owner_process":"processes"."id" ?<? "deliverables"."owner_process_id"
+Ref "fk_deliverables_seed":"template_seeds"."id" ?<? "deliverables"."template_seed_id"
+Ref "fk_document_attachments_uploader":"persons"."id" ?<? "document_attachments"."uploaded_by_person_id"
+Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
+Ref "fk_document_fill_flows_document":"document_versions"."id" <? "document_fill_flows"."document_version_id"
+Ref "fk_document_fill_flows_template":"fill_flow_templates"."id" <? "document_fill_flows"."fill_flow_template_id"
+Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
+Ref "fk_document_signatures_request":"signature_requests"."id" ?<? "document_signatures"."signature_request_id"
+Ref "fk_document_signatures_signer":"persons"."id" <? "document_signatures"."signer_user_id"
+Ref "fk_document_signatures_status":"signature_statuses"."id" <? "document_signatures"."signature_status_id"
+Ref "fk_document_versions_artifact":"template_artifacts"."id" ?<? "document_versions"."template_artifact_id"
+Ref "fk_document_versions_document":"documents"."id" <? "document_versions"."document_id"
+Ref "fk_document_workflow_observations_author":"persons"."id" <? "document_workflow_observations"."author_person_id"
+Ref "fk_document_workflow_observations_fill_request":"fill_requests"."id" ?<? "document_workflow_observations"."fill_request_id"
+Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
+Ref "fk_document_workflow_observations_resolver":"persons"."id" ?<? "document_workflow_observations"."resolved_by_person_id"
+Ref "fk_document_workflow_observations_signature_request":"signature_requests"."id" ?<? "document_workflow_observations"."signature_request_id"
+Ref "fk_document_workflow_observations_target":"persons"."id" ?<? "document_workflow_observations"."target_person_id"
+Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
+Ref "fk_documents_origin_unit":"units"."id" ?<? "documents"."origin_unit_id"
+Ref "fk_documents_owner_person":"persons"."id" ?<? "documents"."owner_person_id"
+Ref "fk_documents_task_item":"task_items"."id" ?<? "documents"."task_item_id"
+Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]
+Ref "fk_email_verification_person":"persons"."id" <? "email_verification_codes"."person_id" [delete: cascade]
+Ref "fk_fill_flow_steps_cargo":"cargos"."id" ?<? "fill_flow_steps"."cargo_id"
+Ref "fk_fill_flow_steps_person":"persons"."id" ?<? "fill_flow_steps"."assigned_person_id"
+Ref "fk_fill_flow_steps_position":"unit_positions"."id" ?<? "fill_flow_steps"."position_id"
+Ref "fk_fill_flow_steps_relation_type":"relation_unit_types"."id" ?<? "fill_flow_steps"."relation_type_id"
+Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps"."fill_flow_template_id"
+Ref "fk_fill_flow_steps_unit":"units"."id" ?<? "fill_flow_steps"."unit_id"
+Ref "fk_fill_flow_steps_unit_type":"unit_types"."id" ?<? "fill_flow_steps"."unit_type_id"
+Ref "fk_fill_flow_templates_artifact":"template_artifacts"."id" ?<? "fill_flow_templates"."template_artifact_id"
+Ref "fk_fill_flow_templates_definition_template":"process_definition_templates"."id" ?<? "fill_flow_templates"."process_definition_template_id"
+Ref "fk_fill_flow_templates_task_item":"task_items"."id" ?<? "fill_flow_templates"."task_item_id" [delete: cascade]
+Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
+Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
+Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
+Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
+Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
+Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
+Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"
+Ref "fk_person_certificates_person":"persons"."id" <? "person_certificates"."person_id" [delete: cascade]
+Ref "fk_position_assignments_person":"persons"."id" <? "position_assignments"."person_id"
+Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
+Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
+Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
+Ref "fk_process_definition_series_cargo":"cargos"."id" ?<? "process_definition_series"."cargo_id"
+Ref "fk_process_definition_series_unit_type":"unit_types"."id" ?<? "process_definition_series"."unit_type_id"
+Ref "fk_process_definition_templates_artifact":"template_artifacts"."id" <? "process_definition_templates"."template_artifact_id"
+Ref "fk_process_definition_templates_definition":"process_definition_versions"."id" <? "process_definition_templates"."process_definition_id" [delete: cascade]
+Ref "fk_process_definition_versions_process":"processes"."id" <? "process_definition_versions"."process_id" [delete: cascade]
+Ref "fk_process_definition_versions_series":"process_definition_series"."id" <? "process_definition_versions"."series_id"
+Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user_id"
+Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
+Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
+Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
+Ref "fk_process_target_rules_cargo":"cargos"."id" ?<? "process_target_rules"."cargo_id"
+Ref "fk_process_target_rules_definition":"process_definition_versions"."id" <? "process_target_rules"."process_definition_id" [delete: cascade]
+Ref "fk_process_target_rules_position":"unit_positions"."id" ?<? "process_target_rules"."position_id"
+Ref "fk_process_target_rules_unit":"units"."id" ?<? "process_target_rules"."unit_id"
+Ref "fk_process_target_rules_unit_type":"unit_types"."id" ?<? "process_target_rules"."unit_type_id"
+Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
+Ref "fk_role_assignment_relation_types_relation_type":"relation_unit_types"."id" <? "role_assignment_relation_types"."relation_type_id"
+Ref "fk_role_assignment_relation_types_role_assignment":"role_assignments"."id" <? "role_assignment_relation_types"."role_assignment_id"
+Ref "fk_role_assignments_person":"persons"."id" <? "role_assignments"."person_id"
+Ref "fk_role_assignments_position_assignment":"position_assignments"."id" ?<? "role_assignments"."derived_from_assignment_id"
+Ref "fk_role_assignments_role":"roles"."id" <? "role_assignments"."role_id"
+Ref "fk_role_assignments_unit":"units"."id" <? "role_assignments"."unit_id"
+Ref "fk_role_permissions_permission":"permissions"."id" <? "role_permissions"."permission_id"
+Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
+Ref "fk_signature_flow_instances_document":"document_versions"."id" <? "signature_flow_instances"."document_version_id"
+Ref "fk_signature_flow_instances_status":"signature_request_statuses"."id" <? "signature_flow_instances"."status_id"
+Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
+Ref "fk_signature_flow_steps_cargo":"cargos"."id" ?<? "signature_flow_steps"."required_cargo_id"
+Ref "fk_signature_flow_steps_person":"persons"."id" ?<? "signature_flow_steps"."assigned_person_id"
+Ref "fk_signature_flow_steps_position":"unit_positions"."id" ?<? "signature_flow_steps"."position_id"
+Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signature_flow_steps"."template_id"
+Ref "fk_signature_flow_steps_unit":"units"."id" ?<? "signature_flow_steps"."unit_id"
+Ref "fk_signature_flow_steps_unit_type":"unit_types"."id" ?<? "signature_flow_steps"."unit_type_id"
+Ref "fk_signature_flow_templates_artifact":"template_artifacts"."id" ?<? "signature_flow_templates"."template_artifact_id"
+Ref "fk_signature_flow_templates_definition_template":"process_definition_templates"."id" ?<? "signature_flow_templates"."process_definition_template_id"
+Ref "fk_signature_flow_templates_task_item":"task_items"."id" ?<? "signature_flow_templates"."task_item_id" [delete: cascade]
+Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
+Ref "fk_signature_requests_person":"persons"."id" ?<? "signature_requests"."assigned_person_id"
+Ref "fk_signature_requests_status":"signature_request_statuses"."id" <? "signature_requests"."status_id"
+Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_requests"."step_id"
+Ref "fk_task_assignments_person":"persons"."id" ?<? "task_assignments"."assigned_person_id"
+Ref "fk_task_assignments_position":"unit_positions"."id" <? "task_assignments"."position_id"
+Ref "fk_task_assignments_task":"tasks"."id" <? "task_assignments"."task_id"
+Ref "fk_task_item_handovers_from":"persons"."id" ?<? "task_item_handovers"."from_person_id"
+Ref "fk_task_item_handovers_item":"task_items"."id" <? "task_item_handovers"."task_item_id"
+Ref "fk_task_item_handovers_to":"persons"."id" ?<? "task_item_handovers"."to_person_id"
+Ref "fk_task_items_assigned_person":"persons"."id" ?<? "task_items"."assigned_person_id"
+Ref "fk_task_items_created_by":"persons"."id" ?<? "task_items"."created_by_person_id"
+Ref "fk_task_items_process_definition_template":"process_definition_templates"."id" ?<? "task_items"."process_definition_template_id"
+Ref "fk_task_items_responsible_position":"unit_positions"."id" ?<? "task_items"."responsible_position_id"
+Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
+Ref "fk_task_items_target_person":"persons"."id" ?<? "task_items"."target_person_id"
+Ref "fk_task_items_target_position":"unit_positions"."id" ?<? "task_items"."target_position_id"
+Ref "fk_task_items_target_unit":"units"."id" ?<? "task_items"."target_unit_id"
+Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
+Ref "fk_task_items_template_artifact":"template_artifacts"."id" <? "task_items"."template_artifact_id"
+Ref "fk_tasks_created_by_user":"persons"."id" ?<? "tasks"."created_by_user_id"
+Ref "fk_tasks_process_definition":"process_definition_versions"."id" <? "tasks"."process_definition_id"
+Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
+Ref "fk_tasks_responsible_position":"unit_positions"."id" ?<? "tasks"."responsible_position_id"
+Ref "fk_tasks_scope_unit":"units"."id" ?<? "tasks"."scope_unit_id"
+Ref "fk_tasks_term":"terms"."id" <? "tasks"."term_id"
+Ref "fk_template_artifacts_deliverable":"deliverables"."id" <? "template_artifacts"."deliverable_id"
+Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artifacts"."parent_version_id"
+Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
+Ref "fk_unit_positions_cargo":"cargos"."id" <? "unit_positions"."cargo_id"
+Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
+Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
+Ref "fk_unit_relations_parent":"units"."id" <? "unit_relations"."parent_unit_id"
+Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relations"."relation_type_id"
+Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
+Ref "fk_vacancies_position":"unit_positions"."id" <? "vacancies"."position_id"
+Ref "fk_vacancy_visibility_role":"roles"."id" ?<? "vacancy_visibility"."role_id"
+Ref "fk_vacancy_visibility_unit":"units"."id" ?<? "vacancy_visibility"."unit_id"
+Ref "fk_vacancy_visibility_vacancy":"vacancies"."id" <? "vacancy_visibility"."vacancy_id"

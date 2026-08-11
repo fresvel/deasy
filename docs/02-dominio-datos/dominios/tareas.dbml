@@ -1,0 +1,251 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Tareas, entregables instanciados y documentos. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project tareas {
+  database_type: 'PostgreSQL'
+  Note: '''Tareas, entregables instanciados y documentos — Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos producidos.'''
+}
+
+Table "document_attachments" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "kind" text [not null, check: `kind = ANY (ARRAY['annex'::text, 'evidence'::text, 'source'::text, 'other'::text])`, default: 'annex']
+  "file_path" varchar(255) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120)
+  "size_bytes" int8
+  "description" varchar(255)
+  "uploaded_by_person_id" int4
+  "sort_order" int4 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    uploaded_by_person_id [type: btree, name: "idx_document_attachments_uploader"]
+    (document_version_id, sort_order) [type: btree, name: "idx_document_attachments_version"]
+  }
+}
+
+Table "document_signatures" {
+  "id" int4 [pk, not null, increment]
+  "signature_request_id" int4
+  "document_version_id" int4 [not null]
+  "signer_user_id" int4 [not null]
+  "signature_status_id" int4 [not null]
+  "note_short" varchar(255)
+  "signed_file_path" varchar(255)
+  "signed_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "document_versions" {
+  "id" int4 [pk, not null, increment]
+  "document_id" int4 [not null]
+  "version" numeric(4,1) [not null, default: 0.1]
+  "template_artifact_id" int4
+  "payload_hash" varchar(64)
+  "payload_object_path" varchar(255)
+  "working_file_path" varchar(255)
+  "final_file_path" varchar(255)
+  "format" varchar(40)
+  "render_engine" varchar(80)
+  "status" varchar(30) [not null, default: 'Borrador']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (document_id, version) [type: btree, unique, name: "uq_document_versions"]
+    template_artifact_id [type: btree, name: "idx_document_versions_artifact"]
+  }
+}
+
+Table "document_workflow_observations" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "document_version_id" int4 [not null]
+  "fill_request_id" int4
+  "signature_request_id" int4
+  "phase" text [not null, check: `phase = ANY (ARRAY['review'::text, 'signature'::text])`]
+  "kind" text [not null, check: `kind = ANY (ARRAY['observation'::text, 'return_reason'::text, 'rejection_reason'::text, 'internal_note'::text])`, default: 'observation']
+  "message" text [not null]
+  "author_person_id" int4 [not null]
+  "target_person_id" int4
+  "resolved_by_person_id" int4
+  "resolved_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    author_person_id [type: btree, name: "idx_document_workflow_observations_author"]
+    fill_request_id [type: btree, name: "idx_document_workflow_observations_fill_request"]
+    (task_item_id, created_at) [type: btree, name: "idx_document_workflow_observations_item"]
+    signature_request_id [type: btree, name: "idx_document_workflow_observations_signature_request"]
+    target_person_id [type: btree, name: "idx_document_workflow_observations_target"]
+    (document_version_id, created_at) [type: btree, name: "idx_document_workflow_observations_version"]
+  }
+}
+
+Table "documents" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [unique]
+  "owner_person_id" int4
+  "origin_unit_id" int4
+  "title" varchar(180)
+  "status" varchar(30) [not null, default: 'Inicial']
+  "comments_thread_ref" varchar(64)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp
+
+  Indexes {
+    origin_unit_id [type: btree, name: "idx_documents_origin_unit"]
+    owner_person_id [type: btree, name: "idx_documents_owner_person"]
+  }
+}
+
+Table "task_assignments" {
+  "id" int4 [pk, not null, increment]
+  "task_id" int4 [not null]
+  "position_id" int4 [not null]
+  "assigned_person_id" int4
+  "status" varchar(30) [not null, default: 'pendiente']
+  "assigned_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "unassigned_at" timestamp
+
+  Indexes {
+    (task_id, position_id) [type: btree, unique, name: "uq_task_assignment_position"]
+    assigned_person_id [type: btree, name: "idx_task_assignments_person"]
+  }
+}
+
+Table "task_item_handovers" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "from_person_id" int4
+  "to_person_id" int4
+  "reason" varchar(255)
+  "trigger_kind" text [not null, check: `trigger_kind = ANY (ARRAY['occupancy_end'::text, 'position_deactivated'::text, 'manual'::text])`, default: 'manual']
+  "performed_by_user_id" int8
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    task_item_id [type: btree, name: "idx_task_item_handovers_item"]
+  }
+}
+
+Table "task_items" {
+  "id" int4 [pk, not null, increment]
+  "task_id" int4 [not null]
+  "process_definition_template_id" int4
+  "template_artifact_id" int4 [not null]
+  "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
+  "title" varchar(180)
+  "sort_order" int4 [not null, default: 1]
+  "created_by_person_id" int4
+  "source_task_item_id" int4
+  "target_unit_id" int4
+  "target_position_id" int4
+  "target_person_id" int4
+  "process_definition_template_key" int4 [note: "columna generada (STORED)"]
+  "target_position_key" int4 [note: "columna generada (STORED)"]
+  "target_person_key" int4 [note: "columna generada (STORED)"]
+  "responsible_position_id" int4
+  "assigned_person_id" int4
+  "start_date" date [not null]
+  "end_date" date
+  "user_started_at" timestamp
+  "status" varchar(30) [not null, default: 'pendiente']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_id, process_definition_template_key, target_position_key, target_person_key) [type: btree, unique, name: "uq_task_items_defined_target"]
+    template_artifact_id [type: btree, name: "idx_task_items_artifact"]
+    created_by_person_id [type: btree, name: "idx_task_items_created_by"]
+    (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
+    process_definition_template_id [type: btree, name: "idx_task_items_definition_template"]
+    origin_kind [type: btree, name: "idx_task_items_origin"]
+    source_task_item_id [type: btree, name: "idx_task_items_source"]
+    target_person_id [type: btree, name: "idx_task_items_target_person"]
+    target_position_id [type: btree, name: "idx_task_items_target_position"]
+    target_unit_id [type: btree, name: "idx_task_items_target_unit"]
+    (task_id, sort_order) [type: btree, name: "idx_task_items_task"]
+    user_started_at [type: btree, name: "idx_task_items_user_started"]
+  }
+}
+
+Table "tasks" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "process_run_id" int4
+  "term_id" int4 [not null]
+  "scope_unit_id" int4
+  "normalized_scope_unit_id" int4 [note: "columna generada (STORED)"]
+  "created_by_user_id" int4
+  "responsible_position_id" int4
+  "description" text
+  "comments_thread_ref" varchar(64)
+  "start_date" date [not null]
+  "end_date" date
+  "status" varchar(30) [not null, default: 'pendiente']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_id, normalized_scope_unit_id) [type: btree, unique, name: "uq_tasks_definition_term_scope"]
+    (process_definition_id, term_id) [type: btree, name: "idx_tasks_definition_term"]
+    process_run_id [type: btree, name: "idx_tasks_process_run"]
+    scope_unit_id [type: btree, name: "idx_tasks_scope_unit"]
+  }
+}
+
+Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
+Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
+Ref "fk_document_versions_document":"documents"."id" <? "document_versions"."document_id"
+Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
+Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
+Ref "fk_documents_task_item":"task_items"."id" ?<? "documents"."task_item_id"
+Ref "fk_task_assignments_task":"tasks"."id" <? "task_assignments"."task_id"
+Ref "fk_task_item_handovers_item":"task_items"."id" <? "task_item_handovers"."task_item_id"
+Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
+Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> document_attachments   [identidad]
+//   document_versions -> document_fill_flows   [plantillas]
+//   signature_requests -> document_signatures   [firmas]
+//   persons -> document_signatures   [identidad]
+//   signature_statuses -> document_signatures   [firmas]
+//   template_artifacts -> document_versions   [plantillas]
+//   persons -> document_workflow_observations   [identidad]
+//   fill_requests -> document_workflow_observations   [plantillas]
+//   persons -> document_workflow_observations   [identidad]
+//   signature_requests -> document_workflow_observations   [firmas]
+//   persons -> document_workflow_observations   [identidad]
+//   units -> documents   [organizacion]
+//   persons -> documents   [identidad]
+//   task_items -> fill_flow_templates   [plantillas]
+//   document_versions -> signature_flow_instances   [firmas]
+//   task_items -> signature_flow_templates   [firmas]
+//   persons -> task_assignments   [identidad]
+//   unit_positions -> task_assignments   [organizacion]
+//   persons -> task_item_handovers   [identidad]
+//   persons -> task_item_handovers   [identidad]
+//   persons -> task_items   [identidad]
+//   persons -> task_items   [identidad]
+//   process_definition_templates -> task_items   [procesos]
+//   unit_positions -> task_items   [organizacion]
+//   persons -> task_items   [identidad]
+//   unit_positions -> task_items   [organizacion]
+//   units -> task_items   [organizacion]
+//   template_artifacts -> task_items   [plantillas]
+//   persons -> tasks   [identidad]
+//   process_definition_versions -> tasks   [procesos]
+//   process_runs -> tasks   [procesos]
+//   unit_positions -> tasks   [organizacion]
+//   units -> tasks   [organizacion]
+//   terms -> tasks   [procesos]

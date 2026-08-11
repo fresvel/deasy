@@ -1,0 +1,75 @@
+{
+  "_readme": [
+    "Reparto de las tablas en diagramas por dominio.",
+    "",
+    "Por qué no hay UN diagrama: un ERD de 67 tablas impresiona y no se lee. Ocho de 2 a 15",
+    "tablas se consultan de verdad.",
+    "",
+    "El generador FALLA si una tabla del esquema no aparece en ningún dominio, o si aparece",
+    "en dos. Así una tabla nueva no se queda fuera de los diagramas en silencio."
+  ],
+
+  "identidad": {
+    "titulo": "Identidad, personas y RBAC",
+    "descripcion": "Quién es cada quien y qué puede hacer. `persons` es la identidad única del sistema; el expediente (dossier) cuelga de ella.",
+    "tablas": ["persons", "person_certificates", "dossiers", "dossier_items",
+               "roles", "permissions", "role_permissions", "role_assignments",
+               "role_assignment_relation_types", "actions", "resources",
+               "cargos", "cargo_role_map",
+               "email_verification_codes", "password_reset_codes"]
+  },
+
+  "organizacion": {
+    "titulo": "Unidades, puestos y ocupación",
+    "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.",
+    "tablas": ["units", "unit_types", "unit_relations", "relation_unit_types",
+               "unit_positions", "position_assignments"]
+  },
+
+  "procesos": {
+    "titulo": "Motor de procesos",
+    "descripcion": "Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. `process_runs` es cada lanzamiento.",
+    "tablas": ["processes", "process_definition_versions", "process_definition_series",
+               "process_definition_templates", "process_definition_period_types",
+               "process_target_rules", "process_runs", "terms", "term_types"]
+  },
+
+  "plantillas": {
+    "titulo": "Plantillas y entregables",
+    "descripcion": "El modelo 'libro y ediciones': `deliverables` porta la identidad y `template_artifacts` las versiones. Aquí vive también la autoría del flujo de llenado.",
+    "tablas": ["deliverables", "template_artifacts", "template_seeds",
+               "fill_flow_templates", "fill_flow_steps", "fill_requests",
+               "document_fill_flows"]
+  },
+
+  "tareas": {
+    "titulo": "Tareas, entregables instanciados y documentos",
+    "descripcion": "Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos producidos.",
+    "tablas": ["tasks", "task_items", "task_assignments", "task_item_handovers",
+               "documents", "document_versions", "document_attachments",
+               "document_signatures", "document_workflow_observations"]
+  },
+
+  "firmas": {
+    "titulo": "Firma electrónica",
+    "descripcion": "El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.",
+    "tablas": ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances",
+               "signature_requests", "signature_request_statuses", "signature_statuses",
+               "signature_batch_jobs"]
+  },
+
+  "chat": {
+    "titulo": "Chat y notificaciones",
+    "descripcion": "Mensajería en tiempo real sobre Socket.IO (EMQX/MQTT retirados). Conversaciones directas, de grupo y de hilo ligado a proceso.",
+    "tablas": ["chat_conversations", "chat_conversation_participants", "chat_messages",
+               "chat_message_attachments", "chat_message_reads", "chat_notifications"]
+  },
+
+  "empleo": {
+    "titulo": "Vacantes, postulaciones y contratos",
+    "descripcion": "El ciclo de contratación: vacante, postulación, oferta y contrato, con el origen del contrato desglosado.",
+    "tablas": ["vacancies", "vacancy_visibility", "aplications", "offers",
+               "contracts", "contract_origins", "contract_origin_recruitment",
+               "contract_origin_renewal"]
+  }
+}

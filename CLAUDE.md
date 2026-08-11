@@ -196,6 +196,30 @@ El servicio vive **solo en `compose.dev.yml`**: qa y prod todavía no despliegan
 Existía desde marzo en el `docker-compose.yml` monolítico y se perdió al partirlo en base+overlays;
 el `Dockerfile` y `DOCS_PORT` sobrevivieron en los cuatro `.env`.
 
+### Modelo de datos — GENERADO, no se escribe
+
+```bash
+bash scripts/docs/gen-dbml.sh            # regenera DBML + los 8 diagramas
+bash scripts/docs/gen-dbml.sh --check    # y falla si hay deriva (lo que corre en CI)
+```
+
+⚠️ **`docs/02-dominio-datos/consolidado.dbml`, `dominios/*.dbml` y `docs/public/diagramas/*.svg`
+son ARTEFACTOS.** Editarlos a mano no sirve de nada: la siguiente regeneración los pisa y
+`.github/workflows/docs-dbml.yml` lo detecta. Antes decían "generado por introspección" y **no
+había generador**: se generó una vez en julio y se mantuvo a mano hasta que derivó.
+
+**Si cambias `postgres_schema.sql`, regenera en el mismo commit.** Si añades una tabla, además
+tienes que darle dominio en `scripts/docs/dominios.json` — el generador falla a propósito si una
+tabla no está en ninguno o está en dos, para que no se quede fuera de los diagramas en silencio.
+
+Lo único que se escribe a mano es **`docs/02-dominio-datos/anotaciones.json`**: qué *significa*
+una tabla o una columna. Se inyecta como nota en el DBML, y el generador falla si nombras algo que
+no existe.
+
+El generador levanta **su propio PostgreSQL desechable** (no toca ninguna pila, no publica
+puertos). Efecto secundario que vale tanto como los diagramas: **aplica el esquema con
+`ON_ERROR_STOP=1`, así que por fin algo valida `postgres_schema.sql`** — antes nadie lo hacía.
+
 ### Backend
 ```bash
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # unitarios, junto a su módulo

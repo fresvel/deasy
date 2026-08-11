@@ -1,0 +1,137 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Unidades, puestos y ocupación. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project organizacion {
+  database_type: 'PostgreSQL'
+  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.'''
+}
+
+Table "position_assignments" {
+  "id" int4 [pk, not null, increment]
+  "position_id" int4 [not null]
+  "person_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "is_current" int2 [not null, default: 1]
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, current_flag) [type: btree, unique, name: "uq_position_current"]
+    (person_id, is_current) [type: btree, name: "idx_assignments_person_current"]
+  }
+}
+
+Table "relation_unit_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(40) [not null]
+  "description" varchar(255)
+  "is_inheritance_allowed" int2 [not null, default: 0]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "unit_positions" {
+  "id" int4 [pk, not null, increment]
+  "unit_id" int4 [not null]
+  "slot_no" int4 [not null]
+  "title" varchar(180)
+  "profile" jsonb
+  "position_type" text [not null, check: `position_type = ANY (ARRAY['real'::text, 'promocion'::text, 'simbolico'::text])`, default: 'real']
+  "is_active" int2 [not null, default: 1]
+  "is_unit_head" int2 [not null, default: 0]
+  "head_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "cargo_id" int4 [not null]
+
+  Indexes {
+    (unit_id, cargo_id, slot_no) [type: btree, unique, name: "uq_unit_cargo_slot"]
+    (unit_id, head_flag) [type: btree, unique, name: "uq_unit_head"]
+    (unit_id, cargo_id, is_active) [type: btree, name: "idx_positions_unit_cargo_active"]
+  }
+}
+
+Table "unit_relations" {
+  "id" int4 [pk, not null, increment]
+  "relation_type_id" int4 [not null]
+  "parent_unit_id" int4 [not null]
+  "child_unit_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (parent_unit_id, child_unit_id, relation_type_id) [type: btree, unique, name: "unit_relations_uq"]
+    (child_unit_id, relation_type_id) [type: btree, unique, name: "uq_unit_relations_child_type"]
+    child_unit_id [type: btree, name: "idx_unit_relations_child"]
+    parent_unit_id [type: btree, name: "idx_unit_relations_parent"]
+  }
+}
+
+Table "unit_types" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "units" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "label" varchar(75)
+  "slug" varchar(180) [not null]
+  "unit_type_id" int4 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    unit_type_id [type: btree, name: "idx_units_unit_type"]
+  }
+}
+
+Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
+Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
+Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
+Ref "fk_unit_relations_parent":"units"."id" <? "unit_relations"."parent_unit_id"
+Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relations"."relation_type_id"
+Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   unit_positions -> contracts   [empleo]
+//   units -> documents   [tareas]
+//   unit_positions -> fill_flow_steps   [plantillas]
+//   relation_unit_types -> fill_flow_steps   [plantillas]
+//   unit_types -> fill_flow_steps   [plantillas]
+//   units -> fill_flow_steps   [plantillas]
+//   persons -> position_assignments   [identidad]
+//   unit_types -> process_definition_series   [procesos]
+//   unit_positions -> process_target_rules   [procesos]
+//   unit_types -> process_target_rules   [procesos]
+//   units -> process_target_rules   [procesos]
+//   relation_unit_types -> role_assignment_relation_types   [identidad]
+//   position_assignments -> role_assignments   [identidad]
+//   units -> role_assignments   [identidad]
+//   unit_positions -> signature_flow_steps   [firmas]
+//   unit_types -> signature_flow_steps   [firmas]
+//   units -> signature_flow_steps   [firmas]
+//   unit_positions -> task_assignments   [tareas]
+//   unit_positions -> task_items   [tareas]
+//   unit_positions -> task_items   [tareas]
+//   units -> task_items   [tareas]
+//   unit_positions -> tasks   [tareas]
+//   units -> tasks   [tareas]
+//   cargos -> unit_positions   [identidad]
+//   unit_positions -> vacancies   [empleo]
+//   units -> vacancy_visibility   [empleo]

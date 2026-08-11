@@ -1,0 +1,166 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Plantillas y entregables. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project plantillas {
+  database_type: 'PostgreSQL'
+  Note: '''Plantillas y entregables — El modelo \'libro y ediciones\': `deliverables` porta la identidad y `template_artifacts` las versiones. Aquí vive también la autoría del flujo de llenado.'''
+}
+
+Table "deliverables" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "display_name" varchar(180) [not null]
+  "description" varchar(255)
+  "owner_process_id" int4
+  "owner_variation_key" varchar(120)
+  "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
+  "template_seed_id" int4
+  "owner_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (owner_process_id, owner_variation_key) [type: btree, name: "idx_deliverables_owner"]
+  }
+
+  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
+}
+
+Table "document_fill_flows" {
+  "id" int4 [pk, not null, increment]
+  "fill_flow_template_id" int4 [not null]
+  "document_version_id" int4 [unique, not null]
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'approved'::text, 'rejected'::text, 'cancelled'::text])`, default: 'pending']
+  "current_step_order" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "fill_flow_steps" {
+  "id" int4 [pk, not null, increment]
+  "fill_flow_template_id" int4 [not null]
+  "step_order" int4 [not null]
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'document_owner'::text, 'specific_person'::text, 'position'::text, 'cargo_in_scope'::text, 'manual_pick'::text])`, default: 'task_assignee']
+  "assigned_person_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text, 'context_subtree'::text, 'context_ancestor_type'::text])`, default: 'unit_exact']
+  "unit_id" int4
+  "unit_type_id" int4
+  "relation_type_id" int4
+  "cargo_id" int4
+  "position_id" int4
+  "selection_mode" text [not null, check: `selection_mode = ANY (ARRAY['auto_one'::text, 'auto_all'::text, 'manual'::text])`, default: 'auto_one']
+  "is_required" int2 [not null, default: 1]
+  "can_reject" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (fill_flow_template_id, step_order) [type: btree, unique, name: "uq_fill_flow_steps"]
+  }
+}
+
+Table "fill_flow_templates" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_template_id" int4
+  "task_item_id" int4
+  "template_artifact_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
+  "name" varchar(180) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    template_artifact_id [type: btree, name: "idx_fill_flow_templates_artifact"]
+    task_item_id [type: btree, name: "idx_fill_flow_templates_task_item"]
+  }
+
+  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).'''
+}
+
+Table "fill_requests" {
+  "id" int4 [pk, not null, increment]
+  "document_fill_flow_id" int4 [not null]
+  "fill_flow_step_id" int4 [not null]
+  "assigned_person_id" int4
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'approved'::text, 'rejected'::text, 'returned'::text, 'cancelled'::text])`, default: 'pending']
+  "is_manual" int2 [not null, default: 0]
+  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "responded_at" timestamp
+  "response_note" varchar(255)
+
+  Indexes {
+    (document_fill_flow_id, fill_flow_step_id, assigned_person_id) [type: btree, unique, name: "uq_fill_requests"]
+    (document_fill_flow_id, fill_flow_step_id) [type: btree, name: "idx_fill_requests_step"]
+  }
+}
+
+Table "template_artifacts" {
+  "id" int4 [pk, not null, increment]
+  "deliverable_id" int4 [not null]
+  "storage_version" varchar(20) [not null]
+  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
+  "base_object_prefix" varchar(255) [not null]
+  "available_formats" jsonb [not null]
+  "schema_object_key" varchar(255) [not null]
+  "meta_object_key" varchar(255) [not null]
+  "content_hash" varchar(64)
+  "parent_version_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (deliverable_id, storage_version) [type: btree, unique, name: "uq_template_artifacts_storage"]
+    deliverable_id [type: btree, name: "idx_template_artifacts_deliverable"]
+    lifecycle_state [type: btree, name: "idx_template_artifacts_state"]
+  }
+
+  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.'''
+}
+
+Table "template_seeds" {
+  "id" int4 [pk, not null, increment]
+  "seed_code" varchar(180) [unique, not null]
+  "display_name" varchar(180) [not null]
+  "description" varchar(255)
+  "seed_type" varchar(40) [not null]
+  "source_path" varchar(255) [not null]
+  "preview_path" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Ref "fk_deliverables_seed":"template_seeds"."id" ?<? "deliverables"."template_seed_id"
+Ref "fk_document_fill_flows_template":"fill_flow_templates"."id" <? "document_fill_flows"."fill_flow_template_id"
+Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps"."fill_flow_template_id"
+Ref "fk_fill_flow_templates_artifact":"template_artifacts"."id" ?<? "fill_flow_templates"."template_artifact_id"
+Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
+Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
+Ref "fk_template_artifacts_deliverable":"deliverables"."id" <? "template_artifacts"."deliverable_id"
+Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artifacts"."parent_version_id"
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> deliverables   [identidad]
+//   processes -> deliverables   [procesos]
+//   document_versions -> document_fill_flows   [tareas]
+//   template_artifacts -> document_versions   [tareas]
+//   fill_requests -> document_workflow_observations   [tareas]
+//   cargos -> fill_flow_steps   [identidad]
+//   persons -> fill_flow_steps   [identidad]
+//   unit_positions -> fill_flow_steps   [organizacion]
+//   relation_unit_types -> fill_flow_steps   [organizacion]
+//   unit_types -> fill_flow_steps   [organizacion]
+//   units -> fill_flow_steps   [organizacion]
+//   process_definition_templates -> fill_flow_templates   [procesos]
+//   task_items -> fill_flow_templates   [tareas]
+//   persons -> fill_requests   [identidad]
+//   template_artifacts -> process_definition_templates   [procesos]
+//   template_artifacts -> signature_flow_templates   [firmas]
+//   template_artifacts -> task_items   [tareas]

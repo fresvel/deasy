@@ -1,0 +1,185 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Motor de procesos. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project procesos {
+  database_type: 'PostgreSQL'
+  Note: '''Motor de procesos — Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. `process_runs` es cada lanzamiento.'''
+}
+
+Table "process_definition_period_types" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_type_id" int4 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_type_id) [type: btree, unique, name: "uq_process_definition_period_types"]
+    (process_definition_id, is_active) [type: btree, name: "idx_process_definition_period_types_lookup"]
+    term_type_id [type: btree, name: "idx_process_definition_period_types_term_type"]
+  }
+}
+
+Table "process_definition_series" {
+  "id" int4 [pk, not null, increment]
+  "source_type" text [not null, check: `source_type = ANY (ARRAY['unit_type'::text, 'cargo'::text, 'default'::text])`, default: 'default']
+  "unit_type_id" int4
+  "cargo_id" int4
+  "code" varchar(120) [unique, not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    is_active [type: btree, name: "idx_process_definition_series_state"]
+  }
+}
+
+Table "process_definition_templates" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "template_artifact_id" int4 [not null]
+  "sort_order" int4 [not null, default: 1]
+  "item_mode" text [not null, check: `item_mode = ANY (ARRAY['single'::text, 'replicated'::text, 'routed'::text])`, default: 'single', note: '''Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, template_artifact_id) [type: btree, unique, name: "uq_process_definition_templates"]
+  }
+
+  Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
+}
+
+Table "process_definition_versions" {
+  "id" int4 [pk, not null, increment]
+  "process_id" int4 [not null]
+  "series_id" int4 [not null]
+  "variation_key" varchar(120) [not null, default: 'general']
+  "definition_version" varchar(20) [not null]
+  "name" varchar(180) [not null]
+  "description" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['draft'::text, 'active'::text, 'retired'::text])`, default: 'draft']
+  "active_series_flag" int2 [note: "columna generada (STORED)"]
+  "effective_from" date [not null]
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, variation_key, active_series_flag) [type: btree, unique, name: "uq_process_definition_one_active_series"]
+    (process_id, variation_key, definition_version) [type: btree, unique, name: "uq_process_definition_versions_series"]
+    (process_id, variation_key, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
+  }
+}
+
+Table "process_runs" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_id" int4
+  "run_mode" text [not null, check: `run_mode = ANY (ARRAY['automatic'::text, 'manual'::text])`, default: 'manual']
+  "source_run_id" int4
+  "created_by_user_id" int4
+  "reason" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'active'::text, 'completed'::text, 'cancelled'::text])`, default: 'active']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, status) [type: btree, name: "idx_process_runs_definition"]
+    term_id [type: btree, name: "idx_process_runs_term"]
+  }
+}
+
+Table "process_target_rules" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text])`, default: 'unit_exact']
+  "unit_id" int4
+  "unit_type_id" int4
+  "cargo_id" int4
+  "position_id" int4
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'one_per_unit'::text, 'exact_position'::text])`, default: 'all_matches']
+  "priority" int4 [not null, default: 1]
+  "is_active" int2 [not null, default: 1]
+  "effective_from" date
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, is_active) [type: btree, name: "idx_process_target_rules_definition"]
+    (unit_scope_type, unit_id, unit_type_id) [type: btree, name: "idx_process_target_rules_scope"]
+  }
+
+  Note: '''El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.'''
+}
+
+Table "processes" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "slug" varchar(180) [unique, not null]
+  "parent_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
+}
+
+Table "term_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "terms" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(60) [unique, not null]
+  "term_type_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date [not null]
+  "is_active" int2 [not null, default: 1]
+
+  Indexes {
+    term_type_id [type: btree, name: "idx_terms_term_type"]
+  }
+}
+
+Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
+Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
+Ref "fk_process_definition_templates_definition":"process_definition_versions"."id" <? "process_definition_templates"."process_definition_id" [delete: cascade]
+Ref "fk_process_definition_versions_process":"processes"."id" <? "process_definition_versions"."process_id" [delete: cascade]
+Ref "fk_process_definition_versions_series":"process_definition_series"."id" <? "process_definition_versions"."series_id"
+Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
+Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
+Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
+Ref "fk_process_target_rules_definition":"process_definition_versions"."id" <? "process_target_rules"."process_definition_id" [delete: cascade]
+Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
+Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   processes -> deliverables   [plantillas]
+//   process_definition_templates -> fill_flow_templates   [plantillas]
+//   cargos -> process_definition_series   [identidad]
+//   unit_types -> process_definition_series   [organizacion]
+//   template_artifacts -> process_definition_templates   [plantillas]
+//   persons -> process_runs   [identidad]
+//   cargos -> process_target_rules   [identidad]
+//   unit_positions -> process_target_rules   [organizacion]
+//   unit_types -> process_target_rules   [organizacion]
+//   units -> process_target_rules   [organizacion]
+//   process_definition_templates -> signature_flow_templates   [firmas]
+//   process_definition_templates -> task_items   [tareas]
+//   process_definition_versions -> tasks   [tareas]
+//   process_runs -> tasks   [tareas]
+//   terms -> tasks   [tareas]
