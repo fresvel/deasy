@@ -23,9 +23,9 @@
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
         <div class="inline-flex items-center gap-0.5 rounded-2xl border border-slate-200 bg-slate-50 p-0.5">
-          <button type="button" class="proc-toggle" :class="showInactive ? 'proc-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
-          <button type="button" class="proc-toggle" :class="showConfigs ? 'proc-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
-          <button type="button" class="proc-toggle" :class="showTemplates ? 'proc-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
+          <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
+          <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
+          <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
         </div>
         <AppButton variant="secondary" size="sm" icon-only :disabled="loading" title="Refrescar" aria-label="Refrescar" @click="loadGraph">
           <IconRefresh class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
@@ -43,7 +43,7 @@
       {{ feedback.message }}
     </div>
 
-    <div ref="graphCanvas" class="process-graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
+    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando mapa de procesos…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-slate-400">No hay procesos para mostrar.</div>
@@ -137,8 +137,8 @@
     </AppDialogOverlay>
 
     <!-- Drawer: cockpit del proceso (configuraciones, sub-procesos, lanzamientos) -->
-    <div v-if="detailProcess" class="proc-detail-overlay" @click.self="closeDetail">
-      <aside class="proc-detail-drawer">
+    <div v-if="detailProcess" class="deasy-drawer-overlay" @click.self="closeDetail">
+      <aside class="deasy-drawer">
         <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div class="min-w-0">
             <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Detalle de proceso</p>
@@ -155,9 +155,9 @@
         </header>
 
         <div class="flex gap-4 border-b border-slate-200 px-5">
-          <button type="button" class="proc-detail-tab" :class="detailTab === 'configuraciones' ? 'proc-detail-tab--active' : ''" @click="detailTab = 'configuraciones'">Configuraciones</button>
-          <button type="button" class="proc-detail-tab" :class="detailTab === 'subprocesos' ? 'proc-detail-tab--active' : ''" @click="detailTab = 'subprocesos'">Sub-procesos</button>
-          <button type="button" class="proc-detail-tab" :class="detailTab === 'corridas' ? 'proc-detail-tab--active' : ''" @click="detailTab = 'corridas'">Lanzamientos</button>
+          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'configuraciones' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'configuraciones'">Configuraciones</button>
+          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'subprocesos' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'subprocesos'">Sub-procesos</button>
+          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'corridas' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'corridas'">Lanzamientos</button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
@@ -260,8 +260,8 @@
     </div>
 
     <!-- Drawer: versiones del entregable (plantilla) -->
-    <div v-if="templateDetail" class="proc-detail-overlay" @click.self="closeTemplateVersions">
-      <aside class="proc-detail-drawer">
+    <div v-if="templateDetail" class="deasy-drawer-overlay" @click.self="closeTemplateVersions">
+      <aside class="deasy-drawer">
         <div class="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
           <div class="min-w-0">
             <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-violet-500">Entregable · versiones</p>
@@ -1097,8 +1097,10 @@ const toggleTemplatesView = () => {
 const graphCanvas = ref(null);
 
 const exportPng = async () => {
-  // Acotado a la raiz propia (no document.*): ProcessGraph y UnitGraph coexistian con la misma clase
-  // global .unit-graph-canvas, asi que un querySelector global podia exportar el grafo equivocado.
+  // Acotado a la raiz propia (no document.*), y esto es CARGA ESTRUCTURAL, no estilo: ProcessGraph y
+  // UnitGraph comparten la clase `.graph-canvas`, asi que un querySelector global exportaria el grafo
+  // equivocado en cuanto los dos esten montados. El ref es lo que los distingue; no lo cambies por
+  // una busqueda por clase.
   const root = graphCanvas.value;
   const target = root?.querySelector(".vue-flow") || root?.querySelector(".vue-flow__viewport");
   if (!target) {
@@ -1146,60 +1148,3 @@ defineExpose({
   }
 });
 </script>
-
-<style scoped>
-.process-graph-canvas {
-  height: 70vh;
-  min-height: 28rem;
-}
-.proc-detail-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1075;
-  display: flex;
-  justify-content: flex-end;
-  background: rgba(15, 23, 42, 0.35);
-  backdrop-filter: blur(1px);
-}
-.proc-detail-drawer {
-  display: flex;
-  flex-direction: column;
-  width: min(30rem, 100vw);
-  height: 100%;
-  background: #fff;
-  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
-}
-.proc-detail-tab {
-  position: relative;
-  padding: 0.6rem 0.15rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-.proc-detail-tab:hover {
-  color: #334155;
-}
-.proc-detail-tab--active {
-  color: #4f46e5;
-  border-bottom-color: #4f46e5;
-}
-.proc-toggle {
-  padding: 0.25rem 0.6rem;
-  border-radius: 0.45rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #64748b;
-  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-.proc-toggle:hover {
-  color: #334155;
-}
-.proc-toggle--on {
-  background: #fff;
-  color: #4f46e5;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
-}
-</style>

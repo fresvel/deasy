@@ -36,6 +36,93 @@
 
     /* ── Conectores ─────────────────────────────────────────────────────────────────── */
 
+    /* ── Lienzo ─────────────────────────────────────────────────────────────────────
+       El grafo no tiene alto propio: si no se le da uno, Vue Flow colapsa a 0. `70vh` con
+       un suelo de `28rem` para que en pantallas bajas siga cabiendo un arbol de 3 niveles. */
+
+    .graph-canvas {
+        height: 70vh;
+        min-height: 28rem;
+    }
+
+    /* ── Control segmentado (que capas del grafo se ven) ─────────────────────────────
+       La opcion activa se distingue por TRES señales a la vez —fondo blanco, color de
+       marca y una elevacion minima— porque va sobre un carril gris y el color solo no
+       bastaba. */
+
+    .graph-toggle {
+        padding: 0.25rem 0.6rem;
+        border-radius: 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--brand-text-muted);
+        transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .graph-toggle:hover {
+        color: var(--brand-ink);
+    }
+
+    .graph-toggle--on {
+        background: var(--brand-white);
+        color: var(--brand-primary);
+        box-shadow: var(--brand-shadow);
+    }
+
+    /* ── Boton de icono del panel lateral ───────────────────────────────────────────
+       El color lo pone cada instancia (corona ambar, lapiz, papelera); aqui solo la caja
+       y el realce al pasar por encima. */
+
+    .graph-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        width: 24px;
+        border-radius: 6px;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .graph-icon-btn:hover {
+        background: var(--brand-surface-muted);
+    }
+
+    /* ── Barra de acciones de una relacion (arista) ──────────────────────────────────
+       Flota sobre el lienzo, de ahi la elevacion. Los dos hover usan los mismos
+       porcentajes que los botones de accion de las tablas: relleno al 10 % sobre blanco y
+       el token como color de texto. */
+
+    .graph-edge-toolbar {
+        display: inline-flex;
+        gap: 2px;
+        padding: 2px;
+        border-radius: 8px;
+        background: var(--brand-white);
+        box-shadow: var(--shadow-raised);
+        transition: opacity 0.15s ease;
+    }
+
+    .graph-edge-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 22px;
+        width: 22px;
+        border-radius: 6px;
+        color: var(--brand-icon);
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .graph-edge-btn:hover {
+        background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
+        color: var(--brand-primary);
+    }
+
+    .graph-edge-btn--danger:hover {
+        background: color-mix(in srgb, var(--state-danger) 10%, var(--brand-white));
+        color: var(--state-danger);
+    }
+
     /* ── Barra de acciones ──────────────────────────────────────────────────────────────
        Al costado derecho del nodo y centrada: libre de los conectores, que van arriba y
        abajo. `left:100%` + `padding-left` transparente la deja CONTIGUA al nodo, para que
