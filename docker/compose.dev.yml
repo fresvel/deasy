@@ -65,6 +65,55 @@ services:
       # una dependencia nueva se instala DENTRO del contenedor, no en el host.
       - docs_node_modules:/app/docs/node_modules
 
+  # ── Explorador del modelo de datos (opcional) ─────────────────────────────────────────
+  # Azimutt (MIT) sirve para EXPLORAR el esquema de forma interactiva: buscar una tabla,
+  # abrir solo sus vecinas, seguir una relacion. Es lo que los diagramas estaticos por
+  # dominio no pueden dar.
+  #
+  # Va detras del perfil `explorer` A PROPOSITO: son DOS contenedores mas (la aplicacion
+  # necesita su propia base) y es una herramienta que se abre de vez en cuando, no parte
+  # de la aplicacion. Con cuatro pilas, arrancarlo por defecto serian ocho contenedores
+  # comiendo RAM sin que nadie los mire.
+  #
+  #   bash scripts/stack.sh c --profile explorer up -d azimutt
+  #
+  # Su base es PROPIA y no la del proyecto, tambien a proposito: `test:char:run` resetea
+  # la base de dev, y con ella se llevaria por delante los diagramas guardados aqui.
+  azimutt:
+    image: ghcr.io/azimuttapp/azimutt:main
+    profiles: [explorer]
+    restart: unless-stopped
+    depends_on:
+      azimutt-db:
+        condition: service_healthy
+    environment:
+      PHX_HOST: localhost
+      PORT: "4000"
+      # Secreto de DESARROLLO. Vale porque esta pila no se publica; para cualquier
+      # despliegue real hay que generar uno propio (>= 64 bytes aleatorios).
+      SECRET_KEY_BASE: ${AZIMUTT_SECRET_KEY_BASE}
+      DATABASE_URL: postgresql://azimutt:azimutt@azimutt-db:5432/azimutt
+      FILE_STORAGE_ADAPTER: local
+      AUTH_PASSWORD: "true"
+    ports:
+      - "${AZIMUTT_PORT:-4700}:4000"
+
+  azimutt-db:
+    image: postgres:17
+    profiles: [explorer]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: azimutt
+      POSTGRES_PASSWORD: azimutt
+      POSTGRES_DB: azimutt
+    volumes:
+      - azimutt_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U azimutt -d azimutt"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   signer:
     build:
       context: ..
@@ -99,6 +148,8 @@ volumes:
     name: deasy_${DEASY_STACK:-dev}_frontend_node_modules
   docs_node_modules:
     name: deasy_${DEASY_STACK:-dev}_docs_node_modules
+  azimutt_data:
+    name: deasy_${DEASY_STACK:-dev}_azimutt_data
 
 networks:
   default:

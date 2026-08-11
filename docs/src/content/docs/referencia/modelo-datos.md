@@ -95,6 +95,28 @@ desglosado. **8 tablas.**
 
 ![Diagrama del dominio de empleo](/diagramas/empleo.svg)
 
+## Explorar el modelo de forma interactiva
+
+Los diagramas de arriba son estáticos: buenos para leer un dominio de un vistazo, inútiles para
+seguir una relación de punta a punta. Para eso está **Azimutt**, autoalojado en la propia pila
+(licencia MIT, ningún servicio externo):
+
+```bash
+bash scripts/stack.sh c --profile explorer up -d azimutt   # -> http://localhost:4900
+```
+
+Va detrás del perfil `explorer` a propósito: son **dos contenedores** (la aplicación necesita su
+propia base) y es una herramienta que se abre de vez en cuando, no parte de la aplicación. Con
+cuatro pilas, arrancarlo por defecto serían ocho contenedores que nadie mira.
+
+La primera vez hay que registrarse — la cuenta es local, vive en la base de Azimutt y no sale de
+tu máquina. Después, al crear el proyecto, se le da la conexión a la base del entorno: desde dentro
+de la red de compose el host es `postgres` y el puerto `5432`, con las credenciales de
+`docker/.env.dev` (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`).
+
+Su base es **propia y separada** de la del proyecto, también a propósito: `test:char:run` resetea
+la base de dev, y con ella se llevaría por delante los diagramas que hayas guardado.
+
 ## Cómo se regenera
 
 ```bash

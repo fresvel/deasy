@@ -86,12 +86,12 @@ bash scripts/stack.sh b exec -T backend npm run test:unit
 bash scripts/stack.sh b down                              # OBLIGATORIO al terminar
 ```
 
-| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | docs |
-|---|---|---|---|---|---|---|---|---|
-| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 | 4321 |
-| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 | 4421 |
-| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 4200 | 5872 | 4521 |
-| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 | 4621 |
+| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | docs | azimutt |
+|---|---|---|---|---|---|---|---|---|---|
+| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 | 4321 | 4700 |
+| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 | 4421 | 4800 |
+| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 4200 | 5872 | 4521 | 4900 |
+| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 | 4621 | 5000 |
 
 - **La pila A ES la `dev` de siempre.** Mismo proyecto, mismos volúmenes, mismos puertos:
   `docker-env.sh dev` y `stack.sh a` son la misma. **No hay una quinta pila.**
@@ -215,6 +215,12 @@ tabla no está en ninguno o está en dos, para que no se quede fuera de los diag
 Lo único que se escribe a mano es **`docs/02-dominio-datos/anotaciones.json`**: qué *significa*
 una tabla o una columna. Se inyecta como nota en el DBML, y el generador falla si nombras algo que
 no existe.
+
+**Explorador interactivo** (opcional, perfil `explorer`): `bash scripts/stack.sh c --profile
+explorer up -d azimutt` levanta **Azimutt** (MIT, autoalojado) para navegar el esquema buscando y
+expandiendo tablas — lo que los diagramas estáticos no dan. Son **dos** contenedores: la aplicación
+y **su propia base**, separada de la del proyecto porque `test:char:run` resetea la de dev y se
+llevaría los diagramas guardados. Por eso va tras un perfil y no arranca por defecto.
 
 El generador levanta **su propio PostgreSQL desechable** (no toca ninguna pila, no publica
 puertos). Efecto secundario que vale tanto como los diagramas: **aplica el esquema con
