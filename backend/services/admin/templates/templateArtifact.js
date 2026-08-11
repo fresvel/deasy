@@ -17,7 +17,7 @@ import {
   walkFiles,
 } from "../kernel/storage.js";
 import { parseAvailableFormats, parseYamlDocument } from "./artifacts.js";
-import { hasFillStepsForArtifact } from "./flowRows.js";
+import { hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -121,65 +121,69 @@ export default class TemplateArtifactService {
       required: requiredSet.has(def?.["x-deasy-data-key"] || key),
     }));
 
-    // Lee los workflows (fill/signatures) del meta.yaml en formato editable por la web.
-    let fillWorkflow = { required: true, steps: [] };
-    let signatureWorkflow = { required: false, steps: [] };
-    try {
-      const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-      const fill = meta?.workflows?.fill || {};
-      fillWorkflow = {
-        required: fill?.required !== false,
-        steps: (Array.isArray(fill?.steps) ? fill.steps : []).map((s, i) => ({
+    // Lee los workflows (fill/signatures) DE LA BASE en formato editable por la web.
+    //
+    // Sub-paso 5 del §0.8: antes se reconstruían desde el `meta.yaml` de MinIO, envueltos en un
+    // `catch {}` mudo que devolvía «esta plantilla no define flujo» ante cualquier fallo. Ese catch
+    // NO vuelve: aquí un flujo vacío inventado no es un aviso cosmético, es lo que el editor carga y
+    // lo que el siguiente guardado escribe — o sea, el borrado del flujo. Un error de base sube.
+    //
+    // `readAuthoredFlowForArtifact` devuelve la MISMA estructura que `buildWorkflowsDocument`
+    // (`workflows.js`), que es la que este aplanado ya consumía: el mapeo de abajo no cambia, y por
+    // eso la respuesta del endpoint sigue siendo equivalente campo a campo. Verificado contra la
+    // salida capturada antes del cambio.
+    const workflows = await readAuthoredFlowForArtifact(this.pool, artifact.id);
+    const fill = workflows?.fill || {};
+    const fillWorkflow = {
+      required: fill?.required !== false,
+      steps: (Array.isArray(fill?.steps) ? fill.steps : []).map((s, i) => ({
+        order: Number(s?.order) || i + 1,
+        code: s?.code || "",
+        name: s?.name || "",
+        resolver_type: s?.resolver?.type || "task_assignee",
+        selection_mode: s?.resolver?.selection_mode || "auto_one",
+        cargo_id: s?.resolver?.cargo_id || null,
+        cargo_code: s?.resolver?.cargo_code || "",
+        unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
+        unit_id: s?.resolver?.unit_id || null,
+        unit_type_id: s?.resolver?.unit_type_id || null,
+        person_id: s?.resolver?.person_id || null,
+        position_id: s?.resolver?.position_id || null,
+        field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
+        required: s?.required !== false,
+      })),
+    };
+    const sig = workflows?.signatures || {};
+    // Aplana un resolutor a los campos que usa el formulario web de firmante.
+    const flattenSigner = (resolver = {}) => ({
+      resolver_type: resolver?.type || "cargo_in_scope",
+      selection_mode: resolver?.selection_mode || "auto_all",
+      cargo_id: resolver?.cargo_id || null,
+      cargo_code: resolver?.cargo_code || "",
+      unit_scope_type: resolver?.unit_scope_type || "context_exact",
+      unit_id: resolver?.unit_id || null,
+      unit_type_id: resolver?.unit_type_id || null,
+      person_id: resolver?.person_id || null,
+      position_id: resolver?.position_id || null,
+    });
+    const signatureWorkflow = {
+      required: sig?.required === true,
+      steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => {
+        // Multi-firmante: `signers: [...]`. Back-compat: un paso con un único `resolver`.
+        const rawSigners = Array.isArray(s?.signers) && s.signers.length
+          ? s.signers
+          : (s?.resolver ? [s.resolver] : []);
+        return {
           order: Number(s?.order) || i + 1,
           code: s?.code || "",
           name: s?.name || "",
-          resolver_type: s?.resolver?.type || "task_assignee",
-          selection_mode: s?.resolver?.selection_mode || "auto_one",
-          cargo_id: s?.resolver?.cargo_id || null,
-          cargo_code: s?.resolver?.cargo_code || "",
-          unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
-          unit_id: s?.resolver?.unit_id || null,
-          unit_type_id: s?.resolver?.unit_type_id || null,
-          person_id: s?.resolver?.person_id || null,
-          position_id: s?.resolver?.position_id || null,
-          field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
+          approval_mode: s?.approval_mode || "and",
+          required_signers_min: s?.required_signers_min || 1,
           required: s?.required !== false,
-        })),
-      };
-      const sig = meta?.workflows?.signatures || {};
-      // Aplana un resolutor del meta a los campos que usa el formulario web de firmante.
-      const flattenSigner = (resolver = {}) => ({
-        resolver_type: resolver?.type || "cargo_in_scope",
-        selection_mode: resolver?.selection_mode || "auto_all",
-        cargo_id: resolver?.cargo_id || null,
-        cargo_code: resolver?.cargo_code || "",
-        unit_scope_type: resolver?.unit_scope_type || "context_exact",
-        unit_id: resolver?.unit_id || null,
-        unit_type_id: resolver?.unit_type_id || null,
-        person_id: resolver?.person_id || null,
-        position_id: resolver?.position_id || null,
-      });
-      signatureWorkflow = {
-        required: sig?.required === true,
-        steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => {
-          // Multi-firmante: `signers: [...]`. Back-compat: meta antigua con un único `resolver`.
-          const rawSigners = Array.isArray(s?.signers) && s.signers.length
-            ? s.signers
-            : (s?.resolver ? [s.resolver] : []);
-          return {
-            order: Number(s?.order) || i + 1,
-            code: s?.code || "",
-            name: s?.name || "",
-            approval_mode: s?.approval_mode || "and",
-            required_signers_min: s?.required_signers_min || 1,
-            required: s?.required !== false,
-            signers: rawSigners.map(flattenSigner),
-          };
-        }),
-      };
-    } catch {
-      // sin meta legible → flujos vacíos por defecto
-    }
+          signers: rawSigners.map(flattenSigner),
+        };
+      }),
+    };
 
     return {
       artifact_id: Number(artifactId),

@@ -13,6 +13,7 @@ import assert from "node:assert/strict";
 
 import {
   hasFillStepsForArtifact,
+  readAuthoredFlowForArtifact,
   replaceAuthoredFlowForArtifact,
   replaceFillFlowSteps,
   replaceSignatureFlowSteps,
@@ -289,4 +290,275 @@ test("un error de la base SUBE: no se traduce en 'no define flujo'", async () =>
   // mensaje que mentía sobre la causa. Aquí no hay `catch` y no lo puede volver a haber.
   const connection = buildCountConnection({ falla: true });
   await assert.rejects(() => hasFillStepsForArtifact(connection, ARTIFACT_ID), /la base no responde/);
+});
+
+// --- La relectura del editor (sub-paso 5 del §0.8) -----------------------------------------------
+//
+// `readAuthoredFlowForArtifact` es lo que rellena el editor al reabrir una plantilla. Devuelve la
+// forma del DOCUMENTO `workflows:` —la misma que produce `buildWorkflowsDocument`— porque el
+// endpoint ya sabía aplanar esa forma y así su contrato HTTP no se mueve.
+//
+// Lo que se fija aquí es lo que el characterization NO puede ver de un solo golpe: el ORDEN de los
+// dos portadores, la INVERSA de `buildStepResolver` (que es donde una lectura ingenua se equivoca) y
+// las dos convenciones del JSONB `signers`.
+
+// Doble que responde a las consultas del lector. Las cabeceras van EN MAPAS POR ARTIFACT porque el
+// tercer escalón sube por `parent_version_id` y hay que poder decir «este artifact no tiene, su padre
+// sí». `is_active` viaja con la cabecera: existir y estar activa son dos cosas distintas y el lector
+// las distingue.
+const buildReadConnection = ({
+  fillHeaders = {},
+  fillLinkHeaders = {},
+  signatureHeaders = {},
+  signatureLinkHeaders = {},
+  parents = {},
+  fillRows = [],
+  signatureRows = [],
+  falla = false,
+} = {}) => {
+  const calls = [];
+  const cabecera = (mapa, artifactId) => {
+    const found = mapa[artifactId];
+    if (!found) return [];
+    return [{ id: found.id, is_active: found.is_active === undefined ? 1 : found.is_active }];
+  };
+  return {
+    calls,
+    query: async (sql, params = []) => {
+      const flat = sql.replace(/\s+/g, " ").trim();
+      calls.push({ sql: flat, params });
+      if (falla) throw new Error("la base no responde");
+      const artifactId = params[0];
+      if (/^SELECT id, is_active FROM fill_flow_templates/.test(flat)) {
+        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? fillHeaders : fillLinkHeaders, artifactId)];
+      }
+      if (/^SELECT id, is_active FROM signature_flow_templates/.test(flat)) {
+        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? signatureHeaders : signatureLinkHeaders, artifactId)];
+      }
+      if (/^SELECT parent_version_id FROM template_artifacts/.test(flat)) {
+        return [parents[artifactId] ? [{ parent_version_id: parents[artifactId] }] : [{ parent_version_id: null }]];
+      }
+      if (/FROM fill_flow_steps/.test(flat)) return [fillRows];
+      if (/FROM signature_flow_steps/.test(flat)) return [signatureRows];
+      return [[]];
+    },
+  };
+};
+
+const fillRow = (extra = {}) => ({
+  step_order: 1,
+  code: null,
+  name: "Entrega del responsable",
+  resolver_type: "task_assignee",
+  assigned_person_id: null,
+  // El valor que `normalizeFillSteps` mete por defecto aunque el ámbito no signifique nada para
+  // este resolutor. Es exactamente lo que NO debe salir en el contrato.
+  unit_scope_type: "unit_exact",
+  unit_id: null,
+  unit_type_id: null,
+  relation_type_id: null,
+  cargo_id: null,
+  position_id: null,
+  selection_mode: "auto_one",
+  is_required: 1,
+  ...extra,
+});
+
+const signatureRow = (extra = {}) => ({
+  step_order: 1,
+  code: "firma_cargo",
+  name: "Firma por cargo",
+  slot: "firma_cargo",
+  resolver_type: "cargo_in_scope",
+  assigned_person_id: null,
+  unit_scope_type: "unit_exact",
+  unit_id: 8,
+  unit_type_id: null,
+  position_id: null,
+  required_cargo_id: 2,
+  selection_mode: "auto_all",
+  approval_mode: "and",
+  required_signers_min: 1,
+  required_signers_max: null,
+  is_required: 1,
+  signers: [],
+  ...extra,
+});
+
+test("el lector prefiere el flujo colgado del ARTIFACT y ni pregunta por el del vinculo", async () => {
+  const connection = buildReadConnection({
+    fillHeaders: { [ARTIFACT_ID]: { id: 13 } },
+    signatureHeaders: { [ARTIFACT_ID]: { id: 4 } },
+    fillRows: [fillRow()],
+  });
+  const flujo = await readAuthoredFlowForArtifact(connection, ARTIFACT_ID);
+
+  assert.equal(flujo.fill.steps.length, 1);
+  const porVinculo = connection.calls.filter((call) => /process_definition_templates/.test(call.sql));
+  assert.equal(porVinculo.length, 0, "con cabecera propia no se baja al segundo escalon");
+});
+
+test("sin flujo propio se lee el que el sync sembro en el VINCULO (andamiaje hasta el sub-paso 8)", async () => {
+  // Toda plantilla que no se haya vuelto a guardar por el formulario —las del bootstrap— solo tiene
+  // esta copia. Sin este escalón, reabrirlas mostraría el flujo vacío y el guardado siguiente lo
+  // borraría: es el hallazgo 2 del §0.8.
+  const connection = buildReadConnection({
+    fillLinkHeaders: { [ARTIFACT_ID]: { id: 2 } },
+    fillRows: [fillRow({ code: "owner_fill" })],
+  });
+  const flujo = await readAuthoredFlowForArtifact(connection, ARTIFACT_ID);
+
+  assert.equal(flujo.fill.steps.length, 1);
+  const [porVinculo] = connection.calls.filter((call) => /process_definition_templates/.test(call.sql));
+  assert.match(porVinculo.sql, /task_item_id IS NULL/, "el flujo de runtime nunca es el de la plantilla");
+});
+
+test("una VERSION recien creada hereda el flujo de su padre (andamiaje hasta el sub-paso 6)", async () => {
+  // `createTemplateArtifactVersion` copia MinIO en binario y no crea ni filas ni vínculo: la versión
+  // nace sin portador propio. Su flujo lo llevaba el `meta.yaml` copiado, o sea el del padre.
+  // MEDIDO EN EL NAVEGADOR: sin este escalón, versionar y reabrir mostraba el flujo vacío.
+  const HIJA = 11;
+  const connection = buildReadConnection({
+    parents: { [HIJA]: ARTIFACT_ID },
+    fillLinkHeaders: { [ARTIFACT_ID]: { id: 4 } },
+    fillRows: [fillRow({ code: "owner_fill", resolver_type: "document_owner" })],
+  });
+  const flujo = await readAuthoredFlowForArtifact(connection, HIJA);
+
+  assert.equal(flujo.fill.steps.length, 1, "la hija ve el flujo del padre");
+  assert.equal(flujo.fill.steps[0].code, "owner_fill");
+});
+
+test("el ascenso por el linaje TERMINA: ni sin padre ni con un padre circular se cuelga", async () => {
+  const sinPadre = buildReadConnection();
+  assert.deepEqual((await readAuthoredFlowForArtifact(sinPadre, ARTIFACT_ID)).fill.steps, []);
+
+  const circular = buildReadConnection({ parents: { [ARTIFACT_ID]: 7, 7: ARTIFACT_ID } });
+  assert.deepEqual((await readAuthoredFlowForArtifact(circular, ARTIFACT_ID)).fill.steps, []);
+});
+
+test("una cabecera DESACTIVADA es una respuesta, no un hueco: no se hereda del padre", async () => {
+  // Quitarle todos los pasos a un lado desactiva su cabecera (`replaceArtifactFlowSide`) en vez de
+  // borrarla. Si el lector la ignorara por no estar activa, seguiría subiendo y resucitaría desde el
+  // padre los pasos que el autor acaba de quitar.
+  const HIJA = 11;
+  const connection = buildReadConnection({
+    parents: { [HIJA]: ARTIFACT_ID },
+    fillHeaders: { [HIJA]: { id: 20, is_active: 0 }, [ARTIFACT_ID]: { id: 13 } },
+    fillRows: [fillRow()],
+  });
+  const flujo = await readAuthoredFlowForArtifact(connection, HIJA);
+
+  assert.deepEqual(flujo.fill.steps, [], "el flujo quitado sigue quitado");
+  assert.equal(connection.calls.some((call) => /FROM fill_flow_steps/.test(call.sql)), false);
+});
+
+test("un resolutor que no es por cargo vuelve SIN ambito, aunque la columna lo lleve", async () => {
+  // Es el fallo que midió el experimento desechable: volcar la columna cruda mueve
+  // `unit_scope_type` de `context_exact` a `unit_exact` en todo paso no-cargo, incluida la
+  // plantilla de la fixture. `buildStepResolver` solo emite el ámbito para `cargo_in_scope`.
+  const connection = buildReadConnection({ fillHeaders: { [ARTIFACT_ID]: { id: 13 } }, fillRows: [fillRow()] });
+  const [paso] = (await readAuthoredFlowForArtifact(connection, ARTIFACT_ID)).fill.steps;
+
+  assert.deepEqual(paso.resolver, { type: "task_assignee", selection_mode: "auto_one" });
+  assert.equal(paso.name, "Entrega del responsable");
+  assert.equal(paso.required, true);
+  assert.equal("code" in paso, false, "un paso sin code no lo inventa");
+});
+
+test("un paso por cargo vuelve con su cargo, su ambito y su unidad", async () => {
+  const connection = buildReadConnection({
+    fillHeaders: { [ARTIFACT_ID]: { id: 13 } },
+    fillRows: [fillRow({
+      step_order: 2,
+      resolver_type: "cargo_in_scope",
+      cargo_id: 2,
+      unit_scope_type: "unit_exact",
+      unit_id: 8,
+      is_required: 0,
+    })],
+  });
+  const [paso] = (await readAuthoredFlowForArtifact(connection, ARTIFACT_ID)).fill.steps;
+
+  assert.deepEqual(paso.resolver, {
+    type: "cargo_in_scope",
+    selection_mode: "auto_one",
+    cargo_id: 2,
+    unit_scope_type: "unit_exact",
+    unit_id: 8,
+  });
+  assert.equal(paso.required, false);
+});
+
+test("el JSONB signers se lee en sus DOS convenciones de nombre", async () => {
+  // camelCase lo escribe la autoría de plantilla (`normalizeSignatureSigner`); snake_case lo escribe
+  // el flujo de runtime (`generation/documents.js`). Devolver la fila cruda le daría al formulario
+  // `requiredCargoId` donde espera `cargo_id`, y perdería a todos los firmantes.
+  const connection = buildReadConnection({
+    signatureHeaders: { [ARTIFACT_ID]: { id: 4 } },
+    signatureRows: [
+      signatureRow({
+        signers: [{ resolverType: "cargo_in_scope", requiredCargoId: 2, unitScopeType: "unit_exact", unitId: 8, selectionMode: "auto_all" }],
+      }),
+      signatureRow({ step_order: 2, signers: '[{"type":"specific_person","person_id":7}]' }),
+    ],
+  });
+  const { steps } = (await readAuthoredFlowForArtifact(connection, ARTIFACT_ID)).signatures;
+
+  assert.deepEqual(steps[0].signers, [{
+    type: "cargo_in_scope",
+    selection_mode: "auto_all",
+    cargo_id: 2,
+    unit_scope_type: "unit_exact",
+    unit_id: 8,
+  }]);
+  assert.deepEqual(steps[1].signers, [{ type: "specific_person", person_id: 7 }]);
+});
+
+test("un paso de firma sin lista signers se lee con las columnas del propio paso", async () => {
+  // Back-compat, espejo de la que ya tenía el lector del meta: ahí un paso podía traer un `resolver`
+  // único en vez de la lista.
+  const connection = buildReadConnection({
+    signatureHeaders: { [ARTIFACT_ID]: { id: 4 } },
+    signatureRows: [signatureRow({ signers: [] })],
+  });
+  const [paso] = (await readAuthoredFlowForArtifact(connection, ARTIFACT_ID)).signatures.steps;
+
+  assert.deepEqual(paso.signers, [{
+    type: "cargo_in_scope",
+    selection_mode: "auto_all",
+    cargo_id: 2,
+    unit_scope_type: "unit_exact",
+    unit_id: 8,
+  }]);
+});
+
+test("las dos banderas 'required' se derivan sin columna: entrega SIEMPRE, firma si hay pasos", async () => {
+  // `fill.required` es `true` en todo lo que produce el formulario y es el valor que el endpoint ya
+  // devolvía por defecto. `signatures.required` equivale al `sig.required === true` del meta: las
+  // filas SOLO existen si el escritor vio la bandera puesta.
+  const vacio = await readAuthoredFlowForArtifact(buildReadConnection(), ARTIFACT_ID);
+  assert.deepEqual(vacio, {
+    fill: { required: true, steps: [] },
+    signatures: { required: false, steps: [] },
+  });
+
+  const conFirma = await readAuthoredFlowForArtifact(
+    buildReadConnection({ signatureHeaders: { [ARTIFACT_ID]: { id: 4 } }, signatureRows: [signatureRow()] }),
+    ARTIFACT_ID,
+  );
+  assert.equal(conFirma.signatures.required, true);
+});
+
+test("sin id no se consulta la base, y un error de la base SUBE", async () => {
+  // El mismo criterio del sub-paso 4, y aquí pesa más: este lector es lo que rellena el editor, así
+  // que un "flujo vacío" inventado se convierte en BORRADO del flujo en cuanto el usuario guarda.
+  const sinId = buildReadConnection();
+  assert.deepEqual((await readAuthoredFlowForArtifact(sinId, null)).fill, { required: true, steps: [] });
+  assert.equal(sinId.calls.length, 0);
+
+  await assert.rejects(
+    () => readAuthoredFlowForArtifact(buildReadConnection({ falla: true }), ARTIFACT_ID),
+    /la base no responde/,
+  );
 });
