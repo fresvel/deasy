@@ -361,6 +361,14 @@ export const getExistingTaskItemTargetKeys = async (connection, taskId) => {
   ].join(":")));
 };
 
+// Fila que consume `ensureDocumentForTaskItem`. `responsible_position_id` es el DEL ENTREGABLE
+// (`ti.`), no el de la tarea: es lo que `resolveOwnerPersonIdForTaskItem` cree estar leyendo cuando
+// busca el ocupante en `task_assignments`. Proyectar `t.responsible_position_id` eclipsaba la
+// columna homónima del ítem y le daba el puesto de la TAREA, con lo que todo entregable dirigido a
+// un puesto distinto del de su tarea heredaba el dueño equivocado. El otro alimentador del mismo
+// resolver (`GeneralTaskService.loadDerivedTaskItemRow`) siempre proyectó `ti.`; esta es la forma
+// que los iguala. El respaldo a nivel de tarea ya existe aguas abajo (rama 4 del resolver, y rama 2
+// de `resolveOriginUnitIdForTaskItem`), así que aquí no hace falta ningún COALESCE.
 export const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
   const [rows] = await connection.query(
     `SELECT
@@ -372,10 +380,9 @@ export const getTaskItemsForDocumentMaterialization = async (connection, taskId)
        ti.target_unit_id,
        ti.target_position_id,
        ti.target_person_id,
-       t.responsible_position_id,
+       ti.responsible_position_id,
        tar_dl.display_name AS template_artifact_name
      FROM task_items ti
-     LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      WHERE ti.task_id = ?
