@@ -6,6 +6,10 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+	// `site` va DELIBERADAMENTE sin poner: fija las URL canonicas y el sitemap, y todavia no
+	// esta decidido bajo que dominio y que ruta se publica esto (va con el despliegue del
+	// servicio en qa/prod). Ponerlo mal es peor que no ponerlo: genera canonicas incorrectas.
+	// Mientras tanto el build avisa "Sitemap integration requires the `site` option" y lo salta.
 	integrations: [
 		mermaid({
 			theme: "forest",
@@ -28,15 +32,28 @@ export default defineConfig({
 			]
 		}),
 		starlight({
-			title: 'Docs with Tailwind',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
-			// Sin sidebar: las paginas de ejemplo de la plantilla se retiraron el 2026-08-08.
-			// OJO: la documentacion real de este repositorio (03-backend/, 07-despliegue/,
-			// arquitecturas/, los planes...) vive FUERA de src/content/docs/, asi que este sitio
-			// NO la publica. Hoy es andamiaje: nadie lo construye ni en CI ni en ningun script.
-			// Antes de añadir entradas aqui hay que decidir si se mueve la documentacion dentro o
-			// si el sitio se retira.
-			sidebar: [],
+			title: 'Deasy — Documentación',
+			// El idioma va DENTRO de `locales`, no como clave de primer nivel: `lang` suelto
+			// hace fallar el arranque con "Unrecognized key".
+			defaultLocale: 'root',
+			locales: { root: { label: 'Español', lang: 'es' } },
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/fresvel/deasy' }],
+			// La carpeta ES la URL: `src/content/docs/guias/entorno-dev.md` -> `/guias/entorno-dev`.
+			// Con `autogenerate` no hay que registrar cada pagina aqui: crear el fichero en la
+			// carpeta lo mete en el menu. El orden dentro de un grupo se controla con
+			// `sidebar: { order: N }` en el frontmatter de cada pagina.
+			//
+			// Los cuatro grupos son los de Diataxis, y responden a preguntas distintas:
+			//   empezar     -> "ensename"            (tutorial, se lee una vez)
+			//   guias       -> "necesito hacer X"    (receta, se consulta)
+			//   referencia  -> "como es exactamente" (GENERADA: esquema y API. No se escribe a mano)
+			//   explicacion -> "por que asi"         (aqui aterrizara arquitectura-deasy.tex)
+			//
+			// Un grupo cuya carpeta no existe todavia hace fallar el build, asi que se añaden
+			// segun se creen. Hoy solo hay `guias/`.
+			sidebar: [
+				{ label: 'Guías', autogenerate: { directory: 'guias' } },
+			],
 			customCss: ['./src/styles/global.css'],
 		}),
 	],

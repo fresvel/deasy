@@ -1,50 +1,36 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: Documentación de Deasy
+description: Plataforma de gestión documental y firmas de la PUCE Sede Esmeraldas.
+template: splash
 hero:
-  title: |
-    Welcome to Starlight with
-    <span
-      class="font-black text-transparent
-        bg-clip-text bg-gradient-to-b
-        from-accent-700 to-accent-400
-        dark:from-accent-500 dark:to-accent-200"
-    >
-      Tailwind
-    </span>
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
+  tagline: Gestión de procesos, entregables y firmas electrónicas para la PUCE Sede Esmeraldas.
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: Levantar el entorno de desarrollo
+      link: /guias/entorno-dev/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
+    - text: Ver el repositorio
+      link: https://github.com/fresvel/deasy
       icon: external
       variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Next steps
-
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
-	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
-	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
-	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
-	</Card>
+<CardGrid>
+  <Card title="Guías" icon="open-book">
+    Recetas para hacer algo concreto: levantar el entorno, desplegar, resetear la base.
+    Empieza por [el entorno de desarrollo](/guias/entorno-dev/).
+  </Card>
+  <Card title="Referencia" icon="setting">
+    El esquema de la base de datos y la API. **Se genera desde el código**, no se escribe
+    a mano — por eso no puede contradecirlo.
+  </Card>
+  <Card title="Explicación" icon="information">
+    Por qué el sistema es como es: el motor de procesos, los modos de emisión,
+    la cadena de firma.
+  </Card>
+  <Card title="Este sitio" icon="rocket">
+    Se edita como el código: abres un `.md`, guardas, y el navegador se recarga solo.
+    Sin CMS y sin panel de administración.
+  </Card>
 </CardGrid>

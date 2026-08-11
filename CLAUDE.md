@@ -86,12 +86,12 @@ bash scripts/stack.sh b exec -T backend npm run test:unit
 bash scripts/stack.sh b down                              # OBLIGATORIO al terminar
 ```
 
-| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit |
-|---|---|---|---|---|---|---|---|
-| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 |
-| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 |
-| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 4200 | 5872 |
-| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 |
+| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | docs |
+|---|---|---|---|---|---|---|---|---|
+| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 | 4321 |
+| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 | 4421 |
+| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 4200 | 5872 | 4521 |
+| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 | 4621 |
 
 - **La pila A ES la `dev` de siempre.** Mismo proyecto, mismos volúmenes, mismos puertos:
   `docker-env.sh dev` y `stack.sh a` son la misma. **No hay una quinta pila.**
@@ -164,6 +164,37 @@ Cuatro cosas que cuestan caro y no son evidentes:
    antes de medir o los anchos mienten.
 
 El plan, la bitácora y las dos auditorías están en **`docs/planes/sistema-diseno/`**.
+
+### Documentación — el sitio Astro Starlight
+
+```bash
+bash scripts/docker-env.sh dev up -d docs                        # levanta el sitio -> http://localhost:4321
+bash scripts/docker-env.sh dev exec -T docs pnpm run build       # build de produccion (3 paginas hoy)
+bash scripts/docker-env.sh dev exec docs pnpm add <paquete>      # dependencias: DENTRO del contenedor
+```
+
+**La carpeta es la URL.** `docs/src/content/docs/guias/entorno-dev.md` se publica en
+`/guias/entorno-dev`; no hay que registrar la página en ningún sitio. El menú lateral se llena solo:
+los grupos de `astro.config.mjs` usan `autogenerate` por carpeta, y el orden dentro de un grupo se
+controla con `sidebar: { order: N }` en el frontmatter. `title` en el frontmatter es **obligatorio**.
+
+El bucle es el mismo que el del código: editas el `.md` en el host con tu editor, guardas, y el
+navegador se recarga solo — el contenedor monta `../docs`, no hay que reconstruir nada. Como en el
+frontend, el volumen de `node_modules` **sombrea** el de la imagen: una dependencia nueva se instala
+dentro del contenedor o no se ve.
+
+Tres cosas que ya costaron un arranque fallido:
+
+1. **`lang` no es clave de primer nivel de Starlight.** Va dentro de `locales`; suelto, el contenedor
+   arranca y muere con `Invalid config passed to starlight integration`.
+2. **Un grupo de `sidebar` cuyo directorio no existe rompe el build.** Los grupos se añaden según se
+   crean las carpetas, no antes. Hoy solo existe `guias/`.
+3. **`site` está sin poner a propósito** — fija canónicas y sitemap, y el dominio de publicación aún
+   no está decidido. El aviso del build es esperado.
+
+El servicio vive **solo en `compose.dev.yml`**: qa y prod todavía no despliegan documentación.
+Existía desde marzo en el `docker-compose.yml` monolítico y se perdió al partirlo en base+overlays;
+el `Dockerfile` y `DOCS_PORT` sobrevivieron en los cuatro `.env`.
 
 ### Backend
 ```bash
