@@ -334,19 +334,68 @@ deshacer (`:1633-1642`). El flujo **no puede escribirse así**: hay que extraer 
 `replaceAuthoredFlowForArtifact(connection, artifactId, …)` y meterlo en la misma transacción que el
 UPSERT de `template_artifacts`.
 
-#### Los ocho sub-pasos
+#### ⚠️ Lo que el primer intento del sub-paso 3 destapó (2026-08-11)
+
+Se intentó la inversión, **se paró antes del punto de no retorno y no se commiteó nada**. El agente hizo
+la mitad reversible —quitar la sección `workflows:` del meta— para **medir a quién le duele**, midió
+12 pruebas en rojo, revirtió y dejó el árbol en verde. Ese informe valió más que el código.
+
+**Cuatro cosas que este documento daba por buenas y son falsas:**
+
+1. **«El `meta.yaml` no tiene otra razón de ser… sus otras claves son copias de columnas.»** Falso, y
+   es el error de fondo: se comprobaron las claves de arriba y **no se miró dentro de los pasos**.
+   `fill_flow_steps` **no tiene `code`, `name` ni `field_refs`**; `signature_flow_steps` sí tiene los
+   tres. **El nombre que el usuario escribe en cada paso de entrega vive solo dentro del YAML.**
+   Invertir sin más lo pierde. → resuelto con el sub-paso **1-bis**.
+2. **Falta un lector, y no estaba en ninguno de los ocho pasos.** `GET /admin/sql/template_artifacts/:id/schema`
+   (`templateArtifact.js:123-181`) reconstruye el flujo **desde el `meta.yaml`**, y es lo único que
+   rellena el editor al reabrir una plantilla (`useAdminDraftArtifactFlow.js:119`). Medido: quitada la
+   sección, guardas un paso y al reabrir sale **vacío**.
+3. **Los sub-pasos 3 y 4 no eran separables.** Los cuatro gates de publicación leen
+   `meta.workflows.fill.steps`; sin la sección, **ninguna plantilla guardada por el formulario se puede
+   publicar ni activar**, y con ella cae su configuración. Tres de las 12 rojas eran del **grupo de
+   control** `runtime_*` — no porque se tocara el runtime, sino porque la configuración nunca llegaba a
+   activarse.
+4. **El escalón 2 tapa al 3.** Lo ya sembrado en el vínculo por el sync gana al flujo de la plantilla.
+   Durante la escritura doble no importa (el contenido es el mismo), pero **el día que se deje de
+   emitir el meta, esas filas se quedan rancias y siguen ganando**: hay que vaciarlas en el desmontaje.
+
+**Y la lección de método, que es la que evita el quinto agujero:** este plan se escribió leyendo el
+código, y el código **no dijo la verdad entera** hasta que se ejecutó. De aquí en adelante, cada
+sub-paso que cambie comportamiento se prueba con un **experimento desechable y reversible primero**,
+para medir a quién le duele, antes de escribir el cambio de verdad.
+
+#### Los sub-pasos, reordenados POR LECTOR (2026-08-11)
+
+**Decisión del dueño:** en vez de cortar por el escritor —que obliga a mover todos los lectores a la
+vez y abre una ventana en rojo—, **se corta por lector**. El sub-paso 3 escribe en la base **y sigue
+emitiendo el `meta.yaml`**; los lectores se mudan de uno en uno; y la sección del YAML **se borra la
+última**, cuando ya no la lee nadie.
+
+El precio es **escritura doble temporal**. Es andamiaje explícito, no deuda: mientras dure, las dos
+copias salen del **mismo objeto en memoria**, así que no pueden divergir. Y cada paso queda en verde y
+es reversible hasta el desmontaje final.
 
 | # | Qué | ¿Reversible? | Qué lo verifica |
 |---|---|---|---|
 | 0 | ✅ **HECHO (`94500f9`).** Golden que observa el flujo **en la base**, no el hash del paquete. Siete claves, separando el flujo de plantilla del de runtime — este último es el **grupo de control**: si se mueve durante la inversión, tocamos algo que no tocaba. Descubrió que **el lado de la firma de plantilla está vacío en la fixture** (`BASE_META_YAML` declara `signatures: steps: []`), así que el test **autora un borrador propio** con los dos flujos para no nacer ciego | Sí | `test:char:run` 254/254 |
 | 1 | ✅ **HECHO (`8f9f1ad`, verificado el 2026-08-10).** `template_artifact_id INT NULL` + FK + índice en las dos cabeceras; `process_definition_template_id` relajado a `NULL`. **Ningún golden se movió** y las columnas se recrean solas tras el `DROP SCHEMA` de char. Aviso para el siguiente `ALTER`: el `CREATE INDEX` va **después** del `ADD COLUMN` — al revés funciona en base nueva y **mata el arranque en bucle** en una ya creada | Sí | `check:imports` · `test:unit` 442/442 · `test:char:run` 254/254 |
 | 2 | ✅ **HECHO (`ba7a55d`).** El runtime lee el tercer escalón, **detrás** de los dos actuales, en los dos gemelos (entrega y firma, que siguen simétricos). **Cada escalón exige `NULL` en los portadores de los anteriores** — sin eso la fila de runtime, que lleva dos, se colaría por el escalón del vínculo. El escalón 3 usa **subconsulta, no `JOIN`**: si el vínculo no enlaza edición da `NULL` y no casa con nada. Y exige `process_definition_template_id IS NULL`, porque **las ediciones se comparten entre configuraciones** y sin eso el flujo privado de un vínculo se colaría a los demás. **Probado por mutación**: quitar cualquiera de las dos guardas pone los unitarios en rojo | Sí | `check:imports` · `test:unit` 454/454 · `test:char:run` 254/254, ningún golden movido |
-| 3 | **La inversión.** `_writeDraftPackage` deja de emitir `workflows:`; `saveTemplateArtifactDraft` llama al escritor dentro de la transacción; deja de llamar al sync | **No** | Los goldens de `artifact_draft` se mueven (cambia `content_hash`) y **ese diff es la prueba**; el golden del paso 0 debe mostrar los mismos pasos |
-| 4 | Los cuatro gates pasan a `count(*)` | **No** | Goldens de `zz_template_lifecycle` |
-| 5 | **El versionado copia FILAS, no bytes**: `createTemplateArtifactVersion` (`templateArtifact.js:336-409`) y `forkDeliverableForConfig` (`templateLifecycle.js:531-610`) | **No** | Char nuevo: versionar con flujo → la hija tiene los mismos pasos con ids distintos. **Debe cubrir entrega Y firma** |
-| 6 | Borrar `BASE_META_YAML` y su upload (`SystemBootstrapService.js:277-305`, `:389`) | **No** | Bootstrap limpio y `count(*)` de flujos del vínculo por defecto = **0** (hoy 1). Es el criterio de cierre de §0.3 |
-| 7 | Borrar el andamiaje **y retirar los seis resolvers de la decisión 1** | **No** | `check:imports` **obligatorio** + `test:unit` + `test:char:run` |
-| 8 | Frontend: quitar badge y botón de sync (~30 L en 3 ficheros) | Sí | `lint` + `test:unit` + navegador |
+| **1-bis** | **Simetría de los pasos de entrega**: `code`, `name` y `field_refs` en `fill_flow_steps`, que `signature_flow_steps` **ya tiene**. Sin esto, invertir pierde los nombres de paso (hallazgo 1). Nadie los escribe ni los lee todavía | Sí | Test de esquema + char sin diffs |
+| **3** | **Escritura doble.** `saveTemplateArtifactDraft` escribe el flujo **en la base** (colgando de `template_artifact_id`) dentro de una transacción, **y sigue emitiendo el `meta.yaml` igual que hoy**. Las dos copias salen del **mismo objeto en memoria**: no pueden divergir. **El escalón 2 sigue ganando**, así que el runtime no nota nada | Sí | char sin diffs en los **pasos**; el golden del sub-paso 0 gana cabeceras nuevas (las de plantilla), y **eso es la prueba** |
+| **4** | **Primer lector: los cuatro gates.** Pasan a contar sobre la base (`templateArtifact.js:224,278`; `templateLifecycle.js:248,920`). Efecto colateral bueno: hoy leen MinIO con un `catch {}` mudo, así que **un MinIO caído se traduce en «no define flujo» y bloquea la publicación por una razón falsa** | Sí | Goldens de `zz_template_lifecycle` |
+| **5** | **Segundo lector: el editor.** `GET /admin/sql/template_artifacts/:id/schema` (`templateArtifact.js:123-181`) reconstruye el flujo desde la base. **Es el lector que faltaba en el plan** (hallazgo 2): sin él, reabrir una plantilla la muestra sin flujo | Sí | char + comprobar en navegador que el editor reabre con su flujo |
+| **6** | **El versionado copia FILAS, no bytes**: `createTemplateArtifactVersion` (`templateArtifact.js:336-409`) y `forkDeliverableForConfig` (`templateLifecycle.js:531-610`). Aquí se corta la auto-replicación de `document_owner` (§0.3) | **No** | Char nuevo: versionar con flujo → la hija tiene los mismos pasos con ids distintos. **Debe cubrir entrega Y firma** |
+| **7** | Borrar `BASE_META_YAML` y su upload (`SystemBootstrapService.js:277-305`, `:389`) | **No** | Bootstrap limpio y `count(*)` de flujos del vínculo por defecto = **0** (hoy 1). Criterio de cierre de §0.3 |
+| **8** | **El desmontaje.** Dejar de emitir `workflows:` en el meta · **vaciar las filas de flujo colgadas del vínculo que sembró el sync** (hallazgo 4: si no, se quedan rancias y siguen tapando al escalón 3) · borrar el andamiaje (`WorkflowSyncService`, endpoints de resync/reconcile/sync-status, `sync_mode`, marcadores, `buildWorkflowsYaml`, `meta_object_key`, `anchor_refs`) · **retirar los seis resolvers de la decisión 1** | **No** | `check:imports` **obligatorio** + `test:unit` + `test:char:run`. Los goldens de `artifact_draft` se mueven (cambia `content_hash`) y **ese diff es la prueba** |
+| **9** | Frontend: quitar badge y botón de sync (~30 L en 3 ficheros) | Sí | `lint` + `test:unit` + navegador |
+
+> **El orden de los lectores no es caprichoso:** los gates (4) van antes que el editor (5) porque son los
+> que rompen más ruidosamente —tumban la publicación entera— y porque su prueba ya existe. El editor
+> pide navegador, que es más lento de verificar.
+>
+> **Y el `meta.yaml` no se toca hasta el 8.** Mientras exista la escritura doble, cualquier paso se
+> puede deshacer volviendo a leer del YAML.
 
 ⚠️ **El sub-paso 8 toca `frontend/`, que está fuera del alcance de esta tanda.** Se deja anotado y se
 ejecuta aparte.
