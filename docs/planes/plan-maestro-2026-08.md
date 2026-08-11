@@ -297,15 +297,30 @@ bloquea la publicación por una razón falsa**. Contra la base ese modo de fallo
 
 #### El diseño objetivo
 
-**Portador: el artifact.** Añadir `template_artifact_id INT NULL` a las dos tablas de flujo y relajar
-`process_definition_template_id` a `NULL`. Quedan tres portadores excluyentes:
+**Portador: el artifact.** Añadir `template_artifact_id INT NULL` a las dos cabeceras de flujo
+(`fill_flow_templates` y `signature_flow_templates`; los **pasos no se tocan**, ya cuelgan de su
+cabecera) y relajar `process_definition_template_id` a `NULL`. Quedan tres portadores:
 
 - `task_item_id` → flujo de runtime (`routed`) — **ya existe y ya funciona**
 - `template_artifact_id` → **el flujo autorado de la plantilla** (nuevo)
-- `process_definition_template_id` → por vínculo, si alguna vez hace falta
+- `process_definition_template_id` → el del vínculo
 
-El runtime (`generation/queries.js:192-220` y su gemela de firma) gana un tercer escalón detrás de los
-dos actuales: task_item → vínculo → artifact del vínculo.
+> ⚠️ **Los tres NO son excluyentes, y una versión anterior de este documento decía que sí.** Corregido
+> el 2026-08-10 tras medirlo: `materializeRuntimeFlowForTaskItem`
+> (`services/admin/generation/documents.js:248` y `:278`) escribe **el vínculo Y el `task_item_id` en
+> el mismo `INSERT`**. En la base, la cabecera de runtime lleva los dos (`vinculo=1, task_item_id=1`).
+>
+> Es decir: **`task_item_id` no sustituye al vínculo, lo afina.** La fila dice «pertenezco al vínculo 1
+> **y además** soy específicamente para el entregable 1»; la segunda etiqueta estrecha la primera, no
+> la cancela.
+>
+> **Consecuencia práctica, y es la que importa:** la resolución del flujo es **por PRIORIDAD, de lo más
+> específico a lo más general** — nunca «mira cuál de las tres columnas está rellena», que es lo que
+> sugería la redacción vieja y habría roto el camino `routed`. Y por eso **no se puso un `CHECK` de
+> «exactamente uno»**: habría reventado el día uno.
+
+El runtime (`generation/queries.js:192-220` y su gemela de firma) gana un **tercer escalón detrás de
+los dos actuales**, sin tocar el orden existente: `task_item` → vínculo → artifact del vínculo.
 
 *Descartado:* escribir N filas, una por vínculo. Reproduce el problema del sync —N copias que
 reconciliar— sin el YAML de por medio. El punto de la inversión es que haya **una**.
@@ -323,8 +338,8 @@ UPSERT de `template_artifacts`.
 
 | # | Qué | ¿Reversible? | Qué lo verifica |
 |---|---|---|---|
-| 0 | **Golden que observe el flujo EN LA BASE**, no el hash del paquete. Hoy `zzz_artifact_draft` fija `content_hash`, que incluye el meta; sin un oráculo sobre `fill_flow_steps` el paso 3 no tiene contra qué compararse | Sí | `test:char:capture` + `run` |
-| 1 | `ALTER`: `template_artifact_id INT NULL` + FK + índice en las dos tablas; `process_definition_template_id` a `NULL` | Sí | Arranque + char sin diffs |
+| 0 | ✅ **HECHO (`94500f9`).** Golden que observa el flujo **en la base**, no el hash del paquete. Siete claves, separando el flujo de plantilla del de runtime — este último es el **grupo de control**: si se mueve durante la inversión, tocamos algo que no tocaba. Descubrió que **el lado de la firma de plantilla está vacío en la fixture** (`BASE_META_YAML` declara `signatures: steps: []`), así que el test **autora un borrador propio** con los dos flujos para no nacer ciego | Sí | `test:char:run` 254/254 |
+| 1 | ✅ **HECHO (`8f9f1ad`, verificado el 2026-08-10).** `template_artifact_id INT NULL` + FK + índice en las dos cabeceras; `process_definition_template_id` relajado a `NULL`. **Ningún golden se movió** y las columnas se recrean solas tras el `DROP SCHEMA` de char. Aviso para el siguiente `ALTER`: el `CREATE INDEX` va **después** del `ADD COLUMN` — al revés funciona en base nueva y **mata el arranque en bucle** en una ya creada | Sí | `check:imports` · `test:unit` 442/442 · `test:char:run` 254/254 |
 | 2 | El runtime lee el tercer escalón, **detrás** de los dos actuales. Aún no hay filas de ese tipo → sin cambio de comportamiento | Sí | Unitario + char sin diffs |
 | 3 | **La inversión.** `_writeDraftPackage` deja de emitir `workflows:`; `saveTemplateArtifactDraft` llama al escritor dentro de la transacción; deja de llamar al sync | **No** | Los goldens de `artifact_draft` se mueven (cambia `content_hash`) y **ese diff es la prueba**; el golden del paso 0 debe mostrar los mismos pasos |
 | 4 | Los cuatro gates pasan a `count(*)` | **No** | Goldens de `zz_template_lifecycle` |
