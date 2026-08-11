@@ -6,7 +6,6 @@
 
     .deasy-table-header {
         @apply mb-4 flex items-center justify-between gap-4 border-b pb-3;
-        border-color: #eeedf6;
     }
 
     .deasy-table-title {
@@ -26,7 +25,6 @@
     .deasy-table thead tr {
         @apply border-b;
         border-color: var(--brand-border);
-        background: #eef0f5;
     }
 
     .deasy-table th {
@@ -41,7 +39,7 @@
 
     .deasy-table tbody tr {
         @apply border-b transition-colors;
-        border-color: #eeedf6;
+        border-color: var(--brand-border);
     }
 
     .deasy-table tbody tr:last-child {
@@ -49,7 +47,6 @@
     }
 
     .deasy-table tbody tr:hover {
-        background: #f5f7fb;
     }
 
     
@@ -83,5 +80,4 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #192144;
-  background: #eef0f5;
 }

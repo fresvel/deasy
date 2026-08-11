@@ -67,7 +67,7 @@
         .deasy-sidebar__flyout {
             @apply visible relative h-full w-[21.5rem] shrink-0 translate-x-0 overflow-y-auto border-l p-3 opacity-100 [scrollbar-width:thin];
             border-color: rgba(255, 255, 255, 0.08);
-            background: #0b2232;
+            background: var(--brand-navy-deep);
         }
     }
 

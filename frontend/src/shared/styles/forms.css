@@ -55,7 +55,7 @@
 
     .deasy-filter-toolbar {
         @apply flex flex-wrap items-center justify-between gap-3 border-t pt-3;
-        border-color: #eef0f5;
+        border-color: var(--brand-surface-muted);
     }
 
     .deasy-filter-summary {

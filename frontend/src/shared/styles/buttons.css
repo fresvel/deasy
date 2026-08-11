@@ -144,7 +144,7 @@
     .deasy-btn--menu {
         @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
         border-color: rgba(18, 63, 136, 0.14);
-        background: linear-gradient(180deg, var(--brand-white) 0%, #f7fafc 100%);
+        background: linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-alt) 100%);
         color: var(--brand-text-body);
     }
 
@@ -185,7 +185,7 @@
 
     .deasy-table-shell .deasy-btn--secondary,
     .deasy-table-responsive .deasy-btn--secondary {
-        border-color: #d0d4dc;
+        border-color: var(--brand-border-strong);
         background: var(--brand-white);
         color: var(--brand-text-strong);
     }
@@ -193,7 +193,7 @@
     .deasy-table-shell .deasy-btn--secondary:hover,
     .deasy-table-responsive .deasy-btn--secondary:hover {
         border-color: #bcc2cd;
-        background: #f8f9fc;
+        background: var(--brand-surface-muted);
         color: #192144;
     }
 
@@ -211,7 +211,7 @@
     .deasy-table-shell .deasy-btn--outline-primary:hover,
     .deasy-table-responsive .deasy-btn--outline-primary:hover {
         border-color: #c3bcff;
-        background: #f7f5ff;
+        background: var(--brand-surface-muted);
         color: #5143dc;
     }
 
@@ -276,7 +276,6 @@
 }
 
 .hope-action-delete {
-  color: #c03221;
   background: rgba(192, 50, 33, 0.1);
   border-color: rgba(192, 50, 33, 0.26);
 }
@@ -336,7 +335,6 @@
 }
 
 .hope-action-delete-pdf {
-  color: #f59e0b; /* amber-500 */
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(245, 158, 11, 0.26);
 }

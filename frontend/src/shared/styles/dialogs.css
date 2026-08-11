@@ -37,7 +37,7 @@
 
 .deasy-dialog-root .deasy-dialog-header .deasy-dialog-title,
 .deasy-dialog-root .deasy-dialog-title {
-  color: #0f172a;
+  color: var(--brand-navy);
 }
 
 .deasy-dialog-root .deasy-dialog-header button {
@@ -47,8 +47,8 @@
 }
 
 .deasy-dialog-root .deasy-dialog-header button:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--brand-surface-muted);
+  color: var(--brand-navy);
 }
 
 .deasy-dialog-root {
@@ -77,7 +77,7 @@
 
 .deasy-dialog-title {
   margin: 0;
-  color: #0f172a;
+  color: var(--brand-navy);
   font-size: 1rem;
   /* `.admin-typography h5` (0,1,1) gana a esta clase (0,1,0) y lo dejaria en 500 */
   font-weight: 600 !important;
@@ -86,7 +86,7 @@
 
 .deasy-dialog-body {
   background: var(--brand-white);
-  color: #334155;
+  color: var(--brand-text-body);
   font-size: 0.95rem;
   line-height: 1.55;
   padding: 1.25rem;
@@ -115,8 +115,8 @@
 .deasy-dialog-panel .deasy-btn--close:hover,
 .profile-dialog-panel [data-modal-dismiss][aria-label="Close"]:hover,
 .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"]:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--brand-surface-muted);
+  color: var(--brand-navy);
 }
 
 .process-dialog-content,
@@ -133,7 +133,7 @@
 .process-dialog-content .deasy-dialog-header,
 .process-dialog-content .deasy-dialog-header .deasy-dialog-title {
   font-weight: var(--font-weight-semibold);
-  color: #1f3342;
+  color: var(--brand-ink);
 }
 
 .process-dialog-content .deasy-dialog-body,

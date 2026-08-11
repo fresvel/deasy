@@ -129,6 +129,17 @@
   --state-danger: #dc3545;
   --state-gold: #d4af37;
 
+  /* Botones de accion de las tablas. UN color por accion: el del icono.
+     El fondo NO se declara, se calcula mezclandolo con blanco (~10%), que es
+     de donde salia el hex que habia escrito a mano. El borde si es un valor
+     propio — es mas saturado que cualquier mezcla — y vive junto a su regla. */
+  --action-neutral: #23384f;
+  --action-view: #075985;
+  --action-assign: #047857;
+  --action-upload: #3751a3;
+  --action-delete: #b42318;
+  --action-warning: #b45309;
+
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;
   --font-size-base: 1rem;
@@ -138,3 +149,4 @@
   --line-height-base: 1.5;
   --line-height-heading: 1.2;
 }
+/* stylelint-enable color-no-hex */

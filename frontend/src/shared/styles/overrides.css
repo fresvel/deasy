@@ -45,7 +45,7 @@
 
 .deasy-auth-page {
   background:
-    linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-muted) 46%, #f3f5fa 100%);
+    linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-muted) 46%, var(--brand-surface-muted) 100%);
 }
 
 .deasy-auth-panel,
@@ -55,7 +55,7 @@
 
 .deasy-auth-visual,
 .deasy-dialog-footer {
-  background-color: #f7fafc;
+  background-color: var(--brand-surface-alt);
 }
 
 .border-slate-100,
@@ -115,12 +115,12 @@ textarea {
 .deasy-table thead tr,
 .table thead th,
 .table-institutional thead {
-  background: #eef0f5;
+  background: var(--brand-surface-muted);
 }
 
 .deasy-table tbody tr:hover,
 .table-institutional tbody tr:hover {
-  background-color: #f5f7fb;
+  background-color: var(--brand-surface-muted);
 }
 
 .deasy-btn--secondary,
@@ -165,45 +165,45 @@ header {
 }
 
 .hope-action-btn {
-  background-color: #f7fbfe;
+  background-color: color-mix(in srgb, var(--action-neutral) 3%, #fff);
   border-color: #b8cadc;
-  color: #23384f;
+  color: var(--action-neutral);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .hope-action-view {
-  background-color: #e8f5fb;
+  background-color: color-mix(in srgb, var(--action-view) 11%, #fff);
   border-color: #8ec6df;
-  color: #075985;
+  color: var(--action-view);
 }
 
 .hope-action-edit,
 .hope-action-select,
 .hope-action-assign {
-  background-color: #e9f8ef;
+  background-color: color-mix(in srgb, var(--action-assign) 10%, #fff);
   border-color: #8ed6b2;
-  color: #047857;
+  color: var(--action-assign);
 }
 
 .hope-action-version,
 .hope-action-download,
 .hope-action-upload {
-  background-color: #eef3ff;
+  background-color: color-mix(in srgb, var(--action-upload) 11%, #fff);
   border-color: #aabef4;
-  color: #3751a3;
+  color: var(--action-upload);
 }
 
 .hope-action-delete,
 .hope-action-delete-strong {
-  background-color: #fff0ed;
+  background-color: color-mix(in srgb, var(--action-delete) 9%, #fff);
   border-color: #f3aaa0;
-  color: #b42318;
+  color: var(--action-delete);
 }
 
 .hope-action-delete-pdf {
-  background-color: #fff6e5;
+  background-color: color-mix(in srgb, var(--action-warning) 9%, #fff);
   border-color: #f4c26f;
-  color: #b45309;
+  color: var(--action-warning);
 }
 
 .hope-action-btn:hover {

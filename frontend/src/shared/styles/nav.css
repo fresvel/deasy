@@ -14,7 +14,7 @@
 
     .deasy-inline-tab__badge {
         @apply inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold;
-        background: #f1f3f8;
+        background: var(--brand-surface-muted);
         color: #5a5f6f;
     }
 
