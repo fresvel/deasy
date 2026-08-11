@@ -1,5 +1,6 @@
-// Escritura de las FILAS de flujo (entrega y firma). Es el ÚNICO sitio del dominio de plantillas que
-// inserta pasos en `fill_flow_steps` / `signature_flow_steps`.
+// Las FILAS de flujo (entrega y firma) de una plantilla: quién las escribe y quién las cuenta. Es el
+// ÚNICO sitio del dominio de plantillas que inserta pasos en `fill_flow_steps` /
+// `signature_flow_steps`, y desde el sub-paso 4 también el único que los cuenta.
 //
 // POR QUÉ EXISTE (sub-paso 3 del §0.8 del plan maestro). Estos dos INSERT vivían dentro de
 // `WorkflowSyncService` (`workflowSync.js:246` y `:304`), que los alimenta desde el `meta.yaml` de
@@ -219,4 +220,59 @@ export const replaceAuthoredFlowForArtifact = async (
   });
 
   return { fill, signatures: signature };
+};
+
+// --- Lectura: ¿esta plantilla define flujo de ENTREGA? -------------------------------------------
+//
+// La usan los CUATRO gates de publicación (`templateArtifact.setTemplateArtifactActive` y
+// `.publishTemplateArtifact`; `templateLifecycle.publishDraftTemplatesForDefinition` y
+// `.finishTemplateUpdate`). Hasta el sub-paso 4 del §0.8 los cuatro leían el `meta.yaml` de MinIO
+// envueltos en un `catch {}` mudo que traducía CUALQUIER fallo —MinIO caído, objeto ausente, YAML
+// ilegible— a "esta plantilla no define flujo de entrega", y bloqueaba la publicación por una razón
+// falsa. Aquí no hay `catch`: un error de base se PROPAGA. Es el motivo real de la mudanza.
+//
+// POR QUÉ CUENTA POR LOS DOS PORTADORES, y por qué es ANDAMIAJE y no diseño final. Tras el sub-paso
+// 3 el flujo de una plantilla puede estar en dos sitios, y hoy hay plantillas reales en cada uno:
+//
+//   · `template_artifact_id`            -> lo escribe el formulario web (sub-paso 3). Lo NUEVO.
+//   · `process_definition_template_id`  -> lo siembra el sync desde el `meta.yaml`, para CADA vínculo.
+//
+// Medido en la base de dev recién sembrada: las dos plantillas de la fixture tienen 0 pasos por
+// artifact y 1 por vínculo. Es decir, TODO lo que existe hoy llegó por el sync — el bootstrap
+// siembra `BASE_META_YAML` (sub-paso 7) y `createTemplateArtifactVersion` copia MinIO en binario sin
+// copiar filas (sub-paso 6). Contar solo por artifact rechazaría toda plantilla que no se haya
+// vuelto a guardar por el formulario, incluida la que produce el update guiado: medido con un
+// experimento desechable, deja `zz_template_lifecycle :: guided_update_finish` en 400 "No se puede
+// publicar…". Contar por los dos es exactamente el conjunto que hoy pasa el gate leyendo el YAML.
+//
+// El segundo término MUERE SOLO: el sub-paso 6 hace que versionar copie filas, el 7 quita
+// `BASE_META_YAML` y el 8 vacía las filas del vínculo que sembró el sync. Cuando esa rama del OR
+// quede vacía, se borra y queda el portador único.
+//
+// Las dos guardas del WHERE no son adorno:
+//   · `f.task_item_id IS NULL` excluye el flujo de RUNTIME, que lleva vínculo Y entregable. Sin
+//     ella, un `routed` "definiría flujo de entrega" en cuanto alguien enviara un entregable.
+//   · `f.is_active = 1` excluye las cabeceras que el sync DESACTIVA sin borrarles los pasos
+//     (`workflowSync.js:322-334`): sus filas siguen ahí y contarían un flujo retirado.
+export const hasFillStepsForArtifact = async (connection, artifactId) => {
+  const id = Number(artifactId);
+  if (!id) return false;
+  const [rows] = await connection.query(
+    `SELECT EXISTS(
+       SELECT 1
+       FROM fill_flow_steps s
+       JOIN fill_flow_templates f ON f.id = s.fill_flow_template_id
+       WHERE f.is_active = 1
+         AND f.task_item_id IS NULL
+         AND (
+           (f.template_artifact_id = ? AND f.process_definition_template_id IS NULL)
+           OR f.process_definition_template_id IN (
+             SELECT pdt.id FROM process_definition_templates pdt WHERE pdt.template_artifact_id = ?
+           )
+         )
+       LIMIT 1
+     ) AS has_steps`,
+    [id, id]
+  );
+  return Boolean(Number(rows?.[0]?.has_steps || 0));
 };

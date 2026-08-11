@@ -12,6 +12,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  hasFillStepsForArtifact,
   replaceAuthoredFlowForArtifact,
   replaceFillFlowSteps,
   replaceSignatureFlowSteps,
@@ -225,4 +226,67 @@ test("sin id de artifact se falla en vez de escribir un flujo huerfano", async (
     /requiere el id del template_artifact/,
   );
   assert.equal(connection.calls.length, 0);
+});
+
+// --- El conteo del gate (sub-paso 4 del §0.8) ---------------------------------------------------
+//
+// `hasFillStepsForArtifact` es lo que responde "¿esta plantilla define flujo de entrega?" a los
+// CUATRO gates de publicación. Lo que se fija aquí es la FORMA de la consulta, porque un WHERE de
+// más o de menos no da error en ningún sitio: solo deja pasar (o rechaza) una plantilla por una
+// razón equivocada, que es exactamente el defecto que este sub-paso vino a cerrar.
+
+// Doble que devuelve el `EXISTS` pedido y guarda la sentencia para poder mirarla.
+const buildCountConnection = ({ hasSteps = 1, falla = false } = {}) => {
+  const calls = [];
+  return {
+    calls,
+    query: async (sql, params = []) => {
+      calls.push({ sql: sql.replace(/\s+/g, " ").trim(), params });
+      if (falla) throw new Error("la base no responde");
+      return [[{ has_steps: hasSteps }]];
+    },
+  };
+};
+
+test("el gate cuenta los pasos por los DOS portadores: el artifact y sus vinculos", async () => {
+  // Andamiaje explícito hasta el sub-paso 8: lo sembrado por el sync cuelga del VÍNCULO y lo que
+  // escribe el formulario cuelga del ARTIFACT. Medido en la base de dev: todas las plantillas de la
+  // fixture tienen 0 pasos por artifact y 1 por vínculo. Contar solo por artifact rechazaría todo lo
+  // que no se haya vuelto a guardar por el formulario.
+  const connection = buildCountConnection();
+  assert.equal(await hasFillStepsForArtifact(connection, ARTIFACT_ID), true);
+
+  const [{ sql, params }] = connection.calls;
+  assert.match(sql, /f\.template_artifact_id = \? AND f\.process_definition_template_id IS NULL/);
+  assert.match(sql, /f\.process_definition_template_id IN \( SELECT pdt\.id FROM process_definition_templates/);
+  assert.deepEqual(params, [ARTIFACT_ID, ARTIFACT_ID], "el id va dos veces: una por portador");
+});
+
+test("el gate excluye el flujo de RUNTIME y las cabeceras desactivadas", async () => {
+  // `task_item_id IS NULL`: el flujo de runtime lleva vínculo Y entregable, así que sin esta guarda
+  // un `routed` "definiría flujo de entrega" en cuanto alguien enviara un entregable.
+  // `is_active = 1`: el sync DESACTIVA cabeceras sin borrarles los pasos, que seguirían contando.
+  const connection = buildCountConnection();
+  await hasFillStepsForArtifact(connection, ARTIFACT_ID);
+
+  const [{ sql }] = connection.calls;
+  assert.match(sql, /f\.task_item_id IS NULL/);
+  assert.match(sql, /f\.is_active = 1/);
+});
+
+test("sin pasos el gate dice que no, y sin id ni consulta a la base", async () => {
+  const conSteps = buildCountConnection({ hasSteps: 0 });
+  assert.equal(await hasFillStepsForArtifact(conSteps, ARTIFACT_ID), false);
+
+  const sinId = buildCountConnection();
+  assert.equal(await hasFillStepsForArtifact(sinId, null), false);
+  assert.equal(sinId.calls.length, 0);
+});
+
+test("un error de la base SUBE: no se traduce en 'no define flujo'", async () => {
+  // ESTE es el motivo del sub-paso 4. La lectura vieja envolvía el `meta.yaml` de MinIO en un
+  // `catch {}` mudo, así que un MinIO caído valía "0 pasos" y bloqueaba la publicación con un
+  // mensaje que mentía sobre la causa. Aquí no hay `catch` y no lo puede volver a haber.
+  const connection = buildCountConnection({ falla: true });
+  await assert.rejects(() => hasFillStepsForArtifact(connection, ARTIFACT_ID), /la base no responde/);
 });

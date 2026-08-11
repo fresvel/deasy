@@ -17,6 +17,7 @@ import {
   walkFiles,
 } from "../kernel/storage.js";
 import { parseAvailableFormats, parseYamlDocument } from "./artifacts.js";
+import { hasFillStepsForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -205,8 +206,9 @@ export default class TemplateArtifactService {
 
 
   // Activa/desactiva una plantilla. is_active es el único estado del ciclo de vida (Activo/Inactivo).
-  // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega definido en su meta.yaml
+  // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega EN LA BASE
   // (regla: una plantilla de proceso no se usa sin flujo de entrega). La firma puede ser ad-hoc.
+  // Sub-paso 4 del §0.8: antes se contaba sobre el `meta.yaml` de MinIO — ver `hasFillStepsForArtifact`.
   async setTemplateArtifactActive(artifactId, active) {
     this.ensurePool();
     const nextActive = active ? 1 : 0;
@@ -219,14 +221,7 @@ export default class TemplateArtifactService {
       return { artifact_id: Number(artifactId), is_active: nextActive, changed: false };
     }
     if (nextActive === 1 && !(await this.isArtifactRoutedOnly(Number(artifactId)))) {
-      let fillSteps = 0;
-      try {
-        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-      } catch {
-        fillSteps = 0;
-      }
-      if (!fillSteps) {
+      if (!(await hasFillStepsForArtifact(this.pool, artifact.id))) {
         throw new Error("No se puede activar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }
@@ -273,14 +268,7 @@ export default class TemplateArtifactService {
     }
     // routed NO autora flujo (se define al enviar): se omite el readiness si la plantilla es routed-only.
     if (!(await this.isArtifactRoutedOnly(id))) {
-      let fillSteps = 0;
-      try {
-        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-      } catch {
-        fillSteps = 0;
-      }
-      if (!fillSteps) {
+      if (!(await hasFillStepsForArtifact(this.pool, artifact.id))) {
         throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }

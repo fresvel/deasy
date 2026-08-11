@@ -59,7 +59,7 @@ import {
   parseWorkflowPayload,
   workflowHasSteps
 } from "./workflows.js";
-import { replaceAuthoredFlowForArtifact } from "./flowRows.js";
+import { replaceAuthoredFlowForArtifact, hasFillStepsForArtifact } from "./flowRows.js";
 import {
   parseAvailableFormats,
   findPreferredPdfObject,
@@ -197,7 +197,6 @@ export default class TemplateLifecycleService {
     retireActiveDefinitionsInSeries,
     createTemplateArtifactVersion,
     getNextStorageVersionForTemplateCode,
-    loadTemplateArtifactMetaDocument,
     retirePriorPublishedSiblings,
     getCargoCodeMap,
     getUnitTypeNameMap,
@@ -217,7 +216,6 @@ export default class TemplateLifecycleService {
     this._retireActiveDefinitionsInSeries = retireActiveDefinitionsInSeries;
     this._createTemplateArtifactVersion = createTemplateArtifactVersion;
     this._getNextStorageVersionForTemplateCode = getNextStorageVersionForTemplateCode;
-    this._loadTemplateArtifactMetaDocument = loadTemplateArtifactMetaDocument;
     this._retirePriorPublishedSiblings = retirePriorPublishedSiblings;
     this._getCargoCodeMap = getCargoCodeMap;
     this._getUnitTypeNameMap = getUnitTypeNameMap;
@@ -257,14 +255,7 @@ export default class TemplateLifecycleService {
       // routed NO autora flujo (se define al enviar): no se exige paso de entrega para publicarse.
       // single/replicated sí deben traer su flujo predefinido.
       if (String(artifact.item_mode) !== "routed") {
-        let fillSteps = 0;
-        try {
-          const meta = await this._loadTemplateArtifactMetaDocument(artifact);
-          fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-        } catch {
-          fillSteps = 0;
-        }
-        if (!fillSteps) {
+        if (!(await hasFillStepsForArtifact(connection, artifact.id))) {
           const templateName = artifact.deliverable_name || artifact.display_name || artifact.template_code || `#${artifact.id}`;
           throw new Error(
             `No se puede activar: la plantilla "${templateName}" debe definir al menos un paso de flujo de entrega antes de publicarse.`
@@ -926,17 +917,11 @@ export default class TemplateLifecycleService {
       throw new Error("La configuración borrador no está vinculada a esta plantilla.");
     }
 
-    // Readiness de publicación de la plantilla (≥1 paso de entrega) — lectura MinIO antes de la transacción.
+    // Readiness de publicación de la plantilla (≥1 paso de entrega) — se cuenta sobre la BASE, y antes de
+    // abrir la transacción, igual que cuando la cuenta venía de MinIO (sub-paso 4 del §0.8).
     // routed NO autora flujo (se define al enviar): se omite el readiness de entrega.
     if (String(linkRows[0].item_mode) !== "routed") {
-      let fillSteps = 0;
-      try {
-        const meta = await this._loadTemplateArtifactMetaDocument(template);
-        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-      } catch {
-        fillSteps = 0;
-      }
-      if (!fillSteps) {
+      if (!(await hasFillStepsForArtifact(this.pool, tplId))) {
         throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }

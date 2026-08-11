@@ -26,8 +26,24 @@ const COLADO_ID = 99;
 
 // Construye el servicio con un doble de pool/conexión que REGISTRA lo que ocurre, en orden.
 // `draftRows` son los borradores que quedan enlazados a la config (sin contar la que se versiona).
-const buildService = ({ draftRows = [], fillSteps = 1 } = {}) => {
+// `fallaElConteo` simula que la base revienta al contar los pasos: es el modo de fallo que el
+// sub-paso 4 del §0.8 vino a arreglar. Con la lectura vieja (MinIO + `catch {}`) esto se traducía en
+// "0 pasos" y bloqueaba la publicación por una razón falsa; contra la base tiene que PROPAGARSE.
+// `true` revienta siempre; un id revienta solo al contar ESE artifact.
+const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } = {}) => {
   const events = [];
+
+  // El gate cuenta con `SELECT EXISTS(...) AS has_steps` y pasa el id del artifact dos veces.
+  // La plantilla versionada (TPL_ID) siempre trae su paso: su readiness se comprueba antes de la
+  // transacción y no es lo que estos casos ejercitan. `fillSteps` describe SOLO al borrador colado.
+  const respondeAlConteo = (params) => {
+    events.push(`cuenta-pasos:${params?.[0]}`);
+    if (fallaElConteo === true || Number(fallaElConteo) === Number(params?.[0])) {
+      throw new Error("no se pudo contar los pasos: la base no responde");
+    }
+    const hay = Number(params?.[0]) === TPL_ID ? 1 : (fillSteps ? 1 : 0);
+    return [[{ has_steps: hay }]];
+  };
 
   const connection = {
     beginTransaction: async () => { events.push("begin"); },
@@ -35,6 +51,9 @@ const buildService = ({ draftRows = [], fillSteps = 1 } = {}) => {
     rollback: async () => { events.push("rollback"); },
     release: () => { events.push("release"); },
     query: async (sql, params) => {
+      if (sql.includes("AS has_steps")) {
+        return respondeAlConteo(params);
+      }
       if (sql.includes("ta.lifecycle_state = 'draft'")) {
         events.push("select:borradores-de-la-config");
         return [draftRows];
@@ -58,7 +77,10 @@ const buildService = ({ draftRows = [], fillSteps = 1 } = {}) => {
 
   const pool = {
     getConnection: async () => connection,
-    query: async (sql) => {
+    query: async (sql, params) => {
+      if (sql.includes("AS has_steps")) {
+        return respondeAlConteo(params);
+      }
       if (sql.includes("FROM process_definition_versions")) {
         return [[{ id: CFG_ID, process_id: 1, variation_key: "general", definition_version: "1.1.0", status: "draft" }]];
       }
@@ -71,12 +93,6 @@ const buildService = ({ draftRows = [], fillSteps = 1 } = {}) => {
 
   const service = new TemplateLifecycleService(pool, {
     getByKeys: async () => ({ id: TPL_ID, lifecycle_state: "draft", storage_version: "1.1.0" }),
-    // `fillSteps` describe SOLO al borrador colado. La plantilla versionada siempre trae su paso:
-    // su readiness se comprueba antes de la transacción y no es lo que estos casos ejercitan.
-    loadTemplateArtifactMetaDocument: async (artifact) => {
-      const pasos = Number(artifact?.id) === TPL_ID ? 1 : fillSteps;
-      return { workflows: { fill: { steps: Array.from({ length: pasos }, (_, i) => ({ order: i + 1 })) } } };
-    },
     retirePriorPublishedSiblings: async (_conn, id) => { events.push(`retira-hermanas:${id}`); },
     retireActiveDefinitionsInSeries: async () => { events.push("retira-config-anterior"); return 1; },
     ensureDefinitionHasActiveRulesForActivation: async () => { events.push("gate:reglas"); },
@@ -98,6 +114,9 @@ test("sin mas borradores en la config, finish publica la plantilla y activa la c
   assert.equal(result.template_lifecycle_state, "published");
   assert.equal(result.config_status, "active");
   assert.deepEqual(events, [
+    // El readiness se cuenta sobre la base y FUERA de la transacción, igual que cuando lo leía de
+    // MinIO: rechazar no debe costar un BEGIN/ROLLBACK.
+    `cuenta-pasos:${TPL_ID}`,
     "begin",
     "gate:reglas",
     "gate:periodos",
@@ -150,6 +169,34 @@ test("un borrador colado en modo routed se publica sin exigirle flujo de entrega
   });
   await finish(service);
   assert.ok(events.includes(`publica:${COLADO_ID}`));
+  assert.ok(!events.includes(`cuenta-pasos:${COLADO_ID}`),
+    "a un routed ni siquiera se le cuenta: la excepción se decide ANTES de tocar la base");
+});
+
+// --- El modo de fallo que motiva el sub-paso 4 del §0.8 -----------------------------------------
+//
+// Los cuatro gates contaban los pasos leyendo el `meta.yaml` de MinIO dentro de un `catch {}` mudo,
+// así que MinIO caído u objeto ausente valían "0 pasos" y bloqueaban la publicación con un mensaje
+// que mentía sobre la causa. Contra la base ese modo de fallo no puede volver: el error SUBE.
+
+test("si la base falla al contar los pasos, el error SUBE en vez de valer cero (finish)", async () => {
+  const { service, events } = buildService({ fallaElConteo: true });
+
+  await assert.rejects(finish(service), /la base no responde/);
+  assert.ok(!events.includes("begin"), "ni siquiera se abre la transaccion");
+  assert.ok(!events.some((e) => e.startsWith("publica")), "no se publica nada");
+});
+
+test("si la base falla al contar los pasos de un colado, la activacion hace rollback", async () => {
+  const { service, events } = buildService({
+    draftRows: [{ id: COLADO_ID, item_mode: "single", deliverable_name: "Informe de evento" }],
+    fallaElConteo: COLADO_ID,
+  });
+
+  await assert.rejects(finish(service), /la base no responde/);
+  assert.ok(events.includes("rollback"), "debe deshacerse la transaccion");
+  assert.ok(!events.includes("commit"));
+  assert.ok(!events.includes(`activa-config:${CFG_ID}`), "la config NO debe quedar activa");
 });
 
 // Atomicidad: publicar el resto ocurre DENTRO de la transacción, así que un borrador que no está
