@@ -239,8 +239,21 @@ Así murió `AdminTableManager.css`: 604 líneas cargadas con `<style scoped src
 `:deep()`, de las que **0 de 86 reglas aplicaban**. Su columna de acciones declaraba
 `position: sticky` y el DOM devolvía `static` — se diseñó y nunca funcionó.
 
+**Y `:deep()` no te salva si el ancla también es de otro componente.** `:deep(X)` mueve el `data-v`
+al selector de la **izquierda**, así que `.ancla :deep(.hijo)` compila a `.ancla[data-v-TUYO] .hijo`:
+sigue exigiendo que **`.ancla`** lleve tu scope. Y un componente padre solo estampa su `data-v` en la
+**raíz** del hijo, nunca en un nieto.
+
+Así murieron las 84 líneas de `HomeView.vue`: nueve reglas `:deep()` colgando de
+`.deliverable-inline-upload`, que está anidada dentro de `DeliverableCard.vue`. Medido en el
+navegador: **con** el atributo el campo mide 62 px en fila; **sin** él —como se renderiza de verdad—
+mide 28 px en columna. Nunca aplicó ni una.
+
 **Si estilas un hijo desde el padre, necesitas `:deep()`. Y si lo necesitas mucho, el estilo no va
-ahí: va en el módulo del hijo.**
+ahí: va en el módulo del hijo** — que además es el único sitio donde alguien lo va a encontrar.
+
+> Para comprobarlo en 10 segundos: clona el nodo en la consola con y sin el `data-v-*` que aparece
+> en el selector compilado, y compara `getComputedStyle`. Si los dos dan lo mismo, la regla sobra.
 
 ### 6.4 Al sacar un `<style scoped>` a un módulo, pierdes una ventaja que no habías pedido
 
