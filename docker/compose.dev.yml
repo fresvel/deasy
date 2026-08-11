@@ -95,6 +95,11 @@ services:
       DATABASE_URL: postgresql://azimutt:azimutt@azimutt-db:5432/azimutt
       FILE_STORAGE_ADAPTER: local
       AUTH_PASSWORD: "true"
+      # Variable documentada por Azimutt. Sin ella, una organizacion nueva nace en plan
+      # `free`, que NO PUEDE GUARDAR PROYECTOS: el diagrama se pierde al cerrar la pestaña.
+      # El codigo es MIT y esta es su propia palanca de configuracion, pero su modelo de
+      # negocio vive de los planes: si esto pasa a uso de equipo, toca apoyarles.
+      ORGANIZATION_DEFAULT_PLAN: pro
     ports:
       - "${AZIMUTT_PORT:-4700}:4000"
 
