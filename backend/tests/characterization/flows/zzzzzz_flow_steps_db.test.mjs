@@ -54,6 +54,15 @@
 // `anchor_refs` se deja fuera a propósito: es el predecesor muerto de `slot` (siempre `[]`, nadie lo
 // consume) y el §0.8 lo borra en el sub-paso 7. Incluirlo movería el golden por una razón que no es
 // de comportamiento. `created_at` tampoco entra: es el reloj de siembra.
+//
+// ⚠️ `fill_flow_steps.code` y `fill_flow_steps.name` EXISTEN desde el sub-paso 1-bis y NO se capturan
+// todavía, a propósito. Hoy no hay quien las escriba —el nombre del paso de entrega sigue viviendo
+// solo en el `meta.yaml` y `workflowSync` no lo proyecta—, así que meterlas aquí ahora movería los
+// seis goldens para añadir `null` en cada paso: ruido, y del caro, porque gastaría por adelantado el
+// movimiento que tiene que ser la PRUEBA del sub-paso 3. Es el mismo criterio que deja fuera a
+// `anchor_refs`. **Entran en `FILL_STEP_COLUMNS` en el sub-paso 3**, en el mismo commit que las
+// empiece a escribir: ahí el diff dirá los nombres, que es lo que hay que demostrar que no se pierde.
+// Mientras tanto las cubre el test de esquema (`database/postgres_schema.test.js`, bloque 3).
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";

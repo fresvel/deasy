@@ -1,9 +1,11 @@
 // Tests unitarios del ESQUEMA. Vigilan lo que `node --check`, `check:imports` y el arranque no ven:
 // el SQL es una cadena de texto hasta que alguien la ejecuta.
 //
-// Dos bloques:
+// Tres bloques:
 //   1. `template_artifacts.lifecycle_state` nace SIN PUBLICAR (defecto 1.13).
 //   2. El portador `template_artifact_id` de las dos cabeceras de flujo (frente 0.8, sub-paso 1).
+//   3. `code` y `name` en los PASOS de entrega, la simetria que le faltaba a `fill_flow_steps`
+//      respecto de `signature_flow_steps` (frente 0.8, sub-paso 1-bis).
 //
 // --- BLOQUE 1 -------------------------------------------------------------------------------------
 //
@@ -157,3 +159,72 @@ for (const tabla of ["fill_flow_templates", "signature_flow_templates"]) {
     );
   });
 }
+
+// --- BLOQUE 3 -------------------------------------------------------------------------------------
+//
+// La SIMETRIA de los pasos (frente 0.8, sub-paso 1-bis). `fill_flow_steps` y `signature_flow_steps`
+// son dos tablas espejo del mismo concepto —un paso de un flujo autorado— y la de entrega habia
+// perdido dos columnas por el camino: `code` y `name`. El formulario deja escribir el nombre de cada
+// paso de entrega (`AdminDraftArtifactModal.vue:327`), `buildWorkflowsYaml` lo emite
+// (`workflows.js:167-168`) y el editor lo lee de vuelta (`templateArtifact.js:135-136`) — pero HOY ese
+// texto solo vive dentro del `meta.yaml` de MinIO. Invertir la direccion del flujo sin estas columnas
+// perderia el nombre de todos los pasos de entrega; eso es lo que destapo el primer intento del
+// sub-paso 3.
+//
+// Igual que el bloque 2, aqui es un CAJON VACIO: nadie las escribe y nadie las lee todavia, asi que
+// ningun golden puede vigilarlas y ninguna ruta HTTP las ejercita. Lo unico que se puede romper en
+// silencio es el esquema, y son dos piezas que hacen falta LAS DOS: la definicion (para bases nuevas,
+// que es por donde pasa el reset de `test:char:run`) y el `ALTER` idempotente (para las que YA
+// existen, donde `CREATE TABLE IF NOT EXISTS` es un no-op).
+//
+// El tipo NO es libre: se copia el de la gemela de firma (`code VARCHAR(120)`, `name VARCHAR(180)`).
+// Si alguien las declara mas cortas, el mismo paso cabria en un lado y no en el otro.
+
+const createFillSteps = SCHEMA.slice(SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS fill_flow_steps (")).split(");")[0];
+const createSignatureSteps = SCHEMA.slice(
+  SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS signature_flow_steps (")
+).split(");")[0];
+
+const declaracion = (create, columna) =>
+  (create.split("\n").find((linea) => linea.trim().startsWith(`${columna} `)) || "").trim();
+
+for (const columna of ["code", "name"]) {
+  test(`fill_flow_steps: la definicion declara ${columna} con el MISMO tipo que signature_flow_steps`, () => {
+    const entrega = declaracion(createFillSteps, columna);
+    const firma = declaracion(createSignatureSteps, columna);
+    assert.ok(firma, `la gemela de firma debe seguir declarando ${columna}`);
+    assert.ok(entrega, `fill_flow_steps debe declarar ${columna}`);
+    assert.equal(entrega, firma, "mismo concepto, mismo tipo: dos tablas espejo");
+  });
+
+  test(`fill_flow_steps: ${columna} nace NULL, sin DEFAULT`, () => {
+    const entrega = declaracion(createFillSteps, columna);
+    // Nulable a proposito: los pasos que ya existen no pueden inventarse un nombre, y en este
+    // sub-paso nadie escribe la columna. Un NOT NULL aqui tumbaria el ALTER en cualquier base con
+    // filas — que son todas.
+    assert.match(entrega, new RegExp(`^${columna} VARCHAR\\(\\d+\\) NULL,$`));
+    assert.doesNotMatch(entrega, /DEFAULT/);
+  });
+}
+
+test("fill_flow_steps: un ALTER idempotente lleva code y name a las bases que YA existen", () => {
+  assert.match(
+    SCHEMA,
+    /ALTER TABLE fill_flow_steps\s+ADD COLUMN IF NOT EXISTS code VARCHAR\(120\) NULL,\s+ADD COLUMN IF NOT EXISTS name VARCHAR\(180\) NULL;/,
+    "sin el ALTER las columnas solo existirian en bases recien creadas"
+  );
+});
+
+test("fill_flow_steps: no se indexa code ni name — son descriptivas, no de busqueda", () => {
+  // La decision, escrita para que no se cuele un indice por inercia: un paso se localiza por
+  // (fill_flow_template_id, step_order), que ya tiene su indice unico, y nadie filtra por el nombre de
+  // un paso. La gemela de firma tampoco los indexa: sus cinco indices son de clave ajena. Y si algun
+  // dia hiciera falta uno, tendria que ir DESPUES del ALTER (la trampa del sub-paso 1); mientras no
+  // exista, no hay orden que invertir.
+  const indices = SCHEMA.split("\n").filter(
+    (linea) => linea.startsWith("CREATE") && linea.includes("INDEX") && linea.includes("ON fill_flow_steps (")
+  );
+  assert.deepEqual(indices, [
+    "CREATE UNIQUE INDEX IF NOT EXISTS uq_fill_flow_steps ON fill_flow_steps (fill_flow_template_id, step_order);",
+  ]);
+});
