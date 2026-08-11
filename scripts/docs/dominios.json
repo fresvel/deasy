@@ -10,7 +10,6 @@
   ],
 
   "identidad": {
-    "color": "#1F5FC7",
     "titulo": "Identidad, personas y RBAC",
     "descripcion": "Quién es cada quien y qué puede hacer. `persons` es la identidad única del sistema; el expediente (dossier) cuelga de ella.",
     "tablas": ["persons", "person_certificates", "dossiers", "dossier_items",
@@ -21,7 +20,6 @@
   },
 
   "organizacion": {
-    "color": "#BF2D33",
     "titulo": "Unidades, puestos y ocupación",
     "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.",
     "tablas": ["units", "unit_types", "unit_relations", "relation_unit_types",
@@ -29,7 +27,6 @@
   },
 
   "procesos": {
-    "color": "#00795C",
     "titulo": "Motor de procesos",
     "descripcion": "Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. `process_runs` es cada lanzamiento.",
     "tablas": ["processes", "process_definition_versions", "process_definition_series",
@@ -38,7 +35,6 @@
   },
 
   "plantillas": {
-    "color": "#A85A0E",
     "titulo": "Plantillas y entregables",
     "descripcion": "El modelo 'libro y ediciones': `deliverables` porta la identidad y `template_artifacts` las versiones. Aquí vive también la autoría del flujo de llenado.",
     "tablas": ["deliverables", "template_artifacts", "template_seeds",
@@ -47,7 +43,6 @@
   },
 
   "tareas": {
-    "color": "#7A3FBF",
     "titulo": "Tareas, entregables instanciados y documentos",
     "descripcion": "Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos producidos.",
     "tablas": ["tasks", "task_items", "task_assignments", "task_item_handovers",
@@ -56,7 +51,6 @@
   },
 
   "firmas": {
-    "color": "#1E7A38",
     "titulo": "Firma electrónica",
     "descripcion": "El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.",
     "tablas": ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances",
@@ -65,7 +59,6 @@
   },
 
   "chat": {
-    "color": "#B02F80",
     "titulo": "Chat y notificaciones",
     "descripcion": "Mensajería en tiempo real sobre Socket.IO (EMQX/MQTT retirados). Conversaciones directas, de grupo y de hilo ligado a proceso.",
     "tablas": ["chat_conversations", "chat_conversation_participants", "chat_messages",
@@ -73,7 +66,6 @@
   },
 
   "empleo": {
-    "color": "#6B7207",
     "titulo": "Vacantes, postulaciones y contratos",
     "descripcion": "El ciclo de contratación: vacante, postulación, oferta y contrato, con el origen del contrato desglosado.",
     "tablas": ["vacancies", "vacancy_visibility", "aplications", "offers",

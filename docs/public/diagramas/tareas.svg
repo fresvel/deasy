@@ -12,7 +12,7 @@
 <g id="document_attachments" class="node">
 <title>document_attachments</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="3680.95" cy="-511.95" rx="341.57" ry="511.89"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="3441.95,-811.95 3441.95,-871.95 3920.95,-871.95 3920.95,-811.95 3441.95,-811.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="3441.95,-811.95 3441.95,-871.95 3920.95,-871.95 3920.95,-811.95 3441.95,-811.95"/>
 <polygon fill="none" stroke="#29235c" points="3441.95,-811.95 3441.95,-871.95 3920.95,-871.95 3920.95,-811.95 3441.95,-811.95"/>
 <text text-anchor="start" x="3452.92" y="-833.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;document_attachments &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="3441.95,-751.95 3441.95,-811.95 3920.95,-811.95 3920.95,-751.95 3441.95,-751.95"/>
@@ -80,7 +80,7 @@
 <g id="document_signatures" class="node">
 <title>document_signatures</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="3680.95" cy="-1468.95" rx="335.75" ry="427.19"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="3445.95,-1708.95 3445.95,-1768.95 3916.95,-1768.95 3916.95,-1708.95 3445.95,-1708.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="3445.95,-1708.95 3445.95,-1768.95 3916.95,-1768.95 3916.95,-1708.95 3445.95,-1708.95"/>
 <polygon fill="none" stroke="#29235c" points="3445.95,-1708.95 3445.95,-1768.95 3916.95,-1768.95 3916.95,-1708.95 3445.95,-1708.95"/>
 <text text-anchor="start" x="3466.26" y="-1730.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;document_signatures &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="3445.95,-1648.95 3445.95,-1708.95 3916.95,-1708.95 3916.95,-1648.95 3445.95,-1648.95"/>
@@ -136,7 +136,7 @@
 <g id="document_versions" class="node">
 <title>document_versions</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2818.34" cy="-1392.95" rx="379.93" ry="554.24"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="2552.34,-1722.95 2552.34,-1782.95 3085.34,-1782.95 3085.34,-1722.95 2552.34,-1722.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="2552.34,-1722.95 2552.34,-1782.95 3085.34,-1782.95 3085.34,-1722.95 2552.34,-1722.95"/>
 <polygon fill="none" stroke="#29235c" points="2552.34,-1722.95 2552.34,-1782.95 3085.34,-1782.95 3085.34,-1722.95 2552.34,-1722.95"/>
 <text text-anchor="start" x="2617.89" y="-1744.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;document_versions &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2552.34,-1662.95 2552.34,-1722.95 3085.34,-1722.95 3085.34,-1662.95 2552.34,-1662.95"/>
@@ -222,7 +222,7 @@
 <g id="document_workflow_observations" class="node">
 <title>document_workflow_observations</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="3680.95" cy="-2510.95" rx="446.78" ry="596.6"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="3366.95,-2870.95 3366.95,-2930.95 3994.95,-2930.95 3994.95,-2870.95 3366.95,-2870.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="3366.95,-2870.95 3366.95,-2930.95 3994.95,-2930.95 3994.95,-2870.95 3366.95,-2870.95"/>
 <polygon fill="none" stroke="#29235c" points="3366.95,-2870.95 3366.95,-2930.95 3994.95,-2930.95 3994.95,-2870.95 3366.95,-2870.95"/>
 <text text-anchor="start" x="3377.76" y="-2892.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;document_workflow_observations &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="3366.95,-2810.95 3366.95,-2870.95 3994.95,-2870.95 3994.95,-2810.95 3366.95,-2810.95"/>
@@ -309,7 +309,7 @@
 <g id="documents" class="node">
 <title>documents</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2024.32" cy="-1514.95" rx="378.1" ry="427.19"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="1759.32,-1754.95 1759.32,-1814.95 2290.32,-1814.95 2290.32,-1754.95 1759.32,-1754.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="1759.32,-1754.95 1759.32,-1814.95 2290.32,-1814.95 2290.32,-1754.95 1759.32,-1754.95"/>
 <polygon fill="none" stroke="#29235c" points="1759.32,-1754.95 1759.32,-1814.95 2290.32,-1814.95 2290.32,-1754.95 1759.32,-1754.95"/>
 <text text-anchor="start" x="1884.33" y="-1776.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;documents &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1759.32,-1694.95 1759.32,-1754.95 2290.32,-1754.95 2290.32,-1694.95 1759.32,-1694.95"/>
@@ -370,7 +370,7 @@
 <g id="task_assignments" class="node">
 <title>task_assignments</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1201.31" cy="-656.95" rx="296.97" ry="342.48"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="993.31,-836.95 993.31,-896.95 1409.31,-896.95 1409.31,-836.95 993.31,-836.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="993.31,-836.95 993.31,-896.95 1409.31,-896.95 1409.31,-836.95 993.31,-836.95"/>
 <polygon fill="none" stroke="#29235c" points="993.31,-836.95 993.31,-896.95 1409.31,-896.95 1409.31,-836.95 993.31,-836.95"/>
 <text text-anchor="start" x="1011.03" y="-858.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;task_assignments &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="993.31,-776.95 993.31,-836.95 1409.31,-836.95 1409.31,-776.95 993.31,-776.95"/>
@@ -418,7 +418,7 @@
 <g id="task_item_handovers" class="node">
 <title>task_item_handovers</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2024.32" cy="-2415.95" rx="321.05" ry="384.83"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="1799.32,-2625.95 1799.32,-2685.95 2249.32,-2685.95 2249.32,-2625.95 1799.32,-2625.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="1799.32,-2625.95 1799.32,-2685.95 2249.32,-2685.95 2249.32,-2625.95 1799.32,-2625.95"/>
 <polygon fill="none" stroke="#29235c" points="1799.32,-2625.95 1799.32,-2685.95 2249.32,-2685.95 2249.32,-2625.95 1799.32,-2625.95"/>
 <text text-anchor="start" x="1810.03" y="-2647.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;task_item_handovers &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1799.32,-2565.95 1799.32,-2625.95 2249.32,-2625.95 2249.32,-2565.95 1799.32,-2565.95"/>
@@ -468,7 +468,7 @@
 <g id="task_items" class="node">
 <title>task_items</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1201.31" cy="-1995.95" rx="408.92" ry="978.77"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="914.31,-2625.95 914.31,-2685.95 1488.31,-2685.95 1488.31,-2625.95 914.31,-2625.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="914.31,-2625.95 914.31,-2685.95 1488.31,-2685.95 1488.31,-2625.95 914.31,-2625.95"/>
 <polygon fill="none" stroke="#29235c" points="914.31,-2625.95 914.31,-2685.95 1488.31,-2685.95 1488.31,-2625.95 914.31,-2625.95"/>
 <text text-anchor="start" x="1062.61" y="-2647.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;task_items &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="914.31,-2565.95 914.31,-2625.95 1488.31,-2625.95 1488.31,-2565.95 914.31,-2565.95"/>
@@ -618,7 +618,7 @@
 <g id="tasks" class="node">
 <title>tasks</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="378.3" cy="-1310.95" rx="378.1" ry="639.45"/>
-<polygon fill="#7a3fbf" stroke="transparent" points="113.3,-1700.95 113.3,-1760.95 644.3,-1760.95 644.3,-1700.95 113.3,-1700.95"/>
+<polygon fill="#1d71b8" stroke="transparent" points="113.3,-1700.95 113.3,-1760.95 644.3,-1760.95 644.3,-1700.95 113.3,-1700.95"/>
 <polygon fill="none" stroke="#29235c" points="113.3,-1700.95 113.3,-1760.95 644.3,-1760.95 644.3,-1700.95 113.3,-1700.95"/>
 <text text-anchor="start" x="279.21" y="-1722.15" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;tasks &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="113.3,-1640.95 113.3,-1700.95 644.3,-1700.95 644.3,-1640.95 113.3,-1640.95"/>

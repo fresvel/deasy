@@ -16,7 +16,7 @@ Project organizacion {
   Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.'''
 }
 
-Table "position_assignments" [headercolor: #BF2D33] {
+Table "position_assignments" {
   "id" int4 [pk, not null, increment]
   "position_id" int4 [not null]
   "person_id" int4 [not null]
@@ -33,7 +33,7 @@ Table "position_assignments" [headercolor: #BF2D33] {
   }
 }
 
-Table "relation_unit_types" [headercolor: #BF2D33] {
+Table "relation_unit_types" {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(40) [not null]
@@ -43,7 +43,7 @@ Table "relation_unit_types" [headercolor: #BF2D33] {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "unit_positions" [headercolor: #BF2D33] {
+Table "unit_positions" {
   "id" int4 [pk, not null, increment]
   "unit_id" int4 [not null]
   "slot_no" int4 [not null]
@@ -64,7 +64,7 @@ Table "unit_positions" [headercolor: #BF2D33] {
   }
 }
 
-Table "unit_relations" [headercolor: #BF2D33] {
+Table "unit_relations" {
   "id" int4 [pk, not null, increment]
   "relation_type_id" int4 [not null]
   "parent_unit_id" int4 [not null]
@@ -79,14 +79,14 @@ Table "unit_relations" [headercolor: #BF2D33] {
   }
 }
 
-Table "unit_types" [headercolor: #BF2D33] {
+Table "unit_types" {
   "id" int4 [pk, not null, increment]
   "name" varchar(120) [not null]
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "units" [headercolor: #BF2D33] {
+Table "units" {
   "id" int4 [pk, not null, increment]
   "name" varchar(180) [not null]
   "label" varchar(75)

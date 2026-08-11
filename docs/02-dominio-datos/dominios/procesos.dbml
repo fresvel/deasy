@@ -16,7 +16,7 @@ Project procesos {
   Note: '''Motor de procesos — Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. `process_runs` es cada lanzamiento.'''
 }
 
-Table "process_definition_period_types" [headercolor: #00795C] {
+Table "process_definition_period_types" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "term_type_id" int4 [not null]
@@ -30,7 +30,7 @@ Table "process_definition_period_types" [headercolor: #00795C] {
   }
 }
 
-Table "process_definition_series" [headercolor: #00795C] {
+Table "process_definition_series" {
   "id" int4 [pk, not null, increment]
   "source_type" text [not null, check: `source_type = ANY (ARRAY['unit_type'::text, 'cargo'::text, 'default'::text])`, default: 'default']
   "unit_type_id" int4
@@ -44,7 +44,7 @@ Table "process_definition_series" [headercolor: #00795C] {
   }
 }
 
-Table "process_definition_templates" [headercolor: #00795C] {
+Table "process_definition_templates" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "template_artifact_id" int4 [not null]
@@ -59,7 +59,7 @@ Table "process_definition_templates" [headercolor: #00795C] {
   Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
 }
 
-Table "process_definition_versions" [headercolor: #00795C] {
+Table "process_definition_versions" {
   "id" int4 [pk, not null, increment]
   "process_id" int4 [not null]
   "series_id" int4 [not null]
@@ -80,7 +80,7 @@ Table "process_definition_versions" [headercolor: #00795C] {
   }
 }
 
-Table "process_runs" [headercolor: #00795C] {
+Table "process_runs" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "term_id" int4
@@ -98,7 +98,7 @@ Table "process_runs" [headercolor: #00795C] {
   }
 }
 
-Table "process_target_rules" [headercolor: #00795C] {
+Table "process_target_rules" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text])`, default: 'unit_exact']
@@ -121,7 +121,7 @@ Table "process_target_rules" [headercolor: #00795C] {
   Note: '''El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.'''
 }
 
-Table "processes" [headercolor: #00795C] {
+Table "processes" {
   "id" int4 [pk, not null, increment]
   "name" varchar(180) [not null]
   "slug" varchar(180) [unique, not null]
@@ -132,7 +132,7 @@ Table "processes" [headercolor: #00795C] {
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
 }
 
-Table "term_types" [headercolor: #00795C] {
+Table "term_types" {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
   "name" varchar(80) [unique, not null]
@@ -142,7 +142,7 @@ Table "term_types" [headercolor: #00795C] {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "terms" [headercolor: #00795C] {
+Table "terms" {
   "id" int4 [pk, not null, increment]
   "name" varchar(60) [unique, not null]
   "term_type_id" int4 [not null]

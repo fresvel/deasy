@@ -12,7 +12,7 @@
 <g id="process_definition_period_types" class="node">
 <title>process_definition_period_types</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2307.13" cy="-1232.52" rx="430.76" ry="257.27"/>
-<polygon fill="#00795c" stroke="transparent" points="2005.13,-1352.52 2005.13,-1412.52 2610.13,-1412.52 2610.13,-1352.52 2005.13,-1352.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="2005.13,-1352.52 2005.13,-1412.52 2610.13,-1412.52 2610.13,-1352.52 2005.13,-1352.52"/>
 <polygon fill="none" stroke="#29235c" points="2005.13,-1352.52 2005.13,-1412.52 2610.13,-1412.52 2610.13,-1352.52 2005.13,-1352.52"/>
 <text text-anchor="start" x="2015.99" y="-1373.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;process_definition_period_types &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2005.13,-1292.52 2005.13,-1352.52 2610.13,-1352.52 2610.13,-1292.52 2005.13,-1292.52"/>
@@ -52,7 +52,7 @@
 <g id="process_definition_series" class="node">
 <title>process_definition_series</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="672.43" cy="-1531.52" rx="361.16" ry="342.48"/>
-<polygon fill="#00795c" stroke="transparent" points="419.43,-1711.52 419.43,-1771.52 926.43,-1771.52 926.43,-1711.52 419.43,-1711.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="419.43,-1711.52 419.43,-1771.52 926.43,-1771.52 926.43,-1711.52 419.43,-1711.52"/>
 <polygon fill="none" stroke="#29235c" points="419.43,-1711.52 419.43,-1771.52 926.43,-1771.52 926.43,-1711.52 419.43,-1711.52"/>
 <text text-anchor="start" x="430.2" y="-1732.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;process_definition_series &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="419.43,-1651.52 419.43,-1711.52 926.43,-1711.52 926.43,-1651.52 419.43,-1651.52"/>
@@ -100,7 +100,7 @@
 <g id="process_definition_versions" class="node">
 <title>process_definition_versions</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1455.13" cy="-1945.52" rx="385.25" ry="554.24"/>
-<polygon fill="#00795c" stroke="transparent" points="1185.13,-2275.52 1185.13,-2335.52 1726.13,-2335.52 1726.13,-2275.52 1185.13,-2275.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="1185.13,-2275.52 1185.13,-2335.52 1726.13,-2335.52 1726.13,-2275.52 1185.13,-2275.52"/>
 <polygon fill="none" stroke="#29235c" points="1185.13,-2275.52 1185.13,-2335.52 1726.13,-2335.52 1726.13,-2275.52 1185.13,-2275.52"/>
 <text text-anchor="start" x="1196.01" y="-2296.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;process_definition_versions &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1185.13,-2215.52 1185.13,-2275.52 1726.13,-2275.52 1726.13,-2215.52 1185.13,-2215.52"/>
@@ -186,7 +186,7 @@
 <title>process_definition_templates</title>
 <g id="a_process_definition_templates"><a xlink:title="process_definition_templates&#10;El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2307.13" cy="-3019.52" rx="398.62" ry="299.63"/>
-<polygon fill="#00795c" stroke="transparent" points="2027.13,-3169.52 2027.13,-3229.52 2587.13,-3229.52 2587.13,-3169.52 2027.13,-3169.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="2027.13,-3169.52 2027.13,-3229.52 2587.13,-3229.52 2587.13,-3169.52 2027.13,-3169.52"/>
 <polygon fill="none" stroke="#29235c" points="2027.13,-3169.52 2027.13,-3229.52 2587.13,-3229.52 2587.13,-3169.52 2027.13,-3169.52"/>
 <text text-anchor="start" x="2037.72" y="-3190.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;process_definition_templates &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2027.13,-3109.52 2027.13,-3169.52 2587.13,-3169.52 2587.13,-3109.52 2027.13,-3109.52"/>
@@ -252,7 +252,7 @@
 <g id="process_runs" class="node">
 <title>process_runs</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2307.13" cy="-469.52" rx="319.72" ry="469.54"/>
-<polygon fill="#00795c" stroke="transparent" points="2083.13,-739.52 2083.13,-799.52 2531.13,-799.52 2531.13,-739.52 2083.13,-739.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="2083.13,-739.52 2083.13,-799.52 2531.13,-799.52 2531.13,-739.52 2083.13,-739.52"/>
 <polygon fill="none" stroke="#29235c" points="2083.13,-739.52 2083.13,-799.52 2531.13,-799.52 2531.13,-739.52 2083.13,-739.52"/>
 <text text-anchor="start" x="2148.87" y="-760.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;process_runs &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2083.13,-679.52 2083.13,-739.52 2531.13,-739.52 2531.13,-679.52 2083.13,-679.52"/>
@@ -324,7 +324,7 @@
 <title>process_target_rules</title>
 <g id="a_process_target_rules"><a xlink:title="process_target_rules&#10;El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2307.13" cy="-2104.52" rx="319.72" ry="596.6"/>
-<polygon fill="#00795c" stroke="transparent" points="2083.13,-2464.52 2083.13,-2524.52 2531.13,-2524.52 2531.13,-2464.52 2083.13,-2464.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="2083.13,-2464.52 2083.13,-2524.52 2531.13,-2524.52 2531.13,-2464.52 2083.13,-2464.52"/>
 <polygon fill="none" stroke="#29235c" points="2083.13,-2464.52 2083.13,-2524.52 2531.13,-2524.52 2531.13,-2464.52 2083.13,-2464.52"/>
 <text text-anchor="start" x="2095.52" y="-2485.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;process_target_rules &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2083.13,-2404.52 2083.13,-2464.52 2531.13,-2464.52 2531.13,-2404.52 2083.13,-2404.52"/>
@@ -421,7 +421,7 @@
 <title>processes</title>
 <g id="a_processes"><a xlink:title="processes&#10;Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="672.43" cy="-2191.52" rx="281.36" ry="299.63"/>
-<polygon fill="#00795c" stroke="transparent" points="475.43,-2341.52 475.43,-2401.52 869.43,-2401.52 869.43,-2341.52 475.43,-2341.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="475.43,-2341.52 475.43,-2401.52 869.43,-2401.52 869.43,-2341.52 475.43,-2341.52"/>
 <polygon fill="none" stroke="#29235c" points="475.43,-2341.52 475.43,-2401.52 869.43,-2401.52 869.43,-2341.52 475.43,-2341.52"/>
 <text text-anchor="start" x="537.27" y="-2362.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;processes &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="475.43,-2281.52 475.43,-2341.52 869.43,-2341.52 869.43,-2281.52 475.43,-2281.52"/>
@@ -485,7 +485,7 @@
 <g id="term_types" class="node">
 <title>term_types</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="672.43" cy="-723.52" rx="287.59" ry="342.48"/>
-<polygon fill="#00795c" stroke="transparent" points="471.43,-903.52 471.43,-963.52 874.43,-963.52 874.43,-903.52 471.43,-903.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="471.43,-903.52 471.43,-963.52 874.43,-963.52 874.43,-903.52 471.43,-903.52"/>
 <polygon fill="none" stroke="#29235c" points="471.43,-903.52 471.43,-963.52 874.43,-963.52 874.43,-903.52 471.43,-903.52"/>
 <text text-anchor="start" x="531.56" y="-924.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;term_types &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="471.43,-843.52 471.43,-903.52 874.43,-903.52 874.43,-843.52 471.43,-843.52"/>
@@ -544,7 +544,7 @@
 <g id="terms" class="node">
 <title>terms</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1455.13" cy="-660.52" rx="242.58" ry="299.63"/>
-<polygon fill="#00795c" stroke="transparent" points="1286.13,-810.52 1286.13,-870.52 1625.13,-870.52 1625.13,-810.52 1286.13,-810.52"/>
+<polygon fill="#1d71b8" stroke="transparent" points="1286.13,-810.52 1286.13,-870.52 1625.13,-870.52 1625.13,-810.52 1286.13,-810.52"/>
 <polygon fill="none" stroke="#29235c" points="1286.13,-810.52 1286.13,-870.52 1625.13,-870.52 1625.13,-810.52 1286.13,-810.52"/>
 <text text-anchor="start" x="1353.39" y="-831.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;terms &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1286.13,-750.52 1286.13,-810.52 1625.13,-810.52 1625.13,-750.52 1286.13,-750.52"/>

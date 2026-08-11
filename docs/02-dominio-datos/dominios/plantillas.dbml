@@ -16,7 +16,7 @@ Project plantillas {
   Note: '''Plantillas y entregables — El modelo \'libro y ediciones\': `deliverables` porta la identidad y `template_artifacts` las versiones. Aquí vive también la autoría del flujo de llenado.'''
 }
 
-Table "deliverables" [headercolor: #A85A0E] {
+Table "deliverables" {
   "id" int4 [pk, not null, increment]
   "code" varchar(180) [unique, not null]
   "display_name" varchar(180) [not null]
@@ -35,7 +35,7 @@ Table "deliverables" [headercolor: #A85A0E] {
   Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
 }
 
-Table "document_fill_flows" [headercolor: #A85A0E] {
+Table "document_fill_flows" {
   "id" int4 [pk, not null, increment]
   "fill_flow_template_id" int4 [not null]
   "document_version_id" int4 [unique, not null]
@@ -45,7 +45,7 @@ Table "document_fill_flows" [headercolor: #A85A0E] {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "fill_flow_steps" [headercolor: #A85A0E] {
+Table "fill_flow_steps" {
   "id" int4 [pk, not null, increment]
   "fill_flow_template_id" int4 [not null]
   "step_order" int4 [not null]
@@ -67,7 +67,7 @@ Table "fill_flow_steps" [headercolor: #A85A0E] {
   }
 }
 
-Table "fill_flow_templates" [headercolor: #A85A0E] {
+Table "fill_flow_templates" {
   "id" int4 [pk, not null, increment]
   "process_definition_template_id" int4
   "task_item_id" int4
@@ -85,7 +85,7 @@ Table "fill_flow_templates" [headercolor: #A85A0E] {
   Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).'''
 }
 
-Table "fill_requests" [headercolor: #A85A0E] {
+Table "fill_requests" {
   "id" int4 [pk, not null, increment]
   "document_fill_flow_id" int4 [not null]
   "fill_flow_step_id" int4 [not null]
@@ -102,7 +102,7 @@ Table "fill_requests" [headercolor: #A85A0E] {
   }
 }
 
-Table "template_artifacts" [headercolor: #A85A0E] {
+Table "template_artifacts" {
   "id" int4 [pk, not null, increment]
   "deliverable_id" int4 [not null]
   "storage_version" varchar(20) [not null]
@@ -125,7 +125,7 @@ Table "template_artifacts" [headercolor: #A85A0E] {
   Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.'''
 }
 
-Table "template_seeds" [headercolor: #A85A0E] {
+Table "template_seeds" {
   "id" int4 [pk, not null, increment]
   "seed_code" varchar(180) [unique, not null]
   "display_name" varchar(180) [not null]

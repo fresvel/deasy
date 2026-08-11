@@ -16,7 +16,7 @@ Project empleo {
   Note: '''Vacantes, postulaciones y contratos — El ciclo de contratación: vacante, postulación, oferta y contrato, con el origen del contrato desglosado.'''
 }
 
-Table "aplications" [headercolor: #6B7207] {
+Table "aplications" {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
   "vacancy_id" int4 [not null]
@@ -34,14 +34,14 @@ Table "aplications" [headercolor: #6B7207] {
   }
 }
 
-Table "contract_origin_recruitment" [headercolor: #6B7207] {
+Table "contract_origin_recruitment" {
   "contract_id" int4 [pk, not null]
   "offer_id" int4 [unique, not null]
   "vacancy_id" int4 [unique, not null]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "contract_origin_renewal" [headercolor: #6B7207] {
+Table "contract_origin_renewal" {
   "contract_id" int4 [pk, not null]
   "renewed_from_contract_id" int4 [not null]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
@@ -51,13 +51,13 @@ Table "contract_origin_renewal" [headercolor: #6B7207] {
   }
 }
 
-Table "contract_origins" [headercolor: #6B7207] {
+Table "contract_origins" {
   "contract_id" int4 [pk, not null]
   "origin_type" text [not null, check: `origin_type = ANY (ARRAY['recruitment'::text, 'renewal'::text])`]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "contracts" [headercolor: #6B7207] {
+Table "contracts" {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
   "position_id" int4 [not null]
@@ -75,7 +75,7 @@ Table "contracts" [headercolor: #6B7207] {
   }
 }
 
-Table "offers" [headercolor: #6B7207] {
+Table "offers" {
   "id" int4 [pk, not null, increment]
   "application_id" int4 [not null]
   "status" text [not null, check: `status = ANY (ARRAY['enviada'::text, 'aceptada'::text, 'rechazada'::text, 'retractada'::text, 'expirada'::text])`, default: 'enviada']
@@ -92,7 +92,7 @@ Table "offers" [headercolor: #6B7207] {
   }
 }
 
-Table "vacancies" [headercolor: #6B7207] {
+Table "vacancies" {
   "id" int4 [pk, not null, increment]
   "title" varchar(180) [not null]
   "category" varchar(120)
@@ -113,7 +113,7 @@ Table "vacancies" [headercolor: #6B7207] {
   }
 }
 
-Table "vacancy_visibility" [headercolor: #6B7207] {
+Table "vacancy_visibility" {
   "id" int4 [pk, not null, increment]
   "vacancy_id" int4 [not null]
   "unit_id" int4

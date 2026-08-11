@@ -16,7 +16,7 @@ Project tareas {
   Note: '''Tareas, entregables instanciados y documentos — Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos producidos.'''
 }
 
-Table "document_attachments" [headercolor: #7A3FBF] {
+Table "document_attachments" {
   "id" int4 [pk, not null, increment]
   "document_version_id" int4 [not null]
   "kind" text [not null, check: `kind = ANY (ARRAY['annex'::text, 'evidence'::text, 'source'::text, 'other'::text])`, default: 'annex']
@@ -35,7 +35,7 @@ Table "document_attachments" [headercolor: #7A3FBF] {
   }
 }
 
-Table "document_signatures" [headercolor: #7A3FBF] {
+Table "document_signatures" {
   "id" int4 [pk, not null, increment]
   "signature_request_id" int4
   "document_version_id" int4 [not null]
@@ -47,7 +47,7 @@ Table "document_signatures" [headercolor: #7A3FBF] {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table "document_versions" [headercolor: #7A3FBF] {
+Table "document_versions" {
   "id" int4 [pk, not null, increment]
   "document_id" int4 [not null]
   "version" numeric(4,1) [not null, default: 0.1]
@@ -67,7 +67,7 @@ Table "document_versions" [headercolor: #7A3FBF] {
   }
 }
 
-Table "document_workflow_observations" [headercolor: #7A3FBF] {
+Table "document_workflow_observations" {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [not null]
   "document_version_id" int4 [not null]
@@ -92,7 +92,7 @@ Table "document_workflow_observations" [headercolor: #7A3FBF] {
   }
 }
 
-Table "documents" [headercolor: #7A3FBF] {
+Table "documents" {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [unique]
   "owner_person_id" int4
@@ -109,7 +109,7 @@ Table "documents" [headercolor: #7A3FBF] {
   }
 }
 
-Table "task_assignments" [headercolor: #7A3FBF] {
+Table "task_assignments" {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
   "position_id" int4 [not null]
@@ -124,7 +124,7 @@ Table "task_assignments" [headercolor: #7A3FBF] {
   }
 }
 
-Table "task_item_handovers" [headercolor: #7A3FBF] {
+Table "task_item_handovers" {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [not null]
   "from_person_id" int4
@@ -139,7 +139,7 @@ Table "task_item_handovers" [headercolor: #7A3FBF] {
   }
 }
 
-Table "task_items" [headercolor: #7A3FBF] {
+Table "task_items" {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
   "process_definition_template_id" int4
@@ -179,7 +179,7 @@ Table "task_items" [headercolor: #7A3FBF] {
   }
 }
 
-Table "tasks" [headercolor: #7A3FBF] {
+Table "tasks" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
   "process_run_id" int4

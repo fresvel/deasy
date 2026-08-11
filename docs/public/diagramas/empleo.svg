@@ -12,7 +12,7 @@
 <g id="aplications" class="node">
 <title>aplications</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="982.11" cy="-1093.34" rx="287.59" ry="384.83"/>
-<polygon fill="#6b7207" stroke="transparent" points="781.11,-1303.34 781.11,-1363.34 1184.11,-1363.34 1184.11,-1303.34 781.11,-1303.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="781.11,-1303.34 781.11,-1363.34 1184.11,-1363.34 1184.11,-1303.34 781.11,-1303.34"/>
 <polygon fill="none" stroke="#29235c" points="781.11,-1303.34 781.11,-1363.34 1184.11,-1363.34 1184.11,-1303.34 781.11,-1303.34"/>
 <text text-anchor="start" x="844.79" y="-1324.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;aplications &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="781.11,-1243.34 781.11,-1303.34 1184.11,-1303.34 1184.11,-1243.34 781.11,-1243.34"/>
@@ -66,7 +66,7 @@
 <g id="offers" class="node">
 <title>offers</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1619.15" cy="-1057.34" rx="285.84" ry="427.19"/>
-<polygon fill="#6b7207" stroke="transparent" points="1419.15,-1297.34 1419.15,-1357.34 1819.15,-1357.34 1819.15,-1297.34 1419.15,-1297.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="1419.15,-1297.34 1419.15,-1357.34 1819.15,-1357.34 1819.15,-1297.34 1419.15,-1297.34"/>
 <polygon fill="none" stroke="#29235c" points="1419.15,-1297.34 1419.15,-1357.34 1819.15,-1357.34 1819.15,-1297.34 1419.15,-1297.34"/>
 <text text-anchor="start" x="1516.89" y="-1318.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;offers &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1419.15,-1237.34 1419.15,-1297.34 1819.15,-1297.34 1819.15,-1237.34 1419.15,-1237.34"/>
@@ -131,7 +131,7 @@
 <g id="contract_origin_recruitment" class="node">
 <title>contract_origin_recruitment</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2321.24" cy="-1392.34" rx="380.35" ry="214.92"/>
-<polygon fill="#6b7207" stroke="transparent" points="2054.24,-1482.34 2054.24,-1542.34 2588.24,-1542.34 2588.24,-1482.34 2054.24,-1482.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="2054.24,-1482.34 2054.24,-1542.34 2588.24,-1542.34 2588.24,-1482.34 2054.24,-1482.34"/>
 <polygon fill="none" stroke="#29235c" points="2054.24,-1482.34 2054.24,-1542.34 2588.24,-1542.34 2588.24,-1482.34 2054.24,-1482.34"/>
 <text text-anchor="start" x="2065.19" y="-1503.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;contract_origin_recruitment &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2054.24,-1422.34 2054.24,-1482.34 2588.24,-1482.34 2588.24,-1422.34 2054.24,-1422.34"/>
@@ -165,7 +165,7 @@
 <g id="contract_origin_renewal" class="node">
 <title>contract_origin_renewal</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2321.24" cy="-2109.34" rx="374.53" ry="172.57"/>
-<polygon fill="#6b7207" stroke="transparent" points="2058.24,-2169.34 2058.24,-2229.34 2584.24,-2229.34 2584.24,-2169.34 2058.24,-2169.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="2058.24,-2169.34 2058.24,-2229.34 2584.24,-2229.34 2584.24,-2169.34 2058.24,-2169.34"/>
 <polygon fill="none" stroke="#29235c" points="2058.24,-2169.34 2058.24,-2229.34 2584.24,-2229.34 2584.24,-2169.34 2058.24,-2169.34"/>
 <text text-anchor="start" x="2089.19" y="-2190.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;contract_origin_renewal &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="2058.24,-2109.34 2058.24,-2169.34 2584.24,-2169.34 2584.24,-2109.34 2058.24,-2109.34"/>
@@ -193,7 +193,7 @@
 <g id="contract_origins" class="node">
 <title>contract_origins</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="1619.15" cy="-2109.34" rx="281.36" ry="172.57"/>
-<polygon fill="#6b7207" stroke="transparent" points="1422.15,-2169.34 1422.15,-2229.34 1816.15,-2229.34 1816.15,-2169.34 1422.15,-2169.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="1422.15,-2169.34 1422.15,-2229.34 1816.15,-2229.34 1816.15,-2169.34 1422.15,-2169.34"/>
 <polygon fill="none" stroke="#29235c" points="1422.15,-2169.34 1422.15,-2229.34 1816.15,-2229.34 1816.15,-2169.34 1422.15,-2169.34"/>
 <text text-anchor="start" x="1443.99" y="-2190.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;contract_origins &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1422.15,-2109.34 1422.15,-2169.34 1816.15,-2169.34 1816.15,-2109.34 1422.15,-2109.34"/>
@@ -239,7 +239,7 @@
 <g id="contracts" class="node">
 <title>contracts</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="982.11" cy="-2010.34" rx="315.24" ry="469.54"/>
-<polygon fill="#6b7207" stroke="transparent" points="761.11,-2280.34 761.11,-2340.34 1203.11,-2340.34 1203.11,-2280.34 761.11,-2280.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="761.11,-2280.34 761.11,-2340.34 1203.11,-2340.34 1203.11,-2280.34 761.11,-2280.34"/>
 <polygon fill="none" stroke="#29235c" points="761.11,-2280.34 761.11,-2340.34 1203.11,-2340.34 1203.11,-2280.34 761.11,-2280.34"/>
 <text text-anchor="start" x="854.96" y="-2301.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;contracts &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="761.11,-2220.34 761.11,-2280.34 1203.11,-2280.34 1203.11,-2220.34 761.11,-2220.34"/>
@@ -334,7 +334,7 @@
 <g id="vacancies" class="node">
 <title>vacancies</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="315.37" cy="-943.34" rx="315.24" ry="596.6"/>
-<polygon fill="#6b7207" stroke="transparent" points="94.37,-1303.34 94.37,-1363.34 536.37,-1363.34 536.37,-1303.34 94.37,-1303.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="94.37,-1303.34 94.37,-1363.34 536.37,-1363.34 536.37,-1303.34 94.37,-1303.34"/>
 <polygon fill="none" stroke="#29235c" points="94.37,-1303.34 94.37,-1363.34 536.37,-1363.34 536.37,-1303.34 94.37,-1303.34"/>
 <text text-anchor="start" x="181.99" y="-1324.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;vacancies &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="94.37,-1243.34 94.37,-1303.34 536.37,-1303.34 536.37,-1243.34 94.37,-1243.34"/>
@@ -432,7 +432,7 @@
 <g id="vacancy_visibility" class="node">
 <title>vacancy_visibility</title>
 <ellipse fill="none" stroke="black" stroke-width="0" cx="982.11" cy="-433.34" rx="281.36" ry="257.27"/>
-<polygon fill="#6b7207" stroke="transparent" points="785.11,-553.34 785.11,-613.34 1179.11,-613.34 1179.11,-553.34 785.11,-553.34"/>
+<polygon fill="#1d71b8" stroke="transparent" points="785.11,-553.34 785.11,-613.34 1179.11,-613.34 1179.11,-553.34 785.11,-553.34"/>
 <polygon fill="none" stroke="#29235c" points="785.11,-553.34 785.11,-613.34 1179.11,-613.34 1179.11,-553.34 785.11,-553.34"/>
 <text text-anchor="start" x="797.19" y="-574.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;vacancy_visibility &#160;&#160;&#160;&#160;&#160;&#160;</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="785.11,-493.34 785.11,-553.34 1179.11,-553.34 1179.11,-493.34 785.11,-493.34"/>

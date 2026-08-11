@@ -16,20 +16,6 @@ impresiona y no se lee.
 Cada dominio muestra **solo las relaciones internas**. Las que salen hacia otros dominios están
 listadas como comentario al final de su fichero `.dbml` — si no, cada dominio parecería una isla,
 que es justo lo que no es.
-
-**El color de cabecera identifica el dominio**, y es el mismo en el `.dbml` consolidado: ahí el
-modelo completo se lee por bloques de color. La paleta está en `scripts/docs/dominios.json`.
-:::
-
-:::tip[Sobre los colores]
-Los ocho tonos no son decorativos: `dbml-renderer` escribe el nombre de la tabla en **blanco**
-sobre ellos, así que cada uno pasa **4.5:1 de contraste con el blanco** — eso descarta cualquier
-tono claro y es la razón de que la gama sea oscura.
-
-Con esa restricción, sRGB no da para ocho tonos que se distingan **todos entre sí**: azul/violeta
-y los dos verdes se acercan para quien tiene daltonismo. Es un límite del espacio de color, no un
-descuido. No molesta aquí porque **los ocho colores nunca coinciden en pantalla**: cada diagrama
-muestra un dominio, bajo un encabezado que lo nombra con palabras. El color orienta, no identifica.
 :::
 
 ## Identidad, personas y RBAC

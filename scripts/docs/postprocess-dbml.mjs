@@ -142,13 +142,16 @@ const CABECERA = (extra) => `// ================================================
 
 `;
 
-// El color de cabecera identifica el DOMINIO al que pertenece la tabla. En el consolidado
-// eso hace legible el modelo completo (se ve por bloques); en cada fichero de dominio es
-// la marca de agua de esa seccion.
+// Color de cabecera por dominio: OPCIONAL y hoy SIN USAR.
 //
-// La paleta esta en `dominios.json`, validada con el criterio de color categorico:
-// `dbml-renderer` pinta el nombre en BLANCO sobre este color, asi que cada uno pasa
-// 4.5:1 con blanco -- ese es el requisito duro, y descarta cualquier tono claro.
+// Se probo una gama de ocho tonos y se retiro el 2026-08-11 porque quedaba fea: con texto
+// blanco encima hacen falta colores oscuros (4.5:1 con blanco), y ocho tonos oscuros juntos
+// ensucian el diagrama mas de lo que ayudan. Sin `color` en `dominios.json` se usa el azul
+// por defecto de dbml-renderer, que es lo que hay ahora.
+//
+// El mecanismo se conserva porque son cuatro lineas y deja la puerta abierta a una gama
+// mejor: basta con volver a poner `"color": "#xxxxxx"` en el dominio. Si se hace, hay que
+// comprobar el contraste con BLANCO, que es el requisito duro y no es negociable.
 const bloqueTabla = (nombre) => {
   const t = tablas.get(nombre);
   const dom = asignadas.get(nombre);
