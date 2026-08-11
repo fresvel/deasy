@@ -88,20 +88,34 @@ seguir una relación de punta a punta. Para eso está **Azimutt**, autoalojado e
 (licencia MIT, ningún servicio externo):
 
 ```bash
-bash scripts/stack.sh c --profile explorer up -d azimutt   # -> http://localhost:4900
+bash scripts/stack.sh c --profile explorer up -d azimutt   # la app  -> http://localhost:4900
+npx -y azimutt@latest gateway                              # la pasarela, en el host -> :4177
 ```
 
+Hacen falta **las dos piezas**. El navegador no puede hablar con una base, así que Azimutt lee el
+esquema a través de una pasarela; si no levantas la tuya, usa la alojada por ellos y tu cadena de
+conexión sale de tu máquina. La pasarela local lo evita.
+
+Luego se elige **«From database connection»** — no «From SQL structure», que solo da una foto que
+hay que reimportar a mano. La cadena de conexión de cada pila está en `CLAUDE.md`, que no se
+publica.
+
+Dentro puedes quedarte solo con lo que te interesa: los **layouts** son vistas con nombre (admiten
+carpetas con `/`), empiezan vacíos y vas añadiendo tablas por búsqueda o siguiendo relaciones; con
+click derecho sobre varias tablas creas **grupos** de color; y los **memos** son notas en Markdown
+sobre el propio diagrama.
+
 Va detrás del perfil `explorer` a propósito: son **dos contenedores** (la aplicación necesita su
-propia base) y es una herramienta que se abre de vez en cuando, no parte de la aplicación. Con
-cuatro pilas, arrancarlo por defecto serían ocho contenedores que nadie mira.
+propia base) y es una herramienta que se abre de vez en cuando, no parte de la aplicación.
 
-La primera vez hay que registrarse — la cuenta es local, vive en la base de Azimutt y no sale de
-tu máquina. Después, al crear el proyecto, se le da la conexión a la base del entorno: desde dentro
-de la red de compose el host es `postgres` y el puerto `5432`, con las credenciales de
-`docker/.env.dev` (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`).
+Su base es **propia y separada** de la del proyecto: `test:char:run` resetea la base de dev, y con
+ella se llevaría por delante los diagramas que hayas guardado.
 
-Su base es **propia y separada** de la del proyecto, también a propósito: `test:char:run` resetea
-la base de dev, y con ella se llevaría por delante los diagramas que hayas guardado.
+:::caution[Azimutt no garantiza estar al día]
+Lee en vivo **cuando refrescas la fuente**, que es un clic; y un layout guardado no incorpora
+tablas nuevas por su cuenta. Quien garantiza que el esquema y su documentación no se separen es la
+puerta de CI de los diagramas generados, no esta herramienta. Azimutt es para *explorar*.
+:::
 
 ## Cómo se regenera
 

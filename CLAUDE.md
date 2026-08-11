@@ -216,11 +216,49 @@ Lo único que se escribe a mano es **`docs/02-dominio-datos/anotaciones.json`**:
 una tabla o una columna. Se inyecta como nota en el DBML, y el generador falla si nombras algo que
 no existe.
 
-**Explorador interactivo** (opcional, perfil `explorer`): `bash scripts/stack.sh c --profile
-explorer up -d azimutt` levanta **Azimutt** (MIT, autoalojado) para navegar el esquema buscando y
-expandiendo tablas — lo que los diagramas estáticos no dan. Son **dos** contenedores: la aplicación
-y **su propia base**, separada de la del proyecto porque `test:char:run` resetea la de dev y se
-llevaría los diagramas guardados. Por eso va tras un perfil y no arranca por defecto.
+### Azimutt — el explorador interactivo (perfil `explorer`)
+
+**Aquí van las credenciales de conexión a propósito: `CLAUDE.md` NO se publica.** El sitio de
+`docs/` sí va a ser público, así que ahí solo se nombran las variables, nunca sus valores.
+(Estas son las de dev, que ya viven en `docker/.env.dev`; no valen para nada más.)
+
+```bash
+bash scripts/stack.sh c --profile explorer up -d azimutt   # la app -> http://localhost:4900
+npx -y azimutt@latest gateway                              # la PASARELA, en el host -> :4177
+```
+
+Luego, en Azimutt: **«From database connection»** y pegar la cadena de la pila que uses:
+
+| Pila | Azimutt | Cadena de conexión |
+|---|---|---|
+| **A** | `:4700` | `postgresql://deasy:deasy@localhost:5432/deasy` |
+| **B** | `:4800` | `postgresql://deasy:deasy@localhost:5532/deasy` |
+| **C** | `:4900` | `postgresql://deasy:deasy@localhost:5632/deasy` |
+| **D** | `:5000` | `postgresql://deasy:deasy@localhost:5732/deasy` |
+
+Cinco cosas que costaron una tarde averiguar:
+
+1. **Sin la pasarela no hay conexión viva.** El navegador no puede hablar con una base; Azimutt
+   extrae por una pasarela. Si no levantas la tuya **usa la ALOJADA de ellos**, y entonces tu
+   cadena de conexión sale de tu máquina. La local lo evita.
+2. **La pasarela va en el host, no en contenedor.** No hay imagen publicada y el proceso **se ata
+   a `127.0.0.1`**, así que el `-p` de Docker no la alcanza (comprobado: 200 desde dentro, 000
+   desde fuera). Es un ayudante de cliente, no parte de la pila. Se apaga con Ctrl-C.
+3. **`localhost:<puerto publicado>`, no `postgres:5432`.** Quien conecta es la pasarela, que corre
+   en el host. El nombre de servicio de compose no le resuelve.
+4. **Importar el `.sql` NO sirve para esto.** Da una foto que hay que reimportar a mano, y además
+   su parser se traga los `CREATE INDEX` y los triggers (164 avisos). La conexión viva no.
+5. **El plan `free` no puede guardar proyectos.** Por eso el compose fija
+   `ORGANIZATION_DEFAULT_PLAN`. Si creas una organización nueva y no guarda, es esto.
+
+Son **dos** contenedores (la app y **su propia base**, separada de la del proyecto porque
+`test:char:run` resetea la de dev y se llevaría los diagramas). Por eso va tras un perfil y no
+arranca por defecto.
+
+⚠️ **Azimutt NO garantiza estar al día**: lee en vivo cuando refrescas la fuente, que es un clic.
+Un layout guardado tampoco incorpora tablas nuevas solo. **La garantía la da la puerta del DBML**,
+no esto: si cambias el esquema y no regeneras, CI se pone rojo. Azimutt es para explorar; los
+diagramas generados son la documentación.
 
 El generador levanta **su propio PostgreSQL desechable** (no toca ninguna pila, no publica
 puertos). Efecto secundario que vale tanto como los diagramas: **aplica el esquema con
