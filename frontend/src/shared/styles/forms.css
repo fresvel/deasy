@@ -31,7 +31,7 @@
 
     .deasy-filter-control:focus {
         border-color: var(--brand-primary);
-        box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
+        box-shadow: var(--focus-ring);
     }
 
     .admin-select-field.deasy-filter-control {
@@ -50,7 +50,7 @@
 
     .deasy-filter-search-input:focus {
         border-color: var(--brand-primary);
-        box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
+        box-shadow: var(--focus-ring);
     }
 
     .deasy-filter-toolbar {
@@ -169,7 +169,7 @@
     }
 
     .deasy-dropzone__surface--active {
-        @apply border-sky-500 bg-sky-50 shadow-[0_0_0_3px_rgba(14,165,233,0.12)];
+        @apply border-sky-500 bg-sky-50 shadow-[var(--focus-ring)];
     }
 
     .deasy-dropzone__surface--filled {
@@ -275,9 +275,9 @@
   min-height: var(--input-height);
   width: 100%;
   border-radius: 1rem;
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  border: 1px solid var(--brand-border-field);
   background: var(--brand-white);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--brand-shadow);
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--brand-navy);
@@ -293,8 +293,8 @@
 .profile-select-input:focus,
 .profile-textarea:focus {
   outline: none;
-  border-color: rgba(14, 116, 144, 0.65);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+  border-color: var(--brand-primary);
+  box-shadow: var(--focus-ring);
 }
 
 .profile-inline-note {

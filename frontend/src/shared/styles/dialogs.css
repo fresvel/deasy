@@ -4,7 +4,7 @@
     }
 
     .deasy-dialog-panel {
-        @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)];
+        @apply rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-modal)];
     }
 
     .deasy-dialog-header {
@@ -31,7 +31,7 @@
 
 .deasy-dialog-root .deasy-dialog-header {
   background: var(--brand-surface-alt);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  border-bottom: 1px solid var(--brand-border);
   box-shadow: none;
 }
 
@@ -43,7 +43,7 @@
 .deasy-dialog-root .deasy-dialog-header button {
   background: var(--brand-white);
   color: var(--brand-icon);
-  border: 1px solid rgba(148, 163, 184, 0.36);
+  border: 1px solid var(--brand-border-field);
 }
 
 .deasy-dialog-root .deasy-dialog-header button:hover {
@@ -52,7 +52,7 @@
 }
 
 .deasy-dialog-root {
-  background: rgba(15, 23, 42, 0.48);
+  background: var(--overlay-backdrop);
   backdrop-filter: blur(3px);
 }
 
@@ -63,15 +63,15 @@
 .deasy-dialog-panel,
 .profile-dialog-panel {
   border-radius: 0.95rem;
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  border: 1px solid var(--brand-border);
   background: var(--brand-white);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  box-shadow: var(--shadow-modal);
 }
 
 .deasy-dialog-header {
   min-height: 3.75rem;
   background: var(--brand-surface-alt);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  border-bottom: 1px solid var(--brand-border);
   padding: 1rem 1.25rem;
 }
 
@@ -94,7 +94,7 @@
 
 .deasy-dialog-footer {
   background: var(--brand-surface-alt);
-  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  border-top: 1px solid var(--brand-border);
   padding: 1rem 1.25rem;
 }
 
@@ -107,7 +107,7 @@
 .profile-dialog-panel [data-modal-dismiss][aria-label="Close"],
 .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"] {
   border-radius: 0.55rem;
-  border-color: rgba(148, 163, 184, 0.34) !important; /* gana a .deasy-dialog-header button (0,2,1) */
+  border-color: var(--brand-border-field) !important; /* gana a .deasy-dialog-header button (0,2,1) */
   background: var(--brand-white);
   color: var(--brand-icon);
 }
