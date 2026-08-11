@@ -1,6 +1,6 @@
 ---
 name: tailadmin-ui
-description: Referencia de estilos de TailAdmin (dashboard Tailwind v4) para construir UI en el frontend Vue de Deasy — tokens, recetas de clases verificadas de botones/inputs/tablas/modales/cards/charts, shell de layout y patrones de página. Úsala al crear o rediseñar cualquier componente visual, al buscar "cómo se hace un X bonito", o al elegir colores/sombras/tipografía. El mapa de Deasy está al día a 2026-08-11: la paleta ya está unificada y con @theme, así que las recetas se pegan casi directas — pero queda UNA trampa viva, `dark:`, que se activa sola y pinta en oscuro sobre la app en claro.
+description: Referencia de estilos de TailAdmin (dashboard Tailwind v4) para construir UI en el frontend Vue de Deasy — tokens, recetas de clases verificadas de botones/inputs/tablas/modales/cards/charts, shell de layout y patrones de página. Úsala al crear o rediseñar cualquier componente visual, al buscar "cómo se hace un X bonito", o al elegir colores/sombras/tipografía. El mapa de Deasy está al día a 2026-08-11: la paleta está unificada y registrada en @theme, así que las recetas se pegan casi directas. Al adaptar una receta hay que hacer dos cosas: traducir sus colores a los tokens de Deasy, y QUITAR sus clases `dark:` — Deasy no tiene modo oscuro y el lint las rechaza.
 ---
 
 # TailAdmin como fuente de referencia visual para Deasy
@@ -10,7 +10,7 @@ construir componentes en Deasy con un lenguaje visual coherente. **No es una gu�
 código de TailAdmin** — su código es peor que el de Deasy (ver §5). Es una fuente de **recetas de
 clases y decisiones de diseño**.
 
-## Antes que nada: de las 3 trampas de Deasy, quedan 1½
+## Antes que nada: las 3 trampas de Deasy están resueltas
 
 > **Actualizado el 2026-08-11 sobre `develop` @ `18e8942`.** Esta sección describía el repo de antes
 > del frente 4. Dos de las tres trampas se arreglaron; los ficheros que citaba (`theme.css`,
@@ -21,25 +21,40 @@ clases y decisiones de diseño**.
 | `rounded-*` mentía: `rounded-lg`=16px y la escala invertida | ✅ **arreglada** — la escala de Tailwind está intacta |
 | No había `@theme`: Tailwind no conocía ningún token | ✅ **arreglada** — 16 colores registrados |
 | Dev y prod no renderizaban igual (105 reglas `!important` bajo `local-dev`) | ✅ **arreglada** — el gate se retiró; lo que ves es lo que hay |
-| **`dark:` se activaría solo** | ⚠️ **SIGUE VIVA** |
+| `dark:` se activaría solo | ✅ **resuelta** — decidido que no hay modo oscuro; tres capas lo impiden |
 
-### La que queda, y es la peor
+### DECIDIDO el 2026-08-11: no hay modo oscuro, y `dark:` se quita al pegar
 
-**Deasy no declara `@custom-variant dark`**, así que Tailwind v4 compila `dark:` a
-`@media (prefers-color-scheme: dark)`. Las recetas de TailAdmin van **saturadas** de `dark:`.
+**Deasy es una app EN CLARO y no se contempla modo oscuro.** Sus zonas oscuras —la barra lateral—
+son una decisión de diseño resuelta con color explícito (`text-white/55`, `border-white/8`), no un
+tema. Hoy hay **0 usos** de `dark:` en todo el frontend.
 
-Pegadas hoy: a quien tenga el sistema operativo en oscuro se le pintan los componentes nuevos **en
-oscuro sobre el resto de la app en claro**. No lo verás en una máquina en claro, ni lo ve el build,
-ni el lint, ni los tests.
+El riesgo era real: sin protección, Tailwind v4 compila `dark:` a
+`@media (prefers-color-scheme: dark)`, y las recetas de TailAdmin traen **1 024**. Pegadas tal cual,
+a quien tuviera el sistema en oscuro se le pintarían los componentes nuevos **en oscuro sobre el
+resto de la app en claro** — invisible para el build, el lint, los tests y para ti si tu sistema
+está en claro.
 
-**Decide antes de copiar la primera receta:**
+**Ya está resuelto, y el repo lo hace cumplir con tres capas:**
 
-- **Opción A — limpiar los `dark:` al pegar.** Cero riesgo, cero infraestructura. Es lo correcto si
-  el modo oscuro no está en el plan.
-- **Opción B — declarar el modo oscuro de verdad**: `@custom-variant dark (&:where(.dark, .dark *))`
-  en `tokens.css` **más** un conmutador que ponga la clase. Sin el conmutador, el `@custom-variant`
-  a secas desactiva el comportamiento automático — que es lo que quieres — pero deja los `dark:`
-  inertes y acumulando.
+| | Qué cubre |
+|---|---|
+| `@custom-variant dark` en `tokens.css` | El seguro: si un `dark:` entra, queda **inerte** |
+| `vue/no-restricted-class` (eslint, en `error`) | El atributo `class` de las plantillas |
+| `pnpm run check:no-dark` | Lo que ninguna ve: dentro de `@apply`, dentro de `<style scoped>` y en `.js` |
+
+**Al adaptar una receta, quítale los `dark:`.** No los dejes «por si acaso»: apuntan a la paleta de
+TailAdmin (`gray-900`, `gray-800`…), no a la de Deasy, así que el día que hubiera modo oscuro habría
+que revisarlos todos igual. Y el lint te va a parar.
+
+```html
+<!-- TailAdmin -->
+<div class="bg-white text-gray-800 dark:bg-gray-900 dark:text-white/90
+            border-gray-200 dark:border-gray-800">
+
+<!-- adaptado a Deasy -->
+<div class="bg-brand-white text-brand-ink border-brand-border">
+```
 
 **Media trampa que no estaba en la lista:** al adaptar una receta, prefiere el utility con nombre
 (`border-brand-border`) a `border-[var(--brand-border)]`. En Tailwind v4 `border-[X]`, `text-[X]` y
@@ -51,7 +66,8 @@ El orden de adopción que había aquí (7 pasos: `@theme`, radios, `local-dev`, 
 **está ejecutado**. Hoy el punto de partida es: paleta única, `@theme` registrado, escala de radios
 correcta, cero literales de color en el CSS y dos linters vigilando.
 
-Lo único que queda por decidir antes de adoptar es `dark:`.
+**Ya no queda nada por decidir antes de adoptar.** Al pegar una receta: traduce los colores a los
+tokens de Deasy y quita los `dark:`.
 
 > **Si copias un `@theme` de TailAdmin, omite las líneas `--font-*: initial` y
 > `--breakpoint-*: initial`.** Son destructivas (borran `font-sans`/`font-mono` y **todos** los
@@ -99,7 +115,12 @@ flotante sí necesita opacidad real).
 
 Error/success sólo cambian el prefijo semántico (`border-error-300`, `focus:ring-error-500/10`).
 
-## Convenciones de dark mode (el contrato de uso)
+## Convenciones de dark mode de TailAdmin — referencia, NO se copia
+
+> Deasy no tiene modo oscuro y las clases `dark:` están prohibidas (ver arriba). Esta tabla queda
+> como referencia de **cómo piensa TailAdmin sus superficies**, que sí es útil: la idea de que una
+> card anidada se aclara por composición en vez de con un gris sólido es transferible. Pero la
+> columna «Dark» **no se pega**.
 
 | Rol | Light | Dark |
 |---|---|---|

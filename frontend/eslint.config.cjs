@@ -35,6 +35,20 @@ module.exports = [
             // fase 6 del frente 4.
             "vue/no-static-inline-styles": ["error", { allowBinding: true }],
             "vue/prefer-separate-static-class": "error",
+
+            // [2026-08-11] Deasy es una app EN CLARO y no se contempla modo oscuro.
+            //
+            // Esta regla existe porque las recetas de TailAdmin —de donde salen los
+            // componentes nuevos— vienen con 1024 clases `dark:`, y pegar una tal cual
+            // mete codigo muerto en el mejor caso. `tokens.css` declara un
+            // `@custom-variant dark` que las deja inertes, pero eso es el seguro: esto
+            // es la puerta. Al adaptar una receta, los `dark:` se QUITAN.
+            //
+            // Si algun dia se implementa modo oscuro, esta regla se retira — pero
+            // entonces habra que revisar uno a uno los `dark:` que se hubieran colado,
+            // porque apuntan a la paleta de TailAdmin (gray-900, gray-800...) y no a la
+            // de Deasy.
+            "vue/no-restricted-class": ["error", "/^dark:/"],
         },
     },
 ];

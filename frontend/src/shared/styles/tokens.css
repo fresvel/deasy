@@ -3,6 +3,27 @@
 @plugin "@tailwindcss/typography";
 
 /* ------------------------------------------------------------------------------------
+   MODO OSCURO: NO HAY, Y ESTA LINEA ES LA QUE LO GARANTIZA.
+
+   Sin ella, Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)`. Es decir
+   que cualquier `dark:` que entre en el codigo —y las recetas de TailAdmin vienen llenas,
+   1024 en la referencia— se activaria SOLO en la maquina de quien tenga el sistema en
+   oscuro, pintando ese componente en oscuro sobre el resto de la app en claro. No lo ve
+   el build, ni el lint, ni los tests, ni tu si tienes el sistema en claro.
+
+   Con ella, `dark:` pasa a depender de una clase `.dark` que NADIE pone, asi que queda
+   inerte. Es un seguro, no una funcionalidad.
+
+   Deasy es una app EN CLARO. Sus zonas oscuras —la barra lateral— son una decision de
+   diseño resuelta con color explicito (`text-white/55`, `border-white/8`), no un tema.
+
+   Si algun dia se quiere modo oscuro de verdad hace falta bastante mas que esto: un
+   conmutador que ponga la clase, persistirlo, y una paleta gemela oscura — hoy hay UN
+   valor por concepto, no dos.
+   ------------------------------------------------------------------------------------ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------------------------
    [fase-3 2026-08-09] REGISTRO DE LA PALETA EN TAILWIND.
 
    Hasta hoy el proyecto usaba Tailwind v4 como si fuera v3: cero `@theme`, con lo que

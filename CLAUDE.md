@@ -163,7 +163,13 @@ Cuatro cosas que cuestan caro y no son evidentes:
    `getBoundingClientRect` de cada nodo**, comparada antes/después. Espera a `document.fonts.ready`
    antes de medir o los anchos mienten.
 
-El plan, la bitácora y las dos auditorías están en **`docs/planes/sistema-diseno/`**.
+5. **No hay modo oscuro y `dark:` está prohibido.** Deasy es una app en claro; sus zonas oscuras
+   son color explícito, no un tema. Importa porque las recetas de TailAdmin traen 1024 clases
+   `dark:` y sin protección se activarían solas en un sistema en oscuro. Hay tres capas:
+   `@custom-variant` en `tokens.css`, `vue/no-restricted-class` y `pnpm run check:no-dark`.
+
+**Las reglas completas están en `frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. El plan,
+la bitácora y las dos auditorías, en **`docs/planes/sistema-diseno/`**.
 
 ### Documentación — el sitio Astro Starlight
 

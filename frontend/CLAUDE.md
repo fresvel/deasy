@@ -78,7 +78,30 @@ de ellas estaban a **ΔE ≤ 2**: nadie distingue 0.24 de 0.26. Las sombras, lo 
 
 **Antes de añadir una opacidad nueva, mira si ya existe una a menos de ΔE 2 y usa esa.**
 
-### 2.5 Ojo con los espacios de nombres de Tailwind v4
+### 2.5 No hay modo oscuro, y `dark:` está prohibido
+
+**Deasy es una app en claro.** Sus zonas oscuras —la barra lateral— son una decisión de diseño
+resuelta con color explícito (`text-white/55`, `border-white/8`), no un tema. Hoy hay **0 usos** de
+`dark:` y así se queda.
+
+Importa porque **las recetas de TailAdmin traen 1 024 clases `dark:`**, y sin protección Tailwind v4
+las compila a `@media (prefers-color-scheme: dark)`: se activarían **solas** en la máquina de quien
+tenga el sistema en oscuro, pintando ese componente en oscuro sobre el resto de la app en claro. No
+lo ve el build, ni el lint, ni los tests, ni tú si tu sistema está en claro.
+
+Hay **tres capas**, y cada una tapa lo que la anterior no ve:
+
+| | Qué cubre |
+|---|---|
+| `@custom-variant dark` en `tokens.css` | El seguro: deja `dark:` inerte aunque entre |
+| `vue/no-restricted-class` | El atributo `class` de las plantillas |
+| `pnpm run check:no-dark` | Lo que ninguna ve: `dark:` dentro de `@apply`, dentro de `<style scoped>` y en `.js` |
+
+**Al adaptar una receta de TailAdmin, los `dark:` se quitan.** No se dejan «por si acaso»: apuntan a
+la paleta de TailAdmin (`gray-900`, `gray-800`…), no a la de Deasy, así que el día que hubiera modo
+oscuro habría que revisarlos todos igual.
+
+### 2.6 Ojo con los espacios de nombres de Tailwind v4
 
 Un token llamado como un namespace de Tailwind **secuestra sus utilidades en toda la app**, en
 silencio. `--radius-lg` hizo durante meses que `rounded-lg` valiera 16 px en vez de 8, dejando la
@@ -262,6 +285,7 @@ concentran la mayor parte de la utility soup. No añadas más a ellos: extrae.
 ```bash
 bash scripts/stack.sh b exec -T frontend pnpm run lint       # eslint .
 bash scripts/stack.sh b exec -T frontend pnpm run lint:css   # stylelint — debe dar 0 errores
+bash scripts/stack.sh b exec -T frontend pnpm run check:no-dark  # sin `dark:` — ver 2.5
 bash scripts/stack.sh b exec -T frontend pnpm run test:unit  # vitest
 bash scripts/stack.sh b exec -T frontend pnpm run build
 ```
@@ -285,7 +309,6 @@ está toda la deuda que queda:
 | Strings de clase >120 caracteres | 221 | `HomeView.vue`, `FirmarPdf.vue` |
 | *Arbitrary values* (`text-[11px]`…) | 443 | 8 tamaños distintos por debajo de `text-sm` |
 | `!important` con motivo escrito | 6 | `dialogs.css`, `overrides.css` |
-| Sin `@custom-variant dark` | — | Pegar una receta con `dark:` pintaría en oscuro sobre la app en claro |
 
 **Dónde se concentra**: 78 de los 175 de `.vue` están en los seis componentes de Vue Flow
 (`modules/admin/components/units/`), y 30 en `HomeView.vue`.
