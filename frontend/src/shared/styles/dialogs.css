@@ -1,0 +1,145 @@
+@layer components {
+.deasy-dialog-root {
+        @apply bg-slate-950/45 backdrop-blur-[2px];
+    }
+
+    .deasy-dialog-panel {
+        @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)];
+    }
+
+    .deasy-dialog-header {
+        @apply border-b border-slate-200 bg-white px-5 py-4 sm:px-6;
+    }
+
+    .deasy-dialog-title {
+        @apply text-base font-semibold tracking-tight text-slate-950 sm:text-lg;
+    }
+
+    .deasy-dialog-body {
+        @apply px-5 py-5 text-slate-700 sm:px-6;
+    }
+
+    .deasy-dialog-footer {
+        @apply border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6;
+    }
+}
+.deasy-dialog-root .deasy-dialog-body,
+.deasy-dialog-root .deasy-dialog-footer {
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.deasy-dialog-root .deasy-dialog-header {
+  background: var(--brand-surface-alt);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: none;
+}
+
+.deasy-dialog-root .deasy-dialog-header .deasy-dialog-title,
+.deasy-dialog-root .deasy-dialog-title {
+  color: #0f172a;
+}
+
+.deasy-dialog-root .deasy-dialog-header button {
+  background: var(--brand-white);
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+}
+
+.deasy-dialog-root .deasy-dialog-header button:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.deasy-dialog-root {
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.deasy-dialog-shell {
+  padding-block: 0.5rem;
+}
+
+.deasy-dialog-panel,
+.profile-dialog-panel {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: var(--brand-white);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+}
+
+.deasy-dialog-header {
+  min-height: 3.75rem;
+  background: var(--brand-surface-alt);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  padding: 1rem 1.25rem;
+}
+
+.deasy-dialog-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  /* `.admin-typography h5` (0,1,1) gana a esta clase (0,1,0) y lo dejaria en 500 */
+  font-weight: 600 !important;
+  line-height: 1.35;
+}
+
+.deasy-dialog-body {
+  background: var(--brand-white);
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  padding: 1.25rem;
+}
+
+.deasy-dialog-footer {
+  background: var(--brand-surface-alt);
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 1rem 1.25rem;
+}
+
+.deasy-dialog-panel .profile-admin-skin,
+.profile-dialog-panel .profile-admin-skin {
+  background: transparent;
+}
+
+.deasy-dialog-panel .deasy-btn--close,
+.profile-dialog-panel [data-modal-dismiss][aria-label="Close"],
+.profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"] {
+  border-radius: 0.55rem;
+  border-color: rgba(148, 163, 184, 0.34) !important; /* gana a .deasy-dialog-header button (0,2,1) */
+  background: var(--brand-white);
+  color: #475569;
+}
+
+.deasy-dialog-panel .deasy-btn--close:hover,
+.profile-dialog-panel [data-modal-dismiss][aria-label="Close"]:hover,
+.profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"]:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.process-dialog-content,
+.process-dialog-content .deasy-dialog-header,
+.process-dialog-content .deasy-dialog-body,
+.process-dialog-content .deasy-dialog-footer,
+.process-dialog-content .deasy-dialog-title {
+  font-family: var(--font-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  color: var(--brand-ink);
+}
+
+.process-dialog-content .deasy-dialog-header,
+.process-dialog-content .deasy-dialog-header .deasy-dialog-title {
+  font-weight: var(--font-weight-semibold);
+  color: #1f3342;
+}
+
+.process-dialog-content .deasy-dialog-body,
+.process-dialog-content .deasy-dialog-body p,
+.process-dialog-content .deasy-dialog-body small,
+.process-dialog-content .deasy-dialog-footer,
+.process-dialog-content .deasy-dialog-footer .text-muted {
+  color: var(--brand-ink);
+}

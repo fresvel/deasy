@@ -1,0 +1,212 @@
+@layer utilities {
+    .shadow-xl {
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+    }
+}
+.min-h-screen.bg-slate-100,
+.bg-slate-100 {
+  background-color: var(--brand-surface-muted);
+}
+
+.bg-slate-50,
+.bg-slate-50\/70,
+.bg-slate-50\/80 {
+  background-color: var(--brand-surface-muted) !important; /* repinta la utilidad; gana a .deasy-dialog-body */
+}
+
+.bg-white,
+.bg-white\/80,
+.bg-white\/85,
+.bg-white\/90,
+.bg-white\/92,
+.bg-white\/95,
+.deasy-card,
+.deasy-card-muted,
+.deasy-card-soft,
+.deasy-panel,
+.deasy-panel-muted,
+.deasy-section-card,
+.deasy-table-shell,
+.deasy-ui-surface,
+.deasy-form-section,
+.deasy-auth-card,
+.admin-workspace-frame,
+.admin-surface-frame,
+.deasy-dialog-panel,
+.profile-table-shell,
+.profile-dialog-panel,
+.table-institutional {
+  background-color: var(--brand-white);
+}
+
+.admin-workspace-frame--table {
+  background-color: transparent;
+}
+
+.deasy-auth-page {
+  background:
+    linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-muted) 46%, #f3f5fa 100%);
+}
+
+.deasy-auth-panel,
+.deasy-dialog-body {
+  background-color: var(--brand-white);
+}
+
+.deasy-auth-visual,
+.deasy-dialog-footer {
+  background-color: #f7fafc;
+}
+
+.border-slate-100,
+.border-slate-200,
+.deasy-card,
+.deasy-section-card,
+.deasy-dialog-panel,
+.admin-workspace-frame,
+.admin-surface-frame,
+.profile-table-shell,
+.table-institutional {
+  border-color: var(--brand-border) !important; /* repinta la utilidad; gana a .deasy-dialog-header button (0,2,1) */
+}
+
+.shadow-xl,
+.shadow-sm,
+.deasy-card,
+.deasy-section-card,
+.deasy-auth-card,
+.admin-workspace-frame,
+.admin-surface-frame,
+.profile-table-shell {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.admin-workspace-frame--table {
+  /* gana al repintado de `.admin-workspace-frame`, que si necesita prioridad */
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+.deasy-field-input,
+.deasy-field-select,
+.deasy-field-textarea,
+.deasy-auth-field,
+.profile-text-input,
+.profile-select-input,
+.profile-textarea,
+input,
+select,
+textarea {
+  background-color: var(--brand-white);
+  border-color: var(--brand-border);
+  border-radius: 0.5rem;
+}
+
+.admin-select-field {
+  border-color: var(--brand-border-field);
+  border-radius: 10px;
+}
+
+.admin-select-field:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+}
+
+.deasy-table thead tr,
+.table thead th,
+.table-institutional thead {
+  background: #eef0f5;
+}
+
+.deasy-table tbody tr:hover,
+.table-institutional tbody tr:hover {
+  background-color: #f5f7fb;
+}
+
+.deasy-btn--secondary,
+.deasy-btn--cancel,
+.deasy-auth-button--secondary,
+.admin-btn--secondary,
+.admin-btn--cancel {
+  background-color: var(--brand-white);
+  border-color: var(--brand-border);
+}
+
+.deasy-nav-shell {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+header {
+  background-color: var(--brand-navy-deep);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.deasy-fa-icon {
+  color: currentColor;
+  opacity: 1;
+}
+
+.deasy-btn--secondary,
+.deasy-btn--cancel,
+.deasy-auth-button--secondary,
+.admin-btn--secondary,
+.admin-btn--cancel {
+  color: var(--brand-text-strong);
+}
+
+.deasy-btn--secondary:hover,
+.deasy-btn--cancel:hover,
+.admin-btn--secondary:hover,
+.admin-btn--cancel:hover {
+  color: var(--brand-primary);
+  background-color: rgba(94, 78, 255, 0.06);
+  border-color: rgba(94, 78, 255, 0.18);
+}
+
+.hope-action-btn {
+  background-color: #f7fbfe;
+  border-color: #b8cadc;
+  color: #23384f;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.hope-action-view {
+  background-color: #e8f5fb;
+  border-color: #8ec6df;
+  color: #075985;
+}
+
+.hope-action-edit,
+.hope-action-select,
+.hope-action-assign {
+  background-color: #e9f8ef;
+  border-color: #8ed6b2;
+  color: #047857;
+}
+
+.hope-action-version,
+.hope-action-download,
+.hope-action-upload {
+  background-color: #eef3ff;
+  border-color: #aabef4;
+  color: #3751a3;
+}
+
+.hope-action-delete,
+.hope-action-delete-strong {
+  background-color: #fff0ed;
+  border-color: #f3aaa0;
+  color: #b42318;
+}
+
+.hope-action-delete-pdf {
+  background-color: #fff6e5;
+  border-color: #f4c26f;
+  color: #b45309;
+}
+
+.hope-action-btn:hover {
+  border-color: currentColor;
+  filter: saturate(1.05);
+}

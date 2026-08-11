@@ -1,0 +1,29 @@
+/* Punto de entrada unico de los estilos. `main.js` importa SOLO este fichero.
+
+   EL ORDEN DE ESTOS IMPORTS NO ES ALFABETICO Y NO SE TOCA A LA LIGERA. En CSS, dos reglas
+   de la misma especificidad se resuelven por orden de aparicion, asi que este orden ES
+   parte del diseño. En concreto:
+
+   - `tokens.css` va primero: declara la paleta y el `@theme` que registra los colores
+     en Tailwind. Todo lo demas lo consume.
+   - `overrides.css` va el ULTIMO. Contiene el repintado de las utilidades de Tailwind
+     (`.bg-white`, `.bg-slate-50`, `.shadow-sm`...) a los valores de la marca, y tiene
+     que ganar a las reglas de componente. Va por orden, no por `!important`.
+
+   Si mueves un import, verificalo en el navegador con una huella de `getComputedStyle`
+   antes/despues. Ni el build, ni el lint, ni los tests ven un estilo roto. */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./layout.css";
+@import "./nav.css";
+@import "./surfaces.css";
+@import "./buttons.css";
+@import "./forms.css";
+@import "./tables.css";
+@import "./tags.css";
+@import "./auth.css";
+@import "./dialogs.css";
+@import "./admin.css";
+@import "./misc.css";
+@import "./overrides.css";
