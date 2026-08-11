@@ -39,9 +39,22 @@ tests/characterization/
     chat.test.mjs       # conversaciones, mensajes, notificaciones
     execution.test.mjs  # capa de ejecución poblada (requiere el setup)
     zzzz_sign_batch.test.mjs     # /sign: validación, lote y descargas (guards de sign_controller)
-    zzzz_sign_workflow.test.mjs  # máquina de estados de fill_requests (MUTA; corre el ÚLTIMO)
+    zzzz_sign_workflow.test.mjs  # máquina de estados de fill_requests (MUTA)
+    zzzzzz_flow_steps_db.test.mjs # pasos de flujo EN LA BASE (MUTA; corre el ÚLTIMO)
   __snapshots__/        # golden-master versionado (el diff en git = evidencia)
 ```
+
+### El único flow cuyo oráculo es SQL
+
+`zzzzzz_flow_steps_db` rompe a propósito la regla «black-box HTTP», y conviene saber por qué antes
+de copiarlo: el §0.8 del plan maestro va a mover el flujo del `meta.yaml` a la base, y **ninguna ruta
+expone el resultado**. La que lo parece —`GET /template_artifacts/:id/schema`— lee el flujo del
+propio `meta.yaml`, o sea justo lo que se va a eliminar; y lo que hoy se fija por HTTP es el
+`content_hash` del paquete de MinIO, que **incluye ese fichero** y por tanto cambiará por
+construcción sin decir nada del flujo. Cuando lo que hay que caracterizar es el estado que un cambio
+va a reescribir y ninguna ruta lo enseña, el oráculo es la base. Separa los **dos productores** en
+claves distintas (`plantilla_*`, que la inversión cambia, y `runtime_*`, que es el grupo de control),
+y enmascara los ids estructurales pero **no** los que son el «quién».
 
 ## La fixture es el BOOTSTRAP, no el seed
 
