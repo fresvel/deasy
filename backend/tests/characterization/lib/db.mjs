@@ -66,6 +66,14 @@ export async function closeDb() {
 // deliverables.code). El orden respeta las FK (ninguna cascada: todas son NO ACTION):
 //   pasos de flujo → plantillas de flujo → vínculo a configuración → artifact → deliverable.
 //
+// ⚠️ EL FLUJO CUELGA DE DOS SITIOS, Y ESTE LIMPIADOR SOLO CONOCÍA UNO. Desde el sub-paso 3 del §0.8
+// `saveTemplateArtifactDraft` escribe también el flujo AUTORADO colgando de `template_artifact_id`
+// (con el vínculo a NULL), así que borrar solo lo que cuelga del vínculo dejaba filas apuntando al
+// artifact y el `DELETE FROM template_artifacts` reventaba con
+// `fk_fill_flow_templates_artifact`. No se manifestaba como un golden movido sino como TRES suites
+// caídas en su `after()` —`zz_template_lifecycle`, `zzz_artifact_draft` y este mismo flow—, y de
+// rebote como restos acumulados en `plantilla_entrega`. Fue el hallazgo del experimento desechable.
+//
 // Los objetos de MinIO NO se tocan a propósito: el prefijo es determinista
 // (`System/<code>/<storage_version>/`), la subida lo reescribe idéntico en cada corrida y
 // ningún golden lo observa. Borrarlo no aportaría estabilidad y no hay ruta que lo haga.
@@ -105,6 +113,24 @@ export async function cleanupDraftArtifactByCode(code) {
       await query("DELETE FROM signature_flow_templates WHERE process_definition_template_id = ANY($1::int[])", [linkIds]);
       await query("DELETE FROM process_definition_templates WHERE id = ANY($1::int[])", [linkIds]);
     }
+
+    // El segundo portador: el flujo autorado que cuelga del propio artifact (§0.8, sub-paso 3).
+    await query(
+      `DELETE FROM fill_flow_steps
+        WHERE fill_flow_template_id IN (
+          SELECT id FROM fill_flow_templates WHERE template_artifact_id = ANY($1::int[])
+        )`,
+      [artifactIds],
+    );
+    await query(
+      `DELETE FROM signature_flow_steps
+        WHERE template_id IN (
+          SELECT id FROM signature_flow_templates WHERE template_artifact_id = ANY($1::int[])
+        )`,
+      [artifactIds],
+    );
+    await query("DELETE FROM fill_flow_templates WHERE template_artifact_id = ANY($1::int[])", [artifactIds]);
+    await query("DELETE FROM signature_flow_templates WHERE template_artifact_id = ANY($1::int[])", [artifactIds]);
 
     await query("DELETE FROM template_artifacts WHERE id = ANY($1::int[])", [artifactIds]);
   }

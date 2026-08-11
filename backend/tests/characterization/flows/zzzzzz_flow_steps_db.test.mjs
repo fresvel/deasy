@@ -40,6 +40,18 @@
 // El discriminante es la columna `task_item_id`: NULL = flujo de plantilla, no-NULL = flujo de
 // runtime (`generation/documents.js:246,278` lo escribe siempre con el task_item).
 //
+// DENTRO DEL ORIGEN «PLANTILLA» HAY AHORA DOS PORTADORES, y esa es la novedad del sub-paso 3:
+//   · el del VÍNCULO   (`process_definition_template_id`) — lo siembra el sync, uno por configuración;
+//   · el de la PLANTILLA (`template_artifact_id`)         — lo escribe el formulario web DIRECTO en
+//     la base, uno solo, compartido por todas las configuraciones donde el entregable esté enlazado.
+// Se distinguen en el golden sin añadir columnas, pero OJO con cuál se mira: `normalize` enmascara
+// las claves de id **aunque valgan `null`**, así que `process_definition_template_id` sale
+// `"<normalized>"` en los dos y NO sirve de discriminante. Lo que los separa en el golden es
+// `process_definition_id` e `item_mode` —conceptos del VÍNCULO, que la plantilla no tiene y salen
+// `null`— y el `description`, que en las del vínculo lleva el marcador `artifact_sync_*` del sync.
+// El portador de verdad se comprueba sobre la fila CRUDA en `mismosPasos`, antes de normalizar.
+// La identidad de negocio la resuelven los dos por el mismo `LEFT JOIN`, gracias al `COALESCE`.
+//
 // SOBRE EL ENMASCARADO. Se enmascaran los ids ESTRUCTURALES (el `id` de la propia fila y los que la
 // cuelgan de otra: `fill_flow_template_id`, `template_id`, `process_definition_template_id`,
 // `task_item_id`, `template_artifact_id`, `deliverable_id`), porque su valor depende del orden de
@@ -55,14 +67,18 @@
 // consume) y el §0.8 lo borra en el sub-paso 7. Incluirlo movería el golden por una razón que no es
 // de comportamiento. `created_at` tampoco entra: es el reloj de siembra.
 //
-// ⚠️ `fill_flow_steps.code` y `fill_flow_steps.name` EXISTEN desde el sub-paso 1-bis y NO se capturan
-// todavía, a propósito. Hoy no hay quien las escriba —el nombre del paso de entrega sigue viviendo
-// solo en el `meta.yaml` y `workflowSync` no lo proyecta—, así que meterlas aquí ahora movería los
-// seis goldens para añadir `null` en cada paso: ruido, y del caro, porque gastaría por adelantado el
-// movimiento que tiene que ser la PRUEBA del sub-paso 3. Es el mismo criterio que deja fuera a
-// `anchor_refs`. **Entran en `FILL_STEP_COLUMNS` en el sub-paso 3**, en el mismo commit que las
-// empiece a escribir: ahí el diff dirá los nombres, que es lo que hay que demostrar que no se pierde.
-// Mientras tanto las cubre el test de esquema (`database/postgres_schema.test.js`, bloque 3).
+// ✅ `fill_flow_steps.code` y `fill_flow_steps.name` YA SE CAPTURAN (sub-paso 3, este commit). Existían
+// como columnas desde el 1-bis pero nadie las escribía: `normalizeFillSteps` las descartaba y el
+// INSERT no las listaba, así que el nombre que el usuario pone a cada paso de ENTREGA vivía solo
+// dentro del `meta.yaml` y la inversión lo habría perdido. Entran en `FILL_STEP_COLUMNS` en el mismo
+// commit que las empieza a escribir, y el diff dice los nombres: eso es lo que había que demostrar.
+//
+// ⚠️ El precio es que `runtime_entrega` —el grupo de control— también gana las dos claves, porque la
+// consulta de pasos es la MISMA para los dos orígenes. Salen en `null`, y ese `null` no es un
+// descuido: es la prueba positiva de que `materializeRuntimeFlowForTaskItem` no se tocó. El
+// movimiento está en lo que se OBSERVA, no en lo que el runtime hace.
+//
+// `anchor_refs` sigue fuera: es el predecesor muerto de `slot` y el §0.8 lo borra en el sub-paso 8.
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -152,7 +168,7 @@ const SIGNATURE_TEMPLATE_COLUMNS = FILL_TEMPLATE_COLUMNS.replaceAll("fft.", "sft
 // solapan del todo (entrega tiene `relation_type_id`/`can_reject`; firma tiene
 // `code`/`name`/`slot`/`approval_mode`/`required_signers_*`/`signers`).
 const FILL_STEP_COLUMNS = `
-  id, fill_flow_template_id, step_order, resolver_type, assigned_person_id,
+  id, fill_flow_template_id, step_order, code, name, resolver_type, assigned_person_id,
   unit_scope_type, unit_id, unit_type_id, relation_type_id, cargo_id, position_id,
   selection_mode, is_required, can_reject`;
 
@@ -164,12 +180,20 @@ const SIGNATURE_STEP_COLUMNS = `
 
 // LEFT JOIN a propósito: si un vínculo se quedara sin artifact, la fila debe SALIR en el golden
 // (con nulos) en vez de desaparecer en silencio.
+//
+// El `COALESCE` de los dos portadores es lo que hace legibles las cabeceras nuevas del sub-paso 3.
+// Sin él, un flujo colgado de `template_artifact_id` llega al golden con la identidad entera en
+// `null` —no se sabría de qué entregable es—, y además no casaría con el filtro por `d.code`, así
+// que la prueba del sub-paso se quedaría fuera de la clave que tiene que probarlo. No mueve nada de
+// lo anterior: para una fila del vínculo, `fft.template_artifact_id` es `NULL` y el `COALESCE`
+// devuelve exactamente el mismo artifact que antes.
 async function readFillFlows({ runtime, deliverableCode = null }) {
   const templates = await query(
     `SELECT ${FILL_TEMPLATE_COLUMNS}
        FROM fill_flow_templates fft
        LEFT JOIN process_definition_templates pdt ON pdt.id = fft.process_definition_template_id
-       LEFT JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+       LEFT JOIN template_artifacts ta
+              ON ta.id = COALESCE(pdt.template_artifact_id, fft.template_artifact_id)
        LEFT JOIN deliverables d ON d.id = ta.deliverable_id
       WHERE fft.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
         AND ($1::text IS NULL OR d.code = $1::text)
@@ -194,7 +218,8 @@ async function readSignatureFlows({ runtime, deliverableCode = null }) {
     `SELECT ${SIGNATURE_TEMPLATE_COLUMNS}
        FROM signature_flow_templates sft
        LEFT JOIN process_definition_templates pdt ON pdt.id = sft.process_definition_template_id
-       LEFT JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+       LEFT JOIN template_artifacts ta
+              ON ta.id = COALESCE(pdt.template_artifact_id, sft.template_artifact_id)
        LEFT JOIN deliverables d ON d.id = ta.deliverable_id
       WHERE sft.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
         AND ($1::text IS NULL OR d.code = $1::text)
@@ -383,18 +408,39 @@ test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () =
   assert.ok(autorado.artifactId, "debe devolverse el id del artifact creado");
 });
 
+// Las DOS copias de la escritura doble (§0.8, sub-paso 3) caen aquí, y ese es el punto: la del
+// vínculo (que sigue poniendo el sync desde el `meta.yaml`) y la de la plantilla (que escribe el
+// formulario directo en la base). Salen del MISMO objeto en memoria, así que los pasos tienen que
+// ser idénticos columna por columna; lo único que las distingue es de qué cuelgan. Comparar los dos
+// juegos de pasos es más fuerte que el propio snapshot: si algún día divergen, falla aquí.
+const mismosPasos = (flows, lado) => {
+  const [porVinculo, porPlantilla] = flows;
+  assert.equal(porVinculo.process_definition_template_id !== null, true, `${lado}: la 1ª cuelga del vínculo`);
+  assert.equal(porPlantilla.process_definition_template_id, null, `${lado}: la 2ª cuelga de la plantilla`);
+  const sinIds = (pasos) => pasos.map(({ id: _id, ...resto }) => resto);
+  assert.deepEqual(
+    sinIds(porPlantilla.steps),
+    sinIds(porVinculo.steps),
+    `${lado}: las dos copias de la escritura doble deben ser IDÉNTICAS paso a paso`,
+  );
+};
+
 test("autoría · flujo de ENTREGA autorado, tal como quedó en la base", async () => {
   assert.ok(autorado.artifactId, "depende del paso anterior");
   const flows = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 1, "la autoría debe dejar exactamente UNA plantilla de flujo de entrega");
+  assert.equal(flows.length, 2, "escritura doble: una plantilla de flujo por el vínculo y otra por la plantilla");
   assert.equal(flows[0].steps.length, 2, "los dos pasos autorados deben materializarse");
+  assert.equal(flows[1].steps.length, 2, "los dos pasos autorados deben materializarse también en la copia de la plantilla");
+  mismosPasos(flows, "entrega");
   matchSnapshot(SUITE, "autorado_entrega", normalize(flows, MASK_OPTS));
 });
 
 test("autoría · flujo de FIRMA autorado, tal como quedó en la base", async () => {
   assert.ok(autorado.artifactId, "depende del paso anterior");
   const flows = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 1, "la autoría debe dejar exactamente UNA plantilla de flujo de firma");
+  assert.equal(flows.length, 2, "escritura doble: una plantilla de flujo por el vínculo y otra por la plantilla");
   assert.equal(flows[0].steps.length, 2, "los dos pasos de firma autorados deben materializarse");
+  assert.equal(flows[1].steps.length, 2, "los dos pasos de firma autorados deben materializarse también en la copia de la plantilla");
+  mismosPasos(flows, "firma");
   matchSnapshot(SUITE, "autorado_firma", normalize(flows, MASK_OPTS));
 });

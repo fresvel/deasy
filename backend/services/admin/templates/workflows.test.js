@@ -12,6 +12,7 @@ import {
   buildStepResolver,
   buildWorkflowsDocument,
   buildWorkflowsYaml,
+  normalizeFillSteps,
   normalizeSignatureSigner,
   normalizeSignatureSteps,
   resolveStepCargoId,
@@ -173,12 +174,12 @@ test("buildWorkflowsYaml marca signatures.required solo si hay pasos de firma", 
   assert.match(sinFirmas, /required: false/, "sin pasos, la firma no es requerida");
 });
 
-// --- buildWorkflowsDocument: el objeto del que saldrán LAS DOS copias ---------
+// --- buildWorkflowsDocument: el objeto del que salen LAS DOS copias -----------
 //
-// La escritura doble del sub-paso 3 del §0.8 descansará en que el `meta.yaml` y las filas de la base
-// salgan del MISMO objeto. Partir la función es la mitad de esa garantía; este test fija que partirla
-// no cambió el YAML, y que `buildWorkflowsYaml` acepta el documento ya construido (si no lo aceptara,
-// el llamador tendría que construirlo dos veces y la garantía se perdería).
+// La escritura doble del sub-paso 3 del §0.8 descansa en que el `meta.yaml` y las filas de la base
+// salgan del MISMO objeto. Estos dos tests fijan las dos mitades de esa garantía: que el documento
+// es lo que se serializa, y que `buildWorkflowsYaml` acepta ese documento ya construido (si no lo
+// aceptara, el llamador tendría que construirlo dos veces y la garantía se perdería).
 
 test("buildWorkflowsDocument devuelve el objeto que buildWorkflowsYaml serializa", () => {
   const entrada = { fillWorkflow: { steps: [{ order: 1, code: "entrega", name: "Entrega" }] } };
@@ -189,6 +190,28 @@ test("buildWorkflowsDocument devuelve el objeto que buildWorkflowsYaml serializa
   // Serializar el documento y serializar la entrada cruda dan EXACTAMENTE lo mismo: partir la
   // función no cambió el YAML que se sube a MinIO.
   assert.equal(buildWorkflowsYaml(doc), buildWorkflowsYaml(entrada));
+});
+
+test("normalizeFillSteps propaga code y name del paso de entrega", () => {
+  // La regresión que esto evita: las columnas existían (sub-paso 1-bis) pero el normalizador las
+  // descartaba, así que el nombre del paso solo vivía en el `meta.yaml` y la inversión lo perdía.
+  const doc = buildWorkflowsDocument({
+    fillWorkflow: { steps: [{ order: 1, code: "owner_fill", name: "Entrega del responsable" }] },
+  });
+  const [paso] = normalizeFillSteps(doc.workflows.fill);
+
+  assert.equal(paso.code, "owner_fill");
+  assert.equal(paso.name, "Entrega del responsable");
+});
+
+test("normalizeFillSteps deja code en null cuando el paso no lo trae", () => {
+  // `buildWorkflowsDocument` solo emite `code` si el formulario lo mandó, pero SIEMPRE emite `name`
+  // (con el relleno "Paso N"). Las columnas son NULLABLE justo por esto.
+  const doc = buildWorkflowsDocument({ fillWorkflow: { steps: [{ order: 2 }] } });
+  const [paso] = normalizeFillSteps(doc.workflows.fill);
+
+  assert.equal(paso.code, null);
+  assert.equal(paso.name, "Paso 2");
 });
 
 // --- collectAuthoredWorkflowIssues -------------------------------------------------------------

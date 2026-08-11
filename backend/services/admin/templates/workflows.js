@@ -249,6 +249,13 @@ export const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } =
       const stepOrder = Number(step.order) || index + 1;
       return {
         stepOrder,
+        // El código y el NOMBRE del paso, leídos igual que en `normalizeSignatureSteps` (que los
+        // propaga desde siempre). Hasta el sub-paso 3 del §0.8 este normalizador los descartaba: el
+        // nombre que el usuario escribe en cada paso de entrega viajaba en el `meta.yaml` y se
+        // perdía al proyectarlo a la base. Con las columnas del 1-bis puestas pero sin esto, la
+        // inversión de la dirección del flujo lo habría perdido para siempre.
+        code: String(step?.code || "").trim() || null,
+        name: String(step?.name || "").trim() || null,
         resolverType: FILL_RESOLVER_TYPES.has(resolverType) ? resolverType : "manual_pick",
         assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
         unitScopeType: FILL_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "unit_exact",

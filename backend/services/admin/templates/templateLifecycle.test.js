@@ -165,3 +165,127 @@ test("un borrador colado sin paso de entrega aborta la activacion y hace rollbac
   assert.ok(!events.includes("commit"), "no debe confirmarse nada");
   assert.ok(!events.includes(`activa-config:${CFG_ID}`), "la config NO debe quedar activa");
 });
+
+// --- La transacción del borrador (sub-paso 3 del §0.8) ------------------------------------------
+//
+// `saveTemplateArtifactDraft` no tenía transacción: compensaba a mano con una pila de deshacer. El
+// flujo autorado NO se podía escribir así —cuelga del artifact por FK—, y el sub-paso 3 abrió una de
+// verdad alrededor de los tres efectos de base. Estos tests fijan lo único que importa de ella: que
+// un fallo a mitad NO deja nada escrito, y que la escritura del flujo va DENTRO.
+//
+// El resto de `saveTemplateArtifactDraft` (MinIO, staging en disco, formatos) queda fuera a
+// propósito: es lo que el characterization ya recorre extremo a extremo.
+
+const DRAFT_ARTIFACT_ID = 77;
+
+const buildDraftService = ({ falla = null } = {}) => {
+  const events = [];
+
+  const connection = {
+    beginTransaction: async () => { events.push("begin"); },
+    commit: async () => { events.push("commit"); },
+    rollback: async () => { events.push("rollback"); },
+    release: () => { events.push("release"); },
+    query: async (sql) => {
+      const texto = String(sql).replace(/\s+/g, " ").trim();
+      if (/^SELECT process_id/i.test(texto)) return [[{ process_id: 1, variation_key: "general" }]];
+      if (/^SELECT id FROM deliverables/i.test(texto)) return [[]];
+      if (/^INSERT INTO deliverables/i.test(texto)) { events.push("insert:deliverable"); return [{ insertId: 5 }]; }
+      if (/^INSERT INTO template_artifacts/i.test(texto)) { events.push("insert:artifact"); return [{ insertId: DRAFT_ARTIFACT_ID }]; }
+      if (/^UPDATE template_artifacts/i.test(texto)) { events.push("update:artifact"); return [{}]; }
+      if (/^UPDATE deliverables/i.test(texto)) { events.push("update:deliverable"); return [{}]; }
+      if (/^SELECT id FROM process_definition_templates/i.test(texto)) return [[]];
+      if (/^INSERT INTO process_definition_templates/i.test(texto)) { events.push("insert:vinculo"); return [{ insertId: 9 }]; }
+      if (/flow_templates/i.test(texto) || /flow_steps/i.test(texto)) { events.push("escribe:flujo"); return [[]]; }
+      return [[]];
+    },
+  };
+
+  const pool = { getConnection: async () => connection, query: async () => [[]] };
+
+  const service = new TemplateLifecycleService(pool, {
+    // El vínculo resuelve el proceso destino con `getByKeys`; devolver null es el camino real del
+    // error "El proceso destino seleccionado no existe.", que es donde se rompía la compensación.
+    getByKeys: async () => (falla === "vinculo" ? null : { id: 1 }),
+    getCargoCodeMap: async () => new Map(),
+    getUnitTypeNameMap: async () => new Map(),
+  });
+
+  if (falla === "flujo") {
+    service._persistAuthoredFlow = async () => { throw new Error("fallo al escribir el flujo"); };
+  }
+
+  return { service, events };
+};
+
+const persistir = (service, extra = {}) =>
+  service._persistDraftToDatabase({
+    isEdit: false,
+    almacenamiento: { storageVersion: "1.0.0", availableFormats: {} },
+    identidad: { templateCode: "draft_x", displayName: "Borrador X" },
+    processDefinitionId: 1,
+    itemMode: "single",
+    workflowsDocument: { workflows: { fill: { required: true, sync_mode: "artifact_to_db", steps: [{ order: 1 }] }, signatures: { steps: [] } } },
+    ...extra,
+  });
+
+test("el borrador se persiste dentro de UNA transaccion, con el flujo incluido", async () => {
+  const { service, events } = buildDraftService();
+  const artifactId = await persistir(service);
+
+  assert.equal(artifactId, DRAFT_ARTIFACT_ID);
+  // Las cinco sentencias de flujo son: buscar la cabecera de entrega, crearla, borrar sus pasos,
+  // insertar el paso, y buscar la de firma (que no llega a crearse porque el flujo no trae firmas).
+  assert.deepEqual(events, [
+    "begin",
+    "insert:deliverable",
+    "insert:artifact",
+    "insert:vinculo",
+    ...Array(5).fill("escribe:flujo"),
+    "commit",
+    "release",
+  ]);
+});
+
+test("si falla el VINCULO, la transaccion se deshace y no se escribe el flujo", async () => {
+  const { service, events } = buildDraftService({ falla: "vinculo" });
+
+  await assert.rejects(persistir(service), /El proceso destino seleccionado no existe/);
+  assert.ok(events.includes("rollback"), "debe deshacerse la transaccion");
+  assert.ok(!events.includes("commit"), "no debe confirmarse nada");
+  assert.ok(!events.includes("escribe:flujo"), "el flujo no llega a escribirse");
+  assert.equal(events.at(-1), "release", "la conexion vuelve al pool pase lo que pase");
+});
+
+test("si falla al escribir el FLUJO, el artifact y el vinculo tampoco quedan escritos", async () => {
+  // Esto es lo que la compensación manual no podía dar: el flujo cuelga del artifact por FK, así que
+  // o se escriben los dos o ninguno.
+  const { service, events } = buildDraftService({ falla: "flujo" });
+
+  await assert.rejects(persistir(service), /fallo al escribir el flujo/);
+  assert.ok(events.includes("insert:artifact"), "el INSERT llegó a ejecutarse...");
+  assert.ok(events.includes("rollback"), "...y es el ROLLBACK quien lo deshace");
+  assert.ok(!events.includes("commit"));
+});
+
+// Efecto lateral bueno de la transacción, y no era el objetivo: la pila de deshacer NO apilaba en
+// EDICIÓN, así que una edición que fallaba al vincular dejaba aplicado el UPDATE de
+// `template_artifacts`. Ahora también se deshace.
+test("una EDICION que falla al vincular tambien se deshace (antes no)", async () => {
+  const { service, events } = buildDraftService({ falla: "vinculo" });
+
+  await assert.rejects(
+    persistir(service, { isEdit: true, existingArtifact: { id: DRAFT_ARTIFACT_ID, deliverable_id: 5 } }),
+    /El proceso destino seleccionado no existe/,
+  );
+  assert.ok(events.includes("update:artifact"), "el UPDATE llegó a ejecutarse...");
+  assert.ok(events.includes("rollback"), "...y ahora se deshace");
+});
+
+test("sin flujo autorado la transaccion sigue siendo la misma, sin escribir flujo", async () => {
+  const { service, events } = buildDraftService();
+  await persistir(service, { workflowsDocument: null });
+
+  assert.ok(!events.includes("escribe:flujo"));
+  assert.ok(events.includes("commit"));
+});
