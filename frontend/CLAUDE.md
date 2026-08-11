@@ -331,25 +331,33 @@ no crea una pila nueva, repunta la de siempre a tu código. Está explicado en e
 
 ## 8. Deuda conocida, para no redescubrirla
 
-**«Cero colores a mano» vale para los ficheros `.css`. Los `.vue` siguen sucios**, y ahí es donde
-está toda la deuda que queda:
+**No queda ni un `<style scoped>` en el frontend.** Los 13 que había se vaciaron entre el
+2026-08-11 y el 2026-08-12, y el saldo dice bastante sobre qué era realmente esa deuda:
+
+| | |
+|---|---:|
+| `<style scoped>` al empezar | 13 |
+| **`<style scoped>` hoy** | **0** |
+| Líneas movidas a módulos | ~330 |
+| **Líneas que estaban MUERTAS** (0 usos, o el selector no casaba nunca) | **~180** |
+
+Más de la mitad no había que mover: había que borrarla. Los sitios donde estaba y por qué, en 6.3
+y 6.4. **Antes de mover un bloque, comprueba que aplica** — el clon con y sin `data-v-*` cuesta diez
+segundos y en esta ronda descartó cinco bloques enteros.
+
+Lo que queda de deuda de color, ya sin CSS escondido:
 
 | Qué | Cuánto | Dónde |
 |---|---:|---|
-| Color a mano **dentro de `<style scoped>`** | **108** | Es CSS puro, y **stylelint no lo mira**: su glob es `src/**/*.css` |
-| Color a mano en plantilla o script | 67 | *Arbitrary values* y mapas de tono en JS |
-| Color a mano en `.js` | 20 | `useDeliverableView.js`, `homeView.helpers.js`, `AdminPresentationService.js` |
-| **Total fuera del CSS** | **195** | |
+| Color a mano en plantilla o script `.vue` | 68 | *Arbitrary values* y mapas de tono |
+| Color a mano en `.js` | 21 | `useDeliverableView.js`, `homeView.helpers.js`, `AdminPresentationService.js` |
+| **Total fuera del CSS** | **89** | era 195 |
 | Strings de clase >120 caracteres | 221 | `HomeView.vue`, `FirmarPdf.vue` |
 | *Arbitrary values* (`text-[11px]`…) | 443 | 8 tamaños distintos por debajo de `text-sm` |
 | `!important` con motivo escrito | 6 | `dialogs.css`, `overrides.css` |
 
-**Dónde se concentra**: 78 de los 175 de `.vue` están en los seis componentes de Vue Flow
-(`modules/admin/components/units/`), y 30 en `HomeView.vue`.
-
-> **Antes de tokenizar los nodos del grafo, mira si son copias.** `ProcessNode.vue` estila
-> `.unit-node__btn`, `.unit-node__handle` y `.unit-node__toolbar` — **los mismos selectores que
-> `UnitNode.vue`**. Es una copia literal. El arreglo ahí no es dar token a cada valor cuatro veces:
-> es extraer una clase compartida y borrar tres copias.
+> **Y hay deuda que los linters tampoco ven en los módulos**: `forms.css` pinta el dropzone con
+> `sky-200`, `sky-500` y `sky-700` **dentro de `@apply`**, donde `color-no-hex` no entra. El azul
+> cielo del dropzone es hoy el único color de familia propia que sigue fuera de la paleta.
 
 El plan, la bitácora y las dos auditorías están en **`docs/planes/sistema-diseno/`**.

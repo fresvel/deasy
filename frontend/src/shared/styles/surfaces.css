@@ -62,3 +62,46 @@
   border: 0;
   box-shadow: var(--brand-shadow);
 }
+
+/* ------------------------------------------------------------------------------------
+   BARRA DE DESPLAZAMIENTO DE LOS PANELES.
+
+   `.custom-scrollbar` se usa en 22 sitios de 7 componentes, pero estaba definida en los
+   `<style scoped>` de TRES de ellos y con tres pieles distintas (5 px con pulgar blanco al
+   20 % en AdminView, 6 px con #e2e8f0 en SNotify, 6 px con `--brand-border` en FirmarPdf).
+   En los otros cuatro componentes la clase no hacia NADA: seis paneles se quedaban con la
+   barra del sistema. Un mismo nombre, cuatro resultados segun donde mirases.
+
+   Aqui hay una sola, con la variante que de verdad hacia falta: la de las barras laterales
+   oscuras, donde un pulgar claro solido cantaria y lo que toca es un velo blanco.
+
+   Ojo: los pseudo-elementos `::-webkit-scrollbar` NO son visibles para `getComputedStyle`,
+   asi que la huella de estilos no los ve. Esto se verifica mirando.
+   ------------------------------------------------------------------------------------ */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--brand-border);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-border-strong);
+}
+
+/* Sobre fondo oscuro (menu de administracion y de procesos). */
+.custom-scrollbar--dark::-webkit-scrollbar-thumb {
+  background: rgba(var(--brand-white-rgb), 0.2);
+}
+
+.custom-scrollbar--dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--brand-white-rgb), 0.32);
+}

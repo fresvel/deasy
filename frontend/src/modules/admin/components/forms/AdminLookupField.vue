@@ -378,10 +378,3 @@ const handleButtonMouseDown = (event) => {
   }
 };
 </script>
-
-<style scoped>
-/* Íconos de acción (limpiar / buscar) menos redondos, acotado a este componente. */
-.admin-lookup-field :deep(.deasy-btn--icon) {
-  border-radius: 0.375rem;
-}
-</style>

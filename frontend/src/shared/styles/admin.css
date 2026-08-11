@@ -82,3 +82,40 @@
 .admin-page-header__create {
   min-width: 8.75rem;
 }
+
+/* ------------------------------------------------------------------------------------
+   Los puntos numerados del asistente de perfiles de puesto.
+   Salen del `<style scoped>` del componente. El activo usaba indigo-600 con su propio
+   fondo y borde; ahora es la receta de siempre: 10 % de relleno, 38 % de borde y el token
+   como texto. El inactivo tenia el numero en slate-400 sobre slate-100 -- 2.6:1, no se
+   leia; pasa al suelo de la escala de texto.
+   ------------------------------------------------------------------------------------ */
+
+.profile-step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  width: 24px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.profile-step-dot--idle {
+  background: var(--brand-surface-muted);
+  color: var(--brand-text-muted);
+}
+
+.profile-step-dot--active {
+  background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
+  color: var(--brand-primary);
+  border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--brand-white));
+}
+
+.profile-step-dot--done {
+  background: var(--brand-primary);
+  color: var(--brand-white);
+}

@@ -127,31 +127,3 @@ const submit = () => {
   emit("save", { ...form.value });
 };
 </script>
-
-<style scoped>
-.profile-step-dot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  width: 24px;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border: 1px solid transparent;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.profile-step-dot--idle {
-  background: #f1f5f9;
-  color: #94a3b8;
-}
-.profile-step-dot--active {
-  background: #eef2ff;
-  color: #4f46e5;
-  border-color: #c7d2fe;
-}
-.profile-step-dot--done {
-  background: #4f46e5;
-  color: #fff;
-}
-</style>

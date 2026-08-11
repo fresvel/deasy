@@ -64,31 +64,3 @@ defineExpose({
   openFromBlob
 });
 </script>
-
-<style scoped lang="postcss">
-.pdf-preview-shell {
-  min-height: 70vh;
-  background: #f8fafc;
-}
-
-.pdf-preview-frame {
-  height: 70vh;
-}
-
-.pdf-preview-iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-  background: white;
-}
-
-.pdf-preview-empty {
-  min-height: 18rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-</style>
