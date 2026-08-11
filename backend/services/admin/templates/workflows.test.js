@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 
 import {
   buildStepResolver,
+  buildWorkflowsDocument,
   buildWorkflowsYaml,
   normalizeSignatureSigner,
   normalizeSignatureSteps,
@@ -170,6 +171,24 @@ test("buildWorkflowsYaml deriva can_reject del orden del paso", () => {
 test("buildWorkflowsYaml marca signatures.required solo si hay pasos de firma", () => {
   const sinFirmas = buildWorkflowsYaml({ signatureWorkflow: { required: true, steps: [] } });
   assert.match(sinFirmas, /required: false/, "sin pasos, la firma no es requerida");
+});
+
+// --- buildWorkflowsDocument: el objeto del que saldrán LAS DOS copias ---------
+//
+// La escritura doble del sub-paso 3 del §0.8 descansará en que el `meta.yaml` y las filas de la base
+// salgan del MISMO objeto. Partir la función es la mitad de esa garantía; este test fija que partirla
+// no cambió el YAML, y que `buildWorkflowsYaml` acepta el documento ya construido (si no lo aceptara,
+// el llamador tendría que construirlo dos veces y la garantía se perdería).
+
+test("buildWorkflowsDocument devuelve el objeto que buildWorkflowsYaml serializa", () => {
+  const entrada = { fillWorkflow: { steps: [{ order: 1, code: "entrega", name: "Entrega" }] } };
+  const doc = buildWorkflowsDocument(entrada);
+
+  assert.equal(doc.workflows.fill.steps[0].code, "entrega");
+  assert.equal(doc.workflows.fill.steps[0].name, "Entrega");
+  // Serializar el documento y serializar la entrada cruda dan EXACTAMENTE lo mismo: partir la
+  // función no cambió el YAML que se sube a MinIO.
+  assert.equal(buildWorkflowsYaml(doc), buildWorkflowsYaml(entrada));
 });
 
 // --- collectAuthoredWorkflowIssues -------------------------------------------------------------

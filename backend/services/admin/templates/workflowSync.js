@@ -18,6 +18,10 @@ import {
   normalizeSignatureSteps,
   collectSignatureWorkflowNormalizationIssues,
 } from "./workflows.js";
+// Los dos INSERT de pasos viven en `flowRows.js` desde el sub-paso 3 del §0.8: el formulario web
+// escribe ahora las mismas filas directamente, y con dos copias del INSERT «producen lo mismo» sería
+// una promesa en vez de una propiedad.
+import { replaceFillFlowSteps, replaceSignatureFlowSteps } from "./flowRows.js";
 
 export default class WorkflowSyncService {
   constructor(pool, { getCargoCodeMap, getUnitTypeNameMap, getTemplateArtifact, loadTemplateArtifactMetaDocument } = {}) {
@@ -236,45 +240,7 @@ export default class WorkflowSyncService {
 
 
   async replaceSyncedFillFlowSteps(fillFlowTemplateId, steps, connection = this.pool) {
-    await connection.query(
-      "DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?",
-      [fillFlowTemplateId]
-    );
-
-    for (const step of steps) {
-      await connection.query(
-        `INSERT INTO fill_flow_steps (
-           fill_flow_template_id,
-           step_order,
-           resolver_type,
-           assigned_person_id,
-           unit_scope_type,
-           unit_id,
-           unit_type_id,
-           relation_type_id,
-           cargo_id,
-           position_id,
-           selection_mode,
-           is_required,
-           can_reject
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          fillFlowTemplateId,
-          step.stepOrder,
-          step.resolverType,
-          step.assignedPersonId,
-          step.unitScopeType,
-          step.unitId,
-          step.unitTypeId,
-          step.relationTypeId ?? null,
-          step.cargoId,
-          step.positionId,
-          step.selectionMode,
-          step.isRequired,
-          step.canReject
-        ]
-      );
-    }
+    await replaceFillFlowSteps(connection, fillFlowTemplateId, steps);
   }
 
 
@@ -294,57 +260,7 @@ export default class WorkflowSyncService {
 
 
   async replaceSyncedSignatureFlowSteps(signatureFlowTemplateId, steps, connection = this.pool) {
-    await connection.query(
-      "DELETE FROM signature_flow_steps WHERE template_id = ?",
-      [signatureFlowTemplateId]
-    );
-
-    for (const step of steps) {
-      await connection.query(
-        `INSERT INTO signature_flow_steps (
-           template_id,
-           step_order,
-           code,
-           name,
-           slot,
-           resolver_type,
-           assigned_person_id,
-           unit_scope_type,
-           unit_id,
-           unit_type_id,
-           position_id,
-           required_cargo_id,
-           selection_mode,
-           approval_mode,
-         required_signers_min,
-         required_signers_max,
-         is_required,
-         anchor_refs,
-         signers
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          signatureFlowTemplateId,
-          step.stepOrder,
-          step.code,
-          step.name,
-          step.slot,
-          step.resolverType,
-          step.assignedPersonId,
-          step.unitScopeType,
-          step.unitId,
-          step.unitTypeId,
-          step.positionId,
-          step.requiredCargoId,
-          step.selectionMode,
-          step.approvalMode,
-          step.requiredSignersMin,
-          step.requiredSignersMax,
-          step.isRequired,
-          JSON.stringify(Array.isArray(step.anchorRefs) ? step.anchorRefs : []),
-          JSON.stringify(Array.isArray(step.signers) ? step.signers : [])
-        ]
-      );
-    }
+    await replaceSignatureFlowSteps(connection, signatureFlowTemplateId, steps);
   }
 
 
