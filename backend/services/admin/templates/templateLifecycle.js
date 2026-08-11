@@ -59,7 +59,7 @@ import {
   parseWorkflowPayload,
   workflowHasSteps
 } from "./workflows.js";
-import { replaceAuthoredFlowForArtifact, hasFillStepsForArtifact } from "./flowRows.js";
+import { replaceAuthoredFlowForArtifact, copyAuthoredFlowToArtifact, hasFillStepsForArtifact } from "./flowRows.js";
 import {
   parseAvailableFormats,
   findPreferredPdfObject,
@@ -594,18 +594,42 @@ export default class TemplateLifecycleService {
       }
     }
 
-    // Insertar la versión publicada del fork. Identidad/scope/owner viven en el `deliverable` nuevo (newDeliverableId).
-    const [taIns] = await this.pool.query(
-      `INSERT INTO template_artifacts
-         (storage_version, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
-          meta_object_key, content_hash, deliverable_id, is_active)
-       VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, ?, 1)`,
-      [
-        newPrefix, JSON.stringify(remappedFormats || {}),
-        `${newPrefix}schema.json`, `${newPrefix}meta.yaml`, src.content_hash, newDeliverableId
-      ]
-    );
-    const newArtifactId = Number(taIns.insertId);
+    // Insertar la versión publicada del fork Y COPIAR SU FLUJO, en una transacción (sub-paso 6 del
+    // §0.8). El fork copia MinIO en binario igual que el versionado, y le pasaba lo mismo: el flujo
+    // ya no viaja dentro del paquete, así que el entregable bifurcado nacía sin ninguna fila y —al
+    // nacer ya `published`— con el gate de publicación esquivado por la puerta de atrás.
+    //
+    // ⚠️ EL ORDEN IMPORTA, y es la única diferencia real con el versionado: la copia va ANTES de
+    // re-apuntar el vínculo. `copyAuthoredFlowToArtifact` puede leer el flujo del VÍNCULO del origen
+    // (el que sembró el sync), y el `UPDATE` de abajo mueve justo ese vínculo al artifact nuevo:
+    // hecho al revés, la búsqueda por el origen ya no encontraría nada.
+    const connection = await this.pool.getConnection();
+    let newArtifactId;
+    try {
+      await connection.beginTransaction();
+      const [taIns] = await connection.query(
+        `INSERT INTO template_artifacts
+           (storage_version, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
+            meta_object_key, content_hash, deliverable_id, is_active)
+         VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, ?, 1)`,
+        [
+          newPrefix, JSON.stringify(remappedFormats || {}),
+          `${newPrefix}schema.json`, `${newPrefix}meta.yaml`, src.content_hash, newDeliverableId
+        ]
+      );
+      newArtifactId = Number(taIns.insertId);
+      await copyAuthoredFlowToArtifact(connection, {
+        sourceArtifactId: srcId,
+        targetArtifactId: newArtifactId,
+        displayName: src.display_name,
+      });
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
 
     // Re-apuntar el enlace de la config destino (del original al fork).
     await this.pool.query(

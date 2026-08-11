@@ -84,7 +84,7 @@
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { get, post } from "../lib/http.mjs";
+import { get, patch, post } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { normalize } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
@@ -445,4 +445,92 @@ test("autoría · flujo de FIRMA autorado, tal como quedó en la base", async ()
   assert.equal(flows[1].steps.length, 2, "los dos pasos de firma autorados deben materializarse también en la copia de la plantilla");
   mismosPasos(flows, "firma");
   matchSnapshot(SUITE, "autorado_firma", normalize(flows, MASK_OPTS));
+});
+
+// --- 4) EL VERSIONADO COPIA FILAS (sub-paso 6 del §0.8) ------------------------------------------
+//
+// `createTemplateArtifactVersion` copia los objetos de MinIO EN BINARIO. Mientras el flujo vivía
+// dentro del `meta.yaml`, la versión nueva lo heredaba con los bytes y nadie notó que no se copiaba
+// ninguna FILA. Con el flujo en la base eso dejaba a la versión sin flujo, con dos consecuencias
+// medidas contra dev: publicarla respondía 400 «la plantilla debe definir al menos un paso de flujo
+// de entrega», y el lector del editor necesitó un tercer escalón (subir al padre) para no enseñarla
+// vacía.
+//
+// Se versiona la plantilla AUTORADA de la sección 3 —no la de la fixture— porque es la única que
+// tiene los DOS lados: la fixture no define flujo de firma (`BASE_META_YAML` lo declara vacío) y una
+// copia que solo probara la entrega no diría nada del `slot`, el `approval_mode` ni el JSONB
+// `signers`.
+//
+// ⚠️ VA AL FINAL DEL FICHERO A PROPÓSITO. Las claves `autorado_*` fotografían los flujos de este
+// entregable ANTES de versionarlo; la versión añade una tercera cabecera por lado, así que
+// ejecutarlo antes movería aquellos goldens por un motivo que no es el suyo.
+
+const versionado = { hijaId: null };
+
+test("versionado · POST /template_artifacts/:id/version sobre la plantilla autorada -> 200", async () => {
+  const token = await tokenFor("admin");
+  assert.ok(autorado.artifactId, "depende de la autoría");
+  const res = await post(`/admin/sql/template_artifacts/${autorado.artifactId}/version`, {
+    token,
+    body: { bump_level: "minor" },
+  });
+  assert.equal(res.status, 200, `versionar debe responder 200: ${JSON.stringify(res.body)}`);
+  versionado.hijaId = res.body?.id;
+  assert.ok(versionado.hijaId, "debe devolverse el id de la versión nueva");
+});
+
+// Compara la copia con su origen: MISMOS pasos, IDS DISTINTOS. Es más fuerte que el snapshot —que
+// enmascara los ids y no podría distinguir «copiado» de «compartido»— y es justo la propiedad que
+// el sub-paso promete.
+const copiaFiel = (flows, lado) => {
+  const [, delPadre, deLaHija] = flows;
+  assert.equal(deLaHija.process_definition_template_id, null, `${lado}: la hija cuelga de SU artifact`);
+  assert.equal(deLaHija.task_item_id, null, `${lado}: y NUNCA de un entregable de runtime`);
+  assert.equal(deLaHija.is_active, 1, `${lado}: la cabecera copiada nace activa`);
+  const sinIds = (pasos) => pasos.map(({ id: _id, ...resto }) => resto);
+  assert.deepEqual(sinIds(deLaHija.steps), sinIds(delPadre.steps), `${lado}: la hija tiene los mismos pasos`);
+  const idsPadre = delPadre.steps.map((paso) => Number(paso.id));
+  for (const paso of deLaHija.steps) {
+    assert.equal(idsPadre.includes(Number(paso.id)), false, `${lado}: los pasos son filas NUEVAS, no las del padre`);
+  }
+};
+
+test("versionado · la hija hereda los pasos de ENTREGA como filas propias", async () => {
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const flows = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  assert.equal(flows.length, 3, "el vínculo y la plantilla del padre, más la copia de la hija");
+  assert.equal(flows[2].storage_version, "1.1.0", "la tercera es la de la versión nueva");
+  copiaFiel(flows, "entrega");
+  matchSnapshot(SUITE, "versionado_entrega", normalize(flows, MASK_OPTS));
+});
+
+test("versionado · la hija hereda los pasos de FIRMA como filas propias", async () => {
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const flows = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  assert.equal(flows.length, 3, "el vínculo y la plantilla del padre, más la copia de la hija");
+  assert.equal(flows[2].steps.length, 2, "los dos pasos de firma se copian enteros");
+  copiaFiel(flows, "firma");
+  matchSnapshot(SUITE, "versionado_firma", normalize(flows, MASK_OPTS));
+});
+
+test("versionado · versionar NO materializa ningún flujo de runtime para el entregable", async () => {
+  // El error grave que este sub-paso podía cometer: copiar la cabecera que cuelga de un `task_item`,
+  // o sea el flujo que un usuario definió al enviar UN entregable concreto en modo `routed`. Eso
+  // convertiría la decisión de un envío en la definición de todas las versiones futuras.
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const entrega = await readFillFlows({ runtime: true, deliverableCode: AUTHORED_CODE });
+  const firma = await readSignatureFlows({ runtime: true, deliverableCode: AUTHORED_CODE });
+  assert.deepEqual([entrega.length, firma.length], [0, 0], "ninguna cabecera con task_item_id");
+});
+
+test("versionado · publicar la versión recién creada YA NO falla por «sin flujo de entrega»", async () => {
+  // El defecto que cierra el sub-paso, medido antes contra dev: el gate cuenta FILAS
+  // (`hasFillStepsForArtifact`, sub-paso 4) y la versión no tenía ninguna, así que respondía
+  //   400 {"message":"No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega."}
+  // Con las filas copiadas, el gate encuentra el flujo por el portador de la propia versión.
+  const token = await tokenFor("admin");
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const res = await patch(`/admin/sql/template_artifacts/${versionado.hijaId}/publish`, { token, body: {} });
+  assert.equal(res.status, 200, `publicar la versión debe responder 200: ${JSON.stringify(res.body)}`);
+  assert.equal(res.body?.lifecycle_state, "published");
 });

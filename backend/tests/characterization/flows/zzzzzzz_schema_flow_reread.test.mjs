@@ -226,15 +226,15 @@ test("relectura · huella del contrato que consume el editor", async () => {
   matchSnapshot(SUITE, "schema_flujo_autorado", contrato);
 });
 
-// El tercer escalón, que NO estaba en el plan y salió de verificar esto en el navegador:
-// `createTemplateArtifactVersion` copia MinIO en binario y no crea filas de flujo ni vínculo. Antes
-// del sub-paso 5 la versión nueva enseñaba el flujo porque lo llevaba el `meta.yaml` copiado byte a
-// byte; leyendo la base no tiene NADA propio, así que lo hereda de su padre. Sin eso, versionar una
-// plantilla y reabrirla mostraba el flujo vacío y el primer guardado lo borraba.
+// La versión hereda el flujo del padre. Lo escribió el sub-paso 5 apoyándose en el tercer escalón
+// del lector (subir por `parent_version_id`), porque `createTemplateArtifactVersion` copiaba MinIO
+// en binario sin crear una sola fila; desde el sub-paso 6 el versionado COPIA LAS FILAS y la hija
+// entra por su propio portador. **La aserción no cambia, y ese es el punto**: lo que se exige es la
+// propiedad —la versión enseña el flujo del padre—, no por qué escalón llega. Que siga verde con el
+// mecanismo cambiado es lo que dice que la copia es fiel de extremo a extremo.
 //
-// Ojo con lo que este caso NO arregla: publicar esa versión sigue fallando con «debe definir al menos
-// un paso de flujo de entrega», porque el gate (sub-paso 4) cuenta FILAS y la versión no las tiene.
-// Eso es exactamente lo que cierra el sub-paso 6, y no se toca aquí.
+// Lo que este caso NO cubre —de dónde salen las filas, si son nuevas y si no hay ninguna de runtime—
+// se mide contra la BASE en `zzzzzz_flow_steps_db :: versionado_*`, junto con el 200 al publicarla.
 test("relectura · una VERSION recien creada hereda el flujo de su padre", async () => {
   const token = await tokenFor("admin");
   assert.ok(estado.artifactId, "depende del paso anterior");

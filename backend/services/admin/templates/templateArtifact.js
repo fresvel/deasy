@@ -17,7 +17,7 @@ import {
   walkFiles,
 } from "../kernel/storage.js";
 import { parseAvailableFormats, parseYamlDocument } from "./artifacts.js";
-import { hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
+import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -325,6 +325,12 @@ export default class TemplateArtifactService {
   // Crea una nueva versión (storage_version semver) clonando un artifact existente. Nace inactiva
   // (is_active=0): el gestor la activa cuando esté lista. El nivel de cambio (patch/minor/major) lo elige
   // quien crea la versión.
+  //
+  // CLONAR ES COPIAR BYTES **Y FILAS** (sub-paso 6 del §0.8). Los objetos de MinIO se copian en
+  // binario; el FLUJO ya no vive ahí, vive en la base, así que hay que copiarlo aparte o la versión
+  // nace sin flujo. Medido antes del cambio: publicarla respondía 400 «la plantilla debe definir al
+  // menos un paso de flujo de entrega». Ver `copyAuthoredFlowToArtifact` para qué cabecera se copia
+  // (la que el editor mostraría para el padre) y cuál NO (la de runtime, que es de un envío concreto).
   async createTemplateArtifactVersion(artifactId, bumpLevel = "minor") {
     this.ensurePool();
     const artifact = await this._getByKeys("template_artifacts", { id: Number(artifactId) });
@@ -336,8 +342,14 @@ export default class TemplateArtifactService {
     const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode, bumpLevel);
     // El entregable se identifica por código (siempre existe tras backfill/creación). Robusto aunque getByKeys
     // no traiga deliverable_id (la columna no está en la config de sqlTables).
-    const [delivRows] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [templateCode]);
+    const [delivRows] = await this.pool.query(
+      "SELECT id, display_name FROM deliverables WHERE code = ? LIMIT 1",
+      [templateCode]
+    );
     const deliverableId = delivRows?.[0]?.id || null;
+    // Solo para el `name` de las cabeceras de flujo, que `replaceAuthoredFlowForArtifact` compone.
+    // Es el mismo entregable, así que sale el mismo rótulo que llevaba el padre.
+    const displayName = String(delivRows?.[0]?.display_name || artifact.display_name || templateCode);
     const oldVersion = String(artifact.storage_version || "");
     const oldPrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
     const versionSuffixRe = new RegExp(`${oldVersion.replace(/[.\\]/g, "\\$&")}/?$`);
@@ -370,25 +382,48 @@ export default class TemplateArtifactService {
       }
     }
     // Identidad/scope/owner viven en `deliverables`; la versión solo hereda deliverable_id (mismo entregable).
-    const [result] = await this.pool.query(
-      `INSERT INTO template_artifacts (
-        storage_version, lifecycle_state, base_object_prefix,
-        available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, deliverable_id, is_active
-      ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
-      [
-        nextStorageVersion,
-        newPrefix,
-        JSON.stringify(remappedFormats || {}),
-        newSchemaKey,
-        newMetaKey,
-        artifact.content_hash,
-        Number(artifactId),
-        deliverableId,
-      ]
-    );
+    //
+    // LA VERSIÓN Y SU FLUJO, EN UNA TRANSACCIÓN, por el mismo motivo que `_persistDraftToDatabase`
+    // (sub-paso 3): el flujo cuelga del artifact por FK, así que sin ella un fallo al copiarlo
+    // dejaría una versión ya insertada y SIN FLUJO — que es exactamente el estado inpublicable que
+    // este sub-paso viene a cerrar, y que nadie vería hasta intentar publicarla. La copia de MinIO
+    // se queda FUERA a propósito: ocurre antes y ningún `ROLLBACK` la revierte.
+    const connection = await this.pool.getConnection();
+    let newArtifactId;
+    try {
+      await connection.beginTransaction();
+      const [result] = await connection.query(
+        `INSERT INTO template_artifacts (
+          storage_version, lifecycle_state, base_object_prefix,
+          available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, deliverable_id, is_active
+        ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
+        [
+          nextStorageVersion,
+          newPrefix,
+          JSON.stringify(remappedFormats || {}),
+          newSchemaKey,
+          newMetaKey,
+          artifact.content_hash,
+          Number(artifactId),
+          deliverableId,
+        ]
+      );
+      newArtifactId = Number(result.insertId);
+      await copyAuthoredFlowToArtifact(connection, {
+        sourceArtifactId: Number(artifactId),
+        targetArtifactId: newArtifactId,
+        displayName,
+      });
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
 
     return {
-      id: Number(result.insertId),
+      id: newArtifactId,
       template_code: templateCode,
       storage_version: nextStorageVersion,
       base_object_prefix: newPrefix,

@@ -12,6 +12,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  copyAuthoredFlowToArtifact,
   hasFillStepsForArtifact,
   readAuthoredFlowForArtifact,
   replaceAuthoredFlowForArtifact,
@@ -413,10 +414,13 @@ test("sin flujo propio se lee el que el sync sembro en el VINCULO (andamiaje has
   assert.match(porVinculo.sql, /task_item_id IS NULL/, "el flujo de runtime nunca es el de la plantilla");
 });
 
-test("una VERSION recien creada hereda el flujo de su padre (andamiaje hasta el sub-paso 6)", async () => {
-  // `createTemplateArtifactVersion` copia MinIO en binario y no crea ni filas ni vínculo: la versión
-  // nace sin portador propio. Su flujo lo llevaba el `meta.yaml` copiado, o sea el del padre.
-  // MEDIDO EN EL NAVEGADOR: sin este escalón, versionar y reabrir mostraba el flujo vacío.
+test("una VERSION sin portador propio hereda el flujo de su padre (andamiaje, ya sin productor)", async () => {
+  // `createTemplateArtifactVersion` copiaba MinIO en binario y no creaba ni filas ni vínculo: la
+  // versión nacía sin portador propio y su flujo lo llevaba el `meta.yaml` copiado, o sea el del
+  // padre. MEDIDO EN EL NAVEGADOR: sin este escalón, versionar y reabrir mostraba el flujo vacío.
+  // Desde el sub-paso 6 el versionado COPIA LAS FILAS, así que este escalón ya no tiene productor
+  // nuevo — solo lo alcanzan los artifacts versionados antes de aquel commit. Se conserva mientras
+  // esos existan; quitarlo es cambio de comportamiento y lleva commit propio.
   const HIJA = 11;
   const connection = buildReadConnection({
     parents: { [HIJA]: ARTIFACT_ID },
@@ -561,4 +565,223 @@ test("sin id no se consulta la base, y un error de la base SUBE", async () => {
     () => readAuthoredFlowForArtifact(buildReadConnection({ falla: true }), ARTIFACT_ID),
     /la base no responde/,
   );
+});
+
+// --- La copia del versionado (sub-paso 6 del §0.8) ----------------------------------------------
+//
+// `createTemplateArtifactVersion` y `forkDeliverableForConfig` copiaban los objetos de MinIO en
+// binario y NINGUNA fila. Con el flujo ya en la base, eso dejaba la versión nueva sin flujo: el gate
+// de publicación —que cuenta filas— la rechazaba con "debe definir al menos un paso de flujo de
+// entrega". Lo que se fija aquí es lo que el characterization no puede separar: DE DÓNDE se copia,
+// qué NO se copia nunca, y que la fila llega entera.
+const buildCopyConnection = ({
+  fillHeaders = {},
+  fillLinkHeaders = {},
+  signatureHeaders = {},
+  signatureLinkHeaders = {},
+  parents = {},
+  fillRows = [],
+  signatureRows = [],
+} = {}) => {
+  const calls = [];
+  let nextInsertId = 500;
+  const cabecera = (mapa, artifactId) => {
+    const found = mapa[artifactId];
+    if (!found) return [];
+    return [{ id: found.id, is_active: found.is_active === undefined ? 1 : found.is_active }];
+  };
+  return {
+    calls,
+    query: async (sql, params = []) => {
+      const flat = sql.replace(/\s+/g, " ").trim();
+      calls.push({ sql: flat, params });
+      const artifactId = params[0];
+      // Búsqueda del ORIGEN (el escalonado del lector: artifact -> vínculo -> padre).
+      if (/^SELECT id, is_active FROM fill_flow_templates/.test(flat)) {
+        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? fillHeaders : fillLinkHeaders, artifactId)];
+      }
+      if (/^SELECT id, is_active FROM signature_flow_templates/.test(flat)) {
+        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? signatureHeaders : signatureLinkHeaders, artifactId)];
+      }
+      if (/^SELECT parent_version_id FROM template_artifacts/.test(flat)) {
+        return [parents[artifactId] ? [{ parent_version_id: parents[artifactId] }] : [{ parent_version_id: null }]];
+      }
+      // Búsqueda de la cabecera del DESTINO (el escritor): una versión recién creada no tiene.
+      if (/^SELECT id FROM (fill|signature)_flow_templates/.test(flat)) return [[]];
+      if (/^SELECT step_order.*FROM fill_flow_steps/.test(flat)) return [fillRows];
+      if (/^SELECT step_order.*FROM signature_flow_steps/.test(flat)) return [signatureRows];
+      if (/^INSERT INTO/.test(flat)) {
+        nextInsertId += 1;
+        return [{ insertId: nextInsertId, affectedRows: 1 }];
+      }
+      return [{ affectedRows: 1 }];
+    },
+  };
+};
+
+const HIJA_ID = 99;
+
+// La fila CRUDA del padre, con las columnas que el documento del editor NO lleva (`can_reject`).
+const fillCopyRow = (extra = {}) => ({
+  step_order: 1,
+  code: "owner_fill",
+  name: "Entrega del responsable",
+  resolver_type: "document_owner",
+  assigned_person_id: null,
+  unit_scope_type: "unit_exact",
+  unit_id: null,
+  unit_type_id: null,
+  relation_type_id: null,
+  cargo_id: null,
+  position_id: null,
+  selection_mode: "auto_one",
+  is_required: 1,
+  can_reject: 0,
+  ...extra,
+});
+
+const signatureCopyRow = (extra = {}) => ({
+  step_order: 1,
+  code: "firma_cargo",
+  name: "Firma por cargo",
+  slot: "firma_cargo",
+  resolver_type: "cargo_in_scope",
+  assigned_person_id: null,
+  unit_scope_type: "unit_exact",
+  unit_id: 8,
+  unit_type_id: null,
+  position_id: null,
+  required_cargo_id: 2,
+  selection_mode: "auto_all",
+  approval_mode: "and",
+  required_signers_min: 1,
+  required_signers_max: null,
+  is_required: 1,
+  anchor_refs: [],
+  signers: [{ resolverType: "cargo_in_scope", requiredCargoId: 2, unitScopeType: "unit_exact", unitId: 8 }],
+  ...extra,
+});
+
+test("versionar copia los pasos de ENTREGA y de FIRMA a la hija, colgados de SU artifact", async () => {
+  // El caso del contrato del sub-paso: los dos lados a la vez. Las cabeceras nuevas son de la HIJA
+  // (ids nuevos) y llevan la forma que exige el escalón 3 del resolvedor.
+  const connection = buildCopyConnection({
+    fillHeaders: { [ARTIFACT_ID]: { id: 13 } },
+    signatureHeaders: { [ARTIFACT_ID]: { id: 4 } },
+    fillRows: [fillCopyRow(), fillCopyRow({ step_order: 2, code: "revision", can_reject: 1 })],
+    signatureRows: [signatureCopyRow()],
+  });
+
+  const resultado = await copyAuthoredFlowToArtifact(connection, {
+    sourceArtifactId: ARTIFACT_ID,
+    targetArtifactId: HIJA_ID,
+    displayName: "Informe general",
+  });
+
+  const [cabeceraFill] = find(connection, /^INSERT INTO fill_flow_templates/);
+  assert.deepEqual(cabeceraFill.params, [HIJA_ID, "Flujo de entrega - Informe general"]);
+  const [cabeceraFirma] = find(connection, /^INSERT INTO signature_flow_templates/);
+  assert.deepEqual(cabeceraFirma.params, [HIJA_ID, "Flujo de firma - Informe general"]);
+
+  assert.equal(find(connection, /^INSERT INTO fill_flow_steps/).length, 2);
+  assert.equal(find(connection, /^INSERT INTO signature_flow_steps/).length, 1);
+  assert.equal(resultado.fill.steps, 2);
+  assert.equal(resultado.signatures.steps, 1);
+  // Ids distintos: los pasos cuelgan de la cabecera NUEVA, no de la 13 ni de la 4 del padre.
+  const [pasoFill] = find(connection, /^INSERT INTO fill_flow_steps/);
+  assert.equal(pasoFill.params[0], resultado.fill.flowTemplateId);
+  assert.notEqual(pasoFill.params[0], 13);
+});
+
+test("la copia arrastra la fila ENTERA, incluido lo que el documento del editor pierde", async () => {
+  // `can_reject` no sale en el documento `workflows:`, y `slot`/`anchor_refs`/`signers` viajan sin
+  // reinterpretar. Copiar leyendo la proyección del editor perdería las cuatro cosas.
+  const connection = buildCopyConnection({
+    fillHeaders: { [ARTIFACT_ID]: { id: 13 } },
+    signatureHeaders: { [ARTIFACT_ID]: { id: 4 } },
+    fillRows: [fillCopyRow({ can_reject: 1, relation_type_id: 3 })],
+    signatureRows: [signatureCopyRow({ required_signers_max: 2, approval_mode: "at_least" })],
+  });
+
+  await copyAuthoredFlowToArtifact(connection, { sourceArtifactId: ARTIFACT_ID, targetArtifactId: HIJA_ID });
+
+  const [pasoFill] = find(connection, /^INSERT INTO fill_flow_steps/);
+  assert.equal(pasoFill.params[2], "owner_fill");
+  assert.equal(pasoFill.params[4], "document_owner");
+  assert.equal(pasoFill.params[9], 3, "relation_type_id");
+  assert.equal(pasoFill.params[14], 1, "can_reject");
+
+  const [pasoFirma] = find(connection, /^INSERT INTO signature_flow_steps/);
+  assert.equal(pasoFirma.params[4], "firma_cargo", "slot");
+  assert.equal(pasoFirma.params[13], "at_least", "approval_mode");
+  assert.equal(pasoFirma.params[15], 2, "required_signers_max");
+  assert.equal(pasoFirma.params[17], "[]", "anchor_refs");
+  assert.match(pasoFirma.params[18], /"requiredCargoId":2/, "el JSONB signers no se reinterpreta");
+});
+
+test("la copia NUNCA busca una cabecera de RUNTIME", async () => {
+  // Es la garantía del grupo de control: la cabecera de runtime es el flujo que un usuario definió
+  // al enviar UN entregable concreto en modo `routed`. Copiarla convertiría esa decisión en la
+  // definición de todas las versiones futuras. Las dos consultas del origen la excluyen.
+  const connection = buildCopyConnection({ fillHeaders: { [ARTIFACT_ID]: { id: 13 } }, fillRows: [fillCopyRow()] });
+  await copyAuthoredFlowToArtifact(connection, { sourceArtifactId: ARTIFACT_ID, targetArtifactId: HIJA_ID });
+
+  const busquedas = connection.calls.filter((call) => /^SELECT id, is_active FROM/.test(call.sql));
+  assert.ok(busquedas.length > 0);
+  for (const busqueda of busquedas) {
+    assert.match(busqueda.sql, /task_item_id IS NULL/);
+  }
+});
+
+test("si el padre no tiene flujo propio, se copia el que el sync sembro en su VINCULO", async () => {
+  // MEDIDO en la base de dev: la plantilla de la fixture tiene 0 cabeceras por artifact y 1 por
+  // vínculo, porque su flujo lo sembró el sync desde `BASE_META_YAML`. Sin este escalón, versionarla
+  // copiaría CERO filas y publicar la versión seguiría dando 400. Andamiaje hasta el sub-paso 8.
+  const connection = buildCopyConnection({
+    fillLinkHeaders: { [ARTIFACT_ID]: { id: 2 } },
+    fillRows: [fillCopyRow()],
+  });
+  await copyAuthoredFlowToArtifact(connection, { sourceArtifactId: ARTIFACT_ID, targetArtifactId: HIJA_ID });
+
+  assert.equal(find(connection, /^INSERT INTO fill_flow_steps/).length, 1);
+});
+
+test("un padre SIN flujo no le crea a la hija ninguna cabecera vacia", async () => {
+  const connection = buildCopyConnection();
+  const resultado = await copyAuthoredFlowToArtifact(connection, {
+    sourceArtifactId: ARTIFACT_ID,
+    targetArtifactId: HIJA_ID,
+  });
+
+  assert.deepEqual(resultado, { fill: null, signatures: null });
+  assert.equal(find(connection, /^INSERT INTO/).length, 0);
+});
+
+test("una cabecera DESACTIVADA en el padre no se copia: el flujo quitado sigue quitado", async () => {
+  // Desactivada significa "el autor quitó el flujo de este lado". Copiarla resucitaría los pasos que
+  // el autor acaba de quitar; y la hija, sin cabecera propia, responde lo mismo que el padre.
+  const connection = buildCopyConnection({
+    fillHeaders: { [ARTIFACT_ID]: { id: 13, is_active: 0 } },
+    fillRows: [fillCopyRow()],
+  });
+  const resultado = await copyAuthoredFlowToArtifact(connection, {
+    sourceArtifactId: ARTIFACT_ID,
+    targetArtifactId: HIJA_ID,
+  });
+
+  assert.equal(resultado.fill, null);
+  assert.equal(connection.calls.some((call) => /FROM fill_flow_steps/.test(call.sql)), false);
+});
+
+test("copiar exige los DOS ids y no toca la base sin ellos", async () => {
+  const connection = buildCopyConnection();
+  await assert.rejects(
+    () => copyAuthoredFlowToArtifact(connection, { sourceArtifactId: ARTIFACT_ID }),
+    /requiere el id de origen y el de destino/,
+  );
+  await assert.rejects(
+    () => copyAuthoredFlowToArtifact(connection, { targetArtifactId: HIJA_ID }),
+    /requiere el id de origen y el de destino/,
+  );
+  assert.equal(connection.calls.length, 0);
 });

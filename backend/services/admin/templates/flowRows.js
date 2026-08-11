@@ -380,6 +380,14 @@ const parseSignersColumn = (value) => {
 //      sea, el de su padre. Sin este escalón, versionar una plantilla y reabrirla mostraba el flujo
 //      VACÍO y el primer guardado lo borraba. Medido en dev: el artifact 11 (v1.2.0 de
 //      `tpl_informe_general`) devolvía `steps: []` con su propio meta declarando `owner_fill`.
+//
+//      ⚠️ **EL ESCALÓN 3 YA SOBRA, Y ESTÁ MEDIDO** (sub-paso 6, este commit): desde que el versionado
+//      copia FILAS (`copyAuthoredFlowToArtifact`), una versión nueva tiene portador propio y entra
+//      por el escalón 1. Medición: con el ascenso por el linaje anulado a mano, la caracterización
+//      entera pasa **266/266**, incluido el caso «una VERSION recien creada hereda el flujo de su
+//      padre». NO se quita aquí a propósito: los artifacts versionados ANTES de este commit siguen
+//      sin filas propias, así que borrarlo es un cambio de comportamiento y le toca su commit con
+//      su golden.
 // Los escalones 2 y 3 MUEREN JUNTOS con los sub-pasos 6, 7 y 8 (cuando versionar copie filas y el
 // sync desaparezca): entonces se borran los dos y queda el portador único.
 //
@@ -537,4 +545,149 @@ export const readAuthoredFlowForArtifact = async (connection, artifactId) => {
     fill: { required: true, steps: fillSteps },
     signatures: { required: signatureSteps.length > 0, steps: signatureSteps },
   };
+};
+
+// --- Copia: el flujo del PADRE pasa a colgar de la HIJA ------------------------------------------
+//
+// Sub-paso 6 del §0.8. `createTemplateArtifactVersion` (`templateArtifact.js`) y
+// `forkDeliverableForConfig` (`templateLifecycle.js`) copian los objetos de MinIO EN BINARIO y no
+// creaban ni una fila de flujo. Mientras el flujo vivía dentro del `meta.yaml` eso bastaba —el
+// paquete llevaba el flujo dentro— y por eso nadie lo notó; desde que el flujo vive en la base, una
+// versión nueva nacía SIN FLUJO. Dos consecuencias medidas:
+//   · publicarla respondía 400 «la plantilla debe definir al menos un paso de flujo de entrega»,
+//     porque el gate del sub-paso 4 cuenta FILAS;
+//   · y el lector del editor necesitó un tercer escalón (subir al padre por `parent_version_id`)
+//     para no enseñar el flujo vacío.
+// Copiando las filas, las dos dejan de ser necesarias por la vía del parche.
+//
+// ⚠️ AQUÍ SE CORTA LA AUTO-REPLICACIÓN DE `document_owner` (§0.2 y §0.3). El resolutor deprecado
+// llega a cada versión nueva por la copia binaria del `meta.yaml`, sin que nadie lo autore ni haya
+// nada que consultar. Copiando filas la herencia no desaparece —eso es el sub-paso 7— pero pasa a
+// ser una fila visible en `fill_flow_steps`, con su artifact: se puede contar, auditar y migrar con
+// un `UPDATE`. Medido: versionar la plantilla de la fixture deja `resolver_type = 'document_owner'`
+// colgando de `template_artifact_id`, donde antes solo había bytes en MinIO.
+//
+// QUÉ SE COPIA, Y POR QUÉ ESA Y NO OTRA. El origen se busca con `findFlowSourceHeaderId`, o sea con
+// EL MISMO ESCALONADO QUE LEE EL EDITOR (artifact → vínculo → versión padre). No es reutilización
+// por comodidad: la propiedad que se quiere es «la hija nace con el flujo que el editor mostraba
+// para el padre». Cualquier otro criterio haría que versionar CAMBIE el flujo.
+//   · Del ARTIFACT (`template_artifact_id`): el flujo autorado. Es el caso limpio.
+//   · Del VÍNCULO (`process_definition_template_id`): hace falta HOY y está medido — la plantilla
+//     de la fixture tiene 0 cabeceras por artifact y 1 por vínculo, porque su flujo lo sembró el
+//     sync desde `BASE_META_YAML`. Sin este escalón, versionarla copiaría CERO filas y publicar la
+//     versión seguiría dando 400. Muere con los sub-pasos 7 y 8, como el `OR` de los gates.
+//   · Del TASK_ITEM (`task_item_id`): **NUNCA**, y no por precaución. Esa cabecera es el flujo que
+//     un usuario definió al enviar UN entregable concreto en modo `routed`
+//     (`materializeRuntimeFlowForTaskItem`): copiarla a una plantilla convertiría la decisión de un
+//     envío en la definición de todas las versiones futuras. Las dos consultas del escalonado ya
+//     exigen `task_item_id IS NULL`, así que la exclusión es estructural, no un filtro añadido aquí.
+//     El grupo de control `runtime_*` del characterization es lo que lo vigila.
+//
+// `is_active`: la hija nace con cabecera ACTIVA si hay pasos que copiar, y SIN NINGUNA CABECERA si
+// no los hay. El caso interesante es el del padre con la cabecera DESACTIVADA, que significa «el
+// autor quitó el flujo de este lado» (así la dejan `replaceArtifactFlowSide` y el sync, sin
+// borrarla): el escalonado devuelve `null`, no se copia nada, y la hija responde lo mismo que el
+// padre —flujo vacío— porque su propio escalonado vuelve a subir hasta esa cabecera. Crear una
+// cabecera desactivada y vacía daría el mismo comportamiento con una fila fantasma de más.
+//
+// POR QUÉ NO UN `INSERT ... SELECT`, que sería la copia literal: sería un SEGUNDO escritor de
+// `fill_flow_steps` / `signature_flow_steps` con su propia lista de columnas, y este módulo existe
+// precisamente para que haya UNO. Se leen las columnas y se vuelven a escribir por el escritor de
+// siempre; si mañana se añade una columna al INSERT, la copia la arrastra sola.
+//
+// Y POR QUÉ NO SE REUSA `readFillSteps`/`readSignatureSteps`: esos devuelven el DOCUMENTO, que es
+// una proyección con pérdida —no lleva `can_reject`, ni `anchor_refs`, ni `required_signers_max`, ni
+// el `unit_scope_type` de los pasos que no son por cargo, y traduce el JSONB `signers`—. Reconstruir
+// la fila desde ahí exigiría volver a normalizar con los catálogos de cargos y tipos de unidad, que
+// este módulo no tiene. La copia lee las MISMAS columnas que el INSERT escribe, ni una más.
+
+const readFillStepsForCopy = async (connection, headerId) => {
+  if (!headerId) return [];
+  const [rows] = await connection.query(
+    `SELECT step_order, code, name, resolver_type, assigned_person_id, unit_scope_type,
+            unit_id, unit_type_id, relation_type_id, cargo_id, position_id, selection_mode,
+            is_required, can_reject
+     FROM fill_flow_steps
+     WHERE fill_flow_template_id = ?
+     ORDER BY step_order ASC, id ASC`,
+    [headerId]
+  );
+  return rows.map((row) => ({
+    stepOrder: Number(row.step_order) || 0,
+    code: row.code ?? null,
+    name: row.name ?? null,
+    resolverType: row.resolver_type ?? null,
+    assignedPersonId: row.assigned_person_id ?? null,
+    unitScopeType: row.unit_scope_type ?? null,
+    unitId: row.unit_id ?? null,
+    unitTypeId: row.unit_type_id ?? null,
+    relationTypeId: row.relation_type_id ?? null,
+    cargoId: row.cargo_id ?? null,
+    positionId: row.position_id ?? null,
+    selectionMode: row.selection_mode ?? null,
+    isRequired: row.is_required,
+    canReject: row.can_reject,
+  }));
+};
+
+const readSignatureStepsForCopy = async (connection, headerId) => {
+  if (!headerId) return [];
+  const [rows] = await connection.query(
+    `SELECT step_order, code, name, slot, resolver_type, assigned_person_id, unit_scope_type,
+            unit_id, unit_type_id, position_id, required_cargo_id, selection_mode, approval_mode,
+            required_signers_min, required_signers_max, is_required, anchor_refs, signers
+     FROM signature_flow_steps
+     WHERE template_id = ?
+     ORDER BY step_order ASC, id ASC`,
+    [headerId]
+  );
+  // `signers` y `anchor_refs` se releen TAL CUAL y el escritor los vuelve a serializar. No se
+  // traduce la convención de nombres del JSONB (ver `resolverFromSigner`): una copia que
+  // reinterpretara el contenido dejaría de ser una copia.
+  return rows.map((row) => ({
+    stepOrder: Number(row.step_order) || 0,
+    code: row.code ?? null,
+    name: row.name ?? null,
+    slot: row.slot ?? null,
+    resolverType: row.resolver_type ?? null,
+    assignedPersonId: row.assigned_person_id ?? null,
+    unitScopeType: row.unit_scope_type ?? null,
+    unitId: row.unit_id ?? null,
+    unitTypeId: row.unit_type_id ?? null,
+    positionId: row.position_id ?? null,
+    requiredCargoId: row.required_cargo_id ?? null,
+    selectionMode: row.selection_mode ?? null,
+    approvalMode: row.approval_mode ?? null,
+    requiredSignersMin: row.required_signers_min ?? null,
+    requiredSignersMax: row.required_signers_max ?? null,
+    isRequired: row.is_required,
+    anchorRefs: parseSignersColumn(row.anchor_refs),
+    signers: parseSignersColumn(row.signers),
+  }));
+};
+
+// Deja colgando de `targetArtifactId` el mismo flujo (entrega y firma) que hoy define
+// `sourceArtifactId`. Ids nuevos, contenido idéntico.
+//
+// SECUENCIAL A PROPÓSITO, sin `Promise.all`: a diferencia del lector —que corre contra el pool—
+// esto se llama DENTRO de una transacción, y una conexión sola no atiende dos consultas a la vez.
+export const copyAuthoredFlowToArtifact = async (
+  connection,
+  { sourceArtifactId, targetArtifactId, displayName = "" } = {}
+) => {
+  const source = Number(sourceArtifactId);
+  const target = Number(targetArtifactId);
+  if (!source || !target) {
+    throw new Error("copyAuthoredFlowToArtifact requiere el id de origen y el de destino.");
+  }
+  const fillHeaderId = await findFlowSourceHeaderId(connection, "fill_flow_templates", source);
+  const signatureHeaderId = await findFlowSourceHeaderId(connection, "signature_flow_templates", source);
+  const fillSteps = await readFillStepsForCopy(connection, fillHeaderId);
+  const signatureSteps = await readSignatureStepsForCopy(connection, signatureHeaderId);
+  return replaceAuthoredFlowForArtifact(connection, {
+    artifactId: target,
+    displayName,
+    fillSteps,
+    signatureSteps,
+  });
 };
