@@ -72,6 +72,44 @@ bash scripts/docker-env.sh dev down
 
 **Builds/tests must run inside the containers via `scripts/docker-env.sh`, not with npm/npx on the host.**
 
+### Pilas paralelas: A, B, C y D — `scripts/stack.sh`
+
+**Si hay varias sesiones trabajando a la vez, cada una necesita su pila.** Los montajes de código son
+**relativos** (`../backend:/app/backend`), así que levantar `dev` desde otro worktree **no crea una
+pila nueva: recrea los mismos contenedores apuntando al código nuevo**. Pasó tres veces, y las dos
+primeras se midieron pruebas contra código ajeno sin que nadie se enterara.
+
+```bash
+bash scripts/stack.sh status                              # qué pila hay y qué worktree monta cada una
+bash scripts/stack.sh b up -d --build                     # levanta la pila B con ESTE worktree
+bash scripts/stack.sh b exec -T backend npm run test:unit
+bash scripts/stack.sh b down                              # OBLIGATORIO al terminar
+```
+
+| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit |
+|---|---|---|---|---|---|---|---|
+| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 |
+| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 |
+| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 4200 | 5872 |
+| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 |
+
+- **La pila A ES la `dev` de siempre.** Mismo proyecto, mismos volúmenes, mismos puertos:
+  `docker-env.sh dev` y `stack.sh a` son la misma. **No hay una quinta pila.**
+- Cada pila tiene **base, MinIO, RabbitMQ, `node_modules` y red propios**. Compartirlos era el fallo:
+  con el mismo volumen de postgres, un `test:char:run` **resetea la base de la otra sesión**.
+- **Regla: quien levanta B, C o D la baja al terminar** (`stack.sh <letra> down`). La A se queda.
+  Cuatro pilas son 28 contenedores; dejarlas colgando come RAM y puertos sin que nadie sepa de quién son.
+- El primer `up --build` de cada pila cuesta un `npm install` completo, porque el volumen de
+  `node_modules` es suyo. A partir de ahí es rápido.
+- **`stack.sh` comprueba solo** que la pila que vas a usar monta el worktree desde el que la llamas, y
+  **se niega si no coincide**, salvo en `down`/`status`/`ps`/`config`. Para saltárselo a sabiendas,
+  `DEASY_STACK_FORCE=1`.
+- Cómo funciona por dentro: `docker/compose.dev.yml` parametriza puertos y nombres de volumen con
+  `${…:-dev}`, así que **sin variables se comporta exactamente igual que siempre**.
+
+**Al encargar trabajo a un subagente, dile qué pila usar** («usa la pila B») y que anteponga
+`bash scripts/stack.sh b` a todo. Si no se lo dices, usará la A y chocará con quien la tenga.
+
 ### Frontend
 ```bash
 bash scripts/docker-env.sh dev exec -T frontend pnpm run lint       # eslint .

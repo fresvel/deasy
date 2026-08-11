@@ -8,7 +8,7 @@ services:
 
   postgres:
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
 
   rabbitmq:
     # Enlazado a 127.0.0.1 a proposito. Antes se publicaba en TODAS las interfaces, y con
@@ -16,8 +16,8 @@ services:
     # —que muestra el CUERPO de los mensajes, y ahi viaja `certPassword`— al alcance de la red.
     # En dev se conserva el acceso local por comodidad; en qa y prod no se publica nada.
     ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MGMT_PORT:-15672}:15672"
 
   minio:
     ports:
@@ -51,7 +51,7 @@ services:
     env_file:
       - .env.dev
     ports:
-      - "4000:4000"
+      - "${SIGNER_PORT:-4000}:4000"
     volumes:
       - ../signer:/app
 
@@ -60,18 +60,23 @@ services:
       context: ..
       dockerfile: docker/analytics/Dockerfile
 
+# Los nombres llevan el ESPACIO DE NOMBRES de la pila (`DEASY_STACK`), que por defecto es `dev`.
+# Sin esa variable todo se comporta exactamente igual que siempre: `docker-env.sh dev` no se entera.
+# Con ella, `scripts/stack.sh <a|b|c|d>` levanta pilas paralelas que NO comparten ni base, ni MinIO,
+# ni node_modules, ni red. Compartirlos era el fallo: aunque cambies el nombre del proyecto, dos
+# pilas con el MISMO volumen de postgres se pisan, y `test:char:run` resetea la base de la otra.
 volumes:
   postgres_data:
-    name: deasy_dev_postgres_data
+    name: deasy_${DEASY_STACK:-dev}_postgres_data
   rabbitmq_data:
-    name: deasy_dev_rabbitmq_data
+    name: deasy_${DEASY_STACK:-dev}_rabbitmq_data
   minio_data:
-    name: deasy_dev_minio_data
+    name: deasy_${DEASY_STACK:-dev}_minio_data
   backend_node_modules_v2:
-    name: deasy_dev_backend_node_modules
+    name: deasy_${DEASY_STACK:-dev}_backend_node_modules
   frontend_node_modules:
-    name: deasy_dev_frontend_node_modules
+    name: deasy_${DEASY_STACK:-dev}_frontend_node_modules
 
 networks:
   default:
-    name: deasy_dev_network
+    name: deasy_${DEASY_STACK:-dev}_network
