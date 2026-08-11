@@ -492,47 +492,182 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 
 ---
 
-## Frente 4 · Sistema de diseño — 🟢 desbloqueado del todo
+## Frente 4 · Sistema de diseño — 🟡 · pasos 1-3 cerrados, el 5 a medias, el 4 y el 6 abiertos
 
 > **Plan, evidencia y bitácora: [`sistema-diseno/`](./sistema-diseno/).** El frente ocupaba 20 líneas
 > aquí y necesitaba más: la medición del 2026-08-09 encontró **tres cosas que no estaban en ningún
 > plan** y que iban *antes* de los pasos ya escritos.
+>
+> **Re-auditado el 2026-08-11**, sobre el árbol de `develop` tras el merge `96f1afe`. Lo que sigue
+> **no** es el resumen de los mensajes de commit: cada línea se volvió a medir con `grep`, con
+> `lint:css` dentro del contenedor y —donde había que verlo— con `getComputedStyle` en el navegador.
+> Tres afirmaciones de la versión anterior de esta sección **eran falsas**, y van marcadas como tales
+> más abajo en vez de borradas.
 
-El orden **no es negociable**, porque hacerlo al revés significa recodificar el conflicto en 1 269
-sitios. Y la sesión del 2026-08-09 le añadió un principio: **borrar antes de migrar** — tokenizar
-reglas que no aplican a ningún nodo es trabajo que se tira.
+El orden **no es negociable**, porque hacerlo al revés significa recodificar el conflicto en cada
+sitio donde hoy hay un color escrito a mano. Y la sesión del 2026-08-09 le añadió un principio:
+**borrar antes de migrar** — tokenizar reglas que no aplican a ningún nodo es trabajo que se tira.
 
-1. ✅ Fusionar los dos `@layer components` en conflicto — hecho (`63b901e`)
-2. ✅ Eliminar los componentes muertos y su CSS — hecho (2026-08-09)
-3. ✅ **Colapsar los tokens duplicados `--deasy-*` / `--brand-*`** — hecho (`6e60d74`). Ya no hay dos
-   juegos, y `@theme` registra la paleta en Tailwind, que es lo que le da destino al paso 5
-4. ⬜ Cerrar el **fork real**: `AdminButton.vue` (un consumidor, único emisor vivo de `admin-btn--*`).
-   Diverge de `AppButton` en que **aplica la clase de tamaño incluso con `icon-only`**, así que
-   cambiarlo mueve el aspecto: pide navegador ← *aquí estamos*
-5. 🟡 Migrar los ~1 269 colores — **arañado** (`192e09d`): hecho el subconjunto de componentes
-   compartidos que duplicaban un token exacto. Queda el grueso, y va con el frente 3
-6. ⬜ Y solo entonces, las **33 incidencias de contraste** (`css:S7924`), que son accesibilidad real
+| # | Paso | Estado | Evidencia medida el 2026-08-11 |
+|---|---|---|---|
+| 1 | Fusionar los dos `@layer components` en conflicto | ✅ `63b901e` | Ya no existe `tailwind.css`. Los `@layer components` que quedan son **uno por módulo de familia** y no se solapan; las marcas del corte siguen anotadas en `buttons.css:36` y `auth.css:60` |
+| 2 | Eliminar los componentes muertos y su CSS | ✅ `9ebe307` + `331322d` | CSS total 3 997 → **2 054 L**; `AdminTableManager.css` borrado entero |
+| 3 | Colapsar los tokens `--deasy-*` / `--brand-*` | ✅ `6e60d74` | **Cero `--deasy-*` vivos.** Las 4 apariciones que quedan en el árbol son **comentarios** de `tokens.css` (`:44`, `:51`, `:52`, `:92`) que explican el colapso. Un solo juego, y `@theme` (`tokens.css:23-40`) registra 16 colores en Tailwind |
+| 4 | Cerrar el fork `AdminButton.vue` | ⬜ **abierto** ← *aquí estamos* | El fichero **sigue vivo**: `frontend/src/modules/admin/components/ui/AdminButton.vue`. Ver abajo: el alcance es más pequeño de lo que decía el plan, y la razón que daba era falsa |
+| 5 | Migrar los colores hardcodeados | 🟡 **el CSS sí, el `.vue` no** | `647030a` + `2f1a158` dejaron `lint:css` en **0 errores**. Pero el contador ve el CSS, no la app. Ver el desglose abajo |
+| 6 | Las 33 incidencias de contraste (`css:S7924`) | ⬜ **sin medir** | No se puede consultar: el SonarQube es local y **no se levantó** en esta auditoría. Ver abajo qué se sabe sin él |
 
-**Lo que la sesión del 2026-08-09 cerró de más, y no estaba escrito aquí:**
+### Paso 4 — el fork sigue ahí, pero el plan lo describía mal
 
-- **CSS total 3 997 → 2 054 líneas (−49 %).** Más de la mitad estaba muerto o era inerte.
-- **`AdminTableManager.css` borrado entero**: 604 líneas cargadas `<style scoped src>` sin un solo
-  `:deep()`. Medido en navegador: **0 de sus 86 reglas aplicaban**. La columna de acciones declara
-  `position: sticky` y el DOM devuelve `static` — se diseñó y nunca funcionó.
-- **La colisión `--radius-*` deshecha**: 224 usos reescritos preservando el aspecto, y la escala de
-  radios vuelve a ser monótona (`sm 4 < md 6 < lg 8 < xl 12 < 2xl 16`).
-- **Barandilla**: stylelint + dos reglas de `eslint-plugin-vue`, donde no había ninguna.
-  `pnpm run lint:css` sale en rojo a propósito (151 hex) y **no debe subir**.
+**Medido:** `AdminButton.vue` tiene **un solo import real** en todo el frontend,
+`modules/perfil/components/DossierDocumentActions.vue:92`. Sus **seis** usos son todos
+`variant="secondary" size="sm" icon-only` (`:3-87`), o sea **exactamente el caso divergente**:
 
-> Las tres colisiones del skill `tailadmin-ui` están **resueltas a medias**: `rounded-lg` ya vale 8 px
-> y `@theme` ya existe. **Sigue viva la tercera**: no hay `@custom-variant dark`, así que pegar una
-> receta con `dark:` pintaría en oscuro sobre la app en claro. Fallo silencioso.
+- `AdminButton.vue:82` → `props.size ? sizeClassMap[props.size] : ""` — aplica el tamaño **siempre**.
+- `AppButton.vue:93` → `props.variant !== "plain" && !props.iconOnly ? … : ""` — lo **omite** con `icon-only`.
 
-**Defecto visual detectado y no arreglado:** en el modal «Agregar título académico» la cabecera sale
-casi negra. Causa: un `html[data-environment="local-dev"] header { … !important }` que golpea
-**cualquier `<header>`**, incluido uno dentro del cuerpo de un modal. Solo afecta a dev, que es justo
-lo que lo hace traicionero: **dev ≠ prod**. El bloque `local-dev` entero (220 líneas, 105
-`!important`) sigue ahí; retirarlo es una decisión aparte, anotada en `sistema-diseno/`.
+Sustituirlo quita `admin-btn--sm px-3 py-2 text-sm` a esos seis botones, así que **sí mueve el
+aspecto** y sigue pidiendo navegador. Lo que ha bajado es el riesgo: no es un fork con veintiún
+consumidores, es un fichero y una fila de botones del dossier.
+
+> ⚠️ **Afirmación falsa corregida.** Esta sección decía que `AdminButton` era el «**único emisor vivo
+> de `admin-btn--*`**». **No lo es, y no lo ha sido nunca desde que existe `AppButton`**:
+> `AppButton.vue:65-94` emite las **dos** familias (`deasy-btn--primary admin-btn--primary`…) en cada
+> botón, que es justo el peaje que `referencia/frontend.md` §3.5 ya describía. Borrar `AdminButton.vue`
+> **no** deja huérfano ningún `.admin-btn--*` del CSS.
+
+> 🪤 **Trampa de nombres, medida.** Hay 14 ficheros que escriben `<AdminButton>` en su plantilla y
+> **no usan este componente**: importan `AppButton.vue` bajo el alias `AdminButton`
+> (p. ej. `AdminFormActions.vue:24`, `AdminLookupField.vue:84`). Buscar `AdminButton` da 100+ líneas
+> y **una sola** es el fork. El grep que vale es `grep -rn "ui/AdminButton" frontend/src`.
+
+### Paso 5 — `lint:css` a cero no es «cero colores»
+
+`bash scripts/docker-env.sh dev exec -T frontend pnpm run lint:css` → **`6 problems (0 errors, 6
+warnings)`**, y los 6 son `!important` documentados en la propia línea (`dialogs.css:83,110`;
+`overrides.css:3,14,70,86`). Eso es real y hay que sostenerlo. Pero es el estado del **CSS**, y el
+grueso del color nunca estuvo ahí:
+
+| Dónde | Cuánto | ¿Lo ve `lint:css`? |
+|---|---:|---|
+| Hex de la **paleta**, `tokens.css` (34 en declaración + 5 en comentarios) | 39 | Sí, y va **silenciado a propósito** (`stylelint-disable color-no-hex` con motivo, `tokens.css:63` y `:106`). Es el sitio correcto |
+| Hex **dentro de `@apply`** en los módulos | **7** | **No.** `forms.css:28,46` (`placeholder:text-[#8a93a8]`), `nav.css:138,142` (`border-[#d6e4f2]`), `tags.css:36` (tres en una línea) |
+| `rgb()/rgba()` con triplete numérico en los módulos | **90** | **No.** El grueso está en `nav.css` (27), `buttons.css` (18) y `overrides.css` (11) |
+| Hex en `.vue` / `.js` | **123** | **No**: `lint:css` es `stylelint "src/**/*.css"`, no mira una sola plantilla |
+| `rgb()/rgba()` en `.vue` / `.js` | **37** | **No** |
+
+Y el número de cabecera: **la cifra «~1 269» no es un colores-hex, es la suma de cuatro categorías de
+`referencia/frontend.md` §3.4** (592 utilidades de paleta + 424 *arbitrary values* + 157 hex + 96
+`rgb()`). Reproduciendo ese criterio hoy sobre `frontend/src` sale **≈1 537**, o sea que **no ha
+bajado: ha subido** con el código nuevo. No es una contradicción con lo anterior — el trabajo del
+frente 4 atacó el hex del CSS, y la masa es *utility soup* de Tailwind en `HomeView.vue` (673),
+`FirmarPdf.vue` (345) y `AdminDraftArtifactModal.vue` (185). **Eso es frente 3, no frente 4.**
+
+**Criterio de cierre del paso 5, redefinido para que sea alcanzable:** los **7 hex de `@apply`** y los
+**90 `rgb()`** de `frontend/src/shared/styles/` a token, con la app idéntica. Lo de `.vue` se cierra
+partiendo los componentes, no tokenizando.
+
+### Paso 6 — lo que se sabe sin SonarQube
+
+No se levantó el servidor, así que **el contador de 33 no está re-medido**. Lo que sí está medido y
+sigue valiendo, de `sistema-diseno/auditoria-color.md` §5:
+
+- El barrido de parejas `color`+`background` con hex literal en la misma regla —lo único que `S7924`
+  puede ver sin resolver cascada— daba **3 fallos, no 33**. Sonar no resuelve `var()`, no compone
+  `rgba()` sobre el ancestro y no aplica cascada entre ficheros.
+- **El contador y la accesibilidad no son la misma magnitud.** `2f1a158` dejó el CSS sin hex sueltos,
+  así que lo previsible es que `S7924` **baje casi solo en el próximo escaneo sin haber arreglado
+  ningún contraste** — el color no desapareció, se movió a `var()` y a `color-mix()`, que es
+  precisamente lo que la regla no sabe leer.
+- El fallo WCAG 1.4.11 que quedaba vivo era `.hope-action-delete-pdf:hover` a **2,90:1**. `2f1a158`
+  unificó los siete `:hover` de `.hope-action-*` en `color-mix(… 85%, var(--brand-black))`, que
+  oscurece, así que **debería haber subido** — pero eso **no está verificado** y el fondo de esa
+  familia sigue siendo `rgba()` numérico (`buttons.css:266-346`).
+
+**Criterio de cierre:** un escaneo con la cobertura regenerada + una medida de contraste real de
+`.hope-action-*` en navegador. Sin las dos cosas no se sabe si esto está hecho.
+
+### La estructura nueva (2026-08-10, `c45b154`)
+
+`theme.css` y `tailwind.css` **ya no existen**. En su lugar hay **15 ficheros** en
+`frontend/src/shared/styles/`: 14 módulos por familia más `index.css`, que es **lo único que importa
+`main.js`** (`main.js:6`). El orden de los `@import` **no es alfabético y está explicado dentro del
+propio `index.css`** (`:1-15`): `tokens.css` primero porque todo lo demás lo consume, `overrides.css`
+el último porque tiene que ganar a las reglas de componente por orden, no por `!important`.
+
+> El módulo **`misc.css` existe** y es el 14.º: la tabla de `CLAUDE.md` no lo lista.
+
+**Los `!important` bajaron de 103 a 6**, y los 6 llevan el motivo escrito al lado.
+
+### El defecto del `<header>`: no se perdió, y ahora es peor
+
+La versión anterior de esta sección decía que la causa era
+`html[data-environment="local-dev"] header { … !important }`, que **solo afecta a dev**, y que el
+bloque `local-dev` «sigue ahí». **Las tres cosas son falsas hoy**, y conviene saber por qué:
+
+- `c45b154` **promovió el bloque entero y retiró el gate**: `grep -rn "data-environment" frontend/src`
+  da **0**. Fue lo correcto —el bloque era *el diseño* puesto tras la condición equivocada, y sin él
+  producción se veía **peor**—, pero significa que **ya no hay nada acotado a desarrollo**.
+- La regla sobrevivió intacta salvo el gate y el `!important`. Hoy es **`overrides.css:140`**:
+
+  ```css
+  header {
+    background-color: var(--brand-navy-deep);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  ```
+
+- **Medido en el navegador** (`https://localhost:8443`, con `data-environment` ya inexistente),
+  inyectando el `<header>` de `AppFormModalLayout.vue:14-17` tal cual: `backgroundColor` =
+  `rgb(7, 25, 39)` (= `--brand-navy-deep`) y el `<h2 class="text-slate-950">` encima, o sea texto
+  casi negro sobre fondo casi negro, **≈1,1:1**.
+
+**O sea: el defecto no se corrigió, se generalizó.** Antes salía en el modal «Agregar título
+académico» y solo en dev; ahora la regla es incondicional y alcanza **todo `<header>` sin utilidad de
+fondo propia** — `AppFormModalLayout.vue:14` (que es **todos** los modales de formulario del perfil),
+`ProcessGraphView.vue:142`, `UnitGraphView.vue:174` y `HomeView.vue:875,1023,1048`. Los que llevan
+`bg-white` (`SNotify.vue:14`) o un degradado (`WorkspaceChatLauncher.vue:24`) se salvan porque una
+clase (0,1,0) gana al selector de elemento (0,0,1).
+
+**Arreglo propuesto:** `overrides.css:140` no quiere ser `header`, quiere ser la cabecera del *shell*
+de la aplicación (`SHeader.vue:2`). Darle su clase y dejar el elemento en paz. Es un cambio de una
+línea, pero **cambia el aspecto de seis sitios a la vez**: pide huella de `getComputedStyle`
+antes/después, no build ni tests.
+
+> 📌 `sistema-diseno/bitacora.md:274` sigue diciendo que «el bloque `local-dev` de `theme.css` sigue
+> vivo». **Está obsoleto desde `c45b154`**; se corrige cuando el frente cierre y ese directorio se
+> archive.
+
+### Las tres colisiones de `tailadmin-ui`: dos cerradas, una viva
+
+| Colisión | Estado | Evidencia |
+|---|---|---|
+| `rounded-lg` valía 16 px (escala invertida) | ✅ **cerrada** (`cdbc62b`) | No queda ni una declaración `--radius-*` en `frontend/src`. Medido en navegador: `--radius-lg` = **`0.5rem`** (8 px), o sea el valor por defecto de Tailwind v4, y la escala vuelve a ser monótona (`sm 4 < md 6 < lg 8 < xl 12 < 2xl 16`) |
+| No había `@theme`, Tailwind no conocía un solo token | ✅ **cerrada** (`6e60d74`) | `tokens.css:23-40`, 16 colores bajo `--color-*`. Ya existen `bg-brand-primary`, `text-brand-text-strong`… |
+| `dark:` se autoactivaría por `prefers-color-scheme` | ⛔ **viva** | `grep -rn "custom-variant" frontend/src` → **0**. Sin `@custom-variant dark`, Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)` y una receta pegada de TailAdmin pintaría en oscuro sobre una app en claro. **Fallo silencioso**, y hoy inocuo solo porque no hay **ni un** `dark:` en el árbol. El aviso está donde toca, en `tokens.css:17-20` |
+
+### La barandilla, y lo que no vigila
+
+- **stylelint** (`frontend/.stylelintrc.json`): `color-no-hex` en **error**, `declaration-no-important`
+  en **warning**. Hoy: **0 errores, 6 avisos**, y ahí se queda.
+- **`eslint-plugin-vue`** (`frontend/eslint.config.cjs:36-37`): `vue/no-static-inline-styles`
+  (`allowBinding: true`) y `vue/prefer-separate-static-class`, ambas en **error** y a cero.
+
+> ⚠️ **Afirmación obsoleta corregida.** Esta sección decía que «`pnpm run lint:css` sale en rojo a
+> propósito (151 hex) y **no debe subir**». Ya no: sale en **verde**. La regla pasa a ser **no debe
+> volver a rojo** — y con el matiz de arriba, que el verde solo cubre el `.css`.
+
+### Los cuatro scripts de `scripts/`
+
+| Script | Qué hace | ¿Se queda? |
+|---|---|---|
+| `css-radios.mjs` | Deshizo la colisión `--radius-*` reescribiendo cada uso al *utility* que pintaba ese mismo valor, en **una sola pasada** (dos `sed` encadenados mandarían los 8 px a 16) | **Un solo uso.** Su trabajo está hecho y no se repite: archivar |
+| `css-modularizar.mjs` | Troceó `theme.css` + `tailwind.css` en los 14 módulos + `index.css`. Sabe descender dentro del `@layer components` y asigna las reglas multi-selector a la familia **más tardía** para que ninguna se adelante | **Un solo uso**, pero su cabecera (`:1-20`) documenta *por qué* el orden de `index.css` es el que es: archivar el script, **conservar el comentario** |
+| `css-prune.mjs` | Poda genérica: trocea una hoja en bloques de primer nivel y borra los que solo mencionan clases sin consumidor, con **invariante de reconstrucción byte a byte** antes de escribir. Tiene modo informe (sin `--apply`) | **Se queda.** Es reutilizable y el modo informe sirve de auditoría periódica |
+| `css-hex-a-token.mjs` | Sustituye hex por `var(--token)` con dos salvaguardas ganadas a golpes: el hex corto que es prefijo del largo (`#fff` dentro de `#fff0ed`) y la autorreferencia que deja el token **sin valor** | **Se queda.** Es la herramienta del paso 5, que sigue abierto |
+
+**Criterio de cierre del frente:** pasos 4, 5 (con el criterio redefinido) y 6 cerrados, más el
+`<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno/` se archiva y esto se marca ✅.
 
 ---
 
