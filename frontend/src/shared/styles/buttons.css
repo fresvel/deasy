@@ -267,49 +267,49 @@
 .hope-action-edit:hover {
   color: color-mix(in srgb, var(--state-success) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--state-success) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--state-success) 45%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--state-success) 85%, var(--brand-white));
 }
 
 
 .hope-action-delete:hover {
   color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--state-danger) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--state-danger) 45%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-white));
 }
 
 
 .hope-action-delete-strong:hover {
   color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--state-danger) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--state-danger) 45%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-white));
 }
 
 
 .hope-action-view:hover {
   color: color-mix(in srgb, var(--action-view) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--action-view) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--action-view) 45%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--action-view) 85%, var(--brand-white));
 }
 
 
 .hope-action-download:hover {
   color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--action-upload) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--action-upload) 45%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-white));
 }
 
 
 .hope-action-upload:hover {
   color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--action-upload) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--action-upload) 45%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-white));
 }
 
 
 .hope-action-delete-pdf:hover {
   color: color-mix(in srgb, var(--state-warning) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--state-warning) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--state-warning) 45%, var(--brand-white));
+  border-color: color-mix(in srgb, var(--state-warning) 85%, var(--brand-white));
 }
 
 .admin-page-header__actions .admin-btn {

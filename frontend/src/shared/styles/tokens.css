@@ -153,15 +153,12 @@
   /* Iconos de accion secundaria (la ✕ de los dialogos). */
   --brand-icon: #475569;
 
-  /* Borde de cada boton de accion. NO se deriva del color de la accion: es mas
-     saturado que cualquier mezcla con blanco (medido: ΔE hasta 11.9 en el ambar),
-     asi que es un valor propio. El fondo si se deriva; ver mas arriba. */
-  --action-neutral-line: #b8cadc;
-  --action-view-line: #8ec6df;
-  --state-success-line: #8ed6b2;
-  --action-upload-line: #aabef4;
-  --state-danger-line: #f3aaa0;
-  --state-warning-line: #f4c26f;
+  /* Aqui vivian seis tokens de borde, uno por accion. Ya no: el borde se deriva
+     del color de la accion como el resto. La clave es el porcentaje — al 35% el
+     borde salia MAS CLARO que el que habia y el boton se veia peor; al 71% los
+     seis llegan a 3:1 contra la fila blanca, que es lo que pide WCAG 1.4.11 para
+     el limite de un componente. Los valores anteriores daban 1.64-1.90: ninguno
+     cumplia, y eso son 172 botones en una tabla llena. */
 
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;

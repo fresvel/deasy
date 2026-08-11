@@ -166,14 +166,14 @@ header {
 
 .hope-action-btn {
   background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--brand-white));
-  border-color: var(--action-neutral-line);
+  border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--brand-white));
   color: var(--action-neutral);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .hope-action-view {
   background-color: color-mix(in srgb, var(--action-view) 11%, var(--brand-white));
-  border-color: var(--action-view-line);
+  border-color: color-mix(in srgb, var(--action-view) 71%, var(--brand-white));
   color: var(--action-view);
 }
 
@@ -181,7 +181,7 @@ header {
 .hope-action-select,
 .hope-action-assign {
   background-color: color-mix(in srgb, var(--state-success) 10%, var(--brand-white));
-  border-color: var(--state-success-line);
+  border-color: color-mix(in srgb, var(--state-success) 71%, var(--brand-white));
   color: var(--state-success);
 }
 
@@ -189,20 +189,20 @@ header {
 .hope-action-download,
 .hope-action-upload {
   background-color: color-mix(in srgb, var(--action-upload) 11%, var(--brand-white));
-  border-color: var(--action-upload-line);
+  border-color: color-mix(in srgb, var(--action-upload) 71%, var(--brand-white));
   color: var(--action-upload);
 }
 
 .hope-action-delete,
 .hope-action-delete-strong {
   background-color: color-mix(in srgb, var(--state-danger) 9%, var(--brand-white));
-  border-color: var(--state-danger-line);
+  border-color: color-mix(in srgb, var(--state-danger) 71%, var(--brand-white));
   color: var(--state-danger);
 }
 
 .hope-action-delete-pdf {
   background-color: color-mix(in srgb, var(--state-warning) 9%, var(--brand-white));
-  border-color: var(--state-warning-line);
+  border-color: color-mix(in srgb, var(--state-warning) 71%, var(--brand-white));
   color: var(--state-warning);
 }
 
