@@ -1,24 +1,24 @@
 <template>
   <div
-    class="tpl-node relative rounded-xl border border-violet-200 border-l-4 border-l-violet-400 bg-violet-50/50 px-2.5 py-1.5 shadow-sm transition-all"
+    class="graph-node graph-node--template relative rounded-xl border border-violet-200 border-l-4 border-l-violet-400 bg-violet-50/50 px-2.5 py-1.5 shadow-sm transition-all"
     :class="data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : ''"
     :title="data.display_name"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
   >
-    <Handle type="target" :position="Position.Top" class="tpl-node__handle" />
+    <Handle type="target" :position="Position.Top" class="graph-node__handle graph-node__handle--sm" />
 
-    <div v-if="hover && data.editable" class="nodrag nopan tpl-node__toolbar">
-      <button v-if="data.parentConfigStatus === 'active'" type="button" class="tpl-node__btn tpl-node__btn--accent" title="Actualizar plantilla (nueva versión de plantilla + configuración, publica y activa juntas)" @click.stop="data.onGuidedUpdate?.(data)">
+    <div v-if="hover && data.editable" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm">
+      <button v-if="data.parentConfigStatus === 'active'" type="button" class="graph-node__btn graph-node__btn--sm graph-node__btn--accent" title="Actualizar plantilla (nueva versión de plantilla + configuración, publica y activa juntas)" @click.stop="data.onGuidedUpdate?.(data)">
         <IconRefresh class="h-4 w-4" />
       </button>
-      <button type="button" class="tpl-node__btn" title="Versionar entregable (crea una versión en borrador)" @click.stop="data.onVersion?.(data)">
+      <button type="button" class="graph-node__btn graph-node__btn--sm" title="Versionar entregable (crea una versión en borrador)" @click.stop="data.onVersion?.(data)">
         <IconGitBranch class="h-4 w-4" />
       </button>
-      <button type="button" class="tpl-node__btn" title="Crear un entregable a partir de este" @click.stop="data.onClone?.(data)">
+      <button type="button" class="graph-node__btn graph-node__btn--sm" title="Crear un entregable a partir de este" @click.stop="data.onClone?.(data)">
         <IconCopy class="h-4 w-4" />
       </button>
-      <button type="button" class="tpl-node__btn" title="Agregar entregable hermano" @click.stop="data.onAddSibling?.(data)">
+      <button type="button" class="graph-node__btn graph-node__btn--sm" title="Agregar entregable hermano" @click.stop="data.onAddSibling?.(data)">
         <IconPlus class="h-4 w-4" />
       </button>
     </div>
@@ -76,53 +76,3 @@ const stateDotClass = computed(() => ({
 const isUnhealthy = computed(() => String(props.data.parentConfigStatus) === "active" && lifecycleState.value !== "published");
 </script>
 
-<style scoped>
-.tpl-node {
-  width: 170px;
-}
-.tpl-node__handle {
-  width: 8px;
-  height: 8px;
-  background: #a78bfa;
-  border: 2px solid #fff;
-}
-.tpl-node__toolbar {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  padding-left: 6px;
-  display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
-  z-index: 6;
-}
-.tpl-node__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  width: 26px;
-  border-radius: 8px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  color: #6d28d9;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.tpl-node__btn:hover {
-  background: #f5f3ff;
-  border-color: #ddd6fe;
-  color: #6d28d9;
-}
-.tpl-node__btn--accent {
-  background: #4f46e5;
-  border-color: #4f46e5;
-  color: #fff;
-}
-.tpl-node__btn--accent:hover {
-  background: #4338ca;
-  border-color: #4338ca;
-  color: #fff;
-}
-</style>

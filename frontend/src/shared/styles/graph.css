@@ -1,0 +1,135 @@
+@layer components {
+    /* ------------------------------------------------------------------------------------
+       NODOS DEL GRAFO (Vue Flow) — organigrama de unidades y grafo de procesos.
+
+       Antes esto eran CUATRO `<style scoped>` con 163 líneas entre los cuatro componentes,
+       y de reglas propias sólo había tres: `ProcessNode.vue` era copia BYTE A BYTE de
+       `UnitNode.vue` —usaba incluso sus clases `.unit-node__*`— y `cfg`/`tpl` repetían la
+       misma forma cambiando el prefijo. Funcionaba porque cada `<style scoped>` lleva su
+       propio `data-v-*`, así que las cuatro copias convivían sin chocar. Por eso nadie lo vio.
+
+       Ahora hay UNA forma y tres variantes. Lo que distingue a cada tipo de nodo es el color
+       del conector, y eso es semántico: dice de qué tipo es el nodo. Se expresa con un solo
+       token local, `--graph-accent`, que cada variante redefine y del que cuelga todo lo
+       demás por herencia de variables CSS.
+       ------------------------------------------------------------------------------------ */
+
+    .graph-node {
+        /* Unidad y proceso: la entidad principal, el color de marca. */
+        --graph-accent: var(--brand-primary);
+    }
+
+    /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
+       Es el gris de los iconos aclarado, no un color propio. */
+    .graph-node--config {
+        --graph-accent: color-mix(in srgb, var(--brand-icon) 57%, var(--brand-white));
+        width: 190px;
+        background: var(--brand-white);
+    }
+
+    /* Plantilla: el mismo color de marca, más claro. En un punto de 8 px la luminosidad
+       distingue mejor que el matiz, y así no se añade un tono nuevo a la gama. */
+    .graph-node--template {
+        --graph-accent: color-mix(in srgb, var(--brand-primary) 63%, var(--brand-white));
+        width: 170px;
+    }
+
+    /* ── Conectores ─────────────────────────────────────────────────────────────────── */
+
+    /* ── Barra de acciones ──────────────────────────────────────────────────────────────
+       Al costado derecho del nodo y centrada: libre de los conectores, que van arriba y
+       abajo. `left:100%` + `padding-left` transparente la deja CONTIGUA al nodo, para que
+       el ratón no pierda el hover al desplazarse hacia ella. */
+
+    .graph-node__toolbar {
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        padding-left: 8px;
+        display: inline-flex;
+        flex-direction: column;
+        gap: 4px;
+        z-index: 6;
+    }
+
+    .graph-node__toolbar--sm {
+        padding-left: 6px;
+    }
+
+    /* ── Botones ────────────────────────────────────────────────────────────────────── */
+
+    .graph-node__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 30px;
+        width: 30px;
+        border-radius: 9px;
+        background: var(--brand-white);
+        border: 1px solid var(--brand-border);
+        color: var(--brand-icon);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .graph-node__btn--sm {
+        height: 26px;
+        width: 26px;
+        border-radius: 8px;
+    }
+
+    /* El hover tira del acento del nodo, así que cada tipo se ilumina con SU color sin
+       necesidad de una regla por variante. Mismos porcentajes que los botones de acción
+       de las tablas: relleno bajo, borde medio, texto el token. */
+    .graph-node__btn:hover {
+        background: color-mix(in srgb, var(--graph-accent) 10%, var(--brand-white));
+        border-color: color-mix(in srgb, var(--graph-accent) 45%, var(--brand-white));
+        color: var(--graph-accent);
+    }
+
+    /* La acción principal del nodo: relleno sólido en vez de contorno. */
+    .graph-node__btn--accent {
+        background: var(--graph-accent);
+        border-color: var(--graph-accent);
+        color: var(--brand-white);
+    }
+
+    .graph-node__btn--accent:hover {
+        background: color-mix(in srgb, var(--graph-accent) 85%, var(--brand-black));
+        border-color: color-mix(in srgb, var(--graph-accent) 85%, var(--brand-black));
+        color: var(--brand-white);
+    }
+}
+
+/* ------------------------------------------------------------------------------------
+   CONECTORES — fuera de `@layer components` A PROPOSITO.
+
+   Vue Flow pinta el conector desde su propia hoja (`@vue-flow/core/dist/style.css`), que
+   va SIN CAPA. Y en CSS la precedencia de capa gana a la especificidad: una regla no
+   capada gana SIEMPRE a una capada, por muy especifica que sea esta. Cualificar con
+   `.vue-flow__handle` no arregla nada — probado: el punto seguia saliendo gris #555 y de
+   6px, los valores de la libreria.
+
+   Antes ganaba el `<style scoped>` de cada componente, que tampoco tiene capa. Al mover
+   esto a un modulo se perdio esa ventaja sin que nada avisara.
+
+   Por eso estas tres reglas viven fuera del bloque. Es lo mismo que hace `overrides.css`
+   con las utilidades de Tailwind, y por el mismo motivo.
+   ------------------------------------------------------------------------------------ */
+.vue-flow__handle.graph-node__handle {
+    width: 9px;
+    height: 9px;
+    background: var(--graph-accent);
+    border: 2px solid var(--brand-white);
+}
+
+.vue-flow__handle.graph-node__handle--sm {
+    width: 8px;
+    height: 8px;
+}
+
+.vue-flow__handle.graph-node__handle--hidden {
+    opacity: 0;
+    pointer-events: none;
+}

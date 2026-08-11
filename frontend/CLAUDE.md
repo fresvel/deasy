@@ -242,7 +242,28 @@ Así murió `AdminTableManager.css`: 604 líneas cargadas con `<style scoped src
 **Si estilas un hijo desde el padre, necesitas `:deep()`. Y si lo necesitas mucho, el estilo no va
 ahí: va en el módulo del hijo.**
 
-### 6.4 Una clase construida en runtime es invisible para cualquier grep
+### 6.4 Al sacar un `<style scoped>` a un módulo, pierdes una ventaja que no habías pedido
+
+Un `<style scoped>` **no está en ninguna capa**. Un módulo de `shared/styles/` está en
+`@layer components`. Y en CSS **la precedencia de capa gana a la especificidad**: una regla sin capa
+gana SIEMPRE a una capada, por muy específica que sea la segunda. Así que al mover el estilo cambian
+dos cosas a la vez, y la segunda no la ves venir.
+
+Mover cuatro nodos de Vue Flow a `graph.css` lo enseñó por partida doble:
+
+- **Hacia abajo**: los conectores volvieron a los valores de la librería (gris `#555`, 6 px) porque
+  `@vue-flow/core` trae su hoja **sin capa**. Cualificar el selector a `.vue-flow__handle.graph-node__handle`
+  **no arregló nada** — no era cuestión de especificidad. La solución es sacar esas reglas del bloque
+  `@layer`, como hace `overrides.css`.
+- **Hacia arriba**: `.cfg-node { background:#fff }` estaba tapando tres `bg-*` de Tailwind que el
+  componente declaraba por estado. Nunca se vieron. Al pasar a una capa, las utilidades ganaron y el
+  tinte **resucitó** — un cambio visual que nadie pidió, en un refactor.
+
+**Antes de mover un `<style scoped>`, pregúntate contra qué estaba ganando.** Si pisa a un tercero,
+la regla va fuera de la capa; si pisa a una utilidad de Tailwind, decide a conciencia cuál de las dos
+sobra y **borra la otra**, en vez de dejar las dos peleando.
+
+### 6.5 Una clase construida en runtime es invisible para cualquier grep
 
 ```js
 `deasy-tag--${props.variant}`                          // AppTag.vue
@@ -255,7 +276,7 @@ los 304 tests pasaron en verde** con la barra lateral sin color.
 
 **Antes de borrar CSS por no encontrarlo con `grep`, comprueba si se compone en runtime.**
 
-### 6.5 Al reemplazar colores en masa, dos trampas ya pagadas
+### 6.6 Al reemplazar colores en masa, dos trampas ya pagadas
 
 1. **Un hex corto es prefijo de uno largo.** `#fff` está dentro de `#fff0ed`; sin límite por la
    derecha la sustitución parte el valor y deja `var(--brand-white)0ed`. Ordenar el mapa por
@@ -267,13 +288,13 @@ los 304 tests pasaron en verde** con la barra lateral sin color.
 
 `scripts/css-hex-a-token.mjs` lleva las dos guardas y **aborta antes de escribir**.
 
-### 6.6 La tipografía se carga desde `index.html`
+### 6.7 La tipografía se carga desde `index.html`
 
 No desde el CSS. Un `@import` remoto anidado dentro de un módulo **lo descarta Vite en silencio** y
 la app entera se queda con la fuente de reserva. Además, un `@import` remoto encadena la petición
 detrás del parseo del CSS; desde el HTML el navegador la pide en paralelo.
 
-### 6.7 Componentes: tres ficheros piden ser partidos
+### 6.8 Componentes: tres ficheros piden ser partidos
 
 `AdminTableManager.vue` (4 223 L), `FirmarPdf.vue` (2 944 L) y `MultiSignerPanel.vue` (1 394 L)
 concentran la mayor parte de la utility soup. No añadas más a ellos: extrae.

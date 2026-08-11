@@ -1,6 +1,6 @@
 <template>
   <div
-    class="unit-node relative rounded-xl border px-3 py-2 shadow-sm transition-all"
+    class="graph-node relative rounded-xl border px-3 py-2 shadow-sm transition-all"
     :class="[
       data.is_active ? 'border-slate-300 bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
       data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : '',
@@ -9,13 +9,13 @@
     @mouseenter="hover = true"
     @mouseleave="hover = false"
   >
-    <Handle type="target" :position="Position.Top" class="unit-node__handle" />
+    <Handle type="target" :position="Position.Top" class="graph-node__handle" />
 
-    <div v-if="hover" class="nodrag nopan unit-node__toolbar">
+    <div v-if="hover" class="nodrag nopan graph-node__toolbar">
       <button
         v-if="data.hasChildren"
         type="button"
-        class="unit-node__btn"
+        class="graph-node__btn"
         :title="data.collapsed ? 'Expandir rama' : 'Colapsar rama'"
         @click.stop="data.onToggleCollapse?.(data.id)"
       >
@@ -23,13 +23,13 @@
         <IconChevronUp v-else class="h-4 w-4" />
       </button>
       <template v-if="data.editable">
-        <button type="button" class="unit-node__btn" title="Editar proceso" @click.stop="data.onEdit?.(data.id)">
+        <button type="button" class="graph-node__btn" title="Editar proceso" @click.stop="data.onEdit?.(data.id)">
           <IconPencil class="h-4 w-4" />
         </button>
-        <button type="button" class="unit-node__btn" title="Agregar proceso hijo" @click.stop="data.onAddChild?.(data.id)">
+        <button type="button" class="graph-node__btn" title="Agregar proceso hijo" @click.stop="data.onAddChild?.(data.id)">
           <IconCornerDownRight class="h-4 w-4" />
         </button>
-        <button type="button" class="unit-node__btn" title="Agregar proceso hermano" @click.stop="data.onAddSibling?.(data.id)">
+        <button type="button" class="graph-node__btn" title="Agregar proceso hermano" @click.stop="data.onAddSibling?.(data.id)">
           <IconPlus class="h-4 w-4" />
         </button>
       </template>
@@ -57,7 +57,7 @@
       <span v-else class="inline-flex items-center rounded-xl bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-400 ring-1 ring-slate-200">Sin config.</span>
       <span v-if="!data.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
     </p>
-    <Handle type="source" :position="Position.Bottom" class="unit-node__handle" />
+    <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
 </template>
 
@@ -80,40 +80,3 @@ const configBadgeClass = computed(() => {
 });
 </script>
 
-<style scoped>
-.unit-node__handle {
-  width: 9px;
-  height: 9px;
-  background: #6366f1;
-  border: 2px solid #fff;
-}
-.unit-node__toolbar {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  padding-left: 8px;
-  display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
-  z-index: 6;
-}
-.unit-node__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 30px;
-  width: 30px;
-  border-radius: 9px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.unit-node__btn:hover {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #4f46e5;
-}
-</style>
