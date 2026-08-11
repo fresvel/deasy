@@ -85,7 +85,17 @@ const shouldInferSignatureFlowForContext = (context) => {
   return true;
 };
 
-const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
+// Gemelo de `getActiveFillFlowTemplateForDefinitionTemplate` (generation/queries.js): tres escalones
+// por PRIORIDAD, no por «qué columna está rellena». Una misma fila puede llevar dos portadores a la
+// vez —el flujo de runtime que escribe `materializeRuntimeFlowForTaskItem` (generation/documents.js:278)
+// lleva `process_definition_template_id` Y `task_item_id`—, así que cada escalón exige NULL en los
+// portadores de los anteriores. Los escalones:
+//   1. del ENTREGABLE   (`task_item_id`)                   — flujo definido en runtime
+//   2. del VÍNCULO      (`process_definition_template_id`) — flujo autorado para esa configuración
+//   3. de la PLANTILLA  (`template_artifact_id`)           — flujo del entregable, compartido por
+//      todas las configuraciones donde esté enlazado (§0.8 del plan maestro)
+// Se exporta solo para poder probar la prioridad con un unitario; el consumidor real es de aquí.
+export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
   connection,
   processDefinitionTemplateId,
   taskItemId = null
@@ -112,7 +122,27 @@ const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
      LIMIT 1`,
     [processDefinitionTemplateId]
   );
-  return rows?.[0] || null;
+  if (rows?.[0]) {
+    return rows[0];
+  }
+  // Flujo de la PLANTILLA que el vínculo enlaza. La subconsulta devuelve NULL si el vínculo no
+  // existe o no tiene artifact, y `columna = NULL` no casa con nada: no hace falta guarda extra.
+  const [byArtifact] = await connection.query(
+    `SELECT id
+     FROM signature_flow_templates
+     WHERE template_artifact_id = (
+             SELECT template_artifact_id
+             FROM process_definition_templates
+             WHERE id = ?
+           )
+       AND process_definition_template_id IS NULL
+       AND task_item_id IS NULL
+       AND is_active = 1
+     ORDER BY id DESC
+     LIMIT 1`,
+    [processDefinitionTemplateId]
+  );
+  return byArtifact?.[0] || null;
 };
 
 // Normaliza la lista de firmantes (columna JSON `signers`) a la forma camelCase que consumen los resolutores.

@@ -189,6 +189,16 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
   return rows?.[0] || null;
 };
 
+// Tres escalones, por PRIORIDAD y no por «qué columna está rellena». El orden importa porque una
+// misma fila puede llevar dos portadores a la vez: el flujo de runtime que escribe
+// `materializeRuntimeFlowForTaskItem` (documents.js:248) lleva `process_definition_template_id` Y
+// `task_item_id`. Por eso cada escalón exige NULL en los portadores de los escalones anteriores: sin
+// ese `IS NULL`, el flujo privado de un envío se le serviría a cualquier otro entregable del mismo
+// vínculo. Los escalones:
+//   1. del ENTREGABLE   (`task_item_id`)                — flujo definido en runtime
+//   2. del VÍNCULO      (`process_definition_template_id`) — flujo autorado para esa configuración
+//   3. de la PLANTILLA  (`template_artifact_id`)        — flujo del entregable, compartido por todas
+//      las configuraciones donde esté enlazado (§0.8 del plan maestro)
 export const getActiveFillFlowTemplateForDefinitionTemplate = async (
   connection,
   processDefinitionTemplateId,
@@ -206,7 +216,7 @@ export const getActiveFillFlowTemplateForDefinitionTemplate = async (
       return inst[0];
     }
   }
-  // Flujo autorado de la plantilla (single/replicated): excluye los por‑instancia.
+  // Flujo autorado del vínculo (single/replicated): excluye los por‑instancia.
   const [rows] = await connection.query(
     `SELECT id
      FROM fill_flow_templates
@@ -217,7 +227,27 @@ export const getActiveFillFlowTemplateForDefinitionTemplate = async (
      LIMIT 1`,
     [processDefinitionTemplateId]
   );
-  return rows?.[0] || null;
+  if (rows?.[0]) {
+    return rows[0];
+  }
+  // Flujo de la PLANTILLA que el vínculo enlaza. La subconsulta devuelve NULL si el vínculo no
+  // existe o no tiene artifact, y `columna = NULL` no casa con nada: no hace falta guarda extra.
+  const [byArtifact] = await connection.query(
+    `SELECT id
+     FROM fill_flow_templates
+     WHERE template_artifact_id = (
+             SELECT template_artifact_id
+             FROM process_definition_templates
+             WHERE id = ?
+           )
+       AND process_definition_template_id IS NULL
+       AND task_item_id IS NULL
+       AND is_active = 1
+     ORDER BY id DESC
+     LIMIT 1`,
+    [processDefinitionTemplateId]
+  );
+  return byArtifact?.[0] || null;
 };
 
 export const getFillFlowSteps = async (connection, fillFlowTemplateId) => {
