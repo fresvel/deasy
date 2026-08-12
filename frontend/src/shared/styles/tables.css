@@ -57,25 +57,40 @@
 
     
 }
-.table.align-middle> :not(caption)>*>* {
-  vertical-align: middle;
-}
+/* ------------------------------------------------------------------------------------
+   [F4.4-c 2026-08-11] ⚠️ **LAS CUATRO REGLAS DE ABAJO ESTAN MUERTAS.** `.table` no tiene un
+   solo consumidor en `src/`: los aciertos de un `grep` son `:table="…"`, `table.table` y
+   `selectedTable?.table`, o sea props y variables, no clases. Y **no hay Bootstrap en
+   `package.json`**, que era el unico motivo por el que este bloque podia tener sentido.
 
-.table {
-  font-size: 0.875rem;
-  margin-bottom: 0;
-}
+   Las tablas de verdad usan `.deasy-table` (arriba, ya capada), `.admin-data-table` o
+   `.person-assignment-table`. Capar esto es un **no-op comprobable** — no hay nodo que
+   estilar— y se hace por uniformidad: asi «fuera de capa» significa siempre «pelea con un
+   tercero». **Lo que procede es borrarlas, y eso es F5**, junto con `.table-institutional`,
+   que tampoco tiene consumidores y deja huerfanas dos ramas de `overrides.css`.
+   ------------------------------------------------------------------------------------ */
 
-.table> :not(caption)>*>* {
-  padding: 0.75rem 1rem;
-  border-bottom-width: 1px;
-}
+@layer components {
+    .table.align-middle> :not(caption)>*>* {
+        vertical-align: middle;
+    }
 
-.table thead th {
-  border-bottom-width: 1px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--brand-navy);
+    .table {
+        font-size: 0.875rem;
+        margin-bottom: 0;
+    }
+
+    .table> :not(caption)>*>* {
+        padding: 0.75rem 1rem;
+        border-bottom-width: 1px;
+    }
+
+    .table thead th {
+        border-bottom-width: 1px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--brand-navy);
+    }
 }

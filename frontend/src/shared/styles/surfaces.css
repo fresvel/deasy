@@ -57,10 +57,17 @@
 
     
 }
-.card {
-  border-radius: 16px;
-  border: 0;
-  box-shadow: var(--brand-elev-1);
+/* [F4.4-c 2026-08-11] ⚠️ **`.card` NO TIENE UN SOLO CONSUMIDOR.** Ni en `.vue` ni en `.js`,
+   y `package.json` no trae Bootstrap. Los unicos aciertos de un `grep` son `group/card`
+   (utilidad de grupo nombrado de Tailwind) y `card.iconWrap` (una variable JS). Se capa con
+   el resto por uniformidad — capar algo muerto es un no-op comprobable— pero **lo que
+   procede es borrarla, y eso es F5**. */
+@layer components {
+    .card {
+        border-radius: 16px;
+        border: 0;
+        box-shadow: var(--brand-elev-1);
+    }
 }
 
 /* ------------------------------------------------------------------------------------
@@ -77,31 +84,38 @@
 
    Ojo: los pseudo-elementos `::-webkit-scrollbar` NO son visibles para `getComputedStyle`,
    asi que la huella de estilos no los ve. Esto se verifica mirando.
+
+   [F4.4-c 2026-08-11] Capadas sin riesgo: **Tailwind no genera ninguna utilidad para
+   `::-webkit-scrollbar*`**, asi que aqui no existe competidor posible ni lo habra. Son de
+   las pocas reglas del proyecto donde la capa da igual — se capan por uniformidad, para que
+   «fuera de capa» signifique siempre «pelea con un tercero» y no «nadie lo movio».
    ------------------------------------------------------------------------------------ */
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+@layer components {
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--brand-border);
-  border-radius: 10px;
-}
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--brand-border);
+        border-radius: 10px;
+    }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-border-strong);
-}
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: var(--brand-border-strong);
+    }
 
-/* Sobre fondo oscuro (menu de administracion y de procesos). */
-.custom-scrollbar--dark::-webkit-scrollbar-thumb {
-  background: rgba(var(--brand-white-rgb), 0.2);
-}
+    /* Sobre fondo oscuro (menu de administracion y de procesos). */
+    .custom-scrollbar--dark::-webkit-scrollbar-thumb {
+        background: rgba(var(--brand-white-rgb), 0.2);
+    }
 
-.custom-scrollbar--dark::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--brand-white-rgb), 0.32);
+    .custom-scrollbar--dark::-webkit-scrollbar-thumb:hover {
+        background: rgba(var(--brand-white-rgb), 0.32);
+    }
 }

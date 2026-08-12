@@ -7,16 +7,23 @@
    no aparecian en ninguna plantilla); los tamaños de la zona de subida se fueron a
    `forms.css` como variantes; y aqui queda lo que de verdad se usa.
 
-   Va sin capa, igual que estaba.
+   [F4.4-c 2026-08-11] Ya no va todo sin capa: el margen del icono baja a `@layer components`
+   y los dos cursores se quedan fuera. El motivo de cada uno, en su bloque.
    ------------------------------------------------------------------------------------ */
 
 /* El icono redondeado de las tarjetas del escritorio. Cuelga de la TARJETA, no de la zona
    de subida: tres de las nueve tarjetas son lanzadores con botones y no tienen dropzone,
-   y colgarlo del dropzone las dejaba sin margenes. */
+   y colgarlo del dropzone las dejaba sin margenes.
 
-.signature-workspace-card .signature-workspace-icon {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
+   Se capa: el unico emisor (`FirmarPdf.vue:1052`, dentro de un `h()`) le pone `mx-auto`,
+   que es `margin-inline` — longhand distinto, no compite. Y ninguna de las 7 tarjetas mete
+   `mt-*`/`mb-*`/`my-*`/`m-*` en el icono. */
+
+@layer components {
+    .signature-workspace-card .signature-workspace-icon {
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+    }
 }
 
 /* ------------------------------------------------------------------------------------
@@ -28,6 +35,15 @@
 
    El `!important` que llevaba la segunda regla se ha quitado: existia para ganarle a la
    primera cuando estaban en bloques distintos; ahora van seguidas y decide el orden.
+
+   [F4.4-c 2026-08-11] SIGUEN FUERA, y ahora con la cifra: **hoy no hay ni un `cursor-*` de
+   Tailwind en esos nodos** —`SignatureBox.vue:6-7` pone `pointer-events-auto` y
+   `opacity-80 scale-105 shadow-xl ring-2`, nada de cursores—, asi que capararlas no rompe
+   nada HOY. Se quedan fuera por lo que puede pasar mañana: ese mismo `:class` recibe un
+   prop `customClass` (`SignatureBox.vue:68`) que puede inyectar utilidades desde fuera, y
+   un `cursor-pointer` que llegara por ahi mataria el cursor de arrastre en silencio.
+   Es la unica regla del proyecto que se queda fuera por PREVENCION y no por un competidor
+   real; si algun dia se retira `customClass`, estas dos bajan.
    ------------------------------------------------------------------------------------ */
 
 .custom-drag-cursor {
