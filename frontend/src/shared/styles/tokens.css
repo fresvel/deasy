@@ -144,6 +144,18 @@
   --brand-border-field: #d7deea;
   /* Superficie alterna (fondos apagados de cabecera, addon de select, hover suave). 7 veces. */
   --brand-surface-alt: #f8fafc;
+  /* [F2.4 2026-08-11] LA TINTA DE SOMBRA. Vivia DENTRO de cinco tokens compuestos
+     —`--brand-shadow`, los tres `--shadow-*` y `--overlay-backdrop`— y no existia plana,
+     asi que desde una plantilla no habia forma de referirla. Resultado: **31 ocurrencias
+     de `#0f172a` escritas a mano con OCHO alfas distintas** (.04 x11, .05 x5, .06 x4,
+     .07 x3, .12 x3, .08, .16, .18), mas dos vecinos indistinguibles —`rgba(7,18,38,.24)`
+     a ΔE 1.77 y `rgba(11,31,63,.06)` a ΔE 1.09—.
+
+     No es un color nuevo: es el token que nunca se declaro. Declararlo es lo que
+     desbloquea F3, que sustituye esas 31 sin mover un pixel. */
+  --brand-shadow-ink: #0f172a;
+  --brand-shadow-ink-rgb: 15, 23, 42;
+
   /* ELEVACION. Habia ONCE valores de sombra, pero no eran once niveles: eran DOS
      niveles escritos de muchas formas (0.03/0.04/0.06 estan a ΔE<=1.3 entre si),
      mas cosas que no son sombras aunque usen la misma propiedad. */
@@ -180,6 +192,26 @@
   --state-warning: #b45309;   /* 4.68:1 */
   --state-pending: #b8432b;   /* 5.42:1 — 'pendiente', ni exito ni fallo */
   --state-gold: #d4af37;      /* solo BtnSera */
+
+  /* [F1.8 2026-08-11] «TE TOCA A TI». La menta de la tarjeta de entregable, que estaba
+     escrita a mano en CINCO sitios (`DeliverableCard.vue` x4 y `useDeliverableView.js`)
+     y arrastraba su propia rampa (#3DE08F, #2ec97d).
+
+     NO se puede colapsar sobre otro estado, y esta medido: el mejor `color-mix` con
+     `--brand-accent` toca fondo en ΔE 19.75 y la curva es PLANA (40 % -> 20.35,
+     56 % -> 19.75, 70 % -> 20.14). No es cuestion de porcentaje: `--brand-accent` es teal
+     y esto es menta, tonos distintos. Y significa algo que ningun otro token significa:
+     «este paso es el actual, te toca firmar», que no es `--state-success` («ya esta
+     hecho»). Colapsarlo perderia una distincion real — 2.3 avisa de eso.
+
+     ⚠️ VALORES PROVISIONALES: son los de hoy, puestos aqui para que la extraccion de
+     `deliverables.css` no mueva un pixel. Y NO CUMPLEN — como borde sobre blanco dan
+     1.46:1 (el minimo de 1.4.11 es 3:1) y la tinta 4.38:1 (el de texto es 4.5:1). F2.4
+     los sustituye por valores que SI cumplan: es el unico punto de la auditoria donde
+     tokenizar arregla una violacion en vez de solo ordenar. */
+  --state-current: #4bf1a1;
+  --state-current-rgb: 75, 241, 161;
+  --state-current-ink: #118a57;
 
   /* Botones de accion de las tablas. UN color por accion: el del icono.
      El fondo NO se declara, se calcula mezclandolo con blanco (~10%), que es

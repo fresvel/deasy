@@ -1329,11 +1329,11 @@
                 <dl class="grid gap-x-6 gap-y-2.5 m-0 sm:grid-cols-2 lg:grid-cols-4">
                   <div
                     class="flex flex-col gap-0.5 border-l-2 pl-3"
-                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-[#4BF1A1]' : 'border-sky-300'"
+                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-[var(--state-current)]' : 'border-sky-300'"
                   >
                     <dt
                       class="text-[11px] font-bold uppercase tracking-[0.16em]"
-                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-[#118a57]' : 'text-sky-600'"
+                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-[var(--state-current-ink)]' : 'text-sky-600'"
                     >
                       Responsable actual
                     </dt>

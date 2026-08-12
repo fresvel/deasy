@@ -521,7 +521,16 @@ export function useDeliverableView({
 
   const getDeliverableHeaderActionTone = (payload) => {
     if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-      return 'border-[#4BF1A1]/65 text-[#118a57] hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 focus:ring-[#4BF1A1]/35';
+      // [F1.8 2026-08-11] Era el hex `#4BF1A1` escrito a mano, con su tinta `#118a57`.
+      // Ahora es `--state-current`; el valor lo decide `tokens.css` y F2.4 lo sube a un
+      // contraste que cumpla sin tocar esta linea.
+      //
+      // ⚠️ `rgba(var(--x), 0.65)` y NO `rgb(var(--x)/0.65)`. El segundo compila —Tailwind
+      // emite la regla tal cual— pero es CSS INVALIDO: el triplete del token va separado
+      // por comas, y la sintaxis heredada por comas no admite la barra del alfa. El
+      // navegador descarta la declaracion y el borde cae a `currentColor` SIN avisar.
+      // Costo media hora; el CSS servido decia que la utilidad existia.
+      return 'border-[rgba(var(--state-current-rgb),0.65)] text-[var(--state-current-ink)] hover:border-[var(--state-current)] hover:bg-[rgba(var(--state-current-rgb),0.1)] focus:ring-[rgba(var(--state-current-rgb),0.35)]';
     }
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
       return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';

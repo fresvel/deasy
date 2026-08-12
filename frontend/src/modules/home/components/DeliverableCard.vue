@@ -125,18 +125,18 @@ const onCardClick = (event) => {
         </div>
 
         <div class="mt-auto grid grid-cols-[minmax(0,1fr)_auto] gap-2.5 border-t border-slate-100 pt-3">
-          <button v-if="h.shouldShowStartDeliverable(deliverable.item)" type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-indigo-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/60 disabled:cursor-not-allowed disabled:opacity-60" :disabled="processingFillItemId === deliverable.item.id || !h.canStartDeliverableAction(deliverable.item)" @click="emit('start', deliverable.item)">
-            <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-indigo-200 bg-indigo-50/70 text-indigo-700"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
-            <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
+          <button v-if="h.shouldShowStartDeliverable(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--start" :disabled="processingFillItemId === deliverable.item.id || !h.canStartDeliverableAction(deliverable.item)" @click="emit('start', deliverable.item)">
+            <div class="deasy-deliverable-action__chip"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
+            <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
           </button>
           <PdfDropField v-else-if="h.shouldShowUploadDeliverable(deliverable.item)" class="deliverable-inline-upload h-full" :input-id="`deliverable-upload-${deliverable.item.id}`" variant="compact" :icon="IconUpload" :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable" :title="''" :action-text="h.getUploadActionLabel(deliverable.item)" help-text="" :accept="UPLOAD_ACCEPT" @files-selected="emit('upload', { item: deliverable.item, files: $event })" />
-          <button v-else-if="h.shouldShowSign(deliverable.item)" type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-[#4BF1A1]/75 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 disabled:cursor-not-allowed disabled:opacity-60" :disabled="!deliverable.item.actions?.implemented?.sign" @click="emit('sign', deliverable.item)">
-            <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-[#4BF1A1]/55 bg-[#4BF1A1]/10 text-[#118a57]"><IconSignature class="h-4.5 w-4.5" /></div>
-            <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">Firmar</span></div>
+          <button v-else-if="h.shouldShowSign(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--sign" :disabled="!deliverable.item.actions?.implemented?.sign" @click="emit('sign', deliverable.item)">
+            <div class="deasy-deliverable-action__chip"><IconSignature class="h-4.5 w-4.5" /></div>
+            <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Firmar</span></div>
           </button>
-          <button v-else type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45" @click="emit('open', deliverable)">
-            <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700"><IconChecklist class="h-4.5 w-4.5" /></div>
-            <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">Abrir</span></div>
+          <button v-else type="button" class="group deasy-deliverable-action deasy-deliverable-action--open" @click="emit('open', deliverable)">
+            <div class="deasy-deliverable-action__chip"><IconChecklist class="h-4.5 w-4.5" /></div>
+            <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Abrir</span></div>
           </button>
 
           <div class="flex h-full items-center justify-end gap-1.5">
