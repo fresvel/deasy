@@ -1,0 +1,122 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Chat y notificaciones. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project chat {
+  database_type: 'PostgreSQL'
+  Note: '''Chat y notificaciones — Mensajería en tiempo real sobre Socket.IO (EMQX/MQTT retirados). Conversaciones directas, de grupo y de hilo ligado a proceso.'''
+}
+
+Table "chat_conversation_participants" {
+  "id" int8 [pk, not null, increment]
+  "conversation_id" int8 [not null]
+  "person_id" int4 [not null]
+  "role" varchar(20) [not null, default: 'member']
+  "joined_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "left_at" timestamp
+
+  Indexes {
+    (conversation_id, person_id) [type: btree, unique, name: "uq_chat_participant"]
+    (person_id, conversation_id) [type: btree, name: "idx_chat_participant_person"]
+  }
+}
+
+Table "chat_conversations" {
+  "id" int8 [pk, not null, increment]
+  "type" text [not null, check: `type = ANY (ARRAY['direct'::text, 'group'::text, 'thread'::text, 'process_thread'::text, 'unit'::text])`]
+  "title" text
+  "process_id" int4
+  "scope_process_id" int4
+  "scope_unit_id" int4
+  "stable_key" varchar(255) [unique]
+  "scope_current_definition_id" int4
+  "scope_origin_definition_id" int4
+  "created_by" int4 [not null]
+  "last_message_id" int8
+  "last_message_at" timestamp
+  "archived_at" timestamp
+  "mobile_summary" text
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (type, process_id) [type: btree, name: "idx_chat_conversations_process"]
+  }
+}
+
+Table "chat_message_attachments" {
+  "id" int8 [pk, not null, increment]
+  "message_id" int8 [not null]
+  "sort_order" int4 [not null, default: 0]
+  "path" varchar(500) [not null]
+  "filename" varchar(255) [not null]
+  "mime" varchar(120)
+  "size" int8 [not null, default: 0]
+
+  Indexes {
+    (message_id, sort_order) [type: btree, name: "idx_chat_attachments_message"]
+  }
+}
+
+Table "chat_message_reads" {
+  "message_id" int8 [not null]
+  "person_id" int4 [not null]
+  "read_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (message_id, person_id) [pk, type: btree, name: "chat_message_reads_pkey"]
+  }
+}
+
+Table "chat_messages" {
+  "id" int8 [pk, not null, increment]
+  "conversation_id" int8 [not null]
+  "sender_person_id" int4 [not null]
+  "content" text [not null, default: '']
+  "content_type" varchar(20) [not null, check: `(content_type)::text = ANY ((ARRAY['text'::character varying, 'system'::character varying, 'attachment'::character varying])::text[])`, default: 'text']
+  "reply_to_message_id" int8
+  "edited_at" timestamp
+  "deleted_at" timestamp
+  "delivery_state" varchar(20)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (conversation_id, created_at) [type: btree, name: "idx_chat_messages_conversation"]
+    (sender_person_id, created_at) [type: btree, name: "idx_chat_messages_sender"]
+  }
+}
+
+Table "chat_notifications" {
+  "id" int8 [pk, not null, increment]
+  "recipient_person_id" int4 [not null]
+  "type" varchar(80) [not null]
+  "title" text [not null]
+  "body" text [not null]
+  "entity_type" varchar(40)
+  "entity_id" varchar(64)
+  "conversation_id" int8
+  "message_id" int8
+  "channel" varchar(20) [not null, default: 'in_app']
+  "read_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (recipient_person_id, created_at) [type: btree, name: "idx_chat_notif_recipient_created"]
+    (recipient_person_id, read_at) [type: btree, name: "idx_chat_notif_recipient_read"]
+  }
+}
+
+Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
+Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachments"."message_id" [delete: cascade]
+Ref "fk_chat_reads_message":"chat_messages"."id" <? "chat_message_reads"."message_id" [delete: cascade]
+Ref "fk_chat_messages_conversation":"chat_conversations"."id" <? "chat_messages"."conversation_id" [delete: cascade]
+Ref "fk_chat_messages_reply":"chat_messages"."id" ?<? "chat_messages"."reply_to_message_id" [delete: set null]

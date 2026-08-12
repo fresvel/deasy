@@ -1,0 +1,357 @@
+{
+  "derived_entregable": {
+    "document": {
+      "id": "<normalized>",
+      "origin_unit_id": 8,
+      "owner_person_id": 1,
+      "status": "Pendiente de llenado",
+      "task_item_id": "<normalized>",
+      "title": "zz char routed derivado"
+    },
+    "fill_flows": [
+      {
+        "current_step_order": 1,
+        "document_version_id": "<normalized>",
+        "fill_flow_template_id": "<normalized>",
+        "id": "<normalized>",
+        "status": "pending"
+      }
+    ],
+    "fill_requests": [
+      {
+        "assigned_person_id": 1,
+        "document_fill_flow_id": "<normalized>",
+        "fill_flow_step_id": "<normalized>",
+        "id": "<normalized>",
+        "is_manual": 0,
+        "status": "pending",
+        "step_order": 1
+      }
+    ],
+    "task_item": {
+      "assigned_person_id": 3,
+      "created_by_person_id": 3,
+      "end_date": "<normalized>",
+      "id": "<normalized>",
+      "origin_kind": "user_added",
+      "process_definition_template_id": "<normalized>",
+      "responsible_position_id": 25,
+      "sort_order": 999,
+      "source_task_item_id": "<normalized>",
+      "start_date": "<normalized>",
+      "status": "pendiente",
+      "target_person_id": 1,
+      "target_position_id": "<normalized>",
+      "target_unit_id": null,
+      "task_id": "<normalized>",
+      "template_artifact_id": "<normalized>",
+      "title": "zz char routed derivado",
+      "user_started_at": null
+    },
+    "versions": [
+      {
+        "document_id": "<normalized>",
+        "final_file_path": null,
+        "format": null,
+        "id": "<normalized>",
+        "payload_object_path": null,
+        "status": "Pendiente de llenado",
+        "template_artifact_id": "<normalized>",
+        "version": "0.1",
+        "working_file_path": null
+      }
+    ]
+  },
+  "derived_flujo_entrega": {
+    "description": null,
+    "id": "<normalized>",
+    "is_active": 1,
+    "name": "Entrega (definida al enviar)",
+    "process_definition_template_id": "<normalized>",
+    "steps": [
+      {
+        "assigned_person_id": 1,
+        "can_reject": 0,
+        "cargo_id": null,
+        "code": null,
+        "id": "<normalized>",
+        "is_required": 1,
+        "name": null,
+        "position_id": null,
+        "relation_type_id": null,
+        "resolver_type": "specific_person",
+        "selection_mode": "auto_one",
+        "step_order": 1,
+        "unit_id": null,
+        "unit_scope_type": "unit_exact",
+        "unit_type_id": null
+      }
+    ],
+    "task_item_id": "<normalized>",
+    "template_artifact_id": "<normalized>"
+  },
+  "derived_flujo_firma": {
+    "description": null,
+    "id": "<normalized>",
+    "is_active": 1,
+    "name": "Firma (definida al enviar)",
+    "process_definition_template_id": "<normalized>",
+    "steps": [
+      {
+        "approval_mode": "at_least",
+        "assigned_person_id": 2,
+        "code": "firma_1",
+        "id": "<normalized>",
+        "is_required": 1,
+        "name": "Firma 1",
+        "position_id": null,
+        "required_cargo_id": null,
+        "required_signers_max": null,
+        "required_signers_min": 1,
+        "resolver_type": "specific_person",
+        "selection_mode": "auto_all",
+        "signers": [
+          {
+            "person_id": 2,
+            "type": "specific_person"
+          },
+          {
+            "person_id": 3,
+            "type": "specific_person"
+          }
+        ],
+        "slot": "firma_1",
+        "step_order": 1,
+        "unit_id": null,
+        "unit_scope_type": "context_exact",
+        "unit_type_id": null
+      },
+      {
+        "approval_mode": "and",
+        "assigned_person_id": 1,
+        "code": "firma_2",
+        "id": "<normalized>",
+        "is_required": 1,
+        "name": "Firma 2",
+        "position_id": null,
+        "required_cargo_id": null,
+        "required_signers_max": null,
+        "required_signers_min": null,
+        "resolver_type": "specific_person",
+        "selection_mode": "auto_all",
+        "signers": [
+          {
+            "person_id": 1,
+            "type": "specific_person"
+          }
+        ],
+        "slot": "firma_2",
+        "step_order": 2,
+        "unit_id": null,
+        "unit_scope_type": "context_exact",
+        "unit_type_id": null
+      }
+    ],
+    "task_item_id": "<normalized>",
+    "template_artifact_id": "<normalized>"
+  },
+  "derived_respuesta": {
+    "status": 200,
+    "body": {
+      "definition_id": 1,
+      "item_mode": "routed",
+      "mode": "derived",
+      "recipient_person_id": 1,
+      "responsible_position_id": 25,
+      "result": "ok",
+      "task_id": "<normalized>",
+      "task_item_id": "<normalized>",
+      "unit_id": 8
+    }
+  },
+  "free_entregable": {
+    "document": {
+      "id": "<normalized>",
+      "origin_unit_id": 8,
+      "owner_person_id": 2,
+      "status": "Pendiente de llenado",
+      "task_item_id": "<normalized>",
+      "title": "Documento <normalized>"
+    },
+    "fill_flows": [
+      {
+        "current_step_order": 1,
+        "document_version_id": "<normalized>",
+        "fill_flow_template_id": "<normalized>",
+        "id": "<normalized>",
+        "status": "pending"
+      }
+    ],
+    "fill_requests": [
+      {
+        "assigned_person_id": 2,
+        "document_fill_flow_id": "<normalized>",
+        "fill_flow_step_id": "<normalized>",
+        "id": "<normalized>",
+        "is_manual": 0,
+        "status": "pending",
+        "step_order": 1
+      },
+      {
+        "assigned_person_id": 3,
+        "document_fill_flow_id": "<normalized>",
+        "fill_flow_step_id": "<normalized>",
+        "id": "<normalized>",
+        "is_manual": 0,
+        "status": "pending",
+        "step_order": 2
+      }
+    ],
+    "task_item": {
+      "assigned_person_id": 3,
+      "created_by_person_id": 3,
+      "end_date": "<normalized>",
+      "id": "<normalized>",
+      "origin_kind": "user_added",
+      "process_definition_template_id": "<normalized>",
+      "responsible_position_id": 25,
+      "sort_order": 1,
+      "source_task_item_id": "<normalized>",
+      "start_date": "<normalized>",
+      "status": "pendiente",
+      "target_person_id": 2,
+      "target_position_id": "<normalized>",
+      "target_unit_id": 8,
+      "task_id": "<normalized>",
+      "template_artifact_id": "<normalized>",
+      "title": "zz char routed libre\n\nEntregable ad-hoc con flujo definido al enviar.",
+      "user_started_at": null
+    },
+    "versions": [
+      {
+        "document_id": "<normalized>",
+        "final_file_path": null,
+        "format": null,
+        "id": "<normalized>",
+        "payload_object_path": null,
+        "status": "Pendiente de llenado",
+        "template_artifact_id": "<normalized>",
+        "version": "0.1",
+        "working_file_path": null
+      }
+    ]
+  },
+  "free_flujo_entrega": {
+    "description": null,
+    "id": "<normalized>",
+    "is_active": 1,
+    "name": "Entrega (definida al enviar)",
+    "process_definition_template_id": "<normalized>",
+    "steps": [
+      {
+        "assigned_person_id": 2,
+        "can_reject": 0,
+        "cargo_id": null,
+        "code": null,
+        "id": "<normalized>",
+        "is_required": 1,
+        "name": null,
+        "position_id": null,
+        "relation_type_id": null,
+        "resolver_type": "specific_person",
+        "selection_mode": "auto_one",
+        "step_order": 1,
+        "unit_id": null,
+        "unit_scope_type": "unit_exact",
+        "unit_type_id": null
+      },
+      {
+        "assigned_person_id": 3,
+        "can_reject": 1,
+        "cargo_id": null,
+        "code": null,
+        "id": "<normalized>",
+        "is_required": 1,
+        "name": null,
+        "position_id": null,
+        "relation_type_id": null,
+        "resolver_type": "specific_person",
+        "selection_mode": "auto_one",
+        "step_order": 2,
+        "unit_id": null,
+        "unit_scope_type": "unit_exact",
+        "unit_type_id": null
+      }
+    ],
+    "task_item_id": "<normalized>",
+    "template_artifact_id": "<normalized>"
+  },
+  "free_flujo_firma": {
+    "description": null,
+    "id": "<normalized>",
+    "is_active": 1,
+    "name": "Firma (definida al enviar)",
+    "process_definition_template_id": "<normalized>",
+    "steps": [
+      {
+        "approval_mode": "and",
+        "assigned_person_id": 1,
+        "code": "firma_1",
+        "id": "<normalized>",
+        "is_required": 1,
+        "name": "Firma 1",
+        "position_id": null,
+        "required_cargo_id": null,
+        "required_signers_max": null,
+        "required_signers_min": null,
+        "resolver_type": "specific_person",
+        "selection_mode": "auto_all",
+        "signers": [
+          {
+            "person_id": 1,
+            "type": "specific_person"
+          }
+        ],
+        "slot": "firma_1",
+        "step_order": 1,
+        "unit_id": null,
+        "unit_scope_type": "context_exact",
+        "unit_type_id": null
+      }
+    ],
+    "task_item_id": "<normalized>",
+    "template_artifact_id": "<normalized>"
+  },
+  "free_respuesta": {
+    "status": 200,
+    "body": {
+      "definition_id": 1,
+      "mode": "free",
+      "recipient_person_id": 2,
+      "responsible_position_id": 25,
+      "result": "ok",
+      "task_id": "<normalized>",
+      "task_item_id": "<normalized>",
+      "term_id": "<normalized>",
+      "unit_id": 8
+    }
+  },
+  "vinculo_competidor": [],
+  "vinculo_routed": {
+    "status": 200,
+    "body": {
+      "definition_id": 1,
+      "deliverables": [
+        {
+          "id": "<normalized>",
+          "item_mode": "routed",
+          "name": "Informe general",
+          "sort_order": 1,
+          "template_artifact_id": "<normalized>"
+        }
+      ],
+      "result": "ok",
+      "task_id": "<normalized>"
+    }
+  }
+}

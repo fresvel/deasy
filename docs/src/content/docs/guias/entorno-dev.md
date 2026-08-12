@@ -56,17 +56,16 @@ Detalles que cuestan tiempo si no se saben:
 
 ## Usuarios de referencia
 
-Los crea el bootstrap (`/setup` → «usar datos de ejemplo»); no hay ningún seed SQL
-alternativo. Ojo con la contraseña del gestor, que **no** sigue el patrón de las otras:
+Los crea el bootstrap (`/setup` → «usar datos de ejemplo»); no hay ningún seed SQL alternativo.
+Son tres: **admin**, **gestor** y **usuario**.
 
-| Rol | Cédula | Contraseña |
-|---|---|---|
-| admin | `1234567890` | `Demo1234!` |
-| gestor | `0987654321` | `Gestor1234!` |
-| usuario | `1122334455` | `Demo1234!` |
+Las cédulas y contraseñas están en `CLAUDE.md`, en la raíz del repositorio — **no aquí, porque
+esta página es pública**. Dos avisos que sí conviene tener a mano:
 
-El router bloquea el espacio de usuario para el admin (`meta: { blockedForAdmin: true }`),
-así que **para probar el dossier o las firmas hay que entrar como gestor o usuario**.
+- La contraseña del **gestor no sigue el patrón** de las otras dos. Es la única excepción y se
+  pierde mucho tiempo con ella.
+- El router **bloquea el espacio de usuario para el admin** (`meta: { blockedForAdmin: true }`),
+  así que para probar el dossier o las firmas hay que entrar como gestor o usuario.
 
 ## Editar esta documentación
 

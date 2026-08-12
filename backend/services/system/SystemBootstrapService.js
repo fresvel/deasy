@@ -273,36 +273,27 @@ const DEFAULT_TEMPLATE_PREFIX = `System/${DEFAULT_TEMPLATE_CODE}/1.0.0/`;
 const DEFAULT_TEMPLATE_SRC_PREFIX = `${DEFAULT_TEMPLATE_PREFIX}template/jinja2/`;
 const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
 
-// meta.yaml generado del artifact instanciado (descriptivo; el contrato de render vive en src/).
-const BASE_META_YAML = `key: "${BASE_SEED_CODE}"
-export_id: "${DEFAULT_TEMPLATE_CODE}"
-seed_code: "${BASE_SEED_CODE}"
-name: "${BASE_SEED_DISPLAY}"
-version: 1.0.0
-storage_version: 1.0.0
-formats:
-  jinja2:
-    path: "template/jinja2"
-origins: []
-workflows:
-  fill:
-    required: true
-    source: "artifact"
-    sync_mode: "artifact_to_db"
-    steps:
-      - order: 1
-        code: "owner_fill"
-        name: "Entrega del responsable"
-        resolver:
-          type: "document_owner"
-          selection_mode: "auto_one"
-        required: true
-        can_reject: false
-  signatures:
-    required: false
-    source: "artifact"
-    steps: []
-`;
+// El artifact base YA NO LLEVA meta.yaml (sub-paso 7 del §0.8; ver plan-maestro-2026-08.md).
+//
+// Aquí vivía `BASE_META_YAML`: un meta.yaml escrito a mano como literal de código que se subía a
+// MinIO junto al seed y que `WorkflowSyncService` proyectaba a `fill_flow_templates`. Era el ÚNICO
+// productor vivo del resolver `document_owner` —nadie lo autoró nunca desde la web— y sembraba un
+// paso de entrega sobre el vínculo del Proceso por defecto, que es `routed` y cuyo bootstrap declara
+// justo lo contrario (ver el punto 6 de `ensureDefaultProcess`). Además se auto-replicaba:
+// `createTemplateArtifactVersion` copia el prefijo de MinIO en binario, así que cada versión nueva
+// heredaba el paso sin pasar por el formulario.
+//
+// ⚠️ VENTANA ABIERTA A PROPÓSITO HASTA EL SUB-PASO 8 — decidida el 2026-08-11, no es un descuido:
+// `template_artifacts.meta_object_key` es NOT NULL y el bootstrap lo sigue rellenando más abajo, así
+// que apunta a un objeto que ya no existe. Los caminos que leen ese meta y NO capturan el error son
+// los dos hooks de `process_definition_templates` (`services/admin/crud/tableHooks.js`, donde está
+// el aviso con lo que se midió que pasa de verdad) y el endpoint explícito
+// `POST /admin/sql/template_artifacts/:id/resync`, que responde 400 «The specified key does not
+// exist». Lo demás aguanta: el reconcile del arranque no reporta error, `sync-status` responde 200
+// con `has_workflow: false`, y clonar una configuración convierte el fallo en aviso no bloqueante.
+// El sub-paso 8 la cierra retirando `meta_object_key` y el `WorkflowSyncService` entero. NO se tapa
+// con un `catch` mudo: los sub-pasos 4 y 5 quitaron exactamente eso a propósito, porque convertía un
+// fallo de MinIO en «esta plantilla no define flujo».
 
 const SEED_CONTENT_TYPES = {
   ".json": "application/json",
@@ -350,7 +341,8 @@ const putSeedFileObject = async (bucket, objectName, absPath) => {
 };
 
 // Publica en MinIO el seed base: (1) el árbol completo al catálogo Seeds/ y (2) el artifact instanciado en
-// System/ (src jinja2 + schema.json + meta.yaml generado + data.yaml desde defaults.yaml). Idempotente: si el
+// System/ (src jinja2 + schema.json + data.yaml desde defaults.yaml). SIN meta.yaml desde el sub-paso 7
+// del §0.8: el flujo se autora en la base, no en un YAML (ver el bloque de arriba). Idempotente: si el
 // main.tex.j2 del artifact ya existe no reescribe (respeta ediciones del admin). Best-effort: un fallo de
 // MinIO no debe abortar el bootstrap (las filas SQL ya quedan registradas y se puede re-publicar).
 export const publishBaseSeedAssets = async () => {
@@ -384,9 +376,9 @@ export const publishBaseSeedAssets = async () => {
       } else if (file.rel.startsWith("src/")) {
         await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}${file.rel.slice("src/".length)}`, file.abs);
       }
-      // workflow.yaml / README.md sólo viven en el catálogo Seeds/.
+      // README.md sólo vive en el catálogo Seeds/ (de ahí lo lee `syncTemplateSeedsFromSource` para
+      // describir la semilla). El artifact instanciado ya no lleva meta.yaml.
     }
-    await putBufferObject(bucket, `${DEFAULT_TEMPLATE_PREFIX}meta.yaml`, Buffer.from(BASE_META_YAML, "utf8"), "text/yaml");
     return { published: true };
   } catch (error) {
     console.warn("publishBaseSeedAssets: no se pudieron publicar los objetos del seed base:", error?.message);
@@ -495,6 +487,8 @@ export const ensureDefaultProcess = async (connection) => {
     [deliverableId]
   );
   if (!artifact) {
+    // ⚠️ `meta_object_key` apunta a un objeto que YA NO SE SUBE (ver el bloque de la ventana, arriba).
+    //    La columna es NOT NULL, así que no se puede dejar vacía; muere entera en el sub-paso 8.
     const availableFormats = { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } };
     const [r] = await connection.query(
       `INSERT INTO template_artifacts

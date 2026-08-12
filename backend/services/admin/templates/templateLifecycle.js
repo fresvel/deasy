@@ -17,15 +17,18 @@
 // _validateAuthoredWorkflows, _materializeDraftFormats, _linkDraftToProcessDefinition,
 // _persistDraftEdit y _persistDraftCreation.
 //
-// COMO SE RESOLVIO LA COMPENSACION, que era lo que bloqueaba el ultimo corte. Aqui NO hay
-// transaccion, asi que habia cuatro variables (createdId, uploadedToMinio, insertedDeliverableId,
+// COMO SE RESOLVIO LA COMPENSACION. Historia en tres actos, porque explica por que hoy es tan corta.
+// Al principio habia cuatro variables (createdId, uploadedToMinio, insertedDeliverableId,
 // insertedLinkId) compartidas entre el `try` y el `catch`, y el `catch` tenia que acordarse de
-// mirarlas en el orden correcto. Ahora CADA PASO REGISTRA SU PROPIO DESHACER en cuanto tiene exito
-// (`registrarDeshacer`), y el `catch` solo desapila. Dos invariantes pasan de "hay que recordarlas"
-// a "se cumplen solas":
-//   · solo se deshace lo que ESTA llamada hizo (un `deliverable` reusado no registra nada);
-//   · se deshace en orden INVERSO al de creacion, obligatorio porque ninguna FK cascadea.
-// La compensacion la posee el paso que causo el efecto. Ver docs/planes/referencia/patrones-diseno.md §3.1.
+// mirarlas en el orden correcto. Despues cada paso registraba su propio deshacer en una pila y el
+// `catch` solo desapilaba. Y desde el sub-paso 3 del §0.8 hay UNA TRANSACCION de verdad alrededor de
+// todo lo que toca la base —artifact/deliverable, vinculo y flujo autorado—, asi que el `ROLLBACK`
+// sustituye a los tres deshacer de base y **solo queda uno**: el prefijo de MinIO, que se sube ANTES
+// y que ninguna transaccion de PostgreSQL puede deshacer.
+//
+// Efecto lateral bueno de la transaccion, y no era el objetivo: la pila NO apilaba en EDICION, asi
+// que una edicion que fallaba al vincular dejaba aplicado el `UPDATE` de `template_artifacts`. Ahora
+// tambien se deshace. Ver docs/planes/referencia/patrones-diseno.md §3.1.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -48,12 +51,21 @@ import { sanitizeStorageSegment } from "../../../utils/templateArchive.js";
 import { normalizeItemMode } from "../kernel/versioning.js";
 import { slugify, humanizeSlug, normalizeNumericId } from "../kernel/primitives.js";
 import {
+  buildWorkflowsDocument,
   buildWorkflowsYaml,
   collectAuthoredWorkflowIssues,
+  normalizeFillSteps,
+  normalizeSignatureSteps,
   parseWorkflowPayload,
   workflowHasSteps
 } from "./workflows.js";
-import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
+import { replaceAuthoredFlowForArtifact, copyAuthoredFlowToArtifact, hasFillStepsForArtifact } from "./flowRows.js";
+import {
+  parseAvailableFormats,
+  findPreferredPdfObject,
+  isArtifactFillWorkflowSyncEnabled,
+  isArtifactSignatureWorkflowSyncEnabled,
+} from "./artifacts.js";
 import {
   MINIO_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
@@ -185,9 +197,9 @@ export default class TemplateLifecycleService {
     retireActiveDefinitionsInSeries,
     createTemplateArtifactVersion,
     getNextStorageVersionForTemplateCode,
-    loadTemplateArtifactMetaDocument,
     retirePriorPublishedSiblings,
     getCargoCodeMap,
+    getUnitTypeNameMap,
     getProcessTargetScope,
     getResolvableCargoIdsByUnit,
     listResolvableCargos,
@@ -204,9 +216,9 @@ export default class TemplateLifecycleService {
     this._retireActiveDefinitionsInSeries = retireActiveDefinitionsInSeries;
     this._createTemplateArtifactVersion = createTemplateArtifactVersion;
     this._getNextStorageVersionForTemplateCode = getNextStorageVersionForTemplateCode;
-    this._loadTemplateArtifactMetaDocument = loadTemplateArtifactMetaDocument;
     this._retirePriorPublishedSiblings = retirePriorPublishedSiblings;
     this._getCargoCodeMap = getCargoCodeMap;
+    this._getUnitTypeNameMap = getUnitTypeNameMap;
     this._getProcessTargetScope = getProcessTargetScope;
     this._getResolvableCargoIdsByUnit = getResolvableCargoIdsByUnit;
     this._listResolvableCargos = listResolvableCargos;
@@ -243,14 +255,7 @@ export default class TemplateLifecycleService {
       // routed NO autora flujo (se define al enviar): no se exige paso de entrega para publicarse.
       // single/replicated sí deben traer su flujo predefinido.
       if (String(artifact.item_mode) !== "routed") {
-        let fillSteps = 0;
-        try {
-          const meta = await this._loadTemplateArtifactMetaDocument(artifact);
-          fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-        } catch {
-          fillSteps = 0;
-        }
-        if (!fillSteps) {
+        if (!(await hasFillStepsForArtifact(connection, artifact.id))) {
           const templateName = artifact.deliverable_name || artifact.display_name || artifact.template_code || `#${artifact.id}`;
           throw new Error(
             `No se puede activar: la plantilla "${templateName}" debe definir al menos un paso de flujo de entrega antes de publicarse.`
@@ -589,18 +594,42 @@ export default class TemplateLifecycleService {
       }
     }
 
-    // Insertar la versión publicada del fork. Identidad/scope/owner viven en el `deliverable` nuevo (newDeliverableId).
-    const [taIns] = await this.pool.query(
-      `INSERT INTO template_artifacts
-         (storage_version, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
-          meta_object_key, content_hash, deliverable_id, is_active)
-       VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, ?, 1)`,
-      [
-        newPrefix, JSON.stringify(remappedFormats || {}),
-        `${newPrefix}schema.json`, `${newPrefix}meta.yaml`, src.content_hash, newDeliverableId
-      ]
-    );
-    const newArtifactId = Number(taIns.insertId);
+    // Insertar la versión publicada del fork Y COPIAR SU FLUJO, en una transacción (sub-paso 6 del
+    // §0.8). El fork copia MinIO en binario igual que el versionado, y le pasaba lo mismo: el flujo
+    // ya no viaja dentro del paquete, así que el entregable bifurcado nacía sin ninguna fila y —al
+    // nacer ya `published`— con el gate de publicación esquivado por la puerta de atrás.
+    //
+    // ⚠️ EL ORDEN IMPORTA, y es la única diferencia real con el versionado: la copia va ANTES de
+    // re-apuntar el vínculo. `copyAuthoredFlowToArtifact` puede leer el flujo del VÍNCULO del origen
+    // (el que sembró el sync), y el `UPDATE` de abajo mueve justo ese vínculo al artifact nuevo:
+    // hecho al revés, la búsqueda por el origen ya no encontraría nada.
+    const connection = await this.pool.getConnection();
+    let newArtifactId;
+    try {
+      await connection.beginTransaction();
+      const [taIns] = await connection.query(
+        `INSERT INTO template_artifacts
+           (storage_version, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
+            meta_object_key, content_hash, deliverable_id, is_active)
+         VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, ?, 1)`,
+        [
+          newPrefix, JSON.stringify(remappedFormats || {}),
+          `${newPrefix}schema.json`, `${newPrefix}meta.yaml`, src.content_hash, newDeliverableId
+        ]
+      );
+      newArtifactId = Number(taIns.insertId);
+      await copyAuthoredFlowToArtifact(connection, {
+        sourceArtifactId: srcId,
+        targetArtifactId: newArtifactId,
+        displayName: src.display_name,
+      });
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
 
     // Re-apuntar el enlace de la config destino (del original al fork).
     await this.pool.query(
@@ -912,17 +941,11 @@ export default class TemplateLifecycleService {
       throw new Error("La configuración borrador no está vinculada a esta plantilla.");
     }
 
-    // Readiness de publicación de la plantilla (≥1 paso de entrega) — lectura MinIO antes de la transacción.
+    // Readiness de publicación de la plantilla (≥1 paso de entrega) — se cuenta sobre la BASE, y antes de
+    // abrir la transacción, igual que cuando la cuenta venía de MinIO (sub-paso 4 del §0.8).
     // routed NO autora flujo (se define al enviar): se omite el readiness de entrega.
     if (String(linkRows[0].item_mode) !== "routed") {
-      let fillSteps = 0;
-      try {
-        const meta = await this._loadTemplateArtifactMetaDocument(template);
-        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-      } catch {
-        fillSteps = 0;
-      }
-      if (!fillSteps) {
+      if (!(await hasFillStepsForArtifact(this.pool, tplId))) {
         throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }
@@ -1235,12 +1258,15 @@ export default class TemplateLifecycleService {
   // Materializa el vinculo de la plantilla con su configuracion de proceso destino.
   //
   // Devuelve el id del vinculo SOLO si lo inserto esta llamada, y null si no habia destino o si el
-  // vinculo ya existia. Quien llama lo necesita asi: en el `catch` solo debe borrar lo que inserto
-  // el, nunca un vinculo que ya estaba.
+  // vinculo ya existia. Eso era, hasta el sub-paso 3 del §0.8, lo que permitia compensarlo a mano
+  // sin borrar un vinculo ajeno; ahora corre dentro de la transaccion de `saveTemplateArtifactDraft`
+  // y lo deshace el `ROLLBACK`. Se sigue devolviendo porque distingue "creado" de "reusado", que es
+  // informacion de la operacion, no andamiaje.
   //
   // El requisito de vinculo obligatorio al crear ya se valido en el fail-fast de mas arriba; en
   // edicion el vinculo previo se conserva. Aqui solo se materializa si llega un destino.
   async _linkDraftToProcessDefinition({
+    connection = this.pool,
     processDefinitionId = null,
     templateArtifactId = null,
     itemMode = "single"
@@ -1255,14 +1281,14 @@ export default class TemplateLifecycleService {
       throw new Error("El proceso destino seleccionado no existe.");
     }
 
-    const [existingLink] = await this.pool.query(
+    const [existingLink] = await connection.query(
       `SELECT id FROM process_definition_templates
        WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
       [definitionId, templateArtifactId]
     );
 
     if (!existingLink?.length) {
-      const [linkInsert] = await this.pool.query(
+      const [linkInsert] = await connection.query(
         `INSERT INTO process_definition_templates
           (process_definition_id, template_artifact_id, sort_order, item_mode)
          VALUES (?, ?, 1, ?)`,
@@ -1273,7 +1299,7 @@ export default class TemplateLifecycleService {
 
     if (itemMode !== "single") {
       // El link ya existía (p. ej. reintento): respeta el modo solicitado si no es el default.
-      await this.pool.query(
+      await connection.query(
         `UPDATE process_definition_templates SET item_mode = ?
          WHERE process_definition_id = ? AND template_artifact_id = ?`,
         [itemMode, definitionId, templateArtifactId]
@@ -1282,12 +1308,13 @@ export default class TemplateLifecycleService {
     return null;
   }
 
-  // Persistencia de una EDICIÓN. No registra compensación: la fila y sus objetos de MinIO ya
-  // existían antes de esta llamada y se conservan pase lo que pase. Devuelve el id, que no cambia.
-  async _persistDraftEdit({ existingArtifact, almacenamiento, identidad }) {
+  // Persistencia de una EDICIÓN. Los objetos de MinIO ya existían antes de esta llamada y se
+  // conservan pase lo que pase; los dos UPDATE los deshace el `ROLLBACK` de la transacción que abre
+  // `saveTemplateArtifactDraft`. Devuelve el id, que no cambia.
+  async _persistDraftEdit({ connection = this.pool, existingArtifact, almacenamiento, identidad }) {
     const artifactId = Number(existingArtifact.id);
 
-    await this.pool.query(
+    await connection.query(
       `UPDATE template_artifacts
        SET base_object_prefix = ?,
            available_formats = ?,
@@ -1307,7 +1334,7 @@ export default class TemplateLifecycleService {
     );
 
     if (existingArtifact?.deliverable_id) {
-      await this.pool.query(
+      await connection.query(
         `UPDATE deliverables
          SET display_name = ?, description = ?, template_scope = ?, template_seed_id = ?, owner_person_id = ?
          WHERE id = ?`,
@@ -1329,14 +1356,15 @@ export default class TemplateLifecycleService {
   // PRIMERO —su dueño es la pareja (proceso, variación) de la configuración destino— y luego se
   // inserta la edición con su `deliverable_id`. Devuelve el id del `template_artifact` nuevo.
   //
-  // Registra su propia compensación, y solo la suya: si el `deliverable` se reusó porque ya existía
-  // con el mismo `code` (pertenece a ediciones anteriores), NO se apunta para borrar.
-  async _persistDraftCreation({ processDefinitionId, almacenamiento, identidad, registrarDeshacer }) {
+  // No compensa nada: corre dentro de la transacción de `saveTemplateArtifactDraft`, así que un
+  // fallo posterior lo deshace el `ROLLBACK`. Y el `deliverable` REUSADO (ya existía con el mismo
+  // `code`, de una edición anterior) no se toca, porque tampoco se inserta.
+  async _persistDraftCreation({ connection = this.pool, processDefinitionId, almacenamiento, identidad }) {
     let ownerProcessId = null;
     let ownerVariationKey = null;
     const destDefId = processDefinitionId ? Number(processDefinitionId) : null;
     if (destDefId) {
-      const [dRows] = await this.pool.query(
+      const [dRows] = await connection.query(
         "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
         [destDefId]
       );
@@ -1344,13 +1372,13 @@ export default class TemplateLifecycleService {
       ownerVariationKey = dRows?.[0]?.variation_key ?? null;
     }
 
-    const [delivExisting] = await this.pool.query(
+    const [delivExisting] = await connection.query(
       "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
       [identidad.templateCode]
     );
     let deliverableId = delivExisting?.[0]?.id;
     if (!deliverableId) {
-      const [delivIns] = await this.pool.query(
+      const [delivIns] = await connection.query(
         `INSERT INTO deliverables
            (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -1366,10 +1394,9 @@ export default class TemplateLifecycleService {
         ]
       );
       deliverableId = delivIns.insertId;
-      registrarDeshacer(() => this.pool.query("DELETE FROM deliverables WHERE id = ?", [deliverableId]));
     }
 
-    const [result] = await this.pool.query(
+    const [result] = await connection.query(
       `INSERT INTO template_artifacts (
         storage_version,
         lifecycle_state,
@@ -1391,10 +1418,105 @@ export default class TemplateLifecycleService {
         deliverableId
       ]
     );
-    const artifactId = result.insertId;
-    registrarDeshacer(() => this.pool.query("DELETE FROM template_artifacts WHERE id = ?", [artifactId]));
+    return result.insertId;
+  }
 
-    return artifactId;
+  // TODO lo que un borrador escribe en la base, en UNA transacción: la edición (`template_artifacts`
+  // + `deliverables`), el vínculo a la configuración destino y el flujo autorado.
+  //
+  // La abre el sub-paso 3 del §0.8 y no es un adorno. Antes había compensación manual con pila de
+  // deshacer, y el flujo nuevo NO se podía escribir así: cuelga del artifact por FK, así que un
+  // fallo posterior dejaba o un artifact sin su flujo o un flujo apuntando a un artifact que la
+  // compensación acababa de borrar. Con `ROLLBACK` los tres efectos son uno solo.
+  //
+  // Efecto lateral bueno, y no era el objetivo: la pila de deshacer NO apilaba en EDICIÓN, así que
+  // una edición que fallaba al vincular dejaba aplicado el `UPDATE` de `template_artifacts`. Ahora
+  // también se deshace.
+  //
+  // Lo que queda FUERA a propósito: la subida a MinIO (ocurre antes y ninguna transacción de
+  // PostgreSQL la revierte; la compensa quien llama) y el sync de flujos (necesita ver el vínculo ya
+  // COMMITEADO, porque va por el pool y atrapa sus propios errores).
+  async _persistDraftToDatabase({
+    isEdit,
+    existingArtifact,
+    almacenamiento,
+    identidad,
+    processDefinitionId,
+    itemMode,
+    workflowsDocument
+  }) {
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const artifactId = isEdit
+        ? await this._persistDraftEdit({ connection, existingArtifact, almacenamiento, identidad })
+        : await this._persistDraftCreation({ connection, processDefinitionId, almacenamiento, identidad });
+
+      // Vínculo a proceso destino. Obligatorio para ejecutores (GestorEjecucionProcesos): su
+      // plantilla debe colgar de un proceso ya definido o de 'default'. Opcional para diseñadores.
+      // El requisito al crear ya se validó en el fail-fast; en edición el vínculo previo se conserva.
+      await this._linkDraftToProcessDefinition({
+        connection,
+        processDefinitionId,
+        templateArtifactId: artifactId,
+        itemMode
+      });
+
+      // ESCRITURA DOBLE: la otra copia del flujo, la que vive EN LA BASE. Sale del mismo
+      // `workflowsDocument` que ya se serializó al `meta.yaml`.
+      if (workflowsDocument && artifactId) {
+        await this._persistAuthoredFlow({
+          connection,
+          artifactId,
+          displayName: identidad.displayName,
+          workflowsDocument
+        });
+      }
+
+      await connection.commit();
+      return artifactId;
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // ESCRITURA DOBLE (sub-paso 3 del §0.8): persiste en la base el flujo AUTORADO, colgado de
+  // `template_artifact_id`. La otra copia —el `meta.yaml`— se sigue emitiendo igual que siempre, y
+  // sale del MISMO `workflowsDocument` que se normaliza aquí: no pueden divergir.
+  //
+  // El comportamiento del runtime NO cambia, y eso es intencionado: el escalón 2 del resolvedor (el
+  // flujo del vínculo, que el sync sigue sembrando) gana al escalón 3. Estas filas son todavía una
+  // copia observable, no la fuente. Los lectores se mudan de uno en uno en los sub-pasos 4 y 5.
+  //
+  // Las DOS decisiones de "¿hay flujo que escribir?" se toman con los MISMOS predicados que usa el
+  // sync sobre el mismo documento (`isArtifact*WorkflowSyncEnabled`), y no con una condición nueva
+  // escrita a mano: si aquí se decidiera distinto, la base y el YAML dirían cosas distintas.
+  async _persistAuthoredFlow({ connection, artifactId, displayName, workflowsDocument }) {
+    const fill = workflowsDocument?.workflows?.fill || {};
+    const signatures = workflowsDocument?.workflows?.signatures || {};
+    const [cargoCodeMap, unitTypeNameMap] = await Promise.all([
+      this._getCargoCodeMap(connection),
+      this._getUnitTypeNameMap(connection)
+    ]);
+    return replaceAuthoredFlowForArtifact(connection, {
+      artifactId,
+      displayName,
+      fillSteps: isArtifactFillWorkflowSyncEnabled(fill)
+        ? normalizeFillSteps(fill, { cargoCodeMap })
+        : [],
+      // `normalizeSignatureSteps` DESCARTA en silencio los firmantes `cargo_in_scope` sin cargo
+      // resoluble y los pasos que se quedan sin ninguno (`workflows.js:9-11`). Se conserva tal cual:
+      // convertirlo en error de autoría sería mejor, pero es otro cambio y §0.8 «Riesgos» le reserva
+      // commit y golden propios. Al escribir con el mismo normalizador que el sync, las dos copias
+      // descartan exactamente lo mismo.
+      signatureSteps: isArtifactSignatureWorkflowSyncEnabled(signatures)
+        ? normalizeSignatureSteps(signatures, { cargoCodeMap, unitTypeNameMap })
+        : []
+    });
   }
 
   // Normaliza la entrada y aplica TODAS las guardas de admision, en bloque y antes de tocar disco o
@@ -1546,8 +1668,15 @@ export default class TemplateLifecycleService {
         })
       : [];
 
-    const workflowsYaml = hasCustomWorkflows
-      ? buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })
+    // ESCRITURA DOBLE (sub-paso 3 del §0.8). El documento se construye UNA vez y se usa dos: aquí se
+    // serializa al `meta.yaml` y, ya en la transacción, el escritor directo normaliza ESTE MISMO
+    // objeto y lo inserta en las tablas de flujo. Que las dos copias salgan del mismo sitio es la
+    // razón por la que no pueden divergir mientras dure el andamiaje.
+    const workflowsDocument = hasCustomWorkflows
+      ? buildWorkflowsDocument({ fillWorkflow, signatureWorkflow })
+      : null;
+    const workflowsYaml = workflowsDocument
+      ? buildWorkflowsYaml(workflowsDocument)
       : ARTIFACT_WORKFLOW_CONTRACT;
     fs.writeFileSync(
       path.join(draftDir, "meta.yaml"),
@@ -1564,7 +1693,7 @@ export default class TemplateLifecycleService {
       "utf8"
     );
 
-    return { contentHash, hasCustomWorkflows, authoringWarnings };
+    return { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument };
   }
 
   async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
@@ -1625,7 +1754,7 @@ export default class TemplateLifecycleService {
 
     const schemaObjectKey = `${baseObjectPrefix}schema.json`;
     const metaObjectKey = `${baseObjectPrefix}meta.yaml`;
-    const { contentHash, hasCustomWorkflows, authoringWarnings } = await this._writeDraftPackage({
+    const { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument } = await this._writeDraftPackage({
       draftDir,
       data,
       availableFormats,
@@ -1636,27 +1765,15 @@ export default class TemplateLifecycleService {
 
     let createdId = isEdit ? Number(existingArtifact.id) : null;
 
-    // Compensación manual: aquí NO hay transacción, así que cada paso que deja rastro registra su
-    // propio deshacer en cuanto ha tenido éxito. Antes esto eran cuatro variables compartidas entre
-    // el `try` y el `catch`, y el `catch` tenía que acordarse de mirarlas en el orden correcto.
-    //
-    // Dos invariantes que la pila garantiza por construcción, y que antes había que sostener a mano:
-    //   · SOLO se deshace lo que ESTA llamada hizo. Un `deliverable` REUSADO (ya existía con el
-    //     mismo `code`, de una versión anterior) no registra nada, así que no se puede borrar.
-    //   · El orden de deshacer es el INVERSO al de creación, que es obligatorio porque ninguna FK
-    //     cascadea (todas NO ACTION): vínculo → artifact → deliverable → MinIO. Se cumple solo por
-    //     desapilar, en vez de por mantener sincronizado el orden del `catch`.
-    //
-    // En EDICIÓN no se compensa nada (los objetos de MinIO pertenecen a un artifact que se conserva),
-    // así que `registrarDeshacer` no apila.
-    const compensaciones = [];
-    const registrarDeshacer = (deshacer) => {
-      if (!isEdit) compensaciones.push(deshacer);
-    };
+    // La ÚNICA compensación que queda. Todo lo que toca la base va en una transacción (más abajo) y
+    // lo deshace el `ROLLBACK`; la subida a MinIO ocurre ANTES y ninguna transacción de PostgreSQL
+    // puede revertirla, así que se deshace a mano. Solo en CREACIÓN: en edición los objetos
+    // pertenecen a un artifact que se conserva y borrar su prefijo sería destruir la versión previa.
+    let prefijoSubidoAMinio = null;
 
     try {
       await uploadDirectoryToMinio(bucket, baseObjectPrefix, draftDir);
-      registrarDeshacer(() => removeMinioPrefix(bucket, baseObjectPrefix));
+      if (!isEdit) prefijoSubidoAMinio = baseObjectPrefix;
 
       // El corte en dos objetos NO es cosmético: es el modelo. El ALMACENAMIENTO vive en
       // `template_artifacts` (una fila por edición) y la IDENTIDAD en `deliverables` (una por
@@ -1668,29 +1785,16 @@ export default class TemplateLifecycleService {
         templateCode, displayName, description, templateScope, templateSeedId, ownerPersonId
       };
 
-      createdId = isEdit
-        ? await this._persistDraftEdit({ existingArtifact, almacenamiento, identidad })
-        : await this._persistDraftCreation({
-            processDefinitionId: data.process_definition_id,
-            almacenamiento,
-            identidad,
-            registrarDeshacer
-          });
-
-      // Vínculo a proceso destino. Obligatorio para ejecutores (GestorEjecucionProcesos):
-      // su plantilla debe colgar de un proceso ya definido o de 'default'. Opcional para diseñadores.
-      // El requisito de vínculo obligatorio para ejecutores al crear ya se validó arriba (fail-fast);
-      // en edición el vínculo previo se conserva. Aquí solo se materializa el vínculo si llega un destino.
-      // Devuelve el id SOLO si lo insertó esta llamada, y `null` si el vínculo ya existía: por eso
-      // se puede registrar el deshacer sin comprobar nada más.
-      const insertedLinkId = await this._linkDraftToProcessDefinition({
+      // Todo lo que va a la base, en UNA transacción (ver `_persistDraftToDatabase`).
+      createdId = await this._persistDraftToDatabase({
+        isEdit,
+        existingArtifact,
+        almacenamiento,
+        identidad,
         processDefinitionId: data.process_definition_id,
-        templateArtifactId: createdId,
-        itemMode: requestedItemMode
+        itemMode: requestedItemMode,
+        workflowsDocument
       });
-      if (insertedLinkId) {
-        registrarDeshacer(() => this.pool.query("DELETE FROM process_definition_templates WHERE id = ?", [insertedLinkId]));
-      }
 
       // Si se definieron flujos y el artifact ya está vinculado a configuraciones de proceso,
       // sincroniza inmediatamente fill/signature flow templates desde el meta.yaml recién subido.
@@ -1739,20 +1843,12 @@ export default class TemplateLifecycleService {
           : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.") + workflowNotice
       };
     } catch (error) {
-      // Desapila: deshacer en orden inverso al de creación es obligatorio porque ninguna FK cascadea
-      // (todas NO ACTION), y aquí sale gratis. Antes sólo se borraba el artifact, así que un fallo
-      // posterior al INSERT en `deliverables` (p. ej. "El proceso destino seleccionado no existe.")
-      // dejaba la fila huérfana; y como el alta busca por `code`, el siguiente intento con el mismo
-      // nombre la REUSABA y se quedaba con `owner_process_id` NULL para siempre.
-      //
-      // Best-effort a propósito: cada compensación traga su error para que un fallo al deshacer no
-      // tape el error ORIGINAL, que es el que se relanza. Si el fallo ocurriera después de
-      // sincronizar los flujos, las plantillas de flujo colgadas del vínculo bloquearían su borrado;
-      // hoy no hay ningún camino que lance ahí, porque el sync atrapa sus propios errores.
-      while (compensaciones.length) {
-        const deshacer = compensaciones.pop();
+      // Lo de la base ya lo deshizo el `ROLLBACK`. Aquí solo queda el prefijo de MinIO, que se subió
+      // antes de abrir la transacción. Best-effort a propósito: si borrarlo falla, el error que se
+      // relanza tiene que seguir siendo el ORIGINAL, no el de la limpieza.
+      if (prefijoSubidoAMinio) {
         try {
-          await deshacer();
+          await removeMinioPrefix(bucket, prefijoSubidoAMinio);
         } catch {
           // Deliberado: se pierde el fallo al compensar, no el original.
         }

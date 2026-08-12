@@ -53,6 +53,7 @@ export default defineConfig({
 			// segun se creen. Hoy solo hay `guias/`.
 			sidebar: [
 				{ label: 'Guías', autogenerate: { directory: 'guias' } },
+				{ label: 'Referencia', autogenerate: { directory: 'referencia' } },
 			],
 			customCss: ['./src/styles/global.css'],
 		}),

@@ -830,7 +830,14 @@ for (const [key, table, id] of REMOVE_GUARD_CASES) {
 // El camino de ÉXITO de la rama transaccional: quitar una plantilla de una configuración borra
 // primero sus flujos derivados (sus FKs NO son ON DELETE CASCADE, así que sin eso el DELETE del
 // vínculo falla). Se fabrica el borrador clonando la configuración sembrada — que se lleva consigo
-// la plantilla y sus flujos — y se destruye al final.
+// la plantilla — y se destruye al final.
+//
+// El flujo de entrega que se va a borrar en cascada LO CREA ESTE CASO, por CRUD, sobre el vínculo
+// clonado. Antes lo ponía el bootstrap: el sync proyectaba `BASE_META_YAML` sobre el vínculo del
+// Proceso por defecto y el clon se lo llevaba. El sub-paso 7 del §0.8 retiró ese productor, así que
+// depender de él dejaba este caso sin sujeto — y `assert.ok(flowsBefore.length)` abortaba ANTES del
+// `DELETE` final, filtrando la configuración 9.9.9 a las suites siguientes. Fabricarlo aquí es
+// además más honesto: el caso ya no depende de qué siembre el arranque.
 test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flujos del vínculo", async () => {
   const token = await tokenFor("admin");
   const source = (await get("/admin/sql/process_definition_versions", { token })).body?.[0];
@@ -852,6 +859,27 @@ test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flu
   const links = (await get("/admin/sql/process_definition_templates", { token })).body || [];
   const link = links.find((row) => row.process_definition_id === cloneId);
   assert.ok(link, "el clon debe traerse la plantilla de la configuración origen");
+
+  const cabecera = await post("/admin/sql/fill_flow_templates", {
+    token,
+    body: {
+      process_definition_template_id: link.id,
+      name: "Flujo de entrega - caracterización cascada",
+      is_active: 1,
+    },
+  });
+  assert.equal(cabecera.status, 200, `la cabecera de flujo debe crearse: ${JSON.stringify(cabecera.body)}`);
+  const paso = await post("/admin/sql/fill_flow_steps", {
+    token,
+    body: {
+      fill_flow_template_id: cabecera.body?.id,
+      step_order: 1,
+      resolver_type: "task_assignee",
+      selection_mode: "auto_one",
+      is_required: 1,
+    },
+  });
+  assert.equal(paso.status, 200, `el paso de flujo debe crearse: ${JSON.stringify(paso.body)}`);
 
   const flowsBefore = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
     .filter((row) => row.process_definition_template_id === link.id);

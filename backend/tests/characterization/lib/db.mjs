@@ -17,12 +17,19 @@
 // EXCEPCIÓN, con nombre y fecha: `flows/zzzzzz_flow_steps_db.test.mjs` (2026-08-10) SÍ asierta
 // contra SQL, y usa el `query` de aquí para hacerlo. No es una grieta en la regla, es su límite:
 // el §0.8 del plan maestro va a mover el flujo del `meta.yaml` a la base, y NO EXISTE contrato HTTP
-// que observe el resultado. `GET /template_artifacts/:id/schema` parece servir y no sirve — devuelve
-// el flujo leyéndolo del `meta.yaml` (`templateArtifact.js:127-181`), o sea justo lo que se va a
-// eliminar—, y lo que hoy se fija por HTTP es el `content_hash` del paquete de MinIO, que INCLUYE
-// ese fichero y por tanto cambiará por construcción sin decir nada del flujo. Cuando lo que hay que
-// caracterizar es el estado que un cambio va a reescribir, y ninguna ruta lo expone, el oráculo es
-// la base. Fuera de ese flow, sigue valiendo la regla.
+// que observe el resultado. `GET /template_artifacts/:id/schema` parece servir y no sirve, y desde el
+// sub-paso 5 sigue sin servir aunque ya lea de la base: devuelve el flujo APLANADO en forma de
+// formulario, colapsa los dos portadores en una sola vista y no dice de cuál leyó, así que no puede
+// observar la escritura doble ni el `can_reject` derivado. Y lo que se fija por HTTP del paquete es
+// el `content_hash` de MinIO, que INCLUYE el `meta.yaml` y cambiará por construcción sin decir nada
+// del flujo. Cuando lo que hay que caracterizar es el estado que un cambio va a reescribir, y
+// ninguna ruta lo expone, el oráculo es la base. Fuera de ese flow, sigue valiendo la regla.
+//
+// SEGUNDA EXCEPCIÓN, con nombre y fecha: `flows/zzzzzzzz_default_process_routed.test.mjs`
+// (2026-08-11), por el mismo límite. Ejercita el camino de usuario del Proceso por defecto
+// (`POST /users/:id/general-tasks`, modo `routed`) y tiene que comprobar DE QUÉ cuelga el flujo que
+// se materializa: `task_item_id` relleno y `template_artifact_id` en `NULL` es *la* propiedad que
+// define el modo, y no hay respuesta HTTP que la diga. El endpoint devuelve ids y nada más.
 
 import pg from "pg";
 
@@ -66,6 +73,14 @@ export async function closeDb() {
 // deliverables.code). El orden respeta las FK (ninguna cascada: todas son NO ACTION):
 //   pasos de flujo → plantillas de flujo → vínculo a configuración → artifact → deliverable.
 //
+// ⚠️ EL FLUJO CUELGA DE DOS SITIOS, Y ESTE LIMPIADOR SOLO CONOCÍA UNO. Desde el sub-paso 3 del §0.8
+// `saveTemplateArtifactDraft` escribe también el flujo AUTORADO colgando de `template_artifact_id`
+// (con el vínculo a NULL), así que borrar solo lo que cuelga del vínculo dejaba filas apuntando al
+// artifact y el `DELETE FROM template_artifacts` reventaba con
+// `fk_fill_flow_templates_artifact`. No se manifestaba como un golden movido sino como TRES suites
+// caídas en su `after()` —`zz_template_lifecycle`, `zzz_artifact_draft` y este mismo flow—, y de
+// rebote como restos acumulados en `plantilla_entrega`. Fue el hallazgo del experimento desechable.
+//
 // Los objetos de MinIO NO se tocan a propósito: el prefijo es determinista
 // (`System/<code>/<storage_version>/`), la subida lo reescribe idéntico en cada corrida y
 // ningún golden lo observa. Borrarlo no aportaría estabilidad y no hay ruta que lo haga.
@@ -106,10 +121,134 @@ export async function cleanupDraftArtifactByCode(code) {
       await query("DELETE FROM process_definition_templates WHERE id = ANY($1::int[])", [linkIds]);
     }
 
+    // El segundo portador: el flujo autorado que cuelga del propio artifact (§0.8, sub-paso 3).
+    await query(
+      `DELETE FROM fill_flow_steps
+        WHERE fill_flow_template_id IN (
+          SELECT id FROM fill_flow_templates WHERE template_artifact_id = ANY($1::int[])
+        )`,
+      [artifactIds],
+    );
+    await query(
+      `DELETE FROM signature_flow_steps
+        WHERE template_id IN (
+          SELECT id FROM signature_flow_templates WHERE template_artifact_id = ANY($1::int[])
+        )`,
+      [artifactIds],
+    );
+    await query("DELETE FROM fill_flow_templates WHERE template_artifact_id = ANY($1::int[])", [artifactIds]);
+    await query("DELETE FROM signature_flow_templates WHERE template_artifact_id = ANY($1::int[])", [artifactIds]);
+
     await query("DELETE FROM template_artifacts WHERE id = ANY($1::int[])", [artifactIds]);
   }
 
   await query("DELETE FROM deliverables WHERE code = $1", [code]);
+}
+
+// --- Tareas ad-hoc del Proceso por defecto: borrar el GRAFO entero -------------------------------
+//
+// Lo usa `flows/zzzzzzzz_default_process_routed.test.mjs`, que ejercita el camino de usuario
+// `POST /users/:id/general-tasks`. Ese endpoint escribe en NUEVE tablas dentro de una sola
+// transacción (terms, tasks, task_items, las cuatro de flujo de runtime, documents,
+// document_versions, document_fill_flows, fill_requests) y **no existe ninguna ruta HTTP que
+// deshaga nada de eso**: el CRUD de admin no expone `terms` ni `document_fill_flows`, y el borrado
+// de un `task_item` chocaría con las FK de `documents` (todas NO ACTION salvo dos).
+//
+// Se entra por el TÍTULO del entregable en vez de por ids, para que el limpiador valga también como
+// guardia de idempotencia en el `before`: si una corrida anterior murió a medias, los restos se
+// localizan sin recordar ningún id. De los entregables se sube a sus tareas y se borra la tarea
+// COMPLETA — el modo `derived` cuelga su entregable de la tarea que creó el modo `free`, así que
+// borrar por tarea cubre los dos de una vez.
+//
+// El orden respeta las FK de abajo arriba. Las dos cascadas que sí existen
+// (`fill_flow_templates.task_item_id` y su gemela de firma) se borran igualmente a mano: dependen de
+// que el `DELETE` de `task_items` llegue a ejecutarse, y ese es justo el que revienta si algo quedó
+// colgando.
+export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
+  const taskRows = await query(
+    "SELECT DISTINCT task_id AS id FROM task_items WHERE title LIKE $1",
+    [`${prefix}%`],
+  );
+  const taskIds = taskRows.map((row) => Number(row.id));
+  if (!taskIds.length) return;
+
+  const itemRows = await query("SELECT id FROM task_items WHERE task_id = ANY($1::int[])", [taskIds]);
+  const itemIds = itemRows.map((row) => Number(row.id));
+
+  const documentRows = itemIds.length
+    ? await query("SELECT id FROM documents WHERE task_item_id = ANY($1::int[])", [itemIds])
+    : [];
+  const documentIds = documentRows.map((row) => Number(row.id));
+
+  const versionRows = documentIds.length
+    ? await query("SELECT id FROM document_versions WHERE document_id = ANY($1::int[])", [documentIds])
+    : [];
+  const versionIds = versionRows.map((row) => Number(row.id));
+
+  if (versionIds.length) {
+    await query(
+      `DELETE FROM fill_requests
+        WHERE document_fill_flow_id IN (
+          SELECT id FROM document_fill_flows WHERE document_version_id = ANY($1::int[])
+        )`,
+      [versionIds],
+    );
+    await query("DELETE FROM document_fill_flows WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    // Firma: hoy este camino no llega a instanciarla (hace falta subir y aprobar), pero el borrado
+    // va igual — un teardown que solo funciona mientras el flujo no avance no es un teardown.
+    await query(
+      `DELETE FROM signature_requests
+        WHERE instance_id IN (
+          SELECT id FROM signature_flow_instances WHERE document_version_id = ANY($1::int[])
+        )`,
+      [versionIds],
+    );
+    await query("DELETE FROM signature_flow_instances WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_signatures WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_workflow_observations WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_attachments WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_versions WHERE id = ANY($1::int[])", [versionIds]);
+  }
+  if (documentIds.length) {
+    await query("DELETE FROM documents WHERE id = ANY($1::int[])", [documentIds]);
+  }
+
+  if (itemIds.length) {
+    await query(
+      `DELETE FROM fill_flow_steps
+        WHERE fill_flow_template_id IN (
+          SELECT id FROM fill_flow_templates WHERE task_item_id = ANY($1::int[])
+        )`,
+      [itemIds],
+    );
+    await query(
+      `DELETE FROM signature_flow_steps
+        WHERE template_id IN (
+          SELECT id FROM signature_flow_templates WHERE task_item_id = ANY($1::int[])
+        )`,
+      [itemIds],
+    );
+    await query("DELETE FROM fill_flow_templates WHERE task_item_id = ANY($1::int[])", [itemIds]);
+    await query("DELETE FROM signature_flow_templates WHERE task_item_id = ANY($1::int[])", [itemIds]);
+    await query("DELETE FROM task_item_handovers WHERE task_item_id = ANY($1::int[])", [itemIds]);
+    await query("DELETE FROM task_items WHERE id = ANY($1::int[])", [itemIds]);
+  }
+
+  const termRows = await query("SELECT DISTINCT term_id AS id FROM tasks WHERE id = ANY($1::int[])", [taskIds]);
+  const termIds = termRows.map((row) => Number(row.id)).filter(Boolean);
+
+  await query("DELETE FROM task_assignments WHERE task_id = ANY($1::int[])", [taskIds]);
+  await query("DELETE FROM tasks WHERE id = ANY($1::int[])", [taskIds]);
+
+  // El periodo Custom lo crea la tarea libre y es suyo (`terms.name` es UNIQUE global y lleva un
+  // sufijo con el reloj). Aun así se comprueba que no lo use nadie más: si el `NOT EXISTS` sobra,
+  // no cuesta nada; si algún día no sobra, evita un teardown que borra la fixture de otro.
+  if (termIds.length) {
+    await query(
+      "DELETE FROM terms WHERE id = ANY($1::int[]) AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.term_id = terms.id)",
+      [termIds],
+    );
+  }
 }
 
 // ¿Sobrevive una fila `deliverables` con este `code`? Se usa para FIJAR el defecto de

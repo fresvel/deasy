@@ -1,0 +1,130 @@
+{
+  "schema_fixture_sembrada_por_sync": {
+    "artifact_id": 1,
+    "template_code": "tpl_informe_general",
+    "display_name": "Informe general",
+    "fill_workflow": {
+      "required": true,
+      "steps": []
+    },
+    "signature_workflow": {
+      "required": false,
+      "steps": []
+    }
+  },
+  "schema_flujo_autorado": {
+    "template_code": "draft_zzzzzzz-char-relectura-de-flujo",
+    "display_name": "zzzzzzz char relectura de flujo",
+    "fill_workflow": {
+      "required": true,
+      "steps": [
+        {
+          "order": 1,
+          "code": "",
+          "name": "Entrega del responsable",
+          "resolver_type": "task_assignee",
+          "selection_mode": "auto_one",
+          "cargo_id": null,
+          "cargo_code": "",
+          "unit_scope_type": "context_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "person_id": null,
+          "position_id": null,
+          "field_refs": [],
+          "required": true
+        },
+        {
+          "order": 2,
+          "code": "",
+          "name": "Revision por cargo",
+          "resolver_type": "cargo_in_scope",
+          "selection_mode": "auto_one",
+          "cargo_id": 2,
+          "cargo_code": "",
+          "unit_scope_type": "unit_exact",
+          "unit_id": 8,
+          "unit_type_id": null,
+          "person_id": null,
+          "position_id": null,
+          "field_refs": [],
+          "required": true
+        },
+        {
+          "order": 3,
+          "code": "",
+          "name": "Visto por cargo en contexto",
+          "resolver_type": "cargo_in_scope",
+          "selection_mode": "auto_all",
+          "cargo_id": 2,
+          "cargo_code": "",
+          "unit_scope_type": "context_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "person_id": null,
+          "position_id": null,
+          "field_refs": [],
+          "required": false
+        }
+      ]
+    },
+    "signature_workflow": {
+      "required": true,
+      "steps": [
+        {
+          "order": 1,
+          "code": "firma_cargo",
+          "name": "Firma por cargo",
+          "approval_mode": "and",
+          "required_signers_min": 1,
+          "required": true,
+          "signers": [
+            {
+              "resolver_type": "cargo_in_scope",
+              "selection_mode": "auto_all",
+              "cargo_id": 2,
+              "cargo_code": "",
+              "unit_scope_type": "unit_exact",
+              "unit_id": 8,
+              "unit_type_id": null,
+              "person_id": null,
+              "position_id": null
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "code": "firma_conjunta",
+          "name": "Firma conjunta",
+          "approval_mode": "at_least",
+          "required_signers_min": 1,
+          "required": false,
+          "signers": [
+            {
+              "resolver_type": "cargo_in_scope",
+              "selection_mode": "auto_all",
+              "cargo_id": 2,
+              "cargo_code": "",
+              "unit_scope_type": "unit_exact",
+              "unit_id": 8,
+              "unit_type_id": null,
+              "person_id": null,
+              "position_id": null
+            },
+            {
+              "resolver_type": "cargo_in_scope",
+              "selection_mode": "auto_one",
+              "cargo_id": 2,
+              "cargo_code": "",
+              "unit_scope_type": "context_exact",
+              "unit_id": null,
+              "unit_type_id": null,
+              "person_id": null,
+              "position_id": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

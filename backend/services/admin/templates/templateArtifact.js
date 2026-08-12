@@ -17,6 +17,7 @@ import {
   walkFiles,
 } from "../kernel/storage.js";
 import { parseAvailableFormats, parseYamlDocument } from "./artifacts.js";
+import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -120,65 +121,69 @@ export default class TemplateArtifactService {
       required: requiredSet.has(def?.["x-deasy-data-key"] || key),
     }));
 
-    // Lee los workflows (fill/signatures) del meta.yaml en formato editable por la web.
-    let fillWorkflow = { required: true, steps: [] };
-    let signatureWorkflow = { required: false, steps: [] };
-    try {
-      const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-      const fill = meta?.workflows?.fill || {};
-      fillWorkflow = {
-        required: fill?.required !== false,
-        steps: (Array.isArray(fill?.steps) ? fill.steps : []).map((s, i) => ({
+    // Lee los workflows (fill/signatures) DE LA BASE en formato editable por la web.
+    //
+    // Sub-paso 5 del §0.8: antes se reconstruían desde el `meta.yaml` de MinIO, envueltos en un
+    // `catch {}` mudo que devolvía «esta plantilla no define flujo» ante cualquier fallo. Ese catch
+    // NO vuelve: aquí un flujo vacío inventado no es un aviso cosmético, es lo que el editor carga y
+    // lo que el siguiente guardado escribe — o sea, el borrado del flujo. Un error de base sube.
+    //
+    // `readAuthoredFlowForArtifact` devuelve la MISMA estructura que `buildWorkflowsDocument`
+    // (`workflows.js`), que es la que este aplanado ya consumía: el mapeo de abajo no cambia, y por
+    // eso la respuesta del endpoint sigue siendo equivalente campo a campo. Verificado contra la
+    // salida capturada antes del cambio.
+    const workflows = await readAuthoredFlowForArtifact(this.pool, artifact.id);
+    const fill = workflows?.fill || {};
+    const fillWorkflow = {
+      required: fill?.required !== false,
+      steps: (Array.isArray(fill?.steps) ? fill.steps : []).map((s, i) => ({
+        order: Number(s?.order) || i + 1,
+        code: s?.code || "",
+        name: s?.name || "",
+        resolver_type: s?.resolver?.type || "task_assignee",
+        selection_mode: s?.resolver?.selection_mode || "auto_one",
+        cargo_id: s?.resolver?.cargo_id || null,
+        cargo_code: s?.resolver?.cargo_code || "",
+        unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
+        unit_id: s?.resolver?.unit_id || null,
+        unit_type_id: s?.resolver?.unit_type_id || null,
+        person_id: s?.resolver?.person_id || null,
+        position_id: s?.resolver?.position_id || null,
+        field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
+        required: s?.required !== false,
+      })),
+    };
+    const sig = workflows?.signatures || {};
+    // Aplana un resolutor a los campos que usa el formulario web de firmante.
+    const flattenSigner = (resolver = {}) => ({
+      resolver_type: resolver?.type || "cargo_in_scope",
+      selection_mode: resolver?.selection_mode || "auto_all",
+      cargo_id: resolver?.cargo_id || null,
+      cargo_code: resolver?.cargo_code || "",
+      unit_scope_type: resolver?.unit_scope_type || "context_exact",
+      unit_id: resolver?.unit_id || null,
+      unit_type_id: resolver?.unit_type_id || null,
+      person_id: resolver?.person_id || null,
+      position_id: resolver?.position_id || null,
+    });
+    const signatureWorkflow = {
+      required: sig?.required === true,
+      steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => {
+        // Multi-firmante: `signers: [...]`. Back-compat: un paso con un único `resolver`.
+        const rawSigners = Array.isArray(s?.signers) && s.signers.length
+          ? s.signers
+          : (s?.resolver ? [s.resolver] : []);
+        return {
           order: Number(s?.order) || i + 1,
           code: s?.code || "",
           name: s?.name || "",
-          resolver_type: s?.resolver?.type || "task_assignee",
-          selection_mode: s?.resolver?.selection_mode || "auto_one",
-          cargo_id: s?.resolver?.cargo_id || null,
-          cargo_code: s?.resolver?.cargo_code || "",
-          unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
-          unit_id: s?.resolver?.unit_id || null,
-          unit_type_id: s?.resolver?.unit_type_id || null,
-          person_id: s?.resolver?.person_id || null,
-          position_id: s?.resolver?.position_id || null,
-          field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
+          approval_mode: s?.approval_mode || "and",
+          required_signers_min: s?.required_signers_min || 1,
           required: s?.required !== false,
-        })),
-      };
-      const sig = meta?.workflows?.signatures || {};
-      // Aplana un resolutor del meta a los campos que usa el formulario web de firmante.
-      const flattenSigner = (resolver = {}) => ({
-        resolver_type: resolver?.type || "cargo_in_scope",
-        selection_mode: resolver?.selection_mode || "auto_all",
-        cargo_id: resolver?.cargo_id || null,
-        cargo_code: resolver?.cargo_code || "",
-        unit_scope_type: resolver?.unit_scope_type || "context_exact",
-        unit_id: resolver?.unit_id || null,
-        unit_type_id: resolver?.unit_type_id || null,
-        person_id: resolver?.person_id || null,
-        position_id: resolver?.position_id || null,
-      });
-      signatureWorkflow = {
-        required: sig?.required === true,
-        steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => {
-          // Multi-firmante: `signers: [...]`. Back-compat: meta antigua con un único `resolver`.
-          const rawSigners = Array.isArray(s?.signers) && s.signers.length
-            ? s.signers
-            : (s?.resolver ? [s.resolver] : []);
-          return {
-            order: Number(s?.order) || i + 1,
-            code: s?.code || "",
-            name: s?.name || "",
-            approval_mode: s?.approval_mode || "and",
-            required_signers_min: s?.required_signers_min || 1,
-            required: s?.required !== false,
-            signers: rawSigners.map(flattenSigner),
-          };
-        }),
-      };
-    } catch {
-      // sin meta legible → flujos vacíos por defecto
-    }
+          signers: rawSigners.map(flattenSigner),
+        };
+      }),
+    };
 
     return {
       artifact_id: Number(artifactId),
@@ -205,8 +210,9 @@ export default class TemplateArtifactService {
 
 
   // Activa/desactiva una plantilla. is_active es el único estado del ciclo de vida (Activo/Inactivo).
-  // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega definido en su meta.yaml
+  // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega EN LA BASE
   // (regla: una plantilla de proceso no se usa sin flujo de entrega). La firma puede ser ad-hoc.
+  // Sub-paso 4 del §0.8: antes se contaba sobre el `meta.yaml` de MinIO — ver `hasFillStepsForArtifact`.
   async setTemplateArtifactActive(artifactId, active) {
     this.ensurePool();
     const nextActive = active ? 1 : 0;
@@ -219,14 +225,7 @@ export default class TemplateArtifactService {
       return { artifact_id: Number(artifactId), is_active: nextActive, changed: false };
     }
     if (nextActive === 1 && !(await this.isArtifactRoutedOnly(Number(artifactId)))) {
-      let fillSteps = 0;
-      try {
-        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-      } catch {
-        fillSteps = 0;
-      }
-      if (!fillSteps) {
+      if (!(await hasFillStepsForArtifact(this.pool, artifact.id))) {
         throw new Error("No se puede activar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }
@@ -273,14 +272,7 @@ export default class TemplateArtifactService {
     }
     // routed NO autora flujo (se define al enviar): se omite el readiness si la plantilla es routed-only.
     if (!(await this.isArtifactRoutedOnly(id))) {
-      let fillSteps = 0;
-      try {
-        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-      } catch {
-        fillSteps = 0;
-      }
-      if (!fillSteps) {
+      if (!(await hasFillStepsForArtifact(this.pool, artifact.id))) {
         throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }
@@ -333,6 +325,12 @@ export default class TemplateArtifactService {
   // Crea una nueva versión (storage_version semver) clonando un artifact existente. Nace inactiva
   // (is_active=0): el gestor la activa cuando esté lista. El nivel de cambio (patch/minor/major) lo elige
   // quien crea la versión.
+  //
+  // CLONAR ES COPIAR BYTES **Y FILAS** (sub-paso 6 del §0.8). Los objetos de MinIO se copian en
+  // binario; el FLUJO ya no vive ahí, vive en la base, así que hay que copiarlo aparte o la versión
+  // nace sin flujo. Medido antes del cambio: publicarla respondía 400 «la plantilla debe definir al
+  // menos un paso de flujo de entrega». Ver `copyAuthoredFlowToArtifact` para qué cabecera se copia
+  // (la que el editor mostraría para el padre) y cuál NO (la de runtime, que es de un envío concreto).
   async createTemplateArtifactVersion(artifactId, bumpLevel = "minor") {
     this.ensurePool();
     const artifact = await this._getByKeys("template_artifacts", { id: Number(artifactId) });
@@ -344,8 +342,14 @@ export default class TemplateArtifactService {
     const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode, bumpLevel);
     // El entregable se identifica por código (siempre existe tras backfill/creación). Robusto aunque getByKeys
     // no traiga deliverable_id (la columna no está en la config de sqlTables).
-    const [delivRows] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [templateCode]);
+    const [delivRows] = await this.pool.query(
+      "SELECT id, display_name FROM deliverables WHERE code = ? LIMIT 1",
+      [templateCode]
+    );
     const deliverableId = delivRows?.[0]?.id || null;
+    // Solo para el `name` de las cabeceras de flujo, que `replaceAuthoredFlowForArtifact` compone.
+    // Es el mismo entregable, así que sale el mismo rótulo que llevaba el padre.
+    const displayName = String(delivRows?.[0]?.display_name || artifact.display_name || templateCode);
     const oldVersion = String(artifact.storage_version || "");
     const oldPrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
     const versionSuffixRe = new RegExp(`${oldVersion.replace(/[.\\]/g, "\\$&")}/?$`);
@@ -378,25 +382,48 @@ export default class TemplateArtifactService {
       }
     }
     // Identidad/scope/owner viven en `deliverables`; la versión solo hereda deliverable_id (mismo entregable).
-    const [result] = await this.pool.query(
-      `INSERT INTO template_artifacts (
-        storage_version, lifecycle_state, base_object_prefix,
-        available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, deliverable_id, is_active
-      ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
-      [
-        nextStorageVersion,
-        newPrefix,
-        JSON.stringify(remappedFormats || {}),
-        newSchemaKey,
-        newMetaKey,
-        artifact.content_hash,
-        Number(artifactId),
-        deliverableId,
-      ]
-    );
+    //
+    // LA VERSIÓN Y SU FLUJO, EN UNA TRANSACCIÓN, por el mismo motivo que `_persistDraftToDatabase`
+    // (sub-paso 3): el flujo cuelga del artifact por FK, así que sin ella un fallo al copiarlo
+    // dejaría una versión ya insertada y SIN FLUJO — que es exactamente el estado inpublicable que
+    // este sub-paso viene a cerrar, y que nadie vería hasta intentar publicarla. La copia de MinIO
+    // se queda FUERA a propósito: ocurre antes y ningún `ROLLBACK` la revierte.
+    const connection = await this.pool.getConnection();
+    let newArtifactId;
+    try {
+      await connection.beginTransaction();
+      const [result] = await connection.query(
+        `INSERT INTO template_artifacts (
+          storage_version, lifecycle_state, base_object_prefix,
+          available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, deliverable_id, is_active
+        ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
+        [
+          nextStorageVersion,
+          newPrefix,
+          JSON.stringify(remappedFormats || {}),
+          newSchemaKey,
+          newMetaKey,
+          artifact.content_hash,
+          Number(artifactId),
+          deliverableId,
+        ]
+      );
+      newArtifactId = Number(result.insertId);
+      await copyAuthoredFlowToArtifact(connection, {
+        sourceArtifactId: Number(artifactId),
+        targetArtifactId: newArtifactId,
+        displayName,
+      });
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
 
     return {
-      id: Number(result.insertId),
+      id: newArtifactId,
       template_code: templateCode,
       storage_version: nextStorageVersion,
       base_object_prefix: newPrefix,

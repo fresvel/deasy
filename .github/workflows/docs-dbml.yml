@@ -1,0 +1,51 @@
+# El modelo de datos publicado tiene que coincidir con el esquema.
+#
+# ── Por qué existe ────────────────────────────────────────────────────────────────────────
+# `docs/02-dominio-datos/consolidado.dbml` decía en su cabecera "generado por introspección de
+# information_schema"... pero NO había ningún generador en el repositorio. Se generó una vez, en
+# julio de 2026, y desde entonces se mantuvo a mano. Resultado medido el 2026-08-11: tres columnas
+# de deriva, y DOS de ellas introducidas el día anterior por el frente 0.8. El diagrama se
+# desactualiza al ritmo al que se mueve el esquema, que es todos los días.
+#
+# Esta puerta lo impide: regenera y compara. Si alguien toca `postgres_schema.sql` sin regenerar,
+# esto se pone rojo con el comando exacto que hay que ejecutar.
+#
+# ── Efecto secundario que vale tanto como la puerta ───────────────────────────────────────
+# Para generar hay que APLICAR el esquema a un PostgreSQL de verdad, con ON_ERROR_STOP=1. Es la
+# primera vez que algo valida `postgres_schema.sql`: `node --check` no mira SQL, `check:imports`
+# tampoco, y el backend arranca igual porque para él es una cadena de texto. Así sobrevivieron
+# meses cuatro `UPDATE ... INNER JOIN ... SET` de sintaxis MySQL que PostgreSQL rechaza.
+name: docs-dbml
+
+on:
+  pull_request:
+    paths:
+      - 'backend/database/postgres_schema.sql'
+      - 'docs/02-dominio-datos/**'
+      - 'docs/public/diagramas/**'
+      - 'scripts/docs/**'
+      - '.github/workflows/docs-dbml.yml'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'backend/database/postgres_schema.sql'
+      - 'docs/02-dominio-datos/**'
+      - 'docs/public/diagramas/**'
+      - 'scripts/docs/**'
+      - '.github/workflows/docs-dbml.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  modelo-al-dia:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # El script se levanta su propio PostgreSQL con `docker run`, así que aquí no hace falta
+      # ningún `services:`. Es a propósito: el generador tiene que funcionar igual en la máquina
+      # de quien desarrolla que en el runner, sin depender de una pila de dev.
+      - name: Regenerar el modelo y comprobar que no hay deriva
+        run: bash scripts/docs/gen-dbml.sh --check

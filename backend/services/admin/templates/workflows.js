@@ -150,10 +150,19 @@ export const buildStepResolver = (step) => {
   return resolver;
 };
 
-// Genera el bloque `workflows:` (fill + signatures) + `dependencies:` a partir de los flujos definidos en
-// el editor web. Construye un objeto y lo serializa con yaml.dump (maneja saltos de línea/comillas/caracteres
-// especiales de forma segura). Produce la misma estructura que consumen normalizeFillSteps/normalizeSignatureSteps.
-export const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
+// Construye el DOCUMENTO `workflows:` (fill + signatures) + `dependencies:` a partir de los flujos
+// definidos en el editor web. Devuelve el objeto, sin serializar.
+//
+// ⚠️ ESTÁ PARTIDO EN DOS A PROPÓSITO (sub-paso 3 del §0.8 del plan maestro). Durante la ESCRITURA
+// DOBLE el flujo se guarda en dos sitios —las filas de `fill_flow_*`/`signature_flow_*` y el
+// `meta.yaml` de MinIO— y la garantía de que no pueden divergir es que **las dos copias salen de
+// ESTE MISMO OBJETO**: quien las escribe llama una vez a `buildWorkflowsDocument` y le pasa el
+// resultado a `buildWorkflowsYaml` (serialización) y al escritor directo (normalización + INSERT).
+// Si alguien vuelve a construir el documento por su cuenta, la garantía se pierde.
+//
+// La estructura es la que consumen normalizeFillSteps/normalizeSignatureSteps, que es lo que hace
+// que el escritor directo y el sync (que la lee de vuelta del YAML) produzcan las mismas filas.
+export const buildWorkflowsDocument = ({ fillWorkflow, signatureWorkflow } = {}) => {
   // ── Fill ──
   const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
   const fill = {
@@ -204,10 +213,17 @@ export const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => 
     return out;
   });
 
-  const doc = {
+  return {
     workflows: { fill, signatures },
     dependencies: { templates: [], data: [] },
   };
+};
+
+// Serializa el documento con yaml.dump (maneja saltos de línea/comillas/caracteres especiales de
+// forma segura). Admite el documento ya construido —el caso de la escritura doble, para que las dos
+// copias salgan del mismo objeto— o los flujos crudos, por comodidad de quien solo quiere el YAML.
+export const buildWorkflowsYaml = (input = {}) => {
+  const doc = input?.workflows ? input : buildWorkflowsDocument(input);
   return yaml.dump(doc, { lineWidth: -1, noRefs: true });
 };
 
@@ -233,6 +249,13 @@ export const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } =
       const stepOrder = Number(step.order) || index + 1;
       return {
         stepOrder,
+        // El código y el NOMBRE del paso, leídos igual que en `normalizeSignatureSteps` (que los
+        // propaga desde siempre). Hasta el sub-paso 3 del §0.8 este normalizador los descartaba: el
+        // nombre que el usuario escribe en cada paso de entrega viajaba en el `meta.yaml` y se
+        // perdía al proyectarlo a la base. Con las columnas del 1-bis puestas pero sin esto, la
+        // inversión de la dirección del flujo lo habría perdido para siempre.
+        code: String(step?.code || "").trim() || null,
+        name: String(step?.name || "").trim() || null,
         resolverType: FILL_RESOLVER_TYPES.has(resolverType) ? resolverType : "manual_pick",
         assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
         unitScopeType: FILL_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "unit_exact",

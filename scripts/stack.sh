@@ -60,11 +60,11 @@ QUE la levantas.
   bash scripts/stack.sh b down            <- OBLIGATORIO al terminar (salvo la A)
 
 Puertos (A no desplaza; B, C y D suman 100, 200 y 300):
-        proxy  https  postgres  minio  consola  signer  rabbit  rabbit-ui  docs
-  A      8088   8443      5432   9000     9001    4000    5672      15672   4321
-  B      8188   8543      5532   9100     9101    4100    5772      15772   4421
-  C      8288   8643      5632   9200     9201    4200    5872      15872   4521
-  D      8388   8743      5732   9300     9301    4300    5972      15972   4621
+        proxy  https  postgres  minio  consola  signer  rabbit  rabbit-ui  docs  azimutt
+  A      8088   8443      5432   9000     9001    4000    5672      15672   4321   4700
+  B      8188   8543      5532   9100     9101    4100    5772      15772   4421   4800
+  C      8288   8643      5632   9200     9201    4200    5872      15872   4521   4900
+  D      8388   8743      5732   9300     9301    4300    5972      15972   4621   5000
 EOF
 }
 
@@ -155,6 +155,7 @@ export MINIO_API_PORT=$((9000 + OFFSET))
 export MINIO_CONSOLE_PORT=$((9001 + OFFSET))
 export SIGNER_PORT=$((4000 + OFFSET))
 export DOCS_PORT=$((4321 + OFFSET))
+export AZIMUTT_PORT=$((4700 + OFFSET))
 export RABBITMQ_PORT=$((5672 + OFFSET))
 export RABBITMQ_MGMT_PORT=$((15672 + OFFSET))
 export ORIGIN1="https://localhost:${HTTPS_PORT}"
