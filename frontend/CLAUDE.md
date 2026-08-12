@@ -110,6 +110,40 @@ escala invertida (`rounded-lg` acabó siendo mayor que `rounded-xl`).
 Nombres prohibidos salvo que sepas exactamente lo que haces: `--color-*`, `--radius-*`, `--font-*`,
 `--spacing-*`, `--shadow-*`, `--text-*`, `--breakpoint-*`, `--leading-*`, `--tracking-*`.
 
+Y **ya ha pasado dos veces más**, con las dos mitades del mismo mecanismo:
+
+- `--shadow-raised/-modal/-drawer` ocupaban `--shadow-*` **sin estar en `@theme`**: ni generaban
+  `shadow-raised` ni evitaban la colisión. Renombrados a `--brand-elev-*` en F2.2.
+- `--font-weight-medium/semibold` vivían en un `:root` **sin capa** y **pisaban los de Tailwind**. El
+  CSS construido declaraba `--font-weight-medium` dos veces y ganaba el del proyecto: cambiarlo a 550
+  habría repintado **cada `font-medium` de la app**. Retirados en F2.3; tres usos pasaron al número.
+
+### 2.7 Un token con alfa se escribe `rgba(var(--x), 0.5)`, nunca `rgb(var(--x)/0.5)`
+
+El triplete de un token va separado por comas, y **la sintaxis heredada por comas no admite la barra
+del alfa**. Lo malo es cómo falla: Tailwind emite la regla tal cual —un `grep` sobre el CSS
+construido la encuentra— y **el navegador la descarta**. El color cae a `currentColor` sin un aviso
+en ningún sitio.
+
+Lo mismo dentro de un `shadow-[…]`: `shadow-[0_6px_16px_rgb(var(--x)/0.04)]` deja el elemento en
+`box-shadow: none`. **Una sombra con token va en `box-shadow:` a pelo.**
+
+> Comprobación que sí vale: aplica el valor con `style=` en la consola y lee el computado. Si
+> devuelve el color heredado, el valor no vale. **Mirar el CSS servido NO sirve** — la regla está ahí.
+
+### 2.8 Antes de fiarte de `@theme`, míralo en el CSS construido
+
+Tailwind v4 hace *tree-shaking* de `@theme`: **un registro que nadie usa no se emite**. Antes de F2.1,
+9 de los 16 registros no llegaban al CSS construido, y eso es indistinguible de no haberlos escrito.
+
+```bash
+grep -o -- '--color-state-warning:' frontend/dist/assets/*.css   # la unica prueba
+```
+
+Y al revés: **una clase inyectada en runtime no prueba un valor arbitrario**, porque Tailwind genera
+esas utilidades escaneando el *fuente*. Para probar un `X-[…]`, mira el CSS construido; para probar
+una clase de módulo, inyectarla va bien.
+
 ---
 
 ## 3. Accesibilidad: los mínimos son mínimos
@@ -213,11 +247,13 @@ tres colores). Usa `var(--focus-ring)` y punto.
 
 ### 5.4 La elevación es una escala de tres, no un valor por componente
 
-`--brand-shadow` (tarjetas) → `--shadow-raised` → `--shadow-modal`. Si necesitas una sombra que no
-está, casi seguro es que el componente pertenece a un nivel que ya existe.
+`--brand-elev-1` (tarjetas) → `--brand-elev-2` → `--brand-elev-3`, más `--brand-elev-3-left` para el
+panel lateral (mismo nivel, otra dirección). Si necesitas una sombra que no está, casi seguro es que
+el componente pertenece a un nivel que ya existe.
 
-Y el velo del modal (`--overlay-backdrop`) **no es una sombra**: es un fondo. Estaba contado como
-sombra y por eso parecía que había once.
+`--focus-ring` **no** entra en la escala aunque use la misma propiedad: es un indicador de estado, no
+un nivel. Y el velo del modal (`--overlay-backdrop`) **no es una sombra**: es un fondo. Estaba
+contado como sombra y por eso parecía que había once.
 
 ### 5.5 Densidad: cuidado con las tablas
 
@@ -364,13 +400,33 @@ Lo que queda de deuda de color, ya sin CSS escondido:
 | Color a mano en plantilla o script `.vue` | 68 | *Arbitrary values* y mapas de tono |
 | Color a mano en `.js` | 21 | `useDeliverableView.js`, `homeView.helpers.js`, `AdminPresentationService.js` |
 | **Total fuera del CSS** | **89** | era 195 |
-| Strings de clase >120 caracteres | 221 | `HomeView.vue`, `FirmarPdf.vue` |
+| Strings de clase >120 caracteres | **255** | `HomeView.vue` 58, `FirmarPdf.vue` 41 |
 | *Arbitrary values* (`text-[11px]`…) | 443 | 8 tamaños distintos por debajo de `text-sm` |
 | `!important` con motivo escrito | 6 | `dialogs.css`, `overrides.css` |
+| **Colores de Tailwind por nombre** | **3 590** | 98 ficheros; **211 dentro de `@apply`**. Ningún linter ve uno |
+
+> El contador de strings largos decía **221** y son **255** — corregido el 2026-08-11. Los otros dos
+> (443 *arbitrary values*, 89 colores fuera del CSS) sí estaban vigentes, y tres mediciones
+> independientes coinciden en ellos.
 
 > **Y hay deuda que los linters tampoco ven en los módulos**: `forms.css` pinta el dropzone con
 > `sky-200`, `sky-500` y `sky-700` **dentro de `@apply`**, donde `color-no-hex` no entra. El azul
 > cielo del dropzone es hoy el único color de familia propia que sigue fuera de la paleta.
+
+### Y una que ningún contador recoge: reglas que existen y no aplican
+
+Es **el patrón dominante de este repo**, y por eso va aquí y no en una lista de números. Medido el
+2026-08-11, y sigue vivo lo que no cerró F1:
+
+- **Ningún `border-*` de Tailwind pinta sobre un `<input>`.** La regla sin capa de `overrides.css`
+  gana a **todas** las capadas, y las utilidades están en `@layer utilities`. Son 90 declaraciones
+  muertas, entre ellas **los 61 bordes de foco** de los campos y las variantes `--error`. Se deja a
+  propósito hasta F4.2 — encenderlas es decidir qué color tiene el foco.
+- **`overrides.css` anula el `rounded-2xl` de `forms.css`** con `border-radius: 0.5rem`: el `@apply`
+  promete 16 px y el DOM da 8, en 228 controles.
+- **`.deasy-nav-glyph--violet`** no tiene consumidor, y `workspaceNavIcons.js` compone
+  `` `${prefix}--${tone}` `` **sin comprobar que la variante exista** — que es como «Mis envíos»
+  estuvo sin color. Un tono nuevo desaparece en silencio.
 
 El plan, la bitácora y la auditoría están en **`docs/planes/sistema-diseno-plantillas/`**. La
 primera vuelta —la que ganó el frente del CSS— está cerrada y archivada en

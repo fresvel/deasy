@@ -298,14 +298,33 @@
      «este paso es el actual, te toca firmar», que no es `--state-success` («ya esta
      hecho»). Colapsarlo perderia una distincion real — 2.3 avisa de eso.
 
-     ⚠️ VALORES PROVISIONALES: son los de hoy, puestos aqui para que la extraccion de
-     `deliverables.css` no mueva un pixel. Y NO CUMPLEN — como borde sobre blanco dan
-     1.46:1 (el minimo de 1.4.11 es 3:1) y la tinta 4.38:1 (el de texto es 4.5:1). F2.4
-     los sustituye por valores que SI cumplan: es el unico punto de la auditoria donde
-     tokenizar arregla una violacion en vez de solo ordenar. */
+     [F2.4] LAS DOS VIOLACIONES SE ARREGLAN CAMBIANDO EL PAPEL, NO EL COLOR.
+
+     El plan pedia elegir el valor «para que cumpla». Al medirlo salio un conflicto que no
+     habia previsto: para que la menta llegue a 3:1 como borde hay que bajarla al 69.8 %
+     sobre negro —`#34a870`—, y ahi **deja de ser menta**: su ΔE contra `--state-success`
+     cae de 34.96 a 17.51. Se estaria arreglando el contraste a costa de la distincion que
+     este token existe para sostener.
+
+     La salida es que la menta cambie de PAPEL. Su fallo no venia de ser clara, venia de
+     usarse como LIMITE de componente, que es lo que WCAG 1.4.11 exige al 3:1. Un tinte de
+     fondo al 10 % no tiene minimo ninguno.
+
+         relleno   --state-current       #4bf1a1   sin minimo — es un fondo
+         borde     --state-current-ink   #108353   4.77:1  >= 3:1    (era 1.46 ✗)
+         texto     --state-current-ink   #108353   4.77:1  >= 4.5:1  (era 4.38 ✗)
+
+     Es el mismo patron que ya usan los botones de accion de las tablas: «el borde SI es un
+     valor propio — es mas saturado que cualquier mezcla». Y la distincion se conserva
+     entera, porque vive en el relleno, que es el elemento dominante: **ΔE 34.96** contra
+     `--state-success`.
+
+     La tinta sube de `#118a57` (4.38, no llegaba) a `#108353`. Se elige con margen: el
+     valor exacto para 4.50:1 seria `#118856`, y quedarse justo en el umbral significa que
+     el proximo retoque lo tumba. */
   --state-current: #4bf1a1;
   --state-current-rgb: 75, 241, 161;
-  --state-current-ink: #118a57;
+  --state-current-ink: #108353;   /* 4.77:1 — vale para texto Y para borde */
 
   /* [F2.4 2026-08-11] «INFORMATIVO». No habia token para esto, y es parte de por que hay
      **629 apariciones repartidas entre sky, blue e indigo** para el mismo significado.

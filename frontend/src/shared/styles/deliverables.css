@@ -75,19 +75,30 @@
         @apply border-indigo-200 bg-indigo-50/70 text-indigo-700;
     }
 
-    /* ── Tono: «te toca firmar» ────────────────────────────────────────────────────── */
+    /* ── Tono: «te toca firmar» ──────────────────────────────────────────────────────
+       [F2.4 2026-08-11] EL BORDE LO PONE LA TINTA, NO LA MENTA. La menta al 75 % sobre
+       blanco daba **1.46:1** — muy por debajo del 3:1 que WCAG 1.4.11 pide a un limite de
+       componente, y aqui el limite es lo unico que dibuja el boton porque el relleno es
+       blanco. Oscurecer la menta lo habria arreglado a costa de convertirla en un verde
+       (ver `tokens.css`), asi que en vez de eso cambia de papel: la menta se queda para el
+       RELLENO, donde no hay minimo, y el borde y el texto usan `--state-current-ink`
+       (4.77:1, que vale para los dos).
+
+       Y el hover OSCURECE. Antes pasaba de la menta al 75 % a la menta al 100 %, o sea a
+       un borde MAS CLARO — justo lo que §5.2 dice que no se haga. Ahora tira del mismo
+       color al 85 % con negro, que son los porcentajes de los botones de accion. */
 
     .deasy-deliverable-action--sign {
-        border-color: rgba(var(--state-current-rgb), 0.75);
+        border-color: var(--state-current-ink);
     }
 
     .deasy-deliverable-action--sign:hover {
-        border-color: var(--state-current);
+        border-color: color-mix(in srgb, var(--state-current-ink) 85%, var(--brand-black));
         background-color: rgba(var(--state-current-rgb), 0.1);
     }
 
     .deasy-deliverable-action--sign .deasy-deliverable-action__chip {
-        border-color: rgba(var(--state-current-rgb), 0.55);
+        border-color: var(--state-current-ink);
         background-color: rgba(var(--state-current-rgb), 0.1);
         color: var(--state-current-ink);
     }

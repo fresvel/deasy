@@ -522,15 +522,17 @@ export function useDeliverableView({
   const getDeliverableHeaderActionTone = (payload) => {
     if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
       // [F1.8 2026-08-11] Era el hex `#4BF1A1` escrito a mano, con su tinta `#118a57`.
-      // Ahora es `--state-current`; el valor lo decide `tokens.css` y F2.4 lo sube a un
-      // contraste que cumpla sin tocar esta linea.
+      // [F2.4] El BORDE lo pone la tinta, no la menta: la menta al 65 % daba 1.46:1 y el
+      // limite de un componente pide 3:1. La menta se queda para el relleno, que no tiene
+      // minimo. Y el hover ya no aclara — antes iba al 100 % de la menta, o sea a un borde
+      // MAS claro, justo lo que §5.2 prohibe.
       //
-      // ⚠️ `rgba(var(--x), 0.65)` y NO `rgb(var(--x)/0.65)`. El segundo compila —Tailwind
+      // ⚠️ `rgba(var(--x), 0.1)` y NO `rgb(var(--x)/0.1)`. El segundo compila —Tailwind
       // emite la regla tal cual— pero es CSS INVALIDO: el triplete del token va separado
       // por comas, y la sintaxis heredada por comas no admite la barra del alfa. El
-      // navegador descarta la declaracion y el borde cae a `currentColor` SIN avisar.
-      // Costo media hora; el CSS servido decia que la utilidad existia.
-      return 'border-[rgba(var(--state-current-rgb),0.65)] text-state-current-ink hover:border-state-current hover:bg-[rgba(var(--state-current-rgb),0.1)] focus:ring-[rgba(var(--state-current-rgb),0.35)]';
+      // navegador descarta la declaracion y el color cae a `currentColor` SIN avisar.
+      // El CSS servido decia que la utilidad existia.
+      return 'border-state-current-ink text-state-current-ink hover:border-[color-mix(in_srgb,var(--state-current-ink)_85%,var(--brand-black))] hover:bg-[rgba(var(--state-current-rgb),0.1)] focus:ring-[rgba(var(--state-current-rgb),0.35)]';
     }
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
       return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';

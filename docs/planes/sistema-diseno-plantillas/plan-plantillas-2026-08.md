@@ -64,9 +64,13 @@ F1 los 5 bugs ─── F2 completar @theme ─┬─ F3 los 40 literales invisi
 
 ---
 
-## Fase 1 · Los cinco bugs
+## Fase 1 · Los cinco bugs — ✅ CERRADA (2026-08-11)
 
 Riesgo bajo, efecto visible, cero dependencias. **Ninguno es deuda estética: son cosas rotas.**
+
+> **Cerrada** en `develop-frontend`, commits `6546791` y `291e621`. Salieron **ocho**, no siete: se
+> añadió **F1.8** a petición del usuario. Lo que la ejecución corrigió del plan está marcado en la
+> tabla; el detalle y lo descartado, en la [bitácora](./bitacora.md#sesión-2026-08-11--f1-y-f2).
 
 | # | Qué | Dónde | Nota |
 |---|---|---|---|
@@ -75,18 +79,33 @@ Riesgo bajo, efecto visible, cero dependencias. **Ninguno es deuda estética: so
 | 1.3 | **Crear `hope-action-launch` y `hope-action-retire`**, o remapearlas a una variante existente | `buttons.css`, `AdminMainTableSection.vue:256,268,280` | 2 de 12 variantes sin regla |
 | 1.4 | **Ordenar `z-index` entre aviso y modal.** Hoy `SNotify` (`z-50`) queda debajo del velo (`1075`) | `SNotify.vue`, `dialogs.css` | Se resuelve del todo en F6.2; aquí sólo lo urgente |
 | 1.5 | **Desempatar el `1075`.** Está escrito en `AppDialogOverlay.vue:7` y en `.deasy-drawer-overlay`; modal y panel lateral quedan iguales y decide el DOM | idem | idem |
-| 1.6 | **`AppButton` con `variant` desconocida** estampa la clase literal (`plain`, `compact`) | `AppButton.vue:92`, `AdminEditorModal.vue:43`, `AdminDraftArtifactModal.vue:187-199` | Añadir *fallback* o registrar las dos variantes |
+| 1.6 | **`AppButton` con `variant` desconocida** estampa la clase literal | `AppButton.vue:92` | ⚠️ **El plan se equivocaba en las dos mitades.** `compact` (`AdminDraftArtifactModal.vue:187-199`) **NO es un bug**: es una variante legítima de `PdfDropField.vue:111`. Y `plain` era **peor** de lo descrito — sí está en `variantClassMap`, mapeado a `""`, que es *falsy*, así que el `\|\|` caía al literal igual. **16 usos** |
 | 1.7 | **`.graph-node__btn--accent` a 2.70:1** en las variantes `--config` y `--template` | `graph.css:179` | **Introducido el 2026-08-11 por esta misma línea de trabajo.** Blanco sobre un acento aclarado, y es la acción principal del nodo |
+| **1.8** | **Dar nombre a la tarjeta de entregable** (`deliverables.css`) | `DeliverableCard.vue`, `useDeliverableView.js` | **Añadido por el usuario** al aprobar el plan, como alternativa a subir el borde global: da un sitio donde declarar un borde que cumpla **sólo** en estos componentes. Tres strings de ~300 caracteres → `.deasy-deliverable-action(--start\|--sign\|--open)` |
 
 **Criterio de cierre:** los siete verificados en navegador; huella de `/home`, `/admin` y
 `/admin/gestiones/procesos/mapa` sin más diferencias que las siete previstas.
 
+✅ **Cumplido.** `/home` A-vs-B: 954 nodos, **15 diferencias**, todas atribuibles (9 bordes de filtro,
+4 del icono indigo, 2 de `z-index`). `/login`: 75 nodos, **2 diferencias**, los campos de auth.
+La base fue la **pila A viva**, no una captura previa.
+
+⚠️ **F1.1 tomó la SEGUNDA salida** de las dos que ofrecía el plan («convertirla en la que declare el
+token correcto»), no la primera. Bajarla a `@layer base` resucita **90 declaraciones hoy muertas** —
+29 `border-slate-300` y los **61 bordes de foco** de los campos —, que es la decisión de F4.2 y no un
+efecto colateral. Y **no** se subió el valor a 3:1: decisión del usuario, va con su propia huella.
+
 ---
 
-## Fase 2 · Completar `@theme` y crear los tokens que faltan
+## Fase 2 · Completar `@theme` y crear los tokens que faltan — ✅ CERRADA (2026-08-11)
 
 **Es la fase que desbloquea el plan entero.** Hoy `@theme` registra 16 nombres de los que **9 no
 llegan al CSS construido**, y deja fuera los que más se usan.
+
+> **Cerrada** en `develop-frontend`, commit `d0bdc5e`. `@theme` pasa de 16 registros a 33 y de **7
+> vivos a 11** en el CSS construido; los `X-[var(--token)]` por falta de registro bajan de 14 a **0**
+> (los 5 que quedan son `shadow-[var(--brand-elev-*)]`, que no son colores y no tienen namespace).
+> **Cambio visual cero**, verificado con huella. Ver la [bitácora](./bitacora.md#sesión-2026-08-11--f1-y-f2).
 
 ### 2.1 Registrar lo que ya existe
 
@@ -98,26 +117,38 @@ llegan al CSS construido**, y deja fuera los que más se usan.
 | `--brand-icon` | — | — |
 | `--action-view`, `--action-upload`, `--action-neutral` | — | — |
 
-Y **retirar los 9 registros muertos** (`--color-brand-accent`, `-navy`, `-ink`, `-white`,
-`-border-strong`, `-surface-muted`, `--color-state-success`, `-danger`, `-gold`). Son inertes —
-Tailwind los poda — pero declaran una API que nadie llama, y hacen creer que `@theme` está completo.
+~~Y **retirar los 9 registros muertos**~~ (`--color-brand-accent`, `-navy`, `-ink`, `-white`,
+`-border-strong`, `-surface-muted`, `--color-state-success`, `-danger`, `-gold`).
+
+> ⚠️ **NO SE HIZO, y a propósito.** Al ejecutarlo se vio que **las dos mitades de §2.1 se
+> contradicen**: `--color-state-success` es el **destino** de los 237 `emerald`/`green` que migra F4,
+> y `--color-brand-white` el de los 290 `white`. El argumento a favor de retirarlos —«declaran una API
+> que nadie llama»— es cierto sólo *hasta* F4, que es la fase siguiente; y como Tailwind los poda,
+> **cuestan cero bytes**. Retirarlos es quitar la diana justo antes de disparar y volver a ponerla.
+> Quedan, y quedan documentados en `tokens.css` como lo que son: la API completa de destinos, no un
+> inventario de lo ya usado. Revertible en una línea si se prefiere lo contrario.
 
 > **Comprobación obligatoria:** Tailwind v4 hace *tree-shaking* de `@theme`. Un registro que nadie usa
 > **no se emite**, así que el `grep` sobre el CSS construido es la única prueba de que un registro
 > está vivo. Verificar en `frontend/dist/assets/*.css`, no en el fuente.
 
-### 2.2 Los `--shadow-*`, decisión pendiente
+### 2.2 Los `--shadow-*` — ✅ decisión tomada: **renombrar**
 
-`--shadow-raised/-modal/-drawer` **ocupan el namespace `--shadow-*` de Tailwind y no están en
-`@theme`**: ni generan `shadow-raised` ni evitan una colisión futura. Dos salidas, y hay que elegir:
+`--shadow-raised/-modal/-drawer` **ocupaban el namespace `--shadow-*` de Tailwind y no estaban en
+`@theme`**: ni generaban `shadow-raised` ni evitaban una colisión futura. Había dos salidas:
 
-- **Registrarlos** en `@theme` → aparecen `shadow-raised`, `shadow-modal`, y desaparecen los 5
-  `shadow-[var(--shadow-…)]`.
-- **Renombrarlos** fuera del namespace (p. ej. `--brand-elev-*`) → coherente con `--brand-shadow`, que
-  es el **primer escalón de la misma escala** y hoy tiene otro prefijo.
+- ~~**Registrarlos** en `@theme`~~ → deja el problema de namespace en pie.
+- ✅ **Renombrarlos** fuera del namespace → **elegida por el usuario**. Arregla además que un
+  `grep '--shadow-'` no encontrara el primer nivel y un `grep '--brand-'` no encontrara los otros dos:
+  eran **cinco tokens de `box-shadow` en tres convenciones de nombre**.
 
-La segunda arregla además que un `grep '--shadow-'` no encuentre el primer nivel y un `grep '--brand-'`
-no encuentre los otros dos: **cinco tokens de `box-shadow` en tres convenciones de nombre**.
+| Antes | Ahora |
+|---|---|
+| `--brand-shadow` | `--brand-elev-1` |
+| `--shadow-raised` | `--brand-elev-2` |
+| `--shadow-modal` | `--brand-elev-3` |
+| `--shadow-drawer` | `--brand-elev-3-left` |
+| `--focus-ring` | *sin cambio* — no es un escalón de elevación, es un indicador de estado |
 
 ### 2.3 Retirar las dos colisiones de namespace **activas**
 
@@ -142,8 +173,18 @@ a cambio de que cambiar uno repinte **cada `font-medium` de la app**. Se sustitu
 | **Una escala categórica** `--chart-1…7` | 7 | Con separación mínima objetivo y anclada en `--brand-primary`. **No es un token por arista** |
 
 > **`--state-current` es el único punto donde tokenizar arregla una violación.** Hoy la menta como
-> borde da **1.46:1** y su texto acompañante `#118a57` da **4.38:1** — ninguno cumple. Al elegir el
-> valor del token, elegirlo **para que cumpla**, no para reproducir el actual.
+> borde da **1.46:1** y su texto acompañante `#118a57` da **4.38:1** — ninguno cumple. ~~Al elegir el
+> valor del token, elegirlo **para que cumpla**, no para reproducir el actual.~~
+>
+> ⚠️ **Eso se contradice con el motivo de existir del token, y se vio al medirlo.** Para que la menta
+> llegue a 3:1 hay que bajarla al 69.8 % sobre negro (`#34a870`), y ahí su **ΔE contra
+> `--state-success` cae de 34.96 a 17.51**: se arregla el contraste a costa de la distinción
+> «te toca» ≠ «hecho», que es lo que §2.3 de `frontend/CLAUDE.md` avisa de no hacer.
+>
+> **Salida tomada:** la menta cambia de **papel**, no de color. Su fallo venía de usarse como
+> *límite de componente* (3:1), no de ser clara; un tinte de fondo al 10 % no tiene mínimo. Relleno
+> `--state-current` `#4bf1a1`; borde y texto `--state-current-ink` `#108353` (**4.78:1**, vale para
+> los dos). La distinción se conserva entera —ΔE 34.96— porque vive en el relleno.
 
 ### 2.5 Y de paso, corregir la paleta
 
