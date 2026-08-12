@@ -228,3 +228,48 @@ test("fill_flow_steps: no se indexa code ni name — son descriptivas, no de bus
     "CREATE UNIQUE INDEX IF NOT EXISTS uq_fill_flow_steps ON fill_flow_steps (fill_flow_template_id, step_order);",
   ]);
 });
+
+// --- BLOQUE 4 -------------------------------------------------------------------------------------
+//
+// EL RETIRO DE LOS FLUJOS QUE SEMBRO EL SYNC (frente 0.8, sub-paso 8). Es la unica DML de este
+// fichero que borra alcance en vez de sembrarlo, y por eso lleva test: si alguien afloja su WHERE,
+// el arranque desactiva flujos que un administrador escribio a mano, y no hay golden que lo vea
+// —en una base recien creada no existe ninguna fila con marcador, asi que la sentencia es un no-op
+// y la caracterizacion no la ejercita nunca—.
+//
+// Las cuatro condiciones del WHERE son la definicion de "lo que sembro el sync", y las cuatro hacen
+// falta:
+//   · `description LIKE 'artifact_sync_*:%'` — la huella del sync. Ningun otro escritor la pone.
+//   · `process_definition_template_id IS NOT NULL` — cuelga del VINCULO. Es lo que tapa al flujo de
+//     la plantilla en el resolvedor de runtime.
+//   · `task_item_id IS NULL` — NUNCA el flujo de runtime, que lleva vinculo Y entregable.
+//   · `is_active = 1` — hace la sentencia idempotente: la segunda pasada afecta a 0 filas.
+
+const retiroDelSync = (tabla, marcador) =>
+  new RegExp(
+    `UPDATE ${tabla}\\s+SET is_active = 0\\s+WHERE is_active = 1\\s+`
+    + `AND task_item_id IS NULL\\s+`
+    + `AND process_definition_template_id IS NOT NULL\\s+`
+    + `AND description LIKE '${marcador}:%';`
+  );
+
+for (const [tabla, marcador] of [
+  ["fill_flow_templates", "artifact_sync_fill"],
+  ["signature_flow_templates", "artifact_sync_signature"],
+]) {
+  test(`${tabla}: el retiro del sync desactiva SOLO lo que lleva el marcador ${marcador}`, () => {
+    assert.match(SCHEMA, retiroDelSync(tabla, marcador));
+  });
+}
+
+test("el retiro del sync DESACTIVA, no borra: una instancia en curso conserva su flujo", () => {
+  // La razon esta medida y es doble: `document_fill_flows.fill_flow_template_id` y
+  // `signature_flow_instances.template_id` referencian estas cabeceras SIN CASCADE, asi que un
+  // DELETE fallaria con una entrega en curso; y borrarles los pasos le cambiaria el flujo bajo los
+  // pies a esa entrega. Desactivar basta: los tres escalones del resolvedor exigen `is_active = 1`.
+  const bloque = SCHEMA.slice(SCHEMA.indexOf("RETIRO DE LOS FLUJOS QUE SEMBRO EL SYNC"));
+  assert.doesNotMatch(bloque, /DELETE FROM fill_flow_templates/);
+  assert.doesNotMatch(bloque, /DELETE FROM fill_flow_steps/);
+  assert.doesNotMatch(bloque, /DELETE FROM signature_flow_templates/);
+  assert.doesNotMatch(bloque, /DELETE FROM signature_flow_steps/);
+});

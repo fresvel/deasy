@@ -1050,6 +1050,55 @@ ALTER TABLE signature_flow_templates
 
 CREATE INDEX IF NOT EXISTS idx_signature_flow_templates_artifact ON signature_flow_templates (template_artifact_id);
 
+
+-- RETIRO DE LOS FLUJOS QUE SEMBRO EL SYNC EN CADA VINCULO (sub-paso 8 del §0.8 del plan maestro).
+--
+-- QUE SON. Hasta este sub-paso, `WorkflowSyncService` leia la seccion `workflows:` del `meta.yaml`
+-- de una plantilla y la proyectaba con DELETE+INSERT sobre UNA cabecera por cada vinculo
+-- (`process_definition_template_id`), marcandola en `description` con `artifact_sync_fill:` /
+-- `artifact_sync_signature:`. Ese marcador es la HUELLA EXACTA del sync: ningun otro escritor lo
+-- pone —el flujo de la plantilla (`replaceArtifactFlowSide`) y el de runtime
+-- (`materializeRuntimeFlowForTaskItem`) dejan la `description` vacia—, asi que filtrar por el no
+-- alcanza a un flujo que un administrador haya escrito a mano por el CRUD.
+--
+-- POR QUE HAY QUE RETIRARLAS. El resolvedor de runtime elige por PRIORIDAD: entregable -> VINCULO ->
+-- plantilla (`services/admin/generation/queries.js`). Sin sync que las refresque, esas filas se
+-- quedan rancias Y SIGUEN GANANDO: un usuario edita el flujo en el formulario, las filas nuevas se
+-- escriben colgando de la plantilla, y el runtime sigue sirviendo las viejas. Medido en psql sobre
+-- una base con las dos: el escalon 2 devolvia la fila rancia y el escalon 3, con el flujo bueno, no
+-- llegaba a consultarse.
+--
+-- POR QUE `is_active = 0` Y NO `DELETE`, que es lo que "vaciar" sugiere. Por dos razones medidas, no
+-- por prudencia:
+--   1. Las cabeceras tienen FKs ENTRANTES sin CASCADE — `document_fill_flows.fill_flow_template_id`
+--      y `signature_flow_instances.template_id`. Una instancia EN CURSO apunta a una de ellas, y el
+--      DELETE fallaria; borrarle los pasos, peor: le cambiaria el flujo bajo los pies a una entrega
+--      que ya esta corriendo. Es justo la invariante que protegia
+--      `hasFillFlowTemplateRuntimeUsage`, y al desaparecer el sync alguien tiene que seguir
+--      sosteniendola.
+--   2. Los tres escalones del resolvedor exigen `is_active = 1`, asi que desactivar CIERRA el
+--      escalon 2 por completo — que es todo lo que hace falta. Y es exactamente el estado en que el
+--      propio sync las dejaba cuando el meta dejaba de declarar flujo (`syncEnabled` falso ->
+--      `UPDATE ... SET is_active = 0`): esto no inventa un estado nuevo, lo aplica a las bases que
+--      nunca volvieron a guardar la plantilla.
+--
+-- IDEMPOTENTE por el `is_active = 1` del WHERE: la segunda pasada afecta a 0 filas. Este fichero se
+-- reaplica en cada arranque, y como ya no queda nadie que escriba el marcador, esto es un no-op
+-- permanente desde el primer arranque tras este commit. En una base recien creada no encuentra nada.
+UPDATE fill_flow_templates
+   SET is_active = 0
+ WHERE is_active = 1
+   AND task_item_id IS NULL
+   AND process_definition_template_id IS NOT NULL
+   AND description LIKE 'artifact_sync_fill:%';
+
+UPDATE signature_flow_templates
+   SET is_active = 0
+ WHERE is_active = 1
+   AND task_item_id IS NULL
+   AND process_definition_template_id IS NOT NULL
+   AND description LIKE 'artifact_sync_signature:%';
+
 DO $$
 BEGIN
   IF NOT EXISTS (
