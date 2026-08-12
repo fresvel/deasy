@@ -1,11 +1,12 @@
 // Characterization: EL PROCESO POR DEFECTO DE PUNTA A PUNTA — crear un entregable `routed` y
 // comprobar que el flujo que se materializa es EL QUE EL USUARIO DEFINIÓ AL ENVIAR.
 //
-// Por qué existe (sub-paso 7 de `docs/planes/plan-maestro-2026-08.md` §0.8). El sub-paso 7 borra
-// `BASE_META_YAML` (`SystemBootstrapService.js:277-305`, subido en `:389`), el `meta.yaml` escrito a
-// mano dentro del bootstrap. Su criterio de cierre es que el `count(*)` de flujos colgados del
-// vínculo del Proceso por defecto pase de 1 a 0. **El riesgo de ese paso es romper el Proceso por
-// defecto**, y hasta este commit no había NINGUNA prueba que lo recorriera entero.
+// Por qué existe (sub-paso 7 de `docs/planes/plan-maestro-2026-08.md` §0.8). El sub-paso 7 borró
+// `BASE_META_YAML`, el `meta.yaml` escrito a mano dentro del bootstrap. Su criterio de cierre era
+// que el `count(*)` de flujos colgados del vínculo del Proceso por defecto pasara de 1 a 0 — y lo
+// hizo: la clave `vinculo_competidor` es hoy `[]`, y ninguna otra de este fichero se movió.
+// **El riesgo de ese paso era romper el Proceso por defecto**, y esta prueba es la que lo recorre
+// entero; sigue siendo la red que protege el desmontaje del sub-paso 8.
 //
 // EL PROCESO POR DEFECTO ES EL PARAGUAS DE LO QUE NO PERTENECE A NINGÚN PROCESO: cualquier persona,
 // en cualquier momento, crea ahí una tarea ad-hoc («haz el informe de este evento»). Su vínculo es
@@ -74,12 +75,14 @@
 //      tiene que ser ESE. Se comparan persona a persona contra lo enviado, que es más fuerte que el
 //      golden — un golden congela lo que hay, esto exige que sea lo que se pidió.
 //
-//   3. **El flujo de runtime GANA al del vínculo.** Es la propiedad que el sub-paso 7 pone en
-//      riesgo, y la única que se puede romper sin que se caiga nada más. Hoy el vínculo del Proceso
-//      por defecto lleva un flujo sembrado por el sync desde `BASE_META_YAML`, con un paso
-//      `document_owner`. Si el escalonado fallara, el documento se gobernaría por ESE flujo y las
-//      solicitudes de llenado irían al dueño en vez de a quien el usuario eligió. Se comprueba en
-//      las dos direcciones: `document_fill_flows` apunta al flujo de runtime, y NO al del vínculo.
+//   3. **El flujo de runtime GANA al del vínculo.** Era la propiedad que el sub-paso 7 ponía en
+//      riesgo, y la única que se podía romper sin que se cayera nada más: el vínculo del Proceso por
+//      defecto llevaba un flujo sembrado por el sync desde `BASE_META_YAML`, con un paso
+//      `document_owner`. Si el escalonado hubiera fallado, el documento se habría gobernado por ESE
+//      flujo y las solicitudes de llenado habrían ido al dueño en vez de a quien eligió el usuario.
+//      Retirado el competidor, la mitad negativa de la comprobación (`NO por el del vínculo`) queda
+//      vacua **a propósito** — no hay rival contra el que comparar; la positiva sigue entera, y la
+//      lista de rivales se recorre igual para que el día que reaparezca uno, se note aquí.
 //
 //   4. **El estado en que queda el entregable.** Qué documento y qué versión se crean y con qué
 //      estado, más las solicitudes de llenado que se abren. Es el resultado observable del camino
@@ -257,9 +260,10 @@ const sinAutoincrementalEnElTitulo = (resultado) => ({
     : null,
 });
 
-// El COMPETIDOR: el flujo que hoy cuelga del vínculo del Proceso por defecto, sembrado por el sync
-// desde `BASE_META_YAML`. Es el que ganaría si el escalonado se rompiera, y es el que el sub-paso 7
-// tiene que dejar a cero. **Esta clave DEBE vaciarse con el sub-paso 7; ninguna otra debe moverse.**
+// El COMPETIDOR: el flujo que colgaba del vínculo del Proceso por defecto, sembrado por el sync
+// desde `BASE_META_YAML`. Era el que ganaría si el escalonado se rompiera, y el que el sub-paso 7
+// tenía que dejar a cero. **Ya está a cero; que vuelva a llenarse significa que reapareció un
+// productor de flujo fuera del formulario.**
 async function readVinculoCompetidor(linkId) {
   const headers = await query(
     `SELECT ${FILL_TEMPLATE_COLUMNS} FROM fill_flow_templates
@@ -545,14 +549,15 @@ test("derived · el documento lo gobierna el flujo de RUNTIME, no el predefinido
 
 // --- 3) El competidor, congelado -----------------------------------------------------------------
 
-test("el vínculo del Proceso por defecto TODAVÍA lleva el flujo que sembró BASE_META_YAML", async () => {
-  // Esta clave es la ÚNICA de este flow que el sub-paso 7 debe mover, y su criterio de cierre es
-  // que se quede en `[]`. Hasta entonces documenta el `document_owner` que nadie autoró: llegó del
-  // `meta.yaml` escrito a mano dentro del bootstrap, sobre un vínculo `routed` cuyo propio bootstrap
-  // declara que NO siembra flujo (`SystemBootstrapService.js:551-553`). El sync no mira `item_mode`.
+test("el vínculo del Proceso por defecto YA NO lleva ningún flujo predefinido", async () => {
+  // Ésta fue la ÚNICA clave de este flow que movió el sub-paso 7, y su criterio de cierre era
+  // quedarse en `[]`. Documentaba el `document_owner` que nadie autoró: llegaba del `meta.yaml`
+  // escrito a mano dentro del bootstrap, sobre un vínculo `routed` cuyo propio bootstrap declara que
+  // NO siembra flujo (punto 6 de `ensureDefaultProcess`). El sync no mira `item_mode`, y por eso lo
+  // proyectaba igual.
   //
-  // Si al retirarlo se mueve alguna OTRA clave de este fichero, el sub-paso 7 rompió el Proceso por
-  // defecto y el diff dice exactamente por dónde.
+  // Que vuelva a tener contenido significa una de dos: reapareció un productor fuera del formulario,
+  // o el desmontaje del sub-paso 8 dejó filas rancias colgando del vínculo.
   assert.ok(estado.linkId, "depende del primer caso");
   const competidor = await readVinculoCompetidor(estado.linkId);
   matchSnapshot(SUITE, "vinculo_competidor", normalize(competidor, MASK_OPTS));

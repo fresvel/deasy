@@ -5,24 +5,7 @@
     "display_name": "Informe general",
     "fill_workflow": {
       "required": true,
-      "steps": [
-        {
-          "order": 1,
-          "code": "owner_fill",
-          "name": "Entrega del responsable",
-          "resolver_type": "document_owner",
-          "selection_mode": "auto_one",
-          "cargo_id": null,
-          "cargo_code": "",
-          "unit_scope_type": "context_exact",
-          "unit_id": null,
-          "unit_type_id": null,
-          "person_id": null,
-          "position_id": null,
-          "field_refs": [],
-          "required": true
-        }
-      ]
+      "steps": []
     },
     "signature_workflow": {
       "required": false,

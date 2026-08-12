@@ -275,23 +275,30 @@ after(async () => {
   await closeDb();
 });
 
-// --- 1) Origen PLANTILLA: lo que `workflowSync` proyectó desde el `meta.yaml` --------------------
+// --- 1) Origen PLANTILLA: lo que quedaba proyectado desde el `meta.yaml` -------------------------
 //
 // Estas dos claves se capturan ANTES de autorar nada, así que retratan lo que dejan el bootstrap y
-// los flows anteriores. Es el estado que el sub-paso 3 tiene que reproducir sin moverse, y el que el
-// sub-paso 6 (borrar `BASE_META_YAML`) vaciará a propósito.
+// los flows anteriores. Fue el estado que el sub-paso 3 tenía que reproducir sin moverse.
+//
+// LAS DOS ESTÁN VACÍAS DESDE EL SUB-PASO 7, y ése es su valor: la de entrega llevaba las TRES filas
+// que sembró `BASE_META_YAML` —la del vínculo v1.0.0, la del vínculo v1.1.0 que la actualización
+// guiada heredó, y la que el sub-paso 6 copió al portador `template_artifact_id`—, las tres con un
+// paso `document_owner` que nadie autoró nunca. Retirado el productor, el bootstrap no siembra
+// ningún flujo: es el criterio de cierre de §0.2 y §0.3, medido aquí en filas.
+// Si alguna vuelve a llenarse, es que reapareció un productor fuera del formulario.
 
 test("origen PLANTILLA · flujos de ENTREGA en la base", async () => {
   const flows = await readFillFlows({ runtime: false });
-  assert.ok(flows.length, "la fixture debe traer al menos un flujo de entrega de plantilla");
+  assert.equal(flows.length, 0, "tras el sub-paso 7 ningún flujo de entrega nace fuera del formulario");
   matchSnapshot(SUITE, "plantilla_entrega", normalize(flows, MASK_OPTS));
 });
 
 test("origen PLANTILLA · flujos de FIRMA en la base", async () => {
-  // Hoy sale VACÍO, y eso es el hallazgo, no un fallo: `BASE_META_YAML` declara
-  // `signatures: steps: []` (`SystemBootstrapService.js:302-304`), así que el sync desactiva/no crea
-  // nada del lado de la firma. Congelarlo es lo que hace visible el día en que deje de estarlo.
+  // Ya salía vacío antes del sub-paso 7 (`BASE_META_YAML` declaraba `signatures: steps: []`, así que
+  // el sync no creaba nada del lado de la firma). Sigue vacío por un motivo más fuerte: no queda
+  // productor. Congelarlo es lo que hace visible el día en que deje de estarlo.
   const flows = await readSignatureFlows({ runtime: false });
+  assert.equal(flows.length, 0, "tras el sub-paso 7 ningún flujo de firma nace fuera del formulario");
   matchSnapshot(SUITE, "plantilla_firma", normalize(flows, MASK_OPTS));
 });
 

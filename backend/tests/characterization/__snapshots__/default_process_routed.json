@@ -336,36 +336,7 @@
       "unit_id": 8
     }
   },
-  "vinculo_competidor": [
-    {
-      "description": "artifact_sync_fill:1:tpl_informe_general:1.0.0",
-      "id": "<normalized>",
-      "is_active": 1,
-      "name": "Flujo de entrega - Informe general",
-      "process_definition_template_id": "<normalized>",
-      "steps": [
-        {
-          "assigned_person_id": null,
-          "can_reject": 0,
-          "cargo_id": null,
-          "code": "owner_fill",
-          "id": "<normalized>",
-          "is_required": 1,
-          "name": "Entrega del responsable",
-          "position_id": null,
-          "relation_type_id": null,
-          "resolver_type": "document_owner",
-          "selection_mode": "auto_one",
-          "step_order": 1,
-          "unit_id": null,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
-        }
-      ],
-      "task_item_id": "<normalized>",
-      "template_artifact_id": "<normalized>"
-    }
-  ],
+  "vinculo_competidor": [],
   "vinculo_routed": {
     "status": 200,
     "body": {

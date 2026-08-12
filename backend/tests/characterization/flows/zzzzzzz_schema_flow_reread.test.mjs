@@ -254,16 +254,19 @@ test("relectura · una VERSION recien creada hereda el flujo de su padre", async
   assert.deepEqual(hija.body?.signature_workflow, original.body?.signature_workflow, "la version hereda la firma");
 });
 
-// La otra mitad del sub-paso, y la que sostiene el andamiaje: una plantilla que NUNCA pasó por el
-// formulario nuevo —la de la fixture, cuyo flujo lo sembró el sync desde `BASE_META_YAML`— tiene sus
-// filas colgadas del VÍNCULO y ninguna colgada del artifact. Se sigue leyendo, por el segundo
-// escalón del lector. Cuando los sub-pasos 6, 7 y 8 dejen ese escalón sin productores, este caso
-// cambia de valor y ESE diff es su prueba.
-test("relectura · una plantilla sembrada por el sync se lee por el portador del vínculo", async () => {
+// La otra mitad del sub-paso: la plantilla de la fixture, que NUNCA pasó por el formulario nuevo.
+// Su flujo lo sembraba el sync desde `BASE_META_YAML` sobre el VÍNCULO, y se leía por el segundo
+// escalón del lector. **El sub-paso 7 retiró ese productor y este caso cambió de valor: ESE diff es
+// su prueba.** Ahora el endpoint responde 200 con el flujo vacío, que es lo correcto —la plantilla
+// no define flujo— y no un 500 ni un `catch {}` mudo.
+//
+// El segundo escalón del lector SIGUE EXISTIENDO y se sigue ejercitando desde el caso de la
+// plantilla autorada; lo retira el sub-paso 8, y entonces esta clave vuelve a ser la que lo mida.
+test("relectura · la plantilla de la fixture ya no trae flujo sembrado por el sync", async () => {
   const token = await tokenFor("admin");
   const res = await get("/admin/sql/template_artifacts/1/schema", { token });
   assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
-  assert.equal(res.body?.fill_workflow?.steps?.length, 1, "la plantilla de la fixture define un paso de entrega");
+  assert.equal(res.body?.fill_workflow?.steps?.length, 0, "sin `BASE_META_YAML` la fixture no define ningún paso");
   const { fields: _fields, ...contrato } = res.body ?? {};
   matchSnapshot(SUITE, "schema_fixture_sembrada_por_sync", contrato);
 });
