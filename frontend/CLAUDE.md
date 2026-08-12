@@ -171,6 +171,39 @@ blanco. Antes de sustituir una utilidad repintada, mira **contra qué estaba gan
 > no es un uso, es el **selector** del repintado — y el escape del `/` en `.bg-slate-50\/70` burla
 > cualquier límite por la derecha. El script lo reescribió y rompió el repintado en silencio.
 
+### 2.11 Dónde va cada regla: la decisión de capas
+
+```
+@layer components   todo skin de componente
+@layer utilities    los repintados de utilidad, MIENTRAS existan
+sin capa            SÓLO lo que pelea con una hoja de tercero sin capa
+```
+
+Hoy los únicos terceros sin capa son **`@vue-flow/core`** (de ahí el bloque suelto de `graph.css`) y
+**`leaflet`** (el mapa de `RegisterView`). Cualquier otra regla fuera de capa está ahí por inercia, y
+son **150 repartidas en 12 módulos** — el trabajo de bajarlas es §4.4-c del plan.
+
+Con esta disposición vuelve el contrato de Tailwind —**una utilidad gana a un componente**— y los
+repintados de `overrides.css` dejan de hacer falta: `bg-brand-surface-muted` gana a
+`.deasy-dialog-body` por capa, sin `!important` y sin lista blanca.
+
+**Y `overrides.css` hace dos cosas: no las mezcles en la misma lista de selectores.** Repintar una
+utilidad y dar skin a un componente son cosas distintas; juntarlas es lo que producía los
+`!important`, que no peleaban contra Tailwind sino **contra otra regla del propio fichero**.
+
+### 2.12 Antes de mover una regla de capa, busca las PROPS de clase
+
+Un `grep` de plantillas no ve esta colisión:
+
+```vue
+<!-- AppModalShell.vue -->      <div class="deasy-dialog-body" :class="bodyClass">
+<!-- FirmarPdf.vue:786 -->      <AppModalShell body-class="p-0 bg-slate-50 relative" />
+```
+
+El **skin lo pone el componente y la utilidad llega de fuera**, así que sólo se encuentran en
+runtime. Es primo de la trampa de 6.5 (clases compuestas), y la comprobación es la misma: mira
+`body-class`, `header-class`, `panel-class`, `class-name` y cualquier prop que acabe en `class`.
+
 ---
 
 ## 3. Accesibilidad: los mínimos son mínimos

@@ -267,5 +267,81 @@ Las dos las cazó **la huella**; ni el lint, ni el build, ni los 304 tests.
 | 4.1 · las familias de tono | ✅ hecha (menos `bg-slate-50`, que se devuelve a 4.4) |
 | 4.2 · conceptos en disputa + **el foco** | ⬜ — y recordar que **las 117 utilidades de foco están muertas** |
 | 4.3 · `text-slate-400` | ✅ hecha |
-| 4.4 · la fuga del repintado de `overrides.css` | ⬜ — ahora con `bg-slate-50` dentro |
+| 4.4 · la fuga del repintado de `overrides.css` | 🟨 **a y b hechas** — ver abajo |
 | 4.5 · los 211 dentro de `@apply` | ⬜ |
+
+---
+
+## Sesión 2026-08-11 (cont.) · F4.4 y la decisión sobre las capas
+
+Commit `0180e22`.
+
+### La decisión, y por qué no era la lista blanca
+
+Lo que bloqueaba §4.4 no era que la lista blanca se quedara corta: era que **`overrides.css` hace dos
+cosas mezcladas en la misma lista de selectores** — repintar utilidades de Tailwind (A) y dar skin a
+componentes (B). **Tres reglas juntaban las dos**: `.bg-white` + 16 clases de componente,
+`.border-slate-*` + 7, `.shadow-*` + 6.
+
+> **Y de ahí salían los `!important`. No resolvían un conflicto contra Tailwind: resolvían un
+> conflicto del fichero CONSIGO MISMO** — la regla (A) iba antes que la (B) que pisaba la misma
+> propiedad en el mismo elemento, así que hacía falta prioridad para que ganara la que debía.
+
+Medición que fundamenta la decisión: **150 reglas fuera de capa en 12 módulos**, y sólo **dos hojas
+de terceros sin capa** contra las que competir (`@vue-flow/core`, `leaflet`). Todo lo demás está sin
+capa por inercia.
+
+```
+@layer components   todo skin de componente
+@layer utilities    los repintados, MIENTRAS existan
+sin capa            SÓLO lo que pelea con un tercero sin capa
+```
+
+Con eso vuelve el contrato de Tailwind —utilidad gana a componente— y el repintado deja de hacer
+falta: `bg-brand-surface-muted` gana a `.deasy-dialog-body` **por capa**.
+
+**Es seguro, y se midió antes de decidir:** **cero** elementos combinan una clase de skin con una
+utilidad de fondo/borde/sombra que hoy pierda contra ella. Al contrario que en F1.1, aquí bajar (B)
+de capa **no resucita nada**.
+
+### Un modo de colisión nuevo: la prop de clase
+
+Las únicas colisiones skin↔utilidad no están en las plantillas — **entran por props**:
+
+```
+FirmarPdf.vue:786   body-class="p-0 bg-slate-50 relative"   ->  .deasy-dialog-body
+                    header-class="bg-slate-50 border-b …"   ->  .deasy-dialog-header
+```
+
+`AppModalShell.vue:37` hace `class="deasy-dialog-body" :class="bodyClass"`: el skin lo pone el
+componente y la utilidad llega de fuera, así que **sólo se encuentran en runtime**. Un `grep` de
+plantillas da cero. Es primo de la trampa de las clases compuestas, y hay que añadirlo a la lista:
+**antes de mover una regla de capa, buscar también las props de clase que apuntan a ella.**
+
+### Lo hecho
+
+| | | |
+|---|---|---|
+| **4.4-a** | 104 sustituciones de las que **se escapan** | ΔE compuesto sobre blanco: 0.53 · 0.56 · 0.66 · 1.63 · 1.23 · 0.00 |
+| **4.4-b** | (B) arriba, (A) al final: gana por orden | Huella **0 diferencias** |
+
+Cae **uno de los tres `!important`**, el de `.bg-slate-50`. Los otros dos pelean contra
+`.deasy-dialog-root .deasy-dialog-header button` (0,3,1) **sin capa** en `dialogs.css`, y contra una
+especificidad mayor el orden no puede.
+
+> Lo descubrí quitándolos: la huella marcó **un nodo** —el botón de cerrar de los diálogos— pasando a
+> `--brand-border-field`. Es discutible cuál debería ganar (**el componente declara `-field` y el
+> repintado se lo pisa**), pero eso es una decisión de diseño y no cabe en un commit que promete
+> cambio visual cero. Restaurado, y anotado para cuando `dialogs.css` baje de capa.
+
+Y se retira el `.shadow-xl` **sin capa**: F5 decía que nunca aplicaba porque el `!important` de
+`@layer utilities` gana siempre. Comprobado en el DOM antes y después — sigue dando `--brand-elev-2`.
+**Es la primera de las tres reglas muertas por cascada de F5 que se cierra.**
+
+### Lo que se descartó aquí
+
+| Descartado | Motivo |
+|---|---|
+| **Ampliar la lista blanca** con las 120 que se escapan | Es lo que se venía haciendo y por eso se escapaban 120. Es una lista escrita a mano: vuelve a pasar |
+| **Migrar `bg-slate-200` (16 usos)** | No tiene destino en la paleta — no es `--brand-border` (eso es un borde, no una superficie) e inventarle uno no es migrar. Queda para F6 o para cuando alguien declare ese escalón |
+| **Bajar las 150 reglas de capa en este commit** | Es el paso que la decisión desbloquea, pero son 12 módulos: va **módulo a módulo y con huella por módulo**, no de golpe |

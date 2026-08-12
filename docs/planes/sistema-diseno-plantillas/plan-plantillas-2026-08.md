@@ -304,12 +304,60 @@ utilidades a tokens. La segunda es la que cierra el problema.
 > ⚠️ **Y aquí cae `bg-slate-50` (109 usos), que venía de §4.1.** Migrarlo a un token falla porque el
 > repintado lleva **`!important`**: `bg-slate-50` no significa «slate-50», significa «slate-50 **con
 > prioridad**», y esa prioridad es la que le gana a `.deasy-dialog-body` y a `input`, que fijan blanco
-> **sin capa**. Así que §4.4 no se puede hacer utilidad por utilidad: hay que decidir primero **qué
-> pasa con las reglas sin capa de `overrides.css`**, que son las que obligan al `!important`.
+> **sin capa**.
 >
 > Y una nota de método, pagada: **el script de migración reescribió los propios selectores del
 > repintado** (`.bg-slate-50\/70` → `.bg-brand-surface-muted\/70`) y lo rompió en silencio. El escape
 > del `/` burla el límite por la derecha. `shared/styles/*.css` se excluye o se revisa a mano.
+
+---
+
+#### 🔑 LA DECISIÓN SOBRE LAS REGLAS SIN CAPA — tomada el 2026-08-11
+
+Lo que bloqueaba §4.4 no era la lista blanca: era que **`overrides.css` hace dos cosas mezcladas en
+la misma lista de selectores**.
+
+| | Qué es | Ejemplos |
+|---|---|---|
+| **(A)** | Repintar utilidades de Tailwind a la marca | `.bg-white`, `.bg-slate-50`, `.border-slate-200`, `.shadow-sm` |
+| **(B)** | Dar skin a componentes | `.deasy-card`, `.deasy-dialog-body`, `input`, `.hope-action-*`, `header` |
+
+**Tres reglas juntaban las dos** (`.bg-white` + 16 componentes, `.border-slate-*` + 7, `.shadow-*`
++ 6). Y de ahí salían los `!important`: **no resolvían un conflicto contra Tailwind, resolvían un
+conflicto del fichero consigo mismo** — (A) iba antes que la (B) que pisaba la misma propiedad.
+
+**Medición que fundamenta la decisión:** hay **150 reglas fuera de capa en 12 módulos**, y sólo
+**dos hojas de terceros sin capa** contra las que competir — `@vue-flow/core` y `leaflet`. Todo lo
+demás está sin capa por inercia, no por necesidad.
+
+```
+@layer components   todo skin de componente
+@layer utilities    los repintados, MIENTRAS existan
+sin capa            SÓLO lo que pelea con un tercero sin capa
+                    (hoy: graph.css / Vue Flow, y el mapa de RegisterView)
+```
+
+Con eso vuelve el contrato de Tailwind —**utilidad gana a componente**— y el repintado deja de hacer
+falta: una plantilla que escriba `bg-brand-surface-muted` gana a `.deasy-dialog-body` **por capa**,
+sin `!important` y sin lista blanca. Eso es «eliminar la necesidad», que es la salida que este mismo
+§4.4 prefería.
+
+**Y es seguro, medido antes de decidirlo:** **cero** elementos combinan una clase de skin con una
+utilidad de fondo/borde/sombra que hoy pierda contra ella. Bajar (B) a `@layer components` **no
+resucita nada** — al contrario que en F1.1, donde bajar la regla de `input` habría resucitado 90
+declaraciones. Las únicas colisiones entran por **props de clase**
+(`body-class="p-0 bg-slate-50 relative"` en `FirmarPdf.vue:786`, `header-class="bg-slate-50 …"`):
+son dos y se revisan a mano. Ese es un modo de colisión nuevo — **una clase de skin y una utilidad
+que sólo se encuentran en runtime, a través de una prop**, invisible a cualquier `grep` de plantilla.
+
+#### Ejecución de §4.4, por partes
+
+| | Qué | Estado |
+|---|---|---|
+| **4.4-a** | Migrar las que **se escapan** a la lista blanca. Cascade-neutral: no están repintadas, así que la utilidad de token cae en la misma capa y con la misma especificidad | ✅ **104 sustituciones** (ΔE 0.00–1.63) |
+| **4.4-b** | Separar (A) de (B) en `overrides.css`; (A) al final, gana por orden | ✅ **0 diferencias** en la huella |
+| **4.4-c** | Bajar las **150 reglas** a `@layer components`, módulo a módulo y con huella por módulo | ⬜ |
+| **4.4-d** | Borrar los repintados según se quedan sin consumidores | ⬜ |
 
 ### 4.5 Los 211 dentro de `@apply`
 
