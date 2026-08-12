@@ -14,15 +14,35 @@
        demás por herencia de variables CSS.
        ------------------------------------------------------------------------------------ */
 
+    /* [F1.7 2026-08-11] SON DOS TOKENS, NO UNO, Y CONFUNDIRLOS COSTABA UN FALLO DE AA.
+
+       `--graph-accent` es el color del CONECTOR, y en `--config` y `--template` está
+       aclarado A PROPÓSITO: un punto de 8 px sobre lienzo blanco se lee por luminosidad,
+       y aclararlo es lo que hace que un nodo de configuración pese menos que una entidad.
+
+       Pero `.graph-node__btn--accent` lo usaba también como RELLENO SÓLIDO con texto
+       blanco encima, y ahí el aclarado juega en contra: blanco sobre el gris al 57 % daba
+       **2.70:1**, y sobre el violeta al 63 % otro 2.70. Es la acción principal del nodo, y
+       no llegaba ni al 3:1 de un límite de componente, menos aún al 4.5:1 de texto.
+
+       El arreglo NO es oscurecer el acento —eso apagaría los conectores, que es lo único
+       que distingue un tipo de nodo de otro—: es que el relleno use el color SIN aclarar,
+       que es de donde sale el aclarado. Queda 5.24 / 7.58 / 5.24, y el nodo principal
+       (que ya cumplía) no se mueve ni un píxel.
+
+       Deuda de esta misma línea de trabajo: se introdujo el 2026-08-11 al deduplicar los
+       cuatro `<style scoped>` de Vue Flow. */
     .graph-node {
         /* Unidad y proceso: la entidad principal, el color de marca. */
         --graph-accent: var(--brand-primary);
+        --graph-accent-solid: var(--brand-primary);
     }
 
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
        Es el gris de los iconos aclarado, no un color propio. */
     .graph-node--config {
         --graph-accent: color-mix(in srgb, var(--brand-icon) 57%, var(--brand-white));
+        --graph-accent-solid: var(--brand-icon);
         width: 190px;
         background: var(--brand-white);
     }
@@ -31,6 +51,7 @@
        distingue mejor que el matiz, y así no se añade un tono nuevo a la gama. */
     .graph-node--template {
         --graph-accent: color-mix(in srgb, var(--brand-primary) 63%, var(--brand-white));
+        --graph-accent-solid: var(--brand-primary);
         width: 170px;
     }
 
@@ -175,16 +196,18 @@
         color: var(--graph-accent);
     }
 
-    /* La acción principal del nodo: relleno sólido en vez de contorno. */
+    /* La acción principal del nodo: relleno sólido en vez de contorno. Usa
+       `--graph-accent-solid` —el color sin aclarar— porque aquí lleva texto blanco
+       encima; ver el bloque de arriba. */
     .graph-node__btn--accent {
-        background: var(--graph-accent);
-        border-color: var(--graph-accent);
+        background: var(--graph-accent-solid);
+        border-color: var(--graph-accent-solid);
         color: var(--brand-white);
     }
 
     .graph-node__btn--accent:hover {
-        background: color-mix(in srgb, var(--graph-accent) 85%, var(--brand-black));
-        border-color: color-mix(in srgb, var(--graph-accent) 85%, var(--brand-black));
+        background: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--brand-black));
+        border-color: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--brand-black));
         color: var(--brand-white);
     }
 }

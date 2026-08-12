@@ -264,7 +264,15 @@
 }
 
 
-.hope-action-edit:hover {
+/* [F1.3 2026-08-11] El reparto de hover estaba INCOMPLETO, y no solo en las dos variantes
+   que no existian: de las doce, solo siete tenian `:hover`. `--select`, `--assign` y
+   `--version` compartian el color de reposo con sus hermanas pero se quedaban planas al
+   pasar el raton, que es justo lo que §5.2 pide que no pase. Se agrupan con el token que
+   ya usaban: cada rama de hover es la misma mezcla, y ahora cubre las doce. */
+.hope-action-edit:hover,
+.hope-action-select:hover,
+.hope-action-assign:hover,
+.hope-action-launch:hover {
   color: color-mix(in srgb, var(--state-success) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--state-success) 16%, var(--brand-white));
   border-color: color-mix(in srgb, var(--state-success) 85%, var(--brand-white));
@@ -292,21 +300,17 @@
 }
 
 
-.hope-action-download:hover {
+.hope-action-download:hover,
+.hope-action-upload:hover,
+.hope-action-version:hover {
   color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--action-upload) 16%, var(--brand-white));
   border-color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-white));
 }
 
 
-.hope-action-upload:hover {
-  color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
-  background: color-mix(in srgb, var(--action-upload) 16%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-white));
-}
-
-
-.hope-action-delete-pdf:hover {
+.hope-action-delete-pdf:hover,
+.hope-action-retire:hover {
   color: color-mix(in srgb, var(--state-warning) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--state-warning) 16%, var(--brand-white));
   border-color: color-mix(in srgb, var(--state-warning) 85%, var(--brand-white));

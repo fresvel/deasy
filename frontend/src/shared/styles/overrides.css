@@ -87,6 +87,48 @@
   box-shadow: none;
 }
 
+/* ------------------------------------------------------------------------------------
+   [F1.1 2026-08-11] LOS CONTROLES DE FORMULARIO. Aqui vivia UNA regla que agrupaba diez
+   selectores —siete clases de componente y los tres elementos— y les daba el mismo
+   `border-color: var(--brand-border)` a todos. El efecto era que
+   **`--brand-border-field` y `--brand-border-strong` NO LLEGABAN NUNCA AL DOM**:
+
+     `forms.css`  .deasy-field-input  { border-color: var(--brand-border-strong) }  <- @layer
+     `forms.css`  .deasy-filter-control { border-color: var(--brand-border-field) } <- @layer
+     `auth.css`   .deasy-auth-field   { border-color: var(--brand-border-strong) }  <- @layer
+
+   ...perdian todas contra un selector de ELEMENTO (0,0,1), porque en CSS la precedencia de
+   capa gana a la especificidad y esta regla esta fuera de capa. Verificado en la app viva:
+   `.deasy-field-input` renderizaba `rgb(226,230,240)`. Dos tokens declarados, comentados y
+   mantenidos que no pintaban un solo pixel, en 228 controles de 40 ficheros.
+
+   El arreglo es partir la regla en tres: el suelo lo sigue poniendo el elemento, y las
+   clases lo pisan por especificidad DENTRO del mismo contexto sin capa. `background-color`
+   y `border-radius` se quedan en el grupo de diez tal cual estaban: el `border-radius`
+   anula el `rounded-2xl` de `forms.css` (16 px prometidos, 8 px reales) y desmontarlo
+   cambiaria el radio de los 228, que es F5 y no esto.
+
+   ⚠️ **LO QUE NO SE HACE AQUI, Y POR QUE.** La otra salida era bajar la regla de elemento a
+   `@layer base`, que es su sitio arquitectonico. Se descarto tras medirlo: al dejar de
+   estar fuera de capa, la regla deja de ganar tambien a las UTILIDADES de Tailwind, y
+   resucitan de golpe **90 declaraciones que hoy estan muertas** —29 `border-slate-300` en
+   reposo, 52 `focus:border-indigo-400` y 9 `focus:border-sky-500`—. O sea: hoy **ningun
+   `border-*` de Tailwind pinta sobre un input**, ni uno solo de los 61 bordes de foco. Eso
+   es un hallazgo nuevo y es de F4.2, que es la fase que decide si el foco es
+   `--focus-ring` o cinco familias. Resucitarlos de tapadillo dentro de un lote de bugs
+   seria justo lo que este plan promete no hacer.
+
+   ⚠️ Y las variantes `--error` siguen sin aplicar por el mismo mecanismo: `border-red-300`
+   vive en `@layer components`. NO se resucitan a proposito — ese par da **1.75:1**, el peor
+   del sistema, asi que encenderlo sin cambiarle el color empeora la accesibilidad en vez
+   de mejorarla. Va con el color, en F4.
+
+   ⚠️ Tercera cosa que sigue igual que antes: el `border-color` de los `:focus` de
+   `forms.css`/`auth.css` tampoco pinta, y por el mismo motivo. El indicador de teclado NO
+   se pierde —el `box-shadow: var(--focus-ring)` de esas mismas reglas SI aplica, porque
+   nadie compite por esa propiedad—, solo el borde. Se deja como estaba: encender el foco
+   es F4.2, y hacerlo aqui mezclaria dos cambios en la misma huella.
+   ------------------------------------------------------------------------------------ */
 .deasy-field-input,
 .deasy-field-select,
 .deasy-field-textarea,
@@ -98,8 +140,31 @@ input,
 select,
 textarea {
   background-color: var(--brand-white);
-  border-color: var(--brand-border);
   border-radius: 0.5rem;
+}
+
+/* El suelo: cualquier control sin clase de componente. */
+input,
+select,
+textarea {
+  border-color: var(--brand-border);
+}
+
+/* Campo de formulario y de login: el borde fuerte que `forms.css` y `auth.css` declaran. */
+.deasy-field-input,
+.deasy-field-select,
+.deasy-field-textarea,
+.deasy-auth-field {
+  border-color: var(--brand-border-strong);
+}
+
+/* Filtros y campos de perfil: el borde de control que declaran sus modulos. */
+.deasy-filter-control,
+.deasy-filter-search-input,
+.profile-text-input,
+.profile-select-input,
+.profile-textarea {
+  border-color: var(--brand-border-field);
 }
 
 .admin-select-field {
@@ -177,9 +242,14 @@ header {
   color: var(--action-view);
 }
 
+/* [F1.3 2026-08-11] `--launch` entra aqui. «Lanzar procesos del periodo» es una accion
+   afirmativa, y verde es como esta tabla dice «adelante». Se pintaba con
+   `hope-action-btn hope-action-launch` y la segunda clase NO EXISTIA: salia con el gris
+   neutro de la base, indistinguible de un boton sin significado. */
 .hope-action-edit,
 .hope-action-select,
-.hope-action-assign {
+.hope-action-assign,
+.hope-action-launch {
   background-color: color-mix(in srgb, var(--state-success) 10%, var(--brand-white));
   border-color: color-mix(in srgb, var(--state-success) 71%, var(--brand-white));
   color: var(--state-success);
@@ -200,7 +270,15 @@ header {
   color: var(--state-danger);
 }
 
-.hope-action-delete-pdf {
+/* [F1.3 2026-08-11] `--retire` entra aqui, con el ambar de aviso: «Retirar» no destruye
+   nada —lo saca de circulacion— asi que no es el rojo de `--delete`, y tampoco es una
+   accion afirmativa. Ambar es ademas el color con el que el estado `retired` se pinta en
+   tres de los cinco sitios donde aparece; F4.2 unificara los otros dos.
+
+   ⚠️ Este par pasa 1.4.11 POR 0.01 (3.01:1). No retoques `--state-warning` sin volver a
+   medir estos dos botones. */
+.hope-action-delete-pdf,
+.hope-action-retire {
   background-color: color-mix(in srgb, var(--state-warning) 9%, var(--brand-white));
   border-color: color-mix(in srgb, var(--state-warning) 71%, var(--brand-white));
   color: var(--state-warning);

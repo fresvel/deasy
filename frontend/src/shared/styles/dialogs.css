@@ -159,7 +159,15 @@
 .deasy-drawer-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1075;
+  /* [F1.5 2026-08-11] Era 1075, EXACTAMENTE el mismo que `AppDialogOverlay.vue:7`. Panel
+     lateral y modal quedaban empatados, asi que quien tapaba a quien lo decidia el orden
+     del DOM y no el diseño. Baja un escalon: si los dos estan abiertos, el modal —que es
+     el gesto que interrumpe— va encima.
+
+     El 1075 tampoco es un valor heredado de nada: Bootstrap usa 1055 para modal, 1070
+     para popover y 1080 para tooltip. Este numero esta ENTRE dos, y nadie sabe de donde
+     salio. La escala de verdad la declara F6.2. */
+  z-index: 1070;
   display: flex;
   justify-content: flex-end;
   background: var(--overlay-backdrop);
