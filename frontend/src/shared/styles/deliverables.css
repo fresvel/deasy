@@ -1,53 +1,21 @@
-/* ------------------------------------------------------------------------------------
-   TARJETA DE ENTREGABLE — la accion principal y su chip de icono.
+/* TARJETA DE ENTREGABLE — la accion principal y su chip de icono.
 
-   [F1.8 2026-08-11] Esto eran TRES strings de ~300 caracteres en `DeliverableCard.vue`
-   (lineas 128, 133 y 137) que decian exactamente lo mismo salvo el tono, mas sus tres
-   chips de icono. Por §6.1 de `frontend/CLAUDE.md` tres usos ya son una clase; aqui eran
-   tres del boton Y tres del chip, en veinte lineas de plantilla.
-
-   No es solo higiene. Extraerlo hace tres cosas que un `class="..."` largo no deja hacer:
-
-   1. **Da un sitio donde declarar el borde.** El limite de estos controles es lo unico que
-      los dibuja —el relleno es blanco— y hoy ninguno llega al 3:1 de WCAG 1.4.11. Con la
-      clase, subirlo es una linea; con la utilidad, son tres plantillas y una huella.
-   2. **Saca la menta `#4BF1A1` de la plantilla.** Estaba escrita a mano cuatro veces aqui
-      y una en `useDeliverableView.js`. Ahora es `--state-current`, y F2.4 puede darle un
-      valor que cumpla cambiando UN sitio.
-   3. **Retira cuatro de las 85 utilidades que se le escapan al repintado de
-      `overrides.css`** (`border-slate-200/90`, `bg-sky-50/45`, `bg-sky-50/55`,
-      `border-sky-100/95`). Esas pintan el gris/azul de Tailwind junto a hermanas
-      repintadas a la marca DENTRO DEL MISMO COMPONENTE — una diferencia de color real y
-      silenciosa. Aqui siguen igual de momento (la extraccion no cambia aspecto), pero
-      ahora estan en un sitio, no en tres.
-
-   El tono NO es decorativo: dice en que punto del flujo esta el entregable, y lo decide
-   `useDeliverableView.js`. Son los mismos cinco de `getDeliverableCardTone`, de los que
-   aqui se usan tres:
+   El tono NO es decorativo: dice en que punto del flujo esta el entregable, y lo elige
+   `getDeliverableCardTone` en `useDeliverableView.js` — un grep de estas clases en las
+   plantillas no las encuentra.
 
        --start   indigo   «aun no has empezado»
        --sign    menta    «te toca firmar»          <- `--state-current`
        --open    slate    «abrir», el neutro
 
    ⚠️ `group` se queda en la plantilla a proposito: es un marcador de variante de Tailwind,
-   no una utilidad, y `@apply group` no compila.
-   ------------------------------------------------------------------------------------ */
+   no una utilidad, y `@apply group` NO COMPILA. */
 
 @layer components {
     /* ⚠️ La sombra va en `box-shadow:` a pelo, NO en un `shadow-[…]`. Probado: Tailwind no
-       sabe parsear `shadow-[0_6px_16px_rgb(var(--token)/0.04)]` —no genera la utilidad y el
-       elemento se queda en `box-shadow: none`, en silencio—. Si algun dia se intenta otra
-       vez, comprobarlo en el DOM y no en el fuente.
-
-       Consecuencia menor y prevista: el valor COMPUTADO cambia de representacion. Antes
-       Tailwind encadenaba delante sus cuatro sombras de anillo vacias
-       (`rgba(0,0,0,0) 0 0 0 0` x4); ahora sale solo la sombra. **Los pixeles son los
-       mismos** —cuatro sombras totalmente transparentes no pintan nada—, pero la huella lo
-       marca como diferencia en `box-shadow`. Verificado leyendo el pixel.
-
-       ⚠️ Y la geometria `0 6px 16px` es una de las 13 sueltas frente a una escala de TRES
-       (§5.4). Se conserva tal cual porque esto es una extraccion, no un rediseño:
-       colapsarla sobre la escala va con las otras 20, en F3. */
+       sabe parsear `shadow-[0_6px_16px_rgb(var(--token)/0.04)]` — no genera la utilidad y el
+       elemento se queda en `box-shadow: none`, EN SILENCIO. Si se reintenta, comprobarlo en
+       el DOM y no en el fuente. */
     .deasy-deliverable-action {
         @apply relative flex w-full items-center gap-2.5 rounded-[1rem] border bg-white px-3.5 py-2.5 text-left transition duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60;
         box-shadow: 0 6px 16px rgba(var(--brand-shadow-ink-rgb), 0.04);
@@ -76,17 +44,10 @@
     }
 
     /* ── Tono: «te toca firmar» ──────────────────────────────────────────────────────
-       [F2.4 2026-08-11] EL BORDE LO PONE LA TINTA, NO LA MENTA. La menta al 75 % sobre
-       blanco daba **1.46:1** — muy por debajo del 3:1 que WCAG 1.4.11 pide a un limite de
-       componente, y aqui el limite es lo unico que dibuja el boton porque el relleno es
-       blanco. Oscurecer la menta lo habria arreglado a costa de convertirla en un verde
-       (ver `tokens.css`), asi que en vez de eso cambia de papel: la menta se queda para el
-       RELLENO, donde no hay minimo, y el borde y el texto usan `--state-current-ink`
-       (4.77:1, que vale para los dos).
-
-       Y el hover OSCURECE. Antes pasaba de la menta al 75 % a la menta al 100 %, o sea a
-       un borde MAS CLARO — justo lo que §5.2 dice que no se haga. Ahora tira del mismo
-       color al 85 % con negro, que son los porcentajes de los botones de accion. */
+       ⚠️ EL BORDE LO PONE LA TINTA, NO LA MENTA: la menta al 75 % sobre blanco da 1.46:1, y
+       aqui el limite es lo unico que dibuja el boton (el relleno es blanco). La menta se
+       queda para el RELLENO, que no tiene minimo. Y el hover OSCURECE — mezclar hacia el
+       100 % daria un borde MAS claro al pasar el raton. */
 
     .deasy-deliverable-action--sign {
         border-color: var(--state-current-ink);

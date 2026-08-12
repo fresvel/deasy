@@ -345,3 +345,54 @@ Y se retira el `.shadow-xl` **sin capa**: F5 decía que nunca aplicaba porque el
 | **Ampliar la lista blanca** con las 120 que se escapan | Es lo que se venía haciendo y por eso se escapaban 120. Es una lista escrita a mano: vuelve a pasar |
 | **Migrar `bg-slate-200` (16 usos)** | No tiene destino en la paleta — no es `--brand-border` (eso es un borde, no una superficie) e inventarle uno no es migrar. Queda para F6 o para cuando alguien declare ese escalón |
 | **Bajar las 150 reglas de capa en este commit** | Es el paso que la decisión desbloquea, pero son 12 módulos: va **módulo a módulo y con huella por módulo**, no de golpe |
+
+---
+
+## §4.4-c y 4.4-d · cerradas (2026-08-11/12)
+
+Seis racimos (`ada8ff5`, `0396590`, `8020850`, `af3e2bd`, `59b2713`, `909fb60`) y la migración
+(`0f726f5`). **156 → 58 reglas fuera de capa**, huella 0 en las siete rutas en todos ellos.
+
+4.4-d migró **621 utilidades** a tokens y mató **dos reglas del repintado** — `.bg-slate-100` y
+`.border-slate-100`, ambas a 0 consumidores. Es la primera vez que el bloque (A) pierde piezas.
+
+### EL INVENTARIO DE SUPRESIONES
+
+**Esta tabla es el entregable de §4.4.** Son las 58 reglas que se quedaron fuera de capa, y lo que
+cada una está tapando hoy. Vivía sólo en los comentarios del CSS; se trae aquí porque ahí sobraba.
+
+| Regla | Suprime | Dónde se decide |
+|---|---|---|
+| `base.css` `h1..h6` + `.admin-typography h1..h6` | **109 utilidades en 95 encabezados**: 77 de peso (`font-bold`, `font-semibold`…) + 32 de `tracking`/`leading` | Tipografía (§6.1) |
+| `base.css` `a`, `a:hover` | 3 `router-link` con `text-*`, y `.deasy-auth-link` — que hoy sale teal en vez de violeta | Familias en disputa (§4.2) |
+| `admin.css` `.admin-page-header__title` | Un `mt-1` (4 px) en `HomeView.vue` | Trivial |
+| `overrides.css` `input, select, textarea` (2 reglas) | **83 radios + 44 bordes + 80 focos** en 228 controles | §4.2 y F5 |
+| `overrides.css` `.deasy-field-*`, `.deasy-filter-*`, `.profile-*`, `.admin-select-field` | Los `:focus` capados de `forms.css` (borde `--brand-primary`) y el radio del select | §4.2 |
+| `overrides.css` `header` | 2 cabeceras de cajón y 1 translúcida | F5 |
+| `overrides.css` `.deasy-fa-icon` | 4 iconos con color propio | Trivial |
+| `overrides.css` `.hope-action-*` (7) y `.deasy-btn--secondary` y hermanas (3) | **239 nodos** y 5 nodos — y **no por una utilidad**: les gana `.deasy-table-shell .deasy-btn` (0,2,0), más específica, ya dentro de la capa | Pendiente |
+| `dialogs.css` `.deasy-dialog-root` | **116 nodos**: el velo de todos los modales | Pendiente |
+| `dialogs.css` `.deasy-dialog-panel` | 49 bordes + 44 sombras + 5 radios, por `content-class` | Pendiente |
+| `dialogs.css` `.deasy-dialog-body` | **33 utilidades de padding** (58 nodos), por `body-class` | Pendiente |
+| `dialogs.css` `.deasy-dialog-footer` · `… header button` (2) · `.deasy-dialog-title` · `.process-dialog-content` (3) | 6 + 15 + 10 nodos | Pendiente |
+| `forms.css` `.profile-*:focus` | El borde de foco de **49 controles** del dossier | §4.2 |
+| `signatures.css` los 2 cursores | Nada hoy — preventivo, por el prop `customClass` de `SignatureBox` | — |
+| `graph.css` los 3 conectores | Compiten con `@vue-flow/core`, que va sin capa | **No se toca** |
+
+### Las tres lecciones que costaron una medición cada una
+
+1. **Enumerar utilidades no basta.** `.hope-action-*` no pudo capar por una regla de componente **más
+   específica ya en la capa de destino**, no por una utilidad. 239 nodos. El análisis estático predijo
+   6 grupos peligrosos; la huella encontró 8.
+2. **La huella puede dar 0 sin haber mirado nada.** Las siete rutas no renderizan ni un modal, que es
+   donde vivía todo el riesgo de `dialogs`. Hubo que abrirlos y medirlos aparte. Igual con `:focus`,
+   que `getComputedStyle` no captura.
+3. **«No tapa nada» y «no he encontrado qué tapa» no son lo mismo.** Se intentó partir
+   `input,select,textarea` por declaración —la técnica que sí funcionó en `.deasy-dialog-body`— con el
+   argumento de que su `background` sobraba. Aparecieron 10 nodos: dos controles con `/alfa` que
+   salían blancos y ocho inputs ocultos que perdían el fondo. Revertido.
+
+### Y una de método, la cuarta vez que pasa
+
+Un script de migración volvió a reescribir el mismo comentario de `ProcessConfigNode.vue`. Ya lo
+habían reescrito otros tres. Sus nombres de clase van ahora **descritos y no escritos**.

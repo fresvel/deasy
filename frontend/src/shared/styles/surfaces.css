@@ -57,11 +57,8 @@
 
     
 }
-/* [F4.4-c 2026-08-11] ⚠️ **`.card` NO TIENE UN SOLO CONSUMIDOR.** Ni en `.vue` ni en `.js`,
-   y `package.json` no trae Bootstrap. Los unicos aciertos de un `grep` son `group/card`
-   (utilidad de grupo nombrado de Tailwind) y `card.iconWrap` (una variable JS). Se capa con
-   el resto por uniformidad — capar algo muerto es un no-op comprobable— pero **lo que
-   procede es borrarla, y eso es F5**. */
+/* ⚠️ `.card` no tiene un solo consumidor — los aciertos de un grep son `group/card`
+   (utilidad de Tailwind) y `card.iconWrap` (una variable JS). Borrarla es F5. */
 @layer components {
     .card {
         border-radius: 16px;
@@ -70,26 +67,11 @@
     }
 }
 
-/* ------------------------------------------------------------------------------------
-   BARRA DE DESPLAZAMIENTO DE LOS PANELES.
+/* BARRA DE DESPLAZAMIENTO DE LOS PANELES — una sola, con la variante `--dark` para las
+   barras laterales oscuras (ahi un pulgar claro solido cantaria; va un velo blanco).
 
-   `.custom-scrollbar` se usa en 22 sitios de 7 componentes, pero estaba definida en los
-   `<style scoped>` de TRES de ellos y con tres pieles distintas (5 px con pulgar blanco al
-   20 % en AdminView, 6 px con #e2e8f0 en SNotify, 6 px con `--brand-border` en FirmarPdf).
-   En los otros cuatro componentes la clase no hacia NADA: seis paneles se quedaban con la
-   barra del sistema. Un mismo nombre, cuatro resultados segun donde mirases.
-
-   Aqui hay una sola, con la variante que de verdad hacia falta: la de las barras laterales
-   oscuras, donde un pulgar claro solido cantaria y lo que toca es un velo blanco.
-
-   Ojo: los pseudo-elementos `::-webkit-scrollbar` NO son visibles para `getComputedStyle`,
-   asi que la huella de estilos no los ve. Esto se verifica mirando.
-
-   [F4.4-c 2026-08-11] Capadas sin riesgo: **Tailwind no genera ninguna utilidad para
-   `::-webkit-scrollbar*`**, asi que aqui no existe competidor posible ni lo habra. Son de
-   las pocas reglas del proyecto donde la capa da igual — se capan por uniformidad, para que
-   «fuera de capa» signifique siempre «pelea con un tercero» y no «nadie lo movio».
-   ------------------------------------------------------------------------------------ */
+   ⚠️ Los pseudo-elementos `::-webkit-scrollbar` NO son visibles para `getComputedStyle`:
+   la huella de estilos NO los ve. Esto se verifica mirando. */
 
 @layer components {
     .custom-scrollbar::-webkit-scrollbar {

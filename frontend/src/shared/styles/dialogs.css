@@ -1,37 +1,9 @@
 /* ======================================================================================
-   [F4.4-c R5 2026-08-11] LOS DIALOGOS BAJAN DE CAPA. DIECISIETE DE VEINTISIETE.
+   LOS DIALOGOS: 17 reglas capadas aqui arriba, 10 SUELTAS al final del fichero.
 
-   Este fichero tenia **27 reglas fuera de toda capa**, el racimo mas grande de §4.4-c. Una
-   regla sin capa gana SIEMPRE a una capada, da igual la especificidad, asi que cada una de
-   las 27 estaba tapando en silencio lo que las plantillas escriben por `content-class`,
-   `body-class` y `footer-class`. Bajarlas devuelve el contrato de Tailwind —una utilidad
-   gana a un componente— y por eso mismo **resucita** lo que estaba tapado.
-
-   El metodo fue el de R4, y es el unico que sirve: se bajaron **las 27 a la vez**, se midio
-   la huella de `getComputedStyle` en 7 rutas mas 3 estados con dialogo/cajon abierto, y se
-   volvieron a sacar de la capa las que rompian algo, cada una con su cifra. El analisis
-   estatico habia acertado el reparto; la medicion aporto las cantidades y **dos consumidores
-   que ninguna lectura del codigo iba a encontrar** (ver el bloque del boton de cabecera).
-
-     CAPAN a `@layer components` .................... 17 reglas — todo lo de aqui abajo
-     SE QUEDAN SIN CAPA ............................. 10 reglas — al final del fichero
-
-   Las 10 no se «neutralizan» borrando la utilidad de la plantilla: eso perderia la intencion
-   de quien la escribio. Salen de aqui cuando se decida el velo, el radio y el padding de los
-   dialogos, que es F5, no esto.
-
-   ⚠️ Tres cosas que la medicion desmintio o afino respecto del plan escrito:
-
-     1. Las utilidades de padding de `body-class` son **33**, no 31 (18 `pt-4`, 8 `p-0`, 2
-        `p-6`, y `px-0`, `py-0`, `pt-8`, `pb-2`, `lg:p-8`).
-     2. Las de `footer-class` son **4**, no 2: al `border-0 pt-0` de `FirmarPdf.vue:598` hay
-        que sumarle el `px-6 lg:px-8` de `HomeView.vue:928`, que tambien pierde hoy contra el
-        `padding` corto de `.deasy-dialog-footer`.
-     3. Las tres reglas de `.process-dialog-content` **tampoco pueden bajar**, y no estaban
-        en la lista de partida. El motivo es el simetrico del de R4: no es que les gane algo
-        mas especifico en la capa de destino, es que **se quedan fuera de capa las que son
-        MENOS especificas que ellas** —`.deasy-dialog-title`, `-body` y `-footer`—, y una
-        regla suelta gana a una capada aunque tenga menos especificidad.
+   Una regla sin capa gana SIEMPRE a una capada, da igual la especificidad. Por eso las 10
+   de abajo estan tapando lo que las plantillas escriben por `content-class`, `body-class`
+   y `footer-class`; cada una lleva su motivo. Inventario completo en la bitacora, §4.4-c.
    ====================================================================================== */
 
 @layer components {
@@ -59,55 +31,34 @@
         @apply border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6;
     }
 
-    /* [F4.4-c R5] Baja sin resucitar nada: ni `body-class` ni `footer-class` traen una sola
-       utilidad de `text-*` de tamaño ni de `font-*`; las 33 + 4 que traen son de padding, y
-       esas las tapa el bloque suelto del final, que no ha bajado. El `font-size` del `body`
-       lo sigue fijando `.deasy-dialog-body` (0,1,0) desde fuera de capa con el MISMO valor,
-       0.95 rem: aqui solo queda mandando el del `footer`. */
     .deasy-dialog-root .deasy-dialog-body,
     .deasy-dialog-root .deasy-dialog-footer {
         font-size: 0.95rem;
         font-weight: 400;
     }
 
-    /* [F4.4-c R5] Baja: la cabecera no recibe ninguna utilidad. La unica que se le intento
-       poner nunca ha llegado al DOM.
-
-       [R6] R5 dejo aqui un «ver la nota del `header-class` fantasma mas abajo» y esa nota no
-       llego a escribirse. La cuenta entera es esta: `FirmarPdf.vue:785` escribia
-       `header-class="bg-slate-50 border-b border-slate-100"`, pero **`AppModalShell` no
-       declara la prop `headerClass`** —tiene `dialogClass`, `contentClass`, `bodyClass` y
-       `footerClass`, no esa—, asi que caia en `attrs` y el `v-bind="attrs"` de la linea 11 la
-       estampaba como ATRIBUTO HTML literal en el div raiz, que ademas no es la cabecera sino
-       el velo. Comprobado en la app viva: cuatro `div.deasy-dialog-root` llevaban un atributo
-       `header-class`, **ninguna de sus tres clases estaba en su `classList`**, y no hay ni un
-       selector en todo el CSS servido que mire ese atributo. Borrada en R6: no es una
-       declaracion suprimida, es una prop que no existe. */
+    /* ⚠️ `AppModalShell` NO declara una prop `headerClass` — tiene `dialogClass`,
+       `contentClass`, `bodyClass` y `footerClass`. Un `header-class="…"` en la plantilla
+       cae en `attrs` y acaba de atributo HTML suelto en el div del VELO, sin efecto. */
     .deasy-dialog-root .deasy-dialog-header {
         background: var(--brand-surface-alt);
         border-bottom: 1px solid var(--brand-border);
         box-shadow: none;
     }
 
-    /* [F4.4-c R5] Baja: el color lo sigue poniendo `.deasy-dialog-title` (0,1,0) desde fuera
-       de capa, con el mismo `--brand-navy`, y el de los dialogos de proceso lo pone
-       `.process-dialog-content …`, que tampoco ha bajado. Medido: 0 diferencias. */
     .deasy-dialog-root .deasy-dialog-header .deasy-dialog-title,
     .deasy-dialog-root .deasy-dialog-title {
         color: var(--brand-navy);
     }
 
-    /* [F4.4-c R5] Baja: el `shell` solo recibe utilidades de caja (`mx-auto`, `flex`,
-       `min-h-full`, `w-full`, `justify-center`) y las de ancho de `shellClass`
-       (`max-w-3xl`…). Ni una de padding. */
     .deasy-dialog-shell {
         padding-block: 0.5rem;
     }
 
-    /* [F4.4-c R5] Baja. Ojo al desempate DENTRO de la capa: el `@apply` de arriba pisa las
-       mismas propiedades con otros valores (`bg-white`, `px-5 py-4`), y esta gana porque va
-       DESPUES en el mismo fichero, no por especificidad. Si alguien reordena el fichero, la
-       cabecera se vuelve blanca. */
+    /* ⚠️ Desempate DENTRO de la capa: el `@apply` de arriba pisa las mismas propiedades con
+       otros valores (`bg-white`, `px-5 py-4`), y esta gana porque va DESPUES en el mismo
+       fichero, no por especificidad. **Si reordenas el fichero, la cabecera se vuelve
+       blanca.** */
     .deasy-dialog-header {
         min-height: 3.75rem;
         background: var(--brand-surface-alt);
@@ -115,26 +66,14 @@
         padding: 1rem 1.25rem;
     }
 
-    /* [F4.4-c R5] Baja: `AppFormModalLayout.vue:2` es el unico consumidor real
-       (`profile-admin-skin relative w-full px-4 py-6 sm:px-6`) y no trae ninguna utilidad de
-       fondo. Medido: sigue en `rgba(0,0,0,0)`. */
     .deasy-dialog-panel .profile-admin-skin,
     .profile-dialog-panel .profile-admin-skin {
         background: transparent;
     }
 
-    /* [F4.4-c R5] Bajan las dos. El boton de cerrar que emiten `AppModalShell` y
-       `AppDialogOverlay` lleva `deasy-btn--close flex h-9 w-9 items-center justify-center
-       transition-colors`: ni fondo, ni borde, ni radio de utilidad. Y en la capa de destino
-       lo unico que lo toca es `.deasy-btn--close` (0,1,0) de `buttons.css`, que estas dos
-       (0,2,0 y 0,3,0) siguen ganando.
-
-       El `!important` se mantiene. Ahora es un importante DENTRO de capa, que en la cascada
-       vale MAS que uno suelto —para las declaraciones importantes el orden de capas se da la
-       vuelta—, asi que sigue ganandole al `border-slate-200 !important` de `overrides.css`.
-       Es un no-op comprobado: ninguno de estos botones lleva `border-slate-*` en plantilla.
-       A quien le gana de verdad es a `.deasy-dialog-root .deasy-dialog-header button`
-       (0,2,1), que se queda suelto ahi abajo y declara el mismo `--brand-border-field`. */
+    /* El `!important` es un importante DENTRO de capa, y para las declaraciones importantes
+       el orden de capas SE DA LA VUELTA: por eso gana al `border-slate-200 !important`
+       suelto de `overrides.css`. Si bajas esta regla de capa, deja de ganar. */
     .deasy-dialog-panel .deasy-btn--close,
     .profile-dialog-panel [data-modal-dismiss][aria-label="Close"],
     .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"] {
@@ -151,40 +90,16 @@
         color: var(--brand-navy);
     }
 
-    /* ----------------------------------------------------------------------------------
-       PANEL LATERAL (drawer) — la otra forma de la familia de dialogos.
-
-       Un dialogo se ancla al centro; este se ancla al borde derecho. Todo lo demas es igual,
-       asi que comparte velo, blanco y nivel de elevacion en vez de tener los suyos.
-
-       Existia DOS veces, con las mismas siete reglas y solo el prefijo cambiado
-       (`.unit-detail-*` en el organigrama y `.proc-detail-*` en el mapa de procesos), dentro
-       de sendos `<style scoped>`. El velo era `rgba(15,23,42,.35)` y el del modal es `.48`:
-       dos oscuridades distintas para el mismo gesto. Se queda la del modal, que es el token.
-
-       [F4.4-c R5] Las cinco bajan enteras. Los cuatro elementos que las llevan
-       (`ProcessGraphView.vue:140-160`, `UnitGraphView.vue:172-187`) no tienen NI UNA utilidad
-       de Tailwind al lado: el `div` lleva solo `deasy-drawer-overlay`, el `aside` solo
-       `deasy-drawer`, y los botones de pestaña solo `deasy-drawer__tab` con
-       `deasy-drawer__tab--active` condicional. Tampoco los alcanza ningun selector de
-       elemento suelto —los unicos que quedan en el sistema son `h1…h6`, `a`,
-       `input/select/textarea` y `header`, y el `header` cae en la cabecera del cajon, que
-       estas reglas no tocan—. Y aunque el cajon vive dentro de la vista de Vue Flow, sus
-       clases no son de la libreria: no compite con la unica hoja de tercero sin capa.
-       Medido con el cajon ABIERTO en el organigrama: 0 diferencias.
-       ---------------------------------------------------------------------------------- */
+    /* PANEL LATERAL (drawer) — la otra forma de la familia de dialogos: se ancla al borde
+       derecho en vez de al centro, y por eso comparte velo, blanco y nivel de elevacion en
+       vez de tener los suyos. */
 
     .deasy-drawer-overlay {
         position: fixed;
         inset: 0;
-        /* [F1.5 2026-08-11] Era 1075, EXACTAMENTE el mismo que `AppDialogOverlay.vue:7`.
-           Panel lateral y modal quedaban empatados, asi que quien tapaba a quien lo decidia
-           el orden del DOM y no el diseño. Baja un escalon: si los dos estan abiertos, el
-           modal —que es el gesto que interrumpe— va encima.
-
-           El 1075 tampoco es un valor heredado de nada: Bootstrap usa 1055 para modal, 1070
-           para popover y 1080 para tooltip. Este numero esta ENTRE dos, y nadie sabe de donde
-           salio. La escala de verdad la declara F6.2. */
+        /* Un escalon POR DEBAJO del 1075 de `AppDialogOverlay.vue`, a proposito: si el
+           cajon y el modal estan abiertos a la vez, el modal —que es el gesto que
+           interrumpe— va encima. Empatados, lo decidia el orden del DOM. */
         z-index: 1070;
         display: flex;
         justify-content: flex-end;
@@ -224,14 +139,8 @@
         border-bottom-color: var(--brand-primary);
     }
 
-    /* Vista previa del dossier en PDF. Del `<style scoped>` del modal; `#f8fafc` y `#64748b`
-       eran exactamente `--brand-surface-alt` y un gris de texto, ya tenian token.
-
-       [F4.4-c R5] Las cuatro bajan: los tres `div` y el `iframe` de
-       `DossierPdfPreviewModal.vue:11-16` no llevan ninguna otra clase. Medido en
-       `/perfil/formacion` con el modal en el DOM: 0 diferencias. El `.pdf-preview-frame` y su
-       `iframe` van tras un `v-if` que pide un PDF real, asi que se inyectaron a mano en las
-       dos capturas para que la huella tambien los midiera. */
+    /* Vista previa del dossier en PDF. Ojo al medirla: `.pdf-preview-frame` y su `iframe`
+       van tras un `v-if` que pide un PDF real, asi que hay que inyectarlos a mano. */
 
     .pdf-preview-shell {
         min-height: 70vh;
@@ -261,53 +170,23 @@
 }
 
 /* ======================================================================================
-   SE QUEDAN SIN CAPA — DIEZ REGLAS, CADA UNA CON LO QUE SUPRIME Y SU CIFRA MEDIDA.
+   SE QUEDAN SIN CAPA — DIEZ REGLAS. Lo que suprime cada una, en la bitacora (§4.4-c).
 
-   Las cifras son nodos de la huella de `getComputedStyle` en las 7 rutas de referencia
-   (login, home, firmas, perfil, admin, organigrama, mapa) con las 27 reglas capadas a la
-   vez. No son estimaciones.
-
-   ⚠️ El ORDEN de estas diez importa y no es decorativo: al estar todas fuera de capa, entre
-   ellas desempata la especificidad y, a igualdad, el orden de aparicion. Es el mismo orden
-   que tenian antes del refactor.
+   ⚠️ EL ORDEN DE ESTAS DIEZ NO ES DECORATIVO: al estar todas fuera de capa, entre ellas
+   desempata la especificidad y, a igualdad, el orden de aparicion. No las reordenes.
    ====================================================================================== */
 
-/* ── 1 y 2. EL BOTON DE LA CABECERA ─────────────────────────────────────────── 15 nodos ──
+/* ── 1 y 2. EL BOTON DE LA CABECERA ────────────────────────────────────────────────────
+   (0,2,1) alcanza a CUALQUIER `button` dentro de la cabecera, incluidos los que la
+   plantilla mete por el slot `#title` — de ahi que el disparador de `AppInfoTip` salga
+   permanentemente en su color de hover.
 
-   `.deasy-dialog-root .deasy-dialog-header button` es (0,2,1) —dos clases y un elemento— y
-   alcanza a CUALQUIER `button` que caiga dentro de la cabecera, incluidos los que la
-   plantilla mete por el slot `#title`. Tiene dos consumidores, y el segundo no lo encuentra
-   ninguna lectura del codigo:
+   El `:hover` no se puede separar de la base: bajando solo uno, la plantilla ganaria en
+   hover y no en reposo, y la huella NO ve los `:hover`.
 
-     - `FirmarPdf.vue:790` — el boton de cerrar del modal «Validar documento», con
-       `bg-brand-surface-muted/50 border border-slate-200 text-brand-icon hover:bg-slate-100`.
-       Capada la regla, el `background` pasa de `rgb(255,255,255)` a
-       `oklab(0.981 -0.0009 -0.0044 / 0.5)`. **5 nodos** (4 en firmas, 1 en home).
-     - `AdminDraftArtifactModal.vue:16` — un `AppInfoTip` DENTRO del `<h5>` del titulo. Su
-       disparador es un `button` con `text-brand-text-muted hover:text-brand-icon`, y esta
-       regla se lo pisa: hoy renderiza `rgb(71,85,105)` en reposo, o sea **el tooltip esta
-       permanentemente en su color de hover**. Capada, vuelve a `rgb(90,95,111)`. **10 nodos**
-       (5 en organigrama y 5 en mapa, contando el `svg` y sus tres `path`, que heredan).
-
-   La segunda regla es el `:hover` de la primera y no se puede separar de ella: si bajase
-   sola, los `hover:bg-slate-100` / `hover:text-slate-800` de la plantilla ganarian solo en
-   hover y el boton cambiaria al pasar el raton pero no en reposo. La huella no ve los
-   `:hover`; esto es analisis, no medicion.
-
-   Salen de aqui cuando se decida si un boton del slot `#title` es «boton de dialogo». */
-
-/* [F4.4-d 2026-08-12] ⚠️ EL `border` SE QUEDA, PERO AHORA GANA POR OTRA COSA, Y ESO CAMBIA
-   LO QUE PINTA. Hasta 4.4-d, el boton de cerrar de `FirmarPdf.vue:790` llevaba
-   `border-slate-200`, y el repintado de `overrides.css` —suelto y con `!important`— le
-   ganaba a esta regla: renderizaba `--brand-border`. Al migrar ese `border-slate-200` a
-   `border-brand-border`, la utilidad deja de tener `!important` y esta regla pasa a ganar:
-   `--brand-border-field`. Son 5 nodos y la huella los cazo.
-
-   NO se arregla partiendo la regla —aqui el `border` si esta tapando algo real— sino
-   dejando que la plantilla diga lo suyo: el `border-brand-border` de `FirmarPdf.vue` se
-   revierte a la utilidad sin migrar en ese punto concreto, para no cambiar el color. Queda
-   como la unica excepcion de 4.4-d, anotada, y muere cuando se decida si un boton del slot
-   `#title` es «boton de dialogo» — la misma decision que ya menciona el bloque de arriba. */
+   ⚠️ `FirmarPdf.vue:790` conserva a proposito su `border-slate-200` SIN MIGRAR: migrado, la
+   utilidad pierde el `!important` del repintado, esta regla pasa a ganar y el borde cambia
+   de `--brand-border` a `--brand-border-field` (5 nodos). Unica excepcion de 4.4-d. */
 .deasy-dialog-root .deasy-dialog-header button {
   background: var(--brand-white);
   color: var(--brand-icon);
@@ -319,44 +198,20 @@
   color: var(--brand-navy);
 }
 
-/* ── 3. EL VELO DE TODOS LOS MODALES ───────────────────────────────────────── 116 nodos ──
-
-   `bg-slate-950/45` y `backdrop-blur-[2px]` estan escritos a mano en el `class` de los DOS
-   componentes de dialogo —`AppModalShell.vue:4` y `AppDialogOverlay.vue:7`— y ademas se
-   repiten con `@apply` en el bloque capado de arriba. Los tres sitios dicen lo mismo y
-   ninguno de los tres pinta: manda esta regla.
-
-   Capada, los 116 velos de las 7 rutas pasan de `rgba(15,23,42,0.48)` a
-   `oklab(0.129 -0.0039 -0.0418 / 0.45)` y de `blur(3px)` a `blur(2px)`. Son dos decisiones
-   distintas del mismo gesto —el token `--overlay-backdrop` y la utilidad— y elegir cual vale
-   es F5, no un refactor de capas. */
+/* ── 3. EL VELO DE TODOS LOS MODALES ───────────────────────────────────────────────────
+   Tapa el `bg-slate-950/45 backdrop-blur-[2px]` que `AppModalShell.vue` y
+   `AppDialogOverlay.vue` escriben a mano, y el `@apply` que lo repite arriba: los tres
+   dicen lo mismo y ninguno pinta. 116 velos. Elegir cual vale es F5. */
 
 .deasy-dialog-root {
   background: var(--overlay-backdrop);
   backdrop-filter: blur(3px);
 }
 
-/* ── 4. EL PANEL ──────────────────────────────── 49 bordes + 44 sombras + 5 radios, nodos ──
-
-   Por `content-class` llegan **20 `border-0`**, **19 `shadow`**, **1 `shadow-xl`** y **1
-   `rounded-xl`**, y esta regla se los come todos. Medido con la regla capada:
-
-     - **49 paneles** pierden el borde de 1 px (gana `border-0`: `1px` -> `0px`).
-     - **44 paneles** cambian de sombra: la de marca `--brand-elev-3` por la de Tailwind.
-     - **5 paneles** cambian de radio: `15.2px` -> `12px` (el `rounded-xl` de
-       `FirmarPdf.vue:784`).
-
-   Ojo con el que NO cambia: el `border-color`. **[R6] Y el motivo que decia aqui era otro.**
-   Decia que lo fijaba `overrides.css` con `!important` dentro de `@layer components`; ese
-   `!important` se retiro en R6 tras medir que no hacia nada, y el `border-color` sigue sin
-   cambiar — porque quien lo pone es ESTA regla, que esta fuera de capa y le gana a la de
-   `overrides.css` sin necesidad de prioridad. Las dos declaran `--brand-border`.
-
-   ⚠️ Y `rounded-4`, que aparecia 18 veces en el mismo `content-class`, **no existe en
-   Tailwind v4**: comprobado enumerando `document.styleSheets` en la app viva —0 reglas, con
-   `.rounded-xl` de control positivo— sobre los 24 nodos que lo llevaban, que renderizaban el
-   `15.2px` de aqui abajo. **[R6] Borrado de las plantillas**, porque no expresa ninguna
-   intencion: es un error de escritura, no una declaracion suprimida. */
+/* ── 4. EL PANEL ───────────────────────────────────────────────────────────────────────
+   Por `content-class` llegan 20 `border-0`, 20 sombras y 1 `rounded-xl`, y esta regla se
+   los come: 49 bordes + 44 sombras + 5 radios. El `border-color` lo pone ESTA regla, no
+   el repintado de `overrides.css` — las dos declaran `--brand-border`. */
 
 .deasy-dialog-panel,
 .profile-dialog-panel {
@@ -366,16 +221,11 @@
   box-shadow: var(--brand-elev-3);
 }
 
-/* ── 5. EL TITULO ──────────────────────────────────────────────────────────── 121 nodos ──
-
-   Aqui el competidor no es una utilidad: es el `h1…h6` de `base.css:64-80`, que **tambien
-   sigue fuera de capa** y declara `line-height: var(--line-height-heading)` = 1.2. Como es
-   (0,0,1) y esta clase es (0,1,0), hoy gana la clase por especificidad; capada, perderia
-   contra el elemento suelto y los titulos pasarian de **21.6 px a 19.2 px**. Medido: 121
-   nodos, contando los hijos del `<h5>` que heredan el `line-height`.
-
-   (El `font-weight` no correria peligro: es `!important`, y un importante capado gana. Pero
-   no se puede bajar media regla.) */
+/* ── 5. EL TITULO ──────────────────────────────────────────────────────────────────────
+   ⚠️ Aqui el competidor NO es una utilidad: es el `h1…h6` de `base.css`, que tambien sigue
+   fuera de capa y declara `line-height: 1.2`. Hoy gana esta clase (0,1,0) por
+   especificidad; capada, perderia contra el elemento suelto (0,0,1) y los titulos bajarian
+   de 21.6 px a 19.2 px (121 nodos). */
 
 .deasy-dialog-title {
   margin: 0;
@@ -386,35 +236,13 @@
   line-height: 1.35;
 }
 
-/* ── 6. EL CUERPO ───────────────────────────────────────────────────────────── 58 nodos ──
+/* ── 6. EL CUERPO ──────────────────────────────────────────────────────────────────────
+   Lo que esta regla tapa es el `padding`: `body-class` trae 33 utilidades de padding en 24
+   usos y este `1.25rem` se las come todas (58 nodos, con saltos de 20 px a 0 y a 32).
 
-   `body-class` trae **33 utilidades de padding** repartidas en 24 usos: 18 `pt-4`, 8 `p-0`,
-   2 `p-6`, y una de `px-0`, `py-0`, `pt-8`, `pb-2` y `lg:p-8`. El `padding: 1.25rem` de aqui
-   las tapa todas.
-
-   Medido con la regla capada: **58 nodos** cambian de padding. Los saltos son grandes —
-   `20px -> 16px` en los 18 `pt-4`, `20px -> 0px` en los `p-0`, `20px -> 32px` en el
-   `p-6 lg:p-8` de `HomeView.vue:927`—, o sea que esto no es un ajuste fino: es la caja de
-   todos los dialogos de la aplicacion. */
-
-/* [F4.4-d 2026-08-12] EL `background` SE VA DE AQUI, Y ES LO QUE DESBLOQUEA 4.4-d.
-
-   Lo que esta regla tiene que seguir tapando es el `padding` — las 33 utilidades de arriba.
-   El `background` no tapaba nada de eso: estaba de mas, porque `overrides.css` declara
-   `.deasy-auth-panel, .deasy-dialog-body { background-color: var(--brand-white) }` con el
-   MISMO valor, y desde R4 esa regla ya vive en `@layer components`.
-
-   Tenerlo aqui, sin capa, era el unico agujero que le quedaba a 4.4-d: `FirmarPdf.vue:786`
-   pasa `body-class="p-0 bg-slate-50 relative"`, y al migrar ese `bg-slate-50` a
-   `bg-brand-surface-muted` la utilidad habria perdido contra esta regla suelta y el cuerpo
-   del modal «Validar documento» habria pasado de gris a blanco.
-
-   Quitando la linea, el fondo lo pone la regla capada de `overrides.css` (mismo blanco, sin
-   cambio) y una utilidad de token vuelve a ganarle por capa, que es el contrato de Tailwind.
-
-   Es la tecnica de PARTIR POR DECLARACION, no por regla: cuando dentro de una misma regla
-   conviven una declaracion que tapa algo y otra que no, se separan. La que tapa se queda
-   fuera con su cifra; la que no, baja. */
+   ⚠️ NO le devuelvas un `background`. El fondo lo pone `overrides.css` desde
+   `@layer components` con el mismo blanco; teniendolo aqui, suelto, un
+   `body-class="… bg-…"` de plantilla pierde. */
 
 .deasy-dialog-body {
   color: var(--brand-text-body);
@@ -423,14 +251,8 @@
   padding: 1.25rem;
 }
 
-/* ── 7. EL PIE ───────────────────────────────────────────────────────────────── 6 nodos ──
-
-   Dos consumidores, cuatro utilidades: `border-0 pt-0` en `FirmarPdf.vue:598` y
-   `px-6 lg:px-8` en `HomeView.vue:928`. El segundo no estaba en el inventario del plan y
-   pierde igual: `px-6` son 1.5 rem contra el 1.25 rem del `padding` corto de aqui.
-
-   Medido con la regla capada: **6 nodos** — 2 pies pierden `padding-left` (`20px -> 32px`) y
-   2 pierden el borde superior junto con su `padding-top` (`16px -> 0px`). */
+/* ── 7. EL PIE ─────────────────────────────────────────────────────────────────────────
+   Tapa 4 utilidades de `footer-class` (`border-0 pt-0`, `px-6 lg:px-8`): 6 nodos. */
 
 .deasy-dialog-footer {
   background: var(--brand-surface-alt);
@@ -438,29 +260,14 @@
   padding: 1rem 1.25rem;
 }
 
-/* ── 8, 9 y 10. LOS DIALOGOS DE PROCESO ───────────────────────── LA TRAMPA DE ESTA RONDA ──
+/* ── 8, 9 y 10. LOS DIALOGOS DE PROCESO ────────────────────────────────────────────────
+   ⚠️ ESTAS TRES NO PUEDEN BAJAR SOLAS. `.process-dialog-content .deasy-dialog-body` (0,2,0)
+   gana hoy a `.deasy-dialog-body` (0,1,0) porque las dos estan sueltas. Si estas bajan y
+   aquellas no, gana la MENOS especifica —estar fuera de capa vale mas que cualquier
+   especificidad— y el dialogo del editor de procesos cambia de color y de tamaño de letra
+   (12 nodos en `/admin/gestiones/procesos/mapa`).
 
-   Estas tres NO estaban en la lista de las que se quedan, y tienen que quedarse. El motivo
-   es el **simetrico** del que descubrio R4, y merece la pena escribirlo entero porque son
-   dos formas del mismo fallo:
-
-     R4: bajas una regla y en la capa de destino ya vive otra MAS especifica que la tapa.
-     R5: bajas una regla y las que la tapan son las que se quedan FUERA, aun siendo MENOS
-         especificas — porque estar fuera de capa vale mas que cualquier especificidad.
-
-   `.process-dialog-content .deasy-dialog-body` es (0,2,0) y `.deasy-dialog-body` es (0,1,0).
-   Hoy gana la primera, las dos sueltas, por especificidad. Si la primera bajase y la segunda
-   no —que es exactamente lo que decide este commit—, ganaria la segunda y el dialogo del
-   editor de procesos cambiaria de color y de tamaño de letra:
-
-     `font-size`  `var(--font-size-base)` (16 px)  ->  0.95 rem (15.2 px)
-     `color`      `--brand-ink` rgb(31,41,55)      ->  `--brand-text-body` rgb(63,66,84)
-     titulo       `--brand-ink` rgb(31,41,55)      ->  `--brand-navy` rgb(17,24,39)
-
-   Medido en `/admin/gestiones/procesos/mapa`, que renderiza uno: **12 nodos**. La medicion
-   con las 27 capadas a la vez NO lo caza —ahi bajan las dos y el orden relativo se conserva—,
-   asi que hizo falta una tercera medicion con estas tres capadas y las otras siete fuera.
-
+   Ojo al medirlo: capando las 27 a la vez NO se caza, porque el orden relativo se conserva.
    Bajan cuando bajen `.deasy-dialog-title`, `-body` y `-footer`; ni antes, ni por separado. */
 
 .process-dialog-content,

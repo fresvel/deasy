@@ -57,18 +57,10 @@
 
     
 }
-/* ------------------------------------------------------------------------------------
-   [F4.4-c 2026-08-11] ⚠️ **LAS CUATRO REGLAS DE ABAJO ESTAN MUERTAS.** `.table` no tiene un
-   solo consumidor en `src/`: los aciertos de un `grep` son `:table="…"`, `table.table` y
-   `selectedTable?.table`, o sea props y variables, no clases. Y **no hay Bootstrap en
-   `package.json`**, que era el unico motivo por el que este bloque podia tener sentido.
-
-   Las tablas de verdad usan `.deasy-table` (arriba, ya capada), `.admin-data-table` o
-   `.person-assignment-table`. Capar esto es un **no-op comprobable** — no hay nodo que
-   estilar— y se hace por uniformidad: asi «fuera de capa» significa siempre «pelea con un
-   tercero». **Lo que procede es borrarlas, y eso es F5**, junto con `.table-institutional`,
-   que tampoco tiene consumidores y deja huerfanas dos ramas de `overrides.css`.
-   ------------------------------------------------------------------------------------ */
+/* ⚠️ LAS CUATRO REGLAS DE ABAJO ESTAN MUERTAS. `.table` no tiene un solo consumidor en
+   `src/` —los aciertos de un grep son props y variables— y no hay Bootstrap en
+   `package.json`. Las tablas de verdad usan `.deasy-table`, `.admin-data-table` o
+   `.person-assignment-table`. Borrarlas es F5, junto con `.table-institutional`. */
 
 @layer components {
     .table.align-middle> :not(caption)>*>* {

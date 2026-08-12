@@ -33,19 +33,6 @@
         flex: 0 0 auto;
     }
 
-    /* [fusion-fase-X 2026-08-07] Estaba definida en los DOS @layer components (ex-L329 y ex-L1349).
-       Ganaba la segunda por orden de cascada dentro de la misma capa. Del bloque 1
-       (rounded-2xl + shadow-none) no sobrevivia ninguna declaracion. */
-    /* [fusion-fase-X 2026-08-07] ex-L334 + ex-L1354. El skin plano del bloque 2 pisaba TODO,
-       incluido `background: var(--brand-surface-muted)`: hoy esta tarjeta es blanca. */
-    /* [fusion-fase-X 2026-08-07] ex-L340 + ex-L1354. Igual que .deasy-card-muted: el bloque 2
-       pisaba `background: var(--brand-surface-soft)`; hoy es blanca. */
-    /* [fusion-fase-X 2026-08-07] ex-L350 + ex-L1354. Del bloque 1 solo sobrevive `p-4`
-       (el skin del bloque 2 no declara padding). */
-    /* [fusion-fase-X 2026-08-07] ex-L355 + ex-L1354. Sobrevive `p-4`; el fondo `--brand-surface-muted`
-       lo pisaba `bg-white` del bloque 2. */
-    /* [fusion-fase-X 2026-08-07] ex-L365 + ex-L1362. Sobreviven los paddings (`p-5 sm:p-6 lg:p-8`);
-       radio, sombra y borde los fijaba el bloque 2. */
     
 }
 @layer components {
@@ -53,13 +40,6 @@
         @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border font-semibold shadow-none transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
-    /* [fusion-fase-X 2026-08-07] Las 13 variantes de boton estaban definidas dos veces
-       (bloque 1 ex-L568..635, bloque 2 ex-L1379..1447). Ganaba SIEMPRE la del bloque 2,
-       que ademas es la que suma el gemelo `.admin-btn--*` que emite AppButton/AdminButton.
-       Del bloque 1 solo sobrevivia el `:hover` rojo de `--cancel` (0,2,0 gana al skin 0,1,0),
-       que se conserva abajo como regla propia. Todo lo demas del bloque 1 estaba muerto:
-       el degradado de `--primary`, los `--soft-*` con tokens semanticos, el `rounded-full`
-       de `--close` (lo pisaba el radio de `.deasy-btn`) y los `hover:text-white` de los soft. */
     .deasy-btn--primary,
     .admin-btn--primary {
         @apply text-white;
@@ -74,10 +54,10 @@
         color: var(--brand-text-body);
     }
 
-    /* Unico resto vivo del bloque 1 en los botones: el hover rojo de cancelar. Solo lo
-       llevaba la variante `deasy-*`, no la `admin-*`, asi que las dos NO se pueden agrupar.
-       Va con `@apply hover:` y no con un `:hover` a mano: Tailwind envuelve la variante
-       `hover:` en `@media (hover:hover)` y escribirlo a mano lo activaria tambien en tactil. */
+    /* El hover rojo lo lleva SOLO la variante `deasy-*`, no la `admin-*`: por eso las dos
+       reglas no se pueden agrupar. Y va con `@apply hover:`, no con un `:hover` a mano —
+       Tailwind envuelve la variante en `@media (hover:hover)` y a mano se activaria
+       tambien en tactil. */
     .deasy-btn--cancel {
         @apply bg-white hover:border-red-300 hover:bg-red-50;
         border-color: var(--brand-border-strong);
@@ -137,10 +117,6 @@
         @apply h-9 w-9 rounded-2xl border border-slate-200 bg-white p-0 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
     }
 
-    /* [fusion-fase-X 2026-08-07] `rounded-[10px]` estaba MUERTO: `.deasy-btn` del bloque 2
-       (ex-L1376) llegaba despues con `rounded-2xl` y ganaba, asi que el boton de menu mide
-       16px hoy. Se retira para que la fusion no lo resucite (AppButton/AdminButton siempre
-       emiten `.deasy-btn` junto a `.deasy-btn--menu`). */
     .deasy-btn--menu {
         @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
         border-color: rgba(var(--brand-navy-menu-rgb), 0.14);
@@ -171,9 +147,6 @@
         @apply h-9 w-9 p-0;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L667 + ex-L1449. Del bloque 1 solo sobrevive `overflow-hidden`:
-       el bloque 2 reemplazaba el degradado azul-verde por blanco plano (y lo remataba con
-       `background-image: none`), el radio, el padding, el color de texto y la sombra. */
     
 }
 @layer components {
@@ -247,68 +220,22 @@
     
 }
 /* ======================================================================================
-   [F4.4-c R4 2026-08-11] LOS 12 BOTONES DE ACCION SE QUEDAN ENTEROS FUERA DE CAPA.
+   LOS 12 BOTONES DE ACCION SE QUEDAN ENTEROS FUERA DE CAPA — Y ESTE FICHERO Y
+   `overrides.css` SON UNA SOLA PIEZA: aqui la caja y los `:hover`, alli los reposos de
+   color. Mover una mitad sin la otra mata o los 12 bordes o los 12 `:hover`.
 
-   Esta familia esta repartida entre este fichero (la caja y los `:hover`) y
-   `overrides.css` (los reposos de color), y **no se puede mover una mitad sin la otra**.
-   Por eso los dos ficheros van en el mismo commit. Lo que se midio antes de tocar nada:
+   ⚠️ Y bajar las dos a la vez TAMPOCO vale: dentro de `@layer components` ya viven
+   `.deasy-table-shell .deasy-btn` y `… .deasy-btn--secondary` (0,2,0), mas especificas que
+   `.hope-action-*` (0,1,0). Capados, los 12 se pintan como un `--secondary` cualquiera —
+   239 nodos en `/admin/…/organigrama`. Estar fuera de capa es lo unico que les hace ganar.
 
-     - Bajando solo `overrides.css`, el `border: 1px solid transparent` de aqui —suelto—
-       ganaria a sus `border-color` capados y **los 12 botones se quedarian sin borde de
-       color**. Y el borde es lo unico que los dibuja: el relleno esta al 10 % y da 1.1:1
-       contra la fila (§3, punto 2).
-     - Bajando solo este fichero, los reposos sueltos de alli (`.hope-action-view`,
-       `-edit`, `-delete`…) ganarian a los `:hover` capados de aqui y **los 12 estados
-       `:hover` moririan**.
+   ⚠️ Segundo motivo, independiente: `AdminButton.vue` estampa utilidades CRUDAS en su mapa
+   de tamaños (`sm: "admin-btn--sm px-3 py-2 text-sm"`), y `@layer utilities` gana a
+   `components`. En cuanto el `padding: 0` de aqui entre en una capa, los 28 botones dejan
+   de ser el cuadrado de 2.25 rem y revientan la columna de acciones de todas las tablas.
 
-   ── Y BAJANDO LOS DOS A LA VEZ TAMPOCO. ESTO SE APRENDIO MIDIENDO ─────────────────────
-
-   El analisis previo decia que bajando los dos no cambiaba nada, porque dentro de
-   `@layer components` el desempate lo seguiria haciendo el orden del documento y
-   `index.css` importa `buttons.css` antes que `overrides.css`. **Es falso, y la huella lo
-   canto: 239 nodos de diferencia en `/admin/…/organigrama`.**
-
-   El motivo es que el orden solo desempata a IGUAL especificidad, y en esa misma capa ya
-   viven, desde antes, dos selectores con MAS:
-
-     buttons.css  `.deasy-table-shell .deasy-btn`      (0,2,0)  -> `rounded-xl`, `px-3 py-1.5`
-     buttons.css  `.deasy-table-shell .deasy-btn--secondary`     -> fondo blanco y texto gris
-
-   `.hope-action-btn` y `.hope-action-*` son (0,1,0). Hoy les ganan igualmente **porque
-   estan fuera de capa**, que vence a cualquier especificidad. Al capar los 12, los
-   botones de las tablas de administracion —que es donde viven— pasaron a pintarse como un
-   `--secondary` normal: radio 10 px -> 12 px, fondo a blanco, y el color de la accion
-   (verde, azul, rojo, ambar) sustituido por `--brand-text-strong`. Medido: el boton de
-   «Editar» paso de `rgb(4,120,87)` a `rgb(52,55,65)`.
-
-   O sea que aqui **no basta con enumerar las utilidades de Tailwind que compiten**: hay
-   que mirar tambien las reglas de componente MAS ESPECIFICAS que ya estan en la capa. Ese
-   es el segundo modo de colision, y no estaba escrito en ningun sitio.
-
-   ── QUE HARIA FALTA PARA QUE PUDIERAN BAJAR ──────────────────────────────────────────
-
-   Decidir si un boton de accion dentro de una tabla es un `.deasy-btn` o no. Hoy lo es
-   —`AdminButton` le estampa `deasy-btn` y `deasy-btn--secondary` ademas de
-   `hope-action-*`—, y por eso lo alcanzan reglas pensadas para otra cosa. Mientras siga
-   siendo las dos cosas a la vez, la unica forma de que gane la que manda es estar fuera
-   de capa. Es un cambio de componente, no de capa: va con el arreglo de `AdminButton` de
-   la nota de abajo.
-
-   ⚠️ Segundo motivo, independiente del anterior y que sigue vivo aunque se resuelva ese:
-   `AdminButton.vue:73` estampa **utilidades crudas** en su mapa de tamaños —
-   `sm: "admin-btn--sm px-3 py-2 text-sm"`. `px-3 py-2` son utilidades de verdad
-   (`@layer utilities`), que gana a `@layer components`. Los 28 usos de `hope-action-btn`
-   pasan por ese `size="sm"`, asi que en cuanto el `padding: 0` de aqui entre en una capa,
-   los botones dejan de ser el cuadrado de 2.25 rem: se van a 2.25 + 1.5 rem de ancho y
-   revientan la columna de acciones de todas las tablas —el peor caso del sistema, 172
-   botones a la vez (§5.5)—.
-
-   ⚠️ Y de paso, apuntado donde se vea: `AdminButton.vue:81-82` conserva el bug
-   `variantClassMap[props.variant] || props.variant` que `AppButton.vue` ya corrigio en
-   F1.6. Una variante desconocida se estampa como clase literal, y `plain` —que SI esta en
-   el mapa, pero mapeado a `""`, que es falsy— tambien. No se arregla aqui: no es de esta
-   fase, y el gemelo ya tiene escrita la explicacion completa en `AppButton.vue:88-98`.
-   ====================================================================================== */
+   Para que puedan bajar hay que decidir si un boton de accion dentro de una tabla es un
+   `.deasy-btn` — hoy `AdminButton` le estampa las dos cosas. Es cambio de componente. */
 
 .hope-action-btn {
   border: 1px solid transparent;
@@ -327,13 +254,7 @@
   transform: translateY(-1px);
 }
 
-/* [F1.3 2026-08-11] El reparto de hover estaba INCOMPLETO, y no solo en las dos variantes
-   que no existian: de las doce, solo siete tenian `:hover`. `--select`, `--assign` y
-   `--version` compartian el color de reposo con sus hermanas pero se quedaban planas al
-   pasar el raton, que es justo lo que §5.2 pide que no pase. Se agrupan con el token que
-   ya usaban: cada rama de hover es la misma mezcla, y ahora cubre las doce.
-
-   Fuera de capa con el resto de la familia — ver la cabecera de arriba. */
+/* Los doce `:hover`, fuera de capa con el resto de la familia (ver cabecera). */
 .hope-action-edit:hover,
 .hope-action-select:hover,
 .hope-action-assign:hover,
@@ -377,11 +298,6 @@
 }
 
 @layer components {
-    /* Las tres bajan de capa sin resucitar nada: los dos componentes que emiten
-       `.deasy-btn--sm`/`--md` son `AppButton` (mapa `sm: "deasy-btn--sm admin-btn--sm"`,
-       `md: "deasy-btn--md"`), y ninguno de los dos añade utilidades crudas de padding ni
-       de tamaño de letra. El unico mapa que si las añade es el de `AdminButton`, y ese
-       emite `admin-btn--sm`, que no casa con estos selectores. */
     .admin-page-header__actions .admin-btn {
         min-height: 2.45rem;
     }
@@ -398,25 +314,11 @@
 }
 
 
-/* ------------------------------------------------------------------------------------
-   BtnSera — el boton de estado del envio a la SERA, con su tooltip y su modal.
-
-   Estaba entero en un `<style scoped>`, y ahi dentro se llamaba `.icon` y `.tooltip` a
-   secas. Eso en un modulo NO vale: `.icon` se usa 26 veces en 8 componentes y les habria
-   cambiado el tamaño a todos. Por eso al salir del scope se renombro con prefijo propio.
-
-   Los cuatro chips de estado mezclaban un TOKEN en el texto con un color de Tailwind sin
-   relacion en el fondo: verde #047857 sobre fondo derivado de #22c55e, rojo #b42318 sobre
-   #ef4444, y el "pendiente" turquesa sobre un fondo azul cielo. Ahora cada fondo sale del
-   mismo token que su texto, con los porcentajes de siempre.
-
-   [F4.4-c R4 2026-08-11] Este bloque SI baja a `@layer components`, al contrario que los
-   botones de accion de arriba. Comprobadas las dos colisiones posibles: `BtnSera.vue`
-   compone su `:class` desde un mapa cerrado que solo devuelve
-   `btnsera sera-send|sera-review|sera-certified|sera-denied` y `btnsera-status--*`, asi
-   que no hay ni una utilidad de Tailwind en el elemento; y `.btnsera` es un prefijo propio
-   que no comparte selector con ninguna regla mas especifica de la capa.
-   ------------------------------------------------------------------------------------ */
+/* ── BtnSera — el boton de estado del envio a la SERA, con su tooltip y su modal ───────
+   ⚠️ Las clases `btnsera*` y `sera-*` las COMPONE `BtnSera.vue` desde un mapa: un grep de
+   la clase literal las da por muertas. Y el prefijo es obligatorio — dentro de su
+   `<style scoped>` se llamaban `.icon` y `.tooltip`, que en un modulo alcanzarian a los
+   26 `.icon` de otros ocho componentes. */
 
 @layer components {
     .btnsera {

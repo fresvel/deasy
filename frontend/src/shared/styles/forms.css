@@ -85,9 +85,6 @@
         @apply mb-2 block text-sm font-semibold text-slate-700;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L473 + ex-L1368. Del bloque 2 solo ganaban dos cosas:
-       `border-color: var(--brand-border-strong)` (era -soft) y `placeholder:text-brand-text-muted`.
-       El resto del bloque 2 repetia lo que ya decia el bloque 1. */
     .deasy-field-input,
     .deasy-field-select,
     .deasy-field-textarea {
@@ -264,26 +261,10 @@
 
     
 }
-/* ======================================================================================
-   [F4.4-c R6 2026-08-12] LOS CAMPOS DEL DOSSIER. CATORCE REGLAS BAJAN, UNA SE QUEDA.
-
-   Las quince vivian fuera de capa por inercia. Comprobadas las tres cosas de la regla 2.13
-   —utilidades vecinas, capa de destino, terceros sin capa— catorce bajan sin mover un pixel
-   y una no puede: el `:focus`, que esta ahi abajo con su cifra.
-
-   El dato que decide las de reposo, y que no da ningun `grep` de hoja de estilos: **ninguno
-   de los 110 elementos que llevan una clase `profile-*` lleva NADA mas en su `class`**.
-   Extraido de los atributos `class`/`:class` de los 6 componentes `Agregar*.vue` del
-   dossier: 37 `profile-text-input`, 7 `profile-select-input`, 5 `profile-textarea`, 59
-   `profile-field-label` y 2 `profile-inline-note`, todos con la clase suelta y sin
-   acompañantes. O sea que no hay ni una utilidad de
-   Tailwind que resucitar. Y en `@layer components` no hay nada mas especifico que los
-   toque: los unicos otros selectores del proyecto que nombran una clase `profile-*` de
-   campo son los DOS grupos de `overrides.css` —el del radio/fondo (L171) y el del borde
-   (L273)—, y esos siguen **fuera de capa**, o sea que ya ganaban antes y siguen ganando
-   igual. El `border-radius: 1rem` y el `background` de aqui abajo llevan muertos desde
-   F1.1 por esa misma razon, no por esta.
-   ====================================================================================== */
+/* LOS CAMPOS DEL DOSSIER. ⚠️ El `border-radius` y el `background` de aqui abajo estan
+   MUERTOS: los tapan los dos grupos `.profile-*` de `overrides.css`, que siguen fuera de
+   capa. Tocarlos no pinta nada. La unica regla que no pudo capar es el `:focus`, mas
+   abajo. */
 
 @layer components {
     .profile-field-label {
@@ -312,22 +293,11 @@
     }
 }
 
-/* ⚠️ SE QUEDA SIN CAPA — EL FOCO DE LOS 49 CONTROLES DEL DOSSIER ....... 49 controles ──
-
-   Es (0,2,0) y hoy le gana por especificidad a `.deasy-filter-control, …, .profile-text-input,
-   .profile-select-input, .profile-textarea` de `overrides.css:273` (0,1,0), que **sigue fuera
-   de capa**. Capada perderia por capa —fuera de capa vale mas que cualquier especificidad— y
-   los **49 controles de perfil** (37 `profile-text-input` + 7 `profile-select-input` + 5
-   `profile-textarea`) se quedarian con `--brand-border-field` tambien al recibir el teclado:
-   medido en `/perfil/investigacion`, el borde pasaria de `rgb(94,78,255)` a `rgb(215,222,234)`.
-
-   El `box-shadow: var(--focus-ring)` no se perderia —nadie compite por esa propiedad— pero el
-   borde si, y es el mismo agujero que `overrides.css` ya documenta para `.deasy-field-input:focus`
-   y `.deasy-filter-control:focus`. Encender el foco de una vez es §4.2, no un refactor de capas.
-
-   ⚠️ Y va JUNTA con las tres de reposo de arriba: si aquellas se hubieran movido y esta no,
-   seguiria ganando igual (sigue siendo la unica sin capa de las cuatro). Medido, y por eso
-   bajan las de reposo solas. */
+/* ⚠️ SE QUEDA SIN CAPA — EL FOCO DE LOS 49 CONTROLES DEL DOSSIER. Es (0,2,0) y hoy le gana
+   por especificidad al grupo `.profile-*` de `overrides.css` (0,1,0), que tambien esta
+   suelto. Capada perderia POR CAPA —fuera de capa vale mas que cualquier especificidad— y
+   los 49 controles del dossier se quedarian con `--brand-border-field` tambien al recibir
+   el teclado. El `box-shadow: var(--focus-ring)` no se pierde; el borde si. §4.2. */
 
 .profile-text-input:focus,
 .profile-select-input:focus,
@@ -338,10 +308,6 @@
 }
 
 @layer components {
-    /* Baja: sus 2 consumidores son `<small class="profile-inline-note">` a secas. Ojo, quien
-       le gana de verdad no es una utilidad sino `.process-dialog-content .deasy-dialog-body
-       small` (0,2,1) de `dialogs.css`, que tambien sigue fuera de capa — pero ya le ganaba
-       antes, asi que capar esta no cambia ese desempate. */
     .profile-inline-note {
         display: block;
         margin-top: 0.4rem;
@@ -349,62 +315,23 @@
         color: var(--brand-text-muted);
     }
 
-    /* Los iconos de accion del buscador (limpiar / buscar) menos redondos que el boton
-       estandar. Venia de un `:deep()` del propio componente, que SI casaba porque
-       `.admin-lookup-field` es su elemento raiz. Aqui no hace falta `:deep()` ni el scope.
-
-       [R6] Baja. La comprobacion de 2.13 aqui no es trivial, porque estos botones NO llevan
-       la clase escrita en plantilla: la compone `AdminButton.vue:83` (`admin-btn--icon
-       deasy-btn deasy-btn--icon`) y ninguna de las que pone es una utilidad de radio. En la
-       capa de destino el rival es `.deasy-table-shell .deasy-btn` (0,2,0) de `buttons.css:179`
-       —el mismo que tumbo a `.hope-action-*` en R4—, pero aqui empatan en especificidad y
-       `forms.css` se importa DESPUES de `buttons.css`, asi que gana esta. Medido en el
-       organigrama y en el mapa, que renderizan 8 de estos botones cada uno: 0 diferencias. */
+    /* Los iconos de accion del buscador (limpiar / buscar), menos redondos que el boton
+       estandar. ⚠️ Dos cosas: estas clases NO estan en plantilla, las compone
+       `AdminButton.vue`; y esta regla le gana a `.deasy-table-shell .deasy-btn` —empatan en
+       especificidad— solo porque `index.css` importa `forms.css` DESPUES de `buttons.css`. */
     .admin-lookup-field .deasy-btn--icon {
         border-radius: 0.375rem;
     }
 }
 
-/* ------------------------------------------------------------------------------------
-   DOS TAMAÑOS DE ZONA DE SUBIDA, que antes se conseguian desde fuera.
+/* DOS TAMAÑOS DE ZONA DE SUBIDA. La variante se escribe en la RAIZ del `<PdfDropField>`
+   (`--workspace` / `--rail`) y estas reglas apuntan a sus descendientes.
 
-   `FirmarPdf` y `MultiSignerPanel` reescribian las tripas del dropzone con once reglas
-   `:deep()` desde su propio `<style scoped>`. Eso es justo lo que la regla 6.3 dice que no
-   debe quedarse en el componente: si necesitas `:deep()` MUCHO, el estilo va al modulo del
-   hijo. Aqui estan, como dos variantes de verdad.
+   ⚠️ Las clases `__surface`, `__title`, `__trigger`, `__action`, `__help` y `__selected`
+   las COMPONE `PdfDropField.vue`: un grep las da por muertas.
 
-   Se ponen sobre el propio `<PdfDropField>`, cuya raiz ES `.deasy-dropzone`, asi que ya no
-   hace falta ni `:deep()` ni un contenedor que sirva de ancla.
-
-   De paso murio una regla: `:deep(.deasy-dropzone)` buscaba el dropzone como DESCENDIENTE
-   del ancla, pero el ancla y el dropzone eran el MISMO elemento. Su `height:auto` no llego
-   a aplicarse nunca, y reproducirlo hoy tampoco serviria: la plantilla pide `h-full`, que
-   es una utilidad de Tailwind y gana a cualquier regla de `@layer components`.
-
-   [F4.4-c R6 2026-08-12] LAS NUEVE BAJAN. Antes decia «van sin capa, igual que estaban», y
-   eso ya no es cierto: estaban asi por inercia, no por necesidad.
-
-   Las tres comprobaciones de 2.13, una por una:
-
-     1. UTILIDADES VECINAS: ninguna. Las dos plantillas que las activan escriben la variante
-        en la RAIZ (`h-full deasy-dropzone--workspace` en `FirmarPdf.vue:174…215`,
-        `deasy-dropzone--rail` en `MultiSignerPanel.vue:13`), y estas nueve reglas apuntan a
-        los DESCENDIENTES —`__surface`, `__title`, `__trigger`, `__action`, `__help`,
-        `__selected`—, cuyas clases las compone `PdfDropField.vue:115-146` sin una sola
-        utilidad. El `h-full` de la raiz no las alcanza, y ademas pisa `height`, no
-        `min-height`.
-     2. CAPA DE DESTINO: es justo el aviso de R4, y aqui sale bien. Las nueve son (0,2,0) y
-        lo que ya vive en `@layer components` para esos mismos elementos son las reglas base
-        `.deasy-dropzone__*` de mas arriba, todas (0,1,0). Las dos unicas (0,2,0) que hay
-        —`.deasy-dropzone__surface--filled .deasy-dropzone__icon` y `… __help`— solo pisan
-        `color`, que ninguna de estas nueve declara.
-     3. TERCEROS SIN CAPA: ninguno. En todo el proyecto no queda ni una regla fuera de capa
-        que nombre un `.deasy-dropzone__*`; estas nueve eran las ultimas.
-
-   Medido en `/home` (4 dropzones de escritorio) y `/home/firmas` (6): 0 diferencias. El
-   carril del multifirmador no se pudo llevar a pantalla —vive tras `workspaceMode === 'multi'`,
-   que exige subir PDFs de verdad—, asi que sus seis reglas van por analisis, no por huella.
-   ------------------------------------------------------------------------------------ */
+   ⚠️ El carril del multifirmador no se puede llevar a pantalla sin subir PDFs de verdad
+   (`workspaceMode === 'multi'`), asi que la huella no lo mide. Verificalo a mano. */
 
 @layer components {
     /* Tarjeta grande del escritorio de firmas: titulo a la izquierda y mas aire. */

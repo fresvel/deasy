@@ -70,24 +70,14 @@
         @apply h-7 w-7 rounded-xl;
     }
 
-    /* [F1.2 2026-08-11] LOS TONOS NO PINTAN TONOS. Habia cuatro bloques
-       —sky, emerald, amber, violet— con los MISMOS tres valores byte por byte: sobre la
-       barra oscura el icono no lleva su color, lleva blanco al 88 % sobre un realce al
-       4 %. El unico que se separa de verdad es `--slate`, que es el estado apagado.
+    /* LOS TONOS NO PINTAN TONOS: sobre la barra oscura el icono lleva blanco al 88 % sobre
+       un realce al 4 %, sea cual sea el tono. El unico que se separa es `--slate`, el
+       estado apagado.
 
-       Se fusionan en una regla porque eran una, y `--indigo` entra aqui: `HomeSidebar.vue`
-       pide `tone: 'indigo'` para «Mis envios» y NO EXISTIA, asi que ese icono salia con
-       fondo `rgba(0,0,0,0)` mientras sus seis hermanos llevaban el realce. Se veia.
-
-       Que un tono nuevo haya que declararlo a mano para que no desaparezca es el fallo de
-       fondo, no la falta de indigo: `workspaceNavIcons.js` compone
-       `${prefix}--${tone}` sin comprobar que la variante exista. Anotado para F4.2, que es
-       donde se decide si estos nombres de familia sobreviven (indigo es una de las cinco
-       en disputa para info/foco/primario).
-
-       Vivos hoy: sky (4), emerald (1), amber (2), indigo (1), direct y derived (grafo).
-       `violet` no lo usa nadie — se queda porque el helper puede componerlo, pero es
-       candidato de F5. */
+       ⚠️ `workspaceNavIcons.js` compone `${prefix}--${tone}` SIN COMPROBAR que la variante
+       exista: un tono que no este en esta lista sale con fondo `rgba(0,0,0,0)` y nadie
+       avisa. Ya paso con `indigo`. Y por lo mismo, un grep de estas clases no las
+       encuentra. */
     .deasy-nav-glyph--sky,
     .deasy-nav-glyph--emerald,
     .deasy-nav-glyph--amber,

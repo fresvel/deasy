@@ -1,37 +1,14 @@
 @layer components {
-    /* ------------------------------------------------------------------------------------
-       NODOS DEL GRAFO (Vue Flow) — organigrama de unidades y grafo de procesos.
+    /* NODOS DEL GRAFO (Vue Flow) — una forma y tres variantes. Lo que distingue a un tipo
+       de nodo es el color del conector, y de ahí cuelga todo lo demás por herencia de
+       `--graph-accent`.
 
-       Antes esto eran CUATRO `<style scoped>` con 163 líneas entre los cuatro componentes,
-       y de reglas propias sólo había tres: `ProcessNode.vue` era copia BYTE A BYTE de
-       `UnitNode.vue` —usaba incluso sus clases `.unit-node__*`— y `cfg`/`tpl` repetían la
-       misma forma cambiando el prefijo. Funcionaba porque cada `<style scoped>` lleva su
-       propio `data-v-*`, así que las cuatro copias convivían sin chocar. Por eso nadie lo vio.
-
-       Ahora hay UNA forma y tres variantes. Lo que distingue a cada tipo de nodo es el color
-       del conector, y eso es semántico: dice de qué tipo es el nodo. Se expresa con un solo
-       token local, `--graph-accent`, que cada variante redefine y del que cuelga todo lo
-       demás por herencia de variables CSS.
-       ------------------------------------------------------------------------------------ */
-
-    /* [F1.7 2026-08-11] SON DOS TOKENS, NO UNO, Y CONFUNDIRLOS COSTABA UN FALLO DE AA.
-
-       `--graph-accent` es el color del CONECTOR, y en `--config` y `--template` está
-       aclarado A PROPÓSITO: un punto de 8 px sobre lienzo blanco se lee por luminosidad,
-       y aclararlo es lo que hace que un nodo de configuración pese menos que una entidad.
-
-       Pero `.graph-node__btn--accent` lo usaba también como RELLENO SÓLIDO con texto
-       blanco encima, y ahí el aclarado juega en contra: blanco sobre el gris al 57 % daba
-       **2.70:1**, y sobre el violeta al 63 % otro 2.70. Es la acción principal del nodo, y
-       no llegaba ni al 3:1 de un límite de componente, menos aún al 4.5:1 de texto.
-
-       El arreglo NO es oscurecer el acento —eso apagaría los conectores, que es lo único
-       que distingue un tipo de nodo de otro—: es que el relleno use el color SIN aclarar,
-       que es de donde sale el aclarado. Queda 5.24 / 7.58 / 5.24, y el nodo principal
-       (que ya cumplía) no se mueve ni un píxel.
-
-       Deuda de esta misma línea de trabajo: se introdujo el 2026-08-11 al deduplicar los
-       cuatro `<style scoped>` de Vue Flow. */
+       ⚠️ SON DOS TOKENS, NO UNO. `--graph-accent` es el color del CONECTOR y va aclarado a
+       propósito (un punto de 8 px se lee por luminosidad). `--graph-accent-solid` es el
+       mismo color SIN aclarar, y existe porque `.graph-node__btn--accent` lo usa como
+       relleno con texto blanco encima: con el aclarado daba 2.70:1. No los unifiques —
+       oscurecer el acento apagaría los conectores, que es lo único que distingue los
+       tipos de nodo. */
     .graph-node {
         /* Unidad y proceso: la entidad principal, el color de marca. */
         --graph-accent: var(--brand-primary);
@@ -212,21 +189,10 @@
     }
 }
 
-/* ------------------------------------------------------------------------------------
-   CONECTORES — fuera de `@layer components` A PROPOSITO.
-
-   Vue Flow pinta el conector desde su propia hoja (`@vue-flow/core/dist/style.css`), que
-   va SIN CAPA. Y en CSS la precedencia de capa gana a la especificidad: una regla no
-   capada gana SIEMPRE a una capada, por muy especifica que sea esta. Cualificar con
-   `.vue-flow__handle` no arregla nada — probado: el punto seguia saliendo gris #555 y de
-   6px, los valores de la libreria.
-
-   Antes ganaba el `<style scoped>` de cada componente, que tampoco tiene capa. Al mover
-   esto a un modulo se perdio esa ventaja sin que nada avisara.
-
-   Por eso estas tres reglas viven fuera del bloque. Es lo mismo que hace `overrides.css`
-   con las utilidades de Tailwind, y por el mismo motivo.
-   ------------------------------------------------------------------------------------ */
+/* CONECTORES — FUERA DE `@layer components` A PROPOSITO, y es el unico caso legitimo del
+   sistema: Vue Flow pinta el conector desde su propia hoja, que va SIN CAPA, y una regla
+   no capada gana SIEMPRE a una capada por especifica que sea. Cualificar con
+   `.vue-flow__handle` NO arregla nada (probado: el punto seguia gris #555 y de 6 px). */
 .vue-flow__handle.graph-node__handle {
     width: 9px;
     height: 9px;

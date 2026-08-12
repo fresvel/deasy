@@ -24,8 +24,6 @@
         @apply mt-2 text-sm font-medium leading-6 text-slate-500;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L1262 + ex-L1368. Lo unico que ganaba el bloque 2 era
-       `border-color: var(--brand-border-strong)` (aqui era -soft). */
     .deasy-auth-field {
         @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-brand-text-muted;
         border-color: var(--brand-border-strong);
@@ -45,9 +43,6 @@
         @apply pl-11;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L1281 + ex-L1376 (iba agrupada con `.deasy-btn`). El bloque 2
-       anadia `min-h-10` y, sobre todo, `shadow-none`, que MATABA el `box-shadow` declarado
-       aqui abajo: el boton de login no tiene sombra hoy. Se retira la declaracion muerta. */
     
 }
 @layer components {
@@ -56,15 +51,6 @@
         color: var(--brand-primary);
     }
 
-    /* ------------------------------------------------------------------------------
-       [fusion-fase-X 2026-08-07] Aqui empezaba el SEGUNDO `@layer components` del fichero
-       (ex-L1300). Estaba en la misma capa que el primero, asi que ganaba solo por venir
-       despues: 42 selectores tenian dos definiciones a mil lineas de distancia. Las 42
-       colisiones estan resueltas arriba, en la definicion unica de cada clase (busca
-       `[fusion-fase-X`). Lo que queda debajo son las reglas que SOLO existian en el
-       segundo bloque; se conservan aqui, al final de la capa, para no alterar el orden
-       de cascada que tenian frente al resto.
-       ------------------------------------------------------------------------------ */
 
     
 }
