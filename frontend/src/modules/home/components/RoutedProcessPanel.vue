@@ -30,7 +30,7 @@
     </div>
 
     <!-- Pestañas: enviados / recibidos -->
-    <div class="flex items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-sm">
+    <div class="flex items-center gap-1.5 rounded-2xl border border-brand-border/80 bg-white p-1.5 shadow-sm">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -45,7 +45,7 @@
         {{ tab.label }}
         <span
           class="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-black"
-          :class="activeTab === tab.key ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'"
+          :class="activeTab === tab.key ? 'bg-brand-white/25 text-white' : 'bg-slate-100 text-slate-500'"
         >{{ tab.items.length }}</span>
       </button>
     </div>
@@ -57,7 +57,7 @@
 
     <div
       v-else-if="!activeItems.length"
-      class="flex flex-col items-center gap-3 rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center"
+      class="flex flex-col items-center gap-3 rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-brand-surface-muted/50 px-6 py-12 text-center"
     >
       <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-300">
         <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-7 w-7" />
@@ -73,7 +73,7 @@
       <li
         v-for="item in activeItems"
         :key="item.id"
-        class="group flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
+        class="group flex items-center gap-3.5 rounded-2xl border border-brand-border/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
       >
         <span
           class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"

@@ -10,7 +10,7 @@
           v-if="showLogo"
           to="/home"
           size="sm"
-          class-name="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white/8 p-1"
+          class-name="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-white/8 p-1"
           image-class="max-h-8 max-w-8 object-contain"
         />
         <UserProfile

@@ -3,7 +3,7 @@
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-brand-surface-muted/60 p-4">
             <PdfDropField
               title=""
               action-text="Seleccionar PDFs"
@@ -95,12 +95,12 @@
               />
             </div>
 
-            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-brand-text-muted">
+            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-brand-surface-muted/50 p-8 text-center text-brand-text-muted">
               <IconFiles class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
             </div>
 
-            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-brand-text-muted">
+            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-brand-surface-muted/50 p-8 text-center text-brand-text-muted">
               <IconInfoCircle class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
             </div>
@@ -194,7 +194,7 @@
                 <template #actions>
                   <button
                     type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-emerald-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-emerald-600/92 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-brand-white/80 bg-emerald-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-emerald-600/92 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     title="Iniciar firma masiva"
                     aria-label="Iniciar firma masiva"
                     :disabled="!canRequestStart"
@@ -206,7 +206,7 @@
 
                 <template #navigation>
                   <div class="grid w-full grid-cols-2 gap-1.5">
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-brand-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
                         class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -230,7 +230,7 @@
                       </button>
                     </div>
 
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-brand-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
                         class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -285,7 +285,7 @@
 
           <div
             v-if="currentDocument"
-            class="border-t border-slate-200/80 bg-white/90 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
+            class="border-t border-brand-border/80 bg-white/90 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
           >
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div class="text-xs font-medium text-slate-500">

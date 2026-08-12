@@ -163,7 +163,7 @@
         :class="enableHomeShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
-        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -175,7 +175,7 @@
           />
         </div>
 
-        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -187,7 +187,7 @@
           />
         </div>
 
-        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -202,7 +202,7 @@
         <div
           id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm"
         >
           <PdfDropField
             title="Multifirmador"
@@ -220,7 +220,7 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
@@ -239,7 +239,7 @@
           id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
           :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
@@ -263,7 +263,7 @@
           id="signature-launcher-pending"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
@@ -330,7 +330,7 @@
                 <button
                   v-if="signMode !== 'token'"
                   type="button"
-                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
+                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-brand-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
                   title="Firmar documento"
                   aria-label="Firmar documento"
                   @click.stop="submitAction"
@@ -787,7 +787,7 @@
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-slate-100/50 border border-slate-200 text-brand-icon hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
+      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-brand-surface-muted/50 border border-slate-200 text-brand-icon hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
         <IconX class="w-4 h-4" stroke-width="2.5" />
       </button>
     </template>

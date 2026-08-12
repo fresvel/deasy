@@ -485,7 +485,7 @@
               <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-brand-text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
               <button type="button" class="rounded-2xl border border-indigo-200 px-2 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50" @click="addSignatureSigner(index)">+ Añadir firmante</button>
             </div>
-            <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-slate-100 bg-slate-50/60 px-2.5 py-2">
+            <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-slate-100 bg-brand-surface-muted/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
                 <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
                   <label :for="fieldId(`signer-who-mode-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-brand-text-muted">Quién firma</label>

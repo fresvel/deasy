@@ -35,7 +35,7 @@
         <div
           v-for="item in group.items"
           :key="item.id"
-          class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-brand-surface-muted/60 px-3 py-2.5"
         >
           <div class="flex flex-col">
             <span class="text-sm font-semibold text-slate-700">

@@ -17,7 +17,7 @@
           </div>
         </div>
 
-        <div class="bg-slate-50/60 px-4 py-5 sm:px-6 lg:px-8">
+        <div class="bg-brand-surface-muted/60 px-4 py-5 sm:px-6 lg:px-8">
           <form @submit.prevent="createnewUser" class="mx-auto max-w-4xl">
             <section class="deasy-form-section">
               <div class="deasy-form-section__header">
@@ -337,7 +337,7 @@
               </div>
             </Transition>
 
-            <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur sm:flex-row">
+            <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-slate-200 bg-brand-surface-muted/95 py-4 backdrop-blur sm:flex-row">
               <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg w-full sm:w-1/2" @click="goToLogin">
                 Cancelar
               </button>

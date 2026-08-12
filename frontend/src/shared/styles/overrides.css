@@ -1,38 +1,49 @@
-@layer utilities {
-    .shadow-xl {
-        box-shadow: var(--brand-elev-2) !important;
-    }
-}
-.min-h-screen.bg-slate-100,
-.bg-slate-100 {
-  background-color: var(--brand-surface-muted);
-}
+/* ======================================================================================
+   ESTE FICHERO HACE DOS COSAS DISTINTAS, Y HASTA F4.4 ESTABAN MEZCLADAS EN LA MISMA
+   LISTA DE SELECTORES. Ese era el problema de fondo, no la lista blanca.
 
-/* ⚠️ [F4.1 2026-08-11] ESTO SON SELECTORES DE REPINTADO, NO USOS. El script de migracion
-   los reescribio a `.bg-brand-surface-muted\/70` y **rompio el repintado en silencio**: dos
-   nodos con `bg-slate-50/70` pasaron de solido a 70 % de alfa. Lo cazo la huella, no el
-   lint ni el build.
+     (A) REPINTAR UTILIDADES DE TAILWIND a los valores de la marca — `.bg-white`,
+         `.bg-slate-50`, `.border-slate-200`, `.shadow-sm`…
+     (B) DAR SKIN A COMPONENTES — `.deasy-card`, `.deasy-dialog-body`, `input`,
+         `.hope-action-*`, `header`…
 
-   Lo que burla la guarda es el ESCAPE del `/`: en `bg-slate-50\/70` el caracter que sigue a
-   `bg-slate-50` es `\`, asi que un limite por la derecha `(?![\w/-])` da el match por bueno.
-   **Al migrar utilidades por script, `shared/styles/*.css` va excluido o revisado a mano.**
+   Tres reglas juntaban las dos: `.bg-white` + 16 clases de componente, `.border-slate-*`
+   + 7, `.shadow-*` + 6. Y de ahi salian los `!important`: **no resolvian un conflicto
+   contra Tailwind, resolvian un conflicto de este fichero CONSIGO MISMO** — la regla (A)
+   iba ANTES que la (B) que pisaba la misma propiedad en el mismo elemento, asi que hacia
+   falta `!important` para que ganara la que tenia que ganar.
 
-   La `.bg-slate-50` a secas ya no tiene consumidor —los 109 usos son ahora
-   `bg-brand-surface-muted`, que no necesita repintado— pero se conserva hasta F5, que es
-   donde se poda con la comprobacion de composicion en runtime. Las dos con alfa SI hacen
-   falta: son las que siguen en las plantillas. */
-.bg-slate-50,
-.bg-slate-50\/70,
-.bg-slate-50\/80 {
-  background-color: var(--brand-surface-muted) !important; /* repinta la utilidad; gana a .deasy-dialog-body */
-}
+   Ahora (B) va arriba y (A) al final, asi que (A) gana por ORDEN. Es lo mismo que hace
+   `index.css` cargando este fichero el ultimo, aplicado un nivel mas abajo.
 
-.bg-white,
-.bg-white\/80,
-.bg-white\/85,
-.bg-white\/90,
-.bg-white\/92,
-.bg-white\/95,
+   ── LA DECISION SOBRE LAS REGLAS SIN CAPA ────────────────────────────────────────────
+
+   Medido: en todo el frontend hay **150 reglas fuera de capa** repartidas en 12 modulos, y
+   solo DOS hojas de terceros sin capa contra las que competir: `@vue-flow/core` y
+   `leaflet`. Todo lo demas esta sin capa por inercia, no por necesidad.
+
+   La regla, a partir de aqui:
+
+     `@layer components`  todo skin de componente
+     `@layer utilities`   los repintados, MIENTRAS existan
+     sin capa             SOLO lo que pelea con una hoja de tercero sin capa,
+                          que hoy es exactamente `graph.css` (Vue Flow) y el mapa
+
+   Con eso vuelve el contrato de Tailwind —utilidad gana a componente— y el repintado deja
+   de hacer falta: una plantilla que escriba `bg-brand-surface-muted` gana a
+   `.deasy-dialog-body` por capa, sin `!important` y sin lista blanca.
+
+   Verificado antes de decidirlo: **CERO elementos combinan una clase de skin con una
+   utilidad de fondo/borde/sombra que hoy pierda contra ella.** O sea que bajar (B) a
+   `@layer components` no resucita nada — al contrario que en F1.1, donde bajar la regla de
+   `input` habria resucitado 90 declaraciones. Las unicas colisiones entran por **props de
+   clase** (`body-class="p-0 bg-slate-50 relative"` en `FirmarPdf.vue:786`,
+   `header-class="bg-slate-50 …"`), que son dos y se revisan a mano.
+
+   Pendiente de esa decision: bajar las 150 reglas a su capa, modulo a modulo y con huella
+   por modulo. Aqui se hace la separacion, que es lo que lo desbloquea.
+   ====================================================================================== */
+
 .deasy-card,
 .deasy-card-muted,
 .deasy-card-soft,
@@ -71,8 +82,6 @@
   background-color: var(--brand-surface-alt);
 }
 
-.border-slate-100,
-.border-slate-200,
 .deasy-card,
 .deasy-section-card,
 .deasy-dialog-panel,
@@ -80,11 +89,9 @@
 .admin-surface-frame,
 .profile-table-shell,
 .table-institutional {
-  border-color: var(--brand-border) !important; /* repinta la utilidad; gana a .deasy-dialog-header button (0,2,1) */
+  border-color: var(--brand-border) !important; /* gana a `.deasy-dialog-header button` (0,3,1), que esta SIN CAPA en dialogs.css */
 }
 
-.shadow-xl,
-.shadow-sm,
 .deasy-card,
 .deasy-section-card,
 .deasy-auth-card,
@@ -300,4 +307,83 @@ header {
 .hope-action-btn:hover {
   border-color: currentColor;
   filter: saturate(1.05);
+}
+
+/* ======================================================================================
+   (A) REPINTADO DE UTILIDADES DE TAILWIND — y NADA MAS. Ni un selector de componente.
+
+   VA AL FINAL A PROPOSITO. Todo lo de arriba son skins (B) sin capa, igual que esto, asi
+   que aqui el desempate lo hace el ORDEN DE APARICION. Estando al final, un repintado gana
+   a cualquier skin que pise la misma propiedad en el mismo elemento — que es justo lo que
+   antes se conseguia a golpe de `!important`.
+
+   ⚠️ **ESTO ES DEUDA CON FECHA DE CADUCIDAD, NO ARQUITECTURA.** Cada utilidad de aqui
+   existe porque una plantilla escribe `bg-slate-50` en vez de `bg-brand-surface-muted`. Su
+   final es quedarse sin consumidores y borrarse — F4.4 llama a eso «eliminar la
+   necesidad», y es preferible a ampliar la lista, que es lo que se venia haciendo y
+   se le escapaban 120 apariciones.
+
+   ⚠️ Y **estos selectores NO son usos**: un script de migracion los reescribio una vez y
+   rompio el repintado en silencio (el escape del `/` en `.bg-slate-50\/70` burla el limite
+   por la derecha). Al migrar por script, este fichero se excluye o se revisa a mano.
+
+   ⚠️ `.bg-slate-50` y `.bg-slate-100` a secas siguen teniendo 93 y 66 consumidores; sus
+   variantes con alfa **ya no**, porque F4.4-a las migro. Se conservan las tres que aun
+   pintan algo, y `/70` y `/80` porque siguen en plantilla.
+
+   ⚠️ De los `!important` que habia, **el orden se lleva por delante uno de tres**: el de
+   `.bg-slate-50`. Los otros dos —los dos de `border-color`— pelean contra
+   `.deasy-dialog-root .deasy-dialog-header button` (0,3,1), que esta **sin capa** en
+   `dialogs.css`, y contra una especificidad mayor el orden no puede. Mueren cuando
+   `dialogs.css` baje a `@layer components`, no antes.
+   ====================================================================================== */
+
+@layer utilities {
+    /* Dentro de la capa a proposito: `.shadow-xl` es una utilidad de Tailwind y aqui se le
+       cambia el valor, no se le gana. El `!important` es lo que hace que gane a la propia
+       `.shadow-xl` de Tailwind, que vive en esta misma capa. */
+    .shadow-xl {
+        box-shadow: var(--brand-elev-2) !important;
+    }
+}
+
+.min-h-screen.bg-slate-100,
+.bg-slate-100 {
+  background-color: var(--brand-surface-muted);
+}
+
+.bg-slate-50,
+.bg-slate-50\/70,
+.bg-slate-50\/80 {
+  /* Ya sin `!important`: iba antes que `.deasy-dialog-body` y por eso hacia falta. Ahora va
+     despues y gana por orden. */
+  background-color: var(--brand-surface-muted);
+}
+
+.bg-white,
+.bg-white\/80,
+.bg-white\/85,
+.bg-white\/90,
+.bg-white\/92,
+.bg-white\/95 {
+  background-color: var(--brand-white);
+}
+
+/* ⚠️ Este `!important` NO es del tipo «me gana un skin de este mismo fichero» — ese se
+   resolvio con el orden. Este pelea contra `.deasy-dialog-root .deasy-dialog-header button`
+   (0,3,1), que esta **SIN CAPA** en `dialogs.css` y declara `--brand-border-field`. Contra
+   una especificidad mayor el orden no puede.
+
+   Se descubrio quitandolo: la huella marco **un nodo** —el boton de cerrar de los
+   dialogos— pasando de `--brand-border` a `--brand-border-field`. Es discutible cual de
+   los dos deberia ganar (el componente declara `-field`, y el repintado se lo pisa), pero
+   eso es una decision de diseño y no cabe en un comite que promete cambio visual cero.
+   Muere cuando `dialogs.css` baje a `@layer components`. */
+.border-slate-100,
+.border-slate-200 {
+  border-color: var(--brand-border) !important;
+}
+
+.shadow-sm {
+  box-shadow: var(--brand-elev-1);
 }

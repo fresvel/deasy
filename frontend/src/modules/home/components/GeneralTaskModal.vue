@@ -26,7 +26,7 @@
     <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
 
     <!-- Documento -->
-    <section class="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+    <section class="flex flex-col gap-3 rounded-2xl border border-brand-border/80 bg-white p-4 shadow-sm">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><IconFileDescription class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Documento</h6>
@@ -42,14 +42,14 @@
     </section>
 
     <!-- Flujo del envío -->
-    <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+    <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-brand-border/80 bg-white p-4 shadow-sm">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><IconSend class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Flujo del envío</h6>
       </div>
       <p class="m-0 -mt-1 text-xs font-medium text-brand-text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
 
-      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+      <div class="rounded-xl border border-slate-200 bg-brand-surface-muted/60 p-3">
         <div class="flex items-center justify-between">
           <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Elabora (entrega) *</span>
           <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('entrega')">+ Agregar</button>
@@ -63,7 +63,7 @@
         </ul>
       </div>
 
-      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+      <div class="rounded-xl border border-slate-200 bg-brand-surface-muted/60 p-3">
         <div class="flex items-center justify-between">
           <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Firma (pasos en orden)</span>
           <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
@@ -140,7 +140,7 @@
     </section>
 
     <!-- Destino y plazo -->
-    <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+    <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-brand-border/80 bg-white p-4 shadow-sm">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><IconBuildingMonument class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Destino y plazo</h6>

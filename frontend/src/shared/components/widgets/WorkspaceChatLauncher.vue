@@ -57,7 +57,7 @@
             Volver
           </AppButton>
 
-          <nav v-else class="flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-100/70 p-1">
+          <nav v-else class="flex items-center gap-1 rounded-2xl border border-slate-200 bg-brand-surface-muted/70 p-1">
             <button
               v-for="mode in modeOptions"
               :key="mode"

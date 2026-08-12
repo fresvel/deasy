@@ -2,7 +2,7 @@
   <div v-if="compact" class="w-full">
     <button
       type="button"
-      class="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-1.5 text-white transition-all hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-white/18"
+      class="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-brand-white/10 bg-brand-white/8 p-1.5 text-white transition-all hover:bg-brand-white/12 focus:outline-none focus:ring-2 focus:ring-white/18"
       :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
       :title="username"
       :aria-label="`Perfil de ${username}`"
@@ -28,7 +28,7 @@
 
   <div v-else class="mb-3 w-full">
     <div
-      class="overflow-hidden rounded-2xl border border-white/10 bg-white/8 p-3 shadow-none backdrop-blur-sm"
+      class="overflow-hidden rounded-2xl border border-brand-white/10 bg-brand-white/8 p-3 shadow-none backdrop-blur-sm"
     >
       <div class="flex items-center gap-3">
         <div 
@@ -36,7 +36,7 @@
           :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
           @click="handleImageClick"
         >
-          <div class="group relative h-12 w-12 rounded-xl border border-white/15 bg-white/10 p-1 shadow-none">
+          <div class="group relative h-12 w-12 rounded-xl border border-brand-white/15 bg-brand-white/10 p-1 shadow-none">
             <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
             <div 
               v-if="editable" 
@@ -63,7 +63,7 @@
           <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58">
             {{ subtitle }}
           </p>
-          <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-2xl border border-white/10 bg-white/8 px-2.5 py-1.5">
+          <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-2xl border border-brand-white/10 bg-brand-white/8 px-2.5 py-1.5">
             <p class="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-white/52">Token firma</p>
             <p class="mt-1 truncate font-mono text-xs text-white/92">
               {{ signatureMarker }}

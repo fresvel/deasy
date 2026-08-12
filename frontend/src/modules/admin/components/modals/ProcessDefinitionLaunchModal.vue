@@ -78,7 +78,7 @@
             <li
               v-for="run in runs"
               :key="run.id"
-              class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-sm"
+              class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-brand-surface-muted/60 px-3 py-2 text-sm"
             >
               <span class="text-brand-icon">
                 #{{ run.id }} · {{ run.term_name || "sin periodo" }}

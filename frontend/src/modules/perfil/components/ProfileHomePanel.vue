@@ -6,7 +6,7 @@
         <div class="deasy-hero-main deasy-hero-main--with-media text-center sm:text-left">
           <div class="deasy-hero-media flex flex-col items-center gap-3 sm:items-start">
             <div class="deasy-hero-media-card deasy-hero-media-card--avatar">
-              <img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo.value" alt="Foto de perfil" />
+              <img class="h-16 w-16 rounded-[1rem] object-cover bg-brand-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo.value" alt="Foto de perfil" />
             </div>
           </div>
           <div class="deasy-hero-copy sm:pt-0">

@@ -40,7 +40,7 @@
         <AppButton type="submit" variant="primary" :disabled="isSubmitting">
           <span
             v-if="isSubmitting"
-            class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+            class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-white/40 border-t-white"
             role="status"
             aria-hidden="true"
           ></span>

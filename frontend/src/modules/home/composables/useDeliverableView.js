@@ -504,7 +504,7 @@ export function useDeliverableView({
       card: 'border-slate-200 hover:border-slate-300',
       header: 'border-slate-100 bg-slate-50/70 text-slate-500',
       accent: 'bg-slate-300',
-      responsibility: 'border-slate-100 bg-slate-50/50',
+      responsibility: 'border-slate-100 bg-brand-surface-muted/50',
       responsibilityLabel: 'text-slate-500',
       iconChip: 'bg-slate-100 text-slate-500'
     };
