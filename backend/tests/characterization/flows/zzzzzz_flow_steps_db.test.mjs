@@ -42,10 +42,12 @@
 // El discriminante es la columna `task_item_id`: NULL = flujo de plantilla, no-NULL = flujo de
 // runtime (`generation/documents.js:246,278` lo escribe siempre con el task_item).
 //
-// DENTRO DEL ORIGEN «PLANTILLA» HAY AHORA DOS PORTADORES, y esa es la novedad del sub-paso 3:
-//   · el del VÍNCULO   (`process_definition_template_id`) — lo siembra el sync, uno por configuración;
-//   · el de la PLANTILLA (`template_artifact_id`)         — lo escribe el formulario web DIRECTO en
-//     la base, uno solo, compartido por todas las configuraciones donde el entregable esté enlazado.
+// DENTRO DEL ORIGEN «PLANTILLA» YA SOLO QUEDA UN PORTADOR, y esa es la novedad del sub-paso 8:
+//   · el de la PLANTILLA (`template_artifact_id`) — lo escribe el formulario web DIRECTO en la base,
+//     uno solo, compartido por todas las configuraciones donde el entregable esté enlazado.
+//   · el del VÍNCULO (`process_definition_template_id`) lo sembraba el sync leyendo la sección
+//     `workflows:` del `meta.yaml`. Retirada la sección, no queda quien lo escriba. Los goldens de
+//     este flow lo enseñan en negativo: donde había dos cabeceras por lado, queda una.
 // Se distinguen en el golden sin añadir columnas, pero OJO con cuál se mira: `normalize` enmascara
 // las claves de id **aunque valgan `null`**, así que `process_definition_template_id` sale
 // `"<normalized>"` en los dos y NO sirve de discriminante. Lo que los separa en el golden es
@@ -417,40 +419,35 @@ test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () =
   assert.ok(autorado.artifactId, "debe devolverse el id del artifact creado");
 });
 
-// Las DOS copias de la escritura doble (§0.8, sub-paso 3) caen aquí, y ese es el punto: la del
-// vínculo (que sigue poniendo el sync desde el `meta.yaml`) y la de la plantilla (que escribe el
-// formulario directo en la base). Salen del MISMO objeto en memoria, así que los pasos tienen que
-// ser idénticos columna por columna; lo único que las distingue es de qué cuelgan. Comparar los dos
-// juegos de pasos es más fuerte que el propio snapshot: si algún día divergen, falla aquí.
-const mismosPasos = (flows, lado) => {
-  const [porVinculo, porPlantilla] = flows;
-  assert.equal(porVinculo.process_definition_template_id !== null, true, `${lado}: la 1ª cuelga del vínculo`);
-  assert.equal(porPlantilla.process_definition_template_id, null, `${lado}: la 2ª cuelga de la plantilla`);
-  const sinIds = (pasos) => pasos.map(({ id: _id, ...resto }) => resto);
-  assert.deepEqual(
-    sinIds(porPlantilla.steps),
-    sinIds(porVinculo.steps),
-    `${lado}: las dos copias de la escritura doble deben ser IDÉNTICAS paso a paso`,
-  );
+// SE ACABÓ LA ESCRITURA DOBLE (§0.8, sub-paso 8). Hasta este commit el formulario dejaba DOS
+// cabeceras por lado —la del vínculo, que sembraba el sync leyendo el `meta.yaml`, y la de la
+// plantilla, que escribe el formulario directo— y esta comprobación exigía que fueran idénticas paso
+// a paso. Retirada la sección `workflows:` del YAML, el sync no tiene de dónde leer y **la copia del
+// vínculo ya no nace**: queda UNA cabecera por lado, la del portador `template_artifact_id`.
+//
+// Lo que se comprueba ahora es esa unicidad, y es la prueba positiva del desmontaje: si alguna vez
+// vuelve a aparecer una segunda cabecera colgada del vínculo, es que reapareció un productor fuera
+// del formulario.
+const unicaCabeceraDeLaPlantilla = (flows, lado) => {
+  assert.equal(flows.length, 1, `${lado}: una sola cabecera, la de la plantilla`);
+  const [porPlantilla] = flows;
+  assert.equal(porPlantilla.process_definition_template_id, null, `${lado}: cuelga de la PLANTILLA, no del vínculo`);
+  assert.equal(porPlantilla.task_item_id, null, `${lado}: y nunca de un entregable de runtime`);
 };
 
 test("autoría · flujo de ENTREGA autorado, tal como quedó en la base", async () => {
   assert.ok(autorado.artifactId, "depende del paso anterior");
   const flows = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 2, "escritura doble: una plantilla de flujo por el vínculo y otra por la plantilla");
+  unicaCabeceraDeLaPlantilla(flows, "entrega");
   assert.equal(flows[0].steps.length, 2, "los dos pasos autorados deben materializarse");
-  assert.equal(flows[1].steps.length, 2, "los dos pasos autorados deben materializarse también en la copia de la plantilla");
-  mismosPasos(flows, "entrega");
   matchSnapshot(SUITE, "autorado_entrega", normalize(flows, MASK_OPTS));
 });
 
 test("autoría · flujo de FIRMA autorado, tal como quedó en la base", async () => {
   assert.ok(autorado.artifactId, "depende del paso anterior");
   const flows = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 2, "escritura doble: una plantilla de flujo por el vínculo y otra por la plantilla");
+  unicaCabeceraDeLaPlantilla(flows, "firma");
   assert.equal(flows[0].steps.length, 2, "los dos pasos de firma autorados deben materializarse");
-  assert.equal(flows[1].steps.length, 2, "los dos pasos de firma autorados deben materializarse también en la copia de la plantilla");
-  mismosPasos(flows, "firma");
   matchSnapshot(SUITE, "autorado_firma", normalize(flows, MASK_OPTS));
 });
 
@@ -490,7 +487,7 @@ test("versionado · POST /template_artifacts/:id/version sobre la plantilla auto
 // enmascara los ids y no podría distinguir «copiado» de «compartido»— y es justo la propiedad que
 // el sub-paso promete.
 const copiaFiel = (flows, lado) => {
-  const [, delPadre, deLaHija] = flows;
+  const [delPadre, deLaHija] = flows;
   assert.equal(deLaHija.process_definition_template_id, null, `${lado}: la hija cuelga de SU artifact`);
   assert.equal(deLaHija.task_item_id, null, `${lado}: y NUNCA de un entregable de runtime`);
   assert.equal(deLaHija.is_active, 1, `${lado}: la cabecera copiada nace activa`);
@@ -505,8 +502,8 @@ const copiaFiel = (flows, lado) => {
 test("versionado · la hija hereda los pasos de ENTREGA como filas propias", async () => {
   assert.ok(versionado.hijaId, "depende del paso anterior");
   const flows = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 3, "el vínculo y la plantilla del padre, más la copia de la hija");
-  assert.equal(flows[2].storage_version, "1.1.0", "la tercera es la de la versión nueva");
+  assert.equal(flows.length, 2, "la plantilla del padre y la copia de la hija (el vínculo ya no lleva ninguna)");
+  assert.equal(flows[1].storage_version, "1.1.0", "la segunda es la de la versión nueva");
   copiaFiel(flows, "entrega");
   matchSnapshot(SUITE, "versionado_entrega", normalize(flows, MASK_OPTS));
 });
@@ -514,8 +511,8 @@ test("versionado · la hija hereda los pasos de ENTREGA como filas propias", asy
 test("versionado · la hija hereda los pasos de FIRMA como filas propias", async () => {
   assert.ok(versionado.hijaId, "depende del paso anterior");
   const flows = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 3, "el vínculo y la plantilla del padre, más la copia de la hija");
-  assert.equal(flows[2].steps.length, 2, "los dos pasos de firma se copian enteros");
+  assert.equal(flows.length, 2, "la plantilla del padre y la copia de la hija (el vínculo ya no lleva ninguna)");
+  assert.equal(flows[1].steps.length, 2, "los dos pasos de firma se copian enteros");
   copiaFiel(flows, "firma");
   matchSnapshot(SUITE, "versionado_firma", normalize(flows, MASK_OPTS));
 });

@@ -8,7 +8,7 @@
   "crear_ok": {
     "status": 200,
     "body": {
-      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema. Flujos sincronizados (entrega: 1, firmas: 0).",
+      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.",
       "available_formats": {
         "jinja2": {
           "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
@@ -18,7 +18,7 @@
         }
       },
       "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
-      "content_hash": "f89e66dfe5a8bd04ace1ea183829f85944247463a3a4816be1523cbacefe68a5",
+      "content_hash": "d36115250d36ad95162c0f8a6c03b19ac6917e3e1158edafa6dab670c7a69935",
       "description": null,
       "display_name": "zzz char draft",
       "id": "<normalized>",
@@ -43,7 +43,7 @@
   "editar_ok": {
     "status": 200,
     "body": {
-      "__notice": "La plantilla de documento fue actualizada y cargada correctamente en MinIO. Flujos sincronizados (entrega: 1, firmas: 0).",
+      "__notice": "La plantilla de documento fue actualizada y cargada correctamente en MinIO.",
       "available_formats": {
         "jinja2": {
           "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
@@ -53,7 +53,7 @@
         }
       },
       "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
-      "content_hash": "44c90e17496729c18c3e7200012d82595e3b51d7e00942b98cc822585bbca20c",
+      "content_hash": "8c19df3cdda6a103bd5b799ff50ff6c51d8c10f39e2b43a7cd677d29fb501083",
       "description": "editado por el characterization test",
       "display_name": "zzz char draft",
       "id": "<normalized>",
@@ -131,7 +131,7 @@
         }
       },
       "base_object_prefix": "System/draft_zzz-char-routed/1.0.0/",
-      "content_hash": "608ddd7ff8fbca797e8c564db355596b3a6e8ed9c4b239e1866b79ba24bd14f7",
+      "content_hash": "f2eef50f00ec73a143d47a366d4bff3f6fac3fab13f023b22bcf0c1fd42c6c0f",
       "description": null,
       "display_name": "zzz char routed",
       "id": "<normalized>",

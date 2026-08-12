@@ -11,7 +11,6 @@ import assert from "node:assert/strict";
 import {
   buildStepResolver,
   buildWorkflowsDocument,
-  buildWorkflowsYaml,
   normalizeFillSteps,
   normalizeSignatureSigner,
   normalizeSignatureSteps,
@@ -158,38 +157,34 @@ test("normalizeSignatureSteps normaliza un approval_mode inválido a 'and'", () 
   assert.equal(normalizeSignatureSteps(wf)[0].approvalMode, "and");
 });
 
-// --- buildWorkflowsYaml: round-trip a YAML -----------------------------------
+// --- buildWorkflowsDocument: la ENTRADA del escritor directo ------------------
+//
+// Hasta el sub-paso 8 del §0.8 este objeto tenía dos consumidores —`buildWorkflowsYaml`, que lo
+// serializaba al `meta.yaml`, y el escritor directo, que lo normaliza e inserta— y los tests de
+// aquí fijaban la equivalencia entre los dos. Retirada la serialización, queda un solo consumidor y
+// lo que hay que fijar es lo que el documento LLEVA, que es de donde salen las columnas.
 
-test("buildWorkflowsYaml deriva can_reject del orden del paso", () => {
-  const yaml = buildWorkflowsYaml({
+test("buildWorkflowsDocument deriva can_reject del orden del paso", () => {
+  const doc = buildWorkflowsDocument({
     fillWorkflow: { steps: [{ order: 1, name: "Entrega" }, { order: 2, name: "Revisión" }] },
   });
   // El primer paso nunca puede devolver (no hay paso anterior); el segundo sí.
-  assert.match(yaml, /can_reject: false/);
-  assert.match(yaml, /can_reject: true/);
+  assert.equal(doc.workflows.fill.steps[0].can_reject, false);
+  assert.equal(doc.workflows.fill.steps[1].can_reject, true);
 });
 
-test("buildWorkflowsYaml marca signatures.required solo si hay pasos de firma", () => {
-  const sinFirmas = buildWorkflowsYaml({ signatureWorkflow: { required: true, steps: [] } });
-  assert.match(sinFirmas, /required: false/, "sin pasos, la firma no es requerida");
+test("buildWorkflowsDocument marca signatures.required solo si hay pasos de firma", () => {
+  const sinFirmas = buildWorkflowsDocument({ signatureWorkflow: { required: true, steps: [] } });
+  assert.equal(sinFirmas.workflows.signatures.required, false, "sin pasos, la firma no es requerida");
 });
 
-// --- buildWorkflowsDocument: el objeto del que salen LAS DOS copias -----------
-//
-// La escritura doble del sub-paso 3 del §0.8 descansa en que el `meta.yaml` y las filas de la base
-// salgan del MISMO objeto. Estos dos tests fijan las dos mitades de esa garantía: que el documento
-// es lo que se serializa, y que `buildWorkflowsYaml` acepta ese documento ya construido (si no lo
-// aceptara, el llamador tendría que construirlo dos veces y la garantía se perdería).
-
-test("buildWorkflowsDocument devuelve el objeto que buildWorkflowsYaml serializa", () => {
-  const entrada = { fillWorkflow: { steps: [{ order: 1, code: "entrega", name: "Entrega" }] } };
-  const doc = buildWorkflowsDocument(entrada);
+test("buildWorkflowsDocument conserva code y name del paso de entrega", () => {
+  const doc = buildWorkflowsDocument({
+    fillWorkflow: { steps: [{ order: 1, code: "entrega", name: "Entrega" }] },
+  });
 
   assert.equal(doc.workflows.fill.steps[0].code, "entrega");
   assert.equal(doc.workflows.fill.steps[0].name, "Entrega");
-  // Serializar el documento y serializar la entrada cruda dan EXACTAMENTE lo mismo: partir la
-  // función no cambió el YAML que se sube a MinIO.
-  assert.equal(buildWorkflowsYaml(doc), buildWorkflowsYaml(entrada));
 });
 
 test("normalizeFillSteps propaga code y name del paso de entrega", () => {

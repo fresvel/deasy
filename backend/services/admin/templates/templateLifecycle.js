@@ -52,7 +52,6 @@ import { normalizeItemMode } from "../kernel/versioning.js";
 import { slugify, humanizeSlug, normalizeNumericId } from "../kernel/primitives.js";
 import {
   buildWorkflowsDocument,
-  buildWorkflowsYaml,
   collectAuthoredWorkflowIssues,
   normalizeFillSteps,
   normalizeSignatureSteps,
@@ -88,23 +87,6 @@ const TEMPLATE_USERS_PREFIX = (
   || process.env.MINIO_TEMPLATES_DRAFT_PREFIX
   || "Users"
 ).replace(/^\/+|\/+$/g, "");
-const ARTIFACT_WORKFLOW_CONTRACT = [
-  "workflows:",
-  "  fill:",
-  "    required: true",
-  "    source: \"artifact\"",
-  "    sync_mode: \"artifact_to_db\"",
-  "    steps: []",
-  "  signatures:",
-  "    required: false",
-  "    source: \"artifact\"",
-  "    sync_mode: \"artifact_to_db\"",
-  "    steps: []",
-  "dependencies:",
-  "  templates: []",
-  "  data: []"
-].join("\n");
-
 // Componentes UI permitidos para los campos del schema editados desde la web.
 const SCHEMA_FIELD_COMPONENTS = new Set([
   "text", "richtext", "textarea", "number", "switch", "date", "date_expression", "select", "hidden"
@@ -171,16 +153,11 @@ const validatePackagedArtifactDraft = (draftDir, availableFormats) => {
   if (!fs.existsSync(schemaPath) || !fs.existsSync(metaPath) || !fs.existsSync(templateDir)) {
     throw new Error("El artifact no cumple la estructura base requerida (meta.yaml, schema.json y template/).");
   }
-  const metaContent = fs.readFileSync(metaPath, "utf8");
-  const requiredMetaSections = [
-    /^workflows:\s*$/m,
-    /^\s{2}fill:\s*$/m,
-    /^\s{2}signatures:\s*$/m,
-    /^dependencies:\s*$/m
-  ];
-  if (requiredMetaSections.some((pattern) => !pattern.test(metaContent))) {
-    throw new Error("El artifact no cumple el contrato minimo de meta.yaml para workflows y dependencies.");
-  }
+  // Aqui habia un contrato de forma sobre el `meta.yaml` —cuatro regex que exigian `workflows:`,
+  // `fill:`, `signatures:` y `dependencies:`—. Se retira con el sub-paso 8 del §0.8: el flujo ya no
+  // viaja en el YAML, asi que exigir su seccion seria exigir la forma de lo que se acaba de quitar.
+  // Lo que valida este guarda ahora es solo la ESTRUCTURA del paquete, que es lo que el ZIP y el
+  // manifiesto necesitan.
   for (const format of Object.keys(availableFormats || {})) {
     const dirPath = buildArtifactFormatDir(draftDir, format);
     if (!hasVisibleFiles(dirPath)) {
@@ -1668,19 +1645,20 @@ export default class TemplateLifecycleService {
         })
       : [];
 
-    // ESCRITURA DOBLE (sub-paso 3 del §0.8). El documento se construye UNA vez y se usa dos: aquí se
-    // serializa al `meta.yaml` y, ya en la transacción, el escritor directo normaliza ESTE MISMO
-    // objeto y lo inserta en las tablas de flujo. Que las dos copias salgan del mismo sitio es la
-    // razón por la que no pueden divergir mientras dure el andamiaje.
+    // SE ACABÓ LA ESCRITURA DOBLE (sub-paso 8 del §0.8). El documento se sigue construyendo —es lo
+    // que el escritor directo normaliza e inserta, ya dentro de la transacción— pero YA NO SE
+    // SERIALIZA AL `meta.yaml`: el flujo vive en la base y nadie lo lee del YAML desde que los
+    // gates (sub-paso 4) y el editor (sub-paso 5) se mudaron.
+    //
+    // El `meta.yaml` pierde con esto su única sección que no era copia literal de una columna. Lo
+    // que queda son los seis campos de identidad, y `content_hash` se mueve por eso: ESE diff del
+    // golden es la prueba del sub-paso.
     const workflowsDocument = hasCustomWorkflows
       ? buildWorkflowsDocument({ fillWorkflow, signatureWorkflow })
       : null;
-    const workflowsYaml = workflowsDocument
-      ? buildWorkflowsYaml(workflowsDocument)
-      : ARTIFACT_WORKFLOW_CONTRACT;
     fs.writeFileSync(
       path.join(draftDir, "meta.yaml"),
-      `${metaLines.join("\n")}\n${workflowsYaml}\n`,
+      `${metaLines.join("\n")}\n`,
       "utf8"
     );
 
