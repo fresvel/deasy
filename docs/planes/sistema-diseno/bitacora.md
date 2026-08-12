@@ -273,3 +273,196 @@ Build OK · `lint` **limpio** · 18 suites / **304 tests**.
   Es una decisión de diseño, no limpieza.
 - **El bloque `local-dev` de `theme.css`**: sigue vivo. Que sólo actúe en desarrollo es el problema
   de fondo (**dev ≠ prod**), no el CSS en sí.
+
+---
+
+## Sesión 2026-08-10 · Módulos, dev = prod, y el primer barrido de color
+
+No estaba en el plan del 2026-08-09: salió al preguntar por qué había un `theme.css` **y** un
+`tailwind.css`, y por qué el aspecto era distinto en desarrollo.
+
+### `local-dev` no era una variante de desarrollo — era el diseño
+
+El bloque `local-dev` (220 líneas, 105 `!important`) estaba tras la condición equivocada. No hacía
+que dev se viera *distinto*: hacía que **prod se viera mal**. Promoverlo arregló **3 de los 4 fallos
+de WCAG 1.4.11** que producción tenía y nadie veía, porque nadie miraba producción.
+
+**`dev = prod` a partir de aquí.** Y 80 `!important` → 5.
+
+### 15 módulos por familia
+
+`theme.css` + `tailwind.css` + `AdminTableManager.css` → **15 ficheros**, uno por familia, encadenados
+por `index.css`. El orden de los `@import` **es parte del diseño**: `overrides.css` va el último a
+propósito, y está explicado dentro del propio fichero.
+
+Tres regresiones que sólo vio la huella, y las tres del mismo tipo — **reordenar CSS cambia quién
+gana**:
+
+1. Las listas de selectores que cruzaban familias se asignaban por el **primer** selector; hay que
+   asignarlas a la familia **más tardía en el orden de importación**.
+2. `.deasy-filter-btn` se clasificó como formulario y es un botón.
+3. La cola del fichero (repintado de utilidades **y sus excepciones**) tenía que viajar junta.
+
+### 74 hex → 0
+
+Por script, y con dos trampas pagadas:
+
+- **Hex corto dentro de hex largo.** `#fff` casaba dentro de `#fff0ed` y dejaba
+  `var(--brand-white)0ed`: **43 botones se quedaron sin fondo**. Ordenar el mapa por longitud **no
+  basta**; hace falta `(?![0-9a-fA-F])`.
+- **Autorreferencia de token.** La sustitución masiva tocó una *redeclaración* y produjo
+  `--brand-border: var(--brand-border)`, inválido en tiempo de cómputo: **114 nodos cayeron a
+  `currentColor`**, sólo en dev.
+
+Y el script **volvió a reescribir prosa** en los comentarios, como en la fase 4. Segunda vez: al
+reemplazar en masa sobre código fuente, la prosa también se toca.
+
+### La tipografía dejó de cargarse entera
+
+Anidar el `@import` de Google Fonts dentro de un módulo hizo que **Vite lo descartara en silencio**.
+`document.fonts.size === 0`, la app entera con la fuente de reserva. Lo detectó un `<h1>` **14 px más
+estrecho con todos los estilos computados idénticos**. Se movió a `<link>` en `index.html`.
+
+---
+
+## Sesión 2026-08-11 (i) · Homogeneizar el color
+
+Rama `color/rgba-y-apply`. Prioridad fijada por el usuario: **gama reducida y tonalidades homogéneas**.
+
+| Qué | Resultado |
+|---|---|
+| `rgba()` numéricos fuera de `tokens.css` | **100 → 0** |
+| Los 7 hex escondidos dentro de `@apply` | fuera |
+| Sombras, foco, bordes y navegación | colapsados por familia |
+
+**Dos mediciones que cambiaron decisiones:**
+
+1. **ΔE no predice el contraste.** Correlación medida sobre 38 sustituciones: **−0.206**. Una con
+   ΔE 5.2 rompió AA (4.55 → 4.19) y otra con ΔE 16.3 lo **mejoró** en +4.95. El criterio correcto es
+   `contraste_después ≥ contraste_antes`, no «se parece».
+2. **El borde es lo que dibuja el botón de acción.** El relleno al 10 % da 1.1:1 contra la fila: es
+   invisible. Los seis bordes estaban entre **1.64 y 1.90**, o sea que **172 botones no tenían límite
+   perceptible**. Derivarlos al 35 % los dejaba **más claros** que antes; al **71 %** los seis pasan
+   3:1. Misma técnica, resultado opuesto según el porcentaje.
+
+También: el placeholder pasó de **2.85 a 6.36:1**.
+
+---
+
+## Sesión 2026-08-11 (ii) · Modo oscuro: decidido que no
+
+**Deasy es una app en claro y no se contempla modo oscuro.** Sus zonas oscuras —la barra lateral— son
+color explícito, no un tema.
+
+El riesgo era real y silencioso: sin protección, Tailwind v4 compila `dark:` a
+`@media (prefers-color-scheme: dark)`, y **las recetas de TailAdmin traen 1 024**. Pegadas tal cual, a
+quien tuviera el sistema en oscuro se le pintarían los componentes nuevos en oscuro sobre el resto en
+claro — invisible para el build, el lint, los tests y para quien tenga el sistema en claro.
+
+Tres capas, cada una tapa lo que la anterior no ve:
+
+| | Qué cubre |
+|---|---|
+| `@custom-variant dark` en `tokens.css` | El seguro: deja `dark:` **inerte** aunque entre |
+| `vue/no-restricted-class` (eslint, en `error`) | El atributo `class` de las plantillas |
+| `pnpm run check:no-dark` | Lo que ninguna ve: dentro de `@apply`, dentro de `<style scoped>` y en `.js` |
+
+---
+
+## Sesión 2026-08-11 (iii) · Los 13 `<style scoped>`
+
+**El frontend se queda en CERO `<style scoped>`.** Y el saldo dice más que el número de líneas:
+
+| | |
+|---|---:|
+| Bloques al empezar | 13 |
+| Líneas totales | ~330 |
+| **Líneas que estaban MUERTAS** | **~180** |
+
+**Más de la mitad no había que moverla: había que borrarla.**
+
+### La trampa de las capas, en las dos direcciones
+
+Un `<style scoped>` **no está en ninguna capa**; un módulo está en `@layer components`. Y en CSS **la
+precedencia de capa gana a la especificidad**. Al mover el estilo cambian dos cosas a la vez:
+
+- **Hacia abajo**: los conectores de Vue Flow volvieron a los valores de la librería (gris `#555`,
+  6 px) porque su hoja va **sin capa**. Cualificar el selector a `.vue-flow__handle.graph-node__handle`
+  **no arregló nada** — no era especificidad. La solución fue sacar esas reglas del `@layer`.
+- **Hacia arriba**: `.cfg-node { background:#fff }` tapaba tres `bg-*` por estado que el componente
+  declaraba y **que nunca se vieron**. Al pasar a una capa, el tinte **resucitó**. Se borraron las
+  clases muertas: el estado ya se lee en el borde izquierdo y en la etiqueta.
+
+### `:deep()` no salva si el ancla también es de otro componente
+
+Las 84 líneas de `HomeView.vue` **nunca pintaron nada**. `.ancla :deep(.hijo)` compila a
+`.ancla[data-v-TUYO] .hijo`: sigue exigiendo que **`.ancla`** lleve tu scope. Y
+`.deliverable-inline-upload` vive anidada dentro de `DeliverableCard.vue` — un padre sólo estampa su
+`data-v` en la **raíz** del hijo, nunca en un nieto.
+
+Probado tres veces, no deducido:
+
+1. El selector compilado es `.deliverable-inline-upload[data-v-d694e610] …`.
+2. Clon en consola con y sin el atributo: **62 px en fila** frente a **28 px en columna**.
+3. Sobre el elemento **real**, con la tarjeta en pantalla: sus atributos son exactamente `["class"]`,
+   **ningún `data-v`**, y la superficie mide 76 px en columna.
+
+Y una variante del mismo fallo: `:deep(.deasy-dropzone)` buscaba el dropzone como **descendiente** de
+un ancla que era **el mismo elemento** (la raíz de `PdfDropField` **es** `.deasy-dropzone`).
+
+### Lo que se descubrió al mover
+
+- **`.custom-scrollbar` se usa en 22 sitios de 7 componentes**, pero estaba definida en **tres**
+  `<style scoped>` con **tres pieles distintas**, y en los otros cuatro componentes **no hacía nada**.
+  Un nombre, cuatro resultados según dónde mirases.
+- **`BtnSera` llamaba a sus clases `.icon` y `.tooltip` a secas.** Dentro del scope da igual; en un
+  módulo, `.icon` habría redimensionado iconos en **8 componentes**.
+- Los cuatro nodos de Vue Flow: **163 líneas con sólo tres reglas propias**. `ProcessNode.vue` era
+  copia **byte a byte** de `UnitNode.vue`, usando incluso sus clases `.unit-node__*`. Convivían porque
+  cada `<style scoped>` lleva su propio `data-v`.
+- Los cuatro chips de `BtnSera` mezclaban **un token en el texto con un color de Tailwind sin relación
+  en el fondo**: turquesa sobre azul cielo, `#047857` sobre un fondo derivado de `#22c55e`.
+
+### Una regresión propia, encontrada midiendo
+
+Al reanclar el icono de las tarjetas de firma al dropzone, **las tres tarjetas que son lanzadores** —y
+no tienen dropzone— se quedaron sin márgenes. La regla cuelga de la tarjeta, no del campo. Corregido y
+vuelto a medir: **1 522 nodos, 0 diferencias**.
+
+### Nota operativa
+
+La pila B tenía los datos equivocados: alguien lanzó `test:char:run` contra ella, **que resetea la
+base**, y sólo quedaban los fixtures de caracterización. `npm run seed:dev` la deja con dos procesos y
+17 entregables para la persona 3 — existe exactamente para eso.
+
+---
+
+## Cierre del plan del 2026-08-09
+
+**Las seis fases están ✅.** Y el plan queda **archivado, no continuado**: sus cuatro ficheros sujeto
+(`theme.css`, `tailwind.css`, `AdminTableManager.css`, `frontend/.eslintrc.js`) **ya no existen**.
+
+Tres de sus «F-pendientes» se cerraron por el camino sin que el documento se enterase: las
+deformaciones del dropzone vía `:deep()` (hoy son variantes `--workspace` y `--rail` en `forms.css`),
+los clones de Vue Flow y los dos drawers gemelos, y el bloque `local-dev`.
+
+Siguen abiertos, y pasan al plan nuevo: la escala tipográfica, los `z-index` y la *utility soup*.
+
+### Cifras acumuladas del frente
+
+| Métrica | Al abrir | Hoy |
+|---|---:|---:|
+| Líneas de CSS | 3 997 | **~2 100** |
+| Ficheros de CSS | 3 | **16 módulos** |
+| Juegos de tokens | 2 | **1** |
+| Hex en los `.css` | 74 | **0** |
+| `rgba()` numéricos en los `.css` | 100 | **0** |
+| `<style scoped>` | 13 | **0** |
+| `!important` | 80 | **6** |
+| Linters de estilo | 0 | **3** |
+| dev ≠ prod | sí | **no** |
+
+**La medición del 2026-08-11 abre la segunda vuelta**, con otro objeto: no el CSS, sino las 3 590
+clases de Tailwind en las plantillas que ningún linter ve. Evidencia en
+[`auditoria-2026-08-11.md`](./auditoria-2026-08-11.md), ejecutable en
+[`plan-2026-08-11.md`](./plan-2026-08-11.md).

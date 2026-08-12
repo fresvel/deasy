@@ -698,9 +698,11 @@ de la aplicación (`SHeader.vue:2`). Darle su clase y dejar el elemento en paz. 
 línea, pero **cambia el aspecto de seis sitios a la vez**: pide huella de `getComputedStyle`
 antes/después, no build ni tests.
 
-> 📌 `sistema-diseno/bitacora.md:274` sigue diciendo que «el bloque `local-dev` de `theme.css` sigue
-> vivo». **Está obsoleto desde `c45b154`**; se corrige cuando el frente cierre y ese directorio se
-> archive.
+> 📌 ~~`sistema-diseno/bitacora.md:274` sigue diciendo que «el bloque `local-dev` de `theme.css` sigue
+> vivo»~~. **Corregido el 2026-08-11**: la bitácora ya registra la sesión del 2026-08-10 donde se
+> promovió (`c45b154`), y con ella el hallazgo de fondo — **`local-dev` no era una variante de
+> desarrollo, era el diseño tras la condición equivocada**, y promoverlo arregló 3 de los 4 fallos de
+> WCAG 1.4.11 que producción tenía.
 
 ### Las tres colisiones de `tailadmin-ui`: dos cerradas, una viva
 
@@ -732,6 +734,17 @@ antes/después, no build ni tests.
 
 **Criterio de cierre del frente:** pasos 4, 5 (con el criterio redefinido) y 6 cerrados, más el
 `<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno/` se archiva y esto se marca ✅.
+
+> ⚠️ **`sistema-diseno/` NO se archiva todavía: va por su segunda vuelta.** El plan del 2026-08-09
+> cerró sus 6 fases y quedó archivado —sus cuatro ficheros sujeto ya no existen—, pero la medición
+> del 2026-08-11 encontró que **la deuda que queda no vive en el CSS**: son **3 590 clases de color de
+> Tailwind en las plantillas** que ningún linter ve, y **`@theme` es el cuello de botella**, no la
+> disciplina (hoy no existen `bg-state-warning` ni `text-brand-text-muted`, así que ~660 de esas
+> apariciones **no tenían alternativa**).
+>
+> El ejecutable es ahora [`sistema-diseno/plan-2026-08-11.md`](./sistema-diseno/plan-2026-08-11.md);
+> la evidencia, [`auditoria-2026-08-11.md`](./sistema-diseno/auditoria-2026-08-11.md). **Eso redefine
+> el paso 5 de este frente**, que aquí seguía contado como «hex en `.vue`».
 
 ---
 
