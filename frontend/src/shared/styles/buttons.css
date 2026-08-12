@@ -246,6 +246,70 @@
 
     
 }
+/* ======================================================================================
+   [F4.4-c R4 2026-08-11] LOS 12 BOTONES DE ACCION SE QUEDAN ENTEROS FUERA DE CAPA.
+
+   Esta familia esta repartida entre este fichero (la caja y los `:hover`) y
+   `overrides.css` (los reposos de color), y **no se puede mover una mitad sin la otra**.
+   Por eso los dos ficheros van en el mismo commit. Lo que se midio antes de tocar nada:
+
+     - Bajando solo `overrides.css`, el `border: 1px solid transparent` de aqui —suelto—
+       ganaria a sus `border-color` capados y **los 12 botones se quedarian sin borde de
+       color**. Y el borde es lo unico que los dibuja: el relleno esta al 10 % y da 1.1:1
+       contra la fila (§3, punto 2).
+     - Bajando solo este fichero, los reposos sueltos de alli (`.hope-action-view`,
+       `-edit`, `-delete`…) ganarian a los `:hover` capados de aqui y **los 12 estados
+       `:hover` moririan**.
+
+   ── Y BAJANDO LOS DOS A LA VEZ TAMPOCO. ESTO SE APRENDIO MIDIENDO ─────────────────────
+
+   El analisis previo decia que bajando los dos no cambiaba nada, porque dentro de
+   `@layer components` el desempate lo seguiria haciendo el orden del documento y
+   `index.css` importa `buttons.css` antes que `overrides.css`. **Es falso, y la huella lo
+   canto: 239 nodos de diferencia en `/admin/…/organigrama`.**
+
+   El motivo es que el orden solo desempata a IGUAL especificidad, y en esa misma capa ya
+   viven, desde antes, dos selectores con MAS:
+
+     buttons.css  `.deasy-table-shell .deasy-btn`      (0,2,0)  -> `rounded-xl`, `px-3 py-1.5`
+     buttons.css  `.deasy-table-shell .deasy-btn--secondary`     -> fondo blanco y texto gris
+
+   `.hope-action-btn` y `.hope-action-*` son (0,1,0). Hoy les ganan igualmente **porque
+   estan fuera de capa**, que vence a cualquier especificidad. Al capar los 12, los
+   botones de las tablas de administracion —que es donde viven— pasaron a pintarse como un
+   `--secondary` normal: radio 10 px -> 12 px, fondo a blanco, y el color de la accion
+   (verde, azul, rojo, ambar) sustituido por `--brand-text-strong`. Medido: el boton de
+   «Editar» paso de `rgb(4,120,87)` a `rgb(52,55,65)`.
+
+   O sea que aqui **no basta con enumerar las utilidades de Tailwind que compiten**: hay
+   que mirar tambien las reglas de componente MAS ESPECIFICAS que ya estan en la capa. Ese
+   es el segundo modo de colision, y no estaba escrito en ningun sitio.
+
+   ── QUE HARIA FALTA PARA QUE PUDIERAN BAJAR ──────────────────────────────────────────
+
+   Decidir si un boton de accion dentro de una tabla es un `.deasy-btn` o no. Hoy lo es
+   —`AdminButton` le estampa `deasy-btn` y `deasy-btn--secondary` ademas de
+   `hope-action-*`—, y por eso lo alcanzan reglas pensadas para otra cosa. Mientras siga
+   siendo las dos cosas a la vez, la unica forma de que gane la que manda es estar fuera
+   de capa. Es un cambio de componente, no de capa: va con el arreglo de `AdminButton` de
+   la nota de abajo.
+
+   ⚠️ Segundo motivo, independiente del anterior y que sigue vivo aunque se resuelva ese:
+   `AdminButton.vue:73` estampa **utilidades crudas** en su mapa de tamaños —
+   `sm: "admin-btn--sm px-3 py-2 text-sm"`. `px-3 py-2` son utilidades de verdad
+   (`@layer utilities`), que gana a `@layer components`. Los 28 usos de `hope-action-btn`
+   pasan por ese `size="sm"`, asi que en cuanto el `padding: 0` de aqui entre en una capa,
+   los botones dejan de ser el cuadrado de 2.25 rem: se van a 2.25 + 1.5 rem de ancho y
+   revientan la columna de acciones de todas las tablas —el peor caso del sistema, 172
+   botones a la vez (§5.5)—.
+
+   ⚠️ Y de paso, apuntado donde se vea: `AdminButton.vue:81-82` conserva el bug
+   `variantClassMap[props.variant] || props.variant` que `AppButton.vue` ya corrigio en
+   F1.6. Una variante desconocida se estampa como clase literal, y `plain` —que SI esta en
+   el mapa, pero mapeado a `""`, que es falsy— tambien. No se arregla aqui: no es de esta
+   fase, y el gemelo ya tiene escrita la explicacion completa en `AppButton.vue:88-98`.
+   ====================================================================================== */
+
 .hope-action-btn {
   border: 1px solid transparent;
   border-radius: 0.625rem;
@@ -263,12 +327,13 @@
   transform: translateY(-1px);
 }
 
-
 /* [F1.3 2026-08-11] El reparto de hover estaba INCOMPLETO, y no solo en las dos variantes
    que no existian: de las doce, solo siete tenian `:hover`. `--select`, `--assign` y
    `--version` compartian el color de reposo con sus hermanas pero se quedaban planas al
    pasar el raton, que es justo lo que §5.2 pide que no pase. Se agrupan con el token que
-   ya usaban: cada rama de hover es la misma mezcla, y ahora cubre las doce. */
+   ya usaban: cada rama de hover es la misma mezcla, y ahora cubre las doce.
+
+   Fuera de capa con el resto de la familia — ver la cabecera de arriba. */
 .hope-action-edit:hover,
 .hope-action-select:hover,
 .hope-action-assign:hover,
@@ -278,13 +343,11 @@
   border-color: color-mix(in srgb, var(--state-success) 85%, var(--brand-white));
 }
 
-
 .hope-action-delete:hover {
   color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--state-danger) 16%, var(--brand-white));
   border-color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-white));
 }
-
 
 .hope-action-delete-strong:hover {
   color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-black));
@@ -292,13 +355,11 @@
   border-color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-white));
 }
 
-
 .hope-action-view:hover {
   color: color-mix(in srgb, var(--action-view) 85%, var(--brand-black));
   background: color-mix(in srgb, var(--action-view) 16%, var(--brand-white));
   border-color: color-mix(in srgb, var(--action-view) 85%, var(--brand-white));
 }
-
 
 .hope-action-download:hover,
 .hope-action-upload:hover,
@@ -308,7 +369,6 @@
   border-color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-white));
 }
 
-
 .hope-action-delete-pdf:hover,
 .hope-action-retire:hover {
   color: color-mix(in srgb, var(--state-warning) 85%, var(--brand-black));
@@ -316,18 +376,25 @@
   border-color: color-mix(in srgb, var(--state-warning) 85%, var(--brand-white));
 }
 
-.admin-page-header__actions .admin-btn {
-  min-height: 2.45rem;
-}
+@layer components {
+    /* Las tres bajan de capa sin resucitar nada: los dos componentes que emiten
+       `.deasy-btn--sm`/`--md` son `AppButton` (mapa `sm: "deasy-btn--sm admin-btn--sm"`,
+       `md: "deasy-btn--md"`), y ninguno de los dos añade utilidades crudas de padding ni
+       de tamaño de letra. El unico mapa que si las añade es el de `AdminButton`, y ese
+       emite `admin-btn--sm`, que no casa con estos selectores. */
+    .admin-page-header__actions .admin-btn {
+        min-height: 2.45rem;
+    }
 
-.admin-page-header__actions .deasy-btn--sm {
-  padding-inline: 0.9rem;
-  font-size: 0.88rem;
-}
+    .admin-page-header__actions .deasy-btn--sm {
+        padding-inline: 0.9rem;
+        font-size: 0.88rem;
+    }
 
-.admin-page-header__actions .deasy-btn--md {
-  padding-inline: 1rem;
-  font-size: 0.94rem;
+    .admin-page-header__actions .deasy-btn--md {
+        padding-inline: 1rem;
+        font-size: 0.94rem;
+    }
 }
 
 
@@ -342,138 +409,147 @@
    relacion en el fondo: verde #047857 sobre fondo derivado de #22c55e, rojo #b42318 sobre
    #ef4444, y el "pendiente" turquesa sobre un fondo azul cielo. Ahora cada fondo sale del
    mismo token que su texto, con los porcentajes de siempre.
+
+   [F4.4-c R4 2026-08-11] Este bloque SI baja a `@layer components`, al contrario que los
+   botones de accion de arriba. Comprobadas las dos colisiones posibles: `BtnSera.vue`
+   compone su `:class` desde un mapa cerrado que solo devuelve
+   `btnsera sera-send|sera-review|sera-certified|sera-denied` y `btnsera-status--*`, asi
+   que no hay ni una utilidad de Tailwind en el elemento; y `.btnsera` es un prefijo propio
+   que no comparte selector con ninguna regla mas especifica de la capa.
    ------------------------------------------------------------------------------------ */
 
-.btnsera {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: none;
-  border-radius: 9999px;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease;
-  --tooltip-bg: var(--brand-accent);
-}
+@layer components {
+    .btnsera {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border: none;
+      border-radius: 9999px;
+      background: transparent;
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+      --tooltip-bg: var(--brand-accent);
+    }
 
-.btnsera:hover {
-  transform: scale(1.04);
-  background: color-mix(in srgb, var(--brand-navy) 4%, transparent);
-}
+    .btnsera:hover {
+      transform: scale(1.04);
+      background: color-mix(in srgb, var(--brand-navy) 4%, transparent);
+    }
 
-.btnsera__icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  stroke-width: 2.1;
-}
+    .btnsera__icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      stroke-width: 2.1;
+    }
 
-/* El color del boton Y el de su tooltip salen del mismo sitio: el tooltip hereda
-   `--tooltip-bg`, asi que basta declararlo una vez por estado. */
+    /* El color del boton Y el de su tooltip salen del mismo sitio: el tooltip hereda
+       `--tooltip-bg`, asi que basta declararlo una vez por estado. */
 
-.sera-send {
-  color: var(--brand-accent);
-  --tooltip-bg: var(--brand-accent);
-}
+    .sera-send {
+      color: var(--brand-accent);
+      --tooltip-bg: var(--brand-accent);
+    }
 
-.sera-review {
-  color: var(--state-success);
-  --tooltip-bg: var(--state-success);
-}
+    .sera-review {
+      color: var(--state-success);
+      --tooltip-bg: var(--state-success);
+    }
 
-.sera-certified {
-  color: var(--state-gold);
-  --tooltip-bg: var(--state-gold);
-}
+    .sera-certified {
+      color: var(--state-gold);
+      --tooltip-bg: var(--state-gold);
+    }
 
-.sera-denied {
-  color: var(--state-danger);
-  --tooltip-bg: var(--state-danger);
-}
+    .sera-denied {
+      color: var(--state-danger);
+      --tooltip-bg: var(--state-danger);
+    }
 
-.btnsera__tooltip {
-  visibility: hidden;
-  position: absolute;
-  top: 50%;
-  left: calc(100% + 8px);
-  transform: translateY(-50%);
-  background-color: var(--tooltip-bg);
-  color: var(--brand-white);
-  padding: 0.35rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  line-height: 1.2;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-  z-index: 25;
-}
+    .btnsera__tooltip {
+      visibility: hidden;
+      position: absolute;
+      top: 50%;
+      left: calc(100% + 8px);
+      transform: translateY(-50%);
+      background-color: var(--tooltip-bg);
+      color: var(--brand-white);
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      line-height: 1.2;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 25;
+    }
 
-.btnsera:hover .btnsera__tooltip {
-  visibility: visible;
-  opacity: 1;
-}
+    .btnsera:hover .btnsera__tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
 
-/* ── El modal de estado ─────────────────────────────────────────────────────────── */
+    /* ── El modal de estado ─────────────────────────────────────────────────────────── */
 
-.btnsera-status__body {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
+    .btnsera-status__body {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
 
-.btnsera-status__icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
+    .btnsera-status__icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
 
-.btnsera-status__icon-svg {
-  width: 1.5rem;
-  height: 1.5rem;
-}
+    .btnsera-status__icon-svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
 
-.btnsera-status__copy {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+    .btnsera-status__copy {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
 
-.btnsera-status__label {
-  font-size: 1rem;
-  color: var(--brand-navy);
-}
+    .btnsera-status__label {
+      font-size: 1rem;
+      color: var(--brand-navy);
+    }
 
-.btnsera-status__message {
-  margin: 0;
-  color: var(--brand-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.45;
-}
+    .btnsera-status__message {
+      margin: 0;
+      color: var(--brand-text-muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
 
-.btnsera-status--pending {
-  color: var(--brand-accent);
-  background: color-mix(in srgb, var(--brand-accent) 12%, var(--brand-white));
-}
+    .btnsera-status--pending {
+      color: var(--brand-accent);
+      background: color-mix(in srgb, var(--brand-accent) 12%, var(--brand-white));
+    }
 
-.btnsera-status--reviewed {
-  color: var(--state-success);
-  background: color-mix(in srgb, var(--state-success) 12%, var(--brand-white));
-}
+    .btnsera-status--reviewed {
+      color: var(--state-success);
+      background: color-mix(in srgb, var(--state-success) 12%, var(--brand-white));
+    }
 
-.btnsera-status--certified {
-  color: var(--state-gold);
-  background: color-mix(in srgb, var(--state-gold) 14%, var(--brand-white));
-}
+    .btnsera-status--certified {
+      color: var(--state-gold);
+      background: color-mix(in srgb, var(--state-gold) 14%, var(--brand-white));
+    }
 
-.btnsera-status--denied {
-  color: var(--state-danger);
-  background: color-mix(in srgb, var(--state-danger) 12%, var(--brand-white));
+    .btnsera-status--denied {
+      color: var(--state-danger);
+      background: color-mix(in srgb, var(--state-danger) 12%, var(--brand-white));
+    }
 }

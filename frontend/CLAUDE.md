@@ -204,6 +204,36 @@ El **skin lo pone el componente y la utilidad llega de fuera**, así que sólo s
 runtime. Es primo de la trampa de 6.5 (clases compuestas), y la comprobación es la misma: mira
 `body-class`, `header-class`, `panel-class`, `class-name` y cualquier prop que acabe en `class`.
 
+### 2.13 Y busca también, en la CAPA DE DESTINO, las reglas más específicas
+
+Esta es la trampa hermana de 2.12, y **no la vio ningún análisis estático**: la encontró la huella,
+con 239 nodos rotos, al bajar los botones de acción en §4.4-c.
+
+Fuera de capa una regla gana **siempre**, da igual la especificidad. Dentro de la capa vuelve a
+competir con todo lo que ya vive allí — incluidas reglas de componente que **no son utilidades de
+Tailwind**, y que por eso no salen en ninguna lista de colisiones:
+
+```
+buttons.css    .deasy-table-shell .deasy-btn     (0,2,0)   <- @layer components, desde antes
+overrides.css  .hope-action-btn                  (0,1,0)   <- lo que ibas a bajar
+```
+
+Los doce botones de acción viven precisamente dentro de `.deasy-table-shell`, así que al capar
+perdieron color, radio y borde y se pintaron como un `--secondary` cualquiera. Lo mismo, más
+pequeño, con `.deasy-btn--secondary` frente a `.deasy-table-shell .deasy-btn--secondary`: **un solo
+nodo** en la huella, pero el `:hover` —que la huella no ve— cambiaba en todas las tablas.
+
+Antes de mover una regla a `@layer components`, la comprobación son **tres** cosas, no una:
+
+1. ¿Qué **utilidades de Tailwind** conviven con ella en el DOM? (2.12, y mira las props de clase).
+2. ¿Hay en la capa de destino una regla **más específica** que pise la misma propiedad? El `grep`
+   útil no es por el selector entero: lo que te gana es un **descendiente**, así que busca
+   ` .deasy-btn`, ` .admin-btn`, con el espacio delante.
+3. ¿Compite con una hoja de **tercero sin capa** (`@vue-flow/core`, `leaflet`)? Entonces no baja.
+
+Y la regla de oro: **una diferencia de un nodo no es «casi cero»**. Es la señal de que el análisis
+estaba mal. Vuelve a mirar antes de aceptarla.
+
 ---
 
 ## 3. Accesibilidad: los mínimos son mínimos

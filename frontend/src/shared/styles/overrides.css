@@ -42,69 +42,132 @@
 
    Pendiente de esa decision: bajar las 150 reglas a su capa, modulo a modulo y con huella
    por modulo. Aqui se hace la separacion, que es lo que lo desbloquea.
+
+   ── [F4.4-c R4 2026-08-11] EL BLOQUE (B) YA HA BAJADO. LO QUE NO, Y POR QUE ───────────
+
+   Este commit baja la mayor parte de (B) a `@layer components`, **junto con `buttons.css`**,
+   que va en el mismo commit porque los dos se sostienen sobre los botones de accion: bajar
+   uno solo mata o los 12 bordes de color o los 12 `:hover`.
+
+   El parrafo de arriba decia que bajar (B) «no resucita nada». Es cierto para los skins de
+   superficie, y NO para los OCHO grupos que siguen sueltos aqui abajo. Cada uno lleva su
+   propio comentario con **la cifra de lo que suprime**, medida, no estimada:
+
+     1. `input, select, textarea` (las DOS reglas) ....... 83 radios + 44 bordes + 80 focos
+     2. `.deasy-field-*` / `.deasy-auth-field` ......... el `:focus` de `forms.css:99-105`
+     3. `.deasy-filter-*` / `.profile-*` ............ los `:focus` de `forms.css:32` y `:51`
+     4. `.admin-select-field` y su `:focus` ......... su propio radio, y el anillo de foco
+     5. `header` ................... 2 cabeceras de cajon y 1 translucida, de las 9 del repo
+     6. `.deasy-fa-icon` ....................................... 4 iconos con color propio
+     7. `.hope-action-*` (las 7 reglas) ......... 239 nodos, y por un motivo DISTINTO
+     8. `.deasy-btn--secondary` y hermanas (3) ... 1 nodo, por ese mismo motivo distinto
+
+   Ninguno se «neutraliza» borrando la utilidad de la plantilla: eso perderia la intencion
+   de quien la escribio. Se resuelven decidiendo el foco y el color (§4.2) y el radio de los
+   controles (F5), no aqui.
+
+   ⚠️ **EL SEPTIMO NO ES COMO LOS SEIS PRIMEROS, Y ESO ES EL HALLAZGO DE ESTA RONDA.** Los
+   seis primeros tapan UTILIDADES de Tailwind, que es la colision que este plan venia
+   buscando. El septimo no: lo que le gana dentro de la capa es **otra regla de componente
+   mas especifica que ya estaba alli** —`.deasy-table-shell .deasy-btn` (0,2,0) frente a
+   `.hope-action-btn` (0,1,0)—. Bajarlos se midio y dio **239 nodos de diferencia** en
+   `/admin/…/organigrama`: los 12 botones perdieron su color y su radio y se pintaron como
+   un `--secondary` cualquiera. O sea que enumerar utilidades NO basta para decidir si una
+   regla puede bajar; hay que mirar tambien la capa de destino. El detalle esta en
+   `buttons.css`. Y el octavo se le pego al septimo en la segunda medicion: mismo
+   mecanismo, mismo fichero, otra pareja de selectores. Por eso la lista se escribio dos
+   veces — el analisis estatico dio 6, y la huella dio 8.
+
+   ⚠️ Y el bloque (A) del final **sigue fuera de capa a proposito**: muere entero en 4.4-d.
+   Que (B) baje y (A) no, no cambia ningun desempate normal —(A) ya ganaba por orden, y
+   ahora gana por capa, que es mas fuerte—. Donde SI se invierte es en los `!important`: la
+   precedencia de capa se da la vuelta para las declaraciones importantes, asi que el
+   `border-color … !important` capado de (B) pasa a ganar al de (A), que esta suelto. Es un
+   no-op comprobado: los dos declaran `var(--brand-border)`, y ninguna de las 7 clases de
+   (B) convive con `border-slate-100`/`-200` en ninguna plantilla. Verificado ademas con la
+   huella: 0 diferencias en las 7 rutas.
    ====================================================================================== */
 
-.deasy-card,
-.deasy-card-muted,
-.deasy-card-soft,
-.deasy-panel,
-.deasy-panel-muted,
-.deasy-section-card,
-.deasy-table-shell,
-.deasy-ui-surface,
-.deasy-form-section,
-.deasy-auth-card,
-.admin-workspace-frame,
-.admin-surface-frame,
-.deasy-dialog-panel,
-.profile-table-shell,
-.profile-dialog-panel,
-.table-institutional {
-  background-color: var(--brand-white);
-}
+@layer components {
+    /* DOCE de estos dieciseis selectores tienen **0 consumidores** —`.deasy-card`,
+       `-card-muted`, `-card-soft`, `.deasy-panel`, `-panel-muted`, `.deasy-table-shell`,
+       `.deasy-ui-surface`, `.profile-table-shell`, `.profile-dialog-panel`,
+       `.table-institutional`, `.deasy-auth-panel` y `.deasy-auth-visual`—: no aparecen ni
+       en plantilla, ni por prop, ni compuestos en runtime. Capar algo muerto es un no-op
+       comprobable, pero lo que procede es borrarlos, y eso es F5.
 
-.admin-workspace-frame--table {
-  background-color: transparent;
-}
+       De los que si se usan, ninguno convive con una utilidad de fondo, borde, sombra o
+       radio: los unicos acompañantes son de caja (`w-full`, `min-h-0`, `min-h-100`). La
+       excepcion conocida entra por prop —`body-class="p-0 bg-slate-50 relative"` en
+       `FirmarPdf.vue:786` sobre `.deasy-dialog-body`— y esa la sigue ganando el repintado
+       de `.bg-slate-50` del bloque (A), que no ha bajado. */
+    .deasy-card,
+    .deasy-card-muted,
+    .deasy-card-soft,
+    .deasy-panel,
+    .deasy-panel-muted,
+    .deasy-section-card,
+    .deasy-table-shell,
+    .deasy-ui-surface,
+    .deasy-form-section,
+    .deasy-auth-card,
+    .admin-workspace-frame,
+    .admin-surface-frame,
+    .deasy-dialog-panel,
+    .profile-table-shell,
+    .profile-dialog-panel,
+    .table-institutional {
+        background-color: var(--brand-white);
+    }
 
-.deasy-auth-page {
-  background:
-    linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-muted) 46%, var(--brand-surface-muted) 100%);
-}
+    .admin-workspace-frame--table {
+        background-color: transparent;
+    }
 
-.deasy-auth-panel,
-.deasy-dialog-body {
-  background-color: var(--brand-white);
-}
+    .deasy-auth-page {
+        background:
+            linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-muted) 46%, var(--brand-surface-muted) 100%);
+    }
 
-.deasy-auth-visual,
-.deasy-dialog-footer {
-  background-color: var(--brand-surface-alt);
-}
+    .deasy-auth-panel,
+    .deasy-dialog-body {
+        background-color: var(--brand-white);
+    }
 
-.deasy-card,
-.deasy-section-card,
-.deasy-dialog-panel,
-.admin-workspace-frame,
-.admin-surface-frame,
-.profile-table-shell,
-.table-institutional {
-  border-color: var(--brand-border) !important; /* gana a `.deasy-dialog-header button` (0,3,1), que esta SIN CAPA en dialogs.css */
-}
+    .deasy-auth-visual,
+    .deasy-dialog-footer {
+        background-color: var(--brand-surface-alt);
+    }
 
-.deasy-card,
-.deasy-section-card,
-.deasy-auth-card,
-.admin-workspace-frame,
-.admin-surface-frame,
-.profile-table-shell {
-  box-shadow: var(--brand-elev-1);
-}
+    /* El `!important` se queda hasta R5 — ver la nota del bloque (A) sobre
+       `.deasy-dialog-root .deasy-dialog-header button` (0,2,1), que sigue SIN CAPA en
+       `dialogs.css`. Ojo: ninguno de estos siete selectores es un `button`, asi que este
+       `!important` en concreto lleva pinta de no hacer falta ni siquiera hoy. Comprobarlo
+       —y retirarlo si sobra— es R5; aqui solo se mueve de capa. */
+    .deasy-card,
+    .deasy-section-card,
+    .deasy-dialog-panel,
+    .admin-workspace-frame,
+    .admin-surface-frame,
+    .profile-table-shell,
+    .table-institutional {
+        border-color: var(--brand-border) !important;
+    }
 
-.admin-workspace-frame--table {
-  /* gana al repintado de `.admin-workspace-frame`, que si necesita prioridad */
-  border-color: transparent !important;
-  box-shadow: none;
+    .deasy-card,
+    .deasy-section-card,
+    .deasy-auth-card,
+    .admin-workspace-frame,
+    .admin-surface-frame,
+    .profile-table-shell {
+        box-shadow: var(--brand-elev-1);
+    }
+
+    .admin-workspace-frame--table {
+        /* gana al repintado de `.admin-workspace-frame`, que si necesita prioridad */
+        border-color: transparent !important;
+        box-shadow: none;
+    }
 }
 
 /* ------------------------------------------------------------------------------------
@@ -131,12 +194,38 @@
    ⚠️ **LO QUE NO SE HACE AQUI, Y POR QUE.** La otra salida era bajar la regla de elemento a
    `@layer base`, que es su sitio arquitectonico. Se descarto tras medirlo: al dejar de
    estar fuera de capa, la regla deja de ganar tambien a las UTILIDADES de Tailwind, y
-   resucitan de golpe **90 declaraciones que hoy estan muertas** —29 `border-slate-300` en
-   reposo, 52 `focus:border-indigo-400` y 9 `focus:border-sky-500`—. O sea: hoy **ningun
-   `border-*` de Tailwind pinta sobre un input**, ni uno solo de los 61 bordes de foco. Eso
-   es un hallazgo nuevo y es de F4.2, que es la fase que decide si el foco es
-   `--focus-ring` o cinco familias. Resucitarlos de tapadillo dentro de un lote de bugs
-   seria justo lo que este plan promete no hacer.
+   resucitan de golpe las declaraciones que hoy estan muertas. Eso es de F4.2, que es la
+   fase que decide si el foco es `--focus-ring` o cinco familias. Resucitarlas de tapadillo
+   dentro de un lote de bugs seria justo lo que este plan promete no hacer.
+
+   ── [F4.4-c R4 2026-08-11] LA CUENTA, VUELTA A MEDIR — Y EL RADIO, QUE ERA NUEVO ──────
+
+   F1.1 dio «90 declaraciones». Recontado sobre los 228 controles del proyecto, tag a tag,
+   son mas, y hay una tercera propiedad que nadie habia sumado:
+
+     | Lo que estas dos reglas suprimen           | Controles |
+     |--------------------------------------------|----------:|
+     | `rounded-2xl` (70) / `rounded-xl` (13)     |    **83** |
+     | Borde en reposo (`border-slate-300` ×43…)  |    **44** |
+     | Borde de foco (`focus:border-*`)           |    **80** |
+
+   Dos precisiones que explican por que la cifra de F1.1 se quedaba corta y a la vez larga:
+
+   - Los `border-slate-200`/`-100` de los controles (48) **NO** estan suprimidos: los repinta
+     el bloque (A) con `!important`, que gana igual. Por eso el borde en reposo tapado son
+     44 y no 92. Los 80 del foco se reparten en `focus:border-indigo-400` (59),
+     `focus:border-sky-500` (17), `focus:border-blue-500` (2), `focus:border-sky-300` (1) y
+     `focus:border-brand-primary` (1).
+   - **El `border-radius: 0.5rem` es un hallazgo nuevo de esta ronda.** F1.1 lo dejo en el
+     grupo de diez «tal cual estaba» sabiendo que anulaba el `rounded-2xl` de `forms.css`,
+     pero no que ademas esta anulando **83 radios escritos a mano en plantilla**. Medido en
+     la app: `.deasy-auth-field` del login pide `rounded-2xl` (16 px) y el DOM devuelve
+     **8 px**. O sea que la promesa «16 px» no la rompe solo el modulo: la rompe para todo
+     el que escriba un radio sobre un control, y en silencio.
+
+   Por eso las DOS reglas se quedan fuera de capa. Y **no se neutralizan borrando esas 207
+   utilidades de las plantillas**: eso no seria un refactor invisible, seria perder la
+   intencion de quien escribio cada campo. Radio es F5; borde y foco son §4.2.
 
    ⚠️ Y las variantes `--error` siguen sin aplicar por el mismo mecanismo: `border-red-300`
    vive en `@layer components`. NO se resucitan a proposito — ese par da **1.75:1**, el peor
@@ -170,7 +259,12 @@ textarea {
   border-color: var(--brand-border);
 }
 
-/* Campo de formulario y de login: el borde fuerte que `forms.css` y `auth.css` declaran. */
+/* Campo de formulario y de login: el borde fuerte que `forms.css` y `auth.css` declaran.
+
+   ⚠️ FUERA DE CAPA, y no por inercia: si bajase, ganaria el `:focus` de `forms.css` —que
+   declara `border-color: rgba(var(--brand-primary-rgb), .44)`— y los campos cambiarian de
+   borde al recibir el teclado. Hoy ese borde no pinta (el `box-shadow: var(--focus-ring)`
+   de la misma regla si, porque nadie compite por esa propiedad). Encenderlo es §4.2. */
 .deasy-field-input,
 .deasy-field-select,
 .deasy-field-textarea,
@@ -178,7 +272,10 @@ textarea {
   border-color: var(--brand-border-strong);
 }
 
-/* Filtros y campos de perfil: el borde de control que declaran sus modulos. */
+/* Filtros y campos de perfil: el borde de control que declaran sus modulos.
+
+   ⚠️ FUERA DE CAPA por lo mismo, y aqui son dos: los `:focus` capados de `forms.css:32`
+   (`.deasy-filter-control`) y `forms.css:51` (`.deasy-filter-search-input`). §4.2. */
 .deasy-filter-control,
 .deasy-filter-search-input,
 .profile-text-input,
@@ -187,6 +284,23 @@ textarea {
   border-color: var(--brand-border-field);
 }
 
+/* ------------------------------------------------------------------------------------
+   ⚠️ FUERA DE CAPA LAS DOS, y esta no estaba en la lista de F1.1 — se descubrio al medir.
+
+   `.admin-select-field` es un `<select>`, asi que compite con la regla de ELEMENTO de
+   arriba, que sigue suelta. Si bajase sola, `input, select, textarea` le ganaria por capa
+   y **los 20 selectores de administracion pasarian de 10 px a 8 px de radio**. No es que
+   tape una utilidad: es que la unica forma de seguir ganandole a un selector suelto es
+   estar suelta tambien. Muere cuando muera la regla de elemento, no antes.
+
+   Y el `:focus`, aunque parezca redundante, tampoco puede bajar. `AdminSelectField.vue:6`
+   escribe `focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10`, que son
+   utilidades y hoy estan muertas. El borde da igual —las dos declaran `--brand-primary`—,
+   pero el anillo no: `--focus-ring` es `0 0 0 4px rgba(--brand-primary-rgb, .1)` y el
+   `ring-4` de Tailwind produce ademas el segmento de `ring-offset`, o sea otro
+   `box-shadow` computado. Que los dos valores coincidan al pixel es justo lo que hace que
+   una de las dos sobre: elegir cual es §4.2, no esto.
+   ------------------------------------------------------------------------------------ */
 .admin-select-field {
   border-color: var(--brand-border-field);
   border-radius: 10px;
@@ -197,17 +311,90 @@ textarea {
   box-shadow: var(--focus-ring);
 }
 
-.deasy-table thead tr,
-.table thead th,
-.table-institutional thead {
-  background: var(--brand-surface-muted);
+@layer components {
+    /* `.deasy-table` y `.table-institutional` tienen 0 consumidores; el unico selector vivo
+       del trio es `.table thead th`. Ninguna `<thead>`/`<tr>` del proyecto lleva utilidad
+       de fondo. */
+    .deasy-table thead tr,
+    .table thead th,
+    .table-institutional thead {
+        background: var(--brand-surface-muted);
+    }
+
+    .deasy-table tbody tr:hover,
+    .table-institutional tbody tr:hover {
+        background-color: var(--brand-surface-muted);
+    }
+
+
+    .deasy-nav-shell {
+        background: linear-gradient(180deg, rgba(var(--brand-white-rgb), 0.12) 0%, rgba(var(--brand-white-rgb), 0.08) 100%);
+        border-color: rgba(var(--brand-white-rgb), 0.08);
+    }
 }
 
-.deasy-table tbody tr:hover,
-.table-institutional tbody tr:hover {
-  background-color: var(--brand-surface-muted);
+/* ------------------------------------------------------------------------------------
+   ⚠️ FUERA DE CAPA. Es un selector de ELEMENTO, y en este proyecto `<header>` no es solo
+   la barra superior: hay 9, y 4 de ellas son cabeceras de panel que NO quieren fondo azul
+   marino. Hoy lo llevan igual, porque esta regla les gana; capandola pasarian a
+   `transparent`, que no es lo mismo:
+
+     - `ProcessGraphView.vue:142` y `UnitGraphView.vue:174` — cabecera del cajon lateral
+       del organigrama. Ninguna declara fondo, asi que al bajar la regla se quedarian sin
+       ninguno.
+     - `WorkspaceChatLauncher.vue:24` — declara `bg-gradient-to-b from-white
+       to-slate-50/70`, que es `background-image`: el degradado acaba **al 70 % de alfa**,
+       o sea que el color de fondo se ve a traves. Cambiarlo cambia el tramo inferior.
+     - `SNotify.vue:25` declara `bg-white` y es el unico caso que NO cambiaria: `.bg-white`
+       (0,1,0) ya le gana hoy a `header` (0,0,1) sin necesidad de capa. Medido en las 7
+       rutas de la huella: esa cabecera renderiza `rgb(255,255,255)`, no el azul.
+
+   Lo correcto es que cada cabecera de panel declare su fondo y que esta regla se limite a
+   `SHeader.vue`, que es la unica que quiere el azul. Es un cambio de plantilla, no de
+   capa. Anotado para F5. */
+header {
+  background-color: var(--brand-navy-deep);
+  border-color: rgba(var(--brand-white-rgb), 0.1);
 }
 
+/* ------------------------------------------------------------------------------------
+   ⚠️ FUERA DE CAPA. `color: currentColor` es exactamente lo que hay que declarar para que
+   un icono herede el color de su contenedor... y por eso mismo **tapa cualquier `text-*`
+   que se le ponga al icono directamente**. Son 4 hoy, y las cuatro estan escritas a
+   proposito:
+
+     `ProcessActivationPanel.vue:6` y `:12` ....... `text-brand-text-muted` (candado gris)
+     `AdminProcessDefinitionActivationModal.vue:43` ....... `text-amber-500` (aviso ambar)
+     `AdminTableManager.vue:677` ......................... `text-amber-500` (aviso ambar)
+
+   O sea que los dos triangulos de aviso salen hoy del color de su parrafo, no ambar. El
+   arreglo no es capar esto —el `currentColor` de la clase base es correcto— sino que esos
+   4 usos pinten el CONTENEDOR en vez del icono. Es §4.2 y F5. */
+.deasy-fa-icon {
+  color: currentColor;
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------------------------
+   ⚠️ FUERA DE CAPA LAS TRES, y por el MISMO motivo que los `hope-action-*` de abajo: no es
+   una utilidad de Tailwind lo que les gana dentro de la capa, es una regla de componente
+   MAS ESPECIFICA que ya vive alli. En `buttons.css`, desde antes:
+
+     `.deasy-table-shell .deasy-btn--secondary`        (0,2,0)  borde, fondo y color
+     `.deasy-table-shell .deasy-btn--secondary:hover`  (0,3,0)  el hover gris de tabla
+
+   frente a las de aqui, que son (0,1,0) y (0,2,0). Sueltas ganan igual; capadas, pierden.
+   Medido: al bajarlas, el boton secundario de la cabecera de tabla del organigrama paso de
+   `rgb(226,230,240)` (`--brand-border`) a `rgb(215,222,234)` (`--brand-border-strong`). Es
+   **un solo nodo** en la huella, pero el `:hover` —que la huella NO ve— cambiaria de la
+   tinta violeta de aqui al gris de `.deasy-table-shell`, en todos los botones secundarios
+   de todas las tablas. Un nodo de diferencia no es «casi cero»: es la señal de que el
+   analisis estaba mal.
+
+   La pregunta de fondo es la misma que con los botones de accion: el skin de un
+   `.deasy-btn` dentro de una tabla no puede estar repartido en dos ficheros con
+   especificidades distintas. Es una decision de componente, no de capa.
+   ------------------------------------------------------------------------------------ */
 .deasy-btn--secondary,
 .deasy-btn--cancel,
 .deasy-auth-button--secondary,
@@ -215,21 +402,6 @@ textarea {
 .admin-btn--cancel {
   background-color: var(--brand-white);
   border-color: var(--brand-border);
-}
-
-.deasy-nav-shell {
-  background: linear-gradient(180deg, rgba(var(--brand-white-rgb), 0.12) 0%, rgba(var(--brand-white-rgb), 0.08) 100%);
-  border-color: rgba(var(--brand-white-rgb), 0.08);
-}
-
-header {
-  background-color: var(--brand-navy-deep);
-  border-color: rgba(var(--brand-white-rgb), 0.1);
-}
-
-.deasy-fa-icon {
-  color: currentColor;
-  opacity: 1;
 }
 
 .deasy-btn--secondary,
@@ -249,6 +421,12 @@ header {
   border-color: rgba(var(--brand-primary-rgb), 0.18);
 }
 
+/* ── Los 12 botones de accion. FUERA DE CAPA — LEER LA CABECERA DE `buttons.css` ──────
+   Estos reposos y la caja de `buttons.css` son una sola pieza repartida en dos ficheros, y
+   ninguna de las dos mitades puede bajar: dentro de `@layer components` les gana
+   `.deasy-table-shell .deasy-btn` (0,2,0), que ya vive alli, y los 12 botones se pintan
+   como un `--secondary` cualquiera. Medido: 239 nodos de diferencia en el organigrama.
+   El porque completo, y lo que haria falta para arreglarlo, en `buttons.css`. */
 .hope-action-btn {
   background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--brand-white));
   border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--brand-white));
@@ -304,6 +482,8 @@ header {
   color: var(--state-warning);
 }
 
+/* Sigue ganando a los seis `:hover` de `buttons.css` por orden de documento, igual que
+   cuando los dos estaban sueltos: `index.css` importa `buttons.css` antes que este. */
 .hope-action-btn:hover {
   border-color: currentColor;
   filter: saturate(1.05);
@@ -333,7 +513,7 @@ header {
 
    ⚠️ De los `!important` que habia, **el orden se lleva por delante uno de tres**: el de
    `.bg-slate-50`. Los otros dos —los dos de `border-color`— pelean contra
-   `.deasy-dialog-root .deasy-dialog-header button` (0,3,1), que esta **sin capa** en
+   `.deasy-dialog-root .deasy-dialog-header button` (0,2,1), que esta **sin capa** en
    `dialogs.css`, y contra una especificidad mayor el orden no puede. Mueren cuando
    `dialogs.css` baje a `@layer components`, no antes.
    ====================================================================================== */
@@ -371,8 +551,13 @@ header {
 
 /* ⚠️ Este `!important` NO es del tipo «me gana un skin de este mismo fichero» — ese se
    resolvio con el orden. Este pelea contra `.deasy-dialog-root .deasy-dialog-header button`
-   (0,3,1), que esta **SIN CAPA** en `dialogs.css` y declara `--brand-border-field`. Contra
+   (0,2,1), que esta **SIN CAPA** en `dialogs.css` y declara `--brand-border-field`. Contra
    una especificidad mayor el orden no puede.
+
+   [F4.4-c R4 2026-08-11] La especificidad decia **(0,3,1)** en los tres sitios donde se
+   nombra este selector. Son dos clases y un elemento: **(0,2,1)**. `dialogs.css:110` ya lo
+   tenia bien, y era el unico. Corregido en los tres — importa porque toda la decision de
+   por que este `!important` no se puede retirar cuelga de esa cifra.
 
    Se descubrio quitandolo: la huella marco **un nodo** —el boton de cerrar de los
    dialogos— pasando de `--brand-border` a `--brand-border-field`. Es discutible cual de
