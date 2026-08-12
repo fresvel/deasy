@@ -1146,7 +1146,7 @@
       labelled-by="task-filters-modal-title"
       title="Filtrar tareas y entregables"
       size="lg"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="deasy-filter-shell flex flex-col gap-5">
@@ -1232,7 +1232,7 @@
       labelled-by="document-sign-modal-title"
       title="Firmar documento"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <FirmarPdf ref="embeddedSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
@@ -1249,7 +1249,7 @@
       labelled-by="deliverable-workspace-modal-title"
       :title="deliverableWorkspaceTitle"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-5">
@@ -1478,7 +1478,7 @@
       labelled-by="my-sends-modal-title"
       title="Mis envíos"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
@@ -1523,7 +1523,7 @@
       labelled-by="fill-workflow-modal-title"
       title="Flujo de entrega"
       size="lg"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-5">
@@ -1721,7 +1721,7 @@
       labelled-by="signature-flow-modal-title"
       title="Flujo de firmas"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
       @close="closeSignatureFlowModal"
     >
@@ -1903,7 +1903,7 @@
       labelled-by="deliverable-upload-modal-title"
       :title="deliverableUploadModalTitle"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
@@ -1940,7 +1940,7 @@
       labelled-by="deliverable-operation-modal-title"
       :title="deliverableOperationState.title"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
@@ -1970,7 +1970,7 @@
       labelled-by="deliverable-sign-result-modal-title"
       :title="deliverableSignResultState.success ? 'Documento firmado' : 'Error al firmar'"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div v-if="deliverableSignResultState.success" class="flex flex-col gap-4">
@@ -2001,7 +2001,7 @@
       labelled-by="deliverable-reset-modal-title"
       title="Resetear flujo del entregable"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
       @close="closeDeliverableResetModal"
     >

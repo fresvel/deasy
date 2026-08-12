@@ -4,7 +4,7 @@
     labelled-by="deliverable-preview-modal-title"
     :title="name || 'Vista previa del archivo'"
     size="xl"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="min-h-[60vh]">

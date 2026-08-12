@@ -4,7 +4,7 @@
   labelled-by="general-task-modal-title"
   :title="generalTaskModalTitle"
   size="lg"
-  content-class="rounded-4 shadow border-0"
+  content-class="shadow border-0"
   body-class="pt-4"
 >
   <div class="flex flex-col gap-5">

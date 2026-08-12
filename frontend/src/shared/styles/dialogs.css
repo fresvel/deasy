@@ -71,7 +71,18 @@
     }
 
     /* [F4.4-c R5] Baja: la cabecera no recibe ninguna utilidad. La unica que se le intento
-       poner nunca ha llegado al DOM —ver la nota del `header-class` fantasma mas abajo—. */
+       poner nunca ha llegado al DOM.
+
+       [R6] R5 dejo aqui un «ver la nota del `header-class` fantasma mas abajo» y esa nota no
+       llego a escribirse. La cuenta entera es esta: `FirmarPdf.vue:785` escribia
+       `header-class="bg-slate-50 border-b border-slate-100"`, pero **`AppModalShell` no
+       declara la prop `headerClass`** —tiene `dialogClass`, `contentClass`, `bodyClass` y
+       `footerClass`, no esa—, asi que caia en `attrs` y el `v-bind="attrs"` de la linea 11 la
+       estampaba como ATRIBUTO HTML literal en el div raiz, que ademas no es la cabecera sino
+       el velo. Comprobado en la app viva: cuatro `div.deasy-dialog-root` llevaban un atributo
+       `header-class`, **ninguna de sus tres clases estaba en su `classList`**, y no hay ni un
+       selector en todo el CSS servido que mire ese atributo. Borrada en R6: no es una
+       declaracion suprimida, es una prop que no existe. */
     .deasy-dialog-root .deasy-dialog-header {
         background: var(--brand-surface-alt);
         border-bottom: 1px solid var(--brand-border);
@@ -323,13 +334,17 @@
      - **5 paneles** cambian de radio: `15.2px` -> `12px` (el `rounded-xl` de
        `FirmarPdf.vue:784`).
 
-   Ojo con el que NO cambia: el `border-color`. Lo fija `overrides.css` con `!important`
-   dentro de `@layer components`, y un importante capado gana a esta regla suelta.
+   Ojo con el que NO cambia: el `border-color`. **[R6] Y el motivo que decia aqui era otro.**
+   Decia que lo fijaba `overrides.css` con `!important` dentro de `@layer components`; ese
+   `!important` se retiro en R6 tras medir que no hacia nada, y el `border-color` sigue sin
+   cambiar — porque quien lo pone es ESTA regla, que esta fuera de capa y le gana a la de
+   `overrides.css` sin necesidad de prioridad. Las dos declaran `--brand-border`.
 
    ⚠️ Y `rounded-4`, que aparecia 18 veces en el mismo `content-class`, **no existe en
-   Tailwind v4**: comprobado enumerando `document.styleSheets` en la app viva, no genera ni
-   una regla. Se ha borrado de las plantillas en este mismo commit, porque no expresa ninguna
-   intencion — es un error de escritura, no una declaracion suprimida. */
+   Tailwind v4**: comprobado enumerando `document.styleSheets` en la app viva —0 reglas, con
+   `.rounded-xl` de control positivo— sobre los 24 nodos que lo llevaban, que renderizaban el
+   `15.2px` de aqui abajo. **[R6] Borrado de las plantillas**, porque no expresa ninguna
+   intencion: es un error de escritura, no una declaracion suprimida. */
 
 .deasy-dialog-panel,
 .profile-dialog-panel {

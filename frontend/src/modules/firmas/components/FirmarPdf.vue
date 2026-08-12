@@ -488,7 +488,7 @@
     title="Asignar firmante"
     size="lg"
     dialog-class="items-center"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
@@ -593,7 +593,7 @@
     labelled-by="confirm-delete-signature-title"
     title="Eliminar firma"
     size="centered"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
     footer-class="border-0 pt-0"
   >
@@ -612,7 +612,7 @@
     labelled-by="sign-cert-modal-title"
     :title="multiBatchRequest ? 'Iniciar firma masiva' : signMode === 'token' ? 'Firmar documento por token' : 'Firmar documento'"
     size="lg"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
@@ -737,7 +737,7 @@
     labelled-by="sign-result-modal-title"
     :title="signSuccess ? 'Documento firmado' : 'Error al firmar'"
     size="md"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
       <div v-if="signSuccess" class="flex flex-col gap-4">
@@ -760,7 +760,7 @@
     labelled-by="certificates-manager-modal-title"
     title="Gestionar certificados"
     size="xl"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <UserCertificatesPanel
@@ -782,7 +782,6 @@
     size="xl"
     :show-close-button="false"
     content-class="rounded-xl shadow-xl border-0 overflow-hidden"
-    header-class="bg-slate-50 border-b border-slate-100"
     body-class="p-0 bg-slate-50 relative"
   >
     <template #title>
@@ -959,7 +958,7 @@
     labelled-by="certificate-authority-modal-title"
     title="Entidad certificadora"
     size="lg"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">

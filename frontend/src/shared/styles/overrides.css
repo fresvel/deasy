@@ -37,8 +37,11 @@
    utilidad de fondo/borde/sombra que hoy pierda contra ella.** O sea que bajar (B) a
    `@layer components` no resucita nada — al contrario que en F1.1, donde bajar la regla de
    `input` habria resucitado 90 declaraciones. Las unicas colisiones entran por **props de
-   clase** (`body-class="p-0 bg-slate-50 relative"` en `FirmarPdf.vue:786`,
-   `header-class="bg-slate-50 …"`), que son dos y se revisan a mano.
+   clase** (`body-class="p-0 bg-slate-50 relative"` en `FirmarPdf.vue`,
+   `header-class="bg-slate-50 …"`), que son dos y se revisan a mano. **[R6] Ahora es UNA**:
+   la del `header-class` nunca fue una colision, porque esa prop no existe en
+   `AppModalShell` y el valor acababa de atributo HTML suelto. Borrada; el detalle esta en
+   `dialogs.css`, en la regla de la cabecera.
 
    Pendiente de esa decision: bajar las 150 reglas a su capa, modulo a modulo y con huella
    por modulo. Aqui se hace la separacion, que es lo que lo desbloquea.
@@ -81,11 +84,21 @@
    ⚠️ Y el bloque (A) del final **sigue fuera de capa a proposito**: muere entero en 4.4-d.
    Que (B) baje y (A) no, no cambia ningun desempate normal —(A) ya ganaba por orden, y
    ahora gana por capa, que es mas fuerte—. Donde SI se invierte es en los `!important`: la
-   precedencia de capa se da la vuelta para las declaraciones importantes, asi que el
-   `border-color … !important` capado de (B) pasa a ganar al de (A), que esta suelto. Es un
-   no-op comprobado: los dos declaran `var(--brand-border)`, y ninguna de las 7 clases de
-   (B) convive con `border-slate-100`/`-200` en ninguna plantilla. Verificado ademas con la
-   huella: 0 diferencias en las 7 rutas.
+   precedencia de capa se da la vuelta para las declaraciones importantes, asi que un
+   importante capado de (B) gana a uno suelto de (A).
+
+   ── [F4.4-c R6 2026-08-12] Y ESE `!important` DE (B) YA NO EXISTE ─────────────────────
+
+   El parrafo de arriba describia el `border-color … !important` de los siete selectores de
+   superficie. R4 lo dejo con la sospecha escrita de que no hacia falta; R6 la comprobo y la
+   confirmo: **0 nodos en nueve estados**. Se ha retirado, con su cifra, en la regla misma.
+
+   De los cuatro `!important` que quedan en este fichero, ninguno es ya del tipo «me gana
+   otra regla de este mismo fichero»:
+
+     `.shadow-xl` ............. es una utilidad de Tailwind y aqui se le cambia el VALOR
+     `.admin-workspace-frame--table` ......... pelea contra el `.border-slate-*` de (A)
+     `.border-slate-100/-200` (A) ..... 5 nodos, contra un selector suelto mas especifico
    ====================================================================================== */
 
 @layer components {
@@ -139,11 +152,19 @@
         background-color: var(--brand-surface-alt);
     }
 
-    /* El `!important` se queda hasta R5 — ver la nota del bloque (A) sobre
-       `.deasy-dialog-root .deasy-dialog-header button` (0,2,1), que sigue SIN CAPA en
-       `dialogs.css`. Ojo: ninguno de estos siete selectores es un `button`, asi que este
-       `!important` en concreto lleva pinta de no hacer falta ni siquiera hoy. Comprobarlo
-       —y retirarlo si sobra— es R5; aqui solo se mueve de capa. */
+    /* [F4.4-c R6 2026-08-12] AQUI HABIA UN `!important`, Y NO HACIA FALTA ......... 0 nodos
+       R4 lo dejo con la sospecha escrita —«ninguno de estos siete selectores es un `button`,
+       asi que lleva pinta de no hacer falta»— y la sospecha era correcta. Se creia que peleaba
+       contra `.deasy-dialog-root .deasy-dialog-header button` (0,2,1) de `dialogs.css`, pero
+       esa regla solo alcanza a `button`s y ninguno de estos siete lo es: no se cruzan nunca.
+
+       Comprobado quitandolo del CSSOM en vivo y volviendo a leer los cuatro `border-*-color`
+       de TODOS los elementos de la pagina, en nueve estados: `/`, `/home`, `/home/documentos`,
+       `/home/firmas`, `/perfil`, `/perfil/investigacion` (con el modal abierto), `/admin`,
+       el organigrama (con «+ Unidad» abierto) y el mapa. **0 nodos de diferencia en los
+       nueve.** El motivo es que a quien de verdad manda en `.deasy-dialog-panel` es
+       `dialogs.css:334`, que sigue fuera de capa y declara el MISMO `--brand-border`; el
+       resto de los siete no tiene rival. */
     .deasy-card,
     .deasy-section-card,
     .deasy-dialog-panel,
@@ -151,7 +172,7 @@
     .admin-surface-frame,
     .profile-table-shell,
     .table-institutional {
-        border-color: var(--brand-border) !important;
+        border-color: var(--brand-border);
     }
 
     .deasy-card,
@@ -164,7 +185,13 @@
     }
 
     .admin-workspace-frame--table {
-        /* gana al repintado de `.admin-workspace-frame`, que si necesita prioridad */
+        /* [R6] El comentario decia «gana al repintado de `.admin-workspace-frame`, que si
+           necesita prioridad», y desde que ese de arriba se ha quedado sin `!important` ya no
+           es verdad: a su hermano le gana por ORDEN, no por prioridad, porque empatan en
+           especificidad y esta va despues. Lo que sigue necesitando el `!important` es otra
+           cosa —el repintado suelto de `.border-slate-100/-200` del bloque (A), que gana a
+           cualquier regla capada que no sea importante—, y por eso no se retira aqui: eso es
+           una decision del bloque (A), que muere entero en 4.4-d. Medido hoy: 0 nodos. */
         border-color: transparent !important;
         box-shadow: none;
     }
@@ -511,11 +538,12 @@ header {
    variantes con alfa **ya no**, porque F4.4-a las migro. Se conservan las tres que aun
    pintan algo, y `/70` y `/80` porque siguen en plantilla.
 
-   ⚠️ De los `!important` que habia, **el orden se lleva por delante uno de tres**: el de
-   `.bg-slate-50`. Los otros dos —los dos de `border-color`— pelean contra
-   `.deasy-dialog-root .deasy-dialog-header button` (0,2,1), que esta **sin capa** en
-   `dialogs.css`, y contra una especificidad mayor el orden no puede. Mueren cuando
-   `dialogs.css` baje a `@layer components`, no antes.
+   ⚠️ De los `!important` que habia, **el orden se llevo por delante uno de tres**: el de
+   `.bg-slate-50`. De los otros dos —los dos de `border-color`— se dijo que peleaban los dos
+   contra `.deasy-dialog-root .deasy-dialog-header button` (0,2,1), que esta **sin capa** en
+   `dialogs.css`. **[R6] Solo era verdad de UNO**: el del bloque (B) no tocaba ni un boton y
+   se ha retirado. El de aqui abajo si, y se queda con su cifra, que tambien estaba mal.
+   Muere cuando `dialogs.css` baje a `@layer components`, no antes.
    ====================================================================================== */
 
 @layer utilities {
@@ -563,7 +591,15 @@ header {
    dialogos— pasando de `--brand-border` a `--brand-border-field`. Es discutible cual de
    los dos deberia ganar (el componente declara `-field`, y el repintado se lo pisa), pero
    eso es una decision de diseño y no cabe en un comite que promete cambio visual cero.
-   Muere cuando `dialogs.css` baje a `@layer components`. */
+   Muere cuando `dialogs.css` baje a `@layer components`.
+
+   [F4.4-c R6 2026-08-12] **Son CINCO nodos, no uno.** Recontado leyendo los cuatro
+   `border-*-color` de todos los elementos de la pagina con el `!important` quitado del
+   CSSOM en vivo: **4 en `/home/firmas` y 1 en `/home`**, todos el mismo boton —el de cerrar
+   del modal «Validar documento» de `FirmarPdf.vue:790`, que es el unico del proyecto que
+   escribe `border-slate-200` a mano dentro de una cabecera de dialogo—, y los cinco pasan
+   de `rgb(226,230,240)` a `rgb(215,222,234)`. La cifra de R4 se quedo corta porque se midio
+   en una sola ruta. Importa: es la unica razon por la que este `!important` sigue vivo. */
 .border-slate-100,
 .border-slate-200 {
   border-color: var(--brand-border) !important;
