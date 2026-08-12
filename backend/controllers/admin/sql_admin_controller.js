@@ -337,38 +337,6 @@ export const finishGuidedTemplateUpdate = async (req, res) => {
   }
 };
 
-// Estado de sincronización del flujo de un artifact (synced/stale/no_link) por vínculo a configuración.
-export const getTemplateArtifactSyncStatus = async (req, res) => {
-  try {
-    const result = await service.getArtifactWorkflowSyncStatus(req.params.id);
-    res.json(result);
-  } catch (error) {
-    res.status(error.statusCode || 400).json({ message: error.message });
-  }
-};
-
-// Re-sincroniza (materializa) los flujos del artifact desde su meta.yaml a las tablas operativas.
-export const resyncTemplateArtifactWorkflows = async (req, res) => {
-  try {
-    const summary = await service.syncArtifactWorkflowsForTemplateArtifactId(Number(req.params.id));
-    const status = await service.getArtifactWorkflowSyncStatus(req.params.id);
-    res.json({ ok: true, summary, ...status });
-  } catch (error) {
-    res.status(error.statusCode || 400).json({ message: error.message });
-  }
-};
-
-// Reconcilia todos los artifacts vinculados cuya proyección de flujo está desfasada. ?all=1 fuerza todos.
-export const reconcileTemplateArtifactWorkflows = async (req, res) => {
-  try {
-    const onlyStale = String(req.query?.all || "") !== "1";
-    const summary = await service.reconcileArtifactWorkflows({ onlyStale });
-    res.json({ ok: true, ...summary });
-  } catch (error) {
-    res.status(error.statusCode || 400).json({ message: error.message });
-  }
-};
-
 // Ámbito resoluble (unidades cubiertas por las reglas objetivo) de una definición de proceso.
 // Lo consume el editor de plantillas para habilitar/acotar los ámbitos del flujo de entrega.
 export const getProcessTargetScope = async (req, res) => {

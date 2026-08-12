@@ -439,9 +439,6 @@ export const TABLE_HOOKS = {
           `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
           + ` y ${cloneSummary.clonedPeriodTypes} periodos del proceso desde la configuracion origen.`;
       }
-      if (cloneSummary.templateWorkflowWarnings?.length) {
-        ctx.notice = `${ctx.notice || ""} Atención: ${cloneSummary.templateWorkflowWarnings.length} plantilla(s) con flujo incompleto no se sincronizaron (revisa sus pasos de firma y vuelve a sincronizarlas).`.trim();
-      }
     },
 
     mapCreateError: mapOneActivePerSeries,
@@ -653,36 +650,14 @@ export const TABLE_HOOKS = {
       }
     },
 
-    // ⚠️ VENTANA ABIERTA, sub-paso 7 → 8 del §0.8 (`docs/planes/plan-maestro-2026-08.md`).
-    // Éste y su gemelo `afterUpdateTx` son los DOS únicos llamadores del sync que no capturan el
-    // error, y el sync lee el `meta.yaml` del artifact desde MinIO. Desde que el sub-paso 7 retiró
-    // `BASE_META_YAML` (`services/system/SystemBootstrapService.js`), la plantilla base del Proceso
-    // por defecto tiene `meta_object_key` (NOT NULL) apuntando a un objeto que ya no se sube, así
-    // que si la ejecución llega hasta aquí con ella, la transacción revienta con
-    // «The specified key does not exist». **Está decidido y aceptado**; lo cierra el sub-paso 8
-    // borrando `meta_object_key` y el `WorkflowSyncService` entero.
+    // AQUÍ HABÍA UN `afterInsertTx` (y su gemelo `afterUpdateTx`, abajo) que proyectaba el flujo del
+    // `meta.yaml` al vínculo recién creado. Eran los DOS llamadores del sync sin `catch`, y por eso
+    // el sub-paso 7 del §0.8 dejó documentada una ventana abierta: `meta_object_key` apuntaba a un
+    // objeto que ya no se subía. Retirado el sync, no hay nada que proyectar —el flujo cuelga del
+    // ENTREGABLE, y vincularlo a una configuración más no lo cambia— y la ventana se cierra sola.
     //
-    // MEDIDO el 2026-08-11, y sale MENOS grave de lo que anticipaba el plan: con la plantilla base
-    // no se alcanza ninguno de los dos hooks, porque antes intercepta otro guard.
-    //   · crear el vínculo por CRUD → 422 de `assertDeliverableBelongsToConfigLine`: el CRUD fuerza
-    //     `variation_key = 'default'` en la configuración nueva y el entregable es de la `general`.
-    //   · actualizar un vínculo existente → 400 «solo … cuando la configuracion esta en draft».
-    //   · clonar una configuración (actualización guiada incluida) SÍ pasa la pared, pero ese camino
-    //     va por `cloneProcessDefinitionChildren`, que convierte el fallo del sync en un aviso no
-    //     bloqueante. Por eso la caracterización sigue en verde.
-    // Lo único que falla de verdad es la acción explícita `POST /template_artifacts/:id/resync`,
-    // con un 400 legible. Si mañana se relaja cualquiera de esos dos guards, esto empieza a reventar.
-    //
-    // NO envolver esto en un `catch`: los sub-pasos 4 y 5 quitaron a propósito los `catch {}` mudos
-    // que convertían un fallo de almacenamiento en «esta plantilla no define flujo».
-    async afterInsertTx(ctx) {
-      if (ctx.payload.template_artifact_id) {
-        await ctx.service.syncArtifactWorkflowsForTemplateArtifactId(
-          Number(ctx.payload.template_artifact_id),
-          ctx.connection
-        );
-      }
-    },
+    // Vincular un entregable ya NO toca ninguna tabla de flujo. Lo único que sigue haciéndolo por
+    // este lado es `beforeRemoveTx`, que limpia lo que quedara colgando del vínculo que se borra.
 
     beforeUpdate: TEMPLATE_CHILD_GUARDS.beforeUpdate,
 
@@ -718,20 +693,6 @@ export const TABLE_HOOKS = {
       );
     },
 
-    // Al reenlazar hay que resincronizar los flujos del artifact. El id sale de lo que se actualiza,
-    // de la fila existente o de la propia clave, en ese orden.
-    // ⚠️ El otro extremo de la ventana del sub-paso 7 → 8: ver el aviso de `afterInsertTx`.
-    async afterUpdateTx(ctx) {
-      const rawArtifactId =
-        ctx.updates.template_artifact_id
-        ?? ctx.existing.template_artifact_id
-        ?? ctx.keyPayload.template_artifact_id
-        ?? 0;
-      const artifactId = Number(rawArtifactId);
-      if (artifactId) {
-        await ctx.service.syncArtifactWorkflowsForTemplateArtifactId(artifactId, ctx.connection);
-      }
-    }
   },
 
   process_target_rules: {

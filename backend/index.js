@@ -212,22 +212,6 @@ const startServer = async () => {
     console.log(`Servidor iniciado en: http://localhost:${PORT}/deasy/v1/`)
     console.log(`WebSocket (Socket.IO) escuchando en: ws://localhost:${PORT}/socket.io`)
   });
-
-  // Auto-reparación: reconcilia flujos de plantillas cuya proyección en BD quedó desfasada
-  // (cierra la ventana de la escritura dual meta.yaml->BD). Best-effort: no bloquea el arranque.
-  (async () => {
-    try {
-      const { default: SqlAdminService } = await import("./services/admin/SqlAdminService.js");
-      const summary = await new SqlAdminService().reconcileArtifactWorkflows({ onlyStale: true });
-      if (summary.resynced || summary.failed) {
-        console.log(
-          `🔄 Reconciliación de flujos de plantillas: ${summary.resynced} re-sincronizada(s), ${summary.failed} con error (de ${summary.scanned} con vínculo).`
-        );
-      }
-    } catch (error) {
-      console.warn("Reconciliación de flujos de plantillas omitida:", error?.message);
-    }
-  })();
 };
 
 startServer();

@@ -21,7 +21,6 @@ import OrgStructureService from "./org/orgStructure.js";
 import { validateTableRules } from "./crud/validation.js";
 import TemplateArtifactService from "./templates/templateArtifact.js";
 import ProcessDefinitionVersionService from "./processes/processDefinitionVersion.js";
-import WorkflowSyncService from "./templates/workflowSync.js";
 import TaskAssignmentService from "./org/taskAssignment.js";
 import TemplateLifecycleService from "./templates/templateLifecycle.js";
 import ProcessGraphService from "./processes/processGraph.js";
@@ -159,10 +158,9 @@ export default class SqlAdminService {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;
     this.taskAssignment = new TaskAssignmentService(this.pool);
-    this.templateLifecycle = new TemplateLifecycleService(this.pool, { getByKeys: (...a) => this.getByKeys(...a), cloneProcessDefinitionChildren: (...a) => this.cloneProcessDefinitionChildren(...a), getNextProcessDefinitionVersion: (...a) => this.getNextProcessDefinitionVersion(...a), retireActiveDefinitionsInSeries: (...a) => this.retireActiveDefinitionsInSeries(...a), createTemplateArtifactVersion: (...a) => this.createTemplateArtifactVersion(...a), getNextStorageVersionForTemplateCode: (...a) => this.getNextStorageVersionForTemplateCode(...a), retirePriorPublishedSiblings: (...a) => this.retirePriorPublishedSiblings(...a), getCargoCodeMap: (...a) => this.getCargoCodeMap(...a), getUnitTypeNameMap: (...a) => this.getUnitTypeNameMap(...a), getProcessTargetScope: (...a) => this.getProcessTargetScope(...a), getResolvableCargoIdsByUnit: (...a) => this.getResolvableCargoIdsByUnit(...a), listResolvableCargos: (...a) => this.listResolvableCargos(...a), getWorkflowReferenceIdSets: (...a) => this.getWorkflowReferenceIdSets(...a), syncArtifactWorkflowsForTemplateArtifactId: (...a) => this.syncArtifactWorkflowsForTemplateArtifactId(...a), ensureDefinitionHasActiveRulesForActivation: (...a) => this.ensureDefinitionHasActiveRulesForActivation(...a), ensureDefinitionHasActivePeriodTypesForActivation: (...a) => this.ensureDefinitionHasActivePeriodTypesForActivation(...a), ensureDefinitionHasArtifactsForActivation: (...a) => this.ensureDefinitionHasArtifactsForActivation(...a) });
+    this.templateLifecycle = new TemplateLifecycleService(this.pool, { getByKeys: (...a) => this.getByKeys(...a), cloneProcessDefinitionChildren: (...a) => this.cloneProcessDefinitionChildren(...a), getNextProcessDefinitionVersion: (...a) => this.getNextProcessDefinitionVersion(...a), retireActiveDefinitionsInSeries: (...a) => this.retireActiveDefinitionsInSeries(...a), createTemplateArtifactVersion: (...a) => this.createTemplateArtifactVersion(...a), getNextStorageVersionForTemplateCode: (...a) => this.getNextStorageVersionForTemplateCode(...a), retirePriorPublishedSiblings: (...a) => this.retirePriorPublishedSiblings(...a), getCargoCodeMap: (...a) => this.getCargoCodeMap(...a), getUnitTypeNameMap: (...a) => this.getUnitTypeNameMap(...a), getProcessTargetScope: (...a) => this.getProcessTargetScope(...a), getResolvableCargoIdsByUnit: (...a) => this.getResolvableCargoIdsByUnit(...a), listResolvableCargos: (...a) => this.listResolvableCargos(...a), getWorkflowReferenceIdSets: (...a) => this.getWorkflowReferenceIdSets(...a), ensureDefinitionHasActiveRulesForActivation: (...a) => this.ensureDefinitionHasActiveRulesForActivation(...a), ensureDefinitionHasActivePeriodTypesForActivation: (...a) => this.ensureDefinitionHasActivePeriodTypesForActivation(...a), ensureDefinitionHasArtifactsForActivation: (...a) => this.ensureDefinitionHasArtifactsForActivation(...a) });
     this.processGraph = new ProcessGraphService(this.pool, { getByKeys: (...a) => this.getByKeys(...a) });
-    this.workflowSync = new WorkflowSyncService(this.pool, { getCargoCodeMap: (...a) => this.getCargoCodeMap(...a), getUnitTypeNameMap: (...a) => this.getUnitTypeNameMap(...a), getTemplateArtifact: (...a) => this.getTemplateArtifact(...a), loadTemplateArtifactMetaDocument: (...a) => this.loadTemplateArtifactMetaDocument(...a) });
-    this.processDefinitionVersion = new ProcessDefinitionVersionService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys), syncArtifactWorkflows: (artifactId, connection) => this.syncArtifactWorkflowsForTemplateArtifactId(artifactId, connection) });
+    this.processDefinitionVersion = new ProcessDefinitionVersionService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
     this.templateArtifact = new TemplateArtifactService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
     this.orgStructure = new OrgStructureService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
   }
@@ -440,13 +438,6 @@ export default class SqlAdminService {
   createTemplateArtifactVersion(...args) { return this.templateArtifact.createTemplateArtifactVersion(...args); }
   applyTemplateArtifactSource(...args) { return this.templateArtifact.applyTemplateArtifactSource(...args); }
   getNextStorageVersionForTemplateCode(...args) { return this.templateArtifact.getNextStorageVersionForTemplateCode(...args); }
-  // --- Delegadores a WorkflowSyncService (Extract Class, cut #5) ---------------------------------
-  // La sincronizacion de workflows vive en SqlAdminService.workflowSync.js. Delegadores con la misma
-  // firma: ni el controller, ni los servicios que inyectan syncArtifactWorkflows, ni create()/update() se tocan.
-  syncArtifactWorkflowsForTemplateArtifactId(...args) { return this.workflowSync.syncArtifactWorkflowsForTemplateArtifactId(...args); }
-  getWorkflowReferenceIdSets(...args) { return this.workflowSync.getWorkflowReferenceIdSets(...args); }
-  getArtifactWorkflowSyncStatus(...args) { return this.workflowSync.getArtifactWorkflowSyncStatus(...args); }
-  reconcileArtifactWorkflows(...args) { return this.workflowSync.reconcileArtifactWorkflows(...args); }
 
   async getTaskItem(taskItemId, connection = this.pool) {
     this.ensurePool();
@@ -851,8 +842,9 @@ export default class SqlAdminService {
 
   // --- Delegadores a TaskAssignmentService (Extract Class, cut #6) -------------------------------
   // Asignacion/handover/scope viven en SqlAdminService.taskAssignment.js. Delegadores con la misma
-  // firma: ni el controller, ni saveTemplateArtifactDraft, ni WorkflowSyncService se tocan.
+  // firma: ni el controller ni saveTemplateArtifactDraft se tocan.
   getCargoCodeMap(...args) { return this.taskAssignment.getCargoCodeMap(...args); }
+  getWorkflowReferenceIdSets(...args) { return this.taskAssignment.getWorkflowReferenceIdSets(...args); }
   getUnitTypeNameMap(...args) { return this.taskAssignment.getUnitTypeNameMap(...args); }
   getProcessTargetScope(...args) { return this.taskAssignment.getProcessTargetScope(...args); }
   listResolvableCargos(...args) { return this.taskAssignment.listResolvableCargos(...args); }

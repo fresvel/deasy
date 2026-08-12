@@ -51,6 +51,7 @@ import { sanitizeStorageSegment } from "../../../utils/templateArchive.js";
 import { normalizeItemMode } from "../kernel/versioning.js";
 import { slugify, humanizeSlug, normalizeNumericId } from "../kernel/primitives.js";
 import {
+  authoredWorkflowHasSteps,
   buildWorkflowsDocument,
   collectAuthoredWorkflowIssues,
   normalizeFillSteps,
@@ -59,12 +60,7 @@ import {
   workflowHasSteps
 } from "./workflows.js";
 import { replaceAuthoredFlowForArtifact, copyAuthoredFlowToArtifact, hasFillStepsForArtifact } from "./flowRows.js";
-import {
-  parseAvailableFormats,
-  findPreferredPdfObject,
-  isArtifactFillWorkflowSyncEnabled,
-  isArtifactSignatureWorkflowSyncEnabled,
-} from "./artifacts.js";
+import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
 import {
   MINIO_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
@@ -181,7 +177,6 @@ export default class TemplateLifecycleService {
     getResolvableCargoIdsByUnit,
     listResolvableCargos,
     getWorkflowReferenceIdSets,
-    syncArtifactWorkflowsForTemplateArtifactId,
     ensureDefinitionHasActiveRulesForActivation,
     ensureDefinitionHasActivePeriodTypesForActivation,
     ensureDefinitionHasArtifactsForActivation
@@ -200,7 +195,6 @@ export default class TemplateLifecycleService {
     this._getResolvableCargoIdsByUnit = getResolvableCargoIdsByUnit;
     this._listResolvableCargos = listResolvableCargos;
     this._getWorkflowReferenceIdSets = getWorkflowReferenceIdSets;
-    this._syncArtifactWorkflowsForTemplateArtifactId = syncArtifactWorkflowsForTemplateArtifactId;
     this._ensureDefinitionHasActiveRulesForActivation = ensureDefinitionHasActiveRulesForActivation;
     this._ensureDefinitionHasActivePeriodTypesForActivation = ensureDefinitionHasActivePeriodTypesForActivation;
     this._ensureDefinitionHasArtifactsForActivation = ensureDefinitionHasArtifactsForActivation;
@@ -353,13 +347,9 @@ export default class TemplateLifecycleService {
           AND d.code = ?`,
       [Number(targetArtifactId), Number(definitionId), String(templateCode)]
     );
-    if (result?.affectedRows) {
-      try {
-        await this._syncArtifactWorkflowsForTemplateArtifactId(Number(targetArtifactId), connection);
-      } catch {
-        // aviso no bloqueante
-      }
-    }
+    // Aquí se re-sincronizaba el flujo del artifact al re-apuntar el vínculo. Retirado con el
+    // sub-paso 8 del §0.8: el flujo cuelga del ENTREGABLE, así que re-apuntar el vínculo a otra
+    // versión ya trae el flujo de esa versión sin proyectar nada.
     return result?.affectedRows || 0;
   }
 
@@ -613,7 +603,6 @@ export default class TemplateLifecycleService {
       "UPDATE process_definition_templates SET template_artifact_id = ? WHERE process_definition_id = ? AND template_artifact_id = ?",
       [newArtifactId, defId, srcId]
     );
-    try { await this._syncArtifactWorkflowsForTemplateArtifactId(newArtifactId); } catch { /* aviso no bloqueante */ }
 
     return { deliverable_id: newDeliverableId, artifact_id: newArtifactId, code, base_object_prefix: newPrefix };
   }
@@ -1461,17 +1450,14 @@ export default class TemplateLifecycleService {
     }
   }
 
-  // ESCRITURA DOBLE (sub-paso 3 del §0.8): persiste en la base el flujo AUTORADO, colgado de
-  // `template_artifact_id`. La otra copia —el `meta.yaml`— se sigue emitiendo igual que siempre, y
-  // sale del MISMO `workflowsDocument` que se normaliza aquí: no pueden divergir.
+  // LA ÚNICA COPIA DEL FLUJO AUTORADO (sub-paso 8 del §0.8): las filas colgadas de
+  // `template_artifact_id`. Ya no hay `meta.yaml` con el que divergir ni sync que las duplique en
+  // cada vínculo.
   //
-  // El comportamiento del runtime NO cambia, y eso es intencionado: el escalón 2 del resolvedor (el
-  // flujo del vínculo, que el sync sigue sembrando) gana al escalón 3. Estas filas son todavía una
-  // copia observable, no la fuente. Los lectores se mudan de uno en uno en los sub-pasos 4 y 5.
-  //
-  // Las DOS decisiones de "¿hay flujo que escribir?" se toman con los MISMOS predicados que usa el
-  // sync sobre el mismo documento (`isArtifact*WorkflowSyncEnabled`), y no con una condición nueva
-  // escrita a mano: si aquí se decidiera distinto, la base y el YAML dirían cosas distintas.
+  // Las DOS decisiones de "¿hay flujo que escribir?" las toma `authoredWorkflowHasSteps`, que es
+  // literalmente el predicado del sync menos su término `sync_mode` —la clave del `meta.yaml` que
+  // autorizaba la proyección y que ya no existe—. Ver su comentario en `workflows.js`: cambiarlo por
+  // una condición escrita a mano aquí es justo lo que dejaría de escribir el flujo sin decir nada.
   async _persistAuthoredFlow({ connection, artifactId, displayName, workflowsDocument }) {
     const fill = workflowsDocument?.workflows?.fill || {};
     const signatures = workflowsDocument?.workflows?.signatures || {};
@@ -1482,7 +1468,7 @@ export default class TemplateLifecycleService {
     return replaceAuthoredFlowForArtifact(connection, {
       artifactId,
       displayName,
-      fillSteps: isArtifactFillWorkflowSyncEnabled(fill)
+      fillSteps: authoredWorkflowHasSteps(fill)
         ? normalizeFillSteps(fill, { cargoCodeMap })
         : [],
       // `normalizeSignatureSteps` DESCARTA en silencio los firmantes `cargo_in_scope` sin cargo
@@ -1490,7 +1476,7 @@ export default class TemplateLifecycleService {
       // convertirlo en error de autoría sería mejor, pero es otro cambio y §0.8 «Riesgos» le reserva
       // commit y golden propios. Al escribir con el mismo normalizador que el sync, las dos copias
       // descartan exactamente lo mismo.
-      signatureSteps: isArtifactSignatureWorkflowSyncEnabled(signatures)
+      signatureSteps: authoredWorkflowHasSteps(signatures)
         ? normalizeSignatureSteps(signatures, { cargoCodeMap, unitTypeNameMap })
         : []
     });
@@ -1774,30 +1760,14 @@ export default class TemplateLifecycleService {
         workflowsDocument
       });
 
-      // Si se definieron flujos y el artifact ya está vinculado a configuraciones de proceso,
-      // sincroniza inmediatamente fill/signature flow templates desde el meta.yaml recién subido.
-      let workflowNotice = "";
-      let workflowSyncFailed = false;
-      if (hasCustomWorkflows && createdId) {
-        try {
-          const summary = await this._syncArtifactWorkflowsForTemplateArtifactId(createdId);
-          const fillTpls = summary?.fill?.syncedTemplates || 0;
-          const sigTpls = summary?.signatures?.syncedTemplates || 0;
-          if (fillTpls || sigTpls) {
-            workflowNotice = ` Flujos sincronizados (entrega: ${fillTpls}, firmas: ${sigTpls}).`;
-          }
-        } catch (syncError) {
-          console.warn("No se pudieron sincronizar los flujos del artifact:", syncError?.message);
-          workflowSyncFailed = true;
-          workflowNotice = " Los flujos se guardaron en el meta.yaml pero NO se pudieron sincronizar a la base de datos; vuelve a guardar o re-sincroniza.";
-        }
-      }
+      // Aquí se proyectaba el flujo del `meta.yaml` a cada vínculo, con su aviso y su bandera
+      // `workflow_sync_failed`. Retirado con el sub-paso 8 del §0.8: el flujo se escribe ahora en la
+      // MISMA transacción que la edición y el vínculo (`_persistDraftToDatabase`), así que «se
+      // guardó pero no se pudo sincronizar» dejó de ser un estado posible — o se guarda todo o no se
+      // guarda nada, y el error sube en vez de convertirse en un aviso.
 
-      // Avisos no bloqueantes (sync fallido + autoría: cargos sin puesto hoy) se combinan en __warning.
-      const combinedWarning = [
-        workflowSyncFailed ? workflowNotice.trim() : "",
-        ...authoringWarnings
-      ].filter(Boolean).join(" ");
+      // Avisos no bloqueantes de autoría (cargos sin puesto hoy en la ubicación).
+      const combinedWarning = authoringWarnings.filter(Boolean).join(" ");
 
       return {
         id: createdId,
@@ -1814,11 +1784,10 @@ export default class TemplateLifecycleService {
         meta_object_key: metaObjectKey,
         content_hash: contentHash,
         is_active: 1,
-        workflow_sync_failed: workflowSyncFailed,
         __warning: combinedWarning || undefined,
-        __notice: (isEdit
+        __notice: isEdit
           ? "La plantilla de documento fue actualizada y cargada correctamente en MinIO."
-          : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.") + workflowNotice
+          : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema."
       };
     } catch (error) {
       // Lo de la base ya lo deshizo el `ROLLBACK`. Aquí solo queda el prefijo de MinIO, que se subió

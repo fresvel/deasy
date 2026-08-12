@@ -35,7 +35,7 @@
 //     tiene que arreglar. Congelarlo aquí es lo que le da un antes y un después.
 //
 // LOS DOS ORÍGENES VAN EN CLAVES SEPARADAS, y no por orden: solo uno va a cambiar.
-//   · `plantilla_*` — lo escribe `workflowSync` desde el YAML. **Es lo que la inversión cambia.**
+//   · `plantilla_*` — lo escribía `workflowSync` desde el YAML. **Es lo que la inversión cambia.**
 //   · `runtime_*`   — lo escribe `materializeRuntimeFlowForTaskItem` (modo `routed`), que YA escribe
 //     directo en la base y no se toca. Es el GRUPO DE CONTROL: si se mueve durante la inversión, es
 //     que hemos tocado algo que no tocaba.
@@ -52,8 +52,8 @@
 // las claves de id **aunque valgan `null`**, así que `process_definition_template_id` sale
 // `"<normalized>"` en los dos y NO sirve de discriminante. Lo que los separa en el golden es
 // `process_definition_id` e `item_mode` —conceptos del VÍNCULO, que la plantilla no tiene y salen
-// `null`— y el `description`, que en las del vínculo lleva el marcador `artifact_sync_*` del sync.
-// El portador de verdad se comprueba sobre la fila CRUDA en `mismosPasos`, antes de normalizar.
+// `null`—. El portador de verdad se comprueba sobre la fila CRUDA en `unicaCabeceraDeLaPlantilla`,
+// antes de normalizar.
 // La identidad de negocio la resuelven los dos por el mismo `LEFT JOIN`, gracias al `COALESCE`.
 //
 // SOBRE EL ENMASCARADO. Se enmascaran los ids ESTRUCTURALES (el `id` de la propia fila y los que la
@@ -412,9 +412,11 @@ test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () =
   });
 
   assert.equal(res.status, 200, `autorar el borrador debe responder 200: ${JSON.stringify(res.body)}`);
-  // Si el sync falla, las filas no se escriben y el golden siguiente sería un vacío MENTIROSO: el
-  // endpoint devuelve 200 igual y solo lo delata esta bandera (`templateLifecycle.js:1704`).
-  assert.equal(res.body?.workflow_sync_failed, false, `el sync no debe fallar: ${JSON.stringify(res.body)}`);
+  // Aquí se comprobaba `workflow_sync_failed === false`, porque el sync corría FUERA de la
+  // transacción y podía fallar dejando un 200 con las filas sin escribir — un golden vacío
+  // mentiroso. Retirado el sync (sub-paso 8 del §0.8), el flujo se escribe dentro de la MISMA
+  // transacción que el borrador: un fallo al escribirlo no devuelve 200, lo deshace todo. El propio
+  // `res.status` es ahora la comprobación, y el golden de abajo la remata.
   autorado.artifactId = res.body?.id;
   assert.ok(autorado.artifactId, "debe devolverse el id del artifact creado");
 });

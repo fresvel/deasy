@@ -1,19 +1,15 @@
-// Artefactos de plantilla: parsing de meta, saneo LaTeX, marcas de sincronización y
-// selección de PDF de vista previa.
+// Artefactos de plantilla: parsing de meta, saneo LaTeX y selección de PDF de vista previa.
 //
 // Extraído de SqlAdminService.js. Funciones puras (sin BD ni this). `sanitizeLatexSource`
-// es la barrera anti-inyección del contenido LaTeX editable por el admin;
-// `parseArtifactSyncMarker` detecta el drift entre lo materializado en BD y el artifact.
+// es la barrera anti-inyección del contenido LaTeX editable por el admin.
+//
+// AQUÍ VIVÍAN LAS MARCAS DE PROCEDENCIA del sync (`artifact_sync_fill:` /
+// `artifact_sync_signature:`), su constructor, su parser y los dos predicados de `sync_mode`. Los
+// borra el sub-paso 8 del §0.8 junto con `WorkflowSyncService`: eran la forma de reconocer los
+// flujos que el sync proyectaba al vínculo y de detectar cuándo se habían quedado desfasados. Sin
+// proyección no hay procedencia que marcar ni deriva que detectar.
 
 import yaml from "js-yaml";
-
-import { normalizeBooleanFlag } from "../kernel/primitives.js";
-
-// Marcas de procedencia que se escriben en la `description` de los flujos proyectados,
-// para poder reconocerlos y detectar drift más tarde.
-export const ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX = "artifact_sync_fill:";
-
-export const ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX = "artifact_sync_signature:";
 
 export const parseYamlDocument = (content, { filePath = "meta.yaml" } = {}) => {
   try {
@@ -70,46 +66,6 @@ export const parseAvailableFormats = (value) => {
     return {};
   }
 };
-
-export const buildArtifactSyncedFillDescription = ({ artifactId, templateCode, storageVersion }) =>
-  `${ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX}${artifactId}:${templateCode}:${storageVersion}`;
-
-export const buildArtifactSyncedSignatureDescription = ({ artifactId, templateCode, storageVersion }) =>
-  `${ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX}${artifactId}:${templateCode}:${storageVersion}`;
-
-// Lee la marca de procedencia "<prefix><artifactId>:<templateCode>:<storageVersion>" para detectar drift:
-// si el storageVersion materializado en BD difiere del actual del artifact, la proyección está desfasada.
-// templateCode puede contener ':' improbable, pero artifactId (primer token) y storageVersion (último)
-// son inequívocos.
-export const parseArtifactSyncMarker = (description, prefix) => {
-  const raw = String(description || "");
-  if (!raw.startsWith(prefix)) {
-    return null;
-  }
-  const body = raw.slice(prefix.length);
-  const firstColon = body.indexOf(":");
-  const lastColon = body.lastIndexOf(":");
-  if (firstColon < 0 || lastColon <= firstColon) {
-    return null;
-  }
-  return {
-    artifactId: Number(body.slice(0, firstColon)) || null,
-    templateCode: body.slice(firstColon + 1, lastColon),
-    storageVersion: body.slice(lastColon + 1)
-  };
-};
-
-export const isArtifactFillWorkflowSyncEnabled = (workflow = {}) =>
-  String(workflow?.sync_mode || "").trim() === "artifact_to_db"
-  && normalizeBooleanFlag(workflow?.required, false)
-  && Array.isArray(workflow?.steps)
-  && workflow.steps.length > 0;
-
-export const isArtifactSignatureWorkflowSyncEnabled = (workflow = {}) =>
-  String(workflow?.sync_mode || "").trim() === "artifact_to_db"
-  && normalizeBooleanFlag(workflow?.required, false)
-  && Array.isArray(workflow?.steps)
-  && workflow.steps.length > 0;
 
 export const findPreferredPdfObject = (objectNames = []) => {
   const pdfCandidates = (objectNames || []).filter((name) => /\.pdf$/i.test(String(name || "")));

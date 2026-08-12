@@ -9,6 +9,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  authoredWorkflowHasSteps,
   buildStepResolver,
   buildWorkflowsDocument,
   normalizeFillSteps,
@@ -17,6 +18,31 @@ import {
   resolveStepCargoId,
   collectAuthoredWorkflowIssues,
 } from "./workflows.js";
+
+// --- authoredWorkflowHasSteps: ¿hay flujo que ESCRIBIR? ----------------------
+//
+// Es el predicado que decide si `_persistAuthoredFlow` inserta filas. Sustituye a los dos
+// `isArtifact*WorkflowSyncEnabled` del sub-paso 8 del §0.8, que además exigían
+// `sync_mode: "artifact_to_db"` — una clave del `meta.yaml` que ya no existe. Estos tests fijan que
+// los otros dos términos se conservan: si alguien vuelve a añadir un tercero, el escritor deja de
+// escribir EN SILENCIO, que es el modo de fallo que este sub-paso tenía que evitar.
+
+test("authoredWorkflowHasSteps exige required y al menos un paso", () => {
+  const ok = { required: true, steps: [{ order: 1 }] };
+  assert.equal(authoredWorkflowHasSteps(ok), true);
+  assert.equal(authoredWorkflowHasSteps({ ...ok, steps: [] }), false, "sin pasos no hay nada que escribir");
+  assert.equal(authoredWorkflowHasSteps({ ...ok, required: false }), false);
+  assert.equal(authoredWorkflowHasSteps({}), false);
+  assert.equal(authoredWorkflowHasSteps(), false);
+});
+
+test("authoredWorkflowHasSteps NO mira sync_mode (la clave del meta.yaml retirado)", () => {
+  // El documento que produce `buildWorkflowsDocument` ya no lleva `sync_mode`. Si el predicado lo
+  // exigiera, el flujo autorado no se escribiría nunca y no fallaría nada.
+  const doc = buildWorkflowsDocument({ fillWorkflow: { steps: [{ order: 1, name: "Entrega" }] } });
+  assert.equal(Object.hasOwn(doc.workflows.fill, "sync_mode"), false, "el documento ya no emite sync_mode");
+  assert.equal(authoredWorkflowHasSteps(doc.workflows.fill), true);
+});
 
 // --- buildStepResolver: qué campos emite según el tipo -----------------------
 

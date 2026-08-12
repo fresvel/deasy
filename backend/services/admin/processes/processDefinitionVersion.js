@@ -1,6 +1,6 @@
 // ProcessDefinitionVersionService — series, versionado, clonado y contexto de borrador de las
 // process definitions. Extraido de SqlAdminService.js (God #1) por Extract Class (cut #4). El cluster
-// solo depende de this.pool + getByKeys y syncArtifactWorkflows(TemplateArtifactId), ambos inyectados;
+// solo depende de this.pool + getByKeys, inyectado;
 // los helpers puros (nombres de version, semver, ids) se importan de los modulos hermanos. SqlAdminService
 // mantiene delegadores; el controller y los grafts de create()/update() (que llaman resolve/ensure/clone/
 // refresh...) no se tocan.
@@ -12,10 +12,9 @@ import { bumpSemanticVersion } from "../kernel/versioning.js";
 import { normalizeNumericId } from "../kernel/primitives.js";
 
 export default class ProcessDefinitionVersionService {
-  constructor(pool, { getByKeys, syncArtifactWorkflows } = {}) {
+  constructor(pool, { getByKeys } = {}) {
     this.pool = pool;
     this._getByKeys = getByKeys;
-    this._syncArtifactWorkflows = syncArtifactWorkflows;
   }
 
   ensurePool() {
@@ -315,9 +314,10 @@ export default class ProcessDefinitionVersionService {
       [normalizedSourceId]
     );
 
-    // Avisos no bloqueantes de sincronización de flujos: clonar la configuración NO debe fallar porque una
-    // plantilla vinculada tenga un flujo incompleto (p. ej. pasos de firma con cargo sin resolver). El vínculo
-    // se conserva y el flujo se re-sincroniza cuando la plantilla quede consistente (resync/reconcile).
+    // Aquí se acumulaban avisos no bloqueantes de sincronización de flujos, porque clonar una
+    // configuración proyectaba el `meta.yaml` de cada plantilla vinculada y eso podía fallar. Con el
+    // sync retirado (sub-paso 8 del §0.8) clonar NO toca ninguna tabla de flujo: el flujo cuelga del
+    // ENTREGABLE y las configuraciones lo comparten, así que copiar los vínculos ya lo lleva consigo.
     // Remap opcional de plantilla: re-apunta enlaces de una versión a otra (acción guiada de "actualizar
     // plantilla de config activa": la nueva config debe pinear la NUEVA versión de plantilla).
     const remap = templateRemap && typeof templateRemap === "object" ? templateRemap : null;
@@ -327,7 +327,6 @@ export default class ProcessDefinitionVersionService {
       return mapped != null ? Number(mapped) : artifactId;
     };
 
-    const templateWorkflowWarnings = [];
     for (const row of templateRows) {
       const targetArtifactId = remapArtifactId(row.template_artifact_id);
       await connection.query(
@@ -344,18 +343,6 @@ export default class ProcessDefinitionVersionService {
           row.item_mode
         ]
       );
-
-      if (targetArtifactId) {
-        try {
-          await this._syncArtifactWorkflows(Number(targetArtifactId), connection);
-        } catch (syncError) {
-          console.warn(
-            `No se pudo sincronizar el flujo de la plantilla ${targetArtifactId} al versionar:`,
-            syncError?.message
-          );
-          templateWorkflowWarnings.push(syncError?.message || String(syncError));
-        }
-      }
     }
 
     const [ruleRows] = await connection.query(
@@ -433,8 +420,7 @@ export default class ProcessDefinitionVersionService {
     return {
       clonedTemplates: templateRows.length,
       clonedRules: ruleRows.length,
-      clonedPeriodTypes: periodTypeRows.length,
-      templateWorkflowWarnings
+      clonedPeriodTypes: periodTypeRows.length
     };
   }
 

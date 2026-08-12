@@ -29,8 +29,7 @@
       "storage_version": "1.0.0",
       "template_code": "draft_zzz-char-draft",
       "template_scope": "official",
-      "template_seed_id": 1,
-      "workflow_sync_failed": false
+      "template_seed_id": 1
     }
   },
   "defecto_deliverable_huerfano": {
@@ -64,8 +63,7 @@
       "storage_version": "1.0.0",
       "template_code": "draft_zzz-char-draft",
       "template_scope": "official",
-      "template_seed_id": null,
-      "workflow_sync_failed": false
+      "template_seed_id": null
     }
   },
   "error_artifact_inexistente": {
@@ -142,8 +140,7 @@
       "storage_version": "1.0.0",
       "template_code": "draft_zzz-char-routed",
       "template_scope": "official",
-      "template_seed_id": 1,
-      "workflow_sync_failed": false
+      "template_seed_id": 1
     }
   }
 }

@@ -1,4 +1,4 @@
-// Flujos de llenado y firma: normalización, serialización a YAML y validación de autoría.
+// Flujos de llenado y firma: normalización y validación de autoría.
 //
 // Extraído de SqlAdminService.js. Son funciones PURAS: no tocan la base de datos ni
 // el sistema de ficheros; reciben por parámetro todo lo que necesitan (mapas de
@@ -111,9 +111,24 @@ export const parseWorkflowPayload = (value) => {
 };
 
 // Un flujo "tiene pasos" si es un objeto con `steps` no vacio. Se usa tanto para el fail-fast de
-// creacion como para decidir si hay que validar y sincronizar la autoria.
+// creacion como para decidir si hay que validar la autoria.
 export const workflowHasSteps = (workflow) =>
   Boolean(workflow && Array.isArray(workflow.steps) && workflow.steps.length);
+
+// ¿Este lado del documento define un flujo que haya que ESCRIBIR? Marcado como requerido y con al
+// menos un paso.
+//
+// SUSTITUYE A `isArtifactFillWorkflowSyncEnabled`/`isArtifactSignatureWorkflowSyncEnabled`
+// (`artifacts.js`), que pedían además `sync_mode === "artifact_to_db"`. Ese tercer término era del
+// `meta.yaml`: decía «este YAML autoriza a proyectarse a la base», y lo emitía siempre
+// `buildWorkflowsDocument` con ese valor fijo. Retirado el YAML (sub-paso 8 del §0.8) la clave no
+// existe, y dejar el predicado como estaba haría que el escritor directo NUNCA viera flujo que
+// escribir — en silencio. Los otros dos términos se conservan literalmente, así que sobre el mismo
+// documento este predicado responde exactamente lo mismo que los dos que reemplaza.
+export const authoredWorkflowHasSteps = (workflow = {}) =>
+  normalizeBooleanFlag(workflow?.required, false)
+  && Array.isArray(workflow?.steps)
+  && workflow.steps.length > 0;
 
 export const buildStepResolver = (step) => {
   const resolver = {
@@ -162,8 +177,6 @@ export const buildWorkflowsDocument = ({ fillWorkflow, signatureWorkflow } = {})
   const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
   const fill = {
     required: fillWorkflow?.required !== false,
-    source: "artifact",
-    sync_mode: "artifact_to_db",
     steps: fillSteps.map((step, index) => {
       const order = Number(step?.order) || index + 1;
       const resolver = buildStepResolver(step);
@@ -187,8 +200,6 @@ export const buildWorkflowsDocument = ({ fillWorkflow, signatureWorkflow } = {})
   const sigSteps = Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps : [];
   const signatures = {
     required: signatureWorkflow?.required === true && sigSteps.length > 0,
-    source: "artifact",
-    sync_mode: "artifact_to_db",
   };
   signatures.steps = sigSteps.map((step, index) => {
     const order = Number(step?.order) || index + 1;
@@ -208,10 +219,9 @@ export const buildWorkflowsDocument = ({ fillWorkflow, signatureWorkflow } = {})
     return out;
   });
 
-  return {
-    workflows: { fill, signatures },
-    dependencies: { templates: [], data: [] },
-  };
+  // `dependencies: { templates: [], data: [] }` salía de aquí y era exclusivo del `meta.yaml`
+  // —siempre vacío, sin productor ni consumidor—. Se va con la serialización.
+  return { workflows: { fill, signatures } };
 };
 
 export const normalizeSignatureStepAnchorRefs = (value) => {

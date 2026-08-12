@@ -52,6 +52,31 @@ export default class TaskAssignmentService {
   }
 
 
+  // Sets de ids válidos (activos) para validar EN AUTORÍA que las referencias del flujo existen en la
+  // DB, antes de escribir las filas (no solo confiar en el select del front ni en las FKs al
+  // materializar). Espejo de `getCargoCodeMap` para persona/posición/unidad/tipo de unidad.
+  //
+  // VIVÍA EN `WorkflowSyncService` y se muda aquí con el sub-paso 8 del §0.8: es el único método de
+  // aquella clase que no era andamiaje —lo consume `_validateAuthoredWorkflows`, que sobrevive—, y
+  // este servicio es donde ya viven sus tres hermanos de catálogo. El resto de `workflowSync.js` se
+  // borra en el mismo commit.
+  async getWorkflowReferenceIdSets(connection = this.pool) {
+    const [persons, positions, units, unitTypes] = await Promise.all([
+      connection.query("SELECT id FROM persons WHERE is_active = 1"),
+      connection.query("SELECT id FROM unit_positions WHERE is_active = 1"),
+      connection.query("SELECT id FROM units WHERE is_active = 1"),
+      connection.query("SELECT id FROM unit_types WHERE is_active = 1")
+    ]);
+    const toSet = (result) => new Set((result?.[0] || []).map((row) => Number(row.id)));
+    return {
+      personIds: toSet(persons),
+      positionIds: toSet(positions),
+      unitIds: toSet(units),
+      unitTypeIds: toSet(unitTypes)
+    };
+  }
+
+
   // Ámbito resoluble de un proceso a partir de sus reglas objetivo activas: la unión de unidades que
   // las reglas pueden alcanzar (lo que en runtime fija la posición responsable → scope_unit_id). Se usa
   // para (a) habilitar/validar los ámbitos de contexto del flujo y (b) acotar el select de unidades a
