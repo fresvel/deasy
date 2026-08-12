@@ -1,0 +1,12 @@
+src/
++-- core/       infraestructura transversal (router, httpClient, apiConfig, accessControl)
++-- layouts/    esqueletos de pagina (AppWorkspaceShell, headers, menus)
++-- modules/    LOS DOMINIOS
+|   +-- admin/     (~80 ficheros)  panel de administracion + grafos
+|   +-- home/      (26)            bandeja de tareas y entregables
+|   +-- perfil/    (28)            el dossier del usuario
+|   +-- firmas/    (8)             firma de PDFs
+|   +-- auth/      (8)             login, registro, bootstrap
+|   +-- dossier/   (1)             solo el servicio
+|   +-- procesos/  (1)
++-- shared/     componentes y utilidades reutilizables

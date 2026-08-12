@@ -1,0 +1,10 @@
+template_seeds       (semillas del catalogo: source_path, preview_path, seed_type)
+      |
+      v
+deliverables         EL LIBRO    -> code UNIQUE, display_name, owner_process_id,
+                                    template_scope (official | ad_hoc), owner_person_id
+      |  1:N
+      v
+template_artifacts   LA EDICION  -> storage_version, lifecycle_state, base_object_prefix,
+                                    available_formats, schema_object_key, content_hash,
+                                    parent_version_id (autorreferencial = linaje)

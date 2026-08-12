@@ -10,7 +10,11 @@
 
 local TIPO = { concepto = "tip", aviso = "caution", nota = "note" }
 
-local n_asides, n_diagramas, n_divs, n_code = 0, 0, 0, 0
+-- El .tex esta escrito sin tildes de punta a punta. El diccionario vive aparte porque son
+-- 145 entradas y porque se regenera si el original cambia.
+local TILDES = dofile(PANDOC_SCRIPT_FILE:gsub("starlight%.lua$", "tildes.lua"))
+
+local n_asides, n_diagramas, n_divs, n_code, n_tildes = 0, 0, 0, 0, 0
 
 -- ── Cajas -> asides de Starlight ────────────────────────────────────────────────────────
 -- `pre-tex.pl` bajo el titulo al cuerpo como \textbf{...} porque pandoc descarta el argumento
@@ -77,6 +81,24 @@ function CodeBlock(el)
   end
 end
 
+-- ── Tildes, SOLO en la prosa ────────────────────────────────────────────────────────────
+-- Actua sobre nodos `Str`, que es texto y nada mas. Pandoc nunca mete codigo en un `Str`:
+-- lo que va entre backticks es un nodo `Code` y lo que va en valla es `CodeBlock`, y esta
+-- funcion no los ve. Por eso `version` se acentua en «la version vigente» y no en `version`.
+-- Pandoc deja la puntuacion PEGADA al nodo: «peticion.» y «(peticion,» son un solo `Str`.
+-- Una busqueda exacta se deja fuera 46 de 286 apariciones, asi que hay que separar el nucleo,
+-- traducirlo y volver a montar. `%w` de Lua solo casa ASCII, que es justo lo que necesitamos:
+-- las palabras de origen no llevan tilde, y si el nodo tiene otra forma (`a/b`, `x-y`) el
+-- match falla y se deja intacto — que es el comportamiento seguro.
+function Str(el)
+  local pre, nucleo, post = el.text:match("^(%A*)(%w*)(%A*)$")
+  if not nucleo or nucleo == "" then return nil end
+  local nuevo = TILDES[nucleo]
+  if not nuevo then return nil end
+  n_tildes = n_tildes + 1
+  return pandoc.Str(pre .. nuevo .. post)
+end
+
 -- \textsc{Deasy} -> texto plano; el versalita es del PDF.
 function Span(el)
   if el.classes:includes("smallcaps") then return el.content end
@@ -84,7 +106,7 @@ end
 
 function Pandoc(doc)
   io.stderr:write(string.format(
-    "  asides tipados   : %d\n  diagramas anclados: %d\n  divs .center fuera: %d\n  codigos reparados : %d\n",
-    n_asides, n_diagramas, n_divs, n_code))
+    "  asides tipados    : %d\n  diagramas anclados: %d\n  divs .center fuera: %d\n  codigos reparados : %d\n  tildes puestas    : %d\n",
+    n_asides, n_diagramas, n_divs, n_code, n_tildes))
   return doc
 end

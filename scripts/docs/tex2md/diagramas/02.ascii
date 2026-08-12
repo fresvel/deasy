@@ -1,0 +1,24 @@
+1. El navegador pide  https://localhost:8443/api/deasy/v1/users/me
+                                             \___/\__________/
+                                             nginx    backend
+
+2. nginx (nginx/app-conf.d/default.conf.template):
+   location /api/ { proxy_pass http://backend:3030/; }
+                                                   ^
+                           esa barra final BORRA el prefijo /api
+
+3. El backend recibe   /deasy/v1/users/me
+   (el prefijo /deasy/v1 se define en backend/config/apiPaths.js)
+
+4. backend/index.js  ->  app.use(ROUTES.USERS, user_router)
+
+5. backend/routes/user_router.js  ->  authMiddleware
+                                  ->  loadAccessContext
+                                  ->  requirePermissions("account.read")
+                                  ->  controlador
+
+6. backend/controllers/users/user_controler.js  ->  llama a UN servicio
+
+7. backend/services/...  ->  SQL contra PostgreSQL via getPostgresPool()
+
+8. Vuelta:  res.json({...})  ->  nginx  ->  navegador

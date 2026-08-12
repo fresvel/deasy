@@ -1,0 +1,5 @@
+Backend genera correlationId = randomUUID()
+  -> crea la cola de respuesta   deasy.sign.response.<uuid>
+  -> publica el trabajo en       deasy.sign.request
+  -> hace polling cada SIGN_POLL_MS (1000 ms) de la cola de respuesta
+     hasta SIGN_TIMEOUT_MS (120000 ms)

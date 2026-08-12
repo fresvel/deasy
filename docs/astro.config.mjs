@@ -54,6 +54,7 @@ export default defineConfig({
 			sidebar: [
 				{ label: 'Guías', autogenerate: { directory: 'guias' } },
 				{ label: 'Referencia', autogenerate: { directory: 'referencia' } },
+				{ label: 'Explicación', autogenerate: { directory: 'explicacion' } },
 			],
 			customCss: ['./src/styles/global.css'],
 		}),

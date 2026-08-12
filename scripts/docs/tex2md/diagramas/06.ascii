@@ -1,0 +1,9 @@
+resources x actions  -->  permissions ("dossier.read", "signature_flows.update", ...)
+                                |
+                                v
+                          role_permissions  -->  roles
+                                                   |
+                                                   v
+                                            role_assignments (persona + rol + UNIDAD)
+                                                   ^ derived_from_assignment_id
+                                            position_assignments  <--  cargo_role_map

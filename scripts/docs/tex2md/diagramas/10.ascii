@@ -1,0 +1,4 @@
+signature_flow_templates  ->  signature_flow_steps  ->  signature_flow_instances
+                                                              |
+                                                              v
+                                          signature_requests  ->  document_signatures

@@ -1,0 +1,11 @@
+prepare (rama -> entorno)
+   |-- frontend-lint        (pnpm run lint)
+   |-- backend-checks       (npm run check:imports + npm run test:unit)
+   +-- compose-validate     (docker-env.sh <env> config, para los 4 entornos)
+              |
+              v
+        publish-images      (matriz de 4 imagenes -> GHCR)
+              |             tags: :dev|:qa|:prod  y  :sha-XXXXXXX
+              v
+        deploy-app-push / deploy-app-manual / deploy-ingress
+              (rsync de docker/ y nginx/ + SSH, solo si DEPLOY_DELIVERY_MODE == 'gh-actions')

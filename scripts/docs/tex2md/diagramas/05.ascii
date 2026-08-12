@@ -1,0 +1,9 @@
+POST /users/login  { cedula, password }
+   |
+   v
+AuthService.login()  ->  bcrypt.compare(password, password_hash)
+   |
+   v
+Devuelve DOS tokens:
+   * access token   -> 2 horas   -> en el JSON; el frontend lo guarda en localStorage
+   * refresh token  -> 30 dias   -> en una COOKIE httpOnly (el JS no puede leerla)
