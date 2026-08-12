@@ -16,7 +16,7 @@ import {
   unzipToDirectory,
   walkFiles,
 } from "../kernel/storage.js";
-import { parseAvailableFormats } from "./artifacts.js";
+import { parseAvailableFormats, sanitizeLatexSource } from "./artifacts.js";
 import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {

@@ -99,7 +99,14 @@ for (const [file, source] of sources) {
   for (const [name, ownerFiles] of owners) {
     if (imported.has(name) || declared.has(name) || ownerFiles.has(file)) continue;
     // Uso como LLAMADA y no como propiedad (`this.x(` / `obj.x(` no cuentan).
-    const usage = new RegExp(`(?<![.\\w$])${name}\\s*\\(`);
+    //
+    // ⚠️ EL `...` DE UN SPREAD NO ES UN ACCESO A PROPIEDAD, y durante meses este detector fue ciego
+    // por eso: `push(...faltante(x))` lleva un punto justo antes del nombre, el lookbehind lo tomaba
+    // por `obj.faltante(` y lo descartaba. Asi sobrevivio `sanitizeLatexSource` sin importar en
+    // `services/admin/templates/templateArtifact.js` — un ReferenceError vivo en
+    // `POST /template_artifacts/:id/source`, que es EXACTAMENTE la clase de fallo para la que existe
+    // este script. La segunda alternativa reabre ese caso sin admitir `obj.x(`.
+    const usage = new RegExp(`(?:(?<![.\\w$])|(?<=\\.\\.\\.))${name}\\s*\\(`);
     if (!usage.test(body)) continue;
     const line = lines.findIndex((l) => usage.test(l)) + 1;
     findings.push({
