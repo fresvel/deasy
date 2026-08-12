@@ -1,44 +1,88 @@
-.admin-workspace-frame {
-  border: 1px solid var(--brand-border);
-  border-radius: 0.95rem;
-  background: var(--brand-surface-alt);
-  box-shadow: var(--brand-elev-1);
-  padding: 0.5rem;
+/* ------------------------------------------------------------------------------------
+   [F4.4-c 2026-08-11] El fichero baja entero a `@layer components` MENOS
+   `.admin-page-header__title`, que tiene su propio bloque explicado mas abajo.
+
+   Se comprobo consumidor a consumidor que ninguna de las clases capadas convive con una
+   utilidad de Tailwind que declare la misma propiedad:
+
+     - `.admin-workspace-frame(--table)` — 2 usos, ambos con `w-full flex-1 overflow-hidden
+       relative flex flex-col min-h-0`: caja y flujo, nada de borde/fondo/sombra/padding.
+     - `.admin-surface-frame` — 3 usos, sueltos. (Su `padding` responsive vive en
+       `misc.css` y baja EN EL MISMO COMMIT; separarlos lo mataria — ver alli.)
+     - `.admin-related-tabs` — 5 usos; el de `HomeView.vue:40` añade `flex items-center
+       justify-between gap-3`, ninguna de padding.
+     - `.admin-page-header`, `__main`, `__actions` — siempre sueltos.
+     - `.admin-page-header__create` — llega por el prop `class-name` de `AdminButton`
+       (`AdminTableHeader.vue:30`, `ProfileSectionShell.vue:9`), que la concatena con
+       `admin-btn deasy-btn` y el mapa de tamaño; ahi no hay ningun `min-w-*`.
+     - `.profile-step-dot(--idle|--active|--done)` — el `:class` de
+       `UnitPositionProfileWizard.vue:12` solo devuelve los tres modificadores de aqui.
+
+   ⚠️ `.admin-page-header__subtitle` y `.admin-page-header__icon` tienen **0 consumidores**:
+   ninguna plantilla las usa, ni directa ni por prop. Se capan con el resto porque capar
+   algo muerto es un no-op comprobable, pero **lo que procede es borrarlas, y eso es F5**.
+   ------------------------------------------------------------------------------------ */
+
+@layer components {
+    .admin-workspace-frame {
+        border: 1px solid var(--brand-border);
+        border-radius: 0.95rem;
+        background: var(--brand-surface-alt);
+        box-shadow: var(--brand-elev-1);
+        padding: 0.5rem;
+    }
+
+    .admin-workspace-frame--table {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .admin-surface-frame {
+        border: 1px solid var(--brand-border);
+        border-radius: 1rem;
+        background: var(--brand-white);
+        box-shadow: none;
+        padding: 0.95rem;
+    }
+
+    .admin-related-tabs {
+        padding: 0.15rem 0 0.2rem;
+    }
+
+    .admin-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.4rem 0 0.85rem;
+        border-bottom: 1px solid var(--brand-surface-muted);
+        margin-bottom: 0;
+    }
+
+    .admin-page-header__main {
+        min-width: 0;
+    }
 }
 
-.admin-workspace-frame--table {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
+/* ------------------------------------------------------------------------------------
+   SE QUEDA SIN CAPA — `.admin-page-header__title`.
 
-.admin-surface-frame {
-  border: 1px solid var(--brand-border);
-  border-radius: 1rem;
-  background: var(--brand-white);
-  box-shadow: none;
-  padding: 0.95rem;
-}
+   La culpable es la primera declaracion: `margin: 0` es el **shorthand**, asi que fija las
+   cuatro esquinas. En `HomeView.vue:674` el titulo se escribe
+   `<h1 class="admin-page-header__title mt-1">`, y hoy ese `mt-1` **no pinta**: la regla va
+   sin capa y le gana al `.mt-1` de `@layer utilities`. Bajarla resucitaria un
+   `margin-top: 0.25rem` — **4 px** que desplazarian el titulo y todo lo que cuelga de el.
 
-.admin-related-tabs {
-  padding: 0.15rem 0 0.2rem;
-}
+   Cuatro pixeles no suenan a nada, pero esta fase promete cero diferencias y una huella de
+   `getBoundingClientRect` los ve. Se queda fuera hasta que se decida si el `mt-1` sobra
+   (entonces se borra de la plantilla y esta baja) o si es lo correcto (entonces se cambia
+   el shorthand por `margin-block-end: 0` y baja igual). Lo que no vale es dejarlo a medias.
 
-.admin-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.4rem 0 0.85rem;
-  border-bottom: 1px solid var(--brand-surface-muted);
-  margin-bottom: 0;
-}
-
-.admin-page-header__main {
-  min-width: 0;
-}
+   El otro consumidor, `HomeView.vue:247`, la lleva suelta y no se entera de nada.
+   ------------------------------------------------------------------------------------ */
 
 .admin-page-header__title {
   margin: 0;
@@ -51,71 +95,73 @@
   color: var(--brand-navy);
 }
 
-.admin-page-header__subtitle {
-  margin: 0.35rem 0 0;
-  font-size: 0.84rem;
-  line-height: 1.4;
-  color: var(--brand-text-muted);
-}
+@layer components {
+    .admin-page-header__subtitle {
+        margin: 0.35rem 0 0;
+        font-size: 0.84rem;
+        line-height: 1.4;
+        color: var(--brand-text-muted);
+    }
 
-.admin-page-header__icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--brand-border);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
-  color: var(--brand-primary);
-  flex: 0 0 auto;
-  font-size: 0.78rem;
-}
+    .admin-page-header__icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-border);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        color: var(--brand-primary);
+        flex: 0 0 auto;
+        font-size: 0.78rem;
+    }
 
-.admin-page-header__actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
-  flex: 0 0 auto;
-}
+    .admin-page-header__actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        flex: 0 0 auto;
+    }
 
-.admin-page-header__create {
-  min-width: 8.75rem;
-}
+    .admin-page-header__create {
+        min-width: 8.75rem;
+    }
 
-/* ------------------------------------------------------------------------------------
-   Los puntos numerados del asistente de perfiles de puesto.
-   Salen del `<style scoped>` del componente. El activo usaba indigo-600 con su propio
-   fondo y borde; ahora es la receta de siempre: 10 % de relleno, 38 % de borde y el token
-   como texto. El inactivo tenia el numero en slate-400 sobre slate-100 -- 2.6:1, no se
-   leia; pasa al suelo de la escala de texto.
-   ------------------------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------------------------
+       Los puntos numerados del asistente de perfiles de puesto.
+       Salen del `<style scoped>` del componente. El activo usaba indigo-600 con su propio
+       fondo y borde; ahora es la receta de siempre: 10 % de relleno, 38 % de borde y el token
+       como texto. El inactivo tenia el numero en slate-400 sobre slate-100 -- 2.6:1, no se
+       leia; pasa al suelo de la escala de texto.
+       ------------------------------------------------------------------------------------ */
 
-.profile-step-dot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  width: 24px;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border: 1px solid transparent;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
+    .profile-step-dot {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        width: 24px;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
 
-.profile-step-dot--idle {
-  background: var(--brand-surface-muted);
-  color: var(--brand-text-muted);
-}
+    .profile-step-dot--idle {
+        background: var(--brand-surface-muted);
+        color: var(--brand-text-muted);
+    }
 
-.profile-step-dot--active {
-  background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
-  color: var(--brand-primary);
-  border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--brand-white));
-}
+    .profile-step-dot--active {
+        background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
+        color: var(--brand-primary);
+        border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--brand-white));
+    }
 
-.profile-step-dot--done {
-  background: var(--brand-primary);
-  color: var(--brand-white);
+    .profile-step-dot--done {
+        background: var(--brand-primary);
+        color: var(--brand-white);
+    }
 }

@@ -1,17 +1,65 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* ------------------------------------------------------------------------------------
+   La capa BASE del proyecto — y las CUATRO reglas de aqui que no pueden bajar a ella.
+
+   [F4.4-c 2026-08-11] En CSS una regla sin capa gana SIEMPRE a una capada, da igual la
+   especificidad. Este fichero llevaba ENTERO fuera de capa, asi que estaba tapando
+   utilidades de Tailwind sin que nadie lo supiera: no es que las utilidades no estuvieran
+   escritas, es que no llegaban a pintar. Bajarlo todo a `@layer base` las habria
+   resucitado de golpe, que es justo lo que esta fase NO quiere — el criterio es refactor
+   invisible: 0 diferencias en la huella de estilos computados.
+
+   Por eso el fichero queda partido. Lo que no pelea con nadie baja a `@layer base`; lo que
+   hoy esta suprimiendo algo se queda fuera **con la cifra de lo que suprime**, para que la
+   proxima persona no tenga que volver a medirlo. Y no se neutraliza borrando la utilidad
+   de la plantilla: eso perderia la intencion de quien la escribio. Se resuelven decidiendo
+   la tipografia (§6.1) y el color de enlace (§4.2), no aqui.
+   ------------------------------------------------------------------------------------ */
+
+@layer base {
+    /* El `box-sizing` heredado. Baja sin riesgo: no hay ni un `box-border`/`box-content` en
+       el frontend, y las tres hojas de terceros que van sin capa (`@vue-flow/core`,
+       `@vue-flow/controls`, `leaflet`) declaran su `box-sizing` sobre selectores propios
+       (`.vue-flow__node`, `.vue-flow__controls-button`, `.leaflet-zoom-box`), que ya le
+       ganaban a este `*` por especificidad antes de existir la capa. */
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    /* `<body>` y `#app` no llevan clases — se escriben en `index.html` y Vue monta dentro,
+       no encima. Sin clases no hay utilidad que pueda competir, asi que estas tres bajan
+       sin cambiar nada. Ojo al ORDEN: `tokens.css` ya trae un `body`/`#app` en `@layer
+       base` (`:125`), y `index.css` importa `tokens.css` ANTES que este fichero, asi que
+       dentro de la capa siguen ganando estas — igual que ganaban por estar fuera. */
+    body {
+        margin: 0;
+        font-family: var(--font-base);
+        font-size: var(--font-size-base);
+        line-height: var(--line-height-base);
+        color: var(--brand-navy);
+        background-color: var(--brand-navy-deep);
+    }
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-base);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
-  color: var(--brand-navy);
-  background-color: var(--brand-navy-deep);
-}
+/* ------------------------------------------------------------------------------------
+   SE QUEDA SIN CAPA (1 de 4) — la tipografia de los encabezados.
+
+   Bajarla a `@layer base` resucitaria **77 utilidades de peso (`font-bold`,
+   `font-semibold`, `font-medium`…) y 32 de `tracking-*`/`leading-*`**, repartidas en **77
+   de los 95 `<h1>`–`<h6>` del proyecto**. Hoy un `<h3 class="text-lg font-semibold">`
+   renderiza a **500, no a 600**, y con `line-height: var(--line-height-heading)` en vez del
+   que pide la utilidad: el `font-weight: 500` de aqui, por ir sin capa, le gana al
+   `.font-semibold` de `@layer utilities`. `font-size` no entra en la lista porque esta
+   regla no lo declara — por eso `text-lg` si se ve.
+
+   No es un descuido que haya que "corregir" borrando las 109 utilidades: son la intencion
+   de quien escribio cada plantilla. La decision es de tipografia y vive en **§6.1**; hasta
+   que se tome, la regla se queda fuera de capa a proposito.
+
+   ⚠️ Y de paso: **`.h1`…`.h6` no tienen un solo consumidor** en `src/`. Esa mitad del
+   selector es un fosil de Bootstrap, que no esta en `package.json`. Borrarlas es F5.
+   ------------------------------------------------------------------------------------ */
 
 h1,
 h2,
@@ -31,12 +79,34 @@ h6,
   letter-spacing: -0.01em;
 }
 
-.admin-typography,
-.home-typography {
-  font-family: var(--font-base);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
+@layer base {
+    /* La tipografia base del contenedor, no la de los encabezados. Baja sin riesgo: los dos
+       unicos consumidores son `AdminView.vue:331` y `ProcessManagementView.vue:197`, ambos
+       con `admin-page admin-typography w-full h-full relative overflow-y-auto` — ni una
+       utilidad de `font-*`/`text-*`/`leading-*` que pueda competir. Y `.admin-page` no
+       existe como regla en ningun sitio, asi que tampoco compite desde `@layer components`.
+
+       ⚠️ `.home-typography` tiene **0 usos**: no aparece en ningun `.vue` ni `.js`. Aqui es
+       un no-op; retirarla es F5. */
+    .admin-typography,
+    .home-typography {
+        font-family: var(--font-base);
+        font-size: var(--font-size-base);
+        line-height: var(--line-height-base);
+    }
 }
+
+/* ------------------------------------------------------------------------------------
+   SE QUEDA SIN CAPA (2 de 4) — hermana de la anterior, para admin y home.
+
+   Suprime lo mismo (peso y `line-height`) dentro de `.admin-typography`/`.home-typography`,
+   y ademas con especificidad 0,1,1, o sea que gana tambien a la regla generica de arriba.
+   Se queda fuera **por coherencia, no por un competidor propio**: si esta bajase y la de
+   arriba no, los encabezados de admin renderizarian con el peso de la utilidad y los del
+   resto de la app con 500 — la tipografia quedaria incoherente entre las dos mitades de la
+   aplicacion, que es peor que el estado actual. Las dos bajan juntas cuando se cierre §6.1,
+   o no baja ninguna.
+   ------------------------------------------------------------------------------------ */
 
 .admin-typography h1,
 .admin-typography h2,
@@ -55,6 +125,28 @@ h6,
   line-height: var(--line-height-heading);
 }
 
+/* ------------------------------------------------------------------------------------
+   SE QUEDAN SIN CAPA (3 y 4 de 4) — el color de los enlaces.
+
+   `a` es especificidad 0,0,1, la mas baja que existe, y aun asi gana a todo lo que lleve
+   capa. Hoy esta tapando cuatro cosas comprobadas:
+
+     - `RecoverPasswordView.vue:6`  `text-sm … text-slate-500 hover:text-blue-600`
+     - `VerifyEmail.vue:6`          `text-sm … text-slate-500 hover:text-blue-600`
+     - `RegisterView.vue:312`       `font-semibold text-blue-700 hover:underline`
+     - `auth.css:54` `.deasy-auth-link`, que declara `color: var(--brand-primary)` dentro
+       de `@layer components`
+
+   El cuarto es el que mas duele: el «¿Olvidaste tu contraseña?» del login **sale hoy en
+   teal (`--brand-accent`, #00b2a9) cuando su propia regla pide violeta
+   (`--brand-primary`, #5e4eff)**. La regla existe, esta bien escrita, y no pinta.
+
+   Capar `a` arreglaria los cuatro de golpe — y por eso mismo NO se capa aqui: seria un
+   cambio visual, y esta fase promete cero. El color de enlace es una decision de paleta y
+   pertenece a **§4.2**; cuando se cierre, estas dos bajan y el arreglo se ve en el diff de
+   la huella, que es donde tiene que verse.
+   ------------------------------------------------------------------------------------ */
+
 a {
   color: var(--brand-accent);
 }
@@ -63,8 +155,14 @@ a:hover {
   color: var(--brand-primary);
 }
 
-body,
-#app {
-  background: var(--brand-navy-deep);
-  color: var(--brand-text-strong);
+@layer base {
+    /* Va DESPUES del `body` de arriba a proposito: dentro de la misma capa manda el orden de
+       aparicion, y este `color` (`--brand-text-strong`) es el que gana al `--brand-navy` del
+       primer bloque. Era asi antes de las capas y sigue siendolo; si alguien junta los dos
+       bloques, que respete este orden. */
+    body,
+    #app {
+        background: var(--brand-navy-deep);
+        color: var(--brand-text-strong);
+    }
 }
