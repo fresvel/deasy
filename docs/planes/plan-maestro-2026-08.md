@@ -22,7 +22,7 @@ cuesta más que el trabajo que ahorran— y la lista de **lo que NO hay que toca
 
 ---
 
-## Frente 0 · Limpiar el modelo antes de seguir refactorizando — ⬜ ← **EMPIEZA AQUÍ**
+## Frente 0 · Limpiar el modelo antes de seguir refactorizando — 🟡 · **0.1, 0.2, 0.3 y 0.8 cerrados**
 
 Abierto el **2026-08-09**, y va delante de todo lo demás por un motivo que no es de gravedad sino de
 orden: **el resto del plan refactoriza sobre un modelo que todavía se contradice a sí mismo**. Mientras
@@ -94,7 +94,9 @@ observable por HTTP. La red es un unitario nuevo (`generation/documents.test.js`
 > responsable de la **tarea** y no al del **entregable**. El código no la sostiene: la función se llama
 > `…ForTaskItem` y su cascada ya cae a «cualquier asignación de la tarea» cuando falta el dato de ítem.
 
-### 0.2 · ¿Hace falta el resolver `document_owner`? — ⬜ **decisión, bloqueada por 0.1**
+### 0.2 · ¿Hace falta el resolver `document_owner`? — ✅ **CERRADO (`94c56c4`)**
+
+**Respuesta: no hacía falta, y ya no existe.** Se retiró del `CHECK` en el sub-paso 8 del §0.8, junto con los otros cuatro que la web no autora. Medido: **cero `document_owner` en la base**. La columna `documents.owner_person_id` **sigue viva** — es otra cosa, y la usan los guards de permisos.
 
 **Hoy no se puede quitar**, aunque convenga: en los casos repartidos por puesto `task_assignee`
 devuelve **NULL**, porque `task_items.assigned_person_id` está vacío y la caída es a
@@ -112,7 +114,9 @@ Con 0.1 arreglado, `task_assignee` cubre el 100 % de los casos **y mejora**: pas
   permisos (`ChatAuthorizationService.js:63-77`, `user_controler.js:422,469,522`), que leen la columna
   y **no el resolver**. Lo que sobra es el resolver homónimo.
 
-### 0.3 · `BASE_META_YAML`: la puerta trasera del bootstrap — ⬜
+### 0.3 · `BASE_META_YAML`: la puerta trasera del bootstrap — ✅ **CERRADO (`30654db`)**
+
+Retirado en el sub-paso 7 del §0.8, con su subida y el fósil `seeds/informe-general/workflow.yaml`. Criterio cumplido y medido: **el vínculo del Proceso por defecto pasa de 1 flujo a 0**, y no queda ni un `meta.yaml` bajo `System/tpl_informe_general/`, así que **la auto-replicación por copia binaria está muerta**.
 
 `services/system/SystemBootstrapService.js:277-305` es un `meta.yaml` **escrito a mano como literal de
 código**, subido en `:389`. Es **el único productor vivo de `document_owner`** y contradice la regla
@@ -220,7 +224,7 @@ falso** (ver 0.3), y es el único desfase que se propaga activamente a todo el q
 **Criterio de cierre:** un documento de modelo vigente en `docs/arquitecturas/`, las actas de sesión
 fechadas archivadas en `docs/docs-md-antiguos/`, y `CLAUDE.md` corregido.
 
-### 0.8 · Invertir la dirección del flujo: la base manda, el YAML se va — ⬜ **el que desbloquea a los demás**
+### 0.8 · Invertir la dirección del flujo: la base manda, el YAML se va — ✅ **CERRADO en backend (2026-08-11)** · queda el sub-paso 9, que es frontend
 
 **La doctrina, en palabras del dueño:** *«El `meta.yaml` YA NO DEBE INFLUIR SOBRE EL FLUJO. Todo se
 modela primero en la base de datos y de la base de datos se va al YAML, no al revés.»*
