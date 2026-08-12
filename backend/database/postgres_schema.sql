@@ -948,9 +948,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_fill_flow_steps ON fill_flow_steps (fill_fl
 --                 (templateArtifact.js:144), pero HOY NADIE PUEDE PONERLE UN VALOR: el formulario no
 --                 tiene control que lo escriba (unica aparicion en el frontend: un literal []),
 --                 el meta.yaml se REGENERA siempre desde el formulario —asi que el de un ZIP subido
---                 se descarta—, y el unico fichero del repo que declara field_refs
---                 (services/system/seeds/informe-general/workflow.yaml) se queda en el catalogo
---                 Seeds/ y nunca llega al meta de un artifact (SystemBootstrapService.js:387).
+--                 se descarta—, y el unico fichero del repo que llego a declarar field_refs
+--                 (services/system/seeds/informe-general/workflow.yaml) nunca tuvo lector y se
+--                 borro en el sub-paso 7 del §0.8.
 --                 Es el gemelo de `anchor_refs` en el lado de entrega: contrato sin productor ni
 --                 consumidor. Modelarlo seria modelar el fosil, no lo que el formulario autora.
 ALTER TABLE fill_flow_steps
