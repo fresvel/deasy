@@ -1,5 +1,5 @@
 <template>
-<div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-600">
+<div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-brand-icon">
   Consultando la secuencia de firmas...
 </div>
 <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
@@ -57,7 +57,7 @@
             </span>
             <div class="flex flex-col gap-1">
               <p class="text-sm font-bold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 m-0">Firma</p>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-text-muted m-0">Firma</p>
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
@@ -72,7 +72,7 @@
           </div>
         </div>
         <div class="mt-3 flex flex-col gap-0.5">
-          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Firmante</p>
+          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-text-muted m-0">Firmante</p>
           <p class="mt-0.5 text-sm font-semibold text-slate-700 m-0 leading-snug">
             {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
           </p>
@@ -95,7 +95,7 @@
     @resolve="$emit('resolve-observation', $event)"
   />
 </div>
-<div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
+<div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-brand-icon text-center">
   No hay datos de firmas disponibles para este entregable.
 </div>
 </template>

@@ -86,12 +86,12 @@
     }
 
     /* [fusion-fase-X 2026-08-07] ex-L473 + ex-L1368. Del bloque 2 solo ganaban dos cosas:
-       `border-color: var(--brand-border-strong)` (era -soft) y `placeholder:text-slate-400`.
+       `border-color: var(--brand-border-strong)` (era -soft) y `placeholder:text-brand-text-muted`.
        El resto del bloque 2 repetia lo que ya decia el bloque 1. */
     .deasy-field-input,
     .deasy-field-select,
     .deasy-field-textarea {
-        @apply block w-full rounded-2xl border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-slate-400;
+        @apply block w-full rounded-2xl border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-brand-text-muted;
         border-color: var(--brand-border-strong);
         color: var(--brand-text-body);
     }
@@ -178,7 +178,7 @@
 
     .deasy-dropzone__surface--filled .deasy-dropzone__icon,
     .deasy-dropzone__surface--filled .deasy-dropzone__action {
-        @apply text-emerald-700;
+        @apply text-state-success;
     }
 
     .deasy-dropzone__surface--filled .deasy-dropzone__help {

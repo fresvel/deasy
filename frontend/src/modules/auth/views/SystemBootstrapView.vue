@@ -15,16 +15,16 @@
         <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
           <span
             class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
-            :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-400'"
+            :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-slate-100 text-brand-text-muted'"
           >{{ i + 1 }}</span>
-          <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-slate-400'">{{ s.label }}</span>
+          <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-brand-text-muted'">{{ s.label }}</span>
           <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-slate-200"></span>
         </li>
       </ol>
 
       <!-- Paso 1: Administrador -->
       <div v-show="step === 1" class="space-y-4">
-        <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+        <label class="flex items-center gap-2.5 text-sm font-medium text-brand-icon">
           <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleAdmin" />
           Usar datos de ejemplo (rellena el formulario para crear rápido)
         </label>
@@ -72,7 +72,7 @@
           </SToggle>
         </div>
         <div v-if="gestorEnabled" class="space-y-4">
-          <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+          <label class="flex items-center gap-2.5 text-sm font-medium text-brand-icon">
             <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleGestor" />
             Usar datos de ejemplo
           </label>
@@ -114,7 +114,7 @@
           </SToggle>
         </div>
         <div v-if="usuarioEnabled" class="space-y-4">
-          <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+          <label class="flex items-center gap-2.5 text-sm font-medium text-brand-icon">
             <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleUsuario" />
             Usar datos de ejemplo
           </label>
@@ -163,7 +163,7 @@
               <p class="m-0 text-sm font-semibold text-slate-700">{{ group.label }}</p>
               <p class="m-0 mt-0.5 text-xs text-slate-500">{{ group.hint }}</p>
             </div>
-            <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-600">
+            <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-brand-icon">
               <input
                 type="checkbox"
                 class="h-4 w-4 rounded border-slate-300 text-sky-600"
@@ -242,20 +242,20 @@
       <!-- Paso 4: Resumen -->
       <div v-show="step === 4" class="space-y-2.5 text-sm">
         <div class="rounded-xl border border-slate-200 p-4">
-          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Administrador</p>
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Administrador</p>
           <p class="m-0 mt-1 font-semibold text-slate-700">{{ form.first_name }} {{ form.last_name }}</p>
           <p class="m-0 text-slate-500">{{ form.email }}</p>
         </div>
         <div class="rounded-xl border border-slate-200 p-4">
-          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Gestor por defecto</p>
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Gestor por defecto</p>
           <p class="m-0 mt-1 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
         </div>
         <div class="rounded-xl border border-slate-200 p-4">
-          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Usuario de prueba</p>
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Usuario de prueba</p>
           <p class="m-0 mt-1 text-slate-500">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
         </div>
         <div class="rounded-xl border border-slate-200 p-4">
-          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Catálogos a preconfigurar</p>
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Catálogos a preconfigurar</p>
           <ul v-if="selectedCatalogSummary.length" class="m-0 mt-2 space-y-2 p-0">
             <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-slate-500">
               <span class="font-semibold text-slate-700">{{ item.label }}:</span>
@@ -312,7 +312,7 @@
         </div>
       </div>
     </div>
-    <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-600">
+    <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center text-sm text-brand-icon">
       Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
     </div>
 
@@ -327,7 +327,7 @@
       <div
         v-if="message"
         class="mt-6 flex rounded-xl border p-4" :class="[
-          isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-emerald-700'
+          isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-state-success'
         ]"
       >
         <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />

@@ -95,12 +95,12 @@
               />
             </div>
 
-            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-slate-400">
+            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-brand-text-muted">
               <IconFiles class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
             </div>
 
-            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-slate-400">
+            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-brand-text-muted">
               <IconInfoCircle class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
             </div>
@@ -126,7 +126,7 @@
                     <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
                   </div>
                 </div>
-                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-slate-400" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
+                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-brand-text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
                 <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-[11px] font-semibold text-rose-600">{{ doc.error }}</div>
               </div>
             </div>
@@ -216,7 +216,7 @@
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
+                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
                         D {{ currentDocumentIndex + 1 }}/{{ filteredDocumentCount }}
                       </span>
                       <button
@@ -240,7 +240,7 @@
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
+                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
                         P {{ currentPage }}/{{ Math.max(totalPages, 1) }}
                       </span>
                       <button
@@ -353,7 +353,7 @@
             <IconSignature class="h-5 w-5" />
           </div>
           <div class="min-w-0">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Multifirmador</div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-brand-icon">Multifirmador</div>
             <div class="truncate text-base font-bold text-slate-800">
               {{ batchProgressModalTitle }}
             </div>

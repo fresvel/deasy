@@ -27,7 +27,7 @@
     /* [fusion-fase-X 2026-08-07] ex-L1262 + ex-L1368. Lo unico que ganaba el bloque 2 era
        `border-color: var(--brand-border-strong)` (aqui era -soft). */
     .deasy-auth-field {
-        @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-slate-400;
+        @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-brand-text-muted;
         border-color: var(--brand-border-strong);
         color: var(--brand-text-body);
     }

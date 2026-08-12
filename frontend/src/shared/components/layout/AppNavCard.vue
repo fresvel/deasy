@@ -33,7 +33,7 @@
         </div>
         <div class="flex flex-col flex-1">
           <h3 :class="titleClasses">{{ title }}</h3>
-          <span v-if="meta" class="text-sm font-medium text-slate-400">{{ meta }}</span>
+          <span v-if="meta" class="text-sm font-medium text-brand-text-muted">{{ meta }}</span>
           <span v-if="description" class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ description }}</span>
         </div>
       </div>

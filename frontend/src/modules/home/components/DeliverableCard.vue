@@ -89,7 +89,7 @@ const onCardClick = (event) => {
                 v{{ deliverable.item.document_version }}
               </span>
             </p>
-            <p class="m-0 min-w-0 truncate text-[0.78rem] font-medium leading-snug text-slate-400">
+            <p class="m-0 min-w-0 truncate text-[0.78rem] font-medium leading-snug text-brand-text-muted">
               {{ h.getDeliverablePeriodLabel(deliverable.task) }}
             </p>
             <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-[0.78rem] font-semibold leading-snug text-indigo-600">
@@ -112,7 +112,7 @@ const onCardClick = (event) => {
       <div v-show="!h.isDeliverableCollapsed(deliverable.item)" class="mt-3 flex flex-col gap-3">
         <div v-if="h.getDeliverableProgress(deliverable.item)" class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-3">
-            <p class="m-0 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-400">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
+            <p class="m-0 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-brand-text-muted">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
             <AppTag :variant="h.getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ h.getDeliverableDueState(deliverable.item).value }}</AppTag>
           </div>
           <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-slate-700">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
@@ -120,7 +120,7 @@ const onCardClick = (event) => {
             <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
               <div class="h-full rounded-full transition-all duration-300" :class="h.getDeliverableCardTone(deliverable.item).accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
             </div>
-            <span class="shrink-0 text-[0.7rem] font-semibold text-slate-400">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
+            <span class="shrink-0 text-[0.7rem] font-semibold text-brand-text-muted">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
           </div>
         </div>
 
@@ -140,7 +140,7 @@ const onCardClick = (event) => {
           </button>
 
           <div class="flex h-full items-center justify-end gap-1.5">
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-emerald-700 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-state-success transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar PDF" @click="emit('download', deliverable.item)"><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)"><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Ver PDF" @click="emit('preview', deliverable.item)"><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>

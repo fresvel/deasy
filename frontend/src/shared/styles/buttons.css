@@ -111,7 +111,7 @@
     }
 
     .deasy-btn--soft-success {
-        @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
+        @apply border-emerald-200 bg-emerald-50 text-state-success hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
     }
 
     .deasy-btn--soft-warning {
@@ -124,7 +124,7 @@
 
     .deasy-btn--success,
     .admin-btn--success {
-        @apply border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700;
+        @apply border-emerald-600 bg-emerald-600 text-white hover:border-state-success hover:bg-state-success;
     }
 
     .deasy-btn--danger,

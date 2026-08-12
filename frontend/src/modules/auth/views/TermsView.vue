@@ -20,7 +20,7 @@
       </div>
 
       <div class="relative w-full grow rounded-b-xl bg-white p-8 sm:p-10 lg:p-12">
-        <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-slate-400">
+        <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-brand-text-muted">
           <IconLoader class="mb-4 h-10 w-10 animate-spin text-blue-600" />
           <p class="font-medium">Cargando términos y condiciones...</p>
         </div>
@@ -33,7 +33,7 @@
           </button>
         </div>
 
-        <div v-else class="prose prose-slate prose-headings:font-semibold prose-headings:text-slate-900 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-h1:text-3xl prose-h2:mt-10 prose-h2:text-2xl prose-p:text-slate-600 prose-li:text-slate-600 max-w-none">
+        <div v-else class="prose prose-slate prose-headings:font-semibold prose-headings:text-slate-900 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-h1:text-3xl prose-h2:mt-10 prose-h2:text-2xl prose-p:text-brand-icon prose-li:text-brand-icon max-w-none">
           <div v-html="markdownContent"></div>
         </div>
 

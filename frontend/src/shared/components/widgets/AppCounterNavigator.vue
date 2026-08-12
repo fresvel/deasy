@@ -15,7 +15,7 @@
       :class="editable ? 'min-w-[7.5rem]' : 'min-w-[5rem]'"
     >
       <template v-if="editable">
-        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ label }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">{{ label }}</div>
         <div class="flex items-center justify-center gap-1 text-sm font-bold text-slate-700">
           <input
             :value="modelValue"
@@ -33,7 +33,7 @@
       </template>
 
       <template v-else>
-        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ label }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">{{ label }}</div>
         <div class="text-sm font-bold text-slate-700">{{ current }} / {{ total }}</div>
       </template>
     </div>

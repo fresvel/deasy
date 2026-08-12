@@ -144,7 +144,7 @@
     }
 
     .deasy-nav-feedback--muted {
-        @apply border border-brand-border-field bg-white/85 text-slate-600;
+        @apply border border-brand-border-field bg-white/85 text-brand-icon;
     }
 
     .deasy-nav-tree {

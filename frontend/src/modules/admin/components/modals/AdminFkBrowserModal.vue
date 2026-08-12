@@ -165,7 +165,7 @@
           :class="processContextFilterActive ? 'translate-x-4' : 'translate-x-1'"
         ></span>
       </button>
-      <span class="text-sm font-medium text-slate-600">Solo plantillas de este proceso</span>
+      <span class="text-sm font-medium text-brand-icon">Solo plantillas de este proceso</span>
     </div>
 
     <div v-if="isFkUnitPositions" class="mb-3 grid gap-3 md:grid-cols-12 md:items-end">

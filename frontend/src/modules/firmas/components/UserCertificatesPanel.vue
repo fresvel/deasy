@@ -21,7 +21,7 @@
         <div v-if="errorMessage" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {{ errorMessage }}
         </div>
-        <div v-if="successMessage" class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div v-if="successMessage" class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-state-success">
           {{ successMessage }}
         </div>
 
@@ -49,7 +49,7 @@
                   <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
                 </div>
                 <div class="mt-1 text-xs text-slate-500 break-all">{{ certificate.original_filename }}</div>
-                <div class="mt-1 text-xs text-slate-400">
+                <div class="mt-1 text-xs text-brand-text-muted">
                   {{ formatDate(certificate.created_at) }}
                 </div>
               </div>

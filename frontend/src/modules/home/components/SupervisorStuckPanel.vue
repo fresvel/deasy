@@ -13,7 +13,7 @@
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-1 rounded-2xl border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50"
+        class="inline-flex items-center gap-1 rounded-2xl border border-slate-200 px-2.5 py-1 text-xs font-semibold text-brand-icon transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50"
         :disabled="loading"
         @click="load"
       >↻ Actualizar</button>
@@ -25,13 +25,13 @@
     <div v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
       {{ error }}
     </div>
-    <div v-else-if="!items.length" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+    <div v-else-if="!items.length" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-state-success">
       Sin entregables atascados. Todo asignado. ✓
     </div>
 
     <div v-else class="flex flex-col gap-4">
       <div v-for="group in grouped" :key="group.unit_id ?? 'sin-unidad'" class="flex flex-col gap-2">
-        <h3 class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">{{ group.unit_name || 'Sin unidad' }}</h3>
+        <h3 class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">{{ group.unit_name || 'Sin unidad' }}</h3>
         <div
           v-for="item in group.items"
           :key="item.id"
@@ -46,7 +46,7 @@
           <div class="flex items-center gap-1.5">
             <span
               class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.65rem] font-semibold"
-              :class="item.reason === 'sin_responsable' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'"
+              :class="item.reason === 'sin_responsable' ? 'bg-amber-100 text-state-warning' : 'bg-rose-100 text-rose-700'"
             >{{ item.reason === 'sin_responsable' ? 'Sin responsable' : 'Titular se fue' }}</span>
             <span
               v-if="item.started"
@@ -55,8 +55,8 @@
           </div>
         </div>
       </div>
-      <p class="m-0 text-[0.7rem] text-slate-400">
-        Total atascados: <span class="font-semibold text-slate-600">{{ items.length }}</span>. La reasignación (traspaso) se habilitará desde aquí en el siguiente paso.
+      <p class="m-0 text-[0.7rem] text-brand-text-muted">
+        Total atascados: <span class="font-semibold text-brand-icon">{{ items.length }}</span>. La reasignación (traspaso) se habilitará desde aquí en el siguiente paso.
       </p>
     </div>
   </section>

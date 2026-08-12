@@ -468,11 +468,11 @@ export function useDeliverableView({
     if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
       return {
         card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-emerald-700',
+        header: 'border-emerald-100 bg-emerald-50/60 text-state-success',
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-emerald-700',
-        iconChip: 'bg-emerald-100 text-emerald-700'
+        responsibilityLabel: 'text-state-success',
+        iconChip: 'bg-emerald-100 text-state-success'
       };
     }
 
@@ -492,11 +492,11 @@ export function useDeliverableView({
     if (variant === 'success') {
       return {
         card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-emerald-700',
+        header: 'border-emerald-100 bg-emerald-50/60 text-state-success',
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-emerald-700',
-        iconChip: 'bg-emerald-100 text-emerald-700'
+        responsibilityLabel: 'text-state-success',
+        iconChip: 'bg-emerald-100 text-state-success'
       };
     }
 
@@ -540,7 +540,7 @@ export function useDeliverableView({
     if (shouldShowStartDeliverable(payload)) {
       return 'border-indigo-100/95 text-indigo-700 hover:border-indigo-200 hover:bg-indigo-50 focus:ring-indigo-200/70';
     }
-    return 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
+    return 'border-slate-200 text-brand-icon hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
   };
 
   const isDeliverableSignatureFlowCompleted = (payload) => {

@@ -23,7 +23,7 @@
             </span>
             <div class="flex flex-col gap-1">
               <strong class="text-sm font-bold text-slate-800">Paso {{ step.step_order }}</strong>
-              <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Entrega</span>
+              <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-text-muted">Entrega</span>
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
@@ -39,12 +39,12 @@
           </div>
         </div>
         <div class="mt-3 flex flex-col gap-0.5">
-          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Responsable</p>
+          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-text-muted m-0">Responsable</p>
           <p class="mt-0.5 text-sm font-semibold text-slate-700 m-0 leading-snug">{{ step.display_label }}</p>
         </div>
         <div v-if="step.response_note" class="mt-2 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2">
-          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Nota</p>
-          <p class="mt-0.5 mb-0 text-xs font-medium text-slate-600">{{ step.response_note }}</p>
+          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-text-muted m-0">Nota</p>
+          <p class="mt-0.5 mb-0 text-xs font-medium text-brand-icon">{{ step.response_note }}</p>
         </div>
       </div>
     </div>

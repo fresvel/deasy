@@ -3,17 +3,17 @@
     <div v-if="!embedded && context" class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm text-emerald-950">{{ context.name || `Configuracion #${context.id}` }}</strong>
-        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-brand-icon ring-1 ring-slate-200">
           {{ context.variation_key || "—" }}
         </span>
-        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-brand-icon ring-1 ring-slate-200">
           {{ context.definition_version || "—" }}
         </span>
       </div>
     </div>
 
     <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
-    <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+    <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-action-view">
       Esta configuracion no esta en draft. Solo puedes gestionar plantillas cuando la configuracion este en draft.
     </div>
 
@@ -57,7 +57,7 @@
             <option value="replicated">Replicado (N con etiqueta)</option>
             <option value="routed">Ruteado (endosar a alguien)</option>
           </select>
-          <span v-else class="text-xs font-semibold text-slate-600">{{ itemModeLabel(row.item_mode) }}</span>
+          <span v-else class="text-xs font-semibold text-brand-icon">{{ itemModeLabel(row.item_mode) }}</span>
           <p v-if="row.item_mode === 'routed'" class="mt-1 m-0 text-[0.65rem] leading-tight text-amber-600">
             El flujo (entrega/firma) se define AL ENVIAR, no aquí.
           </p>

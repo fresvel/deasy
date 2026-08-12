@@ -15,7 +15,7 @@
   >
     <div class="h-full w-full border border-sky-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
       <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-sky-600 drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
-      <span class="text-[9px] sm:text-[10px] font-bold text-sky-800 bg-white/90 px-1.5 py-0.5 rounded shadow-sm border border-sky-200 uppercase tracking-widest text-center truncate max-w-full">
+      <span class="text-[9px] sm:text-[10px] font-bold text-action-view bg-white/90 px-1.5 py-0.5 rounded shadow-sm border border-sky-200 uppercase tracking-widest text-center truncate max-w-full">
         {{ label || 'Firma' }}
       </span>
     </div>

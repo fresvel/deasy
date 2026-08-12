@@ -51,7 +51,7 @@
     </div>
 
     <!-- Contenido -->
-    <div v-if="loading" class="rounded-2xl border border-sky-100 bg-sky-50/60 p-6 text-center text-sm font-semibold text-sky-800 animate-pulse">
+    <div v-if="loading" class="rounded-2xl border border-sky-100 bg-sky-50/60 p-6 text-center text-sm font-semibold text-action-view animate-pulse">
       Cargando…
     </div>
 
@@ -62,8 +62,8 @@
       <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-300">
         <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-7 w-7" />
       </span>
-      <p class="m-0 text-sm font-bold text-slate-600">{{ emptyTitle }}</p>
-      <p class="m-0 max-w-sm text-xs font-medium text-slate-400">{{ emptyHint }}</p>
+      <p class="m-0 text-sm font-bold text-brand-icon">{{ emptyTitle }}</p>
+      <p class="m-0 max-w-sm text-xs font-medium text-brand-text-muted">{{ emptyHint }}</p>
       <AppButton v-if="activeTab === 'sends'" variant="softPrimary" size="sm" class="mt-1" @click="$emit('create')">
         <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> {{ createLabel }}</span>
       </AppButton>
@@ -85,8 +85,8 @@
           <p class="m-0 truncate text-sm font-bold text-slate-800">{{ item.label || 'Documento sin título' }}</p>
           <p class="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-medium text-slate-500">
             <span class="inline-flex items-center gap-1">
-              <IconUser class="h-3.5 w-3.5 text-slate-400" />
-              {{ activeTab === 'sends' ? 'Para' : 'De' }}: <strong class="font-semibold text-slate-600">{{ personName(item) }}</strong>
+              <IconUser class="h-3.5 w-3.5 text-brand-text-muted" />
+              {{ activeTab === 'sends' ? 'Para' : 'De' }}: <strong class="font-semibold text-brand-icon">{{ personName(item) }}</strong>
             </span>
             <span class="text-slate-300">·</span>
             <span>{{ formatDate(item.created_at) }}</span>

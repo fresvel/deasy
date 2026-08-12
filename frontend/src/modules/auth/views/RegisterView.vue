@@ -300,7 +300,7 @@
             </section>
 
             <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
-              <label class="flex items-start gap-3 text-sm font-medium text-slate-600">
+              <label class="flex items-start gap-3 text-sm font-medium text-brand-icon">
                 <input
                   v-model="termsAccepted"
                   type="checkbox"
@@ -460,7 +460,7 @@ const passwordStrengthColors = {
   5: "bg-green-500 w-full"
 };
 const passwordTextColors = {
-  0: "text-slate-400",
+  0: "text-brand-text-muted",
   1: "text-red-500",
   2: "text-orange-500",
   3: "text-amber-500",

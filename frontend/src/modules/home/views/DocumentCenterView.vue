@@ -87,7 +87,7 @@
           </div>
         </div>
 
-        <section v-if="loading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
+        <section v-if="loading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-brand-icon">
           Cargando centro documental...
         </section>
         <section v-else-if="error" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">

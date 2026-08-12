@@ -16,7 +16,7 @@
     }
 
     .deasy-tag--warning {
-        @apply border-amber-200 bg-amber-50 text-amber-700;
+        @apply border-amber-200 bg-amber-50 text-state-warning;
     }
 
     .deasy-tag--info {
@@ -24,7 +24,7 @@
     }
 
     .deasy-tag--neutral {
-        @apply border-slate-200 bg-slate-50 text-slate-600;
+        @apply border-slate-200 bg-slate-50 text-brand-icon;
     }
 
     .deasy-tag--muted {
@@ -37,7 +37,7 @@
     }
 
     .deasy-tag--accent {
-        @apply border-sky-300 bg-sky-100 text-sky-800;
+        @apply border-sky-300 bg-sky-100 text-action-view;
     }
 
     /* [fusion-fase-X 2026-08-07] ex-L558 + ex-L1482. Del bloque 1 solo sobrevive `backdrop-blur-sm`

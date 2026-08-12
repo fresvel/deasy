@@ -3,13 +3,13 @@
     <div v-if="checking" class="text-sm text-slate-500">Validando la configuración…</div>
     <template v-else-if="status === 'active'">
       <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
-        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-slate-400" />
+        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-brand-text-muted" />
         <span>Configuración <strong>activa</strong> y de solo lectura. Para cambios, crea una nueva versión o retírala.</span>
       </div>
     </template>
     <template v-else-if="status === 'retired'">
       <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
-        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-slate-400" />
+        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-brand-text-muted" />
         <span>Configuración <strong>retirada</strong> y de solo lectura. Para reutilizarla, crea una nueva versión a partir de ella.</span>
       </div>
     </template>
@@ -19,7 +19,7 @@
           <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Requisitos para activar</span>
           <span
             class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold ring-1"
-            :class="allRequirementsMet ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-slate-100 text-slate-600 ring-slate-200'"
+            :class="allRequirementsMet ? 'bg-emerald-100 text-state-success ring-emerald-200' : 'bg-slate-100 text-brand-icon ring-slate-200'"
           >{{ completedRequirements }}/3</span>
         </div>
         <div class="grid gap-2 sm:grid-cols-3">

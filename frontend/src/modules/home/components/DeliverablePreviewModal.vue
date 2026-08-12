@@ -14,7 +14,7 @@
         class="w-full min-h-[70vh] rounded-2xl border border-slate-200 bg-white"
         title="Vista previa del archivo"
       />
-      <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+      <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-brand-icon">
         El archivo no se puede previsualizar en línea. Usa la opción de descarga.
       </div>
     </div>

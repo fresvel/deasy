@@ -1,11 +1,11 @@
 <template>
   <AppDialogOverlay :open="open" :title="guided ? 'Actualizar plantilla de configuración activa' : 'Crear nueva versión'" panel-class="max-w-md" @close="$emit('close')">
-    <p v-if="guided" class="mb-3 mt-0 text-sm text-slate-600">
+    <p v-if="guided" class="mb-3 mt-0 text-sm text-brand-icon">
       Crea borradores de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>
       y de su configuración activa. Editarás el contenido y, al publicar, se <strong>publica la plantilla y se
       activa la nueva configuración</strong> juntas (la versión anterior queda retirada).
     </p>
-    <p v-else class="mb-3 mt-0 text-sm text-slate-600">
+    <p v-else class="mb-3 mt-0 text-sm text-brand-icon">
       Nueva versión de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>.
       Nace <strong>en borrador</strong>, clonada de la versión actual<span v-if="template?.storage_version"> ({{ template.storage_version }})</span>.
     </p>

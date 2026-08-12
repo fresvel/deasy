@@ -38,7 +38,7 @@
         <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><IconFileDescription class="h-4.5 w-4.5" /></span>
         <div class="min-w-0 flex-1">
           <p class="m-0 truncate text-sm font-semibold text-slate-800" :title="attachment.file_name">{{ attachment.file_name }}</p>
-          <p class="m-0 mt-0.5 flex items-center gap-2 text-[0.7rem] font-medium text-slate-400">
+          <p class="m-0 mt-0.5 flex items-center gap-2 text-[0.7rem] font-medium text-brand-text-muted">
             <span class="rounded bg-indigo-50 px-1.5 py-0.5 font-semibold text-indigo-600">{{ attachmentKindLabels[attachment.kind] || attachment.kind }}</span>
             <span v-if="formatAttachmentSize(attachment.size_bytes)">{{ formatAttachmentSize(attachment.size_bytes) }}</span>
             <span v-if="attachment.description" class="truncate">· {{ attachment.description }}</span>

@@ -8,6 +8,19 @@
   background-color: var(--brand-surface-muted);
 }
 
+/* ⚠️ [F4.1 2026-08-11] ESTO SON SELECTORES DE REPINTADO, NO USOS. El script de migracion
+   los reescribio a `.bg-brand-surface-muted\/70` y **rompio el repintado en silencio**: dos
+   nodos con `bg-slate-50/70` pasaron de solido a 70 % de alfa. Lo cazo la huella, no el
+   lint ni el build.
+
+   Lo que burla la guarda es el ESCAPE del `/`: en `bg-slate-50\/70` el caracter que sigue a
+   `bg-slate-50` es `\`, asi que un limite por la derecha `(?![\w/-])` da el match por bueno.
+   **Al migrar utilidades por script, `shared/styles/*.css` va excluido o revisado a mano.**
+
+   La `.bg-slate-50` a secas ya no tiene consumidor —los 109 usos son ahora
+   `bg-brand-surface-muted`, que no necesita repintado— pero se conserva hasta F5, que es
+   donde se poda con la comprobacion de composicion en runtime. Las dos con alfa SI hacen
+   falta: son las que siguen en las plantillas. */
 .bg-slate-50,
 .bg-slate-50\/70,
 .bg-slate-50\/80 {

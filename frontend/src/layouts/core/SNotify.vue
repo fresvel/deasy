@@ -28,7 +28,7 @@
           <h3 class="m-0 text-sm font-semibold leading-tight">Notificaciones</h3>
         </div>
         <button
-          class="rounded-2xl p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:hidden"
+          class="rounded-2xl p-1 text-brand-text-muted transition hover:bg-slate-100 hover:text-brand-icon focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:hidden"
           aria-label="Cerrar notificaciones"
           @click="$emit('close')"
         >
@@ -37,7 +37,7 @@
       </header>
 
       <div class="custom-scrollbar flex max-h-[60vh] flex-1 flex-col overflow-y-auto p-3">
-        <div class="flex flex-col items-center justify-center gap-3 py-10 text-slate-400">
+        <div class="flex flex-col items-center justify-center gap-3 py-10 text-brand-text-muted">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
             <IconInbox class="h-6 w-6 stroke-[1.5]" />
           </div>

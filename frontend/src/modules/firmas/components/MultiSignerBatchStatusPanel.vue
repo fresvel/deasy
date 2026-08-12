@@ -25,7 +25,7 @@
             class="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-1 text-center"
             :class="showFieldControls ? 'border-x border-slate-200' : ''"
           >
-            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modo</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">Modo</div>
             <div class="text-sm font-bold text-slate-800">{{ currentBatchModeLabel }}</div>
           </div>
           <button
@@ -55,7 +55,7 @@
               class="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-1 text-center"
               :class="showFieldControls ? 'border-x border-slate-200' : ''"
             >
-              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referencia</div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">Referencia</div>
               <div class="text-sm font-bold text-slate-800">{{ currentPageReferenceLabel }}</div>
             </div>
             <button
@@ -72,7 +72,7 @@
 
         <div
           v-if="currentModeFieldsCount"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-state-success"
         >
           <IconCheck class="h-4 w-4" />
           {{ currentModeFieldsCount }} preparada(s)
@@ -89,11 +89,11 @@
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">Éxitos</div>
-        <div class="text-2xl font-black leading-none text-emerald-700">{{ successCount }}</div>
+        <div class="text-2xl font-black leading-none text-state-success">{{ successCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-amber-600">Pendientes</div>
-        <div class="text-2xl font-black leading-none text-amber-700">{{ pendingCount }}</div>
+        <div class="text-2xl font-black leading-none text-state-warning">{{ pendingCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-rose-600">Fallos</div>

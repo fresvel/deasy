@@ -149,7 +149,7 @@
                     </span>
                     <span>{{ table.label }}</span>
                   </button>
-                  <div v-if="group.supportTables.length" class="pl-4 pt-2 pb-1 text-[0.65rem] font-bold uppercase tracking-widest text-slate-400">
+                  <div v-if="group.supportTables.length" class="pl-4 pt-2 pb-1 text-[0.65rem] font-bold uppercase tracking-widest text-brand-text-muted">
                     Relaciones y soporte
                   </div>
                   <button

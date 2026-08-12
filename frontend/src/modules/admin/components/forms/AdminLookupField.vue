@@ -6,7 +6,7 @@
         :id="inputId"
         :value="displayValue"
         type="text"
-        class="admin-input-field h-10 min-w-0 flex-1 rounded-2xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-none transition-colors duration-150 placeholder:text-brand-text-muted focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+        class="admin-input-field h-10 min-w-0 flex-1 rounded-2xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-none transition-colors duration-150 placeholder:text-brand-text-muted focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-brand-text-muted"
         :class="inputClass"
         :placeholder="placeholder"
         :readonly="effectiveReadonly"
@@ -56,7 +56,7 @@
       class="admin-lookup-suggestions absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-white py-1 shadow-lg"
       role="listbox"
     >
-      <p v-if="loading" class="px-3 py-2 text-sm text-slate-400">{{ loadingText }}</p>
+      <p v-if="loading" class="px-3 py-2 text-sm text-brand-text-muted">{{ loadingText }}</p>
       <p v-else-if="error" class="px-3 py-2 text-sm text-red-500">{{ error }}</p>
       <ul v-else-if="options.length" class="m-0 list-none p-0">
         <li
@@ -71,10 +71,10 @@
           @mouseenter="activeIndex = index"
         >
           <span class="min-w-0 flex-1 truncate">{{ option.label }}</span>
-          <span v-if="option.sublabel" class="shrink-0 text-xs text-slate-400">{{ option.sublabel }}</span>
+          <span v-if="option.sublabel" class="shrink-0 text-xs text-brand-text-muted">{{ option.sublabel }}</span>
         </li>
       </ul>
-      <p v-else class="px-3 py-2 text-sm text-slate-400">{{ noResultsText }}</p>
+      <p v-else class="px-3 py-2 text-sm text-brand-text-muted">{{ noResultsText }}</p>
     </div>
   </div>
 </template>

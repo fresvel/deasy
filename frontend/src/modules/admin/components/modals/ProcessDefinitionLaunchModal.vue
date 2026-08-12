@@ -10,7 +10,7 @@
     <div class="flex flex-col gap-4">
       <div v-if="definition" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
         <span class="font-semibold text-slate-700">Configuración:</span>
-        <span class="ml-1 text-slate-600">{{ definition.name || `#${definition.id}` }}</span>
+        <span class="ml-1 text-brand-icon">{{ definition.name || `#${definition.id}` }}</span>
       </div>
 
       <div v-if="loading" class="text-sm text-slate-500">Cargando información de lanzamiento...</div>
@@ -32,17 +32,17 @@
                 {{ t.name }}{{ t.launched ? " — ya lanzado" : "" }}
               </option>
             </select>
-            <p v-if="!terms.length" class="text-xs text-slate-400 italic">
+            <p v-if="!terms.length" class="text-xs text-brand-text-muted italic">
               No hay periodos activos de los tipos en que corre este proceso.
             </p>
           </div>
 
           <div v-if="selectedTerm" class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <span class="text-sm" :class="selectedTerm.launched ? 'text-amber-600 font-medium' : 'text-slate-400 font-medium'">
+            <span class="text-sm" :class="selectedTerm.launched ? 'text-amber-600 font-medium' : 'text-brand-text-muted font-medium'">
               {{ selectedTerm.launched ? "Este proceso ya está lanzado en el periodo seleccionado." : "Pendiente de lanzar en este periodo." }}
             </span>
             <div v-if="selectedTerm.launched" class="flex flex-col gap-2">
-              <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-slate-600">Motivo del relanzamiento (opcional)</label>
+              <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-brand-icon">Motivo del relanzamiento (opcional)</label>
               <input :id="fieldId('relaunchreason')"
                 v-model="relaunchReason"
                 type="text"
@@ -73,16 +73,16 @@
 
         <div class="flex flex-col gap-2">
           <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Historial de corridas</span>
-          <div v-if="!runs.length" class="text-sm text-slate-400 italic">Sin corridas registradas.</div>
+          <div v-if="!runs.length" class="text-sm text-brand-text-muted italic">Sin corridas registradas.</div>
           <ul v-else class="flex flex-col gap-1.5 m-0 p-0 list-none">
             <li
               v-for="run in runs"
               :key="run.id"
               class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-sm"
             >
-              <span class="text-slate-600">
+              <span class="text-brand-icon">
                 #{{ run.id }} · {{ run.term_name || "sin periodo" }}
-                <span class="text-slate-400">({{ run.run_mode }}{{ run.source_run_id ? `, relanzó #${run.source_run_id}` : "" }})</span>
+                <span class="text-brand-text-muted">({{ run.run_mode }}{{ run.source_run_id ? `, relanzó #${run.source_run_id}` : "" }})</span>
               </span>
               <span :class="runStatusClass(run.status)">{{ run.status }}</span>
             </li>

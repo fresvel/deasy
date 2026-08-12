@@ -10,7 +10,7 @@
     <div class="flex flex-col gap-4">
       <div v-if="term" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
         <span class="font-semibold text-slate-700">Periodo:</span>
-        <span class="ml-1 text-slate-600">{{ term.name || `#${term.id}` }}</span>
+        <span class="ml-1 text-brand-icon">{{ term.name || `#${term.id}` }}</span>
       </div>
 
       <div v-if="loading" class="text-sm text-slate-500">Cargando estado de lanzamiento...</div>
@@ -67,7 +67,7 @@
               </div>
 
               <div v-if="relaunchOpenId === def.definition_id" class="flex flex-col gap-2 rounded-xl bg-slate-50 px-3 py-2">
-                <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-slate-600">Motivo del relanzamiento (opcional)</label>
+                <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-brand-icon">Motivo del relanzamiento (opcional)</label>
                 <input :id="fieldId('relaunchreason')"
                   v-model="relaunchReason"
                   type="text"
@@ -122,7 +122,7 @@ const statusLabel = (def) => {
 const statusClass = (def) => {
   if (def.relaunched) return "text-amber-600 font-medium";
   if (def.launched) return "text-emerald-600 font-medium";
-  return "text-slate-400 font-medium";
+  return "text-brand-text-muted font-medium";
 };
 
 const loadStatus = async () => {

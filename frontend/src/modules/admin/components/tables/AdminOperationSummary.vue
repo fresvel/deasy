@@ -1,6 +1,6 @@
 <template>
   <div v-if="cards.length" class="mb-6">
-    <h3 class="m-0 mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">Resumen de operación</h3>
+    <h3 class="m-0 mb-3 text-xs font-bold uppercase tracking-widest text-brand-text-muted">Resumen de operación</h3>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div
         v-for="card in cards"

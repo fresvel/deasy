@@ -62,7 +62,7 @@ const variantClassMap = {
   cancel: "admin-btn--cancel deasy-btn--cancel",
   outlinePrimary: "admin-btn--outline-primary deasy-btn--outline-primary",
   outlineDanger: "admin-btn--outline-danger deasy-btn--outline-danger",
-  success: "admin-btn--success border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:border-emerald-700",
+  success: "admin-btn--success border-emerald-600 bg-emerald-600 text-white hover:bg-state-success hover:border-state-success",
   danger: "admin-btn--danger border-red-600 bg-red-600 text-white hover:bg-red-700 hover:border-red-700",
   close: "admin-btn--close deasy-btn--close",
   menu: "person-assignment-menu-btn",

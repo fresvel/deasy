@@ -29,7 +29,7 @@
         <div class="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-brand-icon hover:bg-slate-100 transition"
             title="Regresar"
             aria-label="Regresar"
             @click="goBackToStart"
@@ -116,7 +116,7 @@
           :class="workflowPdfStatus.type === 'error'
             ? 'border-rose-200 bg-rose-50 text-rose-700'
             : workflowPdfStatus.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              ? 'border-emerald-200 bg-emerald-50 text-state-success'
               : 'border-sky-200 bg-sky-50 text-sky-700'"
         >
           {{ workflowPdfStatus.message || 'Preparando la sesión de firma embebida.' }}
@@ -355,7 +355,7 @@
       size="lg"
     >
       <div v-if="!visibleFields.length" class="text-center py-10 px-4">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 text-slate-400 rounded-full mb-4">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 text-brand-text-muted rounded-full mb-4">
           <IconSignature class="w-8 h-8" />
         </div>
         <h3 class="text-xl font-semibold text-slate-800 mb-2">No hay firmas</h3>
@@ -387,10 +387,10 @@
                 
                 <div v-if="field.signer" class="text-sm text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                   <span v-if="field.signer.email" class="inline-flex items-center gap-1">
-                    <span class="font-medium text-slate-400">Email:</span> {{ field.signer.email }}
+                    <span class="font-medium text-brand-text-muted">Email:</span> {{ field.signer.email }}
                   </span>
                   <span v-if="field.signer.cedula" class="inline-flex items-center gap-1">
-                    <span class="font-medium text-slate-400">CI:</span> {{ field.signer.cedula }}
+                    <span class="font-medium text-brand-text-muted">CI:</span> {{ field.signer.cedula }}
                   </span>
                 </div>
               </div>
@@ -413,7 +413,7 @@
           <button
             v-if="signMode !== 'token'"
             @click.stop="requestDeleteField(field.id)"
-            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
+            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-brand-text-muted hover:bg-red-50 hover:text-red-500 rounded-2xl transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
             title="Eliminar campo"
           >
             <IconTrash class="w-5 h-5" stroke-width="1.5" />
@@ -462,7 +462,7 @@
           <div class="flex items-center gap-2 sm:self-center self-end">
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-slate-200 text-brand-icon hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
               @click.stop="goToFieldLocation(field.id)"
             >
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -568,7 +568,7 @@
               <span class="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{{ user.cedula }}</span>
               <span>{{ user.email }}</span>
             </div>
-            <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-slate-600 mt-2 flex flex-wrap gap-2">
+            <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-brand-icon mt-2 flex flex-wrap gap-2">
               <span v-if="user.unit_type_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.unit_type_name }}</span>
               <span v-if="user.unit_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.unit_name }}</span>
               <span v-if="user.cargo_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.cargo_name }}</span>
@@ -597,7 +597,7 @@
     body-class="pt-4"
     footer-class="border-0 pt-0"
   >
-    <p class="mb-0 text-sm text-slate-600">
+    <p class="mb-0 text-sm text-brand-icon">
       ¿Deseas eliminar este campo de firma? Esta acción no se puede deshacer.
     </p>
     <template #footer>
@@ -616,7 +616,7 @@
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
-      <p class="mb-0 text-sm text-slate-600">
+      <p class="mb-0 text-sm text-brand-icon">
         Selecciona uno de tus certificados guardados e ingresa la contraseña del `.p12`.
       </p>
 
@@ -625,7 +625,7 @@
         class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
       >
         <div class="font-semibold">Lote preparado</div>
-        <div class="mt-1 text-sky-800">
+        <div class="mt-1 text-action-view">
           Se iniciará una firma masiva para {{ multiBatchRequest.documents.length }} documento(s) en modo
           <span class="font-semibold">
             {{
@@ -644,7 +644,7 @@
         class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
       >
         <div class="font-semibold">Firma por token</div>
-        <div v-if="currentSignatureMarker" class="mt-1 text-sky-800">
+        <div v-if="currentSignatureMarker" class="mt-1 text-action-view">
           Se buscarán todas las coincidencias del marcador <span class="font-mono font-semibold">{{ currentSignatureMarker }}</span> y se estampará la firma en cada una.
         </div>
         <div v-else class="mt-1 text-red-600">
@@ -713,7 +713,7 @@
         <SToggle v-model="allowUntrustedSigner" label-position="end">
           <span class="text-sm text-amber-900">
             Permitir certificados no validados
-            <span class="block text-xs text-amber-700">
+            <span class="block text-xs text-state-warning">
               Solo para pruebas. Si la cadena de confianza no puede validarse, la firma continuará y se devolverá como advertencia.
             </span>
           </span>
@@ -741,7 +741,7 @@
     body-class="pt-4"
   >
       <div v-if="signSuccess" class="flex flex-col gap-4">
-        <p class="mb-0 text-sm text-emerald-700 font-medium">
+        <p class="mb-0 text-sm text-state-success font-medium">
           {{ signResultMessage || `El documento fue firmado correctamente con ${signedFieldsCount} campo(s).` }}
         </p>
         <div v-if="signedMinioPath" class="flex flex-wrap gap-3">
@@ -787,7 +787,7 @@
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-slate-100/50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
+      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-slate-100/50 border border-slate-200 text-brand-icon hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
         <IconX class="w-4 h-4" stroke-width="2.5" />
       </button>
     </template>
@@ -837,7 +837,7 @@
 
         <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
-          <div class="flex items-center gap-2 text-emerald-700 mb-1 z-10">
+          <div class="flex items-center gap-2 text-state-success mb-1 z-10">
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Firmas Válidas</div>
           </div>
@@ -898,7 +898,7 @@
         <template #cell="{ row, field }">
           <template v-if="field.name === 'validLabel'">
             <div class="flex items-center justify-center">
-              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
+              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-emerald-100 text-state-success text-xs font-bold border border-emerald-200">
                 <IconCheck class="w-3.5 h-3.5" /> Válida
               </span>
               <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
@@ -911,12 +911,12 @@
               <button
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
                 @click="openCertificateAuthorityModal(row)"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:bg-sky-100 hover:text-sky-600 transition-colors"
+                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 text-brand-icon hover:bg-sky-100 hover:text-sky-600 transition-colors"
                 title="Ver entidad certificadora"
               >
                 <IconCertificate class="w-4 h-4" />
               </button>
-              <span v-else class="text-slate-400 text-xs font-semibold uppercase">N/A</span>
+              <span v-else class="text-brand-text-muted text-xs font-semibold uppercase">N/A</span>
             </div>
           </template>
           <template v-else-if="field.name === 'signerCedula'">
@@ -934,16 +934,16 @@
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>
               </summary>
-              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-brand-icon bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
             </details>
           </template>
           <template v-else>
-            <span class="text-sm text-slate-600 font-medium">{{ row[field.name] }}</span>
+            <span class="text-sm text-brand-icon font-medium">{{ row[field.name] }}</span>
           </template>
         </template>
         <template #empty>
           <div class="flex flex-col items-center justify-center py-12 px-4">
-            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-brand-text-muted mb-4">
               <IconShieldCheck class="w-8 h-8" />
             </div>
             <h4 class="text-lg font-bold text-slate-700 mb-1">Sin firmas detectadas</h4>
@@ -985,7 +985,7 @@
         class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
       >
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Atributos detectados</div>
-        <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
+        <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-brand-icon">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
       </div>
     </div>
   </AppModalShell>
@@ -1055,7 +1055,7 @@ const fieldId = (name) => `${uid}-${name}`;
     );
 
   const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-sky-50 border-sky-100 text-sky-600');
-  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-slate-100 border-slate-200 text-slate-400');
+  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-slate-100 border-slate-200 text-brand-text-muted');
   const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
   const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
   const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');
