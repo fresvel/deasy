@@ -325,3 +325,151 @@
   padding-inline: 1rem;
   font-size: 0.94rem;
 }
+
+
+/* ------------------------------------------------------------------------------------
+   BtnSera — el boton de estado del envio a la SERA, con su tooltip y su modal.
+
+   Estaba entero en un `<style scoped>`, y ahi dentro se llamaba `.icon` y `.tooltip` a
+   secas. Eso en un modulo NO vale: `.icon` se usa 26 veces en 8 componentes y les habria
+   cambiado el tamaño a todos. Por eso al salir del scope se renombro con prefijo propio.
+
+   Los cuatro chips de estado mezclaban un TOKEN en el texto con un color de Tailwind sin
+   relacion en el fondo: verde #047857 sobre fondo derivado de #22c55e, rojo #b42318 sobre
+   #ef4444, y el "pendiente" turquesa sobre un fondo azul cielo. Ahora cada fondo sale del
+   mismo token que su texto, con los porcentajes de siempre.
+   ------------------------------------------------------------------------------------ */
+
+.btnsera {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+  --tooltip-bg: var(--brand-accent);
+}
+
+.btnsera:hover {
+  transform: scale(1.04);
+  background: color-mix(in srgb, var(--brand-navy) 4%, transparent);
+}
+
+.btnsera__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 2.1;
+}
+
+/* El color del boton Y el de su tooltip salen del mismo sitio: el tooltip hereda
+   `--tooltip-bg`, asi que basta declararlo una vez por estado. */
+
+.sera-send {
+  color: var(--brand-accent);
+  --tooltip-bg: var(--brand-accent);
+}
+
+.sera-review {
+  color: var(--state-success);
+  --tooltip-bg: var(--state-success);
+}
+
+.sera-certified {
+  color: var(--state-gold);
+  --tooltip-bg: var(--state-gold);
+}
+
+.sera-denied {
+  color: var(--state-danger);
+  --tooltip-bg: var(--state-danger);
+}
+
+.btnsera__tooltip {
+  visibility: hidden;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+  background-color: var(--tooltip-bg);
+  color: var(--brand-white);
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.btnsera:hover .btnsera__tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ── El modal de estado ─────────────────────────────────────────────────────────── */
+
+.btnsera-status__body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btnsera-status__icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btnsera-status__icon-svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.btnsera-status__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.btnsera-status__label {
+  font-size: 1rem;
+  color: var(--brand-navy);
+}
+
+.btnsera-status__message {
+  margin: 0;
+  color: var(--brand-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.btnsera-status--pending {
+  color: var(--brand-accent);
+  background: color-mix(in srgb, var(--brand-accent) 12%, var(--brand-white));
+}
+
+.btnsera-status--reviewed {
+  color: var(--state-success);
+  background: color-mix(in srgb, var(--state-success) 12%, var(--brand-white));
+}
+
+.btnsera-status--certified {
+  color: var(--state-gold);
+  background: color-mix(in srgb, var(--state-gold) 14%, var(--brand-white));
+}
+
+.btnsera-status--denied {
+  color: var(--state-danger);
+  background: color-mix(in srgb, var(--state-danger) 12%, var(--brand-white));
+}

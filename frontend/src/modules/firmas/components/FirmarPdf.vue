@@ -171,7 +171,7 @@
             :icon="CustomIconSignature"
             input-id="sign-pdf-input"
             @files-selected="onPdfDropFiles($event, 'sign')"
-            class="h-full"
+            class="h-full deasy-dropzone--workspace"
           />
         </div>
 
@@ -183,7 +183,7 @@
             :icon="CustomIconSend"
             input-id="request-pdf-input"
             @files-selected="onPdfDropFiles($event, 'request')"
-            class="h-full"
+            class="h-full deasy-dropzone--workspace"
           />
         </div>
 
@@ -195,7 +195,7 @@
             :icon="CustomIconShieldCheck"
             input-id="validate-pdf-input"
             @files-selected="onPdfDropFiles($event, 'validate')"
-            class="h-full"
+            class="h-full deasy-dropzone--workspace"
           />
         </div>
 
@@ -212,7 +212,7 @@
             input-id="multi-pdf-input"
             multiple
             @files-selected="onPdfDropFiles($event, 'multi')"
-            class="h-full"
+            class="h-full deasy-dropzone--workspace"
           />
         </div>
 
@@ -2882,63 +2882,3 @@ const fieldId = (name) => `${uid}-${name}`;
     });
 
   </script>
-<style scoped>
-.dropfield-centered-title :deep(.deasy-dropzone__header) {
-  text-align: center;
-  width: 100%;
-}
-.dropfield-centered-title :deep(.deasy-dropzone__title) {
-  text-align: center;
-  width: 100%;
-}
-
-.signature-workspace-card :deep(.deasy-dropzone__surface--card) {
-  min-height: 9.75rem;
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
-}
-
-.signature-workspace-card :deep(.deasy-dropzone__title) {
-  margin-bottom: 1rem;
-  text-align: left;
-}
-
-.signature-workspace-card :deep(.deasy-dropzone__trigger) {
-  gap: 0.375rem;
-}
-
-.signature-workspace-card :deep(.signature-workspace-icon) {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.pdf-viewer {
-  position: relative;
-  max-width: 100%;
-}
-
-
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--brand-border, #e2e8f0);
-  border-radius: 10px;
-}
-
-.page-selector-input {
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-
-.page-selector-input::-webkit-outer-spin-button,
-.page-selector-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-</style>

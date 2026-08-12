@@ -78,7 +78,30 @@ de ellas estaban a **ΔE ≤ 2**: nadie distingue 0.24 de 0.26. Las sombras, lo 
 
 **Antes de añadir una opacidad nueva, mira si ya existe una a menos de ΔE 2 y usa esa.**
 
-### 2.5 Ojo con los espacios de nombres de Tailwind v4
+### 2.5 No hay modo oscuro, y `dark:` está prohibido
+
+**Deasy es una app en claro.** Sus zonas oscuras —la barra lateral— son una decisión de diseño
+resuelta con color explícito (`text-white/55`, `border-white/8`), no un tema. Hoy hay **0 usos** de
+`dark:` y así se queda.
+
+Importa porque **las recetas de TailAdmin traen 1 024 clases `dark:`**, y sin protección Tailwind v4
+las compila a `@media (prefers-color-scheme: dark)`: se activarían **solas** en la máquina de quien
+tenga el sistema en oscuro, pintando ese componente en oscuro sobre el resto de la app en claro. No
+lo ve el build, ni el lint, ni los tests, ni tú si tu sistema está en claro.
+
+Hay **tres capas**, y cada una tapa lo que la anterior no ve:
+
+| | Qué cubre |
+|---|---|
+| `@custom-variant dark` en `tokens.css` | El seguro: deja `dark:` inerte aunque entre |
+| `vue/no-restricted-class` | El atributo `class` de las plantillas |
+| `pnpm run check:no-dark` | Lo que ninguna ve: `dark:` dentro de `@apply`, dentro de `<style scoped>` y en `.js` |
+
+**Al adaptar una receta de TailAdmin, los `dark:` se quitan.** No se dejan «por si acaso»: apuntan a
+la paleta de TailAdmin (`gray-900`, `gray-800`…), no a la de Deasy, así que el día que hubiera modo
+oscuro habría que revisarlos todos igual.
+
+### 2.6 Ojo con los espacios de nombres de Tailwind v4
 
 Un token llamado como un namespace de Tailwind **secuestra sus utilidades en toda la app**, en
 silencio. `--radius-lg` hizo durante meses que `rounded-lg` valiera 16 px en vez de 8, dejando la
@@ -137,12 +160,24 @@ bordes, sombra, tipografía, espaciado) y `getBoundingClientRect` de cada nodo, 
 comparar nodo a nodo. Un refactor que promete «cambio visual cero» **tiene que dar 0 diferencias**;
 si da alguna, o el análisis estaba mal o rompiste algo.
 
-Dos guardas que esa huella necesita, y que se aprendieron por las malas:
+**No hay que reinventarla: está en `scripts/css-huella.mjs`.**
+
+```bash
+node scripts/css-huella.mjs --captura              # el fragmento, para pegar en la consola
+node scripts/css-huella.mjs antes.json despues.json   # 0 si no hay diferencias, 1 si las hay
+```
+
+Los dos guardas que esa huella necesita **ya los aplica el script**, y los dos se aprendieron por las
+malas:
 
 - **Espera a `await document.fonts.ready` antes de medir.** Si no, mides con la fuente de reserva y
   los anchos mienten sin que ningún estilo computado cambie.
 - **Comprueba el número de nodos de la captura base.** Una salió con 4 nodos porque la página
-  seguía cargando, y esa base no valía para nada.
+  seguía cargando, y esa base no valía para nada. El script se planta si ve menos de 50.
+
+Y dos límites suyos que conviene tener presentes: **no ve los pseudo-elementos** (`::-webkit-scrollbar`,
+`::placeholder`, `::before`), y **empareja por ruta en el DOM**, así que si el contenido cambia de
+orden entre capturas comparas nodos distintos y salen diferencias falsas.
 
 ### Los linters no bastan, y conviene saber qué NO ven
 
@@ -216,10 +251,44 @@ Así murió `AdminTableManager.css`: 604 líneas cargadas con `<style scoped src
 `:deep()`, de las que **0 de 86 reglas aplicaban**. Su columna de acciones declaraba
 `position: sticky` y el DOM devolvía `static` — se diseñó y nunca funcionó.
 
-**Si estilas un hijo desde el padre, necesitas `:deep()`. Y si lo necesitas mucho, el estilo no va
-ahí: va en el módulo del hijo.**
+**Y `:deep()` no te salva si el ancla también es de otro componente.** `:deep(X)` mueve el `data-v`
+al selector de la **izquierda**, así que `.ancla :deep(.hijo)` compila a `.ancla[data-v-TUYO] .hijo`:
+sigue exigiendo que **`.ancla`** lleve tu scope. Y un componente padre solo estampa su `data-v` en la
+**raíz** del hijo, nunca en un nieto.
 
-### 6.4 Una clase construida en runtime es invisible para cualquier grep
+Así murieron las 84 líneas de `HomeView.vue`: nueve reglas `:deep()` colgando de
+`.deliverable-inline-upload`, que está anidada dentro de `DeliverableCard.vue`. Medido en el
+navegador: **con** el atributo el campo mide 62 px en fila; **sin** él —como se renderiza de verdad—
+mide 28 px en columna. Nunca aplicó ni una.
+
+**Si estilas un hijo desde el padre, necesitas `:deep()`. Y si lo necesitas mucho, el estilo no va
+ahí: va en el módulo del hijo** — que además es el único sitio donde alguien lo va a encontrar.
+
+> Para comprobarlo en 10 segundos: clona el nodo en la consola con y sin el `data-v-*` que aparece
+> en el selector compilado, y compara `getComputedStyle`. Si los dos dan lo mismo, la regla sobra.
+
+### 6.4 Al sacar un `<style scoped>` a un módulo, pierdes una ventaja que no habías pedido
+
+Un `<style scoped>` **no está en ninguna capa**. Un módulo de `shared/styles/` está en
+`@layer components`. Y en CSS **la precedencia de capa gana a la especificidad**: una regla sin capa
+gana SIEMPRE a una capada, por muy específica que sea la segunda. Así que al mover el estilo cambian
+dos cosas a la vez, y la segunda no la ves venir.
+
+Mover cuatro nodos de Vue Flow a `graph.css` lo enseñó por partida doble:
+
+- **Hacia abajo**: los conectores volvieron a los valores de la librería (gris `#555`, 6 px) porque
+  `@vue-flow/core` trae su hoja **sin capa**. Cualificar el selector a `.vue-flow__handle.graph-node__handle`
+  **no arregló nada** — no era cuestión de especificidad. La solución es sacar esas reglas del bloque
+  `@layer`, como hace `overrides.css`.
+- **Hacia arriba**: `.cfg-node { background:#fff }` estaba tapando tres `bg-*` de Tailwind que el
+  componente declaraba por estado. Nunca se vieron. Al pasar a una capa, las utilidades ganaron y el
+  tinte **resucitó** — un cambio visual que nadie pidió, en un refactor.
+
+**Antes de mover un `<style scoped>`, pregúntate contra qué estaba ganando.** Si pisa a un tercero,
+la regla va fuera de la capa; si pisa a una utilidad de Tailwind, decide a conciencia cuál de las dos
+sobra y **borra la otra**, en vez de dejar las dos peleando.
+
+### 6.5 Una clase construida en runtime es invisible para cualquier grep
 
 ```js
 `deasy-tag--${props.variant}`                          // AppTag.vue
@@ -232,7 +301,7 @@ los 304 tests pasaron en verde** con la barra lateral sin color.
 
 **Antes de borrar CSS por no encontrarlo con `grep`, comprueba si se compone en runtime.**
 
-### 6.5 Al reemplazar colores en masa, dos trampas ya pagadas
+### 6.6 Al reemplazar colores en masa, dos trampas ya pagadas
 
 1. **Un hex corto es prefijo de uno largo.** `#fff` está dentro de `#fff0ed`; sin límite por la
    derecha la sustitución parte el valor y deja `var(--brand-white)0ed`. Ordenar el mapa por
@@ -244,13 +313,13 @@ los 304 tests pasaron en verde** con la barra lateral sin color.
 
 `scripts/css-hex-a-token.mjs` lleva las dos guardas y **aborta antes de escribir**.
 
-### 6.6 La tipografía se carga desde `index.html`
+### 6.7 La tipografía se carga desde `index.html`
 
 No desde el CSS. Un `@import` remoto anidado dentro de un módulo **lo descarta Vite en silencio** y
 la app entera se queda con la fuente de reserva. Además, un `@import` remoto encadena la petición
 detrás del parseo del CSS; desde el HTML el navegador la pide en paralelo.
 
-### 6.7 Componentes: tres ficheros piden ser partidos
+### 6.8 Componentes: tres ficheros piden ser partidos
 
 `AdminTableManager.vue` (4 223 L), `FirmarPdf.vue` (2 944 L) y `MultiSignerPanel.vue` (1 394 L)
 concentran la mayor parte de la utility soup. No añadas más a ellos: extrae.
@@ -262,6 +331,7 @@ concentran la mayor parte de la utility soup. No añadas más a ellos: extrae.
 ```bash
 bash scripts/stack.sh b exec -T frontend pnpm run lint       # eslint .
 bash scripts/stack.sh b exec -T frontend pnpm run lint:css   # stylelint — debe dar 0 errores
+bash scripts/stack.sh b exec -T frontend pnpm run check:no-dark  # sin `dark:` — ver 2.5
 bash scripts/stack.sh b exec -T frontend pnpm run test:unit  # vitest
 bash scripts/stack.sh b exec -T frontend pnpm run build
 ```
@@ -273,26 +343,36 @@ no crea una pila nueva, repunta la de siempre a tu código. Está explicado en e
 
 ## 8. Deuda conocida, para no redescubrirla
 
-**«Cero colores a mano» vale para los ficheros `.css`. Los `.vue` siguen sucios**, y ahí es donde
-está toda la deuda que queda:
+**No queda ni un `<style scoped>` en el frontend.** Los 13 que había se vaciaron entre el
+2026-08-11 y el 2026-08-12, y el saldo dice bastante sobre qué era realmente esa deuda:
+
+| | |
+|---|---:|
+| `<style scoped>` al empezar | 13 |
+| **`<style scoped>` hoy** | **0** |
+| Líneas movidas a módulos | ~330 |
+| **Líneas que estaban MUERTAS** (0 usos, o el selector no casaba nunca) | **~180** |
+
+Más de la mitad no había que mover: había que borrarla. Los sitios donde estaba y por qué, en 6.3
+y 6.4. **Antes de mover un bloque, comprueba que aplica** — el clon con y sin `data-v-*` cuesta diez
+segundos y en esta ronda descartó cinco bloques enteros.
+
+Lo que queda de deuda de color, ya sin CSS escondido:
 
 | Qué | Cuánto | Dónde |
 |---|---:|---|
-| Color a mano **dentro de `<style scoped>`** | **108** | Es CSS puro, y **stylelint no lo mira**: su glob es `src/**/*.css` |
-| Color a mano en plantilla o script | 67 | *Arbitrary values* y mapas de tono en JS |
-| Color a mano en `.js` | 20 | `useDeliverableView.js`, `homeView.helpers.js`, `AdminPresentationService.js` |
-| **Total fuera del CSS** | **195** | |
+| Color a mano en plantilla o script `.vue` | 68 | *Arbitrary values* y mapas de tono |
+| Color a mano en `.js` | 21 | `useDeliverableView.js`, `homeView.helpers.js`, `AdminPresentationService.js` |
+| **Total fuera del CSS** | **89** | era 195 |
 | Strings de clase >120 caracteres | 221 | `HomeView.vue`, `FirmarPdf.vue` |
 | *Arbitrary values* (`text-[11px]`…) | 443 | 8 tamaños distintos por debajo de `text-sm` |
 | `!important` con motivo escrito | 6 | `dialogs.css`, `overrides.css` |
-| Sin `@custom-variant dark` | — | Pegar una receta con `dark:` pintaría en oscuro sobre la app en claro |
 
-**Dónde se concentra**: 78 de los 175 de `.vue` están en los seis componentes de Vue Flow
-(`modules/admin/components/units/`), y 30 en `HomeView.vue`.
+> **Y hay deuda que los linters tampoco ven en los módulos**: `forms.css` pinta el dropzone con
+> `sky-200`, `sky-500` y `sky-700` **dentro de `@apply`**, donde `color-no-hex` no entra. El azul
+> cielo del dropzone es hoy el único color de familia propia que sigue fuera de la paleta.
 
-> **Antes de tokenizar los nodos del grafo, mira si son copias.** `ProcessNode.vue` estila
-> `.unit-node__btn`, `.unit-node__handle` y `.unit-node__toolbar` — **los mismos selectores que
-> `UnitNode.vue`**. Es una copia literal. El arreglo ahí no es dar token a cada valor cuatro veces:
-> es extraer una clase compartida y borrar tres copias.
-
-El plan, la bitácora y las dos auditorías están en **`docs/planes/sistema-diseno/`**.
+El plan, la bitácora y la auditoría están en **`docs/planes/sistema-diseno-plantillas/`**. La
+primera vuelta —la que ganó el frente del CSS— está cerrada y archivada en
+`docs/docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/`; su bitácora sigue valiendo, porque
+es donde están las trampas ya pagadas.

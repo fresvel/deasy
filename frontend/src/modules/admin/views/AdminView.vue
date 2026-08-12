@@ -27,7 +27,7 @@
 
       <template #sidebar>
 
-          <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
+          <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar custom-scrollbar--dark">
             <div class="deasy-nav-shell">
               <div class="deasy-nav-section">
                 <button 
@@ -1132,16 +1132,3 @@ onMounted(() => {
 });
 
 </script>
-
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-}
-</style>

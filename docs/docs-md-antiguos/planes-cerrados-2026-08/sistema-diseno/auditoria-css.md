@@ -2,7 +2,7 @@
 
 Medido sobre `develop` en `d332619`. Las cifras que cambian con cada escaneo de Sonar **no se replican
 aquí** (regla 2 del [README de planes](../README.md)): viven en
-[`referencia/calidad-y-medicion.md`](../referencia/calidad-y-medicion.md). Lo que hay aquí son conteos
+[`referencia/calidad-y-medicion.md`](../../../planes/referencia/calidad-y-medicion.md). Lo que hay aquí son conteos
 sobre el árbol, reproducibles con `grep`.
 
 ---

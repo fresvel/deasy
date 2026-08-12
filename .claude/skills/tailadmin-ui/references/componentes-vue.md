@@ -1151,7 +1151,12 @@ Convenciones:
 ## 7. Recomendaciones para Deasy
 
 ### Qué merece la pena copiar
-1. **El bloque `@theme` de `main.css`** — escalas de color completas (25→950), `--shadow-theme-*`, `--text-theme-*`. Es la parte más madura y encaja con la deuda conocida de `tailwind.css`/`theme.css` (§3.4 del plan de refactor: dos juegos de tokens `--deasy-*`/`--brand-*`). Ojo: TailAdmin también usa `--color-brand-*`, así que **puede colisionar** con el juego `--brand-*` existente — decidir cuál gana antes de mezclar.
+1. **Las escalas de color de su `@theme`** (25→950) como *idea*, no como copia. **Deasy ya tiene su
+   propio `@theme` con 16 colores en `tokens.css`** desde el frente 4, y una paleta única sin
+   duplicados. Lo que puede aportar TailAdmin es la **granularidad** de la escala, si algún día hace
+   falta: hoy la paleta tiene un valor por concepto y los intermedios se derivan con `color-mix()`.
+   ⚠️ **TailAdmin usa `--color-brand-*` y Deasy también.** Copiar su bloque tal cual **pisa la
+   paleta entera**. Añade sólo lo que falte, con otro nombre.
 2. **Las strings de clases de inputs/select/checkbox/tabla** (§3.3–3.5, §3.8) — el verdadero valor del repo, ya que los componentes de formulario no existen como tales.
 3. **El patrón "objeto de variantes + lookup"** de `Badge`/`Button` (§2.5) — simple, sin dependencias, traducible a JS 1:1.
 4. **`@utility` de Tailwind v4** para `menu-item*` y `custom-scrollbar`/`no-scrollbar`.

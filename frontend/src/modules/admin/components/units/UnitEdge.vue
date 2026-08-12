@@ -3,15 +3,15 @@
   <EdgeLabelRenderer>
     <div
       v-if="data?.editable"
-      class="nodrag nopan unit-edge-toolbar"
+      class="nodrag nopan graph-edge-toolbar"
       :style="toolbarStyle"
       @mouseenter="hover = true"
       @mouseleave="hover = false"
     >
-      <button v-if="data?.onEdit" type="button" class="unit-edge-btn" title="Cambiar tipo de relación" @click.stop="data?.onEdit?.(id)">
+      <button v-if="data?.onEdit" type="button" class="graph-edge-btn" title="Cambiar tipo de relación" @click.stop="data?.onEdit?.(id)">
         <IconPencil class="h-3.5 w-3.5" />
       </button>
-      <button type="button" class="unit-edge-btn unit-edge-btn--danger" title="Quitar relación" @click.stop="data?.onDelete?.(id)">
+      <button type="button" class="graph-edge-btn graph-edge-btn--danger" title="Quitar relación" @click.stop="data?.onDelete?.(id)">
         <IconX class="h-3.5 w-3.5" />
       </button>
     </div>
@@ -59,33 +59,3 @@ const toolbarStyle = computed(() => ({
   opacity: hover.value ? 1 : 0.55
 }));
 </script>
-
-<style scoped>
-.unit-edge-toolbar {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
-  transition: opacity 0.15s ease;
-}
-.unit-edge-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 22px;
-  width: 22px;
-  border-radius: 6px;
-  color: #475569;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.unit-edge-btn:hover {
-  background: #eef2ff;
-  color: #4f46e5;
-}
-.unit-edge-btn--danger:hover {
-  background: #fef2f2;
-  color: #dc2626;
-}
-</style>

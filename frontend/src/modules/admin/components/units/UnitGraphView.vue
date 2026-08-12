@@ -70,7 +70,7 @@
       {{ feedback.message }}
     </div>
 
-    <div ref="graphCanvas" class="unit-graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
+    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando organigrama…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-slate-400">No hay unidades para mostrar.</div>
@@ -169,8 +169,8 @@
     </AppDialogOverlay>
 
     <!-- Drawer: detalle de unidad (puestos y ocupaciones) -->
-    <div v-if="detailUnit" class="unit-detail-overlay" @click.self="closeDetail">
-      <aside class="unit-detail-drawer">
+    <div v-if="detailUnit" class="deasy-drawer-overlay" @click.self="closeDetail">
+      <aside class="deasy-drawer">
         <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div class="min-w-0">
             <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Detalle de unidad</p>
@@ -183,8 +183,8 @@
 
         <!-- Pestañas del panel -->
         <div class="flex gap-4 border-b border-slate-200 px-5">
-          <button type="button" class="unit-detail-tab" :class="detailTab === 'ocupaciones' ? 'unit-detail-tab--active' : ''" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
-          <button type="button" class="unit-detail-tab" :class="detailTab === 'procesos' ? 'unit-detail-tab--active' : ''" @click="setDetailTab('procesos')">Procesos</button>
+          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'ocupaciones' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
+          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'procesos' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('procesos')">Procesos</button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
@@ -230,13 +230,13 @@
                 <span class="text-xs text-slate-400">#{{ pos.slot_no }}</span>
                 <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-rose-500">Inactivo</span>
                 <div v-if="editable" class="ml-auto flex items-center gap-1">
-                  <button type="button" class="unit-pos-btn" :class="pos.is_unit_head ? 'text-amber-500' : 'text-slate-400'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
+                  <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-amber-500' : 'text-slate-400'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
                     <IconCrown class="h-4 w-4" />
                   </button>
-                  <button type="button" class="unit-pos-btn text-slate-400 hover:text-indigo-600" title="Editar puesto" @click="openEditPosition(pos)">
+                  <button type="button" class="graph-icon-btn text-slate-400 hover:text-indigo-600" title="Editar puesto" @click="openEditPosition(pos)">
                     <IconPencil class="h-4 w-4" />
                   </button>
-                  <button type="button" class="unit-pos-btn text-slate-400 hover:text-rose-600" title="Eliminar puesto" @click="removePosition(pos.id)">
+                  <button type="button" class="graph-icon-btn text-slate-400 hover:text-rose-600" title="Eliminar puesto" @click="removePosition(pos.id)">
                     <IconTrash class="h-4 w-4" />
                   </button>
                 </div>
@@ -1279,56 +1279,3 @@ const refreshProcessesIfOpen = async () => {
 };
 defineExpose({ reloadGraph: loadGraph, refreshProcesses: refreshProcessesIfOpen });
 </script>
-
-<style scoped>
-.unit-graph-canvas {
-  height: 70vh;
-  min-height: 28rem;
-}
-.unit-detail-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1075;
-  display: flex;
-  justify-content: flex-end;
-  background: rgba(15, 23, 42, 0.35);
-  backdrop-filter: blur(1px);
-}
-.unit-detail-drawer {
-  display: flex;
-  flex-direction: column;
-  width: min(30rem, 100vw);
-  height: 100%;
-  background: #fff;
-  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
-}
-.unit-detail-tab {
-  position: relative;
-  padding: 0.6rem 0.15rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-.unit-detail-tab:hover {
-  color: #334155;
-}
-.unit-detail-tab--active {
-  color: #4f46e5;
-  border-bottom-color: #4f46e5;
-}
-.unit-pos-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  width: 24px;
-  border-radius: 6px;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.unit-pos-btn:hover {
-  background: #f1f5f9;
-}
-</style>

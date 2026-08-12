@@ -10,7 +10,7 @@
               help-text="Haz clic para elegir PDFs o arrastra una carpeta (solo PDFs); se conserva su estructura interna"
               input-id="multisigner-input-rail"
               multiple
-              class="multisigner-upload-card"
+              class="deasy-dropzone--rail"
               @files-selected="onFilesSelected"
             />
             <p v-if="uploadError" class="rounded-2xl bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-rose-600">
@@ -1336,59 +1336,3 @@ defineExpose({
   goToPage
 });
 </script>
-
-<style scoped>
-.multisigner-upload-card :deep(.deasy-dropzone) {
-  height: auto;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__surface) {
-  flex: none;
-  width: 100%;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__surface--card) {
-  min-height: 5.75rem;
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__trigger) {
-  gap: 0.25rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__action) {
-  font-size: 0.95rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__help) {
-  font-size: 0.75rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__selected) {
-  margin-top: 0.75rem;
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-  align-items: flex-start;
-}
-
-.multisigner-canvas {
-  cursor: crosshair;
-}
-
-
-
-.shared-box {
-  position: absolute;
-  border: 2px dashed #0ea5e9;
-  background: rgba(14, 165, 233, 0.18);
-  border-radius: 0.75rem;
-  z-index: 20;
-  pointer-events: none;
-}
-
-.shared-box--active {
-  background: rgba(56, 189, 248, 0.22);
-  border-color: #0284c7;
-}
-</style>
