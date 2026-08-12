@@ -231,18 +231,32 @@ distintas, cinco de ellas la misma sombra con la opacidad movida entre `.04` y `
 
 **3 590 apariciones. Es trabajo de varias sesiones y se hace por familias, no por ficheros.**
 
-### 4.1 Empezar por las siete que son ΔE 0.00
+### 4.1 Empezar por las siete que son ΔE 0.00 — ✅ HECHA (2026-08-11), con dos correcciones
 
-Migración **de nombre, no de color**. Nada se mueve en pantalla, y son las que más se copian.
+⚠️ **No son ΔE 0.00.** La auditoría comparó los tokens contra los hex **heredados de Tailwind v3**;
+el repo corre **v4.2, que sirve su paleta en OKLCH** y no vuelve a esos hex. Medido en el DOM contra
+lo que renderiza, y **es lo que hay que comparar**:
 
-| Token | = Tailwind | Apariciones de esa familia |
-|---|---|---:|
-| `--state-success` | emerald-700 | 223 emerald + 14 green |
-| `--state-warning` | amber-700 | 161 amber + 3 orange |
-| `--action-view` | sky-800 | (parte de 345 sky) |
-| `--brand-icon` | slate-600 | — |
-| `--brand-surface-alt` | slate-50 | (parte de 1 838 slate) |
-| `--brand-navy` / `--brand-ink` | gray-900 / gray-800 | — |
+| Migración | Usos | ΔE real | Contraste |
+|---|---:|---:|---|
+| `text-slate-600` → `text-brand-icon` | 116 | **1.17** | 7.58 → 7.58 |
+| `text-emerald-700` → `text-state-success` | 44 (+4) | **1.28** | 5.36 → 5.48 |
+| `text-amber-700` → `text-state-warning` | 20 | **2.29** | 5.03 → 5.02 |
+| `text-sky-800` → `text-action-view` | 13 | **1.04** | 7.51 → 7.56 |
+
+Dentro de la banda «demostrablemente invisible» del plan (ΔE ≤ 2) salvo amber, que roza; el contraste
+se mantiene o mejora en las cuatro. Pero la promesa correcta es «imperceptible, medido», no «cero por
+construcción».
+
+⚠️ **`bg-slate-50` → `--brand-surface-alt` se REVIERTE, y su destino no era ése.** `overrides.css`
+ya lo repinta a `--brand-surface-muted`, así que renderiza `#f7f9fc` y no `#f8fafc`: la tabla original
+comparaba *fuente contra token* en vez de *renderizado contra token*. Y aun con el token correcto no
+vale, porque **el repintado lleva `!important`** y esa prioridad es la que le gana a
+`.deasy-dialog-body` y a `input`, que fijan blanco sin capa. Migrados, dos nodos cayeron a blanco.
+`bg-slate-50` no significaba «slate-50», significaba «slate-50 **con prioridad**». Los 109 sitios
+pasan a **§4.4**, que es donde se desenreda el repintado.
+
+`gray-900` y `gray-800` tienen **0 usos**: el gris del proyecto es slate y sólo slate.
 
 ### 4.2 Resolver los cuatro conceptos con familias en disputa
 
@@ -260,11 +274,23 @@ Y los dos casos donde la incoherencia **se ve**:
 - **El foco: 116 utilidades en 5 familias** contra el `--focus-ring` único que `frontend/CLAUDE.md`
   §5.3 da por resuelto. 59 son `focus:border-indigo-400`.
 
-### 4.3 El fallo de accesibilidad de volumen
+  > ⚠️ **Y ninguna pinta.** Medido al ejecutar F1.1: la regla sin capa de `overrides.css` gana a
+  > `@layer utilities`, así que **las 117 declaraciones de foco sobre campos están MUERTAS**
+  > (61 indigo · 37 sky · 15 blue · 4 sueltas). El anillo sí funciona —`--focus-ring` es un
+  > `box-shadow` que nadie disputa—; lo muerto es el `border-color` del campo enfocado.
+  >
+  > Eso cambia la naturaleza de §4.2: no es «unificar cinco familias», es **decidir cómo se ve el
+  > foco y encenderlo**. Encenderlo *es* el cambio visible, y por eso F1.1 lo dejó como estaba.
+
+### 4.3 El fallo de accesibilidad de volumen — ✅ HECHA (2026-08-11)
 
 **`text-slate-400` = 2.63:1, 202 usos en 42 ficheros**, y es el placeholder de `.deasy-field-input` y
 `.deasy-auth-field`. El token equivalente da 6.36:1. Esto contradice literalmente la regla escrita en
 §3 («el suelo es `--brand-text-muted`»).
+
+> **206 sustituciones**, y **0 de los 208 usos iban sobre fondo oscuro** — comprobado antes de tocar,
+> porque sobre la barra lateral el cambio habría dejado el texto casi invisible. Es el único cambio
+> visible del commit `f0fa366`: el texto secundario se oscurece en toda la app.
 
 ### 4.4 Cerrar la fuga de `overrides.css`
 
@@ -274,6 +300,16 @@ Esas pintan el gris de Tailwind **junto a hermanas repintadas dentro del mismo c
 
 Dos salidas: ampliar la lista (frágil, volverá a pasar) o **eliminar la necesidad** migrando esas
 utilidades a tokens. La segunda es la que cierra el problema.
+
+> ⚠️ **Y aquí cae `bg-slate-50` (109 usos), que venía de §4.1.** Migrarlo a un token falla porque el
+> repintado lleva **`!important`**: `bg-slate-50` no significa «slate-50», significa «slate-50 **con
+> prioridad**», y esa prioridad es la que le gana a `.deasy-dialog-body` y a `input`, que fijan blanco
+> **sin capa**. Así que §4.4 no se puede hacer utilidad por utilidad: hay que decidir primero **qué
+> pasa con las reglas sin capa de `overrides.css`**, que son las que obligan al `!important`.
+>
+> Y una nota de método, pagada: **el script de migración reescribió los propios selectores del
+> repintado** (`.bg-slate-50\/70` → `.bg-brand-surface-muted\/70`) y lo rompió en silencio. El escape
+> del `/` burla el límite por la derecha. `shared/styles/*.css` se excluye o se revisa a mano.
 
 ### 4.5 Los 211 dentro de `@apply`
 

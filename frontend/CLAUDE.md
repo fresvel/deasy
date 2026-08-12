@@ -144,6 +144,33 @@ Y al revés: **una clase inyectada en runtime no prueba un valor arbitrario**, p
 esas utilidades escaneando el *fuente*. Para probar un `X-[…]`, mira el CSS construido; para probar
 una clase de módulo, inyectarla va bien.
 
+### 2.9 El hex de un token no se compara con el hex de Tailwind, se compara con lo que RENDERIZA
+
+Desde v4 Tailwind sirve su paleta en **OKLCH**, y esos valores no vuelven a los hex que todo el mundo
+tiene en la cabeza de v3. Medido en este repo con `tailwindcss@4.2`:
+
+| Se creía | Renderiza de verdad | ΔE real |
+|---|---|---:|
+| `emerald-700` = `#047857` = `--state-success` | `rgb(0,122,85)` | **1.28** |
+| `amber-700` = `#b45309` = `--state-warning` | `rgb(187,77,0)` | **2.29** |
+| `slate-600` = `#475569` = `--brand-icon` | `rgb(69,85,108)` | **1.17** |
+
+Son diferencias imperceptibles, pero **«ΔE 0.00» era falso** y con él se prometió «cambio visual cero
+por construcción» en una migración de 200 nodos. La medida correcta se toma en el DOM.
+
+### 2.10 Una utilidad repintada lleva PRIORIDAD, no sólo color
+
+`overrides.css` repinta `.bg-slate-50` a `--brand-surface-muted` **con `!important`**. Así que
+`bg-slate-50` en una plantilla no significa «slate-50»: significa **«ese gris, y ganando a lo que
+haga falta»** — en concreto a `.deasy-dialog-body` y a `input`, que fijan fondo blanco sin capa.
+
+Migrarlo a `bg-brand-surface-muted` da **el mismo color y menos prioridad**, y dos nodos cayeron a
+blanco. Antes de sustituir una utilidad repintada, mira **contra qué estaba ganando**.
+
+> Y al hacerlo por script: **`shared/styles/*.css` se excluye o se revisa a mano.** Ahí `.bg-slate-50`
+> no es un uso, es el **selector** del repintado — y el escape del `/` en `.bg-slate-50\/70` burla
+> cualquier límite por la derecha. El script lo reescribió y rompió el repintado en silencio.
+
 ---
 
 ## 3. Accesibilidad: los mínimos son mínimos

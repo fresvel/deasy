@@ -64,7 +64,7 @@ margen del que tiene.
 | F1 · Los siete bugs (+ F1.8) | ✅ **cerrada** — worktree `develop-frontend`, pila B |
 | F2 · Completar `@theme` y crear los tokens que faltan | ✅ **cerrada** — ídem |
 | F3 · Los 40 literales de sustitución invisible | ⬜ sin empezar — **desbloqueada** |
-| F4 · El barrido familia por familia | ⬜ sin empezar — **desbloqueada** |
+| F4 · El barrido familia por familia | 🟨 **4.1 y 4.3 hechas** · quedan 4.2, 4.4 y 4.5 |
 | F5 · Borrar lo muerto y corregir la documentación | ⬜ sin empezar |
 | F6 · Las escalas | ⬜ sin empezar |
 
@@ -198,3 +198,74 @@ arbitrario hay que mirar el CSS construido; para probar una clase de módulo, in
   aviso 1190/1200). Están elegidos para que la relación sea correcta, no como escala.
 - **Sin cerrar y sin dueño**: `workspaceNavIcons.js` compone `${prefix}--${tone}` sin comprobar que
   la variante exista, que es el fallo de fondo de F1.2 — la falta de `indigo` era el síntoma.
+
+---
+
+## Sesión 2026-08-11 (cont.) · F4.1 y F4.3
+
+Commit `f0fa366`. **285 sustituciones** en 65 ficheros, todas de utilidad de Tailwind a utilidad del
+sistema. El único cambio visible es F4.3, y va declarado.
+
+| | Sustituciones | Efecto |
+|---|---:|---|
+| **F4.3** `text-slate-400` → `text-brand-text-muted` | 206 | **2.63:1 → 6.36:1**. Es el placeholder de todos los campos |
+| `text-slate-600` → `text-brand-icon` | 116 | ΔE 1.17 · contraste 7.58 → 7.58 |
+| `text-emerald-700` → `text-state-success` | 44 (+4) | ΔE 1.28 · 5.36 → 5.48 |
+| `text-amber-700` → `text-state-warning` | 20 | ΔE 2.29 · 5.03 → 5.02 |
+| `text-sky-800` → `text-action-view` | 13 | ΔE 1.04 · 7.51 → 7.56 |
+
+Huella de `/home`, 960 nodos: **189 declaraciones cambiadas y las propiedades afectadas son sólo
+`color`** más los `border-*-color` que en un SVG siguen a `currentColor`. Cero fondos, cero
+geometría, cero `z-index`. Las cinco transiciones son las cinco declaradas.
+
+### Dos correcciones a la auditoría, las dos del mismo tipo
+
+**1. «Siete tokens SON un color de Tailwind, con ΔE 0.00» es falso hoy.** La auditoría comparó los
+tokens contra los hex **heredados de Tailwind v3**; el repo corre **v4.2, que sirve su paleta en
+OKLCH**, y esos valores no vuelven al hex de v3. Medido en el DOM contra lo que renderiza:
+
+```
+text-slate-600    #475569 declarado    renderiza 69,85,108    ΔE 1.17
+text-emerald-700  #047857              renderiza  0,122,85    ΔE 1.28
+text-amber-700    #b45309              renderiza 187,77,0     ΔE 2.29
+text-sky-800      #075985              renderiza  0,89,138    ΔE 1.04
+```
+
+Siguen dentro de la banda «demostrablemente invisible» del propio plan (ΔE ≤ 2) salvo amber, que
+roza, y el contraste se mantiene o mejora en las cuatro. Pero **la premisa «cambio visual cero por
+construcción» no se sostiene**: es «cambio imperceptible, medido».
+
+> Regla que sale de aquí: **el hex de un token no se compara con el hex documentado de Tailwind, se
+> compara con lo que el navegador RENDERIZA.** Son cosas distintas desde v4.
+
+**2. `bg-slate-50` no es la migración segura que parecía. Se revierte.** Es idéntica en **color**
+—247,249,252 al píxel, porque `overrides.css` ya lo repinta a `--brand-surface-muted`— pero **no en
+prioridad**: ese repintado lleva `!important`, y es esa prioridad la que le gana a
+`.deasy-dialog-body` y a `input`, que fijan fondo blanco **sin capa**. Migrados a
+`bg-brand-surface-muted` —una utilidad normal en `@layer utilities`— dos nodos cayeron a blanco.
+
+> **`bg-slate-50` no significaba «slate-50»; significaba «slate-50 con prioridad».** Desenredar eso
+> es F4.4 («eliminar la necesidad del repintado»), no F4.1. Los 109 sitios vuelven atrás.
+
+### Y las dos trampas conocidas volvieron a saltar
+
+Las dos las cazó **la huella**; ni el lint, ni el build, ni los 304 tests.
+
+1. **El script reescribió SELECTORES, no usos.** `.bg-slate-50\/70` → `.bg-brand-surface-muted\/70`
+   en `overrides.css`, y el repintado dejó de casar: dos nodos pasaron de sólido a 70 % de alfa. Lo
+   que burla la guarda es el **escape del `/`**: el carácter que sigue a `bg-slate-50` es `\`, así que
+   un límite por la derecha `(?![\w/-])` da el match por bueno. → **Al migrar utilidades por script,
+   `shared/styles/*.css` se excluye o se revisa a mano.**
+2. **El script reescribió PROSA** en tres comentarios (`index.css`, `misc.css`,
+   `ProcessConfigNode.vue`). Es la trampa nº 5, que ya había pasado dos veces. `tokens.css` estaba
+   excluido a propósito y ahí no entró — la exclusión funcionó, lo que faltaba era extenderla.
+
+### Estado de F4 tras esto
+
+| Sub-fase | Estado |
+|---|---|
+| 4.1 · las familias de tono | ✅ hecha (menos `bg-slate-50`, que se devuelve a 4.4) |
+| 4.2 · conceptos en disputa + **el foco** | ⬜ — y recordar que **las 117 utilidades de foco están muertas** |
+| 4.3 · `text-slate-400` | ✅ hecha |
+| 4.4 · la fuga del repintado de `overrides.css` | ⬜ — ahora con `bg-slate-50` dentro |
+| 4.5 · los 211 dentro de `@apply` | ⬜ |
