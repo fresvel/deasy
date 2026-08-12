@@ -2,7 +2,7 @@
   border: 1px solid var(--brand-border);
   border-radius: 0.95rem;
   background: var(--brand-surface-alt);
-  box-shadow: var(--brand-shadow);
+  box-shadow: var(--brand-elev-1);
   padding: 0.5rem;
 }
 

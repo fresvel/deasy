@@ -530,7 +530,7 @@ export function useDeliverableView({
       // por comas, y la sintaxis heredada por comas no admite la barra del alfa. El
       // navegador descarta la declaracion y el borde cae a `currentColor` SIN avisar.
       // Costo media hora; el CSS servido decia que la utilidad existia.
-      return 'border-[rgba(var(--state-current-rgb),0.65)] text-[var(--state-current-ink)] hover:border-[var(--state-current)] hover:bg-[rgba(var(--state-current-rgb),0.1)] focus:ring-[rgba(var(--state-current-rgb),0.35)]';
+      return 'border-[rgba(var(--state-current-rgb),0.65)] text-state-current-ink hover:border-state-current hover:bg-[rgba(var(--state-current-rgb),0.1)] focus:ring-[rgba(var(--state-current-rgb),0.35)]';
     }
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
       return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';

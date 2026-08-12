@@ -6,7 +6,7 @@
         :id="inputId"
         :value="displayValue"
         type="text"
-        class="admin-input-field h-10 min-w-0 flex-1 rounded-2xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-none transition-colors duration-150 placeholder:text-[var(--brand-text-muted)] focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+        class="admin-input-field h-10 min-w-0 flex-1 rounded-2xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-none transition-colors duration-150 placeholder:text-brand-text-muted focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
         :class="inputClass"
         :placeholder="placeholder"
         :readonly="effectiveReadonly"

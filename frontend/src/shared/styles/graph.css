@@ -87,7 +87,7 @@
     .graph-toggle--on {
         background: var(--brand-white);
         color: var(--brand-primary);
-        box-shadow: var(--brand-shadow);
+        box-shadow: var(--brand-elev-1);
     }
 
     /* ── Boton de icono del panel lateral ───────────────────────────────────────────
@@ -119,7 +119,7 @@
         padding: 2px;
         border-radius: 8px;
         background: var(--brand-white);
-        box-shadow: var(--shadow-raised);
+        box-shadow: var(--brand-elev-2);
         transition: opacity 0.15s ease;
     }
 

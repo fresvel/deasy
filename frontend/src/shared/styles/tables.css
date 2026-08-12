@@ -1,6 +1,6 @@
 @layer components {
 .deasy-table-shell {
-        @apply mt-6 mb-6 rounded-[8px] border bg-white p-4 shadow-[var(--brand-shadow)] sm:p-5;
+        @apply mt-6 mb-6 rounded-[8px] border bg-white p-4 shadow-[var(--brand-elev-1)] sm:p-5;
         border-color: var(--brand-border);
     }
 

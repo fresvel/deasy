@@ -4,7 +4,7 @@
     }
 
     .deasy-dialog-panel {
-        @apply rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-modal)];
+        @apply rounded-xl border border-slate-200 bg-white shadow-[var(--brand-elev-3)];
     }
 
     .deasy-dialog-header {
@@ -65,7 +65,7 @@
   border-radius: 0.95rem;
   border: 1px solid var(--brand-border);
   background: var(--brand-white);
-  box-shadow: var(--shadow-modal);
+  box-shadow: var(--brand-elev-3);
 }
 
 .deasy-dialog-header {
@@ -126,13 +126,13 @@
 .process-dialog-content .deasy-dialog-title {
   font-family: var(--font-base);
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-regular);
+  font-weight: 400;
   color: var(--brand-ink);
 }
 
 .process-dialog-content .deasy-dialog-header,
 .process-dialog-content .deasy-dialog-header .deasy-dialog-title {
-  font-weight: var(--font-weight-semibold);
+  font-weight: 600;
   color: var(--brand-ink);
 }
 
@@ -180,7 +180,7 @@
   width: min(30rem, 100vw);
   height: 100%;
   background: var(--brand-white);
-  box-shadow: var(--shadow-drawer);
+  box-shadow: var(--brand-elev-3-left);
 }
 
 /* Pestañas del panel: subrayado, no pildora. El `margin-bottom:-1px` monta el borde de la

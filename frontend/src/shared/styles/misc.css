@@ -1,6 +1,6 @@
 @layer components {
 .deasy-hero-shell {
-        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[var(--brand-shadow)] md:p-6;
+        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[var(--brand-elev-1)] md:p-6;
         background-image: none;
     }
 

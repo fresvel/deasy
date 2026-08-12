@@ -1,6 +1,6 @@
 @layer utilities {
     .shadow-xl {
-        box-shadow: var(--shadow-raised) !important;
+        box-shadow: var(--brand-elev-2) !important;
     }
 }
 .min-h-screen.bg-slate-100,
@@ -78,7 +78,7 @@
 .admin-workspace-frame,
 .admin-surface-frame,
 .profile-table-shell {
-  box-shadow: var(--brand-shadow);
+  box-shadow: var(--brand-elev-1);
 }
 
 .admin-workspace-frame--table {
@@ -233,7 +233,7 @@ header {
   background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--brand-white));
   border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--brand-white));
   color: var(--action-neutral);
-  box-shadow: var(--brand-shadow);
+  box-shadow: var(--brand-elev-1);
 }
 
 .hope-action-view {

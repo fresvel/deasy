@@ -1,6 +1,6 @@
 @layer components {
 .deasy-section-card {
-        @apply rounded-[8px] border bg-white p-5 shadow-[var(--brand-shadow)] sm:p-6 lg:p-8;
+        @apply rounded-[8px] border bg-white p-5 shadow-[var(--brand-elev-1)] sm:p-6 lg:p-8;
         border-color: var(--brand-border);
     }
 
@@ -60,7 +60,7 @@
 .card {
   border-radius: 16px;
   border: 0;
-  box-shadow: var(--brand-shadow);
+  box-shadow: var(--brand-elev-1);
 }
 
 /* ------------------------------------------------------------------------------------
