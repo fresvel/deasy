@@ -1,234 +1,211 @@
 # Sistema de diseño actual de Deasy — mapa para TailAdmin
 
-> **Reescrito el 2026-08-11 sobre `develop` @ `18e8942`.** La versión anterior describía el repo de
-> antes del frente 4 y había caducado entera: hablaba de `tailwind.css` y `theme.css`, que **ya no
-> existen**, de 25 tokens `--deasy-*` que se borraron, y de 103 `!important` que hoy son 6.
-> Todo lo de aquí está medido sobre el árbol, no deducido.
+> **Reescrito el 2026-08-12**, medido sobre `develop-frontend` tras cerrar F1, F2 y F4.4.
+> La versión anterior era de antes de ese trabajo y **mentía en seis puntos**, incluido el más
+> peligroso: decía que no había `@custom-variant dark` y mandaba decidir el modo oscuro antes de
+> copiar la primera receta. Esa decisión ya está tomada e implementada.
 
 ---
 
-## 0. Lo que cambió, y por qué te importa
+## 0. Las tres colisiones que impedían adoptar recetas: **las tres arregladas**
 
-De las **tres colisiones** que impedían adoptar recetas de TailAdmin, **dos están arregladas**:
+| Colisión | Estado |
+|---|---|
+| `rounded-lg` valía 16 px (escala invertida) | ✅ La escala de Tailwind es la suya: `sm` 4 < `md` 6 < `lg` 8 < `xl` 12 < `2xl` 16 |
+| No había `@theme`: Tailwind no conocía ni un token | ✅ **43 registros**. Existen `bg-brand-primary`, `text-state-warning`, `border-brand-border`… |
+| No había `@custom-variant dark` | ✅ **Declarado** en `tokens.css`. Ver §4.1 — sigue habiendo trabajo, pero no es el que decía |
 
-| Colisión | Estado | Qué significa para ti |
-|---|---|---|
-| `rounded-lg` valía **16 px** (escala invertida: `lg` > `xl`) | ✅ **arreglada** | Las recetas de TailAdmin con `rounded-*` ya se ven como en su demo |
-| **No había `@theme`**: Tailwind no conocía ni un token | ✅ **arreglada** | Existen `bg-brand-primary`, `text-state-danger`… y puedes usarlos |
-| **No hay `@custom-variant dark`** | ⚠️ **SIGUE VIVA** | Ver §4. Es la que te va a morder |
-
-Y el CSS se reorganizó por completo: de 3 ficheros y 3 997 líneas a **15 módulos y 2 012**.
+Y una cuarta, que es la que de verdad te habilita a pegar recetas: **las utilidades vuelven a ganar
+a los componentes**. Ver §3.
 
 ---
 
 ## 1. Dónde vive cada cosa
 
 `frontend/src/shared/styles/` — **`main.js` importa sólo `index.css`**, que encadena el resto.
+18 módulos, 2 927 líneas.
 
 | Módulo | L | Contenido |
 |---|---:|---|
-| `tokens.css` | 191 | La paleta + el `@theme`. **Único sitio con literales de color** |
-| `base.css` | 70 | Reset, tipografía, `html`/`body`/`#app` |
-| `layout.css` | 97 | Workspace, sidebar, cabecera |
-| `nav.css` | 161 | Navegación y pestañas |
-| `surfaces.css` | 64 | Tarjetas y paneles |
-| `buttons.css` | 327 | `.deasy-btn*`, `.admin-btn*`, `.hope-action-*` |
-| `forms.css` | 305 | Campos, filtros, dropzone |
-| `tables.css` | 81 | Tablas |
-| `dialogs.css` | 145 | Modales |
-| `tags.css` | 62 | Insignias |
-| `auth.css` | 70 | Login y registro |
-| `admin.css` | 84 | Cabecera y marcos de admin |
-| `misc.css` | 114 | Sin familia todavía |
-| `overrides.css` | 212 | Repintado de utilidades de Tailwind. **Va el último a propósito** |
+| `tokens.css` | 231 | Paleta + `@theme`. **Único sitio con literales de color** |
+| `base.css` | 101 | Reset, tipografía, `html`/`body`/`#app` |
+| `layout.css` | 94 | Workspace, sidebar, cabecera |
+| `nav.css` | 156 | Navegación y pestañas |
+| `surfaces.css` | 103 | Tarjetas, paneles, scrollbars |
+| `buttons.css` | 457 | `.deasy-btn*`, `.admin-btn*`, `.hope-action-*`, BtnSera |
+| `forms.css` | 385 | Campos, filtros, dropzone |
+| `tables.css` | 88 | Tablas |
+| `dialogs.css` | 296 | Modales y panel lateral |
+| `tags.css` | 54 | Insignias |
+| `auth.css` | 56 | Login y registro |
+| `admin.css` | 130 | Cabecera y marcos de admin |
+| `graph.css` | 211 | Nodos de Vue Flow |
+| `deliverables.css` | 76 | Tarjeta de entregable |
+| `signatures.css` | 29 | Escritorio de firma |
+| `misc.css` | 100 | Sin familia todavía |
+| `overrides.css` | 328 | Skins sueltos + repintado de utilidades. **Va el último a propósito** |
 
-⚠️ **El orden de los `@import` de `index.css` es parte del diseño.** En CSS dos reglas de igual
-especificidad se resuelven por orden. `overrides.css` va al final porque tiene que ganar a los
-componentes. Si mueves un import, verifícalo en navegador.
+⚠️ **El orden de los `@import` de `index.css` es parte del diseño**, no es alfabético.
 
 ---
 
 ## 2. La paleta
 
-**Un solo juego de tokens.** El juego paralelo `--deasy-*` se colapsó sobre `--brand-*`; **no queda
-ninguno vivo** (las apariciones que verás son comentarios explicando el colapso).
+Un solo juego de tokens: `--brand-*` / `--state-*` / `--action-*` / `--chart-*`.
 
-### 2.1 Marca
+### 2.1 Marca y texto
 
 ```css
---brand-primary:      #5e4eff    /* 5.24:1 sobre blanco — es el techo de la marca */
+--brand-primary:      #5e4eff    5.24:1   /* el techo de la marca */
 --brand-accent:       #00b2a9
---brand-navy:         #111827    /* titulares */
---brand-ink:          #1f2937
---brand-white:        #ffffff    --brand-white-rgb: 255, 255, 255
---brand-black:        #000000    /* ancla para oscurecer, no es superficie */
---brand-primary-rgb:  94, 78, 255
+--brand-navy:         #111827   17.74:1   /* titulares */
+--brand-ink:          #1f2937   14.68:1
+--brand-text-strong:  #343741   11.87:1
+--brand-text-body:    #3f4254    9.91:1
+--brand-text-muted:   #5a5f6f    6.36:1   ← el SUELO. Nada más claro para texto
+--brand-icon:         #475569             /* iconos de acción secundaria */
 ```
 
-### 2.2 Texto — la escala
+### 2.2 Superficie, borde y elevación
 
 ```css
---brand-navy:         #111827    17.74:1
---brand-ink:          #1f2937    14.68:1
---brand-text-strong:  #343741    11.87:1
---brand-text-body:    #3f4254     9.91:1
---brand-text-muted:   #5a5f6f     6.36:1   ← el SUELO. Nada más claro para texto
---brand-icon:         #475569              /* iconos de acción secundaria */
+--brand-white:         #ffffff   --brand-surface-alt:   #f8fafc
+--brand-surface-muted: #f7f9fc   --brand-navy-deep:     #071927  /* fondo del workspace */
+--brand-border:        #e2e6f0   /* separadores */
+--brand-border-field:  #d7deea   /* bordes de control */
+--brand-border-strong: #cfd6e4
+
+--brand-elev-1 / -2 / -3        /* la escala de elevación, tres escalones */
+--brand-elev-3-left             /* el nivel 3 proyectando a la izquierda: panel lateral */
+--focus-ring                    /* UNO para toda la app */
+--overlay-backdrop              /* el velo del modal. NO es sombra: es fondo */
 ```
 
-### 2.3 Superficie y borde
+> ⚠️ Se llamaban `--brand-shadow` y `--shadow-raised/-modal/-drawer`. **Renombrados**: ocupaban el
+> namespace `--shadow-*` de Tailwind sin estar en `@theme`, que es el mecanismo del `--radius-lg`.
+
+### 2.3 Estados — uno por estado, y es el oscuro
 
 ```css
---brand-surface-muted: #f7f9fc     --brand-surface-alt:   #f8fafc
---brand-border:        #e2e6f0     /* separadores y marcos */
---brand-border-field:  #d7deea     /* bordes de control */
---brand-navy-deep:     #071927     /* el fondo del workspace */
---brand-navy-menu:     #123f88     /* sólo el botón de menú */
+--state-success: #047857   5.49:1
+--state-danger:  #b42318   6.57:1
+--state-warning: #b45309   5.02:1
+--state-pending: #b8432b   5.42:1   /* NO es danger: es 'pendiente' */
+--state-info:    #2563eb   5.17:1
+--state-current: #4bf1a1            /* «te toca a ti» — SÓLO relleno, da 1.46:1 */
+--state-current-ink: #108353 4.78:1 /* su borde y su texto */
+--state-gold:    #d4af37            /* sólo BtnSera. NO cumple en ninguno de sus usos */
 ```
 
-### 2.4 Estados — **uno por estado, y es el oscuro**
-
-Los brillantes (`#28a745`, `#dc3545`, `#f59e0b`) se retiraron: daban 2.85, 4.08 y 1.99 sobre
-blanco. **Ninguno cumplía.**
+### 2.4 Acciones y escala categórica
 
 ```css
---state-success: #047857   5.00:1
---state-danger:  #b42318   5.93:1
---state-warning: #b45309   4.68:1
---state-pending: #b8432b   5.42:1   /* NO es danger: es 'pendiente', otro significado */
---state-gold:    #d4af37            /* sólo BtnSera */
+--action-neutral: #23384f   --action-view: #075985   --action-upload: #3751a3
+--chart-1 … --chart-7       /* escala categórica: ΔE mín 21, contraste mín 3.96:1 */
 ```
-
-### 2.5 Botones de acción — un color por acción
-
-```css
---action-neutral: #23384f    --action-view: #075985    --action-upload: #3751a3
-```
-(`assign`, `delete` y `warning` usan el token de estado correspondiente.)
-
-### 2.6 Elevación, foco y velo
-
-```css
---brand-shadow:     0 1px 2px rgba(15,23,42,.04)                              /* tarjetas */
---shadow-raised:    0 1px 2px rgba(15,23,42,.04), 0 12px 32px rgba(15,23,42,.06)
---shadow-modal:     0 1px 2px rgba(15,23,42,.04), 0 24px 64px rgba(15,23,42,.16)
---focus-ring:       0 0 0 4px rgba(var(--brand-primary-rgb), .1)   /* UNO para todo */
---overlay-backdrop: rgba(15,23,42,.48)                             /* NO es sombra: es fondo */
-```
-
-### 2.7 `@theme` — 16 colores registrados en Tailwind
-
-Ya **existen** como utilidades: `bg-brand-primary`, `text-brand-ink`, `border-brand-border`,
-`text-state-danger`… Están declaradas referenciando la paleta, así que no hay valores duplicados.
-
-> ⚠️ **Prefiere el utility con nombre a `[var(--x)]`.** En Tailwind v4, `border-[X]`, `text-[X]` y
-> `ring-[X]` son **ambiguos** entre color y tamaño: con un hex deduce «color», con `var(--x)` no
-> puede y elige mal. Costó 114 nodos con el borde caído a `currentColor`.
 
 ---
 
-## 3. Reglas de derivación — cópialas antes de inventar un color
+## 3. Lo que más te habilita: **las capas están ordenadas**
 
-**No declares un token por matiz. Declara uno por significado y deriva.** Los cinco violetas del
-proyecto resultaron ser `--brand-primary` al 86/38/33/25/10 %: eran porcentajes, no colores.
+Antes, casi todo el CSS estaba **fuera de capa**, y una regla sin capa gana SIEMPRE a una capada.
+Consecuencia: si pegabas una receta de TailAdmin, **la mitad de sus utilidades no pintaba nada**, y
+no lo veía el build, ni el lint, ni los tests.
 
-El patrón de los botones de acción, que es el que hay que copiar:
+Hoy la disposición es:
 
-```css
-fondo   reposo 10%   hover 16%   sobre var(--brand-white)
-borde   reposo 71%   hover 85%   sobre var(--brand-white)
-texto   reposo el token          hover 85% sobre var(--brand-black)
+```
+@layer components   los skins de componente
+@layer utilities    los repintados que aún quedan
+sin capa            SÓLO lo que pelea con una hoja de tercero (Vue Flow, Leaflet)
 ```
 
-**El 71 % no es arbitrario**: es el único porcentaje con el que los seis bordes llegan a **3:1**
-contra la fila blanca, que es lo que pide WCAG 1.4.11 para el límite de un componente. Al 35 % el
-borde salía *más claro* que el original y el botón se veía peor.
+**Quedan 53 reglas fuera de capa**, y no son inercia: cada una tapa algo a propósito y lleva su
+motivo escrito. Concentradas en `overrides.css` (22), `dialogs.css` (10) y `buttons.css` (8).
+
+### ⚠️ Y son justo las que van a pelear con tus recetas
+
+| Si tocas… | Te encontrarás con |
+|---|---|
+| **Un campo de formulario** | `input, select, textarea` sin capa: suprime **83 radios, 44 bordes y 80 focos** ya escritos. Un `rounded-xl` tuyo NO va a pintar |
+| **Un modal** | `.deasy-dialog-body`, `-panel`, `-footer` y el velo, sin capa: suprimen 33 paddings, 49 bordes y 44 sombras |
+| **Un encabezado** | `h1..h6` sin capa fija peso 500: suprime **77 `font-bold`/`font-semibold`** en 95 encabezados |
+| **Un botón de acción de tabla** | `.hope-action-*` sin capa, y no por una utilidad: le gana `.deasy-table-shell .deasy-btn` |
+
+**Inventario completo con la cifra de cada una** en
+`docs/planes/sistema-diseno-plantillas/bitacora.md`, §4.4-c/d.
+
+Estas reglas no son un obstáculo a rodear: **son las preguntas de diseño que TailAdmin viene a
+contestar.** Al rediseñar un componente, su regla suprimida se resuelve — o se borra la declaración
+muerta, o se capa la regla y se enciende. Nada se queda «presente pero suprimido».
 
 ---
 
-## 4. Diagnóstico de compatibilidad con TailAdmin
+## 4. Compatibilidad al copiar una receta
 
-### 4.1 ⚠️ `dark:` — la colisión que sigue viva, y la que te va a morder
+### 4.1 `dark:` — el seguro está puesto, pero límpialas igual
 
-**El repo no declara `@custom-variant dark`.** Tailwind v4 compila entonces `dark:` a
-`@media (prefers-color-scheme: dark)`.
+`tokens.css` declara `@custom-variant dark (&:where(.dark, .dark *))`, así que un `dark:` que se
+cuele queda **inerte**: depende de una clase `.dark` que nadie pone. Ya no se activa solo en la
+máquina de quien tenga el sistema en oscuro.
 
-Las recetas de TailAdmin vienen **llenas** de `dark:`. Si pegas una tal cual:
+Aun así **se quitan al pegar**, y hay un gate que lo comprueba (`pnpm run check:no-dark`): apuntan a
+la paleta de TailAdmin (`gray-900`…), no a la de Deasy, así que el día que hubiera modo oscuro habría
+que revisarlas todas igual. Hoy hay **0 usos**.
 
-- se verá bien en tu máquina si tienes el sistema en claro;
-- y **se pintará en oscuro, sobre una app en claro**, para cualquiera con el sistema en oscuro.
+### 4.2 Radios: coinciden
 
-No lo verás ni tú, ni el build, ni el lint, ni los tests. **Antes de copiar la primera receta hay
-que decidir**: o se limpian los `dark:` al pegar, o se declara el modo oscuro de verdad
-(`@custom-variant dark (&:where(.dark, .dark *))` + un conmutador). Es una decisión de producto.
-
-### 4.2 Radios: ya coinciden
-
-La escala de Tailwind está intacta (`sm` 4 < `md` 6 < `lg` 8 < `xl` 12 < `2xl` 16). Una receta de
-TailAdmin con `rounded-xl` se ve como en su demo. **Antes no**: `rounded-lg` valía el doble.
+La escala de Tailwind está intacta. Una receta con `rounded-xl` se ve como en su demo — **salvo que
+el componente esté en la lista de §3**, donde el radio está suprimido.
 
 ### 4.3 Colores: traduce, no pegues
 
-TailAdmin usa la paleta de Tailwind (`slate-*`, `blue-*`, `gray-*`). Deasy tiene la suya. Al
-adaptar una receta, **cambia el color por el token equivalente**, no lo dejes en `slate-700`.
+TailAdmin usa la paleta de Tailwind. Cambia cada color por su token.
 
-Ojo: Tailwind v4 define su paleta en **OKLCH**. Convertida a sRGB, `red-800` se desvía hasta 20 por
-canal de lo que esperas. **Ningún mapeo a la paleta de Tailwind es cambio nulo.**
+⚠️ **Tailwind v4 sirve su paleta en OKLCH**, y no vuelve a los hex de v3 que todos tenemos en la
+cabeza. Medido aquí: `emerald-700` renderiza `rgb(0,122,85)`, no `#047857`. **Ningún mapeo a la
+paleta de Tailwind es cambio nulo** — mide en el DOM, no compares hex.
 
-### 4.4 Sombras y foco: usa los tokens, no los de la receta
+### 4.4 Sombras y foco: usa los tokens
 
-TailAdmin trae sus propias sombras y anillos. Deasy tiene **tres niveles de elevación y un solo
-anillo de foco**, y llegar ahí costó colapsar once valores. Usa `var(--shadow-raised)` y
-`var(--focus-ring)`.
+Tres niveles de elevación y **un solo** anillo de foco. Usa `var(--brand-elev-2)` y
+`var(--focus-ring)`, no los de la receta.
+
+⚠️ **Un token con alfa se escribe `rgba(var(--x-rgb), 0.5)`**, nunca `rgb(var(--x-rgb)/0.5)`: lo
+segundo es CSS inválido, Tailwind lo emite igual y el navegador lo descarta en silencio.
 
 ### 4.5 Dónde probar
 
-La tabla de administración (`/admin/usuarios/personas/persons`) pinta **172 botones a la vez**. Es
-el peor caso del sistema: lo sutil desaparece y lo pesado satura. **Si un componente se ve bien
-ahí, se ve bien en todas partes.**
+La tabla de administración pinta **172 botones a la vez**. Es el peor caso del sistema: lo sutil
+desaparece y lo pesado satura. **Si un componente se ve bien ahí, se ve bien en todas partes.**
 
 ---
 
-## 5. Lo que NO está migrado, y condiciona el plan
-
-**«Cero colores a mano» vale para los `.css`. Los `.vue` siguen sucios:**
+## 5. Estado real de la deuda
 
 | | |
-|---|---:|
-| Color a mano dentro de `<style scoped>` | **108** |
-| En plantilla o script | 67 |
-| En ficheros `.js` | 20 |
-| **Total fuera del CSS** | **195** |
+|---:|---|
+| **0** | `<style scoped>` con CSS vivo (eran 13) |
+| **75** | colores a mano fuera del CSS (eran 195) |
+| **0** | literales de color en los `.css` fuera de `tokens.css` |
+| **~2 900** | clases de color de Tailwind por nombre (eran 3 590): slate 984 · sky 332 · indigo 217 · emerald 173 · rose 172 |
+| **53** | reglas fuera de capa, todas con motivo |
+| **~30** | clases declaradas sin un solo uso — pendiente de borrar |
 
-Los 108 son **CSS puro que ningún linter mira**: el glob de stylelint es `src/**/*.css`.
-
-**78 de los 175 de `.vue` están en los seis componentes de Vue Flow**
-(`modules/admin/components/units/`) y 30 en `HomeView.vue`.
-
-> **Antes de tokenizar los nodos del grafo, mira si son copias.** `ProcessNode.vue` estila
-> `.unit-node__btn`, `.unit-node__handle` y `.unit-node__toolbar` — **los mismos selectores que
-> `UnitNode.vue`**. Es copia literal. El arreglo no es dar token cuatro veces al mismo valor: es
-> extraer una clase y borrar copias.
-
-### Por qué esto ordena el trabajo
-
-Los `<style scoped>` son justo lo que TailAdmin viene a sustituir. **Tokenizarlos primero es dar
-nombre a colores de reglas que vas a borrar.** El orden que rinde:
-
-1. Deduplicar Vue Flow (extraer la clase compartida).
-2. Sacar los `<style scoped>` a módulos, componente por componente — **aquí entra TailAdmin**: en
-   vez de traducir el CSS viejo, escribes la receta nueva.
-3. Tokenizar lo que sobreviva, que será mucho menos.
+El barrido de las ~2 900 va por familias, no por ficheros, y **no bloquea nada de TailAdmin**: los
+tokens de destino ya existen todos en `@theme`.
 
 ---
 
 ## 6. Reglas que no se negocian
 
-Están en **`frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. Las tres que más afectan a
+Están en **`frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. Las cuatro que más afectan a
 quien copia recetas:
 
-1. **Cero literales de color fuera de `tokens.css`.** Hoy hay 0 y el gate está en 0.
-2. **`<style scoped>` no casa con hijos sin `:deep()`.** Así murió `AdminTableManager.css`: 604
-   líneas de las que **0 de 86 reglas aplicaban**.
-3. **Ni el build, ni el lint, ni los 304 tests ven un estilo roto.** Demostrado cuatro veces en una
-   sesión. Para un cambio de CSS la verificación es el navegador.
+1. **Cero literales de color fuera de `tokens.css`.** El gate está en 0 y ahí se queda.
+2. **Antes de fiarte de `@theme`, míralo en el CSS construido.** Tailwind hace *tree-shaking*: un
+   registro que nadie usa no se emite, y eso es indistinguible de no haberlo escrito.
+3. **Una utilidad repintada lleva PRIORIDAD además de color.** Antes de sustituirla, mira contra qué
+   estaba ganando.
+4. **Ni el build, ni el lint, ni los 304 tests ven un estilo roto.** Para un cambio de CSS la
+   verificación es el navegador, y si es amplio, `scripts/css-huella.mjs`.

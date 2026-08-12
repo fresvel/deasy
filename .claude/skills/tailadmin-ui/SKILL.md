@@ -19,7 +19,7 @@ clases y decisiones de diseño**.
 | Trampa | Estado |
 |---|---|
 | `rounded-*` mentía: `rounded-lg`=16px y la escala invertida | ✅ **arreglada** — la escala de Tailwind está intacta |
-| No había `@theme`: Tailwind no conocía ningún token | ✅ **arreglada** — 16 colores registrados |
+| No había `@theme`: Tailwind no conocía ningún token | ✅ **arreglada** — **43 registros** |
 | Dev y prod no renderizaban igual (105 reglas `!important` bajo `local-dev`) | ✅ **arreglada** — el gate se retiró; lo que ves es lo que hay |
 | `dark:` se activaría solo | ✅ **resuelta** — decidido que no hay modo oscuro; tres capas lo impiden |
 
