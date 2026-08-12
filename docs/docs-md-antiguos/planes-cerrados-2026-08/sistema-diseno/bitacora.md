@@ -464,5 +464,5 @@ Siguen abiertos, y pasan al plan nuevo: la escala tipográfica, los `z-index` y 
 
 **La medición del 2026-08-11 abre la segunda vuelta**, con otro objeto: no el CSS, sino las 3 590
 clases de Tailwind en las plantillas que ningún linter ve. Evidencia en
-[`auditoria-2026-08-11.md`](./auditoria-2026-08-11.md), ejecutable en
-[`plan-2026-08-11.md`](./plan-2026-08-11.md).
+[`auditoria-2026-08-11.md`](../../../planes/sistema-diseno-plantillas/auditoria-2026-08-11.md), ejecutable en
+[`plan-plantillas-2026-08.md`](../../../planes/sistema-diseno-plantillas/plan-plantillas-2026-08.md).

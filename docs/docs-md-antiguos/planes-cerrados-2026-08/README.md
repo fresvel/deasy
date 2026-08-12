@@ -11,6 +11,7 @@ se tomaron ciertas decisiones, y esa parte no caduca. **No hay nada que hacer en
 | Documento | Qué pedía | Cómo acabó |
 |---|---|---|
 | `plan-limpieza-scripts-2026-08.md` | Reducir `backend/scripts/` de 14 artefactos a 5 + `lib/`, eliminar el seed SQL paralelo y los retro-parches de migración | ✅ **Ejecutado** (`fc44559` y siguientes). Hoy quedan exactamente los 5 previstos: `bootstrap_admin_recovery`, `check_missing_imports`, `generate_demo_certificates`, `reset` y `seed_dev_rich`, más `lib/` |
+| [`sistema-diseno/`](./sistema-diseno/) | Frente 4, primera vuelta: podar el CSS muerto, colapsar los dos juegos de tokens, deshacer el secuestro de `--radius-*`, poner linters y empezar a migrar color | ✅ **Ejecutado** en 21 commits (`298ab96`…`b617c62`). CSS 3 997 → ~2 100 líneas en **16 módulos**, un solo juego de tokens, **0 hex y 0 `rgba()`** en los `.css`, **0 `<style scoped>`**, `!important` 80 → 6, y **dev = prod**. Continúa en [`planes/sistema-diseno-plantillas/`](../../planes/sistema-diseno-plantillas/) |
 
 Lo que sobrevive de este plan y **sí sigue vigente** está recogido en los documentos vivos:
 

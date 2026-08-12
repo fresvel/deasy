@@ -360,4 +360,7 @@ Lo que queda de deuda de color, ya sin CSS escondido:
 > `sky-200`, `sky-500` y `sky-700` **dentro de `@apply`**, donde `color-no-hex` no entra. El azul
 > cielo del dropzone es hoy el único color de familia propia que sigue fuera de la paleta.
 
-El plan, la bitácora y las dos auditorías están en **`docs/planes/sistema-diseno/`**.
+El plan, la bitácora y la auditoría están en **`docs/planes/sistema-diseno-plantillas/`**. La
+primera vuelta —la que ganó el frente del CSS— está cerrada y archivada en
+`docs/docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/`; su bitácora sigue valiendo, porque
+es donde están las trampas ya pagadas.

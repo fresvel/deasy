@@ -5,7 +5,7 @@ en paralelo, cada uno con su cálculo hecho a mano (CIEDE2000 y contraste WCAG 2
 cero, sin librerías) y contrastados contra la aplicación viva en la pila B.
 
 > **Esto es evidencia, no ejecutable.** El plan que sale de aquí es
-> [`plan-2026-08-11.md`](./plan-2026-08-11.md).
+> [`plan-plantillas-2026-08.md`](./plan-plantillas-2026-08.md).
 
 ---
 

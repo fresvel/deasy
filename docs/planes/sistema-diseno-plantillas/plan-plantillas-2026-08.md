@@ -1,6 +1,6 @@
 # Plan de ejecución — Sistema de diseño, segunda vuelta
 
-**Base:** `develop` tras cerrar [`plan-2026-08-09.md`](./plan-2026-08-09.md) (✅ sus 6 fases)
+**Base:** `develop` tras cerrar [`plan-2026-08-09.md`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/plan-2026-08-09.md) (✅ sus 6 fases)
 **Evidencia:** [`auditoria-2026-08-11.md`](./auditoria-2026-08-11.md) · **Bitácora:** [`bitacora.md`](./bitacora.md)
 **Reglas del sistema:** [`frontend/CLAUDE.md`](../../../frontend/CLAUDE.md)
 

@@ -558,7 +558,7 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 
 ## Frente 4 · Sistema de diseño — 🟡 · pasos 1-3 cerrados, el 5 a medias, el 4 y el 6 abiertos
 
-> **Plan, evidencia y bitácora: [`sistema-diseno/`](./sistema-diseno/).** El frente ocupaba 20 líneas
+> **Plan, evidencia y bitácora: [`sistema-diseno-plantillas/`](./sistema-diseno-plantillas/).** El frente ocupaba 20 líneas
 > aquí y necesitaba más: la medición del 2026-08-09 encontró **tres cosas que no estaban en ningún
 > plan** y que iban *antes* de los pasos ya escritos.
 >
@@ -634,7 +634,7 @@ partiendo los componentes, no tokenizando.
 ### Paso 6 — lo que se sabe sin SonarQube
 
 No se levantó el servidor, así que **el contador de 33 no está re-medido**. Lo que sí está medido y
-sigue valiendo, de `sistema-diseno/auditoria-color.md` §5:
+sigue valiendo, de `docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/auditoria-color.md` §5:
 
 - El barrido de parejas `color`+`background` con hex literal en la misma regla —lo único que `S7924`
   puede ver sin resolver cascada— daba **3 fallos, no 33**. Sonar no resuelve `var()`, no compone
@@ -698,7 +698,7 @@ de la aplicación (`SHeader.vue:2`). Darle su clase y dejar el elemento en paz. 
 línea, pero **cambia el aspecto de seis sitios a la vez**: pide huella de `getComputedStyle`
 antes/después, no build ni tests.
 
-> 📌 ~~`sistema-diseno/bitacora.md:274` sigue diciendo que «el bloque `local-dev` de `theme.css` sigue
+> 📌 ~~`planes-cerrados-2026-08/sistema-diseno/bitacora.md` sigue diciendo que «el bloque `local-dev` de `theme.css` sigue
 > vivo»~~. **Corregido el 2026-08-11**: la bitácora ya registra la sesión del 2026-08-10 donde se
 > promovió (`c45b154`), y con ella el hallazgo de fondo — **`local-dev` no era una variante de
 > desarrollo, era el diseño tras la condición equivocada**, y promoverlo arregló 3 de los 4 fallos de
@@ -733,17 +733,17 @@ antes/después, no build ni tests.
 | `css-hex-a-token.mjs` | Sustituye hex por `var(--token)` con dos salvaguardas ganadas a golpes: el hex corto que es prefijo del largo (`#fff` dentro de `#fff0ed`) y la autorreferencia que deja el token **sin valor** | **Se queda.** Es la herramienta del paso 5, que sigue abierto |
 
 **Criterio de cierre del frente:** pasos 4, 5 (con el criterio redefinido) y 6 cerrados, más el
-`<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno/` se archiva y esto se marca ✅.
+`<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno-plantillas/` se archiva y esto se marca ✅.
 
-> ⚠️ **`sistema-diseno/` NO se archiva todavía: va por su segunda vuelta.** El plan del 2026-08-09
+> ⚠️ **La primera vuelta ya está archivada; va la segunda.** El plan del 2026-08-09
 > cerró sus 6 fases y quedó archivado —sus cuatro ficheros sujeto ya no existen—, pero la medición
 > del 2026-08-11 encontró que **la deuda que queda no vive en el CSS**: son **3 590 clases de color de
 > Tailwind en las plantillas** que ningún linter ve, y **`@theme` es el cuello de botella**, no la
 > disciplina (hoy no existen `bg-state-warning` ni `text-brand-text-muted`, así que ~660 de esas
 > apariciones **no tenían alternativa**).
 >
-> El ejecutable es ahora [`sistema-diseno/plan-2026-08-11.md`](./sistema-diseno/plan-2026-08-11.md);
-> la evidencia, [`auditoria-2026-08-11.md`](./sistema-diseno/auditoria-2026-08-11.md). **Eso redefine
+> El ejecutable es ahora [`sistema-diseno-plantillas/plan-plantillas-2026-08.md`](./sistema-diseno-plantillas/plan-plantillas-2026-08.md);
+> la evidencia, [`auditoria-2026-08-11.md`](./sistema-diseno-plantillas/auditoria-2026-08-11.md). **Eso redefine
 > el paso 5 de este frente**, que aquí seguía contado como «hex en `.vue`».
 
 ---
