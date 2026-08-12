@@ -231,29 +231,24 @@ export const replaceAuthoredFlowForArtifact = async (
 // ilegible— a "esta plantilla no define flujo de entrega", y bloqueaba la publicación por una razón
 // falsa. Aquí no hay `catch`: un error de base se PROPAGA. Es el motivo real de la mudanza.
 //
-// POR QUÉ CUENTA POR LOS DOS PORTADORES, y por qué es ANDAMIAJE y no diseño final. Tras el sub-paso
-// 3 el flujo de una plantilla puede estar en dos sitios, y hoy hay plantillas reales en cada uno:
+// UN SOLO PORTADOR, desde el sub-paso 8. El sub-paso 4 dejó aquí un `OR` sobre DOS portadores y lo
+// declaró andamiaje en su propio comentario:
 //
-//   · `template_artifact_id`            -> lo escribe el formulario web (sub-paso 3). Lo NUEVO.
-//   · `process_definition_template_id`  -> lo siembra el sync desde el `meta.yaml`, para CADA vínculo.
+//   · `template_artifact_id`            -> lo escribe el formulario web. El bueno.
+//   · `process_definition_template_id`  -> lo sembraba el sync desde el `meta.yaml`, uno por vínculo.
 //
-// Medido en la base de dev recién sembrada: las dos plantillas de la fixture tienen 0 pasos por
-// artifact y 1 por vínculo. Es decir, TODO lo que existe hoy llegó por el sync — el bootstrap
-// siembra `BASE_META_YAML` (sub-paso 7) y `createTemplateArtifactVersion` copia MinIO en binario sin
-// copiar filas (sub-paso 6). Contar solo por artifact rechazaría toda plantilla que no se haya
-// vuelto a guardar por el formulario, incluida la que produce el update guiado: medido con un
-// experimento desechable, deja `zz_template_lifecycle :: guided_update_finish` en 400 "No se puede
-// publicar…". Contar por los dos es exactamente el conjunto que hoy pasa el gate leyendo el YAML.
-//
-// El segundo término MUERE SOLO: el sub-paso 6 hace que versionar copie filas, el 7 quita
-// `BASE_META_YAML` y el 8 vacía las filas del vínculo que sembró el sync. Cuando esa rama del OR
-// quede vacía, se borra y queda el portador único.
+// El segundo término hacía falta HOY, y estaba medido: toda plantilla que no se hubiera vuelto a
+// guardar por el formulario tenía su flujo solo ahí, así que contar solo por artifact la habría
+// dejado inpublicable. Los sub-pasos 6, 7 y 8 le quitaron sus tres fuentes —el versionado copia
+// filas, `BASE_META_YAML` se retiró, y el sync ya no existe—, y con eso la rama se quedó vacía. Se
+// borra aquí, medida antes de borrarla: con el segundo término anulado a mano, `test:char:run` da
+// 281/281.
 //
 // Las dos guardas del WHERE no son adorno:
 //   · `f.task_item_id IS NULL` excluye el flujo de RUNTIME, que lleva vínculo Y entregable. Sin
 //     ella, un `routed` "definiría flujo de entrega" en cuanto alguien enviara un entregable.
-//   · `f.is_active = 1` excluye las cabeceras que el sync DESACTIVA sin borrarles los pasos
-//     (`workflowSync.js:322-334`): sus filas siguen ahí y contarían un flujo retirado.
+//   · `f.is_active = 1` excluye las cabeceras que `replaceArtifactFlowSide` DESACTIVA sin borrarlas
+//     cuando el autor quita el flujo de un lado: contarían un flujo retirado.
 export const hasFillStepsForArtifact = async (connection, artifactId) => {
   const id = Number(artifactId);
   if (!id) return false;
@@ -264,15 +259,11 @@ export const hasFillStepsForArtifact = async (connection, artifactId) => {
        JOIN fill_flow_templates f ON f.id = s.fill_flow_template_id
        WHERE f.is_active = 1
          AND f.task_item_id IS NULL
-         AND (
-           (f.template_artifact_id = ? AND f.process_definition_template_id IS NULL)
-           OR f.process_definition_template_id IN (
-             SELECT pdt.id FROM process_definition_templates pdt WHERE pdt.template_artifact_id = ?
-           )
-         )
+         AND f.template_artifact_id = ?
+         AND f.process_definition_template_id IS NULL
        LIMIT 1
      ) AS has_steps`,
-    [id, id]
+    [id]
   );
   return Boolean(Number(rows?.[0]?.has_steps || 0));
 };
@@ -367,43 +358,30 @@ const parseSignersColumn = (value) => {
   }
 };
 
-// DÓNDE VIVE EL FLUJO DE ESTA PLANTILLA: tres portadores, por PRIORIDAD y no por «cuál está relleno».
-//   1. `template_artifact_id` — el flujo AUTORADO, uno solo, el que escribe el formulario web.
-//   2. `process_definition_template_id` — el que el sync siembra en CADA vínculo desde el
-//      `meta.yaml`. Es el mismo conjunto que cuenta `hasFillStepsForArtifact`, y ANDAMIAJE por la
-//      misma razón: hoy toda plantilla que no se haya vuelto a guardar por el formulario (las del
-//      bootstrap) solo tiene esta copia, y sin ella reabrirlas mostraría el flujo vacío.
-//   3. La VERSIÓN PADRE (`parent_version_id`), subiendo por el linaje. También ANDAMIAJE, y este se
-//      descubrió EN EL NAVEGADOR verificando este mismo sub-paso: `createTemplateArtifactVersion`
-//      copia MinIO en binario y NO crea filas de flujo ni vínculo, así que una versión recién creada
-//      no tiene NINGÚN portador propio. Su flujo lo llevaba el `meta.yaml` copiado byte a byte — o
-//      sea, el de su padre. Sin este escalón, versionar una plantilla y reabrirla mostraba el flujo
-//      VACÍO y el primer guardado lo borraba. Medido en dev: el artifact 11 (v1.2.0 de
-//      `tpl_informe_general`) devolvía `steps: []` con su propio meta declarando `owner_fill`.
+// DÓNDE VIVE EL FLUJO DE ESTA PLANTILLA: en su propio portador, `template_artifact_id`, y en ningún
+// otro sitio. Es lo que el sub-paso 8 viene a dejar.
 //
-//      ⚠️ **EL ESCALÓN 3 YA SOBRA, Y ESTÁ MEDIDO** (sub-paso 6, este commit): desde que el versionado
-//      copia FILAS (`copyAuthoredFlowToArtifact`), una versión nueva tiene portador propio y entra
-//      por el escalón 1. Medición: con el ascenso por el linaje anulado a mano, la caracterización
-//      entera pasa **266/266**, incluido el caso «una VERSION recien creada hereda el flujo de su
-//      padre». NO se quita aquí a propósito: los artifacts versionados ANTES de este commit siguen
-//      sin filas propias, así que borrarlo es un cambio de comportamiento y le toca su commit con
-//      su golden.
-// Los escalones 2 y 3 MUEREN JUNTOS con los sub-pasos 6, 7 y 8 (cuando versionar copie filas y el
-// sync desaparezca): entonces se borran los dos y queda el portador único.
+// AQUÍ HUBO TRES ESCALONES, y los dos últimos eran andamiaje declarado:
+//   2. `process_definition_template_id` — el que el sync sembraba en CADA vínculo desde el
+//      `meta.yaml`. Hacía falta mientras el bootstrap y las versiones antiguas tuvieran su flujo
+//      solo ahí. Sin sync no hay quien lo escriba.
+//   3. La VERSIÓN PADRE (`parent_version_id`), subiendo por el linaje. Existió porque
+//      `createTemplateArtifactVersion` copiaba MinIO en binario y NO creaba filas, así que una
+//      versión recién creada no tenía portador propio y reabrirla mostraba el flujo VACÍO — y el
+//      primer guardado lo borraba. Desde el sub-paso 6 el versionado copia FILAS, así que la hija
+//      nace con portador propio y entra por el escalón 1.
 //
-// El orden es el CONTRARIO al del resolvedor de runtime (`generation/queries.js`), y a propósito: allí
-// el flujo del vínculo es el específico y el de la plantilla el genérico; aquí se está leyendo QUÉ
-// AUTORÓ EL USUARIO PARA LA PLANTILLA, y de eso la copia del vínculo es un reflejo. Mientras dure la
-// escritura doble las dos son idénticas (salen del mismo objeto), así que el orden solo decide de
-// cuál se lee, no qué se lee.
+// LOS DOS, MEDIDOS ANTES DE BORRARLOS, cada uno por separado y luego juntos: `test:char:run` da
+// 281/281 en los tres casos, incluido «una VERSION recien creada hereda el flujo de su padre», que
+// es el que el escalón 3 existía para sostener. Ahora lo sostiene la copia de filas.
 //
-// ⚠️ LO QUE DECIDE EL ESCALÓN ES QUE LA CABECERA EXISTA, NO QUE ESTÉ ACTIVA. Una cabecera desactivada
-// significa «el autor quitó el flujo de este lado»: así la deja `replaceArtifactFlowSide` y así la
-// deja el sync (`workflowSync.js`), en los dos casos sin borrarla. Eso es una RESPUESTA, no un hueco,
-// y hay que devolver flujo vacío sin seguir bajando. Con `is_active = 1` en la búsqueda, quitarle
-// todos los pasos a una versión y reabrirla los resucitaría desde su padre.
-const findFlowSourceHeader = async (connection, table, artifactId) => {
-  const [byArtifact] = await connection.query(
+// ⚠️ LO QUE SOBREVIVE Y NO ES OBVIO: lo que decide la respuesta es que la cabecera EXISTA, no que
+// esté activa. Una cabecera desactivada significa «el autor quitó el flujo de este lado» —así la
+// deja `replaceArtifactFlowSide`, sin borrarla— y eso es una RESPUESTA (flujo vacío), no un hueco.
+// Ya no hay a dónde seguir bajando, pero la distinción se conserva porque es la que hace que quitar
+// todos los pasos de un lado se lea como «no hay flujo» y no como «no encontré nada».
+const findFlowSourceHeaderId = async (connection, table, artifactId) => {
+  const [rows] = await connection.query(
     `SELECT id, is_active
      FROM ${table}
      WHERE template_artifact_id = ?
@@ -413,44 +391,9 @@ const findFlowSourceHeader = async (connection, table, artifactId) => {
      LIMIT 1`,
     [artifactId]
   );
-  if (byArtifact?.[0]) return byArtifact[0];
-
-  const [byLink] = await connection.query(
-    `SELECT id, is_active
-     FROM ${table}
-     WHERE process_definition_template_id IN (
-             SELECT pdt.id FROM process_definition_templates pdt WHERE pdt.template_artifact_id = ?
-           )
-       AND task_item_id IS NULL
-     ORDER BY id DESC
-     LIMIT 1`,
-    [artifactId]
-  );
-  return byLink?.[0] || null;
-};
-
-// Tope del ascenso por el linaje. No es una constante de rendimiento: es la guarda contra un
-// `parent_version_id` que apunte en círculo, que el esquema no impide.
-const MAX_VERSION_ANCESTRY = 10;
-
-const findParentVersionId = async (connection, artifactId) => {
-  const [rows] = await connection.query(
-    "SELECT parent_version_id FROM template_artifacts WHERE id = ? LIMIT 1",
-    [artifactId]
-  );
-  return rows?.[0]?.parent_version_id ? Number(rows[0].parent_version_id) : null;
-};
-
-const findFlowSourceHeaderId = async (connection, table, artifactId) => {
-  let currentId = artifactId;
-  for (let depth = 0; currentId && depth < MAX_VERSION_ANCESTRY; depth += 1) {
-    const header = await findFlowSourceHeader(connection, table, currentId);
-    if (header) {
-      return Number(header.is_active) === 1 ? Number(header.id) : null;
-    }
-    currentId = await findParentVersionId(connection, currentId);
-  }
-  return null;
+  const header = rows?.[0];
+  if (!header) return null;
+  return Number(header.is_active) === 1 ? Number(header.id) : null;
 };
 
 
@@ -560,35 +503,26 @@ export const readAuthoredFlowForArtifact = async (connection, artifactId) => {
 //     para no enseñar el flujo vacío.
 // Copiando las filas, las dos dejan de ser necesarias por la vía del parche.
 //
-// ⚠️ AQUÍ SE CORTA LA AUTO-REPLICACIÓN DE `document_owner` (§0.2 y §0.3). El resolutor deprecado
-// llega a cada versión nueva por la copia binaria del `meta.yaml`, sin que nadie lo autore ni haya
-// nada que consultar. Copiando filas la herencia no desaparece —eso es el sub-paso 7— pero pasa a
-// ser una fila visible en `fill_flow_steps`, con su artifact: se puede contar, auditar y migrar con
-// un `UPDATE`. Medido: versionar la plantilla de la fixture deja `resolver_type = 'document_owner'`
-// colgando de `template_artifact_id`, donde antes solo había bytes en MinIO.
-//
 // QUÉ SE COPIA, Y POR QUÉ ESA Y NO OTRA. El origen se busca con `findFlowSourceHeaderId`, o sea con
-// EL MISMO ESCALONADO QUE LEE EL EDITOR (artifact → vínculo → versión padre). No es reutilización
-// por comodidad: la propiedad que se quiere es «la hija nace con el flujo que el editor mostraba
-// para el padre». Cualquier otro criterio haría que versionar CAMBIE el flujo.
-//   · Del ARTIFACT (`template_artifact_id`): el flujo autorado. Es el caso limpio.
-//   · Del VÍNCULO (`process_definition_template_id`): hace falta HOY y está medido — la plantilla
-//     de la fixture tiene 0 cabeceras por artifact y 1 por vínculo, porque su flujo lo sembró el
-//     sync desde `BASE_META_YAML`. Sin este escalón, versionarla copiaría CERO filas y publicar la
-//     versión seguiría dando 400. Muere con los sub-pasos 7 y 8, como el `OR` de los gates.
+// LA MISMA BÚSQUEDA QUE HACE EL EDITOR. No es reutilización por comodidad: la propiedad que se
+// quiere es «la hija nace con el flujo que el editor mostraba para el padre». Cualquier otro
+// criterio haría que versionar CAMBIE el flujo.
+//   · Del ARTIFACT (`template_artifact_id`): el flujo autorado. Es el único caso desde el sub-paso 8;
+//     antes había dos escalones más —el vínculo y la versión padre— y su motivo está en el
+//     comentario de `findFlowSourceHeaderId`.
 //   · Del TASK_ITEM (`task_item_id`): **NUNCA**, y no por precaución. Esa cabecera es el flujo que
 //     un usuario definió al enviar UN entregable concreto en modo `routed`
 //     (`materializeRuntimeFlowForTaskItem`): copiarla a una plantilla convertiría la decisión de un
-//     envío en la definición de todas las versiones futuras. Las dos consultas del escalonado ya
-//     exigen `task_item_id IS NULL`, así que la exclusión es estructural, no un filtro añadido aquí.
+//     envío en la definición de todas las versiones futuras. La consulta ya exige
+//     `task_item_id IS NULL`, así que la exclusión es estructural, no un filtro añadido aquí.
 //     El grupo de control `runtime_*` del characterization es lo que lo vigila.
 //
 // `is_active`: la hija nace con cabecera ACTIVA si hay pasos que copiar, y SIN NINGUNA CABECERA si
 // no los hay. El caso interesante es el del padre con la cabecera DESACTIVADA, que significa «el
-// autor quitó el flujo de este lado» (así la dejan `replaceArtifactFlowSide` y el sync, sin
-// borrarla): el escalonado devuelve `null`, no se copia nada, y la hija responde lo mismo que el
-// padre —flujo vacío— porque su propio escalonado vuelve a subir hasta esa cabecera. Crear una
-// cabecera desactivada y vacía daría el mismo comportamiento con una fila fantasma de más.
+// autor quitó el flujo de este lado» (así la deja `replaceArtifactFlowSide`, sin borrarla): la
+// búsqueda devuelve `null`, no se copia nada, y la hija —que se queda sin ninguna cabecera— responde
+// lo mismo que el padre, flujo vacío. Crear una cabecera desactivada y vacía daría el mismo
+// comportamiento con una fila fantasma de más.
 //
 // POR QUÉ NO UN `INSERT ... SELECT`, que sería la copia literal: sería un SEGUNDO escritor de
 // `fill_flow_steps` / `signature_flow_steps` con su propia lista de columnas, y este módulo existe

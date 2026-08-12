@@ -250,24 +250,27 @@ const buildCountConnection = ({ hasSteps = 1, falla = false } = {}) => {
   };
 };
 
-test("el gate cuenta los pasos por los DOS portadores: el artifact y sus vinculos", async () => {
-  // Andamiaje explícito hasta el sub-paso 8: lo sembrado por el sync cuelga del VÍNCULO y lo que
-  // escribe el formulario cuelga del ARTIFACT. Medido en la base de dev: todas las plantillas de la
-  // fixture tienen 0 pasos por artifact y 1 por vínculo. Contar solo por artifact rechazaría todo lo
-  // que no se haya vuelto a guardar por el formulario.
+test("el gate cuenta los pasos por UN portador: el de la plantilla", async () => {
+  // El sub-paso 4 dejó aquí un `OR` sobre dos portadores y lo declaró andamiaje: lo que sembraba el
+  // sync colgaba del VÍNCULO y lo que escribe el formulario cuelga del ARTIFACT. El sub-paso 8 quita
+  // el segundo, que ya no tiene productor. Que el `IN (SELECT ...)` NO esté es la mitad que importa:
+  // mientras siguiera ahí, un flujo rancio colgado de un vínculo haría pasar el gate a una plantilla
+  // que no define ninguno.
   const connection = buildCountConnection();
   assert.equal(await hasFillStepsForArtifact(connection, ARTIFACT_ID), true);
 
   const [{ sql, params }] = connection.calls;
-  assert.match(sql, /f\.template_artifact_id = \? AND f\.process_definition_template_id IS NULL/);
-  assert.match(sql, /f\.process_definition_template_id IN \( SELECT pdt\.id FROM process_definition_templates/);
-  assert.deepEqual(params, [ARTIFACT_ID, ARTIFACT_ID], "el id va dos veces: una por portador");
+  assert.match(sql, /f\.template_artifact_id = \?/);
+  assert.match(sql, /f\.process_definition_template_id IS NULL/);
+  assert.equal(/process_definition_templates/.test(sql), false, "el gate ya no mira los vinculos");
+  assert.deepEqual(params, [ARTIFACT_ID], "un solo portador, un solo parametro");
 });
 
 test("el gate excluye el flujo de RUNTIME y las cabeceras desactivadas", async () => {
   // `task_item_id IS NULL`: el flujo de runtime lleva vínculo Y entregable, así que sin esta guarda
   // un `routed` "definiría flujo de entrega" en cuanto alguien enviara un entregable.
-  // `is_active = 1`: el sync DESACTIVA cabeceras sin borrarles los pasos, que seguirían contando.
+  // `is_active = 1`: `replaceArtifactFlowSide` DESACTIVA la cabecera cuando el autor quita el flujo
+  // de un lado, sin borrarle los pasos: sin esta guarda seguirían contando.
   const connection = buildCountConnection();
   await hasFillStepsForArtifact(connection, ARTIFACT_ID);
 
@@ -299,14 +302,15 @@ test("un error de la base SUBE: no se traduce en 'no define flujo'", async () =>
 // forma del DOCUMENTO `workflows:` —la misma que produce `buildWorkflowsDocument`— porque el
 // endpoint ya sabía aplanar esa forma y así su contrato HTTP no se mueve.
 //
-// Lo que se fija aquí es lo que el characterization NO puede ver de un solo golpe: el ORDEN de los
-// dos portadores, la INVERSA de `buildStepResolver` (que es donde una lectura ingenua se equivoca) y
-// las dos convenciones del JSONB `signers`.
+// Lo que se fija aquí es lo que el characterization NO puede ver de un solo golpe: que el portador
+// es UNO, la INVERSA de `buildStepResolver` (que es donde una lectura ingenua se equivoca) y las dos
+// convenciones del JSONB `signers`.
 
-// Doble que responde a las consultas del lector. Las cabeceras van EN MAPAS POR ARTIFACT porque el
-// tercer escalón sube por `parent_version_id` y hay que poder decir «este artifact no tiene, su padre
-// sí». `is_active` viaja con la cabecera: existir y estar activa son dos cosas distintas y el lector
-// las distingue.
+// Doble que responde a las consultas del lector. Las cabeceras van EN MAPAS POR ARTIFACT —herencia de
+// cuando había un escalón que subía por `parent_version_id`— y siguen así a propósito: es lo que
+// permite montar el caso «el padre sí tiene y la hija no» y comprobar que YA NO se hereda.
+// `is_active` viaja con la cabecera: existir y estar activa son dos cosas distintas y el lector las
+// distingue.
 const buildReadConnection = ({
   fillHeaders = {},
   fillLinkHeaders = {},
@@ -386,7 +390,10 @@ const signatureRow = (extra = {}) => ({
   ...extra,
 });
 
-test("el lector prefiere el flujo colgado del ARTIFACT y ni pregunta por el del vinculo", async () => {
+test("el lector lee el flujo colgado del ARTIFACT, y NO mira ni el vinculo ni el linaje", async () => {
+  // Los tres escalones del sub-paso 5 (artifact -> vinculo -> version padre) se quedan en uno con el
+  // sub-paso 8: los otros dos eran andamiaje y perdieron su productor. Que ni siquiera se CONSULTEN
+  // es lo que se fija aquí — un flujo rancio colgado de un vinculo taparia al de la plantilla.
   const connection = buildReadConnection({
     fillHeaders: { [ARTIFACT_ID]: { id: 13 } },
     signatureHeaders: { [ARTIFACT_ID]: { id: 4 } },
@@ -395,63 +402,45 @@ test("el lector prefiere el flujo colgado del ARTIFACT y ni pregunta por el del 
   const flujo = await readAuthoredFlowForArtifact(connection, ARTIFACT_ID);
 
   assert.equal(flujo.fill.steps.length, 1);
-  const porVinculo = connection.calls.filter((call) => /process_definition_templates/.test(call.sql));
-  assert.equal(porVinculo.length, 0, "con cabecera propia no se baja al segundo escalon");
+  assert.equal(
+    connection.calls.some((call) => /process_definition_templates/.test(call.sql)),
+    false,
+    "el escalon del vinculo ya no existe",
+  );
+  assert.equal(
+    connection.calls.some((call) => /parent_version_id/.test(call.sql)),
+    false,
+    "el ascenso por el linaje ya no existe",
+  );
 });
 
-test("sin flujo propio se lee el que el sync sembro en el VINCULO (andamiaje hasta el sub-paso 8)", async () => {
-  // Toda plantilla que no se haya vuelto a guardar por el formulario —las del bootstrap— solo tiene
-  // esta copia. Sin este escalón, reabrirlas mostraría el flujo vacío y el guardado siguiente lo
-  // borraría: es el hallazgo 2 del §0.8.
+test("sin cabecera propia el flujo sale VACIO, aunque el vinculo o el padre tengan uno", async () => {
+  // El caso que los dos escalones retirados servían. Desde el sub-paso 6 el versionado COPIA FILAS,
+  // así que una hija real nace con cabecera propia; y sin sync, un vínculo no puede tener flujo. Un
+  // artifact sin cabecera propia no define flujo, y eso es la respuesta correcta, no un hueco.
+  const HIJA = 11;
   const connection = buildReadConnection({
-    fillLinkHeaders: { [ARTIFACT_ID]: { id: 2 } },
+    parents: { [HIJA]: ARTIFACT_ID },
+    fillHeaders: { [ARTIFACT_ID]: { id: 13 } },
+    fillLinkHeaders: { [HIJA]: { id: 2 } },
     fillRows: [fillRow({ code: "owner_fill" })],
   });
-  const flujo = await readAuthoredFlowForArtifact(connection, ARTIFACT_ID);
-
-  assert.equal(flujo.fill.steps.length, 1);
-  const [porVinculo] = connection.calls.filter((call) => /process_definition_templates/.test(call.sql));
-  assert.match(porVinculo.sql, /task_item_id IS NULL/, "el flujo de runtime nunca es el de la plantilla");
-});
-
-test("una VERSION sin portador propio hereda el flujo de su padre (andamiaje, ya sin productor)", async () => {
-  // `createTemplateArtifactVersion` copiaba MinIO en binario y no creaba ni filas ni vínculo: la
-  // versión nacía sin portador propio y su flujo lo llevaba el `meta.yaml` copiado, o sea el del
-  // padre. MEDIDO EN EL NAVEGADOR: sin este escalón, versionar y reabrir mostraba el flujo vacío.
-  // Desde el sub-paso 6 el versionado COPIA LAS FILAS, así que este escalón ya no tiene productor
-  // nuevo — solo lo alcanzan los artifacts versionados antes de aquel commit. Se conserva mientras
-  // esos existan; quitarlo es cambio de comportamiento y lleva commit propio.
-  const HIJA = 11;
-  const connection = buildReadConnection({
-    parents: { [HIJA]: ARTIFACT_ID },
-    fillLinkHeaders: { [ARTIFACT_ID]: { id: 4 } },
-    fillRows: [fillRow({ code: "owner_fill", resolver_type: "document_owner" })],
-  });
   const flujo = await readAuthoredFlowForArtifact(connection, HIJA);
 
-  assert.equal(flujo.fill.steps.length, 1, "la hija ve el flujo del padre");
-  assert.equal(flujo.fill.steps[0].code, "owner_fill");
+  assert.deepEqual(flujo.fill.steps, []);
+  assert.equal(connection.calls.some((call) => /FROM fill_flow_steps/.test(call.sql)), false);
 });
 
-test("el ascenso por el linaje TERMINA: ni sin padre ni con un padre circular se cuelga", async () => {
-  const sinPadre = buildReadConnection();
-  assert.deepEqual((await readAuthoredFlowForArtifact(sinPadre, ARTIFACT_ID)).fill.steps, []);
-
-  const circular = buildReadConnection({ parents: { [ARTIFACT_ID]: 7, 7: ARTIFACT_ID } });
-  assert.deepEqual((await readAuthoredFlowForArtifact(circular, ARTIFACT_ID)).fill.steps, []);
-});
-
-test("una cabecera DESACTIVADA es una respuesta, no un hueco: no se hereda del padre", async () => {
+test("una cabecera DESACTIVADA es una respuesta, no un hueco", async () => {
   // Quitarle todos los pasos a un lado desactiva su cabecera (`replaceArtifactFlowSide`) en vez de
-  // borrarla. Si el lector la ignorara por no estar activa, seguiría subiendo y resucitaría desde el
-  // padre los pasos que el autor acaba de quitar.
-  const HIJA = 11;
+  // borrarla. La distinción entre «existe pero desactivada» y «no existe» se conserva: las dos dan
+  // flujo vacío, pero la primera lo dice porque el autor lo quitó, y sin ella cualquier lector nuevo
+  // que se apoyara en `is_active` volvería a leer los pasos que siguen en la tabla.
   const connection = buildReadConnection({
-    parents: { [HIJA]: ARTIFACT_ID },
-    fillHeaders: { [HIJA]: { id: 20, is_active: 0 }, [ARTIFACT_ID]: { id: 13 } },
+    fillHeaders: { [ARTIFACT_ID]: { id: 20, is_active: 0 } },
     fillRows: [fillRow()],
   });
-  const flujo = await readAuthoredFlowForArtifact(connection, HIJA);
+  const flujo = await readAuthoredFlowForArtifact(connection, ARTIFACT_ID);
 
   assert.deepEqual(flujo.fill.steps, [], "el flujo quitado sigue quitado");
   assert.equal(connection.calls.some((call) => /FROM fill_flow_steps/.test(call.sql)), false);
@@ -733,17 +722,19 @@ test("la copia NUNCA busca una cabecera de RUNTIME", async () => {
   }
 });
 
-test("si el padre no tiene flujo propio, se copia el que el sync sembro en su VINCULO", async () => {
-  // MEDIDO en la base de dev: la plantilla de la fixture tiene 0 cabeceras por artifact y 1 por
-  // vínculo, porque su flujo lo sembró el sync desde `BASE_META_YAML`. Sin este escalón, versionarla
-  // copiaría CERO filas y publicar la versión seguiría dando 400. Andamiaje hasta el sub-paso 8.
+test("un flujo colgado de un VINCULO ya no es origen de copia", async () => {
+  // Hasta el sub-paso 8 la búsqueda del origen bajaba al vínculo, porque la plantilla de la fixture
+  // tenía su flujo solo ahí (lo sembraba el sync desde `BASE_META_YAML`). Retirados el productor y
+  // el escalón, un vínculo con flujo rancio NO debe colarse en la versión nueva: eso resucitaría en
+  // la hija un flujo que la plantilla ya no declara.
   const connection = buildCopyConnection({
     fillLinkHeaders: { [ARTIFACT_ID]: { id: 2 } },
     fillRows: [fillCopyRow()],
   });
   await copyAuthoredFlowToArtifact(connection, { sourceArtifactId: ARTIFACT_ID, targetArtifactId: HIJA_ID });
 
-  assert.equal(find(connection, /^INSERT INTO fill_flow_steps/).length, 1);
+  assert.equal(find(connection, /^INSERT INTO fill_flow_steps/).length, 0);
+  assert.equal(find(connection, /^INSERT INTO/).length, 0, "sin origen no nace ninguna cabecera");
 });
 
 test("un padre SIN flujo no le crea a la hija ninguna cabecera vacia", async () => {

@@ -564,10 +564,11 @@ export default class TemplateLifecycleService {
     // ya no viaja dentro del paquete, así que el entregable bifurcado nacía sin ninguna fila y —al
     // nacer ya `published`— con el gate de publicación esquivado por la puerta de atrás.
     //
-    // ⚠️ EL ORDEN IMPORTA, y es la única diferencia real con el versionado: la copia va ANTES de
-    // re-apuntar el vínculo. `copyAuthoredFlowToArtifact` puede leer el flujo del VÍNCULO del origen
-    // (el que sembró el sync), y el `UPDATE` de abajo mueve justo ese vínculo al artifact nuevo:
-    // hecho al revés, la búsqueda por el origen ya no encontraría nada.
+    // El orden —copiar ANTES de re-apuntar el vínculo— importaba mientras `copyAuthoredFlowToArtifact`
+    // podía leer el flujo del VÍNCULO del origen: el `UPDATE` de abajo mueve justo ese vínculo, así
+    // que al revés la búsqueda no habría encontrado nada. Desde el sub-paso 8 el flujo solo cuelga
+    // del artifact y el orden ya no decide el resultado; se conserva porque copiar antes de mover
+    // sigue siendo lo que se lee mejor.
     const connection = await this.pool.getConnection();
     let newArtifactId;
     try {
