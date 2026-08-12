@@ -20,13 +20,22 @@ import {
 
 // --- Catálogos de tipos permitidos -------------------------------------------
 
+// LOS SEIS RETIRADOS (decisión 1 del §0.8, sub-paso 8). Criterio del dueño: **lo que la web no
+// autora, no existe**. El `meta.yaml` era el único sitio del que podían salir `document_owner`,
+// `position`, `manual_pick`, `context_subtree`, `context_ancestor_type` y `specific_person` en
+// plantillas *official*; retirado el YAML se quedaron sin productor.
+//
+// `specific_person` NO sale de este catálogo, y no es una excepción: su retirada era «en plantillas
+// *official*», y eso ya lo decide `WEB_FILL_RESOLVER_TYPES_BY_SCOPE`, que solo lo admite en *ad_hoc*
+// —donde sí se autora desde la web y desde el editor de runtime—.
+//
+// ⚠️ EL ORDEN DE ESTA RETIRADA IMPORTA y por eso llega la última: mientras hubiera un productor,
+// quitar un tipo del catálogo NO habría fallado, habría DEGRADADO el paso en silencio (ver el
+// fallback de `normalizeFillSteps`, ahora convertido en error).
 export const FILL_RESOLVER_TYPES = new Set([
   "task_assignee",
-  "document_owner",
   "specific_person",
-  "position",
-  "cargo_in_scope",
-  "manual_pick"
+  "cargo_in_scope"
 ]);
 
 export const WEB_FILL_RESOLVER_TYPES_BY_SCOPE = {
@@ -45,15 +54,17 @@ export const webFillResolverTypesForScope = (scope) =>
 export const webFillUnitScopeTypesForScope = (scope) =>
   WEB_FILL_UNIT_SCOPE_TYPES_BY_SCOPE[scope === "ad_hoc" ? "ad_hoc" : "official"];
 
+// `context_subtree` y `context_ancestor_type` salen con los seis retirados: solo el `meta.yaml`
+// podía escribirlos. `unit_subtree` y `all_units` SE QUEDAN aunque el formulario tampoco los ofrezca,
+// porque tienen otro productor vivo: `materializeRuntimeFlowForTaskItem` deriva `all_units` cuando el
+// firmante de runtime va por cargo sin unidad ni tipo (`generation/documents.js`).
 export const FILL_UNIT_SCOPE_TYPES = new Set([
   "unit_exact",
   "unit_subtree",
   "unit_type",
   "all_units",
-  // Ámbitos relativos al contexto del proceso (la unidad se resuelve en runtime, sin fijarla en autoría).
-  "context_exact",
-  "context_subtree",
-  "context_ancestor_type"
+  // Ámbito relativo al contexto del proceso (la unidad se resuelve en runtime, sin fijarla en autoría).
+  "context_exact"
 ]);
 
 export const FILL_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
@@ -62,13 +73,11 @@ export const WEB_FILL_SELECTION_MODES = new Set(["auto_one", "auto_all"]);
 
 export const SIGNATURE_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
 
+// Espejo de `FILL_RESOLVER_TYPES`: los mismos tres retirados, por el mismo motivo.
 export const SIGNATURE_RESOLVER_TYPES = new Set([
   "task_assignee",
-  "document_owner",
   "specific_person",
-  "position",
-  "cargo_in_scope",
-  "manual_pick"
+  "cargo_in_scope"
 ]);
 
 export const SIGNATURE_UNIT_SCOPE_TYPES = new Set([
@@ -76,9 +85,7 @@ export const SIGNATURE_UNIT_SCOPE_TYPES = new Set([
   "unit_subtree",
   "unit_type",
   "all_units",
-  "context_exact",
-  "context_subtree",
-  "context_ancestor_type"
+  "context_exact"
 ]);
 
 export const SIGNATURE_APPROVAL_MODES = new Set(["and", "or", "at_least"]);
@@ -148,17 +155,9 @@ export const buildStepResolver = (step) => {
     if (scopeType === "unit_type" && step?.unit_type_id) {
       resolver.unit_type_id = Number(step.unit_type_id);
     }
-    // Ancestro: sube por el grafo de la relación (NULL = 'org'); el tipo de unidad es el tope opcional.
-    if (scopeType === "context_ancestor_type") {
-      if (step?.unit_type_id) resolver.unit_type_id = Number(step.unit_type_id);
-      if (step?.relation_type_id) resolver.relation_type_id = Number(step.relation_type_id);
-    }
   }
   if (step?.resolver_type === "specific_person" && step?.person_id) {
     resolver.person_id = Number(step.person_id);
-  }
-  if (step?.resolver_type === "position" && step?.position_id) {
-    resolver.position_id = Number(step.position_id);
   }
   return resolver;
 };
@@ -233,6 +232,23 @@ export const normalizeSignatureStepAnchorRefs = (value) => {
     .filter(Boolean);
 };
 
+// ANTES ESTO ERA UN FALLBACK SILENCIOSO A `manual_pick`, y `manual_pick` resuelve a NADIE. Un tipo
+// desconocido no producía un error: producía un paso que nunca se asignaba a nadie, sin decirlo.
+// Retirado `manual_pick` del catálogo (sub-paso 8 del §0.8), mantener el fallback habría hecho algo
+// peor todavía: el `INSERT` reventaría contra el `CHECK` de la tabla, en tiempo de ejecución y con un
+// mensaje de PostgreSQL.
+//
+// Se convierte en un error de AUTORÍA, con el nombre del tipo dentro. En la práctica es inalcanzable
+// desde el formulario —`collectAuthoredWorkflowIssues` rechaza antes cualquier tipo fuera de
+// `webFillResolverTypesForScope`— y esa es justo la razón de que deba fallar fuerte si alguna vez se
+// alcanza: significaría que hay un camino de escritura sin validar.
+const assertFillResolverType = (resolverType) => {
+  if (!FILL_RESOLVER_TYPES.has(resolverType)) {
+    throw new Error(`Responsable de paso no soportado: "${resolverType}".`);
+  }
+  return resolverType;
+};
+
 export const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) => {
   const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
   return rawSteps
@@ -253,7 +269,7 @@ export const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } =
         // inversión de la dirección del flujo lo habría perdido para siempre.
         code: String(step?.code || "").trim() || null,
         name: String(step?.name || "").trim() || null,
-        resolverType: FILL_RESOLVER_TYPES.has(resolverType) ? resolverType : "manual_pick",
+        resolverType: assertFillResolverType(resolverType),
         assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
         unitScopeType: FILL_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "unit_exact",
         unitId: normalizeNumericId(step?.resolver?.unit_id),
@@ -432,7 +448,6 @@ const normalizeAuthoringContext = ({
 }) => ({
   cargoCodeMap: cargoCodeMap instanceof Map ? cargoCodeMap : new Map(),
   personIds: asSet(referenceIds?.personIds),
-  positionIds: asSet(referenceIds?.positionIds),
   unitIds: asSet(referenceIds?.unitIds),
   unitTypeIds: asSet(referenceIds?.unitTypeIds),
   // Ámbito resoluble del proceso vinculado (reglas objetivo). Si no se pasó, no se aplican estas reglas.
@@ -493,8 +508,8 @@ const checkCargoScope = (collector, context, resolver, label, resolvedCargoId) =
     }
   }
 
-  if (scope === "context_exact" || scope === "context_subtree") {
-    // Los ámbitos de contexto resuelven la unidad del proceso vía la posición responsable; si el
+  if (scope === "context_exact") {
+    // El ámbito de contexto resuelve la unidad del proceso vía la posición responsable; si el
     // proceso no tiene reglas objetivo, no se genera posición responsable → resolución null garantizada.
     if (context.scopeHasRules === false) {
       collector.error(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
@@ -518,17 +533,6 @@ const checkCargoScope = (collector, context, resolver, label, resolvedCargoId) =
       collector.error(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
     }
   }
-  if (scope === "context_ancestor_type") {
-    // Sube por el grafo de la relación elegida (o 'org') hasta el ancestro más cercano. El tipo de unidad
-    // es opcional (sin tipo = el padre directo por esa relación); si se indica, se valida que exista.
-    const unitTypeId = normalizeNumericId(resolver?.unit_type_id);
-    if (unitTypeId && context.unitTypeIds.size && !context.unitTypeIds.has(unitTypeId)) {
-      collector.error(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
-    }
-    if (context.scopeHasRules === false) {
-      collector.error(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
-    }
-  }
 };
 
 // Valida existencia contra la DB solo si el set correspondiente está poblado (si no se pudo cargar,
@@ -540,14 +544,6 @@ const checkResolverRefs = (collector, context, resolver, type, label, fallbackCa
       collector.error(`${label}: "Persona específica" requiere seleccionar una persona.`);
     } else if (context.personIds.size && !context.personIds.has(personId)) {
       collector.error(`${label}: la persona seleccionada (${personId}) no existe o está inactiva.`);
-    }
-  }
-  if (type === "position") {
-    const positionId = normalizeNumericId(resolver?.position_id);
-    if (!positionId) {
-      collector.error(`${label}: "Posición" requiere seleccionar una posición.`);
-    } else if (context.positionIds.size && !context.positionIds.has(positionId)) {
-      collector.error(`${label}: la posición seleccionada (${positionId}) no existe o está inactiva.`);
     }
   }
   if (type === "cargo_in_scope") {

@@ -309,9 +309,9 @@ const resolverFromStepColumns = (row = {}) => {
   if (type === "specific_person" && row.assigned_person_id) {
     resolver.person_id = Number(row.assigned_person_id);
   }
-  if (type === "position" && row.position_id) {
-    resolver.position_id = Number(row.position_id);
-  }
+  // La rama `position` desaparece con el resolutor (sub-paso 8 del §0.8). La columna
+  // `position_id` sigue en la tabla porque las filas antiguas la llevan; simplemente ya no hay
+  // resolutor que la interprete, así que tampoco se emite al editor.
   return resolver;
 };
 
@@ -343,7 +343,6 @@ const resolverFromSigner = (signer = {}) => {
     if (unitTypeId) resolver.unit_type_id = unitTypeId;
   }
   if (type === "specific_person" && personId) resolver.person_id = personId;
-  if (type === "position" && positionId) resolver.position_id = positionId;
   return resolver;
 };
 

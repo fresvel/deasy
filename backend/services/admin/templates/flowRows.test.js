@@ -611,11 +611,17 @@ const buildCopyConnection = ({
 const HIJA_ID = 99;
 
 // La fila CRUDA del padre, con las columnas que el documento del editor NO lleva (`can_reject`).
+//
+// El `resolver_type` era `document_owner` hasta el sub-paso 8 del §0.8, cuando el resolutor se retiro
+// del catalogo Y DEL `CHECK` de la tabla. La copia no normaliza —relee las columnas y las reescribe
+// tal cual, que es lo que la hace una copia— asi que con un doble de conexion el test pasaria igual;
+// pero contra la base real ese INSERT ahora reventaria. Se usa un valor vivo para que el test no
+// describa una fila imposible.
 const fillCopyRow = (extra = {}) => ({
   step_order: 1,
   code: "owner_fill",
   name: "Entrega del responsable",
-  resolver_type: "document_owner",
+  resolver_type: "task_assignee",
   assigned_person_id: null,
   unit_scope_type: "unit_exact",
   unit_id: null,
@@ -696,7 +702,7 @@ test("la copia arrastra la fila ENTERA, incluido lo que el documento del editor 
 
   const [pasoFill] = find(connection, /^INSERT INTO fill_flow_steps/);
   assert.equal(pasoFill.params[2], "owner_fill");
-  assert.equal(pasoFill.params[4], "document_owner");
+  assert.equal(pasoFill.params[4], "task_assignee");
   assert.equal(pasoFill.params[9], 3, "relation_type_id");
   assert.equal(pasoFill.params[14], 1, "can_reject");
 

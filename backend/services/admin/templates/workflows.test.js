@@ -17,6 +17,11 @@ import {
   normalizeSignatureSteps,
   resolveStepCargoId,
   collectAuthoredWorkflowIssues,
+  webFillResolverTypesForScope,
+  FILL_RESOLVER_TYPES,
+  FILL_UNIT_SCOPE_TYPES,
+  SIGNATURE_RESOLVER_TYPES,
+  SIGNATURE_UNIT_SCOPE_TYPES,
 } from "./workflows.js";
 
 // --- authoredWorkflowHasSteps: ¿hay flujo que ESCRIBIR? ----------------------
@@ -65,18 +70,72 @@ test("buildStepResolver para cargo en unidad exacta incluye unit_id, no unit_typ
   assert.equal("unit_type_id" in r, false, "unit_exact no fija unit_type_id");
 });
 
-test("buildStepResolver para ancestro incluye unit_type_id y relation_type_id, no unit_id", () => {
+test("buildStepResolver para un tipo de unidad incluye unit_type_id, no unit_id", () => {
   const r = buildStepResolver({
     resolver_type: "cargo_in_scope",
     cargo_id: 4,
-    unit_scope_type: "context_ancestor_type",
+    unit_scope_type: "unit_type",
     unit_id: 8,
     unit_type_id: 3,
-    relation_type_id: 2,
   });
   assert.equal(r.unit_type_id, 3);
-  assert.equal(r.relation_type_id, 2);
-  assert.equal("unit_id" in r, false, "el ancestro no fija una unidad concreta");
+  assert.equal("unit_id" in r, false, "un tipo de unidad no fija una unidad concreta");
+});
+
+// --- LOS SEIS RESOLUTORES RETIRADOS (sub-paso 8 del §0.8, decision 1) --------
+//
+// «Lo que la web no autora, no existe». El `meta.yaml` era el unico productor de `document_owner`,
+// `position`, `manual_pick`, `context_subtree` y `context_ancestor_type`.
+//
+// Estos tests existen por la TRAMPA DE ORDEN que el plan avisa: retirar un tipo del catalogo mientras
+// aun tuviera productor no habria fallado, habria DEGRADADO el paso en silencio a `manual_pick`, que
+// resuelve a nadie. Fijan las dos mitades: que el catalogo no los acepta, y que lo dice en voz alta.
+
+test("los cinco resolutores/ambitos retirados ya no estan en ningun catalogo", () => {
+  for (const tipo of ["document_owner", "position", "manual_pick"]) {
+    assert.equal(FILL_RESOLVER_TYPES.has(tipo), false, `entrega: ${tipo} sigue vivo`);
+    assert.equal(SIGNATURE_RESOLVER_TYPES.has(tipo), false, `firma: ${tipo} sigue vivo`);
+  }
+  for (const ambito of ["context_subtree", "context_ancestor_type"]) {
+    assert.equal(FILL_UNIT_SCOPE_TYPES.has(ambito), false, `entrega: ${ambito} sigue vivo`);
+    assert.equal(SIGNATURE_UNIT_SCOPE_TYPES.has(ambito), false, `firma: ${ambito} sigue vivo`);
+  }
+});
+
+test("los que SI tienen productor se quedan: specific_person, unit_subtree y all_units", () => {
+  // `specific_person` se retiraba solo «en plantillas official», y eso lo decide el gating por scope,
+  // no el catalogo: en `ad_hoc` la web sí lo autora. `unit_subtree` y `all_units` no los ofrece el
+  // formulario, pero `materializeRuntimeFlowForTaskItem` deriva `all_units` en el flujo de runtime.
+  assert.equal(FILL_RESOLVER_TYPES.has("specific_person"), true);
+  assert.equal(webFillResolverTypesForScope("ad_hoc").has("specific_person"), true);
+  assert.equal(webFillResolverTypesForScope("official").has("specific_person"), false);
+  assert.equal(FILL_UNIT_SCOPE_TYPES.has("all_units"), true);
+  assert.equal(FILL_UNIT_SCOPE_TYPES.has("unit_subtree"), true);
+});
+
+test("normalizeFillSteps LANZA ante un resolutor retirado, en vez de degradarlo en silencio", () => {
+  // El fallback antiguo convertia cualquier tipo desconocido en `manual_pick`, que resuelve a NADIE:
+  // el paso se materializaba y no se asignaba a nadie, sin un solo sintoma. Y desde que `manual_pick`
+  // sale del catalogo, ese mismo fallback reventaria contra el CHECK de la tabla en tiempo de
+  // ejecucion. Un error de autoria con el nombre del tipo dentro es lo unico que se lee.
+  const conRetirado = { steps: [{ order: 1, resolver: { type: "document_owner" } }] };
+  assert.throws(() => normalizeFillSteps(conRetirado), /document_owner/);
+  const inventado = { steps: [{ order: 1, resolver: { type: "lo_que_sea" } }] };
+  assert.throws(() => normalizeFillSteps(inventado), /lo_que_sea/);
+});
+
+test("normalizeFillSteps sigue aceptando los tres que quedan", () => {
+  const ok = {
+    steps: [
+      { order: 1, resolver: { type: "task_assignee" } },
+      { order: 2, resolver: { type: "cargo_in_scope", cargo_id: 4 } },
+      { order: 3, resolver: { type: "specific_person", person_id: 7 } },
+    ],
+  };
+  assert.deepEqual(
+    normalizeFillSteps(ok).map((paso) => paso.resolverType),
+    ["task_assignee", "cargo_in_scope", "specific_person"],
+  );
 });
 
 test("buildStepResolver para persona específica solo lleva person_id", () => {

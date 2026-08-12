@@ -923,9 +923,9 @@ CREATE TABLE IF NOT EXISTS fill_flow_steps (
   step_order INT NOT NULL,
   code VARCHAR(120) NULL,
   name VARCHAR(180) NULL,
-  resolver_type TEXT CHECK (resolver_type IN ('task_assignee', 'document_owner', 'specific_person', 'position', 'cargo_in_scope', 'manual_pick')) NOT NULL DEFAULT 'task_assignee',
+  resolver_type TEXT CONSTRAINT chk_fill_flow_steps_resolver_type CHECK (resolver_type IN ('task_assignee', 'specific_person', 'cargo_in_scope')) NOT NULL DEFAULT 'task_assignee',
   assigned_person_id INT NULL,
-  unit_scope_type TEXT CHECK (unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact', 'context_subtree', 'context_ancestor_type')) NOT NULL DEFAULT 'unit_exact',
+  unit_scope_type TEXT CONSTRAINT chk_fill_flow_steps_unit_scope_type CHECK (unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact')) NOT NULL DEFAULT 'unit_exact',
   unit_id INT NULL,
   unit_type_id INT NULL,
   relation_type_id INT NULL,
@@ -1119,9 +1119,9 @@ CREATE TABLE IF NOT EXISTS signature_flow_steps (
   code VARCHAR(120) NULL,
   name VARCHAR(180) NULL,
   slot VARCHAR(80) NULL,
-  resolver_type TEXT CHECK (resolver_type IN ('task_assignee', 'document_owner', 'specific_person', 'position', 'cargo_in_scope', 'manual_pick')) NOT NULL DEFAULT 'cargo_in_scope',
+  resolver_type TEXT CONSTRAINT chk_signature_flow_steps_resolver_type CHECK (resolver_type IN ('task_assignee', 'specific_person', 'cargo_in_scope')) NOT NULL DEFAULT 'cargo_in_scope',
   assigned_person_id INT NULL,
-  unit_scope_type TEXT CHECK (unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact', 'context_subtree', 'context_ancestor_type')) NOT NULL DEFAULT 'context_exact',
+  unit_scope_type TEXT CONSTRAINT chk_signature_flow_steps_unit_scope_type CHECK (unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact')) NOT NULL DEFAULT 'context_exact',
   unit_id INT NULL,
   unit_type_id INT NULL,
   position_id INT NULL,
@@ -1146,6 +1146,61 @@ CREATE INDEX IF NOT EXISTS idx_signature_flow_steps_person ON signature_flow_ste
 CREATE INDEX IF NOT EXISTS idx_signature_flow_steps_unit ON signature_flow_steps (unit_id);
 CREATE INDEX IF NOT EXISTS idx_signature_flow_steps_unit_type ON signature_flow_steps (unit_type_id);
 CREATE INDEX IF NOT EXISTS idx_signature_flow_steps_position ON signature_flow_steps (position_id);
+
+
+-- LOS SEIS RESOLUTORES RETIRADOS (sub-paso 8 del §0.8; decision 1 del plan, tomada el 2026-08-10).
+--
+-- Criterio del dueno: **lo que la web no autora, no existe**. El `meta.yaml` era el UNICO sitio del
+-- que podian salir `document_owner`, `position`, `manual_pick`, `context_subtree` y
+-- `context_ancestor_type` (mas `specific_person` en plantillas *official*, que ya lo gobierna el
+-- gating por scope del formulario). Retirado el YAML, se quedaron sin productor.
+--
+-- QUE NO SE TOCA, y no por olvido: `unit_subtree` y `all_units` siguen en el catalogo de ambitos
+-- aunque el formulario tampoco los ofrezca, porque tienen otro productor VIVO —
+-- `materializeRuntimeFlowForTaskItem` deriva `all_units` cuando el firmante de runtime va por cargo
+-- sin unidad ni tipo (`services/admin/generation/documents.js`).
+--
+-- POR QUE HACE FALTA ESTE ALTER: un `CHECK` cambiado NO se reaplica con `CREATE TABLE IF NOT
+-- EXISTS`. Sin esto, el catalogo nuevo solo valdria para bases recien creadas y las desplegadas
+-- seguirian aceptando los seis. Precedentes: 673f1fb, 8f9f1ad, 99fc7c7.
+--
+-- COMO ES IDEMPOTENTE: los CHECK de las definiciones de arriba llevan ahora NOMBRE EXPLICITO
+-- (`chk_*`), asi que en una base recien creada este bloque no encuentra la restriccion vieja
+-- (autonombrada `<tabla>_<columna>_check`) y no anade la nueva porque ya existe: no-op. En una base
+-- ya desplegada dropea la vieja y anade la nueva UNA vez; a partir de ahi, no-op.
+--
+-- ⚠️ El `ADD CONSTRAINT` VALIDA LAS FILAS EXISTENTES y falla el arranque si alguna lleva un valor
+-- retirado. Es deliberado: fallar en el arranque, con el nombre de la restriccion, es preferible a
+-- que una fila con un resolutor que ya nadie sabe resolver siga viva y sin resolver a nadie. Medido
+-- sobre una base recien sembrada: cero filas violan el catalogo nuevo.
+DO $$
+DECLARE
+  objetivo RECORD;
+BEGIN
+  FOR objetivo IN
+    SELECT * FROM (VALUES
+      ('fill_flow_steps',      'resolver_type',   $chk$resolver_type IN ('task_assignee', 'specific_person', 'cargo_in_scope')$chk$),
+      ('fill_flow_steps',      'unit_scope_type', $chk$unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact')$chk$),
+      ('signature_flow_steps', 'resolver_type',   $chk$resolver_type IN ('task_assignee', 'specific_person', 'cargo_in_scope')$chk$),
+      ('signature_flow_steps', 'unit_scope_type', $chk$unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact')$chk$)
+    ) AS t(tabla, columna, expresion)
+  LOOP
+    EXECUTE format(
+      'ALTER TABLE %I DROP CONSTRAINT IF EXISTS %I',
+      objetivo.tabla, objetivo.tabla || '_' || objetivo.columna || '_check'
+    );
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint
+       WHERE conrelid = objetivo.tabla::regclass
+         AND conname = 'chk_' || objetivo.tabla || '_' || objetivo.columna
+    ) THEN
+      EXECUTE format(
+        'ALTER TABLE %I ADD CONSTRAINT %I CHECK (%s)',
+        objetivo.tabla, 'chk_' || objetivo.tabla || '_' || objetivo.columna, objetivo.expresion
+      );
+    END IF;
+  END LOOP;
+END $$;
 
 
 CREATE TABLE IF NOT EXISTS signature_flow_instances (

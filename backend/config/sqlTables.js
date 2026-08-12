@@ -696,7 +696,7 @@ export const SQL_TABLES = [
         name: "resolver_type",
         label: "Resolver",
         type: "select",
-        options: ["task_assignee", "document_owner", "specific_person", "position", "cargo_in_scope", "manual_pick"],
+        options: ["task_assignee", "specific_person", "cargo_in_scope"],
         defaultValue: "task_assignee"
       },
       { name: "assigned_person_id", label: "Persona fija", type: "number" },
@@ -836,7 +836,7 @@ export const SQL_TABLES = [
         name: "resolver_type",
         label: "Resolver",
         type: "select",
-        options: ["task_assignee", "document_owner", "specific_person", "position", "cargo_in_scope", "manual_pick"],
+        options: ["task_assignee", "specific_person", "cargo_in_scope"],
         defaultValue: "cargo_in_scope"
       },
       { name: "assigned_person_id", label: "Persona asignada", type: "number" },
@@ -844,7 +844,7 @@ export const SQL_TABLES = [
         name: "unit_scope_type",
         label: "Alcance unidad",
         type: "select",
-        options: ["unit_exact", "unit_subtree", "unit_type", "all_units", "context_exact", "context_subtree", "context_ancestor_type"],
+        options: ["unit_exact", "unit_subtree", "unit_type", "all_units", "context_exact"],
         defaultValue: "context_exact"
       },
       { name: "unit_id", label: "Unidad", type: "number" },

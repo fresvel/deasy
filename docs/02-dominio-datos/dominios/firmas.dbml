@@ -50,9 +50,9 @@ Table "signature_flow_steps" {
   "code" varchar(120)
   "name" varchar(180)
   "slot" varchar(80)
-  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'document_owner'::text, 'specific_person'::text, 'position'::text, 'cargo_in_scope'::text, 'manual_pick'::text])`, default: 'cargo_in_scope']
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'cargo_in_scope']
   "assigned_person_id" int4
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text, 'context_subtree'::text, 'context_ancestor_type'::text])`, default: 'context_exact']
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text])`, default: 'context_exact']
   "unit_id" int4
   "unit_type_id" int4
   "position_id" int4

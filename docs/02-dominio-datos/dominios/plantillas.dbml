@@ -51,9 +51,9 @@ Table "fill_flow_steps" {
   "step_order" int4 [not null]
   "code" varchar(120)
   "name" varchar(180)
-  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'document_owner'::text, 'specific_person'::text, 'position'::text, 'cargo_in_scope'::text, 'manual_pick'::text])`, default: 'task_assignee']
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'task_assignee']
   "assigned_person_id" int4
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text, 'context_subtree'::text, 'context_ancestor_type'::text])`, default: 'unit_exact']
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text])`, default: 'unit_exact']
   "unit_id" int4
   "unit_type_id" int4
   "relation_type_id" int4
