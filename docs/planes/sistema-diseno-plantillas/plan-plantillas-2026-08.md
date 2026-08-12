@@ -330,12 +330,20 @@ componente son el mismo trabajo hecho dos veces si se separan.
 
 ## Cómo se verifica cada fase
 
-El instrumento está construido y probado; no hay que inventarlo otra vez.
+El instrumento está construido, probado y **versionado**: [`scripts/css-huella.mjs`](../../../scripts/css-huella.mjs).
+No hay que inventarlo otra vez.
 
-1. **Huella de estilos computados** — `getComputedStyle` de 34 propiedades + `getBoundingClientRect`
-   por nodo, antes/después, con `fpdiff`. Esperar a `document.fonts.ready` antes de medir o los anchos
-   mienten. **Comprobar el número de nodos de la captura base antes de fiarse de ella**: en la sesión
-   del 2026-08-09 una base salió con 4 nodos y no se detectó hasta comparar.
+```bash
+node scripts/css-huella.mjs --captura                  # el fragmento, para la consola del navegador
+node scripts/css-huella.mjs antes.json despues.json    # 0 = sin diferencias · 1 = las hay · 2 = base inválida
+```
+
+1. **Huella de estilos computados** — `getComputedStyle` de 37 propiedades + `getBoundingClientRect`
+   por nodo, antes/después, comparado nodo a nodo. El script **ya espera a `document.fonts.ready`** y
+   **ya rechaza una base con menos de 50 nodos**: en la sesión del 2026-08-09 una salió con 4 (página
+   a medio renderizar) y no se detectó hasta comparar. Agrupa las diferencias **por propiedad**, que
+   es lo que distingue un cambio previsto de una regresión: 28 diferencias todas en
+   `background-color` son el cambio que buscabas; repartidas en seis propiedades, no.
 2. **Rutas de referencia**: `/login`, `/home`, `/home/firmas`, `/perfil`, `/admin`,
    `/admin/academia/unidades/organigrama`, `/admin/gestiones/procesos/mapa`. El admin **no puede ver**
    `/home` ni `/perfil` (`meta.blockedForAdmin`): hay que entrar como usuario o gestor.

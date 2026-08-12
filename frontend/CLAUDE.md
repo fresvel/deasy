@@ -160,12 +160,24 @@ bordes, sombra, tipografía, espaciado) y `getBoundingClientRect` de cada nodo, 
 comparar nodo a nodo. Un refactor que promete «cambio visual cero» **tiene que dar 0 diferencias**;
 si da alguna, o el análisis estaba mal o rompiste algo.
 
-Dos guardas que esa huella necesita, y que se aprendieron por las malas:
+**No hay que reinventarla: está en `scripts/css-huella.mjs`.**
+
+```bash
+node scripts/css-huella.mjs --captura              # el fragmento, para pegar en la consola
+node scripts/css-huella.mjs antes.json despues.json   # 0 si no hay diferencias, 1 si las hay
+```
+
+Los dos guardas que esa huella necesita **ya los aplica el script**, y los dos se aprendieron por las
+malas:
 
 - **Espera a `await document.fonts.ready` antes de medir.** Si no, mides con la fuente de reserva y
   los anchos mienten sin que ningún estilo computado cambie.
 - **Comprueba el número de nodos de la captura base.** Una salió con 4 nodos porque la página
-  seguía cargando, y esa base no valía para nada.
+  seguía cargando, y esa base no valía para nada. El script se planta si ve menos de 50.
+
+Y dos límites suyos que conviene tener presentes: **no ve los pseudo-elementos** (`::-webkit-scrollbar`,
+`::placeholder`, `::before`), y **empareja por ruta en el DOM**, así que si el contenido cambia de
+orden entre capturas comparas nodos distintos y salen diferencias falsas.
 
 ### Los linters no bastan, y conviene saber qué NO ven
 
