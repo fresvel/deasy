@@ -70,7 +70,7 @@
       {{ feedback.message }}
     </div>
 
-    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
+    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-brand-border bg-brand-surface-muted">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando organigrama…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-brand-text-muted">No hay unidades para mostrar.</div>
@@ -182,7 +182,7 @@
         </header>
 
         <!-- Pestañas del panel -->
-        <div class="flex gap-4 border-b border-slate-200 px-5">
+        <div class="flex gap-4 border-b border-brand-border px-5">
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'ocupaciones' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'procesos' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('procesos')">Procesos</button>
         </div>
@@ -219,11 +219,11 @@
           </div>
 
           <div v-if="detailLoading" class="text-sm text-slate-500">Cargando…</div>
-          <div v-else-if="!detailPositions.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-brand-text-muted">
+          <div v-else-if="!detailPositions.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
             Esta unidad no tiene puestos registrados.
           </div>
           <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-            <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+            <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-brand-border px-3 py-2.5">
               <div class="flex items-center gap-2">
                 <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-amber-500" title="Jefatura" />
                 <span class="truncate text-sm font-semibold text-slate-800">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
@@ -251,7 +251,7 @@
                   </template>
                 </template>
                 <template v-else>
-                  <span class="inline-flex items-center rounded-xl bg-slate-100 px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
+                  <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
                   <button v-if="editable" type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openAssign(pos.id)">Asignar</button>
                 </template>
               </div>
@@ -260,7 +260,7 @@
               <button
                 v-if="editable"
                 type="button"
-                class="mt-2 inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-brand-icon transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                class="mt-2 inline-flex items-center gap-1.5 rounded-2xl border border-brand-border px-2.5 py-1 text-[11px] font-semibold text-brand-icon transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
                 @click="openProfileWizard(pos)"
               >
                 <IconFileDescription class="h-3.5 w-3.5" />
@@ -268,7 +268,7 @@
               </button>
 
               <!-- Buscador de persona para asignar -->
-              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-brand-border bg-brand-surface-muted p-2">
                 <input
                   v-model="personQuery"
                   type="text"
@@ -302,11 +302,11 @@
               </div>
             </div>
             <div v-if="detailProcessesLoading" class="text-sm text-slate-500">Cargando…</div>
-            <div v-else-if="!detailProcesses.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-brand-text-muted">
+            <div v-else-if="!detailProcesses.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
               Ningún proceso aplica a esta unidad.
             </div>
             <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-              <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+              <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-brand-border px-3 py-2.5">
                 <div class="flex items-center gap-2">
                   <span class="truncate text-sm font-semibold text-slate-800">{{ proc.process_name }}</span>
                   <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="processOriginMeta(proc.origin).class">{{ processOriginMeta(proc.origin).label }}</span>
@@ -314,7 +314,7 @@
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span class="truncate">{{ proc.definition_name }} · v{{ proc.definition_version }}</span>
-                  <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
+                  <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <span class="text-slate-500">Destinatario: <span class="font-medium text-slate-700">{{ recipientSummary(proc) }}</span></span>
@@ -397,7 +397,7 @@
           <select
             v-model="processForm.process_definition_id"
             :disabled="Boolean(processEditingRuleId)"
-            class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-100"
+            class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50"
           >
             <option value="">Selecciona…</option>
             <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
@@ -835,7 +835,7 @@ const processScopeLabel = (code) => PROCESS_SCOPE_LABELS[code] || code || "—";
 const processStatusClass = (status) => {
   if (status === "active") return "bg-emerald-50 text-state-success ring-emerald-200";
   if (status === "retired") return "bg-rose-50 text-rose-600 ring-rose-200";
-  return "bg-slate-100 text-brand-icon ring-slate-200";
+  return "bg-brand-surface-muted text-brand-icon ring-slate-200";
 };
 
 // --- Administración de procesos de la unidad (vía reglas de alcance) ---
@@ -847,8 +847,8 @@ const RECIPIENT_POLICY_LABELS = {
 const PROCESS_ORIGIN_META = {
   direct: { label: "Directo", class: "bg-indigo-50 text-indigo-700 ring-indigo-200" },
   type: { label: "Por tipo", class: "bg-violet-50 text-violet-700 ring-violet-200" },
-  global: { label: "Global", class: "bg-slate-100 text-brand-icon ring-slate-200" },
-  other: { label: "Otro", class: "bg-slate-100 text-slate-500 ring-slate-200" }
+  global: { label: "Global", class: "bg-brand-surface-muted text-brand-icon ring-slate-200" },
+  other: { label: "Otro", class: "bg-brand-surface-muted text-slate-500 ring-slate-200" }
 };
 const recipientPolicyLabel = (code) => RECIPIENT_POLICY_LABELS[code] || code || "—";
 const processOriginMeta = (origin) => PROCESS_ORIGIN_META[origin] || PROCESS_ORIGIN_META.other;

@@ -27,7 +27,7 @@
     <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-indigo-300 bg-indigo-50' : 'border-indigo-200 bg-indigo-50/50'">
       <div class="flex items-center gap-3">
         <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</span>
-        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>
+        <span class="inline-flex items-center rounded-full bg-brand-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>
         <span v-if="draftArtifactForm.storage_version" class="text-xs font-medium text-brand-text-muted">· {{ draftArtifactForm.storage_version }}</span>
         <span v-if="guidedConfigId" class="text-xs font-medium text-indigo-600">· Actualización guiada: al publicar se activa la nueva configuración</span>
       </div>
@@ -54,7 +54,7 @@
           v-for="opt in versionBumpOptions"
           :key="opt.value"
           class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
-          :class="versionBumpLevel === opt.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-slate-200 hover:border-slate-300'"
+          :class="versionBumpLevel === opt.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-brand-border hover:border-slate-300'"
         >
           <input v-model="versionBumpLevel" type="radio" name="bump-level" :value="opt.value" class="mt-1" />
           <span class="min-w-0">
@@ -201,11 +201,11 @@
       <div v-if="draftArtifactPreviewStatus !== 'idle'" class="md:col-span-12">
         <!-- Rotulo del preview: no es un <label> porque no hay control que etiquetar (es un iframe). -->
         <span class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</span>
-        <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-500">
+        <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-brand-border bg-brand-surface-muted px-4 py-5 text-center text-sm font-medium text-slate-500">
           Cargando preview…
         </div>
-        <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-slate-200 bg-white" title="Preview del seed"></iframe>
-        <div v-else class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-500">
+        <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-brand-border bg-brand-white" title="Preview del seed"></iframe>
+        <div v-else class="rounded-xl border border-dashed border-brand-border bg-brand-surface-muted px-4 py-5 text-center text-sm font-medium text-slate-500">
           Este seed no tiene un PDF de preview publicado.
         </div>
       </div>
@@ -220,11 +220,11 @@
         </div>
         <AdminButton variant="outlinePrimary" @click="addSchemaField">+ Añadir campo</AdminButton>
       </div>
-      <div v-if="!schemaFields.length" class="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-500">
+      <div v-if="!schemaFields.length" class="mt-3 rounded-xl border border-dashed border-brand-border bg-brand-surface-muted px-4 py-5 text-center text-sm font-medium text-slate-500">
         Aún no hay campos. Añade al menos uno para generar el formulario del entregable.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
-        <div v-for="(field, index) in schemaFields" :key="index" class="grid grid-cols-12 items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+        <div v-for="(field, index) in schemaFields" :key="index" class="grid grid-cols-12 items-end gap-2 rounded-xl border border-brand-border bg-brand-white px-3 py-2.5">
           <div class="col-span-3">
             <label :for="fieldId(`field-key-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-brand-text-muted">Clave</label>
             <input :id="fieldId(`field-key-${index}`)" :value="field.key" placeholder="ej. semestre" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSchemaField(index, 'key', $event.target.value)" />
@@ -255,7 +255,7 @@
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-brand-border text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
           </div>
         </div>
       </div>
@@ -273,14 +273,14 @@
       <div v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-state-warning">
         El proceso vinculado aún no tiene <strong>reglas objetivo</strong>. Los ámbitos “Unidad del proceso” quedan deshabilitados (resolverían a nadie); define primero las reglas o usa una unidad específica.
       </div>
-      <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm font-medium text-slate-500">
+      <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-brand-border bg-brand-surface-muted px-4 py-4 text-center text-sm font-medium text-slate-500">
         Sin pasos de entrega.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
         <div
           v-for="(step, index) in fillSteps"
           :key="index"
-          class="overflow-hidden rounded-xl border-l-4 border bg-white"
+          class="overflow-hidden rounded-xl border-l-4 border bg-brand-white"
           :class="stepToneClass(index)"
           draggable="true"
           @dragstart="onStepDragStart('fill', index)"
@@ -320,7 +320,7 @@
             </AdminButton>
           </div>
           <!-- Editor (expandido). El orden lo define el arrastre; aquí no se edita el número. -->
-          <div v-show="expandedFillStep === index" class="border-t border-slate-100 px-3 py-2.5">
+          <div v-show="expandedFillStep === index" class="border-t border-brand-border px-3 py-2.5">
             <div class="grid grid-cols-12 items-end gap-2">
               <div class="col-span-6">
                 <label :for="fieldId(`fill-name-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-brand-text-muted">Nombre</label>
@@ -409,14 +409,14 @@
         <AdminButton variant="outlinePrimary" @click="addSignatureStep">+ Añadir paso</AdminButton>
       </div>
 
-      <div v-if="!signatureSteps.length" class="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm font-medium text-slate-500">
+      <div v-if="!signatureSteps.length" class="mt-3 rounded-xl border border-dashed border-brand-border bg-brand-surface-muted px-4 py-4 text-center text-sm font-medium text-slate-500">
         Sin pasos de firma.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
         <div
           v-for="(step, index) in signatureSteps"
           :key="`sig-${index}`"
-          class="overflow-hidden rounded-xl border-l-4 border bg-white"
+          class="overflow-hidden rounded-xl border-l-4 border bg-brand-white"
           :class="stepToneClass(index)"
           draggable="true"
           @dragstart="onStepDragStart('signature', index)"
@@ -456,7 +456,7 @@
             </AdminButton>
           </div>
           <!-- Editor (expandido). El orden lo define el arrastre; aquí no se edita el número. -->
-          <div v-show="expandedSignatureStep === index" class="border-t border-slate-100 px-3 py-2.5">
+          <div v-show="expandedSignatureStep === index" class="border-t border-brand-border px-3 py-2.5">
           <div class="grid grid-cols-12 items-end gap-2">
             <div class="col-span-7">
               <label :for="fieldId(`sig-name-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-brand-text-muted">Nombre</label>
@@ -480,12 +480,12 @@
           </div>
 
           <!-- Firmantes del paso: cada uno con su propio resolutor; el cupo entre ellos lo define "Aprobación". -->
-          <div class="mt-3 border-t border-slate-100 pt-2">
+          <div class="mt-3 border-t border-brand-border pt-2">
             <div class="flex items-center justify-between">
               <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-brand-text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
               <button type="button" class="rounded-2xl border border-indigo-200 px-2 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50" @click="addSignatureSigner(index)">+ Añadir firmante</button>
             </div>
-            <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-slate-100 bg-brand-surface-muted/60 px-2.5 py-2">
+            <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-brand-border bg-brand-surface-muted/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
                 <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
                   <label :for="fieldId(`signer-who-mode-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-brand-text-muted">Quién firma</label>
@@ -496,7 +496,7 @@
                   </select>
                 </div>
                 <div v-if="stepSigners(step).length > 1" class="col-span-1 flex items-center justify-end pb-1">
-                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
+                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-brand-border text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
                 </div>
               </div>
               <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">

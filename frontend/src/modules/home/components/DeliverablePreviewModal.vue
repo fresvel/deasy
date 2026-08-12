@@ -11,10 +11,10 @@
       <iframe
         v-if="url && isPdf"
         :src="url"
-        class="w-full min-h-[70vh] rounded-2xl border border-slate-200 bg-white"
+        class="w-full min-h-[70vh] rounded-2xl border border-brand-border bg-brand-white"
         title="Vista previa del archivo"
       />
-      <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-brand-icon">
+      <div v-else class="rounded-2xl border border-brand-border bg-brand-surface-muted p-6 text-sm text-brand-icon">
         El archivo no se puede previsualizar en línea. Usa la opción de descarga.
       </div>
     </div>

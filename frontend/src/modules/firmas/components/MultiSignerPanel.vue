@@ -1,9 +1,9 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-brand-surface-muted/60 p-4">
+          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-brand-border bg-brand-surface-muted/60 p-4">
             <PdfDropField
               title=""
               action-text="Seleccionar PDFs"
@@ -110,7 +110,7 @@
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
                 class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
-                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
+                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-brand-border bg-brand-white hover:border-slate-300 hover:bg-brand-surface-muted'"
               >
                 <div class="flex w-full items-start justify-between gap-3">
                   <button
@@ -143,7 +143,7 @@
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-sm">
         <div
           class="relative grow overflow-hidden bg-slate-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
@@ -157,13 +157,13 @@
             <div
               v-if="currentDocument"
               ref="viewerRef"
-              class="relative mb-6 border border-slate-300 bg-white shadow-md transition-all duration-300"
+              class="relative mb-6 border border-slate-300 bg-brand-white shadow-md transition-all duration-300"
               @mousedown="handlePointerDown"
               @mousemove="handlePointerMove"
               @mouseup="handlePointerUp"
               @mouseleave="handlePointerLeave"
             >
-              <canvas ref="pdfCanvas" class="z-0 block h-auto w-full bg-white"></canvas>
+              <canvas ref="pdfCanvas" class="z-0 block h-auto w-full bg-brand-white"></canvas>
 
               <SignatureBox
                 v-if="isMouseOverPdf && selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
@@ -216,7 +216,7 @@
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
+                      <span class="min-w-0 flex-1 border-x border-brand-border px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
                         D {{ currentDocumentIndex + 1 }}/{{ filteredDocumentCount }}
                       </span>
                       <button
@@ -240,7 +240,7 @@
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
+                      <span class="min-w-0 flex-1 border-x border-brand-border px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
                         P {{ currentPage }}/{{ Math.max(totalPages, 1) }}
                       </span>
                       <button
@@ -311,7 +311,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-sm">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"

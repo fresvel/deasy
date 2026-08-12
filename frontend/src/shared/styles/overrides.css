@@ -269,6 +269,23 @@
 .deasy-field-select,
 .deasy-field-textarea,
 .deasy-auth-field,
+/* [F4.4-d 2026-08-12] ⚠️ SE INTENTO PARTIR ESTA REGLA Y NO SE PUEDE. Queda escrito porque
+   el razonamiento parecia solido y era falso.
+
+   La idea era la misma que funciono en `.deasy-dialog-body`: bajar el `background-color` a
+   `@layer components` —porque «no tapaba nada, el repintado ya ganaba»— y dejar fuera solo
+   el `border-radius`, que si tapa 83 radios. Al medirlo, el fondo pasó de suprimir a no
+   suprimir y aparecieron **10 nodos**:
+
+     - Dos controles con `bg-brand-surface-muted/50` (migrados en 4.4-a) que hasta ahora
+       salian BLANCOS porque esta regla les ganaba. Con el fondo capado, se tiñeron.
+     - Ocho `input` ocultos (`.deasy-dropzone__input`, `.peer.sr-only`) que perdian el
+       blanco y quedaban en `rgba(0,0,0,0)`.
+
+   O sea: el `background-color` SI estaba tapando, solo que no lo que yo miraba. La regla se
+   queda entera y sin capa, y lo que no se migra son las utilidades que caen sobre ella —
+   ver la nota de los controles en las plantillas. */
+
 .profile-text-input,
 .profile-select-input,
 .profile-textarea,
@@ -378,7 +395,18 @@ textarea {
 
    Lo correcto es que cada cabecera de panel declare su fondo y que esta regla se limite a
    `SHeader.vue`, que es la unica que quiere el azul. Es un cambio de plantilla, no de
-   capa. Anotado para F5. */
+   capa. Anotado para F5.
+
+   [F4.4-d 2026-08-12] TAMPOCO SE PARTE. Se probo bajar el `background-color` a
+   `@layer components` para que el `bg-white` de `SNotify.vue:25` volviera a ganar; funciono
+   para el fondo, pero dejo al descubierto que el `border-color` estaba en la misma
+   situacion y con menos margen: al migrar los `border-slate-200` de las cabeceras, la
+   utilidad perdia contra esta regla y el borde pasaba de `--brand-border` a
+   `rgba(255,255,255,.1)`. Partirla del todo era mover las dos declaraciones, no una, y ahi
+   ya no hay medicion que lo respalde para las tres cabeceras de cajon.
+
+   Se queda entera y sin capa. Lo que no se migra son las utilidades de fondo y borde de las
+   cuatro cabeceras — ver la nota en `SNotify.vue`. */
 header {
   background-color: var(--brand-navy-deep);
   border-color: rgba(var(--brand-white-rgb), 0.1);
@@ -555,10 +583,14 @@ header {
     }
 }
 
-.min-h-screen.bg-slate-100,
-.bg-slate-100 {
-  background-color: var(--brand-surface-muted);
-}
+/* [F4.4-d 2026-08-12] AQUI VIVIA `.min-h-screen.bg-slate-100, .bg-slate-100`. **BORRADA: 0
+   consumidores.** Los 66 usos que tenia son ahora `bg-brand-surface-muted`, que pinta el
+   mismo token sin necesidad de repintado. Comprobado que no se compone en runtime: los
+   unicos aciertos de `slate-100` que quedan son `to-slate-100/70`, paradas de degradado con
+   alfa, que no casan con este selector.
+
+   Es la primera regla del bloque (A) que muere, y de eso iba toda la fase: el repintado no
+   es arquitectura, es deuda con fecha de caducidad. */
 
 .bg-slate-50,
 .bg-slate-50\/70,
@@ -600,7 +632,10 @@ header {
    escribe `border-slate-200` a mano dentro de una cabecera de dialogo—, y los cinco pasan
    de `rgb(226,230,240)` a `rgb(215,222,234)`. La cifra de R4 se quedo corta porque se midio
    en una sola ruta. Importa: es la unica razon por la que este `!important` sigue vivo. */
-.border-slate-100,
+/* [F4.4-d] `.border-slate-100` sale de esta lista: **0 consumidores**, sus 69 usos son ahora
+   `border-brand-border`. `.border-slate-200` se queda con 54, que son los que 4.4-d NO migro
+   a proposito — los que caen sobre `input/select/textarea`, sobre `header` y sobre el boton
+   de cabecera de dialogo, las tres reglas que 4.4-c dejo sin capa. */
 .border-slate-200 {
   border-color: var(--brand-border) !important;
 }

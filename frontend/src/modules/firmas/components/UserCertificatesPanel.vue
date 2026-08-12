@@ -17,7 +17,7 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_20rem] gap-4">
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="bg-brand-white rounded-2xl border border-brand-border p-4 shadow-sm">
         <div v-if="errorMessage" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {{ errorMessage }}
         </div>
@@ -39,7 +39,7 @@
             :key="certificate.id"
             type="button"
             class="w-full rounded-2xl border px-4 py-4 text-left transition shadow-sm"
-            :class="isSelected(certificate.id) ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            :class="isSelected(certificate.id) ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-brand-white hover:bg-brand-surface-muted'"
             @click="selectCertificate(certificate)"
           >
             <div class="flex items-start justify-between gap-3">
@@ -77,7 +77,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-4">
+      <div class="bg-brand-white rounded-2xl border border-brand-border p-4 shadow-sm flex flex-col gap-4">
         <div>
           <h4 class="text-sm font-bold text-slate-800 m-0">Subir certificado</h4>
           <p class="text-xs text-slate-500 m-0 mt-1">

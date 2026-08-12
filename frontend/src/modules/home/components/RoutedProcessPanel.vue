@@ -4,7 +4,7 @@
     <div class="overflow-hidden rounded-[1.75rem] border border-indigo-100 bg-linear-to-br from-indigo-50/70 via-white to-sky-50/50 shadow-sm">
       <div class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
         <div class="flex items-start gap-3.5">
-          <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-white text-indigo-600 shadow-sm">
+          <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-brand-white text-indigo-600 shadow-sm">
             <IconSend class="h-6 w-6" />
           </span>
           <div class="flex min-w-0 flex-col">
@@ -15,7 +15,7 @@
         <div class="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-brand-border bg-brand-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
             title="Actualizar"
             aria-label="Actualizar"
             @click="$emit('refresh')"
@@ -30,7 +30,7 @@
     </div>
 
     <!-- Pestañas: enviados / recibidos -->
-    <div class="flex items-center gap-1.5 rounded-2xl border border-brand-border/80 bg-white p-1.5 shadow-sm">
+    <div class="flex items-center gap-1.5 rounded-2xl border border-brand-border/80 bg-brand-white p-1.5 shadow-sm">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -38,14 +38,14 @@
         class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition"
         :class="activeTab === tab.key
           ? 'bg-indigo-600 text-white shadow-sm'
-          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
+          : 'text-slate-500 hover:bg-brand-surface-muted hover:text-slate-700'"
         @click="activeTab = tab.key"
       >
         <component :is="tab.icon" class="h-4.5 w-4.5" />
         {{ tab.label }}
         <span
           class="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-black"
-          :class="activeTab === tab.key ? 'bg-brand-white/25 text-white' : 'bg-slate-100 text-slate-500'"
+          :class="activeTab === tab.key ? 'bg-brand-white/25 text-white' : 'bg-brand-surface-muted text-slate-500'"
         >{{ tab.items.length }}</span>
       </button>
     </div>
@@ -57,9 +57,9 @@
 
     <div
       v-else-if="!activeItems.length"
-      class="flex flex-col items-center gap-3 rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-brand-surface-muted/50 px-6 py-12 text-center"
+      class="flex flex-col items-center gap-3 rounded-[1.5rem] border-2 border-dashed border-brand-border bg-brand-surface-muted/50 px-6 py-12 text-center"
     >
-      <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-300">
+      <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-brand-border bg-brand-white text-slate-300">
         <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-7 w-7" />
       </span>
       <p class="m-0 text-sm font-bold text-brand-icon">{{ emptyTitle }}</p>
@@ -73,7 +73,7 @@
       <li
         v-for="item in activeItems"
         :key="item.id"
-        class="group flex items-center gap-3.5 rounded-2xl border border-brand-border/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
+        class="group flex items-center gap-3.5 rounded-2xl border border-brand-border/80 bg-brand-white px-4 py-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
       >
         <span
           class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"

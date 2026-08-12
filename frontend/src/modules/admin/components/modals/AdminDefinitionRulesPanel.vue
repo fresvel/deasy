@@ -29,7 +29,7 @@
       <div
         class="flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm"
         :class="canSubmit
-          ? 'border-slate-200 bg-white text-brand-icon'
+          ? 'border-brand-border bg-brand-white text-brand-icon'
           : 'border-amber-200 bg-amber-50 text-amber-800'"
       >
         <font-awesome-icon :icon="canSubmit ? 'info-circle' : 'triangle-exclamation'" class="mt-0.5 shrink-0" />
@@ -42,7 +42,7 @@
         <span
           v-for="chip in seriesFixedChips"
           :key="chip.label"
-          class="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-2 py-0.5 font-medium text-brand-icon ring-1 ring-slate-200"
+          class="inline-flex items-center gap-1 rounded-xl bg-brand-surface-muted px-2 py-0.5 font-medium text-brand-icon ring-1 ring-slate-200"
         >
           {{ chip.label }}: <strong class="font-bold text-slate-700">{{ chip.value }}</strong>
         </span>
@@ -126,7 +126,7 @@
       </fieldset>
 
       <!-- Bloque 2: prioridad, estado y vigencia -->
-      <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-slate-200 pt-4">
+      <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-brand-border pt-4">
         <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-brand-text-muted">Prioridad y vigencia</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
@@ -171,7 +171,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin reglas vinculadas."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
+      responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-brand-white shadow-sm person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">

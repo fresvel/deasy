@@ -379,9 +379,9 @@ export function useDeliverableView({
 
   const getDeliverableWorkspaceTabClass = (tab) => {
     if (deliverableWorkspaceState.value.tab === tab) {
-      return 'border-slate-200 bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
+      return 'border-brand-border bg-brand-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
     }
-    return 'border-transparent bg-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-700';
+    return 'border-transparent bg-brand-surface-muted text-slate-500 hover:border-brand-border hover:bg-brand-surface-muted hover:text-slate-700';
   };
 
   const shouldShowResetWorkflow = (payload) => {
@@ -501,12 +501,12 @@ export function useDeliverableView({
     }
 
     return {
-      card: 'border-slate-200 hover:border-slate-300',
-      header: 'border-slate-100 bg-slate-50/70 text-slate-500',
+      card: 'border-brand-border hover:border-slate-300',
+      header: 'border-brand-border bg-slate-50/70 text-slate-500',
       accent: 'bg-slate-300',
-      responsibility: 'border-slate-100 bg-brand-surface-muted/50',
+      responsibility: 'border-brand-border bg-brand-surface-muted/50',
       responsibilityLabel: 'text-slate-500',
-      iconChip: 'bg-slate-100 text-slate-500'
+      iconChip: 'bg-brand-surface-muted text-slate-500'
     };
   };
 
@@ -540,7 +540,7 @@ export function useDeliverableView({
     if (shouldShowStartDeliverable(payload)) {
       return 'border-indigo-100/95 text-indigo-700 hover:border-indigo-200 hover:bg-indigo-50 focus:ring-indigo-200/70';
     }
-    return 'border-slate-200 text-brand-icon hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
+    return 'border-brand-border text-brand-icon hover:border-slate-300 hover:bg-brand-surface-muted focus:ring-slate-200/70';
   };
 
   const isDeliverableSignatureFlowCompleted = (payload) => {

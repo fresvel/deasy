@@ -296,6 +296,18 @@
 
    Salen de aqui cuando se decida si un boton del slot `#title` es «boton de dialogo». */
 
+/* [F4.4-d 2026-08-12] ⚠️ EL `border` SE QUEDA, PERO AHORA GANA POR OTRA COSA, Y ESO CAMBIA
+   LO QUE PINTA. Hasta 4.4-d, el boton de cerrar de `FirmarPdf.vue:790` llevaba
+   `border-slate-200`, y el repintado de `overrides.css` —suelto y con `!important`— le
+   ganaba a esta regla: renderizaba `--brand-border`. Al migrar ese `border-slate-200` a
+   `border-brand-border`, la utilidad deja de tener `!important` y esta regla pasa a ganar:
+   `--brand-border-field`. Son 5 nodos y la huella los cazo.
+
+   NO se arregla partiendo la regla —aqui el `border` si esta tapando algo real— sino
+   dejando que la plantilla diga lo suyo: el `border-brand-border` de `FirmarPdf.vue` se
+   revierte a la utilidad sin migrar en ese punto concreto, para no cambiar el color. Queda
+   como la unica excepcion de 4.4-d, anotada, y muere cuando se decida si un boton del slot
+   `#title` es «boton de dialogo» — la misma decision que ya menciona el bloque de arriba. */
 .deasy-dialog-root .deasy-dialog-header button {
   background: var(--brand-white);
   color: var(--brand-icon);
@@ -385,8 +397,26 @@
    `p-6 lg:p-8` de `HomeView.vue:927`—, o sea que esto no es un ajuste fino: es la caja de
    todos los dialogos de la aplicacion. */
 
+/* [F4.4-d 2026-08-12] EL `background` SE VA DE AQUI, Y ES LO QUE DESBLOQUEA 4.4-d.
+
+   Lo que esta regla tiene que seguir tapando es el `padding` — las 33 utilidades de arriba.
+   El `background` no tapaba nada de eso: estaba de mas, porque `overrides.css` declara
+   `.deasy-auth-panel, .deasy-dialog-body { background-color: var(--brand-white) }` con el
+   MISMO valor, y desde R4 esa regla ya vive en `@layer components`.
+
+   Tenerlo aqui, sin capa, era el unico agujero que le quedaba a 4.4-d: `FirmarPdf.vue:786`
+   pasa `body-class="p-0 bg-slate-50 relative"`, y al migrar ese `bg-slate-50` a
+   `bg-brand-surface-muted` la utilidad habria perdido contra esta regla suelta y el cuerpo
+   del modal «Validar documento» habria pasado de gris a blanco.
+
+   Quitando la linea, el fondo lo pone la regla capada de `overrides.css` (mismo blanco, sin
+   cambio) y una utilidad de token vuelve a ganarle por capa, que es el contrato de Tailwind.
+
+   Es la tecnica de PARTIR POR DECLARACION, no por regla: cuando dentro de una misma regla
+   conviven una declaracion que tapa algo y otra que no, se separan. La que tapa se queda
+   fuera con su cifra; la que no, baja. */
+
 .deasy-dialog-body {
-  background: var(--brand-white);
   color: var(--brand-text-body);
   font-size: 0.95rem;
   line-height: 1.55;

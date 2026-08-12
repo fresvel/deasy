@@ -8,7 +8,7 @@
       :aria-label="`Perfil de ${username}`"
       @click="handleImageClick"
     >
-      <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-2xl bg-white object-cover">
+      <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-2xl bg-brand-white object-cover">
       <span
         v-if="signatureMarker"
         class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-brand-navy-deep bg-emerald-400"
@@ -37,7 +37,7 @@
           @click="handleImageClick"
         >
           <div class="group relative h-12 w-12 rounded-xl border border-brand-white/15 bg-brand-white/10 p-1 shadow-none">
-            <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
+            <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-brand-white object-cover">
             <div 
               v-if="editable" 
               class="absolute inset-1 flex items-center justify-center rounded-full bg-slate-950/80 px-1 text-center text-[10px] font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"

@@ -2,7 +2,7 @@
   <!-- Solo se muestra a quien encabeza alguna unidad (is_supervisor). Si no, no renderiza nada. -->
   <section
     v-if="isSupervisor"
-    class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-4"
+    class="bg-brand-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-brand-border flex flex-col gap-4"
   >
     <div class="flex items-start justify-between gap-3">
       <div>
@@ -13,13 +13,13 @@
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-1 rounded-2xl border border-slate-200 px-2.5 py-1 text-xs font-semibold text-brand-icon transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50"
+        class="inline-flex items-center gap-1 rounded-2xl border border-brand-border px-2.5 py-1 text-xs font-semibold text-brand-icon transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50"
         :disabled="loading"
         @click="load"
       >↻ Actualizar</button>
     </div>
 
-    <div v-if="loading" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-500">
+    <div v-if="loading" class="rounded-xl border border-brand-border bg-brand-surface-muted px-4 py-4 text-sm font-medium text-slate-500">
       Cargando…
     </div>
     <div v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
@@ -35,7 +35,7 @@
         <div
           v-for="item in group.items"
           :key="item.id"
-          class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-brand-surface-muted/60 px-3 py-2.5"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-border bg-brand-surface-muted/60 px-3 py-2.5"
         >
           <div class="flex flex-col">
             <span class="text-sm font-semibold text-slate-700">

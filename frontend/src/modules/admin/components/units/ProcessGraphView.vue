@@ -22,7 +22,7 @@
       </div>
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="inline-flex items-center gap-0.5 rounded-2xl border border-slate-200 bg-slate-50 p-0.5">
+        <div class="inline-flex items-center gap-0.5 rounded-2xl border border-brand-border bg-brand-surface-muted p-0.5">
           <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
           <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
           <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
@@ -43,7 +43,7 @@
       {{ feedback.message }}
     </div>
 
-    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
+    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-brand-border bg-brand-surface-muted">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando mapa de procesos…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-brand-text-muted">No hay procesos para mostrar.</div>
@@ -154,7 +154,7 @@
           </div>
         </header>
 
-        <div class="flex gap-4 border-b border-slate-200 px-5">
+        <div class="flex gap-4 border-b border-brand-border px-5">
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'configuraciones' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'configuraciones'">Configuraciones</button>
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'subprocesos' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'subprocesos'">Sub-procesos</button>
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'corridas' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'corridas'">Lanzamientos</button>
@@ -169,24 +169,24 @@
                 <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">Configuraciones</p>
                 <AppButton v-if="editable" variant="primary" size="sm" @click="createConfiguration">+ Nueva configuración</AppButton>
               </div>
-              <div v-if="!detailConfigurations.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-brand-text-muted">
+              <div v-if="!detailConfigurations.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
                 Este proceso no tiene configuraciones.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+                <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-brand-border px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
                     <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="configStatusClass(cfg.status)">{{ configStatusLabel(cfg.status) }}</span>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ seriesLabel(cfg) }}</span>
-                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.variation_key }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ seriesLabel(cfg) }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.variation_key }}</span>
                     <span>v{{ cfg.definition_version }}</span>
                   </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
-                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.rules_count }} reglas</span>
-                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.templates_count }} plantillas</span>
-                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.runs_count }} corridas</span>
+                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.rules_count }} reglas</span>
+                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.templates_count }} plantillas</span>
+                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.runs_count }} corridas</span>
                   </div>
                   <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                     <template v-if="editable && cfg.status === 'draft'">
@@ -211,17 +211,17 @@
                 <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">Sub-procesos</p>
                 <AppButton v-if="editable" variant="secondary" size="sm" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
               </div>
-              <div v-if="!detailChildren.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-brand-text-muted">
+              <div v-if="!detailChildren.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
                 Este proceso no tiene sub-procesos.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+                <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-brand-border px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800">{{ ch.name }}</span>
                     <span v-if="!ch.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
                     <span
                       class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
-                      :class="ch.active_count ? 'bg-emerald-50 text-state-success ring-emerald-200' : (ch.definitions_count ? 'bg-amber-50 text-state-warning ring-amber-200' : 'bg-slate-100 text-slate-500 ring-slate-200')"
+                      :class="ch.active_count ? 'bg-emerald-50 text-state-success ring-emerald-200' : (ch.definitions_count ? 'bg-amber-50 text-state-warning ring-amber-200' : 'bg-brand-surface-muted text-slate-500 ring-slate-200')"
                     >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</span>
                   </div>
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
@@ -236,18 +236,18 @@
             <!-- Pestaña: Lanzamientos / corridas -->
             <div v-show="detailTab === 'corridas'">
               <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Lanzamientos / corridas</p>
-              <div v-if="!detailRuns.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-brand-text-muted">
+              <div v-if="!detailRuns.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
                 Este proceso no tiene corridas registradas.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+                <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-brand-border px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800">{{ run.term_name || "Sin periodo" }}</span>
                     <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="runStatusClass(run.status)">{{ run.status }}</span>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                     <span class="truncate">{{ run.definition_name }} · v{{ run.definition_version }}</span>
-                    <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
                     <span v-if="run.source_run_id" class="italic text-brand-text-muted">relanzamiento</span>
                   </div>
                 </li>
@@ -262,7 +262,7 @@
     <!-- Drawer: versiones del entregable (plantilla) -->
     <div v-if="templateDetail" class="deasy-drawer-overlay" @click.self="closeTemplateVersions">
       <aside class="deasy-drawer">
-        <div class="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
+        <div class="flex items-start justify-between gap-2 border-b border-brand-border px-4 py-3">
           <div class="min-w-0">
             <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-violet-500">Entregable · versiones</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-slate-800">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
@@ -274,7 +274,7 @@
             <IconX class="h-5 w-5" />
           </button>
         </div>
-        <div v-if="editable" class="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-2.5">
+        <div v-if="editable" class="flex flex-wrap gap-2 border-b border-brand-border px-4 py-2.5">
           <AppButton variant="secondary" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
           <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
         </div>
@@ -296,7 +296,7 @@
               v-for="v in templateDetail.versions"
               :key="v.id"
               class="cursor-pointer rounded-xl border px-3 py-2.5 transition-colors hover:border-indigo-300 hover:bg-indigo-50/30"
-              :class="String(v.id) === String(templateDetail.pinnedArtifactId) ? 'border-violet-300 bg-violet-50/40' : 'border-slate-200'"
+              :class="String(v.id) === String(templateDetail.pinnedArtifactId) ? 'border-violet-300 bg-violet-50/40' : 'border-brand-border'"
               role="button"
               tabindex="0"
               :title="v.lifecycle_state === 'draft' ? 'Abrir para editar' : 'Abrir (solo lectura)'"
@@ -322,7 +322,7 @@
               </div>
             </li>
           </ul>
-          <p v-else class="m-0 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-brand-text-muted">Sin versiones.</p>
+          <p v-else class="m-0 rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">Sin versiones.</p>
         </div>
       </aside>
     </div>
@@ -779,8 +779,8 @@ const drawerHealthWarning = computed(() => {
 const versionStateClass = (s) => ({
   published: "bg-emerald-50 text-state-success ring-emerald-200",
   draft: "bg-amber-50 text-state-warning ring-amber-200",
-  retired: "bg-slate-100 text-slate-500 ring-slate-200"
-}[String(s)] || "bg-slate-100 text-slate-500 ring-slate-200");
+  retired: "bg-brand-surface-muted text-slate-500 ring-slate-200"
+}[String(s)] || "bg-brand-surface-muted text-slate-500 ring-slate-200");
 const formatVersionDate = (value) => {
   if (!value) return "";
   try {
@@ -935,7 +935,7 @@ const detachChild = async (childId) => {
 const configStatusClass = (status) => {
   if (status === "active") return "bg-emerald-50 text-state-success ring-emerald-200";
   if (status === "draft") return "bg-amber-50 text-state-warning ring-amber-200";
-  return "bg-slate-100 text-slate-500 ring-slate-200";
+  return "bg-brand-surface-muted text-slate-500 ring-slate-200";
 };
 const configStatusLabel = (status) => ({ active: "Activa", draft: "Borrador", retired: "Retirada" }[status] || status);
 const seriesLabel = (cfg) => {
@@ -947,7 +947,7 @@ const runStatusClass = (status) => {
   if (status === "active") return "bg-emerald-50 text-state-success ring-emerald-200";
   if (status === "completed") return "bg-sky-50 text-sky-700 ring-sky-200";
   if (status === "pending") return "bg-amber-50 text-state-warning ring-amber-200";
-  return "bg-slate-100 text-slate-500 ring-slate-200";
+  return "bg-brand-surface-muted text-slate-500 ring-slate-200";
 };
 
 // Acciones de configuración: cierran el drawer y delegan en el padre (wizard / lanzar).

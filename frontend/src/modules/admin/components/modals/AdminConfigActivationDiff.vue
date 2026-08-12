@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-xl border border-slate-200 bg-brand-surface-muted/60 px-3 py-2.5 text-sm">
+  <div class="rounded-xl border border-brand-border bg-brand-surface-muted/60 px-3 py-2.5 text-sm">
     <p class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Qué cambia al activar</p>
 
     <div v-if="loading" class="text-xs text-slate-500">Calculando cambios…</div>
@@ -72,6 +72,6 @@ const changeClass = (c) => ({
   changed: "bg-amber-50 text-state-warning ring-amber-200",
   added: "bg-emerald-50 text-state-success ring-emerald-200",
   removed: "bg-rose-50 text-rose-700 ring-rose-200",
-  unchanged: "bg-slate-100 text-slate-500 ring-slate-200"
-}[c] || "bg-slate-100 text-slate-500 ring-slate-200");
+  unchanged: "bg-brand-surface-muted text-slate-500 ring-slate-200"
+}[c] || "bg-brand-surface-muted text-slate-500 ring-slate-200");
 </script>

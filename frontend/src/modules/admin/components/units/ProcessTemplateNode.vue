@@ -64,8 +64,8 @@ const stateLabel = computed(() => ({ draft: "Borrador", published: "Publicada", 
 const stateBadgeClass = computed(() => ({
   published: "bg-emerald-50 text-state-success ring-emerald-200",
   draft: "bg-amber-50 text-state-warning ring-amber-200",
-  retired: "bg-slate-100 text-slate-500 ring-slate-200"
-}[lifecycleState.value] || "bg-slate-100 text-slate-500 ring-slate-200"));
+  retired: "bg-brand-surface-muted text-slate-500 ring-slate-200"
+}[lifecycleState.value] || "bg-brand-surface-muted text-slate-500 ring-slate-200"));
 const stateDotClass = computed(() => ({
   published: "bg-emerald-500",
   draft: "bg-amber-500",

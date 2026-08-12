@@ -8,7 +8,7 @@
     @close="close"
   >
     <div class="flex flex-col gap-4">
-      <div v-if="term" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+      <div v-if="term" class="rounded-2xl border border-brand-border bg-brand-surface-muted px-4 py-3 text-sm">
         <span class="font-semibold text-slate-700">Periodo:</span>
         <span class="ml-1 text-brand-icon">{{ term.name || `#${term.id}` }}</span>
       </div>
@@ -39,7 +39,7 @@
             <li
               v-for="def in definitions"
               :key="def.definition_id"
-              class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3"
+              class="flex flex-col gap-2 rounded-2xl border border-brand-border bg-brand-white px-4 py-3"
             >
               <div class="flex items-center justify-between gap-3">
                 <div class="flex flex-col">
@@ -66,7 +66,7 @@
                 </div>
               </div>
 
-              <div v-if="relaunchOpenId === def.definition_id" class="flex flex-col gap-2 rounded-xl bg-slate-50 px-3 py-2">
+              <div v-if="relaunchOpenId === def.definition_id" class="flex flex-col gap-2 rounded-xl bg-brand-surface-muted px-3 py-2">
                 <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-brand-icon">Motivo del relanzamiento (opcional)</label>
                 <input :id="fieldId('relaunchreason')"
                   v-model="relaunchReason"

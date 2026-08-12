@@ -1,7 +1,7 @@
 <template>
   <div class="deasy-auth-page flex justify-center">
     <div class="deasy-auth-card flex max-w-4xl flex-col">
-      <div class="relative shrink-0 overflow-hidden border-b border-slate-200 bg-white p-8 text-slate-950 sm:p-10">
+      <div class="relative shrink-0 overflow-hidden border-b border-brand-border bg-brand-white p-8 text-slate-950 sm:p-10">
         <div class="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
             <AppLogo size="lg" class-name="mb-5" />
@@ -11,7 +11,7 @@
 
           <router-link
             to="/register"
-            class="inline-flex w-fit shrink-0 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
+            class="inline-flex w-fit shrink-0 items-center gap-2 rounded-2xl border border-brand-border bg-brand-white px-5 py-2.5 font-semibold text-slate-700 shadow-sm transition-all hover:bg-brand-surface-muted"
           >
             <IconArrowLeft class="h-5 w-5" />
             Volver al registro
@@ -19,7 +19,7 @@
         </div>
       </div>
 
-      <div class="relative w-full grow rounded-b-xl bg-white p-8 sm:p-10 lg:p-12">
+      <div class="relative w-full grow rounded-b-xl bg-brand-white p-8 sm:p-10 lg:p-12">
         <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-brand-text-muted">
           <IconLoader class="mb-4 h-10 w-10 animate-spin text-blue-600" />
           <p class="font-medium">Cargando términos y condiciones...</p>
@@ -37,7 +37,7 @@
           <div v-html="markdownContent"></div>
         </div>
 
-        <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-8 sm:flex-row">
+        <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-brand-border pt-8 sm:flex-row">
           <p class="text-sm font-medium text-slate-500">
             Al registrarte en el sistema, confirmas tu conformidad con estas políticas.
           </p>

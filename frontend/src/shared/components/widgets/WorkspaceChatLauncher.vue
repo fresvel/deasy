@@ -2,7 +2,7 @@
   <div>
     <AppButton
       variant="plain"
-      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_14px_34px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-500/15 sm:right-6 sm:h-16 sm:w-16"
+      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-brand-border bg-brand-white text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_14px_34px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-500/15 sm:right-6 sm:h-16 sm:w-16"
       aria-label="Abrir chat"
       title="Abrir chat"
       @click="openLauncher"
@@ -18,7 +18,7 @@
 
     <aside
       v-if="showChat"
-      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
       <header class="border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-4 py-4 sm:px-5">
@@ -37,7 +37,7 @@
 
           <AppButton
             variant="plain"
-            class-name="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-brand-text-muted transition hover:bg-slate-100 hover:text-slate-700"
+            class-name="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-brand-text-muted transition hover:bg-brand-surface-muted hover:text-slate-700"
             aria-label="Cerrar chat"
             title="Cerrar chat"
             @click="closePanel"
@@ -50,14 +50,14 @@
           <AppButton
             v-if="view === 'conversation'"
             variant="plain"
-            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-brand-icon shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-border bg-brand-white px-3.5 text-sm font-semibold text-brand-icon shadow-sm transition hover:border-slate-300 hover:bg-brand-surface-muted hover:text-slate-900"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
             Volver
           </AppButton>
 
-          <nav v-else class="flex items-center gap-1 rounded-2xl border border-slate-200 bg-brand-surface-muted/70 p-1">
+          <nav v-else class="flex items-center gap-1 rounded-2xl border border-brand-border bg-brand-surface-muted/70 p-1">
             <button
               v-for="mode in modeOptions"
               :key="mode"
@@ -67,7 +67,7 @@
               :aria-pressed="activeMode === mode"
               class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition"
               :class="activeMode === mode
-                ? 'bg-white text-blue-700 shadow-[0_2px_8px_rgba(15,23,42,0.08)]'
+                ? 'bg-brand-white text-blue-700 shadow-[0_2px_8px_rgba(15,23,42,0.08)]'
                 : 'text-slate-500 hover:text-slate-700'"
               @click="switchMode(mode)"
             >
@@ -80,7 +80,7 @@
         <label
           v-if="view !== 'conversation'"
           aria-label="Buscar conversación"
-          class="mt-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10"
+          class="mt-3 flex items-center gap-2 rounded-xl border border-brand-border bg-brand-white px-3 py-2.5 shadow-sm transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10"
         >
           <IconSearch class="h-4 w-4 text-brand-text-muted" />
           <input
@@ -111,7 +111,7 @@
                 class="max-w-[88%] rounded-xl px-4 py-3 shadow-sm"
                 :class="Number(message.sender_person_id) === Number(currentPersonId)
                   ? 'ml-auto bg-blue-700 text-white'
-                  : 'mr-auto border border-slate-200 bg-white text-slate-800'"
+                  : 'mr-auto border border-brand-border bg-brand-white text-slate-800'"
               >
                 <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
                   {{ message.content || 'Adjunto sin texto' }}
@@ -124,7 +124,7 @@
                     class="inline-flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-xs font-semibold"
                     :class="Number(message.sender_person_id) === Number(currentPersonId)
                       ? 'border-blue-500 bg-blue-600 text-white hover:bg-blue-800'
-                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'"
+                      : 'border-brand-border bg-brand-surface-muted text-slate-700 hover:bg-brand-surface-muted'"
                     @click="downloadAttachment(message, attachmentIndex)"
                   >
                     <span class="truncate">{{ attachment.filename }}</span>
@@ -143,12 +143,12 @@
             </div>
           </div>
 
-          <footer class="border-t border-slate-200 bg-white px-4 py-4 sm:px-5">
+          <footer class="border-t border-brand-border bg-brand-white px-4 py-4 sm:px-5">
             <div v-if="pendingAttachments.length" class="mb-3 flex flex-wrap gap-2">
               <span
                 v-for="(file, index) in pendingAttachments"
                 :key="`${file.name}-${index}`"
-                class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-brand-icon"
+                class="inline-flex items-center gap-2 rounded-full border border-brand-border bg-brand-surface-muted px-3 py-1.5 text-xs font-semibold text-brand-icon"
               >
                 <span class="max-w-40 truncate">{{ file.name }}</span>
                 <button type="button" class="text-brand-text-muted transition hover:text-brand-icon" @click="removePendingAttachment(index)">
@@ -160,7 +160,7 @@
               <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl border border-brand-border bg-brand-white text-slate-500 transition hover:bg-brand-surface-muted hover:text-slate-700"
                 aria-label="Adjuntar archivos"
                 title="Adjuntar archivos"
                 @click="attachmentInputRef?.click?.()"
@@ -192,7 +192,7 @@
 
         <template v-else-if="activeMode === 'processes'">
           <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-text-muted shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-white text-brand-text-muted shadow-sm">
               <IconInbox class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-slate-700">Sin contexto de proceso</p>
@@ -207,7 +207,7 @@
                 v-for="item in filteredThreadItems"
                 :key="item.id"
                 type="button"
-                class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                class="rounded-xl border border-brand-border bg-brand-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
                 @click="openThreadItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -242,7 +242,7 @@
                 v-for="item in filteredUnitItems"
                 :key="item.unitId"
                 type="button"
-                class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                class="rounded-xl border border-brand-border bg-brand-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
                 @click="openUnitItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -270,7 +270,7 @@
           </div>
 
           <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-text-muted shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-white text-brand-text-muted shadow-sm">
               <IconBuildingCommunity class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-slate-700">Sin unidades</p>
@@ -281,7 +281,7 @@
         </div>
 
         <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-text-muted shadow-sm">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-white text-brand-text-muted shadow-sm">
             <IconMessages class="h-6 w-6" />
           </div>
           <p class="m-0 text-sm font-bold text-slate-700">Modo en preparación</p>

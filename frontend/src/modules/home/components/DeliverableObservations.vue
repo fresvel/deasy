@@ -56,7 +56,7 @@ const onAdd = () => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-4">
+  <section class="rounded-2xl border border-brand-border bg-brand-white p-4">
     <div class="flex items-center gap-1.5">
       <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">{{ title }}</h3>
       <IconInfoCircle v-if="subtitle" class="h-4 w-4 text-brand-text-muted" :title="subtitle" />
@@ -66,11 +66,11 @@ const onAdd = () => {
     <template v-else>
       <div
         v-if="!observations.length"
-        class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-5 text-sm font-medium text-slate-500"
+        class="mt-4 rounded-2xl border border-dashed border-brand-border bg-slate-50/70 p-5 text-sm font-medium text-slate-500"
       >
         {{ emptyText }}
       </div>
-      <ul v-else class="relative mt-4 m-0 flex flex-col gap-4 list-none border-l border-slate-200 pl-4">
+      <ul v-else class="relative mt-4 m-0 flex flex-col gap-4 list-none border-l border-brand-border pl-4">
         <li
           v-for="observation in observations"
           :key="`obs-${observation.id}`"

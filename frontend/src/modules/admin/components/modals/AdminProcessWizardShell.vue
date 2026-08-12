@@ -13,7 +13,7 @@
     close-action
     @close="$emit('close')"
   >
-    <div class="mb-4 flex items-stretch gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50 p-2">
+    <div class="mb-4 flex items-stretch gap-1 overflow-x-auto rounded-2xl border border-brand-border bg-brand-surface-muted p-2">
       <button
         v-for="(step, index) in steps"
         :key="step.key"
@@ -117,7 +117,7 @@ const isStepLocked = (step, index) =>
   Boolean(step.locked || step.disabled || (props.lockAfterFirstUntilContext && index > 0 && !hasDefinition.value));
 
 const stepButtonClass = (step, index) => {
-  if (step.key === props.currentStep) return "bg-white shadow-sm ring-1 ring-indigo-300";
+  if (step.key === props.currentStep) return "bg-brand-white shadow-sm ring-1 ring-indigo-300";
   if (isStepLocked(step, index)) return "opacity-50 cursor-not-allowed";
   return "hover:bg-brand-white/70";
 };

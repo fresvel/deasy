@@ -113,15 +113,15 @@ defineEmits(["click"]);
 
 const rootClasses = computed(() => [
   props.layout === "inline"
-    ? "group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
-    : "group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/15",
+    ? "group flex items-start gap-4 rounded-xl border border-brand-border bg-brand-white p-5 text-left transition-all hover:border-slate-300 hover:bg-brand-surface-muted focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+    : "group flex flex-col justify-between rounded-xl border border-brand-border bg-brand-white p-5 text-left transition-all hover:border-slate-300 hover:bg-brand-surface-muted focus:outline-none focus:ring-2 focus:ring-blue-500/15",
   props.className
 ]);
 
 const iconWrapperClasses = computed(() => [
   props.layout === "inline"
-    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700"
-    : "flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700",
+    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-brand-border bg-brand-surface-muted text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700"
+    : "flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-border bg-brand-surface-muted text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700",
   props.iconWrapperClass
 ]);
 
@@ -135,6 +135,6 @@ const titleClasses = computed(() => [
 ]);
 
 const arrowWrapperClasses = computed(() => [
-  "flex h-8 w-8 translate-x-2 items-center justify-center rounded-full text-slate-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:bg-white group-hover:text-slate-700 group-hover:opacity-100"
+  "flex h-8 w-8 translate-x-2 items-center justify-center rounded-full text-slate-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:bg-brand-white group-hover:text-slate-700 group-hover:opacity-100"
 ]);
 </script>

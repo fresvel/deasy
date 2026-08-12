@@ -8,7 +8,7 @@
     @close="close"
   >
     <div class="flex flex-col gap-4">
-      <div v-if="definition" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+      <div v-if="definition" class="rounded-2xl border border-brand-border bg-brand-surface-muted px-4 py-3 text-sm">
         <span class="font-semibold text-slate-700">Configuración:</span>
         <span class="ml-1 text-brand-icon">{{ definition.name || `#${definition.id}` }}</span>
       </div>
@@ -37,7 +37,7 @@
             </p>
           </div>
 
-          <div v-if="selectedTerm" class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <div v-if="selectedTerm" class="flex flex-col gap-2 rounded-2xl border border-brand-border bg-brand-white px-4 py-3">
             <span class="text-sm" :class="selectedTerm.launched ? 'text-amber-600 font-medium' : 'text-brand-text-muted font-medium'">
               {{ selectedTerm.launched ? "Este proceso ya está lanzado en el periodo seleccionado." : "Pendiente de lanzar en este periodo." }}
             </span>
@@ -78,7 +78,7 @@
             <li
               v-for="run in runs"
               :key="run.id"
-              class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-brand-surface-muted/60 px-3 py-2 text-sm"
+              class="flex items-center justify-between gap-3 rounded-xl border border-brand-border bg-brand-surface-muted/60 px-3 py-2 text-sm"
             >
               <span class="text-brand-icon">
                 #{{ run.id }} · {{ run.term_name || "sin periodo" }}

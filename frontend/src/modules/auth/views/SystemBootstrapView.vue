@@ -2,7 +2,7 @@
   <AuthLayout size="2xl">
     <div class="mb-7 flex flex-col items-center text-center">
       <AppLogo size="lg" :framed="true" class-name="mb-4" />
-      <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <span class="rounded-full border border-brand-border bg-brand-surface-muted px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
         Primera instalación · {{ environmentLabel }}
       </span>
       <h1 class="deasy-auth-title mt-4">Bootstrap del sistema</h1>
@@ -15,7 +15,7 @@
         <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
           <span
             class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
-            :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-slate-100 text-brand-text-muted'"
+            :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-brand-surface-muted text-brand-text-muted'"
           >{{ i + 1 }}</span>
           <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-brand-text-muted'">{{ s.label }}</span>
           <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-slate-200"></span>
@@ -63,7 +63,7 @@
 
       <!-- Paso 2: Gestor por defecto (opcional) -->
       <div v-show="step === 2" class="space-y-4">
-        <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+        <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-brand-border'">
           <SToggle v-model="gestorEnabled">
             <span>
               <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
@@ -105,7 +105,7 @@
         </div>
 
         <!-- Usuario de prueba (opcional): rol base "Usuario" para validar el flujo operativo -->
-        <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+        <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-brand-border'">
           <SToggle v-model="usuarioEnabled">
             <span>
               <span class="block text-sm font-semibold text-slate-700">Crear un usuario de prueba</span>
@@ -155,7 +155,7 @@
         <fieldset
           v-for="group in selectableCatalogGroups"
           :key="group.key"
-          class="rounded-2xl border border-slate-200 p-4"
+          class="rounded-2xl border border-brand-border p-4"
         >
           <legend class="sr-only">{{ group.label }}</legend>
           <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -178,7 +178,7 @@
               v-for="option in group.options"
               :key="option.id"
               class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors"
-              :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-white'"
+              :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-brand-border bg-brand-white'"
             >
               <input
                 v-model="preconfig[group.key]"
@@ -195,7 +195,7 @@
         </fieldset>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+          :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-brand-border'"
         >
           <SToggle v-model="preconfig.relation_unit_types">
             <span>
@@ -206,7 +206,7 @@
         </div>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+          :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-brand-border'"
         >
           <SToggle v-model="preconfig.example_units">
             <span>
@@ -217,7 +217,7 @@
         </div>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+          :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-brand-border'"
         >
           <SToggle v-model="preconfig.example_positions">
             <span>
@@ -228,7 +228,7 @@
         </div>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+          :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-brand-border'"
         >
           <SToggle v-model="preconfig.example_users">
             <span>
@@ -241,20 +241,20 @@
 
       <!-- Paso 4: Resumen -->
       <div v-show="step === 4" class="space-y-2.5 text-sm">
-        <div class="rounded-xl border border-slate-200 p-4">
+        <div class="rounded-xl border border-brand-border p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Administrador</p>
           <p class="m-0 mt-1 font-semibold text-slate-700">{{ form.first_name }} {{ form.last_name }}</p>
           <p class="m-0 text-slate-500">{{ form.email }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 p-4">
+        <div class="rounded-xl border border-brand-border p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Gestor por defecto</p>
           <p class="m-0 mt-1 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 p-4">
+        <div class="rounded-xl border border-brand-border p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Usuario de prueba</p>
           <p class="m-0 mt-1 text-slate-500">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 p-4">
+        <div class="rounded-xl border border-brand-border p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Catálogos a preconfigurar</p>
           <ul v-if="selectedCatalogSummary.length" class="m-0 mt-2 space-y-2 p-0">
             <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-slate-500">
@@ -312,7 +312,7 @@
         </div>
       </div>
     </div>
-    <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center text-sm text-brand-icon">
+    <div v-else class="rounded-2xl border border-brand-border bg-brand-surface-muted p-5 text-center text-sm text-brand-icon">
       Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
     </div>
 

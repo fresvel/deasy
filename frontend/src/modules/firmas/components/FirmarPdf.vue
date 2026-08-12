@@ -24,12 +24,12 @@
       </div>
     </div>
 
-    <div v-if="!multiOnly && pdfReady" class="flex flex-col gap-4 mt-4 border-b border-slate-100 pb-4">
+    <div v-if="!multiOnly && pdfReady" class="flex flex-col gap-4 mt-4 border-b border-brand-border pb-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-brand-icon hover:bg-slate-100 transition"
+            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-brand-icon hover:bg-brand-surface-muted transition"
             title="Regresar"
             aria-label="Regresar"
             @click="goBackToStart"
@@ -100,7 +100,7 @@
       />
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-slate-100 bg-white rounded-xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-brand-border bg-brand-white rounded-xl p-6 lg:p-8 shadow-sm">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
           <h3 class="text-xl font-bold text-slate-800 m-0">PDF del flujo de firma</h3>
@@ -123,7 +123,7 @@
         </div>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-5">
+          <div class="rounded-2xl border border-brand-border bg-slate-50/70 p-5">
             <PdfDropField
               title="Cargar PDF del entregable"
               action-text="Seleccionar documento"
@@ -149,21 +149,21 @@
         </div>
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
+        <div class="bg-brand-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
       </div>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-slate-100 bg-white rounded-xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-brand-border bg-brand-white rounded-xl p-6 lg:p-8 shadow-sm">
       <div
         id="signature-launchers-grid"
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
         :class="enableHomeShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
-        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-brand-border p-6 text-center shadow-sm">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -175,7 +175,7 @@
           />
         </div>
 
-        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-brand-border p-6 text-center shadow-sm">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -187,7 +187,7 @@
           />
         </div>
 
-        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-brand-border p-6 text-center shadow-sm">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -202,7 +202,7 @@
         <div
           id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-brand-border p-6 text-center shadow-sm"
         >
           <PdfDropField
             title="Multifirmador"
@@ -220,11 +220,11 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-brand-border p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-brand-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
               <span class="mt-5 text-base font-semibold text-slate-700">Ver solicitudes</span>
@@ -239,12 +239,12 @@
           id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-brand-border p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
           :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-brand-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
               <span class="mt-5 text-base font-semibold text-slate-700">
@@ -263,11 +263,11 @@
           id="signature-launcher-pending"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-brand-surface-muted/50 rounded-2xl border border-brand-border p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-brand-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />
               <span class="mt-5 text-base font-semibold text-slate-700">Tabla de procesos</span>
@@ -280,7 +280,7 @@
 
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
+        <div class="bg-brand-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -288,10 +288,10 @@
     </div>
 
     <div v-else-if="!multiOnly" class="mt-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="bg-brand-white rounded-2xl shadow-sm border border-brand-border p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div 
-            class="relative shadow-sm border border-slate-200" 
+            class="relative shadow-sm border border-brand-border" 
             ref="pdfViewer"
             @mousemove="handleMouseMove"
             @mouseleave="handleMouseLeave"
@@ -355,7 +355,7 @@
       size="lg"
     >
       <div v-if="!visibleFields.length" class="text-center py-10 px-4">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 text-brand-text-muted rounded-full mb-4">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-brand-surface-muted text-brand-text-muted rounded-full mb-4">
           <IconSignature class="w-8 h-8" />
         </div>
         <h3 class="text-xl font-semibold text-slate-800 mb-2">No hay firmas</h3>
@@ -368,7 +368,7 @@
         <div
           v-for="field in visibleFields"
           :key="field.id"
-          class="bg-white border border-slate-200 rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
+          class="bg-brand-white border border-brand-border rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
           :class="{ 'ring-2 ring-sky-500 border-transparent': field.id === lastFieldId }"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
@@ -396,8 +396,8 @@
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-slate-100 sm:pl-5">
-              <div class="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1.5 text-center">
+            <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-brand-border sm:pl-5">
+              <div class="bg-brand-surface-muted border border-brand-border rounded-2xl px-3 py-1.5 text-center">
                 <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pág</span>
                 <span class="block text-lg font-bold text-slate-800 leading-none mt-0.5">{{ field.page }}</span>
               </div>
@@ -430,9 +430,9 @@
     size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-    <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
+    <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-brand-surface-muted rounded-xl border border-brand-border">No hay firmas para eliminar.</div>
     <div v-else class="flex flex-col gap-4">
-      <div class="flex items-center justify-between gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
+      <div class="flex items-center justify-between gap-3 bg-brand-surface-muted p-2 rounded-xl border border-brand-border">
         <label :for="fieldId('filterpage')" class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
         <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-2xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
           <option value="all">Todas</option>
@@ -446,13 +446,13 @@
         <div
           v-for="field in filteredFields"
           :key="field.id"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-sky-300 hover:bg-sky-50/30 transition gap-3"
-          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-brand-border rounded-xl hover:border-sky-300 hover:bg-sky-50/30 transition gap-3"
+          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-brand-white'"
         >
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-slate-800">{{ field.name }}</span>
-              <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
+              <span class="px-2 py-0.5 bg-brand-surface-muted text-slate-500 rounded-xl text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
             </div>
             <span class="text-slate-500 text-xs font-medium">
               {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
@@ -462,7 +462,7 @@
           <div class="flex items-center gap-2 sm:self-center self-end">
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-slate-200 text-brand-icon hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-brand-border text-brand-icon hover:bg-brand-surface-muted hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
               @click.stop="goToFieldLocation(field.id)"
             >
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -546,7 +546,7 @@
         </div>
       </div>
 
-      <div class="mt-2 min-h-65 max-h-90 overflow-y-auto bg-slate-50 border border-slate-100 rounded-xl p-2 custom-scrollbar">
+      <div class="mt-2 min-h-65 max-h-90 overflow-y-auto bg-brand-surface-muted border border-brand-border rounded-xl p-2 custom-scrollbar">
         <div v-if="isSearchingUsers" class="text-slate-500 text-sm text-center py-10 font-medium">Buscando usuarios...</div>
         <div v-else-if="userResults.length === 0" class="text-slate-500 text-sm text-center py-10 font-medium">
           No se han encontrado resultados.
@@ -557,7 +557,7 @@
             :key="user.id || user._id"
             type="button"
             class="flex flex-col p-3 border rounded-xl text-left transition w-full shadow-sm"
-            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-brand-white hover:bg-brand-surface-muted'"
             @click="selectSigner(user)"
           >
             <div class="font-semibold text-slate-800 text-sm flex items-center justify-between w-full gap-3">
@@ -565,13 +565,13 @@
               <span v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" class="text-sky-600 bg-sky-100 px-2 py-0.5 rounded text-xs">Seleccionado</span>
             </div>
             <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
-              <span class="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{{ user.cedula }}</span>
+              <span class="bg-brand-surface-muted px-1.5 py-0.5 rounded border border-brand-border">{{ user.cedula }}</span>
               <span>{{ user.email }}</span>
             </div>
             <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-brand-icon mt-2 flex flex-wrap gap-2">
-              <span v-if="user.unit_type_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.unit_type_name }}</span>
-              <span v-if="user.unit_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.unit_name }}</span>
-              <span v-if="user.cargo_name" class="bg-white border border-slate-200 rounded-xl px-2 py-1">{{ user.cargo_name }}</span>
+              <span v-if="user.unit_type_name" class="bg-brand-white border border-brand-border rounded-xl px-2 py-1">{{ user.unit_type_name }}</span>
+              <span v-if="user.unit_name" class="bg-brand-white border border-brand-border rounded-xl px-2 py-1">{{ user.unit_name }}</span>
+              <span v-if="user.cargo_name" class="bg-brand-white border border-brand-border rounded-xl px-2 py-1">{{ user.cargo_name }}</span>
             </div>
           </button>
         </div>
@@ -652,7 +652,7 @@
         </div>
       </div>
 
-      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div class="rounded-2xl border border-brand-border bg-brand-surface-muted p-4">
         <div class="flex items-center justify-between gap-3 mb-3">
           <div>
             <div class="text-sm font-bold text-slate-800">Certificados disponibles</div>
@@ -675,7 +675,7 @@
             :key="certificate.id"
             type="button"
             class="w-full rounded-xl border px-3 py-3 text-left transition"
-            :class="selectedCertificateId === certificate.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            :class="selectedCertificateId === certificate.id ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-brand-white hover:bg-brand-surface-muted'"
             @click="selectedCertificateId = certificate.id"
           >
             <div class="flex items-center gap-2 flex-wrap">
@@ -782,16 +782,23 @@
     size="xl"
     :show-close-button="false"
     content-class="rounded-xl shadow-xl border-0 overflow-hidden"
-    body-class="p-0 bg-slate-50 relative"
+    body-class="p-0 bg-brand-surface-muted relative"
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-brand-surface-muted/50 border border-slate-200 text-brand-icon hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
+      <!-- [F4.4-d 2026-08-12] `border-slate-200` SIN MIGRAR a proposito. Es la unica
+           excepcion de la fase, y esta medida: este boton vive dentro de
+           `.deasy-dialog-header`, cuya regla se quedo SIN CAPA en R5. Migrado a
+           `border-brand-border`, la utilidad pierde el `!important` que le prestaba el
+           repintado y la regla suelta pasa a ganar: el borde iria de `--brand-border` a
+           `--brand-border-field`. Son 5 nodos y los cazo la huella.
+           Muere cuando se decida si un boton del slot `#title` es «boton de dialogo». -->
+      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-brand-surface-muted/50 border border-slate-200 text-brand-icon hover:bg-brand-surface-muted hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
         <IconX class="w-4 h-4" stroke-width="2.5" />
       </button>
     </template>
     <div class="px-6 pt-6 pb-4">
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+      <div class="bg-brand-white rounded-2xl p-5 border border-brand-border shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
         <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
           <label :for="fieldId('validationcedula')" class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
@@ -826,9 +833,9 @@
       </div>
 
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="rounded-2xl border border-brand-border bg-brand-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-slate-500 mb-1 z-10">
-            <div class="p-1.5 bg-slate-100 rounded-2xl"><IconSignature class="w-4 h-4" /></div>
+            <div class="p-1.5 bg-brand-surface-muted rounded-2xl"><IconSignature class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Firmas Detectadas</div>
           </div>
           <div class="text-3xl font-black text-slate-800 z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
@@ -881,7 +888,7 @@
     </div>
 
     <!-- TABLA -->
-    <div class="bg-white border-t border-slate-200 relative min-h-50">
+    <div class="bg-brand-white border-t border-brand-border relative min-h-50">
       <Loading 
         :visible="isValidatingDocument" 
         text="Validando firmas..." 
@@ -910,7 +917,7 @@
               <button
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
                 @click="openCertificateAuthorityModal(row)"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 text-brand-icon hover:bg-sky-100 hover:text-sky-600 transition-colors"
+                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-brand-surface-muted text-brand-icon hover:bg-sky-100 hover:text-sky-600 transition-colors"
                 title="Ver entidad certificadora"
               >
                 <IconCertificate class="w-4 h-4" />
@@ -933,7 +940,7 @@
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>
               </summary>
-              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-brand-icon bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-brand-icon bg-brand-surface-muted p-3 rounded-xl border border-brand-border shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
             </details>
           </template>
           <template v-else>
@@ -942,7 +949,7 @@
         </template>
         <template #empty>
           <div class="flex flex-col items-center justify-center py-12 px-4">
-            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-brand-text-muted mb-4">
+            <div class="w-16 h-16 bg-brand-surface-muted rounded-full flex items-center justify-center text-brand-text-muted mb-4">
               <IconShieldCheck class="w-8 h-8" />
             </div>
             <h4 class="text-lg font-bold text-slate-700 mb-1">Sin firmas detectadas</h4>
@@ -962,7 +969,7 @@
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
-      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <div class="rounded-2xl border border-brand-border bg-brand-surface-muted px-4 py-3">
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Entidad</div>
         <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-800">
           {{ selectedCertificateAuthority?.certificateAuthority || 'No disponible' }}
@@ -971,7 +978,7 @@
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuer"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+        class="rounded-2xl border border-brand-border bg-brand-white px-4 py-3"
       >
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Issuer completo</div>
         <div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
@@ -981,7 +988,7 @@
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+        class="rounded-2xl border border-brand-border bg-brand-white px-4 py-3"
       >
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Atributos detectados</div>
         <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-brand-icon">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
@@ -1054,7 +1061,7 @@ const fieldId = (name) => `${uid}-${name}`;
     );
 
   const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-sky-50 border-sky-100 text-sky-600');
-  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-slate-100 border-slate-200 text-brand-text-muted');
+  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-brand-surface-muted border-brand-border text-brand-text-muted');
   const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
   const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
   const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');

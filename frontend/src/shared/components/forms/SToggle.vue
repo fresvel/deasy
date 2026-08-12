@@ -25,7 +25,7 @@
           class="absolute inset-0 rounded-full bg-slate-300 transition-colors duration-200 ease-in-out peer-checked:bg-brand-primary peer-focus-visible:ring-4 peer-focus-visible:ring-brand-primary/20 peer-disabled:opacity-50 peer-disabled:pointer-events-none"
         ></span>
         <span
-          class="absolute top-1/2 left-0.5 -translate-y-1/2 size-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-full"
+          class="absolute top-1/2 left-0.5 -translate-y-1/2 size-5 rounded-full bg-brand-white shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-full"
         ></span>
       </span>
     </label>

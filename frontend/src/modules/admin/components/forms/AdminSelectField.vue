@@ -3,7 +3,7 @@
     <select
       v-bind="selectAttrs"
       :value="modelValue"
-      class="admin-select-field block h-10 w-full appearance-none rounded-[10px] border border-brand-border-field bg-white px-3.5 py-2 pr-11 text-sm font-medium text-brand-text-strong shadow-none outline-none transition-colors duration-150 focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-brand-text-muted"
+      class="admin-select-field block h-10 w-full appearance-none rounded-[10px] border border-brand-border-field bg-white px-3.5 py-2 pr-11 text-sm font-medium text-brand-text-strong shadow-none outline-none transition-colors duration-150 focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-brand-text-muted"
       :class="selectClass"
       :disabled="disabled"
       @change="handleChange"

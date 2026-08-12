@@ -1,12 +1,12 @@
 <template>
-<div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-brand-icon">
+<div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-brand-border bg-brand-surface-muted p-6 text-center text-sm font-semibold text-brand-icon">
   Consultando la secuencia de firmas...
 </div>
 <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
   {{ signatureFlowState.error }}
 </div>
 <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
-  <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-4">
+  <section class="rounded-2xl border border-brand-border bg-brand-white p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Resumen del flujo</h3>
@@ -17,22 +17,22 @@
       </AppTag>
     </div>
     <div class="grid gap-3 md:grid-cols-3">
-      <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+      <div class="rounded-2xl border border-brand-border bg-slate-50/70 p-4">
         <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Documento</p>
         <p class="text-sm font-semibold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</p>
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+      <div class="rounded-2xl border border-brand-border bg-slate-50/70 p-4">
         <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Paso actual</p>
         <p class="text-sm font-semibold text-slate-800 m-0">{{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}</p>
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+      <div class="rounded-2xl border border-brand-border bg-slate-50/70 p-4">
         <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Solicitudes</p>
         <p class="text-sm font-semibold text-slate-800 m-0">{{ signatureFlowState.snapshot.signatureRequests?.length || 0 }}</p>
       </div>
     </div>
   </section>
 
-  <section class="rounded-[1.8rem] border border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
+  <section class="rounded-[1.8rem] border border-brand-border bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
     <div class="flex items-center justify-between gap-2">
       <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
       <AppTag variant="muted">
@@ -46,13 +46,13 @@
       <div
         v-for="step in signatureFlowState.snapshot.signatureSteps"
         :key="`combined-signature-step-${step.id || step.step_order}`"
-        class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
+        class="relative overflow-hidden rounded-[5%] border bg-brand-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
         :class="getSignatureStepCardClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"
       >
         <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-slate-100 px-3 text-sm font-extrabold text-slate-700">
+            <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-brand-surface-muted px-3 text-sm font-extrabold text-slate-700">
               {{ step.step_order || '—' }}
             </span>
             <div class="flex flex-col gap-1">
@@ -95,7 +95,7 @@
     @resolve="$emit('resolve-observation', $event)"
   />
 </div>
-<div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-brand-icon text-center">
+<div v-else class="rounded-2xl border border-brand-border bg-brand-surface-muted p-6 text-sm font-semibold text-brand-icon text-center">
   No hay datos de firmas disponibles para este entregable.
 </div>
 </template>

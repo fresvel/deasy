@@ -2,7 +2,7 @@
   <div class="deasy-auth-page">
     <div class="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl items-start justify-center py-2 sm:py-6">
       <div class="deasy-auth-card w-full">
-        <div class="border-b border-slate-200 bg-white px-6 py-7 sm:px-9 lg:px-11">
+        <div class="border-b border-brand-border bg-brand-white px-6 py-7 sm:px-9 lg:px-11">
           <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div class="min-w-0">
               <AppLogo size="lg" :framed="true" class-name="mb-6" />
@@ -179,7 +179,7 @@
                 </div>
               </div>
 
-              <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div class="mt-5 rounded-xl border border-brand-border bg-slate-50/70 p-4">
                 <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
                   Ubicación exacta
                   <span class="group relative inline-flex">
@@ -216,7 +216,7 @@
                 </div>
 
                 <div v-show="showMap" class="mt-4">
-                  <div ref="mapElement" class="z-10 h-75 w-full rounded-xl border border-slate-200 shadow-inner"></div>
+                  <div ref="mapElement" class="z-10 h-75 w-full rounded-xl border border-brand-border shadow-inner"></div>
                 </div>
               </div>
             </section>
@@ -253,7 +253,7 @@
                     </button>
                   </div>
                   <div v-if="newuser.password" class="mt-2">
-                    <div class="mb-1 flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div class="mb-1 flex h-1.5 w-full overflow-hidden rounded-full bg-brand-surface-muted">
                       <div
                         class="h-full transition-all duration-300"
                         :class="passwordStrengthColors[passwordStrengthScore]"
@@ -299,7 +299,7 @@
               </div>
             </section>
 
-            <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="mt-5 rounded-xl border border-brand-border bg-brand-white p-4">
               <label class="flex items-start gap-3 text-sm font-medium text-brand-icon">
                 <input
                   v-model="termsAccepted"
@@ -337,7 +337,7 @@
               </div>
             </Transition>
 
-            <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-slate-200 bg-brand-surface-muted/95 py-4 backdrop-blur sm:flex-row">
+            <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-brand-border bg-brand-surface-muted/95 py-4 backdrop-blur sm:flex-row">
               <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg w-full sm:w-1/2" @click="goToLogin">
                 Cancelar
               </button>

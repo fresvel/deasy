@@ -4,7 +4,7 @@
       {{ error }}
     </section>
 
-    <section id="signature-launchers" class="rounded-xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
+    <section id="signature-launchers" class="rounded-xl border border-brand-border bg-brand-white shadow-xl shadow-slate-200/30">
       <FirmarPdf
         :show-start-heading="false"
         :enable-home-shortcuts="true"
@@ -284,7 +284,7 @@
         <div v-if="multiSignerError" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
           {{ multiSignerError }}
         </div>
-        <div v-if="pendingPreparation" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-brand-icon">
+        <div v-if="pendingPreparation" class="rounded-2xl border border-brand-border bg-brand-surface-muted p-5 text-sm font-bold text-brand-icon">
           Preparando documentos del lote...
         </div>
         <div v-else class="flex min-h-0 flex-1 flex-col">
