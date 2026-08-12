@@ -8,17 +8,10 @@
 // borra el sub-paso 8 del §0.8 junto con `WorkflowSyncService`: eran la forma de reconocer los
 // flujos que el sync proyectaba al vínculo y de detectar cuándo se habían quedado desfasados. Sin
 // proyección no hay procedencia que marcar ni deriva que detectar.
-
-import yaml from "js-yaml";
-
-export const parseYamlDocument = (content, { filePath = "meta.yaml" } = {}) => {
-  try {
-    const parsed = yaml.load(content);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch (error) {
-    throw new Error(`No se pudo interpretar ${filePath}: ${error.message}`);
-  }
-};
+//
+// Y con la retirada del `meta.yaml` del paquete se va también `parseYamlDocument`, que solo servía
+// para leerlo: su único llamador era `loadTemplateArtifactMetaDocument`. Con él sale la dependencia
+// `js-yaml` del grafo de módulos del backend — era su última importación.
 
 // Saneo anti-inyección del contenido LaTeX editable. Devuelve la lista de violaciones (vacía = OK).
 export const sanitizeLatexSource = (relpath, text) => {

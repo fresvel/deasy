@@ -34,7 +34,7 @@ const SUITE = "user_workspace";
 // pasa el día que se captura y falla al siguiente, cuando cambia la fecha. Ya ocurrió.
 const STORAGE_MASK = [
   "working_file_path", "final_file_path", "payload_object_path", "payload_hash",
-  "base_object_prefix", "schema_object_key", "meta_object_key",
+  "base_object_prefix", "schema_object_key",
   "url", "signedUrl", "downloadUrl", "path",
   "term_name", "requested_at",
   "effective_from", "effective_to", "start_date", "end_date",

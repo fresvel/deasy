@@ -540,3 +540,59 @@ test("versionado · publicar la versión recién creada YA NO falla por «sin fl
   assert.equal(res.status, 200, `publicar la versión debe responder 200: ${JSON.stringify(res.body)}`);
   assert.equal(res.body?.lifecycle_state, "published");
 });
+
+// --- 5) LA VENTANA DEL SUB-PASO 7, CERRADA (sub-paso 8 del §0.8) ---------------------------------
+//
+// El sub-paso 7 retiró `BASE_META_YAML` y dejó a propósito una ventana abierta: la columna
+// `template_artifacts.meta_object_key` era `NOT NULL` y seguía apuntando a un `meta.yaml` que ya no
+// se subía. Se midió entonces qué se rompía DE VERDAD con eso, y la respuesta fue UNA cosa:
+//
+//   POST /admin/sql/template_artifacts/:id/resync
+//     -> 400 {"message":"The specified key does not exist."}
+//
+// (Los otros dos caminos temidos —los hooks de `process_definition_templates` sin `catch`— no se
+// alcanzaban con la plantilla base porque antes intercepta la pared de línea, 422, o el guard de
+// borrador, 400; y el clonado degradaba el fallo a aviso.)
+//
+// El 8 tenía la obligación de cerrarla, no de heredarla. Estos tres casos son su prueba, y miden las
+// DOS mitades del cierre:
+//   · el ROUTER — los tres endpoints del sync ya no existen, así que el que reventaba no se puede ni
+//     invocar. Un 404 aquí es lo que antes era un 400 con un error de MinIO dentro;
+//   · el ESQUEMA — la columna que apuntaba a la nada ya no está, así que no queda puntero que nadie
+//     pueda dereferenciar más adelante. Sin esta segunda mitad el 404 sería solo una ruta escondida.
+//
+// Se usa la plantilla base del Proceso por defecto (`artifact 1`), que es EXACTAMENTE la que tenía
+// el puntero colgando.
+
+const ARTIFACT_BASE_ID = 1;
+
+test("ventana 7 · POST :id/resync — el endpoint que reventaba ya no existe", async () => {
+  const token = await tokenFor("admin");
+  const res = await post(`/admin/sql/template_artifacts/${ARTIFACT_BASE_ID}/resync`, { token, body: {} });
+  assert.equal(res.status, 404, `resync debe ser 404, no el 400 de MinIO: ${JSON.stringify(res.body)}`);
+});
+
+test("ventana 7 · sync-status y workflows/reconcile tampoco existen", async () => {
+  const token = await tokenFor("admin");
+  const status = await get(`/admin/sql/template_artifacts/${ARTIFACT_BASE_ID}/sync-status`, { token });
+  assert.equal(status.status, 404, `sync-status debe ser 404: ${JSON.stringify(status.body)}`);
+  const reconcile = await post("/admin/sql/template_artifacts/workflows/reconcile", { token, body: {} });
+  assert.equal(reconcile.status, 404, `workflows/reconcile debe ser 404: ${JSON.stringify(reconcile.body)}`);
+});
+
+test("ventana 7 · `meta_object_key` ya no existe como columna, así que no hay puntero colgando", async () => {
+  const columnas = await query(
+    `SELECT column_name
+       FROM information_schema.columns
+      WHERE table_name = 'template_artifacts'
+        AND column_name = 'meta_object_key'`,
+  );
+  assert.deepEqual(columnas, [], "la columna del sub-paso 7 debe estar borrada");
+
+  // Y la plantilla base sigue siendo perfectamente usable sin ella: su editor abre (lee de la base)
+  // y responde con el flujo vacío, que es la verdad. Antes esto dependía de un fichero de MinIO.
+  const token = await tokenFor("admin");
+  const schema = await get(`/admin/sql/template_artifacts/${ARTIFACT_BASE_ID}/schema`, { token });
+  assert.equal(schema.status, 200, `el editor de la plantilla base debe abrir: ${JSON.stringify(schema.body)}`);
+  assert.equal(schema.body?.fill_workflow?.steps?.length, 0);
+});

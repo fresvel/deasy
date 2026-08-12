@@ -4,7 +4,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  parseYamlDocument,
   sanitizeLatexSource,
   parseAvailableFormats,
   findPreferredPdfObject,
@@ -67,18 +66,4 @@ test("parseAvailableFormats devuelve {} ante arrays, JSON inválido o tipos raro
   assert.deepEqual(parseAvailableFormats("{roto"), {});
   assert.deepEqual(parseAvailableFormats(42), {});
   assert.deepEqual(parseAvailableFormats(null), {});
-});
-
-// --- parseYamlDocument -------------------------------------------------------
-
-test("parseYamlDocument parsea un objeto y devuelve {} para escalares", () => {
-  assert.deepEqual(parseYamlDocument("a: 1\nb: 2"), { a: 1, b: 2 });
-  assert.deepEqual(parseYamlDocument("solo un string"), {});
-});
-
-test("parseYamlDocument lanza con la ruta del fichero ante YAML inválido", () => {
-  assert.throws(
-    () => parseYamlDocument("a: [\n", { filePath: "meta.yaml" }),
-    (error) => error.message.includes("meta.yaml"),
-  );
 });

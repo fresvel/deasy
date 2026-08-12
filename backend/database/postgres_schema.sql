@@ -527,7 +527,6 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   base_object_prefix VARCHAR(255) NOT NULL,
   available_formats JSONB NOT NULL,
   schema_object_key VARCHAR(255) NOT NULL,
-  meta_object_key VARCHAR(255) NOT NULL,
   content_hash VARCHAR(64) NULL,
   parent_version_id INT NULL,
   is_active SMALLINT NOT NULL DEFAULT 1,
@@ -545,6 +544,22 @@ CREATE INDEX IF NOT EXISTS idx_template_artifacts_deliverable ON template_artifa
 -- el ALTER de `persons`).
 ALTER TABLE template_artifacts
   ALTER COLUMN lifecycle_state SET DEFAULT 'draft';
+
+-- ADIOS `meta_object_key` (sub-paso 8 del §0.8 del plan maestro). Apuntaba al `meta.yaml` del
+-- paquete de MinIO, que ya no se emite: el flujo —su unica seccion que no era copia literal de una
+-- columna de esta misma tabla— vive en `fill_flow_*` / `signature_flow_*` desde el sub-paso 3, y
+-- ningun lector queda que abra ese fichero.
+--
+-- Cierra ademas la VENTANA que el sub-paso 7 dejo abierta a proposito: la columna era NOT NULL y
+-- apuntaba a un objeto inexistente desde que se retiro `BASE_META_YAML`. Lo unico que reventaba de
+-- verdad con eso era `POST /template_artifacts/:id/resync`, y ese endpoint murio en el commit
+-- anterior; borrar la columna quita tambien el puntero colgando.
+--
+-- `DROP COLUMN IF EXISTS` porque este fichero se reaplica en cada arranque y el `CREATE TABLE IF NOT
+-- EXISTS` de arriba es un no-op sobre una base que ya existe: sin esto, la columna solo desapareceria
+-- de las bases recien creadas. Va DESPUES del CREATE, como el resto de ALTERs de este fichero.
+ALTER TABLE template_artifacts
+  DROP COLUMN IF EXISTS meta_object_key;
 
 
 CREATE TABLE IF NOT EXISTS process_definition_templates (

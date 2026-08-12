@@ -557,7 +557,6 @@
       "id",
       "is_active",
       "lifecycle_state",
-      "meta_object_key",
       "owner_person_id",
       "parent_version_id",
       "schema_object_key",

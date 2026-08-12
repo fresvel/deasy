@@ -388,7 +388,6 @@ export const SQL_TABLES = [
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
       { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
       { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
-      { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
       { name: "parent_version_id", label: "Versión origen", type: "number", readOnly: true },
       { name: "is_active", label: "Almacenamiento listo", type: "boolean", defaultValue: 1, readOnly: true },

@@ -931,7 +931,6 @@ Table "template_artifacts" {
   "base_object_prefix" varchar(255) [not null]
   "available_formats" jsonb [not null]
   "schema_object_key" varchar(255) [not null]
-  "meta_object_key" varchar(255) [not null]
   "content_hash" varchar(64)
   "parent_version_id" int4
   "is_active" int2 [not null, default: 1]

@@ -16,7 +16,7 @@ import {
   unzipToDirectory,
   walkFiles,
 } from "../kernel/storage.js";
-import { parseAvailableFormats, parseYamlDocument } from "./artifacts.js";
+import { parseAvailableFormats } from "./artifacts.js";
 import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
@@ -49,8 +49,7 @@ export default class TemplateArtifactService {
          d.code AS template_code,
          d.display_name,
          ta.storage_version,
-         d.template_scope,
-         ta.meta_object_key
+         d.template_scope
        FROM template_artifacts ta
        LEFT JOIN deliverables d ON d.id = ta.deliverable_id
        WHERE ta.id = ?
@@ -60,19 +59,6 @@ export default class TemplateArtifactService {
     return rows?.[0] ?? null;
   }
 
-
-  async loadTemplateArtifactMetaDocument(artifact, connection = this.pool) {
-    if (!artifact?.meta_object_key) {
-      return null;
-    }
-    const content = await readMinioObjectAsText(
-      MINIO_TEMPLATES_BUCKET,
-      String(artifact.meta_object_key || "").trim()
-    );
-    return parseYamlDocument(content, {
-      filePath: `${MINIO_TEMPLATES_BUCKET}/${artifact.meta_object_key}`
-    });
-  }
 
 
   // Todas las versiones de un template_code (para el drawer de versiones del grafo): linaje completo con su
@@ -372,7 +358,6 @@ export default class TemplateArtifactService {
     }
 
     const newSchemaKey = `${newPrefix}schema.json`;
-    const newMetaKey = `${newPrefix}meta.yaml`;
     // Re-mapea los entry_object_key de available_formats del prefijo viejo al nuevo (antes quedaban
     // apuntando a la versión anterior).
     const remappedFormats = parseAvailableFormats(artifact.available_formats);
@@ -395,14 +380,13 @@ export default class TemplateArtifactService {
       const [result] = await connection.query(
         `INSERT INTO template_artifacts (
           storage_version, lifecycle_state, base_object_prefix,
-          available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, deliverable_id, is_active
-        ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
+          available_formats, schema_object_key, content_hash, parent_version_id, deliverable_id, is_active
+        ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 0)`,
         [
           nextStorageVersion,
           newPrefix,
           JSON.stringify(remappedFormats || {}),
           newSchemaKey,
-          newMetaKey,
           artifact.content_hash,
           Number(artifactId),
           deliverableId,

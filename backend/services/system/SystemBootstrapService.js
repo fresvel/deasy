@@ -283,17 +283,10 @@ const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
 // `createTemplateArtifactVersion` copia el prefijo de MinIO en binario, así que cada versión nueva
 // heredaba el paso sin pasar por el formulario.
 //
-// ⚠️ VENTANA ABIERTA A PROPÓSITO HASTA EL SUB-PASO 8 — decidida el 2026-08-11, no es un descuido:
-// `template_artifacts.meta_object_key` es NOT NULL y el bootstrap lo sigue rellenando más abajo, así
-// que apunta a un objeto que ya no existe. Los caminos que leen ese meta y NO capturan el error son
-// los dos hooks de `process_definition_templates` (`services/admin/crud/tableHooks.js`, donde está
-// el aviso con lo que se midió que pasa de verdad) y el endpoint explícito
-// `POST /admin/sql/template_artifacts/:id/resync`, que responde 400 «The specified key does not
-// exist». Lo demás aguanta: el reconcile del arranque no reporta error, `sync-status` responde 200
-// con `has_workflow: false`, y clonar una configuración convierte el fallo en aviso no bloqueante.
-// El sub-paso 8 la cierra retirando `meta_object_key` y el `WorkflowSyncService` entero. NO se tapa
-// con un `catch` mudo: los sub-pasos 4 y 5 quitaron exactamente eso a propósito, porque convertía un
-// fallo de MinIO en «esta plantilla no define flujo».
+// ✅ LA VENTANA QUE ESTO DEJÓ ABIERTA ESTÁ CERRADA (sub-paso 8). Entre el 7 y el 8, la columna
+// `template_artifacts.meta_object_key` era NOT NULL y el bootstrap la rellenaba con la ruta de un
+// objeto que ya no se subía. El 8 borró la columna, el `meta.yaml` entero y el `WorkflowSyncService`
+// que lo leía: no queda puntero que colgar ni lector que se lo encuentre ausente.
 
 const SEED_CONTENT_TYPES = {
   ".json": "application/json",
@@ -487,20 +480,17 @@ export const ensureDefaultProcess = async (connection) => {
     [deliverableId]
   );
   if (!artifact) {
-    // ⚠️ `meta_object_key` apunta a un objeto que YA NO SE SUBE (ver el bloque de la ventana, arriba).
-    //    La columna es NOT NULL, así que no se puede dejar vacía; muere entera en el sub-paso 8.
     const availableFormats = { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } };
     const [r] = await connection.query(
       `INSERT INTO template_artifacts
         (deliverable_id, storage_version, lifecycle_state, base_object_prefix,
-         available_formats, schema_object_key, meta_object_key, is_active)
-       VALUES (?, '1.0.0', 'published', ?, ?, ?, ?, 1)`,
+         available_formats, schema_object_key, is_active)
+       VALUES (?, '1.0.0', 'published', ?, ?, ?, 1)`,
       [
         deliverableId,
         DEFAULT_TEMPLATE_PREFIX,
         JSON.stringify(availableFormats),
         `${DEFAULT_TEMPLATE_PREFIX}schema.json`,
-        `${DEFAULT_TEMPLATE_PREFIX}meta.yaml`,
       ]
     );
     artifact = { id: r.insertId };

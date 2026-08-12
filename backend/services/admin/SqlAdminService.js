@@ -392,7 +392,7 @@ export default class SqlAdminService {
     if (tableName === "template_artifacts" && keys?.id !== undefined) {
       const [rows] = await this.pool.query(
         `SELECT ta.id, ta.storage_version, ta.lifecycle_state, ta.is_active, ta.base_object_prefix,
-                ta.available_formats, ta.schema_object_key, ta.meta_object_key, ta.content_hash,
+                ta.available_formats, ta.schema_object_key, ta.content_hash,
                 ta.parent_version_id, ta.deliverable_id, ta.created_at,
                 d.code AS template_code, d.display_name, d.description, d.template_scope,
                 d.template_seed_id, d.owner_person_id
@@ -428,7 +428,6 @@ export default class SqlAdminService {
   // El ciclo de vida de artifacts vive en SqlAdminService.templateArtifact.js. Delegadores con la
   // misma firma: ni el controller ni saveTemplateArtifactDraft (que se queda) se tocan.
   getTemplateArtifact(...args) { return this.templateArtifact.getTemplateArtifact(...args); }
-  loadTemplateArtifactMetaDocument(...args) { return this.templateArtifact.loadTemplateArtifactMetaDocument(...args); }
   getTemplateVersions(...args) { return this.templateArtifact.getTemplateVersions(...args); }
   getTemplateArtifactSchema(...args) { return this.templateArtifact.getTemplateArtifactSchema(...args); }
   setTemplateArtifactActive(...args) { return this.templateArtifact.setTemplateArtifactActive(...args); }

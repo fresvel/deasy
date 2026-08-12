@@ -142,18 +142,16 @@ const setAvailableFormatEntry = (availableFormats, format, baseObjectPrefix) => 
   };
 };
 
+// EL PAQUETE YA NO LLEVA `meta.yaml` (sub-paso 8 del §0.8). Aqui se exigia su presencia y ademas
+// cuatro regex sobre su contenido (`workflows:`, `fill:`, `signatures:`, `dependencies:`). Retirado
+// el fichero entero, lo que queda es la ESTRUCTURA del paquete —schema.json, template/ y una salida
+// por formato declarado—, que es lo que el ZIP y el manifiesto necesitan de verdad.
 const validatePackagedArtifactDraft = (draftDir, availableFormats) => {
   const schemaPath = path.join(draftDir, "schema.json");
-  const metaPath = path.join(draftDir, "meta.yaml");
   const templateDir = path.join(draftDir, "template");
-  if (!fs.existsSync(schemaPath) || !fs.existsSync(metaPath) || !fs.existsSync(templateDir)) {
-    throw new Error("El artifact no cumple la estructura base requerida (meta.yaml, schema.json y template/).");
+  if (!fs.existsSync(schemaPath) || !fs.existsSync(templateDir)) {
+    throw new Error("El artifact no cumple la estructura base requerida (schema.json y template/).");
   }
-  // Aqui habia un contrato de forma sobre el `meta.yaml` —cuatro regex que exigian `workflows:`,
-  // `fill:`, `signatures:` y `dependencies:`—. Se retira con el sub-paso 8 del §0.8: el flujo ya no
-  // viaja en el YAML, asi que exigir su seccion seria exigir la forma de lo que se acaba de quitar.
-  // Lo que valida este guarda ahora es solo la ESTRUCTURA del paquete, que es lo que el ZIP y el
-  // manifiesto necesitan.
   for (const format of Object.keys(availableFormats || {})) {
     const dirPath = buildArtifactFormatDir(draftDir, format);
     if (!hasVisibleFiles(dirPath)) {
@@ -577,11 +575,11 @@ export default class TemplateLifecycleService {
       const [taIns] = await connection.query(
         `INSERT INTO template_artifacts
            (storage_version, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
-            meta_object_key, content_hash, deliverable_id, is_active)
-         VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, ?, 1)`,
+            content_hash, deliverable_id, is_active)
+         VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, 1)`,
         [
           newPrefix, JSON.stringify(remappedFormats || {}),
-          `${newPrefix}schema.json`, `${newPrefix}meta.yaml`, src.content_hash, newDeliverableId
+          `${newPrefix}schema.json`, src.content_hash, newDeliverableId
         ]
       );
       newArtifactId = Number(taIns.insertId);
@@ -1111,7 +1109,6 @@ export default class TemplateLifecycleService {
   //   2. los formatos que ya tenia el artifact, cuando NO se cambia de semilla,
   //   3. los ficheros que suba el usuario, que ganan sobre lo anterior.
   //
-  // Devuelve tambien `seedRow` porque quien llama lo necesita para el `seed_code` del meta.yaml.
   async _materializeDraftFormats({
     draftDir,
     bucket,
@@ -1218,7 +1215,7 @@ export default class TemplateLifecycleService {
       }
     }
 
-    return { availableFormats, seedRow };
+    return { availableFormats };
   }
 
   // Materializa el vinculo de la plantilla con su configuracion de proceso destino.
@@ -1285,7 +1282,6 @@ export default class TemplateLifecycleService {
        SET base_object_prefix = ?,
            available_formats = ?,
            schema_object_key = ?,
-           meta_object_key = ?,
            content_hash = ?,
            is_active = 1
        WHERE id = ?`,
@@ -1293,7 +1289,6 @@ export default class TemplateLifecycleService {
         almacenamiento.baseObjectPrefix,
         JSON.stringify(almacenamiento.availableFormats),
         almacenamiento.schemaObjectKey,
-        almacenamiento.metaObjectKey,
         almacenamiento.contentHash,
         artifactId
       ]
@@ -1369,17 +1364,15 @@ export default class TemplateLifecycleService {
         base_object_prefix,
         available_formats,
         schema_object_key,
-        meta_object_key,
         content_hash,
         deliverable_id,
         is_active
-      ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+      ) VALUES (?, 'draft', ?, ?, ?, ?, ?, 1)`,
       [
         almacenamiento.storageVersion,
         almacenamiento.baseObjectPrefix,
         JSON.stringify(almacenamiento.availableFormats),
         almacenamiento.schemaObjectKey,
-        almacenamiento.metaObjectKey,
         almacenamiento.contentHash,
         deliverableId
       ]
@@ -1576,15 +1569,15 @@ export default class TemplateLifecycleService {
     };
   }
 
-  // Escribe en `draftDir` los tres ficheros que acompanan al contenido —schema.json, meta.yaml y
-  // manifest.json—, valida el paquete y calcula su hash. Todo en disco: NO toca base de datos ni
-  // MinIO, asi que si lanza no hay nada que compensar.
+  // Escribe en `draftDir` los DOS ficheros que acompanan al contenido —schema.json y manifest.json—,
+  // valida el paquete y calcula su hash. Todo en disco: NO toca base de datos ni MinIO, asi que si
+  // lanza no hay nada que compensar. (Eran tres hasta el sub-paso 8 del §0.8: el `meta.yaml` ya no
+  // se emite.)
   //
   // EL ORDEN IMPORTA y es la razon de que esto sea un solo metodo: el manifiesto se escribe DESPUES
   // del content_hash (para no alterarlo) pero ANTES del upload (para que viaje con el paquete).
-  async _writeDraftPackage({ draftDir, data, availableFormats, seedRow, identidad, existingArtifactId }) {
-    const { displayName, description, templateCode, templateScope, storageVersion } = identidad;
-    const comillas = (valor) => String(valor).replaceAll("\"", '\\"');
+  async _writeDraftPackage({ draftDir, data, availableFormats, identidad, existingArtifactId }) {
+    const { templateScope } = identidad;
 
     // Campos definidos desde la web (editor de schema). Si no llegan o vienen rotos, se conserva {}.
     let schemaFields = data.schema_fields;
@@ -1600,27 +1593,14 @@ export default class TemplateLifecycleService {
       "utf8"
     );
 
-    const metaLines = [
-      `name: "${comillas(displayName)}"`,
-      `version: "${comillas(storageVersion)}"`,
-      `template_code: "${comillas(templateCode)}"`,
-      `template_scope: ${templateScope}`
-    ];
-    if (description) {
-      metaLines.push(`description: "${comillas(description)}"`);
-    }
-    if (seedRow?.seed_code) {
-      metaLines.push(`seed_code: "${comillas(seedRow.seed_code)}"`);
-    }
-
     // Flujos definidos desde el editor web (fill/signatures). Si no llegan, se usa el contrato vacío.
     const fillWorkflow = parseWorkflowPayload(data.fill_workflow);
     const signatureWorkflow = parseWorkflowPayload(data.signature_workflow);
     const hasCustomWorkflows = workflowHasSteps(fillWorkflow) || workflowHasSteps(signatureWorkflow);
     // Avisos no bloqueantes de autoría (p. ej. cargo sin puesto hoy en la ubicación): se acumulan para
     // informarlos en la respuesta, sin abortar el guardado. La validación del contrato de flujo se hace
-    // AQUÍ, en autoría, y no solo al vincular: falla rápido y claro antes de subir el meta.yaml, en vez
-    // de degradar silenciosamente en la normalización del sync.
+    // AQUÍ, en autoría, y no solo al vincular: falla rápido y claro antes de escribir nada, en vez de
+    // degradar silenciosamente en la normalización.
     const authoringWarnings = hasCustomWorkflows
       ? await this._validateAuthoredWorkflows({
           fillWorkflow,
@@ -1631,22 +1611,17 @@ export default class TemplateLifecycleService {
         })
       : [];
 
-    // SE ACABÓ LA ESCRITURA DOBLE (sub-paso 8 del §0.8). El documento se sigue construyendo —es lo
-    // que el escritor directo normaliza e inserta, ya dentro de la transacción— pero YA NO SE
-    // SERIALIZA AL `meta.yaml`: el flujo vive en la base y nadie lo lee del YAML desde que los
-    // gates (sub-paso 4) y el editor (sub-paso 5) se mudaron.
+    // EL `meta.yaml` YA NO SE ESCRIBE (sub-paso 8 del §0.8, decisión 2 del plan). El documento del
+    // flujo se sigue construyendo —es lo que el escritor directo normaliza e inserta, ya dentro de la
+    // transacción— pero no se serializa a ningún sitio.
     //
-    // El `meta.yaml` pierde con esto su única sección que no era copia literal de una columna. Lo
-    // que queda son los seis campos de identidad, y `content_hash` se mueve por eso: ESE diff del
-    // golden es la prueba del sub-paso.
+    // El commit anterior le quitó la sección `workflows:`, que era la única que no era copia literal
+    // de una columna de `template_artifacts` / `deliverables`. Lo que quedaba —nombre, versión,
+    // código, scope, descripción y seed_code— es exactamente eso: seis copias. Conservarlo generado
+    // obligaría además a rechazarlo explícitamente al re-subir un ZIP, o la grieta vuelve.
     const workflowsDocument = hasCustomWorkflows
       ? buildWorkflowsDocument({ fillWorkflow, signatureWorkflow })
       : null;
-    fs.writeFileSync(
-      path.join(draftDir, "meta.yaml"),
-      `${metaLines.join("\n")}\n`,
-      "utf8"
-    );
 
     validatePackagedArtifactDraft(draftDir, availableFormats);
 
@@ -1703,7 +1678,7 @@ export default class TemplateLifecycleService {
     fs.rmSync(draftDir, { recursive: true, force: true });
     fs.mkdirSync(draftDir, { recursive: true });
     fs.mkdirSync(path.join(draftDir, "template"), { recursive: true });
-    const { availableFormats, seedRow } = await this._materializeDraftFormats({
+    const { availableFormats } = await this._materializeDraftFormats({
       draftDir,
       bucket,
       baseObjectPrefix,
@@ -1717,13 +1692,11 @@ export default class TemplateLifecycleService {
     }
 
     const schemaObjectKey = `${baseObjectPrefix}schema.json`;
-    const metaObjectKey = `${baseObjectPrefix}meta.yaml`;
     const { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument } = await this._writeDraftPackage({
       draftDir,
       data,
       availableFormats,
-      seedRow,
-      identidad: { displayName, description, templateCode, templateScope, storageVersion },
+      identidad: { templateScope },
       existingArtifactId: isEdit ? existingArtifact?.id : null
     });
 
@@ -1743,7 +1716,7 @@ export default class TemplateLifecycleService {
       // `template_artifacts` (una fila por edición) y la IDENTIDAD en `deliverables` (una por
       // entregable, compartida por sus ediciones). Cada método toca la tabla que le toca.
       const almacenamiento = {
-        storageVersion, baseObjectPrefix, availableFormats, schemaObjectKey, metaObjectKey, contentHash
+        storageVersion, baseObjectPrefix, availableFormats, schemaObjectKey, contentHash
       };
       const identidad = {
         templateCode, displayName, description, templateScope, templateSeedId, ownerPersonId
@@ -1781,7 +1754,6 @@ export default class TemplateLifecycleService {
         base_object_prefix: baseObjectPrefix,
         available_formats: availableFormats,
         schema_object_key: schemaObjectKey,
-        meta_object_key: metaObjectKey,
         content_hash: contentHash,
         is_active: 1,
         __warning: combinedWarning || undefined,
