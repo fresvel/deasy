@@ -377,8 +377,7 @@ startServer()
  |    +- ensurePostgresSchema({reset}) // database/postgres_initializer.js
  |- http.createServer(app)
  |- realtimeGateway.init(httpServer, { corsOrigin, credentials: true })
- |- httpServer.listen(PORT)            // PORT || 3030
- +- IIFE async: SqlAdminService().reconcileArtifactWorkflows({ onlyStale: true })
+ +- httpServer.listen(PORT)            // PORT || 3030
 \end{diagrama}
 
 Los reintentos se parametrizan con \rt{DB\_INIT\_MAX\_ATTEMPTS} (20),
@@ -490,15 +489,15 @@ encuentra nada}, porque el SQL ocupa varias lineas.
 \section{El CRUD generico de administracion}
 
 Esta es una de las piezas mas ingeniosas del backend. En vez de escribir un controlador para
-cada una de las 46 tablas administrables, hay tres ficheros que colaboran:
+cada una de las 44 tablas administrables, hay tres ficheros que colaboran:
 
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{\rt{backend/config/sqlTables.js}} (1.009 lineas): un \textbf{catalogo
+  \item \textbf{\rt{backend/config/sqlTables.js}} (1.001 lineas): un \textbf{catalogo
         declarativo} de metadatos. Para cada tabla describe sus campos, etiquetas humanas,
         tipos, cuales son obligatorios y cuales de solo lectura.
-  \item \textbf{\rt{backend/services/admin/SqlAdminService.js}} (884 lineas): lee ese catalogo
+  \item \textbf{\rt{backend/services/admin/SqlAdminService.js}} (901 lineas): lee ese catalogo
         y \textbf{construye los SELECT, INSERT, UPDATE y DELETE dinamicamente}.
-  \item \textbf{\rt{backend/services/admin/crud/tableHooks.js}} (1.137 lineas): los
+  \item \textbf{\rt{backend/services/admin/crud/tableHooks.js}} (1.120 lineas): los
         ``injertos'' --- la logica especial que necesita cada tabla concreta.
 \end{itemize}
 
@@ -766,7 +765,9 @@ cedulas y numeros ecuatorianos contra un servicio externo.
 sintaxis perfectamente valida, el modulo \textbf{carga sin quejarse}, y revienta en tiempo de
 \textbf{llamada}. Asi estuvieron rotos tres semanas cuatro \rt{ReferenceError} en produccion
 (\rt{createUnitWithParent}, \rt{getCargoCodeMap},
-\rt{getNextStorageVersionForTemplateCode}, \rt{loadTemplateArtifactMetaDocument}).
+\rt{getNextStorageVersionForTemplateCode}, \rt{loadTemplateArtifactMetaDocument} --- esta
+ultima ya retirada con el \rt{meta.yaml}, pero sigue nombrada en el script como caso de prueba
+historico).
 
 Comprobar que el backend arranca \textbf{no sustituye} a ejecutar este script. Esta en CI.
 \end{aviso}
@@ -783,7 +784,7 @@ No existe nada tipo Flyway o Knex. El esquema se aplica \textbf{entero} en cada 
 % =====================================================================
 
 \textbf{67 tablas} y una vista, en un unico fichero:
-\rt{backend/database/postgres\_schema.sql} (1.398 lineas).
+\rt{backend/database/postgres\_schema.sql} (1.642 lineas).
 
 \begin{aviso}[Consecuencia de no tener migraciones]
 El esquema entero se reaplica en cada arranque. Es simple y funciona bien sin datos de
@@ -968,21 +969,16 @@ el informe de este evento''). El \rt{CLAUDE.md} insiste: \textbf{no es ``memoran
 \begin{nota}[Resolutores de flujo autorables]
 Solo \rt{task\_assignee} (``Responsable del entregable'') y \rt{cargo\_in\_scope} (``Por
 cargo'') en plantillas \emph{official}; \rt{specific\_person} se anade en \emph{ad\_hoc}.
-Estan \textbf{deprecados en la autoria web} \rt{document\_owner}, \rt{position} y
-\rt{manual\_pick}: siguen en el ENUM por legado.
+\rt{document\_owner}, \rt{position} y \rt{manual\_pick} estan \textbf{retirados}: ya no son una
+deprecacion blanda de la autoria web, sino que \textbf{salieron del \rt{CHECK}} de
+\rt{fill\_flow\_steps.resolver\_type} y \rt{signature\_flow\_steps.resolver\_type}, que hoy solo
+admite esos tres valores. El \rt{ALTER} valida las filas existentes, asi que una base con un
+valor retirado \textbf{no arranca}.
+
+El criterio que los mato, y que conviene tener presente al anadir cualquier cosa a estas tablas:
+\textbf{lo que la web no autora, no existe}. Su unico productor era el \rt{meta.yaml}; retirado
+el YAML, se quedaron sin quien los escribiera.
 \end{nota}
-
-\begin{aviso}[\rt{document\_owner} NO esta retirado: sigue vivo]
-Es el resolver \textbf{mas usado} de la base de dev. La fase P1.4 retiro el atajo del
-\emph{proceso por defecto} (\rt{SystemBootstrapService.js}), pero dejo el de
-\rt{BASE\_META\_YAML} --- un \rt{meta.yaml} escrito a mano como literal de codigo unas 250
-lineas mas arriba, \textbf{en el mismo fichero}. Y ademas \textbf{se auto-replica}:
-\rt{createTemplateArtifactVersion} copia los objetos de MinIO en binario, asi que cada version
-nueva lo hereda.
-
-\textbf{No lo des por muerto sin consultar \rt{fill\_flow\_steps}.} El plan para retirarlo es el
-frente 0 de \rt{docs/planes/plan-maestro-2026-08.md}.
-\end{aviso}
 
 \section{Plantillas: el modelo ``libro y ediciones''}
 
@@ -1015,8 +1011,14 @@ contexto.
 
 El cuerpo del documento es un \textbf{contrato Jinja2 + LaTeX} empaquetado en MinIO, no en la
 base de datos. El bootstrap publica la semilla \rt{backend/services/system/seeds/informe-general}
-con \rt{schema.json}, \rt{meta.yaml}, \rt{data.yaml}, \rt{main.tex.j2} y \rt{make.sh}, y valida
-el pipeline: render Jinja2 con \rt{StrictUndefined} $\rightarrow$ \rt{pdflatex} $\rightarrow$ PDF.
+--- \rt{schema.json}, \rt{defaults.yaml}, \rt{README.md} y el arbol \rt{src/} con
+\rt{main.tex.j2} y \rt{make.sh} --- y valida el pipeline: render Jinja2 con
+\rt{StrictUndefined} $\rightarrow$ \rt{pdflatex} $\rightarrow$ PDF.
+
+\textbf{No hay \rt{meta.yaml}}: el flujo se autora en la base, no en un YAML, desde el sub-paso
+8 del frente 0. Y \rt{data.yaml} \textbf{no es un fichero de la semilla}: es un objeto de MinIO
+que el bootstrap escribe copiando \rt{defaults.yaml} al prefijo del artifact
+(\rt{publishBaseSeedAssets}).
 
 La \textbf{propiedad} se expresa por el prefijo dentro de MinIO, en \rt{base\_object\_prefix}:
 \rt{System/...} para las plantillas curadas por el administrador, \rt{Users/\{cedula\}/...}
@@ -1028,14 +1030,15 @@ para las subidas por un gestor. El pipeline de maduracion documentado es:
 \end{center}
 
 \begin{nota}[Deuda declarada]
-Falta \emph{cablear} el render Jinja2 a PDF en tiempo de ejecucion: hoy \rt{render\_seed.py} es
-utileria de linea de comandos, y el backend no lo invoca.
+Falta \emph{cablear} el render Jinja2 a PDF en tiempo de ejecucion: hoy el render vive en el
+\rt{make.sh} de la propia semilla (utileria de linea de comandos), y el backend no lo invoca.
 \end{nota}
 
 \subsection{Ciclo de vida y versionado}
 
-\rt{template\_artifacts.lifecycle\_state} admite \rt{draft}, \rt{published} y \rt{retired}
-(por defecto \rt{published}). El versionado es \textbf{por linaje}: una fila nueva con
+\rt{template\_artifacts.lifecycle\_state} admite \rt{draft}, \rt{published} y \rt{retired}, y
+\textbf{por defecto \rt{draft}}: una edicion nace sin publicar y hay que publicarla
+explicitamente. El versionado es \textbf{por linaje}: una fila nueva con
 \rt{storage\_version} nuevo y \rt{parent\_version\_id} apuntando a la anterior.
 \rt{templateLifecycle.js} retira la version publicada previa del mismo codigo al publicar, y
 valida que haya al menos un paso de entrega. Ese ultimo requisito \textbf{se relaja para
@@ -1059,8 +1062,12 @@ signature_flow_templates  ->  signature_flow_steps  ->  signature_flow_instances
   \item \rt{at\_least}: un minimo de N, indicado en \rt{required\_signers\_min}.
 \end{itemize}
 
-La columna \rt{anchor\_refs} (JSONB) enlaza el paso con anclas visuales dentro del PDF, es
-decir, donde se dibuja la firma.
+La columna \rt{anchor\_refs} (JSONB) \textbf{es un fosil}: no tiene productor ni consumidor. El
+escritor la serializa siempre como \rt{[]} y el lector la devuelve tal cual; ningun formulario le
+pone un valor y ningun render la mira. Quien decide \textbf{donde se dibuja la firma} es la
+columna \rt{slot} del paso, que el cuerpo Jinja2 embebe como
+\rt{\{\{ signatures.<slot>.token \}\}}. Su gemela en el lado de entrega es
+\rt{fill\_flow\_steps.field\_refs}, con el mismo problema.
 
 Los catalogos de estado se siembran en el propio esquema:
 \rt{signature\_statuses} (\rt{firmado}, \rt{fallido}, \rt{invalido}, \rt{cancelado}) y
@@ -1891,8 +1898,9 @@ las contrasenas de fixture acabaron contando como vulnerabilidades del sistema.
         \rt{*.spec.js}}: no hay ni uno en el repositorio, y anadirlo obliga a mantener un patron
         muerto en la configuracion de Sonar y en los globs de \rt{test:unit}.
   \item Un test unitario nuevo tiene que \textbf{caer dentro de los globs de
-        \rt{backend/package.json} $\rightarrow$ \rt{test:unit}} (\rt{config/}, \rt{services/**},
-        \rt{utils/**}, \rt{middlewares/**}, \rt{controllers/**}, \rt{errors/**}). Si lo pones
+        \rt{backend/package.json} $\rightarrow$ \rt{test:unit}} (\rt{config/}, \rt{database/**},
+        \rt{services/**}, \rt{utils/**}, \rt{middlewares/**}, \rt{controllers/**},
+        \rt{errors/**}). Si lo pones
         fuera, \textbf{no lo ejecuta nadie} y no te vas a enterar.
   \item Si el modulo vive en otra carpeta, \textbf{amplia el glob en el mismo commit y en los DOS
         sitios}: \rt{test:unit} y \rt{test:unit:coverage} llevan la misma lista duplicada (el
@@ -1912,7 +1920,7 @@ linea \rt{Test Files}}, no solo la de \rt{Tests}.
 
 \section{Los tests unitarios}
 
-\textbf{Backend}: 22 ficheros, \textbf{361 casos}, con \rt{node --test} --- el runner nativo de
+\textbf{Backend}: 32 ficheros, \textbf{523 casos}, con \rt{node --test} --- el runner nativo de
 Node, sin Jest ni Vitest. Los mas nutridos:
 
 \begin{center}
@@ -1921,19 +1929,21 @@ Node, sin Jest ni Vitest. Los mas nutridos:
 \toprule
 \textbf{Fichero} & \textbf{Casos} \\
 \midrule
+\rt{config/postgres.test.js}                                & 67 \\
 \rt{config/postgres.dialect.test.js}                        & 38 \\
-\rt{services/documents/FillRequestWorkflowService.test.js}  & 37 \\
+\rt{services/admin/templates/workflows.test.js}             & 37 \\
 \rt{services/admin/crud/validation.test.js}                 & 33 \\
-\rt{services/admin/templates/workflows.test.js}             & 28 \\
-\rt{services/sign/PdfSigningService.test.js}                & 27 \\
+\rt{services/admin/templates/flowRows.test.js}              & 31 \\
+\rt{services/documents/FillRequestWorkflowService.test.js}  & 30 \\
+\rt{database/postgres\_schema.test.js}                      & 25 \\
+\rt{services/sign/PdfSigningService.test.js}                & 24 \\
 \rt{services/sign/BatchSigningService.test.js}              & 21 \\
 \rt{controllers/users/user\_controler.primitives.test.js}   & 21 \\
-\rt{services/tasks/GeneralTaskService.test.js}              & 19 \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-\textbf{Frontend}: 18 ficheros, unos \textbf{261 casos} con Vitest y \rt{@vue/test-utils}. La
+\textbf{Frontend}: 18 ficheros, \textbf{304 casos} con Vitest y \rt{@vue/test-utils}. La
 configuracion vive en el bloque \rt{test:} de \rt{vite.config.js} (no hay \rt{vitest.config.js}).
 El entorno por defecto es \rt{node}; los once tests que montan componentes ponen la pragma
 \rt{// @vitest-environment jsdom} en la primera linea. \textbf{No hay pruebas E2E} (ni Playwright
@@ -1951,7 +1961,7 @@ Sirve para \textbf{blindar refactors} en codigo que no entiendes del todo: no do
 cuando heredas un sistema.
 \end{concepto}
 
-En Deasy son \textbf{15 suites, 150 tests y 256 claves de snapshot}, sin dependencias externas:
+En Deasy son \textbf{19 suites, 204 tests y 281 claves de snapshot}, sin dependencias externas:
 \rt{fetch} nativo mas \rt{node:test} y \rt{node:assert/strict}.
 
 \subsection{Anatomia del harness}
@@ -1988,7 +1998,7 @@ En Deasy son \textbf{15 suites, 150 tests y 256 claves de snapshot}, sin depende
 \rt{setup/seed\_execution.mjs} &
   Siembra datos de ejecucion via API. \\
 \rt{\_\_snapshots\_\_/} &
-  15 JSON, uno por suite, con claves ordenadas alfabeticamente e indentacion 2, para que el
+  19 JSON, uno por suite, con claves ordenadas alfabeticamente e indentacion 2, para que el
   \textbf{diff de git sea legible}. \\
 \bottomrule
 \end{tabularx}
@@ -2003,10 +2013,13 @@ test:char:capture  = test:char:fixture && SNAPSHOT_MODE=update npm run test:char
 test:char          = node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs
 \end{lstlisting}
 
-Los prefijos \rt{zz}, \rt{zzz} y \rt{zzzz} en los nombres de fichero \textbf{fuerzan el orden
-alfabetico} de ejecucion (el runner corre con \rt{--test-concurrency=1}), poniendo al final las
-suites que \emph{escriben} datos: \rt{zz\_task\_generation}, \rt{zz\_template\_lifecycle},
-\rt{zzz\_artifact\_draft}, \rt{zzzz\_sign\_batch}, \rt{zzzz\_sign\_workflow}.
+Los prefijos de \rt{z} en los nombres de fichero \textbf{fuerzan el orden alfabetico} de
+ejecucion (el runner corre con \rt{--test-concurrency=1}), poniendo al final las suites que
+\emph{escriben} datos. Hoy son \textbf{nueve}, y la escalera llega hasta siete \rt{z}:
+\rt{zz\_default\_process\_routed}, \rt{zz\_task\_generation}, \rt{zz\_template\_lifecycle},
+\rt{zzz\_artifact\_draft}, \rt{zzzz\_sign\_batch}, \rt{zzzz\_sign\_workflow},
+\rt{zzzzz\_task\_item\_relay}, \rt{zzzzzz\_flow\_steps\_db} y
+\rt{zzzzzzz\_schema\_flow\_reread}.
 
 \begin{aviso}[\rt{test:char:run} RESETEA la base de dev]
 Hace reset, bootstrap y seed. Es lo normal para caracterizacion, pero \textbf{no lo lances si
@@ -2064,8 +2077,11 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
   \item \textbf{El \rt{README.md} raiz enlaza documentos que ya no existen}
         (\rt{docs/02-dominio-datos/modelo-datos.md}, \rt{MER\_SQL.sql},
-        \rt{docs/01-arquitectura/}). Estan en \rt{docs/docs-md-antiguos/}. Lo unico que hay hoy
-        en \rt{docs/02-dominio-datos/} es \rt{consolidado.dbml} (31 KB, con unas 205 relaciones).
+        \rt{docs/01-arquitectura/}). Estan en \rt{docs/docs-md-antiguos/}. Hoy \rt{docs/02-dominio-datos/}
+        tiene \rt{consolidado.dbml} (53 KB, 67 tablas y 139 relaciones), la carpeta
+        \rt{dominios/} con los ocho DBML por dominio, y \rt{anotaciones.json}. Los dos primeros
+        son \textbf{artefactos generados} por \rt{scripts/docs/gen-dbml.sh}; el unico que se
+        escribe a mano es \rt{anotaciones.json}.
 
   \item \textbf{\rt{amqplib} esta en \rt{package.json} pero no se importa en ningun sitio.} Es
         una dependencia muerta: la integracion real con RabbitMQ es por su API HTTP de gestion.
