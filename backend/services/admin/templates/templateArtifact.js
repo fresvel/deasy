@@ -29,9 +29,14 @@ import {
 // constantes compartido. Son deterministas (env + literal), asi que ambos modulos leen lo mismo.
 
 export default class TemplateArtifactService {
-  constructor(pool, { getByKeys } = {}) {
+  // `readObjectAsText` se inyecta con el mismo patrón que `getByKeys` (que ya estaba) y por el mismo
+  // motivo: sin punto de inyección, la lectura de MinIO no tiene red unitaria — y el defecto que
+  // cierra el §0.4 S2 vive justo ahí. Por defecto es la función real, así que el único llamador de
+  // producción (`SqlAdminService.js:164`) no cambia.
+  constructor(pool, { getByKeys, readObjectAsText = readMinioObjectAsText } = {}) {
     this.pool = pool;
     this._getByKeys = getByKeys;
+    this._readObjectAsText = readObjectAsText;
   }
 
   ensurePool() {
@@ -89,12 +94,31 @@ export default class TemplateArtifactService {
       throw new Error("El artifact seleccionado no existe.");
     }
     const bucket = MINIO_TEMPLATES_BUCKET;
-    let schema = {};
+    // Los campos del formulario se leen de `schema.json` en MinIO, y un fallo SUBE.
+    //
+    // Aquí vivía un `catch {}` que devolvía `{}` ante cualquier fallo de MinIO. Es el MISMO borrado
+    // silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, unas líneas más abajo y en
+    // este mismo fichero: un «vacío» inventado no es un aviso cosmético, es lo que el editor carga
+    // **y lo que el siguiente guardado escribe** — o sea, `schema.json` reducido a `"{}\n"` y todos
+    // los campos configurados perdidos, sin que nadie viera un error.
+    //
+    // Medido antes de tocarlo (experimento desechable, §0.4 S2): con el lector anulado y devolviendo
+    // `{}` siempre, `test:char:run` da **281/281 en verde**. La caracterización es ciega a esto **por
+    // construcción**: el único caso que llega al endpoint descarta `fields` del golden a propósito
+    // (`zzzzzzz_schema_flow_reread.test.mjs:217`). Por eso la red que cubre esta línea es unitaria.
+    //
+    // El JSON mal formado se trata igual que el fallo de red, y a propósito: `schema.json` lo escribe
+    // el propio backend, así que un JSON roto es corrupción del paquete, no una entrada del usuario.
+    const schemaText = await this._readObjectAsText(bucket, artifact.schema_object_key);
+    let schema;
     try {
-      const text = await readMinioObjectAsText(bucket, artifact.schema_object_key);
-      schema = JSON.parse(text || "{}");
-    } catch {
-      schema = {};
+      schema = JSON.parse(schemaText || "{}");
+    } catch (error) {
+      const failure = new Error(
+        `El esquema de campos de la plantilla esta corrupto y no se pudo leer (${artifact.schema_object_key}).`
+      );
+      failure.cause = error;
+      throw failure;
     }
     const properties = schema?.properties || {};
     const requiredSet = new Set(Array.isArray(schema?.required) ? schema.required : []);
