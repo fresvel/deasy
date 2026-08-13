@@ -16,7 +16,7 @@ import {
   unzipToDirectory,
   walkFiles,
 } from "../kernel/storage.js";
-import { parseAvailableFormats, sanitizeLatexSource } from "./artifacts.js";
+import { checkJinjaBlockBalance, parseAvailableFormats, sanitizeLatexSource } from "./artifacts.js";
 import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
@@ -515,7 +515,26 @@ export default class TemplateArtifactService {
           }
           seenProtected.add(fullRel);
         } else if (entry.rel.startsWith(editablePrefix)) {
-          violations.push(...sanitizeLatexSource(entry.rel, fs.readFileSync(entry.abs, "utf8")));
+          const contenido = fs.readFileSync(entry.abs, "utf8");
+          violations.push(...sanitizeLatexSource(entry.rel, contenido));
+          // Balance de bloques Jinja (§0.4 S4), sobre EXACTAMENTE el mismo conjunto que el saneo
+          // LaTeX, y sólo sobre los `.j2`. Las dos acotaciones son deliberadas:
+          //
+          // · SÓLO LA ZONA EDITABLE, aunque hoy el Jinja viva sobre todo en `Preambulo/` (medido:
+          //   24 etiquetas `[[%` en el seed, todas fuera de `Contenido/`). Porque `Preambulo/` es
+          //   PROTEGIDO: su rama de arriba ya exige que el SHA-256 case con el manifiesto, así que
+          //   sus bytes son, por construcción, idénticos a los ya publicados. Validarlos sería
+          //   revisar contenido que el usuario no ha escrito y NO PUEDE ARREGLAR — cambiarlo hace
+          //   fallar el hash —, es decir, un error sin salida que dejaría la plantilla ineditable.
+          //   La zona editable es la única por donde entra Jinja nuevo, y es donde emitirá el
+          //   generador del §0.4 S8.
+          //
+          // · SÓLO LOS `.j2`, porque el render sólo procesa `*.j2` (`make.sh` recorre y filtra por
+          //   esa extensión). En un `.tex` suelto —`Contenido/tables/tabla_01.tex` es uno— un
+          //   `[[%` es texto literal que nadie interpreta, y marcarlo sería un falso positivo.
+          if (entry.rel.endsWith(".j2")) {
+            violations.push(...checkJinjaBlockBalance(entry.rel, contenido));
+          }
           editedContent.push(entry);
         } else {
           violations.push(`Archivo no permitido (solo se edita ${editablePrefix} y no se añaden archivos al contrato): ${entry.rel}`);

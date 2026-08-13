@@ -107,6 +107,101 @@ export const describeRejectedDraftArtifactFile = ({ fieldname, originalname, mim
   return null;
 };
 
+// --- Balance de bloques Jinja (§0.4 S4) ---------------------------------------------------------
+//
+// ESTO NO ES UN PARSER JINJA, Y NO HAY QUE CONFUNDIRLO CON UNO. No hay motor de Jinja en el backend
+// (el render corre fuera, en `make.sh`, con una imagen de Python), así que no se puede compilar la
+// plantilla para validarla. Lo único que se comprueba aquí es que **cada bloque que se abre se
+// cierra, en el orden correcto**. No valida expresiones, ni nombres de variable, ni filtros, ni
+// tipos: una plantilla que pase esto puede seguir reventando al renderizar. Lo que evita es el fallo
+// concreto que hoy se publica sin que nadie mire — un `[[% for %]]` sin su `[[% endfor %]]` — y que
+// revienta en render, cuando ya es tarde.
+//
+// ⚠️ LOS DELIMITADORES NO SON LOS DE JINJA POR DEFECTO. Comprobado en
+// `services/system/seeds/informe-general/src/make.sh`, que construye el `Environment`:
+//     block_start_string="[[%"   block_end_string="%]]"   comment_start_string="[[#"
+// Las expresiones sí son las de serie, `{{ … }}`.
+//
+// Y LAS EXPRESIONES NO SE COMPRUEBAN, A PROPÓSITO: el contenido es LaTeX, donde `{{` y `}}` son
+// llaves normales y frecuentísimas (`\newcommand{\x}{{\bf y}}`). Contarlas daría falsos positivos a
+// puñados sobre plantillas correctas, que es peor que no mirar.
+const JINJA_BLOCK_TAG = /\[\[%[-+]?\s*(\w+)/g;
+const JINJA_COMMENT = /\[\[#[\s\S]*?#\]\]/g;
+
+// Etiquetas que abren un bloque, con la que lo cierra. `raw` va incluida como par: no se suprime lo
+// que hay dentro, que es otra de las cosas que un parser haría y esto no.
+const JINJA_BLOCK_PAIRS = {
+  if: "endif",
+  for: "endfor",
+  block: "endblock",
+  macro: "endmacro",
+  call: "endcall",
+  filter: "endfilter",
+  raw: "endraw",
+  with: "endwith",
+  trans: "endtrans",
+  autoescape: "endautoescape",
+  set: "endset",
+};
+const JINJA_CLOSERS = new Set(Object.values(JINJA_BLOCK_PAIRS));
+// Etiquetas de continuación: no abren ni cierran, pero tienen que caer DENTRO de algo.
+const JINJA_MIDDLE = new Set(["else", "elif"]);
+
+// Devuelve la lista de desbalances (vacía = OK), con el mismo formato `ruta: motivo` que
+// `sanitizeLatexSource`, para que las dos barreras acumulen en la misma lista de violaciones.
+export const checkJinjaBlockBalance = (relpath, text) => {
+  const violations = [];
+  const source = String(text ?? "").replace(JINJA_COMMENT, "");
+
+  // Una apertura de bloque sin su cierre de delimitador se come el resto del fichero en el render.
+  const aperturas = (source.match(/\[\[%/g) || []).length;
+  const cierres = (source.match(/%\]\]/g) || []).length;
+  if (aperturas !== cierres) {
+    violations.push(`${relpath}: hay ${aperturas} "[[%" y ${cierres} "%]]" — falta cerrar un delimitador de bloque`);
+    return violations;
+  }
+
+  const pila = [];
+  JINJA_BLOCK_TAG.lastIndex = 0;
+  let match;
+  while ((match = JINJA_BLOCK_TAG.exec(source)) !== null) {
+    const tag = match[1];
+    if (JINJA_CLOSERS.has(tag)) {
+      const abierto = pila.pop();
+      if (!abierto) {
+        violations.push(`${relpath}: "${tag}" sin bloque abierto que cerrar`);
+      } else if (JINJA_BLOCK_PAIRS[abierto] !== tag) {
+        violations.push(`${relpath}: "${tag}" cierra un bloque "${abierto}", que esperaba "${JINJA_BLOCK_PAIRS[abierto]}"`);
+      }
+      continue;
+    }
+    if (JINJA_MIDDLE.has(tag)) {
+      // `else` vale dentro de un `if` y también dentro de un `for` (Jinja lo permite).
+      const abierto = pila.at(-1);
+      if (abierto !== "if" && abierto !== "for") {
+        violations.push(`${relpath}: "${tag}" fuera de un bloque "if" o "for"`);
+      }
+      continue;
+    }
+    if (!Object.hasOwn(JINJA_BLOCK_PAIRS, tag)) {
+      continue; // `include`, `extends`, `import`, `do`… no abren bloque.
+    }
+    // `set` es las dos cosas: `[[% set x = 1 %]]` es una asignación suelta y no abre nada;
+    // `[[% set x %]]…[[% endset %]]` sí. Los distingue el `=`, que es la regla real de Jinja.
+    if (tag === "set") {
+      const cierre = source.indexOf("%]]", match.index);
+      const cuerpo = cierre === -1 ? "" : source.slice(match.index, cierre);
+      if (cuerpo.includes("=")) continue;
+    }
+    pila.push(tag);
+  }
+
+  for (const abierto of pila.reverse()) {
+    violations.push(`${relpath}: bloque "${abierto}" sin cerrar (falta "${JINJA_BLOCK_PAIRS[abierto]}")`);
+  }
+  return violations;
+};
+
 export const parseAvailableFormats = (value) => {
   if (!value) {
     return {};

@@ -8,6 +8,7 @@ import {
   parseAvailableFormats,
   findPreferredPdfObject,
   describeRejectedDraftArtifactFile,
+  checkJinjaBlockBalance,
 } from "./artifacts.js";
 
 // --- sanitizeLatexSource: barrera anti-inyección -----------------------------
@@ -139,4 +140,80 @@ test("un mimetype que no cuadra con la extension permitida tambien se rechaza", 
     fieldname: "pptx_file", originalname: "presentacion.pptx", mimetype: "text/x-shellscript",
   });
   assert.match(motivo, /text\/x-shellscript/);
+});
+
+// --- checkJinjaBlockBalance: NO ES UN PARSER (§0.4 S4) -----------------------
+//
+// Sólo comprueba que lo que se abre se cierre. Los delimitadores son los REALES del proyecto
+// (`[[% %]]`, comentarios `[[# #]]`), verificados en el `Environment` que arma
+// `services/system/seeds/informe-general/src/make.sh`. Medido sobre los 23 ficheros del seed real:
+// 24 etiquetas `[[%` y CERO falsos positivos.
+
+test("un for sin su endfor se caza, y el motivo nombra lo que falta", () => {
+  const [violacion] = checkJinjaBlockBalance("datos.tex.j2", "[[% for x in y %]]\\item [[[ x ]]]\n");
+  assert.match(violacion, /^datos\.tex\.j2: bloque "for" sin cerrar \(falta "endfor"\)/);
+});
+
+test("los bloques bien cerrados no dan violaciones, anidados incluidos", () => {
+  const bueno = [
+    "[[% if show_firmas %]]\\showfirmastrue[[% else %]]\\showfirmasfalse[[% endif %]]",
+    "[[% for lname, cfg in layout.items() %]]",
+    "[[% if cfg.total %]]A[[% else %]]B[[% endif %]]",
+    "[[% endfor %]]",
+  ].join("\n");
+  assert.deepEqual(checkJinjaBlockBalance("ok.tex.j2", bueno), []);
+});
+
+test("cerrar con la etiqueta equivocada se caza (endfor sobre un if)", () => {
+  const [violacion] = checkJinjaBlockBalance("x.j2", "[[% if a %]]uno[[% endfor %]]");
+  assert.match(violacion, /"endfor" cierra un bloque "if", que esperaba "endif"/);
+});
+
+test("un cierre suelto, sin nada abierto, tambien se caza", () => {
+  const [violacion] = checkJinjaBlockBalance("x.j2", "texto [[% endif %]]");
+  assert.match(violacion, /"endif" sin bloque abierto/);
+});
+
+test("un delimitador sin cerrar se detecta antes de mirar etiquetas", () => {
+  const [violacion] = checkJinjaBlockBalance("x.j2", "[[% if a %]]uno[[% endif");
+  assert.match(violacion, /falta cerrar un delimitador de bloque/);
+});
+
+test("LaTeX con llaves dobles NO es un falso positivo: las expresiones no se cuentan", () => {
+  // Es la razón de que `{{ }}` se deje fuera a propósito: en LaTeX son llaves normales.
+  assert.deepEqual(
+    checkJinjaBlockBalance("preambulo.tex.j2", "\\newcommand{\\x}{{\\bf y}}\n\\def\\z{{a}}"),
+    [],
+  );
+});
+
+test("los comentarios [[# #]] no cuentan como bloques", () => {
+  assert.deepEqual(checkJinjaBlockBalance("x.j2", "[[# [[% if roto %]] #]]\ntexto"), []);
+});
+
+test("`set` con `=` es una asignacion suelta; sin `=` es un bloque que hay que cerrar", () => {
+  assert.deepEqual(checkJinjaBlockBalance("x.j2", "[[% set total = 3 %]]"), []);
+  const [violacion] = checkJinjaBlockBalance("x.j2", "[[% set cuerpo %]]hola");
+  assert.match(violacion, /bloque "set" sin cerrar/);
+});
+
+test("include/extends/import no abren bloque", () => {
+  assert.deepEqual(
+    checkJinjaBlockBalance("main.tex.j2", "[[% include 'Contenido/Inicio.tex' %]]\n[[% extends 'base' %]]"),
+    [],
+  );
+});
+
+test("el control de espacios `[[%-` y `-%]]` no despista al lector de etiquetas", () => {
+  assert.deepEqual(checkJinjaBlockBalance("x.j2", "[[%- if a -%]]uno[[%- endif -%]]"), []);
+});
+
+test("un else fuera de todo bloque se caza", () => {
+  const [violacion] = checkJinjaBlockBalance("x.j2", "texto [[% else %]] otro");
+  assert.match(violacion, /"else" fuera de un bloque "if" o "for"/);
+});
+
+test("un fichero sin nada de Jinja no da violaciones", () => {
+  assert.deepEqual(checkJinjaBlockBalance("tabla_01.tex", "\\begin{tabular}{ll}a & b\\end{tabular}"), []);
+  assert.deepEqual(checkJinjaBlockBalance("vacio.j2", ""), []);
 });
