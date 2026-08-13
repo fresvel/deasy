@@ -127,14 +127,15 @@ Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor
 ### Estilos — dónde va cada cosa
 
 Los estilos viven en `frontend/src/shared/styles/` (no en `frontend/src/styles/`, que no existe) y
-son **15 módulos por familia**. `main.js` importa **sólo `index.css`**, que los encadena.
+son **17 módulos por familia**. `main.js` importa **sólo `index.css`**, que los encadena.
 
 | Módulo | Qué va aquí |
 |---|---|
 | `tokens.css` | La **paleta** (`--brand-*`, `--state-*`, `--action-*`) y el `@theme` que la registra en Tailwind |
 | `base.css` | Reset, tipografía, `html`/`body`/`#app` |
 | `layout.css` · `nav.css` · `surfaces.css` | Armazón, navegación, tarjetas |
-| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` | Un fichero por familia de componente |
+| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` · `signatures.css` · `graph.css` · `deliverables.css` | Un fichero por familia de componente |
+| `misc.css` | El cajón de lo que aún no tiene familia. Si crece, se parte |
 | `overrides.css` | El repintado de utilidades de Tailwind a la marca. **Va el último a propósito** |
 
 ⚠️ **El orden de los `@import` de `index.css` es parte del diseño, no es alfabético.** En CSS dos
@@ -176,7 +177,7 @@ la bitácora y la auditoría, en **`docs/planes/sistema-diseno-plantillas/`**. L
 
 ```bash
 bash scripts/docker-env.sh dev up -d docs                        # levanta el sitio -> http://localhost:4321
-bash scripts/docker-env.sh dev exec -T docs pnpm run build       # build de produccion (3 paginas hoy)
+bash scripts/docker-env.sh dev exec -T docs pnpm run build       # 24 paginas de contenido (el build dice 25: suma el 404)
 bash scripts/docker-env.sh dev exec docs pnpm add <paquete>      # dependencias: DENTRO del contenedor
 ```
 
@@ -195,7 +196,8 @@ Tres cosas que ya costaron un arranque fallido:
 1. **`lang` no es clave de primer nivel de Starlight.** Va dentro de `locales`; suelto, el contenedor
    arranca y muere con `Invalid config passed to starlight integration`.
 2. **Un grupo de `sidebar` cuyo directorio no existe rompe el build.** Los grupos se añaden según se
-   crean las carpetas, no antes. Hoy solo existe `guias/`.
+   crean las carpetas, no antes. Hoy existen `guias/`, `referencia/` y `explicacion/` — los tres con
+   su grupo en `astro.config.mjs`; el cuarto de Diátaxis (`empezar/`) todavía no.
 3. **`site` está sin poner a propósito** — fija canónicas y sitemap, y el dominio de publicación aún
    no está decidido. El aviso del build es esperado.
 
@@ -393,15 +395,14 @@ Cada plantilla ligada declara su modo en `process_definition_templates.item_mode
 
 El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenecen a ningún proceso** (cualquier usuario, en cualquier momento; p. ej. "haz el informe de este evento"). **NO es "memorandums".**
 
-Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`; siguen en el ENUM por legado, pero fuera de la autoría web. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`).
+Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **RETIRADOS (la base los rechaza):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. Ya no es deprecación blanda: el `CHECK` de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type` admite **solo esos tres valores**, y el `ALTER` valida las filas existentes, así que un arranque contra una base con un valor retirado **falla**. Lo mismo con los ámbitos `context_subtree` y `context_ancestor_type`. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`).
 
-⚠️ **`document_owner` NO está retirado: sigue vivo y es el resolver más usado de la base de dev.** Este
-párrafo afirmaba lo contrario y era falso — **corregido el 2026-08-09 tras comprobarlo en la base**. P1.4
-retiró el atajo del *proceso por defecto* (`SystemBootstrapService.js:553`) pero dejó el de
-`BASE_META_YAML`, un `meta.yaml` escrito a mano como literal de código **250 líneas más arriba, en el
-mismo fichero** (`:277-305`). Y se auto-replica: `createTemplateArtifactVersion` copia MinIO en binario,
-así que cada versión nueva lo hereda. **No lo des por muerto sin consultar `fill_flow_steps`.** El plan
-para retirarlo es el **frente 0** de `docs/planes/plan-maestro-2026-08.md` (§0.2 y §0.3).
+⚠️ **Lo que sí queda vivo del `document_owner`: sus `case` en el camino de ejecución.**
+`admin/generation/assignees.js:147`, `users/user_controler.primitives.js:181` y
+`DocumentSignatureWorkflowService.js:518` siguen teniendo su rama. Son **ramas muertas por el `CHECK`**
+—ninguna fila puede llevar ese valor— pero no las des por retiradas al leer el código: el censo de
+fósiles es el §0.6 del frente 0 de `docs/planes/plan-maestro-2026-08.md`. El criterio que las mató
+sigue vigente y vale para lo próximo: **lo que la web no autora, no existe**.
 
 ## Environments & ports
 `dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.
