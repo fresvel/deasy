@@ -1149,6 +1149,15 @@ export default class TemplateLifecycleService {
         buildArtifactFormatDir(draftDir, CONTRACT_FORMAT)
       );
       setAvailableFormatEntry(availableFormats, CONTRACT_FORMAT, baseObjectPrefix);
+      // `defaults.yaml` NO ES UN FÓSIL, y por eso se conserva tal cual (§0.6, cierre del censo).
+      // El censo lo listaba como «vivo pero fuera del CRUD», y las dos mitades siguen siendo ciertas:
+      // se copia entero a `data.yaml` del paquete y es el payload de datos con el que se renderiza
+      // (`brand_rgb`, `palette`, `layout*`, `bibliography_*`, los tokens de firma), pero el usuario no
+      // puede tocar ninguna de esas claves desde la aplicación.
+      // La decisión es NO cablearlo aquí: sus claves son campos de formulario, y modelar los campos
+      // del formulario es justo lo que el §0.8 dejó fuera de alcance a propósito (decisión 3 — no
+      // tienen tabla, viven en el `schema.json` de MinIO). Cablear estas y no las demás sería inventar
+      // un segundo sitio donde vive un campo. Su dueño natural es el generador del §0.4.
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
         await copyMinioObjectToFile(

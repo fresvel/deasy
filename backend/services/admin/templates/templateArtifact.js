@@ -135,6 +135,14 @@ export default class TemplateArtifactService {
         unit_type_id: s?.resolver?.unit_type_id || null,
         person_id: s?.resolver?.person_id || null,
         position_id: s?.resolver?.position_id || null,
+        // SIEMPRE `[]`, y se CONSERVA (§0.6, cierre del censo de fósiles). El flujo llega de la base
+        // (`readAuthoredFlowForArtifact`) y ahí `field_refs` no tiene columna ni se relee, así que
+        // `s?.field_refs` es siempre `undefined`. Se queda porque esto es el CONTRATO HTTP que
+        // consume el editor: la clave está fijada en el golden `schema_flow_reread` y el frontend la
+        // lee. Quitarla movería un golden por una razón que no es de comportamiento.
+        // Lo que la mataría: retirarla del formulario (frontend, hoy un literal `[]`) y recapturar
+        // ese golden, en el mismo commit. Y lo que la haría real es lo contrario: darle columna,
+        // que es modelar los campos del formulario (§0.8, decisión 3 — fuera de alcance).
         field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
         required: s?.required !== false,
       })),
