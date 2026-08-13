@@ -15,7 +15,7 @@ Esta es una regla dura del proyecto, y la ubicación de los ficheros **no es est
 
 - `*.test.js` y `*.test.mjs` son los **únicos sufijos válidos**. **No uses `*.spec.js`**: no hay ni uno en el repositorio, y anadirlo obliga a mantener un patron muerto en la configuración de Sonar y en los globs de `test:unit`.
 
-- Un test unitario nuevo tiene que **caer dentro de los globs de `backend/package.json` → `test:unit`** (`config/`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`, `errors/**`). Si lo pones fuera, **no lo ejecuta nadie** y no te vas a enterar.
+- Un test unitario nuevo tiene que **caer dentro de los globs de `backend/package.json` → `test:unit`** (`config/`, `database/**`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`, `errors/**`). Si lo pones fuera, **no lo ejecuta nadie** y no te vas a enterar.
 
 - Si el modulo vive en otra carpeta, **amplia el glob en el mismo commit y en los DOS sitios**: `test:unit` y `test:unit:coverage` llevan la misma lista duplicada (el segundo con prefijo `backend/`, porque corre desde la raiz del repo para que las rutas del lcov le valgan a Sonar). Si solo tocas uno, el test corre pero **no cuenta para la cobertura**.
 
@@ -31,20 +31,22 @@ Vitest marca *Failed Suite* con 0 casos cuando el error ocurre **al importar** �
 
 ## Los tests unitarios
 
-**Backend**: 22 ficheros, **361 casos**, con `node --test` — el runner nativo de Node, sin Jest ni Vitest. Los mas nutridos:
+**Backend**: 32 ficheros, **523 casos**, con `node --test` — el runner nativo de Node, sin Jest ni Vitest. Los mas nutridos:
 
 | **Fichero**                                             | **Casos** |
 |:--------------------------------------------------------|:----------|
+| `config/postgres.test.js`                               | 67        |
 | `config/postgres.dialect.test.js`                       | 38        |
-| `services/documents/FillRequestWorkflowService.test.js` | 37        |
+| `services/admin/templates/workflows.test.js`            | 37        |
 | `services/admin/crud/validation.test.js`                | 33        |
-| `services/admin/templates/workflows.test.js`            | 28        |
-| `services/sign/PdfSigningService.test.js`               | 27        |
+| `services/admin/templates/flowRows.test.js`             | 31        |
+| `services/documents/FillRequestWorkflowService.test.js` | 30        |
+| `database/postgres_schema.test.js`                      | 25        |
+| `services/sign/PdfSigningService.test.js`               | 24        |
 | `services/sign/BatchSigningService.test.js`             | 21        |
 | `controllers/users/user_controler.primitives.test.js`   | 21        |
-| `services/tasks/GeneralTaskService.test.js`             | 19        |
 
-**Frontend**: 18 ficheros, unos **261 casos** con Vitest y `@vue/test-utils`. La configuración vive en el bloque `test:` de `vite.config.js` (no hay `vitest.config.js`). El entorno por defecto es `node`; los once tests que montan componentes ponen la pragma `// @vitest-environment jsdom` en la primera línea. **No hay pruebas E2E** (ni Playwright ni Cypress).
+**Frontend**: 18 ficheros, **304 casos** con Vitest y `@vue/test-utils`. La configuración vive en el bloque `test:` de `vite.config.js` (no hay `vitest.config.js`). El entorno por defecto es `node`; los once tests que montan componentes ponen la pragma `// @vitest-environment jsdom` en la primera línea. **No hay pruebas E2E** (ni Playwright ni Cypress).
 
 ## Los characterization tests (golden master)
 
@@ -56,7 +58,7 @@ Sirve para **blindar refactors** en código que no entiendes del todo: no docume
 
 :::
 
-En Deasy son **15 suites, 150 tests y 256 claves de snapshot**, sin dependencias externas: `fetch` nativo mas `node:test` y `node:assert/strict`.
+En Deasy son **19 suites, 204 tests y 281 claves de snapshot**, sin dependencias externas: `fetch` nativo mas `node:test` y `node:assert/strict`.
 
 ### Anatomia del harness
 
@@ -71,7 +73,7 @@ En Deasy son **15 suites, 150 tests y 256 claves de snapshot**, sin dependencias
 | `lib/db.mjs`                 | **Excepción declarada**: pool de PostgreSQL directo **solo para limpieza**. La regla escrita es *“se usa para LIMPIAR, nunca para ASERTAR”*.                                       |
 | `setup/bootstrap_system.mjs` | Construye la fixture con el **bootstrap real por HTTP**, no con un seed SQL paralelo (que era la fuente de verdad anterior y derivaba). Idempotente, y falla si los IDs divergen.  |
 | `setup/seed_execution.mjs`   | Siembra datos de ejecución vía API.                                                                                                                                                |
-| `__snapshots__/`             | 15 JSON, uno por suite, con claves ordenadas alfabeticamente e indentación 2, para que el **diff de git sea legible**.                                                             |
+| `__snapshots__/`             | 19 JSON, uno por suite, con claves ordenadas alfabeticamente e indentación 2, para que el **diff de git sea legible**.                                                             |
 
 ### El ciclo de trabajo
 
@@ -82,7 +84,7 @@ test:char:capture  = test:char:fixture && SNAPSHOT_MODE=update npm run test:char
 test:char          = node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs
 ```
 
-Los prefijos `zz`, `zzz` y `zzzz` en los nombres de fichero **fuerzan el orden alfabetico** de ejecución (el runner corre con `--test-concurrency=1`), poniendo al final las suites que *escriben* datos: `zz_task_generation`, `zz_template_lifecycle`, `zzz_artifact_draft`, `zzzz_sign_batch`, `zzzz_sign_workflow`.
+Los prefijos de `z` en los nombres de fichero **fuerzan el orden alfabetico** de ejecución (el runner corre con `--test-concurrency=1`), poniendo al final las suites que *escriben* datos. Hoy son **nueve**, y la escalera llega hasta siete `z`: `zz_default_process_routed`, `zz_task_generation`, `zz_template_lifecycle`, `zzz_artifact_draft`, `zzzz_sign_batch`, `zzzz_sign_workflow`, `zzzzz_task_item_relay`, `zzzzzz_flow_steps_db` y `zzzzzzz_schema_flow_reread`.
 
 :::caution[test:char:run RESETEA la base de dev]
 

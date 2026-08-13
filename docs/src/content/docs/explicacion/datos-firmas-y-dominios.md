@@ -21,7 +21,7 @@ flowchart LR
 
 - `at_least`: un mínimo de N, indicado en `required_signers_min`.
 
-La columna `anchor_refs` (JSONB) enlaza el paso con anclas visuales dentro del PDF, es decir, donde se dibuja la firma.
+La columna `anchor_refs` (JSONB) **es un fósil**: no tiene productor ni consumidor. El escritor la serializa siempre como `[]` y el lector la devuelve tal cual; ningún formulario le pone un valor y ningún render la mira. Quien decide **dónde se dibuja la firma** es la columna `slot` del paso, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}`. Su gemela en el lado de entrega es `fill_flow_steps.field_refs`, con el mismo problema.
 
 Los catalogos de estado se siembran en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`) y `signature_request_statuses` (`pendiente`, `en_progreso`, `completado`, `rechazado`, `cancelado`).
 

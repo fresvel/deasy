@@ -15,7 +15,7 @@ sidebar:
 
 :::caution[npm run check:imports es obligatorio tras mover código]
 
-`node --check` válida **sintaxis, no imports**. Un simbolo movido sin su `import` es sintaxis perfectamente válida, el modulo **carga sin quejarse**, y revienta en tiempo de **llamada**. Así estuvieron rotos tres semanas cuatro `ReferenceError` en producción (`createUnitWithParent`, `getCargoCodeMap`, `getNextStorageVersionForTemplateCode`, `loadTemplateArtifactMetaDocument`).
+`node --check` válida **sintaxis, no imports**. Un simbolo movido sin su `import` es sintaxis perfectamente válida, el modulo **carga sin quejarse**, y revienta en tiempo de **llamada**. Así estuvieron rotos tres semanas cuatro `ReferenceError` en producción (`createUnitWithParent`, `getCargoCodeMap`, `getNextStorageVersionForTemplateCode`, `loadTemplateArtifactMetaDocument` — esta última ya retirada con el `meta.yaml`, pero sigue nombrada en el script como caso de prueba histórico).
 
 Comprobar que el backend arranca **no sustituye** a ejecutar este script. Esta en CI.
 

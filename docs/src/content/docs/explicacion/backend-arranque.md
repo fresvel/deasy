@@ -31,7 +31,6 @@ flowchart LR
     HTTP["http.createServer(app)"]
     RT["realtimeGateway.init(httpServer, { corsOrigin, credentials: true })"]
     LISTEN["httpServer.listen(PORT)<br/>PORT || 3030"]
-    IIFE["IIFE async: SqlAdminService().reconcileArtifactWorkflows({ onlyStale: true })"]
 
     START --> DB
     DB --> DB1
@@ -39,7 +38,6 @@ flowchart LR
     START --> HTTP
     START --> RT
     START --> LISTEN
-    START --> IIFE
 ```
 
 Los reintentos se parametrizan con `DB_INIT_MAX_ATTEMPTS` (20), `DB_INIT_RETRY_DELAY_MS` (3000) y `DB_RESET_SCHEMA_ON_START`. Si se agotan los reintentos, **el backend no aborta**: loguea el fallo y sigue escuchando.

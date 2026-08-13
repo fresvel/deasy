@@ -4,7 +4,7 @@ description: "Los términos del dominio que hay que tener claros antes de mirar 
 sidebar:
   order: 9
 ---
-**67 tablas** y una vista, en un único fichero: `backend/database/postgres_schema.sql` (1.398 líneas).
+**67 tablas** y una vista, en un único fichero: `backend/database/postgres_schema.sql` (1.642 líneas).
 
 :::caution[Consecuencia de no tener migraciones]
 
