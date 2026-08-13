@@ -2,7 +2,7 @@
   <div>
     <AppButton
       variant="plain"
-      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_14px_34px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-500/15 sm:right-6 sm:h-16 sm:w-16"
+      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-blue-700 shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.05),0_14px_34px_rgba(var(--elev-ink-rgb),0.12)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-500/15 sm:right-6 sm:h-16 sm:w-16"
       aria-label="Abrir chat"
       title="Abrir chat"
       @click="openLauncher"
@@ -18,7 +18,7 @@
 
     <aside
       v-if="showChat"
-      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
       <header class="border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-4 py-4 sm:px-5">
@@ -67,7 +67,7 @@
               :aria-pressed="activeMode === mode"
               class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition"
               :class="activeMode === mode
-                ? 'bg-white text-blue-700 shadow-[0_2px_8px_rgba(15,23,42,0.08)]'
+                ? 'bg-white text-blue-700 shadow-[0_2px_8px_rgba(var(--elev-ink-rgb),0.08)]'
                 : 'text-slate-500 hover:text-slate-700'"
               @click="switchMode(mode)"
             >

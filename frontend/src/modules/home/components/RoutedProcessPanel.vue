@@ -73,7 +73,7 @@
       <li
         v-for="item in activeItems"
         :key="item.id"
-        class="group flex items-center gap-3.5 rounded-2xl border border-line/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
+        class="group flex items-center gap-3.5 rounded-2xl border border-line/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
       >
         <span
           class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"

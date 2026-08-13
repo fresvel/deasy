@@ -51,7 +51,7 @@ const onCardClick = (event) => {
 
 <template>
   <article
-    class="group/card relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(15,23,42,0.06),0_16px_32px_-16px_rgba(15,23,42,0.18)]"
+    class="group/card relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_8px_24px_-12px_rgba(var(--elev-ink-rgb),0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(var(--elev-ink-rgb),0.06),0_16px_32px_-16px_rgba(var(--elev-ink-rgb),0.18)]"
     :class="h.getDeliverableCardTone(deliverable.item).card"
     @click="onCardClick"
   >

@@ -379,7 +379,7 @@ export function useDeliverableView({
 
   const getDeliverableWorkspaceTabClass = (tab) => {
     if (deliverableWorkspaceState.value.tab === tab) {
-      return 'border-line bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
+      return 'border-line bg-white text-slate-900 shadow-[0_-1px_0_rgba(var(--white-rgb),0.9)]';
     }
     return 'border-transparent bg-surface text-slate-500 hover:border-line hover:bg-surface hover:text-slate-700';
   };

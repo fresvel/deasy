@@ -1,6 +1,6 @@
 <template>
 <div v-if="fillWorkflowState.subject" class="flex flex-col gap-5">
-  <div class="rounded-[1.8rem] border border-line bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
+  <div class="rounded-[1.8rem] border border-line bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
       <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Secuencia del flujo</h3>
       <AppTag variant="muted">Vista operativa</AppTag>
@@ -12,7 +12,7 @@
       <div
         v-for="step in fillWorkflowState.subject.workflow.fill_steps"
         :key="`fill-step-combined-${step.id}-${step.request_id || 'na'}`"
-        class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
+        class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(var(--elev-ink-rgb),0.07)] ring-1 ring-white/70 transition"
         :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
       >
         <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
