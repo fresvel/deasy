@@ -4,17 +4,18 @@
 > La versión anterior nombraba la paleta entera con nombres que **ya no existen**
 > (`--brand-primary`, `bg-brand-surface-muted`…) y citaba `.deasy-table-shell`, borrada.
 >
-> ⚠️ **TailAdmin quedó descartado como fuente de diseño el 2026-08-12.** Este fichero se
-> conserva porque describe el sistema de Deasy, que vale independientemente de aquello.
-> Lo que dice sobre «adaptar recetas» hay que leerlo como lo que sirve para **cualquier**
-> fuente externa, no como un plan vigente.
+> ⚠️ **Esto describe el punto de PARTIDA, no el destino.** TailAdmin se adoptó como fuente
+> de diseño el **2026-08-13** (su paleta y su markup, no su código Vue), así que la paleta de
+> §2 pasa a ser una capa de **alias sobre sus 91 primitivas** y las cifras de §6 se van a
+> mover. Lo que no caduca —y es por lo que este fichero sigue valiendo— es **§4: con qué van
+> a pelear tus recetas**. La ejecución va en la rama `develop-styles`, pila **B**.
 
 ---
 
 ## 1. Dónde vive cada cosa
 
 `frontend/src/shared/styles/` — **`main.js` importa sólo `index.css`**, que encadena el resto.
-**18 módulos, 2 749 líneas.**
+**18 módulos, 2 900 líneas** (remedido el 2026-08-13; decía 2 749).
 
 | Módulo | L | Contenido |
 |---|---:|---|
@@ -112,7 +113,7 @@ es sombra: es fondo), los tripletes `--*-rgb`, los degradados, `--black` y `--ty
 ## 3. Cuánto de la paleta es realmente nuestro
 
 Medido convirtiendo la paleta de Tailwind v4 desde su OKLCH real y verificado contra el canvas del
-navegador. **Nueve de los 22 tokens están a ΔE ≤ 2 de un color de Tailwind**:
+navegador. **Siete de los 22 tokens están a ΔE ≤ 2 de un color de Tailwind**:
 
 | Token | ΔE al más cercano | |
 |---|---:|---|
@@ -187,9 +188,9 @@ resuelve: o se borra la declaración muerta, o se capa la regla y se enciende. *
 | **0** | `<style scoped>` con CSS vivo (eran 13) |
 | **0** | literales de color en los `.css` fuera de `tokens.css` |
 | **0** | clases declaradas sin usar (eran ~30; borradas el 2026-08-12) |
-| **74** | colores a mano fuera del CSS (eran 195) |
+| **47** | colores a mano fuera del CSS (eran 195) |
 | **52** | reglas fuera de capa, todas con motivo |
-| **~2 260** | clases de color de Tailwind por nombre (eran 3 590) |
+| **~2 112** | clases de color de Tailwind por nombre (eran 3 590) |
 
 ---
 

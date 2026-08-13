@@ -216,4 +216,4 @@ qué hace algo, no es un refactor — es un cambio, va en otro commit y puede mo
 | `docs/planes/referencia/signer.md` | Mapa por bandas de `signer/app.py` y sus 12 riesgos |
 | `docs/planes/referencia/god-objects-2026-07.md` | Bitácora de los 10 cortes: aquí está el *qué*, allí el *cómo se hizo* |
 | skill `refactoring-guru` | El catálogo completo: 22 patrones, 66 técnicas, 23 olores |
-| skill `tailadmin-ui` | Antes de tocar estilos: tres colisiones activas que rompen las recetas |
+| skill `tailadmin-ui` | La fuente de diseño adoptada (2026-08-13): su paleta y su markup, **no** su código Vue |

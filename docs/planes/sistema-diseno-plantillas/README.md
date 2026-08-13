@@ -20,7 +20,7 @@ Su bitácora sigue valiendo: es donde están las trampas ya pagadas.
 
 ---
 
-## ⚠️ Estado a 2026-08-12 — si vas a retomar esto, empieza aquí
+## ⚠️ Estado a 2026-08-13 — si vas a retomar esto, empieza aquí
 
 **El plan describe una paleta que ya no existe.** Lleva su propia tabla de traducción arriba del
 todo; léela antes de tocar nada, o vas a migrar hacia nombres muertos.
@@ -32,30 +32,36 @@ tabla tiene el estado.
 |---|---|---|
 | **F1** Los 5 bugs | ✅ 08-11 | — |
 | **F2** Completar `@theme` | ✅ 08-11 | — |
-| **F3** Literales invisibles | ⬜ **mecánica** | **75** a mano, de los que 15 (grafos) y 3 (logo) están excluidos → **~57** |
+| **F3** Literales invisibles | ✅ **08-12** | 28 sustituciones (`eb72dd6`). Los **29 restantes NO son de F3**: ninguno baja de ΔE 2 contra un token |
 | **F4.1 · 4.3 · 4.4** | ✅ | 4.4-c bajó **156 → 52** reglas fuera de capa |
-| **F4.2** Familias en disputa | ⬜ **decisión** | **1 276** · info/foco 644 · error 303 · éxito 187 · aviso 142 |
-| **F4.5** Dentro de `@apply` | ⬜ **mecánica** | **151** |
+| **F4.2** Familias en disputa | ⬜ **decisión** | **~1 190** en plantillas. Su mitad de CSS ya está resuelta y **fija el criterio**: derivar del token, no elegir un tinte |
+| **F4.5** Dentro de `@apply` | ✅ **08-12** | 148 de 151 (`3bffc1c`, `2128d51`, `1942143`). Quedan **3 `bg-slate-100`**, fuera a propósito |
 | **F5** Borrar lo muerto | ✅ 08-12 | — |
 | **F6.1** Tipografía | ⬜ **decisión** | **200 usos, 21 grafías** de `text-[…]` |
 | **F6.2** `z-index` | ⬜ **decisión** | **20 valores**, tres bandas |
-| **F6.3** *Utility soup* | ⬜ **atada al maestro** | **205** strings largos — va con partir `HomeView` |
+| **F6.3** *Utility soup* | ⬜ **atada al maestro** | **203** strings largos — va con partir `HomeView` |
 
-**Son tres trabajos de naturaleza distinta, y conviene no mezclarlos:**
+> ⚠️ **Esta tabla decía «abiertas» F3 y F4.5 hasta el 2026-08-13**, cuando el plan ya las daba
+> cerradas desde `eb9ba1e`, y publicaba «~208 sitios mecánicos delegables» de trabajo **ya hecho**.
+> Es literalmente la trampa que la bitácora describe: quien lo retome empieza por rehacer lo hecho, y
+> el trabajo mecánico **no da señal de estar repetido** — la huella vuelve a dar 0 y todo parece bien.
 
-- **Mecánico y barato (~208 sitios)**: F3 (~57) y F4.5 (151). Delegable y verificable **sin
-  navegador** comparando el CSS construido. F4.5 es el que más paga: está en el CSS que damos por
-  limpio y `lint:css` no lo ve.
-- **Mecánico de volumen (1 276)**: F4.2. **Avisado**: es la clase de trabajo que la retrospectiva del
-  2026-08-12 juzgó *«correcto pero mecánico; unifica la paleta, no arregla nada visible»*, y sin un
-  rediseño a la vista puede que no compense.
+**Lo que queda son dos trabajos de naturaleza distinta, y conviene no mezclarlos:**
+
+- **Mecánico de volumen (~1 190)**: F4.2. **Avisado**: es la clase de trabajo que la retrospectiva del
+  2026-08-12 juzgó *«correcto pero mecánico; unifica la paleta, no arregla nada visible»*. Con el
+  rediseño de abajo a la vista, ahora sí compensa.
 - **Decisión de diseño**: el foco (**113 utilidades muertas** — encenderlas *es* el cambio), las **52
   reglas fuera de capa** que suprimen 83 radios y 90 bordes ya escritos, y F6.1/F6.2. Esto no es
   trabajo de agente: se decide mirando la pantalla. **Una vez decidido, sustituir sí es mecánico.**
 
-> **Y una premisa del plan se cayó: TailAdmin quedó descartado el 2026-08-12.** F4.2 y F6 daban por
-> hecho que sus recetas contestarían cómo se ve el foco. Ya no hay fuente externa: la respuesta hay
-> que darla aquí.
+> **Y la premisa que se cayó el 2026-08-12 volvió el 2026-08-13: se adopta TailAdmin.** Su descarte
+> dejó huérfanas las cuatro decisiones que F4.2 y F6 le habían delegado —foco, escalones tipográficos
+> bajo 14 px, bandas de `z-index` y tinte de las variantes suaves—. Se adoptan **su paleta** (las 91
+> primitivas, más sus escalas de tipografía, sombra y `z-index`) y **su markup** (sólo desde el repo
+> HTML free, MIT, con atribución); **no su código Vue**. Nuestros 22 tokens semánticos pasan a ser
+> **alias sobre sus primitivas**, y los porcentajes de contraste de Deasy siguen mandando sobre sus
+> tintes. Plan y trazas: rama `develop-styles`, verificación en la **pila B**.
 
 La sesión del 2026-08-12 (8 commits: colapso de la paleta, 24 clases muertas, un fallo de
 transparencia y la documentación) **no salió de estas fases** y está entera en la bitácora.

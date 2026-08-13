@@ -1054,9 +1054,11 @@ Lo que sobrevive de `frontend.md` tras revalidarlo, más una deuda nueva (E-4):
    fusionar los dos `@layer components` (líneas 46 y 1300 de `tailwind.css`), colapsar los tokens
    duplicados `--deasy-*` / `--brand-*`, y borrar los forks `AdminModalShell` (24 consumidores) y
    `AdminDataTable` (11). Migrar antes = recodificar el conflicto en 1 269 sitios.
-   > Antes de adoptar tokens de TailAdmin, leer las tres colisiones activas documentadas en el skill
-   > `tailadmin-ui` (`rounded-lg` = 16px por escala invertida, ausencia de `@theme`, `dark:` se
-   > autoactivaría).
+   > ~~Antes de adoptar tokens de TailAdmin, leer las tres colisiones activas documentadas en el skill
+   > `tailadmin-ui`~~ (`rounded-lg` = 16px por escala invertida, ausencia de `@theme`, `dark:` se
+   > autoactivaría). **Las tres están CERRADAS** (`cdbc62b`, `6e60d74`, y el `@custom-variant dark` de
+   > `tokens.css`). Y el 2026-08-13 **TailAdmin se adoptó**: su paleta entra como capa de primitivas y
+   > los 22 tokens de Deasy pasan a ser alias encima. Va en la rama `develop-styles`.
    >
    > **Los forks: ✅ CERRADOS el 2026-08-08 — y el diagnóstico de este plan era falso.**
    > `AdminModalShell` y `AdminDataTable` **no tenían consumidores: tenían cero.** Los 24 + 11 que

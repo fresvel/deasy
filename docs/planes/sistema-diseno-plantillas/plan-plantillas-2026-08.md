@@ -46,11 +46,42 @@
 > foco muertas** (59 son `focus:border-indigo-400`). No es migración — **es decidir cómo se ve el foco
 > y encenderlo**.
 >
-> ## Y una premisa del plan que se cayó: **TailAdmin está descartado** (2026-08-12)
+> ## La premisa que se cayó el 08-12 volvió: **se adopta TailAdmin** (2026-08-13)
 >
 > F4.2 y F6 daban por hecho que el aspecto del foco, la tipografía y las escalas se decidirían
-> **copiando las recetas de TailAdmin**. Eso ya no va a pasar. No las bloquea el análisis: las bloquea
-> una decisión que hay que tomar mirando la pantalla.
+> **copiando las recetas de TailAdmin**. El 2026-08-12 se descartó, y eso dejó esas cuatro decisiones
+> —foco, escalones tipográficos bajo 14 px, bandas de `z-index` y tinte de las variantes suaves— sin
+> nadie que las contestara. **El 2026-08-13 se revierte el descarte**, y con él se desbloquean:
+>
+> | | |
+> |---|---|
+> | ✅ **Su paleta** | Las 91 primitivas, más sus escalas de tipografía (`text-theme-*`/`text-title-*`), sombra (`shadow-theme-*`) y `z-index` |
+> | ✅ **Su markup** | Las cadenas de clases de sus recetas, **sólo desde el repo HTML free (MIT)**, con atribución |
+> | ❌ **Su código Vue** | No. `AppButton` (15 variantes), `AppModalShell`, `AppDataTable` y `AppTag` se quedan; el markup adoptado vive **dentro** de ellos |
+>
+> **Su paleta no sustituye a nuestros nombres: los sostiene.** Sus 91 colores entran como capa de
+> **primitivas** y nuestros 22 tokens semánticos pasan a ser **alias** sobre ellas
+> (`--color-line: var(--color-gray-200)`), para que `border-line` siga diciendo qué *es* y no de qué
+> *color* es. Cuatro cosas medidas que gobiernan el mapeo:
+>
+> - **Su `-500` es relleno o icono, no texto.** `success-500` da ≈2.4:1 sobre blanco. El texto vive en
+>   sus pasos **600-700** — y la prueba de que ya estábamos ahí es que su `error-700` es **`#b42318`**,
+>   exactamente nuestro `--color-danger`.
+> - **Sus tintes `-200/-300` como borde miden 1.21–1.49:1** en nuestras composiciones. **Los
+>   porcentajes de Deasy ganan**: borde 71 %, relleno 6 % con texto y 10 % con icono.
+> - **Se omiten `--font-*: initial` y `--breakpoint-*: initial`** (destructivas), y **la tipografía
+>   sigue siendo Inter** desde `index.html`; de TailAdmin se toma la *escala*, no la familia.
+> - **Su `z-index` no tiene semántica** (`z-1/9/99/999/…`): se adopta como escalera de magnitudes con
+>   alias `--z-drawer/-modal/-tip/-toast` encima. El problema de Deasy no era la escala, era que la
+>   relación crítica `1070 < 1075` vivía **sólo en un comentario en prosa**.
+>
+> **Y su markup trae basura verificada** que se limpia al pegar: `dark:bg-dark-900` (token y regla
+> inexistentes, al inicio de casi todos sus inputs), `after:bottom-0-0`, una clase `te` suelta,
+> `py-2.5å` con carácter acentuado, radios declarados como `type="checkbox"`, `group-hover:` sin
+> ancestro `group`. Y **su accesibilidad no se importa**: no tiene `aria-expanded`/`aria-current`, ni
+> trap de foco, y su `viewport` lleva `user-scalable=no`. Los `dark:` se quitan: traen **1 024**.
+>
+> Ejecución en la rama `develop-styles`, verificada en la **pila B**.
 >
 > **Lo hecho el 2026-08-12 no está en las fases de abajo** porque no salió del plan, sino de tirar de
 > un hilo: si `--color-` ya es el namespace de Tailwind, el `brand-` sobra. Está todo en la bitácora,

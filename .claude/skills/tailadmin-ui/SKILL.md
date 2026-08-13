@@ -1,30 +1,61 @@
 ---
 name: tailadmin-ui
-description: DESCARTADO como fuente de diseño el 2026-08-12 — no la invoques para decidir el aspecto de un componente nuevo. Se conserva como archivo de dos cosas que siguen valiendo: (a) `references/mapeo-deasy.md`, que describe el sistema de diseño REAL de Deasy —los 22 tokens, las 52 reglas fuera de capa y con qué pelean—, y (b) material verificado sobre TailAdmin por si alguien vuelve a plantearlo. Para escribir UI en Deasy, las reglas vinculantes están en `frontend/CLAUDE.md`, no aquí.
+description: La fuente de diseño ADOPTADA por Deasy desde el 2026-08-13 — su paleta (91 primitivas + escalas de tipografía, sombra y z-index) y su markup (sólo del repo HTML free, MIT, con atribución); NO su código Vue. Invócala al crear o rediseñar un componente visual, al necesitar el hex de una primitiva, o la receta de clases de un átomo (botón, input, card, tabla, modal, sidebar, chat). Lleva también `references/mapeo-deasy.md`, el sistema REAL de Deasy: los 22 tokens semánticos, las 52 reglas fuera de capa y con qué pelean. Las reglas vinculantes —contraste, capas, namespaces, verificación— siguen en `frontend/CLAUDE.md`, y ganan a lo que diga TailAdmin.
 ---
 
-# TailAdmin — DESCARTADO, y qué queda de útil
+# TailAdmin — la fuente de diseño de Deasy
 
-> ## ⚠️ Decisión del 2026-08-12: **no se adopta TailAdmin.**
+> ## ✅ Decisión del 2026-08-13: **se adopta TailAdmin.**
 >
-> Esta skill nació para adoptar su lenguaje visual. **Eso ya no va a pasar**, así que no la uses
-> como fuente para decidir el aspecto de nada. Lo que sigue valiendo, y por eso no se borra:
+> Revierte el descarte del 2026-08-12, que había dejado huérfanas las cuatro decisiones que el plan
+> le tenía delegadas: cómo se ve el foco, cuántos escalones tipográficos hay bajo 14 px, qué bandas
+> de `z-index` y qué tinte llevan las variantes suaves.
 >
-> - **`references/mapeo-deasy.md`** describe el sistema de diseño de Deasy tal y como está hoy: los
->   22 tokens con sus nombres reales, cuántos son de verdad nuestros, y las 52 reglas fuera de capa
->   con las que va a pelear cualquier componente nuevo. **Eso es independiente de TailAdmin.**
-> - El resto de `references/` es material extraído y verificado sobre TailAdmin. Si algún día se
->   replantea, está medido y no hay que volver a hacerlo.
+> | | |
+> |---|---|
+> | ✅ **Su paleta** | Las 91 primitivas de color, más sus escalas de tipografía (`text-theme-*`/`text-title-*`), sombra (`shadow-theme-*`) y `z-index`. Están en `references/tokens.md` |
+> | ✅ **Su markup** | Las cadenas de clases de sus recetas — **sólo desde el repo HTML free (MIT), con atribución**. Ver §Procedencia |
+> | ❌ **Su código Vue** | No. `AppButton` (15 variantes), `AppModalShell`, `AppDataTable` y `AppTag` se quedan; el markup adoptado vive **dentro** de ellos (ver §Qué NO copiar) |
 >
-> **Las reglas vinculantes para escribir UI en Deasy están en `frontend/CLAUDE.md`.**
+> **Su paleta no sustituye a nuestros nombres: los sostiene.** Sus 91 colores entran como capa de
+> **primitivas** en `@theme`, y los 22 tokens semánticos de Deasy pasan a ser **alias** sobre ellas:
+>
+> ```css
+> @theme {
+>   --color-gray-200: #e4e7ec;                /* primitiva de TailAdmin */
+>   --color-line:     var(--color-gray-200);  /* el nombre que se escribe */
+> }
+> ```
+>
+> Así `border-line` sigue diciendo qué *es* y no de qué *color* es. Cuatro cosas medidas gobiernan el
+> mapeo, y las cuatro son el motivo de que la paleta **no se pegue tal cual**:
+>
+> 1. **Su paso `-500` es relleno o icono, NO texto.** `success-500` (`#12b76a`) da ≈2.4:1 sobre
+>    blanco. El texto vive en **600-700** — y la prueba de que Deasy ya estaba ahí es que su
+>    `error-700` es **`#b42318`**, exactamente nuestro `--color-danger`.
+> 2. **Sus tintes `-200/-300` como borde miden 1.21–1.49:1** en nuestras composiciones. Es justo por
+>    lo que Deasy los sustituyó por `color-mix(… 71 %, white)`. **Los porcentajes de Deasy ganan:**
+>    borde 71 %, relleno 6 % si encima va texto y 10 % si va un icono.
+> 3. **Su `--color-black` es `#101828`, no negro**, y `black` es un nombre de Tailwind: redefinirlo
+>    cambia cada `bg-black`/`text-black`. `--color-white: #ffffff` sí conviene adoptarlo — hoy Deasy
+>    lo referencia 108 veces **sin declararlo**.
+> 4. **Su `z-index` no tiene semántica** (`z-1/9/99/999/…`). Se adopta como escalera de magnitudes con
+>    alias `--z-drawer/-modal/-tip/-toast` encima.
+>
+> **La tipografía sigue siendo Inter**, cargada desde `index.html`. De TailAdmin se toma la *escala*
+> (`text-theme-xs` 12/18, `text-theme-sm` 14/20, `text-title-*`), no la familia `Outfit`.
+>
+> ⚠️ **`frontend/CLAUDE.md` sigue siendo la norma y gana a lo que diga esta skill** — contraste,
+> capas, namespaces de Tailwind v4, y la regla de que ni el build, ni el lint, ni los tests ven un
+> estilo roto.
 
-Material extraído y **verificado** de TailAdmin (demo PRO de 87 rutas + los dos repos free). **Nunca
-fue una guía para portar su código** — su código es peor que el de Deasy (ver §5). Era una fuente de
-**recetas de clases y decisiones de diseño**.
+Material extraído y **verificado** de TailAdmin (demo PRO de 87 rutas + los dos repos free). **No es
+una guía para portar su código** — su código Vue es peor que el de Deasy (ver §Qué NO copiar). Es la
+fuente de **la paleta, las recetas de clases y las decisiones de diseño**.
 
 ## Las 3 trampas de Deasy que esto destapó — las tres arregladas
 
-Aunque la adopción se descartara, el análisis sirvió para encontrarlas, y eso sí quedó arreglado:
+El análisis sirvió para encontrarlas antes de adoptar nada, y eso quedó arreglado:
 
 | Trampa | Estado |
 |---|---|
@@ -78,18 +109,34 @@ nombre (`border-line`) a `border-[var(--color-line)]`. En Tailwind v4 `border-[X
 > Ojo al leerlos: `brand-50`, `brand-300`, `brand-500`… que aparecen en sus recetas son de **la
 > paleta de TailAdmin**, no de la nuestra. Nunca fueron nombres de Deasy.
 
-### La hoja de ruta de adopción: no se ejecuta
+### La hoja de ruta de adopción
 
-Aquí había 7 pasos para adoptar el lenguaje de TailAdmin. **La adopción se descartó el 2026-08-12**,
-así que no hay nada que ejecutar. Lo que sí se hizo por el camino —y era lo que de verdad hacía
-falta— fue arreglar el sistema propio: paleta única con una sola declaración por color, `@theme`
-registrado, escala de radios correcta, cero literales de color en el CSS y tres gates vigilando.
+Antes de adoptar nada se arregló el sistema propio, y **ese trabajo era el requisito**: paleta única
+con una sola declaración por color, `@theme` registrado, escala de radios correcta, cero literales de
+color en el CSS y tres gates vigilando. Sobre esa base, la adopción del 2026-08-13 va en la rama
+`develop-styles` y se verifica en la **pila B**:
 
-> Si algún día se replantea, dos avisos ya medidos: **si copias un `@theme` de TailAdmin, omite las
-> líneas `--font-*: initial` y `--breakpoint-*: initial`** (son destructivas: borran
-> `font-sans`/`font-mono` y **todos** los breakpoints), y **ancla su `--color-brand-500` a `#5e4eff`**,
-> el primario real de Deasy — el suyo es `#465fff`, y sin anclarlo tendrías **dos marcas** según el
-> componente fuera viejo o nuevo.
+1. Borrar lo que no pinta (11 clases muertas, 2 tokens muertos, ~26 clases fantasma) — **antes** de
+   migrar, porque tokenizar reglas que no aplican a ningún nodo es trabajo que se tira.
+2. Instalar sus 91 primitivas en `@theme` y reescribir nuestros 22 tokens como **alias** encima.
+3. **Auditoría de contraste** de las seis familias en sus tres roles, antes de tocar markup.
+4. Adoptar su markup **dentro** de nuestros componentes Vue.
+5. Migrar `slate-*` → `gray-*`, que es lo que deja sin consumidores el bloque de repintados de
+   `overrides.css` y permite **borrarlo**.
+6. Colapsar la capa de clases propias: 306 clases en 11 familias de nombres, de las que 133 se usan en
+   un solo fichero.
+
+> **Dos avisos medidos al copiar su `@theme`:** omite las líneas `--font-*: initial` y
+> `--breakpoint-*: initial` (son destructivas: borran `font-sans`/`font-mono` y **todos** los
+> breakpoints), y decide a conciencia qué pasa con `--color-brand-500`. Si lo anclas a `#5e4eff` —el
+> primario histórico de Deasy— conservas la marca; si tomas el suyo (`#465fff`), **la marca cambia de
+> color**, que es lo decidido el 2026-08-13. Lo que no vale es dejarlo a medias: entonces hay **dos
+> marcas** según el componente sea viejo o nuevo.
+
+> Y una **media trampa** que vale para cualquier fuente: prefiere el utility con nombre
+> (`border-line`) a `border-[var(--color-line)]`. En Tailwind v4 `border-[X]`, `text-[X]` y `ring-[X]`
+> son **ambiguos** entre color y tamaño: con `var()` no puede deducir y elige mal. Costó 114 nodos con
+> el borde en `currentColor`.
 
 ## Navegación
 

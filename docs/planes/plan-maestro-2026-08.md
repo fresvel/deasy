@@ -600,6 +600,24 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 > `lint:css` dentro del contenedor y —donde había que verlo— con `getComputedStyle` en el navegador.
 > Tres afirmaciones de la versión anterior de esta sección **eran falsas**, y van marcadas como tales
 > más abajo en vez de borradas.
+>
+> ---
+>
+> ⚠️ **ESTA SECCIÓN SE QUEDÓ EN EL 2026-08-11. NO ES EL ESTADO DE HOY.** El desarrollo del frente
+> siguió en `sistema-diseno-plantillas/` y el maestro no se actualizó con él. **Manda la tabla de
+> `plan-plantillas-2026-08.md`**, no ésta. Lo que ha cambiado desde entonces:
+>
+> - **La paleta se colapsó el 08-12.** Todo `--brand-*` que se lea aquí abajo está **muerto**: hoy son
+>   `--color-primary`, `--color-line`, `--color-muted`… y **no hay `--color-white`**.
+> - **`@theme` registra 22 colores, no 16**, con una sola declaración cada uno.
+> - **La colisión `dark:` está CERRADA.** Más abajo se marca «⛔ viva»: ya no lo está — hay
+>   `@custom-variant dark` en `tokens.css`, `vue/no-restricted-class` en `error` y `check:no-dark`.
+> - **Son 18 módulos, no 15.** «La estructura nueva» de más abajo cuenta 14 + `index.css`.
+> - **F3 y F4.5 se cerraron el 08-12**, y con ellas el paso 5 con su criterio redefinido.
+> - **El 2026-08-13 se revierte el descarte de TailAdmin**: se adoptan **su paleta** (91 primitivas,
+>   con nuestros 22 tokens como alias encima) y **su markup** (repo HTML free, MIT, con atribución),
+>   **no su código Vue**. Eso contesta las cuatro decisiones que bloqueaban el cierre —foco,
+>   tipografía bajo 14 px, `z-index` y tinte de las suaves—. Rama `develop-styles`, pila **B**.
 
 El orden **no es negociable**, porque hacerlo al revés significa recodificar el conflicto en cada
 sitio donde hoy hay un color escrito a mano. Y la sesión del 2026-08-09 le añadió un principio:
@@ -609,7 +627,7 @@ sitio donde hoy hay un color escrito a mano. Y la sesión del 2026-08-09 le aña
 |---|---|---|---|
 | 1 | Fusionar los dos `@layer components` en conflicto | ✅ `63b901e` | Ya no existe `tailwind.css`. Los `@layer components` que quedan son **uno por módulo de familia** y no se solapan; las marcas del corte siguen anotadas en `buttons.css:36` y `auth.css:60` |
 | 2 | Eliminar los componentes muertos y su CSS | ✅ `9ebe307` + `331322d` | CSS total 3 997 → **2 054 L**; `AdminTableManager.css` borrado entero |
-| 3 | Colapsar los tokens `--deasy-*` / `--brand-*` | ✅ `6e60d74` | **Cero `--deasy-*` vivos.** Las 4 apariciones que quedan en el árbol son **comentarios** de `tokens.css` (`:44`, `:51`, `:52`, `:92`) que explican el colapso. Un solo juego, y `@theme` (`tokens.css:23-40`) registra 16 colores en Tailwind |
+| 3 | Colapsar los tokens `--deasy-*` / `--brand-*` | ✅ `6e60d74` | **Cero `--deasy-*` vivos.** Las 4 apariciones que quedan en el árbol son **comentarios** de `tokens.css` (`:44`, `:51`, `:52`, `:92`) que explican el colapso. Un solo juego, y `@theme` (`tokens.css:23-40`) registra 16 colores en Tailwind — **hoy son 22**, tras el colapso del 08-12 |
 | 4 | Cerrar el fork `AdminButton.vue` | ⬜ **abierto** ← *aquí estamos* | El fichero **sigue vivo**: `frontend/src/modules/admin/components/ui/AdminButton.vue`. Ver abajo: el alcance es más pequeño de lo que decía el plan, y la razón que daba era falsa |
 | 5 | Migrar los colores hardcodeados | 🟡 **el CSS sí, el `.vue` no** | `647030a` + `2f1a158` dejaron `lint:css` en **0 errores**. Pero el contador ve el CSS, no la app. Ver el desglose abajo |
 | 6 | Las 33 incidencias de contraste (`css:S7924`) | ⬜ **sin medir** | No se puede consultar: el SonarQube es local y **no se levantó** en esta auditoría. Ver abajo qué se sabe sin él |
@@ -687,7 +705,8 @@ sigue valiendo, de `docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/audi
 ### La estructura nueva (2026-08-10, `c45b154`)
 
 `theme.css` y `tailwind.css` **ya no existen**. En su lugar hay **15 ficheros** en
-`frontend/src/shared/styles/`: 14 módulos por familia más `index.css`, que es **lo único que importa
+`frontend/src/shared/styles/` —**hoy son 18**, tras `graph.css`, `deliverables.css` y `signatures.css`—:
+14 módulos por familia más `index.css`, que es **lo único que importa
 `main.js`** (`main.js:6`). El orden de los `@import` **no es alfabético y está explicado dentro del
 propio `index.css`** (`:1-15`): `tokens.css` primero porque todo lo demás lo consume, `overrides.css`
 el último porque tiene que ganar a las reglas de componente por orden, no por `!important`.
@@ -737,13 +756,13 @@ antes/después, no build ni tests.
 > desarrollo, era el diseño tras la condición equivocada**, y promoverlo arregló 3 de los 4 fallos de
 > WCAG 1.4.11 que producción tenía.
 
-### Las tres colisiones de `tailadmin-ui`: dos cerradas, una viva
+### Las tres colisiones de `tailadmin-ui`: las tres cerradas
 
 | Colisión | Estado | Evidencia |
 |---|---|---|
 | `rounded-lg` valía 16 px (escala invertida) | ✅ **cerrada** (`cdbc62b`) | No queda ni una declaración `--radius-*` en `frontend/src`. Medido en navegador: `--radius-lg` = **`0.5rem`** (8 px), o sea el valor por defecto de Tailwind v4, y la escala vuelve a ser monótona (`sm 4 < md 6 < lg 8 < xl 12 < 2xl 16`) |
 | No había `@theme`, Tailwind no conocía un solo token | ✅ **cerrada** (`6e60d74`) | `tokens.css:23-40`, 16 colores bajo `--color-*`. Ya existen `bg-brand-primary`, `text-brand-text-strong`… |
-| `dark:` se autoactivaría por `prefers-color-scheme` | ⛔ **viva** | `grep -rn "custom-variant" frontend/src` → **0**. Sin `@custom-variant dark`, Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)` y una receta pegada de TailAdmin pintaría en oscuro sobre una app en claro. **Fallo silencioso**, y hoy inocuo solo porque no hay **ni un** `dark:` en el árbol. El aviso está donde toca, en `tokens.css:17-20` |
+| `dark:` se autoactivaría por `prefers-color-scheme` | ✅ **cerrada el 2026-08-11** — lo que sigue era el estado del 08-11 | `grep -rn "custom-variant" frontend/src` → **0**. Sin `@custom-variant dark`, Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)` y una receta pegada de TailAdmin pintaría en oscuro sobre una app en claro. **Fallo silencioso**, y hoy inocuo solo porque no hay **ni un** `dark:` en el árbol. El aviso está donde toca, en `tokens.css:17-20` |
 
 ### La barandilla, y lo que no vigila
 
@@ -767,6 +786,12 @@ antes/después, no build ni tests.
 
 **Criterio de cierre del frente:** pasos 4, 5 (con el criterio redefinido) y 6 cerrados, más el
 `<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno-plantillas/` se archiva y esto se marca ✅.
+
+> **Actualizado el 2026-08-13.** El paso 5 se cerró con F3 y F4.5 el 08-12. Lo que queda del frente
+> pasa a ser el trabajo de `develop-styles`: adoptar la paleta y el markup de TailAdmin, migrar
+> `slate-*` → `gray-*` para poder **borrar el bloque de repintados de `overrides.css`**, colapsar la
+> capa de clases propias (306 clases en 11 familias de nombres, de las que 133 se usan en un solo
+> fichero) y resolver las 53 reglas fuera de capa — incluida la del `<header>`.
 
 > ⚠️ **La primera vuelta ya está archivada; va la segunda.** El plan del 2026-08-09
 > cerró sus 6 fases y quedó archivado —sus cuatro ficheros sujeto ya no existen—, pero la medición

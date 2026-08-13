@@ -127,23 +127,26 @@ Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor
 ### Estilos — dónde va cada cosa
 
 Los estilos viven en `frontend/src/shared/styles/` (no en `frontend/src/styles/`, que no existe) y
-son **15 módulos por familia**. `main.js` importa **sólo `index.css`**, que los encadena.
+son **18 módulos por familia**. `main.js` importa **sólo `index.css`**, que los encadena.
 
 | Módulo | Qué va aquí |
 |---|---|
-| `tokens.css` | La **paleta** (`--brand-*`, `--state-*`, `--action-*`) y el `@theme` que la registra en Tailwind |
+| `tokens.css` | La **paleta** (`--color-*` en `@theme`, que es lo que genera las utilidades) y las escalas sin registrar (`--elev-*`, `--focus-ring`, `--typeface`) |
 | `base.css` | Reset, tipografía, `html`/`body`/`#app` |
 | `layout.css` · `nav.css` · `surfaces.css` | Armazón, navegación, tarjetas |
-| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` | Un fichero por familia de componente |
+| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` · `graph.css` · `deliverables.css` · `signatures.css` | Un fichero por familia de componente |
+| `misc.css` | Lo que aún no tiene familia. **Si crece, es que falta un módulo** |
 | `overrides.css` | El repintado de utilidades de Tailwind a la marca. **Va el último a propósito** |
 
 ⚠️ **El orden de los `@import` de `index.css` es parte del diseño, no es alfabético.** En CSS dos
 reglas de la misma especificidad se resuelven por orden de aparición. Está explicado en el propio
 fichero; si mueves un import, verifícalo en el navegador.
 
-**Un solo juego de tokens.** El juego paralelo `--deasy-*` se colapsó sobre `--brand-*` el
-2026-08-09. **Y no queda ni un color suelto en el CSS**: si necesitas uno, usa el token; si no
-existe, decláralo en `tokens.css` **con su familia**, no en el sitio donde lo gastas.
+**Un solo juego de tokens.** `--deasy-*` se colapsó sobre `--brand-*` el 2026-08-09, y `--brand-*`
+sobre `--color-*` el 2026-08-12 — **`--color-` no es prefijo, es el NAMESPACE de Tailwind**, y lo que
+va detrás es literalmente el nombre de la utilidad (`--color-line` → `border-line`). **Y no queda ni
+un color suelto en el CSS**: si necesitas uno, usa el token; si no existe, decláralo en `tokens.css`
+**con su familia**, no en el sitio donde lo gastas.
 
 Cuatro cosas que cuestan caro y no son evidentes:
 
