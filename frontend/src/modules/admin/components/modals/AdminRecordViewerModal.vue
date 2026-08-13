@@ -305,7 +305,7 @@ const emit = defineEmits([
 // Indicador de sincronización del flujo (plantillas): synced / stale / no_link.
 const SYNC_BADGE_META = {
   synced: { label: "Flujo sincronizado", class: "bg-emerald-100 text-success ring-emerald-200" },
-  stale: { label: "Flujo desincronizado", class: "bg-amber-100 text-amber-800 ring-amber-200" },
+  stale: { label: "Flujo desincronizado", class: "bg-amber-100 text-warning ring-amber-200" },
   no_link: { label: "Flujo sin vínculo", class: "bg-surface text-icon ring-line" }
 };
 const syncBadge = computed(() => {

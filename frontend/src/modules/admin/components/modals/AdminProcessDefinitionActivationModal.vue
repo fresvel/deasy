@@ -39,8 +39,8 @@
       panel-class="max-w-md"
       @close="showConfirm = false"
     >
-      <div class="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
-        <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+      <div class="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-warning">
+        <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
         <span>
           Al activar, <strong>ya no podrás modificar</strong> reglas, periodos ni paquetes en esta versión.
           Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.

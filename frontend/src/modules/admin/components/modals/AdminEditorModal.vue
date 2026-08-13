@@ -13,7 +13,7 @@
       <div v-for="field in visibleFormFields" :key="field.name" class="md:col-span-6">
         <label :for="fieldId(field.name)" class="deasy-form-label deasy-form-label--inline">
           {{ field.label || field.name }}
-          <span v-if="field.required" class="text-red-600">*</span>
+          <span v-if="field.required" class="text-danger">*</span>
         </label>
         <div v-if="isInputField(field) && isForeignKeyField(field)" class="relative">
           <AdminLookupField

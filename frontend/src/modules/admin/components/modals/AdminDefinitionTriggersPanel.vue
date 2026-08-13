@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4">
     <div v-if="!embedded && context" class="person-assignment-context">
       <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
-      <span class="ml-2 text-emerald-700/80">
+      <span class="ml-2 text-success/80">
         Variación {{ context.variation_key || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
       </span>
     </div>

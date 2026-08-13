@@ -39,13 +39,13 @@
       </div>
     </div>
 
-    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
+    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-danger ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
       {{ feedback.message }}
     </div>
 
     <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando mapa de procesos…</div>
-      <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
+      <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-danger">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-muted">No hay procesos para mostrar.</div>
       <VueFlow
         v-else
@@ -198,7 +198,7 @@
                     </template>
                     <template v-else>
                       <button type="button" class="font-semibold text-primary hover:underline" @click="editConfiguration(cfg, 'definition')">Ver</button>
-                      <button v-if="editable && cfg.status === 'active'" type="button" class="font-semibold text-emerald-600 hover:underline" @click="launchConfiguration(cfg)">Lanzar</button>
+                      <button v-if="editable && cfg.status === 'active'" type="button" class="font-semibold text-success hover:underline" @click="launchConfiguration(cfg)">Lanzar</button>
                     </template>
                   </div>
                 </li>
@@ -218,7 +218,7 @@
                 <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong">{{ ch.name }}</span>
-                    <span v-if="!ch.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
+                    <span v-if="!ch.is_active" class="text-[11px] font-semibold text-danger">Inactivo</span>
                     <span
                       class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
                       :class="ch.active_count ? 'bg-emerald-50 text-success ring-emerald-200' : (ch.definitions_count ? 'bg-amber-50 text-warning ring-amber-200' : 'bg-surface text-muted ring-line')"
@@ -227,7 +227,7 @@
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
                     <span class="truncate text-muted">{{ ch.slug }}</span>
                     <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openProcessDetail(ch.id)">Abrir</button>
-                    <button v-if="editable" type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="detachChild(ch.id)">Desvincular</button>
+                    <button v-if="editable" type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="detachChild(ch.id)">Desvincular</button>
                   </div>
                 </li>
               </ul>
@@ -279,7 +279,7 @@
           <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
         </div>
         <!-- Señal de salud: la config usa una versión NO publicada de este entregable. -->
-        <div v-if="drawerHealthWarning" class="border-b border-amber-100 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
+        <div v-if="drawerHealthWarning" class="border-b border-amber-100 bg-amber-50 px-4 py-2.5 text-xs text-warning">
           <p class="m-0 font-semibold">⚠ La configuración usa una versión {{ drawerHealthWarning.pinnedLabel }} de este entregable.</p>
           <p class="m-0 mt-0.5">
             <template v-if="drawerHealthWarning.publishedVersion && editable">

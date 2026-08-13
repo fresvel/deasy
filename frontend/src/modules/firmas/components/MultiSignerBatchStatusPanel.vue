@@ -88,16 +88,16 @@
         <div class="text-2xl font-black leading-none text-strong">{{ documentsCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">Éxitos</div>
+        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-success">Éxitos</div>
         <div class="text-2xl font-black leading-none text-success">{{ successCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-amber-600">Pendientes</div>
+        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-warning">Pendientes</div>
         <div class="text-2xl font-black leading-none text-warning">{{ pendingCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-rose-600">Fallos</div>
-        <div class="text-2xl font-black leading-none text-rose-700">{{ failedCount }}</div>
+        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-danger">Fallos</div>
+        <div class="text-2xl font-black leading-none text-danger">{{ failedCount }}</div>
       </div>
     </div>
 
@@ -136,7 +136,7 @@
       </div>
     </div>
 
-    <div v-if="batchError" class="mt-auto flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-elev-1">
+    <div v-if="batchError" class="mt-auto flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-danger shadow-elev-1">
       <IconAlertCircle class="mt-0.5 h-5 w-5 shrink-0" />
       <span class="font-medium">{{ batchError }}</span>
     </div>

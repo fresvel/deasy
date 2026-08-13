@@ -68,7 +68,7 @@ const cards = computed(() => {
       key: "deliveries",
       title: "Entregas",
       icon: "check-double",
-      iconWrap: "bg-amber-100 text-amber-600",
+      iconWrap: "bg-amber-100 text-warning",
       total: sumCounts(n(by, "pending"), n(by, "in_progress"), n(by, "returned"), n(by, "approved"))
     });
   }
@@ -79,7 +79,7 @@ const cards = computed(() => {
       key: "signatures",
       title: "Firmas",
       icon: "check",
-      iconWrap: "bg-emerald-100 text-emerald-600",
+      iconWrap: "bg-emerald-100 text-success",
       total: sumCounts(n(by, "pendiente"), n(by, "en_progreso"), n(by, "completado"))
     });
   }

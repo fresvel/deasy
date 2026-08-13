@@ -55,7 +55,7 @@
         {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
       <span v-else class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-muted ring-1 ring-line">Sin config.</span>
-      <span v-if="!data.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
+      <span v-if="!data.is_active" class="text-[11px] font-semibold text-danger">Inactivo</span>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>

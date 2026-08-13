@@ -40,7 +40,7 @@
       </span>
       <IconAlertTriangle
         v-if="isUnhealthy"
-        class="h-3.5 w-3.5 shrink-0 text-amber-500"
+        class="h-3.5 w-3.5 shrink-0 text-warning"
         :title="`La configuración activa usa una versión ${stateLabel.toLowerCase()} (no publicada) de este entregable. Publica una versión o usa la publicada.`"
       />
     </p>

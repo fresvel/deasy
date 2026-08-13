@@ -57,7 +57,7 @@
       role="listbox"
     >
       <p v-if="loading" class="px-3 py-2 text-sm text-muted">{{ loadingText }}</p>
-      <p v-else-if="error" class="px-3 py-2 text-sm text-red-500">{{ error }}</p>
+      <p v-else-if="error" class="px-3 py-2 text-sm text-danger">{{ error }}</p>
       <ul v-else-if="options.length" class="m-0 list-none p-0">
         <li
           v-for="(option, index) in options"

@@ -27,7 +27,7 @@
             v-for="req in requirements"
             :key="req.key"
             class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold ring-1 transition-colors"
-            :class="req.done ? 'bg-emerald-50 text-emerald-800 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-rose-200'"
+            :class="req.done ? 'bg-emerald-50 text-success ring-emerald-200' : 'bg-rose-50 text-danger ring-rose-200'"
           >
             <span
               class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"

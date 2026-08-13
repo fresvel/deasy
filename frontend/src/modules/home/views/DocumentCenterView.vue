@@ -37,7 +37,7 @@
       <!-- Fallos de descarga/vista previa. Mismo patrón que HomeView: aviso inline, no toast. -->
       <section
         v-if="actionError"
-        class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700"
+        class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-danger"
       >
         {{ actionError }}
       </section>
@@ -90,7 +90,7 @@
         <section v-if="loading" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">
           Cargando centro documental...
         </section>
-        <section v-else-if="error" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">
+        <section v-else-if="error" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-danger">
           {{ error }}
         </section>
         <AppDataTable

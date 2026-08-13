@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4">
     <div v-if="!embedded && context" class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
       <div class="flex flex-wrap items-center gap-2">
-        <strong class="text-sm text-emerald-950">{{ context.name || `Configuracion #${context.id}` }}</strong>
+        <strong class="text-sm text-success">{{ context.name || `Configuracion #${context.id}` }}</strong>
         <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
           {{ context.variation_key || "—" }}
         </span>
@@ -58,7 +58,7 @@
             <option value="routed">Ruteado (endosar a alguien)</option>
           </select>
           <span v-else class="text-xs font-semibold text-icon">{{ itemModeLabel(row.item_mode) }}</span>
-          <p v-if="row.item_mode === 'routed'" class="mt-1 m-0 text-[0.65rem] leading-tight text-amber-600">
+          <p v-if="row.item_mode === 'routed'" class="mt-1 m-0 text-[0.65rem] leading-tight text-warning">
             El flujo (entrega/firma) se define AL ENVIAR, no aquí.
           </p>
         </template>

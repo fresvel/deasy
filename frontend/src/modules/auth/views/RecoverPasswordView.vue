@@ -158,9 +158,9 @@
       leave-to-class="transform -translate-y-2 opacity-0"
     >
       <div v-if="statusMessage" class="mt-6 flex p-4 rounded-2xl border text-sm font-medium" :class="[
-        isError ? 'bg-red-50 border-red-100 text-red-600' : 'bg-emerald-50 border-emerald-100 text-success'
+        isError ? 'bg-red-50 border-red-100 text-danger' : 'bg-emerald-50 border-emerald-100 text-success'
       ]">
-        <IconAlertCircle v-if="isError" class="h-5 w-5 shrink-0 mr-3 mt-0.5 text-red-500" />
+        <IconAlertCircle v-if="isError" class="h-5 w-5 shrink-0 mr-3 mt-0.5 text-danger" />
         <IconCheck class="h-5 w-5 shrink-0 mr-3 mt-0.5" v-else />
         <div class="flex-1">{{ statusMessage }}</div>
       </div>

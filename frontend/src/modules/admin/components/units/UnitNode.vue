@@ -39,10 +39,10 @@
 
     <p class="m-0 flex items-center gap-1.5">
       <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
-      <IconCrown v-if="data.head_count" class="h-3.5 w-3.5 shrink-0 text-amber-500" title="Tiene jefatura" />
+      <IconCrown v-if="data.head_count" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
       <IconAlertTriangle
         v-if="data.healthIssues && data.healthIssues.length"
-        class="h-3.5 w-3.5 shrink-0 text-amber-500"
+        class="h-3.5 w-3.5 shrink-0 text-warning"
         :title="data.healthIssues.join(' · ')"
       />
       <span v-if="data.collapsed" class="text-[11px] font-semibold text-primary">▸</span>
@@ -57,7 +57,7 @@
         :class="positionsBadgeClass"
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</span>
-      <span v-if="!data.is_active" class="text-[11px] font-semibold text-rose-500">Inactiva</span>
+      <span v-if="!data.is_active" class="text-[11px] font-semibold text-danger">Inactiva</span>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
@@ -81,7 +81,7 @@ const positionsBadgeClass = computed(() => {
   const occ = Number(props.data.occupied_count) || 0;
   if (total === 0) return "bg-surface text-muted ring-line";
   if (occ >= total) return "bg-emerald-50 text-success ring-emerald-200";
-  if (occ === 0) return "bg-rose-50 text-rose-600 ring-rose-200";
+  if (occ === 0) return "bg-rose-50 text-danger ring-rose-200";
   return "bg-amber-50 text-warning ring-amber-200";
 });
 </script>

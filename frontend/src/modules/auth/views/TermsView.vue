@@ -25,7 +25,7 @@
           <p class="font-medium">Cargando términos y condiciones...</p>
         </div>
 
-        <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-red-500">
+        <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-danger">
           <IconAlertCircle class="mb-4 h-12 w-12" />
           <p class="text-lg font-medium">{{ error }}</p>
           <button @click="fetchTerms" class="mt-6 flex items-center gap-2 rounded-2xl bg-blue-light-50 px-6 py-2 font-semibold text-info transition-colors hover:bg-blue-light-100">

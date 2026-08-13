@@ -19,7 +19,7 @@
       </span>
     </template>
     <AppAlert v-if="draftArtifactError">{{ draftArtifactError }}</AppAlert>
-    <div v-if="draftArtifactLoading" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+    <div v-if="draftArtifactLoading" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-warning">
       Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
     </div>
 
@@ -70,7 +70,7 @@
     </AppDialogOverlay>
 
     <!-- Aviso de solo lectura: versión publicada/retirada (inmutable). -->
-    <div v-if="isReadOnly" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+    <div v-if="isReadOnly" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-warning">
       Esta versión está <strong>{{ lifecycleLabel.toLowerCase() }}</strong> y es de <strong>solo lectura</strong>.
       Usa <strong>“Nueva versión”</strong> (arriba) para crear una versión editable.
     </div>
@@ -171,7 +171,7 @@
           <option value="replicated">Replicado (N con etiqueta)</option>
           <option value="routed">Ruteado (endosar a alguien)</option>
         </AdminSelectField>
-        <p v-if="isRouted" class="mt-1 m-0 text-xs font-medium text-amber-600">
+        <p v-if="isRouted" class="mt-1 m-0 text-xs font-medium text-warning">
           El flujo (entrega/firma) de un routed se define AL ENVIAR, no aquí.
         </p>
       </AdminFieldGroup>
@@ -179,7 +179,7 @@
 
     <!-- Pestaña: Formatos -->
     <div v-show="activeTab === 'formatos'" class="mt-4 grid gap-3 md:grid-cols-12">
-      <div v-if="!isFormatosComplete" class="md:col-span-12 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">
+      <div v-if="!isFormatosComplete" class="md:col-span-12 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-warning">
         Adjunta al menos un documento de referencia (PDF, Word, Excel o PowerPoint) para poder crear la plantilla.
       </div>
       <div class="md:col-span-3">
@@ -255,7 +255,7 @@
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
           </div>
         </div>
       </div>
@@ -496,7 +496,7 @@
                   </select>
                 </div>
                 <div v-if="stepSigners(step).length > 1" class="col-span-1 flex items-center justify-end pb-1">
-                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
+                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
                 </div>
               </div>
               <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
@@ -688,8 +688,8 @@ const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit
 const lifecycleState = computed(() => String(props.draftArtifactForm.lifecycle_state || "published"));
 const lifecycleLabel = computed(() => ({ draft: "Borrador", published: "Publicada", retired: "Retirada" }[lifecycleState.value] || lifecycleState.value));
 const lifecycleBadgeClass = computed(() => {
-  if (lifecycleState.value === "published") return "text-emerald-600";
-  if (lifecycleState.value === "draft") return "text-amber-600";
+  if (lifecycleState.value === "published") return "text-success";
+  if (lifecycleState.value === "draft") return "text-warning";
   return "text-muted";
 });
 // Solo lectura: editando una versión publicada/retirada (inmutable). Se ve el contenido pero no se edita ni
@@ -922,7 +922,7 @@ const STEP_TONES = [
   { card: "border-emerald-200", badge: "bg-emerald-100 text-success" },
   { card: "border-amber-200", badge: "bg-amber-100 text-warning" },
   { card: "border-blue-light-200", badge: "bg-blue-light-100 text-info" },
-  { card: "border-rose-200", badge: "bg-rose-100 text-rose-700" },
+  { card: "border-rose-200", badge: "bg-rose-100 text-danger" },
   { card: "border-brand-200", badge: "bg-brand-100 text-primary" }
 ];
 const stepToneClass = (index) => STEP_TONES[index % STEP_TONES.length].card;

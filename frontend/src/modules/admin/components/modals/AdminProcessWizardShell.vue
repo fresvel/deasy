@@ -45,7 +45,7 @@
 
     <div
       v-if="definitionContext?.id && showContextSummary"
-      class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800"
+      class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-success"
     >
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
       <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
@@ -95,7 +95,7 @@ const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
 const DEFINITION_STATUS_META = {
   draft: { label: "Borrador", class: "bg-gray-200 text-body" },
   active: { label: "Activa", class: "bg-emerald-500 text-white" },
-  retired: { label: "Retirada", class: "bg-amber-200 text-amber-800" }
+  retired: { label: "Retirada", class: "bg-amber-200 text-warning" }
 };
 const definitionStatusMeta = computed(() =>
   DEFINITION_STATUS_META[String(props.definitionContext?.status || "draft").toLowerCase()]
@@ -129,7 +129,7 @@ const stepBadgeClass = (step, index) => {
   return "bg-gray-200 text-muted";
 };
 const stepHintClass = (step, index) => {
-  if (isStepComplete(step)) return "text-emerald-600";
+  if (isStepComplete(step)) return "text-success";
   if (step.key === props.currentStep) return "text-primary";
   if (isStepLocked(step, index)) return "text-muted";
   return "text-muted";

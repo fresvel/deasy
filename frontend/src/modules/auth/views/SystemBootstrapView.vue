@@ -282,10 +282,10 @@
 
     <div
       v-else-if="mode === 'recovery_required'"
-      class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
+      class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-warning"
     >
       <div class="flex items-start gap-3">
-        <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
         <div class="space-y-2">
           <p class="m-0 font-semibold">La instancia requiere recuperación administrativa.</p>
           <p class="m-0">
@@ -327,7 +327,7 @@
       <div
         v-if="message"
         class="mt-6 flex rounded-xl border p-4" :class="[
-          isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-success'
+          isError ? 'border-red-100 bg-red-50 text-danger' : 'border-emerald-100 bg-emerald-50 text-success'
         ]"
       >
         <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />

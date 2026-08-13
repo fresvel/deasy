@@ -39,12 +39,12 @@
       </div>
     </div>
 
-    <div v-if="error" class="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-xl flex items-start gap-3">
+    <div v-if="error" class="mb-6 p-4 bg-red-50 border border-red-100 text-danger text-sm font-semibold rounded-xl flex items-start gap-3">
       <IconAlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
       <p>{{ error }}</p>
     </div>
 
-    <div v-if="success" class="mb-6 p-4 bg-green-50 border border-green-100 text-green-600 text-sm font-semibold rounded-xl flex items-start gap-3">
+    <div v-if="success" class="mb-6 p-4 bg-green-50 border border-green-100 text-success text-sm font-semibold rounded-xl flex items-start gap-3">
       <IconCheck class="w-5 h-5 shrink-0 mt-0.5" />
       <p>¡Correo verificado correctamente! Redirigiendo...</p>
     </div>

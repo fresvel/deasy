@@ -13,7 +13,7 @@
               class="deasy-dropzone--rail"
               @files-selected="onFilesSelected"
             />
-            <p v-if="uploadError" class="rounded-2xl bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-rose-600">
+            <p v-if="uploadError" class="rounded-2xl bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-danger">
               {{ uploadError }}
             </p>
           </div>
@@ -118,8 +118,8 @@
                     class="min-w-0 flex flex-1 items-center gap-2 text-left"
                     @click="selectDocument(index)"
                   >
-                    <IconFileCheck v-if="doc.status === 'completed'" class="h-4 w-4 shrink-0 text-emerald-500" />
-                    <IconAlertCircle v-else-if="doc.status === 'failed'" class="h-4 w-4 shrink-0 text-rose-500" />
+                    <IconFileCheck v-if="doc.status === 'completed'" class="h-4 w-4 shrink-0 text-success" />
+                    <IconAlertCircle v-else-if="doc.status === 'failed'" class="h-4 w-4 shrink-0 text-danger" />
                     <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-info' : 'text-strong'" :title="doc.name">{{ formatDisplayFileName(doc.name) }}</div>
                   </button>
                   <div class="shrink-0" @click.stop>
@@ -127,7 +127,7 @@
                   </div>
                 </div>
                 <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
-                <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-[11px] font-semibold text-rose-600">{{ doc.error }}</div>
+                <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-[11px] font-semibold text-danger">{{ doc.error }}</div>
               </div>
             </div>
           </div>

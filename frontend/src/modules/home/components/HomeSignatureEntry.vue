@@ -1,6 +1,6 @@
 <template>
   <section id="signature-home" class="flex flex-col gap-6">
-    <section v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
+    <section v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-danger">
       {{ error }}
     </section>
 
@@ -60,7 +60,7 @@
     >
       <template #header>
         <div id="home-signature-request-modal" class="flex min-w-0 flex-1 items-center gap-4">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-success">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14l11 -11"></path><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7.5l-7.5 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"></path></svg>
           </div>
           <div class="min-w-0">
@@ -281,7 +281,7 @@
         </div>
       </template>
       <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
-        <div v-if="multiSignerError" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+        <div v-if="multiSignerError" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-danger">
           {{ multiSignerError }}
         </div>
         <div v-if="pendingPreparation" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">

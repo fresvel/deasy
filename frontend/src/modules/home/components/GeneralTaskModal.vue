@@ -23,7 +23,7 @@
       <AppTag variant="muted">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
     </div>
 
-    <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
+    <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-danger">{{ generalTaskError }}</div>
 
     <!-- Documento -->
     <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-elev-1">
@@ -57,7 +57,7 @@
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
           <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
             <span class="text-[0.65rem] font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
-            <button type="button" class="text-muted hover:text-rose-500" @click="removeFromEntrega(i)">×</button>
+            <button type="button" class="text-muted hover:text-danger" @click="removeFromEntrega(i)">×</button>
           </li>
           <li v-if="!flowEntrega.length" class="text-xs text-muted">Nadie asignado.</li>
         </ul>
@@ -80,13 +80,13 @@
                 </select>
                 <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 rounded-xl border border-line bg-white px-2 py-1 text-[0.7rem] text-body outline-none" />
               </template>
-              <button type="button" class="text-[0.7rem] font-semibold text-rose-500 hover:text-rose-600" @click="removeFirmaStep(si)">Quitar</button>
+              <button type="button" class="text-[0.7rem] font-semibold text-danger hover:text-danger" @click="removeFirmaStep(si)">Quitar</button>
             </div>
           </div>
           <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">
             <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-body">
               {{ sg.label }}
-              <button type="button" class="text-muted hover:text-rose-500" @click="removeSignerFromStep(si, gi)">×</button>
+              <button type="button" class="text-muted hover:text-danger" @click="removeSignerFromStep(si, gi)">×</button>
             </li>
           </ul>
           <button type="button" class="mt-1.5 text-[0.7rem] font-semibold text-primary hover:text-primary" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>

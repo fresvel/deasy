@@ -22,7 +22,7 @@
     <div v-if="loading" class="rounded-xl border border-line bg-surface px-4 py-4 text-sm font-medium text-muted">
       Cargando…
     </div>
-    <div v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+    <div v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-danger">
       {{ error }}
     </div>
     <div v-else-if="!items.length" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-success">
@@ -46,7 +46,7 @@
           <div class="flex items-center gap-1.5">
             <span
               class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.65rem] font-semibold"
-              :class="item.reason === 'sin_responsable' ? 'bg-amber-100 text-warning' : 'bg-rose-100 text-rose-700'"
+              :class="item.reason === 'sin_responsable' ? 'bg-amber-100 text-warning' : 'bg-rose-100 text-danger'"
             >{{ item.reason === 'sin_responsable' ? 'Sin responsable' : 'Titular se fue' }}</span>
             <span
               v-if="item.started"

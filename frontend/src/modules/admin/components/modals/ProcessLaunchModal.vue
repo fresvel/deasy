@@ -120,8 +120,8 @@ const statusLabel = (def) => {
   return "Pendiente";
 };
 const statusClass = (def) => {
-  if (def.relaunched) return "text-amber-600 font-medium";
-  if (def.launched) return "text-emerald-600 font-medium";
+  if (def.relaunched) return "text-warning font-medium";
+  if (def.launched) return "text-success font-medium";
   return "text-muted font-medium";
 };
 

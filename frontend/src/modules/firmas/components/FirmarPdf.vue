@@ -114,7 +114,7 @@
         <div
           class="rounded-2xl border px-4 py-4 text-sm font-medium"
           :class="workflowPdfStatus.type === 'error'
-            ? 'border-rose-200 bg-rose-50 text-rose-700'
+            ? 'border-rose-200 bg-rose-50 text-danger'
             : workflowPdfStatus.type === 'success'
               ? 'border-emerald-200 bg-emerald-50 text-success'
               : 'border-blue-light-200 bg-blue-light-50 text-info'"
@@ -148,8 +148,8 @@
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-rose-600">
+      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-danger p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -279,8 +279,8 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-rose-600">
+      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-danger p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -413,7 +413,7 @@
           <button
             v-if="signMode !== 'token'"
             @click.stop="requestDeleteField(field.id)"
-            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-muted hover:bg-red-50 hover:text-red-500 rounded-2xl transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
+            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-muted hover:bg-red-50 hover:text-danger rounded-2xl transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
             title="Eliminar campo"
           >
             <IconTrash class="w-5 h-5" stroke-width="1.5" />
@@ -470,7 +470,7 @@
             </button>
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-danger hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2" 
               @click.stop="requestDeleteField(field.id)"
             >
               <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -576,7 +576,7 @@
           </button>
         </div>
       </div>
-      <p v-if="userSearchError" class="text-red-500 text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
+      <p v-if="userSearchError" class="text-danger text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
     </div>
     <template #footer>
       <AdminButton variant="secondary" data-modal-dismiss>
@@ -647,7 +647,7 @@
         <div v-if="currentSignatureMarker" class="mt-1 text-action-view">
           Se buscarán todas las coincidencias del marcador <span class="font-mono font-semibold">{{ currentSignatureMarker }}</span> y se estampará la firma en cada una.
         </div>
-        <div v-else class="mt-1 text-red-600">
+        <div v-else class="mt-1 text-danger">
           Tu usuario no tiene un token de firma configurado.
         </div>
       </div>
@@ -711,7 +711,7 @@
 
       <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
         <SToggle v-model="allowUntrustedSigner" label-position="end">
-          <span class="text-sm text-amber-900">
+          <span class="text-sm text-warning">
             Permitir certificados no validados
             <span class="block text-xs text-warning">
               Solo para pruebas. Si la cadena de confianza no puede validarse, la firma continuará y se devolverá como advertencia.
@@ -720,7 +720,7 @@
         </SToggle>
       </div>
 
-      <p v-if="signError" class="mb-0 text-sm font-medium text-red-600">{{ signError }}</p>
+      <p v-if="signError" class="mb-0 text-sm font-medium text-danger">{{ signError }}</p>
     </div>
     <template #footer>
       <AdminButton variant="secondary" data-modal-dismiss :disabled="isSigning">
@@ -749,7 +749,7 @@
           <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
         </div>
     </div>
-    <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del flujo.' }}</p>
+    <p v-else class="mb-0 text-sm text-danger font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del flujo.' }}</p>
     <template #footer>
       <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
@@ -827,8 +827,8 @@
         </div>
       </div>
 
-      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-elev-1 animate-fade-in">
-        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-danger flex items-start gap-3 shadow-elev-1 animate-fade-in">
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
 
@@ -847,7 +847,7 @@
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
             <div class="deasy-eyebrow">Firmas Válidas</div>
           </div>
-          <div class="text-3xl font-black text-emerald-900 z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
+          <div class="text-3xl font-black text-success z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
         </div>
 
         <div class="rounded-2xl border border-blue-light-200 bg-blue-light-50/50 p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
@@ -870,17 +870,17 @@
 
       <div
         v-if="validationResult?.summary?.timestampCount"
-        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3 shadow-elev-1 animate-fade-in"
+        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-warning flex items-start gap-3 shadow-elev-1 animate-fade-in"
       >
-        <IconAlertTriangle class="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+        <IconAlertTriangle class="w-5 h-5 shrink-0 text-warning mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
       </div>
 
       <div
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-elev-1 animate-fade-in"
+        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-danger flex items-start gap-3 shadow-elev-1 animate-fade-in"
       >
-        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <div class="flex flex-col gap-1">
           <p v-for="(warning, idx) in validationResult.warnings" :key="idx" class="font-medium leading-relaxed m-0">{{ warning }}</p>
         </div>
@@ -907,7 +907,7 @@
               <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-emerald-100 text-success text-xs font-bold border border-emerald-200">
                 <IconCheck class="w-3.5 h-3.5" /> Válida
               </span>
-              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
+              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-rose-100 text-danger text-xs font-bold border border-rose-200">
                 <IconX class="w-3.5 h-3.5" /> Inválida
               </span>
             </div>
@@ -1062,11 +1062,11 @@ const fieldId = (name) => `${uid}-${name}`;
 
   const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-blue-light-50 border-blue-light-100 text-info');
   const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-surface border-line text-muted');
-  const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
-  const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
+  const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-success');
+  const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-warning');
   const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-brand-50 border-brand-100 text-primary');
   const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'bg-blue-light-50 border-blue-light-100 text-info');
-  const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'bg-emerald-50 border-emerald-100 text-emerald-600');
+  const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'bg-emerald-50 border-emerald-100 text-success');
   const normalizedLauncherMode = computed(() => String(props.launcherMode || "all").trim().toLowerCase());
   const canShowLauncher = (mode) => {
     const normalizedMode = String(mode || "").trim().toLowerCase();

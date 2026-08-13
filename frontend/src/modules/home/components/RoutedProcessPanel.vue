@@ -77,7 +77,7 @@
       >
         <span
           class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
-          :class="activeTab === 'sends' ? 'border-brand-100 bg-brand-50/70 text-primary' : 'border-emerald-100 bg-emerald-50/70 text-emerald-600'"
+          :class="activeTab === 'sends' ? 'border-brand-100 bg-brand-50/70 text-primary' : 'border-emerald-100 bg-emerald-50/70 text-success'"
         >
           <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-5 w-5" />
         </span>

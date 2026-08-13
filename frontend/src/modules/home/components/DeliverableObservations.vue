@@ -39,8 +39,8 @@ const dotClass = (observation) => {
   }[observation.kind] || 'bg-blue-light-400';
 };
 const kindTextClass = (kind) => ({
-  return_reason: 'text-amber-600',
-  rejection_reason: 'text-rose-600',
+  return_reason: 'text-warning',
+  rejection_reason: 'text-danger',
   internal_note: 'text-muted',
   observation: 'text-info',
 }[kind] || 'text-info');
@@ -81,7 +81,7 @@ const onAdd = () => {
             <span class="text-xs font-bold text-body">{{ observation.author_name || 'Sistema' }}</span>
             <span class="text-[11px] font-semibold uppercase tracking-wide" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>
             <span class="text-[11px] text-muted">{{ formatObsDate(observation.created_at) }}</span>
-            <span v-if="observation.resolved_at" class="text-[11px] font-semibold text-emerald-600">· Resuelta</span>
+            <span v-if="observation.resolved_at" class="text-[11px] font-semibold text-success">· Resuelta</span>
           </div>
           <p class="m-0 mt-1 text-sm whitespace-pre-line" :class="observation.resolved_at ? 'text-muted' : 'text-body'">{{ observation.message }}</p>
           <p v-if="observation.resolved_at" class="m-0 mt-0.5 text-[11px] text-muted">Resuelta por {{ observation.resolved_by_name || '—' }}</p>

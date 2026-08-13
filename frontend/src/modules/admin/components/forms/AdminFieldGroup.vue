@@ -7,7 +7,7 @@
       :class="labelClass"
     >
       {{ label }}
-      <span v-if="required" class="text-red-600">*</span>
+      <span v-if="required" class="text-danger">*</span>
       <slot name="labelSuffix" />
     </label>
     <slot />

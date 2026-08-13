@@ -194,10 +194,10 @@
                   <button
                     type="button"
                     class="deasy-btn deasy-btn--secondary deasy-btn--md w-full sm:w-auto"
-                    :class="!newuser.direccion ? 'border-red-300 text-red-700 hover:bg-red-50' : ''"
+                    :class="!newuser.direccion ? 'border-red-300 text-danger hover:bg-red-50' : ''"
                     @click="toggleMap"
                   >
-                    <IconMap class="h-4 w-4" :class="!newuser.direccion ? 'text-red-500' : 'text-info'" />
+                    <IconMap class="h-4 w-4" :class="!newuser.direccion ? 'text-danger' : 'text-info'" />
                     {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
                   </button>
 
@@ -289,7 +289,7 @@
                   <div
                     v-if="newuser.repassword"
                     class="mt-1 flex items-center gap-1 text-[11px] font-medium"
-                    :class="passwordsMatch ? 'text-green-600' : 'text-red-500'"
+                    :class="passwordsMatch ? 'text-success' : 'text-danger'"
                   >
                     <IconCheck v-if="passwordsMatch" class="h-3.5 w-3.5" />
                     <IconX v-else class="h-3.5 w-3.5" />
@@ -323,12 +323,12 @@
               leave-from-class="translate-y-0 opacity-100"
               leave-to-class="-translate-y-2 opacity-0"
             >
-              <div v-if="errorMessage" class="mt-5 flex rounded-xl border border-red-100 bg-red-50 p-4 text-red-600">
-                <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+              <div v-if="errorMessage" class="mt-5 flex rounded-xl border border-red-100 bg-red-50 p-4 text-danger">
+                <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
                 <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
                 <button
                   type="button"
-                  class="deasy-inline-icon-button ml-3 h-8 w-8 text-red-400 hover:bg-red-100 hover:text-red-600"
+                  class="deasy-inline-icon-button ml-3 h-8 w-8 text-red-400 hover:bg-red-100 hover:text-danger"
                   aria-label="Cerrar alerta"
                   @click="errorMessage = ''"
                 >
@@ -364,7 +364,7 @@
     @close="goToLogin"
   >
     <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl border border-green-200 bg-green-50">
-      <IconCheck class="h-9 w-9 text-green-600" />
+      <IconCheck class="h-9 w-9 text-success" />
     </div>
     <p class="mb-0 text-sm text-muted">
       Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
@@ -461,11 +461,11 @@ const passwordStrengthColors = {
 };
 const passwordTextColors = {
   0: "text-muted",
-  1: "text-red-500",
-  2: "text-orange-500",
-  3: "text-amber-500",
+  1: "text-danger",
+  2: "text-warning",
+  3: "text-warning",
   4: "text-lime-600",
-  5: "text-green-600"
+  5: "text-success"
 };
 
 const showMap = ref(false);

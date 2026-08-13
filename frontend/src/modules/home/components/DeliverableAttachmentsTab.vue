@@ -23,7 +23,7 @@
       </label>
     </div>
 
-    <div v-if="attachmentsState.error" class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">{{ attachmentsState.error }}</div>
+    <div v-if="attachmentsState.error" class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-danger">{{ attachmentsState.error }}</div>
 
     <div v-if="attachmentsState.loading" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center animate-pulse">Cargando anexos...</div>
     <div v-else-if="!attachmentsState.items.length" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center">
@@ -45,7 +45,7 @@
           </p>
         </div>
         <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-info transition hover:border-blue-light-300 hover:bg-blue-light-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
+        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
       </li>
     </ul>
   </section>

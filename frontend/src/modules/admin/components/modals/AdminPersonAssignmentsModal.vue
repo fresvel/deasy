@@ -7,7 +7,7 @@
       <template v-else>
         <div class="person-assignment-context mb-3">
           <strong>{{ personAssignmentName }}</strong>
-          <span class="ml-2 text-emerald-700/80">{{ personAssignmentMeta }}</span>
+          <span class="ml-2 text-success/80">{{ personAssignmentMeta }}</span>
         </div>
 
         <div v-if="personAssignmentsLoading" class="mb-2 text-sm text-muted">Cargando asignaciones...</div>

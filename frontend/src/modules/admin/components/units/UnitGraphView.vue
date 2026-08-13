@@ -51,7 +51,7 @@
         <AppButton variant="secondary" size="sm" @click="searchAndCenter">Buscar</AppButton>
       </div>
       <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
-        <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-amber-600" />
+        <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-warning" />
         Resaltar pendientes
         <span v-if="pendingCount" class="inline-flex items-center rounded-xl bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-warning ring-1 ring-amber-200">{{ pendingCount }}</span>
       </label>
@@ -66,13 +66,13 @@
       </span>
     </div>
 
-    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
+    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-danger ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
       {{ feedback.message }}
     </div>
 
     <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando organigrama…</div>
-      <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
+      <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-danger">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-muted">No hay unidades para mostrar.</div>
       <VueFlow
         v-else
@@ -225,18 +225,18 @@
           <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
             <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-line px-3 py-2.5">
               <div class="flex items-center gap-2">
-                <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-amber-500" title="Jefatura" />
+                <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
                 <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
                 <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
-                <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-rose-500">Inactivo</span>
+                <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-danger">Inactivo</span>
                 <div v-if="editable" class="ml-auto flex items-center gap-1">
-                  <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-amber-500' : 'text-muted'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
+                  <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-warning' : 'text-muted'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
                     <IconCrown class="h-4 w-4" />
                   </button>
                   <button type="button" class="graph-icon-btn text-muted hover:text-primary" title="Editar puesto" @click="openEditPosition(pos)">
                     <IconPencil class="h-4 w-4" />
                   </button>
-                  <button type="button" class="graph-icon-btn text-muted hover:text-rose-600" title="Eliminar puesto" @click="removePosition(pos.id)">
+                  <button type="button" class="graph-icon-btn text-muted hover:text-danger" title="Eliminar puesto" @click="removePosition(pos.id)">
                     <IconTrash class="h-4 w-4" />
                   </button>
                 </div>
@@ -247,7 +247,7 @@
                   <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                   <template v-if="editable">
                     <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openAssign(pos.id)">Cambiar</button>
-                    <button type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="unassign(pos.id)">Quitar</button>
+                    <button type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="unassign(pos.id)">Quitar</button>
                   </template>
                 </template>
                 <template v-else>
@@ -320,7 +320,7 @@
                   <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
                   <template v-if="editable && proc.origin === 'direct' && proc.status === 'draft'">
                     <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openEditProcessRule(proc)">Editar</button>
-                    <button type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="detachProcess(proc.rule_id)">Quitar</button>
+                    <button type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="detachProcess(proc.rule_id)">Quitar</button>
                   </template>
                   <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-muted">Versiona el proceso para cambiar el alcance</span>
                   <span v-else class="ml-auto text-[11px] italic text-muted">Definido a nivel de proceso</span>
@@ -404,7 +404,7 @@
               {{ def.process_name }} · {{ def.variation_key }} · v{{ def.definition_version }}
             </option>
           </select>
-          <span v-if="!processEditingRuleId && attachableLoaded && !attachableProcesses.length" class="mt-1 block text-[11px] text-amber-600">
+          <span v-if="!processEditingRuleId && attachableLoaded && !attachableProcesses.length" class="mt-1 block text-[11px] text-warning">
             No hay configuraciones en borrador acotables por unidad. El alcance solo se edita en borrador; las variaciones por tipo de unidad se gestionan en la configuración del proceso.
           </span>
         </label>
@@ -834,7 +834,7 @@ const PROCESS_SCOPE_LABELS = {
 const processScopeLabel = (code) => PROCESS_SCOPE_LABELS[code] || code || "—";
 const processStatusClass = (status) => {
   if (status === "active") return "bg-emerald-50 text-success ring-emerald-200";
-  if (status === "retired") return "bg-rose-50 text-rose-600 ring-rose-200";
+  if (status === "retired") return "bg-rose-50 text-danger ring-rose-200";
   return "bg-surface text-icon ring-line";
 };
 

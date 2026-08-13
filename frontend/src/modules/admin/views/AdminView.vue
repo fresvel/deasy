@@ -184,7 +184,7 @@
                  <span class="text-muted font-medium">Cargando catálogos...</span>
                </div>
             </div>
-            <div v-else-if="metaError" class="text-red-500 font-medium text-center p-6 bg-red-50/50 rounded-2xl border border-red-100">{{ metaError }}</div>
+            <div v-else-if="metaError" class="text-danger font-medium text-center p-6 bg-red-50/50 rounded-2xl border border-red-100">{{ metaError }}</div>
             <template v-else>
                <section class="deasy-hero-shell mb-8">
                  <div class="deasy-hero-layout">

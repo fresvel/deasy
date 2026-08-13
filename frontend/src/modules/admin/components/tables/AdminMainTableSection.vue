@@ -455,7 +455,7 @@ const resetGenericSearch = () => {
 const DEFINITION_STATUS_BADGES = {
   draft: { label: "Borrador", class: "bg-gray-200 text-body" },
   active: { label: "Activa", class: "bg-emerald-500 text-white" },
-  retired: { label: "Retirada", class: "bg-amber-200 text-amber-800" }
+  retired: { label: "Retirada", class: "bg-amber-200 text-warning" }
 };
 const isDefinitionStatusField = (field) =>
   field?.name === "active_definition_status"

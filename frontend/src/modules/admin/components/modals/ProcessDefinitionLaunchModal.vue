@@ -38,7 +38,7 @@
           </div>
 
           <div v-if="selectedTerm" class="flex flex-col gap-2 deasy-card px-4 py-3">
-            <span class="text-sm" :class="selectedTerm.launched ? 'text-amber-600 font-medium' : 'text-muted font-medium'">
+            <span class="text-sm" :class="selectedTerm.launched ? 'text-warning font-medium' : 'text-muted font-medium'">
               {{ selectedTerm.launched ? "Este proceso ya está lanzado en el periodo seleccionado." : "Pendiente de lanzar en este periodo." }}
             </span>
             <div v-if="selectedTerm.launched" class="flex flex-col gap-2">
@@ -123,8 +123,8 @@ const relaunchReason = ref("");
 const selectedTerm = computed(() => terms.value.find((t) => String(t.id) === String(selectedTermId.value)) || null);
 
 const runStatusClass = (status) => {
-  if (status === "active") return "text-emerald-600 font-medium";
-  if (status === "cancelled") return "text-red-500 font-medium";
+  if (status === "active") return "text-success font-medium";
+  if (status === "cancelled") return "text-danger font-medium";
   return "text-muted font-medium";
 };
 

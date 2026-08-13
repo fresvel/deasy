@@ -3,7 +3,7 @@
     <p class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Qué cambia al activar</p>
 
     <div v-if="loading" class="text-xs text-muted">Calculando cambios…</div>
-    <div v-else-if="error" class="text-xs text-rose-600">{{ error }}</div>
+    <div v-else-if="error" class="text-xs text-danger">{{ error }}</div>
 
     <template v-else-if="diff">
       <p v-if="!diff.has_active" class="m-0 text-xs text-icon">
@@ -71,7 +71,7 @@ const changeLabel = (c) => ({ changed: "Cambia", added: "Nuevo", removed: "Quita
 const changeClass = (c) => ({
   changed: "bg-amber-50 text-warning ring-amber-200",
   added: "bg-emerald-50 text-success ring-emerald-200",
-  removed: "bg-rose-50 text-rose-700 ring-rose-200",
+  removed: "bg-rose-50 text-danger ring-rose-200",
   unchanged: "bg-surface text-muted ring-line"
 }[c] || "bg-surface text-muted ring-line");
 </script>

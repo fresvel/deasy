@@ -161,7 +161,7 @@
             <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
-            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-elev-1">
+            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-danger text-sm font-bold rounded-2xl p-5 shadow-elev-1">
               {{ processPanelError }}
             </section>
             <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted text-center text-sm font-medium">
@@ -170,7 +170,7 @@
 
             <template v-else>
 
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
@@ -410,7 +410,7 @@
           <div v-else class="flex flex-col gap-4">
 
             <!-- Error banner -->
-            <div v-if="homeErrorMessage" class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+            <div v-if="homeErrorMessage" class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-danger">
               <IconAlertTriangle class="h-5 w-5 shrink-0" />
               <span>{{ homeErrorMessage }}</span>
             </div>
@@ -470,7 +470,7 @@
                 <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1"
                   :class="homeSignatureCount ? 'border-amber-200/80' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-amber-500' : 'text-muted'" />
+                    <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-warning' : 'text-muted'" />
                     <span class="mt-4 text-sm font-semibold text-body">
                       {{ homeSignatureCount ? `${homeSignatureCount} firma(s) pendiente(s)` : 'Sin pendientes' }}
                     </span>
@@ -592,9 +592,9 @@
                     <span
                       class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                       :class="{
-                        'bg-amber-100 text-amber-600': action.tone === 'warning',
+                        'bg-amber-100 text-warning': action.tone === 'warning',
                         'bg-blue-light-100 text-info': action.tone === 'info',
-                        'bg-emerald-100 text-emerald-600': action.tone === 'success',
+                        'bg-emerald-100 text-success': action.tone === 'success',
                         'bg-surface text-icon': !['warning','info','success'].includes(action.tone),
                       }"
                     >
@@ -622,9 +622,9 @@
                       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
                       :class="{
                         'bg-blue-light-100 text-info': stat.tone === 'sky',
-                        'bg-emerald-100 text-emerald-600': stat.tone === 'emerald',
+                        'bg-emerald-100 text-success': stat.tone === 'emerald',
                         'bg-brand-100 text-primary': stat.tone === 'indigo',
-                        'bg-amber-100 text-amber-600': stat.tone === 'amber',
+                        'bg-amber-100 text-warning': stat.tone === 'amber',
                         'bg-surface text-icon': stat.tone === 'slate',
                       }"
                     >
@@ -693,12 +693,12 @@
               Cargando la configuración seleccionada...
             </section>
 
-            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-elev-1">
+            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-danger text-sm font-bold rounded-2xl p-5 shadow-elev-1">
               {{ processPanelError }}
             </section>
 
             <template v-else>
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
@@ -950,7 +950,7 @@
           </div>
         </div>
 
-        <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-elev-1">
+        <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-danger text-sm font-bold rounded-2xl p-5 shadow-elev-1">
           {{ taskLaunchError }}
         </div>
 
@@ -1070,8 +1070,8 @@
 
         <section v-else class="flex flex-col gap-5">
           <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-5">
-            <h3 class="m-0 text-base font-bold text-emerald-900">Confirmación</h3>
-            <p class="mt-2 mb-0 text-sm font-medium text-emerald-800/80">
+            <h3 class="m-0 text-base font-bold text-success">Confirmación</h3>
+            <p class="mt-2 mb-0 text-sm font-medium text-success/80">
               Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
             </p>
           </div>
@@ -1704,7 +1704,7 @@
             />
           </label>
 
-          <div v-if="fillWorkflowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+          <div v-if="fillWorkflowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-danger">
             {{ fillWorkflowState.error }}
           </div>
         </div>
@@ -1729,7 +1729,7 @@
         <div v-if="signatureFlowState.loading" class="deasy-empty">
           Consultando la secuencia de firmas...
         </div>
-        <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
+        <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-danger">
           {{ signatureFlowState.error }}
         </div>
         <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
@@ -1751,7 +1751,7 @@
               <p class="text-xs text-muted">
                 Estado documental: {{ capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente de firma' }}
               </p>
-              <p v-if="!signatureFlowState.snapshot.readiness?.ok" class="text-xs text-rose-600">
+              <p v-if="!signatureFlowState.snapshot.readiness?.ok" class="text-xs text-danger">
                 Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
               </p>
             </section>
@@ -1775,7 +1775,7 @@
               <p class="text-xs text-muted">
                 {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} solicitudes registradas
               </p>
-              <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-rose-600">
+              <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-danger">
                 Pasos sin firmantes: {{ signatureFlowState.snapshot.readiness.unresolvedRequiredSteps.map((step) => step.stepOrder).join(', ') }}
               </p>
             </section>
@@ -1947,7 +1947,7 @@
         <div
           class="rounded-2xl px-4 py-3 text-sm font-semibold"
           :class="deliverableOperationState.type === 'error'
-            ? 'bg-rose-50 border border-rose-200 text-rose-700'
+            ? 'bg-rose-50 border border-rose-200 text-danger'
             : deliverableOperationState.type === 'success'
               ? 'bg-emerald-50 border border-emerald-200 text-success'
               : 'bg-blue-light-50 border border-blue-light-200 text-action-view'"
@@ -1986,7 +1986,7 @@
           </AppButton>
         </div>
       </div>
-      <p v-else class="mb-0 text-sm text-rose-700 font-medium">
+      <p v-else class="mb-0 text-sm text-danger font-medium">
         {{ deliverableSignResultState.message || 'No se pudo completar la firma.' }}
       </p>
       <template #footer>
@@ -2006,7 +2006,7 @@
       @close="closeDeliverableResetModal"
     >
       <div class="flex flex-col gap-4">
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-warning">
           Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
         </div>
         <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
@@ -2017,7 +2017,7 @@
             La versión actual quedará como histórico cancelado. La nueva versión empezará desde cero y el documento no conservará el archivo de trabajo previo.
           </p>
         </div>
-        <p v-if="deliverableResetState.error" class="m-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+        <p v-if="deliverableResetState.error" class="m-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-danger">
           {{ deliverableResetState.error }}
         </p>
       </div>
@@ -2102,7 +2102,7 @@
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'reject')"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-rose-100/95 bg-rose-50/55 text-rose-700 transition-all group-hover:border-rose-200 group-hover:bg-rose-50">
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-rose-100/95 bg-rose-50/55 text-danger transition-all group-hover:border-rose-200 group-hover:bg-rose-50">
                   <IconX class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
