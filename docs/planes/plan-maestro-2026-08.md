@@ -129,26 +129,62 @@ nueva lo arrastra otra vez.
 
 **Criterio de cierre:** el proceso por defecto se siembra por el mismo camino que todo lo demás.
 
-### 0.4 · Falta el generador del código base desde los campos configurados — ⬜ **hueco, no defecto**
+### 0.4 · El generador: de la base al Jinja, para que la firma no se coloque a mano — ⬜
 
-Es **la mitad que falta** del ciclo objetivo *configurar en web → descargar base → editar → subir*.
+**El objetivo, en palabras del dueño (2026-08-13).** Esta ficha estaba mal enfocada: decía que el fin
+era «descargar una base con los valores configurados». El fin real es otro, y explica todo el frente 0.
 
-Hoy `_materializeDraftFormats` (`templateLifecycle.js:1138-1152`) copia `<seed>/src/` **verbatim**. Los
-valores configurados en la web sí llegan al paquete de MinIO — pero **solo a `meta.yaml` y
-`schema.json`, que son exactamente los dos ficheros que el ZIP de descarga NO incluye**
-(`GET /template_artifacts/:id/source` zipea solo `template/jinja2/`, `sql_admin_controller.js:177`).
-El `.tex.j2` que abres para editar es el del seed, **sin una sola referencia a tus campos**: hay que
-escribir los `{{ … }}` a mano adivinando las claves.
+Deasy sostiene **dos mundos a la vez**, y va a seguir así:
 
-Lo que falta, por impacto: (1) **generar el Jinja/LaTeX base desde `schema_fields`**; (2) incluir
-`meta.yaml`+`schema.json` en el ZIP en modo lectura, para ver contra qué contrato se escribe;
-(3) validar **sintaxis Jinja** al subir —hoy solo se sanea LaTeX (`artifacts.js:28-51`), y una
-plantilla con `{% for %}` sin cerrar se publica y revienta en render—; (4) `fileFilter` en los
-adjuntos de referencia (`sql_admin_router.js:59-62` no tiene ninguno).
+- **El de hoy, y será la mayoría.** Automatizar todos los trámites de la institución es imposible: son
+  cambiantes y variables. Así que un proceso recurrente se configura, se le **precarga su plantilla
+  Word/Excel**, el responsable la descarga, la rellena fuera y **sube el PDF**. El sistema no genera
+  nada: **controla quién entrega qué, lo almacena, y le pone encima el flujo de llenado y firmas** —
+  preconfigurado en la base, resuelto en ejecución. **Eso es lo que el §0.8 acaba de dejar en su sitio.**
+- **Al que se migra proceso a proceso.** El admin mide cuáles son cuello de botella, cuáles dan más
+  problemas y cuáles producen más documentos —*lo que no se mide no mejora*— y decide **cuál automatizar**.
+  Un proceso automatizado deja de necesitar Word: el usuario rellena **en la web** y el sistema
+  **compila el PDF**.
 
-> Lo que **sí** funciona y conviene no tocar: la subida por ZIP valida integridad SHA-256 del
-> manifiesto, zona editable acotada a `Contenido/`, path traversal, y saneo LaTeX (`\write18`,
-> `\directlua`, `\openout`, `\ShellEscape`). Está bien hecho.
+**Y aquí entra el Jinja.** El PDF compilado tiene que llevar **los tokens de firma ya puestos**, «para
+que se estampen las firmas necesarias **sin que el usuario coloque de manera manual la ubicación**».
+
+> **Ése es el fin del §0.4, y no «rellenar valores».** La cadena que lo hace posible **ya existe
+> entera del lado que firma**: `persons.token` → `formatTokenForSigner` → `signType: "token"` →
+> `signer/find_marker.py`, que localiza el literal en el texto del PDF y devuelve página y coordenadas.
+> El seed ya lo imprime en blanco para que sea invisible y extraíble. **Lo único que falta es el
+> eslabón que emite el token en el sitio correcto.**
+
+**La dirección, confirmada:** *«antes se llevaba la lógica del jinja a la base y eso fue burdo;
+ahora, de la base al jinja»*. El §0.8 hizo lo primero (la base es la fuente); el §0.4 es lo segundo.
+
+#### Lo que se decidió el 2026-08-13
+
+- **El generador emite campos Y tokens de firma**, y deja el esqueleto para que los campos se
+  almacenen como **JSON en la base**.
+- **El YAML sale del camino.** Se comprobó que el render **ya lee JSON** (`make.sh` mira la extensión:
+  `.yaml`/`.yml` → `yaml.safe_load`, si no → `json.load`); lo único que no lo encuentra es la búsqueda
+  de fichero, que no lista ningún `.json`. **Importa porque el backend no tiene parser de YAML** desde
+  el sub-paso 8 — con el payload en JSON puede **construirlo de verdad**, fusionando los defaults del
+  seed con los valores configurados y los huecos de token, **sin dependencia nueva**.
+- **`field_refs` queda confirmado obsoleto.** Era el mecanismo de «enviar los campos de llenado a la
+  base» que el dueño da por superado. Coincide con su clasificación como fósil sin productor.
+
+#### Los sub-pasos
+
+| # | Qué | ¿Reversible? |
+|---|---|---|
+| **S1** | **El ZIP de una plantilla creada por la web NO compila**: `data.yaml` se escribe en la raíz del prefijo y el ZIP solo lleva `template/jinja2/`, así que no viaja — y `StrictUndefined` revienta antes de LaTeX. **El admin lo usa hoy.** Además, en edición sin cambio de seed el fichero no se re-materializa y **manifiesto y bucket derivan** | Sí |
+| **S2** | El **`catch {}` mudo** de `getTemplateArtifactSchema`: el editor carga sin campos **y el siguiente guardado escribe `{}`**. Es el mismo borrado silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, en el mismo fichero | Sí |
+| **S3** | El **`fileFilter` que falta**. Hoy un `.sh` subido por el campo `pdf_file` acaba en MinIO **y el ZIP le pone modo 0755** | Sí |
+| **S4** | **Balance de bloques Jinja** al subir, con los delimitadores reales `[[% %]]`. No es un parser, y hay que decirlo | Sí |
+| **S5** | **El payload pasa a JSON**: `data.json` en la búsqueda de `make.sh` | Sí |
+| **S6** | **Los campos a la base, como JSON.** El esqueleto que pidió el dueño. Hoy viven solo en `schema.json` de MinIO, **sin tabla**: no se pueden validar contra nada, se copian en binario al versionar, y un fallo de MinIO los borra | **No** |
+| **S7** | **Slot de firma estable.** Hoy es `firma_<orden>` porque el formulario **nunca pone `code`**: insertar un paso en medio renumera los slots y **el token que el `.tex` referenciaba pasa a ser el de otro firmante**, en silencio. Es prerequisito del generador | **No** |
+| **S8** | **El generador**: campos + tokens → Jinja | Sí |
+
+⚠️ **S7 es prerequisito de S8**: sin identidad estable, el generador emite código que caduca al
+reordenar un paso.
 
 ### 0.5 · El vocabulario del entregable — ✅ **CERRADO (`f5cf457`)**
 
