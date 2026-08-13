@@ -22,7 +22,7 @@ cuesta más que el trabajo que ahorran— y la lista de **lo que NO hay que toca
 
 ---
 
-## Frente 0 · Limpiar el modelo antes de seguir refactorizando — 🟡 · **0.1, 0.2, 0.3 y 0.8 cerrados**
+## Frente 0 · Limpiar el modelo antes de seguir refactorizando — 🟡 · **8 de 9** · solo queda §0.4
 
 Abierto el **2026-08-09**, y va delante de todo lo demás por un motivo que no es de gravedad sino de
 orden: **el resto del plan refactoriza sobre un modelo que todavía se contradice a sí mismo**. Mientras
@@ -150,7 +150,11 @@ adjuntos de referencia (`sql_admin_router.js:59-62` no tiene ninguno).
 > manifiesto, zona editable acotada a `Contenido/`, path traversal, y saneo LaTeX (`\write18`,
 > `\directlua`, `\openout`, `\ShellEscape`). Está bien hecho.
 
-### 0.5 · El vocabulario del entregable — ⬜ **tema propio**
+### 0.5 · El vocabulario del entregable — ✅ **CERRADO (`f5cf457`)**
+
+El glosario ya existía en el sitio, pero **colapsaba «Plantilla» en dos tablas** y borraba justo la distinción que más tiempo cuesta. Ahora distingue los cuatro nombres —tipo, edición, vínculo e instancia— con la cadena completa `seed → deliverable → template_artifact → (vínculo) → task_item → document → document_version`, y un aviso sobre que **`documents` no guarda ningún fichero**.
+
+**Trampa aprendida y escrita en `trocear.mjs`:** la conversión LaTeX→Markdown es **de un solo sentido**. Trocear deja *anclas*, no diagramas; los 15 Mermaid se escribieron a mano después. Regenerar sobre lo publicado **los pierde en silencio** — `verificar.sh` sigue verde porque cuenta anclas, y el sitio compila igual. Para una corrección puntual: editar el `.tex` y **replicar a mano en el `.md`**.
 
 **Cuatro nombres, cuatro cosas distintas.** No es sinonimia, y confundirlos es la primera fuente de
 error al leer este repo:
@@ -178,7 +182,14 @@ Los estados también tienen tres convenciones conviviendo (`"Pendiente de llenad
 `"pendiente"` snake castellano, `"pending"` snake inglés) y **se filtran al frontend**. Cierre del
 punto: un **glosario** concepto → nombre canónico en código → tabla → literal de estado.
 
-### 0.6 · Censo de fósiles del camino viejo — ⬜
+### 0.6 · Censo de fósiles del camino viejo — ✅ **CERRADO (`f5fa889`+`92e7e21`+`2c1b17f`)**
+
+Los 18 elementos del censo, **cada uno con veredicto escrito**: retirados, conservados con lápida, o «no era fósil». El criterio de cierre no era retirarlo todo, sino que ninguno quedara sin decidir.
+
+**Y dos hallazgos que valieron más que el cambio:**
+
+1. **Los `case` de firma NO estaban muertos.** `parseStepSigners` saca el resolver del **JSONB `signers`** sin filtrarlo, y **un `CHECK` no cubre una columna JSONB**. Ningún productor vivo puede emitir un tipo retirado, pero una fila legada sí lo lleva **y se auto-propaga a cada versión nueva**. Borrarlos habría mandado el paso al `default` con el cargo a `null`: **no firmaría nadie, y en silencio**.
+2. **Al CRUD le faltaba un valor, no le sobraba.** El censo decía que omitía los `context_*`; lo que faltaba era **`context_exact`**, el valor por defecto que autora el formulario. Su gemela de firma sí lo tenía — la asimetría era el fallo.
 
 Cosas que el YAML/CLI sembraba y la web no puede producir ni editar. **Cada una necesita una decisión
 —retirar o cablear—, no un refactor.** Verificadas el 2026-08-09:
@@ -201,7 +212,13 @@ Cosas que el YAML/CLI sembraba y la web no puede producir ni editar. **Cada una 
 Y un bloque que sería inejecutable aunque se leyera: las firmas de `workflow.yaml:74-104` ponen
 `required_cargo_code` **a nivel de paso**, y el único lector lo busca **dentro** del resolver/firmante.
 
-### 0.7 · La documentación miente en dos direcciones — ⬜
+### 0.7 · La documentación miente en dos direcciones — ✅ **CERRADO (2026-08-11)**
+
+Corregidas **34 afirmaciones falsas** que dejó nuestro propio trabajo y **10 desfases anteriores**, en el sitio, `CLAUDE.md`, `docs/arquitecturas/`, `docs/03-backend/` y `docs/planes/referencia/`. Los dos roadmaps de marzo **se archivaron** en vez de corregirse: eran actas fechadas, y el segundo se presentaba como «el estado real actual del código».
+
+**El hallazgo que salvó el trabajo:** `docs/arquitectura-deasy.tex` **es la fuente** de las 21 páginas de `explicacion/`. Corregir solo los `.md` habría dejado la mentira en el origen, y la siguiente conversión la habría reintroducido entera.
+
+**Y la prueba de por qué este frente existe:** entre el barrido y la ejecución, con horas de diferencia, las cifras **volvieron a moverse** — los unitarios pasaron de 446 a 523 por nuestros propios commits.
 
 **30 desfases en 7 ficheros**, y no son ruido uniforme:
 
