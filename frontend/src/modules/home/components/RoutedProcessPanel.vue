@@ -59,7 +59,7 @@
       v-else-if="!activeItems.length"
       class="flex flex-col items-center gap-3 rounded-[1.5rem] border-2 border-dashed border-line bg-surface/50 px-6 py-12 text-center"
     >
-      <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-line bg-white text-gray-300">
+      <span class="inline-flex h-14 w-14 items-center justify-center deasy-card text-gray-300">
         <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-7 w-7" />
       </span>
       <p class="m-0 text-sm font-bold text-icon">{{ emptyTitle }}</p>

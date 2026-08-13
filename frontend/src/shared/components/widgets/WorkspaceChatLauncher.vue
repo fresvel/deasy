@@ -160,7 +160,7 @@
               <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl border border-line bg-white text-muted transition hover:bg-surface hover:text-body"
+                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center deasy-card text-muted transition hover:bg-surface hover:text-body"
                 aria-label="Adjuntar archivos"
                 title="Adjuntar archivos"
                 @click="attachmentInputRef?.click?.()"

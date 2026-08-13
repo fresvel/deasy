@@ -6,7 +6,7 @@
   {{ signatureFlowState.error }}
 </div>
 <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
-  <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-4">
+  <section class="deasy-card p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Resumen del flujo</h3>

@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-    <div class="rounded-2xl border border-line bg-white p-4 shadow-elev-1">
+    <div class="deasy-card p-4 shadow-elev-1">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div class="block text-sm font-bold text-strong">Campos de Firma</div>
         <BtnDelete

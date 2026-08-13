@@ -38,7 +38,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin plantillas vinculadas."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="mt-3 overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1 person-assignment-table"
+      responsive-class="mt-3 overflow-x-auto deasy-card shadow-elev-1 person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">
@@ -50,7 +50,7 @@
             v-if="canManage"
             aria-label="Modo de emisión de la plantilla"
             :value="row.item_mode || 'single'"
-            class="rounded-2xl border border-line bg-white px-2 py-1 text-xs font-semibold text-body outline-none"
+            class="deasy-card px-2 py-1 text-xs font-semibold text-body outline-none"
             @change="$emit('set-item-mode', { row, itemMode: $event.target.value })"
           >
             <option value="single">Simple (1 entregable)</option>

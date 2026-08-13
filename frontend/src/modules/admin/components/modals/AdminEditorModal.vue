@@ -137,7 +137,7 @@
         :row-key="(row) => row.id"
         empty-text="Este proceso aun no tiene configuraciones."
         table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-        responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
+        responsive-class="overflow-x-auto deasy-card shadow-elev-1"
         scroll-class=""
       >
         <template #cell="{ row, field }">

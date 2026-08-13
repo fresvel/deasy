@@ -1,6 +1,6 @@
 <template>
 <div class="flex flex-col gap-4">
-  <section class="rounded-2xl border border-line bg-white p-4">
+  <section class="deasy-card p-4">
     <div class="flex flex-col gap-1">
       <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Anexos del entregable</h3>
       <p class="m-0 text-xs font-medium text-muted">Archivos auxiliares (evidencias, soportes) adicionales al documento principal.</p>
@@ -9,7 +9,7 @@
     <div class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 p-4">
       <label class="flex flex-col gap-1">
         <span class="deasy-eyebrow">Tipo</span>
-        <select v-model="attachmentUploadKind" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none">
+        <select v-model="attachmentUploadKind" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
           <option value="annex">Anexo</option>
           <option value="evidence">Evidencia</option>
           <option value="source">Fuente</option>
@@ -44,8 +44,8 @@
             <span v-if="attachment.description" class="truncate">· {{ attachment.description }}</span>
           </p>
         </div>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-line bg-white text-info transition hover:border-blue-light-300 hover:bg-blue-light-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-line bg-white text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
+        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-info transition hover:border-blue-light-300 hover:bg-blue-light-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
+        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
       </li>
     </ul>
   </section>

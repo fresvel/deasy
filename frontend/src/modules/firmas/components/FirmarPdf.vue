@@ -833,7 +833,7 @@
       </div>
 
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-        <div class="rounded-2xl border border-line bg-white p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="deasy-card p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-muted mb-1 z-10">
             <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
             <div class="deasy-eyebrow">Firmas Detectadas</div>
@@ -978,7 +978,7 @@
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuer"
-        class="rounded-2xl border border-line bg-white px-4 py-3"
+        class="deasy-card px-4 py-3"
       >
         <div class="deasy-eyebrow">Issuer completo</div>
         <div class="mt-2 whitespace-pre-wrap text-sm text-body">
@@ -988,7 +988,7 @@
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
-        class="rounded-2xl border border-line bg-white px-4 py-3"
+        class="deasy-card px-4 py-3"
       >
         <div class="deasy-eyebrow">Atributos detectados</div>
         <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-icon">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>

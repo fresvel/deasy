@@ -11,7 +11,7 @@
       <iframe
         v-if="url && isPdf"
         :src="url"
-        class="w-full min-h-[70vh] rounded-2xl border border-line bg-white"
+        class="w-full min-h-[70vh] deasy-card"
         title="Vista previa del archivo"
       />
       <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm text-icon">

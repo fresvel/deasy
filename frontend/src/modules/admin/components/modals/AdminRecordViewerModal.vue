@@ -148,7 +148,7 @@
             :rows="section.rows"
             :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white"
+            responsive-class="overflow-x-auto deasy-card"
             scroll-class=""
             actions-label="Accion"
           >

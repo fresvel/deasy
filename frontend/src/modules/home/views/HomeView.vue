@@ -1312,7 +1312,7 @@
 
         <template v-if="deliverableWorkspaceState.tab === 'summary'">
           <div v-if="deliverableWorkspaceSubject" class="flex flex-col gap-5">
-            <section class="rounded-2xl border border-line bg-white p-4">
+            <section class="deasy-card p-4">
               <div class="flex flex-col gap-3">
                 <!-- Estado del entregable -->
                 <div class="flex flex-wrap gap-2">
@@ -1356,7 +1356,7 @@
               </div>
             </section>
 
-            <section class="rounded-2xl border border-line bg-white p-4">
+            <section class="deasy-card p-4">
               <div class="flex items-center gap-1.5">
                 <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Acciones</h3>
                 <IconInfoCircle class="h-4 w-4 text-muted" title="Todo lo que puedes hacer ahora con este entregable, en un solo lugar." />
@@ -1486,7 +1486,7 @@
           <p class="m-0 text-sm font-medium text-muted">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
           <label v-if="mySendsTypes.length > 1" class="flex items-center gap-2 text-sm">
             <span class="deasy-eyebrow">Tipo</span>
-            <select v-model="mySendsTypeFilter" class="rounded-2xl border border-line bg-white px-2 py-1 text-sm font-medium text-body outline-none">
+            <select v-model="mySendsTypeFilter" class="deasy-card px-2 py-1 text-sm font-medium text-body outline-none">
               <option value="all">Todos</option>
               <option v-for="t in mySendsTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>
@@ -1498,7 +1498,7 @@
           Aún no has enviado ningún documento.
         </div>
         <ul v-else class="m-0 flex flex-col gap-2 p-0 list-none">
-          <li v-for="s in filteredMySends" :key="`send-${s.id}`" class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-white px-4 py-3">
+          <li v-for="s in filteredMySends" :key="`send-${s.id}`" class="flex flex-wrap items-center justify-between gap-2 deasy-card px-4 py-3">
             <div class="flex min-w-0 flex-col gap-0.5">
               <div class="flex flex-wrap items-center gap-2">
                 <AppTag variant="info">{{ s.process_name }}</AppTag>
@@ -1545,7 +1545,7 @@
             </div>
           </div>
 
-          <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="deasy-card p-4">
             <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Secuencia del flujo</h3>
             <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-muted">
               Este entregable todavía no tiene una secuencia de entrega visible.
@@ -1588,7 +1588,7 @@
                   <p class="deasy-eyebrow">Regla</p>
                   <p class="mt-1 text-xs font-medium text-muted m-0">{{ getFillStepResolverLabel(step) }}</p>
                 </div>
-                <div v-if="step.response_note" class="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
+                <div v-if="step.response_note" class="mt-3 deasy-card px-4 py-3">
                   <p class="deasy-eyebrow">Nota</p>
                   <p class="mt-1 mb-0 text-xs font-medium text-icon">{{ step.response_note }}</p>
                 </div>
@@ -1596,7 +1596,7 @@
             </div>
           </div>
 
-          <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="deasy-card p-4">
             <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Historial de notas operativas</h3>
             <div v-if="!fillWorkflowNotes.length" class="text-sm text-muted">
               Aún no existen notas operativas registradas en este flujo.
@@ -1627,7 +1627,7 @@
             </div>
           </div>
 
-          <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="deasy-card p-4">
             <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Acciones disponibles</h3>
             <p
               v-if="fillWorkflowState.request && !canOperateCurrentFillRequest"
@@ -1755,7 +1755,7 @@
                 Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
               </p>
             </section>
-            <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-2 shadow-elev-1">
+            <section class="deasy-card p-4 flex flex-col gap-2 shadow-elev-1">
               <p class="text-xs uppercase tracking-wider font-semibold text-muted">Responsable actual</p>
               <p class="text-sm font-semibold text-strong mb-0">
                 {{ signatureFlowState.snapshot?.responsableActual
@@ -1850,7 +1850,7 @@
               <div
                 v-for="request in signatureFlowState.snapshot.signatureRequests"
                 :key="`flow-request-${request.id}`"
-                class="rounded-2xl border border-line bg-white p-3 flex flex-col gap-1"
+                class="deasy-card p-3 flex flex-col gap-1"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <p class="text-sm font-semibold text-strong m-0">Paso {{ request.stepOrder }}</p>
@@ -1869,7 +1869,7 @@
             </div>
           </section>
 
-          <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-4">
+          <section class="deasy-card p-4 flex flex-col gap-4">
             <div class="flex items-center justify-between gap-2">
               <div>
                 <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Firmar documento</h3>
@@ -2043,7 +2043,7 @@
       <template #actions>
           <div
             v-if="hasDeliverablePreviewActions"
-            class="rounded-2xl border border-line bg-white p-4"
+            class="deasy-card p-4"
           >
             <h3 class="mb-3 text-sm font-bold uppercase tracking-wider text-body">
               Acciones disponibles

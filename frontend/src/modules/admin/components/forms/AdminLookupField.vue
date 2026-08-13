@@ -53,7 +53,7 @@
     <div
       v-if="suggestEnabled && isOpen"
       :id="listboxId"
-      class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-64 overflow-auto rounded-2xl border border-line bg-white py-1 shadow-lg"
+      class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-64 overflow-auto deasy-card py-1 shadow-lg"
       role="listbox"
     >
       <p v-if="loading" class="px-3 py-2 text-sm text-muted">{{ loadingText }}</p>

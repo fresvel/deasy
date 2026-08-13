@@ -33,11 +33,11 @@
       </div>
       <label class="flex flex-col gap-1">
         <span class="deasy-eyebrow">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
-        <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none" />
+        <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none" />
       </label>
       <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
         <span class="deasy-eyebrow">Descripción</span>
-        <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none"></textarea>
+        <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none"></textarea>
       </label>
     </section>
 
@@ -68,7 +68,7 @@
           <span class="deasy-eyebrow">Firma (pasos en orden)</span>
           <button type="button" class="text-xs font-semibold text-primary hover:text-primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
         </div>
-        <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 rounded-2xl border border-line bg-white p-2">
+        <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
           <div class="flex items-center justify-between gap-2">
             <span class="text-[0.65rem] font-bold uppercase tracking-wide text-muted">Paso {{ si + 1 }}</span>
             <div class="flex items-center gap-1.5">
@@ -98,7 +98,7 @@
         <p class="m-0 text-[0.7rem] font-semibold text-primary">
           {{ flowPickerTarget === 'entrega' ? 'Quién elabora' : (flowPickerTarget === 'firma:new' ? 'Nuevo paso de firma' : 'Añadir firmante al paso') }}
         </p>
-        <div class="inline-flex self-start rounded-2xl border border-line bg-white p-0.5 text-xs font-semibold">
+        <div class="inline-flex self-start deasy-card p-0.5 text-xs font-semibold">
           <button type="button" :class="flowPickerMode === 'person' ? 'bg-brand-600 text-white' : 'text-muted'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'person'">Persona</button>
           <button type="button" :class="flowPickerMode === 'cargo' ? 'bg-brand-600 text-white' : 'text-muted'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'cargo'">Por cargo</button>
         </div>
@@ -112,7 +112,7 @@
             class="rounded-2xl border border-brand-300 bg-white px-3 py-2 text-sm font-medium text-body outline-none"
             @input="searchRecipients"
           />
-          <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-2xl border border-line bg-white shadow-lg list-none m-0 p-1">
+          <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
             <li v-for="person in recipientResults" :key="`fp-${person.id}`">
               <button type="button" class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-body hover:bg-blue-light-50" @click="addFlowPerson(person)">
                 {{ person.full_name }}
@@ -125,11 +125,11 @@
 
         <div v-else class="flex flex-col gap-2">
           <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select v-model="flowCargoForm.cargoId" aria-label="Cargo" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none">
+            <select v-model="flowCargoForm.cargoId" aria-label="Cargo" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
               <option :value="null" disabled>Cargo…</option>
               <option v-for="c in flowCatalog.cargos" :key="`c-${c.id}`" :value="c.id">{{ c.name }}</option>
             </select>
-            <select v-model="flowCargoForm.unitId" aria-label="Unidad" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none">
+            <select v-model="flowCargoForm.unitId" aria-label="Unidad" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
               <option :value="null">Todas las unidades</option>
               <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
             </select>
@@ -149,14 +149,14 @@
         <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->
         <label v-if="showSenderUnitSelect" class="flex flex-col gap-1">
           <span class="deasy-eyebrow">Unidad emisora *</span>
-          <select v-model="generalTaskForm.unitId" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none">
+          <select v-model="generalTaskForm.unitId" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
             <option :value="null" disabled>Selecciona una unidad</option>
             <option v-for="unit in senderUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
           </select>
         </label>
         <label class="flex flex-col gap-1">
           <span class="deasy-eyebrow">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
-          <input v-model="generalTaskForm.endDate" type="date" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none" />
+          <input v-model="generalTaskForm.endDate" type="date" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none" />
         </label>
       </div>
       <p class="m-0 text-[0.7rem] font-medium text-muted">

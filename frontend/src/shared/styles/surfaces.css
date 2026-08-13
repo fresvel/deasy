@@ -112,3 +112,17 @@
         @apply p-8;
     }
 }
+
+@layer components {
+    /* LA TARJETA. Solo la SUPERFICIE: radio, borde y fondo. El padding NO entra a proposito —
+       varia con razon segun lo que lleve dentro (`p-4` para un bloque, `px-4 py-3` para una
+       fila, ninguno cuando la tarjeta envuelve una tabla que ya trae el suyo)—, asi que sigue
+       en la plantilla. Meterlo aqui obligaria a un modificador por cada combinacion y eso es
+       reinventar las utilidades, no simplificarlas.
+
+       No se confunda con `.deasy-section-card`, que es la superficie GRANDE de una seccion
+       (mas padding y otro radio). Esta es la pequena: la que se repite dentro de un panel. */
+    .deasy-card {
+        @apply rounded-2xl border border-line bg-white;
+    }
+}

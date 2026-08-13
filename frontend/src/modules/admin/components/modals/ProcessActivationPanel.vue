@@ -65,7 +65,7 @@
             :rows="rules"
             :row-key="(row) => `activation-rule-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
+            responsive-class="overflow-x-auto deasy-card shadow-elev-1"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -99,7 +99,7 @@
             :rows="triggers"
             :row-key="(row) => `activation-trigger-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
+            responsive-class="overflow-x-auto deasy-card shadow-elev-1"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -133,7 +133,7 @@
             :rows="artifacts"
             :row-key="(row) => `activation-artifact-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
+            responsive-class="overflow-x-auto deasy-card shadow-elev-1"
             scroll-class=""
           >
             <template #cell="{ row, field }">

@@ -66,7 +66,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin periodos vinculados."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1 person-assignment-table"
+      responsive-class="overflow-x-auto deasy-card shadow-elev-1 person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">

@@ -11,7 +11,7 @@
 
           <router-link
             to="/register"
-            class="inline-flex w-fit shrink-0 items-center gap-2 rounded-2xl border border-line bg-white px-5 py-2.5 font-semibold text-body shadow-elev-1 transition-all hover:bg-surface"
+            class="inline-flex w-fit shrink-0 items-center gap-2 deasy-card px-5 py-2.5 font-semibold text-body shadow-elev-1 transition-all hover:bg-surface"
           >
             <IconArrowLeft class="h-5 w-5" />
             Volver al registro
