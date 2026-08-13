@@ -68,8 +68,8 @@
 // «quién» es justo lo que la inversión no puede cambiar.
 //
 // `anchor_refs` se deja fuera a propósito: es el predecesor muerto de `slot` (siempre `[]`, nadie lo
-// consume) y el §0.8 lo borra en el sub-paso 7. Incluirlo movería el golden por una razón que no es
-// de comportamiento. `created_at` tampoco entra: es el reloj de siembra.
+// consume). Incluirlo movería el golden por una razón que no es de comportamiento. `created_at`
+// tampoco entra: es el reloj de siembra.
 //
 // ✅ `fill_flow_steps.code` y `fill_flow_steps.name` YA SE CAPTURAN (sub-paso 3, este commit). Existían
 // como columnas desde el 1-bis pero nadie las escribía: `normalizeFillSteps` las descartaba y el
@@ -82,7 +82,15 @@
 // descuido: es la prueba positiva de que `materializeRuntimeFlowForTaskItem` no se tocó. El
 // movimiento está en lo que se OBSERVA, no en lo que el runtime hace.
 //
-// `anchor_refs` sigue fuera: es el predecesor muerto de `slot` y el §0.8 lo borra en el sub-paso 8.
+// `anchor_refs` sigue fuera: es el predecesor muerto de `slot`.
+//
+// ⚠️ CORRECCIÓN (§0.6, cierre del censo de fósiles): esta nota y su gemela de arriba anunciaban que
+// el §0.8 borraría la columna en el sub-paso 7 primero y en el 8 después. NO OCURRIÓ NINGUNA DE LAS
+// DOS: el sub-paso 8 se llevó los resolutores del `CHECK`, no la columna. `anchor_refs` sigue en
+// `signature_flow_steps`, expuesta en el CRUD genérico y nombrada en los goldens de `admin_crud`, y
+// se CONSERVA con esa decisión escrita en `DocumentSignatureWorkflowService.js`. Lo que sí se retiró
+// es su única lectura, que no alimentaba a nadie. Dejar aquí el anuncio de una retirada que no pasó
+// es exactamente el mecanismo que describe el §0.7.
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";

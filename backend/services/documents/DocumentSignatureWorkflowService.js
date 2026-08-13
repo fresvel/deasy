@@ -19,27 +19,6 @@ const SIGNATURE_APPROVAL_AND = "and";
 const SIGNATURE_APPROVAL_OR = "or";
 const SIGNATURE_APPROVAL_AT_LEAST = "at_least";
 
-const parseSignatureStepAnchorRefs = (value) => {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => (typeof item === "string" ? item.trim() : ""))
-      .filter(Boolean);
-  }
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((item) => (typeof item === "string" ? item.trim() : ""))
-          .filter(Boolean);
-      }
-    } catch {
-      // ignore malformed JSON
-    }
-  }
-  return [];
-};
-
 const getDocumentVersionSignatureContext = async (connection, documentVersionId) => {
   const [rows] = await connection.query(
     `SELECT
@@ -147,6 +126,26 @@ export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
 
 // Normaliza la lista de firmantes (columna JSON `signers`) a la forma camelCase que consumen los resolutores.
 // Mantiene `selection_mode` (snake) además de `selectionMode` porque la resolución por cargo lo lee así.
+//
+// ⚠️ ESTE ES EL AGUJERO DEL CATÁLOGO, y explica por qué este fichero conserva resolutores que su
+// gemela de entrega (`admin/generation/assignees.js`) ya retiró. `normaliza` aquí significa cambiar
+// de convención de nombres, NO validar: `resolverType` y `unitScopeType` salen del JSONB tal cual
+// vengan, sin pasar por `SIGNATURE_RESOLVER_TYPES` ni `SIGNATURE_UNIT_SCOPE_TYPES`.
+//
+// El `CHECK` del sub-paso 8 del §0.8 cierra las COLUMNAS `resolver_type` y `unit_scope_type`, y una
+// columna JSONB no la cubre ningún `CHECK`. Además, `copySignatureFlowSteps` (`templates/flowRows.js`)
+// copia `signers` VERBATIM al versionar, así que un valor retirado que ya viviera en una base
+// desplegada no lo para el arranque —el `ADD CONSTRAINT` solo valida las columnas— y se propaga solo
+// a cada versión nueva. Por eso `document_owner`, `position` y los ámbitos `context_subtree` /
+// `context_ancestor_type` siguen resolviéndose más abajo: ahí NO son ramas muertas.
+//
+// Ningún productor VIVO puede emitirlos: los tres escritores de `signers` son `normalizeSignatureSteps`
+// (que sí filtra contra `SIGNATURE_RESOLVER_TYPES`), `materializeRuntimeFlowForTaskItem` (solo emite
+// `cargo_in_scope` y `specific_person`) y la copia de versionado. Lo que queda vivo es el legado.
+//
+// QUÉ CERRARÍA EL AGUJERO —y permitiría entonces recortar los `case`—: filtrar aquí contra los dos
+// catálogos de `templates/workflows.js`, y una migración que reescriba el JSONB de las filas ya
+// desplegadas. Las dos cosas, y en ese orden; solo el filtro dejaría pasos legítimos sin firmante.
 const parseStepSigners = (value) => {
   let arr = value;
   if (typeof value === "string") {
@@ -184,6 +183,16 @@ const signerFromStepColumns = (step) => ({
   selection_mode: step.selectionMode
 });
 
+// `anchor_refs` NO se selecciona, y no es un olvido (§0.6, cierre del censo de fósiles). Era el
+// predecesor muerto de `slot`: se escribe siempre `[]`, y lo que aquí se leía sólo servía para
+// rellenar un campo `anchorRefs` del paso que NADIE aguas abajo consultaba —medido: cero lectores en
+// todo el backend—. Quien coloca hoy la firma es `slot`, vía `{{ signatures.<slot>.token }}`.
+//
+// La COLUMNA sigue en `signature_flow_steps` a propósito: está expuesta en el CRUD genérico
+// (`config/sqlTables.js`) y su nombre aparece en los goldens de `admin_crud`, así que soltarla es un
+// cambio de contrato —y de esquema— y no la retirada de una rama muerta. Lo que la mataría: quitarla
+// de `sqlTables.js`, recapturar esos goldens y un `ALTER TABLE ... DROP COLUMN IF EXISTS` idempotente,
+// porque un `DROP COLUMN` no se reaplica con `CREATE TABLE IF NOT EXISTS`.
 const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
   const [rows] = await connection.query(
     `SELECT
@@ -204,7 +213,6 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
        required_signers_min,
        required_signers_max,
        is_required,
-       anchor_refs,
        signers
      FROM signature_flow_steps
      WHERE template_id = ?
@@ -233,8 +241,7 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
       requiredSignersMax: row.required_signers_max !== null && row.required_signers_max !== undefined
         ? Number(row.required_signers_max)
         : null,
-      isRequired: row.is_required ? Number(row.is_required) : 0,
-      anchorRefs: parseSignatureStepAnchorRefs(row.anchor_refs)
+      isRequired: row.is_required ? Number(row.is_required) : 0
     };
     // Multi-firmante: lista de resolutores. Fallback (pasos legacy sin `signers`): el propio paso = 1 firmante.
     const parsed = parseStepSigners(row.signers);
@@ -507,6 +514,14 @@ const resolvePositionAssignees = async (connection, step, context) => {
 };
 
 // Resuelve los firmantes de UN solo resolutor (firmante) del paso.
+//
+// `document_owner` y `position` SE CONSERVAN aunque salieran del `CHECK` en el sub-paso 8 del §0.8, y
+// aunque su gemela de entrega los haya retirado (`admin/generation/assignees.js`). El motivo está
+// arriba, en `parseStepSigners`: el `signer` que llega aquí puede venir del JSONB `signers`, que
+// ningún `CHECK` cubre, que la copia de versionado propaga verbatim y que nadie filtra contra
+// catálogo. Borrar estos dos `case` dejaría a un paso legado resolviéndose por el `default` —cargo en
+// ámbito— con `requiredCargoId` a null: no firmaría NADIE, y en silencio.
+// Lo que los mataría: cerrar el agujero de `parseStepSigners` (filtro + migración del JSONB).
 const resolveSingleSignerAssignees = async (connection, signer, context) => {
   if (!signer || String(signer.selectionMode || signer.selection_mode || "auto_all") === "manual") {
     return [];
