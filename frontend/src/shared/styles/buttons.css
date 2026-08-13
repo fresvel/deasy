@@ -55,13 +55,20 @@
     }
 
     /* El hover rojo lo lleva SOLO la variante `deasy-*`, no la `admin-*`: por eso las dos
-       reglas no se pueden agrupar. Y va con `@apply hover:`, no con un `:hover` a mano —
-       Tailwind envuelve la variante en `@media (hover:hover)` y a mano se activaria
-       tambien en tactil. */
+       reglas no se pueden agrupar. Y el `:hover` va envuelto en `@media (hover: hover)`,
+       que es exactamente lo que Tailwind compila a partir de `@apply hover:` — a pelo se
+       activaria tambien en tactil, donde el «hover» se queda pegado tras el toque. */
     .deasy-btn--cancel {
-        @apply bg-white hover:border-red-300 hover:bg-red-50;
+        @apply bg-white;
         border-color: var(--color-line-strong);
         color: var(--color-body);
+    }
+
+    @media (hover: hover) {
+        .deasy-btn--cancel:hover {
+            border-color: color-mix(in srgb, var(--color-danger) 71%, var(--color-white));
+            background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
+        }
     }
 
     .admin-btn--cancel {
@@ -77,44 +84,102 @@
         color: var(--color-primary);
     }
 
+    /* `--outline-danger` es el gemelo de `--outline-primary` de aqui arriba, y ahora se
+       lee como tal: borde = token entero, fondo blanco, texto = token. Escrito con la
+       escala de Tailwind (`red-600` de borde y `red-700` de texto) parecian dos rojos
+       distintos y eran el mismo papel. */
     .deasy-btn--outline-danger,
     .admin-btn--outline-danger {
-        @apply border-red-600 bg-white text-red-700 hover:border-red-700 hover:bg-red-50 hover:text-red-800;
+        @apply bg-white;
+        border-color: var(--color-danger);
+        color: var(--color-danger);
     }
 
-    .deasy-btn--soft-primary {
-        @apply border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800;
+    /* ── LAS CUATRO VARIANTES SUAVES ─────────────────────────────────────────────────
+       Cada una declara SOLO su token; la receta esta una vez, abajo. Antes eran cuatro
+       copias de la misma idea escritas con los tintes -50/-200/-300 de Tailwind, dentro
+       de un `@apply` donde `color-no-hex` no entra.
+
+       ⚠️ `--soft-neutral` NO entra en la receta: su gris no es un estado, no se deriva de
+       un token de color y su hover ya vive en la escala de superficie. */
+    .deasy-btn--soft-primary { --tone: var(--color-primary); }
+    .deasy-btn--soft-success { --tone: var(--color-success); }
+    .deasy-btn--soft-warning { --tone: var(--color-warning); }
+    .deasy-btn--soft-danger  { --tone: var(--color-danger); }
+
+    .deasy-btn--soft-primary,
+    .deasy-btn--soft-success,
+    .deasy-btn--soft-warning,
+    .deasy-btn--soft-danger {
+        border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--tone) 6%, var(--color-white));
+        color: var(--tone);
     }
 
     .deasy-btn--soft-neutral {
-        @apply border-line bg-surface text-slate-700 hover:border-line-strong hover:bg-slate-100 hover:text-slate-950;
+        @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-slate-100 hover:text-navy;
     }
 
-    .deasy-btn--soft-success {
-        @apply border-emerald-200 bg-emerald-50 text-success hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
-    }
-
-    .deasy-btn--soft-warning {
-        @apply border-amber-200 bg-amber-50 text-amber-800 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-900;
-    }
-
-    .deasy-btn--soft-danger {
-        @apply border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 hover:text-red-800;
-    }
-
+    /* ── LAS DOS SOLIDAS ─────────────────────────────────────────────────────────────
+       ⚠️ `--success` llevaba `emerald-600`, que contra su propio texto blanco da 3.65:1
+       y NO llega al 4.5 de AA. `--color-success` da 5.49. `--danger` iba de `red-600`
+       (4.77) a `--color-danger` (6.57). Las dos suben. */
     .deasy-btn--success,
     .admin-btn--success {
-        @apply border-emerald-600 bg-emerald-600 text-white hover:border-success hover:bg-success;
+        @apply text-white;
+        border-color: var(--color-success);
+        background: var(--color-success);
     }
 
     .deasy-btn--danger,
     .admin-btn--danger {
-        @apply border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700;
+        @apply text-white;
+        border-color: var(--color-danger);
+        background: var(--color-danger);
+    }
+
+    /* ── EL HOVER DE LAS SIETE, EN UN SITIO ──────────────────────────────────────────
+       `@media (hover: hover)` es exactamente lo que Tailwind compila a partir de
+       `@apply hover:` — comprobado en el CSS construido. Escrito asi porque un
+       `hover:bg-[color-mix(in_srgb,var(--tone)_16%,var(--color-white))]` son 55
+       caracteres para decir «16 %».
+
+       La direccion es la de §5.2: el hover es el MISMO color, mas presente. Nunca otro
+       color y nunca mas claro. Antes las siete iban cada una a su aire con la escala de
+       Tailwind, y tres de ellas aclaraban el borde al pasar el raton. */
+    @media (hover: hover) {
+        .deasy-btn--soft-primary:hover,
+        .deasy-btn--soft-success:hover,
+        .deasy-btn--soft-warning:hover,
+        .deasy-btn--soft-danger:hover {
+            border-color: color-mix(in srgb, var(--tone) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--tone) 16%, var(--color-white));
+            color: color-mix(in srgb, var(--tone) 85%, var(--black));
+        }
+
+        .deasy-btn--outline-danger:hover,
+        .admin-btn--outline-danger:hover {
+            border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+            background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
+            color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+        }
+
+        .deasy-btn--success:hover,
+        .admin-btn--success:hover {
+            border-color: color-mix(in srgb, var(--color-success) 85%, var(--black));
+            background: color-mix(in srgb, var(--color-success) 85%, var(--black));
+        }
+
+        .deasy-btn--danger:hover,
+        .admin-btn--danger:hover {
+            border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+            background: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+        }
     }
 
     .deasy-btn--close,
     .admin-btn--close {
-        @apply h-9 w-9 rounded-2xl border border-line bg-white p-0 text-slate-500 hover:border-line-strong hover:bg-surface hover:text-slate-900;
+        @apply h-9 w-9 rounded-2xl border border-line bg-white p-0 text-muted hover:border-line-strong hover:bg-surface hover:text-navy;
     }
 
     .deasy-btn--menu {

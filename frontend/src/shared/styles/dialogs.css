@@ -23,11 +23,11 @@
     }
 
     .deasy-dialog-title {
-        @apply text-base font-semibold tracking-tight text-slate-950 sm:text-lg;
+        @apply text-base font-semibold tracking-tight text-navy sm:text-lg;
     }
 
     .deasy-dialog-body {
-        @apply px-5 py-5 text-slate-700 sm:px-6;
+        @apply px-5 py-5 text-strong sm:px-6;
     }
 
     .deasy-dialog-footer {

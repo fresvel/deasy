@@ -4,9 +4,9 @@
    `getDeliverableCardTone` en `useDeliverableView.js` — un grep de estas clases en las
    plantillas no las encuentra.
 
-       --start   indigo   «aun no has empezado»
-       --sign    menta    «te toca firmar»          <- `--color-step`
-       --open    slate    «abrir», el neutro
+       --start   `--color-primary`      «aun no has empezado»
+       --sign    `--color-step-ink`     «te toca firmar»    (relleno `--step-rgb`)
+       --open    `--color-action-view`  «abrir», el neutro  (el marco si es `--color-line`)
 
    ⚠️ `group` se queda en la plantilla a proposito: es un marcador de variante de Tailwind,
    no una utilidad, y `@apply group` NO COMPILA. */
@@ -30,17 +30,30 @@
     }
 
     .deasy-deliverable-action__text {
-        @apply text-sm font-semibold text-slate-800;
+        @apply text-sm font-semibold text-ink;
     }
 
     /* ── Tono: «aun no has empezado» ───────────────────────────────────────────────── */
 
+    /* El indigo de este tono NO era un color propio: es el violeta de la marca escrito con
+       la paleta de Tailwind, que es lo que se ve en cuanto se mide (indigo-700 esta a
+       ΔE 3.70 de `--color-primary` al 76 %, y los tres indigos de aqui eran tres pasos de
+       la misma escala). Deriva del token, con los mismos porcentajes que el resto. */
     .deasy-deliverable-action--start {
-        @apply border-indigo-200/90 hover:border-indigo-300 hover:bg-indigo-50/60;
+        border-color: color-mix(in srgb, var(--color-primary) 71%, var(--color-white));
     }
 
     .deasy-deliverable-action--start .deasy-deliverable-action__chip {
-        @apply border-indigo-200 bg-indigo-50/70 text-indigo-700;
+        border-color: color-mix(in srgb, var(--color-primary) 71%, var(--color-white));
+        background-color: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+        color: var(--color-primary);
+    }
+
+    @media (hover: hover) {
+        .deasy-deliverable-action--start:hover {
+            border-color: color-mix(in srgb, var(--color-primary) 85%, var(--color-white));
+            background-color: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
+        }
     }
 
     /* ── Tono: «te toca firmar» ──────────────────────────────────────────────────────
@@ -67,10 +80,19 @@
     /* ── Tono: «abrir», el neutro ──────────────────────────────────────────────────── */
 
     .deasy-deliverable-action--open {
-        @apply border-line/90 hover:border-sky-200 hover:bg-sky-50/45;
+        @apply border-line/90;
     }
 
     .deasy-deliverable-action--open .deasy-deliverable-action__chip {
-        @apply border-sky-100/95 bg-sky-50/55 text-sky-700;
+        border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
+        background-color: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
+        color: var(--color-action-view);
+    }
+
+    @media (hover: hover) {
+        .deasy-deliverable-action--open:hover {
+            border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
+            background-color: color-mix(in srgb, var(--color-action-view) 4%, var(--color-white));
+        }
     }
 }

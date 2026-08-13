@@ -82,7 +82,7 @@
 }
 @layer components {
 .deasy-field-label {
-        @apply mb-2 block text-sm font-semibold text-slate-700;
+        @apply mb-2 block text-sm font-semibold text-strong;
     }
 
     .deasy-field-input,
@@ -99,20 +99,39 @@
         --tw-ring-color: rgba(var(--primary-rgb), 0.12);
     }
 
+    /* ⚠️ EL PLACEHOLDER SE QUEDA EN `--color-muted`, el mismo que el del campo normal de
+       arriba. Antes esta regla lo repintaba de `red-300`: **1.92:1**, y WCAG trata el
+       placeholder como texto, o sea que pide 4.5. Un rojo palido no llega ahi sin
+       confundirse con el valor escrito —el rojo que si cumple sobre este fondo es el 90 %
+       del token, a un paso del color del texto—, asi que la salida no es aclarar el rojo:
+       es que el placeholder de un campo en error sea el mismo de siempre. 5.40:1.
+
+       ⚠️ Y HOY EL BORDE Y EL FONDO DE AQUI NO PINTAN: los tapa el grupo `.deasy-field-*`
+       de `overrides.css`, que sigue FUERA DE CAPA. Medido en el DOM: un campo con esta
+       clase da `--color-line-strong` de borde y blanco de fondo. Lo unico que llega es el
+       `color`. No es deuda que entre este commit —ya era asi con los tintes de Tailwind—
+       pero se escribe para que nadie lo mida y crea que la migracion lo rompio. Se
+       encienden cuando §4.2 decida borde y foco de los 228 controles. */
     .deasy-field-input--error {
-        @apply border-red-300 bg-red-50 text-red-700 placeholder:text-red-300;
+        border-color: color-mix(in srgb, var(--color-danger) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
+        color: var(--color-danger);
     }
 
     .deasy-field-input--error:focus {
-        @apply border-red-500 bg-white ring-4 ring-red-500/10;
+        @apply bg-white ring-4;
+        border-color: var(--color-danger);
+        --tw-ring-color: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
     }
 
     .deasy-field-message {
-        @apply mt-1 text-xs font-medium text-slate-500;
+        @apply mt-1 text-xs font-medium text-muted;
     }
 
+    /* Era `red-500`: 3.81:1, por debajo de AA para un texto que ADEMAS es el que explica
+       el error. El token da 6.57. */
     .deasy-field-message--error {
-        @apply text-red-500;
+        @apply text-danger;
     }
 
     
@@ -127,15 +146,24 @@
     }
 
     .deasy-dropzone__title {
-        @apply m-0 text-lg font-semibold text-slate-800;
+        @apply m-0 text-lg font-semibold text-ink;
     }
 
     .deasy-dropzone__label {
-        @apply m-0 text-sm font-semibold text-slate-700;
+        @apply m-0 text-sm font-semibold text-strong;
     }
 
+    /* ── LA ZONA DE SUBIDA ───────────────────────────────────────────────────────────
+       Sus tres estados eran el ultimo color de familia propia fuera de la paleta:
+       `sky-200/300/500` para «vacia», `emerald-400/500` para «llena». Ahora derivan de
+       `--color-action-view` (el azul de accion) y `--color-success`, con la misma escala
+       que el resto: 71 % el borde en reposo, 85 % al pasar el raton o al arrastrar.
+
+       El borde AQUI no es decorativo: es discontinuo y de 2 px, y es lo unico que dibuja
+       la zona. `sky-200` daba **1.33:1** contra el blanco; al 71 % da 3.83. */
     .deasy-dropzone__surface {
-        @apply relative flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-sky-200 bg-white px-5 py-6 text-center transition-all;
+        @apply relative flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-white px-5 py-6 text-center transition-all;
+        border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
     }
 
     .deasy-dropzone__surface--card {
@@ -148,15 +176,31 @@
     }
 
     .deasy-dropzone__surface--clickable {
-        @apply cursor-pointer hover:border-sky-300 hover:bg-sky-50/40;
+        @apply cursor-pointer;
     }
 
     .deasy-dropzone__surface--active {
-        @apply border-sky-500 bg-sky-50 shadow-[var(--focus-ring)];
+        @apply shadow-[var(--focus-ring)];
+        border-color: var(--color-action-view);
+        background: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
     }
 
     .deasy-dropzone__surface--filled {
-        @apply border-solid border-emerald-400 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-50;
+        @apply border-solid;
+        border-color: color-mix(in srgb, var(--color-success) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--color-success) 6%, var(--color-white));
+    }
+
+    @media (hover: hover) {
+        .deasy-dropzone__surface--clickable:hover {
+            border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--color-action-view) 4%, var(--color-white));
+        }
+
+        .deasy-dropzone__surface--filled:hover {
+            border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--color-success) 6%, var(--color-white));
+        }
     }
 
     .deasy-dropzone__surface--filled .deasy-dropzone__icon,
@@ -164,8 +208,9 @@
         @apply text-success;
     }
 
+    /* Era `emerald-600`: 3.65:1, por debajo de AA. El token da 5.48. */
     .deasy-dropzone__surface--filled .deasy-dropzone__help {
-        @apply text-emerald-600;
+        @apply text-success;
     }
 
     .deasy-dropzone__surface--disabled {
@@ -173,7 +218,7 @@
     }
 
     .deasy-dropzone__icon {
-        @apply h-8 w-8 shrink-0 text-sky-700;
+        @apply h-8 w-8 shrink-0 text-action-view;
     }
 
     .deasy-dropzone__icon--compact,
@@ -195,19 +240,21 @@
     }
 
     .deasy-dropzone__action {
-        @apply text-sm font-semibold text-slate-700;
+        @apply text-sm font-semibold text-strong;
     }
 
     .deasy-dropzone__help {
-        @apply text-xs leading-[1.35] text-slate-500;
+        @apply text-xs leading-[1.35] text-muted;
     }
 
     .deasy-dropzone__selected {
-        @apply flex items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-sky-50/40 px-3.5 py-2.5;
+        @apply flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5;
+        border-color: var(--color-line);
+        background: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
     }
 
     .deasy-dropzone__file-name {
-        @apply break-words text-sm font-semibold text-slate-900;
+        @apply break-words text-sm font-semibold text-navy;
     }
 
     
@@ -225,12 +272,18 @@
         @apply mb-4 flex items-center gap-3 border-b border-surface pb-3;
     }
 
+    /* El azul de este chip era `blue-600` sobre `blue-50`, y no significaba «informativo»
+       ni «accion»: era el acento de la marca escrito con la paleta de Tailwind. Es
+       `--color-primary`, con la misma escala que el resto de chips. */
     .deasy-form-section__icon {
-        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600;
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border;
+        border-color: color-mix(in srgb, var(--color-primary) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+        color: var(--color-primary);
     }
 
     .deasy-form-section__title {
-        @apply m-0 text-base font-semibold tracking-tight text-slate-950;
+        @apply m-0 text-base font-semibold tracking-tight text-navy;
     }
 
     .deasy-form-grid {
@@ -242,7 +295,7 @@
     }
 
     .deasy-form-label {
-        @apply mb-1.5 block text-sm font-semibold text-slate-700;
+        @apply mb-1.5 block text-sm font-semibold text-strong;
     }
 
     

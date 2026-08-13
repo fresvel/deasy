@@ -130,7 +130,7 @@
     }
 
     .deasy-nav-feedback--info {
-        @apply border border-line-field bg-white/90 text-slate-700;
+        @apply border border-line-field bg-white/90 text-strong;
     }
 
     .deasy-nav-feedback--muted {

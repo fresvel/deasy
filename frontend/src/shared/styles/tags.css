@@ -7,20 +7,51 @@
         @apply h-4 w-4 shrink-0;
     }
 
-    .deasy-tag--danger {
-        @apply border-red-200 bg-red-50 text-red-600;
+    /* ── LOS TONOS. Cada variante declara SOLO su token; el color sale de la receta ──────
+       Antes cada una escribia el tinte -50/-200 de Tailwind a mano, dentro de un `@apply`
+       donde `color-no-hex` no llega. Eran cinco recetas distintas para la misma idea, y
+       ninguna cumplia WCAG 1.4.11: los bordes daban entre 1.21:1 y 1.49:1 contra el
+       blanco, o sea que el limite del tag no se veia.
+
+       El mecanismo es el de `--tooltip-bg` en `buttons.css`: una variable por variante y
+       una sola regla que la gasta. */
+
+    .deasy-tag--danger  { --tone: var(--color-danger); }
+    .deasy-tag--success { --tone: var(--color-success); }
+    .deasy-tag--warning { --tone: var(--color-warning); }
+    .deasy-tag--info    { --tone: var(--color-action-view); }
+    .deasy-tag--accent  { --tone: var(--color-action-view); }
+    /* Salmón: pendiente de firma en los pasos de firma. NO es el rojo de «rechazado». */
+    .deasy-tag--salmon  { --tone: var(--color-pending); }
+
+    /* LA RECETA. El 71 % del borde no es arbitrario: es el porcentaje al que llega a 3:1
+       sobre blanco, que es el minimo de WCAG 1.4.11 para el limite de un componente.
+
+       ⚠️ EL RELLENO ES EL 6 %, NO EL 10 % QUE DICE `frontend/CLAUDE.md` §2.4, y el motivo
+       merece leerse: el 10 % viene de los BOTONES DE ACCION, donde encima del relleno hay
+       un ICONO y el minimo es 3:1. Aqui encima hay TEXTO, que pide 4.5, y el relleno se
+       come parte de esa diferencia. Medido: al 10 % `--color-warning` sobre su propio
+       relleno da **4.39** y no pasa AA; al 6 % da 4.64 y las seis familias pasan. El
+       relleno no tiene minimo propio, pero SI se lo come al texto que va encima. */
+    .deasy-tag--danger,
+    .deasy-tag--success,
+    .deasy-tag--warning,
+    .deasy-tag--info,
+    .deasy-tag--salmon {
+        border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
+        background-color: color-mix(in srgb, var(--tone) 6%, var(--color-white));
+        color: var(--tone);
     }
 
-    .deasy-tag--success {
-        @apply border-green-200 bg-green-50 text-green-700;
-    }
-
-    .deasy-tag--warning {
-        @apply border-amber-200 bg-amber-50 text-warning;
-    }
-
-    .deasy-tag--info {
-        @apply border-sky-200 bg-sky-50 text-sky-700;
+    /* `--accent` NO es otro color: es el escalon fuerte del mismo azul que `--info`, y por
+       eso comparte token y solo sube los porcentajes al paso siguiente de la escala
+       (los mismos 85/16 que usa el hover de los botones de accion). Escrito con los tintes
+       de Tailwind eran `sky-300`/`sky-100` frente a `sky-200`/`sky-50`, que es lo mismo
+       dicho sin decir que es lo mismo. */
+    .deasy-tag--accent {
+        border-color: color-mix(in srgb, var(--tone) 85%, var(--color-white));
+        background-color: color-mix(in srgb, var(--tone) 16%, var(--color-white));
+        color: var(--tone);
     }
 
     .deasy-tag--neutral {
@@ -28,25 +59,16 @@
     }
 
     .deasy-tag--muted {
-        @apply border-line bg-white text-slate-500;
-    }
-
-    /* Salmón: pendiente de firma en los pasos de firma. */
-    .deasy-tag--salmon {
-        @apply border-[color-mix(in_srgb,var(--color-pending)_71%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-pending)_10%,var(--color-white))] text-pending;
-    }
-
-    .deasy-tag--accent {
-        @apply border-sky-300 bg-sky-100 text-action-view;
+        @apply border-line bg-white text-muted;
     }
 
     .deasy-tag--contrast {
-        @apply border-line bg-surface text-slate-700 shadow-none backdrop-blur-sm;
+        @apply border-line bg-surface text-strong shadow-none backdrop-blur-sm;
         background-image: none;
     }
 
     .deasy-tag--hero {
-        @apply border-line bg-surface text-slate-700 shadow-none backdrop-blur-sm;
+        @apply border-line bg-surface text-strong shadow-none backdrop-blur-sm;
         background-image: none;
     }
 

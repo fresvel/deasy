@@ -1,6 +1,6 @@
 @layer components {
 .deasy-hero-shell {
-        @apply overflow-hidden rounded-xl border border-line bg-white p-5 text-slate-900 shadow-[var(--elev-1)] md:p-6;
+        @apply overflow-hidden rounded-xl border border-line bg-white p-5 text-navy shadow-[var(--elev-1)] md:p-6;
         background-image: none;
     }
 
@@ -25,7 +25,7 @@
     }
 
     .deasy-hero-media-card {
-        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-slate-700 shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
+        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-strong shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
     }
 
     .deasy-hero-media-card--avatar {
@@ -33,11 +33,11 @@
     }
 
     .deasy-hero-kicker {
-        @apply inline-flex w-fit items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700 shadow-none;
+        @apply inline-flex w-fit items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-strong shadow-none;
     }
 
     .deasy-hero-title {
-        @apply m-0 text-[1.25rem] font-bold leading-[1.05] tracking-tight text-slate-950 md:text-[1.45rem];
+        @apply m-0 text-[1.25rem] font-bold leading-[1.05] tracking-tight text-navy md:text-[1.45rem];
     }
 
     .deasy-hero-description {
@@ -52,19 +52,23 @@
         @apply w-full lg:w-auto;
     }
 
+    /* ⚠️ El `/10` del anillo se conserva TAL CUAL: aqui solo se cambia la familia
+       (`blue-500` -> el token de marca), no la opacidad. El hermano de abajo lleva `/15`
+       para lo mismo, y cual de los dos vale es la decision de «como se ve el foco», que
+       va aparte — §5.3 dice que el foco es UNO y hoy no lo es. */
     .deasy-hero-back-button {
-        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-none transition-all duration-200 hover:border-line-strong hover:bg-surface hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-blue-500/10;
+        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-strong shadow-none transition-all duration-200 hover:border-line-strong hover:bg-surface hover:text-navy focus:outline-none focus:ring-4 focus:ring-primary/10;
     }
 
     .deasy-hero-back-button__icon {
-        @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-line bg-surface text-slate-700 shadow-none;
+        @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-line bg-surface text-strong shadow-none;
     }
 
     
 }
 @layer components {
 .deasy-inline-icon-button {
-        @apply inline-flex items-center justify-center rounded-2xl text-muted transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
+        @apply inline-flex items-center justify-center rounded-2xl text-muted transition-colors hover:bg-slate-100 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     
