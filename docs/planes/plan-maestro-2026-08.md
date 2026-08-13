@@ -913,6 +913,61 @@ motivo). No hace falta refactorizarlos para cerrar el frente; hace falta que dej
 
 ---
 
+## Frente 10 · El compilador documental: auditar la rama que existe — ⬜
+
+**Existe, tiene commit propio y nunca se fusionó.** `e53a59a` (2026-04-03), en
+**`origin/feature/compilador-latex`**: *«Compilador: Implementación del micro-servicio de compilación
+de latex»*. **21 ficheros**, y no era un boceto — la carpeta `compiler/` con su README y su superficie
+HTTP, siete servicios en el backend (`DocumentCompilationPipelineService`,
+`DocumentCompilerOrchestratorService`, `DocumentCompilerPayloadService`,
+`DocumentTemplateTechnicalValidatorService` con 366 líneas, `compiler_http.js`…) y su entrada en el
+workflow de CI. **Nada de eso existe en `develop`.**
+
+Su README describe lo que el §0.4 va a necesitar: *«vivir como servicio raíz independiente,
+desplegarse con imagen propia, exponer API de compilación al backend, encapsular render, compilación
+LaTeX, storage y reportes»*, con `POST /compile`, `GET /compile/:jobId` y `POST /validate-template`.
+
+**No tiene nada que ver con `deasy-analytics`** —que sigue en pie, con su `sleep infinity`, porque la
+decisión de sacarlo del pipeline (frente 7) se tomó y **nunca se ejecutó**.
+
+#### Por qué este microservicio SÍ se gana el sueldo, y los demás no
+
+La [pregunta arquitectónica](#la-pregunta-arquitectónica-está-cerrada-2026-08-09) está cerrada: se
+evaluaron 15 arquitecturas y ninguna baja la complejidad. **Este caso es la excepción, y por los
+mismos criterios que descartaron a los demás:**
+
+- Lo que mató partir el backend fue que **el 45 % de las FKs cruzan cualquier frontera** y que **de
+  las 18 transacciones, cero quedan dentro de un solo subdominio**. Un compilador **no toca ni una
+  tabla**: no tiene ninguno de los dos problemas.
+- Los dos aislamientos que sí existen aquí se justifican por **runtime ajeno**: el `signer` está fuera
+  porque pyHanko es Python. LaTeX necesita una imagen de **TeX Live de gigabytes**, y meterla en la
+  imagen del backend —que atiende 162 endpoints— es lo contrario de lo que se hizo al sacar Puppeteer.
+- **Y hay un argumento de seguridad que los otros no tienen: compilar LaTeX es ejecutar código.**
+  `artifacts.js:16-38` ya sanea `\write18`, `\directlua`, `\openout` y `\ShellEscape` — pero eso es
+  una **lista negra**, y las listas negras se rodean. Un contenedor efímero y sin red es una defensa
+  de otra categoría.
+
+#### Lo que hay que auditar antes de fusionar nada
+
+**La rama es de abril, anterior a todo el §0.8**, y su pipeline se construyó sobre el modelo que
+acabamos de retirar — su `DocumentRuntimeService` y su `DocumentCompilerPayloadService` leían el
+`meta.yaml`. **No se fusiona a ciegas.** La auditoría tiene que decir, con evidencia:
+
+1. Qué sobrevive del diseño y qué está construido sobre lo que ya no existe.
+2. Si `DocumentTemplateTechnicalValidatorService` (366 L) cubre lo que el **S4 del §0.4** acaba de
+   hacer a mano —el balance de bloques Jinja— y si lo hace mejor.
+3. Cómo integrarlo **sin heredar la factura del `signer`**, que tiene **8 de 12 riesgos abiertos**:
+   RPC bloqueante con *busy-polling*, cero reintentos, cero DLQ, cero idempotencia, una cola durable
+   huérfana por timeout, y el puerto publicado sin autenticación en los tres entornos.
+   **Ventaja que el signer no tiene: compilar es idempotente por naturaleza** —mismo código, mismo
+   PDF—, así que reintentar es gratis y no hace falta inventar nada.
+
+**Criterio de cierre:** una decisión escrita —retomar la rama, reescribir desde su diseño, o
+descartarla— con el inventario de qué se aprovecha. **No es de ahora**, pero es material real y estaba
+a punto de perderse: no aparecía en ningún documento.
+
+---
+
 ## Frente 9 · La capa de datos — ⬜ · vive en [`plan_data/`](./plan_data/)
 
 **El único frente con carpeta propia**, porque trae su propia referencia medida del esquema. Nació el
