@@ -1,7 +1,7 @@
 @layer components {
     .deasy-table-responsive {
         @apply overflow-x-auto rounded-2xl border bg-white;
-        border-color: var(--brand-border);
+        border-color: var(--color-line);
     }
 
     .deasy-table {
@@ -10,22 +10,22 @@
 
     .deasy-table thead tr {
         @apply border-b;
-        border-color: var(--brand-border);
+        border-color: var(--color-line);
     }
 
     .deasy-table th {
         @apply px-4 py-3 text-[12px] font-semibold uppercase tracking-[0.04em];
-        color: var(--brand-navy);
+        color: var(--color-navy);
     }
 
     .deasy-table td {
         @apply px-4 py-3 text-sm leading-5;
-        color: var(--brand-text-strong);
+        color: var(--color-strong);
     }
 
     .deasy-table tbody tr {
         @apply border-b transition-colors;
-        border-color: var(--brand-border);
+        border-color: var(--color-line);
     }
 
     .deasy-table tbody tr:last-child {
@@ -34,6 +34,6 @@
 
     .deasy-table tbody td:first-child {
         @apply font-semibold;
-        color: var(--brand-text-strong);
+        color: var(--color-strong);
     }
 }

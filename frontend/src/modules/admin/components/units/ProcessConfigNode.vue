@@ -23,7 +23,7 @@
       <span class="max-w-[9.5rem] truncate text-[12px] font-semibold text-slate-700">{{ data.definition_name }}</span>
       <span class="ml-auto inline-flex items-center rounded px-1 py-0.5 text-[10px] font-semibold ring-1" :class="statusChipClass">{{ statusLabel }}</span>
     </p>
-    <p class="m-0 mt-0.5 flex items-center gap-1 text-[10px] text-brand-text-muted">
+    <p class="m-0 mt-0.5 flex items-center gap-1 text-[10px] text-muted">
       <span class="truncate">{{ seriesLabel }}</span>
       <span class="shrink-0">· v{{ data.definition_version }}</span>
     </p>
@@ -70,9 +70,9 @@ const statusBorderClass = computed(() => {
   return "border-l-slate-300 border-y border-r border-y-slate-200 border-r-slate-200";
 });
 const statusChipClass = computed(() => {
-  if (props.data.status === "active") return "bg-emerald-50 text-state-success ring-emerald-200";
-  if (props.data.status === "draft") return "bg-amber-50 text-state-warning ring-amber-200";
-  return "bg-brand-surface-muted text-slate-500 ring-slate-200";
+  if (props.data.status === "active") return "bg-emerald-50 text-success ring-emerald-200";
+  if (props.data.status === "draft") return "bg-amber-50 text-warning ring-amber-200";
+  return "bg-surface text-slate-500 ring-slate-200";
 });
 const seriesLabel = computed(() => {
   if (props.data.series_source_type === "cargo") return `Cargo · ${props.data.series_cargo_name || props.data.series_code}`;

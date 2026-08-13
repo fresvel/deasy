@@ -2,14 +2,14 @@
   <div>
     <div v-if="checking" class="text-sm text-slate-500">Validando la configuración…</div>
     <template v-else-if="status === 'active'">
-      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-border bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
-        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-brand-text-muted" />
+      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
+        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-muted" />
         <span>Configuración <strong>activa</strong> y de solo lectura. Para cambios, crea una nueva versión o retírala.</span>
       </div>
     </template>
     <template v-else-if="status === 'retired'">
-      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-border bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
-        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-brand-text-muted" />
+      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
+        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-muted" />
         <span>Configuración <strong>retirada</strong> y de solo lectura. Para reutilizarla, crea una nueva versión a partir de ella.</span>
       </div>
     </template>
@@ -19,7 +19,7 @@
           <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Requisitos para activar</span>
           <span
             class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold ring-1"
-            :class="allRequirementsMet ? 'bg-emerald-100 text-state-success ring-emerald-200' : 'bg-brand-surface-muted text-brand-icon ring-slate-200'"
+            :class="allRequirementsMet ? 'bg-emerald-100 text-success ring-emerald-200' : 'bg-surface text-icon ring-slate-200'"
           >{{ completedRequirements }}/3</span>
         </div>
         <div class="grid gap-2 sm:grid-cols-3">
@@ -65,7 +65,7 @@
             :rows="rules"
             :row-key="(row) => `activation-rule-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-white shadow-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -99,7 +99,7 @@
             :rows="triggers"
             :row-key="(row) => `activation-trigger-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-white shadow-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -133,7 +133,7 @@
             :rows="artifacts"
             :row-key="(row) => `activation-artifact-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-white shadow-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
             scroll-class=""
           >
             <template #cell="{ row, field }">

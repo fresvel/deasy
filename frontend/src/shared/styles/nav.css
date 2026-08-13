@@ -1,26 +1,26 @@
 @layer components {
 .deasy-inline-tabs {
-        @apply mb-5 flex overflow-x-auto border-b border-brand-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+        @apply mb-5 flex overflow-x-auto border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
     }
 
     .deasy-inline-tab {
-        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-brand-text-muted transition-colors hover:text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-primary/15;
+        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-muted transition-colors hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     .deasy-inline-tab--active {
-        color: var(--brand-primary);
-        border-bottom-color: var(--brand-primary);
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
     }
 
     .deasy-inline-tab__badge {
         @apply inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold;
-        background: var(--brand-surface-muted);
-        color: var(--brand-text-muted);
+        background: var(--color-surface);
+        color: var(--color-muted);
     }
 
     .deasy-inline-tab__badge--active {
-        background: color-mix(in srgb, var(--brand-primary) 10%, var(--color-white));
-        color: var(--brand-primary);
+        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+        color: var(--color-primary);
     }
 
     
@@ -28,7 +28,7 @@
 @layer components {
 .deasy-nav-shell {
         @apply flex flex-col gap-2 rounded-2xl border p-2.5 shadow-none backdrop-blur-sm;
-        border-color: rgba(var(--brand-white-rgb), 0.08);
+        border-color: rgba(var(--white-rgb), 0.08);
         background: transparent;
     }
 
@@ -42,7 +42,7 @@
 
     .deasy-nav-section + .deasy-nav-section {
         @apply border-t pt-2.5;
-        border-color: rgba(var(--brand-white-rgb), 0.14);
+        border-color: rgba(var(--white-rgb), 0.14);
     }
 
     .deasy-nav-group-title {
@@ -90,39 +90,39 @@
     .deasy-nav-item__icon--violet,
     .deasy-nav-item__icon--direct,
     .deasy-nav-item__icon--derived {
-        color: rgba(var(--brand-white-rgb), 0.88);
-        border-color: rgba(var(--brand-white-rgb), 0.08);
-        background: rgba(var(--brand-white-rgb), 0.04);
+        color: rgba(var(--white-rgb), 0.88);
+        border-color: rgba(var(--white-rgb), 0.08);
+        background: rgba(var(--white-rgb), 0.04);
     }
 
     .deasy-nav-glyph--slate,
     .deasy-nav-item__icon--slate {
-        color: rgba(var(--brand-white-rgb), 0.68);
-        border-color: rgba(var(--brand-white-rgb), 0.06);
-        background: rgba(var(--brand-white-rgb), 0.03);
+        color: rgba(var(--white-rgb), 0.68);
+        border-color: rgba(var(--white-rgb), 0.06);
+        background: rgba(var(--white-rgb), 0.03);
     }
 
     .deasy-nav-item--active {
         @apply border bg-white/10 font-semibold text-white shadow-none;
-        border-color: rgba(var(--brand-white-rgb), 0.1);
+        border-color: rgba(var(--white-rgb), 0.1);
     }
 
     .deasy-nav-item--subtle-active {
         @apply border bg-white/14 font-bold text-white;
-        border-color: rgba(var(--brand-white-rgb), 0.16);
+        border-color: rgba(var(--white-rgb), 0.16);
     }
 
     .deasy-nav-item.router-link-active {
         @apply border bg-white/10 font-semibold text-white shadow-none;
-        border-color: rgba(var(--brand-white-rgb), 0.1);
+        border-color: rgba(var(--white-rgb), 0.1);
     }
 
     .deasy-nav-item--active .deasy-nav-item__icon,
     .deasy-nav-item--subtle-active .deasy-nav-glyph,
     .deasy-nav-item.router-link-active .deasy-nav-item__icon {
         color: var(--color-white);
-        border-color: rgba(var(--brand-white-rgb), 0.14);
-        background: rgba(var(--brand-white-rgb), 0.08);
+        border-color: rgba(var(--white-rgb), 0.14);
+        background: rgba(var(--white-rgb), 0.08);
     }
 
     .deasy-nav-feedback {
@@ -130,16 +130,16 @@
     }
 
     .deasy-nav-feedback--info {
-        @apply border border-brand-border-field bg-white/90 text-slate-700;
+        @apply border border-line-field bg-white/90 text-slate-700;
     }
 
     .deasy-nav-feedback--muted {
-        @apply border border-brand-border-field bg-white/85 text-brand-icon;
+        @apply border border-line-field bg-white/85 text-icon;
     }
 
     .deasy-nav-tree {
         @apply ml-0.5 mt-0.5 flex flex-col gap-1 border-l py-1.5 pl-2.5;
-        border-color: rgba(var(--brand-white-rgb), 0.14);
+        border-color: rgba(var(--white-rgb), 0.14);
     }
 
     .deasy-nav-action {

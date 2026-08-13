@@ -136,7 +136,7 @@
 
     <div v-if="!table" class="flex">
       <div class="w-full">
-        <div class="rounded-2xl border border-brand-border bg-white shadow-sm">
+        <div class="rounded-2xl border border-line bg-white shadow-sm">
           <div class="p-5">
             <p class="mb-0 text-sm text-slate-500">Selecciona una tabla para administrar.</p>
           </div>
@@ -654,7 +654,7 @@
           @update:view="processDefinitionActivationView = $event"
           @view-row="handleActivationViewRow"
         />
-        <div class="mt-4 flex items-center justify-end gap-2 border-t border-brand-border pt-3">
+        <div class="mt-4 flex items-center justify-end gap-2 border-t border-line pt-3">
           <span v-if="!allProcessDefinitionActivationRequirementsMet" class="mr-auto text-sm font-medium text-amber-600">
             Completa los requisitos (reglas, disparadores) para activar.
           </span>

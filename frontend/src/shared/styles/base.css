@@ -13,11 +13,11 @@
        imports. */
     body {
         margin: 0;
-        font-family: var(--font-base);
-        font-size: var(--font-size-base);
-        line-height: var(--line-height-base);
-        color: var(--brand-navy);
-        background-color: var(--brand-navy-deep);
+        font-family: var(--typeface);
+        font-size: var(--type-size);
+        line-height: var(--type-leading);
+        color: var(--color-navy);
+        background-color: var(--color-navy-deep);
     }
 }
 
@@ -38,18 +38,18 @@ h6,
 .h4,
 .h5,
 .h6 {
-  font-family: var(--font-base);
+  font-family: var(--typeface);
   font-weight: 500;
-  line-height: var(--line-height-heading);
+  line-height: var(--type-leading-heading);
   letter-spacing: -0.01em;
 }
 
 @layer base {
     /* La tipografia base del CONTENEDOR, no la de los encabezados. */
     .admin-typography {
-        font-family: var(--font-base);
-        font-size: var(--font-size-base);
-        line-height: var(--line-height-base);
+        font-family: var(--typeface);
+        font-size: var(--type-size);
+        line-height: var(--type-leading);
     }
 }
 
@@ -66,32 +66,32 @@ h6,
 .admin-typography h4,
 .admin-typography h5,
 .admin-typography h6 {
-  font-family: var(--font-base);
+  font-family: var(--typeface);
   font-weight: 500;
-  line-height: var(--line-height-heading);
+  line-height: var(--type-leading-heading);
 }
 
 /* SE QUEDAN SIN CAPA (3 y 4 de 4) — el color de los enlaces. `a` es (0,0,1), la
    especificidad mas baja que existe, y aun asi gana a todo lo capado: tapa 3 `text-*` de
-   plantilla y `.deasy-auth-link`, que declara `--brand-primary` desde `@layer components`.
+   plantilla y `.deasy-auth-link`, que declara `--color-primary` desde `@layer components`.
    Por eso el «¿Olvidaste tu contraseña?» del login sale TEAL y no violeta. Capar `a` lo
    arregla de golpe, y por eso no se hace aqui: es cambio visual, y es §4.2. */
 
 a {
-  color: var(--brand-accent);
+  color: var(--color-accent);
 }
 
 a:hover {
-  color: var(--brand-primary);
+  color: var(--color-primary);
 }
 
 @layer base {
     /* ⚠️ Va DESPUES del `body` de arriba a proposito: dentro de la misma capa manda el
-       orden, y este `color` es el que gana al `--brand-navy` del primer bloque. Si juntas
+       orden, y este `color` es el que gana al `--color-navy` del primer bloque. Si juntas
        los dos bloques, respeta el orden. */
     body,
     #app {
-        background: var(--brand-navy-deep);
-        color: var(--brand-text-strong);
+        background: var(--color-navy-deep);
+        color: var(--color-strong);
     }
 }

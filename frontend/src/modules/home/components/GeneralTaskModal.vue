@@ -26,7 +26,7 @@
     <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
 
     <!-- Documento -->
-    <section class="flex flex-col gap-3 rounded-2xl border border-brand-border/80 bg-white p-4 shadow-sm">
+    <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-sm">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><IconFileDescription class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Documento</h6>
@@ -42,38 +42,38 @@
     </section>
 
     <!-- Flujo del envío -->
-    <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-brand-border/80 bg-white p-4 shadow-sm">
+    <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-sm">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><IconSend class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Flujo del envío</h6>
       </div>
-      <p class="m-0 -mt-1 text-xs font-medium text-brand-text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
+      <p class="m-0 -mt-1 text-xs font-medium text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
 
-      <div class="rounded-xl border border-brand-border bg-brand-surface-muted/60 p-3">
+      <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
           <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Elabora (entrega) *</span>
           <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('entrega')">+ Agregar</button>
         </div>
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
-          <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-white px-3 py-1 text-sm font-medium text-slate-700">
-            <span class="text-[0.65rem] font-bold text-brand-text-muted">{{ i + 1 }}</span>{{ p.label }}
-            <button type="button" class="text-brand-text-muted hover:text-rose-500" @click="removeFromEntrega(i)">×</button>
+          <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-slate-700">
+            <span class="text-[0.65rem] font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
+            <button type="button" class="text-muted hover:text-rose-500" @click="removeFromEntrega(i)">×</button>
           </li>
-          <li v-if="!flowEntrega.length" class="text-xs text-brand-text-muted">Nadie asignado.</li>
+          <li v-if="!flowEntrega.length" class="text-xs text-muted">Nadie asignado.</li>
         </ul>
       </div>
 
-      <div class="rounded-xl border border-brand-border bg-brand-surface-muted/60 p-3">
+      <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
           <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Firma (pasos en orden)</span>
           <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
         </div>
-        <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 rounded-2xl border border-brand-border bg-white p-2">
+        <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 rounded-2xl border border-line bg-white p-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-[0.65rem] font-bold uppercase tracking-wide text-brand-text-muted">Paso {{ si + 1 }}</span>
+            <span class="text-[0.65rem] font-bold uppercase tracking-wide text-muted">Paso {{ si + 1 }}</span>
             <div class="flex items-center gap-1.5">
               <template v-if="step.signers.length > 1">
-                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="rounded-xl border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-semibold text-brand-icon outline-none focus:border-indigo-400">
+                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="rounded-xl border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-semibold text-icon outline-none focus:border-indigo-400">
                   <option value="and">Firman todas</option>
                   <option value="or">Cualquiera</option>
                   <option value="at_least">Mínimo</option>
@@ -84,21 +84,21 @@
             </div>
           </div>
           <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">
-            <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface-muted px-3 py-1 text-sm font-medium text-slate-700">
+            <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-slate-700">
               {{ sg.label }}
-              <button type="button" class="text-brand-text-muted hover:text-rose-500" @click="removeSignerFromStep(si, gi)">×</button>
+              <button type="button" class="text-muted hover:text-rose-500" @click="removeSignerFromStep(si, gi)">×</button>
             </li>
           </ul>
           <button type="button" class="mt-1.5 text-[0.7rem] font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>
         </div>
-        <p v-if="!flowFirma.length" class="m-0 mt-2 text-xs text-brand-text-muted">Sin firma. Usa “+ Agregar paso” si el documento debe firmarse.</p>
+        <p v-if="!flowFirma.length" class="m-0 mt-2 text-xs text-muted">Sin firma. Usa “+ Agregar paso” si el documento debe firmarse.</p>
       </div>
 
       <div v-if="flowPickerTarget" class="flex flex-col gap-2 rounded-xl border border-indigo-200 bg-indigo-50/40 p-3">
         <p class="m-0 text-[0.7rem] font-semibold text-indigo-700">
           {{ flowPickerTarget === 'entrega' ? 'Quién elabora' : (flowPickerTarget === 'firma:new' ? 'Nuevo paso de firma' : 'Añadir firmante al paso') }}
         </p>
-        <div class="inline-flex self-start rounded-2xl border border-brand-border bg-white p-0.5 text-xs font-semibold">
+        <div class="inline-flex self-start rounded-2xl border border-line bg-white p-0.5 text-xs font-semibold">
           <button type="button" :class="flowPickerMode === 'person' ? 'bg-indigo-600 text-white' : 'text-slate-500'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'person'">Persona</button>
           <button type="button" :class="flowPickerMode === 'cargo' ? 'bg-indigo-600 text-white' : 'text-slate-500'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'cargo'">Por cargo</button>
         </div>
@@ -112,15 +112,15 @@
             class="rounded-2xl border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
             @input="searchRecipients"
           />
-          <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-2xl border border-brand-border bg-white shadow-lg list-none m-0 p-1">
+          <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-2xl border border-line bg-white shadow-lg list-none m-0 p-1">
             <li v-for="person in recipientResults" :key="`fp-${person.id}`">
               <button type="button" class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-sky-50" @click="addFlowPerson(person)">
                 {{ person.full_name }}
-                <span class="text-xs text-brand-text-muted">· {{ person.cedula || person.email || '' }}</span>
+                <span class="text-xs text-muted">· {{ person.cedula || person.email || '' }}</span>
               </button>
             </li>
           </ul>
-          <p v-else-if="recipientSearching" class="m-0 text-xs text-brand-text-muted">Buscando…</p>
+          <p v-else-if="recipientSearching" class="m-0 text-xs text-muted">Buscando…</p>
         </div>
 
         <div v-else class="flex flex-col gap-2">
@@ -140,7 +140,7 @@
     </section>
 
     <!-- Destino y plazo -->
-    <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-brand-border/80 bg-white p-4 shadow-sm">
+    <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-sm">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><IconBuildingMonument class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-slate-700">Destino y plazo</h6>
@@ -159,7 +159,7 @@
           <input v-model="generalTaskForm.endDate" type="date" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
         </label>
       </div>
-      <p class="m-0 text-[0.7rem] font-medium text-brand-text-muted">
+      <p class="m-0 text-[0.7rem] font-medium text-muted">
         Se emite<template v-if="senderUnitName"> desde <strong class="font-semibold text-slate-500">{{ senderUnitName }}</strong></template> con fecha de hoy. Indica un vencimiento solo si debe atenderse antes de una fecha.
       </p>
     </section>

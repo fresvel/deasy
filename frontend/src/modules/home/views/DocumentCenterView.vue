@@ -42,7 +42,7 @@
         {{ actionError }}
       </section>
 
-      <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-brand-border flex flex-col gap-5">
+      <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
         <div class="deasy-filter-shell">
           <div class="deasy-filter-grid">
             <label class="deasy-filter-field deasy-filter-search-span">
@@ -87,7 +87,7 @@
           </div>
         </div>
 
-        <section v-if="loading" class="rounded-2xl border border-brand-border bg-brand-surface-muted p-5 text-sm font-bold text-brand-icon">
+        <section v-if="loading" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">
           Cargando centro documental...
         </section>
         <section v-else-if="error" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">

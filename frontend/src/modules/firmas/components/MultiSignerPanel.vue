@@ -1,9 +1,9 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-brand-border bg-brand-surface-muted/60 p-4">
+          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-line bg-surface/60 p-4">
             <PdfDropField
               title=""
               action-text="Seleccionar PDFs"
@@ -95,12 +95,12 @@
               />
             </div>
 
-            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-brand-surface-muted/50 p-8 text-center text-brand-text-muted">
+            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-surface/50 p-8 text-center text-muted">
               <IconFiles class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
             </div>
 
-            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-brand-surface-muted/50 p-8 text-center text-brand-text-muted">
+            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-surface/50 p-8 text-center text-muted">
               <IconInfoCircle class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
             </div>
@@ -110,7 +110,7 @@
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
                 class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
-                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-brand-border bg-white hover:border-slate-300 hover:bg-brand-surface-muted'"
+                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-line bg-white hover:border-slate-300 hover:bg-surface'"
               >
                 <div class="flex w-full items-start justify-between gap-3">
                   <button
@@ -126,7 +126,7 @@
                     <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
                   </div>
                 </div>
-                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-brand-text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
+                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
                 <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-[11px] font-semibold text-rose-600">{{ doc.error }}</div>
               </div>
             </div>
@@ -143,7 +143,7 @@
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-white shadow-sm">
+      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-sm">
         <div
           class="relative grow overflow-hidden bg-slate-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
@@ -216,7 +216,7 @@
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="min-w-0 flex-1 border-x border-brand-border px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
+                      <span class="min-w-0 flex-1 border-x border-line px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-icon">
                         D {{ currentDocumentIndex + 1 }}/{{ filteredDocumentCount }}
                       </span>
                       <button
@@ -240,7 +240,7 @@
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="min-w-0 flex-1 border-x border-brand-border px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-brand-icon">
+                      <span class="min-w-0 flex-1 border-x border-line px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-icon">
                         P {{ currentPage }}/{{ Math.max(totalPages, 1) }}
                       </span>
                       <button
@@ -285,7 +285,7 @@
 
           <div
             v-if="currentDocument"
-            class="border-t border-brand-border/80 bg-white/90 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
+            class="border-t border-line/80 bg-white/90 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
           >
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div class="text-xs font-medium text-slate-500">
@@ -311,7 +311,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-sm">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"
@@ -353,7 +353,7 @@
             <IconSignature class="h-5 w-5" />
           </div>
           <div class="min-w-0">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-brand-icon">Multifirmador</div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Multifirmador</div>
             <div class="truncate text-base font-bold text-slate-800">
               {{ batchProgressModalTitle }}
             </div>

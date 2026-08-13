@@ -3,10 +3,10 @@
 
 @layer components {
     .admin-workspace-frame {
-        border: 1px solid var(--brand-border);
+        border: 1px solid var(--color-line);
         border-radius: 0.95rem;
-        background: var(--brand-surface-muted);
-        box-shadow: var(--brand-elev-1);
+        background: var(--color-surface);
+        box-shadow: var(--elev-1);
         padding: 0.5rem;
     }
 
@@ -19,7 +19,7 @@
     }
 
     .admin-surface-frame {
-        border: 1px solid var(--brand-border);
+        border: 1px solid var(--color-line);
         border-radius: 1rem;
         background: var(--color-white);
         box-shadow: none;
@@ -36,7 +36,7 @@
         justify-content: space-between;
         gap: 1rem;
         padding: 0.4rem 0 0.85rem;
-        border-bottom: 1px solid var(--brand-surface-muted);
+        border-bottom: 1px solid var(--color-surface);
         margin-bottom: 0;
     }
 
@@ -60,7 +60,7 @@
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--brand-navy);
+  color: var(--color-navy);
 }
 
 @layer components {
@@ -92,18 +92,18 @@
     }
 
     .profile-step-dot--idle {
-        background: var(--brand-surface-muted);
-        color: var(--brand-text-muted);
+        background: var(--color-surface);
+        color: var(--color-muted);
     }
 
     .profile-step-dot--active {
-        background: color-mix(in srgb, var(--brand-primary) 10%, var(--color-white));
-        color: var(--brand-primary);
-        border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--color-white));
+        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+        color: var(--color-primary);
+        border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-white));
     }
 
     .profile-step-dot--done {
-        background: var(--brand-primary);
+        background: var(--color-primary);
         color: var(--color-white);
     }
 }

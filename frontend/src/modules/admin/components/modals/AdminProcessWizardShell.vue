@@ -13,7 +13,7 @@
     close-action
     @close="$emit('close')"
   >
-    <div class="mb-4 flex items-stretch gap-1 overflow-x-auto rounded-2xl border border-brand-border bg-brand-surface-muted p-2">
+    <div class="mb-4 flex items-stretch gap-1 overflow-x-auto rounded-2xl border border-line bg-surface p-2">
       <button
         v-for="(step, index) in steps"
         :key="step.key"
@@ -48,7 +48,7 @@
       class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800"
     >
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
-      <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-brand-icon ring-1 ring-slate-200">
+      <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-slate-200">
         {{ definitionContext.definition_version || "—" }}
       </span>
       <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadgeClass">
@@ -130,8 +130,8 @@ const stepBadgeClass = (step, index) => {
 const stepHintClass = (step, index) => {
   if (isStepComplete(step)) return "text-emerald-600";
   if (step.key === props.currentStep) return "text-indigo-500";
-  if (isStepLocked(step, index)) return "text-brand-text-muted";
-  return "text-brand-text-muted";
+  if (isStepLocked(step, index)) return "text-muted";
+  return "text-muted";
 };
 const stepHint = (step, index) => {
   if (step.hint) return step.hint;

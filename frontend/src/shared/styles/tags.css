@@ -16,7 +16,7 @@
     }
 
     .deasy-tag--warning {
-        @apply border-amber-200 bg-amber-50 text-state-warning;
+        @apply border-amber-200 bg-amber-50 text-warning;
     }
 
     .deasy-tag--info {
@@ -24,7 +24,7 @@
     }
 
     .deasy-tag--neutral {
-        @apply border-slate-200 bg-slate-50 text-brand-icon;
+        @apply border-slate-200 bg-slate-50 text-icon;
     }
 
     .deasy-tag--muted {
@@ -33,7 +33,7 @@
 
     /* Salmón: pendiente de firma en los pasos de firma. */
     .deasy-tag--salmon {
-        @apply border-[color-mix(in_srgb,var(--state-pending)_71%,var(--color-white))] bg-[color-mix(in_srgb,var(--state-pending)_10%,var(--color-white))] text-state-pending;
+        @apply border-[color-mix(in_srgb,var(--color-pending)_71%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-pending)_10%,var(--color-white))] text-pending;
     }
 
     .deasy-tag--accent {

@@ -379,9 +379,9 @@ export function useDeliverableView({
 
   const getDeliverableWorkspaceTabClass = (tab) => {
     if (deliverableWorkspaceState.value.tab === tab) {
-      return 'border-brand-border bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
+      return 'border-line bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
     }
-    return 'border-transparent bg-brand-surface-muted text-slate-500 hover:border-brand-border hover:bg-brand-surface-muted hover:text-slate-700';
+    return 'border-transparent bg-surface text-slate-500 hover:border-line hover:bg-surface hover:text-slate-700';
   };
 
   const shouldShowResetWorkflow = (payload) => {
@@ -468,11 +468,11 @@ export function useDeliverableView({
     if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
       return {
         card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-state-success',
+        header: 'border-emerald-100 bg-emerald-50/60 text-success',
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-state-success',
-        iconChip: 'bg-emerald-100 text-state-success'
+        responsibilityLabel: 'text-success',
+        iconChip: 'bg-emerald-100 text-success'
       };
     }
 
@@ -492,21 +492,21 @@ export function useDeliverableView({
     if (variant === 'success') {
       return {
         card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-state-success',
+        header: 'border-emerald-100 bg-emerald-50/60 text-success',
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-state-success',
-        iconChip: 'bg-emerald-100 text-state-success'
+        responsibilityLabel: 'text-success',
+        iconChip: 'bg-emerald-100 text-success'
       };
     }
 
     return {
-      card: 'border-brand-border hover:border-slate-300',
-      header: 'border-brand-border bg-slate-50/70 text-slate-500',
+      card: 'border-line hover:border-slate-300',
+      header: 'border-line bg-slate-50/70 text-slate-500',
       accent: 'bg-slate-300',
-      responsibility: 'border-brand-border bg-brand-surface-muted/50',
+      responsibility: 'border-line bg-surface/50',
       responsibilityLabel: 'text-slate-500',
-      iconChip: 'bg-brand-surface-muted text-slate-500'
+      iconChip: 'bg-surface text-slate-500'
     };
   };
 
@@ -532,7 +532,7 @@ export function useDeliverableView({
       // por comas, y la sintaxis heredada por comas no admite la barra del alfa. El
       // navegador descarta la declaracion y el color cae a `currentColor` SIN avisar.
       // El CSS servido decia que la utilidad existia.
-      return 'border-state-current-ink text-state-current-ink hover:border-[color-mix(in_srgb,var(--state-current-ink)_85%,var(--brand-black))] hover:bg-[rgba(var(--state-current-rgb),0.1)] focus:ring-[rgba(var(--state-current-rgb),0.35)]';
+      return 'border-step-ink text-step-ink hover:border-[color-mix(in_srgb,var(--color-step-ink)_85%,var(--black))] hover:bg-[rgba(var(--step-rgb),0.1)] focus:ring-[rgba(var(--step-rgb),0.35)]';
     }
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
       return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';
@@ -540,7 +540,7 @@ export function useDeliverableView({
     if (shouldShowStartDeliverable(payload)) {
       return 'border-indigo-100/95 text-indigo-700 hover:border-indigo-200 hover:bg-indigo-50 focus:ring-indigo-200/70';
     }
-    return 'border-brand-border text-brand-icon hover:border-slate-300 hover:bg-brand-surface-muted focus:ring-slate-200/70';
+    return 'border-line text-icon hover:border-slate-300 hover:bg-surface focus:ring-slate-200/70';
   };
 
   const isDeliverableSignatureFlowCompleted = (payload) => {

@@ -17,7 +17,7 @@
       </div>
     </template>
 
-    <p class="mb-6 text-sm leading-relaxed text-brand-icon">
+    <p class="mb-6 text-sm leading-relaxed text-icon">
       Tu sesión está a punto de expirar por inactividad. ¿Deseas mantener la sesión activa o prefieres salir ahora?
     </p>
 

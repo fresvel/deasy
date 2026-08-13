@@ -11,15 +11,15 @@
        tipos de nodo. */
     .graph-node {
         /* Unidad y proceso: la entidad principal, el color de marca. */
-        --graph-accent: var(--brand-primary);
-        --graph-accent-solid: var(--brand-primary);
+        --graph-accent: var(--color-primary);
+        --graph-accent-solid: var(--color-primary);
     }
 
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
        Es el gris de los iconos aclarado, no un color propio. */
     .graph-node--config {
-        --graph-accent: color-mix(in srgb, var(--brand-icon) 57%, var(--color-white));
-        --graph-accent-solid: var(--brand-icon);
+        --graph-accent: color-mix(in srgb, var(--color-icon) 57%, var(--color-white));
+        --graph-accent-solid: var(--color-icon);
         width: 190px;
         background: var(--color-white);
     }
@@ -27,8 +27,8 @@
     /* Plantilla: el mismo color de marca, más claro. En un punto de 8 px la luminosidad
        distingue mejor que el matiz, y así no se añade un tono nuevo a la gama. */
     .graph-node--template {
-        --graph-accent: color-mix(in srgb, var(--brand-primary) 63%, var(--color-white));
-        --graph-accent-solid: var(--brand-primary);
+        --graph-accent: color-mix(in srgb, var(--color-primary) 63%, var(--color-white));
+        --graph-accent-solid: var(--color-primary);
         width: 170px;
     }
 
@@ -53,18 +53,18 @@
         border-radius: 0.45rem;
         font-size: 0.72rem;
         font-weight: 600;
-        color: var(--brand-text-muted);
+        color: var(--color-muted);
         transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
     }
 
     .graph-toggle:hover {
-        color: var(--brand-ink);
+        color: var(--color-ink);
     }
 
     .graph-toggle--on {
         background: var(--color-white);
-        color: var(--brand-primary);
-        box-shadow: var(--brand-elev-1);
+        color: var(--color-primary);
+        box-shadow: var(--elev-1);
     }
 
     /* ── Boton de icono del panel lateral ───────────────────────────────────────────
@@ -82,7 +82,7 @@
     }
 
     .graph-icon-btn:hover {
-        background: var(--brand-surface-muted);
+        background: var(--color-surface);
     }
 
     /* ── Barra de acciones de una relacion (arista) ──────────────────────────────────
@@ -96,7 +96,7 @@
         padding: 2px;
         border-radius: 8px;
         background: var(--color-white);
-        box-shadow: var(--brand-elev-2);
+        box-shadow: var(--elev-2);
         transition: opacity 0.15s ease;
     }
 
@@ -107,18 +107,18 @@
         height: 22px;
         width: 22px;
         border-radius: 6px;
-        color: var(--brand-icon);
+        color: var(--color-icon);
         transition: background 0.15s ease, color 0.15s ease;
     }
 
     .graph-edge-btn:hover {
-        background: color-mix(in srgb, var(--brand-primary) 10%, var(--color-white));
-        color: var(--brand-primary);
+        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+        color: var(--color-primary);
     }
 
     .graph-edge-btn--danger:hover {
-        background: color-mix(in srgb, var(--state-danger) 10%, var(--color-white));
-        color: var(--state-danger);
+        background: color-mix(in srgb, var(--color-danger) 10%, var(--color-white));
+        color: var(--color-danger);
     }
 
     /* ── Barra de acciones ──────────────────────────────────────────────────────────────
@@ -152,8 +152,8 @@
         width: 30px;
         border-radius: 9px;
         background: var(--color-white);
-        border: 1px solid var(--brand-border);
-        color: var(--brand-icon);
+        border: 1px solid var(--color-line);
+        color: var(--color-icon);
         box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
         transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
@@ -183,8 +183,8 @@
     }
 
     .graph-node__btn--accent:hover {
-        background: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--brand-black));
-        border-color: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--brand-black));
+        background: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--black));
+        border-color: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--black));
         color: var(--color-white);
     }
 }

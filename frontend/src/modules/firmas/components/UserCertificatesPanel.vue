@@ -17,11 +17,11 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_20rem] gap-4">
-      <div class="bg-white rounded-2xl border border-brand-border p-4 shadow-sm">
+      <div class="bg-white rounded-2xl border border-line p-4 shadow-sm">
         <div v-if="errorMessage" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {{ errorMessage }}
         </div>
-        <div v-if="successMessage" class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-state-success">
+        <div v-if="successMessage" class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">
           {{ successMessage }}
         </div>
 
@@ -39,7 +39,7 @@
             :key="certificate.id"
             type="button"
             class="w-full rounded-2xl border px-4 py-4 text-left transition shadow-sm"
-            :class="isSelected(certificate.id) ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-white hover:bg-brand-surface-muted'"
+            :class="isSelected(certificate.id) ? 'border-sky-500 bg-sky-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectCertificate(certificate)"
           >
             <div class="flex items-start justify-between gap-3">
@@ -49,7 +49,7 @@
                   <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
                 </div>
                 <div class="mt-1 text-xs text-slate-500 break-all">{{ certificate.original_filename }}</div>
-                <div class="mt-1 text-xs text-brand-text-muted">
+                <div class="mt-1 text-xs text-muted">
                   {{ formatDate(certificate.created_at) }}
                 </div>
               </div>
@@ -77,7 +77,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-brand-border p-4 shadow-sm flex flex-col gap-4">
+      <div class="bg-white rounded-2xl border border-line p-4 shadow-sm flex flex-col gap-4">
         <div>
           <h4 class="text-sm font-bold text-slate-800 m-0">Subir certificado</h4>
           <p class="text-xs text-slate-500 m-0 mt-1">

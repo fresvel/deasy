@@ -22,7 +22,7 @@
       </div>
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="inline-flex items-center gap-0.5 rounded-2xl border border-brand-border bg-brand-surface-muted p-0.5">
+        <div class="inline-flex items-center gap-0.5 rounded-2xl border border-line bg-surface p-0.5">
           <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
           <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
           <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
@@ -39,14 +39,14 @@
       </div>
     </div>
 
-    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-50 text-state-success ring-1 ring-emerald-200'">
+    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
       {{ feedback.message }}
     </div>
 
-    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-brand-border bg-brand-surface-muted">
+    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando mapa de procesos…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
-      <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-brand-text-muted">No hay procesos para mostrar.</div>
+      <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-muted">No hay procesos para mostrar.</div>
       <VueFlow
         v-else
         v-model:nodes="nodes"
@@ -82,7 +82,7 @@
 
     <!-- Confirmar desvincular -->
     <AppDialogOverlay :open="Boolean(selectedEdge)" title="Desvincular proceso" panel-class="max-w-md" @close="selectedEdge = null">
-      <p class="m-0 text-sm text-brand-icon">
+      <p class="m-0 text-sm text-icon">
         ¿Desvincular <strong>{{ selectedEdgeLabel }}</strong>? El sub-proceso quedará como proceso raíz (sin padre).
       </p>
       <template #footer>
@@ -93,14 +93,14 @@
 
     <!-- Crear proceso (raíz / hijo / hermano) -->
     <AppDialogOverlay :open="Boolean(createContext)" :title="createDialogTitle" panel-class="max-w-md" @close="createContext = null">
-      <p class="m-0 mb-3 text-sm text-brand-icon">{{ createDialogHint }}</p>
+      <p class="m-0 mb-3 text-sm text-icon">{{ createDialogHint }}</p>
       <div class="flex flex-col gap-3">
         <label class="block text-sm font-medium text-slate-700">
           Nombre
           <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre del proceso" />
         </label>
         <label class="block text-sm font-medium text-slate-700">
-          Identificador (slug) <span class="font-normal text-brand-text-muted">(opcional)</span>
+          Identificador (slug) <span class="font-normal text-muted">(opcional)</span>
           <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="se deriva del nombre" />
         </label>
       </div>
@@ -141,20 +141,20 @@
       <aside class="deasy-drawer">
         <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div class="min-w-0">
-            <p class="m-0 text-xs font-bold uppercase tracking-wide text-brand-text-muted">Detalle de proceso</p>
+            <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Detalle de proceso</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-slate-800">{{ detailProcess.name }}</h3>
           </div>
           <div class="flex shrink-0 items-center gap-1">
-            <button v-if="editable" type="button" class="text-brand-text-muted transition-colors hover:text-indigo-600" title="Editar datos del proceso" @click="openEditModal(detailProcess.id)">
+            <button v-if="editable" type="button" class="text-muted transition-colors hover:text-indigo-600" title="Editar datos del proceso" @click="openEditModal(detailProcess.id)">
               <IconPencil class="h-5 w-5" />
             </button>
-            <button type="button" class="text-brand-text-muted transition-colors hover:text-brand-icon" title="Cerrar" @click="closeDetail">
+            <button type="button" class="text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeDetail">
               <IconX class="h-5 w-5" />
             </button>
           </div>
         </header>
 
-        <div class="flex gap-4 border-b border-brand-border px-5">
+        <div class="flex gap-4 border-b border-line px-5">
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'configuraciones' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'configuraciones'">Configuraciones</button>
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'subprocesos' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'subprocesos'">Sub-procesos</button>
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'corridas' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'corridas'">Lanzamientos</button>
@@ -169,32 +169,32 @@
                 <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">Configuraciones</p>
                 <AppButton v-if="editable" variant="primary" size="sm" @click="createConfiguration">+ Nueva configuración</AppButton>
               </div>
-              <div v-if="!detailConfigurations.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
+              <div v-if="!detailConfigurations.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
                 Este proceso no tiene configuraciones.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-brand-border px-3 py-2.5">
+                <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
                     <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="configStatusClass(cfg.status)">{{ configStatusLabel(cfg.status) }}</span>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ seriesLabel(cfg) }}</span>
-                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.variation_key }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-slate-200">{{ seriesLabel(cfg) }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.variation_key }}</span>
                     <span>v{{ cfg.definition_version }}</span>
                   </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
-                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.rules_count }} reglas</span>
-                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.templates_count }} plantillas</span>
-                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.runs_count }} corridas</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.rules_count }} reglas</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.templates_count }} plantillas</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-slate-200">{{ cfg.runs_count }} corridas</span>
                   </div>
                   <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                     <template v-if="editable && cfg.status === 'draft'">
                       <button type="button" class="font-semibold text-indigo-600 hover:underline" @click="editConfiguration(cfg, 'definition')">Editar</button>
                       <span class="text-slate-300">·</span>
-                      <button type="button" class="font-semibold text-brand-icon hover:underline" @click="editConfiguration(cfg, 'rules')">Reglas</button>
-                      <button type="button" class="font-semibold text-brand-icon hover:underline" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
-                      <button type="button" class="font-semibold text-brand-icon hover:underline" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
+                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'rules')">Reglas</button>
+                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
+                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
                     </template>
                     <template v-else>
                       <button type="button" class="font-semibold text-indigo-600 hover:underline" @click="editConfiguration(cfg, 'definition')">Ver</button>
@@ -211,21 +211,21 @@
                 <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">Sub-procesos</p>
                 <AppButton v-if="editable" variant="secondary" size="sm" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
               </div>
-              <div v-if="!detailChildren.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
+              <div v-if="!detailChildren.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
                 Este proceso no tiene sub-procesos.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-brand-border px-3 py-2.5">
+                <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800">{{ ch.name }}</span>
                     <span v-if="!ch.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
                     <span
                       class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
-                      :class="ch.active_count ? 'bg-emerald-50 text-state-success ring-emerald-200' : (ch.definitions_count ? 'bg-amber-50 text-state-warning ring-amber-200' : 'bg-brand-surface-muted text-slate-500 ring-slate-200')"
+                      :class="ch.active_count ? 'bg-emerald-50 text-success ring-emerald-200' : (ch.definitions_count ? 'bg-amber-50 text-warning ring-amber-200' : 'bg-surface text-slate-500 ring-slate-200')"
                     >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</span>
                   </div>
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
-                    <span class="truncate text-brand-text-muted">{{ ch.slug }}</span>
+                    <span class="truncate text-muted">{{ ch.slug }}</span>
                     <button type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openProcessDetail(ch.id)">Abrir</button>
                     <button v-if="editable" type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="detachChild(ch.id)">Desvincular</button>
                   </div>
@@ -236,23 +236,23 @@
             <!-- Pestaña: Lanzamientos / corridas -->
             <div v-show="detailTab === 'corridas'">
               <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Lanzamientos / corridas</p>
-              <div v-if="!detailRuns.length" class="rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">
+              <div v-if="!detailRuns.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
                 Este proceso no tiene corridas registradas.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-brand-border px-3 py-2.5">
+                <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-slate-800">{{ run.term_name || "Sin periodo" }}</span>
                     <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="runStatusClass(run.status)">{{ run.status }}</span>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                     <span class="truncate">{{ run.definition_name }} · v{{ run.definition_version }}</span>
-                    <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-2 py-0.5 font-semibold text-brand-icon ring-1 ring-slate-200">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
-                    <span v-if="run.source_run_id" class="italic text-brand-text-muted">relanzamiento</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-slate-200">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
+                    <span v-if="run.source_run_id" class="italic text-muted">relanzamiento</span>
                   </div>
                 </li>
               </ul>
-              <p class="m-0 mt-3 text-[11px] leading-snug text-brand-text-muted">El lanzamiento de nuevas corridas se habilitará en el siguiente paso.</p>
+              <p class="m-0 mt-3 text-[11px] leading-snug text-muted">El lanzamiento de nuevas corridas se habilitará en el siguiente paso.</p>
             </div>
           </template>
         </div>
@@ -262,19 +262,19 @@
     <!-- Drawer: versiones del entregable (plantilla) -->
     <div v-if="templateDetail" class="deasy-drawer-overlay" @click.self="closeTemplateVersions">
       <aside class="deasy-drawer">
-        <div class="flex items-start justify-between gap-2 border-b border-brand-border px-4 py-3">
+        <div class="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
           <div class="min-w-0">
             <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-violet-500">Entregable · versiones</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-slate-800">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
-            <p class="m-0 mt-0.5 truncate text-xs text-brand-text-muted">
+            <p class="m-0 mt-0.5 truncate text-xs text-muted">
               {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
             </p>
           </div>
-          <button type="button" class="text-brand-text-muted transition-colors hover:text-brand-icon" title="Cerrar" @click="closeTemplateVersions">
+          <button type="button" class="text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeTemplateVersions">
             <IconX class="h-5 w-5" />
           </button>
         </div>
-        <div v-if="editable" class="flex flex-wrap gap-2 border-b border-brand-border px-4 py-2.5">
+        <div v-if="editable" class="flex flex-wrap gap-2 border-b border-line px-4 py-2.5">
           <AppButton variant="secondary" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
           <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
         </div>
@@ -296,7 +296,7 @@
               v-for="v in templateDetail.versions"
               :key="v.id"
               class="cursor-pointer rounded-xl border px-3 py-2.5 transition-colors hover:border-indigo-300 hover:bg-indigo-50/30"
-              :class="String(v.id) === String(templateDetail.pinnedArtifactId) ? 'border-violet-300 bg-violet-50/40' : 'border-brand-border'"
+              :class="String(v.id) === String(templateDetail.pinnedArtifactId) ? 'border-violet-300 bg-violet-50/40' : 'border-line'"
               role="button"
               tabindex="0"
               :title="v.lifecycle_state === 'draft' ? 'Abrir para editar' : 'Abrir (solo lectura)'"
@@ -311,7 +311,7 @@
                 <span class="ml-auto text-[11px] font-semibold text-indigo-600">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
               </div>
               <div class="mt-1 flex items-center justify-between gap-2">
-                <span class="text-[11px] text-brand-text-muted">{{ formatVersionDate(v.created_at) }}</span>
+                <span class="text-[11px] text-muted">{{ formatVersionDate(v.created_at) }}</span>
                 <button
                   v-if="editable && v.lifecycle_state !== 'retired' && String(v.id) !== String(templateDetail.pinnedArtifactId)"
                   type="button"
@@ -322,7 +322,7 @@
               </div>
             </li>
           </ul>
-          <p v-else class="m-0 rounded-xl border border-dashed border-brand-border px-4 py-6 text-center text-sm text-brand-text-muted">Sin versiones.</p>
+          <p v-else class="m-0 rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">Sin versiones.</p>
         </div>
       </aside>
     </div>
@@ -777,10 +777,10 @@ const drawerHealthWarning = computed(() => {
   return { pinnedLabel: versionStateLabel(pinned.lifecycle_state).toLowerCase(), publishedVersion };
 });
 const versionStateClass = (s) => ({
-  published: "bg-emerald-50 text-state-success ring-emerald-200",
-  draft: "bg-amber-50 text-state-warning ring-amber-200",
-  retired: "bg-brand-surface-muted text-slate-500 ring-slate-200"
-}[String(s)] || "bg-brand-surface-muted text-slate-500 ring-slate-200");
+  published: "bg-emerald-50 text-success ring-emerald-200",
+  draft: "bg-amber-50 text-warning ring-amber-200",
+  retired: "bg-surface text-slate-500 ring-slate-200"
+}[String(s)] || "bg-surface text-slate-500 ring-slate-200");
 const formatVersionDate = (value) => {
   if (!value) return "";
   try {
@@ -933,9 +933,9 @@ const detachChild = async (childId) => {
 };
 
 const configStatusClass = (status) => {
-  if (status === "active") return "bg-emerald-50 text-state-success ring-emerald-200";
-  if (status === "draft") return "bg-amber-50 text-state-warning ring-amber-200";
-  return "bg-brand-surface-muted text-slate-500 ring-slate-200";
+  if (status === "active") return "bg-emerald-50 text-success ring-emerald-200";
+  if (status === "draft") return "bg-amber-50 text-warning ring-amber-200";
+  return "bg-surface text-slate-500 ring-slate-200";
 };
 const configStatusLabel = (status) => ({ active: "Activa", draft: "Borrador", retired: "Retirada" }[status] || status);
 const seriesLabel = (cfg) => {
@@ -944,10 +944,10 @@ const seriesLabel = (cfg) => {
   return "General";
 };
 const runStatusClass = (status) => {
-  if (status === "active") return "bg-emerald-50 text-state-success ring-emerald-200";
+  if (status === "active") return "bg-emerald-50 text-success ring-emerald-200";
   if (status === "completed") return "bg-sky-50 text-sky-700 ring-sky-200";
-  if (status === "pending") return "bg-amber-50 text-state-warning ring-amber-200";
-  return "bg-brand-surface-muted text-slate-500 ring-slate-200";
+  if (status === "pending") return "bg-amber-50 text-warning ring-amber-200";
+  return "bg-surface text-slate-500 ring-slate-200";
 };
 
 // Acciones de configuración: cierran el drawer y delegan en el padre (wizard / lanzar).

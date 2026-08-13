@@ -29,7 +29,7 @@
       <div
         class="flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm"
         :class="canSubmit
-          ? 'border-brand-border bg-white text-brand-icon'
+          ? 'border-line bg-white text-icon'
           : 'border-amber-200 bg-amber-50 text-amber-800'"
       >
         <font-awesome-icon :icon="canSubmit ? 'info-circle' : 'triangle-exclamation'" class="mt-0.5 shrink-0" />
@@ -38,11 +38,11 @@
 
       <!-- Lo que ya fija la serie se muestra como contexto, no como campos editables. -->
       <div v-if="seriesFixedChips.length" class="flex flex-wrap items-center gap-2 text-xs">
-        <span class="font-semibold uppercase tracking-wide text-brand-text-muted">Fijado por la serie</span>
+        <span class="font-semibold uppercase tracking-wide text-muted">Fijado por la serie</span>
         <span
           v-for="chip in seriesFixedChips"
           :key="chip.label"
-          class="inline-flex items-center gap-1 rounded-xl bg-brand-surface-muted px-2 py-0.5 font-medium text-brand-icon ring-1 ring-slate-200"
+          class="inline-flex items-center gap-1 rounded-xl bg-surface px-2 py-0.5 font-medium text-icon ring-1 ring-slate-200"
         >
           {{ chip.label }}: <strong class="font-bold text-slate-700">{{ chip.value }}</strong>
         </span>
@@ -50,7 +50,7 @@
 
       <!-- Bloque 1: a quién va dirigida la regla -->
       <fieldset class="flex flex-col gap-2.5">
-        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-brand-text-muted">Alcance y destinatarios</p>
+        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-muted">Alcance y destinatarios</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup v-if="showScopeField" label="Alcance" group-class="md:col-span-4">
             <AdminSelectField
@@ -126,8 +126,8 @@
       </fieldset>
 
       <!-- Bloque 2: prioridad, estado y vigencia -->
-      <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-brand-border pt-4">
-        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-brand-text-muted">Prioridad y vigencia</p>
+      <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-line pt-4">
+        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-muted">Prioridad y vigencia</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
             <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
@@ -171,7 +171,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin reglas vinculadas."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-white shadow-sm person-assignment-table"
+      responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">

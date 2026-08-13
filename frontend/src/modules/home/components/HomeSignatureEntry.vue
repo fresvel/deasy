@@ -4,7 +4,7 @@
       {{ error }}
     </section>
 
-    <section id="signature-launchers" class="rounded-xl border border-brand-border bg-white shadow-xl shadow-slate-200/30">
+    <section id="signature-launchers" class="rounded-xl border border-line bg-white shadow-xl shadow-slate-200/30">
       <FirmarPdf
         :show-start-heading="false"
         :enable-home-shortcuts="true"
@@ -32,7 +32,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21h-7a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v7"></path><path d="M14 19l2 2l4 -4"></path><path d="M9 7h4"></path><path d="M9 11h4"></path></svg>
           </div>
           <div class="min-w-0">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-brand-icon">Firmador singular</div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Firmador singular</div>
             <div class="truncate text-base font-bold text-slate-800">Firmar documento</div>
           </div>
         </div>
@@ -64,7 +64,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14l11 -11"></path><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7.5l-7.5 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"></path></svg>
           </div>
           <div class="min-w-0">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-brand-icon">Solicitud singular</div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Solicitud singular</div>
             <div class="truncate text-base font-bold text-slate-800">Solicitar firmas</div>
           </div>
         </div>
@@ -98,7 +98,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
             </div>
             <div class="min-w-0">
-              <div class="text-[11px] font-bold uppercase tracking-wider text-brand-icon">Previsualizando PDF</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Previsualizando PDF</div>
               <div class="truncate text-base font-bold text-slate-800" :title="generalMultiSignerHeader.documentName">{{ formatHeaderFileName(generalMultiSignerHeader.documentName) }}</div>
             </div>
           </div>
@@ -274,7 +274,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
             </div>
             <div class="min-w-0">
-              <div class="text-[11px] font-bold uppercase tracking-wider text-brand-icon">Previsualizando PDF</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Previsualizando PDF</div>
               <div class="truncate text-base font-bold text-slate-800" :title="pendingMultiSignerHeader.documentName">{{ formatHeaderFileName(pendingMultiSignerHeader.documentName) }}</div>
             </div>
           </div>
@@ -284,7 +284,7 @@
         <div v-if="multiSignerError" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
           {{ multiSignerError }}
         </div>
-        <div v-if="pendingPreparation" class="rounded-2xl border border-brand-border bg-brand-surface-muted p-5 text-sm font-bold text-brand-icon">
+        <div v-if="pendingPreparation" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">
           Preparando documentos del lote...
         </div>
         <div v-else class="flex min-h-0 flex-1 flex-col">

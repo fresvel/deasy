@@ -5,21 +5,21 @@
 
     .deasy-filter-btn.deasy-btn--secondary,
     .deasy-filter-btn.deasy-btn--soft-neutral {
-        border-color: var(--brand-border-field);
+        border-color: var(--color-line-field);
         background: var(--color-white);
-        color: var(--brand-text-strong);
+        color: var(--color-strong);
     }
 
     .deasy-filter-btn.deasy-btn--outline-primary {
-        border-color: color-mix(in srgb, var(--brand-primary) 33%, var(--color-white));
+        border-color: color-mix(in srgb, var(--color-primary) 33%, var(--color-white));
         background: var(--color-white);
-        color: var(--brand-primary);
+        color: var(--color-primary);
     }
 
     .deasy-filter-btn.deasy-btn--soft-primary,
     .deasy-filter-btn.deasy-btn--primary {
         border-color: transparent;
-        background: var(--brand-primary);
+        background: var(--color-primary);
         color: var(--color-white);
     }
 
@@ -43,15 +43,15 @@
     .deasy-btn--primary,
     .admin-btn--primary {
         @apply text-white;
-        border-color: var(--brand-primary);
-        background: var(--brand-primary);
+        border-color: var(--color-primary);
+        background: var(--color-primary);
     }
 
     .deasy-btn--secondary,
     .admin-btn--secondary {
         @apply bg-white;
-        border-color: var(--brand-border-strong);
-        color: var(--brand-text-body);
+        border-color: var(--color-line-strong);
+        color: var(--color-body);
     }
 
     /* El hover rojo lo lleva SOLO la variante `deasy-*`, no la `admin-*`: por eso las dos
@@ -60,21 +60,21 @@
        tambien en tactil. */
     .deasy-btn--cancel {
         @apply bg-white hover:border-red-300 hover:bg-red-50;
-        border-color: var(--brand-border-strong);
-        color: var(--brand-text-body);
+        border-color: var(--color-line-strong);
+        color: var(--color-body);
     }
 
     .admin-btn--cancel {
         @apply bg-white;
-        border-color: var(--brand-border-strong);
-        color: var(--brand-text-body);
+        border-color: var(--color-line-strong);
+        color: var(--color-body);
     }
 
     .deasy-btn--outline-primary,
     .admin-btn--outline-primary {
         @apply bg-white;
-        border-color: var(--brand-primary);
-        color: var(--brand-primary);
+        border-color: var(--color-primary);
+        color: var(--color-primary);
     }
 
     .deasy-btn--outline-danger,
@@ -91,7 +91,7 @@
     }
 
     .deasy-btn--soft-success {
-        @apply border-emerald-200 bg-emerald-50 text-state-success hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
+        @apply border-emerald-200 bg-emerald-50 text-success hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
     }
 
     .deasy-btn--soft-warning {
@@ -104,7 +104,7 @@
 
     .deasy-btn--success,
     .admin-btn--success {
-        @apply border-emerald-600 bg-emerald-600 text-white hover:border-state-success hover:bg-state-success;
+        @apply border-emerald-600 bg-emerald-600 text-white hover:border-success hover:bg-success;
     }
 
     .deasy-btn--danger,
@@ -119,16 +119,16 @@
 
     .deasy-btn--menu {
         @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
-        border-color: rgba(var(--brand-navy-menu-rgb), 0.14);
-        background: linear-gradient(180deg, var(--color-white) 0%, var(--brand-surface-muted) 100%);
-        color: var(--brand-text-body);
+        border-color: rgba(var(--navy-menu-rgb), 0.14);
+        background: linear-gradient(180deg, var(--color-white) 0%, var(--color-surface) 100%);
+        color: var(--color-body);
     }
 
     .deasy-btn--menu.is-active {
         @apply shadow-[var(--focus-ring)];
-        border-color: rgba(var(--brand-navy-menu-rgb), 0.22);
-        background: var(--brand-gradient-soft);
-        color: var(--brand-primary);
+        border-color: rgba(var(--navy-menu-rgb), 0.22);
+        background: var(--gradient-soft);
+        color: var(--color-primary);
     }
 
     .deasy-btn--sm {
@@ -156,41 +156,41 @@
     }
 
     .deasy-table-responsive .deasy-btn--secondary {
-        border-color: var(--brand-border-strong);
+        border-color: var(--color-line-strong);
         background: var(--color-white);
-        color: var(--brand-text-strong);
+        color: var(--color-strong);
     }
 
     .deasy-table-responsive .deasy-btn--secondary:hover {
-        border-color: var(--brand-border-strong);
-        background: var(--brand-surface-muted);
-        color: var(--brand-navy);
+        border-color: var(--color-line-strong);
+        background: var(--color-surface);
+        color: var(--color-navy);
     }
 
     .deasy-table-responsive .deasy-btn--soft-primary,
     .deasy-table-responsive .deasy-btn--outline-primary {
-        border-color: color-mix(in srgb, var(--brand-primary) 25%, var(--color-white));
+        border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-white));
         background: var(--color-white);
-        color: var(--brand-primary);
+        color: var(--color-primary);
     }
 
     .deasy-table-responsive .deasy-btn--soft-primary:hover,
     .deasy-table-responsive .deasy-btn--outline-primary:hover {
-        border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--color-white));
-        background: var(--brand-surface-muted);
-        color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
+        border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-white));
+        background: var(--color-surface);
+        color: color-mix(in srgb, var(--color-primary) 86%, var(--black));
     }
 
     .deasy-table-responsive .deasy-btn--primary {
-        border-color: var(--brand-primary);
-        background: var(--brand-primary);
+        border-color: var(--color-primary);
+        background: var(--color-primary);
         color: var(--color-white);
         box-shadow: none;
     }
 
     .deasy-table-responsive .deasy-btn--primary:hover {
-        border-color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
-        background: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
+        border-color: color-mix(in srgb, var(--color-primary) 86%, var(--black));
+        background: color-mix(in srgb, var(--color-primary) 86%, var(--black));
     }
 
     
@@ -198,14 +198,14 @@
 @layer components {
 .deasy-auth-button {
         @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold text-white shadow-none transition-all focus:outline-none active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
-        border-color: var(--brand-primary);
-        background: var(--brand-gradient-angled);
+        border-color: var(--color-primary);
+        background: var(--gradient-angled);
     }
 
     .deasy-auth-button--secondary {
         @apply bg-white shadow-none;
-        border-color: var(--brand-border);
-        color: var(--brand-text-body);
+        border-color: var(--color-line);
+        color: var(--color-body);
     }
 
     
@@ -250,42 +250,42 @@
 .hope-action-select:hover,
 .hope-action-assign:hover,
 .hope-action-launch:hover {
-  color: color-mix(in srgb, var(--state-success) 85%, var(--brand-black));
-  background: color-mix(in srgb, var(--state-success) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--state-success) 85%, var(--color-white));
+  color: color-mix(in srgb, var(--color-success) 85%, var(--black));
+  background: color-mix(in srgb, var(--color-success) 16%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-white));
 }
 
 .hope-action-delete:hover {
-  color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-black));
-  background: color-mix(in srgb, var(--state-danger) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--state-danger) 85%, var(--color-white));
+  color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-white));
 }
 
 .hope-action-delete-strong:hover {
-  color: color-mix(in srgb, var(--state-danger) 85%, var(--brand-black));
-  background: color-mix(in srgb, var(--state-danger) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--state-danger) 85%, var(--color-white));
+  color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-white));
 }
 
 .hope-action-view:hover {
-  color: color-mix(in srgb, var(--action-view) 85%, var(--brand-black));
-  background: color-mix(in srgb, var(--action-view) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--action-view) 85%, var(--color-white));
+  color: color-mix(in srgb, var(--color-action-view) 85%, var(--black));
+  background: color-mix(in srgb, var(--color-action-view) 16%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
 }
 
 .hope-action-download:hover,
 .hope-action-upload:hover,
 .hope-action-version:hover {
-  color: color-mix(in srgb, var(--action-upload) 85%, var(--brand-black));
-  background: color-mix(in srgb, var(--action-upload) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--action-upload) 85%, var(--color-white));
+  color: color-mix(in srgb, var(--color-action-upload) 85%, var(--black));
+  background: color-mix(in srgb, var(--color-action-upload) 16%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-action-upload) 85%, var(--color-white));
 }
 
 .hope-action-delete-pdf:hover,
 .hope-action-retire:hover {
-  color: color-mix(in srgb, var(--state-warning) 85%, var(--brand-black));
-  background: color-mix(in srgb, var(--state-warning) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--state-warning) 85%, var(--color-white));
+  color: color-mix(in srgb, var(--color-warning) 85%, var(--black));
+  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-warning) 85%, var(--color-white));
 }
 
 @layer components {
@@ -324,12 +324,12 @@
       background: transparent;
       cursor: pointer;
       transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease;
-      --tooltip-bg: var(--brand-accent);
+      --tooltip-bg: var(--color-accent);
     }
 
     .btnsera:hover {
       transform: scale(1.04);
-      background: color-mix(in srgb, var(--brand-navy) 4%, transparent);
+      background: color-mix(in srgb, var(--color-navy) 4%, transparent);
     }
 
     .btnsera__icon {
@@ -342,23 +342,23 @@
        `--tooltip-bg`, asi que basta declararlo una vez por estado. */
 
     .sera-send {
-      color: var(--brand-accent);
-      --tooltip-bg: var(--brand-accent);
+      color: var(--color-accent);
+      --tooltip-bg: var(--color-accent);
     }
 
     .sera-review {
-      color: var(--state-success);
-      --tooltip-bg: var(--state-success);
+      color: var(--color-success);
+      --tooltip-bg: var(--color-success);
     }
 
     .sera-certified {
-      color: var(--state-gold);
-      --tooltip-bg: var(--state-gold);
+      color: var(--color-gold);
+      --tooltip-bg: var(--color-gold);
     }
 
     .sera-denied {
-      color: var(--state-danger);
-      --tooltip-bg: var(--state-danger);
+      color: var(--color-danger);
+      --tooltip-bg: var(--color-danger);
     }
 
     .btnsera__tooltip {
@@ -416,33 +416,33 @@
 
     .btnsera-status__label {
       font-size: 1rem;
-      color: var(--brand-navy);
+      color: var(--color-navy);
     }
 
     .btnsera-status__message {
       margin: 0;
-      color: var(--brand-text-muted);
+      color: var(--color-muted);
       font-size: 0.92rem;
       line-height: 1.45;
     }
 
     .btnsera-status--pending {
-      color: var(--brand-accent);
-      background: color-mix(in srgb, var(--brand-accent) 12%, var(--color-white));
+      color: var(--color-accent);
+      background: color-mix(in srgb, var(--color-accent) 12%, var(--color-white));
     }
 
     .btnsera-status--reviewed {
-      color: var(--state-success);
-      background: color-mix(in srgb, var(--state-success) 12%, var(--color-white));
+      color: var(--color-success);
+      background: color-mix(in srgb, var(--color-success) 12%, var(--color-white));
     }
 
     .btnsera-status--certified {
-      color: var(--state-gold);
-      background: color-mix(in srgb, var(--state-gold) 14%, var(--color-white));
+      color: var(--color-gold);
+      background: color-mix(in srgb, var(--color-gold) 14%, var(--color-white));
     }
 
     .btnsera-status--denied {
-      color: var(--state-danger);
-      background: color-mix(in srgb, var(--state-danger) 12%, var(--color-white));
+      color: var(--color-danger);
+      background: color-mix(in srgb, var(--color-danger) 12%, var(--color-white));
     }
 }

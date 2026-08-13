@@ -27,7 +27,7 @@
 
     .deasy-auth-page {
         background:
-            linear-gradient(180deg, var(--color-white) 0%, var(--brand-surface-muted) 46%, var(--brand-surface-muted) 100%);
+            linear-gradient(180deg, var(--color-white) 0%, var(--color-surface) 46%, var(--color-surface) 100%);
     }
 
     .deasy-dialog-body {
@@ -35,21 +35,21 @@
     }
 
     .deasy-dialog-footer {
-        background-color: var(--brand-surface-muted);
+        background-color: var(--color-surface);
     }
 
     .deasy-section-card,
     .deasy-dialog-panel,
     .admin-workspace-frame,
     .admin-surface-frame {
-        border-color: var(--brand-border);
+        border-color: var(--color-line);
     }
 
     .deasy-section-card,
     .deasy-auth-card,
     .admin-workspace-frame,
     .admin-surface-frame {
-        box-shadow: var(--brand-elev-1);
+        box-shadow: var(--elev-1);
     }
 
     .admin-workspace-frame--table {
@@ -67,7 +67,7 @@
    proyecto. Si las capas, resucitan de golpe. Decidir borde y foco es §4.2; el radio, F5.
 
    Estan partidas en tres —elemento como suelo, clases encima— porque agrupadas hacian que
-   `--brand-border-field` y `--brand-border-strong` no llegaran nunca al DOM.
+   `--color-line-field` y `--color-line-strong` no llegaran nunca al DOM.
    ------------------------------------------------------------------------------------ */
 .deasy-field-input,
 .deasy-field-select,
@@ -90,7 +90,7 @@ textarea {
 input,
 select,
 textarea {
-  border-color: var(--brand-border);
+  border-color: var(--color-line);
 }
 
 /* ⚠️ FUERA DE CAPA: si bajase, ganaria el `:focus` de `forms.css` y los campos cambiarian
@@ -99,7 +99,7 @@ textarea {
 .deasy-field-input,
 .deasy-field-select,
 .deasy-auth-field {
-  border-color: var(--brand-border-strong);
+  border-color: var(--color-line-strong);
 }
 
 /* ⚠️ FUERA DE CAPA por lo mismo: los `:focus` capados de `.deasy-filter-control` y
@@ -109,39 +109,39 @@ textarea {
 .profile-text-input,
 .profile-select-input,
 .profile-textarea {
-  border-color: var(--brand-border-field);
+  border-color: var(--color-line-field);
 }
 
 /* ⚠️ FUERA DE CAPA LAS DOS. `.admin-select-field` es un `<select>`, asi que compite con la
    regla de ELEMENTO de arriba, que tambien esta suelta: capada sola, los 20 selectores de
    administracion pasan de 10 px a 8 px de radio. Muere cuando muera la de elemento.
    El `:focus` tampoco puede bajar: `AdminSelectField.vue` escribe `focus:ring-4
-   focus:ring-brand-primary/10`, hoy muerto, y ese anillo NO es identico a `--focus-ring`
+   focus:ring-primary/10`, hoy muerto, y ese anillo NO es identico a `--focus-ring`
    (Tailwind añade ademas el segmento de `ring-offset`). Elegir cual sobra es §4.2.
    ------------------------------------------------------------------------------------ */
 .admin-select-field {
-  border-color: var(--brand-border-field);
+  border-color: var(--color-line-field);
   border-radius: 10px;
 }
 
 .admin-select-field:focus {
-  border-color: var(--brand-primary);
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
 @layer components {
     .deasy-table thead tr {
-        background: var(--brand-surface-muted);
+        background: var(--color-surface);
     }
 
     .deasy-table tbody tr:hover {
-        background-color: var(--brand-surface-muted);
+        background-color: var(--color-surface);
     }
 
 
     .deasy-nav-shell {
-        background: linear-gradient(180deg, rgba(var(--brand-white-rgb), 0.12) 0%, rgba(var(--brand-white-rgb), 0.08) 100%);
-        border-color: rgba(var(--brand-white-rgb), 0.08);
+        background: linear-gradient(180deg, rgba(var(--white-rgb), 0.12) 0%, rgba(var(--white-rgb), 0.08) 100%);
+        border-color: rgba(var(--white-rgb), 0.08);
     }
 }
 
@@ -151,8 +151,8 @@ textarea {
    El arreglo es que cada cabecera declare lo suyo y esta regla se limite a `SHeader.vue`;
    es cambio de plantilla, no de capa. F5. */
 header {
-  background-color: var(--brand-navy-deep);
-  border-color: rgba(var(--brand-white-rgb), 0.1);
+  background-color: var(--color-navy-deep);
+  border-color: rgba(var(--white-rgb), 0.1);
 }
 
 /* ⚠️ FUERA DE CAPA. `currentColor` es lo correcto para la clase base... y por eso mismo
@@ -175,7 +175,7 @@ header {
 .admin-btn--secondary,
 .admin-btn--cancel {
   background-color: var(--color-white);
-  border-color: var(--brand-border);
+  border-color: var(--color-line);
 }
 
 .deasy-btn--secondary,
@@ -183,16 +183,16 @@ header {
 .deasy-auth-button--secondary,
 .admin-btn--secondary,
 .admin-btn--cancel {
-  color: var(--brand-text-strong);
+  color: var(--color-strong);
 }
 
 .deasy-btn--secondary:hover,
 .deasy-btn--cancel:hover,
 .admin-btn--secondary:hover,
 .admin-btn--cancel:hover {
-  color: var(--brand-primary);
-  background-color: rgba(var(--brand-primary-rgb), 0.06);
-  border-color: rgba(var(--brand-primary-rgb), 0.18);
+  color: var(--color-primary);
+  background-color: rgba(var(--primary-rgb), 0.06);
+  border-color: rgba(var(--primary-rgb), 0.18);
 }
 
 /* ── Los 12 botones de accion. FUERA DE CAPA — LEER LA CABECERA DE `buttons.css` ──────
@@ -204,49 +204,49 @@ header {
    compartia lista de selectores con ella y no estaba en una sola plantilla, asi que los
    239 nodos siempre los puso la primera. */
 .hope-action-btn {
-  background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--color-white));
-  border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--color-white));
-  color: var(--action-neutral);
-  box-shadow: var(--brand-elev-1);
+  background-color: color-mix(in srgb, var(--color-action-neutral) 3%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-action-neutral) 71%, var(--color-white));
+  color: var(--color-action-neutral);
+  box-shadow: var(--elev-1);
 }
 
 .hope-action-view {
-  background-color: color-mix(in srgb, var(--action-view) 11%, var(--color-white));
-  border-color: color-mix(in srgb, var(--action-view) 71%, var(--color-white));
-  color: var(--action-view);
+  background-color: color-mix(in srgb, var(--color-action-view) 11%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
+  color: var(--color-action-view);
 }
 
 .hope-action-edit,
 .hope-action-select,
 .hope-action-assign,
 .hope-action-launch {
-  background-color: color-mix(in srgb, var(--state-success) 10%, var(--color-white));
-  border-color: color-mix(in srgb, var(--state-success) 71%, var(--color-white));
-  color: var(--state-success);
+  background-color: color-mix(in srgb, var(--color-success) 10%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-success) 71%, var(--color-white));
+  color: var(--color-success);
 }
 
 .hope-action-version,
 .hope-action-download,
 .hope-action-upload {
-  background-color: color-mix(in srgb, var(--action-upload) 11%, var(--color-white));
-  border-color: color-mix(in srgb, var(--action-upload) 71%, var(--color-white));
-  color: var(--action-upload);
+  background-color: color-mix(in srgb, var(--color-action-upload) 11%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-action-upload) 71%, var(--color-white));
+  color: var(--color-action-upload);
 }
 
 .hope-action-delete,
 .hope-action-delete-strong {
-  background-color: color-mix(in srgb, var(--state-danger) 9%, var(--color-white));
-  border-color: color-mix(in srgb, var(--state-danger) 71%, var(--color-white));
-  color: var(--state-danger);
+  background-color: color-mix(in srgb, var(--color-danger) 9%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-danger) 71%, var(--color-white));
+  color: var(--color-danger);
 }
 
-/* ⚠️ Este par pasa 1.4.11 POR 0.01 (3.01:1). No retoques `--state-warning` sin volver a
+/* ⚠️ Este par pasa 1.4.11 POR 0.01 (3.01:1). No retoques `--color-warning` sin volver a
    medir estos dos botones. */
 .hope-action-delete-pdf,
 .hope-action-retire {
-  background-color: color-mix(in srgb, var(--state-warning) 9%, var(--color-white));
-  border-color: color-mix(in srgb, var(--state-warning) 71%, var(--color-white));
-  color: var(--state-warning);
+  background-color: color-mix(in srgb, var(--color-warning) 9%, var(--color-white));
+  border-color: color-mix(in srgb, var(--color-warning) 71%, var(--color-white));
+  color: var(--color-warning);
 }
 
 /* Gana a los seis `:hover` de `buttons.css` por ORDEN DE DOCUMENTO: `index.css` importa
@@ -261,7 +261,7 @@ header {
    VA AL FINAL A PROPOSITO (ver cabecera del fichero).
 
    ⚠️ Es DEUDA CON FECHA DE CADUCIDAD, no arquitectura: cada utilidad de aqui existe porque
-   una plantilla escribe `bg-slate-50` en vez de `bg-brand-surface-muted`. Su final es
+   una plantilla escribe `bg-slate-50` en vez de `bg-surface`. Su final es
    quedarse sin consumidores y borrarse — NO ampliar la lista, que es lo que hacia que se
    escaparan 120 apariciones.
 
@@ -275,14 +275,14 @@ header {
        cambia el VALOR, no se le gana. El `!important` la hace ganar a la `.shadow-xl` de
        Tailwind, que vive en esta misma capa. */
     .shadow-xl {
-        box-shadow: var(--brand-elev-2) !important;
+        box-shadow: var(--elev-2) !important;
     }
 }
 
 .bg-slate-50,
 .bg-slate-50\/70,
 .bg-slate-50\/80 {
-  background-color: var(--brand-surface-muted);
+  background-color: var(--color-surface);
 }
 
 /* Solo `.bg-white` a secas, y NO por el color: pinta blanco con blanco, exactamente igual
@@ -293,9 +293,10 @@ header {
    Aqui estaban ademas `/80 /85 /90 /92 /95`, y esas SI hacian algo: aplastaban a blanco
    solido las cinco variantes con alfa. Cinco de los nodos afectados combinaban
    `bg-white/80` con `backdrop-blur` — un cristal esmerilado convertido en losa opaca, que
-   es la prueba de que era un accidente y no una decision. Y `bg-brand-white/80`, el mismo
-   proposito escrito con el otro nombre, salia translucido: el aspecto dependia de que
-   token hubiera elegido quien lo escribio. */
+   es la prueba de que era un accidente y no una decision. Entonces existia ademas un token
+   `--brand-white` propio, y `bg-brand-white/80` —el mismo proposito escrito con el otro
+   nombre— SI salia translucido, porque la regla no nombraba ese selector: el aspecto
+   dependia de que token hubiera elegido quien lo escribio. Ese token ya no existe. */
 .bg-white {
   background-color: var(--color-white);
 }
@@ -308,9 +309,9 @@ header {
    Los 54 consumidores que quedan son los que 4.4-d NO migro a proposito: los que caen
    sobre `input/select/textarea`, sobre `header` y sobre ese boton. */
 .border-slate-200 {
-  border-color: var(--brand-border) !important;
+  border-color: var(--color-line) !important;
 }
 
 .shadow-sm {
-  box-shadow: var(--brand-elev-1);
+  box-shadow: var(--elev-1);
 }

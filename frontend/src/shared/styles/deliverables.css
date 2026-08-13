@@ -5,7 +5,7 @@
    plantillas no las encuentra.
 
        --start   indigo   «aun no has empezado»
-       --sign    menta    «te toca firmar»          <- `--state-current`
+       --sign    menta    «te toca firmar»          <- `--color-step`
        --open    slate    «abrir», el neutro
 
    ⚠️ `group` se queda en la plantilla a proposito: es un marcador de variante de Tailwind,
@@ -18,7 +18,7 @@
        el DOM y no en el fuente. */
     .deasy-deliverable-action {
         @apply relative flex w-full items-center gap-2.5 rounded-[1rem] border bg-white px-3.5 py-2.5 text-left transition duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60;
-        box-shadow: 0 6px 16px rgba(var(--brand-shadow-ink-rgb), 0.04);
+        box-shadow: 0 6px 16px rgba(var(--elev-ink-rgb), 0.04);
     }
 
     .deasy-deliverable-action__chip {
@@ -50,18 +50,18 @@
        100 % daria un borde MAS claro al pasar el raton. */
 
     .deasy-deliverable-action--sign {
-        border-color: var(--state-current-ink);
+        border-color: var(--color-step-ink);
     }
 
     .deasy-deliverable-action--sign:hover {
-        border-color: color-mix(in srgb, var(--state-current-ink) 85%, var(--brand-black));
-        background-color: rgba(var(--state-current-rgb), 0.1);
+        border-color: color-mix(in srgb, var(--color-step-ink) 85%, var(--black));
+        background-color: rgba(var(--step-rgb), 0.1);
     }
 
     .deasy-deliverable-action--sign .deasy-deliverable-action__chip {
-        border-color: var(--state-current-ink);
-        background-color: rgba(var(--state-current-rgb), 0.1);
-        color: var(--state-current-ink);
+        border-color: var(--color-step-ink);
+        background-color: rgba(var(--step-rgb), 0.1);
+        color: var(--color-step-ink);
     }
 
     /* ── Tono: «abrir», el neutro ──────────────────────────────────────────────────── */

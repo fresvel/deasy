@@ -48,7 +48,7 @@
       <span v-if="data.collapsed" class="text-[11px] font-semibold text-indigo-500">▸</span>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
-      <span class="inline-flex items-center rounded-xl bg-brand-surface-muted px-1.5 py-0.5 text-[11px] font-semibold text-brand-icon ring-1 ring-slate-200">
+      <span class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-icon ring-1 ring-slate-200">
         {{ data.unit_type_name || 'Sin tipo' }}
       </span>
       <span
@@ -79,10 +79,10 @@ const hover = ref(false);
 const positionsBadgeClass = computed(() => {
   const total = Number(props.data.positions_count) || 0;
   const occ = Number(props.data.occupied_count) || 0;
-  if (total === 0) return "bg-brand-surface-muted text-slate-500 ring-slate-200";
-  if (occ >= total) return "bg-emerald-50 text-state-success ring-emerald-200";
+  if (total === 0) return "bg-surface text-slate-500 ring-slate-200";
+  if (occ >= total) return "bg-emerald-50 text-success ring-emerald-200";
   if (occ === 0) return "bg-rose-50 text-rose-600 ring-rose-200";
-  return "bg-amber-50 text-state-warning ring-amber-200";
+  return "bg-amber-50 text-warning ring-amber-200";
 });
 </script>
 

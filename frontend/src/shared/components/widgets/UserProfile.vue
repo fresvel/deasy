@@ -11,7 +11,7 @@
       <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-2xl bg-white object-cover">
       <span
         v-if="signatureMarker"
-        class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-brand-navy-deep bg-emerald-400"
+        class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-navy-deep bg-emerald-400"
         aria-hidden="true"
       ></span>
     </button>

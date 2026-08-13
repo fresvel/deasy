@@ -11,7 +11,7 @@
         <label for="identifier" class="deasy-form-label">Usuario</label>
         <div class="relative">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-            <IconUser class="h-5 w-5 text-brand-text-muted" />
+            <IconUser class="h-5 w-5 text-muted" />
           </div>
           <input
             id="identifier"
@@ -28,7 +28,7 @@
         <label for="password" class="deasy-form-label">Contraseña</label>
         <div class="relative">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-            <IconLock class="h-5 w-5 text-brand-text-muted" />
+            <IconLock class="h-5 w-5 text-muted" />
           </div>
           <input
             id="password"
@@ -41,7 +41,7 @@
           <button
             type="button"
             @click="showPassword = !showPassword"
-            class="absolute inset-y-0 right-0 flex items-center pr-4 text-brand-text-muted transition-colors hover:text-sky-600"
+            class="absolute inset-y-0 right-0 flex items-center pr-4 text-muted transition-colors hover:text-sky-600"
             aria-label="Mostrar u ocultar contraseña"
           >
             <IconEye v-if="!showPassword" class="h-5 w-5" />
@@ -78,9 +78,9 @@
     </Transition>
 
     <div class="relative my-7">
-      <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-brand-border"></div></div>
+      <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-line"></div></div>
       <div class="relative flex justify-center text-sm font-medium">
-        <span class="bg-white px-4 text-brand-text-muted">¿No tienes una cuenta?</span>
+        <span class="bg-white px-4 text-muted">¿No tienes una cuenta?</span>
       </div>
     </div>
 

@@ -12,7 +12,7 @@
     }
 
     .deasy-dialog-panel {
-        @apply rounded-xl border border-slate-200 bg-white shadow-[var(--brand-elev-3)];
+        @apply rounded-xl border border-slate-200 bg-white shadow-[var(--elev-3)];
     }
 
     .deasy-dialog-header {
@@ -41,14 +41,14 @@
        `contentClass`, `bodyClass` y `footerClass`. Un `header-class="…"` en la plantilla
        cae en `attrs` y acaba de atributo HTML suelto en el div del VELO, sin efecto. */
     .deasy-dialog-root .deasy-dialog-header {
-        background: var(--brand-surface-muted);
-        border-bottom: 1px solid var(--brand-border);
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--color-line);
         box-shadow: none;
     }
 
     .deasy-dialog-root .deasy-dialog-header .deasy-dialog-title,
     .deasy-dialog-root .deasy-dialog-title {
-        color: var(--brand-navy);
+        color: var(--color-navy);
     }
 
     .deasy-dialog-shell {
@@ -61,8 +61,8 @@
        blanca.** */
     .deasy-dialog-header {
         min-height: 3.75rem;
-        background: var(--brand-surface-muted);
-        border-bottom: 1px solid var(--brand-border);
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--color-line);
         padding: 1rem 1.25rem;
     }
 
@@ -75,14 +75,14 @@
        suelto de `overrides.css`. Si bajas esta regla de capa, deja de ganar. */
     .deasy-dialog-panel .deasy-btn--close {
         border-radius: 0.55rem;
-        border-color: var(--brand-border-field) !important;
+        border-color: var(--color-line-field) !important;
         background: var(--color-white);
-        color: var(--brand-icon);
+        color: var(--color-icon);
     }
 
     .deasy-dialog-panel .deasy-btn--close:hover {
-        background: var(--brand-surface-muted);
-        color: var(--brand-navy);
+        background: var(--color-surface);
+        color: var(--color-navy);
     }
 
     /* PANEL LATERAL (drawer) — la otra forma de la familia de dialogos: se ancla al borde
@@ -108,7 +108,7 @@
         width: min(30rem, 100vw);
         height: 100%;
         background: var(--color-white);
-        box-shadow: var(--brand-elev-3-left);
+        box-shadow: var(--elev-3-left);
     }
 
     /* Pestañas del panel: subrayado, no pildora. El `margin-bottom:-1px` monta el borde de la
@@ -119,19 +119,19 @@
         padding: 0.6rem 0.15rem;
         font-size: 0.85rem;
         font-weight: 600;
-        color: var(--brand-text-muted);
+        color: var(--color-muted);
         border-bottom: 2px solid transparent;
         margin-bottom: -1px;
         transition: color 0.15s ease, border-color 0.15s ease;
     }
 
     .deasy-drawer__tab:hover {
-        color: var(--brand-ink);
+        color: var(--color-ink);
     }
 
     .deasy-drawer__tab--active {
-        color: var(--brand-primary);
-        border-bottom-color: var(--brand-primary);
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
     }
 
     /* Vista previa del dossier en PDF. Ojo al medirla: `.pdf-preview-frame` y su `iframe`
@@ -139,7 +139,7 @@
 
     .pdf-preview-shell {
         min-height: 70vh;
-        background: var(--brand-surface-muted);
+        background: var(--color-surface);
     }
 
     .pdf-preview-frame {
@@ -159,7 +159,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--brand-text-muted);
+        color: var(--color-muted);
         font-size: 0.95rem;
     }
 }
@@ -181,16 +181,16 @@
 
    ⚠️ `FirmarPdf.vue:790` conserva a proposito su `border-slate-200` SIN MIGRAR: migrado, la
    utilidad pierde el `!important` del repintado, esta regla pasa a ganar y el borde cambia
-   de `--brand-border` a `--brand-border-field` (5 nodos). Unica excepcion de 4.4-d. */
+   de `--color-line` a `--color-line-field` (5 nodos). Unica excepcion de 4.4-d. */
 .deasy-dialog-root .deasy-dialog-header button {
   background: var(--color-white);
-  color: var(--brand-icon);
-  border: 1px solid var(--brand-border-field);
+  color: var(--color-icon);
+  border: 1px solid var(--color-line-field);
 }
 
 .deasy-dialog-root .deasy-dialog-header button:hover {
-  background: var(--brand-surface-muted);
-  color: var(--brand-navy);
+  background: var(--color-surface);
+  color: var(--color-navy);
 }
 
 /* ── 3. EL VELO DE TODOS LOS MODALES ───────────────────────────────────────────────────
@@ -206,13 +206,13 @@
 /* ── 4. EL PANEL ───────────────────────────────────────────────────────────────────────
    Por `content-class` llegan 20 `border-0`, 20 sombras y 1 `rounded-xl`, y esta regla se
    los come: 49 bordes + 44 sombras + 5 radios. El `border-color` lo pone ESTA regla, no
-   el repintado de `overrides.css` — las dos declaran `--brand-border`. */
+   el repintado de `overrides.css` — las dos declaran `--color-line`. */
 
 .deasy-dialog-panel {
   border-radius: 0.95rem;
-  border: 1px solid var(--brand-border);
+  border: 1px solid var(--color-line);
   background: var(--color-white);
-  box-shadow: var(--brand-elev-3);
+  box-shadow: var(--elev-3);
 }
 
 /* ── 5. EL TITULO ──────────────────────────────────────────────────────────────────────
@@ -223,7 +223,7 @@
 
 .deasy-dialog-title {
   margin: 0;
-  color: var(--brand-navy);
+  color: var(--color-navy);
   font-size: 1rem;
   /* `.admin-typography h5` (0,1,1) gana a esta clase (0,1,0) y lo dejaria en 500 */
   font-weight: 600 !important;
@@ -239,7 +239,7 @@
    `body-class="… bg-…"` de plantilla pierde. */
 
 .deasy-dialog-body {
-  color: var(--brand-text-body);
+  color: var(--color-body);
   font-size: 0.95rem;
   line-height: 1.55;
   padding: 1.25rem;
@@ -249,8 +249,8 @@
    Tapa 4 utilidades de `footer-class` (`border-0 pt-0`, `px-6 lg:px-8`): 6 nodos. */
 
 .deasy-dialog-footer {
-  background: var(--brand-surface-muted);
-  border-top: 1px solid var(--brand-border);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-line);
   padding: 1rem 1.25rem;
 }
 
@@ -269,16 +269,16 @@
 .process-dialog-content .deasy-dialog-body,
 .process-dialog-content .deasy-dialog-footer,
 .process-dialog-content .deasy-dialog-title {
-  font-family: var(--font-base);
-  font-size: var(--font-size-base);
+  font-family: var(--typeface);
+  font-size: var(--type-size);
   font-weight: 400;
-  color: var(--brand-ink);
+  color: var(--color-ink);
 }
 
 .process-dialog-content .deasy-dialog-header,
 .process-dialog-content .deasy-dialog-header .deasy-dialog-title {
   font-weight: 600;
-  color: var(--brand-ink);
+  color: var(--color-ink);
 }
 
 .process-dialog-content .deasy-dialog-body,
@@ -286,5 +286,5 @@
 .process-dialog-content .deasy-dialog-body small,
 .process-dialog-content .deasy-dialog-footer,
 .process-dialog-content .deasy-dialog-footer .text-muted {
-  color: var(--brand-ink);
+  color: var(--color-ink);
 }

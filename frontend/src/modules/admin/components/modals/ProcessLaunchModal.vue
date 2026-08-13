@@ -8,9 +8,9 @@
     @close="close"
   >
     <div class="flex flex-col gap-4">
-      <div v-if="term" class="rounded-2xl border border-brand-border bg-brand-surface-muted px-4 py-3 text-sm">
+      <div v-if="term" class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
         <span class="font-semibold text-slate-700">Periodo:</span>
-        <span class="ml-1 text-brand-icon">{{ term.name || `#${term.id}` }}</span>
+        <span class="ml-1 text-icon">{{ term.name || `#${term.id}` }}</span>
       </div>
 
       <div v-if="loading" class="text-sm text-slate-500">Cargando estado de lanzamiento...</div>
@@ -39,7 +39,7 @@
             <li
               v-for="def in definitions"
               :key="def.definition_id"
-              class="flex flex-col gap-2 rounded-2xl border border-brand-border bg-white px-4 py-3"
+              class="flex flex-col gap-2 rounded-2xl border border-line bg-white px-4 py-3"
             >
               <div class="flex items-center justify-between gap-3">
                 <div class="flex flex-col">
@@ -66,8 +66,8 @@
                 </div>
               </div>
 
-              <div v-if="relaunchOpenId === def.definition_id" class="flex flex-col gap-2 rounded-xl bg-brand-surface-muted px-3 py-2">
-                <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-brand-icon">Motivo del relanzamiento (opcional)</label>
+              <div v-if="relaunchOpenId === def.definition_id" class="flex flex-col gap-2 rounded-xl bg-surface px-3 py-2">
+                <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-icon">Motivo del relanzamiento (opcional)</label>
                 <input :id="fieldId('relaunchreason')"
                   v-model="relaunchReason"
                   type="text"
@@ -122,7 +122,7 @@ const statusLabel = (def) => {
 const statusClass = (def) => {
   if (def.relaunched) return "text-amber-600 font-medium";
   if (def.launched) return "text-emerald-600 font-medium";
-  return "text-brand-text-muted font-medium";
+  return "text-muted font-medium";
 };
 
 const loadStatus = async () => {
