@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="rounded-2xl border border-line bg-white p-4 shadow-sm">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div class="block text-sm font-bold text-slate-800">Campos de Firma</div>
         <BtnDelete
@@ -11,7 +11,7 @@
         />
       </div>
       <div class="flex flex-col gap-3">
-        <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
+        <div class="flex items-center rounded-xl border border-line bg-slate-50/80 p-1 shadow-sm">
           <button
             v-if="showFieldControls"
             type="button"
@@ -23,9 +23,9 @@
           </button>
           <div
             class="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-1 text-center"
-            :class="showFieldControls ? 'border-x border-slate-200' : ''"
+            :class="showFieldControls ? 'border-x border-line' : ''"
           >
-            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modo</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-muted">Modo</div>
             <div class="text-sm font-bold text-slate-800">{{ currentBatchModeLabel }}</div>
           </div>
           <button
@@ -41,7 +41,7 @@
 
         <div v-if="showPageReference" class="flex flex-col gap-2">
           <div class="text-xs font-semibold text-slate-500">Referencia de página</div>
-          <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
+          <div class="flex items-center rounded-xl border border-line bg-slate-50/80 p-1 shadow-sm">
             <button
               v-if="showFieldControls"
               type="button"
@@ -53,9 +53,9 @@
             </button>
             <div
               class="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-1 text-center"
-              :class="showFieldControls ? 'border-x border-slate-200' : ''"
+              :class="showFieldControls ? 'border-x border-line' : ''"
             >
-              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referencia</div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-muted">Referencia</div>
               <div class="text-sm font-bold text-slate-800">{{ currentPageReferenceLabel }}</div>
             </div>
             <button
@@ -72,7 +72,7 @@
 
         <div
           v-if="currentModeFieldsCount"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-success"
         >
           <IconCheck class="h-4 w-4" />
           {{ currentModeFieldsCount }} preparada(s)
@@ -83,17 +83,17 @@
     <div class="text-sm font-bold text-slate-800">Resultados</div>
 
     <div class="grid grid-cols-2 gap-3">
-      <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-center">
+      <div class="flex flex-col items-center justify-center rounded-xl border border-line bg-surface p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Documentos</div>
         <div class="text-2xl font-black leading-none text-slate-800">{{ documentsCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">Éxitos</div>
-        <div class="text-2xl font-black leading-none text-emerald-700">{{ successCount }}</div>
+        <div class="text-2xl font-black leading-none text-success">{{ successCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-amber-600">Pendientes</div>
-        <div class="text-2xl font-black leading-none text-amber-700">{{ pendingCount }}</div>
+        <div class="text-2xl font-black leading-none text-warning">{{ pendingCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-rose-600">Fallos</div>
@@ -117,7 +117,7 @@
         <div class="h-full rounded-full bg-sky-500 transition-all duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
       </div>
 
-      <div v-if="batchJob" class="mt-4 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+      <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5 shadow-sm">
         <div class="flex items-center justify-between gap-3">
           <div class="flex flex-col">
             <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Estado</span>

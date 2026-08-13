@@ -1,7 +1,7 @@
 <template>
   <AppModalShell ref="modalRef" labelled-by="personAssignmentsModalLabel" title="Asignaciones del usuario" size="xl">
     <div class="person-assignment-panel">
-      <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+      <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-action-view">
         Usa el boton de asignaciones en la fila de una persona para empezar.
       </div>
       <template v-else>

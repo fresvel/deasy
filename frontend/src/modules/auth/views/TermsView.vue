@@ -1,7 +1,7 @@
 <template>
   <div class="deasy-auth-page flex justify-center">
     <div class="deasy-auth-card flex max-w-4xl flex-col">
-      <div class="relative shrink-0 overflow-hidden border-b border-slate-200 bg-white p-8 text-slate-950 sm:p-10">
+      <div class="relative shrink-0 overflow-hidden border-b border-line bg-white p-8 text-slate-950 sm:p-10">
         <div class="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
             <AppLogo size="lg" class-name="mb-5" />
@@ -11,7 +11,7 @@
 
           <router-link
             to="/register"
-            class="inline-flex w-fit shrink-0 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
+            class="inline-flex w-fit shrink-0 items-center gap-2 rounded-2xl border border-line bg-white px-5 py-2.5 font-semibold text-slate-700 shadow-sm transition-all hover:bg-surface"
           >
             <IconArrowLeft class="h-5 w-5" />
             Volver al registro
@@ -20,7 +20,7 @@
       </div>
 
       <div class="relative w-full grow rounded-b-xl bg-white p-8 sm:p-10 lg:p-12">
-        <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-slate-400">
+        <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-muted">
           <IconLoader class="mb-4 h-10 w-10 animate-spin text-blue-600" />
           <p class="font-medium">Cargando términos y condiciones...</p>
         </div>
@@ -33,11 +33,11 @@
           </button>
         </div>
 
-        <div v-else class="prose prose-slate prose-headings:font-semibold prose-headings:text-slate-900 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-h1:text-3xl prose-h2:mt-10 prose-h2:text-2xl prose-p:text-slate-600 prose-li:text-slate-600 max-w-none">
+        <div v-else class="prose prose-slate prose-headings:font-semibold prose-headings:text-slate-900 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-h1:text-3xl prose-h2:mt-10 prose-h2:text-2xl prose-p:text-icon prose-li:text-icon max-w-none">
           <div v-html="markdownContent"></div>
         </div>
 
-        <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-8 sm:flex-row">
+        <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-8 sm:flex-row">
           <p class="text-sm font-medium text-slate-500">
             Al registrarte en el sistema, confirmas tu conformidad con estas políticas.
           </p>

@@ -26,7 +26,7 @@
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <IconMail class="h-5 w-5 text-slate-400" />
+            <IconMail class="h-5 w-5 text-muted" />
           </div>
           <input
             :id="fieldId('email')"
@@ -158,7 +158,7 @@
       leave-to-class="transform -translate-y-2 opacity-0"
     >
       <div v-if="statusMessage" class="mt-6 flex p-4 rounded-2xl border text-sm font-medium" :class="[
-        isError ? 'bg-red-50 border-red-100 text-red-600' : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+        isError ? 'bg-red-50 border-red-100 text-red-600' : 'bg-emerald-50 border-emerald-100 text-success'
       ]">
         <IconAlertCircle v-if="isError" class="h-5 w-5 shrink-0 mr-3 mt-0.5 text-red-500" />
         <IconCheck class="h-5 w-5 shrink-0 mr-3 mt-0.5" v-else />

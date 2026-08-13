@@ -35,7 +35,7 @@
       </div>
       <div v-else-if="recordViewerTable && recordViewerRow" class="space-y-7">
         <section aria-labelledby="recordViewerGeneralTitle">
-          <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div class="mb-3 flex items-center justify-between gap-3 border-b border-line pb-3">
             <div>
               <p class="m-0 text-xs font-semibold text-slate-500">Detalle del registro</p>
               <h6 id="recordViewerGeneralTitle" class="m-0 mt-1 text-base font-bold text-slate-800">
@@ -46,19 +46,19 @@
               v-if="activeValue"
               class="inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold"
               :class="activeValue === 'Si'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-slate-200 bg-slate-100 text-slate-600'"
+                ? 'border-emerald-200 bg-emerald-50 text-success'
+                : 'border-line bg-surface text-icon'"
             >
               <span class="h-1.5 w-1.5 rounded-full" :class="activeValue === 'Si' ? 'bg-emerald-500' : 'bg-slate-400'" />
               {{ activeValue === "Si" ? "Activo" : "Inactivo" }}
             </span>
           </div>
 
-          <dl class="grid grid-cols-1 overflow-hidden border-y border-slate-200 sm:grid-cols-2 lg:grid-cols-3">
+          <dl class="grid grid-cols-1 overflow-hidden border-y border-line sm:grid-cols-2 lg:grid-cols-3">
             <div
               v-for="row in summaryRows"
               :key="row.id"
-              class="min-w-0 border-b border-slate-100 px-1 py-3.5 sm:px-4"
+              class="min-w-0 border-b border-line px-1 py-3.5 sm:px-4"
             >
               <dt class="mb-1 text-xs font-semibold text-slate-500">{{ row.label }}</dt>
               <dd class="m-0 min-w-0 text-sm font-semibold leading-6 text-slate-800">
@@ -70,7 +70,7 @@
                       :key="section.mode"
                       class="space-y-2"
                     >
-                      <div class="text-xs font-bold text-slate-600">{{ section.label }}</div>
+                      <div class="text-xs font-bold text-icon">{{ section.label }}</div>
                       <div
                         v-for="entry in section.entries"
                         :key="`${section.mode}-${entry.format}`"
@@ -83,14 +83,14 @@
                       </div>
                     </div>
                   </template>
-                  <span v-else class="text-slate-400">-</span>
+                  <span v-else class="text-muted">-</span>
                 </div>
               </template>
               <span
                 v-else
                 class="block min-w-0 whitespace-pre-wrap break-words"
                 :class="isLongValue(row)
-                  ? 'max-h-48 overflow-auto rounded-xl bg-slate-50 p-2 font-mono text-xs font-medium text-slate-600'
+                  ? 'max-h-48 overflow-auto rounded-xl bg-surface p-2 font-mono text-xs font-medium text-icon'
                   : ''"
               >
                 {{ getFormattedViewerValue(row) }}
@@ -100,17 +100,17 @@
           </dl>
         </section>
 
-        <section v-for="section in relatedSections" :key="section.key" class="border-t border-slate-200 pt-5">
+        <section v-for="section in relatedSections" :key="section.key" class="border-t border-line pt-5">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-icon">
                 <IconSettings class="h-4.5 w-4.5" />
               </span>
               <div class="min-w-0">
                 <p class="m-0 text-xs font-semibold text-slate-500">{{ sectionEyebrow(section) }}</p>
                 <h6 class="m-0 mt-0.5 flex items-center gap-2 text-base font-bold text-slate-800">
                   <span>{{ sectionTitle(section) }}</span>
-                  <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-slate-100 px-1.5 text-xs font-bold text-slate-600">
+                  <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">
                     {{ section.rows.length }}
                   </span>
                 </h6>
@@ -132,10 +132,10 @@
           </div>
           <div
             v-else-if="section.rows.length === 0"
-            class="flex min-h-32 flex-col items-center justify-center border-y border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center"
+            class="flex min-h-32 flex-col items-center justify-center border-y border-dashed border-line bg-slate-50/70 px-4 py-6 text-center"
           >
-            <IconInbox class="mb-2 h-6 w-6 text-slate-400" />
-            <p class="m-0 text-sm font-semibold text-slate-600">
+            <IconInbox class="mb-2 h-6 w-6 text-muted" />
+            <p class="m-0 text-sm font-semibold text-icon">
               {{ isProcessConfigurationSection(section) ? "Este proceso aun no tiene configuraciones." : "Sin registros relacionados." }}
             </p>
             <p v-if="isProcessConfigurationSection(section)" class="m-0 mt-1 max-w-lg text-xs leading-5 text-slate-500">
@@ -148,7 +148,7 @@
             :rows="section.rows"
             :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white"
+            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white"
             scroll-class=""
             actions-label="Accion"
           >
@@ -303,9 +303,9 @@ const emit = defineEmits([
 
 // Indicador de sincronización del flujo (plantillas): synced / stale / no_link.
 const SYNC_BADGE_META = {
-  synced: { label: "Flujo sincronizado", class: "bg-emerald-100 text-emerald-700 ring-emerald-200" },
+  synced: { label: "Flujo sincronizado", class: "bg-emerald-100 text-success ring-emerald-200" },
   stale: { label: "Flujo desincronizado", class: "bg-amber-100 text-amber-800 ring-amber-200" },
-  no_link: { label: "Flujo sin vínculo", class: "bg-slate-100 text-slate-600 ring-slate-200" }
+  no_link: { label: "Flujo sin vínculo", class: "bg-surface text-icon ring-slate-200" }
 };
 const syncBadge = computed(() => {
   const status = props.syncStatus?.status;

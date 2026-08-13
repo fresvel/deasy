@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+  <div class="inline-flex items-center rounded-xl border border-line bg-white p-1 shadow-sm">
     <button
       type="button"
       class="rounded-2xl p-2 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -11,16 +11,16 @@
     </button>
 
     <div
-      class="border-x border-slate-100 px-3 py-1 text-center"
+      class="border-x border-line px-3 py-1 text-center"
       :class="editable ? 'min-w-[7.5rem]' : 'min-w-[5rem]'"
     >
       <template v-if="editable">
-        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ label }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-muted">{{ label }}</div>
         <div class="flex items-center justify-center gap-1 text-sm font-bold text-slate-700">
           <input
             :value="modelValue"
             aria-label="Ir al número"
-            class="w-10 rounded-2xl border border-slate-100 bg-slate-50 px-1.5 py-1 text-center text-sm font-black text-slate-700 shadow-inner outline-none transition [appearance:textfield] focus:border-sky-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(14,165,233,0.12)] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            class="w-10 rounded-2xl border border-slate-200 bg-slate-50 px-1.5 py-1 text-center text-sm font-black text-slate-700 shadow-inner outline-none transition [appearance:textfield] focus:border-sky-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(14,165,233,0.12)] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
@@ -33,7 +33,7 @@
       </template>
 
       <template v-else>
-        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ label }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-muted">{{ label }}</div>
         <div class="text-sm font-bold text-slate-700">{{ current }} / {{ total }}</div>
       </template>
     </div>

@@ -56,7 +56,7 @@
     />
 
     <div v-if="table && isTemplateArtifactsTable" class="mb-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
-      <p class="m-0 flex items-start gap-2 text-sm text-sky-800">
+      <p class="m-0 flex items-start gap-2 text-sm text-action-view">
         <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
         <span>
           <strong>Consulta y versionado.</strong>
@@ -136,7 +136,7 @@
 
     <div v-if="!table" class="flex">
       <div class="w-full">
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="rounded-2xl border border-line bg-white shadow-sm">
           <div class="p-5">
             <p class="mb-0 text-sm text-slate-500">Selecciona una tabla para administrar.</p>
           </div>
@@ -654,7 +654,7 @@
           @update:view="processDefinitionActivationView = $event"
           @view-row="handleActivationViewRow"
         />
-        <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
+        <div class="mt-4 flex items-center justify-end gap-2 border-t border-line pt-3">
           <span v-if="!allProcessDefinitionActivationRequirementsMet" class="mr-auto text-sm font-medium text-amber-600">
             Completa los requisitos (reglas, disparadores) para activar.
           </span>

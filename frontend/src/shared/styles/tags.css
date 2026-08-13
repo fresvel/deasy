@@ -16,7 +16,7 @@
     }
 
     .deasy-tag--warning {
-        @apply border-amber-200 bg-amber-50 text-amber-700;
+        @apply border-amber-200 bg-amber-50 text-warning;
     }
 
     .deasy-tag--info {
@@ -24,7 +24,7 @@
     }
 
     .deasy-tag--neutral {
-        @apply border-slate-200 bg-slate-50 text-slate-600;
+        @apply border-slate-200 bg-slate-50 text-icon;
     }
 
     .deasy-tag--muted {
@@ -33,30 +33,22 @@
 
     /* Salmón: pendiente de firma en los pasos de firma. */
     .deasy-tag--salmon {
-        @apply border-[color-mix(in_srgb,var(--state-pending)_71%,var(--brand-white))] bg-[color-mix(in_srgb,var(--state-pending)_10%,var(--brand-white))] text-[var(--state-pending)];
+        @apply border-[color-mix(in_srgb,var(--color-pending)_71%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-pending)_10%,var(--color-white))] text-pending;
     }
 
     .deasy-tag--accent {
-        @apply border-sky-300 bg-sky-100 text-sky-800;
+        @apply border-sky-300 bg-sky-100 text-action-view;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L558 + ex-L1482. Del bloque 1 solo sobrevive `backdrop-blur-sm`
-       (el bloque 2 no toca backdrop-filter); borde, fondo y color son los del skin plano. */
     .deasy-tag--contrast {
         @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none backdrop-blur-sm;
         background-image: none;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L562 + ex-L1483. Idem: solo sobrevive `backdrop-blur-sm`. El degradado
-       del bloque 1 lo mataba explicitamente el `background-image: none` del bloque 2. */
     .deasy-tag--hero {
         @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none backdrop-blur-sm;
         background-image: none;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L566 + ex-L1376. El bloque 2 anadia `min-h-10`, `shadow-none` y
-       `focus:outline-none`; el radio era identico en ambos.
-       [fase-4 2026-08-09] Aqui ponia `rounded-lg`, que por el secuestro de `--radius-*` pintaba
-       16px en vez de 8. Ahora es `rounded-2xl`, que son los mismos 16px sin el secuestro. */
     
 }

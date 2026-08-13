@@ -23,7 +23,7 @@
       <span class="max-w-[9.5rem] truncate text-[12px] font-semibold text-slate-700">{{ data.definition_name }}</span>
       <span class="ml-auto inline-flex items-center rounded px-1 py-0.5 text-[10px] font-semibold ring-1" :class="statusChipClass">{{ statusLabel }}</span>
     </p>
-    <p class="m-0 mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
+    <p class="m-0 mt-0.5 flex items-center gap-1 text-[10px] text-muted">
       <span class="truncate">{{ seriesLabel }}</span>
       <span class="shrink-0">· v{{ data.definition_version }}</span>
     </p>
@@ -54,19 +54,25 @@ const hover = ref(false);
 
 const statusLabel = computed(() => ({ active: "Activa", draft: "Borrador", retired: "Retirada" }[props.data.status] || props.data.status));
 // El estado se lee por el borde izquierdo y por la etiqueta; el fondo NO lo tiñe.
-// Aquí hubo un `bg-emerald-50/40` / `bg-amber-50/40` / `bg-slate-50` que nunca se llegó a
-// ver: el `<style scoped>` del componente declaraba `background: #fff` y, al no estar en
-// ninguna capa, ganaba a las utilidades de Tailwind. Se han quitado porque el tinte no
-// añade información que el borde y la etiqueta no den ya, y sí resta contraste al texto.
+//
+// Aquí hubo tres tintes de fondo —emerald, amber y el gris de superficie, los tres al 40 %—
+// que nunca se llegaron a ver: el `<style scoped>` del componente declaraba `background:#fff`
+// y, al no estar en ninguna capa, ganaba a las utilidades de Tailwind. Se quitaron porque el
+// tinte no añade información que el borde y la etiqueta no den ya, y sí resta contraste.
+//
+// ⚠️ Los nombres de esas clases van DESCRITOS y no escritos a propósito. Este comentario lo
+// han reescrito CUATRO scripts de migración distintos (F4.1, F4.4-a, F4.4-d y uno anterior),
+// porque contenía literales que sus expresiones regulares casaban. Un reemplazo masivo no
+// distingue código de prosa. Si vuelves a nombrarlas aquí, volverá a pasar.
 const statusBorderClass = computed(() => {
   if (props.data.status === "active") return "border-l-emerald-400 border-y border-r border-y-slate-200 border-r-slate-200";
   if (props.data.status === "draft") return "border-l-amber-400 border-y border-r border-y-slate-200 border-r-slate-200";
   return "border-l-slate-300 border-y border-r border-y-slate-200 border-r-slate-200";
 });
 const statusChipClass = computed(() => {
-  if (props.data.status === "active") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (props.data.status === "draft") return "bg-amber-50 text-amber-700 ring-amber-200";
-  return "bg-slate-100 text-slate-500 ring-slate-200";
+  if (props.data.status === "active") return "bg-emerald-50 text-success ring-emerald-200";
+  if (props.data.status === "draft") return "bg-amber-50 text-warning ring-amber-200";
+  return "bg-surface text-slate-500 ring-slate-200";
 });
 const seriesLabel = computed(() => {
   if (props.data.series_source_type === "cargo") return `Cargo · ${props.data.series_cargo_name || props.data.series_code}`;

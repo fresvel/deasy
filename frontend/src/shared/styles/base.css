@@ -1,17 +1,30 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* La capa BASE del proyecto — y las CUATRO reglas de aqui que NO pueden bajar a ella.
+   Cada una lleva su motivo; el inventario de lo que suprimen, en la bitacora (§4.4-c). */
+
+@layer base {
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    /* ⚠️ `tokens.css` trae otro `body`/`#app` en `@layer base`, e `index.css` lo importa
+       ANTES que este fichero: dentro de la capa gana este por orden. No inviertas los
+       imports. */
+    body {
+        margin: 0;
+        font-family: var(--typeface);
+        font-size: var(--type-size);
+        line-height: var(--type-leading);
+        color: var(--color-navy);
+        background-color: var(--color-navy-deep);
+    }
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-base);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
-  color: var(--brand-navy);
-  background-color: var(--brand-navy-deep);
-}
+/* SE QUEDA SIN CAPA (1 de 4) — la tipografia de los encabezados. Bajarla resucita 109
+   utilidades en 77 de los 95 encabezados del proyecto: hoy un `font-semibold` sobre un
+   `<h3>` renderiza a 500, porque este `font-weight` va sin capa y gana a
+   `@layer utilities`. (`font-size` no, porque esta regla no lo declara.) §6.1. */
 
 h1,
 h2,
@@ -25,46 +38,60 @@ h6,
 .h4,
 .h5,
 .h6 {
-  font-family: var(--font-base);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-heading);
+  font-family: var(--typeface);
+  font-weight: 500;
+  line-height: var(--type-leading-heading);
   letter-spacing: -0.01em;
 }
 
-.admin-typography,
-.home-typography {
-  font-family: var(--font-base);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
+@layer base {
+    /* La tipografia base del CONTENEDOR, no la de los encabezados. */
+    .admin-typography {
+        font-family: var(--typeface);
+        font-size: var(--type-size);
+        line-height: var(--type-leading);
+    }
 }
+
+/* SE QUEDA SIN CAPA (2 de 4) — hermana de la anterior. Capada, los encabezados de admin
+   pasarian a usar el peso de la utilidad que llevan escrito. Las dos bajan juntas (§6.1).
+
+   Aqui habia ademas los seis `.home-typography h1..h6`, y no hacian nada: esa clase no
+   esta en una sola plantilla. El razonamiento que sostenia el comentario —«los del resto
+   de la app se quedarian en 500»— hablaba de una mitad que nunca llego al DOM. */
 
 .admin-typography h1,
 .admin-typography h2,
 .admin-typography h3,
 .admin-typography h4,
 .admin-typography h5,
-.admin-typography h6,
-.home-typography h1,
-.home-typography h2,
-.home-typography h3,
-.home-typography h4,
-.home-typography h5,
-.home-typography h6 {
-  font-family: var(--font-base);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-heading);
+.admin-typography h6 {
+  font-family: var(--typeface);
+  font-weight: 500;
+  line-height: var(--type-leading-heading);
 }
 
+/* SE QUEDAN SIN CAPA (3 y 4 de 4) — el color de los enlaces. `a` es (0,0,1), la
+   especificidad mas baja que existe, y aun asi gana a todo lo capado: tapa 3 `text-*` de
+   plantilla y `.deasy-auth-link`, que declara `--color-primary` desde `@layer components`.
+   Por eso el «¿Olvidaste tu contraseña?» del login sale TEAL y no violeta. Capar `a` lo
+   arregla de golpe, y por eso no se hace aqui: es cambio visual, y es §4.2. */
+
 a {
-  color: var(--brand-accent);
+  color: var(--color-accent);
 }
 
 a:hover {
-  color: var(--brand-primary);
+  color: var(--color-primary);
 }
 
-body,
-#app {
-  background: var(--brand-navy-deep);
-  color: var(--brand-text-strong);
+@layer base {
+    /* ⚠️ Va DESPUES del `body` de arriba a proposito: dentro de la misma capa manda el
+       orden, y este `color` es el que gana al `--color-navy` del primer bloque. Si juntas
+       los dos bloques, respeta el orden. */
+    body,
+    #app {
+        background: var(--color-navy-deep);
+        color: var(--color-strong);
+    }
 }

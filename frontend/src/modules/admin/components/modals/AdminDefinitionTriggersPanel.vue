@@ -8,7 +8,7 @@
     </div>
 
     <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
-    <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+    <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-action-view">
       Esta configuracion no esta en draft. Solo puedes gestionar los periodos del proceso cuando la configuracion este en draft.
     </div>
 
@@ -66,7 +66,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin periodos vinculados."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
+      responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">

@@ -4,17 +4,17 @@
     labelled-by="deliverable-preview-modal-title"
     :title="name || 'Vista previa del archivo'"
     size="xl"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="min-h-[60vh]">
       <iframe
         v-if="url && isPdf"
         :src="url"
-        class="w-full min-h-[70vh] rounded-2xl border border-slate-200 bg-white"
+        class="w-full min-h-[70vh] rounded-2xl border border-line bg-white"
         title="Vista previa del archivo"
       />
-      <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+      <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm text-icon">
         El archivo no se puede previsualizar en línea. Usa la opción de descarga.
       </div>
     </div>

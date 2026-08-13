@@ -62,10 +62,10 @@ const hover = ref(false);
 const lifecycleState = computed(() => String(props.data.lifecycle_state || "published"));
 const stateLabel = computed(() => ({ draft: "Borrador", published: "Publicada", retired: "Retirada" }[lifecycleState.value] || lifecycleState.value));
 const stateBadgeClass = computed(() => ({
-  published: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  draft: "bg-amber-50 text-amber-700 ring-amber-200",
-  retired: "bg-slate-100 text-slate-500 ring-slate-200"
-}[lifecycleState.value] || "bg-slate-100 text-slate-500 ring-slate-200"));
+  published: "bg-emerald-50 text-success ring-emerald-200",
+  draft: "bg-amber-50 text-warning ring-amber-200",
+  retired: "bg-surface text-slate-500 ring-slate-200"
+}[lifecycleState.value] || "bg-surface text-slate-500 ring-slate-200"));
 const stateDotClass = computed(() => ({
   published: "bg-emerald-500",
   draft: "bg-amber-500",

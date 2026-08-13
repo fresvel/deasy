@@ -17,7 +17,7 @@
         </AppInfoTip>
       </div>
       <div class="flex flex-wrap items-center gap-3">
-        <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+        <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
           Relación
           <select
             v-model="activeRelationType"
@@ -27,7 +27,7 @@
             <option value="all">Todos los tipos</option>
           </select>
         </label>
-        <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+        <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
           <input v-model="showInactive" type="checkbox" class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
           Mostrar inactivas
         </label>
@@ -50,30 +50,30 @@
         />
         <AppButton variant="secondary" size="sm" @click="searchAndCenter">Buscar</AppButton>
       </div>
-      <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+      <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
         <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-slate-300 text-amber-600" />
         Resaltar pendientes
-        <span v-if="pendingCount" class="inline-flex items-center rounded-xl bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">{{ pendingCount }}</span>
+        <span v-if="pendingCount" class="inline-flex items-center rounded-xl bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-warning ring-1 ring-amber-200">{{ pendingCount }}</span>
       </label>
       <AppButton variant="secondary" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
 
     <!-- Leyenda de tipos de relación presentes -->
     <div v-if="legend.length > 1" class="flex flex-wrap items-center gap-3">
-      <span v-for="item in legend" :key="item.code" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600">
+      <span v-for="item in legend" :key="item.code" class="inline-flex items-center gap-1.5 text-xs font-medium text-icon">
         <span class="inline-block h-2.5 w-4 rounded-full" :style="{ backgroundColor: item.color }"></span>
         {{ item.name }}
       </span>
     </div>
 
-    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'">
+    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
       {{ feedback.message }}
     </div>
 
-    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-slate-200 bg-slate-50">
+    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-slate-500">Cargando organigrama…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-rose-500">{{ error }}</div>
-      <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-slate-400">No hay unidades para mostrar.</div>
+      <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-muted">No hay unidades para mostrar.</div>
       <VueFlow
         v-else
         v-model:nodes="nodes"
@@ -108,7 +108,7 @@
       panel-class="max-w-md"
       @close="selectedEdge = null"
     >
-      <p class="m-0 text-sm text-slate-600">
+      <p class="m-0 text-sm text-icon">
         ¿Quitar la relación <strong>{{ selectedEdgeLabel }}</strong>? La unidad hija quedará sin padre en este tipo de relación.
       </p>
       <template #footer>
@@ -124,7 +124,7 @@
       panel-class="max-w-md"
       @close="editingEdge = null"
     >
-      <p class="m-0 mb-3 text-sm text-slate-600">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
+      <p class="m-0 mb-3 text-sm text-icon">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
       <label class="block text-sm font-medium text-slate-700">
         Tipo de relación
         <select v-model="editingTypeCode" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
@@ -144,7 +144,7 @@
       panel-class="max-w-md"
       @close="createContext = null"
     >
-      <p class="m-0 mb-3 text-sm text-slate-600">{{ createDialogHint }}</p>
+      <p class="m-0 mb-3 text-sm text-icon">{{ createDialogHint }}</p>
       <div class="flex flex-col gap-3">
         <label class="block text-sm font-medium text-slate-700">
           Nombre
@@ -158,7 +158,7 @@
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">
-          Slug <span class="font-normal text-slate-400">(opcional)</span>
+          Slug <span class="font-normal text-muted">(opcional)</span>
           <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="se deriva del nombre" />
         </label>
       </div>
@@ -173,16 +173,16 @@
       <aside class="deasy-drawer">
         <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div class="min-w-0">
-            <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Detalle de unidad</p>
+            <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Detalle de unidad</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-slate-800">{{ detailUnit.name }}</h3>
           </div>
-          <button type="button" class="shrink-0 text-slate-400 transition-colors hover:text-slate-600" title="Cerrar" @click="closeDetail">
+          <button type="button" class="shrink-0 text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeDetail">
             <IconX class="h-5 w-5" />
           </button>
         </header>
 
         <!-- Pestañas del panel -->
-        <div class="flex gap-4 border-b border-slate-200 px-5">
+        <div class="flex gap-4 border-b border-line px-5">
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'ocupaciones' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
           <button type="button" class="deasy-drawer__tab" :class="detailTab === 'procesos' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('procesos')">Procesos</button>
         </div>
@@ -219,39 +219,39 @@
           </div>
 
           <div v-if="detailLoading" class="text-sm text-slate-500">Cargando…</div>
-          <div v-else-if="!detailPositions.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+          <div v-else-if="!detailPositions.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
             Esta unidad no tiene puestos registrados.
           </div>
           <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-            <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+            <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-line px-3 py-2.5">
               <div class="flex items-center gap-2">
                 <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-amber-500" title="Jefatura" />
                 <span class="truncate text-sm font-semibold text-slate-800">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
-                <span class="text-xs text-slate-400">#{{ pos.slot_no }}</span>
+                <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
                 <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-rose-500">Inactivo</span>
                 <div v-if="editable" class="ml-auto flex items-center gap-1">
-                  <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-amber-500' : 'text-slate-400'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
+                  <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-amber-500' : 'text-muted'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
                     <IconCrown class="h-4 w-4" />
                   </button>
-                  <button type="button" class="graph-icon-btn text-slate-400 hover:text-indigo-600" title="Editar puesto" @click="openEditPosition(pos)">
+                  <button type="button" class="graph-icon-btn text-muted hover:text-indigo-600" title="Editar puesto" @click="openEditPosition(pos)">
                     <IconPencil class="h-4 w-4" />
                   </button>
-                  <button type="button" class="graph-icon-btn text-slate-400 hover:text-rose-600" title="Eliminar puesto" @click="removePosition(pos.id)">
+                  <button type="button" class="graph-icon-btn text-muted hover:text-rose-600" title="Eliminar puesto" @click="removePosition(pos.id)">
                     <IconTrash class="h-4 w-4" />
                   </button>
                 </div>
               </div>
               <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <template v-if="pos.person_id">
-                  <span class="inline-flex items-center rounded-xl bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 ring-1 ring-emerald-200">Ocupado</span>
-                  <span class="truncate text-slate-600">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
+                  <span class="inline-flex items-center rounded-xl bg-emerald-50 px-2 py-0.5 font-semibold text-success ring-1 ring-emerald-200">Ocupado</span>
+                  <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                   <template v-if="editable">
                     <button type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openAssign(pos.id)">Cambiar</button>
                     <button type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="unassign(pos.id)">Quitar</button>
                   </template>
                 </template>
                 <template v-else>
-                  <span class="inline-flex items-center rounded-xl bg-slate-100 px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
+                  <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
                   <button v-if="editable" type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openAssign(pos.id)">Asignar</button>
                 </template>
               </div>
@@ -260,7 +260,7 @@
               <button
                 v-if="editable"
                 type="button"
-                class="mt-2 inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                class="mt-2 inline-flex items-center gap-1.5 rounded-2xl border border-line px-2.5 py-1 text-[11px] font-semibold text-icon transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
                 @click="openProfileWizard(pos)"
               >
                 <IconFileDescription class="h-3.5 w-3.5" />
@@ -268,7 +268,7 @@
               </button>
 
               <!-- Buscador de persona para asignar -->
-              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-line bg-surface p-2">
                 <input
                   v-model="personQuery"
                   type="text"
@@ -277,16 +277,16 @@
                   class="h-8 w-full rounded-xl border border-slate-300 px-2 text-xs outline-none focus:border-indigo-400"
                   @input="searchPersons"
                 />
-                <div v-if="personSearching" class="mt-1 px-1 text-[11px] text-slate-400">Buscando…</div>
+                <div v-if="personSearching" class="mt-1 px-1 text-[11px] text-muted">Buscando…</div>
                 <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
                   <li v-for="per in personResults" :key="per.id">
                     <button type="button" class="flex w-full items-center justify-between rounded-xl px-2 py-1 text-left text-xs hover:bg-indigo-50" @click="pickPerson(per.id)">
                       <span class="truncate text-slate-700">{{ per.first_name }} {{ per.last_name }}</span>
-                      <span class="ml-2 shrink-0 text-slate-400">{{ per.cedula }}</span>
+                      <span class="ml-2 shrink-0 text-muted">{{ per.cedula }}</span>
                     </button>
                   </li>
                 </ul>
-                <div v-else-if="personQuery.trim().length >= 2" class="mt-1 px-1 text-[11px] text-slate-400">Sin resultados.</div>
+                <div v-else-if="personQuery.trim().length >= 2" class="mt-1 px-1 text-[11px] text-muted">Sin resultados.</div>
               </div>
             </li>
           </ul>
@@ -302,11 +302,11 @@
               </div>
             </div>
             <div v-if="detailProcessesLoading" class="text-sm text-slate-500">Cargando…</div>
-            <div v-else-if="!detailProcesses.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+            <div v-else-if="!detailProcesses.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
               Ningún proceso aplica a esta unidad.
             </div>
             <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-              <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+              <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-line px-3 py-2.5">
                 <div class="flex items-center gap-2">
                   <span class="truncate text-sm font-semibold text-slate-800">{{ proc.process_name }}</span>
                   <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="processOriginMeta(proc.origin).class">{{ processOriginMeta(proc.origin).label }}</span>
@@ -314,7 +314,7 @@
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span class="truncate">{{ proc.definition_name }} · v{{ proc.definition_version }}</span>
-                  <span class="inline-flex items-center rounded-xl bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
+                  <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-slate-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <span class="text-slate-500">Destinatario: <span class="font-medium text-slate-700">{{ recipientSummary(proc) }}</span></span>
@@ -322,12 +322,12 @@
                     <button type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openEditProcessRule(proc)">Editar</button>
                     <button type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="detachProcess(proc.rule_id)">Quitar</button>
                   </template>
-                  <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-slate-400">Versiona el proceso para cambiar el alcance</span>
-                  <span v-else class="ml-auto text-[11px] italic text-slate-400">Definido a nivel de proceso</span>
+                  <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-muted">Versiona el proceso para cambiar el alcance</span>
+                  <span v-else class="ml-auto text-[11px] italic text-muted">Definido a nivel de proceso</span>
                 </div>
               </li>
             </ul>
-            <p class="m-0 mt-3 text-[11px] leading-snug text-slate-400">
+            <p class="m-0 mt-3 text-[11px] leading-snug text-muted">
               "Directo" = regla propia de esta unidad. El alcance solo se edita mientras la configuración está
               en <span class="font-semibold">borrador</span>; al activarse queda fija (cambiarla ⇒ nueva versión).
               "Por tipo"/"Global" se definen en la configuración del proceso y aplican a varias unidades.
@@ -353,7 +353,7 @@
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">
-          Título <span class="font-normal text-slate-400">(opcional)</span>
+          Título <span class="font-normal text-muted">(opcional)</span>
           <input v-model="editPositionForm.title" type="text" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Título del puesto" />
         </label>
         <label class="block text-sm font-medium text-slate-700">
@@ -397,7 +397,7 @@
           <select
             v-model="processForm.process_definition_id"
             :disabled="Boolean(processEditingRuleId)"
-            class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-100"
+            class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50"
           >
             <option value="">Selecciona…</option>
             <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
@@ -833,9 +833,9 @@ const PROCESS_SCOPE_LABELS = {
 };
 const processScopeLabel = (code) => PROCESS_SCOPE_LABELS[code] || code || "—";
 const processStatusClass = (status) => {
-  if (status === "active") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (status === "active") return "bg-emerald-50 text-success ring-emerald-200";
   if (status === "retired") return "bg-rose-50 text-rose-600 ring-rose-200";
-  return "bg-slate-100 text-slate-600 ring-slate-200";
+  return "bg-surface text-icon ring-slate-200";
 };
 
 // --- Administración de procesos de la unidad (vía reglas de alcance) ---
@@ -847,8 +847,8 @@ const RECIPIENT_POLICY_LABELS = {
 const PROCESS_ORIGIN_META = {
   direct: { label: "Directo", class: "bg-indigo-50 text-indigo-700 ring-indigo-200" },
   type: { label: "Por tipo", class: "bg-violet-50 text-violet-700 ring-violet-200" },
-  global: { label: "Global", class: "bg-slate-100 text-slate-600 ring-slate-200" },
-  other: { label: "Otro", class: "bg-slate-100 text-slate-500 ring-slate-200" }
+  global: { label: "Global", class: "bg-surface text-icon ring-slate-200" },
+  other: { label: "Otro", class: "bg-surface text-slate-500 ring-slate-200" }
 };
 const recipientPolicyLabel = (code) => RECIPIENT_POLICY_LABELS[code] || code || "—";
 const processOriginMeta = (origin) => PROCESS_ORIGIN_META[origin] || PROCESS_ORIGIN_META.other;

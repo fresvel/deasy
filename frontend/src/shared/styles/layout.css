@@ -1,6 +1,6 @@
 @layer components {
 .deasy-workspace {
-        @apply min-h-screen bg-brand-navy-deep font-sans text-brand-text-body;
+        @apply min-h-screen bg-navy-deep font-sans text-body;
     }
 
     .deasy-workspace-layout {
@@ -13,7 +13,7 @@
 
     .deasy-workspace-header {
         @apply flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-1 py-1 shadow-none;
-        border-color: rgba(var(--brand-white-rgb), 0.08);
+        border-color: rgba(var(--white-rgb), 0.08);
         background: transparent;
     }
 
@@ -57,17 +57,14 @@
         @apply flex h-full min-h-0 w-full flex-col gap-3 p-3;
     }
 
-    /* En escritorio el panel NO flota sobre el contenido: es una COLUMNA del layout.
-       Antes era `absolute left-full z-50`, asi que se superponia a la primera columna de
-       tarjetas y las hacia inalcanzables con el raton (el toggle si funcionaba, pero el
-       panel arranca abierto en escritorio). Ahora entra en el flujo: al abrirlo DESPLAZA el
-       contenido y al cerrarlo (xl:hidden en AppWorkspaceSidebar) el contenido recupera el
-       espacio. */
+    /* ⚠️ En escritorio el panel NO flota: es una COLUMNA del layout. Con `absolute` se
+       superponia a la primera columna de tarjetas y las hacia INALCANZABLES con el raton
+       —y el panel arranca abierto en escritorio, asi que no era un caso raro. */
     @media (min-width: 1280px) {
         .deasy-sidebar__flyout {
             @apply visible relative h-full w-[21.5rem] shrink-0 translate-x-0 overflow-y-auto border-l p-3 opacity-100 [scrollbar-width:thin];
-            border-color: rgba(var(--brand-white-rgb), 0.08);
-            background: var(--brand-navy-deep);
+            border-color: rgba(var(--white-rgb), 0.08);
+            background: var(--color-navy-deep);
         }
     }
 
@@ -85,8 +82,8 @@
 
     .deasy-sidebar-rail-nav__item--active {
         @apply border text-white;
-        border-color: rgba(var(--brand-white-rgb), 0.1);
-        background: rgba(var(--brand-white-rgb), 0.1);
+        border-color: rgba(var(--white-rgb), 0.1);
+        background: rgba(var(--white-rgb), 0.1);
     }
 
     .deasy-sidebar-rail-nav__icon {

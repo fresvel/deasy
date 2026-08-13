@@ -1,11 +1,11 @@
 <template>
   <div v-if="cards.length" class="mb-6">
-    <h3 class="m-0 mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">Resumen de operación</h3>
+    <h3 class="m-0 mb-3 text-xs font-bold uppercase tracking-widest text-muted">Resumen de operación</h3>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div
         v-for="card in cards"
         :key="card.key"
-        class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        class="rounded-2xl border border-line bg-white p-4 shadow-sm"
       >
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 min-w-0">

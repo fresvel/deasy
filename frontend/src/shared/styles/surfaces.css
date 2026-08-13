@@ -1,7 +1,7 @@
 @layer components {
 .deasy-section-card {
-        @apply rounded-[8px] border bg-white p-5 shadow-[var(--brand-shadow)] sm:p-6 lg:p-8;
-        border-color: var(--brand-border);
+        @apply rounded-[8px] border bg-white p-5 shadow-[var(--elev-1)] sm:p-6 lg:p-8;
+        border-color: var(--color-line);
     }
 
     
@@ -57,51 +57,47 @@
 
     
 }
-.card {
-  border-radius: 16px;
-  border: 0;
-  box-shadow: var(--brand-shadow);
+/* ⚠️ `.card` no tiene un solo consumidor — los aciertos de un grep son `group/card`
+   (utilidad de Tailwind) y `card.iconWrap` (una variable JS). Borrarla es F5. */
+@layer components {
+    .card {
+        border-radius: 16px;
+        border: 0;
+        box-shadow: var(--elev-1);
+    }
 }
 
-/* ------------------------------------------------------------------------------------
-   BARRA DE DESPLAZAMIENTO DE LOS PANELES.
+/* BARRA DE DESPLAZAMIENTO DE LOS PANELES — una sola, con la variante `--dark` para las
+   barras laterales oscuras (ahi un pulgar claro solido cantaria; va un velo blanco).
 
-   `.custom-scrollbar` se usa en 22 sitios de 7 componentes, pero estaba definida en los
-   `<style scoped>` de TRES de ellos y con tres pieles distintas (5 px con pulgar blanco al
-   20 % en AdminView, 6 px con #e2e8f0 en SNotify, 6 px con `--brand-border` en FirmarPdf).
-   En los otros cuatro componentes la clase no hacia NADA: seis paneles se quedaban con la
-   barra del sistema. Un mismo nombre, cuatro resultados segun donde mirases.
+   ⚠️ Los pseudo-elementos `::-webkit-scrollbar` NO son visibles para `getComputedStyle`:
+   la huella de estilos NO los ve. Esto se verifica mirando. */
 
-   Aqui hay una sola, con la variante que de verdad hacia falta: la de las barras laterales
-   oscuras, donde un pulgar claro solido cantaria y lo que toca es un velo blanco.
+@layer components {
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
 
-   Ojo: los pseudo-elementos `::-webkit-scrollbar` NO son visibles para `getComputedStyle`,
-   asi que la huella de estilos no los ve. Esto se verifica mirando.
-   ------------------------------------------------------------------------------------ */
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--color-line);
+        border-radius: 10px;
+    }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: var(--color-line-strong);
+    }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--brand-border);
-  border-radius: 10px;
-}
+    /* Sobre fondo oscuro (menu de administracion y de procesos). */
+    .custom-scrollbar--dark::-webkit-scrollbar-thumb {
+        background: rgba(var(--white-rgb), 0.2);
+    }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-border-strong);
-}
-
-/* Sobre fondo oscuro (menu de administracion y de procesos). */
-.custom-scrollbar--dark::-webkit-scrollbar-thumb {
-  background: rgba(var(--brand-white-rgb), 0.2);
-}
-
-.custom-scrollbar--dark::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--brand-white-rgb), 0.32);
+    .custom-scrollbar--dark::-webkit-scrollbar-thumb:hover {
+        background: rgba(var(--white-rgb), 0.32);
+    }
 }

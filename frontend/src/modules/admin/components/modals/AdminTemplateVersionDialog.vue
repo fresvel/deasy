@@ -1,11 +1,11 @@
 <template>
   <AppDialogOverlay :open="open" :title="guided ? 'Actualizar plantilla de configuración activa' : 'Crear nueva versión'" panel-class="max-w-md" @close="$emit('close')">
-    <p v-if="guided" class="mb-3 mt-0 text-sm text-slate-600">
+    <p v-if="guided" class="mb-3 mt-0 text-sm text-icon">
       Crea borradores de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>
       y de su configuración activa. Editarás el contenido y, al publicar, se <strong>publica la plantilla y se
       activa la nueva configuración</strong> juntas (la versión anterior queda retirada).
     </p>
-    <p v-else class="mb-3 mt-0 text-sm text-slate-600">
+    <p v-else class="mb-3 mt-0 text-sm text-icon">
       Nueva versión de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>.
       Nace <strong>en borrador</strong>, clonada de la versión actual<span v-if="template?.storage_version"> ({{ template.storage_version }})</span>.
     </p>
@@ -14,7 +14,7 @@
         v-for="opt in options"
         :key="opt.value"
         class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
-        :class="level === opt.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-slate-200 hover:border-slate-300'"
+        :class="level === opt.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-line hover:border-slate-300'"
       >
         <input v-model="level" type="radio" name="tpl-version-bump" :value="opt.value" class="mt-1" />
         <span class="min-w-0">

@@ -33,7 +33,7 @@
         </div>
         <div class="flex flex-col flex-1">
           <h3 :class="titleClasses">{{ title }}</h3>
-          <span v-if="meta" class="text-sm font-medium text-slate-400">{{ meta }}</span>
+          <span v-if="meta" class="text-sm font-medium text-muted">{{ meta }}</span>
           <span v-if="description" class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ description }}</span>
         </div>
       </div>
@@ -113,15 +113,15 @@ defineEmits(["click"]);
 
 const rootClasses = computed(() => [
   props.layout === "inline"
-    ? "group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
-    : "group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/15",
+    ? "group flex items-start gap-4 rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+    : "group flex flex-col justify-between rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/15",
   props.className
 ]);
 
 const iconWrapperClasses = computed(() => [
   props.layout === "inline"
-    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700"
-    : "flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700",
+    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700"
+    : "flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700",
   props.iconWrapperClass
 ]);
 

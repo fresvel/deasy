@@ -27,7 +27,7 @@
     <form class="mx-auto flex w-full max-w-xl flex-col gap-4 text-sm" @submit.prevent="$emit('submit')">
       <slot />
 
-      <div class="mt-5 flex w-full flex-col-reverse justify-end gap-3 border-t border-slate-200 pt-4 sm:flex-row">
+      <div class="mt-5 flex w-full flex-col-reverse justify-end gap-3 border-t border-line pt-4 sm:flex-row">
         <AppButton
           type="button"
           variant="secondary"

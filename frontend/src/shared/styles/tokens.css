@@ -2,216 +2,159 @@
 
 @plugin "@tailwindcss/typography";
 
-/* ------------------------------------------------------------------------------------
-   MODO OSCURO: NO HAY, Y ESTA LINEA ES LA QUE LO GARANTIZA.
+/* MODO OSCURO: NO HAY, Y ESTA LINEA ES LA QUE LO GARANTIZA.
 
-   Sin ella, Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)`. Es decir
-   que cualquier `dark:` que entre en el codigo —y las recetas de TailAdmin vienen llenas,
-   1024 en la referencia— se activaria SOLO en la maquina de quien tenga el sistema en
-   oscuro, pintando ese componente en oscuro sobre el resto de la app en claro. No lo ve
-   el build, ni el lint, ni los tests, ni tu si tienes el sistema en claro.
-
-   Con ella, `dark:` pasa a depender de una clase `.dark` que NADIE pone, asi que queda
-   inerte. Es un seguro, no una funcionalidad.
-
-   Deasy es una app EN CLARO. Sus zonas oscuras —la barra lateral— son una decision de
-   diseño resuelta con color explicito (`text-white/55`, `border-white/8`), no un tema.
-
-   Si algun dia se quiere modo oscuro de verdad hace falta bastante mas que esto: un
-   conmutador que ponga la clase, persistirlo, y una paleta gemela oscura — hoy hay UN
-   valor por concepto, no dos.
-   ------------------------------------------------------------------------------------ */
+   Sin ella Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)`, asi que
+   cualquier `dark:` que entre en el codigo se activaria SOLO en la maquina de quien tenga
+   el sistema en oscuro. No lo ve el build, ni el lint, ni los tests, ni tu si tienes el
+   sistema en claro. Con ella, `dark:` depende de una clase `.dark` que nadie pone.
+   Es un seguro, no una funcionalidad. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ------------------------------------------------------------------------------------
-   [fase-3 2026-08-09] REGISTRO DE LA PALETA EN TAILWIND.
+/* LA PALETA. UN SOLO SITIO: aqui se declara el valor Y se registra la utilidad.
 
-   Hasta hoy el proyecto usaba Tailwind v4 como si fuera v3: cero `@theme`, con lo que
-   Tailwind NO conocia ni un token del proyecto. Consecuencia practica: no existian
-   `bg-brand-primary` ni `text-brand-ink`, y el unico modo de usar un color de marca en
-   una plantilla era escribir el hex a mano. De ahi salieron los `bg-[#071927]` de
-   `SHeader.vue` y los `focus:border-[#5e4eff]` de `AdminSelectField.vue`, ya migrados.
+   `--color-` no es parte del nombre: es el NAMESPACE de Tailwind, y significa «esto es un
+   color, generame sus clases». Lo que va detras es el nombre, y es literalmente el de la
+   utilidad: `--color-primary` da `bg-primary`, `text-primary`, `border-primary`.
 
-   Esto es ADITIVO: registra nombres nuevos bajo el namespace `--color-*`, no redefine
-   ninguno de Tailwind. Los valores no se duplican, se referencian — la fuente de verdad
-   sigue siendo la paleta de `theme.css`.
+   ⚠️ UN TOKEN NUEVO SE JUSTIFICA, NO SE AÑADE POR SIMETRIA. Dos condiciones, las dos: que
+   Tailwind no traiga ya ese color, y que el concepto pueda cambiar de color en el futuro.
+   Si el concepto ES el color, usa el de Tailwind — por eso no hay `--color-white`.
 
-   ⚠️ NO añadir aqui `--color-*` pensando en modo oscuro. Este repo no declara
-   `@custom-variant dark`, asi que Tailwind v4 compila `dark:` a
-   `@media (prefers-color-scheme: dark)` y una receta pegada de TailAdmin pintaria
-   componentes en oscuro sobre una app en claro. Fallo silencioso.
-   ------------------------------------------------------------------------------------ */
+   Para lo primero, MIDE el ΔE contra su paleta; no compares hex. Tailwind v4 la sirve en
+   OKLCH y no vuelve a los valores de v3: `emerald-700` renderiza `#007a55`, no `#047857`.
+   Con ΔE ≤ 2 son el mismo color a ojo y el token propio no se sostiene.
+
+   ⚠️ Y comprueba que el nombre no sea un namespace suyo (`--color-*`, `--radius-*`,
+   `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`, `--breakpoint-*`). Unos `--radius-*`
+   sueltos tuvieron `rounded-lg` valiendo 16 px y la escala invertida durante meses.
+   Tampoco valen los nombres que Tailwind ya usa: `current` es suyo (`currentColor`), por
+   eso el paso actual se llama `--color-step`.
+
+   ⚠️ NO SE VERIFICA MIRANDO AQUI. Tailwind hace *tree-shaking* de `@theme`: un registro
+   que nadie usa NO SE EMITE, y eso es indistinguible de no haberlo escrito. La prueba es
+   un `grep` sobre `dist/assets/*.css`. Aqui hubo siete `--color-chart-*` y un
+   `--color-state-info` sin un solo consumidor, sostenidos por la idea de que un registro
+   sin usar «cuesta cero bytes y es un destino al que migrar». No lo era. */
+/* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
+   DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta. */
 @theme {
-    --color-brand-primary: var(--brand-primary);
-    --color-brand-accent: var(--brand-accent);
-    --color-brand-navy: var(--brand-navy);
-    --color-brand-navy-deep: var(--brand-navy-deep);
-    --color-brand-ink: var(--brand-ink);
-    --color-brand-white: var(--brand-white);
-    --color-brand-border: var(--brand-border);
-    --color-brand-border-strong: var(--brand-border-strong);
-    --color-brand-border-field: var(--brand-border-field);
-    --color-brand-surface-muted: var(--brand-surface-muted);
-    --color-brand-surface-alt: var(--brand-surface-alt);
-    --color-brand-text-strong: var(--brand-text-strong);
-    --color-brand-text-body: var(--brand-text-body);
-    --color-state-success: var(--state-success);
-    --color-state-danger: var(--state-danger);
-    --color-state-gold: var(--state-gold);
+    /* Marca */
+    --color-primary: #5e4eff;      /* 5.24:1 — el techo de la marca */
+    --color-accent: #00b2a9;
+    --color-navy: #111827;         /* 17.74:1 — titulares */
+    --color-navy-deep: #071927;    /* el fondo del workspace */
+    --color-ink: #1f2937;          /* 14.68:1 */
+
+    /* Lineas y superficie. Se llaman `line-*` y no `border-*` porque el namespace ya dice
+       que son color: `--color-border` daria `border-border`. */
+    --color-line: #e2e6f0;         /* separadores y marcos */
+    --color-line-strong: #cfd6e4;
+    --color-line-field: #d7deea;   /* bordes de control */
+    --color-surface: #f7f9fc;
+
+    /* Texto e iconos — la escala, de mas oscuro a mas claro */
+    --color-strong: #343741;       /* 11.87:1 */
+    --color-body: #3f4254;         /*  9.91:1 */
+    --color-muted: #5a5f6f;        /*  6.36:1 — el SUELO. Nada mas claro para texto */
+    --color-icon: #475569;         /* iconos de accion secundaria */
+
+    /* UN color por estado, y es el OSCURO: el unico que cumple WCAG en los dos usos, icono
+       (3:1) y texto (4.5:1). Las cifras estan medidas — no aclares ninguno sin remedirlo. */
+    --color-success: #047857;      /* 5.49:1 */
+    --color-danger: #b42318;       /* 6.57:1 */
+    --color-warning: #b45309;      /* 5.02:1 */
+    --color-pending: #b8432b;      /* 5.42:1 — 'pendiente', ni exito ni fallo */
+
+    /* «TE TOCA A TI» — el borde y el texto de la tarjeta de entregable cuando es tu turno.
+       4.77:1, asi que cumple 1.4.11 y AA. Se eligio con margen: el valor justo para 4.50
+       seria `#118856`, y quedarse en el umbral lo tumba el proximo retoque.
+       El RELLENO no esta aqui: es `--step-rgb`, mas abajo. */
+    --color-step-ink: #108353;
+
+    /* ⚠️ NO CUMPLE EN NINGUNO DE SUS USOS: icono 2.10, tooltip 2.10, chip 1.91. Y no es un
+       estado: es el color de UN componente (BtnSera). Los dos problemas van juntos. */
+    --color-gold: #d4af37;
+
+    /* Botones de accion de las tablas. UN color por accion: el del icono. El fondo NO se
+       declara, se calcula mezclandolo con blanco (~10%); el borde tambien se deriva, y vive
+       junto a su regla en `overrides.css`.
+       ⚠️ El 71% del borde no es arbitrario: es el porcentaje al que los seis llegan a 3:1
+       contra la fila blanca (WCAG 1.4.11). Al 35% ninguno cumple. */
+    --color-action-neutral: #23384f;
+    --color-action-view: #075985;
+    --color-action-upload: #3751a3;
 }
 
 @layer base {
-    /* ----------------------------------------------------------------------------------
-       [fase-3 2026-08-09] YA NO HAY DOS JUEGOS DE TOKENS. El juego `--deasy-*` se ha
-       colapsado entero sobre `--brand-*`, que era la paleta canonica declarada y la
-       unica con consumidores fuera de `shared/styles/`. La declaracion de cada token
-       vive donde le corresponde: la PALETA en `theme.css`, y aqui solo lo que el
-       propio `theme.css` no tenia.
-
-       Como se hizo, porque no es obvio: colapsar el espacio de nombres NO es fusionar
-       valores. Los tres que ya eran alias (`--deasy-border-soft`, `--deasy-primary`,
-       `--deasy-brand-gradient`) se sustituyeron por su destino y la indireccion
-       desaparecio. Los demas NO tenian gemelo con el mismo valor, asi que se
-       RENOMBRARON conservando su valor. Fusionar el `var(--brand-surface-muted)` de uno con el `var(--brand-surface-alt)` de otro porque
-       "son casi el mismo gris" habria sido un cambio de aspecto colado dentro de un
-       refactor que promete no tener ninguno.
-
-       Lo que sigue pendiente, y por que no se toca aqui:
-       - `--font-weight-medium/semibold` de `theme.css` pisan el namespace de Tailwind,
-         pero con los MISMOS valores por defecto. Hoy son inocuos; se dejan anotados.
-         (Los `--radius-*`, que si hacian daño, se retiraron en la fase 4.)
-       ---------------------------------------------------------------------------------- */
-    /* stylelint-disable color-no-hex -- definicion de tokens, ver theme.css */
-    :root {
-        /* El navy del workspace. Antes estaba escrito tres veces y no tenia token
-           `--brand-*` plano: solo existia dentro de `--brand-workspace-gradient`. */
-        --brand-navy-deep: #071927;
-        --brand-surface-muted: #f7f9fc;
-  --brand-surface-muted-rgb: 247, 249, 252;
-        --brand-surface-soft: rgba(247, 249, 252, 0.92);
-        --brand-border-strong: #cfd6e4;
-        --brand-text-strong: #343741;
-        --brand-text-body: #3f4254;
-        --brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
-    }
-    /* stylelint-enable color-no-hex */
-
     html {
-        @apply bg-brand-navy-deep;
+        @apply bg-navy-deep;
     }
 
     body {
-        @apply bg-brand-navy-deep text-brand-text-body antialiased;
+        @apply bg-navy-deep text-body antialiased;
     }
 
     #app {
-        @apply min-h-screen bg-brand-navy-deep;
+        @apply min-h-screen bg-navy-deep;
     }
 }
 
+/* LO QUE NO ES UN COLOR SUELTO, y por eso no va en `@theme`: sombras, el velo, los
+   degradados y los tripletes `-rgb`. Ninguno encaja en un namespace de Tailwind.
 
-/* `--brand-*` es la PALETA CANONICA del proyecto, y desde la fase 3 (2026-08-09) es la
-   UNICA: el juego paralelo `--deasy-*` se colapso entero sobre esta. Ya no hay dos sitios
-   donde cambiar un color.
-
-   Lo que hay aqui es la paleta; lo que `theme.css` no tenia se declara en `tailwind.css`
-   (`--brand-navy-deep`, `--brand-text-body`, `--brand-border-strong`...).
-
-   [fase-4 2026-08-09] Aqui vivian `--radius-sm/md/lg`, que PISABAN el espacio de nombres de
-   Tailwind v4 y hacian que `rounded-lg` valiera 16px y `rounded-md` 12px en toda la app —
-   con la escala invertida, porque `rounded-lg` (16) salia mayor que `rounded-xl` (12).
-   Ya no estan: los 224 usos se reescribieron al utility que pinta ese mismo valor
-   (lg->2xl, md->xl, sm->lg) y la escala de Tailwind vuelve a ser la suya. Si vas a
-   declarar un token nuevo, comprueba antes que su nombre no sea un namespace de Tailwind
-   v4 (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`,
-   `--breakpoint-*`): el fallo es silencioso y global. */
-/* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
-   DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta,
-   y por eso `color-no-hex` esta activa en el resto del fichero. */
+   ⚠️ Los gemelos `-rgb` no siguen ningun criterio: se crearon a demanda, para poder
+   escribir `rgba(var(--x-rgb), .08)`. `--color-danger` y `--color-line` no tienen, aunque
+   se usen mucho. Comprueba antes de escribir uno. */
 :root {
-  --brand-primary: #5e4eff;
-  --brand-accent: #00b2a9;
-  --brand-navy: #111827;
-  --brand-ink: #1f2937;
-  --brand-info-soft: rgba(37, 99, 235, 0.1);
-  --brand-white: #ffffff;
-  --brand-white-rgb: 255, 255, 255;
-  /* Ancla para oscurecer con color-mix(). No es un color de superficie: no
-     pintes nada directamente con el. */
-  --brand-black: #000000;
-  --brand-border: #e2e6f0;
-  /* El borde de los controles de formulario. Estaba escrito a mano 6 veces. */
-  --brand-border-field: #d7deea;
-  /* Superficie alterna (fondos apagados de cabecera, addon de select, hover suave). 7 veces. */
-  --brand-surface-alt: #f8fafc;
-  /* ELEVACION. Habia ONCE valores de sombra, pero no eran once niveles: eran DOS
-     niveles escritos de muchas formas (0.03/0.04/0.06 estan a ΔE<=1.3 entre si),
-     mas cosas que no son sombras aunque usen la misma propiedad. */
-  --brand-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);           /* tarjetas y marcos */
-  --shadow-raised: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06);
-  --shadow-modal: 0 1px 2px rgba(15, 23, 42, 0.04), 0 24px 64px rgba(15, 23, 42, 0.16);
-  /* El unico caso en que la sombra NO cae hacia abajo: el panel lateral se ancla al borde
-     derecho de la pantalla, asi que su unico canto visible es el izquierdo y ahi tiene que
-     proyectar. Misma opacidad que --shadow-modal (esta al mismo nivel de elevacion), solo
-     cambia la direccion. */
-  --shadow-drawer: -8px 0 24px rgba(15, 23, 42, 0.16);
+  --white-rgb: 255, 255, 255;
+  --primary-rgb: 94, 78, 255;
+  --surface-rgb: 247, 249, 252;
+  --success-rgb: 4, 120, 87;
 
-  /* El anillo de foco. Es la señal de "aqui esta el teclado", asi que es UNO.
-     Habia tres tamaños (2px, 3px, 4px) y tres colores (sky, navy, primario);
-     se queda el dominante, que ademas es el de marca. */
-  --focus-ring: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
+  /* El RELLENO menta del paso actual (`#4bf1a1`). Vive aqui y no en `@theme` porque no se
+     pinta solido en ningun sitio: sus tres consumidores lo usan al 10% y al 35%. Registrarlo
+     como color daria una utilidad `bg-step` que nadie llama — y Tailwind ni la emitiria.
+     ⚠️ NO lo colapses sobre `--color-success`: significa «este paso es el actual», no «ya
+     esta hecho». Esta medido: el mejor `color-mix` con `--color-accent` toca fondo en
+     ΔE 19.75 y la curva es plana, y contra `--color-success` hay ΔE 34.96. */
+  --step-rgb: 75, 241, 161;
+  --navy-menu-rgb: 18, 63, 136;
 
-  /* El velo del modal. Estaba contado como "sombra" y no lo es: es un fondo. */
-  --overlay-backdrop: rgba(15, 23, 42, 0.48);
+  /* Ancla para oscurecer con color-mix(). No es un color de superficie: no pintes nada
+     directamente con el. Se queda con su hex porque Tailwind NO emite `--color-black`
+     salvo que algo use la clase, y una variable sin emitir es una variable rota. */
+  --black: #000000;
 
-  /* El azul del boton de menu. Es su color y no esta en ninguna otra familia. */
-  --brand-navy-menu: #123f88;
-  --brand-navy-menu-rgb: 18, 63, 136;
-  --brand-gradient-angled: linear-gradient(135deg, #5e4eff 0%, #3898ff 100%);
-  --brand-primary-rgb: 94, 78, 255;
-  --brand-accent-rgb: 0, 178, 169;
+  /* ELEVACION — una escala de TRES. `--elev-3-left` es el nivel 3 proyectando a la
+     izquierda: el panel lateral se ancla al borde derecho de la pantalla, asi que su unico
+     canto visible es el izquierdo. Misma opacidad, solo cambia la direccion. */
+  --elev-ink: #0f172a;
+  --elev-ink-rgb: 15, 23, 42;
+  --elev-1: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04);            /* tarjetas y marcos */
+  --elev-2: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04), 0 12px 32px rgba(var(--elev-ink-rgb), 0.06);
+  --elev-3: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04), 0 24px 64px rgba(var(--elev-ink-rgb), 0.16);
+  --elev-3-left: -8px 0 24px rgba(var(--elev-ink-rgb), 0.16);
 
-  /* UN color por estado, y es el OSCURO. Es el unico que cumple WCAG en los dos
-     usos: icono (3:1) y texto (4.5:1). Los brillantes que habia antes —#28a745,
-     #dc3545, #f59e0b— daban 2.85, 4.08 y 1.99 sobre blanco. */
-  --state-success: #047857;   /* 5.00:1 */
-  --state-success-rgb: 4, 120, 87;
-  --state-danger: #b42318;    /* 5.93:1 */
-  --state-warning: #b45309;   /* 4.68:1 */
-  --state-pending: #b8432b;   /* 5.42:1 — 'pendiente', ni exito ni fallo */
-  --state-gold: #d4af37;      /* solo BtnSera */
+  /* El anillo de foco: la señal de «aqui esta el teclado», asi que es UNO. NO se llama
+     `--elev-*` a proposito — no es un escalon de elevacion, es un indicador de estado que
+     resulta usar la misma propiedad. */
+  --focus-ring: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
 
-  /* Botones de accion de las tablas. UN color por accion: el del icono.
-     El fondo NO se declara, se calcula mezclandolo con blanco (~10%), que es
-     de donde salia el hex que habia escrito a mano. El borde si es un valor
-     propio — es mas saturado que cualquier mezcla — y vive junto a su regla. */
-  --action-neutral: #23384f;
-  --action-view: #075985;
-  --action-upload: #3751a3;
+  /* El velo del modal. No es una sombra aunque lo parezca: es un fondo. */
+  --overlay-backdrop: rgba(var(--elev-ink-rgb), 0.48);
 
-  /* Texto secundario: subtitulos, notas al pie, pestañas inactivas. Habia TRES
-     grises para este papel (#5a5f6f, #697081, #64748b) separados entre si por
-     ΔE 3.8-8.7. Se unifican en el mas oscuro, que es el unico con margen comodo
-     sobre AA: 6.36:1 sobre blanco frente a 4.96 y 4.76 de los otros dos. */
-  --brand-text-muted: #5a5f6f;
+  --info-soft: rgba(37, 99, 235, 0.1);
+  --surface-soft: rgba(247, 249, 252, 0.92);
+  --gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
+  --gradient-angled: linear-gradient(135deg, #5e4eff 0%, #3898ff 100%);
 
-  /* Iconos de accion secundaria (la ✕ de los dialogos). */
-  --brand-icon: #475569;
-
-  /* Aqui vivian seis tokens de borde, uno por accion. Ya no: el borde se deriva
-     del color de la accion como el resto. La clave es el porcentaje — al 35% el
-     borde salia MAS CLARO que el que habia y el boton se veia peor; al 71% los
-     seis llegan a 3:1 contra la fila blanca, que es lo que pide WCAG 1.4.11 para
-     el limite de un componente. Los valores anteriores daban 1.64-1.90: ninguno
-     cumplia, y eso son 172 botones en una tabla llena. */
-
+  /* ⚠️ `--typeface` y `--type-*` NO se llaman `--font-*` ni `--text-*` a proposito: los dos
+     son namespaces de Tailwind y este `:root` esta sin capa, asi que le ganaria. */
   --input-height: 52px;
-  --font-base: 'Inter', sans-serif;
-  --font-size-base: 1rem;
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --line-height-base: 1.5;
-  --line-height-heading: 1.2;
+  --typeface: 'Inter', sans-serif;
+  --type-size: 1rem;
+  --type-leading: 1.5;
+  --type-leading-heading: 1.2;
 }
 /* stylelint-enable color-no-hex */

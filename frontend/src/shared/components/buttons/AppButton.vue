@@ -85,12 +85,32 @@ const sizeClassMap = {
   lg: "deasy-btn--lg admin-btn--lg"
 };
 
+/* [F1.6 2026-08-11] ANTES ESTO ERA `mapa[clave] || clave`, y estampaba la clave como si
+   fuera una clase. Dos fallos en uno:
+
+   1. Una variante desconocida acababa en el DOM como clase literal —`class="foo"`— que no
+      existe en ningun modulo. El boton salia sin estilo y nada avisaba: ni el build, ni el
+      lint, ni los tests ven una clase que no casa con ninguna regla.
+   2. Peor: `plain` SI esta en el mapa, pero mapeado a `""`, que es FALSY. El `||` lo
+      tomaba por ausente y caia al literal igual. Eran 16 usos de `variant="plain"`
+      estampando `class="plain"`.
+
+   Con pertenencia en vez de verdad, `""` es una respuesta valida. Y lo desconocido se
+   queda fuera del DOM y grita en desarrollo, que es donde hay alguien mirando. */
+const resolveClass = (map, key, kind) => {
+  if (Object.hasOwn(map, key)) return map[key];
+  if (import.meta.env.DEV) {
+    console.warn(`[AppButton] ${kind} desconocida: "${key}". Valores validos: ${Object.keys(map).join(", ")}`);
+  }
+  return "";
+};
+
 const classes = computed(() => [
   ["close", "plain"].includes(props.variant)
     ? ""
     : "deasy-btn admin-btn",
-  variantClassMap[props.variant] || props.variant,
-  props.variant !== "plain" && !props.iconOnly ? sizeClassMap[props.size] || props.size : "",
+  resolveClass(variantClassMap, props.variant, "variant"),
+  props.variant !== "plain" && !props.iconOnly ? resolveClass(sizeClassMap, props.size, "size") : "",
   props.iconOnly ? "deasy-btn deasy-btn--icon admin-btn admin-btn--icon" : "",
   props.className
 ]);

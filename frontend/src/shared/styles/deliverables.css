@@ -1,0 +1,76 @@
+/* TARJETA DE ENTREGABLE — la accion principal y su chip de icono.
+
+   El tono NO es decorativo: dice en que punto del flujo esta el entregable, y lo elige
+   `getDeliverableCardTone` en `useDeliverableView.js` — un grep de estas clases en las
+   plantillas no las encuentra.
+
+       --start   indigo   «aun no has empezado»
+       --sign    menta    «te toca firmar»          <- `--color-step`
+       --open    slate    «abrir», el neutro
+
+   ⚠️ `group` se queda en la plantilla a proposito: es un marcador de variante de Tailwind,
+   no una utilidad, y `@apply group` NO COMPILA. */
+
+@layer components {
+    /* ⚠️ La sombra va en `box-shadow:` a pelo, NO en un `shadow-[…]`. Probado: Tailwind no
+       sabe parsear `shadow-[0_6px_16px_rgb(var(--token)/0.04)]` — no genera la utilidad y el
+       elemento se queda en `box-shadow: none`, EN SILENCIO. Si se reintenta, comprobarlo en
+       el DOM y no en el fuente. */
+    .deasy-deliverable-action {
+        @apply relative flex w-full items-center gap-2.5 rounded-[1rem] border bg-white px-3.5 py-2.5 text-left transition duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60;
+        box-shadow: 0 6px 16px rgba(var(--elev-ink-rgb), 0.04);
+    }
+
+    .deasy-deliverable-action__chip {
+        @apply flex h-9 w-9 items-center justify-center rounded-[0.85rem] border;
+    }
+
+    .deasy-deliverable-action__label {
+        @apply flex min-w-0 flex-col;
+    }
+
+    .deasy-deliverable-action__text {
+        @apply text-sm font-semibold text-slate-800;
+    }
+
+    /* ── Tono: «aun no has empezado» ───────────────────────────────────────────────── */
+
+    .deasy-deliverable-action--start {
+        @apply border-indigo-200/90 hover:border-indigo-300 hover:bg-indigo-50/60;
+    }
+
+    .deasy-deliverable-action--start .deasy-deliverable-action__chip {
+        @apply border-indigo-200 bg-indigo-50/70 text-indigo-700;
+    }
+
+    /* ── Tono: «te toca firmar» ──────────────────────────────────────────────────────
+       ⚠️ EL BORDE LO PONE LA TINTA, NO LA MENTA: la menta al 75 % sobre blanco da 1.46:1, y
+       aqui el limite es lo unico que dibuja el boton (el relleno es blanco). La menta se
+       queda para el RELLENO, que no tiene minimo. Y el hover OSCURECE — mezclar hacia el
+       100 % daria un borde MAS claro al pasar el raton. */
+
+    .deasy-deliverable-action--sign {
+        border-color: var(--color-step-ink);
+    }
+
+    .deasy-deliverable-action--sign:hover {
+        border-color: color-mix(in srgb, var(--color-step-ink) 85%, var(--black));
+        background-color: rgba(var(--step-rgb), 0.1);
+    }
+
+    .deasy-deliverable-action--sign .deasy-deliverable-action__chip {
+        border-color: var(--color-step-ink);
+        background-color: rgba(var(--step-rgb), 0.1);
+        color: var(--color-step-ink);
+    }
+
+    /* ── Tono: «abrir», el neutro ──────────────────────────────────────────────────── */
+
+    .deasy-deliverable-action--open {
+        @apply border-slate-200/90 hover:border-sky-200 hover:bg-sky-50/45;
+    }
+
+    .deasy-deliverable-action--open .deasy-deliverable-action__chip {
+        @apply border-sky-100/95 bg-sky-50/55 text-sky-700;
+    }
+}

@@ -1,44 +1,56 @@
-.admin-workspace-frame {
-  border: 1px solid var(--brand-border);
-  border-radius: 0.95rem;
-  background: var(--brand-surface-alt);
-  box-shadow: var(--brand-shadow);
-  padding: 0.5rem;
+/* ⚠️ El `padding` responsive de `.admin-surface-frame` NO esta aqui: vive en `misc.css`, y
+   las dos reglas tienen que estar en la misma capa o una mata a la otra. Ver alli. */
+
+@layer components {
+    .admin-workspace-frame {
+        border: 1px solid var(--color-line);
+        border-radius: 0.95rem;
+        background: var(--color-surface);
+        box-shadow: var(--elev-1);
+        padding: 0.5rem;
+    }
+
+    .admin-workspace-frame--table {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .admin-surface-frame {
+        border: 1px solid var(--color-line);
+        border-radius: 1rem;
+        background: var(--color-white);
+        box-shadow: none;
+        padding: 0.95rem;
+    }
+
+    .admin-related-tabs {
+        padding: 0.15rem 0 0.2rem;
+    }
+
+    .admin-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.4rem 0 0.85rem;
+        border-bottom: 1px solid var(--color-surface);
+        margin-bottom: 0;
+    }
+
+    .admin-page-header__main {
+        min-width: 0;
+    }
 }
 
-.admin-workspace-frame--table {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
-
-.admin-surface-frame {
-  border: 1px solid var(--brand-border);
-  border-radius: 1rem;
-  background: var(--brand-white);
-  box-shadow: none;
-  padding: 0.95rem;
-}
-
-.admin-related-tabs {
-  padding: 0.15rem 0 0.2rem;
-}
-
-.admin-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.4rem 0 0.85rem;
-  border-bottom: 1px solid var(--brand-surface-muted);
-  margin-bottom: 0;
-}
-
-.admin-page-header__main {
-  min-width: 0;
-}
+/* ⚠️ SE QUEDA SIN CAPA — y la culpable es la primera declaracion: `margin: 0` es el
+   SHORTHAND, asi que fija las cuatro esquinas. `HomeView.vue` escribe
+   `class="admin-page-header__title mt-1"` y ese `mt-1` hoy no pinta, porque esta regla va
+   suelta y gana a `@layer utilities`. Capandola resucitan 4 px que desplazan el titulo.
+   Para bajarla: o se borra el `mt-1` de la plantilla, o el shorthand pasa a
+   `margin-block-end: 0`. A medias, no. */
 
 .admin-page-header__title {
   margin: 0;
@@ -48,74 +60,50 @@
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--brand-navy);
+  color: var(--color-navy);
 }
 
-.admin-page-header__subtitle {
-  margin: 0.35rem 0 0;
-  font-size: 0.84rem;
-  line-height: 1.4;
-  color: var(--brand-text-muted);
-}
+@layer components {
+    .admin-page-header__actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        flex: 0 0 auto;
+    }
 
-.admin-page-header__icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--brand-border);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
-  color: var(--brand-primary);
-  flex: 0 0 auto;
-  font-size: 0.78rem;
-}
+    .admin-page-header__create {
+        min-width: 8.75rem;
+    }
 
-.admin-page-header__actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
-  flex: 0 0 auto;
-}
+    /* Los puntos numerados del asistente de perfiles de puesto. Receta de siempre: 10 % de
+       relleno, 38 % de borde y el token como texto. */
 
-.admin-page-header__create {
-  min-width: 8.75rem;
-}
+    .profile-step-dot {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        width: 24px;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
 
-/* ------------------------------------------------------------------------------------
-   Los puntos numerados del asistente de perfiles de puesto.
-   Salen del `<style scoped>` del componente. El activo usaba indigo-600 con su propio
-   fondo y borde; ahora es la receta de siempre: 10 % de relleno, 38 % de borde y el token
-   como texto. El inactivo tenia el numero en slate-400 sobre slate-100 -- 2.6:1, no se
-   leia; pasa al suelo de la escala de texto.
-   ------------------------------------------------------------------------------------ */
+    .profile-step-dot--idle {
+        background: var(--color-surface);
+        color: var(--color-muted);
+    }
 
-.profile-step-dot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  width: 24px;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border: 1px solid transparent;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
+    .profile-step-dot--active {
+        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+        color: var(--color-primary);
+        border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-white));
+    }
 
-.profile-step-dot--idle {
-  background: var(--brand-surface-muted);
-  color: var(--brand-text-muted);
-}
-
-.profile-step-dot--active {
-  background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
-  color: var(--brand-primary);
-  border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--brand-white));
-}
-
-.profile-step-dot--done {
-  background: var(--brand-primary);
-  color: var(--brand-white);
+    .profile-step-dot--done {
+        background: var(--color-primary);
+        color: var(--color-white);
+    }
 }

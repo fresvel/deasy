@@ -30,7 +30,7 @@
           />
           <div
             v-if="shouldShowInlineFkSuggestions(field.name)"
-            class="fk-inline-suggestions overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+            class="fk-inline-suggestions overflow-hidden rounded-xl border border-line bg-white shadow-lg"
             @mousedown.prevent
           >
             <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-slate-500">
@@ -41,7 +41,7 @@
                 v-for="option in inlineFkSuggestions[field.name]"
                 :key="`${field.name}-${option.id}`"
                 variant="plain"
-                class-name="w-full justify-start rounded-none border-0 border-b border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 last:border-b-0 hover:bg-slate-50"
+                class-name="w-full justify-start rounded-none border-0 border-b border-line px-4 py-3 text-left text-sm font-medium text-slate-700 last:border-b-0 hover:bg-surface"
                 @mousedown.prevent="$emit('select-inline-fk-suggestion', field, option)"
               >
                 {{ formatInlineFkOption(field, option) }}
@@ -100,13 +100,13 @@
         />
       </div>
     </form>
-    <section v-if="showProcessConfigurations" class="mt-5 border-t border-slate-200 pt-5">
+    <section v-if="showProcessConfigurations" class="mt-5 border-t border-line pt-5">
       <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Configuraciones</p>
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Configuraciones</p>
           <h6 class="m-0 mt-1 flex items-center gap-2 text-base font-extrabold text-slate-800">
             <span>Configuraciones del proceso</span>
-            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-slate-100 px-1.5 text-xs font-bold text-slate-600">
+            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">
               {{ processConfigurationRows.length }}
             </span>
           </h6>
@@ -129,7 +129,7 @@
       >
         {{ processConfigurationError }}
       </div>
-      <div v-if="processConfigurationLoading" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-medium text-slate-500">
+      <div v-if="processConfigurationLoading" class="rounded-2xl border border-line bg-surface px-4 py-6 text-center text-sm font-medium text-slate-500">
         Cargando configuraciones vinculadas...
       </div>
       <AppDataTable
@@ -139,7 +139,7 @@
         :row-key="(row) => row.id"
         empty-text="Este proceso aun no tiene configuraciones."
         table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-        responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+        responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
         scroll-class=""
       >
         <template #cell="{ row, field }">
@@ -317,10 +317,10 @@ const processConfigurationStatusLabel = (value) => ({
 }[String(value || "").trim().toLowerCase()] || (value || "—"));
 
 const processConfigurationStatusClass = (value) => ({
-  draft: "bg-slate-100 text-slate-700",
-  active: "bg-emerald-50 text-emerald-700",
-  retired: "bg-amber-50 text-amber-700"
-}[String(value || "").trim().toLowerCase()] || "bg-slate-100 text-slate-600");
+  draft: "bg-surface text-slate-700",
+  active: "bg-emerald-50 text-success",
+  retired: "bg-amber-50 text-warning"
+}[String(value || "").trim().toLowerCase()] || "bg-surface text-icon");
 
 const updateFormField = (fieldName, value) => {
   emit("update:form-data", {

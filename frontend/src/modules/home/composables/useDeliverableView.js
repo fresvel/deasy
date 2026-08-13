@@ -379,9 +379,9 @@ export function useDeliverableView({
 
   const getDeliverableWorkspaceTabClass = (tab) => {
     if (deliverableWorkspaceState.value.tab === tab) {
-      return 'border-slate-200 bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
+      return 'border-line bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
     }
-    return 'border-transparent bg-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-700';
+    return 'border-transparent bg-surface text-slate-500 hover:border-line hover:bg-surface hover:text-slate-700';
   };
 
   const shouldShowResetWorkflow = (payload) => {
@@ -468,11 +468,11 @@ export function useDeliverableView({
     if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
       return {
         card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-emerald-700',
+        header: 'border-emerald-100 bg-emerald-50/60 text-success',
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-emerald-700',
-        iconChip: 'bg-emerald-100 text-emerald-700'
+        responsibilityLabel: 'text-success',
+        iconChip: 'bg-emerald-100 text-success'
       };
     }
 
@@ -492,21 +492,21 @@ export function useDeliverableView({
     if (variant === 'success') {
       return {
         card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-emerald-700',
+        header: 'border-emerald-100 bg-emerald-50/60 text-success',
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-emerald-700',
-        iconChip: 'bg-emerald-100 text-emerald-700'
+        responsibilityLabel: 'text-success',
+        iconChip: 'bg-emerald-100 text-success'
       };
     }
 
     return {
-      card: 'border-slate-200 hover:border-slate-300',
-      header: 'border-slate-100 bg-slate-50/70 text-slate-500',
+      card: 'border-line hover:border-slate-300',
+      header: 'border-line bg-slate-50/70 text-slate-500',
       accent: 'bg-slate-300',
-      responsibility: 'border-slate-100 bg-slate-50/50',
+      responsibility: 'border-line bg-surface/50',
       responsibilityLabel: 'text-slate-500',
-      iconChip: 'bg-slate-100 text-slate-500'
+      iconChip: 'bg-surface text-slate-500'
     };
   };
 
@@ -521,7 +521,18 @@ export function useDeliverableView({
 
   const getDeliverableHeaderActionTone = (payload) => {
     if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-      return 'border-[#4BF1A1]/65 text-[#118a57] hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 focus:ring-[#4BF1A1]/35';
+      // [F1.8 2026-08-11] Era el hex `#4BF1A1` escrito a mano, con su tinta `#118a57`.
+      // [F2.4] El BORDE lo pone la tinta, no la menta: la menta al 65 % daba 1.46:1 y el
+      // limite de un componente pide 3:1. La menta se queda para el relleno, que no tiene
+      // minimo. Y el hover ya no aclara — antes iba al 100 % de la menta, o sea a un borde
+      // MAS claro, justo lo que §5.2 prohibe.
+      //
+      // ⚠️ `rgba(var(--x), 0.1)` y NO `rgb(var(--x)/0.1)`. El segundo compila —Tailwind
+      // emite la regla tal cual— pero es CSS INVALIDO: el triplete del token va separado
+      // por comas, y la sintaxis heredada por comas no admite la barra del alfa. El
+      // navegador descarta la declaracion y el color cae a `currentColor` SIN avisar.
+      // El CSS servido decia que la utilidad existia.
+      return 'border-step-ink text-step-ink hover:border-[color-mix(in_srgb,var(--color-step-ink)_85%,var(--black))] hover:bg-[rgba(var(--step-rgb),0.1)] focus:ring-[rgba(var(--step-rgb),0.35)]';
     }
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
       return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';
@@ -529,7 +540,7 @@ export function useDeliverableView({
     if (shouldShowStartDeliverable(payload)) {
       return 'border-indigo-100/95 text-indigo-700 hover:border-indigo-200 hover:bg-indigo-50 focus:ring-indigo-200/70';
     }
-    return 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
+    return 'border-line text-icon hover:border-slate-300 hover:bg-surface focus:ring-slate-200/70';
   };
 
   const isDeliverableSignatureFlowCompleted = (payload) => {

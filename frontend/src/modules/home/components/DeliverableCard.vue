@@ -77,7 +77,7 @@ const onCardClick = (event) => {
               </span>
               <span
                 v-if="deliverable.item.attachment_count"
-                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.62rem] font-bold text-slate-500"
+                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 text-[0.62rem] font-bold text-slate-500"
                 :title="`${deliverable.item.attachment_count} anexo(s)`"
               >
                 <IconPaperclip class="h-3 w-3" />{{ deliverable.item.attachment_count }}
@@ -89,7 +89,7 @@ const onCardClick = (event) => {
                 v{{ deliverable.item.document_version }}
               </span>
             </p>
-            <p class="m-0 min-w-0 truncate text-[0.78rem] font-medium leading-snug text-slate-400">
+            <p class="m-0 min-w-0 truncate text-[0.78rem] font-medium leading-snug text-muted">
               {{ h.getDeliverablePeriodLabel(deliverable.task) }}
             </p>
             <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-[0.78rem] font-semibold leading-snug text-indigo-600">
@@ -112,35 +112,35 @@ const onCardClick = (event) => {
       <div v-show="!h.isDeliverableCollapsed(deliverable.item)" class="mt-3 flex flex-col gap-3">
         <div v-if="h.getDeliverableProgress(deliverable.item)" class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-3">
-            <p class="m-0 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-400">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
+            <p class="m-0 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
             <AppTag :variant="h.getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ h.getDeliverableDueState(deliverable.item).value }}</AppTag>
           </div>
           <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-slate-700">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
           <div class="flex items-center gap-2.5">
-            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
               <div class="h-full rounded-full transition-all duration-300" :class="h.getDeliverableCardTone(deliverable.item).accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
             </div>
-            <span class="shrink-0 text-[0.7rem] font-semibold text-slate-400">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
+            <span class="shrink-0 text-[0.7rem] font-semibold text-muted">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
           </div>
         </div>
 
-        <div class="mt-auto grid grid-cols-[minmax(0,1fr)_auto] gap-2.5 border-t border-slate-100 pt-3">
-          <button v-if="h.shouldShowStartDeliverable(deliverable.item)" type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-indigo-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/60 disabled:cursor-not-allowed disabled:opacity-60" :disabled="processingFillItemId === deliverable.item.id || !h.canStartDeliverableAction(deliverable.item)" @click="emit('start', deliverable.item)">
-            <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-indigo-200 bg-indigo-50/70 text-indigo-700"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
-            <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
+        <div class="mt-auto grid grid-cols-[minmax(0,1fr)_auto] gap-2.5 border-t border-line pt-3">
+          <button v-if="h.shouldShowStartDeliverable(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--start" :disabled="processingFillItemId === deliverable.item.id || !h.canStartDeliverableAction(deliverable.item)" @click="emit('start', deliverable.item)">
+            <div class="deasy-deliverable-action__chip"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
+            <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
           </button>
           <PdfDropField v-else-if="h.shouldShowUploadDeliverable(deliverable.item)" class="deliverable-inline-upload h-full" :input-id="`deliverable-upload-${deliverable.item.id}`" variant="compact" :icon="IconUpload" :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable" :title="''" :action-text="h.getUploadActionLabel(deliverable.item)" help-text="" :accept="UPLOAD_ACCEPT" @files-selected="emit('upload', { item: deliverable.item, files: $event })" />
-          <button v-else-if="h.shouldShowSign(deliverable.item)" type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-[#4BF1A1]/75 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 disabled:cursor-not-allowed disabled:opacity-60" :disabled="!deliverable.item.actions?.implemented?.sign" @click="emit('sign', deliverable.item)">
-            <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-[#4BF1A1]/55 bg-[#4BF1A1]/10 text-[#118a57]"><IconSignature class="h-4.5 w-4.5" /></div>
-            <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">Firmar</span></div>
+          <button v-else-if="h.shouldShowSign(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--sign" :disabled="!deliverable.item.actions?.implemented?.sign" @click="emit('sign', deliverable.item)">
+            <div class="deasy-deliverable-action__chip"><IconSignature class="h-4.5 w-4.5" /></div>
+            <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Firmar</span></div>
           </button>
-          <button v-else type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45" @click="emit('open', deliverable)">
-            <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700"><IconChecklist class="h-4.5 w-4.5" /></div>
-            <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">Abrir</span></div>
+          <button v-else type="button" class="group deasy-deliverable-action deasy-deliverable-action--open" @click="emit('open', deliverable)">
+            <div class="deasy-deliverable-action__chip"><IconChecklist class="h-4.5 w-4.5" /></div>
+            <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Abrir</span></div>
           </button>
 
           <div class="flex h-full items-center justify-end gap-1.5">
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-emerald-700 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-success transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar PDF" @click="emit('download', deliverable.item)"><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)"><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Ver PDF" @click="emit('preview', deliverable.item)"><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>

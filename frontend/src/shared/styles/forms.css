@@ -1,7 +1,7 @@
 @layer components {
 .deasy-filter-shell {
         @apply rounded-xl border bg-white p-4 shadow-none md:p-4;
-        border-color: var(--brand-border);
+        border-color: var(--color-line);
     }
 
     .deasy-filter-shell--embedded {
@@ -25,12 +25,12 @@
     }
 
     .deasy-filter-control {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[var(--brand-text-muted)];
-        border-color: var(--brand-border-field);
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-strong shadow-none outline-none transition placeholder:text-muted;
+        border-color: var(--color-line-field);
     }
 
     .deasy-filter-control:focus {
-        border-color: var(--brand-primary);
+        border-color: var(--color-primary);
         box-shadow: var(--focus-ring);
     }
 
@@ -43,28 +43,28 @@
     }
 
     .deasy-filter-search-input {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-brand-text-strong shadow-none outline-none transition placeholder:text-[var(--brand-text-muted)];
-        border-color: var(--brand-border-field);
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-strong shadow-none outline-none transition placeholder:text-muted;
+        border-color: var(--color-line-field);
         min-width: 0;
     }
 
     .deasy-filter-search-input:focus {
-        border-color: var(--brand-primary);
+        border-color: var(--color-primary);
         box-shadow: var(--focus-ring);
     }
 
     .deasy-filter-toolbar {
         @apply flex flex-wrap items-center justify-between gap-3 border-t pt-3;
-        border-color: var(--brand-surface-muted);
+        border-color: var(--color-surface);
     }
 
     .deasy-filter-summary {
-        @apply text-sm font-medium text-[var(--brand-text-muted)];
+        @apply text-sm font-medium text-muted;
     }
 
     .deasy-filter-summary strong,
     .deasy-filter-summary span.font-bold {
-        color: var(--brand-navy);
+        color: var(--color-navy);
     }
 
     .deasy-filter-actions {
@@ -85,42 +85,25 @@
         @apply mb-2 block text-sm font-semibold text-slate-700;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L473 + ex-L1368. Del bloque 2 solo ganaban dos cosas:
-       `border-color: var(--brand-border-strong)` (era -soft) y `placeholder:text-slate-400`.
-       El resto del bloque 2 repetia lo que ya decia el bloque 1. */
     .deasy-field-input,
-    .deasy-field-select,
-    .deasy-field-textarea {
-        @apply block w-full rounded-2xl border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-slate-400;
-        border-color: var(--brand-border-strong);
-        color: var(--brand-text-body);
+    .deasy-field-select {
+        @apply block w-full rounded-2xl border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-muted;
+        border-color: var(--color-line-strong);
+        color: var(--color-body);
     }
 
     .deasy-field-input:focus,
-    .deasy-field-select:focus,
-    .deasy-field-textarea:focus {
+    .deasy-field-select:focus {
         @apply bg-white ring-4;
-        border-color: rgba(var(--brand-primary-rgb), 0.44);
-        --tw-ring-color: rgba(var(--brand-primary-rgb), 0.12);
+        border-color: rgba(var(--primary-rgb), 0.44);
+        --tw-ring-color: rgba(var(--primary-rgb), 0.12);
     }
 
-    .deasy-field-input--icon-left {
-        @apply pl-11;
-    }
-
-    .deasy-field-input--icon-right {
-        @apply pr-12;
-    }
-
-    .deasy-field-input--error,
-    .deasy-field-select--error,
-    .deasy-field-textarea--error {
+    .deasy-field-input--error {
         @apply border-red-300 bg-red-50 text-red-700 placeholder:text-red-300;
     }
 
-    .deasy-field-input--error:focus,
-    .deasy-field-select--error:focus,
-    .deasy-field-textarea--error:focus {
+    .deasy-field-input--error:focus {
         @apply border-red-500 bg-white ring-4 ring-red-500/10;
     }
 
@@ -178,7 +161,7 @@
 
     .deasy-dropzone__surface--filled .deasy-dropzone__icon,
     .deasy-dropzone__surface--filled .deasy-dropzone__action {
-        @apply text-emerald-700;
+        @apply text-success;
     }
 
     .deasy-dropzone__surface--filled .deasy-dropzone__help {
@@ -264,118 +247,125 @@
 
     
 }
-.profile-field-label {
-  font-weight: 600;
-  color: var(--brand-ink);
+/* LOS CAMPOS DEL DOSSIER. ⚠️ El `border-radius` y el `background` de aqui abajo estan
+   MUERTOS: los tapan los dos grupos `.profile-*` de `overrides.css`, que siguen fuera de
+   capa. Tocarlos no pinta nada. La unica regla que no pudo capar es el `:focus`, mas
+   abajo. */
+
+@layer components {
+    .profile-field-label {
+        font-weight: 600;
+        color: var(--color-ink);
+    }
+
+    .profile-text-input,
+    .profile-select-input,
+    .profile-textarea {
+        min-height: var(--input-height);
+        width: 100%;
+        border-radius: 1rem;
+        border: 1px solid var(--color-line-field);
+        background: var(--color-white);
+        box-shadow: var(--elev-1);
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--color-navy);
+        padding: 0.8rem 1rem;
+    }
+
+    .profile-textarea {
+        min-height: 5.5rem;
+        resize: vertical;
+    }
 }
 
-.profile-text-input,
-.profile-select-input,
-.profile-textarea {
-  min-height: var(--input-height);
-  width: 100%;
-  border-radius: 1rem;
-  border: 1px solid var(--brand-border-field);
-  background: var(--brand-white);
-  box-shadow: var(--brand-shadow);
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--brand-navy);
-  padding: 0.8rem 1rem;
-}
-
-.profile-textarea {
-  min-height: 5.5rem;
-  resize: vertical;
-}
+/* ⚠️ SE QUEDA SIN CAPA — EL FOCO DE LOS 49 CONTROLES DEL DOSSIER. Es (0,2,0) y hoy le gana
+   por especificidad al grupo `.profile-*` de `overrides.css` (0,1,0), que tambien esta
+   suelto. Capada perderia POR CAPA —fuera de capa vale mas que cualquier especificidad— y
+   los 49 controles del dossier se quedarian con `--color-line-field` tambien al recibir
+   el teclado. El `box-shadow: var(--focus-ring)` no se pierde; el borde si. §4.2. */
 
 .profile-text-input:focus,
 .profile-select-input:focus,
 .profile-textarea:focus {
   outline: none;
-  border-color: var(--brand-primary);
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
-.profile-inline-note {
-  display: block;
-  margin-top: 0.4rem;
-  font-size: 0.78rem;
-  color: var(--brand-text-muted);
+@layer components {
+    .profile-inline-note {
+        display: block;
+        margin-top: 0.4rem;
+        font-size: 0.78rem;
+        color: var(--color-muted);
+    }
+
+    /* Los iconos de accion del buscador (limpiar / buscar), menos redondos que el boton
+       estandar. ⚠️ Dos cosas: estas clases NO estan en plantilla, las compone
+       `AdminButton.vue`; y esta regla le gana a `.deasy-table-shell .deasy-btn` —empatan en
+       especificidad— solo porque `index.css` importa `forms.css` DESPUES de `buttons.css`. */
+    .admin-lookup-field .deasy-btn--icon {
+        border-radius: 0.375rem;
+    }
 }
 
-/* Los iconos de accion del buscador (limpiar / buscar) menos redondos que el boton
-   estandar. Venia de un `:deep()` del propio componente, que SI casaba porque
-   `.admin-lookup-field` es su elemento raiz. Aqui no hace falta `:deep()` ni el scope. */
+/* DOS TAMAÑOS DE ZONA DE SUBIDA. La variante se escribe en la RAIZ del `<PdfDropField>`
+   (`--workspace` / `--rail`) y estas reglas apuntan a sus descendientes.
 
-.admin-lookup-field .deasy-btn--icon {
-  border-radius: 0.375rem;
-}
+   ⚠️ Las clases `__surface`, `__title`, `__trigger`, `__action`, `__help` y `__selected`
+   las COMPONE `PdfDropField.vue`: un grep las da por muertas.
 
-/* ------------------------------------------------------------------------------------
-   DOS TAMAÑOS DE ZONA DE SUBIDA, que antes se conseguian desde fuera.
+   ⚠️ El carril del multifirmador no se puede llevar a pantalla sin subir PDFs de verdad
+   (`workspaceMode === 'multi'`), asi que la huella no lo mide. Verificalo a mano. */
 
-   `FirmarPdf` y `MultiSignerPanel` reescribian las tripas del dropzone con once reglas
-   `:deep()` desde su propio `<style scoped>`. Eso es justo lo que la regla 6.3 dice que no
-   debe quedarse en el componente: si necesitas `:deep()` MUCHO, el estilo va al modulo del
-   hijo. Aqui estan, como dos variantes de verdad.
+@layer components {
+    /* Tarjeta grande del escritorio de firmas: titulo a la izquierda y mas aire. */
 
-   Se ponen sobre el propio `<PdfDropField>`, cuya raiz ES `.deasy-dropzone`, asi que ya no
-   hace falta ni `:deep()` ni un contenedor que sirva de ancla.
+    .deasy-dropzone--workspace .deasy-dropzone__surface--card {
+        min-height: 9.75rem;
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+    }
 
-   De paso murio una regla: `:deep(.deasy-dropzone)` buscaba el dropzone como DESCENDIENTE
-   del ancla, pero el ancla y el dropzone eran el MISMO elemento. Su `height:auto` no llego
-   a aplicarse nunca, y reproducirlo hoy tampoco serviria: la plantilla pide `h-full`, que
-   es una utilidad de Tailwind y gana a cualquier regla de `@layer components`.
+    .deasy-dropzone--workspace .deasy-dropzone__title {
+        margin-bottom: 1rem;
+        text-align: left;
+    }
 
-   Van sin capa, igual que estaban.
-   ------------------------------------------------------------------------------------ */
+    .deasy-dropzone--workspace .deasy-dropzone__trigger {
+        gap: 0.375rem;
+    }
 
-/* Tarjeta grande del escritorio de firmas: titulo a la izquierda y mas aire. */
+    /* Carril del multifirmador: la misma zona, comprimida para caber en una columna. */
 
-.deasy-dropzone--workspace .deasy-dropzone__surface--card {
-  min-height: 9.75rem;
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
-}
+    .deasy-dropzone--rail .deasy-dropzone__surface {
+        flex: none;
+        width: 100%;
+    }
 
-.deasy-dropzone--workspace .deasy-dropzone__title {
-  margin-bottom: 1rem;
-  text-align: left;
-}
+    .deasy-dropzone--rail .deasy-dropzone__surface--card {
+        min-height: 5.75rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+    }
 
-.deasy-dropzone--workspace .deasy-dropzone__trigger {
-  gap: 0.375rem;
-}
+    .deasy-dropzone--rail .deasy-dropzone__trigger {
+        gap: 0.25rem;
+    }
 
-/* Carril del multifirmador: la misma zona, comprimida para caber en una columna. */
+    .deasy-dropzone--rail .deasy-dropzone__action {
+        font-size: 0.95rem;
+    }
 
-.deasy-dropzone--rail .deasy-dropzone__surface {
-  flex: none;
-  width: 100%;
-}
+    .deasy-dropzone--rail .deasy-dropzone__help {
+        font-size: 0.75rem;
+    }
 
-.deasy-dropzone--rail .deasy-dropzone__surface--card {
-  min-height: 5.75rem;
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-}
-
-.deasy-dropzone--rail .deasy-dropzone__trigger {
-  gap: 0.25rem;
-}
-
-.deasy-dropzone--rail .deasy-dropzone__action {
-  font-size: 0.95rem;
-}
-
-.deasy-dropzone--rail .deasy-dropzone__help {
-  font-size: 0.75rem;
-}
-
-.deasy-dropzone--rail .deasy-dropzone__selected {
-  margin-top: 0.75rem;
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-  align-items: flex-start;
+    .deasy-dropzone--rail .deasy-dropzone__selected {
+        margin-top: 0.75rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+        align-items: flex-start;
+    }
 }

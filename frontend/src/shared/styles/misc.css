@@ -1,6 +1,6 @@
 @layer components {
 .deasy-hero-shell {
-        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[var(--brand-shadow)] md:p-6;
+        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[var(--elev-1)] md:p-6;
         background-image: none;
     }
 
@@ -24,8 +24,6 @@
         @apply shrink-0;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L693 + ex-L1456. Sobreviven caja y radio; borde, fondo, color
-       y sombra los fijaba el skin plano del bloque 2. */
     .deasy-hero-media-card {
         @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
     }
@@ -34,26 +32,16 @@
         @apply h-auto w-auto p-2;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L701 + ex-L1456. Sobrevive todo menos borde, fondo, color y sombra. */
     .deasy-hero-kicker {
         @apply inline-flex w-fit items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700 shadow-none;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L705 + ex-L1463: la copia del bloque 2 era identica
-       salvo que no repetia `shadow-none`. Se conserva la del bloque 1, que es superset. */
-    .deasy-hero-kicker--ghost {
-        @apply border-slate-200 bg-slate-50 text-blue-700 shadow-none;
-    }
-
-    /* [fusion-fase-X 2026-08-07] Los tres textos del hero estaban duplicados
-       (ex-L709/713/717 + ex-L1467/1472/1477). Lo unico que aportaba el bloque 2 era el
-       COLOR: el hero dejo de ser oscuro, asi que el texto blanco del bloque 1 estaba muerto. */
     .deasy-hero-title {
         @apply m-0 text-[1.25rem] font-bold leading-[1.05] tracking-tight text-slate-950 md:text-[1.45rem];
     }
 
     .deasy-hero-description {
-        @apply m-0 max-w-3xl text-[0.75rem] font-medium leading-4.5 text-slate-600 md:text-[0.8rem];
+        @apply m-0 max-w-3xl text-[0.75rem] font-medium leading-4.5 text-icon md:text-[0.8rem];
     }
 
     .deasy-hero-side {
@@ -64,10 +52,6 @@
         @apply w-full lg:w-auto;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L729/733 + ex-L1456. Del bloque 2 solo ganaban el fondo
-       (`bg-slate-50` sobre `bg-white`) y la sombra (`shadow-none` sobre `shadow-sm`) en el
-       boton, y borde/fondo/color en el icono. Los `hover:` del bloque 1 siguen vivos: son
-       0,2,0 y le ganan al skin plano (0,1,0). */
     .deasy-hero-back-button {
         @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-none transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-blue-500/10;
     }
@@ -76,39 +60,37 @@
         @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-slate-200 bg-slate-50 text-slate-700 shadow-none;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L761 + ex-L1449. Del bloque 1 solo sobrevive `overflow-hidden`;
-       el degradado oscuro lo mataba `background-image: none` del bloque 2. */
-    /* [fusion-fase-X 2026-08-07] ex-L773/777/781 + ex-L1467/1472/1477. Igual que en el hero:
-       del bloque 2 solo ganaba el color; el blanco del bloque 1 estaba muerto. */
-    /* [fusion-fase-X 2026-08-07] ex-L785 + ex-L1449. Mismo caso que .deasy-page-intro: solo
-       sobrevive `overflow-hidden`. */
-    /* [fusion-fase-X 2026-08-07] ex-L791 + ex-L1362. Sobreviven margenes y paddings; radio, sombra y
-       borde son los del bloque 2 (el `var(--brand-border)` literal del bloque 1 es el mismo valor que
-       `var(--brand-border)`, asi que se colapsa al token). */
     
 }
 @layer components {
 .deasy-inline-icon-button {
-        @apply inline-flex items-center justify-center rounded-2xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
+        @apply inline-flex items-center justify-center rounded-2xl text-muted transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
     }
 
     
 }
-@media (min-width: 640px) {
-  .admin-surface-frame {
-    padding: 1rem 1.1rem 1.1rem;
-  }
-}
+/* ⚠️ EL `@media` DE ABAJO ESTA ACOPLADO A `admin.css`: pisa el `padding` que
+   `.admin-surface-frame` declara alli, y le gana solo porque `index.css` importa
+   `misc.css` DESPUES. Si una de las dos cambia de capa sin la otra, el padding responsive
+   de ≥640 px muere en silencio — ni el build, ni el lint, ni los tests lo ven. */
 
-.admin-table-manager {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0;
-}
+@layer components {
+    @media (min-width: 640px) {
+        .admin-surface-frame {
+            padding: 1rem 1.1rem 1.1rem;
+        }
+    }
 
-.theme-info-panel {
-  background-color: var(--brand-info-soft);
-  border-radius: 12px;
-  border: 1px solid var(--brand-border);
+    .admin-table-manager {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0;
+    }
+
+    .theme-info-panel {
+        background-color: var(--info-soft);
+        border-radius: 12px;
+        border: 1px solid var(--color-line);
+    }
 }

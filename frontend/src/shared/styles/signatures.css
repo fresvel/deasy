@@ -1,34 +1,25 @@
-/* ------------------------------------------------------------------------------------
-   FIRMAS — lo propio del escritorio de firma y del multifirmador.
-
-   Sale de los `<style scoped>` de FirmarPdf, MultiSignerPanel y SignatureBox. De las 25
-   reglas que habia entre los tres, DIEZ estaban muertas (`.pdf-viewer`,
-   `.page-selector-input`, `.multisigner-canvas`, `.shared-box` y `.dropfield-centered-title`
-   no aparecian en ninguna plantilla); los tamaños de la zona de subida se fueron a
-   `forms.css` como variantes; y aqui queda lo que de verdad se usa.
-
-   Va sin capa, igual que estaba.
-   ------------------------------------------------------------------------------------ */
+/* FIRMAS — lo propio del escritorio de firma y del multifirmador. Los dos tamaños de la
+   zona de subida NO estan aqui: son variantes en `forms.css`. */
 
 /* El icono redondeado de las tarjetas del escritorio. Cuelga de la TARJETA, no de la zona
-   de subida: tres de las nueve tarjetas son lanzadores con botones y no tienen dropzone,
-   y colgarlo del dropzone las dejaba sin margenes. */
+   de subida: tres de las nueve tarjetas son lanzadores sin dropzone, y colgandolo de ahi
+   se quedaban sin margenes. */
 
-.signature-workspace-card .signature-workspace-icon {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
+@layer components {
+    .signature-workspace-card .signature-workspace-icon {
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+    }
 }
 
-/* ------------------------------------------------------------------------------------
-   Cursores de arrastre de la caja de firma (SignatureBox).
+/* ⚠️ CURSORES DE ARRASTRE (SignatureBox) — SIN CAPA POR PREVENCION, y es la unica regla
+   del proyecto que lo esta sin tener un competidor real. Hoy no hay ni un `cursor-*` de
+   Tailwind en esos nodos, pero `SignatureBox` acepta un prop `customClass` que inyecta
+   utilidades desde fuera: un `cursor-pointer` que llegue por ahi mataria el arrastre en
+   silencio. Si se retira `customClass`, estas dos bajan.
 
-   Van SIN CAPA a proposito: las utilidades `cursor-*` de Tailwind viven en
-   `@layer utilities` y ganarian a una regla capada. En el `<style scoped>` funcionaban
-   justo por eso, porque un scoped tampoco tiene capa.
-
-   El `!important` que llevaba la segunda regla se ha quitado: existia para ganarle a la
-   primera cuando estaban en bloques distintos; ahora van seguidas y decide el orden.
-   ------------------------------------------------------------------------------------ */
+   El orden de las dos importa: la segunda gana a la primera por venir despues (antes lo
+   hacia con un `!important`). */
 
 .custom-drag-cursor {
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='white' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grab;

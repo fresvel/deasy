@@ -2,9 +2,9 @@
 .deasy-auth-page {
         @apply min-h-screen px-4 py-6 font-sans text-slate-900 sm:px-6 lg:px-8;
         background-image:
-            linear-gradient(180deg, rgba(var(--brand-white-rgb), 0.99) 0%, rgba(var(--brand-surface-muted-rgb), 0.98) 48%, var(--brand-surface-muted) 100%),
-            radial-gradient(circle at top left, rgba(var(--brand-navy-menu-rgb), 0.08), transparent 28rem),
-            radial-gradient(circle at bottom right, rgba(var(--state-success-rgb), 0.08), transparent 24rem);
+            linear-gradient(180deg, rgba(var(--white-rgb), 0.99) 0%, rgba(var(--surface-rgb), 0.98) 48%, var(--color-surface) 100%),
+            radial-gradient(circle at top left, rgba(var(--navy-menu-rgb), 0.08), transparent 28rem),
+            radial-gradient(circle at bottom right, rgba(var(--success-rgb), 0.08), transparent 24rem);
     }
 
     .deasy-auth-center {
@@ -12,32 +12,30 @@
     }
 
     .deasy-auth-card {
-        @apply w-full overflow-hidden rounded-[12px] border bg-white shadow-[var(--shadow-modal)];
-        border-color: var(--brand-border);
+        @apply w-full overflow-hidden rounded-[12px] border bg-white shadow-[var(--elev-3)];
+        border-color: var(--color-line);
     }
 
     .deasy-auth-title {
-        @apply text-3xl font-semibold tracking-tight text-brand-text-strong;
+        @apply text-3xl font-semibold tracking-tight text-strong;
     }
 
     .deasy-auth-copy {
         @apply mt-2 text-sm font-medium leading-6 text-slate-500;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L1262 + ex-L1368. Lo unico que ganaba el bloque 2 era
-       `border-color: var(--brand-border-strong)` (aqui era -soft). */
     .deasy-auth-field {
-        @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-slate-400;
-        border-color: var(--brand-border-strong);
-        color: var(--brand-text-body);
+        @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-muted;
+        border-color: var(--color-line-strong);
+        color: var(--color-body);
     }
 
     .deasy-auth-field:-webkit-autofill,
     .deasy-auth-field:-webkit-autofill:hover,
     .deasy-auth-field:-webkit-autofill:focus {
-        -webkit-text-fill-color: var(--brand-text-body);
-        -webkit-box-shadow: 0 0 0px 1000px var(--brand-white) inset;
-        box-shadow: 0 0 0px 1000px var(--brand-white) inset;
+        -webkit-text-fill-color: var(--color-body);
+        -webkit-box-shadow: 0 0 0px 1000px var(--color-white) inset;
+        box-shadow: 0 0 0px 1000px var(--color-white) inset;
         transition: background-color 9999s ease-in-out 0s;
     }
 
@@ -45,26 +43,14 @@
         @apply pl-11;
     }
 
-    /* [fusion-fase-X 2026-08-07] ex-L1281 + ex-L1376 (iba agrupada con `.deasy-btn`). El bloque 2
-       anadia `min-h-10` y, sobre todo, `shadow-none`, que MATABA el `box-shadow` declarado
-       aqui abajo: el boton de login no tiene sombra hoy. Se retira la declaracion muerta. */
     
 }
 @layer components {
 .deasy-auth-link {
         @apply text-sm font-semibold transition-colors hover:underline;
-        color: var(--brand-primary);
+        color: var(--color-primary);
     }
 
-    /* ------------------------------------------------------------------------------
-       [fusion-fase-X 2026-08-07] Aqui empezaba el SEGUNDO `@layer components` del fichero
-       (ex-L1300). Estaba en la misma capa que el primero, asi que ganaba solo por venir
-       despues: 42 selectores tenian dos definiciones a mil lineas de distancia. Las 42
-       colisiones estan resueltas arriba, en la definicion unica de cada clase (busca
-       `[fusion-fase-X`). Lo que queda debajo son las reglas que SOLO existian en el
-       segundo bloque; se conservan aqui, al final de la capa, para no alterar el orden
-       de cascada que tenian frente al resto.
-       ------------------------------------------------------------------------------ */
 
     
 }

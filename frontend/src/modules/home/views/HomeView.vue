@@ -88,11 +88,11 @@
                   </button>
                   <div
                     v-if="showProcessMultiSelect && consolidatedCargoProcesses.length"
-                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/60"
+                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-xl shadow-slate-200/60"
                   >
                     <button
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-surface"
                       @click="toggleAllConsolidatedProcesses"
                     >
                       <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
@@ -100,12 +100,12 @@
                       </span>
                       Todos los procesos
                     </button>
-                    <div class="my-1 h-px bg-slate-100"></div>
+                    <div class="my-1 h-px bg-surface"></div>
                     <button
                       v-for="process in consolidatedCargoProcesses"
                       :key="process.process_definition_id || process.id"
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-medium text-icon hover:bg-surface"
                       @click="toggleConsolidatedProcess(process.process_definition_id || process.id)"
                     >
                       <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
@@ -158,33 +158,33 @@
             </div>
 
             <!-- Estado de carga / error -->
-            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
             <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
               {{ processPanelError }}
             </section>
-            <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 text-center text-sm font-medium">
+            <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 text-center text-sm font-medium">
               Selecciona una unidad y proceso para ver sus entregables.
             </div>
 
             <template v-else>
 
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
               <!-- Tarjetas de entregables -->
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
 
-                  <div v-if="!consolidatedCargoProcesses.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-if="!consolidatedCargoProcesses.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
                     No hay procesos asignados para este cargo.
                   </div>
-                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
                     Selecciona al menos un proceso para ver sus entregables.
                   </div>
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
                   <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
@@ -192,7 +192,7 @@
                       <div class="h-px flex-1 bg-slate-200/90"></div>
                       <AppButton
                         variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
                         :aria-label="isProcessCollapsed ? 'Expandir todo' : 'Colapsar todo'"
                         @click="toggleDeliverableProcess"
                       >
@@ -205,7 +205,7 @@
                       <div v-if="showDeliverableGroupHeaders" class="flex items-center gap-2 px-1">
                         <span class="inline-flex h-6 w-6 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700"><IconChecklist class="h-3.5 w-3.5" /></span>
                         <h3 class="m-0 text-sm font-bold text-slate-700">{{ group.name }}</h3>
-                        <span class="text-xs font-semibold text-slate-400">{{ group.items.length }}</span>
+                        <span class="text-xs font-semibold text-muted">{{ group.items.length }}</span>
                       </div>
                       <section v-for="row in group.rows" :key="row.id" class="flex flex-col gap-3">
                         <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
@@ -274,23 +274,23 @@
               <template v-for="unit in unitsPanelData" :key="unit.id">
                 <div v-if="activeUnitPanelTab === unit.id" class="flex flex-col gap-5">
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <section class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4">
+                    <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4">
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                          <div v-if="unit.groupName" class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ unit.groupName }}</div>
+                          <div v-if="unit.groupName" class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ unit.groupName }}</div>
                           <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1 leading-snug">{{ unit.name }}</h3>
                         </div>
                       </div>
-                      <div v-if="!unit.processes.length" class="text-sm font-medium text-slate-400 italic">
+                      <div v-if="!unit.processes.length" class="text-sm font-medium text-muted italic">
                         Sin procesos asignados.
                       </div>
                       <div v-else class="flex flex-col gap-2">
-                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Procesos disponibles</div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-muted">Procesos disponibles</div>
                         <button
                           v-for="process in unit.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
+                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -300,7 +300,7 @@
                             <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
                           <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
-                          <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
+                          <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
                     </section>
@@ -356,36 +356,36 @@
                     <section
                       v-for="pos in cargo.positions"
                       :key="pos.unitId"
-                      class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4"
+                      class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4"
                     >
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ pos.groupName }}</div>
+                          <div class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ pos.groupName }}</div>
                           <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1 leading-snug">{{ pos.unitName }}</h3>
                         </div>
                         <span
                           v-if="pos.positionType"
                           class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
                           :class="{
-                            'bg-emerald-100 text-emerald-700': pos.positionType === 'real',
+                            'bg-emerald-100 text-success': pos.positionType === 'real',
                             'bg-sky-100 text-sky-700': pos.positionType === 'simbolico',
-                            'bg-amber-100 text-amber-700': pos.positionType === 'promocion',
+                            'bg-amber-100 text-warning': pos.positionType === 'promocion',
                           }"
                         >
                           {{ { real: 'Real', simbolico: 'Simbólico', promocion: 'Promoción' }[pos.positionType] ?? pos.positionType }}
                         </span>
                       </div>
 
-                      <div v-if="!pos.processes.length" class="text-sm font-medium text-slate-400 italic">
+                      <div v-if="!pos.processes.length" class="text-sm font-medium text-muted italic">
                         Sin procesos asignados.
                       </div>
                       <div v-else class="flex flex-col gap-2">
-                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Procesos disponibles</div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-muted">Procesos disponibles</div>
                         <button
                           v-for="process in pos.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
+                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -395,7 +395,7 @@
                             <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
                           <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
-                          <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
+                          <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
                     </section>
@@ -447,13 +447,13 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
                 @click="scrollToProcessNav"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis procesos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconChecklist class="h-10 w-10 text-slate-400" />
+                    <IconChecklist class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeProcesses.length }} proceso(s) disponible(s)</span>
                     <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Accede y gestiona las tareas y entregables de tus procesos activos.</p>
                   </div>
@@ -462,15 +462,15 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
                 :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
                 @click="navigateToGlobalSignaturePage"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Centro de firmas</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm"
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm"
                   :class="homeSignatureCount ? 'border-amber-200/80' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-amber-500' : 'text-slate-400'" />
+                    <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-amber-500' : 'text-muted'" />
                     <span class="mt-4 text-sm font-semibold text-slate-700">
                       {{ homeSignatureCount ? `${homeSignatureCount} firma(s) pendiente(s)` : 'Sin pendientes' }}
                     </span>
@@ -481,11 +481,11 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
                 @click="openMySends"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis envíos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSend class="h-10 w-10 text-indigo-400" />
                     <span class="mt-4 text-sm font-semibold text-slate-700">Documentos que has enviado</span>
@@ -496,13 +496,13 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
                 @click="navigateToDocumentCenterPage"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Centro documental</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconFileDescription class="h-10 w-10 text-slate-400" />
+                    <IconFileDescription class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeDocumentCount }} documento(s) accesibles</span>
                     <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Consulta y descarga los documentos accesibles de tu cuenta.</p>
                   </div>
@@ -511,13 +511,13 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
                 @click="navigateTo('perfil')"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Mi dossier</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconUserCheck class="h-10 w-10 text-slate-400" />
+                    <IconUserCheck class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeDossierCompletion }}% completado · {{ homeDossierTotal }} registro(s)</span>
                     <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Gestiona tu perfil académico, experiencia y certificaciones.</p>
                   </div>
@@ -526,13 +526,13 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-100/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-slate-300 hover:bg-surface/40 hover:shadow-md"
                 @click="openCargosPanel"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis cargos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconBriefcase class="h-10 w-10 text-slate-400" />
+                    <IconBriefcase class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeCargoCount }} cargo(s) asignado(s)</span>
                     <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Consulta las unidades y cargos vinculados a tu cuenta.</p>
                   </div>
@@ -541,13 +541,13 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-violet-200 hover:bg-violet-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-violet-200 hover:bg-violet-50/30 hover:shadow-md"
                 @click="openUnitsPanel"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis unidades</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconBuildingMonument class="h-10 w-10 text-slate-400" />
+                    <IconBuildingMonument class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-slate-700">{{ unitsPanelData.length }} unidad(es) activa(s)</span>
                     <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Revisa los procesos disponibles en cada una de tus unidades.</p>
                   </div>
@@ -560,7 +560,7 @@
             <div v-else-if="homeDashTab === 'resumen'" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
               <!-- Columna izquierda: Acciones pendientes -->
-              <section class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4">
+              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4">
                 <div class="flex items-center justify-between gap-3">
                   <h3 class="text-lg font-semibold text-slate-800 m-0">Acciones pendientes</h3>
                   <AppButton variant="softNeutral" size="sm" :disabled="homeLoading" @click="loadHomeData">
@@ -569,10 +569,10 @@
                   </AppButton>
                 </div>
                 <div class="flex flex-col gap-2">
-                  <div v-if="homeLoading" class="text-sm font-medium text-slate-400 py-2">
+                  <div v-if="homeLoading" class="text-sm font-medium text-muted py-2">
                     Actualizando...
                   </div>
-                  <div v-else-if="!homeActions.length" class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700">
+                  <div v-else-if="!homeActions.length" class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-success">
                     <IconCircleCheck class="h-5 w-5 shrink-0" />
                     Todo al día. No hay acciones pendientes.
                   </div>
@@ -581,7 +581,7 @@
                     v-for="action in homeActions"
                     :key="action.key"
                     type="button"
-                    class="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3.5 text-left shadow-sm transition hover:shadow-md"
+                    class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3.5 text-left shadow-sm transition hover:shadow-md"
                     :class="{
                       'hover:border-amber-200': action.tone === 'warning',
                       'hover:border-sky-200': action.tone === 'info',
@@ -595,7 +595,7 @@
                         'bg-amber-100 text-amber-600': action.tone === 'warning',
                         'bg-sky-100 text-sky-600': action.tone === 'info',
                         'bg-emerald-100 text-emerald-600': action.tone === 'success',
-                        'bg-slate-100 text-slate-600': !['warning','info','success'].includes(action.tone),
+                        'bg-surface text-icon': !['warning','info','success'].includes(action.tone),
                       }"
                     >
                       <component :is="action.icon" class="h-5 w-5" />
@@ -610,13 +610,13 @@
               </section>
 
               <!-- Columna derecha: Estadísticas -->
-              <section class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4">
+              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4">
                 <h3 class="text-lg font-semibold text-slate-800 m-0">Estadísticas de cuenta</h3>
                 <div class="flex flex-col gap-2">
                   <div
                     v-for="stat in homeStats"
                     :key="stat.label"
-                    class="flex items-center gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm"
+                    class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3 shadow-sm"
                   >
                     <span
                       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
@@ -625,13 +625,13 @@
                         'bg-emerald-100 text-emerald-600': stat.tone === 'emerald',
                         'bg-indigo-100 text-indigo-600': stat.tone === 'indigo',
                         'bg-amber-100 text-amber-600': stat.tone === 'amber',
-                        'bg-slate-100 text-slate-600': stat.tone === 'slate',
+                        'bg-surface text-icon': stat.tone === 'slate',
                       }"
                     >
                       <component :is="stat.icon" class="h-4.5 w-4.5" />
                     </span>
                     <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ stat.label }}</span>
+                      <span class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ stat.label }}</span>
                       <span class="text-xs font-medium text-slate-500 truncate">{{ stat.detail }}</span>
                     </div>
                     <strong class="text-xl font-extrabold text-slate-800 shrink-0">{{ stat.value }}</strong>
@@ -668,7 +668,7 @@
             <!-- Cabecera con título y botón volver -->
             <div class="admin-page-header">
               <div class="admin-page-header__main">
-                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 m-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-muted m-0">
                   {{ isRoutedProcess ? 'Documentos' : (selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso') }}
                 </p>
                 <h1 class="admin-page-header__title mt-1">
@@ -689,7 +689,7 @@
               </div>
             </div>
 
-            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando la configuración seleccionada...
             </section>
 
@@ -698,7 +698,7 @@
             </section>
 
             <template v-else>
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
@@ -716,11 +716,11 @@
 
               <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
                   <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="openTaskFiltersModal">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="openTaskFiltersModal">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
                             <IconSearch class="h-5 w-5" />
                           </span>
@@ -728,7 +728,7 @@
                             <span class="text-sm font-bold text-slate-800">Filtrar tareas</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToDocumentCenterPage">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToDocumentCenterPage">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
                             <IconFileDescription class="h-5 w-5" />
                           </span>
@@ -736,7 +736,7 @@
                             <span class="text-sm font-bold text-slate-800">Centro documental</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToGlobalSignaturePage">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToGlobalSignaturePage">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
                             <IconSignature class="h-5 w-5" />
                           </span>
@@ -744,8 +744,8 @@
                             <span class="text-sm font-bold text-slate-800">Firma global</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70" @click="openGeneralTaskModal('free')">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-slate-200 bg-slate-50/80 text-slate-600 transition-all group-hover:border-slate-300 group-hover:bg-slate-100">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70" @click="openGeneralTaskModal('free')">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-line bg-slate-50/80 text-icon transition-all group-hover:border-slate-300 group-hover:bg-surface">
                             <IconPlus class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
@@ -753,7 +753,7 @@
                           </span>
                         </button>
                       </div>
-                      <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-3">
+                      <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-white/80 px-4 py-3">
                         <div class="text-sm font-medium text-slate-500">
                           Tareas visibles:
                           <span class="font-bold text-slate-700">{{ filteredProcessDeliverables.length }}</span>
@@ -796,7 +796,7 @@
                     <div class="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 flex flex-col gap-3">
                       <div class="flex items-center gap-1.5">
                         <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Agregar entregable</h3>
-                        <IconInfoCircle class="h-4 w-4 text-slate-400" title="Crea réplicas con etiqueta o envíos a un destinatario, según el modo configurado en el proceso." />
+                        <IconInfoCircle class="h-4 w-4 text-muted" title="Crea réplicas con etiqueta o envíos a un destinatario, según el modo configurado en el proceso." />
                       </div>
                       <div class="flex flex-wrap gap-2">
                         <AppButton
@@ -815,11 +815,11 @@
                     </div>
                   </section>
 
-                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta configuración.
                   </div>
 
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
                     {{ isRoutedProcess
                       ? 'Aún no has enviado ningún documento. Usa "Nuevo envío" para crear el primero.'
                       : 'No hay entregables que coincidan con los filtros actuales.' }}
@@ -830,7 +830,7 @@
                       <div class="h-px flex-1 bg-slate-200/90"></div>
                       <AppButton
                         variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
                         :aria-label="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         :title="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         @click="toggleDeliverableProcess"
@@ -871,41 +871,41 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
                     <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la configuración</h2>
                     <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
-                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-slate-400"/> Reglas</h3>
+                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-line">
+                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-muted"/> Reglas</h3>
                       <div v-if="!selectedProcessPanel.dependencies.rules.length" class="text-sm text-slate-500 font-medium italic">
                         Sin reglas activas para tu alcance.
                       </div>
                       <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
-                        <li v-for="rule in selectedProcessPanel.dependencies.rules" :key="rule.id" class="text-sm font-medium text-slate-600 flex items-start gap-2">
+                        <li v-for="rule in selectedProcessPanel.dependencies.rules" :key="rule.id" class="text-sm font-medium text-icon flex items-start gap-2">
                           <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ rule.display_label }}
                         </li>
                       </ul>
                     </section>
-                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
-                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-slate-400"/> Periodos del proceso</h3>
+                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-line">
+                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-muted"/> Periodos del proceso</h3>
                       <div v-if="!selectedProcessPanel.dependencies.period_types.length" class="text-sm text-slate-500 font-medium italic">
                         Sin tipos de periodo activos.
                       </div>
                       <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
-                        <li v-for="periodType in selectedProcessPanel.dependencies.period_types" :key="periodType.id" class="text-sm font-medium text-slate-600 flex items-start gap-2">
+                        <li v-for="periodType in selectedProcessPanel.dependencies.period_types" :key="periodType.id" class="text-sm font-medium text-icon flex items-start gap-2">
                           <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ formatTriggerLabel(periodType) }}
                         </li>
                       </ul>
                     </section>
-                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
-                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-slate-400"/> Paquetes</h3>
+                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-line">
+                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-muted"/> Paquetes</h3>
                       <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-slate-500 font-medium italic">
                         Sin artifacts vinculados.
                       </div>
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
-                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-slate-700 flex flex-col gap-1 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-slate-700 flex flex-col gap-1 bg-white p-3 rounded-xl border border-line shadow-sm">
                           <span>{{ template.template_artifact_name }}</span>
                         </li>
                       </ul>
@@ -941,7 +941,7 @@
             v-for="step in taskLaunchSteps"
             :key="step.id"
             class="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition-colors"
-            :class="taskLaunchStep >= step.id ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-400'"
+            :class="taskLaunchStep >= step.id ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-line bg-white text-muted'"
           >
             <span class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]" :class="taskLaunchStep >= step.id ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-500'">
               {{ step.id }}
@@ -955,12 +955,12 @@
         </div>
 
         <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
-          <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50/60 p-5">
+          <div class="md:col-span-2 rounded-xl border border-line bg-surface/60 p-5">
             <div class="flex flex-wrap gap-2">
               <AppTag variant="info">Tarea ligada a proceso</AppTag>
               <AppTag variant="muted">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
             </div>
-            <p class="mt-3 mb-0 text-sm font-medium text-slate-600">
+            <p class="mt-3 mb-0 text-sm font-medium text-icon">
               Define el contexto operativo de la tarea. El backend la materializará usando los templates activos de esta configuración.
             </p>
           </div>
@@ -969,7 +969,7 @@
             <span class="font-bold text-slate-700 text-sm">Descripción</span>
             <textarea
               v-model="taskLaunchForm.description"
-              class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
+              class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
               rows="3"
               placeholder="Describe brevemente la tarea manual que vas a lanzar."
             />
@@ -978,7 +978,7 @@
           <label class="flex flex-col gap-2">
             <span class="font-bold text-slate-700 text-sm">Periodo existente</span>
             <div class="relative">
-              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
+              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
                 <option value="">Seleccionar</option>
                 <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
                   {{ term.name }} · {{ term.term_type_name }}
@@ -990,22 +990,22 @@
             </div>
           </label>
 
-          <div v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="mt-1 md:mt-7 p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
+          <div v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="mt-1 md:mt-7 p-3 rounded-2xl border border-line bg-surface/50">
             <SToggle v-model="taskLaunchUseCustomTerm" label="Crear periodo custom" />
           </div>
 
           <template v-if="taskLaunchUseCustomTerm">
             <label class="flex flex-col gap-2 md:col-span-2">
               <span class="font-bold text-slate-700 text-sm">Nombre del periodo custom</span>
-              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
+              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
             </label>
             <label class="flex flex-col gap-2">
               <span class="font-bold text-slate-700 text-sm">Fecha inicial</span>
-              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
             </label>
             <label class="flex flex-col gap-2">
               <span class="font-bold text-slate-700 text-sm">Fecha final</span>
-              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
             </label>
           </template>
         </section>
@@ -1019,7 +1019,7 @@
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-slate-800">Templates operativos</h3>
@@ -1027,11 +1027,11 @@
                 </div>
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
               </header>
-              <div v-if="!taskLaunchSystemTemplates.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
+              <div v-if="!taskLaunchSystemTemplates.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-slate-500">
                 Esta configuración no tiene templates de proceso que generen tarea.
               </div>
               <div v-else class="flex flex-col gap-3">
-                <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-2">
+                <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="rounded-2xl border border-line bg-surface/60 p-4 flex flex-col gap-2">
                   <div class="flex flex-wrap items-center gap-2">
                     <strong class="text-sm font-bold text-slate-800">{{ template.template_artifact_name }}</strong>
                     <AppTag variant="success">Proceso</AppTag>
@@ -1044,7 +1044,7 @@
               </div>
             </article>
 
-            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-slate-800">Artifacts generales</h3>
@@ -1052,11 +1052,11 @@
                 </div>
                 <AppTag variant="muted">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
               </header>
-              <div v-if="!selectedProcessPanel?.user_packages?.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
+              <div v-if="!selectedProcessPanel?.user_packages?.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-slate-500">
                 No tienes artifacts generales registrados en esta cuenta.
               </div>
               <div v-else class="flex flex-col gap-3">
-                <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 flex items-center justify-between gap-3">
+                <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="rounded-2xl border border-line bg-surface/60 p-4 flex items-center justify-between gap-3">
                   <div class="min-w-0">
                     <strong class="block truncate text-sm font-bold text-slate-800">{{ item.display_name }}</strong>
                     <p class="mt-1 mb-0 text-xs font-medium text-slate-500">{{ item.description || 'Plantilla de documento registrada por el usuario.' }}</p>
@@ -1077,32 +1077,32 @@
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-slate-800">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                <div class="rounded-2xl bg-surface border border-line p-4">
                   <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Configuración</div>
                   <div class="mt-2 text-sm font-bold text-slate-800">{{ selectedProcessPanel?.definition?.name || '—' }}</div>
                 </div>
-                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                <div class="rounded-2xl bg-surface border border-line p-4">
                   <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</div>
                   <div class="mt-2 text-sm font-bold text-slate-800">{{ taskLaunchSelectedTermLabel }}</div>
                 </div>
-                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 sm:col-span-2">
+                <div class="rounded-2xl bg-surface border border-line p-4 sm:col-span-2">
                   <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Descripción</div>
                   <div class="mt-2 text-sm font-medium text-slate-700">{{ taskLaunchForm.description || 'Sin descripción adicional.' }}</div>
                 </div>
               </div>
             </article>
 
-            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-slate-800">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.period_types?.length || 0 }} tipos de periodo activos</AppTag>
                 <AppTag variant="muted">{{ selectedProcessPanel?.dependencies?.rules?.length || 0 }} reglas vigentes</AppTag>
               </div>
-              <ul class="m-0 pl-5 text-sm font-medium text-slate-600 flex flex-col gap-2">
+              <ul class="m-0 pl-5 text-sm font-medium text-icon flex flex-col gap-2">
                 <li>La tarea se creará en modo manual dentro de esta configuración.</li>
                 <li>El backend generará entregables y documentos según los templates activos.</li>
                 <li>Los flujos de entrega y firma dependerán de la configuración actual de cada template.</li>
@@ -1146,14 +1146,14 @@
       labelled-by="task-filters-modal-title"
       title="Filtrar tareas y entregables"
       size="lg"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="deasy-filter-shell flex flex-col gap-5">
         <label class="deasy-filter-field">
           <span class="sr-only">Buscar</span>
           <div class="relative">
-            <IconSearch class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <IconSearch class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <input
               v-model="taskListFilters.query"
               type="text"
@@ -1232,7 +1232,7 @@
       labelled-by="document-sign-modal-title"
       title="Firmar documento"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <FirmarPdf ref="embeddedSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
@@ -1249,13 +1249,13 @@
       labelled-by="deliverable-workspace-modal-title"
       :title="deliverableWorkspaceTitle"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-5">
         <div
           v-if="fillWorkflowState.subject || signatureFlowState.subject"
-          class="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3"
+          class="flex flex-wrap items-center gap-2 border-b border-line pb-3"
           role="tablist"
           aria-label="Secciones del entregable"
         >
@@ -1312,7 +1312,7 @@
 
         <template v-if="deliverableWorkspaceState.tab === 'summary'">
           <div v-if="deliverableWorkspaceSubject" class="flex flex-col gap-5">
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+            <section class="rounded-2xl border border-line bg-white p-4">
               <div class="flex flex-col gap-3">
                 <!-- Estado del entregable -->
                 <div class="flex flex-wrap gap-2">
@@ -1329,26 +1329,26 @@
                 <dl class="grid gap-x-6 gap-y-2.5 m-0 sm:grid-cols-2 lg:grid-cols-4">
                   <div
                     class="flex flex-col gap-0.5 border-l-2 pl-3"
-                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-[#4BF1A1]' : 'border-sky-300'"
+                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-step-ink' : 'border-sky-300'"
                   >
                     <dt
                       class="text-[11px] font-bold uppercase tracking-[0.16em]"
-                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-[#118a57]' : 'text-sky-600'"
+                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-step-ink' : 'text-sky-600'"
                     >
                       Responsable actual
                     </dt>
                     <dd class="m-0 text-sm font-semibold text-slate-800">{{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}</dd>
                   </div>
-                  <div class="flex flex-col gap-0.5 border-l-2 border-slate-100 pl-3">
-                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Proceso</dt>
+                  <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
+                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Proceso</dt>
                     <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
                   </div>
-                  <div class="flex flex-col gap-0.5 border-l-2 border-slate-100 pl-3">
-                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Unidad</dt>
+                  <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
+                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Unidad</dt>
                     <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverableUnitLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
-                  <div class="flex flex-col gap-0.5 border-l-2 border-slate-100 pl-3">
-                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Periodo</dt>
+                  <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
+                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Periodo</dt>
                     <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</dd>
                     <dd class="m-0 text-xs font-medium text-slate-500">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
@@ -1356,12 +1356,12 @@
               </div>
             </section>
 
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+            <section class="rounded-2xl border border-line bg-white p-4">
               <div class="flex items-center gap-1.5">
                 <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones</h3>
-                <IconInfoCircle class="h-4 w-4 text-slate-400" title="Todo lo que puedes hacer ahora con este entregable, en un solo lugar." />
+                <IconInfoCircle class="h-4 w-4 text-muted" title="Todo lo que puedes hacer ahora con este entregable, en un solo lugar." />
               </div>
-              <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+              <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
                 <!-- Acción principal (destacada) -->
                 <AppButton v-if="shouldShowStartDeliverable(deliverableWorkspaceSubject)" variant="primary" size="sm" :disabled="processingFillItemId === deliverableWorkspaceSubject.itemId || !canStartDeliverableAction(deliverableWorkspaceSubject)" @click="startDeliverableFlow(deliverableWorkspaceSubject)">
                   <span class="inline-flex items-center gap-1.5"><IconPlayerPlayFilled class="h-4 w-4" /> {{ processingFillItemId === deliverableWorkspaceSubject.itemId ? 'Iniciando...' : 'Iniciar' }}</span>
@@ -1433,7 +1433,7 @@
             :handle-attachment-delete="handleAttachmentDelete"
           />
         </template>
-        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
+        <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm font-semibold text-icon text-center">
           No hay una sección disponible para este entregable.
         </div>
       </div>
@@ -1478,7 +1478,7 @@
       labelled-by="my-sends-modal-title"
       title="Mis envíos"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
@@ -1494,11 +1494,11 @@
         </div>
 
         <div v-if="mySendsLoading" class="text-sm text-slate-500">Cargando envíos…</div>
-        <div v-else-if="!filteredMySends.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center text-sm font-medium text-slate-500">
+        <div v-else-if="!filteredMySends.length" class="rounded-2xl border border-dashed border-line bg-slate-50/70 p-6 text-center text-sm font-medium text-slate-500">
           Aún no has enviado ningún documento.
         </div>
         <ul v-else class="m-0 flex flex-col gap-2 p-0 list-none">
-          <li v-for="s in filteredMySends" :key="`send-${s.id}`" class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <li v-for="s in filteredMySends" :key="`send-${s.id}`" class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-white px-4 py-3">
             <div class="flex min-w-0 flex-col gap-0.5">
               <div class="flex flex-wrap items-center gap-2">
                 <AppTag variant="info">{{ s.process_name }}</AppTag>
@@ -1506,7 +1506,7 @@
               </div>
               <span class="text-xs font-medium text-indigo-600">Para: {{ s.recipient_name || '—' }}</span>
             </div>
-            <div class="flex items-center gap-3 text-xs text-slate-400">
+            <div class="flex items-center gap-3 text-xs text-muted">
               <span>{{ String(s.created_at || '').slice(0, 10) }}</span>
               <AppTag variant="muted">{{ s.status }}</AppTag>
             </div>
@@ -1523,12 +1523,12 @@
       labelled-by="fill-workflow-modal-title"
       title="Flujo de entrega"
       size="lg"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-5">
         <div v-if="fillWorkflowState.subject" class="flex flex-col gap-3">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div class="rounded-2xl border border-line bg-surface/60 p-4">
             <div class="flex flex-col gap-2">
               <strong class="text-base font-bold text-slate-800">{{ fillWorkflowState.subject.title }}</strong>
               <div class="flex flex-wrap gap-2">
@@ -1545,7 +1545,7 @@
             </div>
           </div>
 
-          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="rounded-2xl border border-line bg-white p-4">
             <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Secuencia del flujo</h3>
             <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-slate-500">
               Este entregable todavía no tiene una secuencia de entrega visible.
@@ -1560,12 +1560,12 @@
                 <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-slate-100 px-3 text-sm font-extrabold text-slate-700">
+                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-slate-700">
                       {{ step.step_order }}
                     </span>
                     <div class="flex flex-col gap-1">
                       <strong class="text-sm font-bold text-slate-800">Paso {{ step.step_order }}</strong>
-                      <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Entrega</span>
+                      <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">Entrega</span>
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
@@ -1580,23 +1580,23 @@
                     </AppTag>
                   </div>
                 </div>
-                <div class="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                  <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Responsable</p>
+                <div class="mt-4 rounded-2xl border border-line bg-slate-50/70 px-4 py-3">
+                  <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Responsable</p>
                   <p class="mt-1 text-sm font-semibold text-slate-700 m-0 leading-snug">{{ step.display_label }}</p>
                 </div>
-                <div class="mt-3 rounded-2xl bg-slate-50/60 px-4 py-3">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Regla</p>
+                <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Regla</p>
                   <p class="mt-1 text-xs font-medium text-slate-500 m-0">{{ getFillStepResolverLabel(step) }}</p>
                 </div>
-                <div v-if="step.response_note" class="mt-3 rounded-2xl border border-slate-100 bg-white px-4 py-3">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Nota</p>
-                  <p class="mt-1 mb-0 text-xs font-medium text-slate-600">{{ step.response_note }}</p>
+                <div v-if="step.response_note" class="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Nota</p>
+                  <p class="mt-1 mb-0 text-xs font-medium text-icon">{{ step.response_note }}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="rounded-2xl border border-line bg-white p-4">
             <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Historial de notas operativas</h3>
             <div v-if="!fillWorkflowNotes.length" class="text-sm text-slate-500">
               Aún no existen notas operativas registradas en este flujo.
@@ -1605,7 +1605,7 @@
               <div
                 v-for="noteEntry in fillWorkflowNotes"
                 :key="`fill-note-${noteEntry.stepId}-${noteEntry.requestId || noteEntry.stepOrder}`"
-                class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4"
+                class="rounded-2xl border border-line bg-surface/50 p-4"
               >
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div class="flex flex-col gap-1">
@@ -1627,11 +1627,11 @@
             </div>
           </div>
 
-          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="rounded-2xl border border-line bg-white p-4">
             <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Acciones disponibles</h3>
             <p
               v-if="fillWorkflowState.request && !canOperateCurrentFillRequest"
-              class="mb-3 text-sm font-medium text-slate-600"
+              class="mb-3 text-sm font-medium text-icon"
             >
               Este paso corresponde a otro responsable. Desde aquí solo puedes revisar el estado del flujo.
             </p>
@@ -1640,7 +1640,7 @@
                 v-if="canReplaceFillFile"
                 variant="softNeutral"
                 size="sm"
-                :class="isUploadingDeliverable ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                :class="isUploadingDeliverable ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="isUploadingDeliverable"
                 @click="triggerFillWorkflowFileReplace"
@@ -1651,7 +1651,7 @@
                 v-if="canApproveFillRequest"
                 variant="softSuccess"
                 size="sm"
-                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('approve')"
@@ -1662,7 +1662,7 @@
                 v-if="canReturnFillRequest"
                 variant="softWarning"
                 size="sm"
-                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('return')"
@@ -1673,7 +1673,7 @@
                 v-if="canRejectFillRequest"
                 variant="softDanger"
                 size="sm"
-                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('reject')"
@@ -1684,7 +1684,7 @@
                 v-if="canCancelFillRequest"
                 variant="softNeutral"
                 size="sm"
-                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('cancel')"
@@ -1699,7 +1699,7 @@
             <textarea
               v-model="fillWorkflowState.note"
               rows="3"
-              class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
+              class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
               placeholder="Agrega una nota para esta acción."
             />
           </label>
@@ -1721,12 +1721,12 @@
       labelled-by="signature-flow-modal-title"
       title="Flujo de firmas"
       size="xl"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
       @close="closeSignatureFlowModal"
     >
       <div class="flex flex-col gap-5">
-        <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-600">
+        <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-line bg-surface p-6 text-center text-sm font-semibold text-icon">
           Consultando la secuencia de firmas...
         </div>
         <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
@@ -1734,7 +1734,7 @@
         </div>
         <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
+            <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-2">
               <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Documento</p>
               <h3 class="text-lg font-bold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
               <div class="flex flex-wrap gap-2">
@@ -1755,7 +1755,7 @@
                 Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
               </p>
             </section>
-            <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-2 shadow-sm">
+            <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-2 shadow-sm">
               <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Responsable actual</p>
               <p class="text-sm font-semibold text-slate-800 mb-0">
                 {{ signatureFlowState.snapshot?.responsableActual
@@ -1769,7 +1769,7 @@
                 Paso actual: {{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}
               </p>
             </section>
-            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
+            <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-2">
               <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Secuencia</p>
               <p class="text-sm font-semibold text-slate-800 mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
               <p class="text-xs text-slate-500">
@@ -1781,7 +1781,7 @@
             </section>
           </div>
 
-          <section class="rounded-[1.8rem] border border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
+          <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
               <AppTag variant="muted">
@@ -1801,12 +1801,12 @@
                 <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-slate-100 px-3 text-sm font-extrabold text-slate-700">
+                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-slate-700">
                       {{ step.step_order || '—' }}
                     </span>
                     <div class="flex flex-col gap-1">
                       <p class="text-sm font-bold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 m-0">Firma</p>
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
@@ -1820,14 +1820,14 @@
                     </AppTag>
                   </div>
                 </div>
-                <div class="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                  <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Firmante</p>
+                <div class="mt-4 rounded-2xl border border-line bg-slate-50/70 px-4 py-3">
+                  <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Firmante</p>
                   <p class="mt-1 text-sm font-semibold text-slate-700 m-0 leading-snug">
                     {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
                   </p>
                 </div>
-                <div class="mt-3 rounded-2xl bg-slate-50/60 px-4 py-3">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Regla</p>
+                <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Regla</p>
                   <p class="mt-1 text-xs font-medium text-slate-500 m-0">
                     {{ getSignatureStepResolverLabel(step) }}
                   </p>
@@ -1836,7 +1836,7 @@
             </div>
           </section>
 
-          <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
+          <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Historial y trazabilidad</h3>
               <AppTag variant="neutral">
@@ -1850,7 +1850,7 @@
               <div
                 v-for="request in signatureFlowState.snapshot.signatureRequests"
                 :key="`flow-request-${request.id}`"
-                class="rounded-2xl border border-slate-100 bg-white p-3 flex flex-col gap-1"
+                class="rounded-2xl border border-line bg-white p-3 flex flex-col gap-1"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ request.stepOrder }}</p>
@@ -1869,7 +1869,7 @@
             </div>
           </section>
 
-          <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-4">
+          <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-4">
             <div class="flex items-center justify-between gap-2">
               <div>
                 <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Firmar documento</h3>
@@ -1882,12 +1882,12 @@
             <div v-if="signatureFlowState.snapshot?.canOperate">
               <FirmarPdf ref="signatureFlowSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
             </div>
-            <div v-else class="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+            <div v-else class="rounded-2xl border border-line bg-surface p-4 text-sm text-slate-500">
               No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
             </div>
           </section>
         </div>
-        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
+        <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm font-semibold text-icon text-center">
           Selecciona una solicitud de firma para revisar su flujo.
         </div>
       </div>
@@ -1903,11 +1903,11 @@
       labelled-by="deliverable-upload-modal-title"
       :title="deliverableUploadModalTitle"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
-        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
           {{ deliverableUploadModalHelp }}
         </div>
 
@@ -1940,7 +1940,7 @@
       labelled-by="deliverable-operation-modal-title"
       :title="deliverableOperationState.title"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
@@ -1949,12 +1949,12 @@
           :class="deliverableOperationState.type === 'error'
             ? 'bg-rose-50 border border-rose-200 text-rose-700'
             : deliverableOperationState.type === 'success'
-              ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-              : 'bg-sky-50 border border-sky-200 text-sky-800'"
+              ? 'bg-emerald-50 border border-emerald-200 text-success'
+              : 'bg-sky-50 border border-sky-200 text-action-view'"
         >
           {{ deliverableOperationState.message }}
         </div>
-        <p v-if="deliverableOperationState.detail" class="text-sm text-slate-600 m-0">
+        <p v-if="deliverableOperationState.detail" class="text-sm text-icon m-0">
           {{ deliverableOperationState.detail }}
         </p>
       </div>
@@ -1970,11 +1970,11 @@
       labelled-by="deliverable-sign-result-modal-title"
       :title="deliverableSignResultState.success ? 'Documento firmado' : 'Error al firmar'"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
     >
       <div v-if="deliverableSignResultState.success" class="flex flex-col gap-4">
-        <p class="mb-0 text-sm text-emerald-700 font-medium">
+        <p class="mb-0 text-sm text-success font-medium">
           {{ deliverableSignResultState.message || 'La firma del entregable se registró correctamente.' }}
         </p>
         <div v-if="deliverableSignResultState.signedPath" class="flex flex-wrap gap-3">
@@ -2001,7 +2001,7 @@
       labelled-by="deliverable-reset-modal-title"
       title="Resetear flujo del entregable"
       size="md"
-      content-class="rounded-4 shadow border-0"
+      content-class="shadow border-0"
       body-class="pt-4"
       @close="closeDeliverableResetModal"
     >
@@ -2009,7 +2009,7 @@
         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
           Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
           <p class="m-0 font-semibold text-slate-700">
             {{ deliverableResetState.target?.title || 'Entregable seleccionado' }}
           </p>
@@ -2043,7 +2043,7 @@
       <template #actions>
           <div
             v-if="hasDeliverablePreviewActions"
-            class="rounded-2xl border border-slate-200 bg-white p-4"
+            class="rounded-2xl border border-line bg-white p-4"
           >
             <h3 class="mb-3 text-sm font-bold uppercase tracking-wider text-slate-700">
               Acciones disponibles
@@ -2052,7 +2052,7 @@
               <button
                 v-if="canReplacePreviewFillFile"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="isUploadingDeliverable"
                 @click="openPreviewDeliverableUploadModal"
               >
@@ -2068,11 +2068,11 @@
               <button
                 v-if="canApprovePreviewFillRequest"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'approve')"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-emerald-100/95 bg-emerald-50/55 text-emerald-700 transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-emerald-100/95 bg-emerald-50/55 text-success transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
                   <IconCircleCheck class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2084,11 +2084,11 @@
               <button
                 v-if="canReturnPreviewFillRequest"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/45 hover:shadow-[0_10px_20px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/45 hover:shadow-[0_10px_20px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'return')"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-amber-100/95 bg-amber-50/55 text-amber-700 transition-all group-hover:border-amber-200 group-hover:bg-amber-50">
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-amber-100/95 bg-amber-50/55 text-warning transition-all group-hover:border-amber-200 group-hover:bg-amber-50">
                   <IconMinus class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2098,7 +2098,7 @@
               <button
                 v-if="canRejectPreviewFillRequest"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50/45 hover:shadow-[0_10px_20px_rgba(244,63,94,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50/45 hover:shadow-[0_10px_20px_rgba(244,63,94,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'reject')"
               >
