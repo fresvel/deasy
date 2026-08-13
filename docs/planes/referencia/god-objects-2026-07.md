@@ -228,6 +228,14 @@ Motor genérico **bueno en su núcleo** (`list`/`getByKeys`/`create`/`update` di
   delegadores; los servicios #3/#4 que inyectan `syncArtifactWorkflows` siguen funcionando (su binding llama el delegador).
   `SqlAdminService.js` 4341 → **3816 L** (−525). **Acumulado #1-#5: 5924 → 3816 L (−2108, −36%).** Verificado: backend arranca,
   **char 119/119**, unit 177/177, **smoke** `GET sync-status` → 200 + `POST workflows/reconcile` → 200 (vía delegador→módulo).
+  > ⚠️ **`WorkflowSyncService` YA NO EXISTE (2026-08-10, sub-paso 8 del §0.8).** Se borró entero, con sus
+  > tres endpoints — los dos del smoke de arriba (`GET :id/sync-status`, `POST workflows/reconcile`) y
+  > `POST :id/resync` — y con su colaborador `loadTemplateArtifactMetaDocument`. **Hoy los tres devuelven
+  > 404**, y hay tres tests de caracterización que lo fijan (`zzzzzz_flow_steps_db.test.mjs:569-580`).
+  > No hay nada que sincronizar: el flujo dejó de vivir en el `meta.yaml` y se autora directamente en la
+  > base. El único método suyo que sobrevivió es el de asignación, mudado a `org/taskAssignment.js:59`.
+  > **La lección del cut sigue en pie** —el cluster estaba bien delimitado y se extrajo limpio— pero no
+  > cites el módulo ni sus endpoints como código vivo.
 - **Cut #6 `TaskAssignmentService` HECHO** (`org/taskAssignment.js`, 413 L): asignación/reconciliación de task items,
   handover, atascados, jefe inmediato, + mapas de referencia (cargo/unit-type) y resolución de scope/cargos-resolubles — 10
   métodos. **El cut más limpio: cluster AUTOCONTENIDO, cero colaboradores** (solo `this.pool` + el import `normalizeNumericId`;
