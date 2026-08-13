@@ -69,10 +69,12 @@ const statusBorderClass = computed(() => {
   if (props.data.status === "draft") return "border-l-amber-400 border-y border-r border-y-line border-r-line";
   return "border-l-line-strong border-y border-r border-y-line border-r-line";
 });
+/* Mismas variantes que el modal de edicion. Antes `draft` salia AMBAR aqui y gris alla: el
+   mismo estado con dos colores segun la pantalla. */
 const statusChipClass = computed(() => {
-  if (props.data.status === "active") return "bg-emerald-50 text-success ring-emerald-200";
-  if (props.data.status === "draft") return "bg-amber-50 text-warning ring-amber-200";
-  return "bg-surface text-muted ring-line";
+  if (props.data.status === "active") return "deasy-tag--success";
+  if (props.data.status === "draft") return "deasy-tag--muted";
+  return "deasy-tag--neutral";
 });
 const seriesLabel = computed(() => {
   if (props.data.series_source_type === "cargo") return `Cargo · ${props.data.series_cargo_name || props.data.series_code}`;
