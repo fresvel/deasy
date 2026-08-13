@@ -46,30 +46,26 @@ h6,
 
 @layer base {
     /* La tipografia base del CONTENEDOR, no la de los encabezados. */
-    .admin-typography,
-    .home-typography {
+    .admin-typography {
         font-family: var(--font-base);
         font-size: var(--font-size-base);
         line-height: var(--line-height-base);
     }
 }
 
-/* SE QUEDA SIN CAPA (2 de 4) — hermana de la anterior, y no por un competidor propio: si
-   bajase esta y la de arriba no, los encabezados de admin usarian el peso de la utilidad y
-   los del resto de la app 500. Las dos bajan juntas (§6.1), o no baja ninguna. */
+/* SE QUEDA SIN CAPA (2 de 4) — hermana de la anterior. Capada, los encabezados de admin
+   pasarian a usar el peso de la utilidad que llevan escrito. Las dos bajan juntas (§6.1).
+
+   Aqui habia ademas los seis `.home-typography h1..h6`, y no hacian nada: esa clase no
+   esta en una sola plantilla. El razonamiento que sostenia el comentario —«los del resto
+   de la app se quedarian en 500»— hablaba de una mitad que nunca llego al DOM. */
 
 .admin-typography h1,
 .admin-typography h2,
 .admin-typography h3,
 .admin-typography h4,
 .admin-typography h5,
-.admin-typography h6,
-.home-typography h1,
-.home-typography h2,
-.home-typography h3,
-.home-typography h4,
-.home-typography h5,
-.home-typography h6 {
+.admin-typography h6 {
   font-family: var(--font-base);
   font-weight: 500;
   line-height: var(--line-height-heading);

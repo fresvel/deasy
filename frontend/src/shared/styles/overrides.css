@@ -12,22 +12,12 @@
    ====================================================================================== */
 
 @layer components {
-    .deasy-card,
-    .deasy-card-muted,
-    .deasy-card-soft,
-    .deasy-panel,
-    .deasy-panel-muted,
     .deasy-section-card,
-    .deasy-table-shell,
-    .deasy-ui-surface,
     .deasy-form-section,
     .deasy-auth-card,
     .admin-workspace-frame,
     .admin-surface-frame,
-    .deasy-dialog-panel,
-    .profile-table-shell,
-    .profile-dialog-panel,
-    .table-institutional {
+    .deasy-dialog-panel {
         background-color: var(--color-white);
     }
 
@@ -40,32 +30,25 @@
             linear-gradient(180deg, var(--color-white) 0%, var(--brand-surface-muted) 46%, var(--brand-surface-muted) 100%);
     }
 
-    .deasy-auth-panel,
     .deasy-dialog-body {
         background-color: var(--color-white);
     }
 
-    .deasy-auth-visual,
     .deasy-dialog-footer {
         background-color: var(--brand-surface-muted);
     }
 
-    .deasy-card,
     .deasy-section-card,
     .deasy-dialog-panel,
     .admin-workspace-frame,
-    .admin-surface-frame,
-    .profile-table-shell,
-    .table-institutional {
+    .admin-surface-frame {
         border-color: var(--brand-border);
     }
 
-    .deasy-card,
     .deasy-section-card,
     .deasy-auth-card,
     .admin-workspace-frame,
-    .admin-surface-frame,
-    .profile-table-shell {
+    .admin-surface-frame {
         box-shadow: var(--brand-elev-1);
     }
 
@@ -88,7 +71,6 @@
    ------------------------------------------------------------------------------------ */
 .deasy-field-input,
 .deasy-field-select,
-.deasy-field-textarea,
 .deasy-auth-field,
 /* ⚠️ NO PARTAS ESTA REGLA POR DECLARACION. Se intento bajar el `background-color` a
    `@layer components` («no tapa nada») y aparecieron 10 nodos: dos controles con
@@ -116,7 +98,6 @@ textarea {
    var(--focus-ring)` de esa misma regla si aplica. Encenderlo es §4.2. */
 .deasy-field-input,
 .deasy-field-select,
-.deasy-field-textarea,
 .deasy-auth-field {
   border-color: var(--brand-border-strong);
 }
@@ -149,14 +130,11 @@ textarea {
 }
 
 @layer components {
-    .deasy-table thead tr,
-    .table thead th,
-    .table-institutional thead {
+    .deasy-table thead tr {
         background: var(--brand-surface-muted);
     }
 
-    .deasy-table tbody tr:hover,
-    .table-institutional tbody tr:hover {
+    .deasy-table tbody tr:hover {
         background-color: var(--brand-surface-muted);
     }
 
@@ -187,9 +165,9 @@ header {
 }
 
 /* ⚠️ FUERA DE CAPA LAS TRES, y NO por una utilidad de Tailwind: dentro de la capa les gana
-   `.deasy-table-shell .deasy-btn--secondary` (0,2,0) de `buttons.css`, que ya vive alli.
-   Capadas, el secundario de cabecera de tabla cambia de borde y su `:hover` pasa de la
-   tinta violeta al gris de tabla — y el `:hover` la huella NO lo ve.
+   `.deasy-table-responsive .deasy-btn--secondary` (0,2,0) de `buttons.css`, que ya vive
+   alli. Capadas, el secundario de cabecera de tabla cambia de borde y su `:hover` pasa de
+   la tinta violeta al gris de tabla — y el `:hover` la huella NO lo ve.
    ------------------------------------------------------------------------------------ */
 .deasy-btn--secondary,
 .deasy-btn--cancel,
@@ -219,8 +197,12 @@ header {
 
 /* ── Los 12 botones de accion. FUERA DE CAPA — LEER LA CABECERA DE `buttons.css` ──────
    Estos reposos y la caja de `buttons.css` son una sola pieza en dos ficheros y ninguna
-   mitad puede bajar: dentro de la capa les gana `.deasy-table-shell .deasy-btn` (0,2,0) y
-   los 12 se pintan como un `--secondary`. Medido: 239 nodos en el organigrama. */
+   mitad puede bajar: dentro de la capa les gana `.deasy-table-responsive .deasy-btn`
+   (0,2,0) y los 12 se pintan como un `--secondary`. Medido: 239 nodos en el organigrama.
+
+   ⚠️ El ancestro es `.deasy-table-responsive`, NO `.deasy-table-shell`: esa segunda
+   compartia lista de selectores con ella y no estaba en una sola plantilla, asi que los
+   239 nodos siempre los puso la primera. */
 .hope-action-btn {
   background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--color-white));
   border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--color-white));

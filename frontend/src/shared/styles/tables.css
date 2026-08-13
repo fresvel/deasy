@@ -1,18 +1,4 @@
 @layer components {
-.deasy-table-shell {
-        @apply mt-6 mb-6 rounded-[8px] border bg-white p-4 shadow-[var(--brand-elev-1)] sm:p-5;
-        border-color: var(--brand-border);
-    }
-
-    .deasy-table-header {
-        @apply mb-4 flex items-center justify-between gap-4 border-b pb-3;
-    }
-
-    .deasy-table-title {
-        @apply m-0 text-[0.95rem] font-semibold tracking-tight sm:text-base;
-        color: var(--brand-navy);
-    }
-
     .deasy-table-responsive {
         @apply overflow-x-auto rounded-2xl border bg-white;
         border-color: var(--brand-border);
@@ -46,43 +32,8 @@
         border-bottom: 0;
     }
 
-
-    
-}
-@layer components {
-.deasy-table tbody td:first-child {
+    .deasy-table tbody td:first-child {
         @apply font-semibold;
         color: var(--brand-text-strong);
-    }
-
-    
-}
-/* ⚠️ LAS CUATRO REGLAS DE ABAJO ESTAN MUERTAS. `.table` no tiene un solo consumidor en
-   `src/` —los aciertos de un grep son props y variables— y no hay Bootstrap en
-   `package.json`. Las tablas de verdad usan `.deasy-table`, `.admin-data-table` o
-   `.person-assignment-table`. Borrarlas es F5, junto con `.table-institutional`. */
-
-@layer components {
-    .table.align-middle> :not(caption)>*>* {
-        vertical-align: middle;
-    }
-
-    .table {
-        font-size: 0.875rem;
-        margin-bottom: 0;
-    }
-
-    .table> :not(caption)>*>* {
-        padding: 0.75rem 1rem;
-        border-bottom-width: 1px;
-    }
-
-    .table thead th {
-        border-bottom-width: 1px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: var(--brand-navy);
     }
 }

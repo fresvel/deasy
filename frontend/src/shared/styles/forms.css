@@ -86,38 +86,24 @@
     }
 
     .deasy-field-input,
-    .deasy-field-select,
-    .deasy-field-textarea {
+    .deasy-field-select {
         @apply block w-full rounded-2xl border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-brand-text-muted;
         border-color: var(--brand-border-strong);
         color: var(--brand-text-body);
     }
 
     .deasy-field-input:focus,
-    .deasy-field-select:focus,
-    .deasy-field-textarea:focus {
+    .deasy-field-select:focus {
         @apply bg-white ring-4;
         border-color: rgba(var(--brand-primary-rgb), 0.44);
         --tw-ring-color: rgba(var(--brand-primary-rgb), 0.12);
     }
 
-    .deasy-field-input--icon-left {
-        @apply pl-11;
-    }
-
-    .deasy-field-input--icon-right {
-        @apply pr-12;
-    }
-
-    .deasy-field-input--error,
-    .deasy-field-select--error,
-    .deasy-field-textarea--error {
+    .deasy-field-input--error {
         @apply border-red-300 bg-red-50 text-red-700 placeholder:text-red-300;
     }
 
-    .deasy-field-input--error:focus,
-    .deasy-field-select--error:focus,
-    .deasy-field-textarea--error:focus {
+    .deasy-field-input--error:focus {
         @apply border-red-500 bg-white ring-4 ring-red-500/10;
     }
 

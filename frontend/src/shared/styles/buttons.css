@@ -150,45 +150,37 @@
     
 }
 @layer components {
-.deasy-table-shell .deasy-btn,
     .deasy-table-responsive .deasy-btn {
         @apply rounded-xl px-3 py-1.5 text-[13px] font-medium shadow-none;
         min-height: 2rem;
     }
 
-    .deasy-table-shell .deasy-btn--secondary,
     .deasy-table-responsive .deasy-btn--secondary {
         border-color: var(--brand-border-strong);
         background: var(--color-white);
         color: var(--brand-text-strong);
     }
 
-    .deasy-table-shell .deasy-btn--secondary:hover,
     .deasy-table-responsive .deasy-btn--secondary:hover {
         border-color: var(--brand-border-strong);
         background: var(--brand-surface-muted);
         color: var(--brand-navy);
     }
 
-    .deasy-table-shell .deasy-btn--soft-primary,
     .deasy-table-responsive .deasy-btn--soft-primary,
-    .deasy-table-shell .deasy-btn--outline-primary,
     .deasy-table-responsive .deasy-btn--outline-primary {
         border-color: color-mix(in srgb, var(--brand-primary) 25%, var(--color-white));
         background: var(--color-white);
         color: var(--brand-primary);
     }
 
-    .deasy-table-shell .deasy-btn--soft-primary:hover,
     .deasy-table-responsive .deasy-btn--soft-primary:hover,
-    .deasy-table-shell .deasy-btn--outline-primary:hover,
     .deasy-table-responsive .deasy-btn--outline-primary:hover {
         border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--color-white));
         background: var(--brand-surface-muted);
         color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
     }
 
-    .deasy-table-shell .deasy-btn--primary,
     .deasy-table-responsive .deasy-btn--primary {
         border-color: var(--brand-primary);
         background: var(--brand-primary);
@@ -196,7 +188,6 @@
         box-shadow: none;
     }
 
-    .deasy-table-shell .deasy-btn--primary:hover,
     .deasy-table-responsive .deasy-btn--primary:hover {
         border-color: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
         background: color-mix(in srgb, var(--brand-primary) 86%, var(--brand-black));
@@ -225,8 +216,8 @@
    color. Mover una mitad sin la otra mata o los 12 bordes o los 12 `:hover`.
 
    ⚠️ Y bajar las dos a la vez TAMPOCO vale: dentro de `@layer components` ya viven
-   `.deasy-table-shell .deasy-btn` y `… .deasy-btn--secondary` (0,2,0), mas especificas que
-   `.hope-action-*` (0,1,0). Capados, los 12 se pintan como un `--secondary` cualquiera —
+   `.deasy-table-responsive .deasy-btn` y `… .deasy-btn--secondary` (0,2,0), mas especificas
+   que `.hope-action-*` (0,1,0). Capados, los 12 se pintan como un `--secondary` cualquiera —
    239 nodos en `/admin/…/organigrama`. Estar fuera de capa es lo unico que les hace ganar.
 
    ⚠️ Segundo motivo, independiente: `AdminButton.vue` estampa utilidades CRUDAS en su mapa

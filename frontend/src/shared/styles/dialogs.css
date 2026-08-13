@@ -66,26 +66,21 @@
         padding: 1rem 1.25rem;
     }
 
-    .deasy-dialog-panel .profile-admin-skin,
-    .profile-dialog-panel .profile-admin-skin {
+    .deasy-dialog-panel .profile-admin-skin {
         background: transparent;
     }
 
     /* El `!important` es un importante DENTRO de capa, y para las declaraciones importantes
        el orden de capas SE DA LA VUELTA: por eso gana al `border-slate-200 !important`
        suelto de `overrides.css`. Si bajas esta regla de capa, deja de ganar. */
-    .deasy-dialog-panel .deasy-btn--close,
-    .profile-dialog-panel [data-modal-dismiss][aria-label="Close"],
-    .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"] {
+    .deasy-dialog-panel .deasy-btn--close {
         border-radius: 0.55rem;
         border-color: var(--brand-border-field) !important;
         background: var(--color-white);
         color: var(--brand-icon);
     }
 
-    .deasy-dialog-panel .deasy-btn--close:hover,
-    .profile-dialog-panel [data-modal-dismiss][aria-label="Close"]:hover,
-    .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"]:hover {
+    .deasy-dialog-panel .deasy-btn--close:hover {
         background: var(--brand-surface-muted);
         color: var(--brand-navy);
     }
@@ -213,8 +208,7 @@
    los come: 49 bordes + 44 sombras + 5 radios. El `border-color` lo pone ESTA regla, no
    el repintado de `overrides.css` — las dos declaran `--brand-border`. */
 
-.deasy-dialog-panel,
-.profile-dialog-panel {
+.deasy-dialog-panel {
   border-radius: 0.95rem;
   border: 1px solid var(--brand-border);
   background: var(--color-white);
