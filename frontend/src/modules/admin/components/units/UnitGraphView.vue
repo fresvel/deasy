@@ -219,7 +219,7 @@
           </div>
 
           <div v-if="detailLoading" class="text-sm text-muted">Cargando…</div>
-          <div v-else-if="!detailPositions.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+          <div v-else-if="!detailPositions.length" class="deasy-empty">
             Esta unidad no tiene puestos registrados.
           </div>
           <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
@@ -302,7 +302,7 @@
               </div>
             </div>
             <div v-if="detailProcessesLoading" class="text-sm text-muted">Cargando…</div>
-            <div v-else-if="!detailProcesses.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+            <div v-else-if="!detailProcesses.length" class="deasy-empty">
               Ningún proceso aplica a esta unidad.
             </div>
             <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">

@@ -1,5 +1,5 @@
 <template>
-<div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-line bg-surface p-6 text-center text-sm font-semibold text-icon">
+<div v-if="signatureFlowState.loading" class="deasy-empty">
   Consultando la secuencia de firmas...
 </div>
 <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">

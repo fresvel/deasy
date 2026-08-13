@@ -169,7 +169,7 @@
                 <p class="deasy-eyebrow">Configuraciones</p>
                 <AppButton v-if="editable" variant="primary" size="sm" @click="createConfiguration">+ Nueva configuración</AppButton>
               </div>
-              <div v-if="!detailConfigurations.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+              <div v-if="!detailConfigurations.length" class="deasy-empty">
                 Este proceso no tiene configuraciones.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
@@ -211,7 +211,7 @@
                 <p class="deasy-eyebrow">Sub-procesos</p>
                 <AppButton v-if="editable" variant="secondary" size="sm" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
               </div>
-              <div v-if="!detailChildren.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+              <div v-if="!detailChildren.length" class="deasy-empty">
                 Este proceso no tiene sub-procesos.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
@@ -236,7 +236,7 @@
             <!-- Pestaña: Lanzamientos / corridas -->
             <div v-show="detailTab === 'corridas'">
               <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-muted">Lanzamientos / corridas</p>
-              <div v-if="!detailRuns.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+              <div v-if="!detailRuns.length" class="deasy-empty">
                 Este proceso no tiene corridas registradas.
               </div>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">

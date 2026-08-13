@@ -178,13 +178,13 @@
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <article class="lg:col-span-12 bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
 
-                  <div v-if="!consolidatedCargoProcesses.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
+                  <div v-if="!consolidatedCargoProcesses.length" class="deasy-empty deasy-empty--lg">
                     No hay procesos asignados para este cargo.
                   </div>
-                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
+                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="deasy-empty deasy-empty--lg">
                     Selecciona al menos un proceso para ver sus entregables.
                   </div>
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="deasy-empty deasy-empty--lg">
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
                   <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
@@ -815,11 +815,11 @@
                     </div>
                   </section>
 
-                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
+                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="deasy-empty deasy-empty--lg">
                     No tienes tareas activas o históricas para esta configuración.
                   </div>
 
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="deasy-empty deasy-empty--lg">
                     {{ isRoutedProcess
                       ? 'Aún no has enviado ningún documento. Usa "Nuevo envío" para crear el primero.'
                       : 'No hay entregables que coincidan con los filtros actuales.' }}
@@ -1027,7 +1027,7 @@
                 </div>
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
               </header>
-              <div v-if="!taskLaunchSystemTemplates.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-muted">
+              <div v-if="!taskLaunchSystemTemplates.length" class="deasy-empty">
                 Esta configuración no tiene templates de proceso que generen tarea.
               </div>
               <div v-else class="flex flex-col gap-3">
@@ -1052,7 +1052,7 @@
                 </div>
                 <AppTag variant="muted">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
               </header>
-              <div v-if="!selectedProcessPanel?.user_packages?.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-muted">
+              <div v-if="!selectedProcessPanel?.user_packages?.length" class="deasy-empty">
                 No tienes artifacts generales registrados en esta cuenta.
               </div>
               <div v-else class="flex flex-col gap-3">
@@ -1726,7 +1726,7 @@
       @close="closeSignatureFlowModal"
     >
       <div class="flex flex-col gap-5">
-        <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-line bg-surface p-6 text-center text-sm font-semibold text-icon">
+        <div v-if="signatureFlowState.loading" class="deasy-empty">
           Consultando la secuencia de firmas...
         </div>
         <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">

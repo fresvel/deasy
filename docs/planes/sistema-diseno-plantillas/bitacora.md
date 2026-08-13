@@ -1097,3 +1097,22 @@ paleta adoptada.
 ⚠️ **No están todos.** Quedan ~6 formas de cola larga (`tracking-[0.16em]`, `text-[10px]`…): medido
 en `/procesos`, 3 nodos en versalitas siguen con tres formas distintas. Se anota en vez de darlo por
 cerrado — es exactamente el tipo de «casi» que luego se lee como hecho.
+
+### `.deasy-empty`: cuatro formas que decían exactamente lo mismo
+
+14 estados vacíos escritos a mano en **cuatro formas que no se ponían de acuerdo en nada**: radio
+`xl` o `2xl`, borde de 1 px o de 2 px, fondo transparente o `surface` o `surface/50`, padding de 4 a
+8, y el texto en `muted` o en `icon`. **Ninguna de esas diferencias significaba nada distinto** — los
+cuatro dicen «aquí no hay nada todavía».
+
+Lo único que no se toca es el **borde discontinuo**, que es lo que comunica «vacío».
+
+### Lo que queda de F5, y por qué no se cierra hoy
+
+**540 colores de estado.** Y no son un patrón: son alertas y paneles con **paddings y radios todos
+distintos** (`p-4`, `p-5`, `p-6`, `rounded-xl`, `rounded-2xl`, pesos `medium`/`semibold`/`bold`).
+`.deasy-alert` ya cubre la forma canónica y absorbió 14; el resto pide mirar **caso por caso** si es
+una alerta, un panel o un chip, y eso no es sustitución mecánica. Forzarlo con un script sería
+inventar equivalencias que no están medidas.
+
+`AppCard` (8 repeticiones) queda igualmente pendiente.
