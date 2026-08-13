@@ -14,23 +14,23 @@
 /* REGISTRO DE LA PALETA EN TAILWIND. Sin esto no existen `bg-brand-primary` ni
    `text-brand-text-muted`, y la unica forma de usar un color de marca en una plantilla es
    escribir el hex a mano. Es ADITIVO: nombres nuevos bajo `--color-*`, valores por
-   referencia — la fuente de verdad es la paleta de mas abajo.
+   referencia â la fuente de verdad es la paleta de mas abajo.
 
-   ⚠️ **NO SE VERIFICA MIRANDO AQUI.** Tailwind v4 hace *tree-shaking* de `@theme`: un
+   â ï¸ **NO SE VERIFICA MIRANDO AQUI.** Tailwind v4 hace *tree-shaking* de `@theme`: un
    registro que nadie usa NO SE EMITE. La unica prueba de que un registro esta vivo es un
    `grep` sobre `dist/assets/*.css`.
 
-   ⚠️ UN TOKEN NUEVO SE JUSTIFICA, NO SE AÑADE POR SIMETRIA. Dos condiciones, las dos:
-   que Tailwind no traiga ya ese color (mide el ΔE contra su paleta — la sirve en OKLCH,
+   â ï¸ UN TOKEN NUEVO SE JUSTIFICA, NO SE AÃADE POR SIMETRIA. Dos condiciones, las dos:
+   que Tailwind no traiga ya ese color (mide el ÎE contra su paleta â la sirve en OKLCH,
    asi que NO compares contra los hex de v3), y que el concepto pueda cambiar de color en
    el futuro. Si el concepto ES el color, usa el de Tailwind: `--brand-white` no existe
    porque el blanco no va a dejar de ser blanco.
 
    Aqui habia siete `--color-chart-*` y un `--color-state-info` con CERO consumidores,
-   sostenidos por la idea de que un registro sin usar «cuesta cero bytes y es un destino al
-   que migrar». No lo era: fue una API inventada por adelantado que nadie llamo nunca.
+   sostenidos por la idea de que un registro sin usar Â«cuesta cero bytes y es un destino al
+   que migrarÂ». No lo era: fue una API inventada por adelantado que nadie llamo nunca.
 
-   ⚠️ No añadas `--color-*` pensando en modo oscuro: hace falta un valor por concepto y
+   â ï¸ No aÃ±adas `--color-*` pensando en modo oscuro: hace falta un valor por concepto y
    por tema, y aqui hay uno. */
 @theme {
     /* Marca */
@@ -45,7 +45,6 @@
     --color-brand-border-strong: var(--brand-border-strong);
     --color-brand-border-field: var(--brand-border-field);
     --color-brand-surface-muted: var(--brand-surface-muted);
-    --color-brand-surface-alt: var(--brand-surface-alt);
 
     /* Texto e iconos */
     --color-brand-text-strong: var(--brand-text-strong);
@@ -100,15 +99,15 @@
 /* `--brand-*` es la PALETA CANONICA, y desde 2026-08-09 la UNICA: no hay dos sitios donde
    cambiar un color.
 
-   ⚠️ ANTES DE DECLARAR UN TOKEN NUEVO, comprueba que su nombre no sea un namespace de
+   â ï¸ ANTES DE DECLARAR UN TOKEN NUEVO, comprueba que su nombre no sea un namespace de
    Tailwind v4 (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`,
    `--text-*`, `--breakpoint-*`). Este `:root` esta SIN CAPA, asi que gana a Tailwind: unos
    `--radius-*` declarados aqui tuvieron `rounded-lg` valiendo 16 px y la escala invertida
    durante meses. El fallo es SILENCIOSO Y GLOBAL.
 
-   ⚠️ Los gemelos `-rgb` no siguen ningun criterio: se crearon a demanda. `--state-danger`
+   â ï¸ Los gemelos `-rgb` no siguen ningun criterio: se crearon a demanda. `--state-danger`
    y `--brand-border` no tienen, aunque se usen mucho. Comprueba antes de escribir un
-   `rgba(var(--x-rgb), …)`. */
+   `rgba(var(--x-rgb), â¦)`. */
 /* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
    DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta. */
 :root {
@@ -118,7 +117,7 @@
   --brand-ink: #1f2937;
   --brand-info-soft: rgba(37, 99, 235, 0.1);
   /* No hay `--brand-white`: el blanco de la marca ES el blanco, asi que se usa el
-     `--color-white` de Tailwind. Este gemelo `-rgb` si sigue vivo — sirve para los
+     `--color-white` de Tailwind. Este gemelo `-rgb` si sigue vivo â sirve para los
      blancos translucidos de la barra lateral (`rgba(var(--brand-white-rgb), .08)`) y
      Tailwind no da un triplete suelto. */
   --brand-white-rgb: 255, 255, 255;
@@ -127,11 +126,13 @@
   --brand-black: #000000;
   --brand-border: #e2e6f0;
   --brand-border-field: #d7deea;
-  --brand-surface-alt: #f8fafc;
+  /* No hay `--brand-surface-alt`: estaba a ΔE 0.56 de `--brand-surface-muted`, que es
+     el umbral de lo indistinguible incluso lado a lado. Eran dos nombres para un color,
+     con 8 usos frente a 216. */
   --brand-shadow-ink: #0f172a;
   --brand-shadow-ink-rgb: 15, 23, 42;
 
-  /* ELEVACION — una escala de TRES. `--brand-elev-3-left` es el nivel 3 proyectando a la
+  /* ELEVACION â una escala de TRES. `--brand-elev-3-left` es el nivel 3 proyectando a la
      izquierda: el panel lateral se ancla al borde derecho de la pantalla, asi que su unico
      canto visible es el izquierdo. Misma opacidad, solo cambia la direccion. */
   --brand-elev-1: 0 1px 2px rgba(var(--brand-shadow-ink-rgb), 0.04);            /* tarjetas y marcos */
@@ -139,8 +140,8 @@
   --brand-elev-3: 0 1px 2px rgba(var(--brand-shadow-ink-rgb), 0.04), 0 24px 64px rgba(var(--brand-shadow-ink-rgb), 0.16);
   --brand-elev-3-left: -8px 0 24px rgba(var(--brand-shadow-ink-rgb), 0.16);
 
-  /* El anillo de foco: la señal de «aqui esta el teclado», asi que es UNO.
-     NO se llama `--brand-elev-*` a proposito — no es un escalon de elevacion, es un
+  /* El anillo de foco: la seÃ±al de Â«aqui esta el tecladoÂ», asi que es UNO.
+     NO se llama `--brand-elev-*` a proposito â no es un escalon de elevacion, es un
      indicador de estado que resulta usar la misma propiedad. */
   --focus-ring: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.1);
 
@@ -152,47 +153,47 @@
   --brand-primary-rgb: 94, 78, 255;
 
   /* UN color por estado, y es el OSCURO: el unico que cumple WCAG en los dos usos, icono
-     (3:1) y texto (4.5:1). Las cifras estan medidas — no aclares ninguno sin volver a
+     (3:1) y texto (4.5:1). Las cifras estan medidas â no aclares ninguno sin volver a
      medirlo. */
   --state-success: #047857;   /* 5.49:1 */
   --state-success-rgb: 4, 120, 87;
   --state-danger: #b42318;    /* 6.57:1 */
   --state-warning: #b45309;   /* 5.02:1 */
-  --state-pending: #b8432b;   /* 5.42:1 — 'pendiente', ni exito ni fallo */
-  /* ⚠️ `--state-gold` NO CUMPLE EN NINGUNO DE SUS USOS: icono 2.10, tooltip 2.10, chip
+  --state-pending: #b8432b;   /* 5.42:1 â 'pendiente', ni exito ni fallo */
+  /* â ï¸ `--state-gold` NO CUMPLE EN NINGUNO DE SUS USOS: icono 2.10, tooltip 2.10, chip
      1.91. Y no es un estado: es el color de UN componente con prefijo de familia
      semantica. Los dos problemas van juntos y van en F4. */
   --state-gold: #d4af37;      /* solo BtnSera */
 
-  /* «TE TOCA A TI» — la menta de la tarjeta de entregable. Dos avisos:
+  /* Â«TE TOCA A TIÂ» â la menta de la tarjeta de entregable. Dos avisos:
 
-     ⚠️ `--state-current` es SOLO relleno (1.46:1). Como borde o como texto usa
+     â ï¸ `--state-current` es SOLO relleno (1.46:1). Como borde o como texto usa
      `--state-current-ink`, que da 4.77:1 y cumple 1.4.11 y AA. Se eligio con margen: el
      valor justo para 4.50 seria `#118856`, y quedarse en el umbral lo tumba el proximo
      retoque.
 
-     ⚠️ NO lo colapses sobre `--state-success`. Esta medido: el mejor `color-mix` con
-     `--brand-accent` toca fondo en ΔE 19.75 y la curva es plana — son tonos distintos, no
-     es cuestion de porcentaje. Y significa otra cosa: «este paso es el actual», no «ya
-     esta hecho». La distincion vive en el relleno: ΔE 34.96 contra `--state-success`. */
+     â ï¸ NO lo colapses sobre `--state-success`. Esta medido: el mejor `color-mix` con
+     `--brand-accent` toca fondo en ÎE 19.75 y la curva es plana â son tonos distintos, no
+     es cuestion de porcentaje. Y significa otra cosa: Â«este paso es el actualÂ», no Â«ya
+     esta hechoÂ». La distincion vive en el relleno: ÎE 34.96 contra `--state-success`. */
   --state-current: #4bf1a1;
   --state-current-rgb: 75, 241, 161;
-  --state-current-ink: #108353;   /* 4.77:1 — vale para texto Y para borde */
+  --state-current-ink: #108353;   /* 4.77:1 â vale para texto Y para borde */
 
   /* Botones de accion de las tablas. UN color por accion: el del icono. El fondo NO se
      declara, se calcula mezclandolo con blanco (~10%); el borde tambien se deriva, y vive
      junto a su regla en `overrides.css`.
 
-     ⚠️ El 71% del borde no es arbitrario: es el porcentaje al que los seis llegan a 3:1
+     â ï¸ El 71% del borde no es arbitrario: es el porcentaje al que los seis llegan a 3:1
      contra la fila blanca (WCAG 1.4.11). Al 35% ninguno cumple. */
   --action-neutral: #23384f;
   --action-view: #075985;
   --action-upload: #3751a3;
 
-  /* Texto secundario: subtitulos, notas al pie, pestañas inactivas. 6.36:1 sobre blanco. */
+  /* Texto secundario: subtitulos, notas al pie, pestaÃ±as inactivas. 6.36:1 sobre blanco. */
   --brand-text-muted: #5a5f6f;
 
-  /* Iconos de accion secundaria (la ✕ de los dialogos). */
+  /* Iconos de accion secundaria (la â de los dialogos). */
   --brand-icon: #475569;
 
   --input-height: 52px;

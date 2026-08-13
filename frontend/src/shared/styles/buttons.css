@@ -120,7 +120,7 @@
     .deasy-btn--menu {
         @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
         border-color: rgba(var(--brand-navy-menu-rgb), 0.14);
-        background: linear-gradient(180deg, var(--color-white) 0%, var(--brand-surface-alt) 100%);
+        background: linear-gradient(180deg, var(--color-white) 0%, var(--brand-surface-muted) 100%);
         color: var(--brand-text-body);
     }
 

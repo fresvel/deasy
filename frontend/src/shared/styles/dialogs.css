@@ -41,7 +41,7 @@
        `contentClass`, `bodyClass` y `footerClass`. Un `header-class="…"` en la plantilla
        cae en `attrs` y acaba de atributo HTML suelto en el div del VELO, sin efecto. */
     .deasy-dialog-root .deasy-dialog-header {
-        background: var(--brand-surface-alt);
+        background: var(--brand-surface-muted);
         border-bottom: 1px solid var(--brand-border);
         box-shadow: none;
     }
@@ -61,7 +61,7 @@
        blanca.** */
     .deasy-dialog-header {
         min-height: 3.75rem;
-        background: var(--brand-surface-alt);
+        background: var(--brand-surface-muted);
         border-bottom: 1px solid var(--brand-border);
         padding: 1rem 1.25rem;
     }
@@ -144,7 +144,7 @@
 
     .pdf-preview-shell {
         min-height: 70vh;
-        background: var(--brand-surface-alt);
+        background: var(--brand-surface-muted);
     }
 
     .pdf-preview-frame {
@@ -255,7 +255,7 @@
    Tapa 4 utilidades de `footer-class` (`border-0 pt-0`, `px-6 lg:px-8`): 6 nodos. */
 
 .deasy-dialog-footer {
-  background: var(--brand-surface-alt);
+  background: var(--brand-surface-muted);
   border-top: 1px solid var(--brand-border);
   padding: 1rem 1.25rem;
 }

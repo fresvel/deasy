@@ -5,7 +5,7 @@
     .admin-workspace-frame {
         border: 1px solid var(--brand-border);
         border-radius: 0.95rem;
-        background: var(--brand-surface-alt);
+        background: var(--brand-surface-muted);
         box-shadow: var(--brand-elev-1);
         padding: 0.5rem;
     }

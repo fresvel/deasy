@@ -47,7 +47,7 @@
 
     .deasy-auth-visual,
     .deasy-dialog-footer {
-        background-color: var(--brand-surface-alt);
+        background-color: var(--brand-surface-muted);
     }
 
     .deasy-card,
