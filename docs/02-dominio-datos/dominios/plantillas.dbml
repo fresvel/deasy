@@ -104,6 +104,26 @@ Table "fill_requests" {
   }
 }
 
+Table "template_artifact_fields" {
+  "id" int4 [pk, not null, increment]
+  "template_artifact_id" int4 [not null]
+  "field_order" int4 [not null, note: '''El orden AUTORADO, 1..N. No se deriva de nada: es el indice del array que mando el formulario. El `schema.json` no puede llevarlo porque su orden es el de las claves de un objeto.''']
+  "data_key" varchar(180) [not null]
+  "field_code" varchar(255) [not null, note: '''La referencia externa del campo (`x-deasy-field-code`). Es la que el generador tendra que contrastar con `signature_flow_steps.slot` para colocar el token de firma sin que el usuario ponga la ubicacion a mano.''']
+  "title" varchar(180) [not null]
+  "ui_component" text [not null, check: `ui_component = ANY (ARRAY['text'::text, 'richtext'::text, 'textarea'::text, 'number'::text, 'switch'::text, 'date'::text, 'date_expression'::text, 'select'::text, 'hidden'::text])`, default: 'text']
+  "ui_group" varchar(180) [not null, default: 'general']
+  "is_required" int2 [not null, default: 0]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (template_artifact_id, data_key) [type: btree, unique, name: "uq_template_artifact_fields_key"]
+    (template_artifact_id, field_order) [type: btree, name: "idx_template_artifact_fields_order"]
+  }
+
+  Note: '''Los CAMPOS que el usuario rellenara en la web, uno por fila, colgados de la EDICION. Vivian solo como `schema.json` en MinIO, y eso costaba tres cosas: se copiaban en binario al versionar (el mismo tubo del `document_owner` que abrio el frente 0), no se podian unir con nada —`field_code` contra `signature_flow_steps.slot` es lo que el generador de Jinja necesita— y el orden era el de las claves de un objeto JS, que coloca las claves enteras primero. `field_order` es la columna que arregla lo tercero.'''
+}
+
 Table "template_artifacts" {
   "id" int4 [pk, not null, increment]
   "deliverable_id" int4 [not null]
@@ -144,6 +164,7 @@ Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps
 Ref "fk_fill_flow_templates_artifact":"template_artifacts"."id" ?<? "fill_flow_templates"."template_artifact_id"
 Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
 Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
+Ref "fk_template_artifact_fields_artifact":"template_artifacts"."id" <? "template_artifact_fields"."template_artifact_id" [delete: cascade]
 Ref "fk_template_artifacts_deliverable":"deliverables"."id" <? "template_artifacts"."deliverable_id"
 Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artifacts"."parent_version_id"
 

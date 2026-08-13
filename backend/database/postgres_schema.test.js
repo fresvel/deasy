@@ -273,3 +273,89 @@ test("el retiro del sync DESACTIVA, no borra: una instancia en curso conserva su
   assert.doesNotMatch(bloque, /DELETE FROM signature_flow_templates/);
   assert.doesNotMatch(bloque, /DELETE FROM signature_flow_steps/);
 });
+
+// --- BLOQUE 4: `template_artifact_fields`, los campos del formulario (frente 0.4, sub-paso S6) ----
+//
+// El SQL es una cadena de texto hasta que alguien la ejecuta, y ninguna de estas propiedades tiene
+// disparador vivo hoy: el escritor las respeta por construccion (normaliza antes de insertar) y la
+// caracterizacion no manda `schema_fields` en ningun flow — medido: con el escritor de campos
+// anulado del todo, `test:char:run` da 281/281 en verde. O sea que si alguien afloja el esquema, no
+// se entera nadie.
+
+const createFields = SCHEMA.slice(
+  SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifact_fields")
+).split(");")[0];
+
+test("el portador de un campo es el template_artifact, y es obligatorio", () => {
+  const columna = createFields.split("\n").find((l) => l.trim().startsWith("template_artifact_id"));
+  assert.ok(columna, "template_artifact_id debe existir en la definicion");
+  assert.match(columna, /NOT NULL/);
+});
+
+test("el CHECK de ui_component lista los NUEVE componentes que autora la web, y ninguno mas", () => {
+  // Es la razon de fondo por la que se descarto la columna `schema_json JSONB`: un CHECK no cubre un
+  // JSONB (medido en el §0.6), asi que dentro de un JSONB estos nueve serian para siempre una
+  // promesa del `Set` `SCHEMA_FIELD_COMPONENTS` de JavaScript. Esta lista queda alineada con ese
+  // `Set` (`templateLifecycle.js`): si uno cambia, el otro cambia en el mismo commit.
+  const componentes = createFields.match(/ui_component IN \(([^)]+)\)/);
+  assert.ok(componentes, "ui_component debe llevar su CHECK");
+  const listados = componentes[1].split(",").map((v) => v.trim().replace(/'/g, ""));
+  assert.deepEqual(listados, [
+    "text", "richtext", "textarea", "number", "switch", "date", "date_expression", "select", "hidden",
+  ]);
+});
+
+test("`field_order` es columna, que es lo que hace que el orden autorado exista", () => {
+  // El fichero `schema.json` no puede llevarlo: su orden es el de las claves de un objeto JS, y JS
+  // itera primero las claves de indice de array ordenandolas numericamente. Medido: la entrada
+  // `anio_lectivo, 2025, responsable, 10` sale como `10, 2025, anio_lectivo, responsable`.
+  const columna = createFields.split("\n").find((l) => l.trim().startsWith("field_order"));
+  assert.ok(columna, "field_order debe existir");
+  assert.match(columna, /INT NOT NULL/);
+});
+
+test("`field_code` es columna, que es lo que permitira unirlo con signature_flow_steps.slot", () => {
+  const columna = createFields.split("\n").find((l) => l.trim().startsWith("field_code"));
+  assert.ok(columna, "field_code debe existir");
+  assert.match(columna, /NOT NULL/);
+});
+
+test("no se guarda el `type` de JSON Schema: es funcion pura del componente", () => {
+  // Guardarlo seria una segunda copia que reconciliar. Se deriva al leer (`jsonTypeForComponent`).
+  assert.doesNotMatch(createFields, /^\s*json_type/m);
+});
+
+test("el unico por (artifact, data_key) hace estructural el descarte del slug repetido", () => {
+  assert.match(
+    SCHEMA,
+    /CREATE UNIQUE INDEX IF NOT EXISTS uq_template_artifact_fields_key ON template_artifact_fields \(template_artifact_id, data_key\);/
+  );
+});
+
+test("borrar una edicion se lleva sus campos: la FK va con ON DELETE CASCADE", () => {
+  // La asimetria con las cabeceras de flujo es del MODELO, no un descuido: una cabecera tiene TRES
+  // portadores posibles y quedarse huerfana es un error que hay que ver; un campo tiene uno y no
+  // significa nada sin su edicion. Ademas conserva el comportamiento de
+  // `DELETE /admin/sql/template_artifacts`, que con NO ACTION pasaria a responder 409 en una
+  // plantilla `routed` con campos y sin flujo. Verificado en psql antes de escribirlo.
+  assert.match(
+    createFields,
+    /CONSTRAINT fk_template_artifact_fields_artifact FOREIGN KEY \(template_artifact_id\) REFERENCES template_artifacts\(id\) ON DELETE CASCADE/
+  );
+});
+
+test("el CREATE INDEX de la tabla nueva va DESPUES de su CREATE TABLE", () => {
+  // Precedentes `673f1fb`, `8f9f1ad`, `99fc7c7`: este fichero se reaplica en CADA arranque, y un
+  // indice colocado antes de existir su columna mata el arranque en bucle.
+  assert.ok(
+    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifact_fields")
+      < SCHEMA.indexOf("CREATE INDEX IF NOT EXISTS idx_template_artifact_fields_order")
+  );
+});
+
+test("la tabla se declara DESPUES de template_artifacts, a la que referencia", () => {
+  assert.ok(
+    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifacts")
+      < SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifact_fields")
+  );
+});
