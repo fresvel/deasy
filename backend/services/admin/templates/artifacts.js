@@ -39,6 +39,74 @@ export const sanitizeLatexSource = (relpath, text) => {
   return violations;
 };
 
+// --- Política de tipos de los adjuntos de plantilla (§0.4 S3) -----------------------------------
+//
+// QUÉ DECIDE, Y POR QUÉ LA EXTENSIÓN ES EL CONTROL. `_materializeDraftFormats`
+// (`templateLifecycle.js`) construye el nombre del objeto de MinIO con
+// `path.extname(file.originalname)`, **sin comprobarlo**. Es decir: la extensión que escribe el
+// cliente decide el nombre del fichero que acaba publicado. Medido antes de escribir esto
+// (experimento desechable): un `payload.sh` enviado por el campo `pdf_file` da **200** y acaba en
+// `System/draft_.../template/pdf/payload.sh`. Y `sendResourcesAsZip` (`utils/templateArchive.js`)
+// le pone **modo 0755** al empaquetarlo, junto al `make.sh` que al admin se le pide ejecutar.
+//
+// Por eso el gate es la EXTENSIÓN y no el mimetype: el mimetype lo declara el cliente y no influye
+// en dónde acaba el fichero, así que aceptar por mimetype dejaría el agujero abierto entero (basta
+// mandar `payload.sh` con `Content-Type: application/pdf`). El mimetype se comprueba **además**,
+// como cordura, con `application/octet-stream` tolerado porque es lo que mandan varios clientes
+// para cualquier binario.
+//
+// Un campo desconocido se rechaza: la lista de campos es cerrada y la fija el router.
+const DRAFT_ARTIFACT_FILE_POLICY = {
+  pdf_file: {
+    extensions: [".pdf"],
+    mimetypes: ["application/pdf"],
+    label: "PDF",
+  },
+  docx_file: {
+    extensions: [".docx"],
+    mimetypes: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+    label: "Word (.docx)",
+  },
+  xlsx_file: {
+    extensions: [".xlsx"],
+    mimetypes: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+    label: "Excel (.xlsx)",
+  },
+  pptx_file: {
+    extensions: [".pptx"],
+    mimetypes: ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+    label: "PowerPoint (.pptx)",
+  },
+  // La re-subida de código (`POST /template_artifacts/:id/source`) comparte instancia de multer con
+  // el borrador, así que su campo va en el mismo mapa. `applyTemplateArtifactSource` ya lo trata
+  // como ZIP (`unzipToDirectory`); antes ni siquiera se comprobaba que lo fuera.
+  source: {
+    extensions: [".zip"],
+    mimetypes: ["application/zip", "application/x-zip-compressed", "application/x-compressed"],
+    label: "ZIP",
+  },
+};
+
+const GENERIC_BINARY_MIMETYPE = "application/octet-stream";
+
+// Devuelve `null` si el fichero es aceptable, o el MOTIVO en castellano si no lo es.
+// Pura a propósito: el `fileFilter` de multer es transporte y no debe llevar la política dentro.
+export const describeRejectedDraftArtifactFile = ({ fieldname, originalname, mimetype } = {}) => {
+  const policy = DRAFT_ARTIFACT_FILE_POLICY[String(fieldname || "")];
+  if (!policy) {
+    return `No se esperaba ningun archivo en el campo "${fieldname}".`;
+  }
+  const name = String(originalname || "").toLowerCase();
+  if (!policy.extensions.some((extension) => name.endsWith(extension))) {
+    return `El campo "${fieldname}" solo admite ${policy.label}: ${policy.extensions.join(", ")}.`;
+  }
+  const declared = String(mimetype || "").toLowerCase();
+  if (declared && declared !== GENERIC_BINARY_MIMETYPE && !policy.mimetypes.includes(declared)) {
+    return `El campo "${fieldname}" solo admite ${policy.label}; el archivo se declaro como "${mimetype}".`;
+  }
+  return null;
+};
+
 export const parseAvailableFormats = (value) => {
   if (!value) {
     return {};
