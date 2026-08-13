@@ -522,3 +522,110 @@ escribirse porque el número grande es el que se cita al planificar, y llevaba u
 **Método, para no repetir la cuenta a ojo:** las cifras de este plan se sacan con `grep -rohE`
 contando **ocurrencias, no ficheros**, e incluyendo `.css` cuando la deuda vive también en `@apply`.
 Excluir `.css` es justo lo que escondió los 151 y la mitad de los `z-index`.
+
+---
+
+## Sesión 2026-08-12 (relevo) · F4.5 y F3 — y F4.5 no era mecánica
+
+Cuatro commits, `3bffc1c` → `1942143`, en `design/f45-f3` sobre la **pila B**. F4.5 cerrada (148 de
+151) y F3 cerrada (28 de los ~57).
+
+### Lo que cambió el encargo: medir antes de migrar
+
+El plan y el traspaso describían F4.5 como «mecánica». **Lo era para 33 de los 151.** Se midió el
+ΔE de cada clase contra el OKLCH real de `tailwindcss@4.2.2` (extraído de su `theme.css`, no de los
+hex de v3) y contra los 22 tokens, buscando token puro **y** derivación:
+
+| | Cuántos | Qué pedía |
+|---|---:|---|
+| Familia neutra | 33 | Nada. Token del mismo concepto a ΔE ≤ 2.07 |
+| Escala de texto | 29 | Una decisión: el más cercano en ΔE no siempre conserva el contraste |
+| Variantes suaves | 86 | Una decisión mayor: **no hay destino a ninguna distancia** |
+
+> **El hallazgo que reencuadra la fase:** las 86 son **F4.2 metida dentro de un `@apply`**. Mismas
+> seis familias, contadas aparte sólo por dónde viven. Y la paleta no puede absorberlas porque
+> **declara un solo tono por estado, y es el oscuro**: no existe «el rojo claro de fondo». El
+> destino de un `bg-red-50` no es un token — es un `color-mix`.
+
+Las dos decisiones se llevaron al usuario con la medición delante. Aprobó las dos.
+
+### Una incoherencia que no estaba escrita en ningún sitio
+
+**`@apply border-slate-200` NO lo alcanza el repintado de `overrides.css`.** `@apply` copia la
+DECLARACIÓN, y el selector `.border-slate-200` necesita la clase en el atributo. Así que hasta hoy
+la misma clase valía `#e2e8f0` escrita en un módulo y `--color-line` escrita en una plantilla.
+Ahora coinciden. **Efecto colateral útil:** la trampa 2.10 (una utilidad repintada lleva prioridad,
+no sólo color) **no aplica dentro de `@apply`**, así que estas 33 no tenían el riesgo que tenían
+las 109 de §4.1.
+
+### La corrección a la receta, que es una regla del sistema
+
+**El relleno en reposo es el 6 %, no el 10 %.** El 10 % de `frontend/CLAUDE.md` §2.4 sale de los
+botones de acción, donde encima del relleno hay un **icono** (mínimo 3:1). Donde encima hay
+**texto** (4.5) el relleno se come parte de la diferencia:
+
+```
+relleno   danger  success  warning  pending  action-view  primary
+   6 %      5.97     5.05     4.64     4.99         6.89     4.81
+  10 %      5.58     4.78     4.39!    4.69         6.44     4.55
+  16 %      5.03     4.35!    4.01!    4.30!        5.83     4.18!
+```
+
+En el *hover* sí vale el 16 %, porque ahí la receta **oscurece además el texto** (85 % sobre negro)
+y el contraste sube en las seis. El relleno no tiene mínimo propio, **pero se lo come al texto que
+lleva encima** — eso es lo que no estaba escrito.
+
+### Tres cosas que encontró la ejecución y no estaban previstas
+
+1. **El placeholder de un campo en error no se arregla aclarando el rojo.** Era `red-300`: 1.92:1.
+   El rojo más claro que cumple sobre ese fondo es el **90 %** del token, o sea a un paso del color
+   del propio texto: arreglas el contraste y pierdes la distinción valor/placeholder. La salida es
+   que use el mismo `--color-muted` que todos los demás campos. 5.40:1.
+2. **El borde y el fondo de `.deasy-field-input--error` no pintan**, y no por esta migración: los
+   tapa el grupo `.deasy-field-*` de `overrides.css`, que sigue fuera de capa. Medido en el DOM
+   antes y después. Escrito en la propia regla para que nadie lo mida y crea que se rompió.
+3. **`.deasy-tag--accent` no era otro color**: es el escalón fuerte del mismo azul que `--info`
+   (`sky-300`/`sky-100` frente a `sky-200`/`sky-50`). Lo mismo dicho sin decir que es lo mismo.
+
+### El velo de los modales: la migración correcta era borrar
+
+`.deasy-dialog-root { @apply bg-slate-950/45 backdrop-blur-[2px] }` **estaba muerto** — la regla sin
+capa del final del mismo fichero gana siempre y ya usaba `--overlay-backdrop`. El comentario de esa
+regla lo avisaba desde 4.4-c. Medido antes de tocar: el computado ya era `rgba(15,23,42,0.48)` +
+`blur(3px)`.
+
+> Y un falso peligro que parecía real: el `@apply` emitía `-webkit-backdrop-filter` y la regla
+> ganadora no lo escribe, así que borrarlo parecía dejar sin desenfoque a Safari ≤17. **No:
+> lightningcss ya prefija esa propiedad en el build.** La versión con el prefijo escrito a mano daba
+> un CSS byte por byte idéntico. Se retiró por redundante.
+
+### F3: el criterio de la fase excluía a la mitad de la fase
+
+De los ~57, sólo **28** cumplían «ΔE ≤ 2 contra un token existente». Los 29 restantes son F4.2 (6
+sombras de color, 9 paradas de degradado), una paleta cualitativa (los 6 colores de formato de
+fichero — que son justo los consumidores que les faltaban a los `--color-chart-*` retirados en
+`3ba869d`), la paleta azul paralela de `PerfilView`, un gris de icono sin escalón, el anillo de foco
+que el propio plan ya difería, y **un falso positivo dentro de un comentario**.
+
+Los 26 de tinta de sombra son **cambio cero demostrado**: `getComputedStyle` devuelve el mismo
+string para `#0f172a0a` y para `rgba(15,23,42,0.04)`.
+
+### Cuatro notas de instrumental
+
+1. **`shadow-[…rgb(var(--x)/0.04)]` sigue muriendo en silencio** en `tailwindcss@4.2.2` — se
+   comprobó a propósito antes de migrar 26 sombras. `box-shadow: none`. La forma con coma sí vale.
+2. **Al contar dentro de `@apply`, quita los comentarios primero.** Un comentario que cita
+   `` `@apply bg-slate-950/45` `` cuenta como uso. Los nombres de clase en comentarios van
+   **descritos y no escritos** — es la quinta vez que esto pasa en este repo.
+3. **Comparar tintas de sombra COMPUESTAS no vale para decidir.** A 0.06 de alfa sobre blanco,
+   cualquier tinta oscura sale a ΔE ~1. Hay que comparar tinta contra tinta.
+4. **`@media (hover: hover)` escrito a mano es exactamente lo que compila `@apply hover:`** —
+   verificado en el CSS construido. Vale la pena cuando la alternativa es un
+   `hover:bg-[color-mix(in_srgb,var(--tone)_16%,var(--color-white))]` de 55 caracteres.
+
+### Qué queda de F4.5 y por qué
+
+**3 `bg-slate-100`.** Es un segundo escalón de superficie que la paleta no declara, y colapsarlo
+sobre `--color-surface` (ΔE 1.29) **mataría el hover de `.deasy-btn--soft-neutral`**, que va
+justamente de slate-50 a slate-100. Mismo criterio que se aplicó a `bg-slate-200` en 4.4: sin
+escalón declarado no se inventa uno.

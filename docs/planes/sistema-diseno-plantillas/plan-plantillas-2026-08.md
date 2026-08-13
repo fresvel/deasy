@@ -28,14 +28,19 @@
 > | Fase | Estado | Lo que queda, medido hoy |
 > |---|---|---|
 > | **F1** · **F2** | ✅ cerradas 08-11 | — |
-> | **F3** | ⬜ **abierta** | **75** literales a mano en `.vue`/`.js`, no 40. Pero **15 son los grafos y 3 el logo, ambos excluidos**: superficie real **~57** |
+> | **F3** | ✅ **cerrada el 2026-08-12** | 28 sustituciones (`eb72dd6`). Los **29 que quedan NO son de F3**: ninguno baja de ΔE 2 contra un token. Ver §3 |
 > | **F4.1** · **F4.3** · **F4.4** (a·b·c·d) | ✅ cerradas | 4.4-c bajó **156 → 52** reglas fuera de capa |
-> | **F4.2** | ⬜ **abierta — decisión de diseño** | **1 276**: info/foco 644 · error 303 · éxito 187 · aviso 142 |
-> | **F4.5** | ⬜ **abierta — mecánica** | **151** dentro de `@apply` |
+> | **F4.2** | ⬜ **abierta — decisión de diseño** | **~1 190** en plantillas. Su mitad de CSS ya está resuelta y **fija el criterio**: derivar del token con la receta 71/6, no elegir un tinte |
+> | **F4.5** | ✅ **cerrada el 2026-08-12** | 148 de 151 (`3bffc1c`, `2128d51`, `1942143`). Quedan **3 `bg-slate-100`**, fuera a propósito |
 > | **F5** | ✅ **cerrada el 2026-08-12** | 24 clases muertas (`8887012`) + contadores de `CLAUDE.md` (`c40555e`). Lo que §5 lista como pendiente **ya está hecho** |
 > | **F6.1** tipografía | ⬜ **abierta — decisión** | **200 usos, 21 grafías** de `text-[…]` |
 > | **F6.2** `z-index` | ⬜ **abierta — decisión** | **20 valores** en tres bandas que no se hablan |
-> | **F6.3** *utility soup* | ⬜ **abierta — atada al maestro** | **205** strings de +120 car. No se hace suelta: va con partir `HomeView` |
+> | **F6.3** *utility soup* | ⬜ **abierta — atada al maestro** | **203** strings de +120 car. No se hace suelta: va con partir `HomeView` |
+>
+> ⚠️ **Y una regla del sistema cambió al ejecutar F4.5**, así que si vienes a copiar la receta de
+> `frontend/CLAUDE.md` §2.4, léela otra vez: **el relleno en reposo es el 6 %, no el 10 %**, cuando
+> encima va texto. El 10 % es de los botones de acción, que llevan un icono. Medido: al 10 %
+> `--color-warning` sobre su propio relleno da 4.39 y no pasa AA.
 >
 > Y un bloque que **no pertenece a ninguna fase** aunque vive dentro de §4.2: las **113 utilidades de
 > foco muertas** (59 son `focus:border-indigo-400`). No es migración — **es decidir cómo se ve el foco
@@ -251,7 +256,36 @@ falta de registro; los `--font-weight-*` fuera; cambio visual cero.
 
 ---
 
-## Fase 3 · Los literales de sustitución invisible — ⬜ ABIERTA
+## Fase 3 · Los literales de sustitución invisible — ✅ CERRADA (2026-08-12)
+
+> **Cerrada en `eb72dd6`, con 28 sustituciones** — y con una corrección de alcance que importa más
+> que el número: de los ~57 «de superficie real», **sólo 28 cumplían el criterio de la propia fase**
+> (ΔE ≤ 2 contra un token existente). Los otros 29 se quedan, y **no por falta de tiempo**:
+>
+> | Lo que queda | Cuántos | Por qué no es F3 |
+> |---|---:|---|
+> | Sombras de color (sky · emerald · ámbar · rose · indigo · blue) | 6 | Son las familias en disputa: **F4.2** |
+> | Paradas de degradado de los pasos de firma (menta y salmón) | 9 | Ídem. `#4BF1A1` sí es `--step-rgb` exacto, pero sus dos compañeras de rampa no tienen token |
+> | Anillo de foco sky de `AppCounterNavigator` | 1 | Ya lo difería este mismo plan a F4 |
+> | Colores de formato de fichero (`AdminPresentationService`) | 6 | **Paleta cualitativa**, hermana de las 7 aristas del grafo. Son justo los consumidores que les faltaban a los `--color-chart-*` retirados en `3ba869d` |
+> | Los 3 de `PerfilView` | 3 | Son la paleta azul **paralela** de la plantilla de correo del backend (`#21517a`), no la de la app |
+> | `text-[#7a869a]` de `AdminSelectField` | 1 | Un gris de icono más claro que `--color-icon`; ese escalón no existe |
+> | El `#fff` de `ProcessConfigNode.vue:59` | 1 | **Falso positivo: está dentro de un comentario** |
+>
+> Lo que sí entró, y cómo se probó: los 26 `rgba(15,23,42,α)` son **cambio cero DEMOSTRADO** —
+> `getComputedStyle` devuelve el mismo string para `#0f172a0a` y para `rgba(15,23,42,0.04)`—, más el
+> azul de sombra de `SMenu` (ΔE 1.77 tinta contra tinta) y un blanco.
+>
+> ⚠️ **Y la trampa de §2.7 se comprobó ANTES de escribir nada, porque aquí es donde muerde:**
+> `shadow-[…rgb(var(--x)/0.04)]` compila y el navegador lo **descarta** (`box-shadow: none`, medido).
+> La forma válida es `rgba(var(--x),α)`, y esa sí la acepta.
+>
+> **Corrección al recuento de abajo:** el plan dice que `rgba(11,31,63,.06)` está a ΔE 1.09 de la
+> tinta. Tinta contra tinta son **5.52**; el 1.09 sale de comparar los dos *compuestos* al 6 % sobre
+> blanco, y a esa opacidad **cualquier** tinta oscura pasa. Da igual porque vive en `AppLogo`, que
+> está excluido, pero el método de medida no vale para decidir.
+
+<details><summary>El análisis original del 08-11 (conservado)</summary>
 
 > **Recuento del 2026-08-12: son 75, no 40** (`#hex` + `rgb(`/`rgba(` numérico en `.vue` y `.js`).
 > De ellos **15 están en `UnitGraphView`/`ProcessGraphView` y 3 en `AppLogo`**, y los dos bloques
@@ -281,6 +315,8 @@ distintas, cinco de ellas la misma sombra con la opacidad movida entre `.04` y `
 > unificarlos con `--focus-ring` cambia el aspecto. Van a F4 con los otros 116.
 
 **Criterio de cierre:** los 40 fuera; huella sin diferencias en `/home`, `/perfil`, `/home/firmas`.
+
+</details>
 
 ---
 
@@ -425,10 +461,35 @@ que sólo se encuentran en runtime, a través de una prop**, invisible a cualqui
 > bordes ya escritos. Estas últimas **no se resuelven aquí**: cada una acaba borrada de la plantilla
 > o encendida en la pantalla, y eso es §4.2.
 
-### 4.5 Los dentro de `@apply` — ⬜ ABIERTA
+### 4.5 Los dentro de `@apply` — ✅ CERRADA (2026-08-12)
 
-> **Hoy son 151**, no 211: F4.4 se llevó parte por el camino. Repartidos en los 18 módulos de
-> `shared/styles/`.
+> **148 de 151**, en tres commits: `3bffc1c` (neutros), `2128d51` (el velo muerto) y `1942143`
+> (escala de texto + variantes suaves). Quedan **3 `bg-slate-100`**, fuera a propósito.
+>
+> ⚠️ **Y esta fase NO era «mecánica», que es como la describía la tabla de estado.** Medido antes de
+> tocar nada: sólo **33 de los 151** tenían un token del mismo concepto por debajo de ΔE 2. Los otros
+> 118 se repartían así, y cada mitad pedía una decisión distinta:
+>
+> | | Cuántos | Por qué no era mecánico |
+> |---|---:|---|
+> | La familia **neutra** | 33 | Sí lo era. `slate-200`→`line` (ΔE 1.61), `slate-50`→`surface` (0.56), `slate-300`→`line-strong` (2.07) |
+> | La escala de **texto** | 29 | Hay token por papel, pero el más cercano en ΔE no siempre conserva el contraste. `slate-700`→`body` estaba más cerca (5.41) y **bajaba** de 10.36 a 9.91; §3.1 manda `strong` |
+> | Las **variantes suaves** | 86 | **No tenían destino a ninguna distancia**: la paleta sólo declara el tono OSCURO de cada estado. No es elegir un token, es **derivarlo** |
+>
+> Las 86 son **F4.2 vestida de CSS**: las mismas seis familias en disputa, contadas aparte sólo por
+> vivir dentro de un `@apply`. Se cerraron aplicando la receta de derivación, y eso **fija el criterio
+> para las ~1 190 de plantilla que quedan**: el destino de un `bg-red-50` no es un token, es
+> `color-mix(danger 6%, white)`.
+>
+> **Lo que arregló, medido en el DOM:** los siete bordes de variante suave estaban entre **1.21 y
+> 1.49:1** y ahora están entre 3.01 y 3.86 (WCAG 1.4.11 pide 3). Y cuatro textos que no llegaban a
+> AA: el botón sólido `--success` (3.65 — blanco sobre `emerald-600`, o sea que **no cumplía con su
+> propia etiqueta**), el mensaje de error (3.81), la ayuda del dropzone lleno (3.65) y el placeholder
+> del campo en error (**1.92**).
+>
+> **Y corrigió una regla del sistema.** El relleno en reposo es el **6 %**, no el 10 % que decía
+> `frontend/CLAUDE.md` §2.4: el 10 % viene de los botones de acción, donde encima hay un **icono**
+> (3:1). Donde encima hay **texto** (4.5), al 10 % `--color-warning` da 4.39 y no pasa.
 
 **`stylelint` no ve ninguno**: `color-no-hex` no entra en `@apply`. Es el CSS que damos por limpio,
 y por eso es la única de las mecánicas que sí paga sola — **el contador en verde esconde justo esto**.

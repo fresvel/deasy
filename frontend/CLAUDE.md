@@ -98,13 +98,28 @@ un destino al que migrar». No lo eran — nadie migró.
 ### 2.4 Deriva en vez de declarar
 
 No declares un token por matiz. Declara **uno por significado** y saca los demás con `color-mix()`.
-Los botones de acción son el ejemplo a copiar:
+La receta, con **dos rellenos según lo que lleve encima**:
 
 ```css
-fondo   reposo 10%   hover 16%   sobre var(--color-white)
-borde   reposo 71%   hover 85%   sobre var(--color-white)
-texto   reposo el token          hover 85% sobre var(--black)
+borde    reposo 71%   hover 85%   sobre var(--color-white)
+texto    reposo el token          hover 85% sobre var(--black)
+relleno  reposo  6%   hover 16%   sobre var(--color-white)   <- si encima va TEXTO
+relleno  reposo 10%   hover 16%   sobre var(--color-white)   <- si encima va un ICONO
 ```
+
+⚠️ **El 6 % no es un capricho, y el 10 % de los botones de acción no es general.** Encima del
+relleno de un botón de acción hay un **icono** (mínimo 3:1); encima del de un tag o un botón suave
+hay **texto** (mínimo 4.5). El relleno no tiene mínimo propio, pero **se lo come al texto que lleva
+encima**: medido, `--color-warning` sobre su propio relleno al 10 % da **4.39 y no pasa AA**; al 6 %
+da 4.64 y las seis familias pasan. En el *hover* sí vale el 16 %, porque ahí la receta oscurece
+además el texto y el contraste **sube** en las seis.
+
+**El 71 % del borde tampoco es arbitrario**: es el porcentaje al que llega a 3:1 sobre blanco, que
+es lo que pide WCAG 1.4.11 para el límite de un componente. Los tintes `-200` de Tailwind que había
+antes estaban entre **1.21 y 1.49:1**.
+
+**Y la receta se escribe UNA vez.** Cada variante declara sólo su token en `--tone` y una regla común
+lo gasta — el mecanismo de `--tooltip-bg` de `buttons.css`. Antes eran cinco copias de la misma idea.
 
 Los cinco violetas del proyecto resultaron ser `--color-primary` al 86 %, 38 %, 33 %, 25 % y 10 %:
 **no eran colores, eran porcentajes**.
@@ -487,16 +502,20 @@ no crea una pila nueva, repunta la de siempre a tu código. Está en el `CLAUDE.
 
 | Qué | Cuánto | Dónde |
 |---|---:|---|
-| Colores a mano fuera del CSS | **74** | *Arbitrary values* y mapas de tono en `.vue` y `.js` |
-| Strings de clase >120 caracteres | **205** | `HomeView.vue`, `FirmarPdf.vue` |
+| Colores a mano fuera del CSS | **47** | *Arbitrary values* y mapas de tono en `.vue` y `.js` |
+| Strings de clase >120 caracteres | **203** | `HomeView.vue`, `FirmarPdf.vue` |
 | *Arbitrary values* (`text-[11px]`…) | **436** | 8 tamaños distintos por debajo de `text-sm` |
 | `!important` con motivo escrito | **5** | `dialogs.css`, `overrides.css` |
 | Reglas fuera de capa | **52** | Todas con su motivo escrito al lado |
-| **Colores de Tailwind por nombre** | **~2 260** | Ningún linter ve uno |
+| **Colores de Tailwind por nombre** | **~2 112** | Ningún linter ve uno |
+| Colores de Tailwind **dentro de `@apply`** | **3** | Los `bg-slate-100`, abajo |
 
-**Y hay deuda que los linters tampoco ven dentro de los módulos**: `forms.css` pinta el dropzone con
-`sky-200`, `sky-500` y `sky-700` **dentro de `@apply`**. Es el único color de familia propia que sigue
-fuera de la paleta.
+**Dentro de los módulos ya no queda ni un color de familia propia fuera de la paleta.** Eran **151**
+—`color-no-hex` no entra en `@apply`, así que el contador en verde los escondía— y quedan **tres**:
+los `bg-slate-100` de `buttons.css`, `forms.css` y `misc.css`. Se quedan a propósito: son un **segundo
+escalón de superficie que la paleta no declara**, y colapsarlo sobre `--color-surface` (ΔE 1.29)
+mataría el *hover* de `.deasy-btn--soft-neutral`, que va justamente de slate-50 a slate-100. Es el
+mismo criterio que se aplicó a `bg-slate-200` en 4.4: sin escalón declarado no se inventa uno.
 
 ### La que ningún contador recoge: reglas que existen y no aplican
 
@@ -505,6 +524,8 @@ Es **el patrón dominante de este repo**, y por eso va aquí y no en una lista d
 - **Ningún `border-*` de Tailwind pinta sobre un `<input>`.** La regla sin capa de `overrides.css`
   gana a todas las capadas. Son 90 declaraciones muertas, entre ellas **los 61 bordes de foco**.
   Encenderlas es decidir qué color tiene el foco: es una decisión de diseño, no un refactor.
+  **Y se lleva por delante el borde y el fondo de `.deasy-field-input--error`**, medido en el DOM:
+  un campo en error da `--color-line-strong` y blanco. Lo único suyo que llega es el `color`.
 - **`overrides.css` anula el `rounded-2xl` de `forms.css`** con `border-radius: 0.5rem`: el `@apply`
   promete 16 px y el DOM da 8, en 228 controles.
 - **`workspaceNavIcons.js` compone `` `${prefix}--${tone}` `` sin comprobar que la variante exista** —
