@@ -307,7 +307,7 @@
               <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-strong">v{{ v.storage_version }}</span>
                 <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="versionStateClass(v.lifecycle_state)">{{ versionStateLabel(v.lifecycle_state) }}</span>
-                <span v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" class="inline-flex items-center rounded-xl bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-primary ring-1 ring-brand-200" title="Versión vinculada a esta configuración">Vinculada aquí</span>
+                <span v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" class="deasy-tag deasy-tag--accent" title="Versión vinculada a esta configuración">Vinculada aquí</span>
                 <span class="ml-auto text-[11px] font-semibold text-primary">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
               </div>
               <div class="mt-1 flex items-center justify-between gap-2">
