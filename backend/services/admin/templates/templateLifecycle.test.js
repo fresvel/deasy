@@ -18,7 +18,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import TemplateLifecycleService from "./templateLifecycle.js";
+import path from "node:path";
+
+import TemplateLifecycleService, {
+  PACKAGE_DATA_FILE_NAME,
+  buildPackageDataFileTargets,
+} from "./templateLifecycle.js";
+import { CONTRACT_FORMAT } from "../kernel/constants.js";
 
 const TPL_ID = 10;
 const CFG_ID = 20;
@@ -335,4 +341,50 @@ test("sin flujo autorado la transaccion sigue siendo la misma, sin escribir fluj
 
   assert.ok(!events.includes("escribe:flujo"));
   assert.ok(events.includes("commit"));
+});
+
+// --- El payload de datos del paquete (S1) --------------------------------------------------------
+//
+// `buildPackageDataFileTargets` existe como costura verificable porque el defecto que arregla es
+// INVISIBLE desde el backend: el paquete quedaba bien en MinIO y el error solo aparecia al
+// renderizar el ZIP en la maquina del usuario.
+//
+// Medido en la pila A antes del arreglo, con una plantilla creada por la web:
+//   - la raiz del ZIP traia `Contenido main.tex.j2 make.sh Preambulo Referencias`, sin fichero de datos
+//   - `bash make.sh` -> rc=1, «Fallo al renderizar ./Contenido/Referencias.tex.j2:
+//     'bibliography_style' is undefined» (StrictUndefined), sin PDF.
+//
+// La causa es que `GET /template_artifacts/:id/source` zipea SOLO el prefijo del contrato jinja2, con
+// las rutas relativas a el; y `make.sh` busca el fichero de datos relativo a su propio directorio,
+// que en el ZIP es la raiz. De ahi que las dos copias no sean redundantes: la de la raiz del paquete
+// es la que consume el backend, la del contrato es la UNICA que viaja al usuario.
+
+test("el payload del paquete se escribe en DOS sitios, no en uno", () => {
+  const targets = buildPackageDataFileTargets("/tmp/draft");
+  assert.equal(targets.length, 2, "una sola copia es justo el defecto que esto arregla");
+  assert.deepEqual(
+    targets.map((target) => path.basename(target)),
+    [PACKAGE_DATA_FILE_NAME, PACKAGE_DATA_FILE_NAME],
+    "las dos copias se llaman igual: make.sh busca por nombre",
+  );
+});
+
+test("la primera copia es la raiz del paquete (la que lee el backend)", () => {
+  const [raiz] = buildPackageDataFileTargets("/tmp/draft");
+  assert.equal(raiz, path.join("/tmp/draft", PACKAGE_DATA_FILE_NAME));
+});
+
+test("la segunda copia cae DENTRO del contrato jinja2, que es lo unico que se zipea", () => {
+  const [, enElContrato] = buildPackageDataFileTargets("/tmp/draft");
+  const dirDelContrato = path.join("/tmp/draft", "template", CONTRACT_FORMAT);
+
+  assert.equal(enElContrato, path.join(dirDelContrato, PACKAGE_DATA_FILE_NAME));
+  // Y en la RAIZ de ese prefijo, no en un subdirectorio: `make.sh` viaja a la raiz del ZIP y busca
+  // el fichero de datos a su lado. Un nivel mas abajo y no lo encuentra.
+  assert.equal(path.dirname(enElContrato), dirDelContrato);
+});
+
+test("las dos copias son rutas distintas (si colapsaran, el ZIP volveria a salir sin datos)", () => {
+  const [raiz, enElContrato] = buildPackageDataFileTargets("/tmp/draft");
+  assert.notEqual(raiz, enElContrato);
 });

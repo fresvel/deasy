@@ -136,6 +136,21 @@ const buildSchemaJsonFromFields = (fields = []) => {
 const buildArtifactFormatDir = (baseDir, format) =>
   path.join(baseDir, "template", format);
 
+// El payload de datos del paquete (copia de `defaults.yaml` de la semilla).
+export const PACKAGE_DATA_FILE_NAME = "data.yaml";
+
+// `data.yaml` va DOS VECES a proposito, igual que en el bootstrap
+// (`SystemBootstrapService.js:367-368`), y la copia de dentro NO es redundante: es la UNICA que
+// viaja al usuario. `GET /template_artifacts/:id/source` zipea solo `template/jinja2/` con rutas
+// relativas a ese prefijo, y `make.sh` busca `data.yaml`/`defaults.yaml` relativos a su propio
+// directorio, que en el ZIP es la raiz. Con solo la copia de la raiz del paquete, el render con
+// `StrictUndefined` reventaba antes de llegar a LaTeX — medido:
+// «Fallo al renderizar ./Contenido/Referencias.tex.j2: 'bibliography_style' is undefined».
+export const buildPackageDataFileTargets = (draftDir) => [
+  path.join(draftDir, PACKAGE_DATA_FILE_NAME),
+  path.join(buildArtifactFormatDir(draftDir, CONTRACT_FORMAT), PACKAGE_DATA_FILE_NAME),
+];
+
 const setAvailableFormatEntry = (availableFormats, format, baseObjectPrefix) => {
   availableFormats[format] = {
     entry_object_key: `${baseObjectPrefix}template/${format}/`
@@ -1160,11 +1175,9 @@ export default class TemplateLifecycleService {
       // un segundo sitio donde vive un campo. Su dueño natural es el generador del §0.4.
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
-        await copyMinioObjectToFile(
-          MINIO_TEMPLATES_BUCKET,
-          defaultsObjectKey,
-          path.join(draftDir, "data.yaml")
-        );
+        for (const target of buildPackageDataFileTargets(draftDir)) {
+          await copyMinioObjectToFile(MINIO_TEMPLATES_BUCKET, defaultsObjectKey, target);
+        }
       } catch {
         // Optional for non-latex seeds.
       }
@@ -1185,8 +1198,30 @@ export default class TemplateLifecycleService {
     }
 
     if (!seedRow) {
-      await preserveExistingFormat(CONTRACT_FORMAT);
+      const hasContract = await preserveExistingFormat(CONTRACT_FORMAT);
       await preserveExistingFormat("latex");
+      // El `data.yaml` que ya tenia el paquete, a las MISMAS dos rutas que la rama de la semilla:
+      // la raiz no la baja nadie (`preserveExistingFormat` solo trae prefijos de formato), y la copia
+      // de dentro del contrato falta en los paquetes anteriores a este arreglo, asi que reescribir
+      // las dos desde el original repara de paso lo ya publicado.
+      //
+      // Sin esto, editar un borrador sin cambiar de semilla dejaba `data.yaml` fuera del `draftDir`
+      // — y como el manifiesto se recalcula SOBRE el `draftDir`, el objeto sobrevivia en MinIO pero
+      // desaparecia de `manifest.json`. Manifiesto y bucket derivaban en la PRIMERA edicion (medido:
+      // la clave `data.yaml` desaparecia de `protected`).
+      //
+      // Solo si el paquete conserva contrato jinja2: sin renderizador el payload no significa nada, y
+      // escribirlo crearia un `template/jinja2/` fantasma —no declarado en `available_formats`, luego
+      // no descargable— que ademas entraria en `protected` del manifiesto.
+      if (hasContract) {
+        try {
+          for (const target of buildPackageDataFileTargets(draftDir)) {
+            await copyMinioObjectToFile(bucket, `${baseObjectPrefix}${PACKAGE_DATA_FILE_NAME}`, target);
+          }
+        } catch {
+          // Un paquete de semilla no-latex puede no tener `data.yaml`: no es un error.
+        }
+      }
     }
 
     const fileFieldMap = {
