@@ -1056,3 +1056,27 @@ No lo vio el CSS, ni el lint, ni los 316 tests. Lo cazó comparar la forma de lo
 séptima vez que este repo demuestra lo mismo: **para un cambio de estilo, la verificación es el
 navegador.** Y el matiz que lo hace fácil de repetir: `border-*` (color) y `border` (ancho) parecen
 lo mismo al leer una cadena de clases, y no lo son.
+
+### `.deasy-form-label`: la clase existía y se estaba ignorando
+
+52 etiquetas escritas a mano en **cuatro formas casi iguales** que diferían en margen, peso y color
+sin que ninguna diferencia fuera una decisión. Y `.deasy-form-label` llevaba declarada desde
+siempre. Es exactamente el caso que §6.1 ya describía —«el mismo string se repetía 21 veces cuando
+`.deasy-form-label` ya existía con exactamente ese `@apply`, byte por byte»—, sin resolver.
+
+**Y aquí NO tocaba componente Vue.** Una etiqueta no tiene estado ni markup propio: solo texto. El
+nivel correcto de la regla de decisión es la **clase**, y añadir un `AppFieldLabel` habría sido
+ceremonia. El componente se gana el sueldo cuando hay markup y estados que unificar —`AppAlert` lo
+tiene, y por eso trajo el `role="alert"` que faltaba en 15 sitios—; una etiqueta, no.
+
+Una sola variante nueva, `--inline`, para las 23 que llevan icono al lado.
+Verificado en el DOM: 40 etiquetas, una forma, ninguna invisible.
+**Strings de clase de +120 caracteres: 203 → 174.**
+
+### Nota de método: los commits de esta tanda
+
+Se pidió un commit por fase y las cinco primeras ya estaban entrelazadas: `tokens.css` y
+`overrides.css` los tocan F2, F3, F6 y F7 **en las mismas líneas**, así que partirlas a posteriori
+habría producido commits que no pasan su propia verificación — peor que uno honesto. Van en dos:
+la documentación por su lado (es separable de verdad) y el código con las cinco fases enumeradas.
+De F5 en adelante, uno por fase.
