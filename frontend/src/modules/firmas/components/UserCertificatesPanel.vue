@@ -21,7 +21,7 @@
         <AppAlert v-if="errorMessage">
           {{ errorMessage }}
         </AppAlert>
-        <div v-if="successMessage" class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">
+        <div v-if="successMessage" class="deasy-alert deasy-alert--success mb-3">
           {{ successMessage }}
         </div>
 

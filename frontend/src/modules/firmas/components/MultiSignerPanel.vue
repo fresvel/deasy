@@ -259,7 +259,7 @@
 
               <div
                 v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
-                class="pointer-events-none absolute z-20 rounded-lg border-2 border-dashed border-rose-500 bg-rose-500/20 mix-blend-multiply"
+                class="deasy-alert deasy-alert--danger pointer-events-none absolute z-20 border-2 border-dashed mix-blend-multiply"
                 :style="activeSelectionBox"
               >
                 <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-elev-1">

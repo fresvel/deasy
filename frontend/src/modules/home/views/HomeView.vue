@@ -161,7 +161,7 @@
             <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
-            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-danger text-sm font-bold rounded-2xl p-5 shadow-elev-1">
+            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger shadow-elev-1">
               {{ processPanelError }}
             </section>
             <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted text-center text-sm font-medium">
@@ -410,7 +410,7 @@
           <div v-else class="flex flex-col gap-4">
 
             <!-- Error banner -->
-            <div v-if="homeErrorMessage" class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-danger">
+            <div v-if="homeErrorMessage" class="deasy-alert deasy-alert--danger flex items-center gap-3">
               <IconAlertTriangle class="h-5 w-5 shrink-0" />
               <span>{{ homeErrorMessage }}</span>
             </div>
@@ -511,7 +511,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                class="deasy-alert deasy-alert--success flex flex-col h-full min-h-[19rem] bg-surface/50 border-line text-left shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
                 @click="navigateTo('perfil')"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>
@@ -693,7 +693,7 @@
               Cargando la configuración seleccionada...
             </section>
 
-            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-danger text-sm font-bold rounded-2xl p-5 shadow-elev-1">
+            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger shadow-elev-1">
               {{ processPanelError }}
             </section>
 
@@ -950,7 +950,7 @@
           </div>
         </div>
 
-        <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-danger text-sm font-bold rounded-2xl p-5 shadow-elev-1">
+        <div v-if="taskLaunchError" class="deasy-alert deasy-alert--danger shadow-elev-1">
           {{ taskLaunchError }}
         </div>
 
@@ -1069,7 +1069,7 @@
         </section>
 
         <section v-else class="flex flex-col gap-5">
-          <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-5">
+          <div class="deasy-alert deasy-alert--success">
             <h3 class="m-0 text-base font-bold text-success">Confirmación</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-success/80">
               Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
@@ -1704,7 +1704,7 @@
             />
           </label>
 
-          <div v-if="fillWorkflowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-danger">
+          <div v-if="fillWorkflowState.error" class="deasy-alert deasy-alert--danger">
             {{ fillWorkflowState.error }}
           </div>
         </div>
@@ -1729,7 +1729,7 @@
         <div v-if="signatureFlowState.loading" class="deasy-empty">
           Consultando la secuencia de firmas...
         </div>
-        <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-danger">
+        <div v-else-if="signatureFlowState.error" class="deasy-alert deasy-alert--danger">
           {{ signatureFlowState.error }}
         </div>
         <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
@@ -2006,7 +2006,7 @@
       @close="closeDeliverableResetModal"
     >
       <div class="flex flex-col gap-4">
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-warning">
+        <div class="deasy-alert deasy-alert--warning">
           Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
         </div>
         <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
@@ -2017,7 +2017,7 @@
             La versión actual quedará como histórico cancelado. La nueva versión empezará desde cero y el documento no conservará el archivo de trabajo previo.
           </p>
         </div>
-        <p v-if="deliverableResetState.error" class="m-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-danger">
+        <p v-if="deliverableResetState.error" class="deasy-alert deasy-alert--danger m-0">
           {{ deliverableResetState.error }}
         </p>
       </div>
@@ -2068,11 +2068,11 @@
               <button
                 v-if="canApprovePreviewFillRequest"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-alert deasy-alert--success group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'approve')"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-emerald-100/95 bg-emerald-50/55 text-success transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
+                <div class="deasy-alert deasy-alert--success flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-emerald-100/95 transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
                   <IconCircleCheck class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2084,11 +2084,11 @@
               <button
                 v-if="canReturnPreviewFillRequest"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/45 hover:shadow-[0_10px_20px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-alert deasy-alert--warning group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/45 hover:shadow-[0_10px_20px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'return')"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-amber-100/95 bg-amber-50/55 text-warning transition-all group-hover:border-amber-200 group-hover:bg-amber-50">
+                <div class="deasy-alert deasy-alert--warning flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-amber-100/95 transition-all group-hover:border-amber-200 group-hover:bg-amber-50">
                   <IconMinus class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2098,11 +2098,11 @@
               <button
                 v-if="canRejectPreviewFillRequest"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50/45 hover:shadow-[0_10px_20px_rgba(244,63,94,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-alert deasy-alert--danger group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50/45 hover:shadow-[0_10px_20px_rgba(244,63,94,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'reject')"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-rose-100/95 bg-rose-50/55 text-danger transition-all group-hover:border-rose-200 group-hover:bg-rose-50">
+                <div class="deasy-alert deasy-alert--danger flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-rose-100/95 transition-all group-hover:border-rose-200 group-hover:bg-rose-50">
                   <IconX class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">

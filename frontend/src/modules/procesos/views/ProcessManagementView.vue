@@ -78,7 +78,7 @@
 
         <div
           v-else-if="metaError"
-          class="text-danger font-medium text-center p-6 bg-red-50/50 rounded-2xl border border-red-100"
+          class="deasy-alert deasy-alert--danger text-center"
         >
           {{ metaError }}
         </div>

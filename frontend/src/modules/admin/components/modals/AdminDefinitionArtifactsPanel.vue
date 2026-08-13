@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-4">
-    <div v-if="!embedded && context" class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
+    <div v-if="!embedded && context" class="deasy-alert deasy-alert--success">
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm text-success">{{ context.name || `Configuracion #${context.id}` }}</strong>
         <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">

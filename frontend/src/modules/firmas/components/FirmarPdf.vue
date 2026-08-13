@@ -148,7 +148,7 @@
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-danger p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6 shadow-elev-1">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
@@ -220,7 +220,7 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="deasy-alert deasy-alert--success signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 border-line text-center shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Solicitudes recibidas</h3>
@@ -279,7 +279,7 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-danger p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6 shadow-elev-1">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
@@ -470,7 +470,7 @@
             </button>
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-danger hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2" 
+              class="deasy-alert deasy-alert--danger inline-flex items-center gap-1.5 hover:bg-red-50 hover:border-red-300 transition focus:outline-none focus:ring-2" 
               @click.stop="requestDeleteField(field.id)"
             >
               <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -709,7 +709,7 @@
         </div>
       </div>
 
-      <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+      <div class="deasy-alert deasy-alert--warning">
         <SToggle v-model="allowUntrustedSigner" label-position="end">
           <span class="text-sm text-warning">
             Permitir certificados no validados
@@ -827,7 +827,7 @@
         </div>
       </div>
 
-      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-danger flex items-start gap-3 shadow-elev-1 animate-fade-in">
+      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 shadow-elev-1 animate-fade-in">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
@@ -841,7 +841,7 @@
           <div class="text-3xl font-black text-strong z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="deasy-alert deasy-alert--success shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-success mb-1 z-10">
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
@@ -870,7 +870,7 @@
 
       <div
         v-if="validationResult?.summary?.timestampCount"
-        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-warning flex items-start gap-3 shadow-elev-1 animate-fade-in"
+        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3 shadow-elev-1 animate-fade-in"
       >
         <IconAlertTriangle class="w-5 h-5 shrink-0 text-warning mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
@@ -878,7 +878,7 @@
 
       <div
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-danger flex items-start gap-3 shadow-elev-1 animate-fade-in"
+        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 shadow-elev-1 animate-fade-in"
       >
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <div class="flex flex-col gap-1">

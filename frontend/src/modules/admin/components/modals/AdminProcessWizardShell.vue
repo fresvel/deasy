@@ -45,7 +45,7 @@
 
     <div
       v-if="definitionContext?.id && showContextSummary"
-      class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-success"
+      class="deasy-alert deasy-alert--success mb-3 flex flex-wrap items-center gap-2"
     >
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
       <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">

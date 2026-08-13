@@ -18,7 +18,7 @@
 
     <div
       v-if="errorMessage"
-      class="mx-auto w-full max-w-xl rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-danger"
+      class="deasy-alert deasy-alert--danger mx-auto w-full max-w-xl"
       role="alert"
     >
       {{ errorMessage }}

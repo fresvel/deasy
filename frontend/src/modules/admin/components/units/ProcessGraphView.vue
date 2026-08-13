@@ -279,7 +279,7 @@
           <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
         </div>
         <!-- Señal de salud: la config usa una versión NO publicada de este entregable. -->
-        <div v-if="drawerHealthWarning" class="border-b border-amber-100 bg-amber-50 px-4 py-2.5 text-xs text-warning">
+        <div v-if="drawerHealthWarning" class="deasy-alert deasy-alert--warning border-b">
           <p class="m-0 font-semibold">⚠ La configuración usa una versión {{ drawerHealthWarning.pinnedLabel }} de este entregable.</p>
           <p class="m-0 mt-0.5">
             <template v-if="drawerHealthWarning.publishedVersion && editable">

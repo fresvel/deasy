@@ -282,7 +282,7 @@
 
     <div
       v-else-if="mode === 'recovery_required'"
-      class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-warning"
+      class="deasy-alert deasy-alert--warning"
     >
       <div class="flex items-start gap-3">
         <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-warning" />

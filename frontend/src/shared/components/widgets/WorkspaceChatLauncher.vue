@@ -98,7 +98,7 @@
           <p class="m-0 text-sm font-semibold">Cargando chat...</p>
         </div>
 
-        <div v-else-if="error" class="m-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-semibold text-danger">
+        <div v-else-if="error" class="deasy-alert deasy-alert--danger m-4">
           {{ error }}
         </div>
 

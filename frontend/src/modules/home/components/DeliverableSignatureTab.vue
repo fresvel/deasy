@@ -2,7 +2,7 @@
 <div v-if="signatureFlowState.loading" class="deasy-empty">
   Consultando la secuencia de firmas...
 </div>
-<div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-danger">
+<div v-else-if="signatureFlowState.error" class="deasy-alert deasy-alert--danger">
   {{ signatureFlowState.error }}
 </div>
 <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">

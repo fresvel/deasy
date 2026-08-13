@@ -23,7 +23,7 @@
       <AppTag variant="muted">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
     </div>
 
-    <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-danger">{{ generalTaskError }}</div>
+    <div v-if="generalTaskError" class="deasy-alert deasy-alert--danger">{{ generalTaskError }}</div>
 
     <!-- Documento -->
     <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-elev-1">

@@ -19,7 +19,7 @@
       </span>
     </template>
     <AppAlert v-if="draftArtifactError">{{ draftArtifactError }}</AppAlert>
-    <div v-if="draftArtifactLoading" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-warning">
+    <div v-if="draftArtifactLoading" class="deasy-alert deasy-alert--warning">
       Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
     </div>
 
@@ -70,7 +70,7 @@
     </AppDialogOverlay>
 
     <!-- Aviso de solo lectura: versión publicada/retirada (inmutable). -->
-    <div v-if="isReadOnly" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-warning">
+    <div v-if="isReadOnly" class="deasy-alert deasy-alert--warning mt-3">
       Esta versión está <strong>{{ lifecycleLabel.toLowerCase() }}</strong> y es de <strong>solo lectura</strong>.
       Usa <strong>“Nueva versión”</strong> (arriba) para crear una versión editable.
     </div>
@@ -179,7 +179,7 @@
 
     <!-- Pestaña: Formatos -->
     <div v-show="activeTab === 'formatos'" class="mt-4 grid gap-3 md:grid-cols-12">
-      <div v-if="!isFormatosComplete" class="md:col-span-12 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-warning">
+      <div v-if="!isFormatosComplete" class="deasy-alert deasy-alert--warning md:col-span-12">
         Adjunta al menos un documento de referencia (PDF, Word, Excel o PowerPoint) para poder crear la plantilla.
       </div>
       <div class="md:col-span-3">
@@ -255,7 +255,7 @@
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
+            <button type="button" class="deasy-alert deasy-alert--danger inline-flex h-8 w-8 items-center justify-center border-line transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
           </div>
         </div>
       </div>
@@ -270,7 +270,7 @@
         </div>
         <AdminButton variant="outlinePrimary" @click="addFillStep">+ Añadir paso</AdminButton>
       </div>
-      <div v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-warning">
+      <div v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading" class="deasy-alert deasy-alert--warning mt-3">
         El proceso vinculado aún no tiene <strong>reglas objetivo</strong>. Los ámbitos “Unidad del proceso” quedan deshabilitados (resolverían a nadie); define primero las reglas o usa una unidad específica.
       </div>
       <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-muted">
@@ -496,7 +496,7 @@
                   </select>
                 </div>
                 <div v-if="stepSigners(step).length > 1" class="col-span-1 flex items-center justify-end pb-1">
-                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
+                  <button type="button" class="deasy-alert deasy-alert--danger inline-flex h-8 w-8 items-center justify-center border-line transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
                 </div>
               </div>
               <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">

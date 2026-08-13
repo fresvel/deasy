@@ -1,6 +1,6 @@
 <template>
   <section id="signature-home" class="flex flex-col gap-6">
-    <section v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-danger">
+    <section v-if="error" class="deasy-alert deasy-alert--danger">
       {{ error }}
     </section>
 
@@ -281,7 +281,7 @@
         </div>
       </template>
       <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
-        <div v-if="multiSignerError" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-danger">
+        <div v-if="multiSignerError" class="deasy-alert deasy-alert--danger mb-4">
           {{ multiSignerError }}
         </div>
         <div v-if="pendingPreparation" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">

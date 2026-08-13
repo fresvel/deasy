@@ -68,7 +68,7 @@
       leave-from-class="translate-y-0 opacity-100"
       leave-to-class="-translate-y-2 opacity-0"
     >
-      <div v-if="errorMessage" class="mt-5 flex rounded-xl border border-red-100 bg-red-50 p-4 text-danger">
+      <div v-if="errorMessage" class="deasy-alert deasy-alert--danger mt-5 flex">
         <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
         <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
         <button @click="clearToast" class="ml-3 text-red-400 transition-colors hover:text-danger" aria-label="Cerrar alerta">

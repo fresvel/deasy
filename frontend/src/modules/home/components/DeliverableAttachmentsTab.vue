@@ -23,7 +23,7 @@
       </label>
     </div>
 
-    <div v-if="attachmentsState.error" class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-danger">{{ attachmentsState.error }}</div>
+    <div v-if="attachmentsState.error" class="deasy-alert deasy-alert--danger mt-3">{{ attachmentsState.error }}</div>
 
     <div v-if="attachmentsState.loading" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center animate-pulse">Cargando anexos...</div>
     <div v-else-if="!attachmentsState.items.length" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center">

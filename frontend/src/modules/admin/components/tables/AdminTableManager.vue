@@ -85,7 +85,7 @@
       />
     </div>
 
-    <div v-if="table && isCurrentTableTraceability" class="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+    <div v-if="table && isCurrentTableTraceability" class="deasy-alert deasy-alert--warning mb-3">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <p class="m-0 flex items-start gap-2 text-sm text-warning">
           <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
@@ -420,7 +420,7 @@
         Vas a <strong>retirar</strong> la configuración
         <strong>{{ retireDefinitionRow?.name || `#${retireDefinitionRow?.id}` }}</strong>.
       </p>
-      <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-warning">
+      <div class="deasy-alert deasy-alert--warning">
         Una configuración retirada deja de aplicarse a nuevos procesos y queda en <strong>solo lectura</strong>:
         no podrás reactivarla. Si más adelante necesitas estos ajustes, crea una nueva versión a partir de ella.
       </div>
@@ -673,7 +673,7 @@
           panel-class="max-w-md"
           @close="showWizardActivateConfirm = false"
         >
-          <div class="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-warning">
+          <div class="deasy-alert deasy-alert--warning flex items-start gap-3 leading-relaxed">
             <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
             <span>
               Al activar, <strong>ya no podrás modificar</strong> reglas, periodos ni paquetes en esta versión.

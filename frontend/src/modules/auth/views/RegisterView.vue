@@ -323,7 +323,7 @@
               leave-from-class="translate-y-0 opacity-100"
               leave-to-class="-translate-y-2 opacity-0"
             >
-              <div v-if="errorMessage" class="mt-5 flex rounded-xl border border-red-100 bg-red-50 p-4 text-danger">
+              <div v-if="errorMessage" class="deasy-alert deasy-alert--danger mt-5 flex">
                 <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
                 <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
                 <button
@@ -363,7 +363,7 @@
     footer-class="justify-center"
     @close="goToLogin"
   >
-    <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl border border-green-200 bg-green-50">
+    <div class="deasy-alert deasy-alert--success mx-auto mb-6 flex h-16 w-16 items-center justify-center">
       <IconCheck class="h-9 w-9 text-success" />
     </div>
     <p class="mb-0 text-sm text-muted">

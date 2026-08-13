@@ -22,10 +22,10 @@
     <div v-if="loading" class="rounded-xl border border-line bg-surface px-4 py-4 text-sm font-medium text-muted">
       Cargando…
     </div>
-    <div v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-danger">
+    <div v-else-if="error" class="deasy-alert deasy-alert--danger">
       {{ error }}
     </div>
-    <div v-else-if="!items.length" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-success">
+    <div v-else-if="!items.length" class="deasy-alert deasy-alert--success">
       Sin entregables atascados. Todo asignado. ✓
     </div>
 

@@ -18,7 +18,7 @@
     <div v-show="currentStep === 'definition'" class="flex flex-col gap-4">
       <div
         v-if="duplicateDefinition?.id"
-        class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-warning"
+        class="deasy-alert deasy-alert--warning flex flex-wrap items-center justify-between gap-3"
       >
         <span>Ya existe una configuración para esa variación y versión.</span>
         <AdminButton variant="outline-primary" @click="$emit('edit-existing-definition', duplicateDefinition)">
