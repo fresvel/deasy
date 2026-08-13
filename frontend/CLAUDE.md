@@ -1,7 +1,7 @@
 # CLAUDE.md — Frontend
 
-Reglas del sistema de diseño. **Cada una viene de un fallo real medido en este repo**, con su
-número al lado. No son preferencias: son las cosas que costaron una sesión entera de arreglar.
+Reglas del sistema de diseño. **Cada una viene de un fallo real medido en este repo.** No son
+preferencias: son las cosas que costaron una sesión entera de arreglar.
 
 El contexto general del proyecto está en el `CLAUDE.md` de la raíz. Aquí va solo lo que afecta a
 cómo se escribe la interfaz.
@@ -10,17 +10,17 @@ cómo se escribe la interfaz.
 
 ## 1. Dónde vive cada cosa
 
-`src/shared/styles/` son **15 módulos por familia**. `main.js` importa **sólo `index.css`**, que
-los encadena.
+`src/shared/styles/` son **18 módulos por familia**, 2 749 líneas. `main.js` importa **sólo
+`index.css`**, que los encadena.
 
 | Módulo | Qué va aquí |
 |---|---|
-| `tokens.css` | La paleta y el `@theme` que la registra en Tailwind. **El único sitio con literales de color** |
+| `tokens.css` | La paleta. **El único sitio con literales de color** |
 | `base.css` | Reset, tipografía, `html`/`body`/`#app` |
 | `layout.css` · `nav.css` · `surfaces.css` | Armazón, navegación, tarjetas |
-| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` | Uno por familia de componente |
-| `misc.css` | Lo que aún no tiene familia. **Si creces esto, es que falta un módulo** |
-| `overrides.css` | Repintado de utilidades de Tailwind a la marca. **Va el último a propósito** |
+| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` · `graph.css` · `deliverables.css` · `signatures.css` | Uno por familia de componente |
+| `misc.css` | Lo que aún no tiene familia. **Si crece, es que falta un módulo** |
+| `overrides.css` | Repintado de utilidades de Tailwind. **Va el último a propósito** |
 
 ⚠️ **El orden de los `@import` de `index.css` es parte del diseño, no es alfabético.** En CSS dos
 reglas de igual especificidad se resuelven por orden de aparición. Está explicado dentro del
@@ -28,55 +28,90 @@ fichero. Si mueves un import, verifícalo en el navegador.
 
 ---
 
-## 2. Color: las cinco reglas
+## 2. Color
 
 ### 2.1 Cero colores a mano. Sin excepciones fuera de `tokens.css`
 
-Hoy hay **0 hex y 0 `rgb()/rgba()` numéricos** en todo el CSS fuera de la paleta. Se llegó ahí
-desde 74 hex y 100 `rgba`. **Si tu cambio los sube, has metido un color suelto.**
+Hoy hay **0 hex y 0 `rgb()/rgba()` numéricos** en todo el CSS fuera de la paleta. Se llegó ahí desde
+74 hex y 100 `rgba`. **Si tu cambio los sube, has metido un color suelto.**
 
 ```css
 /*  MAL  */  color: #5e4eff;   background: rgba(94, 78, 255, 0.12);
-/* BIEN */  color: var(--brand-primary);
-            background: rgba(var(--brand-primary-rgb), 0.12);
+/* BIEN */  color: var(--color-primary);
+            background: rgba(var(--primary-rgb), 0.12);
 ```
 
-### 2.2 Un color por concepto, y el resto se DERIVA
+⚠️ Pero **verde no significa sin deuda**: `color-no-hex` **no ve** los hex dentro de `@apply`
+(`text-[#8a93a8]`) ni los `rgb()/rgba()` numéricos. Llegó a haber 10 hex y 100 `rgba` vivos con el
+contador a cero. Y `stylelint` sólo mira `src/**/*.css`.
 
-No declares un token para cada matiz. Declara **uno por significado** y saca los demás con
-`color-mix()`. Los botones de acción son el ejemplo a copiar:
+### 2.2 Cómo se llama un token, y por qué el nombre es corto
+
+Un color se declara **una sola vez**, en el `@theme` de `tokens.css`:
 
 ```css
-fondo   reposo 10%   hover 16%   sobre var(--brand-white)
-borde   reposo 71%   hover 85%   sobre var(--brand-white)
-texto   reposo el token          hover 85% sobre var(--brand-black)
+@theme { --color-primary: #5e4eff; }     /* da bg-primary, text-primary, border-primary… */
 ```
 
-Los cinco violetas del proyecto resultaron ser `--brand-primary` al 86 %, 38 %, 33 %, 25 % y 10 %:
-**no eran colores, eran porcentajes**. Antes de declarar un token nuevo, comprueba si es una mezcla
-de uno que ya existe.
+**`--color-` no es parte del nombre: es el NAMESPACE de Tailwind**, y significa «esto es un color,
+genérame sus clases». Lo que va detrás es literalmente el nombre de la utilidad. Por eso no hay
+`--color-brand-primary`: el `brand-` sobraba, y eran seis caracteres en 963 sitios.
 
-### 2.3 Antes de crear un token, busca a qué familia pertenece
+Tres nombres **no** son el recorte obvio, y el motivo importa:
 
-Reutilizar gana a declarar. Medido: de 41 colores «sin token», **40 pertenecían a algo que ya
-existía**; sólo uno se ganó nombre propio. Y de los 11 que parecían irreductibles, **9 tenían
-familia** — el verde del login era el verde de éxito, el borde del panel era `--brand-border`.
+| | | porque |
+|---|---|---|
+| el borde del sistema | `--color-line` | `--color-border` daría `border-border` |
+| el texto secundario | `--color-muted` | daría `text-text-muted` |
+| el paso actual | `--color-step-ink` | **`current` es de Tailwind** (`currentColor`) |
 
-Un token nuevo se justifica cuando el color **significa algo que ningún otro significa**, no cuando
-es un poco distinto.
+Lo que **no** es un color suelto —sombras, el velo, los degradados, los tripletes `-rgb`— va en el
+`:root` de abajo, sin prefijo y sin registrar.
 
-> **Y al revés: no colapses un significado.** El tag salmón parecía un rojo suelto y es el estado
+### 2.3 Un token nuevo se justifica, no se añade por simetría
+
+**Dos condiciones, y hacen falta las dos.**
+
+**(a) Que Tailwind no traiga ya ese color.** Se mide el ΔE contra su paleta; con ΔE ≤ 2 son el mismo
+color a ojo y el token propio no se sostiene. Así se retiró `--brand-white`: el blanco de la marca
+**es** el blanco, y eran 271 usos de un nombre más largo para `#ffffff`.
+
+> ⚠️ Y se mide **contra lo que renderiza, no contra el hex de v3**. Ver 2.8.
+
+**(b) Que el concepto pueda cambiar de color.** Si el concepto **es** el color, usa el de Tailwind.
+`--color-line` se queda porque «el borde del sistema» cambiará algún día, y entonces es una línea en
+vez de 354. El blanco no va a dejar de ser blanco.
+
+**Y antes de declararlo, busca a qué familia pertenece.** Medido: de 41 colores «sin token», **40
+pertenecían a algo que ya existía**. De los 11 que parecían irreductibles, **9 tenían familia** — el
+verde del login era el verde de éxito, el borde del panel era `--color-line`.
+
+> **Al revés también: no colapses un significado.** El tag salmón parecía un rojo suelto y es
 > **«pendiente»**, distinto de «rechazado». Meterlo en rojo no habría reducido la gama: habría
 > perdido una distinción que el usuario necesita. Lo que sobraba era que estuviera escrito **dos
 > veces**, no el color.
 
-### 2.4 Si el mismo valor aparece con varias opacidades, casi seguro es UNA sola
+**Y un registro sin consumidor no es una API: es basura.** Aquí hubo siete `--color-chart-*` y un
+`--color-state-info` que nadie llamó nunca, sostenidos por la idea de que «cuestan cero bytes y son
+un destino al que migrar». No lo eran — nadie migró.
 
-Los bordes de diálogo tenían **siete opacidades** del mismo gris. Compuestas sobre blanco, cinco
-de ellas estaban a **ΔE ≤ 2**: nadie distingue 0.24 de 0.26. Las sombras, lo mismo: 0.03, 0.04 y
-0.06 a ΔE ≤ 1.3.
+### 2.4 Deriva en vez de declarar
 
-**Antes de añadir una opacidad nueva, mira si ya existe una a menos de ΔE 2 y usa esa.**
+No declares un token por matiz. Declara **uno por significado** y saca los demás con `color-mix()`.
+Los botones de acción son el ejemplo a copiar:
+
+```css
+fondo   reposo 10%   hover 16%   sobre var(--color-white)
+borde   reposo 71%   hover 85%   sobre var(--color-white)
+texto   reposo el token          hover 85% sobre var(--black)
+```
+
+Los cinco violetas del proyecto resultaron ser `--color-primary` al 86 %, 38 %, 33 %, 25 % y 10 %:
+**no eran colores, eran porcentajes**.
+
+**Y si el mismo valor aparece con varias opacidades, casi seguro es UNA sola.** Los bordes de diálogo
+tenían **siete** opacidades del mismo gris; compuestas sobre blanco, cinco estaban a **ΔE ≤ 2**.
+Antes de añadir una opacidad nueva, mira si ya existe una a menos de ΔE 2.
 
 ### 2.5 No hay modo oscuro, y `dark:` está prohibido
 
@@ -84,10 +119,10 @@ de ellas estaban a **ΔE ≤ 2**: nadie distingue 0.24 de 0.26. Las sombras, lo 
 resuelta con color explícito (`text-white/55`, `border-white/8`), no un tema. Hoy hay **0 usos** de
 `dark:` y así se queda.
 
-Importa porque **las recetas de TailAdmin traen 1 024 clases `dark:`**, y sin protección Tailwind v4
-las compila a `@media (prefers-color-scheme: dark)`: se activarían **solas** en la máquina de quien
-tenga el sistema en oscuro, pintando ese componente en oscuro sobre el resto de la app en claro. No
-lo ve el build, ni el lint, ni los tests, ni tú si tu sistema está en claro.
+Importa porque Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)`: cualquier `dark:`
+que entre se activaría **solo** en la máquina de quien tenga el sistema en oscuro, pintando ese
+componente en oscuro sobre el resto de la app en claro. No lo ve el build, ni el lint, ni los tests,
+ni tú si tu sistema está en claro.
 
 Hay **tres capas**, y cada una tapa lo que la anterior no ve:
 
@@ -95,11 +130,7 @@ Hay **tres capas**, y cada una tapa lo que la anterior no ve:
 |---|---|
 | `@custom-variant dark` en `tokens.css` | El seguro: deja `dark:` inerte aunque entre |
 | `vue/no-restricted-class` | El atributo `class` de las plantillas |
-| `pnpm run check:no-dark` | Lo que ninguna ve: `dark:` dentro de `@apply`, dentro de `<style scoped>` y en `.js` |
-
-**Al adaptar una receta de TailAdmin, los `dark:` se quitan.** No se dejan «por si acaso»: apuntan a
-la paleta de TailAdmin (`gray-900`, `gray-800`…), no a la de Deasy, así que el día que hubiera modo
-oscuro habría que revisarlos todos igual.
+| `pnpm run check:no-dark` | Lo que ninguna ve: dentro de `@apply`, dentro de `<style scoped>` y en `.js` |
 
 ### 2.6 Ojo con los espacios de nombres de Tailwind v4
 
@@ -110,66 +141,81 @@ escala invertida (`rounded-lg` acabó siendo mayor que `rounded-xl`).
 Nombres prohibidos salvo que sepas exactamente lo que haces: `--color-*`, `--radius-*`, `--font-*`,
 `--spacing-*`, `--shadow-*`, `--text-*`, `--breakpoint-*`, `--leading-*`, `--tracking-*`.
 
-Y **ya ha pasado dos veces más**, con las dos mitades del mismo mecanismo:
+**Y ya ha pasado tres veces más**, con las dos mitades del mismo mecanismo:
 
 - `--shadow-raised/-modal/-drawer` ocupaban `--shadow-*` **sin estar en `@theme`**: ni generaban
-  `shadow-raised` ni evitaban la colisión. Renombrados a `--brand-elev-*` en F2.2.
-- `--font-weight-medium/semibold` vivían en un `:root` **sin capa** y **pisaban los de Tailwind**. El
-  CSS construido declaraba `--font-weight-medium` dos veces y ganaba el del proyecto: cambiarlo a 550
-  habría repintado **cada `font-medium` de la app**. Retirados en F2.3; tres usos pasaron al número.
+  `shadow-raised` ni evitaban la colisión. Hoy son `--elev-*`.
+- `--font-weight-medium/semibold` vivían en un `:root` **sin capa** y **pisaban los de Tailwind**:
+  cambiarlos a 550 habría repintado cada `font-medium` de la app. Retirados.
+- `--font-base`, `--font-size-base` y `--line-height-*` ocupaban `--font-*` sin ser de Tailwind. Hoy
+  son `--typeface` y `--type-*`. Era la bomba esperando a que alguien declarase el token que chocara.
 
-### 2.7 Un token con alfa se escribe `rgba(var(--x), 0.5)`, nunca `rgb(var(--x)/0.5)`
+**Tampoco valen los nombres que Tailwind ya usa**, aunque no sean namespaces: `current`, `white`,
+`black`, `transparent`, `inherit` y los 22 nombres de su paleta.
 
-El triplete de un token va separado por comas, y **la sintaxis heredada por comas no admite la barra
-del alfa**. Lo malo es cómo falla: Tailwind emite la regla tal cual —un `grep` sobre el CSS
-construido la encuentra— y **el navegador la descarta**. El color cae a `currentColor` sin un aviso
-en ningún sitio.
+### 2.7 Un token con alfa se escribe `rgba(var(--x-rgb), 0.5)`, nunca `rgb(var(--x)/0.5)`
+
+El triplete va separado por comas, y **la sintaxis heredada por comas no admite la barra del alfa**.
+Lo malo es cómo falla: Tailwind emite la regla tal cual —un `grep` sobre el CSS construido la
+encuentra— y **el navegador la descarta**. El color cae a `currentColor` sin un aviso en ningún sitio.
 
 Lo mismo dentro de un `shadow-[…]`: `shadow-[0_6px_16px_rgb(var(--x)/0.04)]` deja el elemento en
 `box-shadow: none`. **Una sombra con token va en `box-shadow:` a pelo.**
+
+⚠️ Los gemelos `-rgb` **no siguen ningún criterio**: se crearon a demanda. `--color-danger` y
+`--color-line` no tienen, aunque se usen mucho. Comprueba antes de escribir uno.
 
 > Comprobación que sí vale: aplica el valor con `style=` en la consola y lee el computado. Si
 > devuelve el color heredado, el valor no vale. **Mirar el CSS servido NO sirve** — la regla está ahí.
 
 ### 2.8 Antes de fiarte de `@theme`, míralo en el CSS construido
 
-Tailwind v4 hace *tree-shaking* de `@theme`: **un registro que nadie usa no se emite**. Antes de F2.1,
-9 de los 16 registros no llegaban al CSS construido, y eso es indistinguible de no haberlos escrito.
+Tailwind v4 hace *tree-shaking* de `@theme`: **un registro que nadie usa no se emite**, y eso es
+indistinguible de no haberlo escrito.
 
 ```bash
-grep -o -- '--color-state-warning:' frontend/dist/assets/*.css   # la unica prueba
+grep -o -- '--color-warning:' frontend/dist/assets/*.css   # la unica prueba
 ```
+
+Esto vale también para **la paleta de Tailwind**: `--color-slate-600` no está en el CSS construido si
+nadie usa `slate-600`. Referenciarla desde `:root` sí la hace emitir — probado — pero no lo des por
+hecho sin mirarlo.
 
 Y al revés: **una clase inyectada en runtime no prueba un valor arbitrario**, porque Tailwind genera
 esas utilidades escaneando el *fuente*. Para probar un `X-[…]`, mira el CSS construido; para probar
 una clase de módulo, inyectarla va bien.
 
-### 2.9 El hex de un token no se compara con el hex de Tailwind, se compara con lo que RENDERIZA
+### 2.9 El hex de un token no se compara con el hex de Tailwind, sino con lo que RENDERIZA
 
-Desde v4 Tailwind sirve su paleta en **OKLCH**, y esos valores no vuelven a los hex que todo el mundo
-tiene en la cabeza de v3. Medido en este repo con `tailwindcss@4.2`:
+Desde v4 Tailwind sirve su paleta en **OKLCH**, y esos valores no vuelven a los hex de v3 que todo el
+mundo tiene en la cabeza. Medido aquí con `tailwindcss@4.2`, y confirmado pintando en un canvas:
 
 | Se creía | Renderiza de verdad | ΔE real |
 |---|---|---:|
-| `emerald-700` = `#047857` = `--state-success` | `rgb(0,122,85)` | **1.28** |
-| `amber-700` = `#b45309` = `--state-warning` | `rgb(187,77,0)` | **2.29** |
-| `slate-600` = `#475569` = `--brand-icon` | `rgb(69,85,108)` | **1.17** |
+| `emerald-700` = `#047857` = `--color-success` | `rgb(0,122,85)` | **1.28** |
+| `amber-700` = `#b45309` = `--color-warning` | `rgb(187,77,0)` | **2.29** |
+| `slate-600` = `#475569` = `--color-icon` | `rgb(69,85,108)` | **1.17** |
 
 Son diferencias imperceptibles, pero **«ΔE 0.00» era falso** y con él se prometió «cambio visual cero
-por construcción» en una migración de 200 nodos. La medida correcta se toma en el DOM.
+por construcción» en una migración de 200 nodos.
+
+⚠️ Y **87 de los 288 colores de Tailwind v4 caen fuera de la gama sRGB**. En una pantalla sRGB el
+navegador los recorta (coincide con el cálculo), pero en una P3 se ven más saturados. Nuestros hex se
+ven igual en las dos.
 
 ### 2.10 Una utilidad repintada lleva PRIORIDAD, no sólo color
 
-`overrides.css` repinta `.bg-slate-50` a `--brand-surface-muted` **con `!important`**. Así que
-`bg-slate-50` en una plantilla no significa «slate-50»: significa **«ese gris, y ganando a lo que
-haga falta»** — en concreto a `.deasy-dialog-body` y a `input`, que fijan fondo blanco sin capa.
+`overrides.css` repinta `.border-slate-200` a `--color-line` **con `!important`**. Así que
+`border-slate-200` en una plantilla no significa «slate-200»: significa **«ese gris, y ganando a lo
+que haga falta»**.
 
-Migrarlo a `bg-brand-surface-muted` da **el mismo color y menos prioridad**, y dos nodos cayeron a
-blanco. Antes de sustituir una utilidad repintada, mira **contra qué estaba ganando**.
+Migrarlo al token da **el mismo color y menos prioridad**, y dos nodos cayeron a blanco la vez que se
+intentó. Antes de sustituir una utilidad repintada, mira **contra qué estaba ganando**.
 
-> Y al hacerlo por script: **`shared/styles/*.css` se excluye o se revisa a mano.** Ahí `.bg-slate-50`
-> no es un uso, es el **selector** del repintado — y el escape del `/` en `.bg-slate-50\/70` burla
-> cualquier límite por la derecha. El script lo reescribió y rompió el repintado en silencio.
+> Y al hacerlo por script: **`shared/styles/*.css` se excluye o se revisa a mano.** Ahí
+> `.bg-slate-50` no es un uso, es el **selector** del repintado — y el escape del `/` en
+> `.bg-slate-50\/70` burla cualquier límite por la derecha. El script lo reescribió y rompió el
+> repintado en silencio.
 
 ### 2.11 Dónde va cada regla: la decisión de capas
 
@@ -179,57 +225,45 @@ blanco. Antes de sustituir una utilidad repintada, mira **contra qué estaba gan
 sin capa            SÓLO lo que pelea con una hoja de tercero sin capa
 ```
 
-Hoy los únicos terceros sin capa son **`@vue-flow/core`** (de ahí el bloque suelto de `graph.css`) y
-**`leaflet`** (el mapa de `RegisterView`). Cualquier otra regla fuera de capa está ahí por inercia, y
-son **150 repartidas en 12 módulos** — el trabajo de bajarlas es §4.4-c del plan.
+Los únicos terceros sin capa son **`@vue-flow/core`** (el bloque suelto de `graph.css`) y **`leaflet`**
+(el mapa de `RegisterView`). Quedan **52 reglas fuera de capa** —`overrides.css` 22, `dialogs.css` 10,
+`buttons.css` 8, `base.css` 4— y cada una lleva escrito qué tapa.
 
 Con esta disposición vuelve el contrato de Tailwind —**una utilidad gana a un componente**— y los
-repintados de `overrides.css` dejan de hacer falta: `bg-brand-surface-muted` gana a
-`.deasy-dialog-body` por capa, sin `!important` y sin lista blanca.
+repintados de `overrides.css` dejan de hacer falta.
 
 **Y `overrides.css` hace dos cosas: no las mezcles en la misma lista de selectores.** Repintar una
 utilidad y dar skin a un componente son cosas distintas; juntarlas es lo que producía los
 `!important`, que no peleaban contra Tailwind sino **contra otra regla del propio fichero**.
 
-### 2.12 Antes de mover una regla de capa, busca las PROPS de clase
+### 2.12 Antes de mover una regla de capa, TRES comprobaciones
 
-Un `grep` de plantillas no ve esta colisión:
+Fuera de capa una regla gana **siempre**, da igual la especificidad. Dentro de la capa vuelve a
+competir con todo lo que ya vive allí. Las tres cosas que hay que mirar, y las tres han fallado ya:
+
+**1. Las utilidades de Tailwind que conviven en el DOM — incluidas las que llegan por PROPS.** Un
+`grep` de plantillas no ve esto:
 
 ```vue
 <!-- AppModalShell.vue -->      <div class="deasy-dialog-body" :class="bodyClass">
 <!-- FirmarPdf.vue:786 -->      <AppModalShell body-class="p-0 bg-slate-50 relative" />
 ```
 
-El **skin lo pone el componente y la utilidad llega de fuera**, así que sólo se encuentran en
-runtime. Es primo de la trampa de 6.5 (clases compuestas), y la comprobación es la misma: mira
-`body-class`, `header-class`, `panel-class`, `class-name` y cualquier prop que acabe en `class`.
+El skin lo pone el componente y la utilidad llega de fuera: sólo se encuentran en runtime. Mira
+`body-class`, `header-class`, `panel-class` y cualquier prop que acabe en `class`.
 
-### 2.13 Y busca también, en la CAPA DE DESTINO, las reglas más específicas
-
-Esta es la trampa hermana de 2.12, y **no la vio ningún análisis estático**: la encontró la huella,
-con 239 nodos rotos, al bajar los botones de acción en §4.4-c.
-
-Fuera de capa una regla gana **siempre**, da igual la especificidad. Dentro de la capa vuelve a
-competir con todo lo que ya vive allí — incluidas reglas de componente que **no son utilidades de
-Tailwind**, y que por eso no salen en ninguna lista de colisiones:
+**2. Si en la CAPA DE DESTINO hay una regla más específica** que pise la misma propiedad. Esto no lo
+vio ningún análisis estático: lo encontró la huella, con **239 nodos rotos**.
 
 ```
-buttons.css    .deasy-table-shell .deasy-btn     (0,2,0)   <- @layer components, desde antes
-overrides.css  .hope-action-btn                  (0,1,0)   <- lo que ibas a bajar
+buttons.css    .deasy-table-responsive .deasy-btn   (0,2,0)   <- @layer components, desde antes
+overrides.css  .hope-action-btn                     (0,1,0)   <- lo que ibas a bajar
 ```
 
-Los doce botones de acción viven precisamente dentro de `.deasy-table-shell`, así que al capar
-perdieron color, radio y borde y se pintaron como un `--secondary` cualquiera. Lo mismo, más
-pequeño, con `.deasy-btn--secondary` frente a `.deasy-table-shell .deasy-btn--secondary`: **un solo
-nodo** en la huella, pero el `:hover` —que la huella no ve— cambiaba en todas las tablas.
+El `grep` útil **no es por el selector entero**: lo que te gana es un **descendiente**, así que busca
+` .deasy-btn`, ` .admin-btn`, con el espacio delante.
 
-Antes de mover una regla a `@layer components`, la comprobación son **tres** cosas, no una:
-
-1. ¿Qué **utilidades de Tailwind** conviven con ella en el DOM? (2.12, y mira las props de clase).
-2. ¿Hay en la capa de destino una regla **más específica** que pise la misma propiedad? El `grep`
-   útil no es por el selector entero: lo que te gana es un **descendiente**, así que busca
-   ` .deasy-btn`, ` .admin-btn`, con el espacio delante.
-3. ¿Compite con una hoja de **tercero sin capa** (`@vue-flow/core`, `leaflet`)? Entonces no baja.
+**3. Si compite con una hoja de tercero sin capa** (`@vue-flow/core`, `leaflet`). Entonces no baja.
 
 Y la regla de oro: **una diferencia de un nodo no es «casi cero»**. Es la señal de que el análisis
 estaba mal. Vuelve a mirar antes de aceptarla.
@@ -238,8 +272,7 @@ estaba mal. Vuelve a mirar antes de aceptarla.
 
 ## 3. Accesibilidad: los mínimos son mínimos
 
-Todo lo de esta sección se **midió**, no se estimó. Los fallos que se corrigieron eran reales y
-llevaban meses.
+Todo lo de esta sección se **midió**, no se estimó.
 
 | Qué | Mínimo | Regla |
 |---|---|---|
@@ -250,67 +283,59 @@ llevaban meses.
 
 **Tres cosas que no son obvias:**
 
-1. **Un ΔE bajo no garantiza que el contraste aguante.** Medido en este repo: correlación
-   ΔE ↔ Δcontraste = **−0.206**. Una sustitución con ΔE 5.2 rompió AA (4.55 → 4.19) y otra con
-   ΔE 16.3 lo **mejoró** en +4.95. El criterio correcto es uno solo:
-   **`contraste_después ≥ contraste_antes`**, o al menos ≥ umbral con margen.
+1. **Un ΔE bajo no garantiza que el contraste aguante.** Medido aquí: correlación ΔE ↔ Δcontraste =
+   **−0.206**. Una sustitución con ΔE 5.2 rompió AA (4.55 → 4.19) y otra con ΔE 16.3 lo **mejoró** en
+   +4.95. El criterio correcto es uno solo: **`contraste_después ≥ contraste_antes`**.
 2. **El borde es lo que dibuja el botón.** En los botones de acción el relleno está al 10 % y da
-   1.1:1 contra la fila — invisible. Todo el trabajo lo hace el borde de 1 px. Los seis estaban
-   entre 1.64 y 1.90, o sea que **172 botones no tenían límite perceptible**.
-3. **Al derivar un color, el porcentaje importa más que la idea.** Derivar el borde al 35 % lo
-   dejaba **más claro** que el valor que había. Al 71 % los seis pasan 3:1. Misma técnica, resultado
-   opuesto.
+   1.1:1 contra la fila — invisible. Todo el trabajo lo hace el borde de 1 px, y los seis estaban
+   entre 1.64 y 1.90: **172 botones sin límite perceptible**.
+3. **Al derivar un color, el porcentaje importa más que la idea.** Derivar el borde al 35 % lo dejaba
+   **más claro** que el valor que había. Al 71 % los seis pasan 3:1. Misma técnica, resultado opuesto.
 
-**El suelo de la escala de grises de texto es `--brand-text-muted` (6.36:1).** Nada más claro que
-eso para texto sobre blanco.
+**El suelo de la escala de grises de texto es `--color-muted` (6.36:1).** Nada más claro para texto
+sobre blanco.
 
 ---
 
 ## 4. Verificación: lo que ninguna herramienta ve
 
 **Ni el build, ni el lint, ni los 304 tests detectan que rompiste un estilo.** Está demostrado
-**cuatro veces** en una sola sesión:
+**seis** veces:
 
-| Lo que se rompió | Qué dijeron build / lint / tests |
+| Lo que se rompió | build / lint / tests |
 |---|---|
 | Dos clases de la barra lateral se quedaron sin color | verde |
 | La tipografía Inter **dejó de cargarse entera** | verde |
 | 114 nodos perdieron el borde por una autorreferencia de token | verde |
 | 43 botones perdieron su fondo por un hex partido a la mitad | verde |
+| Los conectores de Vue Flow volvieron a los valores de la librería | verde |
+| Tres tarjetas de firmas perdieron los márgenes de su icono | verde |
 
-**Para cualquier cambio de CSS la verificación es el navegador.** Y si el cambio es amplio, una
-**huella de estilos computados**: recorrer el DOM guardando `getComputedStyle` (color, fondo,
-bordes, sombra, tipografía, espaciado) y `getBoundingClientRect` de cada nodo, antes y después, y
-comparar nodo a nodo. Un refactor que promete «cambio visual cero» **tiene que dar 0 diferencias**;
-si da alguna, o el análisis estaba mal o rompiste algo.
-
-**No hay que reinventarla: está en `scripts/css-huella.mjs`.**
+**Para cualquier cambio de CSS la verificación es el navegador.** Y si es amplio, la **huella de
+estilos computados**, que está en `scripts/css-huella.mjs`:
 
 ```bash
-node scripts/css-huella.mjs --captura              # el fragmento, para pegar en la consola
+node scripts/css-huella.mjs --captura                 # el fragmento, para pegar en la consola
 node scripts/css-huella.mjs antes.json despues.json   # 0 si no hay diferencias, 1 si las hay
 ```
 
-Los dos guardas que esa huella necesita **ya los aplica el script**, y los dos se aprendieron por las
-malas:
+Los dos guardas que necesita ya los aplica el script, y los dos se aprendieron por las malas: espera
+a **`await document.fonts.ready`** antes de medir (si no, los anchos mienten) y **comprueba el número
+de nodos de la base** (una salió con 4 porque la página seguía cargando). Dos límites suyos: **no ve
+pseudo-elementos** (`::placeholder`, `::before`) ni estados (`:hover`, `:focus`), y **empareja por
+ruta en el DOM**, así que un cambio de orden da diferencias falsas.
 
-- **Espera a `await document.fonts.ready` antes de medir.** Si no, mides con la fuente de reserva y
-  los anchos mienten sin que ningún estilo computado cambie.
-- **Comprueba el número de nodos de la captura base.** Una salió con 4 nodos porque la página
-  seguía cargando, y esa base no valía para nada. El script se planta si ve menos de 50.
+### Tres trampas del instrumental, todas pagadas
 
-Y dos límites suyos que conviene tener presentes: **no ve los pseudo-elementos** (`::-webkit-scrollbar`,
-`::placeholder`, `::before`), y **empareja por ruta en el DOM**, así que si el contenido cambia de
-orden entre capturas comparas nodos distintos y salen diferencias falsas.
-
-### Los linters no bastan, y conviene saber qué NO ven
-
-`pnpm run lint:css` está en **0 errores**. Pero `color-no-hex` **no ve** los hex dentro de `@apply`
-(`text-[#8a93a8]`) ni los `rgb()/rgba()` numéricos. **Verde no significa sin deuda**: llegó a haber
-10 hex y 100 `rgba` vivos con el contador a cero.
-
-Y `stylelint` sólo mira `src/**/*.css`. **El CSS dentro de un `<style scoped>` de un `.vue` no lo
-mira nadie.**
+1. **`diff` a través del proxy `rtk` puede mentir.** Devolvió «Files are identical» sobre dos ficheros
+   que difieren en 70 bytes, con CSS de una sola línea muy larga. Comprueba con `cmp`, o salta el
+   filtro con `rtk proxy diff`.
+2. **La pila A monta `develop`, no tu worktree.** No sirve de baseline para una rama: mide el trabajo
+   entero, no tu cambio. El A/B bueno es `git checkout <commit-base> -- frontend/src` **sobre tu
+   propia pila**, capturar, restaurar y comparar.
+3. **Cuando un cambio no puede mover un píxel, pruébalo con el CSS construido, no con la huella.**
+   Construir con y sin el cambio y comparar el emitido es más barato que una sesión de navegador y
+   más fuerte: si el diff son las líneas que tocaste y nada más, no hay nada que verificar a ojo.
 
 ---
 
@@ -318,38 +343,38 @@ mira nadie.**
 
 ### 5.1 Un estado se distingue por más de una señal
 
-Los botones de acción llevan color en el **fondo, el borde y el icono**. No dependas sólo del
-relleno: al 10 % es prácticamente invisible. Y no dependas sólo del color — un cambio de estado
-debería notarse también en forma, peso o posición.
+Los botones de acción llevan color en el **fondo, el borde y el icono**. No dependas sólo del relleno:
+al 10 % es prácticamente invisible. Y no dependas sólo del color — un cambio de estado debería notarse
+también en forma, peso o posición.
 
-### 5.2 El hover tiene que intensificar, siempre en la misma dirección
+### 5.2 El hover intensifica, siempre en la misma dirección
 
 Antes de arreglarlo, los siete hover de los botones de acción iban cada uno a su aire: tres
-oscurecían, **dos aclaraban** y dos cambiaban de matiz. Y el de «eliminar» estaba a **ΔE 1.08** de
-su propio estado normal — **no se veía al pasar el ratón**.
+oscurecían, **dos aclaraban** y dos cambiaban de matiz. Y el de «eliminar» estaba a **ΔE 1.08** de su
+propio estado normal — **no se veía al pasar el ratón**.
 
 Regla: el hover es el mismo color, más presente. Nunca otro color, nunca más claro.
 
 ### 5.3 El foco es uno solo
 
-El anillo de foco es la señal de «aquí está el teclado». Había **seis** variantes (tres tamaños y
-tres colores). Usa `var(--focus-ring)` y punto.
+El anillo de foco es la señal de «aquí está el teclado». Había **seis** variantes. Usa
+`var(--focus-ring)` y punto.
 
-### 5.4 La elevación es una escala de tres, no un valor por componente
+### 5.4 La elevación es una escala de tres
 
-`--brand-elev-1` (tarjetas) → `--brand-elev-2` → `--brand-elev-3`, más `--brand-elev-3-left` para el
-panel lateral (mismo nivel, otra dirección). Si necesitas una sombra que no está, casi seguro es que
-el componente pertenece a un nivel que ya existe.
+`--elev-1` (tarjetas) → `--elev-2` → `--elev-3`, más `--elev-3-left` para el panel lateral (mismo
+nivel, otra dirección). Si necesitas una sombra que no está, casi seguro el componente pertenece a un
+nivel que ya existe.
 
-`--focus-ring` **no** entra en la escala aunque use la misma propiedad: es un indicador de estado, no
-un nivel. Y el velo del modal (`--overlay-backdrop`) **no es una sombra**: es un fondo. Estaba
-contado como sombra y por eso parecía que había once.
+`--focus-ring` **no** entra en la escala aunque use la misma propiedad: es un indicador de estado. Y
+el velo del modal (`--overlay-backdrop`) **no es una sombra**: es un fondo. Estaba contado como
+sombra y por eso parecía que había once.
 
 ### 5.5 Densidad: cuidado con las tablas
 
-La tabla de administración pinta **172 botones a la vez**. Todo lo que sea sutil ahí desaparece, y
-todo lo que sea pesado satura. Es el peor caso del sistema: si un componente se ve bien ahí, se ve
-bien en todas partes. **Pruébalo ahí.**
+La tabla de administración pinta **172 botones a la vez**. Todo lo sutil desaparece ahí y todo lo
+pesado satura. Es el peor caso del sistema: **si un componente se ve bien ahí, se ve bien en todas
+partes.**
 
 ---
 
@@ -359,91 +384,82 @@ bien en todas partes. **Pruébalo ahí.**
 
 Si el mismo puñado de utilidades aparece **tres veces**, dale nombre en su módulo con `@apply`.
 
-Hay **221 strings de clase de más de 120 caracteres** en los `.vue`. El caso extremo: el mismo
-string se repetía **21 veces** cuando `.deasy-form-label` ya existía en el CSS con exactamente ese
-`@apply`, byte por byte. El sistema estaba ahí y se ignoraba.
+Hay **205 strings de clase de más de 120 caracteres** en los `.vue`. El caso extremo: el mismo string
+se repetía **21 veces** cuando `.deasy-form-label` ya existía con exactamente ese `@apply`, byte por
+byte. El sistema estaba ahí y se ignoraba.
 
 ### 6.2 Nada de estilos en línea
 
 `vue/no-static-inline-styles` está en **error**. Un `style="..."` estático es una clase disfrazada.
 `:style` con valor calculado sí es legítimo (posiciones de firma sobre el PDF, anchos de barra).
 
-### 6.3 `<style scoped>` no hace lo que crees
+### 6.3 `<style scoped>`: no queda ninguno, y no vuelvas a meter uno
 
-Vue añade el `data-v-*` al **último** elemento del selector. Si ese elemento vive en un componente
-hijo, **el selector no casa jamás**.
+Los 13 que había se vaciaron; **más de la mitad de sus líneas estaban muertas**, no había que
+moverlas. Dos motivos por los que un `<style scoped>` casi nunca hace lo que crees:
 
-Así murió `AdminTableManager.css`: 604 líneas cargadas con `<style scoped src>` sin un solo
-`:deep()`, de las que **0 de 86 reglas aplicaban**. Su columna de acciones declaraba
-`position: sticky` y el DOM devolvía `static` — se diseñó y nunca funcionó.
+- **Vue añade el `data-v-*` al ÚLTIMO elemento del selector.** Si ese elemento vive en un componente
+  hijo, el selector **no casa jamás**. Así murió `AdminTableManager.css`: 604 líneas de las que **0 de
+  86 reglas aplicaban**; su columna de acciones declaraba `position: sticky` y el DOM daba `static`.
+- **`:deep()` no te salva si el ancla también es de otro componente.** `.ancla :deep(.hijo)` compila a
+  `.ancla[data-v-TUYO] .hijo`: sigue exigiendo que `.ancla` lleve tu scope. Y un padre solo estampa su
+  `data-v` en la **raíz** del hijo, nunca en un nieto.
 
-**Y `:deep()` no te salva si el ancla también es de otro componente.** `:deep(X)` mueve el `data-v`
-al selector de la **izquierda**, así que `.ancla :deep(.hijo)` compila a `.ancla[data-v-TUYO] .hijo`:
-sigue exigiendo que **`.ancla`** lleve tu scope. Y un componente padre solo estampa su `data-v` en la
-**raíz** del hijo, nunca en un nieto.
+⚠️ **Y un `<style scoped>` no está en ninguna capa**, así que gana a todo lo capado. Al sacarlo a un
+módulo cambian dos cosas a la vez: mover cuatro nodos de Vue Flow hizo que los conectores volvieran a
+los valores de la librería (hacia abajo) y que tres `bg-*` de Tailwind **resucitaran** tras años
+tapados por un `background:#fff` (hacia arriba). Antes de mover uno, pregúntate **contra qué estaba
+ganando**.
 
-Así murieron las 84 líneas de `HomeView.vue`: nueve reglas `:deep()` colgando de
-`.deliverable-inline-upload`, que está anidada dentro de `DeliverableCard.vue`. Medido en el
-navegador: **con** el atributo el campo mide 62 px en fila; **sin** él —como se renderiza de verdad—
-mide 28 px en columna. Nunca aplicó ni una.
+> Para comprobarlo en 10 segundos: clona el nodo en la consola con y sin el `data-v-*` del selector
+> compilado, y compara `getComputedStyle`. Si dan lo mismo, la regla sobra.
 
-**Si estilas un hijo desde el padre, necesitas `:deep()`. Y si lo necesitas mucho, el estilo no va
-ahí: va en el módulo del hijo** — que además es el único sitio donde alguien lo va a encontrar.
-
-> Para comprobarlo en 10 segundos: clona el nodo en la consola con y sin el `data-v-*` que aparece
-> en el selector compilado, y compara `getComputedStyle`. Si los dos dan lo mismo, la regla sobra.
-
-### 6.4 Al sacar un `<style scoped>` a un módulo, pierdes una ventaja que no habías pedido
-
-Un `<style scoped>` **no está en ninguna capa**. Un módulo de `shared/styles/` está en
-`@layer components`. Y en CSS **la precedencia de capa gana a la especificidad**: una regla sin capa
-gana SIEMPRE a una capada, por muy específica que sea la segunda. Así que al mover el estilo cambian
-dos cosas a la vez, y la segunda no la ves venir.
-
-Mover cuatro nodos de Vue Flow a `graph.css` lo enseñó por partida doble:
-
-- **Hacia abajo**: los conectores volvieron a los valores de la librería (gris `#555`, 6 px) porque
-  `@vue-flow/core` trae su hoja **sin capa**. Cualificar el selector a `.vue-flow__handle.graph-node__handle`
-  **no arregló nada** — no era cuestión de especificidad. La solución es sacar esas reglas del bloque
-  `@layer`, como hace `overrides.css`.
-- **Hacia arriba**: `.cfg-node { background:#fff }` estaba tapando tres `bg-*` de Tailwind que el
-  componente declaraba por estado. Nunca se vieron. Al pasar a una capa, las utilidades ganaron y el
-  tinte **resucitó** — un cambio visual que nadie pidió, en un refactor.
-
-**Antes de mover un `<style scoped>`, pregúntate contra qué estaba ganando.** Si pisa a un tercero,
-la regla va fuera de la capa; si pisa a una utilidad de Tailwind, decide a conciencia cuál de las dos
-sobra y **borra la otra**, en vez de dejar las dos peleando.
-
-### 6.5 Una clase construida en runtime es invisible para cualquier grep
+### 6.4 Una clase construida en runtime es invisible para cualquier grep
 
 ```js
-`deasy-tag--${props.variant}`                          // AppTag.vue
+`deasy-tag--${props.variant}`                                    // AppTag.vue
 (tone, prefix = 'deasy-nav-item__icon') => `${prefix}--${tone}`   // workspaceNavIcons.js
+box.classList.add('box')                                         // FirmarPdf.vue
+this.element.classList.add('show')                               // modalController.js
 ```
 
-La segunda es la mala: el literal va como **valor por defecto de un parámetro**, así que ni siquiera
-queda pegado al `${`. Una limpieza automática se llevó dos de esas clases y **el build, el lint y
-los 304 tests pasaron en verde** con la barra lateral sin color.
+La segunda es la peor: el literal va como **valor por defecto de un parámetro**, así que ni siquiera
+queda pegado al `${`. Una limpieza automática se llevó dos de esas clases y **el build, el lint y los
+304 tests pasaron en verde** con la barra lateral sin color.
 
 **Antes de borrar CSS por no encontrarlo con `grep`, comprueba si se compone en runtime.**
 
-### 6.6 Al reemplazar colores en masa, dos trampas ya pagadas
+### 6.5 Al borrar una clase muerta, mira si es el único selector
+
+Confundir los dos casos rompe reglas vivas:
+
+```css
+.muerta { … }                    /* único selector  -> se va la regla entera */
+.viva, .muerta { … }             /* en lista        -> se va SOLO su línea   */
+.viva,
+.muerta { … }                    /* y la coma de la anterior, si cerraba     */
+```
+
+Y **corrige los comentarios que la nombren**: `.deasy-table-shell` aparecía en cuatro explicaciones de
+por qué ciertas reglas están fuera de capa, y no estaba en una sola plantilla — los 239 nodos los
+ponía su hermana `.deasy-table-responsive`, con la que compartía lista de selectores.
+
+### 6.6 Al reemplazar en masa, dos trampas pagadas
 
 1. **Un hex corto es prefijo de uno largo.** `#fff` está dentro de `#fff0ed`; sin límite por la
-   derecha la sustitución parte el valor y deja `var(--brand-white)0ed`. Ordenar el mapa por
-   longitud **no basta**.
-2. **Nunca toques una línea que DECLARA el token.** Sale `--brand-border: var(--brand-border)`, una
+   derecha la sustitución parte el valor. Ordenar el mapa por longitud **no basta**.
+2. **Nunca toques una línea que DECLARA el token.** Sale `--color-line: var(--color-line)`, una
    autorreferencia que en CSS deja la variable **sin valor** — y todo lo que la usaba cae a
-   `currentColor`. Fueron 114 nodos, y sólo en desarrollo, porque la declaración culpable estaba en
-   un bloque condicionado.
+   `currentColor`. Fueron 114 nodos.
 
-`scripts/css-hex-a-token.mjs` lleva las dos guardas y **aborta antes de escribir**.
+Lo mismo con los nombres: **sustituye por longitud descendente**, o `--color-line` se come a
+`--color-line-strong`. `scripts/css-hex-a-token.mjs` lleva las dos guardas y **aborta antes de
+escribir**.
 
 ### 6.7 La tipografía se carga desde `index.html`
 
-No desde el CSS. Un `@import` remoto anidado dentro de un módulo **lo descarta Vite en silencio** y
-la app entera se queda con la fuente de reserva. Además, un `@import` remoto encadena la petición
-detrás del parseo del CSS; desde el HTML el navegador la pide en paralelo.
+No desde el CSS. Un `@import` remoto anidado dentro de un módulo **lo descarta Vite en silencio** y la
+app entera se queda con la fuente de reserva. Además, desde el HTML el navegador lo pide en paralelo.
 
 ### 6.8 Componentes: tres ficheros piden ser partidos
 
@@ -457,68 +473,43 @@ concentran la mayor parte de la utility soup. No añadas más a ellos: extrae.
 ```bash
 bash scripts/stack.sh b exec -T frontend pnpm run lint       # eslint .
 bash scripts/stack.sh b exec -T frontend pnpm run lint:css   # stylelint — debe dar 0 errores
-bash scripts/stack.sh b exec -T frontend pnpm run check:no-dark  # sin `dark:` — ver 2.5
+bash scripts/stack.sh b exec -T frontend pnpm run check:no-dark
 bash scripts/stack.sh b exec -T frontend pnpm run test:unit  # vitest
 bash scripts/stack.sh b exec -T frontend pnpm run build
 ```
 
 Sustituye `b` por tu pila (`docker-env.sh dev` = pila A). **Nunca levantes `dev` desde un worktree**:
-no crea una pila nueva, repunta la de siempre a tu código. Está explicado en el `CLAUDE.md` raíz.
+no crea una pila nueva, repunta la de siempre a tu código. Está en el `CLAUDE.md` raíz.
 
 ---
 
 ## 8. Deuda conocida, para no redescubrirla
 
-**No queda ni un `<style scoped>` en el frontend.** Los 13 que había se vaciaron entre el
-2026-08-11 y el 2026-08-12, y el saldo dice bastante sobre qué era realmente esa deuda:
-
-| | |
-|---|---:|
-| `<style scoped>` al empezar | 13 |
-| **`<style scoped>` hoy** | **0** |
-| Líneas movidas a módulos | ~330 |
-| **Líneas que estaban MUERTAS** (0 usos, o el selector no casaba nunca) | **~180** |
-
-Más de la mitad no había que mover: había que borrarla. Los sitios donde estaba y por qué, en 6.3
-y 6.4. **Antes de mover un bloque, comprueba que aplica** — el clon con y sin `data-v-*` cuesta diez
-segundos y en esta ronda descartó cinco bloques enteros.
-
-Lo que queda de deuda de color, ya sin CSS escondido:
-
 | Qué | Cuánto | Dónde |
 |---|---:|---|
-| Color a mano en plantilla o script `.vue` | 68 | *Arbitrary values* y mapas de tono |
-| Color a mano en `.js` | 21 | `useDeliverableView.js`, `homeView.helpers.js`, `AdminPresentationService.js` |
-| **Total fuera del CSS** | **89** | era 195 |
-| Strings de clase >120 caracteres | **255** | `HomeView.vue` 58, `FirmarPdf.vue` 41 |
-| *Arbitrary values* (`text-[11px]`…) | 443 | 8 tamaños distintos por debajo de `text-sm` |
-| `!important` con motivo escrito | 6 | `dialogs.css`, `overrides.css` |
-| **Colores de Tailwind por nombre** | **3 590** | 98 ficheros; **211 dentro de `@apply`**. Ningún linter ve uno |
+| Colores a mano fuera del CSS | **74** | *Arbitrary values* y mapas de tono en `.vue` y `.js` |
+| Strings de clase >120 caracteres | **205** | `HomeView.vue`, `FirmarPdf.vue` |
+| *Arbitrary values* (`text-[11px]`…) | **436** | 8 tamaños distintos por debajo de `text-sm` |
+| `!important` con motivo escrito | **5** | `dialogs.css`, `overrides.css` |
+| Reglas fuera de capa | **52** | Todas con su motivo escrito al lado |
+| **Colores de Tailwind por nombre** | **~2 260** | Ningún linter ve uno |
 
-> El contador de strings largos decía **221** y son **255** — corregido el 2026-08-11. Los otros dos
-> (443 *arbitrary values*, 89 colores fuera del CSS) sí estaban vigentes, y tres mediciones
-> independientes coinciden en ellos.
+**Y hay deuda que los linters tampoco ven dentro de los módulos**: `forms.css` pinta el dropzone con
+`sky-200`, `sky-500` y `sky-700` **dentro de `@apply`**. Es el único color de familia propia que sigue
+fuera de la paleta.
 
-> **Y hay deuda que los linters tampoco ven en los módulos**: `forms.css` pinta el dropzone con
-> `sky-200`, `sky-500` y `sky-700` **dentro de `@apply`**, donde `color-no-hex` no entra. El azul
-> cielo del dropzone es hoy el único color de familia propia que sigue fuera de la paleta.
+### La que ningún contador recoge: reglas que existen y no aplican
 
-### Y una que ningún contador recoge: reglas que existen y no aplican
-
-Es **el patrón dominante de este repo**, y por eso va aquí y no en una lista de números. Medido el
-2026-08-11, y sigue vivo lo que no cerró F1:
+Es **el patrón dominante de este repo**, y por eso va aquí y no en una lista de números:
 
 - **Ningún `border-*` de Tailwind pinta sobre un `<input>`.** La regla sin capa de `overrides.css`
-  gana a **todas** las capadas, y las utilidades están en `@layer utilities`. Son 90 declaraciones
-  muertas, entre ellas **los 61 bordes de foco** de los campos y las variantes `--error`. Se deja a
-  propósito hasta F4.2 — encenderlas es decidir qué color tiene el foco.
+  gana a todas las capadas. Son 90 declaraciones muertas, entre ellas **los 61 bordes de foco**.
+  Encenderlas es decidir qué color tiene el foco: es una decisión de diseño, no un refactor.
 - **`overrides.css` anula el `rounded-2xl` de `forms.css`** con `border-radius: 0.5rem`: el `@apply`
   promete 16 px y el DOM da 8, en 228 controles.
-- **`.deasy-nav-glyph--violet`** no tiene consumidor, y `workspaceNavIcons.js` compone
-  `` `${prefix}--${tone}` `` **sin comprobar que la variante exista** — que es como «Mis envíos»
-  estuvo sin color. Un tono nuevo desaparece en silencio.
+- **`workspaceNavIcons.js` compone `` `${prefix}--${tone}` `` sin comprobar que la variante exista** —
+  que es como «Mis envíos» estuvo sin color. Un tono nuevo desaparece en silencio.
 
-El plan, la bitácora y la auditoría están en **`docs/planes/sistema-diseno-plantillas/`**. La
-primera vuelta —la que ganó el frente del CSS— está cerrada y archivada en
-`docs/docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/`; su bitácora sigue valiendo, porque
-es donde están las trampas ya pagadas.
+El plan y la bitácora están en **`docs/planes/sistema-diseno-plantillas/`**. La primera vuelta está
+archivada en `docs/docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/`; su bitácora sigue
+valiendo, porque es donde están las trampas ya pagadas.
