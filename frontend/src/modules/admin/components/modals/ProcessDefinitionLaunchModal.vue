@@ -37,7 +37,7 @@
             </p>
           </div>
 
-          <div v-if="selectedTerm" class="flex flex-col gap-2 rounded-2xl border border-brand-border bg-brand-white px-4 py-3">
+          <div v-if="selectedTerm" class="flex flex-col gap-2 rounded-2xl border border-brand-border bg-white px-4 py-3">
             <span class="text-sm" :class="selectedTerm.launched ? 'text-amber-600 font-medium' : 'text-brand-text-muted font-medium'">
               {{ selectedTerm.launched ? "Este proceso ya está lanzado en el periodo seleccionado." : "Pendiente de lanzar en este periodo." }}
             </span>

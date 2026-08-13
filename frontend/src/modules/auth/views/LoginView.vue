@@ -80,7 +80,7 @@
     <div class="relative my-7">
       <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-brand-border"></div></div>
       <div class="relative flex justify-center text-sm font-medium">
-        <span class="bg-brand-white px-4 text-brand-text-muted">¿No tienes una cuenta?</span>
+        <span class="bg-white px-4 text-brand-text-muted">¿No tienes una cuenta?</span>
       </div>
     </div>
 

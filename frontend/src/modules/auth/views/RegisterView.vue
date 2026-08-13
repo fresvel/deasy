@@ -2,7 +2,7 @@
   <div class="deasy-auth-page">
     <div class="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl items-start justify-center py-2 sm:py-6">
       <div class="deasy-auth-card w-full">
-        <div class="border-b border-brand-border bg-brand-white px-6 py-7 sm:px-9 lg:px-11">
+        <div class="border-b border-brand-border bg-white px-6 py-7 sm:px-9 lg:px-11">
           <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div class="min-w-0">
               <AppLogo size="lg" :framed="true" class-name="mb-6" />
@@ -299,7 +299,7 @@
               </div>
             </section>
 
-            <div class="mt-5 rounded-xl border border-brand-border bg-brand-white p-4">
+            <div class="mt-5 rounded-xl border border-brand-border bg-white p-4">
               <label class="flex items-start gap-3 text-sm font-medium text-brand-icon">
                 <input
                   v-model="termsAccepted"

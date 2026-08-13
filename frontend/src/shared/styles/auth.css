@@ -34,8 +34,8 @@
     .deasy-auth-field:-webkit-autofill:hover,
     .deasy-auth-field:-webkit-autofill:focus {
         -webkit-text-fill-color: var(--brand-text-body);
-        -webkit-box-shadow: 0 0 0px 1000px var(--brand-white) inset;
-        box-shadow: 0 0 0px 1000px var(--brand-white) inset;
+        -webkit-box-shadow: 0 0 0px 1000px var(--color-white) inset;
+        box-shadow: 0 0 0px 1000px var(--color-white) inset;
         transition: background-color 9999s ease-in-out 0s;
     }
 

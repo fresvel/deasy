@@ -19,7 +19,7 @@
 
     <div
       v-show="show"
-      class="fixed right-4 top-[4.5rem] z-1200 flex w-[calc(100vw-2rem)] origin-top-right transform flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_48px_rgba(15,23,42,0.12)] transition-all duration-200 sm:right-6 sm:w-80 md:w-96 lg:right-8"
+      class="fixed right-4 top-[4.5rem] z-1200 flex w-[calc(100vw-2rem)] origin-top-right transform flex-col overflow-hidden rounded-xl border border-brand-border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_48px_rgba(15,23,42,0.12)] transition-all duration-200 sm:right-6 sm:w-80 md:w-96 lg:right-8"
       :class="show ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none -translate-y-2 scale-95 opacity-0'"
     >
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">

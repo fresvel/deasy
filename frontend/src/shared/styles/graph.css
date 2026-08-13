@@ -18,16 +18,16 @@
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
        Es el gris de los iconos aclarado, no un color propio. */
     .graph-node--config {
-        --graph-accent: color-mix(in srgb, var(--brand-icon) 57%, var(--brand-white));
+        --graph-accent: color-mix(in srgb, var(--brand-icon) 57%, var(--color-white));
         --graph-accent-solid: var(--brand-icon);
         width: 190px;
-        background: var(--brand-white);
+        background: var(--color-white);
     }
 
     /* Plantilla: el mismo color de marca, más claro. En un punto de 8 px la luminosidad
        distingue mejor que el matiz, y así no se añade un tono nuevo a la gama. */
     .graph-node--template {
-        --graph-accent: color-mix(in srgb, var(--brand-primary) 63%, var(--brand-white));
+        --graph-accent: color-mix(in srgb, var(--brand-primary) 63%, var(--color-white));
         --graph-accent-solid: var(--brand-primary);
         width: 170px;
     }
@@ -62,7 +62,7 @@
     }
 
     .graph-toggle--on {
-        background: var(--brand-white);
+        background: var(--color-white);
         color: var(--brand-primary);
         box-shadow: var(--brand-elev-1);
     }
@@ -95,7 +95,7 @@
         gap: 2px;
         padding: 2px;
         border-radius: 8px;
-        background: var(--brand-white);
+        background: var(--color-white);
         box-shadow: var(--brand-elev-2);
         transition: opacity 0.15s ease;
     }
@@ -112,12 +112,12 @@
     }
 
     .graph-edge-btn:hover {
-        background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
+        background: color-mix(in srgb, var(--brand-primary) 10%, var(--color-white));
         color: var(--brand-primary);
     }
 
     .graph-edge-btn--danger:hover {
-        background: color-mix(in srgb, var(--state-danger) 10%, var(--brand-white));
+        background: color-mix(in srgb, var(--state-danger) 10%, var(--color-white));
         color: var(--state-danger);
     }
 
@@ -151,7 +151,7 @@
         height: 30px;
         width: 30px;
         border-radius: 9px;
-        background: var(--brand-white);
+        background: var(--color-white);
         border: 1px solid var(--brand-border);
         color: var(--brand-icon);
         box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
@@ -168,8 +168,8 @@
        necesidad de una regla por variante. Mismos porcentajes que los botones de acción
        de las tablas: relleno bajo, borde medio, texto el token. */
     .graph-node__btn:hover {
-        background: color-mix(in srgb, var(--graph-accent) 10%, var(--brand-white));
-        border-color: color-mix(in srgb, var(--graph-accent) 45%, var(--brand-white));
+        background: color-mix(in srgb, var(--graph-accent) 10%, var(--color-white));
+        border-color: color-mix(in srgb, var(--graph-accent) 45%, var(--color-white));
         color: var(--graph-accent);
     }
 
@@ -179,13 +179,13 @@
     .graph-node__btn--accent {
         background: var(--graph-accent-solid);
         border-color: var(--graph-accent-solid);
-        color: var(--brand-white);
+        color: var(--color-white);
     }
 
     .graph-node__btn--accent:hover {
         background: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--brand-black));
         border-color: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--brand-black));
-        color: var(--brand-white);
+        color: var(--color-white);
     }
 }
 
@@ -197,7 +197,7 @@
     width: 9px;
     height: 9px;
     background: var(--graph-accent);
-    border: 2px solid var(--brand-white);
+    border: 2px solid var(--color-white);
 }
 
 .vue-flow__handle.graph-node__handle--sm {

@@ -30,7 +30,7 @@
           />
           <div
             v-if="shouldShowInlineFkSuggestions(field.name)"
-            class="fk-inline-suggestions overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-lg"
+            class="fk-inline-suggestions overflow-hidden rounded-xl border border-brand-border bg-white shadow-lg"
             @mousedown.prevent
           >
             <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-slate-500">
@@ -139,7 +139,7 @@
         :row-key="(row) => row.id"
         empty-text="Este proceso aun no tiene configuraciones."
         table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-        responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-brand-white shadow-sm"
+        responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-white shadow-sm"
         scroll-class=""
       >
         <template #cell="{ row, field }">

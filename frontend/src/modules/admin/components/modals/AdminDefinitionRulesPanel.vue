@@ -29,7 +29,7 @@
       <div
         class="flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm"
         :class="canSubmit
-          ? 'border-brand-border bg-brand-white text-brand-icon'
+          ? 'border-brand-border bg-white text-brand-icon'
           : 'border-amber-200 bg-amber-50 text-amber-800'"
       >
         <font-awesome-icon :icon="canSubmit ? 'info-circle' : 'triangle-exclamation'" class="mt-0.5 shrink-0" />
@@ -171,7 +171,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin reglas vinculadas."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-brand-white shadow-sm person-assignment-table"
+      responsive-class="overflow-x-auto rounded-2xl border border-brand-border bg-white shadow-sm person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">

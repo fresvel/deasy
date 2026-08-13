@@ -27,7 +27,7 @@
     <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-indigo-300 bg-indigo-50' : 'border-indigo-200 bg-indigo-50/50'">
       <div class="flex items-center gap-3">
         <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</span>
-        <span class="inline-flex items-center rounded-full bg-brand-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>
+        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>
         <span v-if="draftArtifactForm.storage_version" class="text-xs font-medium text-brand-text-muted">· {{ draftArtifactForm.storage_version }}</span>
         <span v-if="guidedConfigId" class="text-xs font-medium text-indigo-600">· Actualización guiada: al publicar se activa la nueva configuración</span>
       </div>
@@ -204,7 +204,7 @@
         <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-brand-border bg-brand-surface-muted px-4 py-5 text-center text-sm font-medium text-slate-500">
           Cargando preview…
         </div>
-        <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-brand-border bg-brand-white" title="Preview del seed"></iframe>
+        <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-brand-border bg-white" title="Preview del seed"></iframe>
         <div v-else class="rounded-xl border border-dashed border-brand-border bg-brand-surface-muted px-4 py-5 text-center text-sm font-medium text-slate-500">
           Este seed no tiene un PDF de preview publicado.
         </div>
@@ -224,7 +224,7 @@
         Aún no hay campos. Añade al menos uno para generar el formulario del entregable.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
-        <div v-for="(field, index) in schemaFields" :key="index" class="grid grid-cols-12 items-end gap-2 rounded-xl border border-brand-border bg-brand-white px-3 py-2.5">
+        <div v-for="(field, index) in schemaFields" :key="index" class="grid grid-cols-12 items-end gap-2 rounded-xl border border-brand-border bg-white px-3 py-2.5">
           <div class="col-span-3">
             <label :for="fieldId(`field-key-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-brand-text-muted">Clave</label>
             <input :id="fieldId(`field-key-${index}`)" :value="field.key" placeholder="ej. semestre" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSchemaField(index, 'key', $event.target.value)" />
@@ -280,7 +280,7 @@
         <div
           v-for="(step, index) in fillSteps"
           :key="index"
-          class="overflow-hidden rounded-xl border-l-4 border bg-brand-white"
+          class="overflow-hidden rounded-xl border-l-4 border bg-white"
           :class="stepToneClass(index)"
           draggable="true"
           @dragstart="onStepDragStart('fill', index)"
@@ -416,7 +416,7 @@
         <div
           v-for="(step, index) in signatureSteps"
           :key="`sig-${index}`"
-          class="overflow-hidden rounded-xl border-l-4 border bg-brand-white"
+          class="overflow-hidden rounded-xl border-l-4 border bg-white"
           :class="stepToneClass(index)"
           draggable="true"
           @dragstart="onStepDragStart('signature', index)"

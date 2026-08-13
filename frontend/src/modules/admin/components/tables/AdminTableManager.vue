@@ -136,7 +136,7 @@
 
     <div v-if="!table" class="flex">
       <div class="w-full">
-        <div class="rounded-2xl border border-brand-border bg-brand-white shadow-sm">
+        <div class="rounded-2xl border border-brand-border bg-white shadow-sm">
           <div class="p-5">
             <p class="mb-0 text-sm text-slate-500">Selecciona una tabla para administrar.</p>
           </div>

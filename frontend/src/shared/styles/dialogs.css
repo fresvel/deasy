@@ -79,7 +79,7 @@
     .profile-dialog-panel [data-modal-dismiss][aria-label="Cerrar"] {
         border-radius: 0.55rem;
         border-color: var(--brand-border-field) !important;
-        background: var(--brand-white);
+        background: var(--color-white);
         color: var(--brand-icon);
     }
 
@@ -112,7 +112,7 @@
         flex-direction: column;
         width: min(30rem, 100vw);
         height: 100%;
-        background: var(--brand-white);
+        background: var(--color-white);
         box-shadow: var(--brand-elev-3-left);
     }
 
@@ -156,7 +156,7 @@
         height: 100%;
         border: 0;
         display: block;
-        background: var(--brand-white);
+        background: var(--color-white);
     }
 
     .pdf-preview-empty {
@@ -188,7 +188,7 @@
    utilidad pierde el `!important` del repintado, esta regla pasa a ganar y el borde cambia
    de `--brand-border` a `--brand-border-field` (5 nodos). Unica excepcion de 4.4-d. */
 .deasy-dialog-root .deasy-dialog-header button {
-  background: var(--brand-white);
+  background: var(--color-white);
   color: var(--brand-icon);
   border: 1px solid var(--brand-border-field);
 }
@@ -217,7 +217,7 @@
 .profile-dialog-panel {
   border-radius: 0.95rem;
   border: 1px solid var(--brand-border);
-  background: var(--brand-white);
+  background: var(--color-white);
   box-shadow: var(--brand-elev-3);
 }
 

@@ -12,7 +12,7 @@
       <div
         v-for="step in fillWorkflowState.subject.workflow.fill_steps"
         :key="`fill-step-combined-${step.id}-${step.request_id || 'na'}`"
-        class="relative overflow-hidden rounded-[5%] border bg-brand-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
+        class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
         :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
       >
         <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>

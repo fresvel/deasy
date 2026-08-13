@@ -19,7 +19,7 @@
     }
 
     .deasy-inline-tab__badge--active {
-        background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
+        background: color-mix(in srgb, var(--brand-primary) 10%, var(--color-white));
         color: var(--brand-primary);
     }
 
@@ -120,7 +120,7 @@
     .deasy-nav-item--active .deasy-nav-item__icon,
     .deasy-nav-item--subtle-active .deasy-nav-glyph,
     .deasy-nav-item.router-link-active .deasy-nav-item__icon {
-        color: var(--brand-white);
+        color: var(--color-white);
         border-color: rgba(var(--brand-white-rgb), 0.14);
         background: rgba(var(--brand-white-rgb), 0.08);
     }

@@ -33,7 +33,7 @@
 
     /* Salmón: pendiente de firma en los pasos de firma. */
     .deasy-tag--salmon {
-        @apply border-[color-mix(in_srgb,var(--state-pending)_71%,var(--brand-white))] bg-[color-mix(in_srgb,var(--state-pending)_10%,var(--brand-white))] text-state-pending;
+        @apply border-[color-mix(in_srgb,var(--state-pending)_71%,var(--color-white))] bg-[color-mix(in_srgb,var(--state-pending)_10%,var(--color-white))] text-state-pending;
     }
 
     .deasy-tag--accent {

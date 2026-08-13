@@ -1,6 +1,6 @@
 <template>
 <div class="flex flex-col gap-4">
-  <section class="rounded-2xl border border-brand-border bg-brand-white p-4">
+  <section class="rounded-2xl border border-brand-border bg-white p-4">
     <div class="flex flex-col gap-1">
       <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Anexos del entregable</h3>
       <p class="m-0 text-xs font-medium text-slate-500">Archivos auxiliares (evidencias, soportes) adicionales al documento principal.</p>
@@ -16,7 +16,7 @@
           <option value="other">Otro</option>
         </select>
       </label>
-      <label class="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-indigo-300 bg-brand-white px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50" :class="attachmentsState.uploading ? 'pointer-events-none opacity-60' : ''">
+      <label class="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-indigo-300 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50" :class="attachmentsState.uploading ? 'pointer-events-none opacity-60' : ''">
         <IconUpload class="h-4 w-4" />
         <span>{{ attachmentsState.uploading ? 'Subiendo...' : 'Agregar anexo' }}</span>
         <input type="file" class="hidden" :disabled="attachmentsState.uploading" @change="handleAttachmentUpload" />
@@ -33,7 +33,7 @@
       <li
         v-for="attachment in attachmentsState.items"
         :key="`attachment-${attachment.id}`"
-        class="flex items-center gap-3 rounded-xl border border-brand-border bg-brand-white px-3 py-2.5"
+        class="flex items-center gap-3 rounded-xl border border-brand-border bg-white px-3 py-2.5"
       >
         <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-brand-surface-muted text-slate-500"><IconFileDescription class="h-4.5 w-4.5" /></span>
         <div class="min-w-0 flex-1">
@@ -44,8 +44,8 @@
             <span v-if="attachment.description" class="truncate">· {{ attachment.description }}</span>
           </p>
         </div>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-brand-border bg-brand-white text-sky-700 transition hover:border-sky-300 hover:bg-sky-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-brand-border bg-brand-white text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
+        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-brand-border bg-white text-sky-700 transition hover:border-sky-300 hover:bg-sky-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
+        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-brand-border bg-white text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
       </li>
     </ul>
   </section>

@@ -178,7 +178,7 @@
               v-for="option in group.options"
               :key="option.id"
               class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors"
-              :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-brand-border bg-brand-white'"
+              :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-brand-border bg-white'"
             >
               <input
                 v-model="preconfig[group.key]"

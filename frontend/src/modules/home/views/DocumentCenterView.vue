@@ -42,7 +42,7 @@
         {{ actionError }}
       </section>
 
-      <section class="bg-brand-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-brand-border flex flex-col gap-5">
+      <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-brand-border flex flex-col gap-5">
         <div class="deasy-filter-shell">
           <div class="deasy-filter-grid">
             <label class="deasy-filter-field deasy-filter-search-span">

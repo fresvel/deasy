@@ -21,7 +21,7 @@
     .admin-surface-frame {
         border: 1px solid var(--brand-border);
         border-radius: 1rem;
-        background: var(--brand-white);
+        background: var(--color-white);
         box-shadow: none;
         padding: 0.95rem;
     }
@@ -118,13 +118,13 @@
     }
 
     .profile-step-dot--active {
-        background: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-white));
+        background: color-mix(in srgb, var(--brand-primary) 10%, var(--color-white));
         color: var(--brand-primary);
-        border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--brand-white));
+        border-color: color-mix(in srgb, var(--brand-primary) 38%, var(--color-white));
     }
 
     .profile-step-dot--done {
         background: var(--brand-primary);
-        color: var(--brand-white);
+        color: var(--color-white);
     }
 }

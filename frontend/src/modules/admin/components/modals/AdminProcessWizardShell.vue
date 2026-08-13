@@ -48,7 +48,7 @@
       class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800"
     >
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
-      <span class="inline-flex items-center rounded-xl bg-brand-white/70 px-2 py-0.5 text-xs font-semibold text-brand-icon ring-1 ring-slate-200">
+      <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-brand-icon ring-1 ring-slate-200">
         {{ definitionContext.definition_version || "—" }}
       </span>
       <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadgeClass">
@@ -117,9 +117,9 @@ const isStepLocked = (step, index) =>
   Boolean(step.locked || step.disabled || (props.lockAfterFirstUntilContext && index > 0 && !hasDefinition.value));
 
 const stepButtonClass = (step, index) => {
-  if (step.key === props.currentStep) return "bg-brand-white shadow-sm ring-1 ring-indigo-300";
+  if (step.key === props.currentStep) return "bg-white shadow-sm ring-1 ring-indigo-300";
   if (isStepLocked(step, index)) return "opacity-50 cursor-not-allowed";
-  return "hover:bg-brand-white/70";
+  return "hover:bg-white/70";
 };
 const stepBadgeClass = (step, index) => {
   if (isStepComplete(step)) return "bg-emerald-500 text-white";

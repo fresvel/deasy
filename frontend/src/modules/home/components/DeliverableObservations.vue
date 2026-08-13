@@ -56,7 +56,7 @@ const onAdd = () => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-brand-border bg-brand-white p-4">
+  <section class="rounded-2xl border border-brand-border bg-white p-4">
     <div class="flex items-center gap-1.5">
       <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">{{ title }}</h3>
       <IconInfoCircle v-if="subtitle" class="h-4 w-4 text-brand-text-muted" :title="subtitle" />

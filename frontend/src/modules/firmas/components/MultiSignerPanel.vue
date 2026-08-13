@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
           <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-brand-border bg-brand-surface-muted/60 p-4">
             <PdfDropField
@@ -110,7 +110,7 @@
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
                 class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
-                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-brand-border bg-brand-white hover:border-slate-300 hover:bg-brand-surface-muted'"
+                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-brand-border bg-white hover:border-slate-300 hover:bg-brand-surface-muted'"
               >
                 <div class="flex w-full items-start justify-between gap-3">
                   <button
@@ -143,7 +143,7 @@
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-sm">
+      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-white shadow-sm">
         <div
           class="relative grow overflow-hidden bg-slate-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
@@ -157,13 +157,13 @@
             <div
               v-if="currentDocument"
               ref="viewerRef"
-              class="relative mb-6 border border-slate-300 bg-brand-white shadow-md transition-all duration-300"
+              class="relative mb-6 border border-slate-300 bg-white shadow-md transition-all duration-300"
               @mousedown="handlePointerDown"
               @mousemove="handlePointerMove"
               @mouseup="handlePointerUp"
               @mouseleave="handlePointerLeave"
             >
-              <canvas ref="pdfCanvas" class="z-0 block h-auto w-full bg-brand-white"></canvas>
+              <canvas ref="pdfCanvas" class="z-0 block h-auto w-full bg-white"></canvas>
 
               <SignatureBox
                 v-if="isMouseOverPdf && selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
@@ -194,7 +194,7 @@
                 <template #actions>
                   <button
                     type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-brand-white/80 bg-emerald-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-emerald-600/92 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-emerald-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-emerald-600/92 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     title="Iniciar firma masiva"
                     aria-label="Iniciar firma masiva"
                     :disabled="!canRequestStart"
@@ -206,7 +206,7 @@
 
                 <template #navigation>
                   <div class="grid w-full grid-cols-2 gap-1.5">
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-brand-white/90 bg-white/95 shadow-md backdrop-blur-sm">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
                         class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -230,7 +230,7 @@
                       </button>
                     </div>
 
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-brand-white/90 bg-white/95 shadow-md backdrop-blur-sm">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
                         class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -311,7 +311,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-brand-border bg-white shadow-sm">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"

@@ -5,7 +5,7 @@
       <div
         v-for="card in cards"
         :key="card.key"
-        class="rounded-2xl border border-brand-border bg-brand-white p-4 shadow-sm"
+        class="rounded-2xl border border-brand-border bg-white p-4 shadow-sm"
       >
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 min-w-0">

@@ -39,7 +39,6 @@
     --color-brand-navy: var(--brand-navy);
     --color-brand-navy-deep: var(--brand-navy-deep);
     --color-brand-ink: var(--brand-ink);
-    --color-brand-white: var(--brand-white);
 
     /* Bordes y superficies */
     --color-brand-border: var(--brand-border);
@@ -118,7 +117,10 @@
   --brand-navy: #111827;
   --brand-ink: #1f2937;
   --brand-info-soft: rgba(37, 99, 235, 0.1);
-  --brand-white: #ffffff;
+  /* No hay `--brand-white`: el blanco de la marca ES el blanco, asi que se usa el
+     `--color-white` de Tailwind. Este gemelo `-rgb` si sigue vivo — sirve para los
+     blancos translucidos de la barra lateral (`rgba(var(--brand-white-rgb), .08)`) y
+     Tailwind no da un triplete suelto. */
   --brand-white-rgb: 255, 255, 255;
   /* Ancla para oscurecer con color-mix(). No es un color de superficie: no
      pintes nada directamente con el. */

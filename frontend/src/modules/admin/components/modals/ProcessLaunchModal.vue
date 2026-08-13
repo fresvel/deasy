@@ -39,7 +39,7 @@
             <li
               v-for="def in definitions"
               :key="def.definition_id"
-              class="flex flex-col gap-2 rounded-2xl border border-brand-border bg-brand-white px-4 py-3"
+              class="flex flex-col gap-2 rounded-2xl border border-brand-border bg-white px-4 py-3"
             >
               <div class="flex items-center justify-between gap-3">
                 <div class="flex flex-col">

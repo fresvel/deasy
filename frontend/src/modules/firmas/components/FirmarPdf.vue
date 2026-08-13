@@ -100,7 +100,7 @@
       />
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-brand-border bg-brand-white rounded-xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-brand-border bg-white rounded-xl p-6 lg:p-8 shadow-sm">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
           <h3 class="text-xl font-bold text-slate-800 m-0">PDF del flujo de firma</h3>
@@ -149,14 +149,14 @@
         </div>
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-brand-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
       </div>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-brand-border bg-brand-white rounded-xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-brand-border bg-white rounded-xl p-6 lg:p-8 shadow-sm">
       <div
         id="signature-launchers-grid"
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
@@ -224,7 +224,7 @@
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-brand-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
               <span class="mt-5 text-base font-semibold text-slate-700">Ver solicitudes</span>
@@ -244,7 +244,7 @@
           @click="handleDatabaseEntry"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-brand-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
               <span class="mt-5 text-base font-semibold text-slate-700">
@@ -267,7 +267,7 @@
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-brand-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />
               <span class="mt-5 text-base font-semibold text-slate-700">Tabla de procesos</span>
@@ -280,7 +280,7 @@
 
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-brand-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -288,7 +288,7 @@
     </div>
 
     <div v-else-if="!multiOnly" class="mt-4">
-      <div class="bg-brand-white rounded-2xl shadow-sm border border-brand-border p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-border p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div 
             class="relative shadow-sm border border-brand-border" 
@@ -330,7 +330,7 @@
                 <button
                   v-if="signMode !== 'token'"
                   type="button"
-                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-brand-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
+                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
                   title="Firmar documento"
                   aria-label="Firmar documento"
                   @click.stop="submitAction"
@@ -368,7 +368,7 @@
         <div
           v-for="field in visibleFields"
           :key="field.id"
-          class="bg-brand-white border border-brand-border rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
+          class="bg-white border border-brand-border rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
           :class="{ 'ring-2 ring-sky-500 border-transparent': field.id === lastFieldId }"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
@@ -447,7 +447,7 @@
           v-for="field in filteredFields"
           :key="field.id"
           class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-brand-border rounded-xl hover:border-sky-300 hover:bg-sky-50/30 transition gap-3"
-          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-brand-white'"
+          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
         >
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
@@ -557,7 +557,7 @@
             :key="user.id || user._id"
             type="button"
             class="flex flex-col p-3 border rounded-xl text-left transition w-full shadow-sm"
-            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-brand-white hover:bg-brand-surface-muted'"
+            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-white hover:bg-brand-surface-muted'"
             @click="selectSigner(user)"
           >
             <div class="font-semibold text-slate-800 text-sm flex items-center justify-between w-full gap-3">
@@ -569,9 +569,9 @@
               <span>{{ user.email }}</span>
             </div>
             <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-brand-icon mt-2 flex flex-wrap gap-2">
-              <span v-if="user.unit_type_name" class="bg-brand-white border border-brand-border rounded-xl px-2 py-1">{{ user.unit_type_name }}</span>
-              <span v-if="user.unit_name" class="bg-brand-white border border-brand-border rounded-xl px-2 py-1">{{ user.unit_name }}</span>
-              <span v-if="user.cargo_name" class="bg-brand-white border border-brand-border rounded-xl px-2 py-1">{{ user.cargo_name }}</span>
+              <span v-if="user.unit_type_name" class="bg-white border border-brand-border rounded-xl px-2 py-1">{{ user.unit_type_name }}</span>
+              <span v-if="user.unit_name" class="bg-white border border-brand-border rounded-xl px-2 py-1">{{ user.unit_name }}</span>
+              <span v-if="user.cargo_name" class="bg-white border border-brand-border rounded-xl px-2 py-1">{{ user.cargo_name }}</span>
             </div>
           </button>
         </div>
@@ -675,7 +675,7 @@
             :key="certificate.id"
             type="button"
             class="w-full rounded-xl border px-3 py-3 text-left transition"
-            :class="selectedCertificateId === certificate.id ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-brand-white hover:bg-brand-surface-muted'"
+            :class="selectedCertificateId === certificate.id ? 'border-sky-500 bg-sky-50' : 'border-brand-border bg-white hover:bg-brand-surface-muted'"
             @click="selectedCertificateId = certificate.id"
           >
             <div class="flex items-center gap-2 flex-wrap">
@@ -798,7 +798,7 @@
       </button>
     </template>
     <div class="px-6 pt-6 pb-4">
-      <div class="bg-brand-white rounded-2xl p-5 border border-brand-border shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+      <div class="bg-white rounded-2xl p-5 border border-brand-border shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
         <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
           <label :for="fieldId('validationcedula')" class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
@@ -833,7 +833,7 @@
       </div>
 
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-        <div class="rounded-2xl border border-brand-border bg-brand-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="rounded-2xl border border-brand-border bg-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-slate-500 mb-1 z-10">
             <div class="p-1.5 bg-brand-surface-muted rounded-2xl"><IconSignature class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Firmas Detectadas</div>
@@ -888,7 +888,7 @@
     </div>
 
     <!-- TABLA -->
-    <div class="bg-brand-white border-t border-brand-border relative min-h-50">
+    <div class="bg-white border-t border-brand-border relative min-h-50">
       <Loading 
         :visible="isValidatingDocument" 
         text="Validando firmas..." 
@@ -978,7 +978,7 @@
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuer"
-        class="rounded-2xl border border-brand-border bg-brand-white px-4 py-3"
+        class="rounded-2xl border border-brand-border bg-white px-4 py-3"
       >
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Issuer completo</div>
         <div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
@@ -988,7 +988,7 @@
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
-        class="rounded-2xl border border-brand-border bg-brand-white px-4 py-3"
+        class="rounded-2xl border border-brand-border bg-white px-4 py-3"
       >
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Atributos detectados</div>
         <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-brand-icon">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>

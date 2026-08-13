@@ -6,7 +6,7 @@
   {{ signatureFlowState.error }}
 </div>
 <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
-  <section class="rounded-2xl border border-brand-border bg-brand-white p-4 flex flex-col gap-4">
+  <section class="rounded-2xl border border-brand-border bg-white p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Resumen del flujo</h3>
@@ -46,7 +46,7 @@
       <div
         v-for="step in signatureFlowState.snapshot.signatureSteps"
         :key="`combined-signature-step-${step.id || step.step_order}`"
-        class="relative overflow-hidden rounded-[5%] border bg-brand-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
+        class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
         :class="getSignatureStepCardClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"
       >
         <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>

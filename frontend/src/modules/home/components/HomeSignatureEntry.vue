@@ -4,7 +4,7 @@
       {{ error }}
     </section>
 
-    <section id="signature-launchers" class="rounded-xl border border-brand-border bg-brand-white shadow-xl shadow-slate-200/30">
+    <section id="signature-launchers" class="rounded-xl border border-brand-border bg-white shadow-xl shadow-slate-200/30">
       <FirmarPdf
         :show-start-heading="false"
         :enable-home-shortcuts="true"

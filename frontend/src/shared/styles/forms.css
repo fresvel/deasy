@@ -279,7 +279,7 @@
         width: 100%;
         border-radius: 1rem;
         border: 1px solid var(--brand-border-field);
-        background: var(--brand-white);
+        background: var(--color-white);
         box-shadow: var(--brand-elev-1);
         font-size: 0.95rem;
         font-weight: 500;

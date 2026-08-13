@@ -28,7 +28,7 @@
     .profile-table-shell,
     .profile-dialog-panel,
     .table-institutional {
-        background-color: var(--brand-white);
+        background-color: var(--color-white);
     }
 
     .admin-workspace-frame--table {
@@ -37,12 +37,12 @@
 
     .deasy-auth-page {
         background:
-            linear-gradient(180deg, var(--brand-white) 0%, var(--brand-surface-muted) 46%, var(--brand-surface-muted) 100%);
+            linear-gradient(180deg, var(--color-white) 0%, var(--brand-surface-muted) 46%, var(--brand-surface-muted) 100%);
     }
 
     .deasy-auth-panel,
     .deasy-dialog-body {
-        background-color: var(--brand-white);
+        background-color: var(--color-white);
     }
 
     .deasy-auth-visual,
@@ -100,7 +100,7 @@
 input,
 select,
 textarea {
-  background-color: var(--brand-white);
+  background-color: var(--color-white);
   border-radius: 0.5rem;
 }
 
@@ -196,7 +196,7 @@ header {
 .deasy-auth-button--secondary,
 .admin-btn--secondary,
 .admin-btn--cancel {
-  background-color: var(--brand-white);
+  background-color: var(--color-white);
   border-color: var(--brand-border);
 }
 
@@ -222,15 +222,15 @@ header {
    mitad puede bajar: dentro de la capa les gana `.deasy-table-shell .deasy-btn` (0,2,0) y
    los 12 se pintan como un `--secondary`. Medido: 239 nodos en el organigrama. */
 .hope-action-btn {
-  background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--brand-white));
+  background-color: color-mix(in srgb, var(--action-neutral) 3%, var(--color-white));
+  border-color: color-mix(in srgb, var(--action-neutral) 71%, var(--color-white));
   color: var(--action-neutral);
   box-shadow: var(--brand-elev-1);
 }
 
 .hope-action-view {
-  background-color: color-mix(in srgb, var(--action-view) 11%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--action-view) 71%, var(--brand-white));
+  background-color: color-mix(in srgb, var(--action-view) 11%, var(--color-white));
+  border-color: color-mix(in srgb, var(--action-view) 71%, var(--color-white));
   color: var(--action-view);
 }
 
@@ -238,23 +238,23 @@ header {
 .hope-action-select,
 .hope-action-assign,
 .hope-action-launch {
-  background-color: color-mix(in srgb, var(--state-success) 10%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--state-success) 71%, var(--brand-white));
+  background-color: color-mix(in srgb, var(--state-success) 10%, var(--color-white));
+  border-color: color-mix(in srgb, var(--state-success) 71%, var(--color-white));
   color: var(--state-success);
 }
 
 .hope-action-version,
 .hope-action-download,
 .hope-action-upload {
-  background-color: color-mix(in srgb, var(--action-upload) 11%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--action-upload) 71%, var(--brand-white));
+  background-color: color-mix(in srgb, var(--action-upload) 11%, var(--color-white));
+  border-color: color-mix(in srgb, var(--action-upload) 71%, var(--color-white));
   color: var(--action-upload);
 }
 
 .hope-action-delete,
 .hope-action-delete-strong {
-  background-color: color-mix(in srgb, var(--state-danger) 9%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--state-danger) 71%, var(--brand-white));
+  background-color: color-mix(in srgb, var(--state-danger) 9%, var(--color-white));
+  border-color: color-mix(in srgb, var(--state-danger) 71%, var(--color-white));
   color: var(--state-danger);
 }
 
@@ -262,8 +262,8 @@ header {
    medir estos dos botones. */
 .hope-action-delete-pdf,
 .hope-action-retire {
-  background-color: color-mix(in srgb, var(--state-warning) 9%, var(--brand-white));
-  border-color: color-mix(in srgb, var(--state-warning) 71%, var(--brand-white));
+  background-color: color-mix(in srgb, var(--state-warning) 9%, var(--color-white));
+  border-color: color-mix(in srgb, var(--state-warning) 71%, var(--color-white));
   color: var(--state-warning);
 }
 
@@ -309,7 +309,7 @@ header {
 .bg-white\/90,
 .bg-white\/92,
 .bg-white\/95 {
-  background-color: var(--brand-white);
+  background-color: var(--color-white);
 }
 
 /* ⚠️ Este `!important` no lo resuelve el orden: pelea contra
