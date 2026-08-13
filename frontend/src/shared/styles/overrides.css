@@ -303,12 +303,18 @@ header {
   background-color: var(--brand-surface-muted);
 }
 
-.bg-white,
-.bg-white\/80,
-.bg-white\/85,
-.bg-white\/90,
-.bg-white\/92,
-.bg-white\/95 {
+/* Solo `.bg-white` a secas, y NO por el color: pinta blanco con blanco, exactamente igual
+   que la utilidad de Tailwind. Lo que aporta es PRIORIDAD — esta sin capa, asi que gana a
+   las reglas de componente en 172 nodos. Quitarla no seria un cambio de color: seria
+   soltar esos 172.
+
+   Aqui estaban ademas `/80 /85 /90 /92 /95`, y esas SI hacian algo: aplastaban a blanco
+   solido las cinco variantes con alfa. Cinco de los nodos afectados combinaban
+   `bg-white/80` con `backdrop-blur` — un cristal esmerilado convertido en losa opaca, que
+   es la prueba de que era un accidente y no una decision. Y `bg-brand-white/80`, el mismo
+   proposito escrito con el otro nombre, salia translucido: el aspecto dependia de que
+   token hubiera elegido quien lo escribio. */
+.bg-white {
   background-color: var(--color-white);
 }
 
