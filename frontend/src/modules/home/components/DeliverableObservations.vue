@@ -34,16 +34,16 @@ const dotClass = (observation) => {
   return {
     return_reason: 'bg-amber-400',
     rejection_reason: 'bg-rose-400',
-    internal_note: 'bg-slate-300',
-    observation: 'bg-sky-400',
-  }[observation.kind] || 'bg-sky-400';
+    internal_note: 'bg-gray-300',
+    observation: 'bg-blue-light-400',
+  }[observation.kind] || 'bg-blue-light-400';
 };
 const kindTextClass = (kind) => ({
   return_reason: 'text-amber-600',
   rejection_reason: 'text-rose-600',
   internal_note: 'text-muted',
-  observation: 'text-sky-600',
-}[kind] || 'text-sky-600');
+  observation: 'text-info',
+}[kind] || 'text-info');
 
 const formatObsDate = (value) => String(value || '').toString().slice(0, 16).replace('T', ' ');
 
@@ -58,15 +58,15 @@ const onAdd = () => {
 <template>
   <section class="rounded-2xl border border-line bg-white p-4">
     <div class="flex items-center gap-1.5">
-      <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">{{ title }}</h3>
+      <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">{{ title }}</h3>
       <IconInfoCircle v-if="subtitle" class="h-4 w-4 text-muted" :title="subtitle" />
     </div>
 
-    <div v-if="loading" class="mt-4 text-sm text-slate-500">Cargando observaciones...</div>
+    <div v-if="loading" class="mt-4 text-sm text-muted">Cargando observaciones...</div>
     <template v-else>
       <div
         v-if="!observations.length"
-        class="mt-4 rounded-2xl border border-dashed border-line bg-slate-50/70 p-5 text-sm font-medium text-slate-500"
+        class="mt-4 rounded-2xl border border-dashed border-line bg-surface/70 p-5 text-sm font-medium text-muted"
       >
         {{ emptyText }}
       </div>
@@ -78,17 +78,17 @@ const onAdd = () => {
         >
           <span class="absolute -left-[1.42rem] top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white" :class="dotClass(observation)"></span>
           <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span class="text-xs font-bold text-slate-700">{{ observation.author_name || 'Sistema' }}</span>
+            <span class="text-xs font-bold text-body">{{ observation.author_name || 'Sistema' }}</span>
             <span class="text-[11px] font-semibold uppercase tracking-wide" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>
             <span class="text-[11px] text-muted">{{ formatObsDate(observation.created_at) }}</span>
             <span v-if="observation.resolved_at" class="text-[11px] font-semibold text-emerald-600">· Resuelta</span>
           </div>
-          <p class="m-0 mt-1 text-sm whitespace-pre-line" :class="observation.resolved_at ? 'text-muted' : 'text-slate-700'">{{ observation.message }}</p>
+          <p class="m-0 mt-1 text-sm whitespace-pre-line" :class="observation.resolved_at ? 'text-muted' : 'text-body'">{{ observation.message }}</p>
           <p v-if="observation.resolved_at" class="m-0 mt-0.5 text-[11px] text-muted">Resuelta por {{ observation.resolved_by_name || '—' }}</p>
           <button
             v-else-if="observation.can_resolve"
             type="button"
-            class="mt-1 text-xs font-semibold text-sky-600 transition hover:text-sky-700 disabled:opacity-50"
+            class="mt-1 text-xs font-semibold text-info transition hover:text-info disabled:opacity-50"
             :disabled="resolvingId === observation.id"
             @click="emit('resolve', observation)"
           >
@@ -102,7 +102,7 @@ const onAdd = () => {
           v-model="draft"
           rows="2"
           aria-label="Escribe una observación"
-          class="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          class="rounded-xl border border-line px-3 py-2 text-sm"
           placeholder="Escribe una observación para el hilo..."
         ></textarea>
         <div class="flex justify-end">

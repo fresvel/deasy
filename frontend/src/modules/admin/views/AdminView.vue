@@ -36,7 +36,7 @@
                   class="deasy-nav-item"
                   :class="isHomeActive ? 'deasy-nav-item--active' : ''"
                 >
-                  <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                  <span class="deasy-nav-item__icon">
                     <IconHome class="h-4.5 w-4.5 shrink-0" />
                   </span>
                   <span>Inicio</span>
@@ -180,8 +180,8 @@
           <div class="deasy-section-card flex flex-col min-h-100">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
                <div class="inline-flex items-center gap-3">
-                 <div class="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-                 <span class="text-slate-500 font-medium">Cargando catálogos...</span>
+                 <div class="w-6 h-6 border-2 border-blue-light-400 border-t-transparent rounded-full animate-spin"></div>
+                 <span class="text-muted font-medium">Cargando catálogos...</span>
                </div>
             </div>
             <div v-else-if="metaError" class="text-red-500 font-medium text-center p-6 bg-red-50/50 rounded-2xl border border-red-100">{{ metaError }}</div>
@@ -245,8 +245,8 @@
                         @click="traceabilityOpen = !traceabilityOpen"
                       >
                         <span>
-                          <span class="block text-sm font-bold text-slate-700">Trazabilidad y soporte</span>
-                          <span class="block text-xs text-slate-500">Registros técnicos generados durante la ejecución de tareas, entregas y firmas. Disponibles para consulta, diagnóstico y soporte.</span>
+                          <span class="block text-sm font-bold text-body">Trazabilidad y soporte</span>
+                          <span class="block text-xs text-muted">Registros técnicos generados durante la ejecución de tareas, entregas y firmas. Disponibles para consulta, diagnóstico y soporte.</span>
                         </span>
                         <IconChevronDown class="h-4 w-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': traceabilityOpen }" />
                       </button>
@@ -328,7 +328,7 @@
         </div>
 
         <div v-else class="admin-workspace-frame admin-workspace-frame--table w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
-          <div class="admin-page admin-typography w-full h-full relative overflow-y-auto">
+          <div class="admin-typography w-full h-full relative overflow-y-auto">
              <AdminTableManager
                ref="adminManager"
                :table="selectedTable"

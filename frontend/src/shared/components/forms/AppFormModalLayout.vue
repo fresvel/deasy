@@ -12,8 +12,8 @@
     </AppButton>
 
     <header class="mx-auto mt-2 mb-5 w-full max-w-xl text-center">
-      <h2 class="mb-1 text-xl font-semibold tracking-tight text-slate-950">{{ title }}</h2>
-      <p class="mb-0 text-sm font-medium text-slate-500">{{ description }}</p>
+      <h2 class="mb-1 text-xl font-semibold tracking-tight text-navy">{{ title }}</h2>
+      <p class="mb-0 text-sm font-medium text-muted">{{ description }}</p>
     </header>
 
     <div

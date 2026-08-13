@@ -95,8 +95,8 @@
     .deasy-field-input:focus,
     .deasy-field-select:focus {
         @apply bg-white ring-4;
-        border-color: rgba(var(--primary-rgb), 0.44);
-        --tw-ring-color: rgba(var(--primary-rgb), 0.12);
+        border-color: color-mix(in srgb, var(--color-primary) 44%, transparent);
+        --tw-ring-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
     }
 
     /* ⚠️ EL PLACEHOLDER SE QUEDA EN `--color-muted`, el mismo que el del campo normal de
@@ -420,5 +420,36 @@
         padding-top: 0.625rem;
         padding-bottom: 0.625rem;
         align-items: flex-start;
+    }
+}
+
+@layer components {
+    /* EL CONTROL DE TEXTO CANONICO — 2026-08-13.
+       Sustituye a las CUATRO variantes del mismo campo que convivian en administracion, cada una
+       con su propia idea de la forma: `AdminInputField` (`rounded-2xl` + `border-line-strong` +
+       `text-body`), `AdminSelectField` (`rounded-[10px]` + `border-line-field` + `text-strong` +
+       `font-medium`), `AdminLookupField` (sobre una clase FANTASMA que ningun CSS declaraba) y las
+       15 copias sueltas de `AdminDraftArtifactModal`. Eran el mismo control escrito de cuatro
+       maneras, y las diferencias no eran decisiones: eran deriva.
+
+       ⚠️ Colapsarlas es casi gratis, y merece la pena saber por que: el RADIO y el COLOR de borde
+       sobre un control **no pintaban nada**. La regla de elemento `input, select, textarea` de
+       `overrides.css` sigue fuera de capa y les gana, asi que los cuatro radios distintos ya
+       renderizaban 8 px igual.
+
+       ⚠️ PERO EL `border` A SECAS —el ANCHO— NO ES LO MISMO Y SI HACE FALTA. El reset de Tailwind
+       pone `border-width: 0` en todo, y la regla de elemento solo declara el `border-color`. Al
+       colapsar las cuatro cadenas se cayo, y los 29 controles del modal se quedaron con
+       `border-top-width: 0px`: sin borde. No lo vio el CSS ni el lint — lo cazo la medida en el
+       DOM, comparando la forma de los 29. */
+    .deasy-control {
+        @apply w-full border bg-white px-3.5 text-sm text-body shadow-none transition-colors duration-150;
+        @apply placeholder:text-muted;
+        @apply disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted;
+    }
+
+    /* El `<select>` añade lo suyo: sitio para la flecha y supresion del adorno del navegador. */
+    .deasy-control--select {
+        @apply appearance-none pr-11;
     }
 }

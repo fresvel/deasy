@@ -87,7 +87,7 @@
                       <option v-for="c in countriesData" :key="c.es_name" :value="c">{{ c.es_name }}</option>
                     </select>
                     <div class="relative">
-                      <span class="pointer-events-none absolute inset-y-0 left-3 z-10 flex items-center text-sm font-semibold text-slate-500">
+                      <span class="pointer-events-none absolute inset-y-0 left-3 z-10 flex items-center text-sm font-semibold text-muted">
                         {{ phonePrefix }}
                       </span>
                       <input
@@ -179,12 +179,12 @@
                 </div>
               </div>
 
-              <div class="mt-5 rounded-xl border border-line bg-slate-50/70 p-4">
-                <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <div class="mt-5 rounded-xl border border-line bg-surface/70 p-4">
+                <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-body">
                   Ubicación exacta
                   <span class="group relative inline-flex">
-                    <IconHelp class="h-4 w-4 cursor-help text-blue-600" />
-                    <span class="invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-2xl bg-slate-950 p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                    <IconHelp class="h-4 w-4 cursor-help text-info" />
+                    <span class="invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-2xl bg-navy p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-elev-2 transition-all group-hover:visible group-hover:opacity-100">
                       Marca tu ubicación exacta para completar la información geográfica de tu registro.
                     </span>
                   </span>
@@ -197,7 +197,7 @@
                     :class="!newuser.direccion ? 'border-red-300 text-red-700 hover:bg-red-50' : ''"
                     @click="toggleMap"
                   >
-                    <IconMap class="h-4 w-4" :class="!newuser.direccion ? 'text-red-500' : 'text-blue-600'" />
+                    <IconMap class="h-4 w-4" :class="!newuser.direccion ? 'text-red-500' : 'text-info'" />
                     {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
                   </button>
 
@@ -305,11 +305,11 @@
                   v-model="termsAccepted"
                   type="checkbox"
                   required
-                  class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  class="mt-0.5 h-4 w-4 rounded border-line-strong text-info"
                 />
                 <span>
                   Acepto los
-                  <router-link to="/terminos" class="font-semibold text-blue-700 hover:underline">términos y condiciones</router-link>
+                  <router-link to="/terminos" class="font-semibold text-info hover:underline">términos y condiciones</router-link>
                   de la plataforma.
                 </span>
               </label>
@@ -366,7 +366,7 @@
     <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl border border-green-200 bg-green-50">
       <IconCheck class="h-9 w-9 text-green-600" />
     </div>
-    <p class="mb-0 text-sm text-slate-500">
+    <p class="mb-0 text-sm text-muted">
       Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
     </p>
     <template #footer>
@@ -452,7 +452,7 @@ const cedulaError = ref("");
 const passwordStrengthScore = ref(0);
 const passwordStrengthText = ref("No segura");
 const passwordStrengthColors = {
-  0: "bg-slate-200",
+  0: "bg-gray-200",
   1: "bg-red-500 w-1/5",
   2: "bg-orange-500 w-2/5",
   3: "bg-amber-400 w-3/5",

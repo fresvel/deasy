@@ -62,15 +62,31 @@
         @apply border-line bg-white text-muted;
     }
 
-    .deasy-tag--contrast {
-        @apply border-line bg-surface text-strong shadow-none backdrop-blur-sm;
-        background-image: none;
+    /* Habia aqui `--contrast` y `--hero`, IDENTICAS byte a byte entre si y sin un solo
+       consumidor: `AppTag` compone `deasy-tag--${variant}` y ninguna plantilla pasa esos dos
+       valores. Borradas el 2026-08-13. Las variantes vivas son las nueve de arriba. */
+}
+
+@layer components {
+    /* LA ALERTA EN LINEA. Sustituye a 15 copias a mano del trio
+       `bg-X-50 + border-X-200 + text-X-700`, que ademas derivaban entre si.
+
+       El color NO se elige: se DERIVA del token con la receta de `frontend/CLAUDE.md` §2.4.
+       · borde   71 % sobre blanco -> es el porcentaje al que llega a 3:1 (WCAG 1.4.11).
+                 Los tintes `-200` que habia antes median 1.21-1.49:1.
+       · relleno  6 % sobre blanco -> encima va TEXTO, y al 10 % `--color-warning` da 4.39
+                 y no pasa AA. Al 6 % pasan las cuatro variantes.
+       Cada variante declara UN token en `--tone` y la regla comun lo gasta: la receta se
+       escribe una vez, no cuatro. */
+    .deasy-alert {
+        @apply rounded-2xl border px-4 py-3 text-sm font-medium;
+        color: var(--tone);
+        border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
+        background-color: color-mix(in srgb, var(--tone) 6%, var(--color-white));
     }
 
-    .deasy-tag--hero {
-        @apply border-line bg-surface text-strong shadow-none backdrop-blur-sm;
-        background-image: none;
-    }
-
-    
+    .deasy-alert--danger  { --tone: var(--color-danger); }
+    .deasy-alert--warning { --tone: var(--color-warning); }
+    .deasy-alert--success { --tone: var(--color-success); }
+    .deasy-alert--info    { --tone: var(--color-info); }
 }

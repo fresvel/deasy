@@ -1,7 +1,10 @@
 <template>
+  <!-- Ojo al nombre: NO hay FontAwesome. Este componente traduce nombres de icono de FA a
+       componentes de Tabler, que es lo que se renderiza. Llevaba una clase `deasy-fa-icon` cuya
+       unica regla forzaba `color: currentColor` fuera de capa y tapaba cualquier `text-*` puesto
+       encima; se retiro el 2026-08-13 con la regla. El color se hereda, que es lo que hace falta. -->
   <component
     :is="resolvedIcon"
-    class="deasy-fa-icon"
     :size="size"
     :stroke-width="strokeWidth"
     aria-hidden="true"

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="graph-node graph-node--config relative rounded-2xl border-l-4 px-2.5 py-1.5 shadow-sm transition-all"
-    :class="[statusBorderClass, data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : '']"
+    class="graph-node graph-node--config relative rounded-2xl border-l-4 px-2.5 py-1.5 shadow-elev-1 transition-all"
+    :class="[statusBorderClass, data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '']"
     :title="data.definition_name"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
@@ -20,7 +20,7 @@
       </button>
     </div>
     <p class="m-0 flex items-center gap-1.5">
-      <span class="max-w-[9.5rem] truncate text-[12px] font-semibold text-slate-700">{{ data.definition_name }}</span>
+      <span class="max-w-[9.5rem] truncate text-[12px] font-semibold text-body">{{ data.definition_name }}</span>
       <span class="ml-auto inline-flex items-center rounded px-1 py-0.5 text-[10px] font-semibold ring-1" :class="statusChipClass">{{ statusLabel }}</span>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1 text-[10px] text-muted">
@@ -30,7 +30,7 @@
     <p v-if="data.templatesCount" class="m-0 mt-1">
       <button
         type="button"
-        class="nodrag inline-flex items-center gap-0.5 rounded bg-violet-50 px-1 py-0.5 text-[10px] font-semibold text-violet-700 ring-1 ring-violet-200 transition-colors hover:bg-violet-100"
+        class="nodrag inline-flex items-center gap-0.5 rounded bg-brand-50 px-1 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-brand-200 transition-colors hover:bg-brand-100"
         :title="data.templatesExpanded ? 'Ocultar entregables' : 'Mostrar entregables'"
         @click.stop="data.onToggleTemplates?.(data.definition_id)"
       >
@@ -65,14 +65,14 @@ const statusLabel = computed(() => ({ active: "Activa", draft: "Borrador", retir
 // porque contenía literales que sus expresiones regulares casaban. Un reemplazo masivo no
 // distingue código de prosa. Si vuelves a nombrarlas aquí, volverá a pasar.
 const statusBorderClass = computed(() => {
-  if (props.data.status === "active") return "border-l-emerald-400 border-y border-r border-y-slate-200 border-r-slate-200";
-  if (props.data.status === "draft") return "border-l-amber-400 border-y border-r border-y-slate-200 border-r-slate-200";
-  return "border-l-slate-300 border-y border-r border-y-slate-200 border-r-slate-200";
+  if (props.data.status === "active") return "border-l-emerald-400 border-y border-r border-y-line border-r-line";
+  if (props.data.status === "draft") return "border-l-amber-400 border-y border-r border-y-line border-r-line";
+  return "border-l-line-strong border-y border-r border-y-line border-r-line";
 });
 const statusChipClass = computed(() => {
   if (props.data.status === "active") return "bg-emerald-50 text-success ring-emerald-200";
   if (props.data.status === "draft") return "bg-amber-50 text-warning ring-amber-200";
-  return "bg-surface text-slate-500 ring-slate-200";
+  return "bg-surface text-muted ring-line";
 });
 const seriesLabel = computed(() => {
   if (props.data.series_source_type === "cargo") return `Cargo · ${props.data.series_cargo_name || props.data.series_code}`;

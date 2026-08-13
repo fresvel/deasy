@@ -13,7 +13,7 @@
   <div>
     <div
       v-show="show"
-      class="fixed inset-0 top-16 z-1190 bg-slate-950/20 backdrop-blur-[2px]"
+      class="fixed inset-0 top-16 z-1190 bg-navy/20 backdrop-blur-[2px]"
       @click="$emit('close')"
     ></div>
 
@@ -22,13 +22,13 @@
       class="fixed right-4 top-[4.5rem] z-1200 flex w-[calc(100vw-2rem)] origin-top-right transform flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_18px_48px_rgba(var(--elev-ink-rgb),0.12)] transition-all duration-200 sm:right-6 sm:w-80 md:w-96 lg:right-8"
       :class="show ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none -translate-y-2 scale-95 opacity-0'"
     >
-      <header class="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
-        <div class="flex items-center gap-2 text-slate-800">
-          <IconBellFilled class="h-5 w-5 text-blue-600" />
+      <header class="flex items-center justify-between border-b border-line bg-white px-5 py-4">
+        <div class="flex items-center gap-2 text-strong">
+          <IconBellFilled class="h-5 w-5 text-info" />
           <h3 class="m-0 text-sm font-semibold leading-tight">Notificaciones</h3>
         </div>
         <button
-          class="rounded-2xl p-1 text-muted transition hover:bg-surface hover:text-icon focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:hidden"
+          class="rounded-2xl p-1 text-muted transition hover:bg-surface hover:text-icon focus:outline-none focus:ring-2 sm:hidden"
           aria-label="Cerrar notificaciones"
           @click="$emit('close')"
         >
@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <footer class="border-t border-line bg-slate-50/70 p-3">
+      <footer class="border-t border-line bg-surface/70 p-3">
         <button class="deasy-btn deasy-btn--secondary deasy-btn--sm w-full">
           Marcar todo como leído
         </button>

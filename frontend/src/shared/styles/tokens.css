@@ -39,38 +39,222 @@
 /* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
    DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta. */
 @theme {
-    /* Marca */
-    --color-primary: #5e4eff;      /* 5.24:1 — el techo de la marca */
-    --color-accent: #00b2a9;
-    --color-navy: #111827;         /* 17.74:1 — titulares */
+    /* ══ CAPA 1 · PRIMITIVAS ═════════════════════════════════════════════════════════════
+       La paleta de TailAdmin, adoptada el 2026-08-13. Procedencia: el `@theme` del repo
+       HTML free, MIT (c) 2023 TailAdmin — ver `frontend/NOTICE`.
+
+       ESTO NO SE ESCRIBE EN UNA PLANTILLA. Son valores en bruto: el nombre `gray-600` dice
+       de que COLOR es, no que ES. Para eso esta la capa 2. La excepcion es el markup
+       adoptado de TailAdmin, que viene escrito en estos nombres.
+
+       Que se dejo fuera a proposito, y por que:
+       · `--font-*: initial` y `--breakpoint-*: initial` — DESTRUCTIVAS. Borran `font-sans`,
+         `font-mono` y TODOS los breakpoints. Sin ellas el bloque es aditivo.
+       · `--font-outfit` — la tipografia de Deasy es Inter y se carga desde `index.html`.
+         De TailAdmin se toma la ESCALA, no la familia.
+       · `--color-black: #101828` — su «negro» no es negro, y `black` es un nombre de
+         Tailwind: declararlo cambiaria cada `bg-black`/`text-black`. El ancla para oscurecer
+         sigue siendo `--black` en el `:root` de abajo, que si es negro.
+       · `--color-gray-dark`, `--color-theme-pink-500`, `--color-theme-purple-500` — el
+         primero es de modo oscuro (no hay) y los otros dos no tienen rol aqui. Un registro
+         sin consumidor no es una API: es basura.
+
+       ⚠️ Esta escala `gray-*` PISA la de Tailwind. Es seguro y es deliberado: hoy hay CERO
+       usos de `gray-*` en el arbol, y es el destino de los `slate-*` que quedan. */
+    --color-white: #ffffff;
+
+    --color-brand-25: #f2f7ff;
+    --color-brand-50: #ecf3ff;
+    --color-brand-100: #dde9ff;
+    --color-brand-200: #c2d6ff;
+    --color-brand-300: #9cb9ff;
+    --color-brand-400: #7592ff;
+    --color-brand-500: #465fff;
+    --color-brand-600: #3641f5;
+    --color-brand-700: #2a31d8;
+    --color-brand-800: #252dae;
+    --color-brand-900: #262e89;
+    --color-brand-950: #161950;
+
+    --color-gray-25: #fcfcfd;
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f2f4f7;
+    --color-gray-200: #e4e7ec;
+    --color-gray-300: #d0d5dd;
+    --color-gray-400: #98a2b3;
+    --color-gray-500: #667085;
+    --color-gray-600: #475467;
+    --color-gray-700: #344054;
+    --color-gray-800: #1d2939;
+    --color-gray-900: #101828;
+    --color-gray-950: #0c111d;
+
+    --color-success-25: #f6fef9;
+    --color-success-50: #ecfdf3;
+    --color-success-100: #d1fadf;
+    --color-success-200: #a6f4c5;
+    --color-success-300: #6ce9a6;
+    --color-success-400: #32d583;
+    --color-success-500: #12b76a;
+    --color-success-600: #039855;
+    --color-success-700: #027a48;
+    --color-success-800: #05603a;
+    --color-success-900: #054f31;
+    --color-success-950: #053321;
+
+    --color-error-25: #fffbfa;
+    --color-error-50: #fef3f2;
+    --color-error-100: #fee4e2;
+    --color-error-200: #fecdca;
+    --color-error-300: #fda29b;
+    --color-error-400: #f97066;
+    --color-error-500: #f04438;
+    --color-error-600: #d92d20;
+    --color-error-700: #b42318;
+    --color-error-800: #912018;
+    --color-error-900: #7a271a;
+    --color-error-950: #55160c;
+
+    --color-warning-25: #fffcf5;
+    --color-warning-50: #fffaeb;
+    --color-warning-100: #fef0c7;
+    --color-warning-200: #fedf89;
+    --color-warning-300: #fec84b;
+    --color-warning-400: #fdb022;
+    --color-warning-500: #f79009;
+    --color-warning-600: #dc6803;
+    --color-warning-700: #b54708;
+    --color-warning-800: #93370d;
+    --color-warning-900: #7a2e0e;
+    --color-warning-950: #4e1d09;
+
+    --color-orange-25: #fffaf5;
+    --color-orange-50: #fff6ed;
+    --color-orange-100: #ffead5;
+    --color-orange-200: #fddcab;
+    --color-orange-300: #feb273;
+    --color-orange-400: #fd853a;
+    --color-orange-500: #fb6514;
+    --color-orange-600: #ec4a0a;
+    --color-orange-700: #c4320a;
+    --color-orange-800: #9c2a10;
+    --color-orange-900: #7e2410;
+    --color-orange-950: #511c10;
+
+    --color-blue-light-25: #f5fbff;
+    --color-blue-light-50: #f0f9ff;
+    --color-blue-light-100: #e0f2fe;
+    --color-blue-light-200: #b9e6fe;
+    --color-blue-light-300: #7cd4fd;
+    --color-blue-light-400: #36bffa;
+    --color-blue-light-500: #0ba5ec;
+    --color-blue-light-600: #0086c9;
+    --color-blue-light-700: #026aa2;
+    --color-blue-light-800: #065986;
+    --color-blue-light-900: #0b4a6f;
+    --color-blue-light-950: #062c41;
+
+    /* LA ESCALA TIPOGRAFICA. `theme-*` es la de interfaz y tiene HUECOS a proposito: para
+       16 px se usa el `text-base` nativo. Convive con la escala de Tailwind, no la sustituye
+       — a diferencia de `--font-*` y `--breakpoint-*`, que TailAdmin si resetea y aqui no.
+       Es el destino de los 189 `text-[…]` en ocho tamanos que hay hoy en las plantillas. */
+    --text-theme-xs: 12px;
+    --text-theme-xs--line-height: 18px;
+    --text-theme-sm: 14px;
+    --text-theme-sm--line-height: 20px;
+    --text-theme-xl: 20px;
+    --text-theme-xl--line-height: 30px;
+    --text-title-sm: 30px;
+    --text-title-sm--line-height: 38px;
+    --text-title-md: 36px;
+    --text-title-md--line-height: 44px;
+    --text-title-lg: 48px;
+    --text-title-lg--line-height: 60px;
+
+    /* LA ESCALA DE SOMBRA. Todas son el mismo negro del sistema con alfa —`rgba(16,24,40,α)`,
+       que es `gray-900`—, y esa coherencia es la mitad del efecto. Es el destino de las 19
+       recetas distintas de `shadow-[…]` que hay hoy. `--elev-*` se mantiene abajo: es la
+       escala semantica de tres, y ahora se apoya en estos valores. */
+    --shadow-theme-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+    --shadow-theme-sm: 0 1px 3px 0 rgba(16, 24, 40, 0.1), 0 1px 2px 0 rgba(16, 24, 40, 0.06);
+    --shadow-theme-md: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
+    --shadow-theme-lg: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
+    --shadow-theme-xl: 0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03);
+
+    /* LA ESCALA SEMANTICA DE ELEVACION, ahora como utilidad de verdad (`shadow-elev-1`…).
+       Antes solo existia como `var(--elev-N)` dentro del CSS, y las plantillas que querian una
+       sombra del sistema escribian `shadow-sm`/`shadow-xl` **contando con que `overrides.css` las
+       repintara** — un repintado fuera de capa cuyo unico trabajo era convertir una utilidad de
+       Tailwind en otra cosa. Registrandola aqui, la plantilla pide lo que quiere y el repintado
+       sobra. Los valores son los mismos de `--elev-*`: esto no cambia un pixel.
+
+       ⚠️ `--shadow-*` ES namespace de Tailwind, asi que va DENTRO de `@theme` — que es lo que
+       genera la utilidad. Los `--elev-*` del `:root` de abajo NO pueden llamarse asi: ahi
+       ocuparian el namespace sin registrarlo, que es el mecanismo del `--radius-lg`. */
+    --shadow-elev-1: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-elev-2: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06);
+    --shadow-elev-3: 0 1px 2px rgba(15, 23, 42, 0.04), 0 24px 64px rgba(15, 23, 42, 0.16);
+
+    /* ══ CAPA 2 · SEMANTICOS ═════════════════════════════════════════════════════════════
+       ESTO es lo que se escribe. `border-line` dice «el borde del sistema»; `border-gray-200`
+       dice «gris claro». El dia que el borde cambie, esto es UNA linea y no 354.
+
+       Cada anclaje esta MEDIDO con `node scripts/contraste.mjs`, y el criterio de aceptacion
+       es uno solo: `contraste_despues >= contraste_antes`. El ΔE no sirve para esto —esta
+       medido aqui: su correlacion con el salto de contraste es -0.206—.
+
+       ⚠️ EL PASO `-500` NO ES TEXTO. En el sistema de TailAdmin el 500 es relleno o icono:
+       `success-500` da 2.4:1 sobre blanco. El texto vive en 600-700. La prueba de que Deasy
+       ya estaba ahi es que su `error-700` es EXACTAMENTE nuestro `--color-danger` de siempre. */
+
+    /* Marca. ⚠️ UNICA REGRESION DELIBERADA DE CONTRASTE: 5.24 -> 4.84. Sigue pasando AA
+       (4.5), y es el cambio de identidad que la adopcion trae — el primario deja de ser
+       `#5e4eff` y pasa a `#465fff`. */
+    --color-primary: var(--color-brand-500);
+
+    /* Sin equivalente en TailAdmin: conservan su hex propio. `accent` es turquesa y su
+       paleta no tiene esa familia. */
+    --color-accent: #00b2a9;       /* 2.64:1 — NO cumple 3:1, viene de antes */
     --color-navy-deep: #071927;    /* el fondo del workspace */
-    --color-ink: #1f2937;          /* 14.68:1 */
+
+    /* Texto e iconos — de mas oscuro a mas claro.
+       ⚠️ `ink` y `strong` caen los DOS en `gray-800`: la escala de Deasy tenia CINCO
+       escalones de texto (17.7 / 14.7 / 11.9 / 9.9 / 6.4) y la de TailAdmin sostiene cuatro.
+       Son ahora el mismo valor, asi que uno de los dos sobra — se retira al colapsar la capa
+       de clases, no aqui. */
+    --color-navy: var(--color-gray-900);    /* 17.74 -> 17.75  titulares */
+    --color-ink: var(--color-gray-800);     /* 14.68 -> 14.70 */
+    --color-strong: var(--color-gray-800);  /* 11.87 -> 14.70 */
+    --color-body: var(--color-gray-700);    /*  9.91 -> 10.46 */
+    --color-muted: var(--color-gray-600);   /*  6.36 ->  7.69  el SUELO. Nada mas claro para texto */
+    --color-icon: var(--color-gray-600);    /*  7.58 ->  7.69  iconos de accion secundaria */
 
     /* Lineas y superficie. Se llaman `line-*` y no `border-*` porque el namespace ya dice
-       que son color: `--color-border` daria `border-border`. */
-    --color-line: #e2e6f0;         /* separadores y marcos */
-    --color-line-strong: #cfd6e4;
-    --color-line-field: #d7deea;   /* bordes de control */
-    --color-surface: #f7f9fc;
+       que son color: `--color-border` daria `border-border`.
+       ⚠️ Los tres bordes siguen POR DEBAJO de los 3:1 que pide WCAG 1.4.11, como antes.
+       Subirlos repinta 228 controles y esta decidido que es un rediseno aparte. */
+    --color-line: var(--color-gray-200);          /* 1.25 -> 1.24  separadores y marcos */
+    --color-line-strong: var(--color-gray-300);   /* 1.46 -> 1.47 */
+    --color-line-field: var(--color-gray-300);    /* 1.35 -> 1.47  bordes de control */
+    --color-surface: var(--color-gray-50);        /* 1.05 -> 1.05 */
 
-    /* Texto e iconos — la escala, de mas oscuro a mas claro */
-    --color-strong: #343741;       /* 11.87:1 */
-    --color-body: #3f4254;         /*  9.91:1 */
-    --color-muted: #5a5f6f;        /*  6.36:1 — el SUELO. Nada mas claro para texto */
-    --color-icon: #475569;         /* iconos de accion secundaria */
+    /* UN color por estado, y es el OSCURO: el unico que cumple en los dos usos, icono (3:1)
+       y texto (4.5:1). `pending` va a `orange` y no a `error` a proposito: «pendiente» no es
+       «rechazado», y colapsarlo perderia una distincion que el usuario necesita. */
+    --color-success: var(--color-success-700);  /* 5.48 -> 5.41 */
+    --color-danger: var(--color-error-700);     /* 6.57 -> 6.57  valor IDENTICO al de siempre */
+    --color-warning: var(--color-warning-700);  /* 5.02 -> 5.43 */
+    --color-pending: var(--color-orange-700);   /* 5.42 -> 5.52  'pendiente', ni exito ni fallo */
 
-    /* UN color por estado, y es el OSCURO: el unico que cumple WCAG en los dos usos, icono
-       (3:1) y texto (4.5:1). Las cifras estan medidas — no aclares ninguno sin remedirlo. */
-    --color-success: #047857;      /* 5.49:1 */
-    --color-danger: #b42318;       /* 6.57:1 */
-    --color-warning: #b45309;      /* 5.02:1 */
-    --color-pending: #b8432b;      /* 5.42:1 — 'pendiente', ni exito ni fallo */
+    /* INFORMATIVO. Token NUEVO del 2026-08-13, y no por simetria: las plantillas llevaban 66
+       usos de texto en `sky-600`/`sky-700` diciendo «esto es informativo» sin nada a lo que
+       migrar. `sky-600` RENDERIZA a 4.02:1 —falla AA para texto—, asi que ademas de nombrarlo
+       lo arregla: `blue-light-700` da 5.86. Es la familia que TailAdmin reserva justo para esto. */
+    --color-info: var(--color-blue-light-700);  /* 4.02 -> 5.86 */
 
     /* «TE TOCA A TI» — el borde y el texto de la tarjeta de entregable cuando es tu turno.
-       4.77:1, asi que cumple 1.4.11 y AA. Se eligio con margen: el valor justo para 4.50
-       seria `#118856`, y quedarse en el umbral lo tumba el proximo retoque.
        El RELLENO no esta aqui: es `--step-rgb`, mas abajo. */
-    --color-step-ink: #108353;
+    --color-step-ink: var(--color-success-700); /* 4.78 -> 5.41 */
 
     /* ⚠️ NO CUMPLE EN NINGUNO DE SUS USOS: icono 2.10, tooltip 2.10, chip 1.91. Y no es un
        estado: es el color de UN componente (BtnSera). Los dos problemas van juntos. */
@@ -81,24 +265,16 @@
        junto a su regla en `overrides.css`.
        ⚠️ El 71% del borde no es arbitrario: es el porcentaje al que los seis llegan a 3:1
        contra la fila blanca (WCAG 1.4.11). Al 35% ninguno cumple. */
-    --color-action-neutral: #23384f;
-    --color-action-view: #075985;
-    --color-action-upload: #3751a3;
+    --color-action-neutral: #23384f;              /* azul grisaceo sin familia equivalente */
+    --color-action-view: var(--color-blue-light-800);  /* 7.56 -> 7.55 */
+    --color-action-upload: #3751a3;               /* idem: no es su `brand` */
 }
 
-@layer base {
-    html {
-        @apply bg-navy-deep;
-    }
-
-    body {
-        @apply bg-navy-deep text-body antialiased;
-    }
-
-    #app {
-        @apply min-h-screen bg-navy-deep;
-    }
-}
+/* Aqui habia un `@layer base` con `html`, `body` y `#app`. Se fue a `base.css` el 2026-08-13:
+   entre los dos ficheros el fondo `--color-navy-deep` estaba declarado CINCO veces y el `color`
+   del `body` TRES, y cual ganaba dependia del orden de los `@import` de `index.css` — que es
+   justo lo que no debe sostener un valor. `tokens.css` declara la paleta; el armazon es de
+   `base.css`. */
 
 /* LO QUE NO ES UN COLOR SUELTO, y por eso no va en `@theme`: sombras, el velo, los
    degradados y los tripletes `-rgb`. Ninguno encaja en un namespace de Tailwind.
@@ -108,9 +284,18 @@
    se usen mucho. Comprueba antes de escribir uno. */
 :root {
   --white-rgb: 255, 255, 255;
-  --primary-rgb: 94, 78, 255;
-  --surface-rgb: 247, 249, 252;
-  --success-rgb: 4, 120, 87;
+
+  /* AQUI VIVIAN `--primary-rgb`, `--surface-rgb` y `--success-rgb`. Se retiraron el 2026-08-13
+     al anclar la paleta, y el motivo es el que hace peligrosa a toda esta familia: un triplete
+     es una COPIA A MANO del token, y al mover el token la copia no se entera. Los tres se
+     quedaron con el valor viejo en el mismo commit —`--primary-rgb` seguia siendo el violeta
+     `#5e4eff` cuando `--color-primary` ya era `#465fff`— y nada lo habria dicho.
+
+     Sus siete consumidores usan ahora `color-mix(in srgb, var(--token) N%, transparent)`, que
+     produce EXACTAMENTE el mismo color y lee del token, asi que no puede desincronizarse.
+
+     Los que quedan abajo NO tienen token gemelo del que copiar, asi que no pueden derivar:
+     `--white-rgb` (el blanco no se mueve), `--step-rgb`, `--navy-menu-rgb` y `--elev-ink-rgb`. */
 
   /* El RELLENO menta del paso actual (`#4bf1a1`). Vive aqui y no en `@theme` porque no se
      pinta solido en ningun sitio: sus tres consumidores lo usan al 10% y al 35%. Registrarlo
@@ -129,7 +314,8 @@
   /* ELEVACION — una escala de TRES. `--elev-3-left` es el nivel 3 proyectando a la
      izquierda: el panel lateral se ancla al borde derecho de la pantalla, asi que su unico
      canto visible es el izquierdo. Misma opacidad, solo cambia la direccion. */
-  --elev-ink: #0f172a;
+  /* Solo el triplete: `--elev-ink: #0f172a` quedo huerfano cuando todo migro a `-rgb` y era
+     el unico sitio del proyecto que guardaba ese hex sin gastarlo. Retirado el 2026-08-13. */
   --elev-ink-rgb: 15, 23, 42;
   --elev-1: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04);            /* tarjetas y marcos */
   --elev-2: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04), 0 12px 32px rgba(var(--elev-ink-rgb), 0.06);
@@ -139,15 +325,22 @@
   /* El anillo de foco: la señal de «aqui esta el teclado», asi que es UNO. NO se llama
      `--elev-*` a proposito — no es un escalon de elevacion, es un indicador de estado que
      resulta usar la misma propiedad. */
-  --focus-ring: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
+  --focus-ring: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
 
   /* El velo del modal. No es una sombra aunque lo parezca: es un fondo. */
   --overlay-backdrop: rgba(var(--elev-ink-rgb), 0.48);
 
   --info-soft: rgba(37, 99, 235, 0.1);
-  --surface-soft: rgba(247, 249, 252, 0.92);
-  --gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
-  --gradient-angled: linear-gradient(135deg, #5e4eff 0%, #3898ff 100%);
+  /* `--surface-soft: rgba(247,249,252,.92)` vivia aqui con CERO consumidores, y ademas duplicaba
+     `--color-surface` con alfa. Retirado el 2026-08-13. */
+  /* Los dos degradados llevaban el primario ESCRITO A MANO (`#5e4eff` y su triplete), asi que
+     al mover la marca se habrian quedado violetas contra una app azul. Anclados el 2026-08-13.
+     El segundo tono era `#3898ff`, un azul claro sin token: se toma `--color-blue-light-500`,
+     que es el escalon equivalente de la paleta adoptada. */
+  --gradient-soft: linear-gradient(135deg,
+      color-mix(in srgb, var(--color-primary) 9%, transparent) 0%,
+      color-mix(in srgb, var(--color-blue-light-500) 7%, transparent) 100%);
+  --gradient-angled: linear-gradient(135deg, var(--color-primary) 0%, var(--color-blue-light-500) 100%);
 
   /* ⚠️ `--typeface` y `--type-*` NO se llaman `--font-*` ni `--text-*` a proposito: los dos
      son namespaces de Tailwind y este `:root` esta sin capa, asi que le ganaria. */

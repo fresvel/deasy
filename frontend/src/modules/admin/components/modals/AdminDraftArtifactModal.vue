@@ -18,18 +18,18 @@
         </AppInfoTip>
       </span>
     </template>
-    <div v-if="draftArtifactError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ draftArtifactError }}</div>
+    <AppAlert v-if="draftArtifactError">{{ draftArtifactError }}</AppAlert>
     <div v-if="draftArtifactLoading" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
       Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
     </div>
 
     <!-- Gobierno del ciclo de vida: estado (draft/published/retired) + publicar/retirar/versionar (solo al editar) -->
-    <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-indigo-300 bg-indigo-50' : 'border-indigo-200 bg-indigo-50/50'">
+    <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-brand-300 bg-brand-50' : 'border-brand-200 bg-brand-50/50'">
       <div class="flex items-center gap-3">
-        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</span>
+        <span class="text-xs font-semibold uppercase tracking-wide text-muted">Estado</span>
         <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>
         <span v-if="draftArtifactForm.storage_version" class="text-xs font-medium text-muted">· {{ draftArtifactForm.storage_version }}</span>
-        <span v-if="guidedConfigId" class="text-xs font-medium text-indigo-600">· Actualización guiada: al publicar se activa la nueva configuración</span>
+        <span v-if="guidedConfigId" class="text-xs font-medium text-primary">· Actualización guiada: al publicar se activa la nueva configuración</span>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <AdminButton v-if="lifecycleState === 'draft' && guidedConfigId" variant="primary" @click="$emit('finish-guided')">Publicar y activar config</AdminButton>
@@ -54,12 +54,12 @@
           v-for="opt in versionBumpOptions"
           :key="opt.value"
           class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
-          :class="versionBumpLevel === opt.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-line hover:border-slate-300'"
+          :class="versionBumpLevel === opt.value ? 'border-brand-400 bg-brand-50/60' : 'border-line hover:border-line-strong'"
         >
           <input v-model="versionBumpLevel" type="radio" name="bump-level" :value="opt.value" class="mt-1" />
           <span class="min-w-0">
-            <span class="block text-sm font-semibold text-slate-800">{{ opt.label }} <span class="font-mono text-xs font-normal text-slate-500">{{ opt.example }}</span></span>
-            <span class="block text-xs text-slate-500">{{ opt.hint }}</span>
+            <span class="block text-sm font-semibold text-strong">{{ opt.label }} <span class="font-mono text-xs font-normal text-muted">{{ opt.example }}</span></span>
+            <span class="block text-xs text-muted">{{ opt.hint }}</span>
           </span>
         </label>
       </div>
@@ -110,9 +110,9 @@
         </template>
         <span
           class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-          :class="isAdHoc ? 'bg-amber-100 text-warning' : 'bg-indigo-100 text-indigo-700'"
+          :class="isAdHoc ? 'bg-amber-100 text-warning' : 'bg-brand-100 text-primary'"
         >
-          <span class="h-1.5 w-1.5 rounded-full" :class="isAdHoc ? 'bg-amber-500' : 'bg-indigo-500'"></span>
+          <span class="h-1.5 w-1.5 rounded-full" :class="isAdHoc ? 'bg-amber-500' : 'bg-brand-500'"></span>
           {{ isAdHoc ? "De usuario (ad-hoc)" : "De proceso (oficial)" }}
         </span>
       </AdminFieldGroup>
@@ -183,29 +183,29 @@
         Adjunta al menos un documento de referencia (PDF, Word, Excel o PowerPoint) para poder crear la plantilla.
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-pdf')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PDF</label>
+        <label :for="fieldId('upload-pdf')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">PDF</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" :filled="isDraftFileSelected('pdf')" accept=".pdf" :input-id="fieldId('upload-pdf')" @files-selected="emitDraftFiles('pdf', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-docx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Word</label>
+        <label :for="fieldId('upload-docx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Word</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('docx')" :filled="isDraftFileSelected('docx')" accept=".doc,.docx" :input-id="fieldId('upload-docx')" @files-selected="emitDraftFiles('docx', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-xlsx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Excel</label>
+        <label :for="fieldId('upload-xlsx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Excel</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('xlsx')" :filled="isDraftFileSelected('xlsx')" accept=".xls,.xlsx" :input-id="fieldId('upload-xlsx')" @files-selected="emitDraftFiles('xlsx', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-pptx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PowerPoint</label>
+        <label :for="fieldId('upload-pptx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">PowerPoint</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pptx')" :filled="isDraftFileSelected('pptx')" accept=".ppt,.pptx" :input-id="fieldId('upload-pptx')" @files-selected="emitDraftFiles('pptx', $event)" />
       </div>
       <div v-if="draftArtifactPreviewStatus !== 'idle'" class="md:col-span-12">
         <!-- Rotulo del preview: no es un <label> porque no hay control que etiquetar (es un iframe). -->
-        <span class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</span>
-        <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-line bg-surface px-4 py-5 text-center text-sm font-medium text-slate-500">
+        <span class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Preview del seed</span>
+        <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
           Cargando preview…
         </div>
         <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-line bg-white" title="Preview del seed"></iframe>
-        <div v-else class="rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-slate-500">
+        <div v-else class="rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
           Este seed no tiene un PDF de preview publicado.
         </div>
       </div>
@@ -215,27 +215,27 @@
     <div v-show="activeTab === 'campos'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-1.5">
-          <h4 class="m-0 text-sm font-bold text-slate-800">Campos del formulario</h4>
+          <h4 class="m-0 text-sm font-bold text-strong">Campos del formulario</h4>
           <AppInfoTip>Definen los datos que el usuario llenará en el entregable (schema.json).</AppInfoTip>
         </div>
         <AdminButton variant="outlinePrimary" @click="addSchemaField">+ Añadir campo</AdminButton>
       </div>
-      <div v-if="!schemaFields.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-slate-500">
+      <div v-if="!schemaFields.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
         Aún no hay campos. Añade al menos uno para generar el formulario del entregable.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
         <div v-for="(field, index) in schemaFields" :key="index" class="grid grid-cols-12 items-end gap-2 rounded-xl border border-line bg-white px-3 py-2.5">
           <div class="col-span-3">
             <label :for="fieldId(`field-key-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Clave</label>
-            <input :id="fieldId(`field-key-${index}`)" :value="field.key" placeholder="ej. semestre" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSchemaField(index, 'key', $event.target.value)" />
+            <input :id="fieldId(`field-key-${index}`)" :value="field.key" placeholder="ej. semestre" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSchemaField(index, 'key', $event.target.value)" />
           </div>
           <div class="col-span-3">
             <label :for="fieldId(`field-title-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Etiqueta</label>
-            <input :id="fieldId(`field-title-${index}`)" :value="field.title" placeholder="ej. Semestre" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSchemaField(index, 'title', $event.target.value)" />
+            <input :id="fieldId(`field-title-${index}`)" :value="field.title" placeholder="ej. Semestre" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSchemaField(index, 'title', $event.target.value)" />
           </div>
           <div class="col-span-2">
             <label :for="fieldId(`field-component-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Componente</label>
-            <select :id="fieldId(`field-component-${index}`)" :value="field.component" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSchemaField(index, 'component', $event.target.value)">
+            <select :id="fieldId(`field-component-${index}`)" :value="field.component" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @change="updateSchemaField(index, 'component', $event.target.value)">
               <option value="text">Texto</option>
               <option value="textarea">Área de texto</option>
               <option value="richtext">Texto enriquecido</option>
@@ -248,7 +248,7 @@
           </div>
           <div class="col-span-2">
             <label :for="fieldId(`field-group-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Grupo</label>
-            <input :id="fieldId(`field-group-${index}`)" :value="field.group" placeholder="general" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSchemaField(index, 'group', $event.target.value)" />
+            <input :id="fieldId(`field-group-${index}`)" :value="field.group" placeholder="general" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSchemaField(index, 'group', $event.target.value)" />
           </div>
           <div class="col-span-1 flex flex-col items-center justify-center gap-1 pb-1.5">
             <span class="text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Req.</span>
@@ -265,7 +265,7 @@
     <div v-show="activeTab === 'entrega'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-1.5">
-          <h4 class="m-0 text-sm font-bold text-slate-800">Flujo de entrega</h4>
+          <h4 class="m-0 text-sm font-bold text-strong">Flujo de entrega</h4>
           <AppInfoTip>Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</AppInfoTip>
         </div>
         <AdminButton variant="outlinePrimary" @click="addFillStep">+ Añadir paso</AdminButton>
@@ -273,7 +273,7 @@
       <div v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-warning">
         El proceso vinculado aún no tiene <strong>reglas objetivo</strong>. Los ámbitos “Unidad del proceso” quedan deshabilitados (resolverían a nadie); define primero las reglas o usa una unidad específica.
       </div>
-      <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-slate-500">
+      <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-muted">
         Sin pasos de entrega.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
@@ -290,11 +290,11 @@
         >
           <!-- Cabecera (resumen): arrastra para reordenar; Editar expande; cada paso con su tono. -->
           <div class="flex items-center gap-2 px-3 py-2">
-            <span class="cursor-grab select-none px-1 text-slate-300" title="Arrastra para reordenar" aria-hidden="true">⠿</span>
+            <span class="cursor-grab select-none px-1 text-gray-300" title="Arrastra para reordenar" aria-hidden="true">⠿</span>
             <span class="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs font-bold" :class="stepBadgeClass(index)">{{ index + 1 }}</span>
             <div class="min-w-0 flex-1">
-              <p class="m-0 truncate text-sm font-semibold text-slate-800">{{ step.name || "Paso sin nombre" }}</p>
-              <p class="m-0 truncate text-xs text-slate-500">{{ fillWhoSummary(step) }}</p>
+              <p class="m-0 truncate text-sm font-semibold text-strong">{{ step.name || "Paso sin nombre" }}</p>
+              <p class="m-0 truncate text-xs text-muted">{{ fillWhoSummary(step) }}</p>
             </div>
             <AdminButton
               variant="secondary"
@@ -324,11 +324,11 @@
             <div class="grid grid-cols-12 items-end gap-2">
               <div class="col-span-6">
                 <label :for="fieldId(`fill-name-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Nombre</label>
-                <input :id="fieldId(`fill-name-${index}`)" :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
+                <input :id="fieldId(`fill-name-${index}`)" :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateFillStep(index, 'name', $event.target.value)" />
               </div>
               <div class="col-span-3">
                 <label :for="fieldId(`fill-who-mode-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Quién hace el paso</label>
-                <select :id="fieldId(`fill-who-mode-${index}`)" :value="stepWhoMode(step)" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
+                <select :id="fieldId(`fill-who-mode-${index}`)" :value="stepWhoMode(step)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStepWho(index, $event.target.value)">
                   <option value="task_assignee">Responsable del entregable</option>
                   <option value="scope">Por cargo</option>
                   <option v-if="isAdHoc" value="person">Persona concreta</option>
@@ -336,7 +336,7 @@
               </div>
               <div v-if="fillStepShowsMode(step)" class="col-span-3">
                 <label :for="fieldId(`fill-selection-mode-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Modo</label>
-                <select :id="fieldId(`fill-selection-mode-${index}`)" :value="step.selection_mode" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
+                <select :id="fieldId(`fill-selection-mode-${index}`)" :value="step.selection_mode" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
                   <option value="auto_one">Uno cualquiera</option>
                   <option value="auto_all">Todas</option>
                 </select>
@@ -346,7 +346,7 @@
             <div v-if="stepWhoMode(step) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
               <div class="col-span-4">
                 <label :for="fieldId(`fill-unit-scope-type-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Ubicación</label>
-                <select :id="fieldId(`fill-unit-scope-type-${index}`)" :value="step.unit_scope_type" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepUbicacion(index, $event.target.value)">
+                <select :id="fieldId(`fill-unit-scope-type-${index}`)" :value="step.unit_scope_type" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStepUbicacion(index, $event.target.value)">
                   <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
                   <option value="unit_exact">En una unidad específica…</option>
                   <option v-if="!isAdHoc" value="unit_type">En un tipo de unidad…</option>
@@ -355,14 +355,14 @@
               <template v-if="fillStepNeedsUnit(step)">
                 <div class="col-span-4">
                   <label :for="fieldId(`fill-filter-unit-type-id-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Tipo (filtro)</label>
-                  <select :id="fieldId(`fill-filter-unit-type-id-${index}`)" :value="step.filter_unit_type_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeFilterChange(index, Number($event.target.value) || null)">
+                  <select :id="fieldId(`fill-filter-unit-type-id-${index}`)" :value="step.filter_unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onUnitTypeFilterChange(index, Number($event.target.value) || null)">
                     <option value="">Todos los tipos</option>
                     <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                   </select>
                 </div>
                 <div class="col-span-4">
                   <label :for="fieldId(`fill-unit-id-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Unidad</label>
-                  <select :id="fieldId(`fill-unit-id-${index}`)" :value="step.unit_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitExactUnitChange(index, Number($event.target.value) || null)">
+                  <select :id="fieldId(`fill-unit-id-${index}`)" :value="step.unit_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onUnitExactUnitChange(index, Number($event.target.value) || null)">
                     <option value="">— Selecciona unidad —</option>
                     <option v-for="u in fillStepUnitOptions(step)" :key="u.id" :value="u.id">{{ u.name }}</option>
                   </select>
@@ -370,14 +370,14 @@
               </template>
               <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
                 <label :for="fieldId(`fill-unit-type-id-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Tipo de unidad</label>
-                <select :id="fieldId(`fill-unit-type-id-${index}`)" :value="step.unit_type_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeScopeChange(index, Number($event.target.value) || null)">
+                <select :id="fieldId(`fill-unit-type-id-${index}`)" :value="step.unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onUnitTypeScopeChange(index, Number($event.target.value) || null)">
                   <option value="">— Selecciona tipo —</option>
                   <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                 </select>
               </div>
               <div class="col-span-4">
                 <label :for="fieldId(`fill-cargo-id-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Cargo</label>
-                <select :id="fieldId(`fill-cargo-id-${index}`)" :value="step.cargo_id || ''" :disabled="!fillStepCargoReady(step)" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-muted" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
+                <select :id="fieldId(`fill-cargo-id-${index}`)" :value="step.cargo_id || ''" :disabled="!fillStepCargoReady(step)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none disabled:bg-surface disabled:text-muted" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
                   <option value="">{{ fillStepCargoPlaceholder(step) }}</option>
                   <option v-for="c in fillStepCargoOptions(step)" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
@@ -386,7 +386,7 @@
             <div v-else-if="stepWhoMode(step) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
               <div class="col-span-6">
                 <label :for="fieldId(`fill-person-id-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Persona</label>
-                <select :id="fieldId(`fill-person-id-${index}`)" :value="step.person_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
+                <select :id="fieldId(`fill-person-id-${index}`)" :value="step.person_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
                   <option value="">— Selecciona persona —</option>
                   <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
                 </select>
@@ -403,13 +403,13 @@
     <div v-show="activeTab === 'firmas'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-1.5">
-          <h4 class="m-0 text-sm font-bold text-slate-800">Flujo de firmas</h4>
+          <h4 class="m-0 text-sm font-bold text-strong">Flujo de firmas</h4>
           <AppInfoTip>Quién firma cada paso (mismo modelo que entrega). Los pasos van en orden; dentro de un paso, la “Aprobación” define si firman todas, cualquiera o un mínimo.</AppInfoTip>
         </div>
         <AdminButton variant="outlinePrimary" @click="addSignatureStep">+ Añadir paso</AdminButton>
       </div>
 
-      <div v-if="!signatureSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-slate-500">
+      <div v-if="!signatureSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-muted">
         Sin pasos de firma.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
@@ -426,11 +426,11 @@
         >
           <!-- Cabecera (resumen): arrastra para reordenar; Editar expande; cada paso con su tono. -->
           <div class="flex items-center gap-2 px-3 py-2">
-            <span class="cursor-grab select-none px-1 text-slate-300" title="Arrastra para reordenar" aria-hidden="true">⠿</span>
+            <span class="cursor-grab select-none px-1 text-gray-300" title="Arrastra para reordenar" aria-hidden="true">⠿</span>
             <span class="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs font-bold" :class="stepBadgeClass(index)">{{ index + 1 }}</span>
             <div class="min-w-0 flex-1">
-              <p class="m-0 truncate text-sm font-semibold text-slate-800">{{ step.name || "Paso sin nombre" }}</p>
-              <p class="m-0 truncate text-xs text-slate-500">{{ signatureSummary(step) }}</p>
+              <p class="m-0 truncate text-sm font-semibold text-strong">{{ step.name || "Paso sin nombre" }}</p>
+              <p class="m-0 truncate text-xs text-muted">{{ signatureSummary(step) }}</p>
             </div>
             <AdminButton
               variant="secondary"
@@ -460,11 +460,11 @@
           <div class="grid grid-cols-12 items-end gap-2">
             <div class="col-span-7">
               <label :for="fieldId(`sig-name-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Nombre</label>
-              <input :id="fieldId(`sig-name-${index}`)" :value="step.name" placeholder="ej. Firma de dirección" class="w-full rounded-2xl border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'name', $event.target.value)" />
+              <input :id="fieldId(`sig-name-${index}`)" :value="step.name" placeholder="ej. Firma de dirección" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
             <div class="col-span-5">
               <label :for="fieldId(`sig-approval-mode-${index}`)" class="mb-1 inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
-              <select :id="fieldId(`sig-approval-mode-${index}`)" :value="step.approval_mode || 'and'" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
+              <select :id="fieldId(`sig-approval-mode-${index}`)" :value="step.approval_mode || 'and'" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
                 <option value="and">Todas</option>
                 <option value="or">Cualquiera</option>
                 <option value="at_least">Al menos…</option>
@@ -475,7 +475,7 @@
           <div v-if="step.approval_mode === 'at_least'" class="mt-2 grid grid-cols-12 gap-2">
             <div class="col-span-3">
               <label :for="fieldId(`sig-required-signers-min-${index}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Mínimo de firmas</label>
-              <input :id="fieldId(`sig-required-signers-min-${index}`)" type="number" min="1" :value="step.required_signers_min || 1" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'required_signers_min', Number($event.target.value) || 1)" />
+              <input :id="fieldId(`sig-required-signers-min-${index}`)" type="number" min="1" :value="step.required_signers_min || 1" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @input="updateSignatureStep(index, 'required_signers_min', Number($event.target.value) || 1)" />
             </div>
           </div>
 
@@ -483,13 +483,13 @@
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
               <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
-              <button type="button" class="rounded-2xl border border-indigo-200 px-2 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50" @click="addSignatureSigner(index)">+ Añadir firmante</button>
+              <button type="button" class="rounded-2xl border border-brand-200 px-2 py-1 text-xs font-semibold text-primary transition hover:bg-brand-50" @click="addSignatureSigner(index)">+ Añadir firmante</button>
             </div>
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-line bg-surface/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
                 <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
                   <label :for="fieldId(`signer-who-mode-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Quién firma</label>
-                  <select :id="fieldId(`signer-who-mode-${index}-${si}`)" :value="stepWhoMode(signer)" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureWho(index, si, $event.target.value)">
+                  <select :id="fieldId(`signer-who-mode-${index}-${si}`)" :value="stepWhoMode(signer)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureWho(index, si, $event.target.value)">
                     <option value="task_assignee">Responsable del entregable</option>
                     <option value="scope">Por cargo</option>
                     <option v-if="isAdHoc" value="person">Persona concreta</option>
@@ -502,7 +502,7 @@
               <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
                 <div class="col-span-4">
                   <label :for="fieldId(`signer-unit-scope-type-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Ubicación</label>
-                  <select :id="fieldId(`signer-unit-scope-type-${index}-${si}`)" :value="signer.unit_scope_type" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureUbicacion(index, si, $event.target.value)">
+                  <select :id="fieldId(`signer-unit-scope-type-${index}-${si}`)" :value="signer.unit_scope_type" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureUbicacion(index, si, $event.target.value)">
                     <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
                     <option value="unit_exact">En una unidad específica…</option>
                     <option v-if="!isAdHoc" value="unit_type">En un tipo de unidad…</option>
@@ -511,14 +511,14 @@
                 <template v-if="fillStepNeedsUnit(signer)">
                   <div class="col-span-4">
                     <label :for="fieldId(`signer-filter-unit-type-id-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Tipo (filtro)</label>
-                    <select :id="fieldId(`signer-filter-unit-type-id-${index}-${si}`)" :value="signer.filter_unit_type_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitTypeFilterChange(index, si, Number($event.target.value) || null)">
+                    <select :id="fieldId(`signer-filter-unit-type-id-${index}-${si}`)" :value="signer.filter_unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onSignatureUnitTypeFilterChange(index, si, Number($event.target.value) || null)">
                       <option value="">Todos los tipos</option>
                       <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                     </select>
                   </div>
                   <div class="col-span-4">
                     <label :for="fieldId(`signer-unit-id-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Unidad</label>
-                    <select :id="fieldId(`signer-unit-id-${index}-${si}`)" :value="signer.unit_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitExactChange(index, si, Number($event.target.value) || null)">
+                    <select :id="fieldId(`signer-unit-id-${index}-${si}`)" :value="signer.unit_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onSignatureUnitExactChange(index, si, Number($event.target.value) || null)">
                       <option value="">— Selecciona unidad —</option>
                       <option v-for="u in fillStepUnitOptions(signer)" :key="u.id" :value="u.id">{{ u.name }}</option>
                     </select>
@@ -526,14 +526,14 @@
                 </template>
                 <div v-else-if="fillStepNeedsUnitType(signer)" class="col-span-4">
                   <label :for="fieldId(`signer-unit-type-id-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Tipo de unidad</label>
-                  <select :id="fieldId(`signer-unit-type-id-${index}-${si}`)" :value="signer.unit_type_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitTypeScopeChange(index, si, Number($event.target.value) || null)">
+                  <select :id="fieldId(`signer-unit-type-id-${index}-${si}`)" :value="signer.unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onSignatureUnitTypeScopeChange(index, si, Number($event.target.value) || null)">
                     <option value="">— Selecciona tipo —</option>
                     <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                   </select>
                 </div>
                 <div class="col-span-4">
                   <label :for="fieldId(`signer-cargo-id-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Cargo</label>
-                  <select :id="fieldId(`signer-cargo-id-${index}-${si}`)" :value="signer.cargo_id || ''" :disabled="!fillStepCargoReady(signer)" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-muted" @change="updateSignatureSigner(index, si, 'cargo_id', Number($event.target.value) || null)">
+                  <select :id="fieldId(`signer-cargo-id-${index}-${si}`)" :value="signer.cargo_id || ''" :disabled="!fillStepCargoReady(signer)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none disabled:bg-surface disabled:text-muted" @change="updateSignatureSigner(index, si, 'cargo_id', Number($event.target.value) || null)">
                     <option value="">{{ fillStepCargoPlaceholder(signer) }}</option>
                     <option v-for="c in fillStepCargoOptions(signer)" :key="c.id" :value="c.id">{{ c.name }}</option>
                   </select>
@@ -542,7 +542,7 @@
               <div v-else-if="stepWhoMode(signer) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
                 <div class="col-span-6">
                   <label :for="fieldId(`signer-person-id-${index}-${si}`)" class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Persona</label>
-                  <select :id="fieldId(`signer-person-id-${index}-${si}`)" :value="signer.person_id || ''" class="w-full rounded-2xl border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureSigner(index, si, 'person_id', Number($event.target.value) || null)">
+                  <select :id="fieldId(`signer-person-id-${index}-${si}`)" :value="signer.person_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureSigner(index, si, 'person_id', Number($event.target.value) || null)">
                     <option value="">— Selecciona persona —</option>
                     <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
                   </select>
@@ -575,6 +575,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, useId } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
@@ -689,7 +690,7 @@ const lifecycleLabel = computed(() => ({ draft: "Borrador", published: "Publicad
 const lifecycleBadgeClass = computed(() => {
   if (lifecycleState.value === "published") return "text-emerald-600";
   if (lifecycleState.value === "draft") return "text-amber-600";
-  return "text-slate-500";
+  return "text-muted";
 });
 // Solo lectura: editando una versión publicada/retirada (inmutable). Se ve el contenido pero no se edita ni
 // se guarda; el strip ofrece "Nueva versión" para crear una versión editable.
@@ -917,12 +918,12 @@ const toggleSignatureStep = (index) => { expandedSignatureStep.value = expandedS
 
 // Paleta de tonos para diferenciar pasos (se cicla por índice).
 const STEP_TONES = [
-  { card: "border-indigo-200", badge: "bg-indigo-100 text-indigo-700" },
+  { card: "border-brand-200", badge: "bg-brand-100 text-primary" },
   { card: "border-emerald-200", badge: "bg-emerald-100 text-success" },
   { card: "border-amber-200", badge: "bg-amber-100 text-warning" },
-  { card: "border-sky-200", badge: "bg-sky-100 text-sky-700" },
+  { card: "border-blue-light-200", badge: "bg-blue-light-100 text-info" },
   { card: "border-rose-200", badge: "bg-rose-100 text-rose-700" },
-  { card: "border-violet-200", badge: "bg-violet-100 text-violet-700" }
+  { card: "border-brand-200", badge: "bg-brand-100 text-primary" }
 ];
 const stepToneClass = (index) => STEP_TONES[index % STEP_TONES.length].card;
 const stepBadgeClass = (index) => STEP_TONES[index % STEP_TONES.length].badge;

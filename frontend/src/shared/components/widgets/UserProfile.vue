@@ -40,7 +40,7 @@
             <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
             <div 
               v-if="editable" 
-              class="absolute inset-1 flex items-center justify-center rounded-full bg-slate-950/80 px-1 text-center text-[10px] font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              class="absolute inset-1 flex items-center justify-center rounded-full bg-navy/80 px-1 text-center text-[10px] font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
             >
               <span>Foto</span>
             </div>

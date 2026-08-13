@@ -13,11 +13,11 @@
       </span>
       <span class="flex flex-col flex-1 min-w-0 pt-0.5">
         <strong :class="titleClasses">{{ title }}</strong>
-        <span v-if="meta" class="text-slate-500 text-sm font-medium mt-1 inline-flex items-center gap-1.5 opacity-80">
-          <span v-if="showMetaDot" class="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-sky-400 transition-colors"></span>
+        <span v-if="meta" class="text-muted text-sm font-medium mt-1 inline-flex items-center gap-1.5 opacity-80">
+          <span v-if="showMetaDot" class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-blue-light-400 transition-colors"></span>
           {{ meta }}
         </span>
-        <span v-if="description" class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ description }}</span>
+        <span v-if="description" class="text-sm font-medium text-muted leading-snug line-clamp-2 mt-1">{{ description }}</span>
       </span>
     </template>
 
@@ -34,7 +34,7 @@
         <div class="flex flex-col flex-1">
           <h3 :class="titleClasses">{{ title }}</h3>
           <span v-if="meta" class="text-sm font-medium text-muted">{{ meta }}</span>
-          <span v-if="description" class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ description }}</span>
+          <span v-if="description" class="text-sm font-medium text-muted leading-snug line-clamp-2 mt-1">{{ description }}</span>
         </div>
       </div>
       <AppTag v-if="badge" :variant="badgeVariant" class-name="mt-4 self-start">
@@ -113,15 +113,15 @@ defineEmits(["click"]);
 
 const rootClasses = computed(() => [
   props.layout === "inline"
-    ? "group flex items-start gap-4 rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/15"
-    : "group flex flex-col justify-between rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/15",
+    ? "group flex items-start gap-4 rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-line-strong hover:bg-surface focus:outline-none focus:ring-2"
+    : "group flex flex-col justify-between rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-line-strong hover:bg-surface focus:outline-none focus:ring-2",
   props.className
 ]);
 
 const iconWrapperClasses = computed(() => [
   props.layout === "inline"
-    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700"
-    : "flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface text-slate-500 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700",
+    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-muted transition-colors group-hover:border-blue-light-200 group-hover:bg-blue-light-50 group-hover:text-info"
+    : "flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface text-muted transition-colors group-hover:border-blue-light-200 group-hover:bg-blue-light-50 group-hover:text-info",
   props.iconWrapperClass
 ]);
 
@@ -129,12 +129,12 @@ const iconClasses = computed(() => props.iconClass);
 
 const titleClasses = computed(() => [
   props.layout === "inline"
-    ? "block truncate text-base font-semibold text-slate-950 transition-colors"
-    : "text-lg font-semibold leading-tight text-slate-950 transition-colors",
+    ? "block truncate text-base font-semibold text-navy transition-colors"
+    : "text-lg font-semibold leading-tight text-navy transition-colors",
   props.titleClass
 ]);
 
 const arrowWrapperClasses = computed(() => [
-  "flex h-8 w-8 translate-x-2 items-center justify-center rounded-full text-slate-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:bg-white group-hover:text-slate-700 group-hover:opacity-100"
+  "flex h-8 w-8 translate-x-2 items-center justify-center rounded-full text-gray-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:bg-white group-hover:text-body group-hover:opacity-100"
 ]);
 </script>

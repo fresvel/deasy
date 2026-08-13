@@ -64,7 +64,7 @@
       size="md"
       @close="showDeleteModal = false"
     >
-      <p class="text-sm text-slate-700">
+      <p class="text-sm text-body">
         <slot name="delete-question" :item="pendingDelete">
           ¿Deseas eliminar el registro seleccionado?
         </slot>

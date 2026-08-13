@@ -3,7 +3,7 @@
     <label
       v-if="label || $slots.labelSuffix"
       :for="labelFor || undefined"
-      class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700"
+      class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body"
       :class="labelClass"
     >
       {{ label }}

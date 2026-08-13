@@ -42,7 +42,7 @@
         {{ actionError }}
       </section>
 
-      <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+      <section class="bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
         <div class="deasy-filter-shell">
           <div class="deasy-filter-grid">
             <label class="deasy-filter-field deasy-filter-search-span">
@@ -79,7 +79,7 @@
             </label>
           </div>
           <div class="deasy-filter-toolbar">
-            <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredItems.length }}</span></div>
+            <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-body">{{ filteredItems.length }}</span></div>
             <div class="deasy-filter-actions">
               <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetFilters">Reset</AppButton>
               <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="load">Actualizar</AppButton>
@@ -104,8 +104,8 @@
           <template #cell="{ row, field }">
             <template v-if="field.name === 'document'">
               <div class="flex flex-col gap-1">
-                <strong class="text-sm font-bold text-slate-800">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
-                <span class="text-xs font-medium text-slate-500">{{ row.document_version ? `v${row.document_version}` : 'Sin versión' }}</span>
+                <strong class="text-sm font-bold text-strong">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
+                <span class="text-xs font-medium text-muted">{{ row.document_version ? `v${row.document_version}` : 'Sin versión' }}</span>
               </div>
             </template>
             <template v-else-if="field.name === 'process'">{{ row.process_name }}</template>

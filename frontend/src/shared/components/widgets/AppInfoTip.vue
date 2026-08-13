@@ -2,13 +2,13 @@
   <!-- Ícono de información con tooltip: descarga de la UI los textos de ayuda que de otro modo generan ruido.
        Se revela al pasar el cursor, al enfocar con teclado o al hacer clic (persistente para táctil/lectura). -->
   <span
-    class="deasy-info-tip relative inline-flex"
+    class="relative inline-flex"
     @mouseenter="open = true"
     @mouseleave="open = false"
   >
     <button
       type="button"
-      class="deasy-info-tip__trigger inline-flex h-4 w-4 items-center justify-center rounded-full text-muted transition-colors hover:text-icon focus:text-icon focus:outline-none"
+      class="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted transition-colors hover:text-icon focus:text-icon focus:outline-none"
       :aria-label="ariaLabel"
       :aria-expanded="open"
       @click.stop="open = !open"
@@ -21,7 +21,7 @@
     <span
       v-show="open"
       role="tooltip"
-      class="deasy-info-tip__bubble absolute z-[1100] w-64 max-w-xs rounded-2xl bg-slate-800 px-3 py-2 text-xs font-medium leading-snug text-white shadow-lg"
+      class="absolute z-[1100] w-64 max-w-xs rounded-2xl bg-strong px-3 py-2 text-xs font-medium leading-snug text-white shadow-lg"
       :class="placementClass"
     >
       <slot>{{ text }}</slot>

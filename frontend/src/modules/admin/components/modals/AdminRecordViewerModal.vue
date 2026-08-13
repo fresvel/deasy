@@ -14,11 +14,11 @@
   >
     <template #header>
       <div class="flex min-w-0 items-center gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-600">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-primary">
           <IconFileDescription class="h-5 w-5" />
         </span>
         <div class="min-w-0">
-          <p class="m-0 text-xs font-semibold text-slate-500">{{ recordViewerTable?.label || "Registro" }}</p>
+          <p class="m-0 text-xs font-semibold text-muted">{{ recordViewerTable?.label || "Registro" }}</p>
           <h5 id="recordViewerModalLabel" class="deasy-dialog-title truncate">
             {{ primaryValue }}
           </h5>
@@ -27,18 +27,18 @@
     </template>
 
     <div>
-      <div v-if="loading" class="flex min-h-40 items-center justify-center text-sm font-medium text-slate-500">
+      <div v-if="loading" class="flex min-h-40 items-center justify-center text-sm font-medium text-muted">
         Cargando informacion del registro...
       </div>
-      <div v-else-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+      <AppAlert v-else-if="error">
         {{ error }}
-      </div>
+      </AppAlert>
       <div v-else-if="recordViewerTable && recordViewerRow" class="space-y-7">
         <section aria-labelledby="recordViewerGeneralTitle">
           <div class="mb-3 flex items-center justify-between gap-3 border-b border-line pb-3">
             <div>
-              <p class="m-0 text-xs font-semibold text-slate-500">Detalle del registro</p>
-              <h6 id="recordViewerGeneralTitle" class="m-0 mt-1 text-base font-bold text-slate-800">
+              <p class="m-0 text-xs font-semibold text-muted">Detalle del registro</p>
+              <h6 id="recordViewerGeneralTitle" class="m-0 mt-1 text-base font-bold text-strong">
                 Informacion general
               </h6>
             </div>
@@ -49,7 +49,7 @@
                 ? 'border-emerald-200 bg-emerald-50 text-success'
                 : 'border-line bg-surface text-icon'"
             >
-              <span class="h-1.5 w-1.5 rounded-full" :class="activeValue === 'Si' ? 'bg-emerald-500' : 'bg-slate-400'" />
+              <span class="h-1.5 w-1.5 rounded-full" :class="activeValue === 'Si' ? 'bg-emerald-500' : 'bg-gray-400'" />
               {{ activeValue === "Si" ? "Activo" : "Inactivo" }}
             </span>
           </div>
@@ -60,8 +60,8 @@
               :key="row.id"
               class="min-w-0 border-b border-line px-1 py-3.5 sm:px-4"
             >
-              <dt class="mb-1 text-xs font-semibold text-slate-500">{{ row.label }}</dt>
-              <dd class="m-0 min-w-0 text-sm font-semibold leading-6 text-slate-800">
+              <dt class="mb-1 text-xs font-semibold text-muted">{{ row.label }}</dt>
+              <dd class="m-0 min-w-0 text-sm font-semibold leading-6 text-strong">
               <template v-if="row.field.name === 'available_formats'">
                 <div class="space-y-3">
                   <template v-if="getAvailableFormatSections(recordViewerRow[row.field.name]).length">
@@ -76,10 +76,10 @@
                         :key="`${section.mode}-${entry.format}`"
                         class="flex min-w-0 flex-wrap items-center gap-2"
                       >
-                        <span class="available-formats-badge is-viewer" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                        <span class="is-viewer" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
                           {{ entry.formatLabel }}
                         </span>
-                        <code class="min-w-0 break-all text-xs font-medium text-slate-500">{{ entry.entryObjectKey }}</code>
+                        <code class="min-w-0 break-all text-xs font-medium text-muted">{{ entry.entryObjectKey }}</code>
                       </div>
                     </div>
                   </template>
@@ -107,8 +107,8 @@
                 <IconSettings class="h-4.5 w-4.5" />
               </span>
               <div class="min-w-0">
-                <p class="m-0 text-xs font-semibold text-slate-500">{{ sectionEyebrow(section) }}</p>
-                <h6 class="m-0 mt-0.5 flex items-center gap-2 text-base font-bold text-slate-800">
+                <p class="m-0 text-xs font-semibold text-muted">{{ sectionEyebrow(section) }}</p>
+                <h6 class="m-0 mt-0.5 flex items-center gap-2 text-base font-bold text-strong">
                   <span>{{ sectionTitle(section) }}</span>
                   <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">
                     {{ section.rows.length }}
@@ -127,18 +127,18 @@
             </AdminButton>
           </div>
 
-          <div v-if="section.error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <AppAlert v-if="section.error">
             {{ section.error }}
-          </div>
+          </AppAlert>
           <div
             v-else-if="section.rows.length === 0"
-            class="flex min-h-32 flex-col items-center justify-center border-y border-dashed border-line bg-slate-50/70 px-4 py-6 text-center"
+            class="flex min-h-32 flex-col items-center justify-center border-y border-dashed border-line bg-surface/70 px-4 py-6 text-center"
           >
             <IconInbox class="mb-2 h-6 w-6 text-muted" />
             <p class="m-0 text-sm font-semibold text-icon">
               {{ isProcessConfigurationSection(section) ? "Este proceso aun no tiene configuraciones." : "Sin registros relacionados." }}
             </p>
-            <p v-if="isProcessConfigurationSection(section)" class="m-0 mt-1 max-w-lg text-xs leading-5 text-slate-500">
+            <p v-if="isProcessConfigurationSection(section)" class="m-0 mt-1 max-w-lg text-xs leading-5 text-muted">
               {{ processConfigurationEmptyText }}
             </p>
           </div>
@@ -167,7 +167,7 @@
           </AppDataTable>
         </section>
       </div>
-      <div v-else class="flex min-h-40 items-center justify-center text-sm font-medium text-slate-500">
+      <div v-else class="flex min-h-40 items-center justify-center text-sm font-medium text-muted">
         No hay informacion para visualizar.
       </div>
     </div>
@@ -225,6 +225,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   IconFileDescription,
   IconInbox,
@@ -305,7 +306,7 @@ const emit = defineEmits([
 const SYNC_BADGE_META = {
   synced: { label: "Flujo sincronizado", class: "bg-emerald-100 text-success ring-emerald-200" },
   stale: { label: "Flujo desincronizado", class: "bg-amber-100 text-amber-800 ring-amber-200" },
-  no_link: { label: "Flujo sin vínculo", class: "bg-surface text-icon ring-slate-200" }
+  no_link: { label: "Flujo sin vínculo", class: "bg-surface text-icon ring-line" }
 };
 const syncBadge = computed(() => {
   const status = props.syncStatus?.status;

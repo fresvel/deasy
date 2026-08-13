@@ -1,14 +1,14 @@
 <template>
   <div>
-    <div v-if="checking" class="text-sm text-slate-500">Validando la configuración…</div>
+    <div v-if="checking" class="text-sm text-muted">Validando la configuración…</div>
     <template v-else-if="status === 'active'">
-      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
+      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface/70 px-4 py-2.5 text-sm text-body">
         <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-muted" />
         <span>Configuración <strong>activa</strong> y de solo lectura. Para cambios, crea una nueva versión o retírala.</span>
       </div>
     </template>
     <template v-else-if="status === 'retired'">
-      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
+      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface/70 px-4 py-2.5 text-sm text-body">
         <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-muted" />
         <span>Configuración <strong>retirada</strong> y de solo lectura. Para reutilizarla, crea una nueva versión a partir de ella.</span>
       </div>
@@ -16,10 +16,10 @@
     <template v-else>
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Requisitos para activar</span>
+          <span class="text-xs font-bold uppercase tracking-wide text-muted">Requisitos para activar</span>
           <span
             class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold ring-1"
-            :class="allRequirementsMet ? 'bg-emerald-100 text-success ring-emerald-200' : 'bg-surface text-icon ring-slate-200'"
+            :class="allRequirementsMet ? 'bg-emerald-100 text-success ring-emerald-200' : 'bg-surface text-icon ring-line'"
           >{{ completedRequirements }}/3</span>
         </div>
         <div class="grid gap-2 sm:grid-cols-3">
@@ -49,7 +49,7 @@
         </div>
 
         <div v-if="view === 'definition'" class="mt-3">
-          <div class="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+          <div class="grid gap-2 text-sm text-body md:grid-cols-2">
             <div><strong>Proceso:</strong> {{ formatCell(selectedRow?.process_id, { name: 'process_id' }, selectedRow || {}) }}</div>
             <div><strong>Variación:</strong> {{ formatCell(selectedRow?.series_id, { name: 'series_id' }, selectedRow || {}) }}</div>
             <div><strong>Version:</strong> {{ selectedRow?.definition_version || "—" }}</div>
@@ -65,7 +65,7 @@
             :rows="rules"
             :row-key="(row) => `activation-rule-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -89,7 +89,7 @@
               />
             </template>
           </AppDataTable>
-          <div v-else class="text-sm text-slate-500">Sin reglas registradas.</div>
+          <div v-else class="text-sm text-muted">Sin reglas registradas.</div>
         </div>
 
         <div v-else-if="view === 'triggers'" class="mt-3">
@@ -99,7 +99,7 @@
             :rows="triggers"
             :row-key="(row) => `activation-trigger-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -123,7 +123,7 @@
               />
             </template>
           </AppDataTable>
-          <div v-else class="text-sm text-slate-500">Sin periodos registrados.</div>
+          <div v-else class="text-sm text-muted">Sin periodos registrados.</div>
         </div>
 
         <div v-else class="mt-3">
@@ -133,7 +133,7 @@
             :rows="artifacts"
             :row-key="(row) => `activation-artifact-${row.id}`"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -154,7 +154,7 @@
               />
             </template>
           </AppDataTable>
-          <div v-else class="text-sm text-slate-500">Sin plantillas vinculadas.</div>
+          <div v-else class="text-sm text-muted">Sin plantillas vinculadas.</div>
         </div>
       </div>
     </template>

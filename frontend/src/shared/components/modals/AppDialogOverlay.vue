@@ -4,7 +4,7 @@
        controlador de Bootstrap: se muestra/oculta con la prop `open`. z por debajo del picker FK (1090). -->
   <div
     v-if="open"
-    class="deasy-dialog-root fixed inset-0 z-[1075] flex items-start justify-center overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
+    class="deasy-dialog-root fixed inset-0 z-[1075] flex items-start justify-center overflow-y-auto px-4 py-8"
     role="dialog"
     aria-modal="true"
     @click.self="$emit('close')"

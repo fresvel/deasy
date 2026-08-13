@@ -1,7 +1,7 @@
 <template>
   <div
-    class="graph-node graph-node--template relative rounded-xl border border-violet-200 border-l-4 border-l-violet-400 bg-violet-50/50 px-2.5 py-1.5 shadow-sm transition-all"
-    :class="data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : ''"
+    class="graph-node graph-node--template relative rounded-xl border border-brand-200 border-l-4 border-l-brand-400 bg-brand-50/50 px-2.5 py-1.5 shadow-elev-1 transition-all"
+    :class="data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : ''"
     :title="data.display_name"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
@@ -23,11 +23,11 @@
       </button>
     </div>
     <p class="m-0 flex items-center gap-1">
-      <IconFileText class="h-3.5 w-3.5 shrink-0 text-violet-500" />
-      <span class="max-w-[8.5rem] truncate text-[12px] font-semibold text-slate-700">{{ data.display_name }}</span>
+      <IconFileText class="h-3.5 w-3.5 shrink-0 text-primary" />
+      <span class="max-w-[8.5rem] truncate text-[12px] font-semibold text-body">{{ data.display_name }}</span>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1">
-      <span class="inline-flex items-center rounded bg-violet-100 px-1 py-0.5 text-[10px] font-semibold text-violet-700 ring-1 ring-violet-200" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</span>
+      <span class="inline-flex items-center rounded bg-brand-100 px-1 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-brand-200" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</span>
       <span
         v-if="data.storage_version"
         class="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold ring-1"
@@ -64,13 +64,13 @@ const stateLabel = computed(() => ({ draft: "Borrador", published: "Publicada", 
 const stateBadgeClass = computed(() => ({
   published: "bg-emerald-50 text-success ring-emerald-200",
   draft: "bg-amber-50 text-warning ring-amber-200",
-  retired: "bg-surface text-slate-500 ring-slate-200"
-}[lifecycleState.value] || "bg-surface text-slate-500 ring-slate-200"));
+  retired: "bg-surface text-muted ring-line"
+}[lifecycleState.value] || "bg-surface text-muted ring-line"));
 const stateDotClass = computed(() => ({
   published: "bg-emerald-500",
   draft: "bg-amber-500",
-  retired: "bg-slate-400"
-}[lifecycleState.value] || "bg-slate-400"));
+  retired: "bg-gray-400"
+}[lifecycleState.value] || "bg-gray-400"));
 // Señal de salud: una config ACTIVA debería usar la versión publicada. Si usa una no publicada (retirada/borrador)
 // = "hueco" → ⚠. En configs borrador es normal (trabajo en curso), no se marca.
 const isUnhealthy = computed(() => String(props.data.parentConfigStatus) === "active" && lifecycleState.value !== "published");

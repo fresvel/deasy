@@ -7,8 +7,8 @@
       </span>
     </div>
 
-    <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
-    <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-action-view">
+    <AppAlert v-if="error">{{ error }}</AppAlert>
+    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-action-view">
       Esta configuracion no esta en draft. Solo puedes gestionar reglas cuando la configuracion este en draft.
     </div>
     <!-- Por defecto solo se ve la lista; el formulario se abre con este botón -->
@@ -42,9 +42,9 @@
         <span
           v-for="chip in seriesFixedChips"
           :key="chip.label"
-          class="inline-flex items-center gap-1 rounded-xl bg-surface px-2 py-0.5 font-medium text-icon ring-1 ring-slate-200"
+          class="inline-flex items-center gap-1 rounded-xl bg-surface px-2 py-0.5 font-medium text-icon ring-1 ring-line"
         >
-          {{ chip.label }}: <strong class="font-bold text-slate-700">{{ chip.value }}</strong>
+          {{ chip.label }}: <strong class="font-bold text-body">{{ chip.value }}</strong>
         </span>
       </div>
 
@@ -163,7 +163,7 @@
       </template>
     </AppDialogOverlay>
 
-    <div v-if="loading" class="text-sm text-slate-500">Cargando reglas vinculadas...</div>
+    <div v-if="loading" class="text-sm text-muted">Cargando reglas vinculadas...</div>
     <AppDataTable
       v-else
       :fields="tableFields"
@@ -171,7 +171,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin reglas vinculadas."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm person-assignment-table"
+      responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1 person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">
@@ -199,6 +199,7 @@
 
 <script setup>
 import { computed, ref, watch } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";

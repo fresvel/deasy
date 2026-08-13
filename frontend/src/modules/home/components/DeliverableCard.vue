@@ -77,13 +77,13 @@ const onCardClick = (event) => {
               </span>
               <span
                 v-if="deliverable.item.attachment_count"
-                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 text-[0.62rem] font-bold text-slate-500"
+                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 text-[0.62rem] font-bold text-muted"
                 :title="`${deliverable.item.attachment_count} anexo(s)`"
               >
                 <IconPaperclip class="h-3 w-3" />{{ deliverable.item.attachment_count }}
               </span>
             </div>
-            <p class="m-0 line-clamp-2 text-[0.95rem] font-semibold leading-snug text-slate-800" :title="deliverable.item.template_artifact_name">
+            <p class="m-0 line-clamp-2 text-[0.95rem] font-semibold leading-snug text-strong" :title="deliverable.item.template_artifact_name">
               {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
               <span v-if="deliverable.item.document_version" class="ml-0.5 whitespace-nowrap align-middle text-[0.72rem] font-bold" :class="h.getDeliverableCardTone(deliverable.item).responsibilityLabel">
                 v{{ deliverable.item.document_version }}
@@ -92,7 +92,7 @@ const onCardClick = (event) => {
             <p class="m-0 min-w-0 truncate text-[0.78rem] font-medium leading-snug text-muted">
               {{ h.getDeliverablePeriodLabel(deliverable.task) }}
             </p>
-            <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-[0.78rem] font-semibold leading-snug text-indigo-600">
+            <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-[0.78rem] font-semibold leading-snug text-primary">
               Para: {{ deliverable.item.recipient_name }}
             </p>
           </div>
@@ -115,7 +115,7 @@ const onCardClick = (event) => {
             <p class="m-0 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
             <AppTag :variant="h.getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ h.getDeliverableDueState(deliverable.item).value }}</AppTag>
           </div>
-          <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-slate-700">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
+          <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
           <div class="flex items-center gap-2.5">
             <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
               <div class="h-full rounded-full transition-all duration-300" :class="h.getDeliverableCardTone(deliverable.item).accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
@@ -140,10 +140,10 @@ const onCardClick = (event) => {
           </button>
 
           <div class="flex h-full items-center justify-end gap-1.5">
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-success transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar PDF" @click="emit('download', deliverable.item)"><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)"><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Ver PDF" @click="emit('preview', deliverable.item)"><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-success transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Descargar PDF" @click="emit('download', deliverable.item)"><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)"><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Ver PDF" @click="emit('preview', deliverable.item)"><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton variant="plain" :class-name="['group inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4', h.getDeliverableHeaderActionTone(deliverable.item)].join(' ')" :disabled="!deliverable.item.actions?.can_open_process_chat" aria-label="Abrir chat" @click="emit('chat', deliverable.item)"><IconMessages class="h-[1.3rem] w-[1.3rem]" /></AppButton>
           </div>
         </div>

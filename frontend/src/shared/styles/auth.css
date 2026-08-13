@@ -2,9 +2,9 @@
 .deasy-auth-page {
         @apply min-h-screen px-4 py-6 font-sans text-navy sm:px-6 lg:px-8;
         background-image:
-            linear-gradient(180deg, rgba(var(--white-rgb), 0.99) 0%, rgba(var(--surface-rgb), 0.98) 48%, var(--color-surface) 100%),
+            linear-gradient(180deg, rgba(var(--white-rgb), 0.99) 0%, color-mix(in srgb, var(--color-surface) 98%, transparent) 48%, var(--color-surface) 100%),
             radial-gradient(circle at top left, rgba(var(--navy-menu-rgb), 0.08), transparent 28rem),
-            radial-gradient(circle at bottom right, rgba(var(--success-rgb), 0.08), transparent 24rem);
+            radial-gradient(circle at bottom right, color-mix(in srgb, var(--color-success) 8%, transparent), transparent 24rem);
     }
 
     .deasy-auth-center {

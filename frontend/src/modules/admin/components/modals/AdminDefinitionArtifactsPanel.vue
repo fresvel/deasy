@@ -3,22 +3,22 @@
     <div v-if="!embedded && context" class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm text-emerald-950">{{ context.name || `Configuracion #${context.id}` }}</strong>
-        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-slate-200">
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
           {{ context.variation_key || "—" }}
         </span>
-        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-slate-200">
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
           {{ context.definition_version || "—" }}
         </span>
       </div>
     </div>
 
-    <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
-    <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-action-view">
+    <AppAlert v-if="error">{{ error }}</AppAlert>
+    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-action-view">
       Esta configuracion no esta en draft. Solo puedes gestionar plantillas cuando la configuracion este en draft.
     </div>
 
     <div class="flex items-center justify-between gap-3">
-      <h6 class="m-0 text-sm font-bold text-slate-800">Plantillas del proceso</h6>
+      <h6 class="m-0 text-sm font-bold text-strong">Plantillas del proceso</h6>
       <AdminButton
         v-if="canManage"
         variant="outlinePrimary"
@@ -29,7 +29,7 @@
       </AdminButton>
     </div>
 
-    <div v-if="loading" class="text-sm text-slate-500">Cargando plantillas vinculadas...</div>
+    <div v-if="loading" class="text-sm text-muted">Cargando plantillas vinculadas...</div>
     <AppDataTable
       v-else
       class="person-assignment-table"
@@ -38,7 +38,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin plantillas vinculadas."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="mt-3 overflow-x-auto rounded-2xl border border-line bg-white shadow-sm person-assignment-table"
+      responsive-class="mt-3 overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1 person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">
@@ -50,7 +50,7 @@
             v-if="canManage"
             aria-label="Modo de emisión de la plantilla"
             :value="row.item_mode || 'single'"
-            class="rounded-2xl border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400"
+            class="rounded-2xl border border-line bg-white px-2 py-1 text-xs font-semibold text-body outline-none"
             @change="$emit('set-item-mode', { row, itemMode: $event.target.value })"
           >
             <option value="single">Simple (1 entregable)</option>
@@ -83,6 +83,7 @@
 
 <script setup>
 import { computed } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";

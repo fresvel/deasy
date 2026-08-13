@@ -2,8 +2,8 @@
   <div class="flex flex-col gap-4">
     <div v-if="title" class="flex items-center justify-between gap-3">
       <div>
-        <h3 class="text-base font-bold text-slate-800 m-0">{{ title }}</h3>
-        <p v-if="description" class="text-sm text-slate-500 m-0 mt-1">{{ description }}</p>
+        <h3 class="text-base font-bold text-strong m-0">{{ title }}</h3>
+        <p v-if="description" class="text-sm text-muted m-0 mt-1">{{ description }}</p>
       </div>
       <AdminButton
         v-if="refreshable"
@@ -17,19 +17,19 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_20rem] gap-4">
-      <div class="bg-white rounded-2xl border border-line p-4 shadow-sm">
-        <div v-if="errorMessage" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+      <div class="bg-white rounded-2xl border border-line p-4 shadow-elev-1">
+        <AppAlert v-if="errorMessage">
           {{ errorMessage }}
-        </div>
+        </AppAlert>
         <div v-if="successMessage" class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-success">
           {{ successMessage }}
         </div>
 
-        <div v-if="isLoading" class="py-8 text-center text-sm text-slate-500 font-medium">
+        <div v-if="isLoading" class="py-8 text-center text-sm text-muted font-medium">
           Cargando certificados...
         </div>
 
-        <div v-else-if="!certificates.length" class="py-8 text-center text-sm text-slate-500 font-medium">
+        <div v-else-if="!certificates.length" class="py-8 text-center text-sm text-muted font-medium">
           No hay certificados cargados.
         </div>
 
@@ -38,17 +38,17 @@
             v-for="certificate in certificates"
             :key="certificate.id"
             type="button"
-            class="w-full rounded-2xl border px-4 py-4 text-left transition shadow-sm"
-            :class="isSelected(certificate.id) ? 'border-sky-500 bg-sky-50' : 'border-line bg-white hover:bg-surface'"
+            class="w-full rounded-2xl border px-4 py-4 text-left transition shadow-elev-1"
+            :class="isSelected(certificate.id) ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectCertificate(certificate)"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-bold text-slate-800 truncate">{{ certificate.label }}</span>
+                  <span class="text-sm font-bold text-strong truncate">{{ certificate.label }}</span>
                   <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
                 </div>
-                <div class="mt-1 text-xs text-slate-500 break-all">{{ certificate.original_filename }}</div>
+                <div class="mt-1 text-xs text-muted break-all">{{ certificate.original_filename }}</div>
                 <div class="mt-1 text-xs text-muted">
                   {{ formatDate(certificate.created_at) }}
                 </div>
@@ -77,20 +77,20 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-line p-4 shadow-sm flex flex-col gap-4">
+      <div class="bg-white rounded-2xl border border-line p-4 shadow-elev-1 flex flex-col gap-4">
         <div>
-          <h4 class="text-sm font-bold text-slate-800 m-0">Subir certificado</h4>
-          <p class="text-xs text-slate-500 m-0 mt-1">
+          <h4 class="text-sm font-bold text-strong m-0">Subir certificado</h4>
+          <p class="text-xs text-muted m-0 mt-1">
             El archivo `.p12` ya está protegido por contraseña. Solo los endpoints autenticados pueden descargarlo.
           </p>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('uploadlabel')" class="text-sm font-semibold text-slate-700">Nombre visible</label>
+          <label :for="fieldId('uploadlabel')" class="text-sm font-semibold text-body">Nombre visible</label>
           <input :id="fieldId('uploadlabel')"
             v-model="uploadLabel"
             type="text"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
             placeholder="Ej: Token personal 2026"
           />
         </div>
@@ -123,6 +123,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch, useId } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { IconCertificate } from "@tabler/icons-vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";

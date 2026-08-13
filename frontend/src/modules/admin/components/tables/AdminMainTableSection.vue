@@ -186,17 +186,17 @@
           </div>
           </div>
 
-          <div v-if="loading" class="text-sm text-slate-500">Cargando datos...</div>
-          <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
+          <div v-if="loading" class="text-sm text-muted">Cargando datos...</div>
+          <div v-else-if="error" role="alert">{{ error }}</div>
           <AppDataTable v-else :fields="tableListFields" :rows="rows" :row-key="rowKey">
             <template #cell="{ row, field }">
               <template v-if="field.name === 'available_formats'">
-                <div class="available-formats-cell">
+                <div>
                   <template v-if="getAvailableFormatSections(row[field.name]).length">
-                    <div v-for="section in getAvailableFormatSections(row[field.name])" :key="section.mode" class="available-formats-group" :class="{ 'is-inline': section.mode === 'reference' }">
-                      <span class="available-formats-mode">{{ section.label }}</span>
-                      <div class="available-formats-badges">
-                        <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" class="available-formats-badge" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                    <div v-for="section in getAvailableFormatSections(row[field.name])" :key="section.mode" :class="{ 'is-inline': section.mode === 'reference' }">
+                      <span>{{ section.label }}</span>
+                      <div>
+                        <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
                           {{ entry.formatLabel }}
                         </span>
                       </div>
@@ -453,7 +453,7 @@ const resetGenericSearch = () => {
 // Badge de estado de la configuración: aplica al status de process_definition_versions y al estado de la
 // definición activa en la tabla de procesos. El resto de columnas 'status' siguen como texto plano.
 const DEFINITION_STATUS_BADGES = {
-  draft: { label: "Borrador", class: "bg-slate-200 text-slate-700" },
+  draft: { label: "Borrador", class: "bg-gray-200 text-body" },
   active: { label: "Activa", class: "bg-emerald-500 text-white" },
   retired: { label: "Retirada", class: "bg-amber-200 text-amber-800" }
 };
@@ -462,7 +462,7 @@ const isDefinitionStatusField = (field) =>
   || (field?.name === "status" && props.table?.table === "process_definition_versions");
 const definitionStatusBadge = (value) =>
   DEFINITION_STATUS_BADGES[String(value || "").toLowerCase()]
-  || { label: value, class: "bg-slate-200 text-slate-700" };
+  || { label: value, class: "bg-gray-200 text-body" };
 
 defineExpose({ searchInputRef });
 </script>

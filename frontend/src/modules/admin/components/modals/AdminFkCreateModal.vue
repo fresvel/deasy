@@ -7,10 +7,10 @@
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="fkCreateError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <AppAlert v-if="fkCreateError">
       {{ fkCreateError }}
-    </div>
-    <div v-if="!fkCreateFields.length" class="text-sm text-slate-500">
+    </AppAlert>
+    <div v-if="!fkCreateFields.length" class="text-sm text-muted">
       No hay campos editables disponibles para crear esta referencia.
     </div>
     <form v-else class="grid gap-3 md:grid-cols-12">
@@ -80,6 +80,7 @@
 
 <script setup>
 import { ref } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";

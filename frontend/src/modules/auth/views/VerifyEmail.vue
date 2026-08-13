@@ -3,19 +3,19 @@
     <AppLogo size="lg" class-name="mb-8" />
     
     <!-- Go back button -->
-    <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded-2xl pr-2">
+    <router-link to="/" class="inline-flex items-center text-sm font-semibold text-muted hover:text-info transition-colors mb-8 group focus:outline-none focus:ring-2 rounded-2xl pr-2">
       <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
       Volver al login
     </router-link>
 
     <div class="mb-8 flex flex-col items-center text-center">
-      <div class="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mb-6">
+      <div class="w-14 h-14 bg-blue-light-50 rounded-2xl flex items-center justify-center text-info mb-6">
         <IconMailCheck class="h-7 w-7" />
       </div>
       <h1 class="deasy-auth-title text-2xl">Verificar correo</h1>
       <p class="deasy-auth-copy">
         Hemos enviado un código a <br class="hidden sm:block" />
-        <strong class="text-slate-800">{{ email || 'tu correo' }}</strong>
+        <strong class="text-strong">{{ email || 'tu correo' }}</strong>
       </p>
     </div>
 
@@ -30,7 +30,7 @@
           inputmode="numeric"
           pattern="[0-9]*"
           maxlength="1"
-          class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-2xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 outline-none transition-all shadow-sm"
+          class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-2xl font-bold text-strong bg-surface border border-line rounded-xl focus:bg-white focus:ring-4 outline-none transition-all shadow-elev-1"
           v-model="code[index]"
           @input="onInput(index, $event)"
           @keydown.backspace="onBackspace(index, $event)"

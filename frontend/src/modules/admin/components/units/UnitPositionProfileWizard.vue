@@ -13,32 +13,32 @@
             <IconCheck v-if="idx < current" class="h-3.5 w-3.5" />
             <span v-else>{{ idx + 1 }}</span>
           </span>
-          <span class="hidden text-[11px] font-semibold sm:inline" :class="idx === current ? 'text-indigo-600' : 'text-muted'">{{ step }}</span>
+          <span class="hidden text-[11px] font-semibold sm:inline" :class="idx === current ? 'text-primary' : 'text-muted'">{{ step }}</span>
         </div>
-        <div v-if="idx < stepLabels.length - 1" class="h-px flex-1 bg-slate-200"></div>
+        <div v-if="idx < stepLabels.length - 1" class="h-px flex-1 bg-gray-200"></div>
       </template>
     </div>
 
     <!-- Paso de sección -->
     <div v-if="currentSection">
-      <h4 :id="sectionTitleId" class="m-0 text-base font-bold text-slate-800">{{ currentSection.label }}</h4>
-      <p class="m-0 mt-1 mb-3 text-sm text-slate-500">{{ currentSection.hint }}</p>
+      <h4 :id="sectionTitleId" class="m-0 text-base font-bold text-strong">{{ currentSection.label }}</h4>
+      <p class="m-0 mt-1 mb-3 text-sm text-muted">{{ currentSection.hint }}</p>
       <textarea
         v-model="form[currentSection.key]"
         :aria-labelledby="sectionTitleId"
         rows="5"
-        class="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+        class="w-full rounded-2xl border border-line-strong px-3 py-2 text-sm outline-none"
         :placeholder="currentSection.placeholder"
       ></textarea>
     </div>
 
     <!-- Paso de revisión -->
     <div v-else>
-      <h4 class="m-0 mb-3 text-base font-bold text-slate-800">Revisión</h4>
+      <h4 class="m-0 mb-3 text-base font-bold text-strong">Revisión</h4>
       <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
         <li v-for="section in SECTIONS" :key="section.key" class="rounded-2xl border border-line px-3 py-2">
           <span class="block text-xs font-bold uppercase tracking-wide text-muted">{{ section.label }}</span>
-          <p class="m-0 mt-0.5 whitespace-pre-line text-sm" :class="form[section.key] ? 'text-slate-700' : 'italic text-muted'">
+          <p class="m-0 mt-0.5 whitespace-pre-line text-sm" :class="form[section.key] ? 'text-body' : 'italic text-muted'">
             {{ form[section.key] || 'Sin especificar' }}
           </p>
         </li>

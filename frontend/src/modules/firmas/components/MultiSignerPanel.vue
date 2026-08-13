@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-elev-1">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
           <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-line bg-surface/60 p-4">
             <PdfDropField
@@ -83,9 +83,9 @@
 
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
-              <div class="text-sm font-bold text-slate-800">
+              <div class="text-sm font-bold text-strong">
                 Archivos
-                <span class="ml-1 text-xs font-semibold text-slate-500">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
+                <span class="ml-1 text-xs font-semibold text-muted">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
               </div>
               <BtnDelete
                 v-if="documents.length"
@@ -95,12 +95,12 @@
               />
             </div>
 
-            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-surface/50 p-8 text-center text-muted">
+            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface/50 p-8 text-center text-muted">
               <IconFiles class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
             </div>
 
-            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-surface/50 p-8 text-center text-muted">
+            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface/50 p-8 text-center text-muted">
               <IconInfoCircle class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
             </div>
@@ -110,7 +110,7 @@
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
                 class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
-                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-line bg-white hover:border-slate-300 hover:bg-surface'"
+                :class="index === currentDocumentIndex ? 'border-blue-light-400 bg-blue-light-50 shadow-elev-1' : 'border-line bg-white hover:border-line-strong hover:bg-surface'"
               >
                 <div class="flex w-full items-start justify-between gap-3">
                   <button
@@ -120,7 +120,7 @@
                   >
                     <IconFileCheck v-if="doc.status === 'completed'" class="h-4 w-4 shrink-0 text-emerald-500" />
                     <IconAlertCircle v-else-if="doc.status === 'failed'" class="h-4 w-4 shrink-0 text-rose-500" />
-                    <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'" :title="doc.name">{{ formatDisplayFileName(doc.name) }}</div>
+                    <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-info' : 'text-strong'" :title="doc.name">{{ formatDisplayFileName(doc.name) }}</div>
                   </button>
                   <div class="shrink-0" @click.stop>
                     <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
@@ -136,16 +136,16 @@
             variant="primary"
             :disabled="!canRequestStart"
             @click="requestBatchStart"
-            class-name="w-full justify-center rounded-xl py-3 font-bold shadow-md shadow-sky-500/20 transition-all hover:shadow-lg hover:shadow-sky-500/30"
+            class-name="w-full justify-center rounded-xl py-3 font-bold shadow-md shadow-blue-light-500/20 transition-all hover:shadow-lg hover:shadow-blue-light-500/30"
           >
             {{ isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
           </AdminButton>
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-sm">
+      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-elev-1">
         <div
-          class="relative grow overflow-hidden bg-slate-200"
+          class="relative grow overflow-hidden bg-gray-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
         >
           <div
@@ -157,7 +157,7 @@
             <div
               v-if="currentDocument"
               ref="viewerRef"
-              class="relative mb-6 border border-slate-300 bg-white shadow-md transition-all duration-300"
+              class="relative mb-6 border border-line-strong bg-white shadow-md transition-all duration-300"
               @mousedown="handlePointerDown"
               @mousemove="handlePointerMove"
               @mouseup="handlePointerUp"
@@ -209,7 +209,7 @@
                     <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
                         title="Documento anterior"
                         :disabled="!canPrevDocument"
                         @click.stop="prevDocument"
@@ -221,7 +221,7 @@
                       </span>
                       <button
                         type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
                         title="Siguiente documento"
                         :disabled="!canNextDocument"
                         @click.stop="nextDocument"
@@ -233,7 +233,7 @@
                     <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
                         title="Página anterior"
                         :disabled="!canPrevPage"
                         @click.stop="prevPage"
@@ -245,7 +245,7 @@
                       </span>
                       <button
                         type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
                         title="Página siguiente"
                         :disabled="!canNextPage"
                         @click.stop="nextPage"
@@ -262,7 +262,7 @@
                 class="pointer-events-none absolute z-20 rounded-lg border-2 border-dashed border-rose-500 bg-rose-500/20 mix-blend-multiply"
                 :style="activeSelectionBox"
               >
-                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-elev-1">
                   <IconDragDrop class="h-3 w-3" />
                   <span>Calculando Área...</span>
                 </div>
@@ -273,11 +273,11 @@
               v-if="!currentDocument"
               class="relative z-5 mx-auto flex h-full w-full max-w-sm animate-fade-in flex-col items-center justify-center text-center opacity-70"
             >
-              <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-slate-300/50 shadow-inner ring-8 ring-white/40">
-                <IconFiles class="ml-1 h-10 w-10 text-slate-500" />
+              <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-300/50 shadow-inner ring-8 ring-white/40">
+                <IconFiles class="ml-1 h-10 w-10 text-muted" />
               </div>
-              <h3 class="mb-2 text-xl font-bold text-slate-700">No hay ningún PDF para visualizar</h3>
-              <p class="text-sm font-medium text-slate-500">
+              <h3 class="mb-2 text-xl font-bold text-body">No hay ningún PDF para visualizar</h3>
+              <p class="text-sm font-medium text-muted">
                 Añade uno o más documentos PDF a la cola desde el panel lateral izquierdo para comenzar a configurar el lote de firmas.
               </p>
             </div>
@@ -288,7 +288,7 @@
             class="border-t border-line/80 bg-white/90 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
           >
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div class="text-xs font-medium text-slate-500">
+              <div class="text-xs font-medium text-muted">
                 {{ isCoordinateMode ? 'Usa el visor para ubicar la firma en el documento actual.' : 'Revisa el PDF antes de iniciar el lote.' }}
               </div>
               <AppCounterNavigator
@@ -311,7 +311,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-elev-1">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"
@@ -349,12 +349,12 @@
     >
       <template #header>
         <div id="multi-signer-progress-modal-title" class="flex min-w-0 flex-1 items-center gap-4">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-light-100 text-info">
             <IconSignature class="h-5 w-5" />
           </div>
           <div class="min-w-0">
             <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Multifirmador</div>
-            <div class="truncate text-base font-bold text-slate-800">
+            <div class="truncate text-base font-bold text-strong">
               {{ batchProgressModalTitle }}
             </div>
           </div>

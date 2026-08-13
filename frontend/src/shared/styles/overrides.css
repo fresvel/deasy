@@ -93,6 +93,29 @@ textarea {
   border-color: var(--color-line);
 }
 
+/* ══ EL FOCO, Y ES UNO SOLO ══════════════════════════════════════════════════════════
+   Decidido y ENCENDIDO el 2026-08-13. Hasta hoy habia dos problemas a la vez:
+
+   · **80 `focus:border-*` en las plantillas que no pintaban NADA.** La regla de elemento de
+     aqui arriba esta fuera de capa y les ganaba a todas, asi que el borde del campo enfocado
+     no cambiaba nunca. Estaban escritas, se leian bien, y eran mentira.
+   · **31 `focus:ring-*` de color que SI pintaban**, porque la utilidad de Tailwind vive en
+     `@layer utilities` y le gana al `--focus-ring` que pone el componente. Resultado: el
+     anillo era azul cielo en unos campos, azul rey en otros y de marca en el resto.
+
+   Las 111 se retiraron de las plantillas y el foco pasa a declararse UNA vez, aqui. El borde
+   usa `--color-brand-300`, que es la receta de TailAdmin para el campo enfocado; el anillo es
+   `--focus-ring`, que ya era el unico declarado. Va FUERA DE CAPA por lo mismo que su regla
+   hermana: mientras esa no baje, esta tampoco puede.
+   ═══════════════════════════════════════════════════════════════════════════════════ */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-brand-300);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
 /* ⚠️ FUERA DE CAPA: si bajase, ganaria el `:focus` de `forms.css` y los campos cambiarian
    de borde al recibir el teclado. El indicador no se pierde hoy — el `box-shadow:
    var(--focus-ring)` de esa misma regla si aplica. Encenderlo es §4.2. */
@@ -108,26 +131,17 @@ textarea {
 .deasy-filter-search-input,
 .profile-text-input,
 .profile-select-input,
-.profile-textarea {
-  border-color: var(--color-line-field);
-}
-
-/* ⚠️ FUERA DE CAPA LAS DOS. `.admin-select-field` es un `<select>`, asi que compite con la
-   regla de ELEMENTO de arriba, que tambien esta suelta: capada sola, los 20 selectores de
-   administracion pasan de 10 px a 8 px de radio. Muere cuando muera la de elemento.
-   El `:focus` tampoco puede bajar: `AdminSelectField.vue` escribe `focus:ring-4
-   focus:ring-primary/10`, hoy muerto, y ese anillo NO es identico a `--focus-ring`
-   (Tailwind añade ademas el segmento de `ring-offset`). Elegir cual sobra es §4.2.
-   ------------------------------------------------------------------------------------ */
+.profile-textarea,
 .admin-select-field {
   border-color: var(--color-line-field);
-  border-radius: 10px;
 }
 
-.admin-select-field:focus {
-  border-color: var(--color-primary);
-  box-shadow: var(--focus-ring);
-}
+/* `.admin-select-field` tenia aqui dos reglas propias, y las dos se colapsaron el 2026-08-13:
+   · `border-radius: 10px` — un numero magico que existia SOLO para diferenciarse del 0.5rem
+     de la regla de elemento. Los 20 selectores de administracion pasan a 8 px, que es el radio
+     de control del sistema (`rounded-lg`, el mismo que usa la receta adoptada).
+   · `.admin-select-field:focus` — ahora lo cubre el `select:focus` canonico de arriba. Su borde
+     iba a `--color-primary` y el canonico va a `--color-brand-300`: el foco es UNO. */
 
 @layer components {
     .deasy-table thead tr {
@@ -145,24 +159,21 @@ textarea {
     }
 }
 
-/* ⚠️ FUERA DE CAPA, Y NO SE PARTE. Es un selector de ELEMENTO y en este proyecto hay 9
-   `<header>`: 4 son cabeceras de panel que no declaran fondo y se quedarian sin ninguno, y
-   al capar solo el fondo el `border-color` se va a `rgba(255,255,255,.1)` en tres de ellas.
-   El arreglo es que cada cabecera declare lo suyo y esta regla se limite a `SHeader.vue`;
-   es cambio de plantilla, no de capa. F5. */
-header {
-  background-color: var(--color-navy-deep);
-  border-color: rgba(var(--white-rgb), 0.1);
-}
+/* AQUI VIVIA UN SELECTOR DE ELEMENTO `header`, BORRADO EL 2026-08-13.
+   Pintaba `--color-navy-deep` sobre los NUEVE `<header>` del proyecto, y al estar fuera de capa
+   ganaba a cualquier utilidad. Cinco de ellos no declaran fondo propio —`AppFormModalLayout`
+   (todos los modales de formulario del perfil), `HomeView` x3 y las cabeceras de panel de los
+   dos grafos—, asi que recibian texto casi negro sobre fondo casi negro: **≈1,1:1**.
 
-/* ⚠️ FUERA DE CAPA. `currentColor` es lo correcto para la clase base... y por eso mismo
-   tapa cualquier `text-*` puesto sobre el icono (hoy 4, entre ellos dos triangulos de
-   aviso que salen del color de su parrafo en vez de ambar). El arreglo es pintar el
-   CONTENEDOR, no capar esto. §4.2 y F5. */
-.deasy-fa-icon {
-  color: currentColor;
-  opacity: 1;
-}
+   Y lo que la hacia gratuita: el unico `<header>` que SI quiere ese aspecto, el del armazon
+   (`SHeader.vue:2`), ya lo declara por utilidad —`bg-navy-deep border-b border-white/10`—, con
+   los mismos valores. La regla no le aportaba nada y rompia a los otros cinco. */
+
+/* Y aqui vivia `.deasy-fa-icon { color: currentColor; opacity: 1 }`, borrada el mismo dia junto
+   con la clase que la invocaba. **No habia FontAwesome**: `FontAwesomeIcon.vue` conserva el
+   nombre pero renderiza iconos de Tabler, que ya son `currentColor` por defecto. Asi que la
+   regla no deshacia nada de una libreria — solo tapaba cualquier `text-*` puesto sobre el icono,
+   y por eso dos triangulos de aviso salian del color de su parrafo en vez de ambar. */
 
 /* ⚠️ FUERA DE CAPA LAS TRES, y NO por una utilidad de Tailwind: dentro de la capa les gana
    `.deasy-table-responsive .deasy-btn--secondary` (0,2,0) de `buttons.css`, que ya vive
@@ -191,8 +202,8 @@ header {
 .admin-btn--secondary:hover,
 .admin-btn--cancel:hover {
   color: var(--color-primary);
-  background-color: rgba(var(--primary-rgb), 0.06);
-  border-color: rgba(var(--primary-rgb), 0.18);
+  background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 /* ── Los 12 botones de accion. FUERA DE CAPA — LEER LA CABECERA DE `buttons.css` ──────
@@ -270,20 +281,17 @@ header {
    por la derecha). Al migrar por script, excluye este fichero o revisalo a mano.
    ====================================================================================== */
 
-@layer utilities {
-    /* Dentro de la capa a proposito: `.shadow-xl` es una utilidad de Tailwind y aqui se le
-       cambia el VALOR, no se le gana. El `!important` la hace ganar a la `.shadow-xl` de
-       Tailwind, que vive en esta misma capa. */
-    .shadow-xl {
-        box-shadow: var(--elev-2) !important;
-    }
-}
+/* ══ TRES REPINTADOS BORRADOS EL 2026-08-13, POR QUEDARSE SIN CONSUMIDORES ══════════════
+   Era su final declarado desde el principio: «deuda con fecha de caducidad, no arquitectura».
 
-.bg-slate-50,
-.bg-slate-50\/70,
-.bg-slate-50\/80 {
-  background-color: var(--color-surface);
-}
+   · `.shadow-xl` y `.shadow-sm` -> las plantillas escribian una utilidad de Tailwind CONTANDO
+     con que aqui se le cambiara el valor por `--elev-2` / `--elev-1`. Ahora la escala de
+     elevacion esta registrada en `@theme` (`--shadow-elev-1/2/3`), asi que la plantilla pide
+     `shadow-elev-1` —lo que de verdad quiere— y el rodeo sobra. Mismos valores: cambio cero.
+   · `.bg-slate-50` (+ `/70` y `/80`) -> `bg-surface`, que es el mismo `--color-surface` sin
+     necesidad de una regla que lo traduzca.
+
+   Quedaba tambien `.border-slate-200` con `!important`. Ver mas abajo. */
 
 /* Solo `.bg-white` a secas, y NO por el color: pinta blanco con blanco, exactamente igual
    que la utilidad de Tailwind. Lo que aporta es PRIORIDAD — esta sin capa, asi que gana a
@@ -297,21 +305,25 @@ header {
    `--brand-white` propio, y `bg-brand-white/80` —el mismo proposito escrito con el otro
    nombre— SI salia translucido, porque la regla no nombraba ese selector: el aspecto
    dependia de que token hubiera elegido quien lo escribio. Ese token ya no existe. */
-.bg-white {
-  background-color: var(--color-white);
-}
+/* BORRADA EL 2026-08-13, y con ella el bloque (A) entero.
+   No repintaba ningun color —blanco sobre blanco, igual que la utilidad de Tailwind—: existia
+   SOLO para robar prioridad, y lo que le daba sentido eran las 10 reglas sin capa de
+   `dialogs.css`. Capadas esas, `bg-white` vive en `@layer utilities`, que ya gana a
+   `@layer components` por el orden de capas de Tailwind. La muleta sobra.
+   Medido con huella de `getComputedStyle` sobre el modal de la tabla de personas. */
 
-/* ⚠️ Este `!important` no lo resuelve el orden: pelea contra
-   `.deasy-dialog-root .deasy-dialog-header button` (0,2,1), que esta SIN CAPA en
-   `dialogs.css`. Quitarlo mueve 5 nodos (el boton de cerrar de «Validar documento»).
-   Muere cuando `dialogs.css` baje a `@layer components`, no antes.
+/* `.border-slate-200 { border-color: var(--color-line) !important }` tambien se fue el
+   2026-08-13, con sus 54 consumidores migrados a `border-line`.
 
-   Los 54 consumidores que quedan son los que 4.4-d NO migro a proposito: los que caen
-   sobre `input/select/textarea`, sobre `header` y sobre ese boton. */
-.border-slate-200 {
-  border-color: var(--color-line) !important;
-}
+   El comentario anterior decia que moria «cuando `dialogs.css` baje a `@layer components`, no
+   antes», y esa condicion era para su `!important`, no para la regla: lo que peleaba contra
+   `.deasy-dialog-root .deasy-dialog-header button` era el `!important`, y ese boton no escribe
+   `border-slate-200` en su plantilla. Sin consumidores, la regla entera sobra.
 
-.shadow-sm {
-  box-shadow: var(--elev-1);
-}
+   ⚠️ Lo que SI cambia, y es el efecto buscado: 37 de los 54 caian sobre CONTROLES, donde el
+   `!important` les imponia `--color-line` por encima del color que declara su propio componente.
+   Ahora manda el componente: los campos pasan a `--color-line-strong` o `--color-line-field`,
+   que ademas suben de 1.24:1 a 1.47:1. El borde del control lo decide el control. */
+
+/* ⚠️ `.shadow-sm` era el ultimo repintado de valor y se fue con los otros dos: sus 119
+   consumidores piden ahora `shadow-elev-1`, que es el mismo valor pedido por su nombre. */

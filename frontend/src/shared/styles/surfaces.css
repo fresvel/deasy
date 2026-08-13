@@ -57,15 +57,9 @@
 
     
 }
-/* ⚠️ `.card` no tiene un solo consumidor — los aciertos de un grep son `group/card`
-   (utilidad de Tailwind) y `card.iconWrap` (una variable JS). Borrarla es F5. */
-@layer components {
-    .card {
-        border-radius: 16px;
-        border: 0;
-        box-shadow: var(--elev-1);
-    }
-}
+/* Aqui vivia `.card`, sin un solo consumidor: los aciertos de un grep eran `group/card`
+   (utilidad de Tailwind), la clave `{ card: … }` de un mapa de tonos y la variable `card` de un
+   `v-for`. Borrada el 2026-08-13. Su radio de 16px a pelo era ademas el unico del fichero. */
 
 /* BARRA DE DESPLAZAMIENTO DE LOS PANELES — una sola, con la variante `--dark` para las
    barras laterales oscuras (ahi un pulgar claro solido cantaria; va un velo blanco).

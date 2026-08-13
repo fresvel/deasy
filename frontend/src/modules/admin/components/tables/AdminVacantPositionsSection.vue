@@ -67,8 +67,8 @@
           </div>
           </div>
 
-          <div v-if="loading" class="text-sm text-slate-500">Cargando puestos sin ocupaciones...</div>
-          <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
+          <div v-if="loading" class="text-sm text-muted">Cargando puestos sin ocupaciones...</div>
+          <div v-else-if="error" role="alert">{{ error }}</div>
           <AppDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `vacant-${row.id}`" empty-text="No hay puestos disponibles sin ocupaciones.">
             <template #cell="{ row, field }">
               <template v-if="field.name === '__unit_type_id'">

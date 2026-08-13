@@ -37,17 +37,17 @@
             </div>
           </div>
 
-          <div v-if="loading" class="text-sm text-slate-500">Cargando plantillas sin configuracion...</div>
-          <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
+          <div v-if="loading" class="text-sm text-muted">Cargando plantillas sin configuracion...</div>
+          <div v-else-if="error" role="alert">{{ error }}</div>
           <AppDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `artifact-free-${row.id}`" empty-text="No hay plantillas sin configuracion.">
             <template #cell="{ row, field }">
               <template v-if="field.name === 'available_formats'">
-                <div class="available-formats-cell">
+                <div>
                   <template v-if="getAvailableFormatSections(row.available_formats).length">
-                    <div v-for="section in getAvailableFormatSections(row.available_formats)" :key="section.mode" class="available-formats-group" :class="{ 'is-inline': section.mode === 'reference' }">
-                      <span class="available-formats-mode">{{ section.label }}</span>
-                      <div class="available-formats-badges">
-                        <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" class="available-formats-badge" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                    <div v-for="section in getAvailableFormatSections(row.available_formats)" :key="section.mode" :class="{ 'is-inline': section.mode === 'reference' }">
+                      <span>{{ section.label }}</span>
+                      <div>
+                        <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
                           {{ entry.formatLabel }}
                         </span>
                       </div>

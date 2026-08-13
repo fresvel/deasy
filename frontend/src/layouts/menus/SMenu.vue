@@ -8,7 +8,7 @@
 
   <div
     v-if="show"
-    class="fixed inset-0 top-[60px] z-30 bg-slate-950/28 backdrop-blur-[3px] transition-opacity duration-300 xl:hidden"
+    class="fixed inset-0 top-[60px] z-30 bg-navy/28 backdrop-blur-[3px] transition-opacity duration-300 xl:hidden"
     @click="$emit('close-mobile')"
     aria-hidden="true"
   ></div>

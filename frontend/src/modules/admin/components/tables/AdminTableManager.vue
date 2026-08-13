@@ -55,7 +55,7 @@
       @create="handlePrimaryCreateAction"
     />
 
-    <div v-if="table && isTemplateArtifactsTable" class="mb-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+    <div v-if="table && isTemplateArtifactsTable" class="mb-3 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3">
       <p class="m-0 flex items-start gap-2 text-sm text-action-view">
         <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
         <span>
@@ -136,9 +136,9 @@
 
     <div v-if="!table" class="flex">
       <div class="w-full">
-        <div class="rounded-2xl border border-line bg-white shadow-sm">
+        <div class="rounded-2xl border border-line bg-white shadow-elev-1">
           <div class="p-5">
-            <p class="mb-0 text-sm text-slate-500">Selecciona una tabla para administrar.</p>
+            <p class="mb-0 text-sm text-muted">Selecciona una tabla para administrar.</p>
           </div>
         </div>
       </div>
@@ -845,7 +845,7 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('process-filter-parent')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Proceso padre</label>
+                <label :for="fieldId('process-filter-parent')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Proceso padre</label>
                 <AdminLookupField
                   :id="fieldId('process-filter-parent')"
                   v-model="processFilterLabels.parent_id"
@@ -858,7 +858,7 @@
                 />
               </div>
               <div>
-                <label :for="fieldId('process-filter-is-active')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Activo</label>
+                <label :for="fieldId('process-filter-is-active')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Activo</label>
                 <AdminSelectField :id="fieldId('process-filter-is-active')" v-model="processFilters.is_active">
                   <option value="">Todos</option>
                   <option value="1">Si</option>
@@ -877,19 +877,19 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('template-filter-name')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Nombre</label>
+                <label :for="fieldId('template-filter-name')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Nombre</label>
                 <AdminInputField :id="fieldId('template-filter-name')" v-model="templateFilters.name" />
               </div>
               <div>
-                <label :for="fieldId('template-filter-slug')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Slug</label>
+                <label :for="fieldId('template-filter-slug')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Slug</label>
                 <AdminInputField :id="fieldId('template-filter-slug')" v-model="templateFilters.slug" />
               </div>
               <div>
-                <label :for="fieldId('template-filter-description')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Descripcion</label>
+                <label :for="fieldId('template-filter-description')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Descripcion</label>
                 <AdminInputField :id="fieldId('template-filter-description')" v-model="templateFilters.description" />
               </div>
               <div>
-                <label :for="fieldId('template-filter-process')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Proceso</label>
+                <label :for="fieldId('template-filter-process')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Proceso</label>
                 <AdminLookupField
                   :id="fieldId('template-filter-process')"
                   v-model="templateFilterLabels.process_id"
@@ -913,7 +913,7 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('document-filter-task')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tarea</label>
+                <label :for="fieldId('document-filter-task')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Tarea</label>
                 <AdminLookupField
                   :id="fieldId('document-filter-task')"
                   v-model="documentFilterLabels.task_id"
@@ -926,7 +926,7 @@
                 />
               </div>
               <div>
-                <label :for="fieldId('document-filter-status')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Estado</label>
+                <label :for="fieldId('document-filter-status')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Estado</label>
                 <AdminSelectField :id="fieldId('document-filter-status')" v-model="documentFilters.status">
                   <option value="">Todos</option>
                   <option value="Inicial">Inicial</option>
@@ -954,7 +954,7 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('unit-position-filter-unit-type')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de unidad</label>
+                <label :for="fieldId('unit-position-filter-unit-type')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Tipo de unidad</label>
                 <AdminSelectField
                   :id="fieldId('unit-position-filter-unit-type')"
                   v-model="unitPositionFilters.unit_type_id"
@@ -972,7 +972,7 @@
                 </AdminSelectField>
               </div>
               <div>
-                <label :for="fieldId('unit-position-filter-unit')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
+                <label :for="fieldId('unit-position-filter-unit')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Unidad</label>
                 <AdminSelectField
                   :id="fieldId('unit-position-filter-unit')"
                   v-model="unitPositionFilters.unit_id"
@@ -989,7 +989,7 @@
                 </AdminSelectField>
               </div>
               <div>
-                <label :for="fieldId('unit-position-filter-cargo')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Cargo</label>
+                <label :for="fieldId('unit-position-filter-cargo')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Cargo</label>
                 <AdminSelectField
                   :id="fieldId('unit-position-filter-cargo')"
                   v-model="unitPositionFilters.cargo_id"

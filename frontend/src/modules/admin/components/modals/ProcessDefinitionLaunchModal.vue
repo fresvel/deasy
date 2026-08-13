@@ -9,23 +9,23 @@
   >
     <div class="flex flex-col gap-4">
       <div v-if="definition" class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
-        <span class="font-semibold text-slate-700">Configuración:</span>
+        <span class="font-semibold text-body">Configuración:</span>
         <span class="ml-1 text-icon">{{ definition.name || `#${definition.id}` }}</span>
       </div>
 
-      <div v-if="loading" class="text-sm text-slate-500">Cargando información de lanzamiento...</div>
+      <div v-if="loading" class="text-sm text-muted">Cargando información de lanzamiento...</div>
 
       <template v-else>
-        <div v-if="!periodTypes.length" class="text-sm text-slate-500 italic">
+        <div v-if="!periodTypes.length" class="text-sm text-muted italic">
           Esta configuración no tiene tipos de periodo activos. Defínelos en "Periodos del proceso" antes de lanzar.
         </div>
 
         <template v-else>
           <div class="flex flex-col gap-2">
-            <label :for="fieldId('selectedtermid')" class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</label>
+            <label :for="fieldId('selectedtermid')" class="text-xs font-bold uppercase tracking-wider text-muted">Periodo</label>
             <select :id="fieldId('selectedtermid')"
               v-model="selectedTermId"
-              class="h-10 rounded-xl border border-slate-200 px-3 text-sm"
+              class="h-10 rounded-xl border border-line px-3 text-sm"
             >
               <option value="" disabled>Selecciona un periodo</option>
               <option v-for="t in terms" :key="t.id" :value="String(t.id)">
@@ -46,7 +46,7 @@
               <input :id="fieldId('relaunchreason')"
                 v-model="relaunchReason"
                 type="text"
-                class="h-10 rounded-xl border border-slate-200 px-3 text-sm"
+                class="h-10 rounded-xl border border-line px-3 text-sm"
                 placeholder="Ej. se agregaron nuevos destinatarios"
               />
             </div>
@@ -72,7 +72,7 @@
         </template>
 
         <div class="flex flex-col gap-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Historial de corridas</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-muted">Historial de corridas</span>
           <div v-if="!runs.length" class="text-sm text-muted italic">Sin corridas registradas.</div>
           <ul v-else class="flex flex-col gap-1.5 m-0 p-0 list-none">
             <li
@@ -125,7 +125,7 @@ const selectedTerm = computed(() => terms.value.find((t) => String(t.id) === Str
 const runStatusClass = (status) => {
   if (status === "active") return "text-emerald-600 font-medium";
   if (status === "cancelled") return "text-red-500 font-medium";
-  return "text-slate-500 font-medium";
+  return "text-muted font-medium";
 };
 
 const loadInfo = async () => {

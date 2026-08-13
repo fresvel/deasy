@@ -2,21 +2,21 @@
 <div class="flex flex-col gap-4">
   <section class="rounded-2xl border border-line bg-white p-4">
     <div class="flex flex-col gap-1">
-      <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Anexos del entregable</h3>
-      <p class="m-0 text-xs font-medium text-slate-500">Archivos auxiliares (evidencias, soportes) adicionales al documento principal.</p>
+      <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Anexos del entregable</h3>
+      <p class="m-0 text-xs font-medium text-muted">Archivos auxiliares (evidencias, soportes) adicionales al documento principal.</p>
     </div>
 
-    <div class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/40 p-4">
+    <div class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 p-4">
       <label class="flex flex-col gap-1">
-        <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Tipo</span>
-        <select v-model="attachmentUploadKind" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+        <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">Tipo</span>
+        <select v-model="attachmentUploadKind" class="rounded-2xl border border-line bg-white px-3 py-2 text-sm font-medium text-body outline-none">
           <option value="annex">Anexo</option>
           <option value="evidence">Evidencia</option>
           <option value="source">Fuente</option>
           <option value="other">Otro</option>
         </select>
       </label>
-      <label class="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-indigo-300 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50" :class="attachmentsState.uploading ? 'pointer-events-none opacity-60' : ''">
+      <label class="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-brand-300 bg-white px-4 py-2 text-sm font-semibold text-primary transition hover:bg-brand-50" :class="attachmentsState.uploading ? 'pointer-events-none opacity-60' : ''">
         <IconUpload class="h-4 w-4" />
         <span>{{ attachmentsState.uploading ? 'Subiendo...' : 'Agregar anexo' }}</span>
         <input type="file" class="hidden" :disabled="attachmentsState.uploading" @change="handleAttachmentUpload" />
@@ -25,8 +25,8 @@
 
     <div v-if="attachmentsState.error" class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">{{ attachmentsState.error }}</div>
 
-    <div v-if="attachmentsState.loading" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-slate-500 text-center animate-pulse">Cargando anexos...</div>
-    <div v-else-if="!attachmentsState.items.length" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-slate-500 text-center">
+    <div v-if="attachmentsState.loading" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center animate-pulse">Cargando anexos...</div>
+    <div v-else-if="!attachmentsState.items.length" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center">
       Este entregable todavía no tiene anexos.
     </div>
     <ul v-else class="mt-4 flex flex-col gap-2">
@@ -35,16 +35,16 @@
         :key="`attachment-${attachment.id}`"
         class="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2.5"
       >
-        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-surface text-slate-500"><IconFileDescription class="h-4.5 w-4.5" /></span>
+        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-surface text-muted"><IconFileDescription class="h-4.5 w-4.5" /></span>
         <div class="min-w-0 flex-1">
-          <p class="m-0 truncate text-sm font-semibold text-slate-800" :title="attachment.file_name">{{ attachment.file_name }}</p>
+          <p class="m-0 truncate text-sm font-semibold text-strong" :title="attachment.file_name">{{ attachment.file_name }}</p>
           <p class="m-0 mt-0.5 flex items-center gap-2 text-[0.7rem] font-medium text-muted">
-            <span class="rounded bg-indigo-50 px-1.5 py-0.5 font-semibold text-indigo-600">{{ attachmentKindLabels[attachment.kind] || attachment.kind }}</span>
+            <span class="rounded bg-brand-50 px-1.5 py-0.5 font-semibold text-primary">{{ attachmentKindLabels[attachment.kind] || attachment.kind }}</span>
             <span v-if="formatAttachmentSize(attachment.size_bytes)">{{ formatAttachmentSize(attachment.size_bytes) }}</span>
             <span v-if="attachment.description" class="truncate">· {{ attachment.description }}</span>
           </p>
         </div>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-line bg-white text-sky-700 transition hover:border-sky-300 hover:bg-sky-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
+        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-line bg-white text-info transition hover:border-blue-light-300 hover:bg-blue-light-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
         <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-line bg-white text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
       </li>
     </ul>

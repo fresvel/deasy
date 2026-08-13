@@ -6,12 +6,12 @@
     size="xl"
     :content-class="isProcessTable ? 'process-dialog-content' : ''"
   >
-    <div v-if="modalError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <AppAlert v-if="modalError">
       {{ modalError }}
-    </div>
+    </AppAlert>
     <form class="grid gap-3 md:grid-cols-12">
       <div v-for="field in visibleFormFields" :key="field.name" class="md:col-span-6">
-        <label :for="fieldId(field.name)" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
+        <label :for="fieldId(field.name)" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">
           {{ field.label || field.name }}
           <span v-if="field.required" class="text-red-600">*</span>
         </label>
@@ -33,7 +33,7 @@
             class="fk-inline-suggestions overflow-hidden rounded-xl border border-line bg-white shadow-lg"
             @mousedown.prevent
           >
-            <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-slate-500">
+            <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-muted">
               Buscando...
             </div>
             <template v-else-if="(inlineFkSuggestions[field.name] || []).length">
@@ -41,13 +41,13 @@
                 v-for="option in inlineFkSuggestions[field.name]"
                 :key="`${field.name}-${option.id}`"
                 variant="plain"
-                class-name="w-full justify-start rounded-none border-0 border-b border-line px-4 py-3 text-left text-sm font-medium text-slate-700 last:border-b-0 hover:bg-surface"
+                class-name="w-full justify-start rounded-none border-0 border-b border-line px-4 py-3 text-left text-sm font-medium text-body last:border-b-0 hover:bg-surface"
                 @mousedown.prevent="$emit('select-inline-fk-suggestion', field, option)"
               >
                 {{ formatInlineFkOption(field, option) }}
               </AdminButton>
             </template>
-            <div v-else class="px-4 py-3 text-sm text-slate-500">
+            <div v-else class="px-4 py-3 text-sm text-muted">
               Sin coincidencias. Usa Buscar.
             </div>
           </div>
@@ -104,13 +104,13 @@
       <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Configuraciones</p>
-          <h6 class="m-0 mt-1 flex items-center gap-2 text-base font-extrabold text-slate-800">
+          <h6 class="m-0 mt-1 flex items-center gap-2 text-base font-extrabold text-strong">
             <span>Configuraciones del proceso</span>
             <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">
               {{ processConfigurationRows.length }}
             </span>
           </h6>
-          <p class="m-0 mt-1 text-xs font-medium leading-5 text-slate-500">
+          <p class="m-0 mt-1 text-xs font-medium leading-5 text-muted">
             Agrega nuevas configuraciones y elimina borradores que aun no deben usarse en el proceso.
           </p>
         </div>
@@ -123,13 +123,11 @@
           <span>Agregar configuracion</span>
         </AdminButton>
       </div>
-      <div
-        v-if="processConfigurationError"
-        class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
-      >
+      <AppAlert
+        v-if="processConfigurationError">
         {{ processConfigurationError }}
-      </div>
-      <div v-if="processConfigurationLoading" class="rounded-2xl border border-line bg-surface px-4 py-6 text-center text-sm font-medium text-slate-500">
+      </AppAlert>
+      <div v-if="processConfigurationLoading" class="rounded-2xl border border-line bg-surface px-4 py-6 text-center text-sm font-medium text-muted">
         Cargando configuraciones vinculadas...
       </div>
       <AppDataTable
@@ -139,7 +137,7 @@
         :row-key="(row) => row.id"
         empty-text="Este proceso aun no tiene configuraciones."
         table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-        responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm"
+        responsive-class="overflow-x-auto rounded-2xl border border-line bg-white shadow-elev-1"
         scroll-class=""
       >
         <template #cell="{ row, field }">
@@ -166,7 +164,7 @@
       </AppDataTable>
       <p
         v-if="canDeleteProcessConfiguration && processConfigurationRows.some((row) => !canDeleteProcessConfigurationRow(row))"
-        class="m-0 mt-2 text-xs font-medium text-slate-500"
+        class="m-0 mt-2 text-xs font-medium text-muted"
       >
         Las configuraciones activas o retiradas no se eliminan desde este bloque; gestionalas con versionado o cambio de estado.
       </p>
@@ -174,8 +172,8 @@
     <div v-if="table?.table === 'process_definition_versions'" class="definition-checklist mt-4">
       <div class="definition-checklist-head">
         <strong>Checklist de activacion</strong>
-        <span v-if="processDefinitionChecklistLoading" class="text-sm text-slate-500">Validando...</span>
-        <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-sm text-slate-500">
+        <span v-if="processDefinitionChecklistLoading" class="text-sm text-muted">Validando...</span>
+        <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-sm text-muted">
           Disponible despues de guardar la configuracion.
         </span>
       </div>
@@ -240,6 +238,7 @@
 
 <script setup>
 import { computed, ref, useId } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
@@ -317,7 +316,7 @@ const processConfigurationStatusLabel = (value) => ({
 }[String(value || "").trim().toLowerCase()] || (value || "—"));
 
 const processConfigurationStatusClass = (value) => ({
-  draft: "bg-surface text-slate-700",
+  draft: "bg-surface text-body",
   active: "bg-emerald-50 text-success",
   retired: "bg-amber-50 text-warning"
 }[String(value || "").trim().toLowerCase()] || "bg-surface text-icon");

@@ -4,7 +4,7 @@
       {{ error }}
     </section>
 
-    <section id="signature-launchers" class="rounded-xl border border-line bg-white shadow-xl shadow-slate-200/30">
+    <section id="signature-launchers" class="rounded-xl border border-line bg-white shadow-elev-2 shadow-line/30">
       <FirmarPdf
         :show-start-heading="false"
         :enable-home-shortcuts="true"
@@ -28,12 +28,12 @@
     >
       <template #header>
         <div id="home-signature-sign-modal" class="flex min-w-0 flex-1 items-center gap-4">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-light-100 text-info">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21h-7a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v7"></path><path d="M14 19l2 2l4 -4"></path><path d="M9 7h4"></path><path d="M9 11h4"></path></svg>
           </div>
           <div class="min-w-0">
             <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Firmador singular</div>
-            <div class="truncate text-base font-bold text-slate-800">Firmar documento</div>
+            <div class="truncate text-base font-bold text-strong">Firmar documento</div>
           </div>
         </div>
       </template>
@@ -65,7 +65,7 @@
           </div>
           <div class="min-w-0">
             <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Solicitud singular</div>
-            <div class="truncate text-base font-bold text-slate-800">Solicitar firmas</div>
+            <div class="truncate text-base font-bold text-strong">Solicitar firmas</div>
           </div>
         </div>
       </template>
@@ -94,12 +94,12 @@
       <template #header>
         <div id="home-signature-general-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
           <div class="flex min-w-0 max-w-[22rem] items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-light-100 text-info">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
             </div>
             <div class="min-w-0">
               <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Previsualizando PDF</div>
-              <div class="truncate text-base font-bold text-slate-800" :title="generalMultiSignerHeader.documentName">{{ formatHeaderFileName(generalMultiSignerHeader.documentName) }}</div>
+              <div class="truncate text-base font-bold text-strong" :title="generalMultiSignerHeader.documentName">{{ formatHeaderFileName(generalMultiSignerHeader.documentName) }}</div>
             </div>
           </div>
         </div>
@@ -200,7 +200,7 @@
           </div>
           <div class="deasy-filter-toolbar">
           <div class="deasy-filter-summary">
-            Seleccionados: <span class="font-bold text-slate-700">{{ selectedItems.length }}</span>
+            Seleccionados: <span class="font-bold text-body">{{ selectedItems.length }}</span>
           </div>
           <div class="deasy-filter-actions">
             <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTableFilters">Reset</AppButton>
@@ -223,15 +223,15 @@
               <input
                 type="checkbox"
                 aria-label="Seleccionar documento"
-                class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                class="h-4 w-4 rounded border-line-strong text-info"
                 :checked="isSelected(row)"
                 @change="toggleSelection(row)"
               />
             </template>
             <template v-else-if="field.name === 'document'">
               <div class="flex flex-col gap-1">
-                <strong class="text-sm font-bold text-slate-800">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
-                <span class="text-xs font-medium text-slate-500">{{ row.document_version ? `v${row.document_version}` : "Sin versión" }}</span>
+                <strong class="text-sm font-bold text-strong">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
+                <span class="text-xs font-medium text-muted">{{ row.document_version ? `v${row.document_version}` : "Sin versión" }}</span>
               </div>
             </template>
             <template v-else-if="field.name === 'process'">{{ row.process_name }}</template>
@@ -270,12 +270,12 @@
       <template #header>
         <div id="home-signature-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
           <div class="flex min-w-0 max-w-[22rem] items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-light-100 text-info">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
             </div>
             <div class="min-w-0">
               <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Previsualizando PDF</div>
-              <div class="truncate text-base font-bold text-slate-800" :title="pendingMultiSignerHeader.documentName">{{ formatHeaderFileName(pendingMultiSignerHeader.documentName) }}</div>
+              <div class="truncate text-base font-bold text-strong" :title="pendingMultiSignerHeader.documentName">{{ formatHeaderFileName(pendingMultiSignerHeader.documentName) }}</div>
             </div>
           </div>
         </div>

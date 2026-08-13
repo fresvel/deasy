@@ -1,7 +1,7 @@
 <template>
   <!-- Variante embebida de AppModalShell: misma API de slots (default = cuerpo, #footer) pero SIN overlay ni
        header, para hospedar el contenido de un modal dentro de otro (p. ej. el wizard de crear como pestaña). -->
-  <div class="deasy-embedded-shell">
+  <div>
     <div class="deasy-dialog-body">
       <slot />
     </div>

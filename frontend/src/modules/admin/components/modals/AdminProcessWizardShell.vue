@@ -39,16 +39,16 @@
       </button>
     </div>
 
-    <div v-if="wizardError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <AppAlert v-if="wizardError">
       {{ wizardError }}
-    </div>
+    </AppAlert>
 
     <div
       v-if="definitionContext?.id && showContextSummary"
       class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800"
     >
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
-      <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-slate-200">
+      <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
         {{ definitionContext.definition_version || "—" }}
       </span>
       <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadgeClass">
@@ -66,6 +66,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 const props = defineProps({
@@ -92,13 +93,13 @@ const modalRef = ref(null);
 const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
 
 const DEFINITION_STATUS_META = {
-  draft: { label: "Borrador", class: "bg-slate-200 text-slate-700" },
+  draft: { label: "Borrador", class: "bg-gray-200 text-body" },
   active: { label: "Activa", class: "bg-emerald-500 text-white" },
   retired: { label: "Retirada", class: "bg-amber-200 text-amber-800" }
 };
 const definitionStatusMeta = computed(() =>
   DEFINITION_STATUS_META[String(props.definitionContext?.status || "draft").toLowerCase()]
-  || { label: props.definitionContext?.status || "—", class: "bg-slate-200 text-slate-700" }
+  || { label: props.definitionContext?.status || "—", class: "bg-gray-200 text-body" }
 );
 const definitionStatusLabel = computed(() => definitionStatusMeta.value.label);
 const definitionStatusBadgeClass = computed(() => definitionStatusMeta.value.class);
@@ -117,19 +118,19 @@ const isStepLocked = (step, index) =>
   Boolean(step.locked || step.disabled || (props.lockAfterFirstUntilContext && index > 0 && !hasDefinition.value));
 
 const stepButtonClass = (step, index) => {
-  if (step.key === props.currentStep) return "bg-white shadow-sm ring-1 ring-indigo-300";
+  if (step.key === props.currentStep) return "bg-white shadow-elev-1 ring-1 ring-brand-300";
   if (isStepLocked(step, index)) return "opacity-50 cursor-not-allowed";
   return "hover:bg-white/70";
 };
 const stepBadgeClass = (step, index) => {
   if (isStepComplete(step)) return "bg-emerald-500 text-white";
-  if (step.key === props.currentStep) return "bg-indigo-500 text-white";
-  if (isStepLocked(step, index)) return "bg-slate-200 text-slate-500";
-  return "bg-slate-200 text-slate-500";
+  if (step.key === props.currentStep) return "bg-brand-500 text-white";
+  if (isStepLocked(step, index)) return "bg-gray-200 text-muted";
+  return "bg-gray-200 text-muted";
 };
 const stepHintClass = (step, index) => {
   if (isStepComplete(step)) return "text-emerald-600";
-  if (step.key === props.currentStep) return "text-indigo-500";
+  if (step.key === props.currentStep) return "text-primary";
   if (isStepLocked(step, index)) return "text-muted";
   return "text-muted";
 };

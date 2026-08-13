@@ -123,14 +123,23 @@ describe('getSignatureStepStatusLabel / Variant', () => {
   });
 });
 
+/* Igual que el bloque de abajo: afirmaba `toContain('emerald')` y `toContain('sky')`, o sea el
+   nombre de la paleta. Lo que estas funciones prometen es DELEGAR en el codigo de estado y que el
+   turno mande, y eso es lo que se comprueba ahora. */
 describe('getSignatureStepCardClass / AccentClass (delegan en el status code)', () => {
-  test('un paso completado usa clases emerald; uno actual usa sky/verde', () => {
-    const completado = [{ stepOrder: 1, requestStatusCode: 'completado' }];
-    expect(getSignatureStepCardClass({ step_order: 1 }, completado)).toContain('emerald');
-    expect(getSignatureStepAccentClass({ step_order: 1 }, completado)).toContain('emerald');
+  const paso = { step_order: 1 };
+  const conEstado = (code) => [{ stepOrder: 1, requestStatusCode: code }];
 
-    const actual = [{ stepOrder: 1, requestStatusCode: 'pendiente' }];
-    expect(getSignatureStepCardClass({ step_order: 1 }, actual, 1)).toContain('sky');
+  test('delegan en el codigo de estado: estados distintos dan clases distintas', () => {
+    expect(getSignatureStepCardClass(paso, conEstado('completado')))
+      .not.toBe(getSignatureStepCardClass(paso, conEstado('pendiente')));
+    expect(getSignatureStepAccentClass(paso, conEstado('completado')))
+      .not.toBe(getSignatureStepAccentClass(paso, conEstado('pendiente')));
+  });
+
+  test('ser el paso ACTUAL cambia la clase aunque el estado sea el mismo', () => {
+    expect(getSignatureStepCardClass(paso, conEstado('pendiente'), 1))
+      .not.toBe(getSignatureStepCardClass(paso, conEstado('pendiente')));
   });
 });
 
@@ -213,16 +222,29 @@ describe('getFillStepStatusLabel / TagVariant', () => {
   });
 });
 
+/* Estas pruebas afirmaban sobre el NOMBRE DE LA PALETA (`toContain('slate')`), asi que una
+   migracion de color las rompio aunque el comportamiento fuera identico. Un test acoplado al valor
+   no protege la regla: protege la implementacion, y estorba justo cuando hace falta cambiarla.
+   Reescritas el 2026-08-13 para afirmar lo que sus propios nombres dicen —que el turno manda sobre
+   el estado, y que cada estado se distingue del resto—, que sobrevive a repintar la aplicacion. */
 describe('getFillStepCardClass / AccentClass', () => {
-  test('el paso ACTUAL manda sobre el estado (clases sky)', () => {
-    expect(getFillStepCardClass({ step_order: 2, request_status: 'approved' }, 2)).toContain('sky');
-    expect(getFillStepAccentClass({ step_order: 2, request_status: 'approved' }, 2)).toContain('sky');
+  const card = (estado, actual) => getFillStepCardClass({ step_order: 2, request_status: estado }, actual);
+  const accent = (estado, actual) => getFillStepAccentClass({ step_order: 2, request_status: estado }, actual);
+
+  test('el paso ACTUAL manda sobre el estado', () => {
+    /* Mismo estado, distinto turno: si el turno no mandara, las dos saldrian iguales. */
+    expect(card('approved', 2)).not.toBe(card('approved', 1));
+    expect(accent('approved', 2)).not.toBe(accent('approved', 1));
   });
-  test('si no es el actual, colorea por estado', () => {
-    expect(getFillStepCardClass({ step_order: 2, request_status: 'approved' }, 1)).toContain('emerald');
-    expect(getFillStepCardClass({ step_order: 2, request_status: 'rejected' }, 1)).toContain('rose');
-    expect(getFillStepCardClass({ step_order: 2, request_status: 'returned' }, 1)).toContain('amber');
-    expect(getFillStepCardClass({ step_order: 2, request_status: 'pendiente' }, 1)).toContain('slate');
+
+  test('si no es el actual, cada estado se distingue de los demas', () => {
+    const clases = ['approved', 'rejected', 'returned', 'pendiente'].map((e) => card(e, 1));
+    expect(new Set(clases).size).toBe(clases.length);
+  });
+
+  test('un estado desconocido cae en el neutro, no en el de otro estado', () => {
+    expect(card('lo-que-sea', 1)).toBe(card('pendiente', 1));
+    expect(card('lo-que-sea', 1)).toContain('border-line');
   });
 });
 

@@ -379,9 +379,9 @@ export function useDeliverableView({
 
   const getDeliverableWorkspaceTabClass = (tab) => {
     if (deliverableWorkspaceState.value.tab === tab) {
-      return 'border-line bg-white text-slate-900 shadow-[0_-1px_0_rgba(var(--white-rgb),0.9)]';
+      return 'border-line bg-white text-navy shadow-[0_-1px_0_rgba(var(--white-rgb),0.9)]';
     }
-    return 'border-transparent bg-surface text-slate-500 hover:border-line hover:bg-surface hover:text-slate-700';
+    return 'border-transparent bg-surface text-muted hover:border-line hover:bg-surface hover:text-body';
   };
 
   const shouldShowResetWorkflow = (payload) => {
@@ -456,12 +456,12 @@ export function useDeliverableView({
   const getDeliverableCardTone = (payload) => {
     if (shouldShowStartDeliverable(payload)) {
       return {
-        card: 'border-indigo-200 hover:border-indigo-300',
-        header: 'border-indigo-100 bg-indigo-50/60 text-indigo-700',
-        accent: 'bg-indigo-500',
-        responsibility: 'border-indigo-100 bg-indigo-50/40',
-        responsibilityLabel: 'text-indigo-700',
-        iconChip: 'bg-indigo-100 text-indigo-700'
+        card: 'border-brand-200 hover:border-brand-300',
+        header: 'border-brand-100 bg-brand-50/60 text-primary',
+        accent: 'bg-brand-500',
+        responsibility: 'border-brand-100 bg-brand-50/40',
+        responsibilityLabel: 'text-primary',
+        iconChip: 'bg-brand-100 text-primary'
       };
     }
 
@@ -478,12 +478,12 @@ export function useDeliverableView({
 
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
       return {
-        card: 'border-sky-200 hover:border-sky-300',
-        header: 'border-sky-100 bg-sky-50/60 text-sky-700',
-        accent: 'bg-sky-400',
-        responsibility: 'border-sky-100 bg-sky-50/40',
-        responsibilityLabel: 'text-sky-700',
-        iconChip: 'bg-sky-100 text-sky-700'
+        card: 'border-blue-light-200 hover:border-blue-light-300',
+        header: 'border-blue-light-100 bg-blue-light-50/60 text-info',
+        accent: 'bg-blue-light-400',
+        responsibility: 'border-blue-light-100 bg-blue-light-50/40',
+        responsibilityLabel: 'text-info',
+        iconChip: 'bg-blue-light-100 text-info'
       };
     }
 
@@ -501,12 +501,12 @@ export function useDeliverableView({
     }
 
     return {
-      card: 'border-line hover:border-slate-300',
-      header: 'border-line bg-slate-50/70 text-slate-500',
-      accent: 'bg-slate-300',
+      card: 'border-line hover:border-line-strong',
+      header: 'border-line bg-surface/70 text-muted',
+      accent: 'bg-gray-300',
       responsibility: 'border-line bg-surface/50',
-      responsibilityLabel: 'text-slate-500',
-      iconChip: 'bg-surface text-slate-500'
+      responsibilityLabel: 'text-muted',
+      iconChip: 'bg-surface text-muted'
     };
   };
 
@@ -535,12 +535,12 @@ export function useDeliverableView({
       return 'border-step-ink text-step-ink hover:border-[color-mix(in_srgb,var(--color-step-ink)_85%,var(--black))] hover:bg-[rgba(var(--step-rgb),0.1)] focus:ring-[rgba(var(--step-rgb),0.35)]';
     }
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
-      return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';
+      return 'border-blue-light-100/95 text-info hover:border-blue-light-200 hover:bg-blue-light-50';
     }
     if (shouldShowStartDeliverable(payload)) {
-      return 'border-indigo-100/95 text-indigo-700 hover:border-indigo-200 hover:bg-indigo-50 focus:ring-indigo-200/70';
+      return 'border-brand-100/95 text-primary hover:border-brand-200 hover:bg-brand-50';
     }
-    return 'border-line text-icon hover:border-slate-300 hover:bg-surface focus:ring-slate-200/70';
+    return 'border-line text-icon hover:border-line-strong hover:bg-surface focus:ring-line/70';
   };
 
   const isDeliverableSignatureFlowCompleted = (payload) => {

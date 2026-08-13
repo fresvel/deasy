@@ -5,16 +5,16 @@
       <div
         v-for="card in cards"
         :key="card.key"
-        class="rounded-2xl border border-line bg-white p-4 shadow-sm"
+        class="rounded-2xl border border-line bg-white p-4 shadow-elev-1"
       >
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 min-w-0">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="card.iconWrap">
               <font-awesome-icon :icon="card.icon" />
             </span>
-            <span class="truncate text-sm font-bold text-slate-700">{{ card.title }}</span>
+            <span class="truncate text-sm font-bold text-body">{{ card.title }}</span>
           </div>
-          <span class="shrink-0 text-2xl font-extrabold leading-none text-slate-800">{{ card.total }}</span>
+          <span class="shrink-0 text-2xl font-extrabold leading-none text-strong">{{ card.total }}</span>
         </div>
       </div>
     </div>
@@ -41,7 +41,7 @@ const cards = computed(() => {
       key: "tasks",
       title: "Tareas",
       icon: "square-check",
-      iconWrap: "bg-sky-100 text-sky-600",
+      iconWrap: "bg-blue-light-100 text-info",
       total: sumCounts(n(by, "pendiente"), n(by, "en_proceso"), stats.tasks.overdue)
     });
   }
@@ -52,7 +52,7 @@ const cards = computed(() => {
       key: "documents",
       title: "Documentos",
       icon: "info-circle",
-      iconWrap: "bg-indigo-100 text-indigo-600",
+      iconWrap: "bg-brand-100 text-primary",
       total: sumCounts(
         n(by, "En proceso"),
         n(by, "Observado"),

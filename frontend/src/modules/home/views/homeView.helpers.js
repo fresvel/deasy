@@ -103,14 +103,14 @@ export const getSignatureStepCardClass = (step, requests = [], currentStepOrder 
     case 'completed':
       return 'border-emerald-200 bg-linear-to-br from-emerald-50/80 via-white to-emerald-100/40';
     case 'current':
-      return 'border-sky-200 bg-linear-to-br from-sky-50/80 via-white to-sky-100/50';
+      return 'border-blue-light-200 bg-linear-to-br from-blue-light-50/80 via-white to-blue-light-100/50';
     case 'rejected':
       return 'border-rose-200 bg-linear-to-br from-rose-50/80 via-white to-rose-100/40';
     case 'pending':
     case 'unresolved':
       return 'border-[#f8a895] bg-linear-to-br from-[#fdeae3]/85 via-white to-[#fbccbd]/45';
     default:
-      return 'border-line bg-linear-to-br from-slate-50/90 via-white to-slate-100/60';
+      return 'border-line bg-linear-to-br from-surface/90 via-white to-gray-100/60';
   }
 };
 
@@ -127,7 +127,7 @@ export const getSignatureStepAccentClass = (step, requests = [], currentStepOrde
     case 'unresolved':
       return 'bg-linear-to-r from-[#ffa792] via-[#fa8072] to-[#f0664f]';
     default:
-      return 'bg-linear-to-r from-slate-200 via-slate-300 to-slate-200';
+      return 'bg-linear-to-r from-gray-200 via-line-strong to-gray-200';
   }
 };
 
@@ -201,24 +201,24 @@ export const formatWorkflowDateTime = (value) => {
 
 export const getFillStepCardClass = (step, currentStepOrder) => {
   if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) {
-    return 'border-sky-200 bg-linear-to-br from-sky-50/80 via-white to-sky-100/50';
+    return 'border-blue-light-200 bg-linear-to-br from-blue-light-50/80 via-white to-blue-light-100/50';
   }
   const code = String(step?.request_status || '').trim().toLowerCase();
   if (code === 'approved') return 'border-emerald-200 bg-linear-to-br from-emerald-50/80 via-white to-emerald-100/40';
   if (code === 'rejected') return 'border-rose-200 bg-linear-to-br from-rose-50/80 via-white to-rose-100/40';
   if (code === 'returned') return 'border-amber-200 bg-linear-to-br from-amber-50/80 via-white to-amber-100/40';
-  return 'border-line bg-linear-to-br from-slate-50/90 via-white to-slate-100/60';
+  return 'border-line bg-linear-to-br from-surface/90 via-white to-gray-100/60';
 };
 
 export const getFillStepAccentClass = (step, currentStepOrder) => {
   if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) {
-    return 'bg-linear-to-r from-sky-300 via-sky-400 to-cyan-300';
+    return 'bg-linear-to-r from-blue-light-300 via-blue-light-400 to-blue-light-300';
   }
   const code = String(step?.request_status || '').trim().toLowerCase();
   if (code === 'approved') return 'bg-linear-to-r from-emerald-300 via-emerald-400 to-green-300';
   if (code === 'rejected') return 'bg-linear-to-r from-rose-300 via-rose-400 to-red-300';
   if (code === 'returned') return 'bg-linear-to-r from-amber-300 via-amber-400 to-orange-300';
-  return 'bg-linear-to-r from-slate-200 via-slate-300 to-slate-200';
+  return 'bg-linear-to-r from-gray-200 via-line-strong to-gray-200';
 };
 
 export const getFillStepResolverLabel = (step) => {

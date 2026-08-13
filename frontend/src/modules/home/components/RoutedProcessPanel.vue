@@ -1,21 +1,21 @@
 <template>
   <section class="flex flex-col gap-5">
     <!-- Barra de acción: propósito + botón principal. El título del proceso lo pone la cabecera de la página. -->
-    <div class="overflow-hidden rounded-[1.75rem] border border-indigo-100 bg-linear-to-br from-indigo-50/70 via-white to-sky-50/50 shadow-sm">
+    <div class="overflow-hidden rounded-[1.75rem] border border-brand-100 bg-linear-to-br from-brand-50/70 via-white to-blue-light-50/50 shadow-elev-1">
       <div class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
         <div class="flex items-start gap-3.5">
-          <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-white text-indigo-600 shadow-sm">
+          <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-white text-primary shadow-elev-1">
             <IconSend class="h-6 w-6" />
           </span>
           <div class="flex min-w-0 flex-col">
-            <h3 class="m-0 text-sm font-black uppercase tracking-wider text-indigo-500">Mis documentos</h3>
-            <p class="m-0 mt-1 max-w-xl text-sm font-medium text-slate-500">{{ purpose }}</p>
+            <h3 class="m-0 text-sm font-black uppercase tracking-wider text-primary">Mis documentos</h3>
+            <p class="m-0 mt-1 max-w-xl text-sm font-medium text-muted">{{ purpose }}</p>
           </div>
         </div>
         <div class="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
             title="Actualizar"
             aria-label="Actualizar"
             @click="$emit('refresh')"
@@ -30,28 +30,28 @@
     </div>
 
     <!-- Pestañas: enviados / recibidos -->
-    <div class="flex items-center gap-1.5 rounded-2xl border border-line/80 bg-white p-1.5 shadow-sm">
+    <div class="flex items-center gap-1.5 rounded-2xl border border-line/80 bg-white p-1.5 shadow-elev-1">
       <button
         v-for="tab in tabs"
         :key="tab.key"
         type="button"
         class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition"
         :class="activeTab === tab.key
-          ? 'bg-indigo-600 text-white shadow-sm'
-          : 'text-slate-500 hover:bg-surface hover:text-slate-700'"
+          ? 'bg-brand-600 text-white shadow-elev-1'
+          : 'text-muted hover:bg-surface hover:text-body'"
         @click="activeTab = tab.key"
       >
         <component :is="tab.icon" class="h-4.5 w-4.5" />
         {{ tab.label }}
         <span
           class="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-black"
-          :class="activeTab === tab.key ? 'bg-white/25 text-white' : 'bg-surface text-slate-500'"
+          :class="activeTab === tab.key ? 'bg-white/25 text-white' : 'bg-surface text-muted'"
         >{{ tab.items.length }}</span>
       </button>
     </div>
 
     <!-- Contenido -->
-    <div v-if="loading" class="rounded-2xl border border-sky-100 bg-sky-50/60 p-6 text-center text-sm font-semibold text-action-view animate-pulse">
+    <div v-if="loading" class="rounded-2xl border border-blue-light-100 bg-blue-light-50/60 p-6 text-center text-sm font-semibold text-action-view animate-pulse">
       Cargando…
     </div>
 
@@ -59,7 +59,7 @@
       v-else-if="!activeItems.length"
       class="flex flex-col items-center gap-3 rounded-[1.5rem] border-2 border-dashed border-line bg-surface/50 px-6 py-12 text-center"
     >
-      <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-line bg-white text-slate-300">
+      <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-line bg-white text-gray-300">
         <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-7 w-7" />
       </span>
       <p class="m-0 text-sm font-bold text-icon">{{ emptyTitle }}</p>
@@ -73,22 +73,22 @@
       <li
         v-for="item in activeItems"
         :key="item.id"
-        class="group flex items-center gap-3.5 rounded-2xl border border-line/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
+        class="group flex items-center gap-3.5 rounded-2xl border border-line/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition hover:border-brand-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
       >
         <span
           class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
-          :class="activeTab === 'sends' ? 'border-indigo-100 bg-indigo-50/70 text-indigo-600' : 'border-emerald-100 bg-emerald-50/70 text-emerald-600'"
+          :class="activeTab === 'sends' ? 'border-brand-100 bg-brand-50/70 text-primary' : 'border-emerald-100 bg-emerald-50/70 text-emerald-600'"
         >
           <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-5 w-5" />
         </span>
         <div class="flex min-w-0 flex-1 flex-col">
-          <p class="m-0 truncate text-sm font-bold text-slate-800">{{ item.label || 'Documento sin título' }}</p>
-          <p class="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-medium text-slate-500">
+          <p class="m-0 truncate text-sm font-bold text-strong">{{ item.label || 'Documento sin título' }}</p>
+          <p class="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-medium text-muted">
             <span class="inline-flex items-center gap-1">
               <IconUser class="h-3.5 w-3.5 text-muted" />
               {{ activeTab === 'sends' ? 'Para' : 'De' }}: <strong class="font-semibold text-icon">{{ personName(item) }}</strong>
             </span>
-            <span class="text-slate-300">·</span>
+            <span class="text-gray-300">·</span>
             <span>{{ formatDate(item.created_at) }}</span>
           </p>
         </div>

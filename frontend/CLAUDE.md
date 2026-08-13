@@ -10,7 +10,7 @@ cómo se escribe la interfaz.
 
 ## 1. Dónde vive cada cosa
 
-`src/shared/styles/` son **18 módulos por familia**, 2 749 líneas. `main.js` importa **sólo
+`src/shared/styles/` son **18 módulos por familia**, 2 900 líneas. `main.js` importa **sólo
 `index.css`**, que los encadena.
 
 | Módulo | Qué va aquí |
@@ -36,21 +36,67 @@ Hoy hay **0 hex y 0 `rgb()/rgba()` numéricos** en todo el CSS fuera de la palet
 74 hex y 100 `rgba`. **Si tu cambio los sube, has metido un color suelto.**
 
 ```css
-/*  MAL  */  color: #5e4eff;   background: rgba(94, 78, 255, 0.12);
+/*  MAL  */  color: #465fff;   background: rgba(70, 95, 255, 0.12);
 /* BIEN */  color: var(--color-primary);
-            background: rgba(var(--primary-rgb), 0.12);
+            background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 ```
+
+⚠️ **Para el alfa, `color-mix()` — NO un triplete `-rgb`.** Da exactamente el mismo color y **lee
+del token**. Un triplete es una copia a mano: al mover el token, la copia no se entera. Pasó el
+2026-08-13 con los tres que existían —`--primary-rgb` seguía siendo el violeta viejo cuando
+`--color-primary` ya era azul— y **no hay puerta que lo vea**. Los cuatro que quedan
+(`--white-rgb`, `--step-rgb`, `--navy-menu-rgb`, `--elev-ink-rgb`) no tienen token gemelo del que
+copiar, así que no pueden desincronizarse.
 
 ⚠️ Pero **verde no significa sin deuda**: `color-no-hex` **no ve** los hex dentro de `@apply`
 (`text-[#8a93a8]`) ni los `rgb()/rgba()` numéricos. Llegó a haber 10 hex y 100 `rgba` vivos con el
 contador a cero. Y `stylelint` sólo mira `src/**/*.css`.
 
-### 2.2 Cómo se llama un token, y por qué el nombre es corto
+### 2.2 DOS CAPAS: primitivas y semánticos. Sólo se escribe la segunda
+
+Desde el 2026-08-13 `tokens.css` tiene dos bloques dentro del mismo `@theme`, y **la diferencia
+entre ellos es la regla más importante de todo este fichero**:
+
+```css
+@theme {
+  --color-gray-200: #e4e7ec;                 /* CAPA 1 · primitiva — un valor en bruto */
+  --color-line:     var(--color-gray-200);   /* CAPA 2 · semántico — lo que SÍ se escribe */
+}
+```
+
+**`border-gray-200` dice de qué color es. `border-line` dice qué es.** El día que el borde del
+sistema cambie, la capa 2 es **una línea** en vez de 354 sustituciones. Por eso:
+
+| | |
+|---|---|
+| **Capa 1 · primitivas** | La paleta de TailAdmin (91 colores, MIT — ver `frontend/NOTICE`). **No se escriben en una plantilla**, salvo en el markup adoptado de ellos, que viene en sus nombres |
+| **Capa 2 · semánticos** | Los 22 nombres de Deasy. **Es lo que se escribe.** Cada uno es un alias sobre una primitiva, o su propio hex si no hay equivalente |
+
+**Tres cosas verificadas al instalarlo, que evitan repetir el análisis:**
+
+1. **El alias con `var()` funciona sin `@theme inline`.** Se temía que el *tree-shaking* de
+   `@theme` se llevara la primitiva y dejara el alias sin valor —el desastre de los 114 nodos con
+   el borde en `currentColor`—. **No pasa: Tailwind sigue la referencia y emite la primitiva.**
+   Medido en `dist`: las 13 primitivas referenciadas están; las que nadie usa, no. Cuestan 0 bytes.
+2. **Referenciar una primitiva desde el `:root` de abajo también la emite** (`--color-blue-light-500`
+   entra por los degradados).
+3. **La escala `gray-*` de TailAdmin pisa la de Tailwind**, y es seguro: había **cero** usos de
+   `gray-*` en el árbol. Es el destino de los `slate-*` que quedan.
+
+⚠️ **El paso `-500` NO es texto.** En su sistema el 500 es relleno o icono: `success-500` da 2.4:1
+sobre blanco. El texto vive en **600-700**. La prueba de que Deasy ya estaba ahí: su `error-700`
+es `#b42318`, **exactamente** nuestro `--color-danger` de siempre.
+
+⚠️ **Un token semántico no se ancla a ojo: se mide.** `node scripts/contraste.mjs --tabla` da, para
+cada token, su contraste de hoy y el escalón de su familia que no lo empeora. La familia la elige
+una persona —el tono es diseño—; el escalón lo elige la medida.
+
+### 2.2.1 Cómo se llama un token, y por qué el nombre es corto
 
 Un color se declara **una sola vez**, en el `@theme` de `tokens.css`:
 
 ```css
-@theme { --color-primary: #5e4eff; }     /* da bg-primary, text-primary, border-primary… */
+@theme { --color-primary: var(--color-brand-500); }   /* da bg-primary, text-primary, border-primary… */
 ```
 
 **`--color-` no es parte del nombre: es el NAMESPACE de Tailwind**, y significa «esto es un color,
@@ -486,12 +532,25 @@ concentran la mayor parte de la utility soup. No añadas más a ellos: extrae.
 ## 7. Comandos
 
 ```bash
-bash scripts/stack.sh b exec -T frontend pnpm run lint       # eslint .
+bash scripts/stack.sh b exec -T frontend pnpm run lint       # eslint + no-dark + orphan-classes
 bash scripts/stack.sh b exec -T frontend pnpm run lint:css   # stylelint — debe dar 0 errores
-bash scripts/stack.sh b exec -T frontend pnpm run check:no-dark
 bash scripts/stack.sh b exec -T frontend pnpm run test:unit  # vitest
 bash scripts/stack.sh b exec -T frontend pnpm run build
+
+# El contraste, antes de mover un token de sitio:
+bash scripts/stack.sh b exec -T frontend node scripts/contraste.mjs --tabla
+bash scripts/stack.sh b exec -T frontend node scripts/contraste.mjs muted=gray-600 primary=brand-500
 ```
+
+**`lint` encadena los tres desde el 2026-08-13.** Antes `check:no-dark` estaba suelto: existía, y
+dependía de que alguien se acordara de invocarlo. Los dos scripts siguen siendo llamables por
+separado (`check:no-dark`, `check:orphan-classes`) para depurar.
+
+> **`check:orphan-classes` es nuevo** y cubre el sentido que no vigilaba nadie: una clase **propia**
+> que una plantilla escribe y **ningún CSS declara**. Eran 23 nombres en 40 sitios, restos de
+> refactores donde el CSS se borró y el atributo se quedó. `css-prune.mjs` cubre el contrario
+> (regla declarada sin consumidor). Ojo: **no ve las clases compuestas en runtime** —a propósito—,
+> así que su salida es «revisa esto», no «borra esto».
 
 Sustituye `b` por tu pila (`docker-env.sh dev` = pila A). **Nunca levantes `dev` desde un worktree**:
 no crea una pila nueva, repunta la de siempre a tu código. Está en el `CLAUDE.md` raíz.
@@ -505,10 +564,34 @@ no crea una pila nueva, repunta la de siempre a tu código. Está en el `CLAUDE.
 | Colores a mano fuera del CSS | **47** | *Arbitrary values* y mapas de tono en `.vue` y `.js` |
 | Strings de clase >120 caracteres | **203** | `HomeView.vue`, `FirmarPdf.vue` |
 | *Arbitrary values* (`text-[11px]`…) | **436** | 8 tamaños distintos por debajo de `text-sm` |
-| `!important` con motivo escrito | **5** | `dialogs.css`, `overrides.css` |
-| Reglas fuera de capa | **52** | Todas con su motivo escrito al lado |
-| **Colores de Tailwind por nombre** | **~2 112** | Ningún linter ve uno |
+| `!important` con motivo escrito | **3** | `dialogs.css`, `overrides.css` |
+| Reglas fuera de capa | **33** | Todas con su motivo escrito al lado |
+| **Colores de Tailwind por nombre** | **824** | Eran 2 117. Ningún linter ve uno. Ver el desglose abajo |
 | Colores de Tailwind **dentro de `@apply`** | **3** | Los `bg-slate-100`, abajo |
+| Clases propias sin regla | **0** | Eran 23 en 40 sitios. Lo vigila `check:orphan-classes` |
+
+### Lo que salió el 2026-08-13, y qué enseñó cada cosa
+
+Todo verificado con el **diff del CSS construido**: 8 reglas nuevas, 12 bajas, y ninguna baja
+inesperada. Cambio visual cero.
+
+- **Once selectores de tono de navegación.** `--sky`, `--emerald`, `--amber`, `--indigo`,
+  `--violet`, `--direct`, `--derived` en dos prefijos **compartían un solo cuerpo**: doce selectores
+  para dos aspectos. Plegado sobre la clase base, el aspecto correcto pasa a ser el **por defecto**
+  y con eso muere el fallo que el comentario describía sin arreglar — `workspaceNavIcons.js`
+  componía `${prefix}--${tone}` sin validar, y un tono nuevo salía transparente. Ahora la función
+  solo emite la clase de `slate`, el único tono real, y **tiene test**.
+- **`.card`, `.h1`–`.h6`, `.deasy-tag--contrast` y `--hero`** (estas dos, idénticas byte a byte
+  entre sí), sin un solo consumidor.
+- **`--elev-ink` y `--surface-soft`**, tokens con cero consumidores. El primero era el único sitio
+  que guardaba `#0f172a` sin gastarlo; el segundo duplicaba `--color-surface` con alfa.
+- **El fondo del `body` estaba declarado CINCO veces** entre `tokens.css` y `base.css`, y el `color`
+  tres, ganando el último **por orden de `@import`**. Consolidado en `base.css`, que es su módulo.
+- **`graph.css` escribía `rgba(15,23,42,.12)`**, el mismo triplete que `--elev-ink-rgb`.
+
+> 🪤 **Tailwind escanea también los `.mjs` de `scripts/`.** El primer `check-orphan-classes.mjs`
+> citaba tres utilidades de ejemplo **en un comentario en prosa** y las tres acabaron **emitidas en
+> el CSS construido**. Si documentas una clase, descríbela; no la escribas.
 
 **Dentro de los módulos ya no queda ni un color de familia propia fuera de la paleta.** Eran **151**
 —`color-no-hex` no entra en `@apply`, así que el contador en verde los escondía— y quedan **tres**:

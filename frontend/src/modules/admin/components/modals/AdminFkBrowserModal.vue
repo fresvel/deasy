@@ -20,7 +20,7 @@
     <div v-show="!createTabEnabled || activeTab === 'select'">
     <div class="grid gap-3 md:grid-cols-12 md:items-end mb-3">
       <template v-if="isFkUnits">
-        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-7">
+        <AdminFieldGroup label="Busqueda" label-class="text-body" group-class="md:col-span-7">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar referencia"
@@ -28,7 +28,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Tipo de unidad" label-class="text-slate-700" group-class="md:col-span-4">
+        <AdminFieldGroup label="Tipo de unidad" label-class="text-body" group-class="md:col-span-4">
           <AdminSelectField
             :model-value="fkPositionFilters.unit_type_id"
             :disabled="fkPositionFilterLoading"
@@ -55,7 +55,7 @@
         </div>
       </template>
       <template v-else-if="isFkProcessDefinitions">
-        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Busqueda" label-class="text-body" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar referencia"
@@ -63,7 +63,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Proceso" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Proceso" label-class="text-body" group-class="md:col-span-3">
           <AdminSelectField
             :model-value="fkFilters.process_id"
             @update:model-value="updateFilter('process_id', $event)"
@@ -75,7 +75,7 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Variación" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Variación" label-class="text-body" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkFilters.variation_key"
             placeholder="Filtrar por variación"
@@ -97,7 +97,7 @@
         </div>
       </template>
       <template v-else-if="isFkTemplateArtifacts">
-        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-4">
+        <AdminFieldGroup label="Busqueda" label-class="text-body" group-class="md:col-span-4">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar por nombre"
@@ -105,7 +105,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Proceso" label-class="text-slate-700" group-class="md:col-span-4">
+        <AdminFieldGroup label="Proceso" label-class="text-body" group-class="md:col-span-4">
           <AdminSelectField
             :model-value="fkFilters.process_id"
             @update:model-value="updateFilter('process_id', $event)"
@@ -117,7 +117,7 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Activo" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Activo" label-class="text-body" group-class="md:col-span-3">
           <AdminSelectField
             :model-value="fkFilters.is_active"
             @update:model-value="updateFilter('is_active', $event)"
@@ -141,7 +141,7 @@
           </AdminButton>
         </div>
       </template>
-      <AdminFieldGroup v-else label="Busqueda" label-class="text-slate-700" group-class="md:col-span-12">
+      <AdminFieldGroup v-else label="Busqueda" label-class="text-body" group-class="md:col-span-12">
         <AdminInputField
           :model-value="fkSearch"
           placeholder="Buscar referencia"
@@ -156,8 +156,8 @@
         type="button"
         role="switch"
         :aria-checked="processContextFilterActive"
-        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500/30"
-        :class="processContextFilterActive ? 'bg-sky-600' : 'bg-slate-300'"
+        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2"
+        :class="processContextFilterActive ? 'bg-blue-light-600' : 'bg-gray-300'"
         @click="toggleProcessContextFilter"
       >
         <span
@@ -169,7 +169,7 @@
     </div>
 
     <div v-if="isFkUnitPositions" class="mb-3 grid gap-3 md:grid-cols-12 md:items-end">
-      <AdminFieldGroup label="Tipo de unidad" label-class="text-slate-700" group-class="md:col-span-4">
+      <AdminFieldGroup label="Tipo de unidad" label-class="text-body" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.unit_type_id"
           :disabled="fkPositionFilterLoading"
@@ -182,7 +182,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Unidad" label-class="text-slate-700" group-class="md:col-span-4">
+      <AdminFieldGroup label="Unidad" label-class="text-body" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.unit_id"
           :disabled="!fkPositionFilters.unit_type_id || fkPositionFilterLoading"
@@ -195,7 +195,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Cargo" label-class="text-slate-700" group-class="md:col-span-4">
+      <AdminFieldGroup label="Cargo" label-class="text-body" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.cargo_id"
           :disabled="fkPositionFilterLoading"
@@ -222,8 +222,8 @@
       </div>
     </div>
 
-    <div v-if="fkLoading" class="text-sm text-slate-500">Cargando...</div>
-    <div v-else-if="fkError" class="admin-inline-error" role="alert">{{ fkError }}</div>
+    <div v-if="fkLoading" class="text-sm text-muted">Cargando...</div>
+    <div v-else-if="fkError" role="alert">{{ fkError }}</div>
     <AppDataTable
       v-else
       :fields="fkSearchTableFields"
@@ -235,20 +235,18 @@
           {{ formatFkPrimaryCell(row) }}
         </template>
         <template v-else-if="field.name === 'available_formats'">
-          <div class="available-formats-cell">
+          <div>
             <template v-if="getAvailableFormatSections(row[field.name]).length">
               <div
                 v-for="section in getAvailableFormatSections(row[field.name])"
                 :key="section.mode"
-                class="available-formats-group"
                 :class="{ 'is-inline': section.mode === 'reference' }"
               >
-                <span class="available-formats-mode">{{ section.label }}</span>
-                <div class="available-formats-badges">
+                <span>{{ section.label }}</span>
+                <div>
                   <span
                     v-for="entry in section.entries"
                     :key="`${section.mode}-${entry.format}`"
-                    class="available-formats-badge"
                     :style="getAvailableFormatBadgeStyle(section.mode, entry)"
                   >
                     {{ entry.formatLabel }}

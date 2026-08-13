@@ -1,7 +1,7 @@
 <template>
   <AppModalShell ref="modalRef" labelled-by="personAssignmentsModalLabel" title="Asignaciones del usuario" size="xl">
     <div class="person-assignment-panel">
-      <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-action-view">
+      <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-action-view">
         Usa el boton de asignaciones en la fila de una persona para empezar.
       </div>
       <template v-else>
@@ -10,7 +10,7 @@
           <span class="ml-2 text-emerald-700/80">{{ personAssignmentMeta }}</span>
         </div>
 
-        <div v-if="personAssignmentsLoading" class="mb-2 text-sm text-slate-500">Cargando asignaciones...</div>
+        <div v-if="personAssignmentsLoading" class="mb-2 text-sm text-muted">Cargando asignaciones...</div>
         <div v-else class="grid gap-4">
           <div>
             <div class="person-assignment-menu">
@@ -28,15 +28,15 @@
           </div>
 
           <div v-if="personAssignmentSection === 'ocupaciones'">
-            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
+            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-strong">
               <font-awesome-icon icon="id-card" />
               <span>Ocupaciones</span>
             </h6>
-            <div v-if="personCargoError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ personCargoError }}</div>
+            <AppAlert v-if="personCargoError">{{ personCargoError }}</AppAlert>
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
-                  <label :for="fieldId('cargo-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto</label>
+                  <label :for="fieldId('cargo-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Puesto</label>
                   <AdminLookupField
                     :id="fieldId('cargo-position')"
                     :model-value="personCargoLabels.position_id"
@@ -103,15 +103,15 @@
           </div>
 
           <div v-if="personAssignmentSection === 'roles'">
-            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
+            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-strong">
               <font-awesome-icon icon="lock" />
               <span>Roles</span>
             </h6>
-            <div v-if="personRoleError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ personRoleError }}</div>
+            <AppAlert v-if="personRoleError">{{ personRoleError }}</AppAlert>
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
-                  <label :for="fieldId('role-role')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Rol</label>
+                  <label :for="fieldId('role-role')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Rol</label>
                   <AdminLookupField
                     :id="fieldId('role-role')"
                     :model-value="personRoleLabels.role_id"
@@ -124,7 +124,7 @@
                   />
                 </div>
                 <div class="md:col-span-6">
-                  <label :for="fieldId('role-unit')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
+                  <label :for="fieldId('role-unit')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Unidad</label>
                   <AdminLookupField
                     :id="fieldId('role-unit')"
                     :model-value="personRoleLabels.unit_id"
@@ -173,15 +173,15 @@
           </div>
 
           <div v-if="personAssignmentSection === 'contratos'">
-            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
+            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-strong">
               <font-awesome-icon icon="check-double" />
               <span>Contratos / Puestos</span>
             </h6>
-            <div v-if="personContractError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ personContractError }}</div>
+            <AppAlert v-if="personContractError">{{ personContractError }}</AppAlert>
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-4">
-                  <label :for="fieldId('contract-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto</label>
+                  <label :for="fieldId('contract-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Puesto</label>
                   <AdminLookupField
                     :id="fieldId('contract-position')"
                     :model-value="personContractLabels.position_id"
@@ -261,6 +261,7 @@
 
 <script setup>
 import { ref, useId } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";

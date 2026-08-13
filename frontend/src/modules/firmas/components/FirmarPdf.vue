@@ -3,8 +3,8 @@
     <div v-if="!multiOnly && workspaceMode !== 'multi' && showStartHeading" class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
-          <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
+          <h2 class="text-2xl font-bold text-strong m-0 leading-tight">Firmas electrónicas</h2>
+          <p class="text-muted text-sm m-0 font-medium leading-snug">
             Carga documentos y define las areas de estampado para la firma.
           </p>
         </div>
@@ -29,7 +29,7 @@
         <div class="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-icon hover:bg-surface transition"
+            class="inline-flex items-center justify-center p-2 rounded-xl border border-line-strong text-icon hover:bg-surface transition"
             title="Regresar"
             aria-label="Regresar"
             @click="goBackToStart"
@@ -100,13 +100,13 @@
       />
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8 shadow-elev-1">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
-          <h3 class="text-xl font-bold text-slate-800 m-0">PDF del flujo de firma</h3>
-          <p class="text-sm font-medium leading-snug text-slate-500 m-0">
+          <h3 class="text-xl font-bold text-strong m-0">PDF del flujo de firma</h3>
+          <p class="text-sm font-medium leading-snug text-muted m-0">
             Esta sesión pertenece al documento
-            <span class="font-semibold text-slate-700">{{ workflowSignContext?.documentTitle || 'seleccionado' }}</span>.
+            <span class="font-semibold text-body">{{ workflowSignContext?.documentTitle || 'seleccionado' }}</span>.
             Si el PDF no se precargó correctamente, puedes reintentar la carga o seleccionar el archivo de forma manual.
           </p>
         </div>
@@ -117,13 +117,13 @@
             ? 'border-rose-200 bg-rose-50 text-rose-700'
             : workflowPdfStatus.type === 'success'
               ? 'border-emerald-200 bg-emerald-50 text-success'
-              : 'border-sky-200 bg-sky-50 text-sky-700'"
+              : 'border-blue-light-200 bg-blue-light-50 text-info'"
         >
           {{ workflowPdfStatus.message || 'Preparando la sesión de firma embebida.' }}
         </div>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div class="rounded-2xl border border-line bg-slate-50/70 p-5">
+          <div class="rounded-2xl border border-line bg-surface/70 p-5">
             <PdfDropField
               title="Cargar PDF del entregable"
               action-text="Seleccionar documento"
@@ -148,22 +148,22 @@
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
+      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
       </div>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8 shadow-elev-1">
       <div
         id="signature-launchers-grid"
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
         :class="enableHomeShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
-        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-sm">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -175,7 +175,7 @@
           />
         </div>
 
-        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-sm">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -187,7 +187,7 @@
           />
         </div>
 
-        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-sm">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -202,7 +202,7 @@
         <div
           id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-sm"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1"
         >
           <PdfDropField
             title="Multifirmador"
@@ -220,15 +220,15 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
           @click="emit('open-home-pending')"
         >
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
+          <h3 class="text-lg font-semibold text-strong mb-4 text-left">Solicitudes recibidas</h3>
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8 shadow-elev-1">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
-              <span class="mt-5 text-base font-semibold text-slate-700">Ver solicitudes</span>
-              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
+              <span class="mt-5 text-base font-semibold text-body">Ver solicitudes</span>
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
                 Revisa solicitudes pendientes por atender.
               </p>
             </div>
@@ -239,18 +239,18 @@
           id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
           :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <h3 class="text-lg font-semibold text-strong mb-4 text-left">Buscar en BD</h3>
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8 shadow-elev-1">
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
-              <span class="mt-5 text-base font-semibold text-slate-700">
+              <span class="mt-5 text-base font-semibold text-body">
                 {{ enableHomeShortcuts ? 'Procesos pendientes' : 'Bandeja de Home' }}
               </span>
-              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
                 {{ enableHomeShortcuts
                   ? 'Consulta procesos con firma pendiente.'
                   : 'Consulta solicitudes pendientes de Home.' }}
@@ -263,15 +263,15 @@
           id="signature-launcher-pending"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md xl:col-start-3"
           @click="emit('open-home-pending')"
         >
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <h3 class="text-lg font-semibold text-strong mb-4 text-left">Bandeja de pendientes</h3>
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8 shadow-elev-1">
             <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />
-              <span class="mt-5 text-base font-semibold text-slate-700">Tabla de procesos</span>
-              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
+              <span class="mt-5 text-base font-semibold text-body">Tabla de procesos</span>
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
                 Revisa y selecciona procesos pendientes.
               </p>
             </div>
@@ -279,8 +279,8 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-sm text-rose-600">
+      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-elev-1">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-rose-600">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -288,10 +288,10 @@
     </div>
 
     <div v-else-if="!multiOnly" class="mt-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-line p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="bg-white rounded-2xl shadow-elev-1 border border-line p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div 
-            class="relative shadow-sm border border-line" 
+            class="relative shadow-elev-1 border border-line" 
             ref="pdfViewer"
             @mousemove="handleMouseMove"
             @mouseleave="handleMouseLeave"
@@ -358,8 +358,8 @@
         <div class="inline-flex items-center justify-center w-16 h-16 bg-surface text-muted rounded-full mb-4">
           <IconSignature class="w-8 h-8" />
         </div>
-        <h3 class="text-xl font-semibold text-slate-800 mb-2">No hay firmas</h3>
-        <p class="text-slate-500 max-w-sm mx-auto leading-relaxed">
+        <h3 class="text-xl font-semibold text-strong mb-2">No hay firmas</h3>
+        <p class="text-muted max-w-sm mx-auto leading-relaxed">
           Aún no has agregado ningún campo de firma al documento. Haz clic sobre el documento PDF para insertar una.
         </p>
       </div>
@@ -368,24 +368,24 @@
         <div
           v-for="field in visibleFields"
           :key="field.id"
-          class="bg-white border border-line rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
-          :class="{ 'ring-2 ring-sky-500 border-transparent': field.id === lastFieldId }"
+          class="bg-white border border-line rounded-xl p-4 hover:border-blue-light-300 hover:shadow-elev-1 transition-all relative overflow-hidden group"
+          :class="{ 'ring-2 ring-blue-light-500 border-transparent': field.id === lastFieldId }"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
             
             <div class="flex items-start gap-4">
-              <div class="shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center font-bold">
+              <div class="shrink-0 w-10 h-10 bg-blue-light-50 text-info rounded-2xl flex items-center justify-center font-bold">
                 <IconSignature class="w-5 h-5" />
               </div>
               <div>
-                <div v-if="field.signer" class="font-semibold text-slate-800 text-base mb-0.5">
+                <div v-if="field.signer" class="font-semibold text-strong text-base mb-0.5">
                   {{ field.signer.first_name }} {{ field.signer.last_name }}
                 </div>
-                <div v-else class="font-semibold text-slate-800 text-base mb-0.5">
+                <div v-else class="font-semibold text-strong text-base mb-0.5">
                   Firmante no asignado
                 </div>
                 
-                <div v-if="field.signer" class="text-sm text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                <div v-if="field.signer" class="text-sm text-muted flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                   <span v-if="field.signer.email" class="inline-flex items-center gap-1">
                     <span class="font-medium text-muted">Email:</span> {{ field.signer.email }}
                   </span>
@@ -398,13 +398,13 @@
 
             <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-line sm:pl-5">
               <div class="bg-surface border border-line rounded-2xl px-3 py-1.5 text-center">
-                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pág</span>
-                <span class="block text-lg font-bold text-slate-800 leading-none mt-0.5">{{ field.page }}</span>
+                <span class="block text-[10px] font-bold uppercase tracking-wider text-muted">Pág</span>
+                <span class="block text-lg font-bold text-strong leading-none mt-0.5">{{ field.page }}</span>
               </div>
               
-              <div class="text-xs text-slate-500 grid grid-cols-2 gap-x-4 gap-y-1">
-                <div>x/y: <span class="font-medium text-slate-700">{{ formatCoord(field.x1) }}, {{ formatCoord(field.y1) }}</span></div>
-                <div>w/h: <span class="font-medium text-slate-700">{{ formatCoord(field.x2 - field.x1) }}, {{ formatCoord(field.y2 - field.y1) }}</span></div>
+              <div class="text-xs text-muted grid grid-cols-2 gap-x-4 gap-y-1">
+                <div>x/y: <span class="font-medium text-body">{{ formatCoord(field.x1) }}, {{ formatCoord(field.y1) }}</span></div>
+                <div>w/h: <span class="font-medium text-body">{{ formatCoord(field.x2 - field.x1) }}, {{ formatCoord(field.y2 - field.y1) }}</span></div>
               </div>
             </div>
             
@@ -430,11 +430,11 @@
     size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-    <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-surface rounded-xl border border-line">No hay firmas para eliminar.</div>
+    <div v-if="!fields.length" class="text-muted text-center font-medium py-8 bg-surface rounded-xl border border-line">No hay firmas para eliminar.</div>
     <div v-else class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 bg-surface p-2 rounded-xl border border-line">
-        <label :for="fieldId('filterpage')" class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
-        <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-2xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+        <label :for="fieldId('filterpage')" class="font-semibold text-sm text-body ml-2">Filtrar por pagina</label>
+        <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-2xl border border-line-strong bg-white px-3 py-1.5 text-sm text-strong shadow-elev-1 outline-none transition">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
             Pagina {{ page }}
@@ -446,15 +446,15 @@
         <div
           v-for="field in filteredFields"
           :key="field.id"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-line rounded-xl hover:border-sky-300 hover:bg-sky-50/30 transition gap-3"
-          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-line rounded-xl hover:border-blue-light-300 hover:bg-blue-light-50/30 transition gap-3"
+          :class="field.id === lastFieldId ? 'border-blue-light-500 bg-blue-light-50/50' : 'bg-white'"
         >
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-slate-800">{{ field.name }}</span>
-              <span class="px-2 py-0.5 bg-surface text-slate-500 rounded-xl text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
+              <span class="text-sm font-semibold text-strong">{{ field.name }}</span>
+              <span class="px-2 py-0.5 bg-surface text-muted rounded-xl text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
             </div>
-            <span class="text-slate-500 text-xs font-medium">
+            <span class="text-muted text-xs font-medium">
               {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
             </span>
           </div>
@@ -462,7 +462,7 @@
           <div class="flex items-center gap-2 sm:self-center self-end">
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-line text-icon hover:bg-surface hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-line text-icon hover:bg-surface hover:text-strong transition font-medium focus:outline-none focus:ring-2 focus:ring-line" 
               @click.stop="goToFieldLocation(field.id)"
             >
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -470,7 +470,7 @@
             </button>
             <button 
               type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2 focus:ring-red-200" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2" 
               @click.stop="requestDeleteField(field.id)"
             >
               <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
@@ -494,8 +494,8 @@
     <div class="flex flex-col gap-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('statusfilter')" class="font-semibold text-sm text-slate-700 mb-0">Estado</label>
-          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+          <label :for="fieldId('statusfilter')" class="font-semibold text-sm text-body mb-0">Estado</label>
+          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition">
             <option value="all">Todos</option>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
@@ -504,17 +504,17 @@
           </select>
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signerinput')" class="font-semibold text-sm text-slate-700 mb-0">Buscar</label>
+          <label :for="fieldId('signerinput')" class="font-semibold text-sm text-body mb-0">Buscar</label>
           <input :id="fieldId('signerinput')"
             v-model="signerInput"
             type="text"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
             placeholder="Nombre, correo o cédula"
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signerunittypefilter')" class="font-semibold text-sm text-slate-700 mb-0">Tipo de unidad</label>
-          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+          <label :for="fieldId('signerunittypefilter')" class="font-semibold text-sm text-body mb-0">Tipo de unidad</label>
+          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition">
             <option value="">Todos</option>
             <option v-for="option in signerUnitTypeOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -522,8 +522,8 @@
           </select>
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signerunitfilter')" class="font-semibold text-sm text-slate-700 mb-0">Unidad</label>
-          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
+          <label :for="fieldId('signerunitfilter')" class="font-semibold text-sm text-body mb-0">Unidad</label>
+          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
             <option v-for="option in signerUnitOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -531,8 +531,8 @@
           </select>
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signercargofilter')" class="font-semibold text-sm text-slate-700 mb-0">Cargo</label>
-          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="isLoadingSignerOptions">
+          <label :for="fieldId('signercargofilter')" class="font-semibold text-sm text-body mb-0">Cargo</label>
+          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
             <option v-for="option in signerCargoOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -547,8 +547,8 @@
       </div>
 
       <div class="mt-2 min-h-65 max-h-90 overflow-y-auto bg-surface border border-line rounded-xl p-2 custom-scrollbar">
-        <div v-if="isSearchingUsers" class="text-slate-500 text-sm text-center py-10 font-medium">Buscando usuarios...</div>
-        <div v-else-if="userResults.length === 0" class="text-slate-500 text-sm text-center py-10 font-medium">
+        <div v-if="isSearchingUsers" class="text-muted text-sm text-center py-10 font-medium">Buscando usuarios...</div>
+        <div v-else-if="userResults.length === 0" class="text-muted text-sm text-center py-10 font-medium">
           No se han encontrado resultados.
         </div>
         <div v-else class="flex flex-col gap-2">
@@ -556,15 +556,15 @@
             v-for="user in userResults"
             :key="user.id || user._id"
             type="button"
-            class="flex flex-col p-3 border rounded-xl text-left transition w-full shadow-sm"
-            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-sky-500 bg-sky-50' : 'border-line bg-white hover:bg-surface'"
+            class="flex flex-col p-3 border rounded-xl text-left transition w-full shadow-elev-1"
+            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectSigner(user)"
           >
-            <div class="font-semibold text-slate-800 text-sm flex items-center justify-between w-full gap-3">
+            <div class="font-semibold text-strong text-sm flex items-center justify-between w-full gap-3">
               <span>{{ user.first_name }} {{ user.last_name }}</span>
-              <span v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" class="text-sky-600 bg-sky-100 px-2 py-0.5 rounded text-xs">Seleccionado</span>
+              <span v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" class="text-info bg-blue-light-100 px-2 py-0.5 rounded text-xs">Seleccionado</span>
             </div>
-            <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+            <div class="text-xs text-muted mt-1 flex flex-wrap items-center gap-2">
               <span class="bg-surface px-1.5 py-0.5 rounded border border-line">{{ user.cedula }}</span>
               <span>{{ user.email }}</span>
             </div>
@@ -622,7 +622,7 @@
 
       <div
         v-if="multiBatchRequest"
-        class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+        class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Lote preparado</div>
         <div class="mt-1 text-action-view">
@@ -641,7 +641,7 @@
 
       <div
         v-if="!multiBatchRequest && signMode === 'token'"
-        class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+        class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Firma por token</div>
         <div v-if="currentSignatureMarker" class="mt-1 text-action-view">
@@ -655,18 +655,18 @@
       <div class="rounded-2xl border border-line bg-surface p-4">
         <div class="flex items-center justify-between gap-3 mb-3">
           <div>
-            <div class="text-sm font-bold text-slate-800">Certificados disponibles</div>
-            <div class="text-xs text-slate-500">Puedes gestionarlos aquí sin salir de la vista de firmas.</div>
+            <div class="text-sm font-bold text-strong">Certificados disponibles</div>
+            <div class="text-xs text-muted">Puedes gestionarlos aquí sin salir de la vista de firmas.</div>
           </div>
           <AdminButton variant="outlinePrimary" size="sm" @click="openCertificatesManagerModal">
             Gestionar certificados
           </AdminButton>
         </div>
 
-        <div v-if="isLoadingCertificates" class="text-sm text-slate-500 font-medium py-3">
+        <div v-if="isLoadingCertificates" class="text-sm text-muted font-medium py-3">
           Cargando certificados...
         </div>
-        <div v-else-if="!availableCertificates.length" class="text-sm text-slate-500 font-medium py-3">
+        <div v-else-if="!availableCertificates.length" class="text-sm text-muted font-medium py-3">
           No tienes certificados cargados.
         </div>
         <div v-else class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
@@ -675,35 +675,35 @@
             :key="certificate.id"
             type="button"
             class="w-full rounded-xl border px-3 py-3 text-left transition"
-            :class="selectedCertificateId === certificate.id ? 'border-sky-500 bg-sky-50' : 'border-line bg-white hover:bg-surface'"
+            :class="selectedCertificateId === certificate.id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectedCertificateId = certificate.id"
           >
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-bold text-slate-800">{{ certificate.label }}</span>
+              <span class="text-sm font-bold text-strong">{{ certificate.label }}</span>
               <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
             </div>
-            <div class="text-xs text-slate-500 mt-1">{{ certificate.original_filename }}</div>
+            <div class="text-xs text-muted mt-1">{{ certificate.original_filename }}</div>
           </button>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('certpassword')" class="font-semibold text-sm text-slate-700">Contraseña del certificado</label>
+          <label :for="fieldId('certpassword')" class="font-semibold text-sm text-body">Contraseña del certificado</label>
           <input :id="fieldId('certpassword')"
             v-model="certPassword"
             type="password"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
             placeholder="Contraseña del .p12"
             autocomplete="current-password"
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('stamptext')" class="font-semibold text-sm text-slate-700">Texto del sello</label>
+          <label :for="fieldId('stamptext')" class="font-semibold text-sm text-body">Texto del sello</label>
           <input :id="fieldId('stamptext')"
             v-model="stampText"
             type="text"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
             placeholder="Ej: Dr. Juan Pérez"
           />
         </div>
@@ -781,42 +781,42 @@
     title="Validar documento"
     size="xl"
     :show-close-button="false"
-    content-class="rounded-xl shadow-xl border-0 overflow-hidden"
+    content-class="rounded-xl shadow-elev-2 border-0 overflow-hidden"
     body-class="p-0 bg-surface relative"
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <!-- [F4.4-d 2026-08-12] `border-slate-200` SIN MIGRAR a proposito. Es la unica
+      <!-- [F4.4-d 2026-08-12] `border-line` SIN MIGRAR a proposito. Es la unica
            excepcion de la fase, y esta medida: este boton vive dentro de
            `.deasy-dialog-header`, cuya regla se quedo SIN CAPA en R5. Migrado a
            `border-line`, la utilidad pierde el `!important` que le prestaba el
            repintado y la regla suelta pasa a ganar: el borde iria de `--color-line` a
            `--color-line-field`. Son 5 nodos y los cazo la huella.
            Muere cuando se decida si un boton del slot `#title` es «boton de dialogo». -->
-      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-surface/50 border border-slate-200 text-icon hover:bg-surface hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
+      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-surface/50 border border-line text-icon hover:bg-surface hover:text-strong font-semibold text-sm transition-colors cursor-pointer z-20">
         <IconX class="w-4 h-4" stroke-width="2.5" />
       </button>
     </template>
     <div class="px-6 pt-6 pb-4">
-      <div class="bg-white rounded-2xl p-5 border border-line shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
-        <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
+      <div class="bg-white rounded-2xl p-5 border border-line shadow-elev-1 flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-32 h-32 bg-blue-light-50 rounded-full blur-2xl opacity-60"></div>
         <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
-          <label :for="fieldId('validationcedula')" class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
-            <IconSearch class="w-4 h-4 text-sky-600" /> Buscar cédula en las firmas
+          <label :for="fieldId('validationcedula')" class="font-bold text-sm text-body flex items-center justify-start gap-2">
+            <IconSearch class="w-4 h-4 text-info" /> Buscar cédula en las firmas
           </label>
           <div class="relative max-w-full md:max-w-sm">
             <input
               :id="fieldId('validationcedula')"
               v-model="validationCedula"
               type="text"
-              class="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-50"
+              class="block w-full rounded-xl border border-line bg-surface pl-4 py-2.5 text-sm text-strong shadow-elev-1 outline-none transition focus:bg-white focus:ring-4"
               placeholder="Ej. 0999999999 (Opcional)"
             />
           </div>
         </div>
         <div class="relative z-10 w-full md:w-auto">
           <button 
-            class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-sky-600 text-sky-700 hover:bg-sky-50 hover:border-sky-700 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-blue-light-600 text-info hover:bg-blue-light-50 hover:border-blue-light-700 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="isValidatingDocument || !validationFile" 
             @click="validateDocument"
           >
@@ -827,21 +827,21 @@
         </div>
       </div>
 
-      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-sm animate-fade-in">
+      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-elev-1 animate-fade-in">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
 
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-        <div class="rounded-2xl border border-line bg-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
-          <div class="flex items-center gap-2 text-slate-500 mb-1 z-10">
+        <div class="rounded-2xl border border-line bg-white p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
+          <div class="flex items-center gap-2 text-muted mb-1 z-10">
             <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Firmas Detectadas</div>
           </div>
-          <div class="text-3xl font-black text-slate-800 z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
+          <div class="text-3xl font-black text-strong z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-success mb-1 z-10">
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
@@ -850,27 +850,27 @@
           <div class="text-3xl font-black text-emerald-900 z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
-           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-cyan-100 rounded-full blur-xl opacity-50"></div>
-          <div class="flex items-center gap-2 text-cyan-700 mb-1 z-10">
-            <div class="p-1.5 bg-cyan-100 rounded-2xl"><IconSearch class="w-4 h-4" /></div>
+        <div class="rounded-2xl border border-blue-light-200 bg-blue-light-50/50 p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
+           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-light-100 rounded-full blur-xl opacity-50"></div>
+          <div class="flex items-center gap-2 text-info mb-1 z-10">
+            <div class="p-1.5 bg-blue-light-100 rounded-2xl"><IconSearch class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Coincidencias</div>
           </div>
-          <div class="text-3xl font-black text-cyan-900 z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
+          <div class="text-3xl font-black text-info z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm flex flex-col justify-center relative overflow-hidden">
-          <div class="flex items-center gap-2 text-indigo-700 mb-2 z-10">
-            <div class="p-1.5 bg-indigo-100 rounded-2xl"><IconFileCheck class="w-4 h-4" /></div>
+        <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 shadow-elev-1 flex flex-col justify-center relative overflow-hidden">
+          <div class="flex items-center gap-2 text-primary mb-2 z-10">
+            <div class="p-1.5 bg-brand-100 rounded-2xl"><IconFileCheck class="w-4 h-4" /></div>
             <div class="text-xs font-bold uppercase tracking-wider">Documento Activo</div>
           </div>
-          <div class="text-sm font-bold text-indigo-900 truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
+          <div class="text-sm font-bold text-primary truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
         </div>
       </div>
 
       <div
         v-if="validationResult?.summary?.timestampCount"
-        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3 shadow-sm animate-fade-in"
+        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3 shadow-elev-1 animate-fade-in"
       >
         <IconAlertTriangle class="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
@@ -878,7 +878,7 @@
 
       <div
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-sm animate-fade-in"
+        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-elev-1 animate-fade-in"
       >
         <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
         <div class="flex flex-col gap-1">
@@ -917,7 +917,7 @@
               <button
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
                 @click="openCertificateAuthorityModal(row)"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-surface text-icon hover:bg-sky-100 hover:text-sky-600 transition-colors"
+                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-surface text-icon hover:bg-blue-light-100 hover:text-info transition-colors"
                 title="Ver entidad certificadora"
               >
                 <IconCertificate class="w-4 h-4" />
@@ -927,15 +927,15 @@
           </template>
           <template v-else-if="field.name === 'signerCedula'">
             <div class="flex flex-col gap-1.5 items-start">
-              <span class="font-semibold text-slate-800">{{ row.signerCedula }}</span>
-              <span v-if="row.matchesCedula" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-100 text-cyan-700 text-[10px] font-bold uppercase tracking-wider border border-cyan-200">
+              <span class="font-semibold text-strong">{{ row.signerCedula }}</span>
+              <span v-if="row.matchesCedula" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-light-100 text-info text-[10px] font-bold uppercase tracking-wider border border-blue-light-200">
                 <IconCheck class="w-3 h-3" /> Coincide
               </span>
             </div>
           </template>
           <template v-else-if="field.name === 'details'">
             <details class="min-w-[16rem] group">
-              <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-sky-600 hover:text-sky-700 transition flex items-center gap-1 list-none">
+              <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-info hover:text-info transition flex items-center gap-1 list-none">
                 <IconInfoCircle class="w-4 h-4" />
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>
@@ -952,8 +952,8 @@
             <div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-muted mb-4">
               <IconShieldCheck class="w-8 h-8" />
             </div>
-            <h4 class="text-lg font-bold text-slate-700 mb-1">Sin firmas detectadas</h4>
-            <p class="text-sm text-slate-500 text-center max-w-md">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</p>
+            <h4 class="text-lg font-bold text-body mb-1">Sin firmas detectadas</h4>
+            <p class="text-sm text-muted text-center max-w-md">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</p>
           </div>
         </template>
       </AppDataTable>
@@ -970,8 +970,8 @@
   >
     <div class="flex flex-col gap-4">
       <div class="rounded-2xl border border-line bg-surface px-4 py-3">
-        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Entidad</div>
-        <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-800">
+        <div class="text-xs font-semibold uppercase tracking-wide text-muted">Entidad</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-strong">
           {{ selectedCertificateAuthority?.certificateAuthority || 'No disponible' }}
         </div>
       </div>
@@ -980,8 +980,8 @@
         v-if="selectedCertificateAuthority?.extras?.issuer"
         class="rounded-2xl border border-line bg-white px-4 py-3"
       >
-        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Issuer completo</div>
-        <div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+        <div class="text-xs font-semibold uppercase tracking-wide text-muted">Issuer completo</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm text-body">
           {{ selectedCertificateAuthority.extras.issuer }}
         </div>
       </div>
@@ -990,7 +990,7 @@
         v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
         class="rounded-2xl border border-line bg-white px-4 py-3"
       >
-        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Atributos detectados</div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-muted">Atributos detectados</div>
         <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-icon">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
       </div>
     </div>
@@ -1055,17 +1055,17 @@ const fieldId = (name) => `${uid}-${name}`;
     h(
       'div',
       {
-        class: `signature-workspace-icon shrink-0 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border shadow-sm ${colorClasses}`
+        class: `signature-workspace-icon shrink-0 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border shadow-elev-1 ${colorClasses}`
       },
       [h(IconComponent, { class: 'h-7 w-7', 'stroke-width': 1.5 })]
     );
 
-  const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-sky-50 border-sky-100 text-sky-600');
+  const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-blue-light-50 border-blue-light-100 text-info');
   const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-surface border-line text-muted');
   const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
   const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
-  const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');
-  const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'bg-sky-50 border-sky-100 text-sky-600');
+  const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-brand-50 border-brand-100 text-primary');
+  const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'bg-blue-light-50 border-blue-light-100 text-info');
   const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'bg-emerald-50 border-emerald-100 text-emerald-600');
   const normalizedLauncherMode = computed(() => String(props.launcherMode || "all").trim().toLowerCase());
   const canShowLauncher = (mode) => {
@@ -2106,9 +2106,9 @@ const fieldId = (name) => `${uid}-${name}`;
           if (boxEl) {
             boxEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             // optionally highlight the box temporarily by adding a temporary class
-            boxEl.classList.add('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
+            boxEl.classList.add('ring-4', 'ring-blue-light-500', 'ring-offset-2', 'transition-shadow');
             setTimeout(() => {
-              boxEl.classList.remove('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
+              boxEl.classList.remove('ring-4', 'ring-blue-light-500', 'ring-offset-2', 'transition-shadow');
             }, 1500);
           }
         }, 100);

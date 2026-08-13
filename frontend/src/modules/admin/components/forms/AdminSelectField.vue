@@ -1,9 +1,9 @@
 <template>
-  <span class="admin-select-field-shell relative block w-full" :class="wrapperClass">
+  <span class="relative block w-full" :class="wrapperClass">
     <select
       v-bind="selectAttrs"
       :value="modelValue"
-      class="admin-select-field block h-10 w-full appearance-none rounded-[10px] border border-line-field bg-white px-3.5 py-2 pr-11 text-sm font-medium text-strong shadow-none outline-none transition-colors duration-150 focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-muted"
+      class="admin-select-field deasy-control deasy-control--select block h-10 py-2"
       :class="selectClass"
       :disabled="disabled"
       @change="handleChange"

@@ -98,7 +98,7 @@ const props = defineProps({
   },
   emptyCellClass: {
     type: String,
-    default: "px-4 py-8 text-center text-sm text-slate-500"
+    default: "px-4 py-8 text-center text-sm text-muted"
   }
 });
 

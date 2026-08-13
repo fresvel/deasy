@@ -9,20 +9,20 @@
   >
     <div class="flex flex-col gap-4">
       <div v-if="term" class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
-        <span class="font-semibold text-slate-700">Periodo:</span>
+        <span class="font-semibold text-body">Periodo:</span>
         <span class="ml-1 text-icon">{{ term.name || `#${term.id}` }}</span>
       </div>
 
-      <div v-if="loading" class="text-sm text-slate-500">Cargando estado de lanzamiento...</div>
+      <div v-if="loading" class="text-sm text-muted">Cargando estado de lanzamiento...</div>
 
       <template v-else>
-        <div v-if="!definitions.length" class="text-sm text-slate-500 italic">
+        <div v-if="!definitions.length" class="text-sm text-muted italic">
           No hay configuraciones de proceso activas vinculadas al tipo de periodo de este periodo.
         </div>
 
         <div v-else class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span class="text-xs font-bold uppercase tracking-wider text-muted">
               {{ pendingCount }} pendiente(s) · {{ definitions.length }} configuracion(es)
             </span>
             <AppButton
@@ -43,7 +43,7 @@
             >
               <div class="flex items-center justify-between gap-3">
                 <div class="flex flex-col">
-                  <span class="text-sm font-semibold text-slate-700">{{ def.name }}</span>
+                  <span class="text-sm font-semibold text-body">{{ def.name }}</span>
                   <span class="text-xs" :class="statusClass(def)">{{ statusLabel(def) }}</span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -71,7 +71,7 @@
                 <input :id="fieldId('relaunchreason')"
                   v-model="relaunchReason"
                   type="text"
-                  class="h-10 rounded-xl border border-slate-200 px-3 text-sm"
+                  class="h-10 rounded-xl border border-line px-3 text-sm"
                   placeholder="Ej. se agregaron nuevos destinatarios"
                 />
                 <div class="flex justify-end gap-2">

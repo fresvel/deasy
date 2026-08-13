@@ -1,0 +1,52 @@
+Deasy — atribuciones de terceros
+================================
+
+TailAdmin (paleta y recetas de clases)
+--------------------------------------
+
+Los tokens de la CAPA 1 de `src/shared/styles/tokens.css` —la escala de color, la escala
+tipografica `--text-theme-*`/`--text-title-*` y la escala de sombra `--shadow-theme-*`— y las
+cadenas de clases de utilidad adoptadas en los componentes proceden de:
+
+    tailadmin-free-tailwind-dashboard-template
+    Copyright (c) 2023 TailAdmin
+    Licencia MIT
+
+    https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template
+
+QUE SE TOMO Y QUE NO, Y POR QUE IMPORTA
+---------------------------------------
+
+Solo se toma material del repositorio **HTML free**, que es el que lleva licencia MIT. Los otros
+dos origenes de TailAdmin NO son fuente de codigo en este proyecto:
+
+  · El repositorio **Vue free** no declara licencia (`license: null` en su `package.json`).
+    Se consulta como referencia; no se copia.
+  · La **demo PRO** es comercial. Sirve de inspiracion; su markup no se copia.
+
+Tampoco se adopta su codigo Vue: `AppButton`, `AppModalShell`, `AppDataTable` y `AppTag` son de
+Deasy y se quedan. Lo adoptado son valores de diseno y cadenas de clases, que viven DENTRO de
+nuestros componentes.
+
+Los valores no se pegan tal cual: los tokens semanticos de Deasy se anclan a estas primitivas
+midiendo el contraste con `node scripts/contraste.mjs`, y donde el tinte de TailAdmin no llega a
+los minimos de WCAG mandan los porcentajes de Deasy. El detalle esta en `tokens.css`.
+
+
+Texto de la licencia MIT
+------------------------
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+and associated documentation files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

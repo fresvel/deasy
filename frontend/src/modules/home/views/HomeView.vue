@@ -55,7 +55,7 @@
               <div class="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1.5 rounded-full border border-indigo-300 bg-white px-3.5 py-2 text-sm font-semibold text-indigo-700 transition hover:-translate-y-0.5 hover:bg-indigo-50"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-brand-300 bg-white px-3.5 py-2 text-sm font-semibold text-primary transition hover:-translate-y-0.5 hover:bg-brand-50"
                   @click="openGeneralTaskModal('free')"
                 >
                   <IconPlus class="h-4 w-4" />
@@ -88,14 +88,14 @@
                   </button>
                   <div
                     v-if="showProcessMultiSelect && consolidatedCargoProcesses.length"
-                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-xl shadow-slate-200/60"
+                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-elev-2 shadow-line/60"
                   >
                     <button
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-surface"
+                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-semibold text-body hover:bg-surface"
                       @click="toggleAllConsolidatedProcesses"
                     >
-                      <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
+                      <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">
                         <IconCheck v-if="allConsolidatedProcessesSelected" class="h-3 w-3" />
                       </span>
                       Todos los procesos
@@ -108,11 +108,11 @@
                       class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-medium text-icon hover:bg-surface"
                       @click="toggleConsolidatedProcess(process.process_definition_id || process.id)"
                     >
-                      <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
+                      <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">
                         <IconCheck v-if="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id))" class="h-3 w-3" />
                       </span>
                       <span class="truncate">{{ routedMenuLabel(process) }}</span>
-                      <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                      <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                     </button>
                   </div>
                 </div>
@@ -133,7 +133,7 @@
               </div>
               <div class="deasy-filter-toolbar">
                 <div class="deasy-filter-summary">
-                  Entregables visibles: <span class="font-bold text-slate-700">{{ filteredProcessDeliverables.length }}</span>
+                  Entregables visibles: <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
                 </div>
                 <div class="deasy-filter-actions">
                   <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTaskListFilters">Reset</AppButton>
@@ -158,53 +158,53 @@
             </div>
 
             <!-- Estado de carga / error -->
-            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
-            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
+            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-elev-1">
               {{ processPanelError }}
             </section>
-            <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 text-center text-sm font-medium">
+            <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted text-center text-sm font-medium">
               Selecciona una unidad y proceso para ver sus entregables.
             </div>
 
             <template v-else>
 
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
               <!-- Tarjetas de entregables -->
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
 
-                  <div v-if="!consolidatedCargoProcesses.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
+                  <div v-if="!consolidatedCargoProcesses.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
                     No hay procesos asignados para este cargo.
                   </div>
-                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
+                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
                     Selecciona al menos un proceso para ver sus entregables.
                   </div>
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
                   <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
                     <div class="flex items-center gap-3 px-1">
-                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                      <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
                         variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
                         :aria-label="isProcessCollapsed ? 'Expandir todo' : 'Colapsar todo'"
                         @click="toggleDeliverableProcess"
                       >
                         <span>{{ isProcessCollapsed ? 'Expandir' : 'Colapsar' }}</span>
                         <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isProcessCollapsed ? 'rotate-180' : ''" />
                       </AppButton>
-                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                      <div class="h-px flex-1 bg-gray-200/90"></div>
                     </div>
                     <div v-for="group in deliverableGroups" :key="group.id" class="flex flex-col gap-3">
                       <div v-if="showDeliverableGroupHeaders" class="flex items-center gap-2 px-1">
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700"><IconChecklist class="h-3.5 w-3.5" /></span>
-                        <h3 class="m-0 text-sm font-bold text-slate-700">{{ group.name }}</h3>
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-2xl bg-brand-100 text-primary"><IconChecklist class="h-3.5 w-3.5" /></span>
+                        <h3 class="m-0 text-sm font-bold text-body">{{ group.name }}</h3>
                         <span class="text-xs font-semibold text-muted">{{ group.items.length }}</span>
                       </div>
                       <section v-for="row in group.rows" :key="row.id" class="flex flex-col gap-3">
@@ -253,7 +253,7 @@
                 </button>
               </div>
             </div>
-            <div v-if="!unitsPanelData.length" class="text-sm font-medium text-slate-500 py-4">
+            <div v-if="!unitsPanelData.length" class="text-sm font-medium text-muted py-4">
               No hay unidades con procesos asignados.
             </div>
             <template v-else>
@@ -274,11 +274,11 @@
               <template v-for="unit in unitsPanelData" :key="unit.id">
                 <div v-if="activeUnitPanelTab === unit.id" class="flex flex-col gap-5">
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4">
+                    <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4">
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <div v-if="unit.groupName" class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ unit.groupName }}</div>
-                          <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1 leading-snug">{{ unit.name }}</h3>
+                          <h3 class="text-lg font-semibold text-strong m-0 mt-1 leading-snug">{{ unit.name }}</h3>
                         </div>
                       </div>
                       <div v-if="!unit.processes.length" class="text-sm font-medium text-muted italic">
@@ -290,16 +290,16 @@
                           v-for="process in unit.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
+                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:shadow-md"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
                             <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                           </span>
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ routedMenuLabel(process) }}</strong>
+                            <strong class="text-sm font-semibold text-strong leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
-                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
@@ -327,7 +327,7 @@
               </button>
             </div>
 
-            <div v-if="!cargosPanelData.length" class="text-sm font-medium text-slate-500 py-4">
+            <div v-if="!cargosPanelData.length" class="text-sm font-medium text-muted py-4">
               No hay cargos asignados para mostrar.
             </div>
             <template v-else>
@@ -356,19 +356,19 @@
                     <section
                       v-for="pos in cargo.positions"
                       :key="pos.unitId"
-                      class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4"
+                      class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4"
                     >
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <div class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ pos.groupName }}</div>
-                          <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1 leading-snug">{{ pos.unitName }}</h3>
+                          <h3 class="text-lg font-semibold text-strong m-0 mt-1 leading-snug">{{ pos.unitName }}</h3>
                         </div>
                         <span
                           v-if="pos.positionType"
                           class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
                           :class="{
                             'bg-emerald-100 text-success': pos.positionType === 'real',
-                            'bg-sky-100 text-sky-700': pos.positionType === 'simbolico',
+                            'bg-blue-light-100 text-info': pos.positionType === 'simbolico',
                             'bg-amber-100 text-warning': pos.positionType === 'promocion',
                           }"
                         >
@@ -385,16 +385,16 @@
                           v-for="process in pos.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
+                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:shadow-md"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
                             <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                           </span>
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ routedMenuLabel(process) }}</strong>
+                            <strong class="text-sm font-semibold text-strong leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
-                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
@@ -447,109 +447,109 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
                 @click="scrollToProcessNav"
               >
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis procesos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
+                <h3 class="text-lg font-semibold text-strong mb-4">Mis procesos</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconChecklist class="h-10 w-10 text-muted" />
-                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeProcesses.length }} proceso(s) disponible(s)</span>
-                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Accede y gestiona las tareas y entregables de tus procesos activos.</p>
+                    <span class="mt-4 text-sm font-semibold text-body">{{ homeProcesses.length }} proceso(s) disponible(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-muted">Accede y gestiona las tareas y entregables de tus procesos activos.</p>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
                 :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
                 @click="navigateToGlobalSignaturePage"
               >
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Centro de firmas</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm"
+                <h3 class="text-lg font-semibold text-strong mb-4">Centro de firmas</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1"
                   :class="homeSignatureCount ? 'border-amber-200/80' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-amber-500' : 'text-muted'" />
-                    <span class="mt-4 text-sm font-semibold text-slate-700">
+                    <span class="mt-4 text-sm font-semibold text-body">
                       {{ homeSignatureCount ? `${homeSignatureCount} firma(s) pendiente(s)` : 'Sin pendientes' }}
                     </span>
-                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Firma, solicita y valida documentos electrónicos.</p>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-muted">Firma, solicita y valida documentos electrónicos.</p>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
                 @click="openMySends"
               >
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis envíos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
+                <h3 class="text-lg font-semibold text-strong mb-4">Mis envíos</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
                   <div class="flex flex-col items-center justify-center text-center">
-                    <IconSend class="h-10 w-10 text-indigo-400" />
-                    <span class="mt-4 text-sm font-semibold text-slate-700">Documentos que has enviado</span>
-                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Memos, oficios y otros documentos que endosaste, con su estado.</p>
+                    <IconSend class="h-10 w-10 text-primary" />
+                    <span class="mt-4 text-sm font-semibold text-body">Documentos que has enviado</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-muted">Memos, oficios y otros documentos que endosaste, con su estado.</p>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
                 @click="navigateToDocumentCenterPage"
               >
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Centro documental</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
+                <h3 class="text-lg font-semibold text-strong mb-4">Centro documental</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconFileDescription class="h-10 w-10 text-muted" />
-                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeDocumentCount }} documento(s) accesibles</span>
-                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Consulta y descarga los documentos accesibles de tu cuenta.</p>
+                    <span class="mt-4 text-sm font-semibold text-body">{{ homeDocumentCount }} documento(s) accesibles</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-muted">Consulta y descarga los documentos accesibles de tu cuenta.</p>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
                 @click="navigateTo('perfil')"
               >
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mi dossier</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
+                <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconUserCheck class="h-10 w-10 text-muted" />
-                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeDossierCompletion }}% completado · {{ homeDossierTotal }} registro(s)</span>
-                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Gestiona tu perfil académico, experiencia y certificaciones.</p>
+                    <span class="mt-4 text-sm font-semibold text-body">{{ homeDossierCompletion }}% completado · {{ homeDossierTotal }} registro(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-muted">Gestiona tu perfil académico, experiencia y certificaciones.</p>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-slate-300 hover:bg-surface/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-line-strong hover:bg-surface/40 hover:shadow-md"
                 @click="openCargosPanel"
               >
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis cargos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
+                <h3 class="text-lg font-semibold text-strong mb-4">Mis cargos</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBriefcase class="h-10 w-10 text-muted" />
-                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeCargoCount }} cargo(s) asignado(s)</span>
-                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Consulta las unidades y cargos vinculados a tu cuenta.</p>
+                    <span class="mt-4 text-sm font-semibold text-body">{{ homeCargoCount }} cargo(s) asignado(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-muted">Consulta las unidades y cargos vinculados a tu cuenta.</p>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-sm transition hover:border-violet-200 hover:bg-violet-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
                 @click="openUnitsPanel"
               >
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis unidades</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-sm">
+                <h3 class="text-lg font-semibold text-strong mb-4">Mis unidades</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBuildingMonument class="h-10 w-10 text-muted" />
-                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ unitsPanelData.length }} unidad(es) activa(s)</span>
-                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Revisa los procesos disponibles en cada una de tus unidades.</p>
+                    <span class="mt-4 text-sm font-semibold text-body">{{ unitsPanelData.length }} unidad(es) activa(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-muted">Revisa los procesos disponibles en cada una de tus unidades.</p>
                   </div>
                 </div>
               </button>
@@ -560,9 +560,9 @@
             <div v-else-if="homeDashTab === 'resumen'" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
               <!-- Columna izquierda: Acciones pendientes -->
-              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4">
+              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4">
                 <div class="flex items-center justify-between gap-3">
-                  <h3 class="text-lg font-semibold text-slate-800 m-0">Acciones pendientes</h3>
+                  <h3 class="text-lg font-semibold text-strong m-0">Acciones pendientes</h3>
                   <AppButton variant="softNeutral" size="sm" :disabled="homeLoading" @click="loadHomeData">
                     <IconRefresh class="h-4 w-4" />
                     Actualizar
@@ -581,10 +581,10 @@
                     v-for="action in homeActions"
                     :key="action.key"
                     type="button"
-                    class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3.5 text-left shadow-sm transition hover:shadow-md"
+                    class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3.5 text-left shadow-elev-1 transition hover:shadow-md"
                     :class="{
                       'hover:border-amber-200': action.tone === 'warning',
-                      'hover:border-sky-200': action.tone === 'info',
+                      'hover:border-blue-light-200': action.tone === 'info',
                       'hover:border-emerald-200': action.tone === 'success',
                     }"
                     @click="runHomeAction(action)"
@@ -593,7 +593,7 @@
                       class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                       :class="{
                         'bg-amber-100 text-amber-600': action.tone === 'warning',
-                        'bg-sky-100 text-sky-600': action.tone === 'info',
+                        'bg-blue-light-100 text-info': action.tone === 'info',
                         'bg-emerald-100 text-emerald-600': action.tone === 'success',
                         'bg-surface text-icon': !['warning','info','success'].includes(action.tone),
                       }"
@@ -601,8 +601,8 @@
                       <component :is="action.icon" class="h-5 w-5" />
                     </span>
                     <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <strong class="text-sm font-bold text-slate-800 leading-tight">{{ action.title }}</strong>
-                      <span class="text-xs font-medium text-slate-500 leading-snug">{{ action.description }}</span>
+                      <strong class="text-sm font-bold text-strong leading-tight">{{ action.title }}</strong>
+                      <span class="text-xs font-medium text-muted leading-snug">{{ action.description }}</span>
                     </span>
                     <AppTag :variant="action.tagVariant" class-name="shrink-0">{{ action.meta }}</AppTag>
                   </button>
@@ -610,20 +610,20 @@
               </section>
 
               <!-- Columna derecha: Estadísticas -->
-              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-sm flex flex-col gap-4">
-                <h3 class="text-lg font-semibold text-slate-800 m-0">Estadísticas de cuenta</h3>
+              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4">
+                <h3 class="text-lg font-semibold text-strong m-0">Estadísticas de cuenta</h3>
                 <div class="flex flex-col gap-2">
                   <div
                     v-for="stat in homeStats"
                     :key="stat.label"
-                    class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3 shadow-sm"
+                    class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3 shadow-elev-1"
                   >
                     <span
                       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
                       :class="{
-                        'bg-sky-100 text-sky-600': stat.tone === 'sky',
+                        'bg-blue-light-100 text-info': stat.tone === 'sky',
                         'bg-emerald-100 text-emerald-600': stat.tone === 'emerald',
-                        'bg-indigo-100 text-indigo-600': stat.tone === 'indigo',
+                        'bg-brand-100 text-primary': stat.tone === 'indigo',
                         'bg-amber-100 text-amber-600': stat.tone === 'amber',
                         'bg-surface text-icon': stat.tone === 'slate',
                       }"
@@ -632,9 +632,9 @@
                     </span>
                     <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ stat.label }}</span>
-                      <span class="text-xs font-medium text-slate-500 truncate">{{ stat.detail }}</span>
+                      <span class="text-xs font-medium text-muted truncate">{{ stat.detail }}</span>
                     </div>
-                    <strong class="text-xl font-extrabold text-slate-800 shrink-0">{{ stat.value }}</strong>
+                    <strong class="text-xl font-extrabold text-strong shrink-0">{{ stat.value }}</strong>
                   </div>
                 </div>
               </section>
@@ -689,16 +689,16 @@
               </div>
             </div>
 
-            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando la configuración seleccionada...
             </section>
 
-            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
+            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-elev-1">
               {{ processPanelError }}
             </section>
 
             <template v-else>
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
@@ -716,47 +716,47 @@
 
               <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
-                  <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                  <section class="overflow-hidden rounded-[2rem] border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="openTaskFiltersModal">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="openTaskFiltersModal">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
                             <IconSearch class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
-                            <span class="text-sm font-bold text-slate-800">Filtrar tareas</span>
+                            <span class="text-sm font-bold text-strong">Filtrar tareas</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToDocumentCenterPage">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="navigateToDocumentCenterPage">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
                             <IconFileDescription class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
-                            <span class="text-sm font-bold text-slate-800">Centro documental</span>
+                            <span class="text-sm font-bold text-strong">Centro documental</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToGlobalSignaturePage">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="navigateToGlobalSignaturePage">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
                             <IconSignature class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
-                            <span class="text-sm font-bold text-slate-800">Firma global</span>
+                            <span class="text-sm font-bold text-strong">Firma global</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70" @click="openGeneralTaskModal('free')">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-line bg-slate-50/80 text-icon transition-all group-hover:border-slate-300 group-hover:bg-surface">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface/70" @click="openGeneralTaskModal('free')">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-line bg-surface/80 text-icon transition-all group-hover:border-line-strong group-hover:bg-surface">
                             <IconPlus class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
-                            <span class="text-sm font-bold text-slate-800">Nueva tarea</span>
+                            <span class="text-sm font-bold text-strong">Nueva tarea</span>
                           </span>
                         </button>
                       </div>
                       <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-white/80 px-4 py-3">
-                        <div class="text-sm font-medium text-slate-500">
+                        <div class="text-sm font-medium text-muted">
                           Tareas visibles:
-                          <span class="font-bold text-slate-700">{{ filteredProcessDeliverables.length }}</span>
+                          <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
                         </div>
                         <div class="flex flex-wrap gap-2">
                           <AppTag v-if="taskListFilters.query" variant="info">Búsqueda</AppTag>
@@ -776,14 +776,14 @@
 
                   <!-- Routed: panel de envíos (crear/endosar). Los recibidos llegan al Centro de firmas. -->
                   <section v-if="isRoutedProcess" class="px-2 md:px-3 xl:px-4">
-                    <div class="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50/60 via-white to-sky-50/40 p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50/60 via-white to-blue-light-50/40 p-4 flex flex-wrap items-center justify-between gap-3">
                       <div class="flex items-center gap-3">
-                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-100 bg-white text-indigo-600">
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 bg-white text-primary">
                           <IconSend class="h-5 w-5" />
                         </span>
                         <div class="flex min-w-0 flex-col">
-                          <h3 class="m-0 text-sm font-bold text-slate-800">Mis envíos</h3>
-                          <p class="m-0 text-xs font-medium text-slate-500">Crea y endosa un documento a una persona. Lo que te envían llega a tu Centro de firmas.</p>
+                          <h3 class="m-0 text-sm font-bold text-strong">Mis envíos</h3>
+                          <p class="m-0 text-xs font-medium text-muted">Crea y endosa un documento a una persona. Lo que te envían llega a tu Centro de firmas.</p>
                         </div>
                       </div>
                       <AppButton variant="primary" size="sm" @click="openNewSend">
@@ -793,9 +793,9 @@
                   </section>
 
                   <section v-if="addableDeliverableEntries.length && !isRoutedProcess" class="px-2 md:px-3 xl:px-4">
-                    <div class="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 flex flex-col gap-3">
+                    <div class="rounded-2xl border border-blue-light-100 bg-blue-light-50/40 p-4 flex flex-col gap-3">
                       <div class="flex items-center gap-1.5">
-                        <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Agregar entregable</h3>
+                        <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Agregar entregable</h3>
                         <IconInfoCircle class="h-4 w-4 text-muted" title="Crea réplicas con etiqueta o envíos a un destinatario, según el modo configurado en el proceso." />
                       </div>
                       <div class="flex flex-wrap gap-2">
@@ -815,11 +815,11 @@
                     </div>
                   </section>
 
-                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
+                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta configuración.
                   </div>
 
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-slate-500 bg-surface/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted bg-surface/50 text-center text-sm font-medium">
                     {{ isRoutedProcess
                       ? 'Aún no has enviado ningún documento. Usa "Nuevo envío" para crear el primero.'
                       : 'No hay entregables que coincidan con los filtros actuales.' }}
@@ -827,10 +827,10 @@
 
                   <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
                     <div class="flex items-center gap-3 px-1">
-                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                      <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
                         variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
                         :aria-label="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         :title="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         @click="toggleDeliverableProcess"
@@ -838,7 +838,7 @@
                         <span>{{ isProcessCollapsed ? 'Expandir' : 'Colapsar' }}</span>
                         <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isProcessCollapsed ? 'rotate-180' : ''" />
                       </AppButton>
-                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                      <div class="h-px flex-1 bg-gray-200/90"></div>
                     </div>
                     <section
                       v-for="row in deliverableRows"
@@ -871,41 +871,41 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
-                    <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la configuración</h2>
-                    <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
+                    <h2 class="text-lg font-bold text-strong m-0 leading-tight">Dependencias de la configuración</h2>
+                    <p class="text-muted text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-line">
-                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-muted"/> Reglas</h3>
-                      <div v-if="!selectedProcessPanel.dependencies.rules.length" class="text-sm text-slate-500 font-medium italic">
+                    <section class="p-5 rounded-2xl bg-surface/70 border border-line">
+                      <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-muted"/> Reglas</h3>
+                      <div v-if="!selectedProcessPanel.dependencies.rules.length" class="text-sm text-muted font-medium italic">
                         Sin reglas activas para tu alcance.
                       </div>
                       <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
                         <li v-for="rule in selectedProcessPanel.dependencies.rules" :key="rule.id" class="text-sm font-medium text-icon flex items-start gap-2">
-                          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ rule.display_label }}
+                          <span class="w-1.5 h-1.5 rounded-full bg-blue-light-400 mt-1.5 shrink-0"></span> {{ rule.display_label }}
                         </li>
                       </ul>
                     </section>
-                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-line">
-                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-muted"/> Periodos del proceso</h3>
-                      <div v-if="!selectedProcessPanel.dependencies.period_types.length" class="text-sm text-slate-500 font-medium italic">
+                    <section class="p-5 rounded-2xl bg-surface/70 border border-line">
+                      <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-muted"/> Periodos del proceso</h3>
+                      <div v-if="!selectedProcessPanel.dependencies.period_types.length" class="text-sm text-muted font-medium italic">
                         Sin tipos de periodo activos.
                       </div>
                       <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
                         <li v-for="periodType in selectedProcessPanel.dependencies.period_types" :key="periodType.id" class="text-sm font-medium text-icon flex items-start gap-2">
-                          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ formatTriggerLabel(periodType) }}
+                          <span class="w-1.5 h-1.5 rounded-full bg-blue-light-400 mt-1.5 shrink-0"></span> {{ formatTriggerLabel(periodType) }}
                         </li>
                       </ul>
                     </section>
-                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-line">
-                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-muted"/> Paquetes</h3>
-                      <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-slate-500 font-medium italic">
+                    <section class="p-5 rounded-2xl bg-surface/70 border border-line">
+                      <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-muted"/> Paquetes</h3>
+                      <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-muted font-medium italic">
                         Sin artifacts vinculados.
                       </div>
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
-                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-slate-700 flex flex-col gap-1 bg-white p-3 rounded-xl border border-line shadow-sm">
+                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-body flex flex-col gap-1 bg-white p-3 rounded-xl border border-line shadow-elev-1">
                           <span>{{ template.template_artifact_name }}</span>
                         </li>
                       </ul>
@@ -930,8 +930,8 @@
     >
       <template #title>
         <div>
-          <div class="text-2xl font-bold tracking-tight text-slate-800">Crear tarea manual</div>
-          <p class="mt-1 mb-0 text-sm font-medium text-slate-500">{{ selectedProcessPanel?.definition?.name || 'Configuración seleccionada' }}</p>
+          <div class="text-2xl font-bold tracking-tight text-strong">Crear tarea manual</div>
+          <p class="mt-1 mb-0 text-sm font-medium text-muted">{{ selectedProcessPanel?.definition?.name || 'Configuración seleccionada' }}</p>
         </div>
       </template>
 
@@ -941,16 +941,16 @@
             v-for="step in taskLaunchSteps"
             :key="step.id"
             class="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition-colors"
-            :class="taskLaunchStep >= step.id ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-line bg-white text-muted'"
+            :class="taskLaunchStep >= step.id ? 'border-blue-light-200 bg-blue-light-50 text-info' : 'border-line bg-white text-muted'"
           >
-            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]" :class="taskLaunchStep >= step.id ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-500'">
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]" :class="taskLaunchStep >= step.id ? 'bg-blue-light-600 text-white' : 'bg-gray-200 text-muted'">
               {{ step.id }}
             </span>
             <span>{{ step.label }}</span>
           </div>
         </div>
 
-        <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
+        <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-elev-1">
           {{ taskLaunchError }}
         </div>
 
@@ -966,25 +966,25 @@
           </div>
 
           <label class="flex flex-col gap-2 md:col-span-2">
-            <span class="font-bold text-slate-700 text-sm">Descripción</span>
+            <span class="font-bold text-body text-sm">Descripción</span>
             <textarea
               v-model="taskLaunchForm.description"
-              class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
+              class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
               rows="3"
               placeholder="Describe brevemente la tarea manual que vas a lanzar."
             />
           </label>
 
           <label class="flex flex-col gap-2">
-            <span class="font-bold text-slate-700 text-sm">Periodo existente</span>
+            <span class="font-bold text-body text-sm">Periodo existente</span>
             <div class="relative">
-              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
+              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
                 <option value="">Seleccionar</option>
                 <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
                   {{ term.name }} · {{ term.term_type_name }}
                 </option>
               </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-muted">
                 <svg fill="none" stroke="currentColor" class="h-4 w-4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg>
               </div>
             </div>
@@ -996,24 +996,24 @@
 
           <template v-if="taskLaunchUseCustomTerm">
             <label class="flex flex-col gap-2 md:col-span-2">
-              <span class="font-bold text-slate-700 text-sm">Nombre del periodo custom</span>
-              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
+              <span class="font-bold text-body text-sm">Nombre del periodo custom</span>
+              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium placeholder-gray-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
             </label>
             <label class="flex flex-col gap-2">
-              <span class="font-bold text-slate-700 text-sm">Fecha inicial</span>
-              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+              <span class="font-bold text-body text-sm">Fecha inicial</span>
+              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
             </label>
             <label class="flex flex-col gap-2">
-              <span class="font-bold text-slate-700 text-sm">Fecha final</span>
-              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+              <span class="font-bold text-body text-sm">Fecha final</span>
+              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
             </label>
           </template>
         </section>
 
         <section v-else-if="taskLaunchStep === 2" class="flex flex-col gap-5">
-          <div class="rounded-xl border border-sky-200 bg-sky-50/70 p-5">
-            <h3 class="m-0 text-base font-bold text-sky-900">Base documental de la tarea</h3>
-            <p class="mt-2 mb-0 text-sm font-medium text-sky-800/80">
+          <div class="rounded-xl border border-blue-light-200 bg-blue-light-50/70 p-5">
+            <h3 class="m-0 text-base font-bold text-info">Base documental de la tarea</h3>
+            <p class="mt-2 mb-0 text-sm font-medium text-info/80">
               Esta tarea se creará usando los templates activos de la configuración. En este corte, Home informa el alcance documental real antes de confirmar la creación.
             </p>
           </div>
@@ -1022,18 +1022,18 @@
             <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="m-0 text-base font-bold text-slate-800">Templates operativos</h3>
-                  <p class="mt-1 mb-0 text-sm font-medium text-slate-500">Se materializan al crear la tarea.</p>
+                  <h3 class="m-0 text-base font-bold text-strong">Templates operativos</h3>
+                  <p class="mt-1 mb-0 text-sm font-medium text-muted">Se materializan al crear la tarea.</p>
                 </div>
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
               </header>
-              <div v-if="!taskLaunchSystemTemplates.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-slate-500">
+              <div v-if="!taskLaunchSystemTemplates.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-muted">
                 Esta configuración no tiene templates de proceso que generen tarea.
               </div>
               <div v-else class="flex flex-col gap-3">
                 <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="rounded-2xl border border-line bg-surface/60 p-4 flex flex-col gap-2">
                   <div class="flex flex-wrap items-center gap-2">
-                    <strong class="text-sm font-bold text-slate-800">{{ template.template_artifact_name }}</strong>
+                    <strong class="text-sm font-bold text-strong">{{ template.template_artifact_name }}</strong>
                     <AppTag variant="success">Proceso</AppTag>
                   </div>
                   <div class="flex flex-wrap gap-2">
@@ -1047,19 +1047,19 @@
             <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="m-0 text-base font-bold text-slate-800">Artifacts generales</h3>
-                  <p class="mt-1 mb-0 text-sm font-medium text-slate-500">Disponibles para iteraciones posteriores del flujo manual.</p>
+                  <h3 class="m-0 text-base font-bold text-strong">Artifacts generales</h3>
+                  <p class="mt-1 mb-0 text-sm font-medium text-muted">Disponibles para iteraciones posteriores del flujo manual.</p>
                 </div>
                 <AppTag variant="muted">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
               </header>
-              <div v-if="!selectedProcessPanel?.user_packages?.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-slate-500">
+              <div v-if="!selectedProcessPanel?.user_packages?.length" class="rounded-2xl border border-dashed border-line bg-surface p-4 text-sm font-medium text-muted">
                 No tienes artifacts generales registrados en esta cuenta.
               </div>
               <div v-else class="flex flex-col gap-3">
                 <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="rounded-2xl border border-line bg-surface/60 p-4 flex items-center justify-between gap-3">
                   <div class="min-w-0">
-                    <strong class="block truncate text-sm font-bold text-slate-800">{{ item.display_name }}</strong>
-                    <p class="mt-1 mb-0 text-xs font-medium text-slate-500">{{ item.description || 'Plantilla de documento registrada por el usuario.' }}</p>
+                    <strong class="block truncate text-sm font-bold text-strong">{{ item.display_name }}</strong>
+                    <p class="mt-1 mb-0 text-xs font-medium text-muted">{{ item.description || 'Plantilla de documento registrada por el usuario.' }}</p>
                   </div>
                   <AppTag :variant="Number(item.is_active) === 1 ? 'success' : 'muted'" class-name="shrink-0">{{ Number(item.is_active) === 1 ? 'Activa' : 'Inactiva' }}</AppTag>
                 </article>
@@ -1078,25 +1078,25 @@
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
-              <h3 class="m-0 text-base font-bold text-slate-800">Resumen operativo</h3>
+              <h3 class="m-0 text-base font-bold text-strong">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="rounded-2xl bg-surface border border-line p-4">
-                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Configuración</div>
-                  <div class="mt-2 text-sm font-bold text-slate-800">{{ selectedProcessPanel?.definition?.name || '—' }}</div>
+                  <div class="text-xs font-bold uppercase tracking-wider text-muted">Configuración</div>
+                  <div class="mt-2 text-sm font-bold text-strong">{{ selectedProcessPanel?.definition?.name || '—' }}</div>
                 </div>
                 <div class="rounded-2xl bg-surface border border-line p-4">
-                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</div>
-                  <div class="mt-2 text-sm font-bold text-slate-800">{{ taskLaunchSelectedTermLabel }}</div>
+                  <div class="text-xs font-bold uppercase tracking-wider text-muted">Periodo</div>
+                  <div class="mt-2 text-sm font-bold text-strong">{{ taskLaunchSelectedTermLabel }}</div>
                 </div>
                 <div class="rounded-2xl bg-surface border border-line p-4 sm:col-span-2">
-                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Descripción</div>
-                  <div class="mt-2 text-sm font-medium text-slate-700">{{ taskLaunchForm.description || 'Sin descripción adicional.' }}</div>
+                  <div class="text-xs font-bold uppercase tracking-wider text-muted">Descripción</div>
+                  <div class="mt-2 text-sm font-medium text-body">{{ taskLaunchForm.description || 'Sin descripción adicional.' }}</div>
                 </div>
               </div>
             </article>
 
             <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
-              <h3 class="m-0 text-base font-bold text-slate-800">Impacto documental</h3>
+              <h3 class="m-0 text-base font-bold text-strong">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.period_types?.length || 0 }} tipos de periodo activos</AppTag>
@@ -1306,7 +1306,7 @@
             @click="deliverableWorkspaceState.tab = 'attachments'"
           >
             Anexos
-            <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-indigo-100 px-1 text-[0.65rem] font-bold text-indigo-700">{{ attachmentsState.items.length }}</span>
+            <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brand-100 px-1 text-[0.65rem] font-bold text-primary">{{ attachmentsState.items.length }}</span>
           </button>
         </div>
 
@@ -1329,28 +1329,28 @@
                 <dl class="grid gap-x-6 gap-y-2.5 m-0 sm:grid-cols-2 lg:grid-cols-4">
                   <div
                     class="flex flex-col gap-0.5 border-l-2 pl-3"
-                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-step-ink' : 'border-sky-300'"
+                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-step-ink' : 'border-blue-light-300'"
                   >
                     <dt
                       class="text-[11px] font-bold uppercase tracking-[0.16em]"
-                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-step-ink' : 'text-sky-600'"
+                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-step-ink' : 'text-info'"
                     >
                       Responsable actual
                     </dt>
-                    <dd class="m-0 text-sm font-semibold text-slate-800">{{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}</dd>
+                    <dd class="m-0 text-sm font-semibold text-strong">{{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
                     <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Proceso</dt>
-                    <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
+                    <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
                     <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Unidad</dt>
-                    <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverableUnitLabel(deliverableWorkspaceSubject) }}</dd>
+                    <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableUnitLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
                     <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Periodo</dt>
-                    <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</dd>
-                    <dd class="m-0 text-xs font-medium text-slate-500">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
+                    <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</dd>
+                    <dd class="m-0 text-xs font-medium text-muted">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
                 </dl>
               </div>
@@ -1358,7 +1358,7 @@
 
             <section class="rounded-2xl border border-line bg-white p-4">
               <div class="flex items-center gap-1.5">
-                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones</h3>
+                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Acciones</h3>
                 <IconInfoCircle class="h-4 w-4 text-muted" title="Todo lo que puedes hacer ahora con este entregable, en un solo lugar." />
               </div>
               <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
@@ -1483,18 +1483,18 @@
     >
       <div class="flex flex-col gap-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="m-0 text-sm font-medium text-slate-500">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
+          <p class="m-0 text-sm font-medium text-muted">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
           <label v-if="mySendsTypes.length > 1" class="flex items-center gap-2 text-sm">
-            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Tipo</span>
-            <select v-model="mySendsTypeFilter" class="rounded-2xl border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">Tipo</span>
+            <select v-model="mySendsTypeFilter" class="rounded-2xl border border-line bg-white px-2 py-1 text-sm font-medium text-body outline-none">
               <option value="all">Todos</option>
               <option v-for="t in mySendsTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>
           </label>
         </div>
 
-        <div v-if="mySendsLoading" class="text-sm text-slate-500">Cargando envíos…</div>
-        <div v-else-if="!filteredMySends.length" class="rounded-2xl border border-dashed border-line bg-slate-50/70 p-6 text-center text-sm font-medium text-slate-500">
+        <div v-if="mySendsLoading" class="text-sm text-muted">Cargando envíos…</div>
+        <div v-else-if="!filteredMySends.length" class="rounded-2xl border border-dashed border-line bg-surface/70 p-6 text-center text-sm font-medium text-muted">
           Aún no has enviado ningún documento.
         </div>
         <ul v-else class="m-0 flex flex-col gap-2 p-0 list-none">
@@ -1502,9 +1502,9 @@
             <div class="flex min-w-0 flex-col gap-0.5">
               <div class="flex flex-wrap items-center gap-2">
                 <AppTag variant="info">{{ s.process_name }}</AppTag>
-                <span class="text-sm font-semibold text-slate-800">{{ s.label || `Envío #${s.id}` }}</span>
+                <span class="text-sm font-semibold text-strong">{{ s.label || `Envío #${s.id}` }}</span>
               </div>
-              <span class="text-xs font-medium text-indigo-600">Para: {{ s.recipient_name || '—' }}</span>
+              <span class="text-xs font-medium text-primary">Para: {{ s.recipient_name || '—' }}</span>
             </div>
             <div class="flex items-center gap-3 text-xs text-muted">
               <span>{{ String(s.created_at || '').slice(0, 10) }}</span>
@@ -1530,7 +1530,7 @@
         <div v-if="fillWorkflowState.subject" class="flex flex-col gap-3">
           <div class="rounded-2xl border border-line bg-surface/60 p-4">
             <div class="flex flex-col gap-2">
-              <strong class="text-base font-bold text-slate-800">{{ fillWorkflowState.subject.title }}</strong>
+              <strong class="text-base font-bold text-strong">{{ fillWorkflowState.subject.title }}</strong>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="neutral">
                   Paso {{ fillWorkflowState.request?.step_order || 1 }}
@@ -1546,25 +1546,25 @@
           </div>
 
           <div class="rounded-2xl border border-line bg-white p-4">
-            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Secuencia del flujo</h3>
-            <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-slate-500">
+            <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Secuencia del flujo</h3>
+            <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-muted">
               Este entregable todavía no tiene una secuencia de entrega visible.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
                 v-for="step in fillWorkflowState.subject.workflow.fill_steps"
                 :key="`fill-step-${step.id}-${step.request_id || 'na'}`"
-                class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 shadow-sm transition"
+                class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 shadow-elev-1 transition"
                 :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
               >
                 <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-slate-700">
+                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
                       {{ step.step_order }}
                     </span>
                     <div class="flex flex-col gap-1">
-                      <strong class="text-sm font-bold text-slate-800">Paso {{ step.step_order }}</strong>
+                      <strong class="text-sm font-bold text-strong">Paso {{ step.step_order }}</strong>
                       <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">Entrega</span>
                     </div>
                   </div>
@@ -1580,13 +1580,13 @@
                     </AppTag>
                   </div>
                 </div>
-                <div class="mt-4 rounded-2xl border border-line bg-slate-50/70 px-4 py-3">
+                <div class="mt-4 rounded-2xl border border-line bg-surface/70 px-4 py-3">
                   <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Responsable</p>
-                  <p class="mt-1 text-sm font-semibold text-slate-700 m-0 leading-snug">{{ step.display_label }}</p>
+                  <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">{{ step.display_label }}</p>
                 </div>
                 <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
                   <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Regla</p>
-                  <p class="mt-1 text-xs font-medium text-slate-500 m-0">{{ getFillStepResolverLabel(step) }}</p>
+                  <p class="mt-1 text-xs font-medium text-muted m-0">{{ getFillStepResolverLabel(step) }}</p>
                 </div>
                 <div v-if="step.response_note" class="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
                   <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Nota</p>
@@ -1597,8 +1597,8 @@
           </div>
 
           <div class="rounded-2xl border border-line bg-white p-4">
-            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Historial de notas operativas</h3>
-            <div v-if="!fillWorkflowNotes.length" class="text-sm text-slate-500">
+            <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Historial de notas operativas</h3>
+            <div v-if="!fillWorkflowNotes.length" class="text-sm text-muted">
               Aún no existen notas operativas registradas en este flujo.
             </div>
             <div v-else class="flex flex-col gap-3">
@@ -1609,18 +1609,18 @@
               >
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div class="flex flex-col gap-1">
-                    <strong class="text-sm font-bold text-slate-800">
+                    <strong class="text-sm font-bold text-strong">
                       Paso {{ noteEntry.stepOrder }} · {{ noteEntry.label }}
                     </strong>
-                    <span class="text-xs font-semibold text-slate-500">
+                    <span class="text-xs font-semibold text-muted">
                       {{ noteEntry.statusLabel }}
                     </span>
                   </div>
-                  <span v-if="noteEntry.respondedAtLabel" class="text-xs font-medium text-slate-500">
+                  <span v-if="noteEntry.respondedAtLabel" class="text-xs font-medium text-muted">
                     {{ noteEntry.respondedAtLabel }}
                   </span>
                 </div>
-                <p class="mt-3 mb-0 text-sm font-medium leading-relaxed text-slate-700 whitespace-pre-wrap">
+                <p class="mt-3 mb-0 text-sm font-medium leading-relaxed text-body whitespace-pre-wrap">
                   {{ noteEntry.note }}
                 </p>
               </div>
@@ -1628,7 +1628,7 @@
           </div>
 
           <div class="rounded-2xl border border-line bg-white p-4">
-            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Acciones disponibles</h3>
+            <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Acciones disponibles</h3>
             <p
               v-if="fillWorkflowState.request && !canOperateCurrentFillRequest"
               class="mb-3 text-sm font-medium text-icon"
@@ -1695,11 +1695,11 @@
           </div>
 
           <label class="flex flex-col gap-2">
-            <span class="text-sm font-bold text-slate-700">Nota operativa</span>
+            <span class="text-sm font-bold text-body">Nota operativa</span>
             <textarea
               v-model="fillWorkflowState.note"
               rows="3"
-              class="block w-full px-4 py-3 bg-surface/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
+              class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
               placeholder="Agrega una nota para esta acción."
             />
           </label>
@@ -1735,8 +1735,8 @@
         <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-2">
-              <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Documento</p>
-              <h3 class="text-lg font-bold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
+              <p class="text-xs uppercase tracking-wider font-semibold text-muted">Documento</p>
+              <h3 class="text-lg font-bold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="neutral">
                   {{ signatureFlowState.subject?.documentId ? `Documento #${signatureFlowState.subject.documentId}` : 'Sin documento' }}
@@ -1748,16 +1748,16 @@
                   {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
                 </AppTag>
               </div>
-              <p class="text-xs text-slate-500">
+              <p class="text-xs text-muted">
                 Estado documental: {{ capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente de firma' }}
               </p>
               <p v-if="!signatureFlowState.snapshot.readiness?.ok" class="text-xs text-rose-600">
                 Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
               </p>
             </section>
-            <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-2 shadow-sm">
-              <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Responsable actual</p>
-              <p class="text-sm font-semibold text-slate-800 mb-0">
+            <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-2 shadow-elev-1">
+              <p class="text-xs uppercase tracking-wider font-semibold text-muted">Responsable actual</p>
+              <p class="text-sm font-semibold text-strong mb-0">
                 {{ signatureFlowState.snapshot?.responsableActual
                   ? `${signatureFlowState.snapshot.responsableActual.firstName || ''} ${signatureFlowState.snapshot.responsableActual.lastName || ''}`.trim()
                   : 'Sin responsable resuelto' }}
@@ -1765,14 +1765,14 @@
               <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
                 {{ signatureFlowState.snapshot?.canOperate ? 'Puedes operar este paso' : 'Solo visualización' }}
               </AppTag>
-              <p class="text-xs text-slate-500">
+              <p class="text-xs text-muted">
                 Paso actual: {{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}
               </p>
             </section>
             <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-2">
-              <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Secuencia</p>
-              <p class="text-sm font-semibold text-slate-800 mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
-              <p class="text-xs text-slate-500">
+              <p class="text-xs uppercase tracking-wider font-semibold text-muted">Secuencia</p>
+              <p class="text-sm font-semibold text-strong mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
+              <p class="text-xs text-muted">
                 {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} solicitudes registradas
               </p>
               <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-rose-600">
@@ -1781,14 +1781,14 @@
             </section>
           </div>
 
-          <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
+          <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
+              <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
               <AppTag variant="muted">
                 {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
               </AppTag>
             </div>
-            <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
+            <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-muted">
               Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1801,11 +1801,11 @@
                 <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-slate-700">
+                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
                       {{ step.step_order || '—' }}
                     </span>
                     <div class="flex flex-col gap-1">
-                      <p class="text-sm font-bold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
+                      <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
                     </div>
                   </div>
@@ -1820,15 +1820,15 @@
                     </AppTag>
                   </div>
                 </div>
-                <div class="mt-4 rounded-2xl border border-line bg-slate-50/70 px-4 py-3">
+                <div class="mt-4 rounded-2xl border border-line bg-surface/70 px-4 py-3">
                   <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Firmante</p>
-                  <p class="mt-1 text-sm font-semibold text-slate-700 m-0 leading-snug">
+                  <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">
                     {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
                   </p>
                 </div>
                 <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
                   <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Regla</p>
-                  <p class="mt-1 text-xs font-medium text-slate-500 m-0">
+                  <p class="mt-1 text-xs font-medium text-muted m-0">
                     {{ getSignatureStepResolverLabel(step) }}
                   </p>
                 </div>
@@ -1838,12 +1838,12 @@
 
           <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Historial y trazabilidad</h3>
+              <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Historial y trazabilidad</h3>
               <AppTag variant="neutral">
                 {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
               </AppTag>
             </div>
-            <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="text-sm text-slate-500">
+            <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="text-sm text-muted">
               Aún no se ha registrado actividad sobre este flujo.
             </div>
             <div v-else class="flex flex-col gap-3">
@@ -1853,16 +1853,16 @@
                 class="rounded-2xl border border-line bg-white p-3 flex flex-col gap-1"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ request.stepOrder }}</p>
+                  <p class="text-sm font-semibold text-strong m-0">Paso {{ request.stepOrder }}</p>
                   <AppTag :variant="signatureRequestTagVariant(request.requestStatusCode)">
                     {{ signatureRequestStatusLabel(request.requestStatusCode) }}
                   </AppTag>
                 </div>
-                <p class="text-xs text-slate-500 m-0">
+                <p class="text-xs text-muted m-0">
                   {{ request.assignedPerson ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim() : 'Firmante no resuelto' }}
                   · Cargo {{ request.cargoName || '—' }}
                 </p>
-                <p class="text-xs text-slate-500 m-0">
+                <p class="text-xs text-muted m-0">
                   {{ request.respondedAt ? formatDateTime(request.respondedAt) : formatDateTime(request.requestedAt) }}
                 </p>
               </div>
@@ -1872,8 +1872,8 @@
           <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-4">
             <div class="flex items-center justify-between gap-2">
               <div>
-                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Firmar documento</h3>
-                <p class="text-xs text-slate-500 m-0">Utiliza el visor integrado para completar tu paso actual.</p>
+                <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Firmar documento</h3>
+                <p class="text-xs text-muted m-0">Utiliza el visor integrado para completar tu paso actual.</p>
               </div>
               <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
                 {{ signatureFlowState.snapshot?.canOperate ? 'Listo para operar' : 'Acceso en modo lectura' }}
@@ -1882,7 +1882,7 @@
             <div v-if="signatureFlowState.snapshot?.canOperate">
               <FirmarPdf ref="signatureFlowSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
             </div>
-            <div v-else class="rounded-2xl border border-line bg-surface p-4 text-sm text-slate-500">
+            <div v-else class="rounded-2xl border border-line bg-surface p-4 text-sm text-muted">
               No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
             </div>
           </section>
@@ -1950,7 +1950,7 @@
             ? 'bg-rose-50 border border-rose-200 text-rose-700'
             : deliverableOperationState.type === 'success'
               ? 'bg-emerald-50 border border-emerald-200 text-success'
-              : 'bg-sky-50 border border-sky-200 text-action-view'"
+              : 'bg-blue-light-50 border border-blue-light-200 text-action-view'"
         >
           {{ deliverableOperationState.message }}
         </div>
@@ -2010,7 +2010,7 @@
           Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
         </div>
         <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
-          <p class="m-0 font-semibold text-slate-700">
+          <p class="m-0 font-semibold text-body">
             {{ deliverableResetState.target?.title || 'Entregable seleccionado' }}
           </p>
           <p class="mt-2 mb-0">
@@ -2045,22 +2045,22 @@
             v-if="hasDeliverablePreviewActions"
             class="rounded-2xl border border-line bg-white p-4"
           >
-            <h3 class="mb-3 text-sm font-bold uppercase tracking-wider text-slate-700">
+            <h3 class="mb-3 text-sm font-bold uppercase tracking-wider text-body">
               Acciones disponibles
             </h3>
             <div class="flex flex-wrap gap-2">
               <button
                 v-if="canReplacePreviewFillFile"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="isUploadingDeliverable"
                 @click="openPreviewDeliverableUploadModal"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-blue-light-100/95 bg-blue-light-50/55 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
                   <IconUpload class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
-                  <span class="text-sm font-semibold text-slate-800">
+                  <span class="text-sm font-semibold text-strong">
                     {{ isUploadingDeliverable ? 'Subiendo...' : getUploadActionLabel(deliverablePreviewSource) }}
                   </span>
                 </div>
@@ -2076,7 +2076,7 @@
                   <IconCircleCheck class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
-                  <span class="text-sm font-semibold text-slate-800">
+                  <span class="text-sm font-semibold text-strong">
                     {{ getFillApproveActionLabelForPayload(deliverablePreviewSource) }}
                   </span>
                 </div>
@@ -2092,7 +2092,7 @@
                   <IconMinus class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
-                  <span class="text-sm font-semibold text-slate-800">Devolver</span>
+                  <span class="text-sm font-semibold text-strong">Devolver</span>
                 </div>
               </button>
               <button
@@ -2106,7 +2106,7 @@
                   <IconX class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
-                  <span class="text-sm font-semibold text-slate-800">Rechazar</span>
+                  <span class="text-sm font-semibold text-strong">Rechazar</span>
                 </div>
               </button>
             </div>

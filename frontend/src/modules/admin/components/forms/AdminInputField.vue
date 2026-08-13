@@ -3,7 +3,7 @@
     :is="tagName"
     :value="modelValue"
     :type="tagName === 'input' ? type : undefined"
-    class="admin-input-field w-full rounded-2xl border border-slate-300 bg-white px-3.5 text-sm text-slate-700 shadow-none transition-colors duration-150 placeholder:text-muted focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted"
+    class="deasy-control"
     :class="[sizeClass, inputClass]"
     :placeholder="placeholder"
     :disabled="disabled"

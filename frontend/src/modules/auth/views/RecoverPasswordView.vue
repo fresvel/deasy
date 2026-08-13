@@ -3,17 +3,17 @@
     <AppLogo size="lg" :framed="true" class-name="mb-8" />
     
     <!-- Go back button -->
-    <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-8 group">
+    <router-link to="/" class="inline-flex items-center text-sm font-semibold text-muted hover:text-info transition-colors mb-8 group">
       <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
       Volver al login
     </router-link>
 
     <div class="mb-8">
-      <div class="w-14 h-14 bg-sky-50 rounded-2xl flex flex-col items-center justify-center text-sky-600 mb-6">
+      <div class="w-14 h-14 bg-blue-light-50 rounded-2xl flex flex-col items-center justify-center text-info mb-6">
         <IconKey class="h-7 w-7" />
       </div>
-      <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Recuperar contraseña</h1>
-      <p class="text-slate-500 mt-2.5 font-medium text-sm">
+      <h1 class="text-2xl font-bold text-strong tracking-tight">Recuperar contraseña</h1>
+      <p class="text-muted mt-2.5 font-medium text-sm">
         Solicita un código de recuperación y luego define una nueva contraseña para tu cuenta.
       </p>
     </div>
@@ -21,7 +21,7 @@
     <form v-if="step === 'request'" @submit.prevent="recoverPassword" class="space-y-6" autocomplete="off">
       <input type="text" name="recover-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de usuario" />
       <div>
-        <label :for="fieldId('email')" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('email')" class="block text-sm font-semibold text-body mb-2">
           Correo Electrónico
         </label>
         <div class="relative">
@@ -62,7 +62,7 @@
       <input type="text" name="recover-reset-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de usuario" />
       <input type="password" name="recover-reset-decoy-password" autocomplete="current-password" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de contraseña" />
       <div>
-        <label :for="fieldId('email-confirmed')" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('email-confirmed')" class="block text-sm font-semibold text-body mb-2">
           Correo Electrónico
         </label>
         <input
@@ -71,13 +71,13 @@
           v-model="email"
           name="recover-reset-email"
           autocomplete="off"
-          class="deasy-auth-field bg-slate-50"
+          class="deasy-auth-field bg-surface"
           readonly
         />
       </div>
 
       <div>
-        <label :for="fieldId('code')" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('code')" class="block text-sm font-semibold text-body mb-2">
           Código de recuperación
         </label>
         <input
@@ -93,7 +93,7 @@
       </div>
 
       <div>
-        <label :for="fieldId('password')" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('password')" class="block text-sm font-semibold text-body mb-2">
           Nueva contraseña
         </label>
         <input
@@ -109,7 +109,7 @@
       </div>
 
       <div>
-        <label :for="fieldId('repassword')" class="block text-sm font-semibold text-slate-700 mb-2">
+        <label :for="fieldId('repassword')" class="block text-sm font-semibold text-body mb-2">
           Confirmar contraseña
         </label>
         <input

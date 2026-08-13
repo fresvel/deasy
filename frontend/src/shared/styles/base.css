@@ -8,67 +8,88 @@
         box-sizing: border-box;
     }
 
-    /* ⚠️ `tokens.css` trae otro `body`/`#app` en `@layer base`, e `index.css` lo importa
-       ANTES que este fichero: dentro de la capa gana este por orden. No inviertas los
-       imports. */
+    /* EL ARMAZON, declarado UNA vez. Hasta el 2026-08-13 este fondo se escribia cinco veces
+       entre `tokens.css` y este fichero, y el `color` del `body` tres (`text-body`,
+       `--color-navy` y `--color-strong`), ganando el ultimo por orden de `@import`. Se
+       conservan los valores que ganaban: fondo `--color-navy-deep` y texto `--color-strong`. */
+    html,
+    body,
+    #app {
+        background: var(--color-navy-deep);
+    }
+
+    body,
+    #app {
+        color: var(--color-strong);
+    }
+
     body {
+        @apply antialiased;
         margin: 0;
         font-family: var(--typeface);
         font-size: var(--type-size);
         line-height: var(--type-leading);
-        color: var(--color-navy);
-        background-color: var(--color-navy-deep);
+    }
+
+    #app {
+        @apply min-h-screen;
     }
 }
 
-/* SE QUEDA SIN CAPA (1 de 4) — la tipografia de los encabezados. Bajarla resucita 109
-   utilidades en 77 de los 95 encabezados del proyecto: hoy un `font-semibold` sobre un
-   `<h3>` renderiza a 500, porque este `font-weight` va sin capa y gana a
-   `@layer utilities`. (`font-size` no, porque esta regla no lo declara.) §6.1. */
+/* ══ LOS ENCABEZADOS BAJAN A `@layer base` — 2026-08-13 ═════════════════════════════════
+   Estas dos reglas llevaban FUERA DE CAPA con este motivo escrito: «bajarla resucita 109
+   utilidades en 77 de los 95 encabezados del proyecto», porque un `font-weight` sin capa gana
+   a `@layer utilities` y un `font-semibold` sobre un `<h3>` renderizaba a **500**.
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.h1,
-.h2,
-.h3,
-.h4,
-.h5,
-.h6 {
-  font-family: var(--typeface);
-  font-weight: 500;
-  line-height: var(--type-leading-heading);
-  letter-spacing: -0.01em;
-}
+   Eso no era una razon para dejarlas: era la descripcion del defecto. La norma no admite que
+   una declaracion se quede «presente pero suprimida» — o se borra de la plantilla, o se capa la
+   regla y se enciende. Se enciende: **un encabezado que pide `font-semibold` es que quiere
+   semibold**, y estas reglas son el SUELO tipografico, no la ultima palabra.
 
+   Y aqui era ademas la condicion que bloqueaba otra cosa: `.deasy-dialog-title` no podia bajar
+   de capa porque, capada, perdia contra este `h1..h6` suelto y 121 titulos caian de 21.6 px a
+   19.2 px. Con los encabezados en `@layer base` deja de haber conflicto: `base` va ANTES que
+   `components` en el orden de capas de Tailwind, asi que el titulo gana sin depender de la
+   especificidad.
+
+   Las clases-espejo `.h1`…`.h6` salieron de esta lista el mismo dia: no las usaba nadie. Los
+   selectores de ELEMENTO siguen vivos y son los que pintan.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
 @layer base {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: var(--typeface);
+      font-weight: 500;
+      line-height: var(--type-leading-heading);
+      letter-spacing: -0.01em;
+    }
+
     /* La tipografia base del CONTENEDOR, no la de los encabezados. */
     .admin-typography {
         font-family: var(--typeface);
         font-size: var(--type-size);
         line-height: var(--type-leading);
     }
-}
 
-/* SE QUEDA SIN CAPA (2 de 4) — hermana de la anterior. Capada, los encabezados de admin
-   pasarian a usar el peso de la utilidad que llevan escrito. Las dos bajan juntas (§6.1).
-
-   Aqui habia ademas los seis `.home-typography h1..h6`, y no hacian nada: esa clase no
-   esta en una sola plantilla. El razonamiento que sostenia el comentario —«los del resto
-   de la app se quedarian en 500»— hablaba de una mitad que nunca llego al DOM. */
-
-.admin-typography h1,
-.admin-typography h2,
-.admin-typography h3,
-.admin-typography h4,
-.admin-typography h5,
-.admin-typography h6 {
-  font-family: var(--typeface);
-  font-weight: 500;
-  line-height: var(--type-leading-heading);
+    /* Hermana de la de arriba, y baja con ella: los encabezados de administracion pasan a usar
+       el peso que llevan escrito en la plantilla.
+       Aqui habia ademas los seis `.home-typography h1..h6`, y no hacian nada: esa clase no esta
+       en una sola plantilla. El razonamiento que sostenia el comentario —«los del resto de la
+       app se quedarian en 500»— hablaba de una mitad que nunca llego al DOM. */
+    .admin-typography h1,
+    .admin-typography h2,
+    .admin-typography h3,
+    .admin-typography h4,
+    .admin-typography h5,
+    .admin-typography h6 {
+      font-family: var(--typeface);
+      font-weight: 500;
+      line-height: var(--type-leading-heading);
+    }
 }
 
 /* SE QUEDAN SIN CAPA (3 y 4 de 4) — el color de los enlaces. `a` es (0,0,1), la
@@ -85,13 +106,5 @@ a:hover {
   color: var(--color-primary);
 }
 
-@layer base {
-    /* ⚠️ Va DESPUES del `body` de arriba a proposito: dentro de la misma capa manda el
-       orden, y este `color` es el que gana al `--color-navy` del primer bloque. Si juntas
-       los dos bloques, respeta el orden. */
-    body,
-    #app {
-        background: var(--color-navy-deep);
-        color: var(--color-strong);
-    }
-}
+/* El segundo `@layer base` con `body, #app` se fusiono con el primero el 2026-08-13. Existia
+   solo para ganar por orden a un `color` que este fichero declaraba doce lineas mas arriba. */

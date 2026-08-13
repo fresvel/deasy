@@ -2,7 +2,7 @@
   <AuthLayout size="2xl">
     <div class="mb-7 flex flex-col items-center text-center">
       <AppLogo size="lg" :framed="true" class-name="mb-4" />
-      <span class="rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <span class="rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
         Primera instalación · {{ environmentLabel }}
       </span>
       <h1 class="deasy-auth-title mt-4">Bootstrap del sistema</h1>
@@ -15,17 +15,17 @@
         <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
           <span
             class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
-            :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-surface text-muted'"
+            :class="step >= i + 1 ? 'bg-blue-light-600 text-white' : 'bg-surface text-muted'"
           >{{ i + 1 }}</span>
-          <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-muted'">{{ s.label }}</span>
-          <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-slate-200"></span>
+          <span class="hidden sm:inline" :class="step === i + 1 ? 'text-strong' : 'text-muted'">{{ s.label }}</span>
+          <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-gray-200"></span>
         </li>
       </ol>
 
       <!-- Paso 1: Administrador -->
       <div v-show="step === 1" class="space-y-4">
         <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
-          <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleAdmin" />
+          <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 rounded border-line-strong text-info" @change="toggleExampleAdmin" />
           Usar datos de ejemplo (rellena el formulario para crear rápido)
         </label>
         <div class="grid gap-4 md:grid-cols-2">
@@ -63,17 +63,17 @@
 
       <!-- Paso 2: Gestor por defecto (opcional) -->
       <div v-show="step === 2" class="space-y-4">
-        <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-line'">
+        <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'">
           <SToggle v-model="gestorEnabled">
             <span>
-              <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
-              <span class="block text-xs text-slate-500">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
+              <span class="block text-sm font-semibold text-body">Crear un gestor por defecto</span>
+              <span class="block text-xs text-muted">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
             </span>
           </SToggle>
         </div>
         <div v-if="gestorEnabled" class="space-y-4">
           <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
-            <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleGestor" />
+            <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-line-strong text-info" @change="toggleExampleGestor" />
             Usar datos de ejemplo
           </label>
           <div class="grid gap-4 md:grid-cols-2">
@@ -105,17 +105,17 @@
         </div>
 
         <!-- Usuario de prueba (opcional): rol base "Usuario" para validar el flujo operativo -->
-        <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-line'">
+        <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'">
           <SToggle v-model="usuarioEnabled">
             <span>
-              <span class="block text-sm font-semibold text-slate-700">Crear un usuario de prueba</span>
-              <span class="block text-xs text-slate-500">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
+              <span class="block text-sm font-semibold text-body">Crear un usuario de prueba</span>
+              <span class="block text-xs text-muted">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
             </span>
           </SToggle>
         </div>
         <div v-if="usuarioEnabled" class="space-y-4">
           <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
-            <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleUsuario" />
+            <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-line-strong text-info" @change="toggleExampleUsuario" />
             Usar datos de ejemplo
           </label>
           <div class="grid gap-4 md:grid-cols-2">
@@ -149,7 +149,7 @@
 
       <!-- Paso 3: Catálogos genéricos -->
       <div v-show="step === 3" class="space-y-4">
-        <p class="m-0 text-sm text-slate-500">
+        <p class="m-0 text-sm text-muted">
           Selecciona únicamente los registros que quieras crear. Podrás completar o editar estos catálogos después.
         </p>
         <fieldset
@@ -160,13 +160,13 @@
           <legend class="sr-only">{{ group.label }}</legend>
           <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p class="m-0 text-sm font-semibold text-slate-700">{{ group.label }}</p>
-              <p class="m-0 mt-0.5 text-xs text-slate-500">{{ group.hint }}</p>
+              <p class="m-0 text-sm font-semibold text-body">{{ group.label }}</p>
+              <p class="m-0 mt-0.5 text-xs text-muted">{{ group.hint }}</p>
             </div>
             <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-icon">
               <input
                 type="checkbox"
-                class="h-4 w-4 rounded border-slate-300 text-sky-600"
+                class="h-4 w-4 rounded border-line-strong text-info"
                 :checked="isCatalogGroupFullySelected(group)"
                 @change="toggleCatalogGroup(group, $event.target.checked)"
               />
@@ -178,62 +178,62 @@
               v-for="option in group.options"
               :key="option.id"
               class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors"
-              :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-line bg-white'"
+              :class="preconfig[group.key].includes(option.id) ? 'border-blue-light-300 bg-blue-light-50' : 'border-line bg-white'"
             >
               <input
                 v-model="preconfig[group.key]"
                 type="checkbox"
                 :value="option.id"
-                class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600"
+                class="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-info"
               />
               <span class="min-w-0">
-                <span class="block text-sm font-medium text-slate-700">{{ option.label }}</span>
-                <span v-if="option.description" class="block text-xs text-slate-500">{{ option.description }}</span>
+                <span class="block text-sm font-medium text-body">{{ option.label }}</span>
+                <span v-if="option.description" class="block text-xs text-muted">{{ option.description }}</span>
               </span>
             </label>
           </div>
         </fieldset>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-line'"
+          :class="preconfig.relation_unit_types ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
         >
           <SToggle v-model="preconfig.relation_unit_types">
             <span>
-              <span class="block text-sm font-semibold text-slate-700">Relación orgánica</span>
-              <span class="block text-xs text-slate-500">Crea el tipo de relación jerárquica entre unidades.</span>
+              <span class="block text-sm font-semibold text-body">Relación orgánica</span>
+              <span class="block text-xs text-muted">Crea el tipo de relación jerárquica entre unidades.</span>
             </span>
           </SToggle>
         </div>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_units ? 'border-sky-300 bg-sky-50' : 'border-line'"
+          :class="preconfig.example_units ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
         >
           <SToggle v-model="preconfig.example_units">
             <span>
-              <span class="block text-sm font-semibold text-slate-700">Estructura de unidades de ejemplo</span>
-              <span class="block text-xs text-slate-500">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
+              <span class="block text-sm font-semibold text-body">Estructura de unidades de ejemplo</span>
+              <span class="block text-xs text-muted">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
             </span>
           </SToggle>
         </div>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-line'"
+          :class="preconfig.example_positions ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
         >
           <SToggle v-model="preconfig.example_positions">
             <span>
-              <span class="block text-sm font-semibold text-slate-700">Puestos de ejemplo</span>
-              <span class="block text-xs text-slate-500">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
+              <span class="block text-sm font-semibold text-body">Puestos de ejemplo</span>
+              <span class="block text-xs text-muted">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
             </span>
           </SToggle>
         </div>
         <div
           class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-line'"
+          :class="preconfig.example_users ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
         >
           <SToggle v-model="preconfig.example_users">
             <span>
-              <span class="block text-sm font-semibold text-slate-700">Usuarios de ejemplo</span>
-              <span class="block text-xs text-slate-500">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
+              <span class="block text-sm font-semibold text-body">Usuarios de ejemplo</span>
+              <span class="block text-xs text-muted">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
             </span>
           </SToggle>
         </div>
@@ -243,26 +243,26 @@
       <div v-show="step === 4" class="space-y-2.5 text-sm">
         <div class="rounded-xl border border-line p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Administrador</p>
-          <p class="m-0 mt-1 font-semibold text-slate-700">{{ form.first_name }} {{ form.last_name }}</p>
-          <p class="m-0 text-slate-500">{{ form.email }}</p>
+          <p class="m-0 mt-1 font-semibold text-body">{{ form.first_name }} {{ form.last_name }}</p>
+          <p class="m-0 text-muted">{{ form.email }}</p>
         </div>
         <div class="rounded-xl border border-line p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Gestor por defecto</p>
-          <p class="m-0 mt-1 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
+          <p class="m-0 mt-1 text-muted">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
         </div>
         <div class="rounded-xl border border-line p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Usuario de prueba</p>
-          <p class="m-0 mt-1 text-slate-500">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
+          <p class="m-0 mt-1 text-muted">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
         </div>
         <div class="rounded-xl border border-line p-4">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Catálogos a preconfigurar</p>
           <ul v-if="selectedCatalogSummary.length" class="m-0 mt-2 space-y-2 p-0">
-            <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-slate-500">
-              <span class="font-semibold text-slate-700">{{ item.label }}:</span>
+            <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-muted">
+              <span class="font-semibold text-body">{{ item.label }}:</span>
               {{ item.value }}
             </li>
           </ul>
-          <p v-else class="m-0 mt-1 text-slate-500">Ninguno</p>
+          <p v-else class="m-0 mt-1 text-muted">Ninguno</p>
         </div>
       </div>
 

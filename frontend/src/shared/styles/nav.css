@@ -57,44 +57,26 @@
         @apply block min-w-0 flex-1 break-words pr-2 leading-snug whitespace-normal;
     }
 
+    /* LOS TONOS NO PINTABAN TONOS. Habia DOCE selectores de tono (`--sky`, `--emerald`,
+       `--amber`, `--indigo`, `--violet`, `--direct`, `--derived`… en dos prefijos) y los doce
+       compartian ESTE MISMO cuerpo: sobre la barra oscura el icono va con blanco al 88 %
+       sobre un realce al 4 %, sea cual sea el tono. El unico que se separa de verdad es
+       `--slate`, el estado apagado.
+
+       Plegado sobre la clase base el 2026-08-13. Ademas de quitar once selectores, cierra el
+       fallo que el comentario anterior describia y no arreglaba: `workspaceNavIcons.js`
+       componia `${prefix}--${tone}` SIN comprobar que la variante existiera, asi que un tono
+       nuevo salia con fondo `rgba(0,0,0,0)` y no avisaba nadie — paso con `indigo`. Ahora el
+       aspecto correcto es el POR DEFECTO y un tono desconocido no puede perderlo. */
     .deasy-nav-glyph,
     .deasy-nav-item__icon {
-        @apply inline-flex shrink-0 items-center justify-center border shadow-none;
-    }
-
-    .deasy-nav-glyph {
-        @apply h-7 w-7 rounded-xl;
-    }
-
-    .deasy-nav-item__icon {
-        @apply h-7 w-7 rounded-xl;
-    }
-
-    /* LOS TONOS NO PINTAN TONOS: sobre la barra oscura el icono lleva blanco al 88 % sobre
-       un realce al 4 %, sea cual sea el tono. El unico que se separa es `--slate`, el
-       estado apagado.
-
-       ⚠️ `workspaceNavIcons.js` compone `${prefix}--${tone}` SIN COMPROBAR que la variante
-       exista: un tono que no este en esta lista sale con fondo `rgba(0,0,0,0)` y nadie
-       avisa. Ya paso con `indigo`. Y por lo mismo, un grep de estas clases no las
-       encuentra. */
-    .deasy-nav-glyph--sky,
-    .deasy-nav-glyph--emerald,
-    .deasy-nav-glyph--amber,
-    .deasy-nav-glyph--indigo,
-    .deasy-nav-glyph--violet,
-    .deasy-nav-item__icon--sky,
-    .deasy-nav-item__icon--emerald,
-    .deasy-nav-item__icon--amber,
-    .deasy-nav-item__icon--indigo,
-    .deasy-nav-item__icon--violet,
-    .deasy-nav-item__icon--direct,
-    .deasy-nav-item__icon--derived {
+        @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border shadow-none;
         color: rgba(var(--white-rgb), 0.88);
         border-color: rgba(var(--white-rgb), 0.08);
         background: rgba(var(--white-rgb), 0.04);
     }
 
+    /* El unico tono real. Va DESPUES a proposito: misma especificidad (0,1,0), gana por orden. */
     .deasy-nav-glyph--slate,
     .deasy-nav-item__icon--slate {
         color: rgba(var(--white-rgb), 0.68);

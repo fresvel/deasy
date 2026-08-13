@@ -1,9 +1,9 @@
 <template>
   <div
-    class="graph-node relative rounded-xl border px-3 py-2 shadow-sm transition-all"
+    class="graph-node relative rounded-xl border px-3 py-2 shadow-elev-1 transition-all"
     :class="[
-      data.is_active ? 'border-slate-300 bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
-      data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : '',
+      data.is_active ? 'border-line-strong bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
+      data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '',
       data.dimmed ? 'opacity-35' : ''
     ]"
     @mouseenter="hover = true"
@@ -36,11 +36,11 @@
     </div>
 
     <p class="m-0 flex items-center gap-1.5">
-      <span class="max-w-[10.5rem] truncate text-sm font-bold text-slate-800" :title="data.name">{{ data.name }}</span>
-      <span v-if="data.collapsed" class="text-[11px] font-semibold text-indigo-500">▸</span>
+      <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
+      <span v-if="data.collapsed" class="text-[11px] font-semibold text-primary">▸</span>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
-      <span class="inline-flex max-w-[10.5rem] items-center truncate rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200" :title="data.slug">
+      <span class="inline-flex max-w-[10.5rem] items-center truncate rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-muted ring-1 ring-line" :title="data.slug">
         {{ data.slug }}
       </span>
       <button
@@ -54,7 +54,7 @@
         <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
         {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
-      <span v-else class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-muted ring-1 ring-slate-200">Sin config.</span>
+      <span v-else class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-muted ring-1 ring-line">Sin config.</span>
       <span v-if="!data.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
@@ -74,7 +74,7 @@ const hover = ref(false);
 const configBadgeClass = computed(() => {
   const total = Number(props.data.definitions_count) || 0;
   const active = Number(props.data.active_count) || 0;
-  if (total === 0) return "bg-surface text-slate-500 ring-slate-200";
+  if (total === 0) return "bg-surface text-muted ring-line";
   if (active >= 1) return "bg-emerald-50 text-success ring-emerald-200";
   return "bg-amber-50 text-warning ring-amber-200";
 });

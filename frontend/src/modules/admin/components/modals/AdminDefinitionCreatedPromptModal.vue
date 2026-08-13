@@ -1,6 +1,6 @@
 <template>
   <AppModalShell ref="modalRef" labelled-by="definitionArtifactsPromptModalLabel" title="Configuracion creada">
-    <p class="mb-0 text-sm text-slate-700">
+    <p class="mb-0 text-sm text-body">
       La configuracion se creo correctamente.
       <span v-if="context?.name">
         <strong>{{ context.name }}</strong>.

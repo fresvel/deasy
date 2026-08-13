@@ -1,12 +1,12 @@
 <template>
-  <div class="admin-lookup-field-wrap relative" :class="groupClass">
+  <div class="relative" :class="groupClass">
     <div class="admin-lookup-field flex h-10 items-stretch gap-2">
       <input
         ref="inputRef"
         :id="inputId"
         :value="displayValue"
         type="text"
-        class="admin-input-field h-10 min-w-0 flex-1 rounded-2xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-none transition-colors duration-150 placeholder:text-muted focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-muted"
+        class="deasy-control h-10 min-w-0 flex-1 py-2"
         :class="inputClass"
         :placeholder="placeholder"
         :readonly="effectiveReadonly"
@@ -53,7 +53,7 @@
     <div
       v-if="suggestEnabled && isOpen"
       :id="listboxId"
-      class="admin-lookup-suggestions absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-64 overflow-auto rounded-2xl border border-line bg-white py-1 shadow-lg"
+      class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-64 overflow-auto rounded-2xl border border-line bg-white py-1 shadow-lg"
       role="listbox"
     >
       <p v-if="loading" class="px-3 py-2 text-sm text-muted">{{ loadingText }}</p>
@@ -63,8 +63,8 @@
           v-for="(option, index) in options"
           :id="optionId(index)"
           :key="option.key ?? index"
-          class="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm text-slate-700 transition-colors duration-100"
-          :class="index === activeIndex ? 'bg-blue-50 text-blue-700' : 'hover:bg-surface'"
+          class="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm text-body transition-colors duration-100"
+          :class="index === activeIndex ? 'bg-blue-light-50 text-info' : 'hover:bg-surface'"
           role="option"
           :aria-selected="index === activeIndex"
           @mousedown.prevent="selectOption(option)"

@@ -23,7 +23,18 @@ import {
 
 const createIconMeta = (icon, tone = 'sky') => ({ icon, tone });
 
-export const workspaceIconToneClass = (tone = 'sky', prefix = 'deasy-nav-item__icon') => `${prefix}--${tone}`;
+/* Los tonos que TIENEN una clase en `nav.css`. Hasta el 2026-08-13 esta funcion componia
+   `${prefix}--${tone}` a ciegas y el CSS declaraba doce variantes con el MISMO cuerpo, asi que:
+   (a) once de las doce clases eran ruido, y (b) un tono que no estuviera declarado salia con
+   fondo transparente sin que se enterara nadie — le paso a `indigo`, que dejo «Mis envios» sin
+   color con el build, el lint y los tests en verde.
+
+   Hoy el aspecto normal es el POR DEFECTO de `.deasy-nav-item__icon`, y solo `slate` (el estado
+   apagado) tiene clase propia. Un tono desconocido no emite clase y cae al aspecto correcto. */
+const TONE_CLASSES = new Set(['slate']);
+
+export const workspaceIconToneClass = (tone = 'sky', prefix = 'deasy-nav-item__icon') =>
+  (TONE_CLASSES.has(tone) ? `${prefix}--${tone}` : '');
 
 export const resolveWorkspaceAreaIcon = (name = '') => {
   const normalized = String(name).toLowerCase();

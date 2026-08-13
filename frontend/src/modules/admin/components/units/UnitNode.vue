@@ -1,9 +1,9 @@
 <template>
   <div
-    class="graph-node relative rounded-xl border px-3 py-2 shadow-sm transition-all"
+    class="graph-node relative rounded-xl border px-3 py-2 shadow-elev-1 transition-all"
     :class="[
-      data.is_active ? 'border-slate-300 bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
-      data.highlighted ? 'ring-2 ring-indigo-400 ring-offset-1' : '',
+      data.is_active ? 'border-line-strong bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
+      data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '',
       data.dimmed ? 'opacity-35' : ''
     ]"
     @mouseenter="hover = true"
@@ -38,17 +38,17 @@
     </div>
 
     <p class="m-0 flex items-center gap-1.5">
-      <span class="max-w-[10.5rem] truncate text-sm font-bold text-slate-800" :title="data.name">{{ data.name }}</span>
+      <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <IconCrown v-if="data.head_count" class="h-3.5 w-3.5 shrink-0 text-amber-500" title="Tiene jefatura" />
       <IconAlertTriangle
         v-if="data.healthIssues && data.healthIssues.length"
         class="h-3.5 w-3.5 shrink-0 text-amber-500"
         :title="data.healthIssues.join(' · ')"
       />
-      <span v-if="data.collapsed" class="text-[11px] font-semibold text-indigo-500">▸</span>
+      <span v-if="data.collapsed" class="text-[11px] font-semibold text-primary">▸</span>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
-      <span class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-icon ring-1 ring-slate-200">
+      <span class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-icon ring-1 ring-line">
         {{ data.unit_type_name || 'Sin tipo' }}
       </span>
       <span
@@ -79,7 +79,7 @@ const hover = ref(false);
 const positionsBadgeClass = computed(() => {
   const total = Number(props.data.positions_count) || 0;
   const occ = Number(props.data.occupied_count) || 0;
-  if (total === 0) return "bg-surface text-slate-500 ring-slate-200";
+  if (total === 0) return "bg-surface text-muted ring-line";
   if (occ >= total) return "bg-emerald-50 text-success ring-emerald-200";
   if (occ === 0) return "bg-rose-50 text-rose-600 ring-rose-200";
   return "bg-amber-50 text-warning ring-amber-200";

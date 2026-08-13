@@ -1,8 +1,8 @@
 <template>
   <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-    <div class="rounded-2xl border border-line bg-white p-4 shadow-sm">
+    <div class="rounded-2xl border border-line bg-white p-4 shadow-elev-1">
       <div class="mb-3 flex items-center justify-between gap-3">
-        <div class="block text-sm font-bold text-slate-800">Campos de Firma</div>
+        <div class="block text-sm font-bold text-strong">Campos de Firma</div>
         <BtnDelete
           v-if="showFieldControls"
           :disabled="!canClearCurrentModeFields"
@@ -11,11 +11,11 @@
         />
       </div>
       <div class="flex flex-col gap-3">
-        <div class="flex items-center rounded-xl border border-line bg-slate-50/80 p-1 shadow-sm">
+        <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1 shadow-elev-1">
           <button
             v-if="showFieldControls"
             type="button"
-            class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+            class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
             title="Modo anterior"
             @click="$emit('previous-batch-mode')"
           >
@@ -26,12 +26,12 @@
             :class="showFieldControls ? 'border-x border-line' : ''"
           >
             <div class="text-[10px] font-bold uppercase tracking-wider text-muted">Modo</div>
-            <div class="text-sm font-bold text-slate-800">{{ currentBatchModeLabel }}</div>
+            <div class="text-sm font-bold text-strong">{{ currentBatchModeLabel }}</div>
           </div>
           <button
             v-if="showFieldControls"
             type="button"
-            class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+            class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
             title="Siguiente modo"
             @click="$emit('next-batch-mode')"
           >
@@ -40,12 +40,12 @@
         </div>
 
         <div v-if="showPageReference" class="flex flex-col gap-2">
-          <div class="text-xs font-semibold text-slate-500">Referencia de página</div>
-          <div class="flex items-center rounded-xl border border-line bg-slate-50/80 p-1 shadow-sm">
+          <div class="text-xs font-semibold text-muted">Referencia de página</div>
+          <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1 shadow-elev-1">
             <button
               v-if="showFieldControls"
               type="button"
-              class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+              class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
               title="Referencia anterior"
               @click="$emit('previous-page-reference')"
             >
@@ -56,12 +56,12 @@
               :class="showFieldControls ? 'border-x border-line' : ''"
             >
               <div class="text-[10px] font-bold uppercase tracking-wider text-muted">Referencia</div>
-              <div class="text-sm font-bold text-slate-800">{{ currentPageReferenceLabel }}</div>
+              <div class="text-sm font-bold text-strong">{{ currentPageReferenceLabel }}</div>
             </div>
             <button
               v-if="showFieldControls"
               type="button"
-              class="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+              class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
               title="Siguiente referencia"
               @click="$emit('next-page-reference')"
             >
@@ -80,12 +80,12 @@
       </div>
     </div>
 
-    <div class="text-sm font-bold text-slate-800">Resultados</div>
+    <div class="text-sm font-bold text-strong">Resultados</div>
 
     <div class="grid grid-cols-2 gap-3">
       <div class="flex flex-col items-center justify-center rounded-xl border border-line bg-surface p-3.5 text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Documentos</div>
-        <div class="text-2xl font-black leading-none text-slate-800">{{ documentsCount }}</div>
+        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted">Documentos</div>
+        <div class="text-2xl font-black leading-none text-strong">{{ documentsCount }}</div>
       </div>
       <div class="flex flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-center">
         <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">Éxitos</div>
@@ -101,27 +101,27 @@
       </div>
     </div>
 
-    <div class="rounded-2xl border border-sky-100 bg-sky-50/50 p-4">
+    <div class="rounded-2xl border border-blue-light-100 bg-blue-light-50/50 p-4">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div>
-          <div class="text-sm font-bold text-slate-800">Progreso del lote</div>
-          <div class="mt-0.5 text-[11px] font-medium text-slate-500">
+          <div class="text-sm font-bold text-strong">Progreso del lote</div>
+          <div class="mt-0.5 text-[11px] font-medium text-muted">
             {{ progressLabel }}
           </div>
         </div>
-        <div class="rounded-2xl bg-sky-100 px-2.5 py-1 text-sm font-black text-sky-600">
+        <div class="rounded-2xl bg-blue-light-100 px-2.5 py-1 text-sm font-black text-info">
           {{ progressPercent }}%
         </div>
       </div>
-      <div class="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-200/70">
-        <div class="h-full rounded-full bg-sky-500 transition-all duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
+      <div class="mb-4 h-2 w-full overflow-hidden rounded-full bg-gray-200/70">
+        <div class="h-full rounded-full bg-blue-light-500 transition-all duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
       </div>
 
-      <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5 shadow-sm">
+      <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5 shadow-elev-1">
         <div class="flex items-center justify-between gap-3">
           <div class="flex flex-col">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Estado</span>
-            <span class="text-sm font-semibold text-slate-800">{{ batchStatusLabel }}</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Estado</span>
+            <span class="text-sm font-semibold text-strong">{{ batchStatusLabel }}</span>
           </div>
           <AdminButton
             v-if="showDownloadButton"
@@ -136,7 +136,7 @@
       </div>
     </div>
 
-    <div v-if="batchError" class="mt-auto flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
+    <div v-if="batchError" class="mt-auto flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-elev-1">
       <IconAlertCircle class="mt-0.5 h-5 w-5 shrink-0" />
       <span class="font-medium">{{ batchError }}</span>
     </div>

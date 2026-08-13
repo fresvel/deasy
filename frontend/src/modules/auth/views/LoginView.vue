@@ -41,7 +41,7 @@
           <button
             type="button"
             @click="showPassword = !showPassword"
-            class="absolute inset-y-0 right-0 flex items-center pr-4 text-muted transition-colors hover:text-sky-600"
+            class="absolute inset-y-0 right-0 flex items-center pr-4 text-muted transition-colors hover:text-info"
             aria-label="Mostrar u ocultar contraseña"
           >
             <IconEye v-if="!showPassword" class="h-5 w-5" />

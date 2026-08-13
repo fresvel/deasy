@@ -2,7 +2,7 @@
   <div>
     <AppButton
       variant="plain"
-      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-blue-700 shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.05),0_14px_34px_rgba(var(--elev-ink-rgb),0.12)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-500/15 sm:right-6 sm:h-16 sm:w-16"
+      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-info shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.05),0_14px_34px_rgba(var(--elev-ink-rgb),0.12)] transition hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50 focus:outline-none focus:ring-4 sm:right-6 sm:h-16 sm:w-16"
       aria-label="Abrir chat"
       title="Abrir chat"
       @click="openLauncher"
@@ -12,7 +12,7 @@
 
     <div
       v-if="showChat"
-      class="fixed inset-0 z-95 bg-slate-950/30 backdrop-blur-[2px]"
+      class="fixed inset-0 z-95 bg-navy/30 backdrop-blur-[2px]"
       @click="closePanel"
     />
 
@@ -21,15 +21,15 @@
       class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
-      <header class="border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-4 py-4 sm:px-5">
+      <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">
         <div class="flex items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
-            <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
+            <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-light-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
               <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
             </span>
             <div class="min-w-0">
-              <h3 class="m-0 truncate text-base font-bold text-slate-900">{{ headerTitle }}</h3>
-              <p v-if="headerSubtitle" class="m-0 mt-0.5 truncate text-xs font-medium text-slate-500">
+              <h3 class="m-0 truncate text-base font-bold text-navy">{{ headerTitle }}</h3>
+              <p v-if="headerSubtitle" class="m-0 mt-0.5 truncate text-xs font-medium text-muted">
                 {{ headerSubtitle }}
               </p>
             </div>
@@ -37,7 +37,7 @@
 
           <AppButton
             variant="plain"
-            class-name="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-surface hover:text-slate-700"
+            class-name="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-surface hover:text-body"
             aria-label="Cerrar chat"
             title="Cerrar chat"
             @click="closePanel"
@@ -50,7 +50,7 @@
           <AppButton
             v-if="view === 'conversation'"
             variant="plain"
-            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3.5 text-sm font-semibold text-icon shadow-sm transition hover:border-slate-300 hover:bg-surface hover:text-slate-900"
+            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3.5 text-sm font-semibold text-icon shadow-elev-1 transition hover:border-line-strong hover:bg-surface hover:text-navy"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
@@ -67,8 +67,8 @@
               :aria-pressed="activeMode === mode"
               class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition"
               :class="activeMode === mode
-                ? 'bg-white text-blue-700 shadow-[0_2px_8px_rgba(var(--elev-ink-rgb),0.08)]'
-                : 'text-slate-500 hover:text-slate-700'"
+                ? 'bg-white text-info shadow-[0_2px_8px_rgba(var(--elev-ink-rgb),0.08)]'
+                : 'text-muted hover:text-body'"
               @click="switchMode(mode)"
             >
               <component :is="modeIcons[mode]" class="h-5 w-5" :stroke="1.8" />
@@ -80,21 +80,21 @@
         <label
           v-if="view !== 'conversation'"
           aria-label="Buscar conversación"
-          class="mt-3 flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2.5 shadow-sm transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10"
+          class="mt-3 flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2.5 shadow-elev-1 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
         >
           <IconSearch class="h-4 w-4 text-muted" />
           <input
             v-model="searchQuery"
             type="search"
-            class="w-full border-0 bg-transparent p-0 text-sm font-medium text-slate-700 outline-none placeholder:text-muted"
+            class="w-full border-0 bg-transparent p-0 text-sm font-medium text-body outline-none placeholder:text-muted"
             placeholder="Buscar conversación"
           >
         </label>
       </header>
 
-      <div class="min-h-0 flex-1 bg-slate-50/70">
-        <div v-if="loading" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="h-12 w-12 animate-pulse rounded-full border border-sky-100 bg-sky-50" />
+      <div class="min-h-0 flex-1 bg-surface/70">
+        <div v-if="loading" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+          <div class="h-12 w-12 animate-pulse rounded-full border border-blue-light-100 bg-blue-light-50" />
           <p class="m-0 text-sm font-semibold">Cargando chat...</p>
         </div>
 
@@ -108,10 +108,10 @@
               <article
                 v-for="message in messages"
                 :key="message.id"
-                class="max-w-[88%] rounded-xl px-4 py-3 shadow-sm"
+                class="max-w-[88%] rounded-xl px-4 py-3 shadow-elev-1"
                 :class="Number(message.sender_person_id) === Number(currentPersonId)
-                  ? 'ml-auto bg-blue-700 text-white'
-                  : 'mr-auto border border-line bg-white text-slate-800'"
+                  ? 'ml-auto bg-blue-light-700 text-white'
+                  : 'mr-auto border border-line bg-white text-strong'"
               >
                 <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
                   {{ message.content || 'Adjunto sin texto' }}
@@ -123,8 +123,8 @@
                     type="button"
                     class="inline-flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-xs font-semibold"
                     :class="Number(message.sender_person_id) === Number(currentPersonId)
-                      ? 'border-blue-500 bg-blue-600 text-white hover:bg-blue-800'
-                      : 'border-line bg-surface text-slate-700 hover:bg-surface'"
+                      ? 'border-blue-light-500 bg-blue-light-600 text-white hover:bg-blue-light-800'
+                      : 'border-line bg-surface text-body hover:bg-surface'"
                     @click="downloadAttachment(message, attachmentIndex)"
                   >
                     <span class="truncate">{{ attachment.filename }}</span>
@@ -160,7 +160,7 @@
               <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl border border-line bg-white text-slate-500 transition hover:bg-surface hover:text-slate-700"
+                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl border border-line bg-white text-muted transition hover:bg-surface hover:text-body"
                 aria-label="Adjuntar archivos"
                 title="Adjuntar archivos"
                 @click="attachmentInputRef?.click?.()"
@@ -172,7 +172,7 @@
                 v-model="draft"
                 rows="1"
                 aria-label="Mensaje del chat"
-                class="max-h-40 min-h-13 flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-muted focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                class="max-h-40 min-h-13 flex-1 resize-none rounded-2xl border border-line bg-surface px-4 py-3 text-sm font-medium text-strong outline-none transition placeholder:text-muted focus:bg-white focus:ring-4"
                 placeholder="Escribe un mensaje"
                 @input="resizeComposer"
                 @keydown.enter.exact.prevent="sendMessage"
@@ -191,12 +191,12 @@
         </div>
 
         <template v-else-if="activeMode === 'processes'">
-          <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-sm">
+          <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-elev-1">
               <IconInbox class="h-6 w-6" />
             </div>
-            <p class="m-0 text-sm font-bold text-slate-700">Sin contexto de proceso</p>
-            <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
+            <p class="m-0 text-sm font-bold text-body">Sin contexto de proceso</p>
+            <p class="m-0 max-w-xs text-sm font-medium text-muted">
               Abre primero un proceso desde Home para dejar disponible su thread en el launcher global.
             </p>
           </div>
@@ -207,13 +207,13 @@
                 v-for="item in filteredThreadItems"
                 :key="item.id"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                class="rounded-xl border border-line bg-white px-4 py-4 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
                 @click="openThreadItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
-                    <p class="m-0 truncate text-sm font-bold text-slate-900">{{ item.title }}</p>
-                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ item.scopeLabel }}</p>
+                    <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
+                    <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
                   </div>
                   <div class="shrink-0 text-right">
                     <span class="block text-[11px] font-bold uppercase tracking-wide text-muted">
@@ -221,7 +221,7 @@
                     </span>
                     <span
                       v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-[11px] font-bold text-white"
                     >
                       {{ item.unreadCount }}
                     </span>
@@ -242,13 +242,13 @@
                 v-for="item in filteredUnitItems"
                 :key="item.unitId"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                class="rounded-xl border border-line bg-white px-4 py-4 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
                 @click="openUnitItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
-                    <p class="m-0 truncate text-sm font-bold text-slate-900">{{ item.title }}</p>
-                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ item.scopeLabel }}</p>
+                    <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
+                    <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
                   </div>
                   <div class="shrink-0 text-right">
                     <span class="block text-[11px] font-bold uppercase tracking-wide text-muted">
@@ -256,7 +256,7 @@
                     </span>
                     <span
                       v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-[11px] font-bold text-white"
                     >
                       {{ item.unreadCount }}
                     </span>
@@ -269,23 +269,23 @@
             </div>
           </div>
 
-          <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-sm">
+          <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-elev-1">
               <IconBuildingCommunity class="h-6 w-6" />
             </div>
-            <p class="m-0 text-sm font-bold text-slate-700">Sin unidades</p>
-            <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
+            <p class="m-0 text-sm font-bold text-body">Sin unidades</p>
+            <p class="m-0 max-w-xs text-sm font-medium text-muted">
               No perteneces a ninguna unidad con miembros para conversar.
             </p>
           </div>
         </div>
 
-        <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-sm">
+        <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-elev-1">
             <IconMessages class="h-6 w-6" />
           </div>
-          <p class="m-0 text-sm font-bold text-slate-700">Modo en preparación</p>
-          <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
+          <p class="m-0 text-sm font-bold text-body">Modo en preparación</p>
+          <p class="m-0 max-w-xs text-sm font-medium text-muted">
             {{ activeMode === 'groups' ? 'Los chats grupales se integrarán en este mismo panel.' : 'Los chats individuales se integrarán en este mismo panel.' }}
           </p>
         </div>

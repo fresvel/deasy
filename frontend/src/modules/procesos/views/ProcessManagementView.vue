@@ -34,7 +34,7 @@
               :class="isHomeActive ? 'deasy-nav-item--active' : ''"
               @click="goProcessHome"
             >
-              <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+              <span class="deasy-nav-item__icon">
                 <IconHome class="h-4.5 w-4.5 shrink-0" />
               </span>
               <span>Inicio</span>
@@ -71,8 +71,8 @@
       <div class="deasy-section-card flex flex-col min-h-100">
         <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
           <div class="inline-flex items-center gap-3">
-            <div class="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-slate-500 font-medium">Cargando catálogos...</span>
+            <div class="w-6 h-6 border-2 border-blue-light-400 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-muted font-medium">Cargando catálogos...</span>
           </div>
         </div>
 
@@ -132,12 +132,12 @@
                 :icon="IconPlus"
                 badge="Acción especial"
                 badge-variant="info"
-                class-name="min-h-[170px] bg-gradient-to-br from-sky-50 to-white border-sky-200 hover:border-sky-400"
-                icon-wrapper-class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:border-sky-300 group-hover:bg-sky-50 group-hover:text-sky-700 transition-colors"
-                title-class="text-sky-900 group-hover:text-sky-700"
+                class-name="min-h-[170px] bg-gradient-to-br from-blue-light-50 to-white border-blue-light-200 hover:border-blue-light-400"
+                icon-wrapper-class="w-12 h-12 rounded-xl bg-blue-light-100 text-info flex items-center justify-center shrink-0 border border-blue-light-200 group-hover:border-blue-light-300 group-hover:bg-blue-light-50 group-hover:text-info transition-colors"
+                title-class="text-info group-hover:text-info"
                 @click="openTemplateArtifactDraftFromHome"
               />
-              <div v-if="!processCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">
+              <div v-if="!processCrudTables.length" class="col-span-full py-10 text-center text-muted font-medium">
                 No hay tablas disponibles para este subgrupo.
               </div>
             </template>
@@ -164,8 +164,8 @@
                   @click="traceabilityOpen = !traceabilityOpen"
                 >
                   <span>
-                    <span class="block text-sm font-bold text-slate-700">Trazabilidad y soporte</span>
-                    <span class="block text-xs text-slate-500">Registros técnicos generados durante la ejecución de tareas, entregas y firmas. Disponibles para consulta, diagnóstico y soporte.</span>
+                    <span class="block text-sm font-bold text-body">Trazabilidad y soporte</span>
+                    <span class="block text-xs text-muted">Registros técnicos generados durante la ejecución de tareas, entregas y firmas. Disponibles para consulta, diagnóstico y soporte.</span>
                   </span>
                   <IconChevronDown class="h-4 w-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': traceabilityOpen }" />
                 </button>
@@ -184,7 +184,7 @@
                   />
                 </div>
               </div>
-              <div v-if="!processMenuItems.length && !traceabilityTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">
+              <div v-if="!processMenuItems.length && !traceabilityTables.length" class="col-span-full py-10 text-center text-muted font-medium">
                 No tienes permisos para gestionar procesos.
               </div>
             </template>
@@ -194,7 +194,7 @@
     </div>
 
     <div v-else class="admin-workspace-frame admin-workspace-frame--table w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
-      <div class="admin-page admin-typography w-full h-full relative overflow-y-auto">
+      <div class="admin-typography w-full h-full relative overflow-y-auto">
         <AdminTableManager
           ref="adminManager"
           :table="selectedTable"

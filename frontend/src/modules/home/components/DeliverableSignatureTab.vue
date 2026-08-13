@@ -9,37 +9,37 @@
   <section class="rounded-2xl border border-line bg-white p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Resumen del flujo</h3>
-        <p class="text-xs text-slate-500 m-0">Documento y estado actual de firmas.</p>
+        <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Resumen del flujo</h3>
+        <p class="text-xs text-muted m-0">Documento y estado actual de firmas.</p>
       </div>
       <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
         {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
       </AppTag>
     </div>
     <div class="grid gap-3 md:grid-cols-3">
-      <div class="rounded-2xl border border-line bg-slate-50/70 p-4">
-        <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Documento</p>
-        <p class="text-sm font-semibold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</p>
+      <div class="rounded-2xl border border-line bg-surface/70 p-4">
+        <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Documento</p>
+        <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</p>
       </div>
-      <div class="rounded-2xl border border-line bg-slate-50/70 p-4">
-        <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Paso actual</p>
-        <p class="text-sm font-semibold text-slate-800 m-0">{{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}</p>
+      <div class="rounded-2xl border border-line bg-surface/70 p-4">
+        <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Paso actual</p>
+        <p class="text-sm font-semibold text-strong m-0">{{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}</p>
       </div>
-      <div class="rounded-2xl border border-line bg-slate-50/70 p-4">
-        <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Solicitudes</p>
-        <p class="text-sm font-semibold text-slate-800 m-0">{{ signatureFlowState.snapshot.signatureRequests?.length || 0 }}</p>
+      <div class="rounded-2xl border border-line bg-surface/70 p-4">
+        <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Solicitudes</p>
+        <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.snapshot.signatureRequests?.length || 0 }}</p>
       </div>
     </div>
   </section>
 
-  <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
+  <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
     <div class="flex items-center justify-between gap-2">
-      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
+      <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
       <AppTag variant="muted">
         {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
       </AppTag>
     </div>
-    <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
+    <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-muted">
       Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
     </div>
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -52,11 +52,11 @@
         <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-slate-700">
+            <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
               {{ step.step_order || '—' }}
             </span>
             <div class="flex flex-col gap-1">
-              <p class="text-sm font-bold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
+              <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
               <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
             </div>
           </div>
@@ -73,7 +73,7 @@
         </div>
         <div class="mt-3 flex flex-col gap-0.5">
           <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Firmante</p>
-          <p class="mt-0.5 text-sm font-semibold text-slate-700 m-0 leading-snug">
+          <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">
             {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
           </p>
         </div>
