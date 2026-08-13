@@ -22,14 +22,24 @@
 > | `--brand-elev-*` · `--brand-white` | `--elev-*` · **no existe** (se usa el `white` de Tailwind) |
 > | «33 registros en `@theme`» | **22**, con **una sola declaración** cada uno |
 >
-> **Estado real de las fases:**
+> **Estado real de las SEIS fases**, remedido sobre `develop` fusionado (`3b01a60`) el 2026-08-12.
+> Las cifras de las secciones de abajo son las del 08-11 y varias han cambiado; **manda esta tabla**:
 >
-> | | |
-> |---|---|
-> | F1 · F2 · F4.1 · F4.3 · F4.4 | ✅ cerradas |
-> | **F5** | ✅ **cerrada el 2026-08-12** — 24 clases muertas borradas (`8887012`) y los contadores de `CLAUDE.md` corregidos (`c40555e`). Lo que la sección de abajo lista como pendiente **ya está hecho** |
-> | F3 · F4.5 | ⬜ pendientes, **mecánicas**: 74 colores a mano + 151 dentro de `@apply` |
-> | F4.2 · F6 | ⬜ pendientes, y **NO son refactor: son decisión de diseño** |
+> | Fase | Estado | Lo que queda, medido hoy |
+> |---|---|---|
+> | **F1** · **F2** | ✅ cerradas 08-11 | — |
+> | **F3** | ⬜ **abierta** | **75** literales a mano en `.vue`/`.js`, no 40. Pero **15 son los grafos y 3 el logo, ambos excluidos**: superficie real **~57** |
+> | **F4.1** · **F4.3** · **F4.4** (a·b·c·d) | ✅ cerradas | 4.4-c bajó **156 → 52** reglas fuera de capa |
+> | **F4.2** | ⬜ **abierta — decisión de diseño** | **1 276**: info/foco 644 · error 303 · éxito 187 · aviso 142 |
+> | **F4.5** | ⬜ **abierta — mecánica** | **151** dentro de `@apply` |
+> | **F5** | ✅ **cerrada el 2026-08-12** | 24 clases muertas (`8887012`) + contadores de `CLAUDE.md` (`c40555e`). Lo que §5 lista como pendiente **ya está hecho** |
+> | **F6.1** tipografía | ⬜ **abierta — decisión** | **200 usos, 21 grafías** de `text-[…]` |
+> | **F6.2** `z-index` | ⬜ **abierta — decisión** | **20 valores** en tres bandas que no se hablan |
+> | **F6.3** *utility soup* | ⬜ **abierta — atada al maestro** | **205** strings de +120 car. No se hace suelta: va con partir `HomeView` |
+>
+> Y un bloque que **no pertenece a ninguna fase** aunque vive dentro de §4.2: las **113 utilidades de
+> foco muertas** (59 son `focus:border-indigo-400`). No es migración — **es decidir cómo se ve el foco
+> y encenderlo**.
 >
 > ## Y una premisa del plan que se cayó: **TailAdmin está descartado** (2026-08-12)
 >
@@ -241,7 +251,13 @@ falta de registro; los `--font-weight-*` fuera; cambio visual cero.
 
 ---
 
-## Fase 3 · Los 40 literales de sustitución invisible
+## Fase 3 · Los literales de sustitución invisible — ⬜ ABIERTA
+
+> **Recuento del 2026-08-12: son 75, no 40** (`#hex` + `rgb(`/`rgba(` numérico en `.vue` y `.js`).
+> De ellos **15 están en `UnitGraphView`/`ProcessGraphView` y 3 en `AppLogo`**, y los dos bloques
+> están excluidos más abajo en «Lo que NO se toca». **Superficie real: ~57**, concentrada en
+> `HomeView.vue` (14), `homeView.helpers.js` (9), `WorkspaceChatLauncher.vue` (6) y
+> `AdminPresentationService.js` (6).
 
 Con el token de sombra ya creado en F2, esta fase es casi mecánica: **ΔE ≤ 2 contra un token
 existente**, o sea demostrablemente invisible.
@@ -301,12 +317,16 @@ pasan a **§4.4**, que es donde se desenreda el repintado.
 
 ### 4.2 Resolver los cuatro conceptos con familias en disputa
 
-| Concepto | Familias hoy | Apariciones |
+| Concepto | Familias hoy | Apariciones (remedido 08-12) |
 |---|---|---:|
-| info / foco / primario | sky + blue + indigo (+1 violet) | **629** |
+| info / foco / primario | sky + blue + indigo (+1 violet) | **644** |
 | error | rose + red | 303 |
-| éxito | emerald + green | 237 |
-| aviso | amber + orange | 164 |
+| éxito | emerald + green | 187 |
+| aviso | amber + orange | 142 |
+
+**Total 1 276.** Es la fase más grande que queda y la que la retrospectiva del 08-12 juzgó *«correcto
+pero mecánico: unifica la paleta, no arregla nada visible»*. **Sin un rediseño a la vista, no es lo
+primero que hay que hacer.**
 
 Y los dos casos donde la incoherencia **se ve**:
 
@@ -397,13 +417,24 @@ que sólo se encuentran en runtime, a través de una prop**, invisible a cualqui
 |---|---|---|
 | **4.4-a** | Migrar las que **se escapan** a la lista blanca. Cascade-neutral: no están repintadas, así que la utilidad de token cae en la misma capa y con la misma especificidad | ✅ **104 sustituciones** (ΔE 0.00–1.63) |
 | **4.4-b** | Separar (A) de (B) en `overrides.css`; (A) al final, gana por orden | ✅ **0 diferencias** en la huella |
-| **4.4-c** | Bajar las **150 reglas** a `@layer components`, módulo a módulo y con huella por módulo | ⬜ |
-| **4.4-d** | Borrar los repintados según se quedan sin consumidores | ⬜ |
+| **4.4-c** | Bajar las **150 reglas** a `@layer components`, módulo a módulo y con huella por módulo | ✅ **156 → 52** |
+| **4.4-d** | Borrar los repintados según se quedan sin consumidores | ✅ |
 
-### 4.5 Los 211 dentro de `@apply`
+> Las **52 que quedan fuera de capa** no son deuda de 4.4-c: son las que pelean con un tercero sin
+> capa (`graph.css` / Vue Flow, el mapa de `RegisterView`) **más** las que suprimen 83 radios y 90
+> bordes ya escritos. Estas últimas **no se resuelven aquí**: cada una acaba borrada de la plantilla
+> o encendida en la pantalla, y eso es §4.2.
 
-`buttons.css` 50 · `forms.css` 38 · `misc.css` 27 · `tags.css` 26. **`stylelint` no ve ninguno**:
-`color-no-hex` no entra en `@apply`. Es el CSS que damos por limpio.
+### 4.5 Los dentro de `@apply` — ⬜ ABIERTA
+
+> **Hoy son 151**, no 211: F4.4 se llevó parte por el camino. Repartidos en los 18 módulos de
+> `shared/styles/`.
+
+**`stylelint` no ve ninguno**: `color-no-hex` no entra en `@apply`. Es el CSS que damos por limpio,
+y por eso es la única de las mecánicas que sí paga sola — **el contador en verde esconde justo esto**.
+
+Y se prueba **sin navegador**: si la sustitución es correcta no puede mover un píxel, así que el
+CSS construido antes/después es la verificación entera (ver la bitácora, trampa 3 del instrumental).
 
 **Criterio de cierre por familia** (no por fase entera): la familia migrada baja a 0 usos fuera de
 `tokens.css`, y la huella de las rutas afectadas no se mueve salvo donde se declaró que sí.
@@ -462,25 +493,28 @@ declaran.
 
 ### 6.1 Tipografía
 
-**193 usos de `text-[…]` con 18 valores distintos**, 12 por debajo de `text-sm`. Medido: son **tres
-escalones reales escritos de nueve formas** — nadie distingue `9px` de `0.6rem` de `0.62rem`.
+**200 usos de `text-[…]` con 21 grafías distintas** (remedido 08-12), 12 por debajo de `text-sm`.
+Medido: son **tres escalones reales escritos de nueve formas** — nadie distingue `9px` de `0.6rem`
+de `0.62rem`.
 
 La decisión no es técnica: **cuántos escalones tiene la escala por debajo de 14 px**. Con eso, la
 sustitución es mecánica.
 
 ### 6.2 `z-index`
 
-**11 valores en 14 grafías, tres bandas que no se hablan**: la de Tailwind (0-50, usada sin criterio
-de capa), tres números a ojo (6, 25, 90) y la herencia de Bootstrap (1075, 1100 — y 1075 **ni siquiera
-es un valor de Bootstrap**).
+**20 valores distintos, tres bandas que no se hablan** (remedido 08-12): la de Tailwind (0·10·20·30·
+40·50, usada sin criterio de capa y con 18 de los usos en el `10`), cinco números a ojo (5, 6, 25,
+90, 95) y la herencia de Bootstrap (1060·1070·1080·1075·1100·1190·1200 — y **1075 ni siquiera es un
+valor de Bootstrap**).
 
 La decisión: **qué capas de apilamiento tiene la app** (contenido / flotante / navegación / modal /
 aviso / tip) y qué número le toca a cada una. Luego es sustituir.
 
 ### 6.3 *Utility soup*
 
-**255 strings de clase de más de 120 caracteres**, 99 de ellos en `HomeView.vue` y `FirmarPdf.vue`.
-**33 strings distintos se repiten**, sumando 84 usos; el peor **7 veces**. Son clases sin nombre.
+**205 strings de clase de más de 120 caracteres** (remedido 08-12; el 255 era anterior a F4 y F5),
+la mayoría en `HomeView.vue` y `FirmarPdf.vue`. **33 strings distintos se repiten**, sumando 84 usos;
+el peor **7 veces**. Son clases sin nombre.
 
 Esto va acompasado con el **frente 3 del maestro** (partir `HomeView`): extraer la clase y partir el
 componente son el mismo trabajo hecho dos veces si se separan.

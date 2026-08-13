@@ -25,21 +25,33 @@ Su bitácora sigue valiendo: es donde están las trampas ya pagadas.
 **El plan describe una paleta que ya no existe.** Lleva su propia tabla de traducción arriba del
 todo; léela antes de tocar nada, o vas a migrar hacia nombres muertos.
 
-| Fase | Estado |
-|---|---|
-| F1 · F2 · F4.1 · F4.3 · F4.4 · **F5** | ✅ cerradas |
-| **F3** · **F4.5** | ⬜ **mecánicas**: 74 colores a mano fuera del CSS + 151 dentro de `@apply` |
-| **F4.2** · **F6** | ⬜ **no son refactor: son decisión de diseño** |
+**Las seis fases, remedidas sobre `develop` fusionado (`3b01a60`).** El plan tiene el detalle; esta
+tabla tiene el estado.
 
-**Lo que queda son dos trabajos de naturaleza distinta, y conviene no mezclarlos:**
+| Fase | Estado | Queda |
+|---|---|---|
+| **F1** Los 5 bugs | ✅ 08-11 | — |
+| **F2** Completar `@theme` | ✅ 08-11 | — |
+| **F3** Literales invisibles | ⬜ **mecánica** | **75** a mano, de los que 15 (grafos) y 3 (logo) están excluidos → **~57** |
+| **F4.1 · 4.3 · 4.4** | ✅ | 4.4-c bajó **156 → 52** reglas fuera de capa |
+| **F4.2** Familias en disputa | ⬜ **decisión** | **1 276** · info/foco 644 · error 303 · éxito 187 · aviso 142 |
+| **F4.5** Dentro de `@apply` | ⬜ **mecánica** | **151** |
+| **F5** Borrar lo muerto | ✅ 08-12 | — |
+| **F6.1** Tipografía | ⬜ **decisión** | **200 usos, 21 grafías** de `text-[…]` |
+| **F6.2** `z-index` | ⬜ **decisión** | **20 valores**, tres bandas |
+| **F6.3** *Utility soup* | ⬜ **atada al maestro** | **205** strings largos — va con partir `HomeView` |
 
-- **Mecánico (~1 500 sitios)**: F3, F4.5 y las familias en disputa de F4.2 (sky/blue/indigo 641 ·
-  red/rose 303 · green 187 · amber 142). Verificable como invisible, delegable. **Pero avisado**: es
-  la clase de trabajo que la retrospectiva del 2026-08-12 juzgó *«correcto pero mecánico; unifica la
-  paleta, no arregla nada visible»*, y sin un rediseño a la vista puede que no compense.
-- **Decisión de diseño**: el foco (**115 utilidades muertas** — encenderlas *es* el cambio), las **52
-  reglas fuera de capa** que suprimen 83 radios y 90 bordes ya escritos, y las escalas de F6. Esto no
-  es trabajo de agente: se decide mirando la pantalla.
+**Son tres trabajos de naturaleza distinta, y conviene no mezclarlos:**
+
+- **Mecánico y barato (~208 sitios)**: F3 (~57) y F4.5 (151). Delegable y verificable **sin
+  navegador** comparando el CSS construido. F4.5 es el que más paga: está en el CSS que damos por
+  limpio y `lint:css` no lo ve.
+- **Mecánico de volumen (1 276)**: F4.2. **Avisado**: es la clase de trabajo que la retrospectiva del
+  2026-08-12 juzgó *«correcto pero mecánico; unifica la paleta, no arregla nada visible»*, y sin un
+  rediseño a la vista puede que no compense.
+- **Decisión de diseño**: el foco (**113 utilidades muertas** — encenderlas *es* el cambio), las **52
+  reglas fuera de capa** que suprimen 83 radios y 90 bordes ya escritos, y F6.1/F6.2. Esto no es
+  trabajo de agente: se decide mirando la pantalla. **Una vez decidido, sustituir sí es mecánico.**
 
 > **Y una premisa del plan se cayó: TailAdmin quedó descartado el 2026-08-12.** F4.2 y F6 daban por
 > hecho que sus recetas contestarían cómo se ve el foco. Ya no hay fuente externa: la respuesta hay

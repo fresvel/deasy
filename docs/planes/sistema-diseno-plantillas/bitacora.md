@@ -492,3 +492,33 @@ corresponder a `emerald-700` y se usa en un degradado de `auth.css`.
 > viejo tenía DOS nombres por color (`--color-brand-X` cuando venía de una utilidad, `--brand-X`
 > cuando venía de un `var()` a mano), y colapsar ese desdoblamiento es justo el cambio. Hay que
 > canonizar ambos lados al mismo **concepto**.
+
+---
+
+## 2026-08-12 (cierre) · Remedida de las seis fases sobre `develop` fusionado
+
+Al preparar el traspaso salió una **deriva del plan contra el árbol**: la tabla de ejecución de §4.4
+seguía marcando **4.4-c y 4.4-d como pendientes** cuando llevaban cerradas desde el 08-11. Se veía
+en una sola cifra —**52 reglas fuera de capa**, no 150— y nadie la había mirado desde entonces.
+
+> **Un plan con una fase cerrada marcada como abierta no es un error de forma: es una trampa.** Quien
+> lo retome empieza por rehacer lo hecho, y el trabajo mecánico no da señal de estar repetido: la
+> huella vuelve a dar 0 y todo parece correcto.
+
+Se remidieron **todas** las cifras del plan, no solo las de §4.4. Cuatro habían cambiado lo bastante
+como para engañar a quien planifique:
+
+| El plan decía | Hoy | Por qué cambió |
+|---|---:|---|
+| F3 «40 literales» | **75** | El recuento original no cubría `rgb()/rgba()` numérico, solo `#hex` |
+| F4.5 «211 en `@apply`» | **151** | F4.4 se llevó parte por el camino |
+| F6.3 «255 strings largos» | **205** | F4 y F5 acortaron plantillas |
+| F6.2 «11 valores de `z-index`» | **20** | El recuento original no miraba `.css`, solo plantillas |
+
+Y una que **baja el trabajo**, no lo sube: de los 75 de F3, **15 son los grafos y 3 el logo**, y los
+dos bloques ya estaban excluidos en «Lo que NO se toca». La superficie real es **~57**. Merece
+escribirse porque el número grande es el que se cita al planificar, y llevaba un 30 % de aire.
+
+**Método, para no repetir la cuenta a ojo:** las cifras de este plan se sacan con `grep -rohE`
+contando **ocurrencias, no ficheros**, e incluyendo `.css` cuando la deuda vive también en `@apply`.
+Excluir `.css` es justo lo que escondió los 151 y la mitad de los `z-index`.
