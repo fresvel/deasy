@@ -294,8 +294,20 @@
         @apply grid grid-cols-1 gap-4 md:grid-cols-3;
     }
 
+    /* LA ETIQUETA DE CAMPO. Existia desde siempre y se estaba IGNORANDO: habia 52 etiquetas
+       escritas a mano en cuatro formas casi iguales —`mb-2 inline-flex … font-semibold`,
+       `block … font-medium`, `block … font-semibold`, la misma con el `mb-2` al final— que
+       diferian en margen, peso y color sin que ninguna diferencia fuera una decision.
+       Es la regla de tres de §6.1: si el mismo punado de utilidades aparece tres veces, se le
+       da nombre. Y una etiqueta NO necesita componente Vue: no tiene estado ni markup propio,
+       solo texto. El nivel correcto es la clase. */
     .deasy-form-label {
         @apply mb-1.5 block text-sm font-semibold text-strong;
+    }
+
+    /* La variante que lleva un icono al lado: deja de ser bloque para poder alinearlo. */
+    .deasy-form-label--inline {
+        @apply inline-flex items-center gap-1;
     }
 
     

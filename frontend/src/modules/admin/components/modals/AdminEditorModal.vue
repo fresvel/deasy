@@ -11,7 +11,7 @@
     </AppAlert>
     <form class="grid gap-3 md:grid-cols-12">
       <div v-for="field in visibleFormFields" :key="field.name" class="md:col-span-6">
-        <label :for="fieldId(field.name)" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">
+        <label :for="fieldId(field.name)" class="deasy-form-label deasy-form-label--inline">
           {{ field.label || field.name }}
           <span v-if="field.required" class="text-red-600">*</span>
         </label>

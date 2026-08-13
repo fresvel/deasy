@@ -125,7 +125,7 @@
       @close="editingEdge = null"
     >
       <p class="m-0 mb-3 text-sm text-icon">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
-      <label class="block text-sm font-medium text-body">
+      <label class="deasy-form-label">
         Tipo de relación
         <select v-model="editingTypeCode" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm font-medium text-body outline-none">
           <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
@@ -146,18 +146,18 @@
     >
       <p class="m-0 mb-3 text-sm text-icon">{{ createDialogHint }}</p>
       <div class="flex flex-col gap-3">
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Nombre
           <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="Nombre de la unidad" />
         </label>
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Tipo de unidad
           <select v-model="createForm.unit_type_id" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
             <option value="">Selecciona…</option>
             <option v-for="ut in unitTypes" :key="ut.id" :value="ut.id">{{ ut.name }}</option>
           </select>
         </label>
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Slug <span class="font-normal text-muted">(opcional)</span>
           <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="se deriva del nombre" />
         </label>
@@ -345,18 +345,18 @@
       @close="editingPosition = null"
     >
       <div class="flex flex-col gap-3">
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Cargo
           <select v-model="editPositionForm.cargo_id" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
             <option value="">Selecciona…</option>
             <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </label>
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Título <span class="font-normal text-muted">(opcional)</span>
           <input v-model="editPositionForm.title" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="Título del puesto" />
         </label>
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Tipo
           <select v-model="editPositionForm.position_type" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
             <option value="real">Real</option>
@@ -392,7 +392,7 @@
       @close="processModalOpen = false"
     >
       <div class="flex flex-col gap-3">
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Proceso (configuración en borrador)
           <select
             v-model="processForm.process_definition_id"
@@ -409,7 +409,7 @@
           </span>
         </label>
 
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Alcance
           <select v-model="processForm.unit_scope_type" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
             <option value="unit_exact">Solo esta unidad</option>
@@ -417,7 +417,7 @@
           </select>
         </label>
 
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Entrega (destinatario)
           <select v-model="processForm.recipient_policy" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
             <option value="all_matches">Todos los del cargo</option>
@@ -431,7 +431,7 @@
           <div v-if="seriesLockedCargo" class="rounded-2xl border border-brand-200 bg-brand-50/50 px-3 py-2 text-xs text-primary">
             Cargo fijado por la serie: <span class="font-semibold">{{ seriesLockedCargo.name }}</span>
           </div>
-          <label v-else class="block text-sm font-medium text-body">
+          <label v-else class="deasy-form-label">
             Cargo destinatario
             <select v-model="processForm.cargo_id" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
               <option value="">Selecciona…</option>
@@ -441,7 +441,7 @@
         </div>
 
         <!-- Puesto exacto: de los puestos de esta unidad -->
-        <label v-else class="block text-sm font-medium text-body">
+        <label v-else class="deasy-form-label">
           Puesto de la unidad
           <select v-model="processForm.position_id" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
             <option value="">Selecciona…</option>

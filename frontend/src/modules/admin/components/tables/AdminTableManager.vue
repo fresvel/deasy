@@ -845,7 +845,7 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('process-filter-parent')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Proceso padre</label>
+                <label :for="fieldId('process-filter-parent')" class="deasy-form-label deasy-form-label--inline">Proceso padre</label>
                 <AdminLookupField
                   :id="fieldId('process-filter-parent')"
                   v-model="processFilterLabels.parent_id"
@@ -858,7 +858,7 @@
                 />
               </div>
               <div>
-                <label :for="fieldId('process-filter-is-active')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Activo</label>
+                <label :for="fieldId('process-filter-is-active')" class="deasy-form-label deasy-form-label--inline">Activo</label>
                 <AdminSelectField :id="fieldId('process-filter-is-active')" v-model="processFilters.is_active">
                   <option value="">Todos</option>
                   <option value="1">Si</option>
@@ -877,19 +877,19 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('template-filter-name')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Nombre</label>
+                <label :for="fieldId('template-filter-name')" class="deasy-form-label deasy-form-label--inline">Nombre</label>
                 <AdminInputField :id="fieldId('template-filter-name')" v-model="templateFilters.name" />
               </div>
               <div>
-                <label :for="fieldId('template-filter-slug')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Slug</label>
+                <label :for="fieldId('template-filter-slug')" class="deasy-form-label deasy-form-label--inline">Slug</label>
                 <AdminInputField :id="fieldId('template-filter-slug')" v-model="templateFilters.slug" />
               </div>
               <div>
-                <label :for="fieldId('template-filter-description')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Descripcion</label>
+                <label :for="fieldId('template-filter-description')" class="deasy-form-label deasy-form-label--inline">Descripcion</label>
                 <AdminInputField :id="fieldId('template-filter-description')" v-model="templateFilters.description" />
               </div>
               <div>
-                <label :for="fieldId('template-filter-process')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Proceso</label>
+                <label :for="fieldId('template-filter-process')" class="deasy-form-label deasy-form-label--inline">Proceso</label>
                 <AdminLookupField
                   :id="fieldId('template-filter-process')"
                   v-model="templateFilterLabels.process_id"
@@ -913,7 +913,7 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('document-filter-task')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Tarea</label>
+                <label :for="fieldId('document-filter-task')" class="deasy-form-label deasy-form-label--inline">Tarea</label>
                 <AdminLookupField
                   :id="fieldId('document-filter-task')"
                   v-model="documentFilterLabels.task_id"
@@ -926,7 +926,7 @@
                 />
               </div>
               <div>
-                <label :for="fieldId('document-filter-status')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Estado</label>
+                <label :for="fieldId('document-filter-status')" class="deasy-form-label deasy-form-label--inline">Estado</label>
                 <AdminSelectField :id="fieldId('document-filter-status')" v-model="documentFilters.status">
                   <option value="">Todos</option>
                   <option value="Inicial">Inicial</option>
@@ -954,7 +954,7 @@
     >
             <div class="grid gap-3">
               <div>
-                <label :for="fieldId('unit-position-filter-unit-type')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Tipo de unidad</label>
+                <label :for="fieldId('unit-position-filter-unit-type')" class="deasy-form-label deasy-form-label--inline">Tipo de unidad</label>
                 <AdminSelectField
                   :id="fieldId('unit-position-filter-unit-type')"
                   v-model="unitPositionFilters.unit_type_id"
@@ -972,7 +972,7 @@
                 </AdminSelectField>
               </div>
               <div>
-                <label :for="fieldId('unit-position-filter-unit')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Unidad</label>
+                <label :for="fieldId('unit-position-filter-unit')" class="deasy-form-label deasy-form-label--inline">Unidad</label>
                 <AdminSelectField
                   :id="fieldId('unit-position-filter-unit')"
                   v-model="unitPositionFilters.unit_id"
@@ -989,7 +989,7 @@
                 </AdminSelectField>
               </div>
               <div>
-                <label :for="fieldId('unit-position-filter-cargo')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Cargo</label>
+                <label :for="fieldId('unit-position-filter-cargo')" class="deasy-form-label deasy-form-label--inline">Cargo</label>
                 <AdminSelectField
                   :id="fieldId('unit-position-filter-cargo')"
                   v-model="unitPositionFilters.cargo_id"

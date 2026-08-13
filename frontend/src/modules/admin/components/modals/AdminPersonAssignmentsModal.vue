@@ -36,7 +36,7 @@
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
-                  <label :for="fieldId('cargo-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Puesto</label>
+                  <label :for="fieldId('cargo-position')" class="deasy-form-label deasy-form-label--inline">Puesto</label>
                   <AdminLookupField
                     :id="fieldId('cargo-position')"
                     :model-value="personCargoLabels.position_id"
@@ -111,7 +111,7 @@
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
-                  <label :for="fieldId('role-role')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Rol</label>
+                  <label :for="fieldId('role-role')" class="deasy-form-label deasy-form-label--inline">Rol</label>
                   <AdminLookupField
                     :id="fieldId('role-role')"
                     :model-value="personRoleLabels.role_id"
@@ -124,7 +124,7 @@
                   />
                 </div>
                 <div class="md:col-span-6">
-                  <label :for="fieldId('role-unit')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Unidad</label>
+                  <label :for="fieldId('role-unit')" class="deasy-form-label deasy-form-label--inline">Unidad</label>
                   <AdminLookupField
                     :id="fieldId('role-unit')"
                     :model-value="personRoleLabels.unit_id"
@@ -181,7 +181,7 @@
             <div class="person-assignment-form">
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-4">
-                  <label :for="fieldId('contract-position')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Puesto</label>
+                  <label :for="fieldId('contract-position')" class="deasy-form-label deasy-form-label--inline">Puesto</label>
                   <AdminLookupField
                     :id="fieldId('contract-position')"
                     :model-value="personContractLabels.position_id"

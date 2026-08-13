@@ -66,7 +66,7 @@
         <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'">
           <SToggle v-model="gestorEnabled">
             <span>
-              <span class="block text-sm font-semibold text-body">Crear un gestor por defecto</span>
+              <span class="deasy-form-label">Crear un gestor por defecto</span>
               <span class="block text-xs text-muted">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
             </span>
           </SToggle>
@@ -108,7 +108,7 @@
         <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'">
           <SToggle v-model="usuarioEnabled">
             <span>
-              <span class="block text-sm font-semibold text-body">Crear un usuario de prueba</span>
+              <span class="deasy-form-label">Crear un usuario de prueba</span>
               <span class="block text-xs text-muted">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
             </span>
           </SToggle>
@@ -187,7 +187,7 @@
                 class="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-info"
               />
               <span class="min-w-0">
-                <span class="block text-sm font-medium text-body">{{ option.label }}</span>
+                <span class="deasy-form-label">{{ option.label }}</span>
                 <span v-if="option.description" class="block text-xs text-muted">{{ option.description }}</span>
               </span>
             </label>
@@ -199,7 +199,7 @@
         >
           <SToggle v-model="preconfig.relation_unit_types">
             <span>
-              <span class="block text-sm font-semibold text-body">Relación orgánica</span>
+              <span class="deasy-form-label">Relación orgánica</span>
               <span class="block text-xs text-muted">Crea el tipo de relación jerárquica entre unidades.</span>
             </span>
           </SToggle>
@@ -210,7 +210,7 @@
         >
           <SToggle v-model="preconfig.example_units">
             <span>
-              <span class="block text-sm font-semibold text-body">Estructura de unidades de ejemplo</span>
+              <span class="deasy-form-label">Estructura de unidades de ejemplo</span>
               <span class="block text-xs text-muted">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
             </span>
           </SToggle>
@@ -221,7 +221,7 @@
         >
           <SToggle v-model="preconfig.example_positions">
             <span>
-              <span class="block text-sm font-semibold text-body">Puestos de ejemplo</span>
+              <span class="deasy-form-label">Puestos de ejemplo</span>
               <span class="block text-xs text-muted">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
             </span>
           </SToggle>
@@ -232,7 +232,7 @@
         >
           <SToggle v-model="preconfig.example_users">
             <span>
-              <span class="block text-sm font-semibold text-body">Usuarios de ejemplo</span>
+              <span class="deasy-form-label">Usuarios de ejemplo</span>
               <span class="block text-xs text-muted">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
             </span>
           </SToggle>

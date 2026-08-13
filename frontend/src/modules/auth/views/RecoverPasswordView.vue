@@ -21,7 +21,7 @@
     <form v-if="step === 'request'" @submit.prevent="recoverPassword" class="space-y-6" autocomplete="off">
       <input type="text" name="recover-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de usuario" />
       <div>
-        <label :for="fieldId('email')" class="block text-sm font-semibold text-body mb-2">
+        <label :for="fieldId('email')" class="deasy-form-label">
           Correo Electrónico
         </label>
         <div class="relative">
@@ -62,7 +62,7 @@
       <input type="text" name="recover-reset-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de usuario" />
       <input type="password" name="recover-reset-decoy-password" autocomplete="current-password" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Campo oculto de contraseña" />
       <div>
-        <label :for="fieldId('email-confirmed')" class="block text-sm font-semibold text-body mb-2">
+        <label :for="fieldId('email-confirmed')" class="deasy-form-label">
           Correo Electrónico
         </label>
         <input
@@ -77,7 +77,7 @@
       </div>
 
       <div>
-        <label :for="fieldId('code')" class="block text-sm font-semibold text-body mb-2">
+        <label :for="fieldId('code')" class="deasy-form-label">
           Código de recuperación
         </label>
         <input
@@ -93,7 +93,7 @@
       </div>
 
       <div>
-        <label :for="fieldId('password')" class="block text-sm font-semibold text-body mb-2">
+        <label :for="fieldId('password')" class="deasy-form-label">
           Nueva contraseña
         </label>
         <input
@@ -109,7 +109,7 @@
       </div>
 
       <div>
-        <label :for="fieldId('repassword')" class="block text-sm font-semibold text-body mb-2">
+        <label :for="fieldId('repassword')" class="deasy-form-label">
           Confirmar contraseña
         </label>
         <input

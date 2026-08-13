@@ -95,11 +95,11 @@
     <AppDialogOverlay :open="Boolean(createContext)" :title="createDialogTitle" panel-class="max-w-md" @close="createContext = null">
       <p class="m-0 mb-3 text-sm text-icon">{{ createDialogHint }}</p>
       <div class="flex flex-col gap-3">
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Nombre
           <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="Nombre del proceso" />
         </label>
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Identificador (slug) <span class="font-normal text-muted">(opcional)</span>
           <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="se deriva del nombre" />
         </label>
@@ -113,15 +113,15 @@
     <!-- Editar datos generales del proceso (modal, como en unidades) -->
     <AppDialogOverlay :open="Boolean(editingProcess)" title="Editar proceso" panel-class="max-w-md" @close="closeEditModal">
       <div class="flex flex-col gap-3">
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Nombre
           <input v-model="editForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="Nombre del proceso" />
         </label>
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Identificador (slug)
           <input v-model="editForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="identificador" />
         </label>
-        <label class="block text-sm font-medium text-body">
+        <label class="deasy-form-label">
           Proceso padre
           <select v-model="editForm.parent_id" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
             <option value="">— Sin padre (raíz) —</option>

@@ -183,24 +183,24 @@
         Adjunta al menos un documento de referencia (PDF, Word, Excel o PowerPoint) para poder crear la plantilla.
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-pdf')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">PDF</label>
+        <label :for="fieldId('upload-pdf')" class="deasy-form-label deasy-form-label--inline">PDF</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" :filled="isDraftFileSelected('pdf')" accept=".pdf" :input-id="fieldId('upload-pdf')" @files-selected="emitDraftFiles('pdf', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-docx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Word</label>
+        <label :for="fieldId('upload-docx')" class="deasy-form-label deasy-form-label--inline">Word</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('docx')" :filled="isDraftFileSelected('docx')" accept=".doc,.docx" :input-id="fieldId('upload-docx')" @files-selected="emitDraftFiles('docx', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-xlsx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Excel</label>
+        <label :for="fieldId('upload-xlsx')" class="deasy-form-label deasy-form-label--inline">Excel</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('xlsx')" :filled="isDraftFileSelected('xlsx')" accept=".xls,.xlsx" :input-id="fieldId('upload-xlsx')" @files-selected="emitDraftFiles('xlsx', $event)" />
       </div>
       <div class="md:col-span-3">
-        <label :for="fieldId('upload-pptx')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">PowerPoint</label>
+        <label :for="fieldId('upload-pptx')" class="deasy-form-label deasy-form-label--inline">PowerPoint</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pptx')" :filled="isDraftFileSelected('pptx')" accept=".ppt,.pptx" :input-id="fieldId('upload-pptx')" @files-selected="emitDraftFiles('pptx', $event)" />
       </div>
       <div v-if="draftArtifactPreviewStatus !== 'idle'" class="md:col-span-12">
         <!-- Rotulo del preview: no es un <label> porque no hay control que etiquetar (es un iframe). -->
-        <span class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Preview del seed</span>
+        <span class="deasy-form-label deasy-form-label--inline">Preview del seed</span>
         <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
           Cargando preview…
         </div>

@@ -28,7 +28,7 @@
     >
       <div class="grid gap-3 md:grid-cols-12">
         <div class="md:col-span-8">
-          <label :for="fieldId('term-type')" class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-body">Tipo de periodo</label>
+          <label :for="fieldId('term-type')" class="deasy-form-label deasy-form-label--inline">Tipo de periodo</label>
           <AdminLookupField
             :id="fieldId('term-type')"
             :model-value="labels.term_type_id"
