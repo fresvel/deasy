@@ -220,7 +220,7 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="deasy-alert deasy-alert--success signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 border-line text-center shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Solicitudes recibidas</h3>
@@ -470,7 +470,7 @@
             </button>
             <button 
               type="button" 
-              class="deasy-alert deasy-alert--danger inline-flex items-center gap-1.5 hover:bg-red-50 hover:border-red-300 transition focus:outline-none focus:ring-2" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-danger hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2" 
               @click.stop="requestDeleteField(field.id)"
             >
               <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />

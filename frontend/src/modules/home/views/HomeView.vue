@@ -511,7 +511,7 @@
 
               <button
                 type="button"
-                class="deasy-alert deasy-alert--success flex flex-col h-full min-h-[19rem] bg-surface/50 border-line text-left shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
                 @click="navigateTo('perfil')"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>

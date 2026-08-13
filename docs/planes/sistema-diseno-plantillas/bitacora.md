@@ -1136,3 +1136,17 @@ decisión pequeña cada uno; el 5 es cola larga.
 
 Lo que este corte deja claro y el recuento por color escondía: **no son 540 problemas, son seis** —y
 dos de ellos ya tienen su componente escrito.
+
+### Un fallo de la migración del grupo 2, cazado al remedir
+
+El script exigía `bg-{fam}-N` **y** `border-{fam}-N` para dar por bueno un bloque de estado. Pero
+`\b` no impide casar **dentro de una variante**: `hover:bg-rose-50` contiene `bg-rose-50`, así que
+**cinco elementos que sólo tenían color EN EL HOVER se convirtieron en alertas** — dos botones de
+borrar, un botón de «quitar firmante» y dos tarjetas del escritorio de firma.
+
+No lo vio el lint, ni los 316 tests, ni el build: una clase de más es markup válido. Lo cazó
+**remedir antes de abrir el grupo siguiente**, que es lo único que lo habría encontrado.
+
+Restaurados los cinco desde `e424cc3~1`. **La lección para el próximo script de clases: un color en
+`hover:`/`focus:` NO es el color del elemento**, y el patrón tiene que excluir explícitamente las
+variantes con prefijo, no confiar en el límite de palabra.

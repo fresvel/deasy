@@ -255,7 +255,7 @@
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
-            <button type="button" class="deasy-alert deasy-alert--danger inline-flex h-8 w-8 items-center justify-center border-line transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
           </div>
         </div>
       </div>
@@ -496,7 +496,7 @@
                   </select>
                 </div>
                 <div v-if="stepSigners(step).length > 1" class="col-span-1 flex items-center justify-end pb-1">
-                  <button type="button" class="deasy-alert deasy-alert--danger inline-flex h-8 w-8 items-center justify-center border-line transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
+                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
                 </div>
               </div>
               <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
