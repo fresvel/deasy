@@ -7,10 +7,13 @@
    ====================================================================================== */
 
 @layer components {
-    .deasy-dialog-root {
-        @apply bg-slate-950/45 backdrop-blur-[2px];
-    }
-
+    /* ⚠️ AQUI NO VA EL VELO. Lo ponia un slate-950 al 45 % con desenfoque de 2 px, y NUNCA
+       pinto: la regla 3 del final del fichero, sin capa, gana siempre a esta. Medido antes
+       de borrarlo — el computado ya era `rgba(15,23,42,0.48)` y `blur(3px)`, que es lo que
+       dice `--overlay-backdrop`, no lo que decia la utilidad.
+       (Los nombres de clase van DESCRITOS y no escritos a proposito: escritos, los cuenta
+       cualquier medicion y los reescribe cualquier script de migracion. Ya paso cuatro
+       veces con el comentario de `ProcessConfigNode.vue`.) */
     .deasy-dialog-panel {
         @apply rounded-xl border border-line bg-white shadow-[var(--elev-3)];
     }
