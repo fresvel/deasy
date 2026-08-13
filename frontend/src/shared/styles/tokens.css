@@ -20,8 +20,15 @@
    registro que nadie usa NO SE EMITE. La unica prueba de que un registro esta vivo es un
    `grep` sobre `dist/assets/*.css`.
 
-   ⚠️ Por eso los registros sin consumidor NO se retiran: cuestan cero bytes y son la lista
-   de destinos a los que migrar. Esto es la API completa, no un inventario de lo usado.
+   ⚠️ UN TOKEN NUEVO SE JUSTIFICA, NO SE AÑADE POR SIMETRIA. Dos condiciones, las dos:
+   que Tailwind no traiga ya ese color (mide el ΔE contra su paleta — la sirve en OKLCH,
+   asi que NO compares contra los hex de v3), y que el concepto pueda cambiar de color en
+   el futuro. Si el concepto ES el color, usa el de Tailwind: `--brand-white` no existe
+   porque el blanco no va a dejar de ser blanco.
+
+   Aqui habia siete `--color-chart-*` y un `--color-state-info` con CERO consumidores,
+   sostenidos por la idea de que un registro sin usar «cuesta cero bytes y es un destino al
+   que migrar». No lo era: fue una API inventada por adelantado que nadie llamo nunca.
 
    ⚠️ No añadas `--color-*` pensando en modo oscuro: hace falta un valor por concepto y
    por tema, y aqui hay uno. */
@@ -52,7 +59,6 @@
     --color-state-danger: var(--state-danger);
     --color-state-warning: var(--state-warning);
     --color-state-pending: var(--state-pending);
-    --color-state-info: var(--state-info);
     --color-state-current: var(--state-current);
     --color-state-current-ink: var(--state-current-ink);
     --color-state-gold: var(--state-gold);
@@ -62,15 +68,6 @@
     --color-action-neutral: var(--action-neutral);
     --color-action-view: var(--action-view);
     --color-action-upload: var(--action-upload);
-
-    /* Escala categorica de visualizacion. NO son colores de marca — ver abajo. */
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-    --color-chart-6: var(--chart-6);
-    --color-chart-7: var(--chart-7);
 }
 
 @layer base {
@@ -180,10 +177,6 @@
   --state-current-rgb: 75, 241, 161;
   --state-current-ink: #108353;   /* 4.77:1 — vale para texto Y para borde */
 
-  /* «Informativo». A ΔE 13.56 de `--action-view`, asi que «informativo» y «ver» siguen
-     siendo distinguibles: no los acerques. */
-  --state-info: #2563eb;   /* 5.17:1 */
-
   /* Botones de accion de las tablas. UN color por accion: el del icono. El fondo NO se
      declara, se calcula mezclandolo con blanco (~10%); el borde tambien se deriva, y vive
      junto a su regla en `overrides.css`.
@@ -199,28 +192,6 @@
 
   /* Iconos de accion secundaria (la ✕ de los dialogos). */
   --brand-icon: #475569;
-
-  /* ESCALA CATEGORICA DE VISUALIZACION. **Esto NO es paleta de marca.**
-
-     En una paleta cualitativa el valor no esta en lo que cada color significa, sino en
-     cuanto se SEPARAN entre si — una propiedad del conjunto que ningun color individual
-     tiene. Siete tonos equiespaciados a L*=50 y C*=58 en CIELAB, anclados en el matiz de
-     `--brand-primary`. Separacion minima ΔE 21.07 y minimo 3.96:1 sobre blanco.
-
-     ⚠️ Acercar cualquiera de estos a un token de marca los JUNTA y estropea lo unico que
-     los hace utiles. En particular `--chart-1` NO es `--brand-primary`: es su matiz al L y
-     C de la escala, porque el violeta de marca tiene croma fuera de gama a L*=50.
-
-     ⚠️ Declarada y AUN SIN APLICAR: los siete colores del organigrama y los tres del mapa
-     de procesos siguen escritos a mano. Aplicarlos es un cambio de aspecto con su propia
-     decision. */
-  --chart-1: #7d67ca;
-  --chart-2: #ca4582;
-  --chart-3: #c15731;
-  --chart-4: #837900;
-  --chart-5: #008a41;
-  --chart-6: #008e98;
-  --chart-7: #0085d5;
 
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;
