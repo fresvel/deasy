@@ -67,7 +67,7 @@
     /* ── Tono: «abrir», el neutro ──────────────────────────────────────────────────── */
 
     .deasy-deliverable-action--open {
-        @apply border-slate-200/90 hover:border-sky-200 hover:bg-sky-50/45;
+        @apply border-line/90 hover:border-sky-200 hover:bg-sky-50/45;
     }
 
     .deasy-deliverable-action--open .deasy-deliverable-action__chip {

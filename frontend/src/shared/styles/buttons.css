@@ -87,7 +87,7 @@
     }
 
     .deasy-btn--soft-neutral {
-        @apply border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950;
+        @apply border-line bg-surface text-slate-700 hover:border-line-strong hover:bg-slate-100 hover:text-slate-950;
     }
 
     .deasy-btn--soft-success {
@@ -114,7 +114,7 @@
 
     .deasy-btn--close,
     .admin-btn--close {
-        @apply h-9 w-9 rounded-2xl border border-slate-200 bg-white p-0 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+        @apply h-9 w-9 rounded-2xl border border-line bg-white p-0 text-slate-500 hover:border-line-strong hover:bg-surface hover:text-slate-900;
     }
 
     .deasy-btn--menu {

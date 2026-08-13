@@ -169,7 +169,7 @@
     }
 
     .deasy-dropzone__surface--disabled {
-        @apply cursor-not-allowed border-slate-200 bg-slate-100 opacity-70;
+        @apply cursor-not-allowed border-line bg-slate-100 opacity-70;
     }
 
     .deasy-dropzone__icon {
@@ -214,7 +214,7 @@
 }
 @layer components {
 .deasy-form-section {
-        @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5;
+        @apply rounded-xl border border-line bg-white p-4 shadow-sm sm:p-5;
     }
 
     .deasy-form-section + .deasy-form-section {
@@ -222,7 +222,7 @@
     }
 
     .deasy-form-section__header {
-        @apply mb-4 flex items-center gap-3 border-b border-slate-100 pb-3;
+        @apply mb-4 flex items-center gap-3 border-b border-surface pb-3;
     }
 
     .deasy-form-section__icon {

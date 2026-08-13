@@ -24,11 +24,11 @@
     }
 
     .deasy-tag--neutral {
-        @apply border-slate-200 bg-slate-50 text-icon;
+        @apply border-line bg-surface text-icon;
     }
 
     .deasy-tag--muted {
-        @apply border-slate-200 bg-white text-slate-500;
+        @apply border-line bg-white text-slate-500;
     }
 
     /* Salmón: pendiente de firma en los pasos de firma. */
@@ -41,12 +41,12 @@
     }
 
     .deasy-tag--contrast {
-        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none backdrop-blur-sm;
+        @apply border-line bg-surface text-slate-700 shadow-none backdrop-blur-sm;
         background-image: none;
     }
 
     .deasy-tag--hero {
-        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none backdrop-blur-sm;
+        @apply border-line bg-surface text-slate-700 shadow-none backdrop-blur-sm;
         background-image: none;
     }
 

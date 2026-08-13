@@ -1,6 +1,6 @@
 @layer components {
 .deasy-hero-shell {
-        @apply overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[var(--elev-1)] md:p-6;
+        @apply overflow-hidden rounded-xl border border-line bg-white p-5 text-slate-900 shadow-[var(--elev-1)] md:p-6;
         background-image: none;
     }
 
@@ -25,7 +25,7 @@
     }
 
     .deasy-hero-media-card {
-        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
+        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-slate-700 shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
     }
 
     .deasy-hero-media-card--avatar {
@@ -33,7 +33,7 @@
     }
 
     .deasy-hero-kicker {
-        @apply inline-flex w-fit items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700 shadow-none;
+        @apply inline-flex w-fit items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700 shadow-none;
     }
 
     .deasy-hero-title {
@@ -53,11 +53,11 @@
     }
 
     .deasy-hero-back-button {
-        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-none transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-blue-500/10;
+        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-none transition-all duration-200 hover:border-line-strong hover:bg-surface hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-blue-500/10;
     }
 
     .deasy-hero-back-button__icon {
-        @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-slate-200 bg-slate-50 text-slate-700 shadow-none;
+        @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-line bg-surface text-slate-700 shadow-none;
     }
 
     
