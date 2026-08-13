@@ -5,7 +5,7 @@
 # ── Por que existe ─────────────────────────────────────────────────────────────────────
 # Pandoc convierte `docs/arquitectura-deasy.tex` SIN EMITIR UN SOLO AVISO y pierde el 26%
 # del contenido: los 15 diagramas ASCII quedan reflowados a un parrafo con los `---`
-# convertidos en rayas tipograficas (irreversible), las 21 tablas pierden la estructura y
+# convertidos en rayas tipograficas (irreversible), las 22 tablas pierden la estructura y
 # las 40 cajas colapsan al mismo div.
 #
 # Como el fallo es silencioso, la unica defensa es CONTAR. Estos diez numeros salen de haber
@@ -52,7 +52,7 @@ pandoc -f latex -t gfm --wrap=none \
 MD="$TMP/intermedio.md"
 echo
 echo "▸ Las diez comprobaciones"
-comprobar "tablas Markdown"        "$(grep -cE '^\|[[:space:]]*:?-' "$MD" || true)" 21
+comprobar "tablas Markdown"        "$(grep -cE '^\|[[:space:]]*:?-' "$MD" || true)" 22
 comprobar ":::tip (concepto)"      "$(grep -c '^:::tip' "$MD" || true)" 11
 comprobar ":::caution (aviso)"     "$(grep -c '^:::caution' "$MD" || true)" 16
 comprobar ":::note (nota)"         "$(grep -c '^:::note' "$MD" || true)" 13

@@ -826,8 +826,8 @@ comoda: cualquier cambio de columna hay que pensarlo como idempotente o pasa por
   \rt{task\_items} \\
 \textbf{Plantilla} &
   El \emph{molde} del documento: schema de campos + cuerpo (Jinja2/LaTeX u ofimatico) +
-  formatos, versionado y almacenado en MinIO. &
-  \rt{deliverables} + \rt{template\_artifacts} \\
+  formatos, versionado y almacenado en MinIO. \textbf{Son tres tablas, no una}: ver abajo. &
+  \rt{deliverables} + \rt{template\_artifacts} + \rt{process\_definition\_templates} \\
 \textbf{Flujo de entrega} &
   Cadena de pasos ``quien llena y aprueba el documento antes de firmarlo''. &
   \rt{fill\_flow\_*} / \rt{fill\_requests} \\
@@ -841,6 +841,60 @@ comoda: cualquier cambio de columna hay que pensarlo como idempotente o pasa por
 \bottomrule
 \end{tabularx}
 \end{center}
+
+\subsection{Los cuatro nombres de ``entregable'', que son cuatro cosas distintas}
+
+Esta es la confusion que mas tiempo cuesta en este repositorio, y no es sinonimia: cada nombre es
+un eslabon distinto. Leer \rt{artifact} donde el codigo dice \rt{template\_artifact} y creer que
+habla del entregable de una persona lleva media tarde de despiste.
+
+\begin{center}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}P{4.6cm}LP{3.4cm}@{}}
+\toprule
+\textbf{Nombre en el codigo} & \textbf{Que es} & \textbf{Donde vive} \\
+\midrule
+\rt{deliverable} &
+  El entregable como \textbf{tipo}: su identidad institucional, su codigo y su dueno.
+  \emph{No es un archivo.} &
+  \rt{deliverables} \\
+\rt{template\_artifact} &
+  Una \textbf{edicion} de ese tipo, con sus ficheros en MinIO y su ciclo de vida
+  (\rt{draft} / \rt{published} / \rt{retired}). El codigo lo abrevia \rt{artifact}; no hay
+  ninguna tabla \rt{artifacts}. &
+  \rt{template\_artifacts} \\
+\rt{process\_definition\_template} &
+  El \textbf{vinculo} entre una configuracion de proceso y una edicion. \textbf{Aqui vive}
+  \rt{item\_mode}: por eso la misma plantilla puede emitirse de tres maneras segun a que
+  proceso este enlazada. &
+  \rt{process\_definition\_templates} \\
+\rt{task\_item} &
+  La \textbf{instancia con dueno}: lo que una persona concreta tiene que entregar. Es la
+  tarjeta que el usuario ve en su Home. &
+  \rt{task\_items} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Y un quinto eslabon antes de todos, la \rt{template\_seed}: la plantilla de fabrica de la que
+nace el entregable. La cadena completa, de molde a documento firmado:
+
+\begin{center}
+\rt{seed} $\to$ \rt{deliverable} $\to$ \rt{template\_artifact} $\to$ (vinculo) $\to$
+\rt{task\_item} $\to$ \rt{document} $\to$ \rt{document\_version}
+\end{center}
+
+\begin{aviso}[Y ``documento'' tampoco es lo que parece]
+La tabla \rt{documents} \textbf{no guarda ningun fichero}: no tiene una sola columna de ruta.
+Es el \textbf{expediente} del entregable, y nace vacia al lanzar el proceso. El PDF vive en la
+fila hija, \rt{document\_versions}, en \rt{working\_file\_path} (el que se esta trabajando) y
+\rt{final\_file\_path} (el firmado).
+
+Esa distincion importa mas de lo que parece: ``tiene documento'' significa \emph{se lanzo el
+proceso}, no \emph{alguien empezo a trabajar}. Confundir las dos cosas dejo los tres relevos
+automaticos de responsable sin ejecutarse durante meses. La senal correcta es
+\rt{task\_items.user\_started\_at}.
+\end{aviso}
 
 \section{El motor de procesos: serie, regla y flujo}
 
