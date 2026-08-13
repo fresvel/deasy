@@ -277,7 +277,7 @@
                     <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4">
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                          <div v-if="unit.groupName" class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ unit.groupName }}</div>
+                          <div v-if="unit.groupName" class="deasy-eyebrow">{{ unit.groupName }}</div>
                           <h3 class="text-lg font-semibold text-strong m-0 mt-1 leading-snug">{{ unit.name }}</h3>
                         </div>
                       </div>
@@ -285,7 +285,7 @@
                         Sin procesos asignados.
                       </div>
                       <div v-else class="flex flex-col gap-2">
-                        <div class="text-[11px] font-bold uppercase tracking-wider text-muted">Procesos disponibles</div>
+                        <div class="deasy-eyebrow">Procesos disponibles</div>
                         <button
                           v-for="process in unit.processes"
                           :key="process.process_definition_id || process.id"
@@ -360,7 +360,7 @@
                     >
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                          <div class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ pos.groupName }}</div>
+                          <div class="deasy-eyebrow">{{ pos.groupName }}</div>
                           <h3 class="text-lg font-semibold text-strong m-0 mt-1 leading-snug">{{ pos.unitName }}</h3>
                         </div>
                         <span
@@ -380,7 +380,7 @@
                         Sin procesos asignados.
                       </div>
                       <div v-else class="flex flex-col gap-2">
-                        <div class="text-[11px] font-bold uppercase tracking-wider text-muted">Procesos disponibles</div>
+                        <div class="deasy-eyebrow">Procesos disponibles</div>
                         <button
                           v-for="process in pos.processes"
                           :key="process.process_definition_id || process.id"
@@ -631,7 +631,7 @@
                       <component :is="stat.icon" class="h-4.5 w-4.5" />
                     </span>
                     <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span class="text-[11px] font-bold uppercase tracking-wider text-muted">{{ stat.label }}</span>
+                      <span class="deasy-eyebrow">{{ stat.label }}</span>
                       <span class="text-xs font-medium text-muted truncate">{{ stat.detail }}</span>
                     </div>
                     <strong class="text-xl font-extrabold text-strong shrink-0">{{ stat.value }}</strong>
@@ -1081,15 +1081,15 @@
               <h3 class="m-0 text-base font-bold text-strong">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="rounded-2xl bg-surface border border-line p-4">
-                  <div class="text-xs font-bold uppercase tracking-wider text-muted">Configuración</div>
+                  <div class="deasy-eyebrow">Configuración</div>
                   <div class="mt-2 text-sm font-bold text-strong">{{ selectedProcessPanel?.definition?.name || '—' }}</div>
                 </div>
                 <div class="rounded-2xl bg-surface border border-line p-4">
-                  <div class="text-xs font-bold uppercase tracking-wider text-muted">Periodo</div>
+                  <div class="deasy-eyebrow">Periodo</div>
                   <div class="mt-2 text-sm font-bold text-strong">{{ taskLaunchSelectedTermLabel }}</div>
                 </div>
                 <div class="rounded-2xl bg-surface border border-line p-4 sm:col-span-2">
-                  <div class="text-xs font-bold uppercase tracking-wider text-muted">Descripción</div>
+                  <div class="deasy-eyebrow">Descripción</div>
                   <div class="mt-2 text-sm font-medium text-body">{{ taskLaunchForm.description || 'Sin descripción adicional.' }}</div>
                 </div>
               </div>
@@ -1485,7 +1485,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="m-0 text-sm font-medium text-muted">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
           <label v-if="mySendsTypes.length > 1" class="flex items-center gap-2 text-sm">
-            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">Tipo</span>
+            <span class="deasy-eyebrow">Tipo</span>
             <select v-model="mySendsTypeFilter" class="rounded-2xl border border-line bg-white px-2 py-1 text-sm font-medium text-body outline-none">
               <option value="all">Todos</option>
               <option v-for="t in mySendsTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -1585,11 +1585,11 @@
                   <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">{{ step.display_label }}</p>
                 </div>
                 <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Regla</p>
+                  <p class="deasy-eyebrow">Regla</p>
                   <p class="mt-1 text-xs font-medium text-muted m-0">{{ getFillStepResolverLabel(step) }}</p>
                 </div>
                 <div v-if="step.response_note" class="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Nota</p>
+                  <p class="deasy-eyebrow">Nota</p>
                   <p class="mt-1 mb-0 text-xs font-medium text-icon">{{ step.response_note }}</p>
                 </div>
               </div>
@@ -1827,7 +1827,7 @@
                   </p>
                 </div>
                 <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Regla</p>
+                  <p class="deasy-eyebrow">Regla</p>
                   <p class="mt-1 text-xs font-medium text-muted m-0">
                     {{ getSignatureStepResolverLabel(step) }}
                   </p>

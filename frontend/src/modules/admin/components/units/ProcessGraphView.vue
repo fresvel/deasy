@@ -141,7 +141,7 @@
       <aside class="deasy-drawer">
         <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div class="min-w-0">
-            <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Detalle de proceso</p>
+            <p class="deasy-eyebrow">Detalle de proceso</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailProcess.name }}</h3>
           </div>
           <div class="flex shrink-0 items-center gap-1">
@@ -166,7 +166,7 @@
             <!-- Pestaña: Configuraciones -->
             <div v-show="detailTab === 'configuraciones'">
               <div class="mb-3 flex items-center justify-between gap-2">
-                <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Configuraciones</p>
+                <p class="deasy-eyebrow">Configuraciones</p>
                 <AppButton v-if="editable" variant="primary" size="sm" @click="createConfiguration">+ Nueva configuración</AppButton>
               </div>
               <div v-if="!detailConfigurations.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
@@ -208,7 +208,7 @@
             <!-- Pestaña: Sub-procesos -->
             <div v-show="detailTab === 'subprocesos'">
               <div class="mb-3 flex items-center justify-between gap-2">
-                <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Sub-procesos</p>
+                <p class="deasy-eyebrow">Sub-procesos</p>
                 <AppButton v-if="editable" variant="secondary" size="sm" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
               </div>
               <div v-if="!detailChildren.length" class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">

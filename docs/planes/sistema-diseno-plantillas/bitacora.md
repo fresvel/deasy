@@ -1080,3 +1080,20 @@ Se pidió un commit por fase y las cinco primeras ya estaban entrelazadas: `toke
 habría producido commits que no pasan su propia verificación — peor que uno honesto. Van en dos:
 la documentación por su lado (es separable de verdad) y el código con las cinco fases enumeradas.
 De F5 en adelante, uno por fase.
+
+### `.deasy-eyebrow`: 69 kickers, y media F6.1 contestada de paso
+
+Había **75 kickers escritos a mano en DIEZ formas**, y entre ellas **cuatro tamaños de fuente
+distintos** —`text-[0.6rem]` (9.6px), `text-[11px]`, `text-[0.7rem]` (11.2px) y `text-xs`—, cuatro
+valores de `tracking`, dos pesos y dos colores. Nadie distingue 9.6 de 11 de 11.2 px: eran **tres
+formas de escribir el mismo escalón**.
+
+Eso contesta media F6.1 en la práctica sin necesidad de una sesión de diseño: la escala por debajo
+de 14 px tiene **dos** escalones y éste es el de abajo, `text-theme-xs` (12/18), que es el de la
+paleta adoptada.
+
+**Migrados 69.** Valores arbitrarios: 423 → **376**; `text-[…]`: 189 → **146**.
+
+⚠️ **No están todos.** Quedan ~6 formas de cola larga (`tracking-[0.16em]`, `text-[10px]`…): medido
+en `/procesos`, 3 nodos en versalitas siguen con tres formas distintas. Se anota en vez de darlo por
+cerrado — es exactamente el tipo de «casi» que luego se lee como hecho.

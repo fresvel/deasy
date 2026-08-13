@@ -103,7 +103,7 @@
     <section v-if="showProcessConfigurations" class="mt-5 border-t border-line pt-5">
       <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Configuraciones</p>
+          <p class="deasy-eyebrow">Configuraciones</p>
           <h6 class="m-0 mt-1 flex items-center gap-2 text-base font-extrabold text-strong">
             <span>Configuraciones del proceso</span>
             <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">

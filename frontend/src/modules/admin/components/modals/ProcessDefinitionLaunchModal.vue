@@ -22,7 +22,7 @@
 
         <template v-else>
           <div class="flex flex-col gap-2">
-            <label :for="fieldId('selectedtermid')" class="text-xs font-bold uppercase tracking-wider text-muted">Periodo</label>
+            <label :for="fieldId('selectedtermid')" class="deasy-eyebrow">Periodo</label>
             <select :id="fieldId('selectedtermid')"
               v-model="selectedTermId"
               class="h-10 rounded-xl border border-line px-3 text-sm"
@@ -72,7 +72,7 @@
         </template>
 
         <div class="flex flex-col gap-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-muted">Historial de corridas</span>
+          <span class="deasy-eyebrow">Historial de corridas</span>
           <div v-if="!runs.length" class="text-sm text-muted italic">Sin corridas registradas.</div>
           <ul v-else class="flex flex-col gap-1.5 m-0 p-0 list-none">
             <li

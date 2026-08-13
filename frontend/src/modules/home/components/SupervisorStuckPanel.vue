@@ -31,7 +31,7 @@
 
     <div v-else class="flex flex-col gap-4">
       <div v-for="group in grouped" :key="group.unit_id ?? 'sin-unidad'" class="flex flex-col gap-2">
-        <h3 class="m-0 text-xs font-bold uppercase tracking-wide text-muted">{{ group.unit_name || 'Sin unidad' }}</h3>
+        <h3 class="deasy-eyebrow">{{ group.unit_name || 'Sin unidad' }}</h3>
         <div
           v-for="item in group.items"
           :key="item.id"

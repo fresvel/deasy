@@ -353,7 +353,7 @@
             <IconSignature class="h-5 w-5" />
           </div>
           <div class="min-w-0">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-icon">Multifirmador</div>
+            <div class="deasy-eyebrow">Multifirmador</div>
             <div class="truncate text-base font-bold text-strong">
               {{ batchProgressModalTitle }}
             </div>

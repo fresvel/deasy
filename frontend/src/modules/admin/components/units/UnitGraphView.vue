@@ -173,7 +173,7 @@
       <aside class="deasy-drawer">
         <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div class="min-w-0">
-            <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Detalle de unidad</p>
+            <p class="deasy-eyebrow">Detalle de unidad</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailUnit.name }}</h3>
           </div>
           <button type="button" class="shrink-0 text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeDetail">
@@ -191,7 +191,7 @@
           <!-- Pestaña: Ocupaciones -->
           <div v-show="detailTab === 'ocupaciones'">
           <div class="mb-3 flex items-center justify-between gap-2">
-            <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Puestos y ocupaciones</p>
+            <p class="deasy-eyebrow">Puestos y ocupaciones</p>
             <AppButton v-if="editable" variant="secondary" size="sm" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
           </div>
 
@@ -295,7 +295,7 @@
           <!-- Pestaña: Procesos de la unidad (alcance) -->
           <div v-show="detailTab === 'procesos'">
             <div class="mb-3 flex items-center justify-between gap-2">
-              <p class="m-0 text-xs font-bold uppercase tracking-wide text-muted">Procesos de la unidad</p>
+              <p class="deasy-eyebrow">Procesos de la unidad</p>
               <div class="flex items-center gap-2">
                 <AppButton v-if="editable" variant="secondary" size="sm" title="Vincular una configuración en borrador existente a esta unidad" @click="openAttachProcess">Vincular</AppButton>
                 <AppButton v-if="editable && canCreateProcess" variant="primary" size="sm" @click="$emit('create-process')">+ Nueva configuración</AppButton>

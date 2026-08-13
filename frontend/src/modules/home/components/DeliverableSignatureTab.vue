@@ -72,7 +72,7 @@
           </div>
         </div>
         <div class="mt-3 flex flex-col gap-0.5">
-          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-muted m-0">Firmante</p>
+          <p class="deasy-eyebrow">Firmante</p>
           <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">
             {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
           </p>

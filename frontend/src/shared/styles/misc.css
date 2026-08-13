@@ -98,3 +98,23 @@
         border: 1px solid var(--color-line);
     }
 }
+
+@layer components {
+    /* EL KICKER (o *eyebrow*): el rotulo pequeno en versalitas que va encima de un titulo o
+       de un dato. Habia 75 escritos a mano en DIEZ formas, y entre ellas cuatro tamanos de
+       fuente distintos —`text-[0.6rem]` (9.6px), `text-[11px]`, `text-[0.7rem]` (11.2px) y
+       `text-xs`—, cuatro valores de `tracking`, dos pesos y dos colores. Nadie distingue 9.6
+       de 11 de 11.2 px: eran tres formas de escribir el mismo escalon.
+
+       Esto contesta media F6.1 en la practica: la escala por debajo de 14px tiene DOS
+       escalones y este es el de abajo, `text-theme-xs` (12/18), que es el de la paleta
+       adoptada. Se lleva de paso 38 de los `text-[…]` arbitrarios. */
+    .deasy-eyebrow {
+        @apply m-0 text-theme-xs font-bold uppercase tracking-wide text-muted;
+    }
+
+    /* Cuando va sobre un titulo y necesita separarse de el. */
+    .deasy-eyebrow--spaced {
+        @apply mb-1 block;
+    }
+}
