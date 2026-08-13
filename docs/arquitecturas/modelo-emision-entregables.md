@@ -44,55 +44,62 @@ con su propia plantilla/uso, pero eso no es lo que define al proceso por defecto
 - **routed**: **NO se autora** flujo en la plantilla; se **construye en runtime** al crear
   la instancia.
 
-**DEPRECADO — no usar en autoría ni en guías:** `document_owner` ("Responsable del
-documento"), `position`, `manual_pick`. Siguen en el `ENUM` de la BD solo por
-legado/seed/runtime, pero **no** son opciones de autoría web.
+**RETIRADO — la base los rechaza (2026‑08‑10, §0.8 del frente 0):** `document_owner`
+("Responsable del documento"), `position`, `manual_pick`. Ya **no** están «en el `ENUM` por
+legado»: el `CHECK` de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type`
+admite **solo** `task_assignee`, `specific_person` y `cargo_in_scope`, y el `ALTER` valida las
+filas existentes, así que una base con un valor retirado **no arranca**. El criterio fue: *lo
+que la web no autora, no existe* — su único productor era el `meta.yaml`, que también murió.
 
-## Estado de implementación (honesto, para handoff)
+## Estado de implementación
 
 - **single** — ✅ implementado (autoría de flujo + generación al lanzar).
 - **replicated** — ✅ implementado (réplica etiquetada que hereda el flujo del original).
-- **routed** — ⚠️ **PARCIAL / NO coherente con el concepto todavía.** Lo implementado
-  (F‑B/F3/R1‑R4 de la sesión previa) es una versión **simplificada**: al crear la instancia
-  se elige **un solo destinatario** (`task_items.target_person_id`) que queda como dueño y
-  firma vía un paso `document_owner` **SEMBRADO** en el bootstrap (no autorado). El
-  "Proceso por defecto" parece funcionar solo por ese atajo sembrado, **no** por el modelo
-  real. **FALTA** el pilar del concepto: el **editor de flujo en runtime** para que el
-  usuario defina entrega + firma al instanciar un routed.
+- **routed** — ✅ implementado. **El editor de flujo en runtime existe**: el usuario define
+  entrega y firma al instanciar, y `materializeRuntimeFlowForTaskItem` crea el flujo **por
+  instancia** (`fill_flow_templates.task_item_id != NULL`). El atajo del "un solo destinatario
+  + un paso `document_owner` sembrado" se retiró en P1.4 y el resolutor ya ni existe.
+  El detalle del cierre está más abajo, en «Estado P1 — IMPLEMENTADO».
 
-## Deuda / a corregir (próxima sesión)
+## Deuda / a corregir — CERRADA
 
-1. **routed = flujo en runtime**: construir el editor que, al crear la instancia, permita
-   definir los pasos de **entrega** y **firma** con sus resolutores/personas —
-   reemplazando el atajo "un destinatario + `document_owner` sembrado".
-2. Erradicar `document_owner` / "Responsable del documento" de guías y autoría.
-3. Revisar que la plantilla de un routed **no** requiera flujo predefinido (hoy el default
-   trae un fill `document_owner` sembrado que es el atajo a quitar).
+Los tres puntos que esta sección abría están hechos, y se dejan escritos porque explican por qué
+el modelo quedó como quedó:
+
+1. ~~**routed = flujo en runtime**: construir el editor.~~ ✅ Hecho (P1 y P2, ver abajo).
+2. ~~Erradicar `document_owner` de guías y autoría.~~ ✅ Hecho, y más: **retirado del `CHECK`**.
+3. ~~Revisar que la plantilla de un routed **no** requiera flujo predefinido.~~ ✅ Hecho: el
+   fail‑fast de "≥1 paso de entrega" está relajado para `routed` (P3‑F1).
 
 ## Modelo de datos (referencia)
 
 - `process_definition_templates.item_mode` — el modo por plantilla ligada.
 - Réplicas/instancias routed = `task_items` con `origin_kind='user_added'`.
-- `task_items.target_person_id` — usado hoy por el atajo routed (dueño = destinatario, vía
-  `resolveOwnerPersonIdForTaskItem`, que alimenta el resolutor `document_owner`).
+- `task_items.target_person_id` — el **destinatario principal** ("Para:"). `resolveOwnerPersonIdForTaskItem`
+  lo usa para fijar `documents.owner_person_id`; ya **no** alimenta ningún resolutor de flujo.
 
 ---
 
 ## Auditoría modelo ↔ código (2026‑07‑01, verificado archivo:línea)
+
+> ⚠️ **Foto del 2026‑07‑01. Las dos filas ⚠️ están CERRADAS desde P1** (ver la sección siguiente), y el
+> `document_owner` que citan como evidencia ya no existe ni en el `CHECK` de la base. Se conserva porque
+> documenta *cuál era la divergencia* y con qué evidencia se midió; al citar de aquí, no des por vigente
+> ninguna línea de código.
 
 | Modo | Veredicto | Evidencia |
 |---|---|---|
 | **single** | ✅ **Aplica** | Siembra filtrada a `single` → 1 instancia al lanzar (`TaskGenerationService.js:1172,1236`); flujo predefinido heredado del template ligado (`746‑838`, `290‑304`). Autoría web `task_assignee`/`cargo_in_scope`. |
 | **replicated** | ✅ **Aplica** | 0 siembra al lanzar; el usuario crea N réplicas `user_added` con etiqueta (`user_controler.js:3806‑3842`) que **heredan** el flujo del template vía `process_definition_template_id` (`TaskGenerationService.js:761‑776`; firma `DocumentSignatureWorkflowService.js:660‑662`). |
 | **routed** | ⚠️ **Diverge** | El modelo exige flujo **definido al instanciar**; el código solo captura **etiqueta + 1 destinatario** (`user_controler.js:3685,3790‑3804`; `HomeView.vue:4829‑4842`, sin pasos) y **hereda** el flujo del template (misma vía que single). **No existe editor de flujo runtime.** |
-| **Proceso por defecto** | ⚠️ **Diverge (mismo defecto)** | Funciona por un **atajo**: link `item_mode='routed'` + un paso `document_owner` **sembrado** (`SystemBootstrapService.js:537,563‑567`); el destinatario queda como owner (`resolveOwnerPersonIdForTaskItem:987‑990` → resolver `document_owner:548‑549`). |
+| **Proceso por defecto** | ⚠️ **Divergía — CERRADO en P1.4** | Entonces funcionaba por un **atajo**: link `item_mode='routed'` + un paso `document_owner` **sembrado**; el destinatario quedaba como owner. Hoy el bootstrap **no siembra flujo alguno** para el proceso por defecto: define entrega y firma al enviar (`SystemBootstrapService.js:535‑537`, donde queda el comentario del atajo retirado). |
 | **Autoría de flujo** | ✅ **Aplica** | Solo `task_assignee`/`cargo_in_scope` (+`specific_person` en ad_hoc); **sin** `document_owner`/`position`/`manual_pick` (`SqlAdminService.js:261`; modal `307‑311/468‑471`). El editor **ignora `item_mode`** (el modo vive en el LINK, no en la plantilla). |
 
-**Divergencia central:** para `routed`, el flujo se resuelve por el **template ligado**
-(`getActiveFillFlowTemplateForDefinitionTemplate`, misma ruta que single/replicated). **No
-hay ningún camino donde el usuario defina los pasos al instanciar.** El "editor de flujo en
-runtime" —pilar del modelo— no existe. El front está limpio de `document_owner`
-("Responsable del documento") — 0 coincidencias.
+**Divergencia central (de entonces):** para `routed`, el flujo se resolvía por el **template
+ligado** (`getActiveFillFlowTemplateForDefinitionTemplate`, misma ruta que single/replicated), y
+no había ningún camino donde el usuario definiera los pasos al instanciar. **El "editor de flujo
+en runtime" —pilar del modelo— se construyó en P1**: hoy `getActive{Fill,Signature}FlowTemplate…`
+aceptan `taskItemId` y **prefieren** el flujo por instancia.
 
 ---
 
@@ -200,8 +207,12 @@ paralelo con quórum.
 **Deuda restante (menor):**
 - Ciclo humano entrega→firma end‑to‑end no ejercitado (usa la misma maquinaria de `single`).
 - "Para:" cuando el destinatario es un cargo (no muestra 1 persona).
-- Migración de instalaciones previas con `document_owner` sembrado (solo afecta a instalados
-  antes de P1.4; en dev se resuelve con reset).
+- ~~Migración de instalaciones previas con `document_owner` sembrado (solo afecta a instalados
+  antes de P1.4; en dev se resuelve con reset).~~ **Dejó de ser «menor» el 2026‑08‑10**: el `ALTER`
+  que añade el `CHECK` nuevo **valida las filas existentes**, así que una instalación previa con
+  una fila `document_owner` ya no arranca en silencio — **falla el arranque nombrando la
+  restricción**. Es deliberado. En dev se resuelve con reset; en una instalación real hay que
+  reescribir esas filas antes de subir la versión.
 
 ---
 

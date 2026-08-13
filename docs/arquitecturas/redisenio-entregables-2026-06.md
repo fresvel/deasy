@@ -3,11 +3,12 @@
 ## Propósito
 
 Este documento describe el rediseño del modelo de negocio de **entregables, procesos y tareas**
-ejecutado en junio de 2026. Complementa (no reemplaza) a
-[roadmap-documental-operativo-v2.md](./roadmap-documental-operativo-v2.md) y
-[roadmap-modelo-documental-y-firmas.md](./roadmap-modelo-documental-y-firmas.md), que conservan el
-diseño base del núcleo documental. Aquí se documentan tres capacidades nuevas que cierran puntos
-débiles del modelo:
+ejecutado en junio de 2026. Complementaba a
+[`roadmap-documental-operativo-v2.md`](../docs-md-antiguos/planes-cerrados-2026-08/roadmap-documental-operativo-v2.md) y
+[`roadmap-modelo-documental-y-firmas.md`](../docs-md-antiguos/planes-cerrados-2026-08/roadmap-modelo-documental-y-firmas.md),
+que conservaban el diseño base del núcleo documental y que se **archivaron el 2026-08-13**: su objetivo
+se cumplió, pero describen un núcleo que gira alrededor del `meta.yaml`, y el `meta.yaml` ya no existe.
+Aquí se documentan tres capacidades nuevas que cierran puntos débiles del modelo:
 
 - **Fase A** — Entregables con varios elementos (documento principal + anexos heterogéneos).
 - **Fase B** — Tareas libres (proceso "General") y tareas derivadas de un entregable.
@@ -119,28 +120,39 @@ seed o de un archivo subido.
 - `saveTemplateArtifactDraft` acepta `data.schema_fields` (JSON) y escribe el `schema.json` real en MinIO.
 - Componentes UI soportados: `text, richtext, textarea, number, switch, date, date_expression, select, hidden`.
 
-### Flujos de llenado y firma (meta.yaml → workflows)
-- `buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })` genera el bloque `workflows:` del `meta.yaml`
-  con el formato que ya consumen `normalizeFillSteps` / `normalizeSignatureSteps`.
-- `saveTemplateArtifactDraft` acepta `fill_workflow` y `signature_workflow`. Si el artifact ya está
-  vinculado a definiciones de proceso, tras guardar dispara
-  `syncArtifactWorkflowsForTemplateArtifactId(id)` que sincroniza
-  `fill_flow_templates`/`signature_flow_templates` + steps.
-- Llenado: pasos con `resolver_type` (document_owner / task_assignee / cargo_in_scope / specific_person /
-  position / manual_pick), `selection_mode`, `cargo_code` + `unit_scope_type`, `can_reject`, `field_refs`.
-- Firmas: pasos (cargo firmante, tipo electrónico) + **anchors por token** (un campo del schema marca la
-  posición de la firma en el PDF).
+### Flujos de llenado y firma
 
-### Gobierno de versión/stage
-- `updateTemplateArtifactStage(id, stage)` — transiciones válidas (`ARTIFACT_STAGE_TRANSITIONS`):
-  `draft → review → approved → published → archived` (+ reversas y restaurar). Actualiza BD y reescribe
-  `stage`/`repository_stage` en el `meta.yaml`.
+> **Reescrito el 2026-08-13.** Esta sección se titulaba «(meta.yaml → workflows)» y describía el camino
+> que el **§0.8 del frente 0** desmontó. Lo que sigue es lo que hay hoy; el mecanismo de junio queda
+> descrito en `docs/planes/plan-maestro-2026-08.md`.
+
+- **El flujo se autora en la base, no en un YAML.** El formulario alimenta directamente
+  `fill_flow_templates`/`signature_flow_templates` + sus `*_steps`, vía `_persistAuthoredFlow`
+  (`services/admin/templates/workflows.js`). `buildWorkflowsYaml` ya no serializa: hoy es
+  `buildWorkflowsDocument`, y su salida es **la entrada del escritor**, no un fichero.
+- `saveTemplateArtifactDraft` sigue aceptando `fill_workflow` y `signature_workflow`, pero **no dispara
+  ninguna sincronización**: `syncArtifactWorkflowsForTemplateArtifactId` y el resto de
+  `WorkflowSyncService` se borraron. El portador del flujo es el propio `template_artifact_id`.
+- Llenado: pasos con `resolver_type` — y hoy solo hay **tres**: `task_assignee`, `cargo_in_scope` y
+  `specific_person`. `document_owner`, `position` y `manual_pick` salieron del `CHECK`; la base rechaza
+  la fila. Siguen valiendo `selection_mode`, `cargo_code` + `unit_scope_type` y `can_reject`.
+  `field_refs` es un fósil: nadie puede ponerle un valor.
+- Firmas: pasos (cargo firmante, tipo electrónico). Quien marca **dónde va la firma en el PDF** es la
+  columna `slot`, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}`. La columna
+  `anchor_refs` que se describía como «anchors por token» **no la escribe ni la lee nadie**.
+
+### Gobierno del ciclo de vida
+
+- El gobierno **no es** `artifact_stage` con cinco estados. Esa columna nunca llegó a existir: hoy es
+  `template_artifacts.lifecycle_state` con **tres** — `draft`, `published`, `retired` — y por defecto
+  `draft`. `updateTemplateArtifactStage` y `ARTIFACT_STAGE_TRANSITIONS` no existen.
 - `createTemplateArtifactVersion(id)` — clona el artifact a la siguiente `storage_version` (copia objetos
-  MinIO + nuevo registro en BD en `draft`).
+  MinIO + nuevo registro en BD en `draft`). Desde el §0.8 **copia también las filas de flujo**: antes solo
+  copiaba MinIO, y la versión nueva nacía sin flujo.
 
 ### Endpoints admin (sql_admin_router.js)
-- `GET   /admin/sql/template_artifacts/:id/schema` — lee campos + workflows del meta.yaml/schema.
-- `PATCH /admin/sql/template_artifacts/:id/stage`
+- `GET   /admin/sql/template_artifacts/:id/schema` — lee campos + flujo.
+- `POST  /admin/sql/template_artifacts/:id/publish` y `.../retire` — las transiciones de ciclo de vida.
 - `POST  /admin/sql/template_artifacts/:id/version`
 - (existentes) `POST/PUT /admin/sql/template_artifacts/draft[/:id]` — alta/edición del artifact general.
 
@@ -155,13 +167,16 @@ Editor integrado en `AdminDraftArtifactModal.vue`: secciones "Campos del formula
 
 Hallazgos al verificar código ↔ docs existentes:
 
-1. **Rutas obsoletas** en `roadmap-modelo-documental-y-firmas.md`: apuntan a
+1. **Rutas obsoletas** en `roadmap-modelo-documental-y-firmas.md` (hoy archivado en
+   `docs/docs-md-antiguos/planes-cerrados-2026-08/`): apuntan a
    `/home/fresvel/Sharepoint/DIR/Deploy/deasy/…` (ubicación antigua; hoy el repo está en
    `Documentos/Pucese/deasy`). También cita `frontend/src/services/admin/AdminTableManagerConfig.js`,
    que hoy vive en `frontend/src/modules/admin/services/AdminTableManagerConfig.js`.
 2. **Estado desactualizado**: los roadmaps describen flujos de llenado/firma como "modelados pero no
-   operativos"; el código actual los referencia y sincroniza activamente
-   (`syncArtifactFillWorkflowForArtifact`, `syncArtifactSignatureWorkflowForArtifact`).
+   operativos"; el código actual los materializa y los ejecuta. *(La sincronización que se citaba aquí
+   —`syncArtifactFillWorkflowForArtifact`, `syncArtifactSignatureWorkflowForArtifact`— desapareció con
+   `WorkflowSyncService` en el §0.8: ya no hay nada que sincronizar, porque el flujo se escribe
+   directamente en la base.)*
 3. **Funcionalidad no documentada** (cubierta por este archivo): `document_attachments`, proceso General /
    tareas libres-derivadas, y el editor web de plantillas (campos, flujos, stage/versión).
 

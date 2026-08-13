@@ -1,3 +1,21 @@
+> ⚠️ **ARCHIVADO el 2026-08-13 — acta de marzo de 2026, NO es el estado del código.**
+>
+> **Cómo acabó:** el núcleo documental que este documento planificaba está construido —documentos,
+> versiones, flujo de llenado y flujo de firmas operan hoy— pero **por otro camino** y sobre otras
+> piezas de las que aquí se nombran. El `meta.yaml` que este roadmap trata como fuente del flujo
+> desapareció en el §0.8 del frente 0 (agosto de 2026): el flujo se autora en la base
+> (`fill_flow_steps` / `signature_flow_steps`), `WorkflowSyncService` y sus tres endpoints se
+> borraron, y de los resolutores que aquí se dan por vigentes solo sobreviven tres.
+>
+> **Por qué se archiva y no se corrige:** este documento **se presenta a sí mismo como «el estado
+> real actual del código»** (§Propósito), y eso es justo lo que lo hace peligroso — ya no lo es, y
+> quien lo abra buscando el estado se lo cree. Se conserva por el diseño, que sigue explicando *por
+> qué* el modelo quedó centrado en documentos y versiones.
+>
+> **Dónde está hoy el estado real:** el sitio de `docs/` (`explicacion/datos-modos-y-plantillas`,
+> `explicacion/datos-firmas-y-dominios`), `docs/arquitecturas/modelo-emision-entregables.md` y
+> `docs/planes/plan-maestro-2026-08.md`.
+
 # Hoja de Ruta Operativa V2 - Núcleo Documental, Llenado y Firmas
 
 ## Propósito
