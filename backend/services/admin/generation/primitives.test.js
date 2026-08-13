@@ -28,10 +28,18 @@ test("resolveScopeForStep: el unit_id del paso MANDA sobre el del contexto", () 
   assert.equal(scope.unitId, 3, "lo declarado en el paso gana");
 });
 
-test("resolveScopeForStep: los ámbitos context_* heredan del contexto", () => {
-  for (const t of ["context_exact", "context_subtree", "context_ancestor_type"]) {
+test("resolveScopeForStep: context_exact hereda la unidad del contexto", () => {
+  const scope = resolveScopeForStep({ unit_scope_type: "context_exact" }, { scope_unit_id: 5 });
+  assert.equal(scope.unitId, 5, "context_exact debe heredar la unidad del contexto");
+});
+
+// Los otros dos `context_*` salieron del `CHECK` de la columna en el sub-paso 8 del §0.8: la base
+// rechaza la fila, así que un paso de ENTREGA no puede llevarlos. Este test fija que ya NO heredan —
+// si alguien vuelve a nombrarlos aquí, el ámbito volvería a resolverse para un valor imposible.
+test("resolveScopeForStep: los context_* retirados ya no heredan la unidad del contexto", () => {
+  for (const t of ["context_subtree", "context_ancestor_type"]) {
     const scope = resolveScopeForStep({ unit_scope_type: t }, { scope_unit_id: 5 });
-    assert.equal(scope.unitId, 5, `${t} debe heredar la unidad del contexto`);
+    assert.equal(scope.unitId, null, `${t} está fuera del CHECK y no debe heredar`);
   }
 });
 
