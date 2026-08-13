@@ -1116,3 +1116,23 @@ una alerta, un panel o un chip, y eso no es sustitución mecánica. Forzarlo con
 inventar equivalencias que no están medidas.
 
 `AppCard` (8 repeticiones) queda igualmente pendiente.
+
+### Los colores de estado, clasificados POR ROL — 183 atributos en 6 grupos
+
+Contarlos por utilidad (540) no servía para decidir nada: cada atributo lleva tres. Clasificados por
+**la forma que tienen**, que es lo que dice qué son, salen seis grupos con tratamientos distintos:
+
+| # | Grupo | Atributos | Qué hacer |
+|---|---|---:|---|
+| 1 | **CHIP / badge** (píldora inline) | 14 | `AppTag` ya existe con 9 variantes. Es sustitución |
+| 2 | **BLOQUE de estado** (fondo+borde+texto) | 50 | **Es `AppAlert`.** El grupo más grande y el más claro |
+| 3 | **SUPERFICIE tintada** (fondo+borde, texto aparte) | 24 | Falta la clase. Misma receta 71/6, sin el texto |
+| 4 | **TEXTO suelto** (solo color de letra) | 69 | Sustitución directa al token semántico |
+| 5 | **BORDE suelto** | 6 | Cola larga, caso a caso |
+| 6 | **RELLENO suelto** | 20 | Hay que mirar si es sólido (icono encima) o tinte |
+
+**Los grupos 1, 2 y 4 son 133 de los 183 y tienen destino conocido.** Los grupos 3 y 6 piden una
+decisión pequeña cada uno; el 5 es cola larga.
+
+Lo que este corte deja claro y el recuento por color escondía: **no son 540 problemas, son seis** —y
+dos de ellos ya tienen su componente escrito.
