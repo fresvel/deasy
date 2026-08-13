@@ -1,8 +1,4 @@
 <template>
-  <!-- Ojo al nombre: NO hay FontAwesome. Este componente traduce nombres de icono de FA a
-       componentes de Tabler, que es lo que se renderiza. Llevaba una clase `deasy-fa-icon` cuya
-       unica regla forzaba `color: currentColor` fuera de capa y tapaba cualquier `text-*` puesto
-       encima; se retiro el 2026-08-13 con la regla. El color se hereda, que es lo que hace falta. -->
   <component
     :is="resolvedIcon"
     :size="size"
@@ -13,6 +9,16 @@
 </template>
 
 <script setup>
+/*
+ * Ojo al nombre: NO hay FontAwesome. Este componente traduce nombres de icono de FA a componentes
+ * de Tabler, que es lo que se renderiza. Llevaba una clase `deasy-fa-icon` cuya unica regla forzaba
+ * `color: currentColor` FUERA DE CAPA y tapaba cualquier `text-*` puesto encima; se retiro el
+ * 2026-08-13 junto con la regla. El color se hereda, que es lo que hace falta.
+ *
+ * ⚠️ Y este comentario va en el `<script>`, no en el `<template>`: Vue **renderiza al DOM** los
+ * comentarios HTML de una plantilla. Estuvo unas horas arriba y se veia repetido en el markup de
+ * cada icono — cuatro veces solo en el modal de editar proceso.
+ */
 import { computed } from "vue";
 import {
   IconAlertTriangle,
