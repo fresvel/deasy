@@ -18,6 +18,7 @@ import {
 } from "../kernel/storage.js";
 import { checkJinjaBlockBalance, parseAvailableFormats, sanitizeLatexSource } from "./artifacts.js";
 import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
+import { copySchemaFieldsToArtifact } from "./schemaFieldRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -429,6 +430,14 @@ export default class TemplateArtifactService {
         sourceArtifactId: Number(artifactId),
         targetArtifactId: newArtifactId,
         displayName,
+      });
+      // Los CAMPOS del formulario, por el mismo camino y por el mismo motivo (sub-paso S6 del §0.4).
+      // El `schema.json` de la hija ya llegó por la copia binaria de MinIO de más arriba; esto añade
+      // la copia CONTABLE, que es la que se puede listar, unir y migrar con un UPDATE. Sin ella las
+      // dos copias divergirían justo aquí: fichero con campos, tabla vacía.
+      await copySchemaFieldsToArtifact(connection, {
+        sourceArtifactId: Number(artifactId),
+        targetArtifactId: newArtifactId,
       });
       await connection.commit();
     } catch (error) {
