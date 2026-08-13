@@ -396,3 +396,99 @@ cada una está tapando hoy. Vivía sólo en los comentarios del CSS; se trae aqu
 
 Un script de migración volvió a reescribir el mismo comentario de `ProcessConfigNode.vue`. Ya lo
 habían reescrito otros tres. Sus nombres de clase van ahora **descritos y no escritos**.
+
+---
+
+## Sesión 2026-08-12 · la paleta se colapsa, y TailAdmin se descarta
+
+Ocho commits, `3ba869d` → `c67189e`. **La cuestión de fondo fue una pregunta tuya**: si `--color-` ya
+es el namespace de Tailwind, ¿qué pinta ahí el `brand-`? Nada, y de tirar de ese hilo salió todo lo
+demás.
+
+### La decisión que reencuadró la fase: TailAdmin fuera
+
+Se descartó como fuente de diseño. **Importa más de lo que parece**, porque el plan le había asignado
+las respuestas de F4.2 y F6: «cómo se ve el foco» se iba a contestar copiando su receta. Sin eso,
+esas fases no están bloqueadas por análisis sino **por una decisión de diseño que hay que tomar aquí**.
+
+### El criterio nuevo, que es el que gobierna la paleta a partir de ahora
+
+> **Un token propio se justifica con DOS condiciones, y hacen falta las dos:** que Tailwind no traiga
+> ya ese color (ΔE ≤ 2 = es el mismo a ojo), y que **el concepto pueda cambiar de color**. Si el
+> concepto ES el color, usa el de Tailwind.
+
+De ahí salió que `--brand-white` sobraba (271 usos de un nombre más largo para `#ffffff`) y que
+`--color-line` se queda (el borde del sistema cambiará algún día, y entonces es una línea y no 354).
+
+### Lo hecho
+
+| | Qué | Cómo se probó |
+|---|---|---|
+| `3ba869d` | 8 registros sin **un solo** consumidor: `--chart-1..7` y `--state-info` | El CSS construido difiere en **1 línea**. Los registros de `@theme` ni se emitían |
+| `7910413` | `--brand-white` → el `white` de Tailwind (197 utilidades + 74 `var()`) | Diff = el renombrado entero; `--color-white` emitida de verdad |
+| `4e29d9e` | **fix**: la transparencia de `bg-white/NN` | Medido en el DOM: el velo vuelve a `/ 0.8` |
+| `c815c1b` | `--brand-surface-alt` colapsado sobre `--surface` (ΔE **0.56**) | 7 reglas, contadas una a una |
+| `8887012` | **24 clases** declaradas sin un solo uso | Diff del CSS revisado selector a selector |
+| `231cafe` | Una declaración por color, sin prefijo | **Huella 0** contra `ad2de56` en la misma pila |
+| `c40555e` `c67189e` | `frontend/CLAUDE.md` y la skill, al día | — |
+
+### El fallo que encontramos sin buscarlo: `bg-white/80` salía OPACO
+
+`.bg-white` y sus cinco variantes con alfa compartían una regla **sin capa** que las pintaba a todas
+con blanco sólido. Para `.bg-white` a secas eso no hace nada —pinta blanco con blanco—, pero a las
+variantes les quitaba el alfa.
+
+**Que era un accidente y no una decisión lo prueba el propio código:** cinco de los nodos afectados
+combinan `bg-white/80` con `backdrop-blur`, y un desenfoque de fondo sobre un fondo opaco **no hace
+absolutamente nada**. Alguien escribió un cristal esmerilado —el velo de carga, el pie del
+multifirmador— y la regla lo convirtió en una losa. Y el mismo propósito escrito `bg-brand-white/80`
+sí salía translúcido, porque la regla no nombraba ese selector: **el aspecto dependía de qué token
+hubiera elegido quien lo escribió.**
+
+### Tres correcciones a lo que esta misma bitácora daba por bueno
+
+1. **Los «239 nodos» no los ponía `.deasy-table-shell`.** Esa clase **no está en una sola plantilla**;
+   compartía lista de selectores con `.deasy-table-responsive`, que es la que gana. La tabla de
+   supresiones de §4.4-c la nombra cuatro veces y estaba mal las cuatro.
+2. **`--state-current` (el relleno menta) nunca se emitió.** Tenía cero consumidores, igual que los
+   `--chart-*`; sus 4 «usos» eran de `-ink` (el `\b` del grep casaba antes del guion). Hoy vive sólo
+   como `--step-rgb`, que es como se usa de verdad: al 10 % y al 35 %.
+3. **`--font-base`, `--font-size-base` y `--line-height-*` ocupaban el namespace `--font-*`** sin ser
+   de Tailwind. Era el mecanismo del `--radius-lg` esperando a que alguien declarase el token que
+   chocara. Hoy son `--typeface` y `--type-*`.
+
+### Cuánto de la paleta era realmente nuestro
+
+Medido convirtiendo la paleta de Tailwind v4 desde su **OKLCH real** (no desde los hex de v3, que es
+el error que ya nos costó una medición) y verificado pintando en un canvas del navegador: coincide en
+los 21 comprobados.
+
+**7 de los 22 tokens están a ΔE ≤ 2 de un color de Tailwind** — `navy`→`gray-900` 0.52,
+`surface`→`slate-50` 0.56, `ink`→`gray-800` 1.00, `action-view`→`sky-800` 1.04, `icon`→`slate-600`
+1.17, `success`→`emerald-700` 1.28, `line`→`slate-200` 1.61.
+
+**Se decidió NO anclarlos**, y el motivo se ha quedado obsoleto (era «se re-decidirán con TailAdmin»).
+Si se retoma, dos trampas medidas: Tailwind **sí** emite `--color-slate-600` al referenciarla desde
+`:root` (probado), pero los gemelos `-rgb` se desincronizan **en silencio** — `--success-rgb` deja de
+corresponder a `emerald-700` y se usa en un degradado de `auth.css`.
+
+> Y un dato que no estaba en ningún sitio: **87 de los 288 colores de Tailwind v4 caen fuera de la
+> gama sRGB**. En pantalla sRGB el navegador los recorta (coincide con el cálculo), pero en una P3 se
+> ven más saturados. Nuestros hex se ven igual en las dos.
+
+### Tres trampas del instrumental, las tres pagadas hoy
+
+1. **`diff` a través del proxy `rtk` devolvió «Files are identical»** sobre dos ficheros que difieren
+   en 70 bytes. Salió con `cmp` y con `rtk proxy diff`. Con CSS de una sola línea muy larga, no te
+   fíes de un diff en verde.
+2. **La pila A monta `develop`, no tu worktree.** No sirve de baseline para una rama: mide el trabajo
+   entero. El A/B bueno es `git checkout <base> -- frontend/src` **sobre tu propia pila**.
+3. **Cuando un cambio no puede mover un píxel, pruébalo con el CSS construido.** Construir con y sin
+   el cambio y comparar el emitido es más barato que una sesión de navegador y más fuerte: si el diff
+   son las líneas que tocaste y nada más, no hay nada que verificar a ojo. Así se cerraron `3ba869d`
+   y `7910413` sin abrir el navegador.
+
+> ⚠️ Al comparar el CSS de antes y después de un renombrado, **no se puede comparar por nombre**: el
+> viejo tenía DOS nombres por color (`--color-brand-X` cuando venía de una utilidad, `--brand-X`
+> cuando venía de un `var()` a mano), y colapsar ese desdoblamiento es justo el cambio. Hay que
+> canonizar ambos lados al mismo **concepto**.

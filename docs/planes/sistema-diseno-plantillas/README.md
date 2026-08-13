@@ -20,6 +20,36 @@ Su bitácora sigue valiendo: es donde están las trampas ya pagadas.
 
 ---
 
+## ⚠️ Estado a 2026-08-12 — si vas a retomar esto, empieza aquí
+
+**El plan describe una paleta que ya no existe.** Lleva su propia tabla de traducción arriba del
+todo; léela antes de tocar nada, o vas a migrar hacia nombres muertos.
+
+| Fase | Estado |
+|---|---|
+| F1 · F2 · F4.1 · F4.3 · F4.4 · **F5** | ✅ cerradas |
+| **F3** · **F4.5** | ⬜ **mecánicas**: 74 colores a mano fuera del CSS + 151 dentro de `@apply` |
+| **F4.2** · **F6** | ⬜ **no son refactor: son decisión de diseño** |
+
+**Lo que queda son dos trabajos de naturaleza distinta, y conviene no mezclarlos:**
+
+- **Mecánico (~1 500 sitios)**: F3, F4.5 y las familias en disputa de F4.2 (sky/blue/indigo 641 ·
+  red/rose 303 · green 187 · amber 142). Verificable como invisible, delegable. **Pero avisado**: es
+  la clase de trabajo que la retrospectiva del 2026-08-12 juzgó *«correcto pero mecánico; unifica la
+  paleta, no arregla nada visible»*, y sin un rediseño a la vista puede que no compense.
+- **Decisión de diseño**: el foco (**115 utilidades muertas** — encenderlas *es* el cambio), las **52
+  reglas fuera de capa** que suprimen 83 radios y 90 bordes ya escritos, y las escalas de F6. Esto no
+  es trabajo de agente: se decide mirando la pantalla.
+
+> **Y una premisa del plan se cayó: TailAdmin quedó descartado el 2026-08-12.** F4.2 y F6 daban por
+> hecho que sus recetas contestarían cómo se ve el foco. Ya no hay fuente externa: la respuesta hay
+> que darla aquí.
+
+La sesión del 2026-08-12 (8 commits: colapso de la paleta, 24 clases muertas, un fallo de
+transparencia y la documentación) **no salió de estas fases** y está entera en la bitácora.
+
+---
+
 ## El argumento de una frase
 
 **Primero dar a dónde ir, luego pedir que se vaya.** Hoy no existen `bg-state-warning` ni

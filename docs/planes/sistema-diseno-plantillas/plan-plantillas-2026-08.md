@@ -6,6 +6,47 @@
 
 ---
 
+> # ⚠️ ESTADO A 2026-08-12 — LEE ESTO ANTES QUE EL PLAN
+>
+> El plan de abajo se escribió el 2026-08-11 y **describe una paleta que ya no existe**. Sigue
+> valiendo como mapa de lo que falta, pero **traduce mientras lees**:
+>
+> | El plan escribe | Hoy se llama |
+> |---|---|
+> | `--brand-primary` · `bg-brand-primary` | `--color-primary` · `bg-primary` |
+> | `--brand-border` · `border-brand-border` | `--color-line` · `border-line` |
+> | `--brand-text-muted` | `--color-muted` |
+> | `--brand-text-body` · `--brand-text-strong` | `--color-body` · `--color-strong` |
+> | `--brand-surface-muted` (y `-alt`, colapsado) | `--color-surface` |
+> | `--state-success` · `--state-danger` · … | `--color-success` · `--color-danger` · … |
+> | `--brand-elev-*` · `--brand-white` | `--elev-*` · **no existe** (se usa el `white` de Tailwind) |
+> | «33 registros en `@theme`» | **22**, con **una sola declaración** cada uno |
+>
+> **Estado real de las fases:**
+>
+> | | |
+> |---|---|
+> | F1 · F2 · F4.1 · F4.3 · F4.4 | ✅ cerradas |
+> | **F5** | ✅ **cerrada el 2026-08-12** — 24 clases muertas borradas (`8887012`) y los contadores de `CLAUDE.md` corregidos (`c40555e`). Lo que la sección de abajo lista como pendiente **ya está hecho** |
+> | F3 · F4.5 | ⬜ pendientes, **mecánicas**: 74 colores a mano + 151 dentro de `@apply` |
+> | F4.2 · F6 | ⬜ pendientes, y **NO son refactor: son decisión de diseño** |
+>
+> ## Y una premisa del plan que se cayó: **TailAdmin está descartado** (2026-08-12)
+>
+> F4.2 y F6 daban por hecho que el aspecto del foco, la tipografía y las escalas se decidirían
+> **copiando las recetas de TailAdmin**. Eso ya no va a pasar. No las bloquea el análisis: las bloquea
+> una decisión que hay que tomar mirando la pantalla.
+>
+> **Lo hecho el 2026-08-12 no está en las fases de abajo** porque no salió del plan, sino de tirar de
+> un hilo: si `--color-` ya es el namespace de Tailwind, el `brand-` sobra. Está todo en la bitácora,
+> con el criterio nuevo que gobierna la paleta a partir de ahora:
+>
+> > **Un token propio se justifica con DOS condiciones, y hacen falta las dos:** que Tailwind no traiga
+> > ya ese color (ΔE ≤ 2 medido contra su OKLCH real, no contra los hex de v3), y que **el concepto
+> > pueda cambiar de color**. Si el concepto ES el color, usa el de Tailwind.
+
+---
+
 ## Por qué hace falta un plan nuevo y no una fase más
 
 El plan del 2026-08-09 **está cerrado**: sus seis fases se ejecutaron y están verificadas. Pero además
@@ -369,7 +410,22 @@ que sólo se encuentran en runtime, a través de una prop**, invisible a cualqui
 
 ---
 
-## Fase 5 · Borrar lo muerto y corregir la documentación
+## Fase 5 · Borrar lo muerto y corregir la documentación — ✅ CERRADA (2026-08-12)
+
+> **Ejecutada en `8887012` y `c40555e`.** Salieron **24 clases** (165 líneas), no 39: el resto de la
+> lista de abajo o estaba viva, o se compone en runtime, o ya había caído en F4.4. Lo que sigue se
+> conserva porque su parte de método —cómo distinguir una clase muerta de una viva— es la que hay que
+> repetir la próxima vez.
+>
+> **Dos cosas que la ejecución desmintió de esta sección:**
+>
+> 1. **`.deasy-table-shell` no era una regla viva que ganase en 239 nodos**: no está en una sola
+>    plantilla. Compartía lista de selectores con `.deasy-table-responsive`, que es la que gana.
+> 2. **Los contadores de `frontend/CLAUDE.md` §8 ya no son «221 vs 255»**: hoy son **205**, y el
+>    fichero entero se remidió.
+>
+> Y dos clases más que la lista de runtime no tenía, y que un `grep` tampoco encuentra: **`.box`**
+> (`FirmarPdf.vue:1340`) y **`.show`** (`modalController.js`), las dos por `classList.add`.
 
 **~117 líneas** de CSS que no aplica a nada, en 39 clases.
 
