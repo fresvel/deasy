@@ -904,10 +904,10 @@
         <template #cell="{ row, field }">
           <template v-if="field.name === 'validLabel'">
             <div class="flex items-center justify-center">
-              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-emerald-100 text-success text-xs font-bold border border-emerald-200">
+              <span v-if="row.valid" class="deasy-tag deasy-tag--success">
                 <IconCheck class="w-3.5 h-3.5" /> Válida
               </span>
-              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-rose-100 text-danger text-xs font-bold border border-rose-200">
+              <span v-else class="deasy-tag deasy-tag--danger">
                 <IconX class="w-3.5 h-3.5" /> Inválida
               </span>
             </div>

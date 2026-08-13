@@ -53,7 +53,7 @@
       <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
         <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-warning" />
         Resaltar pendientes
-        <span v-if="pendingCount" class="inline-flex items-center rounded-xl bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-warning ring-1 ring-amber-200">{{ pendingCount }}</span>
+        <span v-if="pendingCount" class="deasy-tag deasy-tag--warning">{{ pendingCount }}</span>
       </label>
       <AppButton variant="secondary" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
@@ -243,7 +243,7 @@
               </div>
               <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <template v-if="pos.person_id">
-                  <span class="inline-flex items-center rounded-xl bg-emerald-50 px-2 py-0.5 font-semibold text-success ring-1 ring-emerald-200">Ocupado</span>
+                  <span class="deasy-tag deasy-tag--success">Ocupado</span>
                   <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                   <template v-if="editable">
                     <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openAssign(pos.id)">Cambiar</button>

@@ -72,7 +72,7 @@
 
         <div
           v-if="currentModeFieldsCount"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-success"
+          class="deasy-tag deasy-tag--success"
         >
           <IconCheck class="h-4 w-4" />
           {{ currentModeFieldsCount }} preparada(s)
