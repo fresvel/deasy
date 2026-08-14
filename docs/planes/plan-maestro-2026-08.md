@@ -174,14 +174,26 @@ ahora, de la base al jinja»*. El §0.8 hizo lo primero (la base es la fuente); 
 
 | # | Qué | ¿Reversible? |
 |---|---|---|
-| **S1** | **El ZIP de una plantilla creada por la web NO compila**: `data.yaml` se escribe en la raíz del prefijo y el ZIP solo lleva `template/jinja2/`, así que no viaja — y `StrictUndefined` revienta antes de LaTeX. **El admin lo usa hoy.** Además, en edición sin cambio de seed el fichero no se re-materializa y **manifiesto y bucket derivan** | Sí |
-| **S2** | El **`catch {}` mudo** de `getTemplateArtifactSchema`: el editor carga sin campos **y el siguiente guardado escribe `{}`**. Es el mismo borrado silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, en el mismo fichero | Sí |
-| **S3** | El **`fileFilter` que falta**. Hoy un `.sh` subido por el campo `pdf_file` acaba en MinIO **y el ZIP le pone modo 0755** | Sí |
-| **S4** | **Balance de bloques Jinja** al subir, con los delimitadores reales `[[% %]]`. No es un parser, y hay que decirlo | Sí |
-| **S5** | **El payload pasa a JSON**: `data.json` en la búsqueda de `make.sh` | Sí |
-| **S6** | **Los campos a la base, como JSON.** El esqueleto que pidió el dueño. Hoy viven solo en `schema.json` de MinIO, **sin tabla**: no se pueden validar contra nada, se copian en binario al versionar, y un fallo de MinIO los borra | **No** |
+| ~~S1~~ | ✅ **HECHO (`49d41ce`, con S5).** Medido, no deducido: `make.sh` pasó de `rc=1` con `'bibliography_style' is undefined` a **un PDF de 2 páginas — y con los tokens de firma dentro** (`!-9b6D6WnuUE-!`). El segundo defecto también: el `content_hash` se movía al editar **sin que cambiara nada del paquete**. ~~El ZIP de una plantilla creada por la web NO compila~~: `data.yaml` se escribe en la raíz del prefijo y el ZIP solo lleva `template/jinja2/`, así que no viaja — y `StrictUndefined` revienta antes de LaTeX. **El admin lo usa hoy.** Además, en edición sin cambio de seed el fichero no se re-materializa y **manifiesto y bucket derivan** | Sí |
+| ~~S2~~ | ✅ **HECHO (`7c3e38d`).** ⚠️ **La caracterización era ciega**: anular el lector entero daba **281/281 en verde**, porque el único caso que llega al endpoint descarta `fields` del golden a propósito. La red tuvo que ser unitaria. ~~El `catch {}` mudo de `getTemplateArtifactSchema`~~: el editor carga sin campos **y el siguiente guardado escribe `{}`**. Es el mismo borrado silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, en el mismo fichero | Sí |
+| ~~S3~~ | ✅ **HECHO (`3e79282`).** Probado contra la pila viva: antes, un `payload.sh` por el campo `pdf_file` llegaba a MinIO con **200 OK**; ahora **400** con su motivo. **El gate es la extensión, no el mimetype** — la extensión es lo que decide el nombre del objeto. Y `sql_admin_router.js` **no tenía montado `uploadError`**: sus límites de multer se disparaban y Express contestaba HTML con el stack. ~~El `fileFilter` que falta.~~ Hoy un `.sh` subido por el campo `pdf_file` acaba en MinIO **y el ZIP le pone modo 0755** | Sí |
+| ~~S4~~ | ✅ **HECHO (`6f381d7`).** Alcance decidido con criterio: **solo `Contenido/` y solo `.j2`**. `Preambulo/` es zona protegida y su SHA-256 tiene que casar con el manifiesto, así que validarlo sería **rechazar contenido que el usuario no escribió y no puede arreglar**. Las expresiones `{{ }}` no se comprueban a propósito: son llaves normales en LaTeX. ~~Balance de bloques Jinja al subir,~~ con los delimitadores reales `[[% %]]`. No es un parser, y hay que decirlo | Sí |
+| ~~S5~~ | ✅ **HECHO (con S1).** El render **ya sabía leer JSON** (mira la extensión); lo único que fallaba era la búsqueda, que no listaba ninguno. Ahora `data.json` va **primero**. El paquete conserva el `.yaml` hasta que exista el generador, a propósito. ~~El payload pasa a JSON~~: `data.json` en la búsqueda de `make.sh` | Sí |
+| ~~S6~~ | ✅ **HECHO (`38c2b56`+`351a391`).** **Una fila por campo**, no un `jsonb`: un JSONB cierra la copia binaria pero **no la validación ni el orden**, que son los dos que el generador necesita — y el §0.6 ya midió que **un `CHECK` no cubre un JSONB**. Escritura doble a la base y a `schema.json`, versionado copiando **filas** (patrón de `flowRows.js`). **Los seis tokens del seed ya son consultables por SQL.** ~~Los campos a la base, como JSON.~~ El esqueleto que pidió el dueño. Hoy viven solo en `schema.json` de MinIO, **sin tabla**: no se pueden validar contra nada, se copian en binario al versionar, y un fallo de MinIO los borra | **No** |
 | **S7** | **Slot de firma estable.** Hoy es `firma_<orden>` porque el formulario **nunca pone `code`**: insertar un paso en medio renumera los slots y **el token que el `.tex` referenciaba pasa a ser el de otro firmante**, en silencio. Es prerequisito del generador | **No** |
 | **S8** | **El generador**: campos + tokens → Jinja | Sí |
+
+> **Tres cosas que costaron aprenderse y no se deducen del código:**
+>
+> 1. **La caracterización fue ciega TRES veces seguidas** en este frente — anular el lector de campos,
+>    el escritor de campos o el lector de schema daba **verde**. Ningún flow manda `schema_fields`.
+>    **Aquí la verificación que manda no es un test: es compilar el ZIP y mirar el PDF.**
+> 2. **El defecto del orden era peor de lo descrito**: las claves enteras no solo van primero, se
+>    ordenan numéricamente entre sí, y **la corrupción ocurre al ESCRIBIR** — `schema.json` ya sale mal
+>    del disco.
+> 3. **Los 18 campos del seed no llegan por el formulario**: el bootstrap publica el fichero y guarda
+>    solo el puntero. **La misma forma que `BASE_META_YAML`**, que costó todo el frente 0. Se siembran
+>    ahora, solo si la tabla está vacía.
 
 ⚠️ **S7 es prerequisito de S8**: sin identidad estable, el generador emite código que caduca al
 reordenar un paso.
