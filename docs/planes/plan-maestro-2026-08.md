@@ -1021,8 +1021,94 @@ acabamos de retirar — su `DocumentRuntimeService` y su `DocumentCompilerPayloa
    PDF—, así que reintentar es gratis y no hace falta inventar nada.
 
 **Criterio de cierre:** una decisión escrita —retomar la rama, reescribir desde su diseño, o
-descartarla— con el inventario de qué se aprovecha. **No es de ahora**, pero es material real y estaba
-a punto de perderse: no aparecía en ningún documento.
+descartarla— con el inventario de qué se aprovecha.
+
+> ⚠️ **PRIORIDAD SUBIDA el 2026-08-13.** Cuando se abrió este frente era «material real que estaba a
+> punto de perderse». Ya no: **el compilador es camino crítico de tres cosas a la vez**.
+>
+> 1. **La mitad de ejecución del generador (§0.4 S8).** El generador emite macros que algo tiene que
+>    rellenar con el token del firmante resuelto. Sin compilador, el §0.4 entrega el andamio pero no
+>    el circuito.
+> 2. **La vista previa del editor web (frente 11).** Y ahí es *la* pieza que da el valor — ver el
+>    resultado en segundos en vez de descargar, compilar en local y volver a subir.
+> 3. **La generación automática de PDFs**, que es el segundo mundo entero del modelo de negocio.
+>
+> Deja de ser una curiosidad histórica: **es de lo que cuelgan tres frentes.**
+
+---
+
+## Frente 11 · El editor web de plantillas — ⬜ · **son DOS productos, no uno**
+
+Idea del dueño (2026-08-13). Hoy el gestor sube su plantilla en Word/Excel y **un admin la pasa a
+LaTeX a mano**. La propuesta: un editor tipo Overleaf, en la web, para hacer ese paso.
+
+**Verificado antes de analizar: no existe nada.** Ni CodeMirror, ni Monaco, ni TipTap, ni ninguna
+dependencia de editor en `frontend/package.json`. La única rama relacionada es la del compilador.
+
+#### Producto A — el taller del admin (puntos 1-3) · **viable, y con el andamiaje medio construido**
+
+Controlar las semillas con interfaz de edición, crear las plantillas a partir de los formatos Word que
+la medición marque como prioritarios, y **a la larga, que el gestor las cree solo**.
+
+Técnicamente es: editor de código en el navegador + árbol de ficheros + compilar con vista previa +
+guardar. **Y casi todo lo caro ya existe, sin que se construyera para esto:**
+
+| Lo que necesita | Ya está |
+|---|---|
+| Estructura del paquete y zona editable | `Contenido/` vs protegido, con manifiesto |
+| Validación al guardar | SHA-256 del manifiesto, path traversal, saneo LaTeX |
+| Validar el Jinja | El balance de bloques del **§0.4 S4** |
+| Leer y escribir el paquete | La API de `draft` y `/source` |
+| Compilar | **Frente 10** |
+
+El editor de código es una biblioteca de estantería. **Lo que suele costar un producto así —el sandbox
+de compilación, el modelo de ficheros, la validación de lo que se sube— ya está.**
+
+**Y el punto 3 es el premio estratégico, aunque venía tercero en la lista:** *«que el gestor pueda
+crear las plantillas de manera autónoma»* es **quitar al admin del cuello de botella**, que es la
+lógica del modelo entero — medir, automatizar, delegar.
+
+#### Producto B — el editor del usuario final (punto 4) · **otro producto, decisión aparte**
+
+Que el usuario redacte sus propios informes (memorandos con tablas, figuras, imágenes) en la web.
+
+**No es lo mismo.** El usuario no debe escribir LaTeX, así que hace falta un editor visual **y una
+traducción de texto enriquecido a LaTeX** — tablas anidadas, imágenes posicionadas, saltos de página:
+donde estos proyectos se atascan.
+
+Encaja en el modelo (sería para los `routed`, libres por diseño), pero **su valor es distinto**:
+sustituye «escribo en Word, exporto, subo» por «escribo en la web». Es mejora de **experiencia**, no de
+**control** — y el control es lo que este sistema aporta. **Compartir la palabra «editor» no los hace
+el mismo producto.**
+
+#### La arquitectura: el editor NO es un microservicio
+
+Se propuso como servicio separado. **El compilador sí lo es; el editor no.**
+
+El editor es **frontend**: un navegador que habla con la API que ya existe y con el compilador. **No
+tiene runtime ajeno, no ejecuta código y no tiene estado propio** — que son los tres criterios por los
+que el `signer` y el compilador sí se ganan estar fuera. Meterlo en un servicio propio sería otra app,
+otro despliegue y otra sesión **sin ganar nada**, y es justo el error que
+[la pregunta arquitectónica](#la-pregunta-arquitectónica-está-cerrada-2026-08-09) descartó.
+
+**La forma son tres piezas, no cuatro:** editor (frontend) → backend (API existente) → compilador
+(servicio). *(La excepción sería edición colaborativa en vivo, que sí pide estado y websockets. No se
+ha pedido.)*
+
+#### El empujón en contra, que es lo que hay que tener delante
+
+**¿El dolor del admin es que no tiene buen editor, o que convertir un Word en una plantilla LaTeX
+parametrizada es trabajo de DISEÑO?** Decidir qué es fijo, qué es campo, dónde van las firmas y cómo se
+comporta con datos variables **no es teclear**. Un editor no hace ese trabajo más fácil.
+
+**Pero sí acorta brutalmente el bucle de realimentación**, y ahí es donde se va el tiempo de diseño:
+probar, mirar, ajustar. Hoy ese ciclo es descargar, editar, compilar en local, mirar, volver a subir.
+
+> **Corolario que cambia la prioridad interna: la VISTA PREVIA vale más que el editor.** Si hubiera que
+> partir este frente, lo primero no es el editor de código — es poder compilar y ver el resultado.
+
+**Criterio de cierre:** una decisión escrita sobre el producto A, con su alcance separado del B. **No
+antes del frente 10**: sin compilador, la pieza que da el valor no existe.
 
 ---
 
