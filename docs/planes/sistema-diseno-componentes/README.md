@@ -15,15 +15,23 @@ continuación: es otro problema.**
 
 ## El argumento de una frase
 
-**Lo que queda no lo arregla una sustitución.** La segunda vuelta bajó los colores a mano de 2 117 a
-**201**, y los que quedan no caen en ningun patron: 139 son cola larga en `class` estatico y 62
-viven en una expresion — se deciden leyendo la
-condición, no con un `sed`. Lo mismo con la *utility soup*: no es que esté mal escrita, es que vive
-dentro de dos componentes que nadie puede leer enteros.
+**Lo que queda no lo arregla una sustitución, y lo que ya se hizo no aguantó.** La segunda vuelta
+extrajo seis componentes y puso cuatro gates; una auditoría del 2026-08-13 encontró que **ni los
+componentes se propagaron, ni los gates cerraron** — `.deasy-control` cubre 3 de 228 controles, y
+el 81 % de las alertas esquiva su componente. No fue un fallo de ejecución: fue el orden.
 
 > El de la 1.ª vuelta era **«borrar antes de migrar»**. El de la 2.ª, **«primero dar a dónde ir,
-> luego pedir que se vaya»**. El de ésta es: **lo que un script no puede decidir, no lo decide un
-> script.**
+> luego pedir que se vaya»**. El de ésta:
+>
+> **Declarar una clase no es adoptarla, y un gate con un agujero es peor que no tenerlo: da verde.**
+
+Por eso **los gates son la fase 0** y **propagar lo ya extraído es la fase 2**, antes de extraer nada
+nuevo. Y por eso la parte manual —los colores que viven en JavaScript, y partir los dos ficheros
+gordos— va después: se decide leyendo, no con un `sed`.
+
+> ⚠️ **Las cifras viven en el plan, no aquí.** La regla 2 del [README de planes](../README.md): un
+> contador replicado en dos sitios acaba contradiciéndose — en este repo llegó a haber **cinco**
+> conteos distintos de lo mismo. Si necesitas un número, está en `plan-2026-08-13.md`.
 
 ## Lo que se hereda, y que cambia cómo se trabaja
 
@@ -41,8 +49,8 @@ ahora y no antes.
 
 | Fichero | Qué es | ¿Hay que hacer algo? |
 |---|---|---|
-| [`plan-2026-08-13.md`](./plan-2026-08-13.md) | **Las fases, con criterio de cierre y verificación** | **SÍ. Es el ejecutable** |
-| `bitacora.md` | Qué se hizo, qué se midió y qué se descartó | Se escribe al ejecutar |
+| [`plan-2026-08-13.md`](./plan-2026-08-13.md) | **Las once fases, con criterio de cierre y verificación** | **SÍ. Es el ejecutable** |
+| `bitacora.md` | La auditoría que reescribió el plan, y **las cinco trampas ya pagadas** | Léela antes de tocar un script de migración |
 
 La segunda vuelta está archivada en
 [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/).
