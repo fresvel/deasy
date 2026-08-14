@@ -1,6 +1,6 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 6 de 21 tareas · 1 de 6 defectos** — abierto el **2026-08-14**.
+> **Estado: 8 de 21 tareas · 2 de 6 defectos** — abierto el **2026-08-14**.
 >
 > ⚠️ **La suite de caracterización NO está verde** (defecto **1.15**, §8). Son 9 casos en un solo
 > fichero y un golden no determinista, pero conviene saberlo antes de apoyarse en el argumento de que
@@ -47,8 +47,8 @@ plan.
 | `T1.10-d` | 1.10 | **Decisión escrita**: quién LEE `task_item_handovers` (hoy: nadie, cero `SELECT` en el repo) | ⬜ | — | — |
 | `T1.11-a` | 1.11 | **Censo cerrado**: 423 decidibles por escáner + 61 leídos uno a uno + sonda sobre los 240 flujos | ✅ | **484/484 equilibradas · 0 de más**; sonda 0 disparos (arranque, fixture y flujos) | 2026-08-14 |
 | `T1.11-d` | 1.11 | **Nueva.** `npm run check:params` como gate permanente — el artefacto que al 1.5 le faltó | ✅ | `scripts/audit_bindparams.mjs`; probado con un desajuste inyectado (salta) y con `?` en comentario/cadena/`IN (?)` (no salta) | 2026-08-14 |
-| `T1.11-b` | 1.11 | **Decisión escrita**: endurecer, avisar, o dejarlo con la razón por escrito | ⬜ | — | — |
-| `T1.11-c` | 1.11 | La decisión implementada, con su unitario | ⬜ | — | — |
+| `T1.11-b` | 1.11 | **Decisión: ENDURECER.** Escrita encima de `bindParams` con su medición y con por qué no bastaba avisar | ✅ | El gate estático solo ve 423 de 484; lanzar cubre las 484 en runtime | 2026-08-14 |
+| `T1.11-c` | 1.11 | Guard simétrico `paramIndex !== provided`; los 3 tests que fijaban la tolerancia, resueltos | ✅ | **602 unitarios verdes**; char: los **mismos 9 fallos preexistentes**, 0 errores de `bindParams`, 0 goldens movidos | 2026-08-14 |
 | `T1.15-a` | 1.15 | **Decisión escrita**: qué se hace con el golden que congela un hash no determinista | ⬜ | — | — |
 | `T1.15-b` | 1.15 | La suite de caracterización vuelve a verde | ⬜ | — | — |
 | `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ⬜ | — | — |
@@ -61,7 +61,7 @@ plan.
 | **1.7** | El sello fantasma: un guard permanentemente verdadero | Frontend · Vue | ⬜ |
 | ~~**1.8**~~ | ~~Dos documentos del repo mandan formas de error contrarias~~ | Backend · documental | ✅ **2026-08-14** |
 | **1.10** | La única bitácora de auditoría la puentea el camino automático | Base de datos · triggers | ⬜ |
-| **1.11** | Parámetros de MÁS se ignoran en silencio | Backend · `config/postgres.js` | 🟡 censo cerrado |
+| ~~**1.11**~~ | ~~Parámetros de MÁS se ignoran en silencio~~ | Backend · `config/postgres.js` | ✅ **2026-08-14** |
 | **1.15** | **La suite de caracterización está roja**: un golden congela un hash no determinista | Pruebas · `zzz_artifact_draft` | ⬜ **nuevo** |
 | **1.16** | Orden de parámetros cruzado en `context_ancestor_type` (cargo ↔ tipo de unidad) | Backend · firma | ⬜ **nuevo** |
 
@@ -227,64 +227,14 @@ aquí).
 
 ---
 
-## §6 · Defecto 1.11 — los parámetros de MÁS se ignoran en silencio
+## ~~§6 · Defecto 1.11 — los parámetros de MÁS se ignoran en silencio~~
 
-**Dónde**: `backend/config/postgres.js:142-162`.
+✅ **CERRADO el 2026-08-14.** La ficha entera está en
+[`bitacora.md` § 1.11](./bitacora.md#111--los-parametros-de-mas-se-ignoraban-en-silencio-y-la-premisa-era-falsa).
 
-Es el modo de fallo del 1.5 en la otra dirección, y se descubrió al arreglarlo. Hoy `bindParams`
-**falla ruidosamente si faltan** parámetros —lo hace el 1.5, ya cerrado— y **calla si sobran**:
-
-```js
-// Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran y hay
-// call sites que reutilizan un array de argumentos más largo que la consulta.
-```
-
-### El censo, cerrado el 2026-08-14 — y **la premisa era falsa**
-
-La segunda mitad de ese comentario —«hay call sites que reutilizan un array más largo»— **no tenía ni
-un respaldo en el árbol**. Medido por tres vías que se cubren entre sí:
-
-| Vía | Alcance | Resultado |
-|---|---|---|
-| **Escáner estático** (`npm run check:params`) | 423 llamadas decidibles | **0 con parámetros de más** |
-| **Lectura, una a una** | los 61 que el estático no decide (33 con SQL `${}` + params en variable, 24 de ellos construidos con `.push()` condicional) | **61 equilibrados, 0 desajustes** |
-| **Sonda en `bindParams`** (registra, no lanza) | arranque + fixture + bootstrap + seed + los 240 flujos | **0 disparos** |
-
-**484 de 484 llamadas equilibradas.** El único reuso genuino del mismo array en dos consultas
-—`processDefinitionVersion.js:227` y `:240`— **está equilibrado**, porque ambas comparten el mismo
-fragmento `${excludeSql}`. El clásico `COUNT(*)` + `LIMIT` compartiendo array **no existe**: los seis
-sitios con esa forma usan `[...params, limit, offset]`, que *añade* en vez de reutilizar.
-
-En todos los indecidibles el idioma es correcto **por construcción**: cada `params.push` condicional
-viaja pegado al fragmento que aporta su `?`, y los `${placeholders}` se generan con `.map(() => "?")`
-sobre el **mismo** array que se pasa como parámetros.
-
-> **Lo que la sonda NO cubre, dicho por su nombre:** los flujos no entran en todas las ramas de los 24
-> `.push()` condicionales. Esas ramas están cerradas **por lectura**, no por ejecución. Las tres vías
-> juntas son la evidencia; ninguna sola bastaba.
-
-**Y esta vez el barrido no se tira.** El del 1.5 se hizo y se perdió —solo quedó una frase en
-`postgres.test.js:157`—, y por eso hubo que rehacerlo entero. Ahora es
-`backend/scripts/audit_bindparams.mjs` + `npm run check:params`, con el idioma de `check:imports`, y
-**es un gate**: sale con código 1 ante un desajuste decidible. Probado en las dos direcciones.
-
-**D5-b: este cerrojo queda retirado.** Ojo, no queda desbloqueada — `plan_data` §D5-b tenía **dos**
-condiciones y la otra sigue puesta (D5-a cerrada primero). De paso se corrigió allí una cifra muerta:
-decía «`bindParams` (CC 59)» y **la Fase F la dejó en ~1**.
-
-### Lo que queda: `T1.11-b`
-
-Con la premisa desmentida, las tres salidas siguen siendo legítimas pero ya no pesan igual:
-
-1. **Endurecer** (lanzar, como con los que faltan) — el censo demuestra que hoy nadie depende de la
-   tolerancia. Coste conocido: **la tolerancia está fijada como contrato en tres sitios** de
-   `postgres.test.js` (el bucle de 32 casos del escáner en `:96`, más `:122` y `:209`), y hay que
-   resolverlos, no borrarlos.
-2. **Avisar** (log permanente) — riesgo cero, pero no converge solo.
-3. **Dejarlo y escribirlo** — con el censo enlazado, para que no se vuelva a proponer a ciegas.
-
-**Criterio de cierre**: la decisión escrita **encima de la propia función**, y la sonda retirada o
-convertida en lo que decida `T1.11-b`.
+En una línea: **la justificación de la tolerancia era falsa** —se midió y las 484 llamadas están
+equilibradas—, así que `bindParams` **lanza también cuando sobran**. Dejó dos cosas vivas: el gate
+`npm run check:params`, y dos defectos nuevos encontrados de rebote (**1.15** y **1.16**).
 
 ---
 

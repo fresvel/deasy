@@ -15,14 +15,14 @@ costaba más que hacerlo. Y sin control de ejecución, «⬜» era lo único que
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud | Backend · servicio |
 | **1.7** | El **sello fantasma**: un guard permanentemente verdadero en el panel de firma | Frontend · Vue |
 | **1.10** | La única **bitácora de auditoría** la puentean los caminos automáticos (son **tres**) | Base de datos · triggers |
-| **1.11** | Los **parámetros de más** se ignoran en silencio — 🟡 censo cerrado, falta decidir | `backend/config/postgres.js` |
 | **1.15** | **La suite de caracterización está ROJA**: un golden congela un hash no determinista | Pruebas · `zzz_artifact_draft` |
 | **1.16** | Orden de parámetros cruzado: el cargo y el tipo de unidad van intercambiados | Backend · firma |
 
-**Diez ya están cerrados.** El último, el **1.8** (2026-08-14): resultó que **no eran dos documentos en
-conflicto, sino cinco**, y uno de ellos era la documentación **publicada**. Y uno de los diez —el
-**1.9**— resultó **no ser un defecto**: aplicarle el arreglo «obvio» habría roto el chat a ocho de diez
-personas. Está todo medido en la bitácora.
+**Once ya están cerrados**, dos de ellos el 2026-08-14: el **1.8** —resultó que **no eran dos
+documentos en conflicto, sino cinco**, y uno era la documentación **publicada**— y el **1.11**, cuya
+justificación para tolerar los parámetros de más **era falsa**: se midió y las 484 llamadas del
+backend están equilibradas. Y uno de los once —el **1.9**— resultó **no ser un defecto**: aplicarle
+el arreglo «obvio» habría roto el chat a ocho de diez personas. Está todo medido en la bitácora.
 
 ## Los ficheros
 
@@ -30,7 +30,7 @@ personas. Está todo medido en la bitácora.
 |---|---|---|
 | **[`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md)** | **El ejecutable.** Su **§0 es el control de ejecución**: 21 tareas con estado, evidencia y fecha. Cada defecto tiene ficha con diagnóstico remedido, decisiones pendientes y criterio de cierre | **SÍ. Empieza aquí** |
 | [`CLAUDE.md`](./CLAUDE.md) | **La norma de la carpeta.** Cómo se lleva el control, qué cuenta como evidencia, y lo que NO se hace desde aquí | Se carga sola al trabajar aquí |
-| [`bitacora.md`](./bitacora.md) | Los **diez cerrados**, con *por qué no se hizo de la otra forma*. Cinco sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
+| [`bitacora.md`](./bitacora.md) | Los **once cerrados**, con *por qué no se hizo de la otra forma*. **Seis** sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
 
 ## Por qué este frente rinde más que los otros
 

@@ -90,14 +90,21 @@ const PLACEHOLDER_CASES = [
   ],
 ];
 
-// Con escalares de sobra: `bindParams` tolera los parámetros que sobran, y así cada caso
-// mide SOLO la numeración del escáner, sin que el chequeo de parámetros que faltan (1.5)
-// se cuele en un test que no va de eso. El caso con más `?` tiene 10.
-const SOBRAN_ESCALARES = new Array(32).fill(0).map((_, k) => k);
+// Cada caso se alimenta con EXACTAMENTE los parámetros que consume, y ese número se deriva del
+// texto esperado contando sus `$n`. Aquí todos los parámetros son escalares, así que un `?` de
+// código emite exactamente un `$n` y la cuenta es exacta.
+//
+// Antes esto se alimentaba con un array de 32 escalares —`SOBRAN_ESCALARES`— apoyándose en que
+// `bindParams` toleraba los parámetros de sobra. Esa tolerancia murió con el defecto 1.11
+// (2026-08-14), y el bucle habría fallado 32 veces. Derivar la cuenta, además de arreglarlo, es
+// mejor test que antes: **el número de placeholders pasa a formar parte de lo que el caso fija**,
+// en vez de quedar tapado por un array de sobra.
+const consumidos = (expected) => (expected.match(/\$\d+/g) || []).length;
 
 for (const [name, input, expected] of PLACEHOLDER_CASES) {
   test(`escáner: ${name}`, () => {
-    assert.equal(bindParams(input, SOBRAN_ESCALARES).text, expected);
+    const justos = new Array(consumidos(expected)).fill(0).map((_, k) => k);
+    assert.equal(bindParams(input, justos).text, expected);
   });
 }
 
@@ -119,7 +126,6 @@ const BIND_CASES = [
   // Valores límite.
   ["null y undefined viajan tal cual", "SELECT ?, ?", [null, undefined], "SELECT $1, $2", [null, undefined]],
   ["los falsy no se confunden con vacío", "SELECT ?, ?, ?", [0, "", false], "SELECT $1, $2, $3", [0, "", false]],
-  ["sobran parámetros: se ignoran los de más", "SELECT ?", [1, 2, 3], "SELECT $1", [1]],
   ["sin argumento de parámetros y sin `?`", "SELECT 1", undefined, "SELECT 1", []],
 
   // Protección de literales, identificadores y comentarios (mismo escáner).
@@ -154,9 +160,9 @@ for (const [name, sql, params, expectedText, expectedValues] of BIND_CASES) {
 // devolvía resultados equivocados sin decir nada. Ahora lanza.
 //
 // Se comprobó antes de cambiarlo que ningún call site vivo dependía del comportamiento
-// anterior: 429 llamadas `.query(`/`.execute(` con SQL y parámetros literales dan 0
-// desajustes, y una sonda en `bindParams` no registró ni un caso en los 240 flujos de
-// caracterización.
+// anterior. Aquel barrido decía «429 llamadas dan 0 desajustes» y **se tiró sin dejar código**,
+// así que hubo que rehacerlo entero para el defecto 1.11. Ahora vive en
+// `scripts/audit_bindparams.mjs` (`npm run check:params`) y se puede volver a correr.
 
 test("faltan parámetros: lanza en vez de mandar `undefined` (que pg convertiría en NULL)", () => {
   assert.throws(
@@ -206,10 +212,35 @@ test("un array vacío satisface su placeholder (IN (?) -> IN (NULL)) y no lanza"
   assert.deepEqual(values, []);
 });
 
-test("sobrar parámetros se sigue tolerando (mysql2 hacía lo mismo)", () => {
-  const { text, values } = bindParams("SELECT ?", [1, 2, 3]);
-  assert.equal(text, "SELECT $1");
-  assert.deepEqual(values, [1]);
+// --- Sobran parámetros: ahora TAMBIÉN falla (defecto 1.11, arreglado el 2026-08-14) -----------
+//
+// Este test decía lo contrario —"sobrar parámetros se sigue tolerando (mysql2 hacía lo mismo)"— y
+// su inversión ES la prueba del arreglo. La tolerancia se justificaba diciendo que había call
+// sites que reutilizaban un array más largo que su consulta; se midió y NO EXISTÍA NINGUNO:
+// 484 de 484 llamadas equilibradas (423 por escáner estático, 61 leídas una a una, y una sonda
+// sobre los 240 flujos de caracterización que no registró un solo caso).
+//
+// El gate que lo vigila desde fuera es `npm run check:params`, pero solo alcanza a las 423
+// decidibles sin ejecutar: este guard es el que cubre las 484.
+
+test("sobran parámetros: lanza en vez de ignorarlos en silencio", () => {
+  assert.throws(
+    () => bindParams("SELECT ?", [1, 2, 3]),
+    /1 placeholders.*3 parametros.*Sobran 2/s
+  );
+});
+
+test("el mensaje de `sobran` avisa del tramo sin cerrar, que es la causa no obvia", () => {
+  // Un comentario sin cerrar se traga el resto del SQL, así que sus `?` no cuentan y el
+  // desajuste NO lo produce quien llamó. Sin esta pista, el mensaje culpa al call site.
+  assert.throws(() => bindParams("SELECT ? /* ? , ?", [1, 2]), /SIN CERRAR/);
+});
+
+test("ni el mensaje de `faltan` ni el de `sobran` incluyen el SQL", () => {
+  // Varios controllers responden `error.message` al cliente: llevar el SQL filtraría el esquema.
+  const sql = "SELECT * FROM tabla_secreta WHERE columna_secreta = ?";
+  assert.throws(() => bindParams(sql, []), (e) => !e.message.includes("tabla_secreta"));
+  assert.throws(() => bindParams("SELECT 1", [1]), (e) => !e.message.includes("SELECT"));
 });
 
 test("un `undefined` EXPLÍCITO en la lista sigue pasando: se pidió NULL a propósito", () => {
@@ -220,9 +251,15 @@ test("un `undefined` EXPLÍCITO en la lista sigue pasando: se pidió NULL a prop
 });
 
 test("RAREZA: un bloque sin cerrar deja `?` literales en el texto final", () => {
-  // El `?` que queda dentro del comentario no se numera Y el parámetro no se
-  // consume: el SQL sale con un `?` crudo que PostgreSQL no entiende.
-  const { text, values } = bindParams("SELECT ? /* ? , ?", [1, 2]);
+  // El `?` que queda dentro del comentario no se numera: el SQL sale con un `?` crudo que
+  // PostgreSQL no entiende. Con los parámetros JUSTOS sigue saliendo así — la rareza es del
+  // escáner y no la arregla el guard.
+  //
+  // Antes este caso pasaba `[1, 2]`, y desde el defecto 1.11 eso lanza. No es una regresión: con
+  // dos parámetros el SQL ya salía inválido, así que se cambia un error confuso de PostgreSQL por
+  // uno localizado que además nombra la causa. Por eso el mensaje de `sobran` habla del tramo sin
+  // cerrar.
+  const { text, values } = bindParams("SELECT ? /* ? , ?", [1]);
   assert.equal(text, "SELECT $1 /* ? , ?");
   assert.deepEqual(values, [1]);
 });

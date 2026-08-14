@@ -1,7 +1,7 @@
-# Bitácora del frente 1 — los diez cerrados
+# Bitácora del frente 1 — los once cerrados
 
 > Esto **no es historia decorativa**. La mitad del valor de cada ficha es *por qué no se hizo de la
-> otra forma*: hay cuatro sitios de este repo donde la «corrección obvia» es la equivocada, y están
+> otra forma*: hay **seis** sitios de este repo donde la «corrección obvia» es la equivocada, y están
 > aquí. Léela antes de proponer un arreglo que se le parezca.
 >
 > Lo pendiente está en [`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md).
@@ -15,6 +15,7 @@
 | 1.6 | `translatePlaceholders` es código muerto | `d25034b` | — |
 | 1.8 | Dos documentos mandaban formas de error contrarias (**eran cinco**) | 2026-08-14 | **ninguno, y es correcto** |
 | **1.9** | «Una copia del IDOR se quedó atrás» | **NO ERA UN DEFECTO** | — |
+| 1.11 | Los parámetros de MÁS se ignoraban en silencio (**y la premisa era falsa**) | 2026-08-14 | **ninguno, y es correcto** |
 | 1.12 | Se activa una configuración con una plantilla sin publicar | 2026-08-10 · `e6d291d`+`73d2e82` | 1 nuevo |
 | 1.13 | `template_artifacts.lifecycle_state` nace `published` | 2026-08-10 · `673f1fb` | **ninguno, y es correcto** |
 | 1.14 | Clonar una configuración convertía en `single` todo lo `routed` | 2026-08-11 · `597cd43` | 1 línea |
@@ -224,6 +225,77 @@ Tres razones, la última **medida** contra la base de dev:
    les caería a ocho **en cuanto un compañero creara el primer entregable**.
 
 Queda escrito en el propio fichero, encima de la consulta, para que no se «arregle» otra vez.
+
+---
+
+## 1.11 · Los parámetros de MÁS se ignoraban en silencio (y la premisa era falsa)
+
+**Cerrado el 2026-08-14.** Ningún golden se movió, y **eso es lo correcto**: el guard nuevo solo
+cambia el comportamiento de un call site equivocado, y no había ninguno.
+
+### La premisa que sostenía la tolerancia, y que nadie había comprobado
+
+`bindParams` lanzaba si FALTABAN parámetros (defecto 1.5) y callaba si SOBRABAN, con esta
+justificación escrita en el propio fichero:
+
+> *«Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran y hay call sites
+> que reutilizan un array de argumentos más largo que la consulta.»*
+
+La primera mitad era cierta. **La segunda era falsa.** Medido por tres vías que se cubren entre sí:
+
+| Vía | Alcance | Resultado |
+|---|---|---|
+| Escáner estático (`npm run check:params`) | 423 llamadas decidibles | **0 con parámetros de más** |
+| Lectura una a una | los 61 indecidibles (24 con `.push()` condicional) | **61 equilibrados** |
+| Sonda que registra sin lanzar | arranque + fixture + los 240 flujos | **0 disparos** |
+
+**484 de 484 equilibradas.** El único reuso genuino del mismo array en dos consultas
+—`processDefinitionVersion.js:227` y `:240`— **está equilibrado**: ambas comparten el fragmento
+`${excludeSql}`. El `COUNT(*)` + `LIMIT` compartiendo array **no existe**: los seis sitios con esa
+forma usan `[...params, limit, offset]`, que *añade* en vez de reutilizar.
+
+### Por qué se eligió LANZAR y no solo avisar
+
+Avisar (log permanente) era la opción sin riesgo, y se descartó por una razón concreta y medida:
+**el gate estático solo alcanza a 423 de las 484 llamadas.** Las otras 61 —SQL con `${}`, parámetros
+en variable— quedaban protegidas por una **lectura**, y una lectura caduca en cuanto alguien toca el
+código. Lanzar en `bindParams` es lo único que cubre las 484 en tiempo de ejecución.
+
+Y la simetría no es estética: sobrar es **el mismo fallo** que faltar —el SQL y su lista de
+argumentos se han desincronizado— solo que en la otra dirección. Que el mismo fallo se comportara de
+dos maneras opuestas según hacia dónde se desviara es lo que mantenía uno de los dos invisible.
+
+### La tolerancia era CONTRATO en tres sitios, y se resolvieron, no se borraron
+
+1. **El bucle de 32 casos del escáner** se alimentaba con un array de 32 escalares *a propósito*,
+   apoyándose en la tolerancia para medir solo la numeración. Se arregló **derivando la cuenta del
+   texto esperado** (`(expected.match(/\$\d+/g) || []).length`), sin tocar ninguno de los 32 casos.
+   Queda **mejor test que antes**: el número de placeholders pasa a ser parte de lo que el caso fija,
+   en vez de quedar tapado por un array de sobra.
+2. **Los dos tests que fijaban «sobran parámetros: se ignoran»** se **invirtieron**. Ese diff **es**
+   la prueba del arreglo.
+3. **El test `RAREZA` del bloque sin cerrar** pasaba `[1, 2]` y eso ahora lanza. **No es una
+   regresión**: con dos parámetros el SQL ya salía inválido (un `?` crudo que PostgreSQL rechaza), así
+   que se cambia un error confuso por uno localizado. Por eso el mensaje de «sobran» **nombra el tramo
+   sin cerrar**: en ese caso el desajuste lo produce el escáner, no quien llamó.
+
+### Lo que deja vivo
+
+- **`npm run check:params`** (`scripts/audit_bindparams.mjs`), con el idioma de `check:imports`. El
+  barrido del 1.5 **se hizo y se tiró** —solo quedó una frase en `postgres.test.js`— y por eso hubo
+  que rehacerlo entero. Este no se tira. Declara además sus indecidibles con su motivo: un auditor
+  que dice «0 problemas» sin decir cuántas no miró es el verde engañoso que el método prohíbe.
+- **Dos defectos nuevos encontrados de rebote**: el **1.15** (la suite de caracterización está roja
+  por un golden no determinista) y el **1.16** (orden de parámetros cruzado en la firma, que
+  `bindParams` no puede ver porque el número cuadra).
+- En `plan_data` §D5-b: **retirado el cerrojo del 1.11** —sigue el otro, cerrar D5-a— y corregida una
+  cifra muerta que era su argumento de peso: decía «`bindParams` (CC 59)» y **la Fase F la dejó en ~1**.
+
+### Cómo se verificó
+
+**602 unitarios verdes.** Y la suite de caracterización completa **antes y después**: los **mismos 9
+fallos preexistentes** (defecto 1.15), en el mismo fichero, **cero errores de `bindParams`** y **cero
+goldens movidos**. La predicción se escribió antes de correr, que es lo que la hace valer.
 
 ---
 
