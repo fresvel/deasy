@@ -771,6 +771,7 @@ Table "signature_flow_steps" {
 
   Indexes {
     (template_id, step_order) [type: btree, unique, name: "uq_signature_flow_steps"]
+    (template_id, slot) [type: btree, unique, name: "uq_signature_flow_steps_slot"]
     assigned_person_id [type: btree, name: "idx_signature_flow_steps_person"]
     position_id [type: btree, name: "idx_signature_flow_steps_position"]
     unit_id [type: btree, name: "idx_signature_flow_steps_unit"]

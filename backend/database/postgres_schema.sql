@@ -1257,6 +1257,43 @@ CREATE INDEX IF NOT EXISTS idx_signature_flow_steps_unit ON signature_flow_steps
 CREATE INDEX IF NOT EXISTS idx_signature_flow_steps_unit_type ON signature_flow_steps (unit_type_id);
 CREATE INDEX IF NOT EXISTS idx_signature_flow_steps_position ON signature_flow_steps (position_id);
 
+-- EL SLOT ES UNICO POR FLUJO (sub-paso S7 del §0.4 del plan maestro).
+--
+-- QUE PROTEGE. El `slot` es el nombre con el que el `.tex` compilado referencia el token del
+-- firmante (`persons.token` -> `formatTokenForSigner` -> `signer/find_marker.py`). Dos filas del
+-- mismo flujo con el mismo slot son DOS FIRMANTES COMPARTIENDO UN TOKEN, y hasta este sub-paso
+-- ocurria en silencio: medido contra dev, insertar un paso de firma en el orden 2 de una plantilla
+-- que ya tenia tres dejaba dos filas con `slot = firma_2` y la peticion respondia **200**. El indice
+-- que ya habia, `uq_signature_flow_steps`, vigila `(template_id, step_order)` — la POSICION — y no
+-- ve nada de esto.
+--
+-- POR QUE UN INDICE Y NO SOLO LA VALIDACION DEL ESCRITOR. `collectAuthoredWorkflowIssues` valida la
+-- autoria de plantilla, que es UN escritor de tres: tambien escriben aqui
+-- `materializeRuntimeFlowForTaskItem` (el flujo de runtime del modo `routed`) y
+-- `copyAuthoredFlowToArtifact` (el versionado). Con la validacion sola, la unicidad seria una
+-- promesa de un camino; con el indice es una propiedad de la tabla. La validacion se queda igual y
+-- por el motivo inverso: sin ella el usuario leeria una violacion de indice en vez de un error de
+-- autoria. Mismo reparto que `checkStepOrders` + `uq_signature_flow_steps`, dos lineas mas arriba.
+--
+-- PARCIAL (`WHERE slot IS NOT NULL`) porque la columna es NULLABLE y un slot ausente no es una
+-- colision: las filas de flujo de ENTREGA no tienen slot y el §0.6 decidio que no lo necesitan.
+-- (En PostgreSQL varios NULL no colisionan igualmente; el predicado lo deja escrito y ademas
+-- mantiene el indice pequeno.)
+--
+-- VA DESPUES del `CREATE TABLE`, que es donde la columna `slot` nace: un `CREATE INDEX` antes del
+-- `ADD COLUMN` mata el arranque en bucle (precedentes 673f1fb, 8f9f1ad, 99fc7c7, 38c2b56). Aqui no
+-- hace falta `ADD COLUMN` — `slot` existe desde la definicion de la tabla — pero el indice si hace
+-- falta aparte: un indice nuevo NO se aplica con `CREATE TABLE IF NOT EXISTS`.
+--
+-- ⚠️ VALIDA LAS FILAS EXISTENTES, igual que el `ALTER` del CHECK de `resolver_type`: contra una base
+-- que ya tenga slots duplicados este `CREATE` falla y el arranque se para. Es deliberado —el dato
+-- corrupto tiene valor legal— y esta medido que en dev no hay ninguno. Si alguna base desplegada los
+-- tuviera, se localizan con:
+--   SELECT template_id, slot, count(*) FROM signature_flow_steps
+--    WHERE slot IS NOT NULL GROUP BY 1,2 HAVING count(*) > 1;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_signature_flow_steps_slot
+  ON signature_flow_steps (template_id, slot) WHERE slot IS NOT NULL;
+
 
 -- LOS SEIS RESOLUTORES RETIRADOS (sub-paso 8 del §0.8; decision 1 del plan, tomada el 2026-08-10).
 --
