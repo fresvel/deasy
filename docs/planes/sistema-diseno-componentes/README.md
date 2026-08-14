@@ -16,7 +16,8 @@ continuación: es otro problema.**
 ## El argumento de una frase
 
 **Lo que queda no lo arregla una sustitución.** La segunda vuelta bajó los colores a mano de 2 117 a
-206, y los 206 que quedan son mayoritariamente `:class` con ternario — se deciden leyendo la
+**201**, y los que quedan no caen en ningun patron: 139 son cola larga en `class` estatico y 62
+viven en una expresion — se deciden leyendo la
 condición, no con un `sed`. Lo mismo con la *utility soup*: no es que esté mal escrita, es que vive
 dentro de dos componentes que nadie puede leer enteros.
 
