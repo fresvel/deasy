@@ -25,7 +25,7 @@
     }
 
     .deasy-filter-control {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-strong shadow-none outline-none transition placeholder:text-muted;
+        @apply block h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-strong shadow-theme-xs outline-none transition placeholder:text-muted;
         border-color: var(--color-line-field);
     }
 
@@ -43,7 +43,7 @@
     }
 
     .deasy-filter-search-input {
-        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-strong shadow-none outline-none transition placeholder:text-muted;
+        @apply block h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-strong shadow-theme-xs outline-none transition placeholder:text-muted;
         border-color: var(--color-line-field);
         min-width: 0;
     }
@@ -455,7 +455,23 @@
        `border-top-width: 0px`: sin borde. No lo vio el CSS ni el lint — lo cazo la medida en el
        DOM, comparando la forma de los 29. */
     .deasy-control {
-        @apply w-full border bg-white px-3.5 text-sm text-body shadow-none transition-colors duration-150;
+        /* LA FORMA ES LA DE TAILADMIN — adoptada el 2026-08-13. Su input canonico:
+             h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
+
+           Cambia respecto a lo de antes: la altura sube de 40 a 44 px (mejor objetivo tactil),
+           el padding horizontal de 14 a 16 px, el vertical de 8 a 10, y aparece una sombra
+           minima donde antes habia `shadow-none`.
+
+           ⚠️ EL `h-11` SOLO GANA SI LA PLANTILLA NO ESCRIBE `h-10`. Una utilidad de Tailwind
+           vive en `@layer utilities` y le gana a esta clase, que esta en `components`. Al
+           adoptar la altura hubo que quitar el `h-10 py-2` de los tres campos de admin; si
+           vuelve a aparecer en una plantilla, la altura del sistema deja de aplicar y no
+           avisa nadie.
+
+           ⚠️ El RADIO y el COLOR de borde siguen viniendo de la regla de elemento sin capa de
+           `overrides.css`, que gana a esto. `rounded-lg` se escribe igual porque es el mismo
+           valor (8 px) y porque el dia que esa regla baje de capa, esto ya dice la verdad. */
+        @apply h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-body shadow-theme-xs transition-colors duration-150;
         @apply placeholder:text-muted;
         @apply disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted;
     }

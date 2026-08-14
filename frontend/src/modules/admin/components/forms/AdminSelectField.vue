@@ -3,7 +3,7 @@
     <select
       v-bind="selectAttrs"
       :value="modelValue"
-      class="admin-select-field deasy-control deasy-control--select block h-10 py-2"
+      class="admin-select-field deasy-control deasy-control--select block"
       :class="selectClass"
       :disabled="disabled"
       @change="handleChange"

@@ -6,7 +6,7 @@
         :id="inputId"
         :value="displayValue"
         type="text"
-        class="deasy-control h-10 min-w-0 flex-1 py-2"
+        class="deasy-control min-w-0 flex-1"
         :class="inputClass"
         :placeholder="placeholder"
         :readonly="effectiveReadonly"
