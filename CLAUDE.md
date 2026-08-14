@@ -72,6 +72,32 @@ bash scripts/docker-env.sh dev down
 
 **Builds/tests must run inside the containers via `scripts/docker-env.sh`, not with npm/npx on the host.**
 
+### ⛔ Regla de entrada: si vas a cambiar código, primero tu worktree
+
+**Una sesión nueva que vaya a modificar el repositorio NO trabaja en el worktree principal**
+(`~/Documentos/Pucese/deasy`, que está en `develop`). Lo primero que hace, **antes de tocar un
+fichero**, es crearse el suyo con rama propia salida de `develop`:
+
+```bash
+git worktree list                                            # ¿qué hay ya, y en qué rama?
+git worktree add -b <rama> ../deasy-<algo> develop           # el tuyo, desde develop
+cd ../deasy-<algo> && bash scripts/stack.sh <letra> up -d    # y su pila, desde ESE worktree
+```
+
+Al terminar: commit en la rama → `merge --ff-only` en `develop` → `stack.sh <letra> down` →
+`git worktree remove` + `git branch -d`. **El push lo hace el usuario.**
+
+**Por qué es obligatorio y no una costumbre:** aquí trabajan varias sesiones a la vez. Dos que editen
+el mismo árbol se pisan los ficheros sin conflicto de git —simplemente la última escritura gana— y,
+peor, **comparten la pila**: un `test:char:run` **resetea la base que la otra está usando**. Ya se
+midieron pruebas contra código ajeno tres veces. La rama separada además hace que el trabajo se pueda
+descartar entero si sale mal, que es lo que permite el experimento desechable de la regla 14 del
+método.
+
+**Lo único que puede quedarse en el principal** es lo que no cambia el árbol: leer, medir, consultar
+la base, y responder preguntas. **En cuanto vayas a escribir —código o documentación—, worktree.**
+Y si el usuario te asigna uno («trabaja en `deasy-defectos`»), ése, y no toques los demás.
+
 ### Pilas paralelas: A, B, C y D — `scripts/stack.sh`
 
 **Si hay varias sesiones trabajando a la vez, cada una necesita su pila.** Los montajes de código son
@@ -83,7 +109,8 @@ primeras se midieron pruebas contra código ajeno sin que nadie se enterara.
 bash scripts/stack.sh status                              # qué pila hay y qué worktree monta cada una
 bash scripts/stack.sh b up -d --build                     # levanta la pila B con ESTE worktree
 bash scripts/stack.sh b exec -T backend npm run test:unit
-bash scripts/stack.sh b down                              # OBLIGATORIO al terminar
+bash scripts/stack.sh b stop                              # te vas por hoy y el worktree sigue
+bash scripts/stack.sh b down                              # SOLO al retirar el worktree que monta
 ```
 
 | Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | docs | azimutt |
@@ -97,10 +124,19 @@ bash scripts/stack.sh b down                              # OBLIGATORIO al termi
   `docker-env.sh dev` y `stack.sh a` son la misma. **No hay una quinta pila.**
 - Cada pila tiene **base, MinIO, RabbitMQ, `node_modules` y red propios**. Compartirlos era el fallo:
   con el mismo volumen de postgres, un `test:char:run` **resetea la base de la otra sesión**.
-- **Regla: quien levanta B, C o D la baja al terminar** (`stack.sh <letra> down`). La A se queda.
-  Cuatro pilas son 28 contenedores; dejarlas colgando come RAM y puertos sin que nadie sepa de quién son.
+- **Regla: la pila vive con su WORKTREE, no con la sesión.** No se baja al terminar una tanda de
+  trabajo: **se baja el día que se retira el worktree que monta** (`stack.sh <letra> down`, y entonces
+  sí, obligatorio — si no, la letra queda ocupada por código que ya no existe).
+  Antes la regla era «quien la levanta la baja al terminar», y se cambió el **2026-08-14** porque
+  costaba más de lo que ahorraba: el primer `up --build` de cada pila es un `npm install` completo, y
+  bajarla al acabar el día obligaba a pagarlo otra vez a la mañana siguiente. **Lo que la regla vieja
+  protegía —medir contra código ajeno— ya lo impide el guard**, que se niega si la pila monta otro
+  worktree.
+  Si te vas y tu worktree sigue vivo: **`stack.sh <letra> stop`**. Libera la RAM y conserva volúmenes,
+  base y `node_modules`; `start` la devuelve en segundos. Cuatro pilas son 28 contenedores, así que
+  dejar corriendo la que no estás usando sigue sin tener sentido — pero **`stop` no es `down`**.
 - El primer `up --build` de cada pila cuesta un `npm install` completo, porque el volumen de
-  `node_modules` es suyo. A partir de ahí es rápido.
+  `node_modules` es suyo. A partir de ahí es rápido — y ése es justo el motivo de la regla anterior.
 - **`stack.sh` comprueba solo** que la pila que vas a usar monta el worktree desde el que la llamas, y
   **se niega si no coincide**, salvo en `down`/`status`/`ps`/`config`. Para saltárselo a sabiendas,
   `DEASY_STACK_FORCE=1`.
