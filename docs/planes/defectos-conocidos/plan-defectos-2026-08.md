@@ -8,7 +8,7 @@
 > forma*.
 >
 > **Antes de tocar nada**: [`CLAUDE.md`](./CLAUDE.md) de esta carpeta (cómo se lleva el control) y
-> [`referencia/metodo.md`](../referencia/metodo.md) (las 17 reglas del repo).
+> [`referencia/metodo.md`](../referencia/metodo.md) (las 18 reglas del repo).
 
 **Por qué este frente va primero.** No es deuda estética: son fallos que un usuario puede encontrarse.
 Y **están congelados en pruebas**, así que el arreglo se verifica solo — cuando el defecto muere, su
