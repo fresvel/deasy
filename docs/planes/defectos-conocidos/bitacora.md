@@ -1,4 +1,4 @@
-# Bitácora del frente 1 — los nueve cerrados
+# Bitácora del frente 1 — los diez cerrados
 
 > Esto **no es historia decorativa**. La mitad del valor de cada ficha es *por qué no se hizo de la
 > otra forma*: hay cuatro sitios de este repo donde la «corrección obvia» es la equivocada, y están
@@ -13,6 +13,7 @@
 | 1.4 | Se pueden enumerar los jobs de otros usuarios | 2026-08-09 | 2 movidos |
 | 1.5 | `bindParams` con parámetros de menos → NULL silencioso | `e0cdae9` | **ninguno, y es correcto** |
 | 1.6 | `translatePlaceholders` es código muerto | `d25034b` | — |
+| 1.8 | Dos documentos mandaban formas de error contrarias (**eran cinco**) | 2026-08-14 | **ninguno, y es correcto** |
 | **1.9** | «Una copia del IDOR se quedó atrás» | **NO ERA UN DEFECTO** | — |
 | 1.12 | Se activa una configuración con una plantilla sin publicar | 2026-08-10 · `e6d291d`+`73d2e82` | 1 nuevo |
 | 1.13 | `template_artifacts.lifecycle_state` nace `published` | 2026-08-10 · `673f1fb` | **ninguno, y es correcto** |
@@ -107,6 +108,97 @@ llamadas (0 desajustes en las 429 decidibles)—. **Ese es el método que hereda
 > **Aviso para el próximo borrado de código muerto**: sus 33 tests **no probaban esa función** —
 > caracterizaban el autómata `scanSql`, que `bindParams` sigue usando. Borrarlos junto con ella habría
 > dejado ese escáner sin red. Se re-apuntaron a `bindParams`.
+
+---
+
+## 1.8 · Dos documentos del repo mandaban formas de error contrarias (y eran cinco)
+
+**Cerrado el 2026-08-14.** Ningún golden se movió, y **eso es lo correcto**: no hubo cambio de
+comportamiento. El único fichero del backend que se tocó fue **un comentario**.
+
+### Lo que la ficha decía mal
+
+Decía «dos documentos». **Son cinco**, y el tercero no estaba en ningún plan porque **es documentación
+publicada**:
+
+| Dónde | Qué mandaba |
+|---|---|
+| `referencia/contrato-errores-api.md` §4 | `{ message, code }` — la norma |
+| `backend/errors/HttpError.js:20` | `res.json({ error: error.message })` — **el defecto** |
+| `docs/src/content/docs/explicacion/backend-errores-e-integraciones.md:7-13` | `res.json({ message: error.message })` — **tercera forma, en el sitio público** |
+| `backend/middlewares/uploadError.js:10-12` | Citaba el contrato por su ruta y lo implementaba |
+| `frontend/src/shared/utils/apiError.js:4-20` | Describía dos formas vivas y su precedencia |
+
+Y decía que la cabecera debía recomendar `{ message, code }`. **No podía**: `HttpError` tiene `name`,
+`message` y `statusCode`, y **ningún campo `code`** — habría pedido algo que sus cuatro fábricas no
+saben rellenar.
+
+### El arreglo, y por qué NO fue «poner el ejemplo bueno»
+
+**A la cabecera se le retiró el ejemplo, no se le corrigió.** Dos textos solo pueden contradecirse si
+**ambos deciden sobre lo mismo**; mientras la cabecera enseñe una forma, vuelve a divergir en cuanto el
+contrato evolucione. Retirar la afirmación hace la contradicción **irrepetible**, no solo la corrige.
+Es la regla 4 de [`../CLAUDE.md`](../CLAUDE.md) —una cosa, un sitio— aplicada a una doctrina.
+
+A cambio la cabecera ganó lo que **sí es suyo** y no estaba escrito en ninguna parte: que aporta
+`statusCode` y **no puede aportar `code`**. Es un hecho de la clase, no del contrato, así que no puede
+derivar.
+
+> **Dato de contexto que hacía obvia la dirección:** `{ message }` ya había ganado de facto —**219 de
+> 306** respuestas (71,6 %), y **47 de los 57** sitios que reciben un `HttpError`—. La forma que su
+> propia cabecera recomendaba la usaban **4**.
+
+### `code` se queda, aunque no lo lea NADIE — y esta es la parte que se descartó dos veces
+
+Medido: **cero lectores** en `frontend/src`, `signer/` y `scripts/`. Ni un `data?.code` sobre una
+respuesta de error, ni una comparación contra `"SIGN_BATCH_LEGACY_GONE"` o `"UPLOAD_REJECTED"`. (La
+única coincidencia de `data?.code` es `edge.data?.code` en `UnitGraphView.vue:1206`: un tipo de
+relación del organigrama, nada que ver.)
+
+**Retirarlo del contrato se evaluó y se DESCARTÓ**, y la razón es concreta:
+`middlewares/uploadError.js:54` es **la única implementación conforme del backend** y emite
+`{ message, code }`, con **tres goldens que congelan `claves: ["code","message"]`** (`dossier.json:8`,
+`user_workspace.json:31`, `sign_batch.json:113`). Retirarlo **dejaría no conforme al único que lo hace
+bien** y movería tres goldens por un cambio documental. Eso es peor que el defecto.
+
+**Lo que sí había que arreglar era su semántica**, y es el hallazgo que más rendía: la regla 4 decía
+*«Hoy lo usa `login_user.js`; que siga»* — y `login_user.js:15,30` emite `code: 400` / `code: 401`,
+**un número que repite el status HTTP**, que no permite ramificar nada. **El contrato bendecía como
+ejemplo el peor de sus diez emisores**, y era el que se iba a copiar: 8 de los 10 ya lo hacen así. El
+§4.1 nuevo dice qué es (string estable en `SCREAMING_SNAKE`), qué no es (ni el status repetido, ni el
+`.code` del error subyacente — `uploadError.js` colaría un `ENOENT` de `fs` o un SQLSTATE de `pg`), y
+cuál es el único bien puesto: `"SIGN_BATCH_LEGACY_GONE"`.
+
+**Y la necesidad existe, aunque hoy no se use**: `FillRequestWorkflowService` responde **409 en tres
+guards distintos** —«sin responsable resoluble», «transición ilegal» y «falta el PDF» (el 1.2)— con
+remedios distintos e indistinguibles salvo por la cadena de texto.
+
+### La página publicada: se enlaza, no se reescribe
+
+Es *explicación* en el sentido de Diátaxis: su trabajo es **describir**, y lo que afirma es **cierto**
+—verificado leyendo `backend/index.js` entero y los routers: **no hay `app.use((err, req, res, next))`
+en ninguna parte**—. El defecto no era lo que decía, sino que **no mencionaba que existe una norma**, y
+por eso se leía como prescripción. Se le puso un aviso al principio y el enlace. De paso se corrigió un
+error de hecho: `handleUploadError` se monta en **cuatro** routers, no en tres (faltaba
+`sql_admin_router`).
+
+### Lo que NO entró, y a dónde se fue
+
+- **El helper `fail()`** que el contrato §6 propone (`backend/utils/httpError.js`, que **no existe**).
+  Crearlo sin migrar ni un controller añade **un decimoséptimo productor de forma sin un solo
+  consumidor** — el olor que el documento persigue. **Nace con la fase C del frente 7**, no antes.
+- **La migración de las respuestas.** Es el frente 7 entero. Aquí solo murió la desinformación.
+
+### Un hallazgo estructural que hay que tener delante antes de la fase C
+
+**No hay error handler central.** Ni en `index.js` ni en los routers; el único middleware de aridad 4
+es `handleUploadError`, y es de ámbito de router. **No existe un punto donde normalizar la forma de un
+golpe**: o se tocan los sitios uno a uno, o primero hay que crear ese handler. Quedó escrito en el §6
+del contrato, que es donde se leerá.
+
+Y el censo se remidió: **306 respuestas y 16 formas**, no las 309/15 que decía el maestro —que **no se
+reproducen con ningún criterio razonable**—. Han aparecido **tres formas nuevas en un mes**, que es
+exactamente lo que el §7 del contrato prohíbe, ocurriendo mientras nadie miraba.
 
 ---
 

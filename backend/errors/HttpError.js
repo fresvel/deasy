@@ -16,8 +16,18 @@
 //   throw new HttpError("Periodo no encontrado.", 404);
 //   throw notFound("Periodo no encontrado.");
 //
-// En el controller:
-//   catch (error) { res.status(error.statusCode ?? 500).json({ error: error.message }); }
+// QUÉ APORTA ESTA CLASE, Y QUÉ NO. Aporta `statusCode`, que el controller lee como
+// `error.statusCode ?? 500` para dejar de responder 500 a una regla de negocio. NO aporta
+// `code`: esta clase no tiene ese campo, así que ninguna de sus cuatro fábricas puede
+// rellenarlo. Si alguna vez hace falta un código estable, hay que añadírselo aquí primero.
+//
+// LA FORMA DE LA RESPUESTA NO SE DECIDE AQUÍ. La fija
+// `docs/planes/referencia/contrato-errores-api.md` §4, que es el único sitio que manda.
+// Aquí había un ejemplo de `res.json(...)` y CONTRADECÍA al contrato — era el defecto 1.8:
+// dos documentos del repo mandaban formas contrarias y cada controller nuevo elegía mal la
+// mitad de las veces. El ejemplo se retira en vez de corregirse, y a propósito: un ejemplo
+// duplicado vuelve a divergir en cuanto el contrato evolucione, mientras que un puntero no
+// puede. Lo mismo hace `middlewares/uploadError.js`, que cita el contrato por su ruta.
 //
 // Un error SIN statusCode sigue siendo un 500 — y eso está bien: significa que es un fallo
 // de verdad, no una regla de negocio.

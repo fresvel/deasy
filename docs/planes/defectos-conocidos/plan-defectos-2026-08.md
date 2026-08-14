@@ -1,9 +1,9 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 0 de 15 tareas · 0 de 5 defectos** — abierto el **2026-08-14**.
+> **Estado: 4 de 17 tareas · 1 de 5 defectos** — abierto el **2026-08-14**.
 >
 > Este es el **ejecutable** del frente 1. El [plan maestro](../plan-maestro-2026-08.md) delega aquí y
-> no repite ninguna tarea. Lo ya cerrado —**nueve fichas**— vive en [`bitacora.md`](./bitacora.md),
+> no repite ninguna tarea. Lo ya cerrado —**diez fichas**— vive en [`bitacora.md`](./bitacora.md),
 > con su razonamiento entero, porque la mitad de ese razonamiento es *por qué no se hizo de la otra
 > forma*.
 >
@@ -32,8 +32,10 @@ plan.
 | `T1.7-a` | 1.7 | **Reproducción en navegador** del sello fantasma, con la decisión: ¿el preview debe existir o es código muerto? | ⬜ | — | — |
 | `T1.7-b` | 1.7 | El guard arreglado (o el código muerto borrado), verificado en navegador | ⬜ | — | — |
 | `T1.7-c` | 1.7 | `referencia/frontend.md` corregido — hoy afirma lo contrario de lo que hace el código | ⬜ | — | — |
-| `T1.8-a` | 1.8 | La cabecera de `errors/HttpError.js` deja de recomendar `{ error }` y remite al contrato `{ message, code }` | ⬜ | — | — |
-| `T1.8-b` | 1.8 | Frontera escrita en los dos documentos: qué es esto y qué es el frente 7 | ⬜ | — | — |
+| `T1.8-a` | 1.8 | La cabecera de `errors/HttpError.js` **deja de enseñar forma**: remite al contrato §4 y dice que la clase no lleva `code` | ✅ | `grep -n "res.status" backend/errors/HttpError.js` → 0 resultados | 2026-08-14 |
+| `T1.8-b` | 1.8 | Frontera escrita: el helper `fail()` es la puerta del frente 7, no de éste. Y la cifra del censo deja de estar en dos sitios | ✅ | Nota en contrato §6 + fila del frente 7 del maestro reescrita (decía 309/15, no reproducible) | 2026-08-14 |
+| `T1.8-c` | 1.8 | **Nueva.** El §4.1 del contrato define qué es `code` y qué no, y retira `login_user.js` como ejemplo bendecido | ✅ | Censo: 8 de 10 emisores repiten el status; 0 lectores en front/signer/scripts | 2026-08-14 |
+| `T1.8-d` | 1.8 | **Nueva.** La página publicada de Starlight remite al contrato y deja de leerse como norma | ✅ | `docs pnpm run build` verde; +1 router corregido (eran 4, no 3) | 2026-08-14 |
 | `T1.10-a` | 1.10 | **Censo cerrado** de los caminos que reasignan sin dejar asiento (hoy son **tres**, no uno) | ⬜ | — | — |
 | `T1.10-b` | 1.10 | **Decisión escrita**: dónde se escribe el asiento — en el trigger plpgsql o en la capa de servicio | ⬜ | — | — |
 | `T1.10-c` | 1.10 | El asiento se escribe en los tres caminos; `occupancy_end` y `position_deactivated` dejan de ser inalcanzables | ⬜ | — | — |
@@ -48,7 +50,7 @@ plan.
 |---|---|---|---|
 | **1.3** | Auto-apropiación de una solicitud manual | Backend · servicio | ⬜ |
 | **1.7** | El sello fantasma: un guard permanentemente verdadero | Frontend · Vue | ⬜ |
-| **1.8** | Dos documentos del repo mandan formas de error contrarias | Backend · documental | ⬜ |
+| ~~**1.8**~~ | ~~Dos documentos del repo mandan formas de error contrarias~~ | Backend · documental | ✅ **2026-08-14** |
 | **1.10** | La única bitácora de auditoría la puentea el camino automático | Base de datos · triggers | ⬜ |
 | **1.11** | Parámetros de MÁS se ignoran en silencio | Backend · `config/postgres.js` | ⬜ |
 
@@ -140,38 +142,15 @@ mover), y la referencia corregida.
 
 ---
 
-## §4 · Defecto 1.8 — dos documentos del repo mandan formas de error contrarias
+## ~~§4 · Defecto 1.8 — dos documentos del repo mandan formas de error contrarias~~
 
-**Dónde**: `backend/errors/HttpError.js:20`, en el bloque de comentario que documenta el uso:
+✅ **CERRADO el 2026-08-14.** La ficha entera, con lo que se descartó y por qué, está en
+[`bitacora.md` § 1.8](./bitacora.md#18--dos-documentos-del-repo-mandaban-formas-de-error-contrarias-y-eran-cinco).
 
-```js
-// En el controller:
-//   catch (error) { res.status(error.statusCode ?? 500).json({ error: error.message }); }
-```
-
-Mientras tanto el contrato objetivo —y `middlewares/uploadError.js`, que ya lo implementa— es
-`{ message, code }`. Los dos ficheros son de este repo, los dos se leen como norma, y **dicen cosas
-contrarias**. Consecuencia directa: cada controller nuevo elige mal la mitad de las veces, y la
-divergencia que el frente 7 tiene que pagar sigue creciendo mientras tanto.
-
-Y no es una preferencia estética: según
-[`referencia/contrato-errores-api.md`](../referencia/contrato-errores-api.md) §3, `error` significa
-**dos cosas opuestas** según quién responda — mensaje humano cuando no hay `message`, y **detalle
-técnico de la excepción** cuando sí lo hay. Un cliente que lea `.error` primero le enseña al usuario
-el `error.message` de la excepción.
-
-**El alcance de esta tarea es la contradicción, no la migración.** Migrar las respuestas es el
-**frente 7** (~114 lecturas en 33 ficheros del frontend, fases B–G del documento de contrato). Aquí se
-hace solo:
-
-- `T1.8-a` — reescribir la cabecera de `HttpError.js` para que recomiende el contrato ganador y
-  **explique por qué** la forma vieja era peligrosa (no basta con cambiar el ejemplo: el fichero se
-  lee como doctrina).
-- `T1.8-b` — dejar escrita la frontera en los dos sitios, para que nadie confunda «reconciliar el
-  documento» con «migrar los controllers».
-
-**Criterio de cierre**: los dos documentos dicen lo mismo, y ninguno de los dos promete la migración.
-Ningún golden se mueve — es documental, y eso es correcto.
+En una línea: **eran cinco documentos, no dos**, y uno de ellos es la documentación **publicada**. La
+cabecera de `HttpError.js` **no se corrigió, se le retiró el ejemplo** —un ejemplo duplicado vuelve a
+divergir; un puntero no—, y `code` **se quedó en el contrato pese a no leerlo nadie**, porque
+retirarlo dejaba no conforme a la única implementación correcta del backend.
 
 ---
 
