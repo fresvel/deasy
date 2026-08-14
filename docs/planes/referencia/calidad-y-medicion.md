@@ -475,7 +475,7 @@ versión anterior de esta tabla, así que no cites las viejas.
 |---:|---|---:|
 | ~~76~~ | ~~`templates/templateLifecycle.js:1252` → `saveTemplateArtifactDraft`~~ | ✅ **fuera de la cola** — `f37ada2` la dejó en **21** (164 → 76 → 21) |
 | **67** | `frontend/.../composables/forms/useAdminSubmitFlow.js:30` | = ← **la peor del repo tras cerrar la Fase C** |
-| 59 / 49 | `backend/config/postgres.js:111` (`bindParams`) y `:47` (`translatePlaceholders`) | = |
+| ~~59 / 49~~ | ~~`backend/config/postgres.js:111` (`bindParams`) y `:47` (`translatePlaceholders`)~~ | ✅ **fuera** — la Fase F las bajó a ~1 y 0; `translatePlaceholders` está **borrada** y `bindParams` vive hoy en `:142` |
 | 44 | `frontend/.../firmas/FirmarPdf.vue:2488` → `confirmSign` | = |
 | 44 | `frontend/.../ui/useAdminPresentationAdapters.js:94` | = |
 | 40 | `signer/app.py:534` | = |
@@ -1206,25 +1206,27 @@ Lo que sobrevive de `frontend.md` tras revalidarlo, más una deuda nueva (E-4):
   duplicación era la causa de la mitad de la complejidad, y no estaba anotada en ningún sitio.
 
   **La red, que es lo que hace esto un refactor y no una apuesta:** `backend/config/postgres.test.js`,
-  **60 casos** escritos y verdes **antes** de tocar el código y no modificados después, con entradas
+  **60 casos** escritos y verdes **antes** de tocar el código y no modificados por el refactor, con entradas
   sacadas de consultas reales del repo (`IN (?)` de `RbacService`, `LIMIT ? OFFSET ?` de
   `SqlAdminService`, backticks, `<=>`, `ON DUPLICATE KEY`, casts `::`, `->>`). Además **fuzz diferencial
   contra una copia literal de la implementación original: 200 000 entradas, cero divergencias.**
 
-  > **Seis rarezas congeladas, no arregladas** — están marcadas `RAREZA CONGELADA` en el test, para que
-  > el día que se arreglen el diff del golden **sea** la prueba del arreglo. Dos merecen atención propia:
+  > **Seis rarezas congeladas — hoy quedan cuatro.** Están marcadas `RAREZA CONGELADA` en el test, para
+  > que el día que se arreglen el diff del golden **sea** la prueba del arreglo. Las dos que merecían
+  > atención propia **ya están arregladas**:
   >
-  > - **`translatePlaceholders` es código muerto.** Cero llamadas en todo el repo (`FNDA:0` en el lcov);
-  >   `runQuery` usa solo `bindParams`. Ya lo decía la auditoría de tests de julio. Se ha mantenido
-  >   exportada porque borrar un export no es refactor — **bórrala en un commit aparte**.
-  > - **Faltan parámetros → `undefined` silencioso, y es un bug latente real.**
-  >   `bindParams("SELECT ?,?,?", [1])` produce `values: [1, undefined, undefined]`, y `pg` los manda
-  >   como NULL: **la consulta no falla, ejecuta con NULLs**. Un error de programación se convierte en
-  >   datos silenciosamente equivocados.
+  > - ~~**`translatePlaceholders` es código muerto.**~~ ✅ **Borrada.** Sus 33 casos no se perdieron: no
+  >   caracterizaban la función sino el escáner, así que se re-apuntaron a `bindParams`. El test de
+  >   invariante entre las dos desapareció por tautológico.
+  > - ~~**Faltan parámetros → `undefined` silencioso.**~~ ✅ **Ahora lanza.** `bindParams("SELECT ?,?,?", [1])`
+  >   ya no manda NULLs en silencio: tira con un mensaje que dice cuántos placeholders esperaba. Se
+  >   comprobó antes de cambiarlo que ningún call site vivo dependía del comportamiento anterior (429
+  >   llamadas con SQL y parámetros literales, 0 desajustes; sonda en `bindParams`, 0 casos en los flujos
+  >   de caracterización). Un `undefined` **explícito** en la lista sigue pasando: eso es un NULL pedido.
   >
-  > Las otras cuatro: comentario de bloque sin cerrar deja `?` crudos; fila vacía en bulk insert genera
-  > `VALUES ()`; solo se inspecciona el primer elemento para decidir si es bulk; y `/*/` cuenta como
-  > bloque ya cerrado.
+  > Las cuatro que siguen congeladas: comentario de bloque sin cerrar deja `?` crudos; fila vacía en bulk
+  > insert genera `VALUES ()`; solo se inspecciona el primer elemento para decidir si es bulk; y `/*/`
+  > cuenta como bloque ya cerrado.
 
   **Corrección al encargo:** el módulo **sí** tenía test propio (`postgres.dialect.test.js`, 38 casos).
   Lo que no tenía cobertura era `translatePlaceholders`, que no se ejecutaba ni una vez.

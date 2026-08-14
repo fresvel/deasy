@@ -16,6 +16,20 @@
 // Ademas del estado, se comprueba el INVARIANTE: la concatenacion de las 21 paginas tiene
 // que reconstruir el intermedio (normalizando el nivel de cabecera, que es lo unico que
 // cambia). Si el estado fallara, el invariante lo caza igual.
+//
+// ── ⚠️ ESTO PISA LOS DIAGRAMAS. LEELO ANTES DE EJECUTARLO ──────────────────────────────
+// Trocear deja ANCLAS `<!-- diagrama NN -->`, no diagramas. Los Mermaid publicados en
+// `docs/src/content/docs/explicacion/` se escribieron A MANO a partir de los `.ascii` de
+// `diagramas/`, DESPUES de trocear. La conversion es de un solo sentido: ejecutar esto
+// sobre las paginas ya publicadas las SUSTITUYE por anclas y **pierde los 15 Mermaid**.
+//
+// Pasa en silencio: `verificar.sh` sigue en verde (cuenta anclas, no Mermaid) y el sitio
+// compila igual. Solo se ve abriendo una pagina.
+//
+// Asi que para una CORRECCION puntual en una pagina ya publicada: edita el `.tex` (que es
+// la fuente y hay que mantener al dia) y **replica el cambio a mano en el `.md`**. No
+// regeneres. Regenerar solo compensa si vas a rehacer los 15 diagramas.
+// Aprendido a golpes el 2026-08-11, revirtiendo 17 ficheros.
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';

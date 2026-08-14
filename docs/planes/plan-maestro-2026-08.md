@@ -22,7 +22,7 @@ cuesta más que el trabajo que ahorran— y la lista de **lo que NO hay que toca
 
 ---
 
-## Frente 0 · Limpiar el modelo antes de seguir refactorizando — 🟡 · **0.1, 0.2, 0.3 y 0.8 cerrados**
+## Frente 0 · Limpiar el modelo antes de seguir refactorizando — 🟡 · **8 de 9** · solo queda §0.4
 
 Abierto el **2026-08-09**, y va delante de todo lo demás por un motivo que no es de gravedad sino de
 orden: **el resto del plan refactoriza sobre un modelo que todavía se contradice a sí mismo**. Mientras
@@ -129,28 +129,68 @@ nueva lo arrastra otra vez.
 
 **Criterio de cierre:** el proceso por defecto se siembra por el mismo camino que todo lo demás.
 
-### 0.4 · Falta el generador del código base desde los campos configurados — ⬜ **hueco, no defecto**
+### 0.4 · El generador: de la base al Jinja, para que la firma no se coloque a mano — ⬜
 
-Es **la mitad que falta** del ciclo objetivo *configurar en web → descargar base → editar → subir*.
+**El objetivo, en palabras del dueño (2026-08-13).** Esta ficha estaba mal enfocada: decía que el fin
+era «descargar una base con los valores configurados». El fin real es otro, y explica todo el frente 0.
 
-Hoy `_materializeDraftFormats` (`templateLifecycle.js:1138-1152`) copia `<seed>/src/` **verbatim**. Los
-valores configurados en la web sí llegan al paquete de MinIO — pero **solo a `meta.yaml` y
-`schema.json`, que son exactamente los dos ficheros que el ZIP de descarga NO incluye**
-(`GET /template_artifacts/:id/source` zipea solo `template/jinja2/`, `sql_admin_controller.js:177`).
-El `.tex.j2` que abres para editar es el del seed, **sin una sola referencia a tus campos**: hay que
-escribir los `{{ … }}` a mano adivinando las claves.
+Deasy sostiene **dos mundos a la vez**, y va a seguir así:
 
-Lo que falta, por impacto: (1) **generar el Jinja/LaTeX base desde `schema_fields`**; (2) incluir
-`meta.yaml`+`schema.json` en el ZIP en modo lectura, para ver contra qué contrato se escribe;
-(3) validar **sintaxis Jinja** al subir —hoy solo se sanea LaTeX (`artifacts.js:28-51`), y una
-plantilla con `{% for %}` sin cerrar se publica y revienta en render—; (4) `fileFilter` en los
-adjuntos de referencia (`sql_admin_router.js:59-62` no tiene ninguno).
+- **El de hoy, y será la mayoría.** Automatizar todos los trámites de la institución es imposible: son
+  cambiantes y variables. Así que un proceso recurrente se configura, se le **precarga su plantilla
+  Word/Excel**, el responsable la descarga, la rellena fuera y **sube el PDF**. El sistema no genera
+  nada: **controla quién entrega qué, lo almacena, y le pone encima el flujo de llenado y firmas** —
+  preconfigurado en la base, resuelto en ejecución. **Eso es lo que el §0.8 acaba de dejar en su sitio.**
+- **Al que se migra proceso a proceso.** El admin mide cuáles son cuello de botella, cuáles dan más
+  problemas y cuáles producen más documentos —*lo que no se mide no mejora*— y decide **cuál automatizar**.
+  Un proceso automatizado deja de necesitar Word: el usuario rellena **en la web** y el sistema
+  **compila el PDF**.
 
-> Lo que **sí** funciona y conviene no tocar: la subida por ZIP valida integridad SHA-256 del
-> manifiesto, zona editable acotada a `Contenido/`, path traversal, y saneo LaTeX (`\write18`,
-> `\directlua`, `\openout`, `\ShellEscape`). Está bien hecho.
+**Y aquí entra el Jinja.** El PDF compilado tiene que llevar **los tokens de firma ya puestos**, «para
+que se estampen las firmas necesarias **sin que el usuario coloque de manera manual la ubicación**».
 
-### 0.5 · El vocabulario del entregable — ⬜ **tema propio**
+> **Ése es el fin del §0.4, y no «rellenar valores».** La cadena que lo hace posible **ya existe
+> entera del lado que firma**: `persons.token` → `formatTokenForSigner` → `signType: "token"` →
+> `signer/find_marker.py`, que localiza el literal en el texto del PDF y devuelve página y coordenadas.
+> El seed ya lo imprime en blanco para que sea invisible y extraíble. **Lo único que falta es el
+> eslabón que emite el token en el sitio correcto.**
+
+**La dirección, confirmada:** *«antes se llevaba la lógica del jinja a la base y eso fue burdo;
+ahora, de la base al jinja»*. El §0.8 hizo lo primero (la base es la fuente); el §0.4 es lo segundo.
+
+#### Lo que se decidió el 2026-08-13
+
+- **El generador emite campos Y tokens de firma**, y deja el esqueleto para que los campos se
+  almacenen como **JSON en la base**.
+- **El YAML sale del camino.** Se comprobó que el render **ya lee JSON** (`make.sh` mira la extensión:
+  `.yaml`/`.yml` → `yaml.safe_load`, si no → `json.load`); lo único que no lo encuentra es la búsqueda
+  de fichero, que no lista ningún `.json`. **Importa porque el backend no tiene parser de YAML** desde
+  el sub-paso 8 — con el payload en JSON puede **construirlo de verdad**, fusionando los defaults del
+  seed con los valores configurados y los huecos de token, **sin dependencia nueva**.
+- **`field_refs` queda confirmado obsoleto.** Era el mecanismo de «enviar los campos de llenado a la
+  base» que el dueño da por superado. Coincide con su clasificación como fósil sin productor.
+
+#### Los sub-pasos
+
+| # | Qué | ¿Reversible? |
+|---|---|---|
+| **S1** | **El ZIP de una plantilla creada por la web NO compila**: `data.yaml` se escribe en la raíz del prefijo y el ZIP solo lleva `template/jinja2/`, así que no viaja — y `StrictUndefined` revienta antes de LaTeX. **El admin lo usa hoy.** Además, en edición sin cambio de seed el fichero no se re-materializa y **manifiesto y bucket derivan** | Sí |
+| **S2** | El **`catch {}` mudo** de `getTemplateArtifactSchema`: el editor carga sin campos **y el siguiente guardado escribe `{}`**. Es el mismo borrado silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, en el mismo fichero | Sí |
+| **S3** | El **`fileFilter` que falta**. Hoy un `.sh` subido por el campo `pdf_file` acaba en MinIO **y el ZIP le pone modo 0755** | Sí |
+| **S4** | **Balance de bloques Jinja** al subir, con los delimitadores reales `[[% %]]`. No es un parser, y hay que decirlo | Sí |
+| **S5** | **El payload pasa a JSON**: `data.json` en la búsqueda de `make.sh` | Sí |
+| **S6** | **Los campos a la base, como JSON.** El esqueleto que pidió el dueño. Hoy viven solo en `schema.json` de MinIO, **sin tabla**: no se pueden validar contra nada, se copian en binario al versionar, y un fallo de MinIO los borra | **No** |
+| **S7** | **Slot de firma estable.** Hoy es `firma_<orden>` porque el formulario **nunca pone `code`**: insertar un paso en medio renumera los slots y **el token que el `.tex` referenciaba pasa a ser el de otro firmante**, en silencio. Es prerequisito del generador | **No** |
+| **S8** | **El generador**: campos + tokens → Jinja | Sí |
+
+⚠️ **S7 es prerequisito de S8**: sin identidad estable, el generador emite código que caduca al
+reordenar un paso.
+
+### 0.5 · El vocabulario del entregable — ✅ **CERRADO (`f5cf457`)**
+
+El glosario ya existía en el sitio, pero **colapsaba «Plantilla» en dos tablas** y borraba justo la distinción que más tiempo cuesta. Ahora distingue los cuatro nombres —tipo, edición, vínculo e instancia— con la cadena completa `seed → deliverable → template_artifact → (vínculo) → task_item → document → document_version`, y un aviso sobre que **`documents` no guarda ningún fichero**.
+
+**Trampa aprendida y escrita en `trocear.mjs`:** la conversión LaTeX→Markdown es **de un solo sentido**. Trocear deja *anclas*, no diagramas; los 15 Mermaid se escribieron a mano después. Regenerar sobre lo publicado **los pierde en silencio** — `verificar.sh` sigue verde porque cuenta anclas, y el sitio compila igual. Para una corrección puntual: editar el `.tex` y **replicar a mano en el `.md`**.
 
 **Cuatro nombres, cuatro cosas distintas.** No es sinonimia, y confundirlos es la primera fuente de
 error al leer este repo:
@@ -178,7 +218,14 @@ Los estados también tienen tres convenciones conviviendo (`"Pendiente de llenad
 `"pendiente"` snake castellano, `"pending"` snake inglés) y **se filtran al frontend**. Cierre del
 punto: un **glosario** concepto → nombre canónico en código → tabla → literal de estado.
 
-### 0.6 · Censo de fósiles del camino viejo — ⬜
+### 0.6 · Censo de fósiles del camino viejo — ✅ **CERRADO (`f5fa889`+`92e7e21`+`2c1b17f`)**
+
+Los 18 elementos del censo, **cada uno con veredicto escrito**: retirados, conservados con lápida, o «no era fósil». El criterio de cierre no era retirarlo todo, sino que ninguno quedara sin decidir.
+
+**Y dos hallazgos que valieron más que el cambio:**
+
+1. **Los `case` de firma NO estaban muertos.** `parseStepSigners` saca el resolver del **JSONB `signers`** sin filtrarlo, y **un `CHECK` no cubre una columna JSONB**. Ningún productor vivo puede emitir un tipo retirado, pero una fila legada sí lo lleva **y se auto-propaga a cada versión nueva**. Borrarlos habría mandado el paso al `default` con el cargo a `null`: **no firmaría nadie, y en silencio**.
+2. **Al CRUD le faltaba un valor, no le sobraba.** El censo decía que omitía los `context_*`; lo que faltaba era **`context_exact`**, el valor por defecto que autora el formulario. Su gemela de firma sí lo tenía — la asimetría era el fallo.
 
 Cosas que el YAML/CLI sembraba y la web no puede producir ni editar. **Cada una necesita una decisión
 —retirar o cablear—, no un refactor.** Verificadas el 2026-08-09:
@@ -201,7 +248,13 @@ Cosas que el YAML/CLI sembraba y la web no puede producir ni editar. **Cada una 
 Y un bloque que sería inejecutable aunque se leyera: las firmas de `workflow.yaml:74-104` ponen
 `required_cargo_code` **a nivel de paso**, y el único lector lo busca **dentro** del resolver/firmante.
 
-### 0.7 · La documentación miente en dos direcciones — ⬜
+### 0.7 · La documentación miente en dos direcciones — ✅ **CERRADO (2026-08-11)**
+
+Corregidas **34 afirmaciones falsas** que dejó nuestro propio trabajo y **10 desfases anteriores**, en el sitio, `CLAUDE.md`, `docs/arquitecturas/`, `docs/03-backend/` y `docs/planes/referencia/`. Los dos roadmaps de marzo **se archivaron** en vez de corregirse: eran actas fechadas, y el segundo se presentaba como «el estado real actual del código».
+
+**El hallazgo que salvó el trabajo:** `docs/arquitectura-deasy.tex` **es la fuente** de las 21 páginas de `explicacion/`. Corregir solo los `.md` habría dejado la mentira en el origen, y la siguiente conversión la habría reintroducido entera.
+
+**Y la prueba de por qué este frente existe:** entre el barrido y la ejecución, con horas de diferencia, las cifras **volvieron a moverse** — los unitarios pasaron de 446 a 523 por nuestros propios commits.
 
 **30 desfases en 7 ficheros**, y no son ruido uniforme:
 
@@ -892,6 +945,61 @@ esfuerzo: HomeView pide extraer **componentes**; los demás, **composables**.
 
 **Criterio de cierre:** los cuatro con una decisión escrita (atacar, o declarar no-tocar con su
 motivo). No hace falta refactorizarlos para cerrar el frente; hace falta que dejen de ser invisibles.
+
+---
+
+## Frente 10 · El compilador documental: auditar la rama que existe — ⬜
+
+**Existe, tiene commit propio y nunca se fusionó.** `e53a59a` (2026-04-03), en
+**`origin/feature/compilador-latex`**: *«Compilador: Implementación del micro-servicio de compilación
+de latex»*. **21 ficheros**, y no era un boceto — la carpeta `compiler/` con su README y su superficie
+HTTP, siete servicios en el backend (`DocumentCompilationPipelineService`,
+`DocumentCompilerOrchestratorService`, `DocumentCompilerPayloadService`,
+`DocumentTemplateTechnicalValidatorService` con 366 líneas, `compiler_http.js`…) y su entrada en el
+workflow de CI. **Nada de eso existe en `develop`.**
+
+Su README describe lo que el §0.4 va a necesitar: *«vivir como servicio raíz independiente,
+desplegarse con imagen propia, exponer API de compilación al backend, encapsular render, compilación
+LaTeX, storage y reportes»*, con `POST /compile`, `GET /compile/:jobId` y `POST /validate-template`.
+
+**No tiene nada que ver con `deasy-analytics`** —que sigue en pie, con su `sleep infinity`, porque la
+decisión de sacarlo del pipeline (frente 7) se tomó y **nunca se ejecutó**.
+
+#### Por qué este microservicio SÍ se gana el sueldo, y los demás no
+
+La [pregunta arquitectónica](#la-pregunta-arquitectónica-está-cerrada-2026-08-09) está cerrada: se
+evaluaron 15 arquitecturas y ninguna baja la complejidad. **Este caso es la excepción, y por los
+mismos criterios que descartaron a los demás:**
+
+- Lo que mató partir el backend fue que **el 45 % de las FKs cruzan cualquier frontera** y que **de
+  las 18 transacciones, cero quedan dentro de un solo subdominio**. Un compilador **no toca ni una
+  tabla**: no tiene ninguno de los dos problemas.
+- Los dos aislamientos que sí existen aquí se justifican por **runtime ajeno**: el `signer` está fuera
+  porque pyHanko es Python. LaTeX necesita una imagen de **TeX Live de gigabytes**, y meterla en la
+  imagen del backend —que atiende 162 endpoints— es lo contrario de lo que se hizo al sacar Puppeteer.
+- **Y hay un argumento de seguridad que los otros no tienen: compilar LaTeX es ejecutar código.**
+  `artifacts.js:16-38` ya sanea `\write18`, `\directlua`, `\openout` y `\ShellEscape` — pero eso es
+  una **lista negra**, y las listas negras se rodean. Un contenedor efímero y sin red es una defensa
+  de otra categoría.
+
+#### Lo que hay que auditar antes de fusionar nada
+
+**La rama es de abril, anterior a todo el §0.8**, y su pipeline se construyó sobre el modelo que
+acabamos de retirar — su `DocumentRuntimeService` y su `DocumentCompilerPayloadService` leían el
+`meta.yaml`. **No se fusiona a ciegas.** La auditoría tiene que decir, con evidencia:
+
+1. Qué sobrevive del diseño y qué está construido sobre lo que ya no existe.
+2. Si `DocumentTemplateTechnicalValidatorService` (366 L) cubre lo que el **S4 del §0.4** acaba de
+   hacer a mano —el balance de bloques Jinja— y si lo hace mejor.
+3. Cómo integrarlo **sin heredar la factura del `signer`**, que tiene **8 de 12 riesgos abiertos**:
+   RPC bloqueante con *busy-polling*, cero reintentos, cero DLQ, cero idempotencia, una cola durable
+   huérfana por timeout, y el puerto publicado sin autenticación en los tres entornos.
+   **Ventaja que el signer no tiene: compilar es idempotente por naturaleza** —mismo código, mismo
+   PDF—, así que reintentar es gratis y no hace falta inventar nada.
+
+**Criterio de cierre:** una decisión escrita —retomar la rama, reescribir desde su diseño, o
+descartarla— con el inventario de qué se aprovecha. **No es de ahora**, pero es material real y estaba
+a punto de perderse: no aparecía en ningún documento.
 
 ---
 

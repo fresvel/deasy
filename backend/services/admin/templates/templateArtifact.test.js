@@ -181,3 +181,78 @@ test("una plantilla ya publicada no vuelve a pasar por el readiness", async () =
   assert.equal(resultado.changed, false);
   assert.deepEqual(events, []);
 });
+
+// --- Lectura del schema.json (§0.4 S2) ---------------------------------------------------------
+//
+// POR QUÉ AQUÍ Y NO EN CHAR. Medido con un experimento desechable antes de tocar nada: anulando el
+// lector para que devolviera siempre `{}`, `test:char:run` dio **281/281 en verde**. No es que
+// faltara un caso: la caracterización es ciega a esto **por construcción**, porque el único test que
+// llega al endpoint (`zzzzzzz_schema_flow_reread.test.mjs:217`) descarta `fields` del golden a
+// propósito — ese golden observa el flujo, no los campos.
+//
+// Lo que fijan estos tres: los campos salen de `schema.json`, y un fallo al leerlo SUBE. El defecto
+// que cierran no era de lectura sino de ESCRITURA: con el `catch {}` el editor cargaba sin campos y
+// el siguiente guardado dejaba `schema.json` en `"{}\n"`, borrando la configuración en silencio.
+
+const SCHEMA_JSON = JSON.stringify({
+  properties: {
+    titulo: {
+      title: "Titulo del informe",
+      "x-deasy-data-key": "titulo",
+      "x-deasy-field-code": "TIT",
+      "x-deasy-ui": { component: "text", group: "cabecera" },
+    },
+  },
+  required: ["titulo"],
+});
+
+// Doble mínimo para el camino del schema: `getByKeys` da el artifact y el pool solo tiene que
+// responder a la lectura del flujo, que aquí no es el objeto de la prueba.
+const buildSchemaService = ({ readObjectAsText }) => new TemplateArtifactService(
+  { query: async () => [[]] },
+  {
+    getByKeys: async () => ({
+      id: ART_ID,
+      schema_object_key: "System/tpl_x/1.0.0/schema.json",
+      template_code: "tpl_x",
+      display_name: "Plantilla X",
+    }),
+    readObjectAsText,
+  },
+);
+
+test("los campos del editor salen del schema.json de MinIO", async () => {
+  const service = buildSchemaService({ readObjectAsText: async () => SCHEMA_JSON });
+  const resultado = await service.getTemplateArtifactSchema(ART_ID);
+
+  assert.deepEqual(resultado.fields, [{
+    key: "titulo",
+    title: "Titulo del informe",
+    field_code: "TIT",
+    component: "text",
+    group: "cabecera",
+    required: true,
+  }]);
+});
+
+test("si MinIO falla al leer el schema, el error SUBE en vez de devolver cero campos", async () => {
+  // Este es el defecto: `{}` no es «esta plantilla no tiene campos», es lo que el editor carga y lo
+  // que el siguiente guardado escribe.
+  const service = buildSchemaService({
+    readObjectAsText: async () => { throw new Error("MinIO no responde: connect ECONNREFUSED"); },
+  });
+
+  await assert.rejects(
+    () => service.getTemplateArtifactSchema(ART_ID),
+    /MinIO no responde/,
+  );
+});
+
+test("un schema.json corrupto se rechaza nombrando el objeto, no se traga como vacio", async () => {
+  const service = buildSchemaService({ readObjectAsText: async () => "{esto no es json" });
+
+  await assert.rejects(
+    () => service.getTemplateArtifactSchema(ART_ID),
+    /esquema de campos de la plantilla esta corrupto.*schema\.json/s,
+  );
+});

@@ -60,6 +60,7 @@ import {
   workflowHasSteps
 } from "./workflows.js";
 import { replaceAuthoredFlowForArtifact, copyAuthoredFlowToArtifact, hasFillStepsForArtifact } from "./flowRows.js";
+import { replaceSchemaFieldsForArtifact, copySchemaFieldsToArtifact } from "./schemaFieldRows.js";
 import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -97,32 +98,78 @@ const slugifyFieldKey = (value, fallback = "campo") => {
   return base || fallback;
 };
 
-// Convierte la lista de campos definida en la web en un JSON Schema con extensiones x-deasy-*.
-// Cada field: { key, title, type, component, group, required }
-const buildSchemaJsonFromFields = (fields = []) => {
-  const properties = {};
-  const required = [];
+// El `type` de JSON Schema es funcion PURA del componente de UI, y no tiene otro productor. Por eso
+// `template_artifact_fields` NO le da columna: guardarlo seria una segunda copia que reconciliar.
+// Se deriva aqui para el fichero, y quien lea las filas lo deriva igual.
+const jsonTypeForComponent = (component) => (
+  component === "switch" ? "boolean"
+    : component === "number" ? "number"
+      : "string"
+);
+
+// PASO 1 — la lista NORMALIZADA de campos, EN EL ORDEN QUE MANDO EL FORMULARIO.
+//
+// Esta funcion existe por el sub-paso S6 del §0.4: es la que alimenta A LA VEZ el `schema.json` de
+// MinIO y las filas de `template_artifact_fields`. Las dos copias salen del MISMO objeto en memoria,
+// que es la condicion que hace que la escritura doble no pueda divergir (misma leccion que el
+// sub-paso 3 del §0.8, donde `buildWorkflowsYaml` se partio en `buildWorkflowsDocument` + `dump`).
+//
+// ⚠️ Y ES LA UNICA COPIA QUE CONSERVA EL ORDEN AUTORADO. El paso 2 vuelca esto en un objeto
+// `properties`, y ahi el orden se pierde: JS itera primero las claves de indice de array y ademas
+// las ordena numericamente entre si. Medido con un experimento desechable antes de escribir esto:
+// la entrada `anio_lectivo, 2025, responsable, 10` —el slug deja pasar los enteros— sale del objeto
+// como `10, 2025, anio_lectivo, responsable`. O sea, `schema.json` YA se escribe con el orden
+// roto, y no se arregla aqui a proposito: arreglarlo moveria el `content_hash` de todos los
+// paquetes con un campo de clave entera. La columna `field_order` sale del indice de ESTA lista, asi
+// que la base guarda el orden bueno y el fichero conserva el que siempre tuvo.
+//
+// Cada `rawField` del formulario: { key, title, field_code, component, group, required }.
+export const normalizeSchemaFieldList = (fields = []) => {
+  const lista = [];
   const seen = new Set();
   (Array.isArray(fields) ? fields : []).forEach((rawField, index) => {
     const dataKey = slugifyFieldKey(rawField?.key || rawField?.title, `campo_${index + 1}`);
+    // Descarte silencioso del slug repetido: es el comportamiento de siempre (el segundo se pisaba
+    // en `properties`). Ahora ademas lo impide `uq_template_artifact_fields_key`, pero el descarte
+    // se queda aqui para que la base no vea nunca la fila duplicada y el guardado no falle donde
+    // antes pasaba.
     if (seen.has(dataKey)) return;
     seen.add(dataKey);
     const component = SCHEMA_FIELD_COMPONENTS.has(String(rawField?.component || "").trim())
       ? String(rawField.component).trim()
       : "text";
     const group = slugifyFieldKey(rawField?.group || "general", "general");
-    const jsonType = component === "switch" ? "boolean"
-      : component === "number" ? "number"
-      : "string";
-    const fieldCode = String(rawField?.field_code || `${group}.${dataKey}`).trim();
-    properties[dataKey] = {
-      type: jsonType,
+    lista.push({
+      order: lista.length + 1,
+      dataKey,
       title: String(rawField?.title || dataKey).slice(0, 180),
-      "x-deasy-field-code": fieldCode,
-      "x-deasy-data-key": dataKey,
-      "x-deasy-ui": { component, group },
+      fieldCode: String(rawField?.field_code || `${group}.${dataKey}`).trim(),
+      component,
+      group,
+      required: Boolean(rawField?.required),
+    });
+  });
+  return lista;
+};
+
+// PASO 2 — el JSON Schema con extensiones x-deasy-*, BYTE A BYTE COMO SIEMPRE.
+//
+// El recorrido es el mismo (la lista en su orden) y las claves se asignan en el mismo orden, asi que
+// el objeto resultante —y por tanto el `JSON.stringify` y el `content_hash` del paquete— es
+// identico al que producia la version de una sola pieza. Esa igualdad es el contrato del S6: nada
+// observable cambia.
+export const buildSchemaJsonFromFieldList = (lista = []) => {
+  const properties = {};
+  const required = [];
+  lista.forEach((campo) => {
+    properties[campo.dataKey] = {
+      type: jsonTypeForComponent(campo.component),
+      title: campo.title,
+      "x-deasy-field-code": campo.fieldCode,
+      "x-deasy-data-key": campo.dataKey,
+      "x-deasy-ui": { component: campo.component, group: campo.group },
     };
-    if (rawField?.required) required.push(dataKey);
+    if (campo.required) required.push(campo.dataKey);
   });
   return {
     type: "object",
@@ -135,6 +182,21 @@ const buildSchemaJsonFromFields = (fields = []) => {
 // Layout aplanado por formato (sin eje "modes" ni "mode" ni "src"): template/<format>/...
 const buildArtifactFormatDir = (baseDir, format) =>
   path.join(baseDir, "template", format);
+
+// El payload de datos del paquete (copia de `defaults.yaml` de la semilla).
+export const PACKAGE_DATA_FILE_NAME = "data.yaml";
+
+// `data.yaml` va DOS VECES a proposito, igual que en el bootstrap
+// (`SystemBootstrapService.js:367-368`), y la copia de dentro NO es redundante: es la UNICA que
+// viaja al usuario. `GET /template_artifacts/:id/source` zipea solo `template/jinja2/` con rutas
+// relativas a ese prefijo, y `make.sh` busca `data.yaml`/`defaults.yaml` relativos a su propio
+// directorio, que en el ZIP es la raiz. Con solo la copia de la raiz del paquete, el render con
+// `StrictUndefined` reventaba antes de llegar a LaTeX — medido:
+// «Fallo al renderizar ./Contenido/Referencias.tex.j2: 'bibliography_style' is undefined».
+export const buildPackageDataFileTargets = (draftDir) => [
+  path.join(draftDir, PACKAGE_DATA_FILE_NAME),
+  path.join(buildArtifactFormatDir(draftDir, CONTRACT_FORMAT), PACKAGE_DATA_FILE_NAME),
+];
 
 const setAvailableFormatEntry = (availableFormats, format, baseObjectPrefix) => {
   availableFormats[format] = {
@@ -588,6 +650,14 @@ export default class TemplateLifecycleService {
         sourceArtifactId: srcId,
         targetArtifactId: newArtifactId,
         displayName: src.display_name,
+      });
+      // Los CAMPOS, por el mismo camino (sub-paso S6 del §0.4). El fork copia MinIO en binario igual
+      // que el versionado, así que el `schema.json` del entregable bifurcado ya llegó; lo que faltaba
+      // era su copia en filas. Sin esto, un entregable bifurcado nacería con campos en el fichero y
+      // la tabla vacía.
+      await copySchemaFieldsToArtifact(connection, {
+        sourceArtifactId: srcId,
+        targetArtifactId: newArtifactId,
       });
       await connection.commit();
     } catch (error) {
@@ -1149,13 +1219,20 @@ export default class TemplateLifecycleService {
         buildArtifactFormatDir(draftDir, CONTRACT_FORMAT)
       );
       setAvailableFormatEntry(availableFormats, CONTRACT_FORMAT, baseObjectPrefix);
+      // `defaults.yaml` NO ES UN FÓSIL, y por eso se conserva tal cual (§0.6, cierre del censo).
+      // El censo lo listaba como «vivo pero fuera del CRUD», y las dos mitades siguen siendo ciertas:
+      // se copia entero a `data.yaml` del paquete y es el payload de datos con el que se renderiza
+      // (`brand_rgb`, `palette`, `layout*`, `bibliography_*`, los tokens de firma), pero el usuario no
+      // puede tocar ninguna de esas claves desde la aplicación.
+      // La decisión es NO cablearlo aquí: sus claves son campos de formulario, y modelar los campos
+      // del formulario es justo lo que el §0.8 dejó fuera de alcance a propósito (decisión 3 — no
+      // tienen tabla, viven en el `schema.json` de MinIO). Cablear estas y no las demás sería inventar
+      // un segundo sitio donde vive un campo. Su dueño natural es el generador del §0.4.
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
-        await copyMinioObjectToFile(
-          MINIO_TEMPLATES_BUCKET,
-          defaultsObjectKey,
-          path.join(draftDir, "data.yaml")
-        );
+        for (const target of buildPackageDataFileTargets(draftDir)) {
+          await copyMinioObjectToFile(MINIO_TEMPLATES_BUCKET, defaultsObjectKey, target);
+        }
       } catch {
         // Optional for non-latex seeds.
       }
@@ -1176,8 +1253,30 @@ export default class TemplateLifecycleService {
     }
 
     if (!seedRow) {
-      await preserveExistingFormat(CONTRACT_FORMAT);
+      const hasContract = await preserveExistingFormat(CONTRACT_FORMAT);
       await preserveExistingFormat("latex");
+      // El `data.yaml` que ya tenia el paquete, a las MISMAS dos rutas que la rama de la semilla:
+      // la raiz no la baja nadie (`preserveExistingFormat` solo trae prefijos de formato), y la copia
+      // de dentro del contrato falta en los paquetes anteriores a este arreglo, asi que reescribir
+      // las dos desde el original repara de paso lo ya publicado.
+      //
+      // Sin esto, editar un borrador sin cambiar de semilla dejaba `data.yaml` fuera del `draftDir`
+      // — y como el manifiesto se recalcula SOBRE el `draftDir`, el objeto sobrevivia en MinIO pero
+      // desaparecia de `manifest.json`. Manifiesto y bucket derivaban en la PRIMERA edicion (medido:
+      // la clave `data.yaml` desaparecia de `protected`).
+      //
+      // Solo si el paquete conserva contrato jinja2: sin renderizador el payload no significa nada, y
+      // escribirlo crearia un `template/jinja2/` fantasma —no declarado en `available_formats`, luego
+      // no descargable— que ademas entraria en `protected` del manifiesto.
+      if (hasContract) {
+        try {
+          for (const target of buildPackageDataFileTargets(draftDir)) {
+            await copyMinioObjectToFile(bucket, `${baseObjectPrefix}${PACKAGE_DATA_FILE_NAME}`, target);
+          }
+        } catch {
+          // Un paquete de semilla no-latex puede no tener `data.yaml`: no es un error.
+        }
+      }
     }
 
     const fileFieldMap = {
@@ -1403,7 +1502,8 @@ export default class TemplateLifecycleService {
     identidad,
     processDefinitionId,
     itemMode,
-    workflowsDocument
+    workflowsDocument,
+    schemaFieldList = []
   }) {
     const connection = await this.pool.getConnection();
     try {
@@ -1431,6 +1531,22 @@ export default class TemplateLifecycleService {
           artifactId,
           displayName: identidad.displayName,
           workflowsDocument
+        });
+      }
+
+      // ESCRITURA DOBLE (sub-paso S6 del §0.4): la otra copia de los CAMPOS, la que vive en la base.
+      // Sale de la misma `schemaFieldList` que ya se serializó al `schema.json` del paquete.
+      //
+      // VA SIEMPRE, también con la lista vacía, y ahí se separa del flujo de arriba: el flujo solo
+      // se toca si el formulario mandó uno (`workflowsDocument`), pero los campos se reescriben en
+      // cada guardado porque `schema.json` también se reescribe en cada guardado —a `{}` si no
+      // llegan—. Saltarse el `DELETE` cuando la lista viene vacía dejaría las filas viejas
+      // contradiciendo un fichero ya vaciado, que es exactamente la divergencia que la escritura
+      // doble existe para impedir.
+      if (artifactId) {
+        await replaceSchemaFieldsForArtifact(connection, {
+          artifactId,
+          fields: schemaFieldList
         });
       }
 
@@ -1585,8 +1701,18 @@ export default class TemplateLifecycleService {
     if (typeof schemaFields === "string") {
       try { schemaFields = JSON.parse(schemaFields); } catch { schemaFields = null; }
     }
-    const schemaJson = Array.isArray(schemaFields) && schemaFields.length
-      ? buildSchemaJsonFromFields(schemaFields)
+    // ESCRITURA DOBLE (sub-paso S6 del §0.4): de esta lista salen LAS DOS copias —el `schema.json`
+    // del paquete, aqui mismo, y las filas de `template_artifact_fields`, ya dentro de la transaccion
+    // de `_persistDraftToDatabase`—. Sale UNA sola vez y se pasa a los dos, que es lo que impide que
+    // diverjan; si se normalizara dos veces, "producen lo mismo" volveria a ser una promesa.
+    //
+    // El `schema.json` se SIGUE EMITIENDO, y no es andamiaje temporal: es lo que viaja dentro del
+    // paquete de MinIO, entra en el `content_hash`, lo exige `validatePackagedArtifactDraft` y es lo
+    // unico que hoy relee `getTemplateArtifactSchema` para el editor. Mientras exista, cualquier paso
+    // de este frente se deshace volviendo a leer del fichero.
+    const schemaFieldList = normalizeSchemaFieldList(schemaFields);
+    const schemaJson = schemaFieldList.length
+      ? buildSchemaJsonFromFieldList(schemaFieldList)
       : null;
     fs.writeFileSync(
       path.join(draftDir, "schema.json"),
@@ -1633,7 +1759,7 @@ export default class TemplateLifecycleService {
       "utf8"
     );
 
-    return { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument };
+    return { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument, schemaFieldList };
   }
 
   async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
@@ -1693,7 +1819,7 @@ export default class TemplateLifecycleService {
     }
 
     const schemaObjectKey = `${baseObjectPrefix}schema.json`;
-    const { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument } = await this._writeDraftPackage({
+    const { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument, schemaFieldList } = await this._writeDraftPackage({
       draftDir,
       data,
       availableFormats,
@@ -1731,7 +1857,8 @@ export default class TemplateLifecycleService {
         identidad,
         processDefinitionId: data.process_definition_id,
         itemMode: requestedItemMode,
-        workflowsDocument
+        workflowsDocument,
+        schemaFieldList
       });
 
       // Aquí se proyectaba el flujo del `meta.yaml` a cada vínculo, con su aviso y su bandera

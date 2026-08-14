@@ -2,16 +2,17 @@
 
 ## Descripción
 
-Este archivo contiene el controlador para operaciones administrativas SQL, incluyendo gestión de metadatos, sincronización de plantillas, y operaciones CRUD en tablas.
+Este archivo contiene el controlador para operaciones administrativas SQL, incluyendo gestión de metadatos, sincronización de semillas de plantillas, y operaciones CRUD en tablas.
+
+> ⚠️ **Esta página cubre 9 de las 45 funciones que el controller exporta.** El hueco se anota, no se
+> rellena: documentar las otras 36 a mano volvería a derivar. Para el inventario real,
+> `backend/controllers/admin/sql_admin_controller.js` y `backend/routes/sql_admin_router.js`.
+
 ## Funciones
 ### getSqlMeta
 - **Descripción**: Obtiene los metadatos de las tablas de la base de datos.
 - **Parámetros**: `req`, `res`
 - **Retorna**: JSON con las tablas.
-### syncTemplateArtifacts
-- **Descripción**: Sincroniza los artefactos de plantillas desde la distribución.
-- **Parámetros**: `_req`, `res`
-- **Retorna**: JSON con el resultado de la sincronización.
 ### syncTemplateSeeds
 - **Descripción**: Sincroniza las semillas de plantillas desde la fuente.
 - **Parámetros**: `_req`, `res`

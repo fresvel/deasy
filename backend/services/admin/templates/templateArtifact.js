@@ -16,8 +16,9 @@ import {
   unzipToDirectory,
   walkFiles,
 } from "../kernel/storage.js";
-import { parseAvailableFormats, sanitizeLatexSource } from "./artifacts.js";
+import { checkJinjaBlockBalance, parseAvailableFormats, sanitizeLatexSource } from "./artifacts.js";
 import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
+import { copySchemaFieldsToArtifact } from "./schemaFieldRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -29,9 +30,14 @@ import {
 // constantes compartido. Son deterministas (env + literal), asi que ambos modulos leen lo mismo.
 
 export default class TemplateArtifactService {
-  constructor(pool, { getByKeys } = {}) {
+  // `readObjectAsText` se inyecta con el mismo patrón que `getByKeys` (que ya estaba) y por el mismo
+  // motivo: sin punto de inyección, la lectura de MinIO no tiene red unitaria — y el defecto que
+  // cierra el §0.4 S2 vive justo ahí. Por defecto es la función real, así que el único llamador de
+  // producción (`SqlAdminService.js:164`) no cambia.
+  constructor(pool, { getByKeys, readObjectAsText = readMinioObjectAsText } = {}) {
     this.pool = pool;
     this._getByKeys = getByKeys;
+    this._readObjectAsText = readObjectAsText;
   }
 
   ensurePool() {
@@ -89,12 +95,31 @@ export default class TemplateArtifactService {
       throw new Error("El artifact seleccionado no existe.");
     }
     const bucket = MINIO_TEMPLATES_BUCKET;
-    let schema = {};
+    // Los campos del formulario se leen de `schema.json` en MinIO, y un fallo SUBE.
+    //
+    // Aquí vivía un `catch {}` que devolvía `{}` ante cualquier fallo de MinIO. Es el MISMO borrado
+    // silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, unas líneas más abajo y en
+    // este mismo fichero: un «vacío» inventado no es un aviso cosmético, es lo que el editor carga
+    // **y lo que el siguiente guardado escribe** — o sea, `schema.json` reducido a `"{}\n"` y todos
+    // los campos configurados perdidos, sin que nadie viera un error.
+    //
+    // Medido antes de tocarlo (experimento desechable, §0.4 S2): con el lector anulado y devolviendo
+    // `{}` siempre, `test:char:run` da **281/281 en verde**. La caracterización es ciega a esto **por
+    // construcción**: el único caso que llega al endpoint descarta `fields` del golden a propósito
+    // (`zzzzzzz_schema_flow_reread.test.mjs:217`). Por eso la red que cubre esta línea es unitaria.
+    //
+    // El JSON mal formado se trata igual que el fallo de red, y a propósito: `schema.json` lo escribe
+    // el propio backend, así que un JSON roto es corrupción del paquete, no una entrada del usuario.
+    const schemaText = await this._readObjectAsText(bucket, artifact.schema_object_key);
+    let schema;
     try {
-      const text = await readMinioObjectAsText(bucket, artifact.schema_object_key);
-      schema = JSON.parse(text || "{}");
-    } catch {
-      schema = {};
+      schema = JSON.parse(schemaText || "{}");
+    } catch (error) {
+      const failure = new Error(
+        `El esquema de campos de la plantilla esta corrupto y no se pudo leer (${artifact.schema_object_key}).`
+      );
+      failure.cause = error;
+      throw failure;
     }
     const properties = schema?.properties || {};
     const requiredSet = new Set(Array.isArray(schema?.required) ? schema.required : []);
@@ -135,6 +160,14 @@ export default class TemplateArtifactService {
         unit_type_id: s?.resolver?.unit_type_id || null,
         person_id: s?.resolver?.person_id || null,
         position_id: s?.resolver?.position_id || null,
+        // SIEMPRE `[]`, y se CONSERVA (§0.6, cierre del censo de fósiles). El flujo llega de la base
+        // (`readAuthoredFlowForArtifact`) y ahí `field_refs` no tiene columna ni se relee, así que
+        // `s?.field_refs` es siempre `undefined`. Se queda porque esto es el CONTRATO HTTP que
+        // consume el editor: la clave está fijada en el golden `schema_flow_reread` y el frontend la
+        // lee. Quitarla movería un golden por una razón que no es de comportamiento.
+        // Lo que la mataría: retirarla del formulario (frontend, hoy un literal `[]`) y recapturar
+        // ese golden, en el mismo commit. Y lo que la haría real es lo contrario: darle columna,
+        // que es modelar los campos del formulario (§0.8, decisión 3 — fuera de alcance).
         field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
         required: s?.required !== false,
       })),
@@ -398,6 +431,14 @@ export default class TemplateArtifactService {
         targetArtifactId: newArtifactId,
         displayName,
       });
+      // Los CAMPOS del formulario, por el mismo camino y por el mismo motivo (sub-paso S6 del §0.4).
+      // El `schema.json` de la hija ya llegó por la copia binaria de MinIO de más arriba; esto añade
+      // la copia CONTABLE, que es la que se puede listar, unir y migrar con un UPDATE. Sin ella las
+      // dos copias divergirían justo aquí: fichero con campos, tabla vacía.
+      await copySchemaFieldsToArtifact(connection, {
+        sourceArtifactId: Number(artifactId),
+        targetArtifactId: newArtifactId,
+      });
       await connection.commit();
     } catch (error) {
       await connection.rollback().catch(() => {});
@@ -483,7 +524,26 @@ export default class TemplateArtifactService {
           }
           seenProtected.add(fullRel);
         } else if (entry.rel.startsWith(editablePrefix)) {
-          violations.push(...sanitizeLatexSource(entry.rel, fs.readFileSync(entry.abs, "utf8")));
+          const contenido = fs.readFileSync(entry.abs, "utf8");
+          violations.push(...sanitizeLatexSource(entry.rel, contenido));
+          // Balance de bloques Jinja (§0.4 S4), sobre EXACTAMENTE el mismo conjunto que el saneo
+          // LaTeX, y sólo sobre los `.j2`. Las dos acotaciones son deliberadas:
+          //
+          // · SÓLO LA ZONA EDITABLE, aunque hoy el Jinja viva sobre todo en `Preambulo/` (medido:
+          //   24 etiquetas `[[%` en el seed, todas fuera de `Contenido/`). Porque `Preambulo/` es
+          //   PROTEGIDO: su rama de arriba ya exige que el SHA-256 case con el manifiesto, así que
+          //   sus bytes son, por construcción, idénticos a los ya publicados. Validarlos sería
+          //   revisar contenido que el usuario no ha escrito y NO PUEDE ARREGLAR — cambiarlo hace
+          //   fallar el hash —, es decir, un error sin salida que dejaría la plantilla ineditable.
+          //   La zona editable es la única por donde entra Jinja nuevo, y es donde emitirá el
+          //   generador del §0.4 S8.
+          //
+          // · SÓLO LOS `.j2`, porque el render sólo procesa `*.j2` (`make.sh` recorre y filtra por
+          //   esa extensión). En un `.tex` suelto —`Contenido/tables/tabla_01.tex` es uno— un
+          //   `[[%` es texto literal que nadie interpreta, y marcarlo sería un falso positivo.
+          if (entry.rel.endsWith(".j2")) {
+            violations.push(...checkJinjaBlockBalance(entry.rel, contenido));
+          }
           editedContent.push(entry);
         } else {
           violations.push(`Archivo no permitido (solo se edita ${editablePrefix} y no se añaden archivos al contrato): ${entry.rel}`);

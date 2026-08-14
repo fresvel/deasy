@@ -183,8 +183,15 @@ export const buildWorkflowsDocument = ({ fillWorkflow, signatureWorkflow } = {})
       if (step?.code) out.code = step.code;
       out.name = step?.name || `Paso ${order}`;
       out.resolver = resolver;
-      const fieldRefs = Array.isArray(step?.field_refs) ? step.field_refs.filter(Boolean) : [];
-      if (fieldRefs.length) out.field_refs = fieldRefs;
+      // `field_refs` YA NO SE EMITE (§0.6, cierre del censo de fósiles). Este documento dejó de ser
+      // un paso hacia el `meta.yaml` en el sub-paso 3 del §0.8 y hoy tiene un único consumidor:
+      // `_persistAuthoredFlow` → `normalizeFillSteps`, que no lo lee y no tiene columna donde
+      // ponerlo (ver la nota de `fill_flow_steps` en `postgres_schema.sql`). Emitirlo era escribir
+      // una clave que se descartaba en la línea siguiente. Tampoco tenía de dónde venir: el
+      // formulario no tiene control que lo escriba.
+      // Lo que lo devolvería a la vida: darle columna y que `normalizeFillSteps` la escriba — y eso
+      // es modelar los campos del formulario, que el §0.8 dejó fuera de alcance a propósito
+      // (decisión 3: no tienen tabla, viven en el `schema.json` de MinIO).
       out.required = step?.required !== false;
       // La capacidad de devolver se deriva del orden: solo a partir del 2º paso hay un paso previo
       // al que regresar. El 1º (entrega del dueño) nunca puede devolver.

@@ -50,7 +50,8 @@ export default defineConfig({
 			//   explicacion -> "por que asi"         (aqui aterrizara arquitectura-deasy.tex)
 			//
 			// Un grupo cuya carpeta no existe todavia hace fallar el build, asi que se añaden
-			// segun se creen. Hoy solo hay `guias/`.
+			// segun se creen. Hoy existen tres —`guias/`, `referencia/` y `explicacion/`—, que
+			// son los tres grupos de abajo. Falta `empezar/`: por eso no tiene grupo.
 			sidebar: [
 				{ label: 'Guías', autogenerate: { directory: 'guias' } },
 				{ label: 'Referencia', autogenerate: { directory: 'referencia' } },

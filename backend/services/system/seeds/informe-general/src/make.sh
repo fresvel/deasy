@@ -29,8 +29,23 @@ trap cleanup EXIT
 # --- Localiza el archivo de datos (defaults) para el render jinja2 ---
 # El contenedor Docker solo monta WORKDIR, asi que si el archivo esta en el directorio padre
 # (caso del paquete "seed": defaults.yaml en la raiz, make.sh en src/) hay que copiarlo dentro.
+#
+# El orden NO es alfabetico ni casual: gana el PRIMERO que exista.
+#   - `data.*` es el payload del PAQUETE, el que va a generar el backend desde la base.
+#     `defaults.*` es la fuente escrita a mano de la SEMILLA, que se lee al correr make.sh dentro del
+#     arbol de la semilla (make.sh en src/, defaults.yaml en el padre).
+#   - `.json` ANTES que `.yaml` a proposito: el backend no tiene parser de YAML (js-yaml salio del
+#     grafo en el sub-paso 8), asi que el payload generado sera JSON. Mientras no exista el generador
+#     el paquete sigue llevando `data.yaml` copiado de la semilla; en cuanto lo emita, el `data.json`
+#     generado tiene que ganarle al `.yaml` heredado aunque convivan en el mismo paquete.
+#   - Y esto va aqui AHORA, no cuando exista el generador, porque `make.sh` VIAJA DENTRO del paquete:
+#     el que se cree hoy se queda con la copia de hoy para siempre. Sin este candidato, el generador
+#     obligaria a reemitir todos los paquetes ya creados.
+# No se anade `defaults.json`: la semilla se escribe a mano y sigue en YAML (sus valores llevan
+# escapes de LaTeX como "\mydate\today", que en JSON habria que redoblar). Un candidato que nadie
+# produce es un patron muerto que luego hay que mantener.
 DATA_FILE=""
-for candidate in data.yaml defaults.yaml ../data.yaml ../defaults.yaml; do
+for candidate in data.json data.yaml defaults.yaml ../data.json ../data.yaml ../defaults.yaml; do
   if [ -f "$candidate" ]; then DATA_FILE="$candidate"; break; fi
 done
 RENDER_DATA=""
@@ -101,7 +116,7 @@ PYEOF
 fi
 
 if [ ! -f "$WORKDIR/main.tex" ]; then
-  echo "ERROR: no se encontro main.tex tras el render (¿falta main.tex.j2 o data.yaml?)." >&2
+  echo "ERROR: no se encontro main.tex tras el render (¿falta main.tex.j2 o data.json/data.yaml?)." >&2
   exit 1
 fi
 

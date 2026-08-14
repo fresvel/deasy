@@ -22,11 +22,14 @@
     "deliverables": "El ENTREGABLE como identidad estable (el 'libro'). Sus versiones son `template_artifacts` (las 'ediciones'): la identidad vive aquí y sólo aquí.",
     "template_artifacts": "Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.",
     "fill_flow_templates": "Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).",
-    "dossiers": "El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula."
+    "dossiers": "El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.",
+    "template_artifact_fields": "Los CAMPOS que el usuario rellenara en la web, uno por fila, colgados de la EDICION. Vivian solo como `schema.json` en MinIO, y eso costaba tres cosas: se copiaban en binario al versionar (el mismo tubo del `document_owner` que abrio el frente 0), no se podian unir con nada —`field_code` contra `signature_flow_steps.slot` es lo que el generador de Jinja necesita— y el orden era el de las claves de un objeto JS, que coloca las claves enteras primero. `field_order` es la columna que arregla lo tercero."
   },
 
   "columnas": {
     "process_definition_templates.item_mode": "Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).",
-    "fill_flow_templates.template_artifact_id": "El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe."
+    "fill_flow_templates.template_artifact_id": "El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.",
+    "template_artifact_fields.field_code": "La referencia externa del campo (`x-deasy-field-code`). Es la que el generador tendra que contrastar con `signature_flow_steps.slot` para colocar el token de firma sin que el usuario ponga la ubicacion a mano.",
+    "template_artifact_fields.field_order": "El orden AUTORADO, 1..N. No se deriva de nada: es el indice del array que mando el formulario. El `schema.json` no puede llevarlo porque su orden es el de las claves de un objeto."
   }
 }

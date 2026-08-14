@@ -5,8 +5,11 @@
 > el doble concepto de "adjunto" y el enlace entregable↔plantilla.
 >
 > **Estado de implementación (2026-06-02):**
-> - ✅ Paso 1 — proceso `default` sembrado en bootstrap (`SystemBootstrapService.ensureDefaultProcess`)
->   con plantilla base `tpl_default_memo` (`process`) y flujo de llenado `document_owner`. Firma ad-hoc.
+> - ✅ Paso 1 — proceso `default` sembrado en bootstrap (`SystemBootstrapService.ensureDefaultProcess`).
+>   *(Al escribirse esto la plantilla base era `tpl_default_memo` con un flujo de llenado
+>   `document_owner`. **Ninguna de las dos cosas existe hoy**: la plantilla base es
+>   `tpl_informe_general` —el único `deliverables` de una base recién sembrada— y el proceso por
+>   defecto **no lleva flujo sembrado**, porque es `routed` y lo define el usuario al enviar.)*
 > - ✅ Paso 2 — tareas libres migradas: `createGeneralTask` apunta al slug `default`; proceso `general`
 >   viejo y contenedor vacío `tpl_general_tarea_libre` eliminados. Verificado: la tarea libre materializa
 >   documento+versión+flujo de llenado.
@@ -20,16 +23,20 @@
 >   eliminada la ramificación muerta en ambos `shouldInferSignatureFlowForContext`. Adjunción ad-hoc va por
 >   `document_attachments`. Los gates de subida (`["primary","attachment"]` en user_controler) se dejan
 >   tolerantes a propósito (no ramifican comportamiento; defensa para datos legados).
-> - ✅ Publicación MinIO `tpl_default_memo` — `publishDefaultTemplateAssets()` sube schema.json/meta.yaml/
->   data.yaml + cuerpo jinja2 autocontenido (`main.tex.j2`, `make.sh`) al prefijo canónico (idempotente,
+> - ✅ Publicación MinIO de la plantilla base — hoy la hace **`publishBaseSeedAssets()`**
+>   (`SystemBootstrapService.js:341`), que sube `schema.json`, `data.yaml` (copiado de `defaults.yaml`)
+>   y el cuerpo jinja2 autocontenido (`main.tex.j2`, `make.sh`) al prefijo canónico (idempotente,
 >   best-effort). Validado end-to-end: render jinja2 (StrictUndefined OK) + compilación pdflatex → PDF.
+>   *(Se llamaba `publishDefaultTemplateAssets()` y subía además un `meta.yaml`; **ya no hay
+>   `meta.yaml`** — el flujo se autora en la base desde el §0.8.)*
 > - ✅ Limpieza de campos inútiles — DROP de columnas muertas: `template_artifacts.artifact_origin`
 >   (constante 'process'; propiedad por owner_ref), `process_definition_templates.usage_role` +
 >   `task_items.template_usage_role` (constantes 'primary'; UNIQUE KEY reconstruido sin la columna en un
 >   ALTER atómico), y `processes.unit_id/program_id/person_id/term_id` (vestigiales, nunca usadas). Migración
 >   idempotente en `postgres_initializer.js` + `postgres_schema.sql`. Front/back limpios; build y writes OK.
-> - ⏳ Pendientes: cablear el render jinja2→PDF en runtime (hoy `render_seed.py` es tooling CLI, no lo invoca
->   el backend); revisar `documents.updated_at` (siempre NULL).
+> - ⏳ Pendientes: cablear el render jinja2→PDF en runtime (hoy el render vive en el `make.sh` de la
+>   semilla, tooling CLI que el backend no invoca — `render_seed.py` nunca llegó a existir en el repo);
+>   revisar `documents.updated_at` (siempre NULL).
 
 ## 1. Diagnóstico del ruido actual
 
@@ -171,8 +178,16 @@ Se **unifica toda adjunción en `document_attachments`** y se **deprecia `usage_
    stage: draft→review                                   stage: approved→published
 ```
 
-El gobierno por `artifact_stage` (Fase C ya implementada: draft→review→approved→published→archived)
-es el mecanismo de promoción: el admin aprueba/publica y, al curar, sube el render jinja2.
+El gobierno del ciclo de vida es el mecanismo de promoción: el admin publica y, al curar, sube el
+render jinja2.
+
+> ⚠️ **`artifact_stage` con cinco estados (draft→review→approved→published→archived) nunca existió
+> como columna, y hoy tampoco existe el concepto.** El gobierno real es
+> `template_artifacts.lifecycle_state` con **tres** valores —`draft`, `published`, `retired`— y por
+> defecto `draft`; las transiciones son los endpoints `.../publish` y `.../retire`. El diagrama de
+> arriba conserva las etiquetas «stage» de la propuesta original; léelas como *intención*, no como
+> nombres de estado. Está listado como confusión conocida en el sitio de `docs/`
+> (`explicacion/confusiones`, punto 10).
 
 ## 7. Plan de migración propuesto (por fases, aún no ejecutado)
 
@@ -226,7 +241,7 @@ Reglas derivadas:
 - **Tarea libre = entregable real bajo el proceso `default`**, sembrado en **bootstrap** con plantilla base
   **jinja2** (memo genérico). Reemplaza el contenedor vacío.
 - Toda plantilla aspira a un **contrato jinja2 curado por el administrador** (pipeline office→jinja2 vía
-  `artifact_stage`).
+  el ciclo de vida — hoy `lifecycle_state`, no `artifact_stage`; ver el aviso de §6).
 - **Permisos** (ver §7bis): GestorProcesos = control total sobre plantillas; GestorEjecucionProcesos =
   crear/editar plantillas **siempre vinculadas** a un proceso existente o `default`, sin crear definiciones.
 

@@ -194,7 +194,8 @@ No son ruido:
 - `effective_from` y `effective_to` controlan vigencia.
 - `creates_task`, `instance_mode`, `is_required` y `sort_order` afectan la generacion y presentacion.
 - `normalized_term_type_id` y `active_series_flag` soportan restricciones de unicidad condicional.
-- `available_formats`, `schema_object_key`, `meta_object_key`, `base_object_prefix` y `content_hash` soportan almacenamiento, compilacion e integridad de artifacts.
+- `available_formats`, `schema_object_key`, `base_object_prefix` y `content_hash` soportan almacenamiento, compilacion e integridad de artifacts.
+  *(La lista incluía `meta_object_key`. **Esa columna ya no existe**: apuntaba al `meta.yaml` del artifact, y el sub-paso 8 del §0.8 la dropeó junto con el propio `meta.yaml` — `postgres_schema.sql:548-562`.)*
 
 #### Redundancias activas
 
@@ -256,7 +257,8 @@ No deben eliminarse sin una decision de producto. Si no se implementaran reinten
 
 Se usan activamente:
 
-- `documents.task_item_id`, `instance_no`, `owner_person_id`, `origin_unit_id`, `origin_type`, `title`, `status`;
+- `documents.task_item_id`, `owner_person_id`, `origin_unit_id`, `title`, `status`;
+  *(La lista incluía también `instance_no` y `origin_type`. **Ninguna de las dos existe hoy**: `documents` tiene nueve columnas y no están entre ellas. `origin_type` —el discriminador `task_item | standalone | imported | generated`— se retiró el 2026-08-10 al resolverse el «documento suelto» por el Proceso por defecto; ver `docs/arquitecturas/modelo-templates-entregables-limpio.md` §4.)*
 - `document_versions.document_id`, `version`, `template_artifact_id`, `working_file_path`, `final_file_path`, `status`;
 - todos los campos de `document_attachments`;
 - todos los campos de `document_signatures`.

@@ -18,7 +18,7 @@
         }
       },
       "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
-      "content_hash": "a00e56a6c4528197d31673a76267b5cc168be2318142282e434fc60965eb0fb1",
+      "content_hash": "c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1",
       "description": null,
       "display_name": "zzz char draft",
       "id": "<normalized>",
@@ -51,7 +51,7 @@
         }
       },
       "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
-      "content_hash": "06f0a77d49c0c340bdffc520d804963dddfdfe9a2a7eff94bacfbc4b54a5f1fd",
+      "content_hash": "7dba45afa3b893a56716b2c406bd4f0025ea8881ff4b567bb29ebf7a6a6e81b9",
       "description": "editado por el characterization test",
       "display_name": "zzz char draft",
       "id": "<normalized>",
@@ -127,7 +127,7 @@
         }
       },
       "base_object_prefix": "System/draft_zzz-char-routed/1.0.0/",
-      "content_hash": "a00e56a6c4528197d31673a76267b5cc168be2318142282e434fc60965eb0fb1",
+      "content_hash": "c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1",
       "description": null,
       "display_name": "zzz char routed",
       "id": "<normalized>",

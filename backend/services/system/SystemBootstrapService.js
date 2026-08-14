@@ -14,6 +14,10 @@ import {
   ROLE_CATALOG,
   ROLE_PERMISSION_MATRIX
 } from "../../config/rbacCatalog.js";
+import {
+  replaceSchemaFieldsForArtifact,
+  schemaFieldListFromJsonSchema
+} from "../admin/templates/schemaFieldRows.js";
 
 const BOOTSTRAP_UNIT_TYPE_NAME = "Sistema";
 const BOOTSTRAP_UNIT_NAME = "Raiz del sistema";
@@ -496,6 +500,37 @@ export const ensureDefaultProcess = async (connection) => {
     artifact = { id: r.insertId };
   }
   const artifactId = Number(artifact.id);
+
+  // 4bis. LOS CAMPOS DEL SEED, A LA BASE (sub-paso S6 del §0.4 del plan maestro).
+  //
+  //       El `INSERT` de arriba guarda el PUNTERO al `schema.json` y nada mas, así que los 18 campos
+  //       que el seed base declara —incluidos los tres `signatures.*.token` que el generador tendra
+  //       que colocar— vivian SOLO como fichero de MinIO. Es la misma forma del `BASE_META_YAML` que
+  //       costo el frente 0: contenido del modelo que entra por un literal y se auto-replica al
+  //       versionar por copia binaria.
+  //
+  //       SOLO SI NO HAY NINGUNA FILA, no `if (!artifact)`. Dos motivos: cubre las bases creadas
+  //       ANTES de este commit (el artifact ya existe y sus campos no), y no pisa lo que el admin
+  //       haya autorado despues desde la web — el mismo criterio con el que `publishBaseSeedAssets`
+  //       respeta un `main.tex.j2` ya editado.
+  //
+  //       El seed se lee del disco, NO de MinIO: es la misma fuente que `publishBaseSeedAssets`
+  //       acaba de publicar unas lineas mas abajo, y leerlo de MinIO ataria el bootstrap de la base
+  //       al orden de publicacion. Un seed ausente o ilegible PROPAGA, igual que el fallo de
+  //       publicacion: dejar la tabla vacia en silencio es justo lo que este sub-paso viene a quitar.
+  const yaTieneCampos = await fetchOne(
+    connection,
+    "SELECT 1 AS hay FROM template_artifact_fields WHERE template_artifact_id = ? LIMIT 1",
+    [artifactId]
+  );
+  if (!yaTieneCampos) {
+    const seedSchemaPath = path.join(BASE_SEED_DIR, "schema.json");
+    const seedSchema = JSON.parse(await fs.promises.readFile(seedSchemaPath, "utf8"));
+    await replaceSchemaFieldsForArtifact(connection, {
+      artifactId,
+      fields: schemaFieldListFromJsonSchema(seedSchema),
+    });
+  }
 
   // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado.
   //       Idempotente; si la publicación falla (MinIO caído, seed no empaquetado) se PROPAGA el error para

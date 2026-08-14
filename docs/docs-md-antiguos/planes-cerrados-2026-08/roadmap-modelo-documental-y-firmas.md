@@ -1,3 +1,17 @@
+> ⚠️ **ARCHIVADO el 2026-08-13 — acta de marzo de 2026, NO es el estado del código.**
+>
+> **Cómo acabó:** la migración que aquí se planifica **se hizo**. El sistema pasó de girar en torno a
+> `processes`/`tasks`/`task_items` a tener documentos, versiones, flujo de llenado y flujo de firmas
+> como entidades de primera clase. Lo que no sobrevivió es el *cómo*: la metadata técnica del artifact
+> ya no vive en un `meta.yaml` en MinIO —el §0.8 del frente 0 lo eliminó en agosto de 2026 y movió el
+> flujo a la base—, y con él cayeron `WorkflowSyncService`, sus tres endpoints y cinco resolutores.
+>
+> **Además, sus rutas están obsoletas** desde antes: apuntan a `/home/fresvel/Sharepoint/DIR/Deploy/`
+> y a ficheros del frontend que se movieron con la reorganización por módulos.
+>
+> **Dónde está hoy el estado real:** el sitio de `docs/`, `docs/arquitecturas/modelo-emision-entregables.md`
+> y `docs/planes/plan-maestro-2026-08.md`.
+
 # Hoja de Ruta - Modelo Documental, Llenado y Firmas
 
 ## Objetivo

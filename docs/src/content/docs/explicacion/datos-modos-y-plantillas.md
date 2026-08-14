@@ -20,15 +20,9 @@ El **“Proceso por defecto”** (slug `default`, sembrado por el bootstrap) es 
 
 :::note[Resolutores de flujo autorables]
 
-Solo `task_assignee` (“Responsable del entregable”) y `cargo_in_scope` (“Por cargo”) en plantillas *official*; `specific_person` se anade en *ad_hoc*. Están **deprecados en la autoria web** `document_owner`, `position` y `manual_pick`: siguen en el ENUM por legado.
+Solo `task_assignee` (“Responsable del entregable”) y `cargo_in_scope` (“Por cargo”) en plantillas *official*; `specific_person` se anade en *ad_hoc*. `document_owner`, `position` y `manual_pick` están **retirados**: ya no son una deprecación blanda de la autoría web, sino que **salieron del `CHECK`** de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type`, que hoy solo admite esos tres valores. El `ALTER` valida las filas existentes, así que una base con un valor retirado **no arranca**.
 
-:::
-
-:::caution[document_owner NO esta retirado: sigue vivo]
-
-Es el resolver **mas usado** de la base de dev. La fase P1.4 retiro el atajo del *proceso por defecto* (`SystemBootstrapService.js`), pero dejo el de `BASE_META_YAML` — un `meta.yaml` escrito a mano como literal de código unas 250 líneas mas arriba, **en el mismo fichero**. Y además **se auto-replica**: `createTemplateArtifactVersion` copia los objetos de MinIO en binario, así que cada versión nueva lo hereda.
-
-**No lo des por muerto sin consultar `fill_flow_steps`.** El plan para retirarlo es el frente 0 de `docs/planes/plan-maestro-2026-08.md`.
+El criterio que los mató, y que conviene tener presente al añadir cualquier cosa a estas tablas: **lo que la web no autora, no existe**. Su único productor era el `meta.yaml`; retirado el YAML, se quedaron sin quien los escribiera.
 
 :::
 
@@ -55,7 +49,9 @@ En `sqlTables.js` la tabla `task_items` se etiqueta “Entregables” (la *insta
 
 ### El contenido: Jinja2 sobre LaTeX
 
-El cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en MinIO, no en la base de datos. El bootstrap pública la semilla `backend/services/system/seeds/informe-general` con `schema.json`, `meta.yaml`, `data.yaml`, `main.tex.j2` y `make.sh`, y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
+El cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en MinIO, no en la base de datos. El bootstrap pública la semilla `backend/services/system/seeds/informe-general` — `schema.json`, `defaults.yaml`, `README.md` y el árbol `src/` con `main.tex.j2` y `make.sh` — y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
+
+**No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto de MinIO que el bootstrap escribe copiando `defaults.yaml` al prefijo del artifact (`publishBaseSeedAssets`).
 
 La **propiedad** se expresa por el prefijo dentro de MinIO, en `base_object_prefix`: `System/...` para las plantillas curadas por el administrador, `Users/{cedula}/...` para las subidas por un gestor. El pipeline de maduración documentado es:
 
@@ -63,10 +59,10 @@ La **propiedad** se expresa por el prefijo dentro de MinIO, en `base_object_pref
 
 :::note[Deuda declarada]
 
-Falta *cablear* el render Jinja2 a PDF en tiempo de ejecución: hoy `render_seed.py` es utileria de línea de comandos, y el backend no lo invoca.
+Falta *cablear* el render Jinja2 a PDF en tiempo de ejecución: hoy el render vive en el `make.sh` de la propia semilla (utileria de línea de comandos), y el backend no lo invoca.
 
 :::
 
 ### Ciclo de vida y versionado
 
-`template_artifacts.lifecycle_state` admite `draft`, `published` y `retired` (por defecto `published`). El versionado es **por linaje**: una fila nueva con `storage_version` nuevo y `parent_version_id` apuntando a la anterior. `templateLifecycle.js` retira la versión publicada previa del mismo código al publicar, y válida que haya al menos un paso de entrega. Ese último requisito **se relaja para `routed`**, que por definición no autora flujo.
+`template_artifacts.lifecycle_state` admite `draft`, `published` y `retired`, y **por defecto `draft`**: una edición nace sin publicar y hay que publicarla explícitamente. El versionado es **por linaje**: una fila nueva con `storage_version` nuevo y `parent_version_id` apuntando a la anterior. `templateLifecycle.js` retira la versión publicada previa del mismo código al publicar, y válida que haya al menos un paso de entrega. Ese último requisito **se relaja para `routed`**, que por definición no autora flujo.

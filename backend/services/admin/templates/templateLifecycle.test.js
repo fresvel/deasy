@@ -18,7 +18,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import TemplateLifecycleService from "./templateLifecycle.js";
+import path from "node:path";
+
+import TemplateLifecycleService, {
+  PACKAGE_DATA_FILE_NAME,
+  buildPackageDataFileTargets,
+  buildSchemaJsonFromFieldList,
+  normalizeSchemaFieldList,
+} from "./templateLifecycle.js";
+import { CONTRACT_FORMAT } from "../kernel/constants.js";
 
 const TPL_ID = 10;
 const CFG_ID = 20;
@@ -335,4 +343,150 @@ test("sin flujo autorado la transaccion sigue siendo la misma, sin escribir fluj
 
   assert.ok(!events.includes("escribe:flujo"));
   assert.ok(events.includes("commit"));
+});
+
+// --- El payload de datos del paquete (S1) --------------------------------------------------------
+//
+// `buildPackageDataFileTargets` existe como costura verificable porque el defecto que arregla es
+// INVISIBLE desde el backend: el paquete quedaba bien en MinIO y el error solo aparecia al
+// renderizar el ZIP en la maquina del usuario.
+//
+// Medido en la pila A antes del arreglo, con una plantilla creada por la web:
+//   - la raiz del ZIP traia `Contenido main.tex.j2 make.sh Preambulo Referencias`, sin fichero de datos
+//   - `bash make.sh` -> rc=1, «Fallo al renderizar ./Contenido/Referencias.tex.j2:
+//     'bibliography_style' is undefined» (StrictUndefined), sin PDF.
+//
+// La causa es que `GET /template_artifacts/:id/source` zipea SOLO el prefijo del contrato jinja2, con
+// las rutas relativas a el; y `make.sh` busca el fichero de datos relativo a su propio directorio,
+// que en el ZIP es la raiz. De ahi que las dos copias no sean redundantes: la de la raiz del paquete
+// es la que consume el backend, la del contrato es la UNICA que viaja al usuario.
+
+test("el payload del paquete se escribe en DOS sitios, no en uno", () => {
+  const targets = buildPackageDataFileTargets("/tmp/draft");
+  assert.equal(targets.length, 2, "una sola copia es justo el defecto que esto arregla");
+  assert.deepEqual(
+    targets.map((target) => path.basename(target)),
+    [PACKAGE_DATA_FILE_NAME, PACKAGE_DATA_FILE_NAME],
+    "las dos copias se llaman igual: make.sh busca por nombre",
+  );
+});
+
+test("la primera copia es la raiz del paquete (la que lee el backend)", () => {
+  const [raiz] = buildPackageDataFileTargets("/tmp/draft");
+  assert.equal(raiz, path.join("/tmp/draft", PACKAGE_DATA_FILE_NAME));
+});
+
+test("la segunda copia cae DENTRO del contrato jinja2, que es lo unico que se zipea", () => {
+  const [, enElContrato] = buildPackageDataFileTargets("/tmp/draft");
+  const dirDelContrato = path.join("/tmp/draft", "template", CONTRACT_FORMAT);
+
+  assert.equal(enElContrato, path.join(dirDelContrato, PACKAGE_DATA_FILE_NAME));
+  // Y en la RAIZ de ese prefijo, no en un subdirectorio: `make.sh` viaja a la raiz del ZIP y busca
+  // el fichero de datos a su lado. Un nivel mas abajo y no lo encuentra.
+  assert.equal(path.dirname(enElContrato), dirDelContrato);
+});
+
+test("las dos copias son rutas distintas (si colapsaran, el ZIP volveria a salir sin datos)", () => {
+  const [raiz, enElContrato] = buildPackageDataFileTargets("/tmp/draft");
+  assert.notEqual(raiz, enElContrato);
+});
+
+// --- Los CAMPOS del formulario: la lista y el fichero (sub-paso S6 del §0.4) ----------------------
+//
+// `normalizeSchemaFieldList` + `buildSchemaJsonFromFieldList` son las dos mitades en que se partió
+// `buildSchemaJsonFromFields`. El corte es el que hace posible la escritura doble: la lista alimenta
+// A LA VEZ el `schema.json` de MinIO y las filas de `template_artifact_fields`, saliendo del MISMO
+// objeto en memoria (misma receta que el sub-paso 3 del §0.8 con `buildWorkflowsDocument`).
+//
+// Y el contrato del sub-paso es que el FICHERO NO SE MUEVA: `schema.json` entra en el `content_hash`
+// del paquete, que está fijado en el golden `artifact_draft`. Los tests de abajo lo fijan aquí
+// también, porque char no manda `schema_fields` en ningún flow y no vería el cambio.
+
+const CAMPOS_WEB = [
+  { key: "semestre", title: "Semestre", component: "text", group: "general", required: true },
+  { key: "Mostrar firmas", title: "Mostrar firmas", component: "switch", group: "display" },
+  { key: "cuantos", title: "Cuantos", component: "number", group: "general" },
+  { key: "inventado", title: "Inventado", component: "no_existe", group: "general" },
+];
+
+test("la lista conserva el orden del formulario y numera 1..N", () => {
+  const lista = normalizeSchemaFieldList(CAMPOS_WEB);
+  assert.deepEqual(lista.map((c) => [c.order, c.dataKey]), [
+    [1, "semestre"], [2, "mostrar_firmas"], [3, "cuantos"], [4, "inventado"],
+  ]);
+});
+
+test("EL ORDEN AUTORADO SOLO SOBREVIVE EN LA LISTA: el objeto lo pierde con una clave entera", () => {
+  // El hallazgo que justifica la columna `field_order`, medido con un experimento desechable antes
+  // de escribir el cambio: el slug de `slugifyFieldKey` deja pasar los enteros, y JS itera primero
+  // las claves de índice de array ORDENÁNDOLAS numéricamente. O sea que la corrupción no ocurre al
+  // releer el fichero, ocurre al ESCRIBIRLO.
+  const entrada = [
+    { key: "anio_lectivo", title: "Anio" },
+    { key: "2025", title: "Periodo" },
+    { key: "responsable", title: "Responsable" },
+    { key: "10", title: "Decimo" },
+  ];
+  const lista = normalizeSchemaFieldList(entrada);
+  assert.deepEqual(lista.map((c) => c.dataKey), ["anio_lectivo", "2025", "responsable", "10"]);
+
+  const json = buildSchemaJsonFromFieldList(lista);
+  assert.deepEqual(Object.keys(json.properties), ["10", "2025", "anio_lectivo", "responsable"]);
+});
+
+test("el slug repetido se descarta en silencio, como siempre (y el unico de la base lo respalda)", () => {
+  const lista = normalizeSchemaFieldList([
+    { key: "titulo", title: "Titulo" },
+    { key: "Titulo", title: "Otro titulo" },
+  ]);
+  assert.equal(lista.length, 1);
+  assert.equal(lista[0].title, "Titulo");
+});
+
+test("el componente desconocido cae a `text` y el `type` se deriva del componente", () => {
+  const lista = normalizeSchemaFieldList(CAMPOS_WEB);
+  assert.equal(lista[3].component, "text");
+
+  const json = buildSchemaJsonFromFieldList(lista);
+  assert.equal(json.properties.semestre.type, "string");
+  assert.equal(json.properties.mostrar_firmas.type, "boolean");
+  assert.equal(json.properties.cuantos.type, "number");
+});
+
+test("el JSON Schema sale EXACTAMENTE con la forma de siempre (el content_hash no se mueve)", () => {
+  const json = buildSchemaJsonFromFieldList(normalizeSchemaFieldList([CAMPOS_WEB[0]]));
+  assert.deepEqual(json, {
+    type: "object",
+    properties: {
+      semestre: {
+        type: "string",
+        title: "Semestre",
+        "x-deasy-field-code": "general.semestre",
+        "x-deasy-data-key": "semestre",
+        "x-deasy-ui": { component: "text", group: "general" },
+      },
+    },
+    required: ["semestre"],
+    additionalProperties: true,
+  });
+});
+
+test("`required` sale en el orden del formulario, no en el de las claves del objeto", () => {
+  const json = buildSchemaJsonFromFieldList(normalizeSchemaFieldList([
+    { key: "zeta", title: "Z", required: true },
+    { key: "alfa", title: "A", required: true },
+    { key: "beta", title: "B" },
+  ]));
+  assert.deepEqual(json.required, ["zeta", "alfa"]);
+});
+
+test("`field_code` se compone del grupo cuando el formulario no lo manda", () => {
+  const [campo] = normalizeSchemaFieldList([{ key: "token", title: "Token", group: "signatures" }]);
+  assert.equal(campo.fieldCode, "signatures.token");
+});
+
+test("una entrada que no es lista da lista vacia (y el escritor deja `{}` en el paquete)", () => {
+  assert.deepEqual(normalizeSchemaFieldList(null), []);
+  assert.deepEqual(normalizeSchemaFieldList("roto"), []);
+  assert.deepEqual(normalizeSchemaFieldList([]), []);
 });

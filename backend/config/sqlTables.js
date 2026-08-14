@@ -701,10 +701,16 @@ export const SQL_TABLES = [
       },
       { name: "assigned_person_id", label: "Persona fija", type: "number" },
       {
+        // `context_exact` estaba de menos (§0.6, cierre del censo de fosiles): es el valor POR DEFECTO
+        // que autora el formulario web de flujo y esta en el CHECK de la columna, pero el CRUD crudo
+        // no lo ofrecia — asi que desde aqui no habia forma de poner un paso en el ambito mas comun.
+        // Su gemela `signature_flow_steps` si lo lista; esto era la asimetria, no la norma.
+        // La lista queda alineada con el CHECK de `fill_flow_steps.unit_scope_type`: si ese CHECK
+        // cambia, esta lista cambia en el mismo commit.
         name: "unit_scope_type",
         label: "Alcance de unidad",
         type: "select",
-        options: ["unit_exact", "unit_subtree", "unit_type", "all_units"],
+        options: ["unit_exact", "unit_subtree", "unit_type", "all_units", "context_exact"],
         defaultValue: "unit_exact"
       },
       { name: "unit_id", label: "Unidad", type: "number" },
@@ -869,6 +875,13 @@ export const SQL_TABLES = [
       { name: "required_signers_max", label: "Max firmantes", type: "number" },
       { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
       {
+        // FOSIL QUE SE CONSERVA (§0.6, cierre del censo de fosiles): predecesor muerto de `slot`.
+        // Se escribe siempre `[]` y su unica lectura se retiro de `DocumentSignatureWorkflowService.js`
+        // porque no alimentaba a nadie. Quien coloca hoy la firma es `slot`, via
+        // `{{ signatures.<slot>.token }}`. Sigue expuesto aqui porque el nombre de la columna esta en
+        // los goldens de `admin_crud`: soltarlo es un cambio de contrato, no la retirada de una rama
+        // muerta. Lo que lo mataria: borrar este campo, recapturar ese golden y un
+        // `ALTER TABLE signature_flow_steps DROP COLUMN IF EXISTS anchor_refs` idempotente.
         name: "anchor_refs",
         label: "Anchor refs",
         type: "textarea",
