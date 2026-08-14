@@ -1,6 +1,10 @@
 {
   "extends": "stylelint-config-standard",
-  "ignoreFiles": ["dist/**", "node_modules/**", "coverage/**"],
+  "ignoreFiles": [
+    "dist/**",
+    "node_modules/**",
+    "coverage/**"
+  ],
   "rules": {
     "at-rule-no-unknown": [
       true,
@@ -20,10 +24,13 @@
         ]
       }
     ],
-
     "color-no-hex": true,
-    "declaration-no-important": [true, { "severity": "warning" }],
-
+    "declaration-no-important": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
     "color-function-alias-notation": null,
     "color-hex-length": null,
     "number-max-precision": null,
@@ -32,9 +39,13 @@
     "at-rule-empty-line-before": null,
     "length-zero-no-unit": null,
     "no-duplicate-selectors": null,
-
     "custom-property-pattern": null,
-    "selector-class-pattern": null,
+    "selector-class-pattern": [
+      "^((deasy|admin|graph|hope-action|btnsera|sera|profile|pdf-preview|custom|signature-workspace|theme|process-dialog)(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?|(router-link-active|vue-flow__[a-z-]+|leaflet-[a-z-]+|is-active|peer)|(text-muted|font-bold|bg-white|bg-slate-50(\\\\\\\\/[0-9]+)?|border-slate-200|shadow-sm|shadow-xl))$",
+      {
+        "message": "Una clase propia va en BEM con prefijo de familia: deasy-bloque__elemento--modificador. Las familias que no son `deasy-` son legado y no admiten nombres NUEVOS; los terceros y las utilidades repintadas estan listados aparte en la regla."
+      }
+    ],
     "no-descending-specificity": null,
     "declaration-block-no-redundant-longhand-properties": null,
     "alpha-value-notation": null,

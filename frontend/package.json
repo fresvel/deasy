@@ -6,13 +6,14 @@
     "dev": "vite --host 0.0.0.0 --port 8080",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 8080",
-    "lint": "eslint . && node scripts/check-no-dark.mjs && node scripts/check-orphan-classes.mjs",
+    "lint": "eslint . && node scripts/check-no-dark.mjs && node scripts/check-orphan-classes.mjs && node scripts/check-no-arbitrary.mjs",
     "lint:css": "stylelint \"src/**/*.css\"",
     "check:no-dark": "node scripts/check-no-dark.mjs",
     "check:orphan-classes": "node scripts/check-orphan-classes.mjs",
     "test:unit": "vitest run",
     "test:unit:coverage": "vitest run --coverage && sed -i 's|^SF:|SF:frontend/|' coverage/lcov.info",
-    "test:unit:watch": "vitest"
+    "test:unit:watch": "vitest",
+    "check:no-arbitrary": "node scripts/check-no-arbitrary.mjs"
   },
   "dependencies": {
     "@tabler/icons-vue": "^3.41.1",
