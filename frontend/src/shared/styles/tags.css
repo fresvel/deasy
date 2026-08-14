@@ -1,65 +1,77 @@
 @layer components {
 .deasy-tag {
-        @apply inline-flex w-fit items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-semibold;
+        /* LA FORMA ES LA DE TAILADMIN — adoptada el 2026-08-13, y se declara UNA vez.
+           Su badge es una PILDORA sin borde con relleno tintado:
+             inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5
+             text-sm font-medium  +  bg-{fam}-50  +  text-{fam}-500
+
+           Antes esto era la forma propia de Deasy (`rounded-xl`, `py-1.5`, `text-xs`,
+           `font-semibold` y BORDE), y ademas habia ~40 pastillas escritas a mano con formas
+           distintas. Consolidar hacia una forma y luego cambiarla es una sola linea aqui;
+           por eso el componente existe. */
+        @apply inline-flex w-fit items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium;
     }
 
     .deasy-tag__icon {
         @apply h-4 w-4 shrink-0;
     }
 
-    /* ── LOS TONOS. Cada variante declara SOLO su token; el color sale de la receta ──────
-       Antes cada una escribia el tinte -50/-200 de Tailwind a mano, dentro de un `@apply`
-       donde `color-no-hex` no llega. Eran cinco recetas distintas para la misma idea, y
-       ninguna cumplia WCAG 1.4.11: los bordes daban entre 1.21:1 y 1.49:1 contra el
-       blanco, o sea que el limite del tag no se veia.
+    /* ── LOS TONOS: dos tokens por variante ─────────────────────────────────────────────
+       `--tone` es el TEXTO y `--tone-soft` el RELLENO.
 
-       El mecanismo es el de `--tooltip-bg` en `buttons.css`: una variable por variante y
-       una sola regla que la gasta. */
+       ⚠️ EL TEXTO VA EN EL PASO 600-700, NO EN EL 500 QUE USA TAILADMIN. Su receta pone
+       `text-{fam}-500` sobre `bg-{fam}-50`, y ese paso NO cumple AA: `success-500` da 2.4:1
+       sobre blanco. Nuestros tokens semanticos YA son los pasos 600-700 —`--color-danger`
+       es `error-700`—, asi que basta con usarlos. Su geometria, nuestro contraste.
 
-    .deasy-tag--danger  { --tone: var(--color-danger); }
-    .deasy-tag--success { --tone: var(--color-success); }
-    .deasy-tag--warning { --tone: var(--color-warning); }
-    .deasy-tag--info    { --tone: var(--color-action-view); }
-    .deasy-tag--accent  { --tone: var(--color-action-view); }
-    /* Salmón: pendiente de firma en los pasos de firma. NO es el rojo de «rechazado». */
-    .deasy-tag--salmon  { --tone: var(--color-pending); }
+       El relleno es el paso `-50` de la misma familia, que es lo que hace su badge. Donde
+       no hay familia equivalente (accent) se deriva con `color-mix`. */
+    .deasy-tag--danger {
+        --tone: var(--color-danger);
+        --tone-soft: var(--color-error-50);
+    }
+    .deasy-tag--success {
+        --tone: var(--color-success);
+        --tone-soft: var(--color-success-50);
+    }
+    .deasy-tag--warning {
+        --tone: var(--color-warning);
+        --tone-soft: var(--color-warning-50);
+    }
+    .deasy-tag--info {
+        --tone: var(--color-info);
+        --tone-soft: var(--color-blue-light-50);
+    }
+    /* Salmon: pendiente de firma. NO es el rojo de «rechazado». */
+    .deasy-tag--salmon {
+        --tone: var(--color-pending);
+        --tone-soft: var(--color-orange-50);
+    }
+    /* Sin familia en la paleta adoptada: el relleno se deriva al 6 %, el mismo porcentaje
+       al que un tinte `-50` se sitúa sobre blanco. */
+    .deasy-tag--accent {
+        --tone: var(--color-accent);
+        --tone-soft: color-mix(in srgb, var(--color-accent) 6%, var(--color-white));
+    }
+    /* El estado apagado: gris CON fondo, para que se lea como pastilla y no como texto
+       suelto. `--muted` (fondo blanco) desaparecia sobre una fila blanca. */
+    .deasy-tag--neutral,
+    .deasy-tag--muted {
+        --tone: var(--color-icon);
+        --tone-soft: var(--color-gray-100);
+    }
 
-    /* LA RECETA. El 71 % del borde no es arbitrario: es el porcentaje al que llega a 3:1
-       sobre blanco, que es el minimo de WCAG 1.4.11 para el limite de un componente.
-
-       ⚠️ EL RELLENO ES EL 6 %, NO EL 10 % QUE DICE `frontend/CLAUDE.md` §2.4, y el motivo
-       merece leerse: el 10 % viene de los BOTONES DE ACCION, donde encima del relleno hay
-       un ICONO y el minimo es 3:1. Aqui encima hay TEXTO, que pide 4.5, y el relleno se
-       come parte de esa diferencia. Medido: al 10 % `--color-warning` sobre su propio
-       relleno da **4.39** y no pasa AA; al 6 % da 4.64 y las seis familias pasan. El
-       relleno no tiene minimo propio, pero SI se lo come al texto que va encima. */
+    /* LA RECETA, escrita una vez para las ocho variantes. */
     .deasy-tag--danger,
     .deasy-tag--success,
     .deasy-tag--warning,
     .deasy-tag--info,
-    .deasy-tag--salmon {
-        border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
-        background-color: color-mix(in srgb, var(--tone) 6%, var(--color-white));
-        color: var(--tone);
-    }
-
-    /* `--accent` NO es otro color: es el escalon fuerte del mismo azul que `--info`, y por
-       eso comparte token y solo sube los porcentajes al paso siguiente de la escala
-       (los mismos 85/16 que usa el hover de los botones de accion). Escrito con los tintes
-       de Tailwind eran `sky-300`/`sky-100` frente a `sky-200`/`sky-50`, que es lo mismo
-       dicho sin decir que es lo mismo. */
-    .deasy-tag--accent {
-        border-color: color-mix(in srgb, var(--tone) 85%, var(--color-white));
-        background-color: color-mix(in srgb, var(--tone) 16%, var(--color-white));
-        color: var(--tone);
-    }
-
-    .deasy-tag--neutral {
-        @apply border-line bg-surface text-icon;
-    }
-
+    .deasy-tag--salmon,
+    .deasy-tag--accent,
+    .deasy-tag--neutral,
     .deasy-tag--muted {
-        @apply border-line bg-white text-muted;
+        background-color: var(--tone-soft);
+        color: var(--tone);
     }
 
     /* Habia aqui `--contrast` y `--hero`, IDENTICAS byte a byte entre si y sin un solo
