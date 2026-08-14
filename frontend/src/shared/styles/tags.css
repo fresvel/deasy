@@ -80,25 +80,46 @@
 }
 
 @layer components {
-    /* LA ALERTA EN LINEA. Sustituye a 15 copias a mano del trio
-       `bg-X-50 + border-X-200 + text-X-700`, que ademas derivaban entre si.
+    /* LA ALERTA — geometria de TailAdmin, adoptada el 2026-08-13.
+       Su receta: `rounded-xl border border-{fam}-500 bg-{fam}-50 p-4`, y **el texto NEUTRO**:
+       en sus cuatro variantes solo el borde, el relleno y el icono tinen; el titulo va en
+       `gray-800` y el cuerpo en `gray-500`. Eso es lo contrario de lo que hacia Deasy, que
+       pintaba el texto del color del estado.
 
-       El color NO se elige: se DERIVA del token con la receta de `frontend/CLAUDE.md` §2.4.
-       · borde   71 % sobre blanco -> es el porcentaje al que llega a 3:1 (WCAG 1.4.11).
-                 Los tintes `-200` que habia antes median 1.21-1.49:1.
-       · relleno  6 % sobre blanco -> encima va TEXTO, y al 10 % `--color-warning` da 4.39
-                 y no pasa AA. Al 6 % pasan las cuatro variantes.
-       Cada variante declara UN token en `--tone` y la regla comun lo gasta: la receta se
-       escribe una vez, no cuatro. */
+       El cambio mejora el contraste: `--color-strong` sobre un tinte `-50` da mas de 13:1,
+       mientras que el texto tenido daba entre 4.6 y 5.5. Y el color no se pierde — lo llevan
+       el borde y el fondo, que es lo que de verdad identifica un aviso de un vistazo.
+
+       ⚠️ AQUI SU BORDE SI VALE, al reves que en el badge. Su alerta usa el paso `-500`
+       COMPLETO —no un tinte `-200`—, y ese paso llega a 3:1 sobre blanco: `error-500` da
+       3.4. Cumple WCAG 1.4.11 sin necesidad de derivarlo al 71 %.
+
+       Sustituye a 15 copias a mano del trio `bg-X-50 + border-X-200 + text-X-700`, que
+       ademas derivaban entre si en padding, radio y peso. */
     .deasy-alert {
-        @apply rounded-2xl border px-4 py-3 text-sm font-medium;
-        color: var(--tone);
-        border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
-        background-color: color-mix(in srgb, var(--tone) 6%, var(--color-white));
+        @apply rounded-xl border p-4 text-sm;
+        border-color: var(--tone-edge);
+        background-color: var(--tone-soft);
+        color: var(--color-strong);
     }
 
-    .deasy-alert--danger  { --tone: var(--color-danger); }
-    .deasy-alert--warning { --tone: var(--color-warning); }
-    .deasy-alert--success { --tone: var(--color-success); }
-    .deasy-alert--info    { --tone: var(--color-info); }
+    .deasy-alert--danger {
+        --tone-edge: var(--color-error-500);
+        --tone-soft: var(--color-error-50);
+    }
+
+    .deasy-alert--warning {
+        --tone-edge: var(--color-warning-500);
+        --tone-soft: var(--color-warning-50);
+    }
+
+    .deasy-alert--success {
+        --tone-edge: var(--color-success-500);
+        --tone-soft: var(--color-success-50);
+    }
+
+    .deasy-alert--info {
+        --tone-edge: var(--color-blue-light-500);
+        --tone-soft: var(--color-blue-light-50);
+    }
 }
