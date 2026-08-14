@@ -34,8 +34,9 @@ problemas que ningún frente del plan maestro cubría**.
   tabla como el ORM.
 - Toca dos defectos que el maestro ya registra: **1.10** (la bitácora de relevos que puentea el camino
   automático) aparece en el retrato del esquema §6 —**y `TD7-d` le arregla la columna que identifica a
-  quién hizo el relevo**, así que van juntos—, y **1.11** (parámetros de más ignorados) es
-  prerrequisito de la fase D5-b.
+  quién hizo el relevo**, así que van juntos—, y **1.11** (parámetros de más ignorados) **era**
+  prerrequisito de D5-b: su censo se cerró el 2026-08-14 —484 de 484 llamadas equilibradas— y **ese
+  cerrojo queda retirado**; sigue puesto el otro, cerrar D5-a antes.
 - **Recoge lo que el frente 0 dejó abierto al archivarse** (2026-08-14): las decisiones del modelo que
   ese frente inventarió pero no llegó a validar. Es la fase **D7**.
 - Respeta la lista de **no tocar** del maestro: el núcleo CRUD de `SqlAdminService` y `sqlTables.js`

@@ -34,7 +34,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | Frente | Qué entrega | Estado | Control detallado | Evidencia · fecha |
 |---|---|---|---|---|
 | **0** · Modelo de dominio | El modelo deja de contradecirse: cero `document_owner`, la base manda y el YAML se fue | ✅ **9 de 9** | [archivado](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) | `30654db` · medido en base · **2026-08-13** |
-| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **4 abiertos** · 10 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **4 de 17 tareas** | 1.8 cerrado · **2026-08-14** |
+| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas — **salvo donde la suite está roja (1.15)** | 🟡 **6 abiertos** · 10 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **6 de 21 tareas** | censo del 1.11: 484/484 · **2026-08-14** |
 | **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ 8 vulnerabilidades | aquí, §Frente 2 | Sonar `:9002` · 2026-08-09 |
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
 | **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 pasos 1-3 y 5 ✅ · 4 y 6 ⬜ | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
@@ -93,7 +93,7 @@ promovieron el día del cierre, porque vivían solo en su prosa.
 
 ---
 
-## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **4 de 17** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
+## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **6 de 21** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
 
 **Lo más rentable que queda, y con diferencia**, porque no es deuda estética: son fallos que un
 usuario puede encontrarse. Y todos están **congelados en pruebas**, así que el arreglo se verifica
@@ -102,14 +102,16 @@ solo: cuando el defecto muere, su golden cambia, y ese diff **es** la prueba.
 **Segundo frente con carpeta propia** (el otro es el 9), desde el **2026-08-14**. El motivo: llevaba
 **catorce fichas en una sola tabla**, nueve de ellas cerradas con párrafos de trescientas palabras, y
 leerlo para saber *qué queda* costaba más que hacerlo. **Las tareas están allí**, con su control de
-ejecución —17 tareas con estado, evidencia y fecha— y no se repiten aquí.
+ejecución —21 tareas con estado, evidencia y fecha— y no se repiten aquí.
 
 | Defecto | Qué es | Superficie |
 |---|---|---|
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud al iniciarla. Congelado en `manual_autoasignacion_efecto` | Backend · servicio |
 | **1.7** | El **sello fantasma**: `previewBoxStyle` nace `{display:'none'}` y la asignación del `pointermove` no incluye `display`, así que el tercer término del `v-if` es siempre cierto | Frontend · `MultiSignerPanel.vue` |
 | **1.10** | La **única bitácora de auditoría** del sistema la puentea el camino automático. Remedido: son **tres** caminos que reasignan sin dejar asiento, no uno, y la tabla no la lee **nadie** (un `INSERT`, cero `SELECT`) | Base de datos · triggers |
-| **1.11** | Los **parámetros de más se ignoran en silencio** — el modo de fallo del 1.5 en la otra dirección. **Bloquea la fase D5-b** del frente 9 hasta que se censen sus call sites | `backend/config/postgres.js` |
+| **1.11** | Los **parámetros de más se ignoran en silencio**. **Censo cerrado el 2026-08-14: 484 de 484 llamadas equilibradas** — la premisa que justificaba la tolerancia era falsa. Queda decidir si se endurece | `backend/config/postgres.js` |
+| **1.15** | **La suite de caracterización está ROJA** en `develop`: 9 casos, un golden que congela un hash SHA-256 no determinista. Mina el argumento de que «el arreglo se verifica solo» | Pruebas · `zzz_artifact_draft` |
+| **1.16** | **Orden de parámetros cruzado** en `context_ancestor_type`: el cargo recibe el tipo de unidad y viceversa. `bindParams` no lo ve —el número cuadra—, y resuelve firmantes equivocados en silencio | Backend · firma |
 
 **Diez cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
 razonamiento entero — que es donde está el valor: hay **cinco sitios donde la corrección obvia es la
@@ -674,7 +676,7 @@ problemas que ningún frente de aquí cubría. **Las tareas están allí**, no e
 | **D2** | Un vocabulario de estados, no cinco | `task_items.status` está definido en **5 sitios con 3 alfabetos**, y los dos grupos **no comparten ni un literal**. Efecto vivo: el panel cuenta `completada` como cerrado; el motor de relevos lo reasigna |
 | **D3** | Migraciones versionadas | El esquema se reaplica entero en cada arranque (`postgres_initializer.js:23-40`). Idempotente para crear, **incapaz de alterar**. Es el mayor riesgo operativo de la capa |
 | **D4** | Repositorios **por agregado** (10, no 67) | Cierra la fuga de capa del frente 8: `user_controler.queries.js` → `UserWorkspaceRepository` |
-| **D5** | Matar el traductor de dialecto | `config/postgres.js`: **241 cognitiva en 391 ncloc**, el más denso del repo, y los defectos 1.5/1.6/1.11 salieron todos de ahí. **D5-b está ⛔ hasta censar los call sites del 1.11** |
+| **D5** | Matar el traductor de dialecto | `config/postgres.js`: **241 cognitiva en 391 ncloc**, el más denso del repo, y los defectos 1.5/1.6/1.11 salieron todos de ahí. **D5-b está ⛔ hasta cerrar D5-a** — el cerrojo del 1.11 se retiró al cerrarse su censo (2026-08-14) |
 | **D6** | Validación por esquema en el borde | 0 dependencias de validación; tres capas artesanales desconectadas, y las rutas fuera del CRUD admin sin ninguna |
 
 **No contradice nada de lo de abajo.** Rechaza la clase por tabla y el ORM por el mismo criterio que

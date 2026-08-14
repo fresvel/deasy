@@ -137,8 +137,15 @@ function expandParam(value, pushScalar) {
 // con NULL. Los dos son silenciosos: ni excepción, ni log, ni fila de más o de menos que
 // delate el fallo. Es preferible un 500 en el sitio exacto que una corrupción muda.
 //
-// Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran y hay
-// call sites que reutilizan un array de argumentos más largo que la consulta.
+// Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran.
+//
+// ⚠️ ESTE COMENTARIO AFIRMABA ADEMÁS que «hay call sites que reutilizan un array de argumentos
+// más largo que la consulta», y ERA FALSO. Medido el 2026-08-14 sobre el árbol entero
+// (`npm run check:params`): de 423 llamadas decidibles, **cero** pasan parámetros de más. El
+// patrón que se invocaba como justificación no aparece ni una vez — el único reuso genuino del
+// mismo array en dos consultas (`processDefinitionVersion.js:227` y `:240`) está EQUILIBRADO,
+// porque ambas comparten el mismo fragmento `${excludeSql}`. La tolerancia se estaba pagando
+// con una premisa que nadie había comprobado. Defecto 1.11.
 export function bindParams(sql, params = []) {
   const values = [];
   let paramIndex = 0;
@@ -157,6 +164,20 @@ export function bindParams(sql, params = []) {
       `bindParams: la consulta tiene ${paramIndex} placeholders "?" y solo se recibieron ` +
       `${provided} parametros. Faltan ${paramIndex - provided}: sin este error se enviarian ` +
       `como NULL y la consulta se ejecutaria con datos equivocados.`
+    );
+  }
+  // SONDA del defecto 1.11 (TEMPORAL, tarea T1.11-a). REGISTRA Y DEJA PASAR: su trabajo es cerrar
+  // las 61 llamadas que el escáner estático NO puede decidir (SQL con `${}`, params en variable,
+  // arrays construidos con `.push()` condicional). Se ejerce con `npm run test:char:run`.
+  //
+  // Aquí el log SÍ lleva el SQL y la excepción de arriba NO, y no es incoherencia: el mensaje que
+  // se lanza puede acabar en el cliente —varios controllers responden `error.message`— y filtraría
+  // el esquema; un `console.error` se queda en el servidor. El `stack` es lo que da la ruta y la
+  // línea del call site, que es todo el objetivo de la sonda.
+  if (paramIndex < provided) {
+    console.error(
+      `[SONDA 1.11] sobran ${provided - paramIndex} parametros (${paramIndex} placeholders, ` +
+      `${provided} recibidos):\n${sql}\n${new Error().stack}`
     );
   }
   return { text, values };

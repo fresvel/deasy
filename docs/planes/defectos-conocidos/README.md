@@ -15,7 +15,9 @@ costaba más que hacerlo. Y sin control de ejecución, «⬜» era lo único que
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud | Backend · servicio |
 | **1.7** | El **sello fantasma**: un guard permanentemente verdadero en el panel de firma | Frontend · Vue |
 | **1.10** | La única **bitácora de auditoría** la puentean los caminos automáticos (son **tres**) | Base de datos · triggers |
-| **1.11** | Los **parámetros de más** se ignoran en silencio | `backend/config/postgres.js` |
+| **1.11** | Los **parámetros de más** se ignoran en silencio — 🟡 censo cerrado, falta decidir | `backend/config/postgres.js` |
+| **1.15** | **La suite de caracterización está ROJA**: un golden congela un hash no determinista | Pruebas · `zzz_artifact_draft` |
+| **1.16** | Orden de parámetros cruzado: el cargo y el tipo de unidad van intercambiados | Backend · firma |
 
 **Diez ya están cerrados.** El último, el **1.8** (2026-08-14): resultó que **no eran dos documentos en
 conflicto, sino cinco**, y uno de ellos era la documentación **publicada**. Y uno de los diez —el
@@ -26,7 +28,7 @@ personas. Está todo medido en la bitácora.
 
 | Fichero | Qué es | ¿Hay que hacer algo? |
 |---|---|---|
-| **[`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md)** | **El ejecutable.** Su **§0 es el control de ejecución**: 17 tareas con estado, evidencia y fecha. Cada defecto tiene ficha con diagnóstico remedido, decisiones pendientes y criterio de cierre | **SÍ. Empieza aquí** |
+| **[`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md)** | **El ejecutable.** Su **§0 es el control de ejecución**: 21 tareas con estado, evidencia y fecha. Cada defecto tiene ficha con diagnóstico remedido, decisiones pendientes y criterio de cierre | **SÍ. Empieza aquí** |
 | [`CLAUDE.md`](./CLAUDE.md) | **La norma de la carpeta.** Cómo se lleva el control, qué cuenta como evidencia, y lo que NO se hace desde aquí | Se carga sola al trabajar aquí |
 | [`bitacora.md`](./bitacora.md) | Los **diez cerrados**, con *por qué no se hizo de la otra forma*. Cinco sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
 
@@ -38,14 +40,20 @@ Dos motivos, y el segundo es el bueno:
 2. **Están congelados en pruebas.** El arreglo se verifica solo — cuando el defecto muere, su golden
    cambia, y **ese diff es la prueba**. No hace falta inventar la verificación: ya existe.
 
-La excepción es el **1.7**, que es frontend y ahí no hay golden que valga: se verifica en navegador,
-con usuario y ruta escritos en su ficha.
+⚠️ **Ese segundo motivo tiene hoy una grieta, y es el defecto 1.15**: la suite de caracterización
+**no está verde** (9 casos, un golden que congela un hash no determinista). Mientras siga así, en esa
+zona el diff de un golden no distingue el arreglo del ruido. Medido el 2026-08-14 con dos corridas,
+una de ellas sobre el árbol limpio.
+
+La otra excepción es el **1.7**, que es frontend y ahí no hay golden que valga: se verifica en
+navegador, con usuario y ruta escritos en su ficha.
 
 ## Su relación con el resto de `docs/planes/`
 
 - **No duplica ninguna tarea del maestro**: el maestro delega aquí, igual que hace el frente 9 con
   [`plan_data/`](../plan_data/).
-- **El 1.11 desbloquea la fase D5-b** del plan de datos, que está ⛔ esperando su censo.
+- **El 1.11 retiró uno de los dos cerrojos de la fase D5-b** del plan de datos (2026-08-14). Sigue ⛔,
+  pero ahora solo por el otro: cerrar D5-a primero.
 - **El 1.8 NO es el frente 7.** Aquí se reconcilia la contradicción entre dos documentos; migrar las
   ~114 lecturas de `.data.error` del frontend es del frente 7, con su plan en
   [`referencia/contrato-errores-api.md`](../referencia/contrato-errores-api.md) §6.

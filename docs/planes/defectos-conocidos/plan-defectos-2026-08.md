@@ -1,6 +1,11 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 4 de 17 tareas · 1 de 5 defectos** — abierto el **2026-08-14**.
+> **Estado: 6 de 21 tareas · 1 de 6 defectos** — abierto el **2026-08-14**.
+>
+> ⚠️ **La suite de caracterización NO está verde** (defecto **1.15**, §8). Son 9 casos en un solo
+> fichero y un golden no determinista, pero conviene saberlo antes de apoyarse en el argumento de que
+> «el arreglo se verifica solo»: para cualquier defecto que toque esa zona, el diff del golden no
+> prueba nada hasta que se arregle.
 >
 > Este es el **ejecutable** del frente 1. El [plan maestro](../plan-maestro-2026-08.md) delega aquí y
 > no repite ninguna tarea. Lo ya cerrado —**diez fichas**— vive en [`bitacora.md`](./bitacora.md),
@@ -40,9 +45,13 @@ plan.
 | `T1.10-b` | 1.10 | **Decisión escrita**: dónde se escribe el asiento — en el trigger plpgsql o en la capa de servicio | ⬜ | — | — |
 | `T1.10-c` | 1.10 | El asiento se escribe en los tres caminos; `occupancy_end` y `position_deactivated` dejan de ser inalcanzables | ⬜ | — | — |
 | `T1.10-d` | 1.10 | **Decisión escrita**: quién LEE `task_item_handovers` (hoy: nadie, cero `SELECT` en el repo) | ⬜ | — | — |
-| `T1.11-a` | 1.11 | **Censo** de los call sites que pasan más parámetros que placeholders a propósito | ⬜ | — | — |
+| `T1.11-a` | 1.11 | **Censo cerrado**: 423 decidibles por escáner + 61 leídos uno a uno + sonda sobre los 240 flujos | ✅ | **484/484 equilibradas · 0 de más**; sonda 0 disparos (arranque, fixture y flujos) | 2026-08-14 |
+| `T1.11-d` | 1.11 | **Nueva.** `npm run check:params` como gate permanente — el artefacto que al 1.5 le faltó | ✅ | `scripts/audit_bindparams.mjs`; probado con un desajuste inyectado (salta) y con `?` en comentario/cadena/`IN (?)` (no salta) | 2026-08-14 |
 | `T1.11-b` | 1.11 | **Decisión escrita**: endurecer, avisar, o dejarlo con la razón por escrito | ⬜ | — | — |
 | `T1.11-c` | 1.11 | La decisión implementada, con su unitario | ⬜ | — | — |
+| `T1.15-a` | 1.15 | **Decisión escrita**: qué se hace con el golden que congela un hash no determinista | ⬜ | — | — |
+| `T1.15-b` | 1.15 | La suite de caracterización vuelve a verde | ⬜ | — | — |
+| `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ⬜ | — | — |
 
 **Resumen por defecto** (se deriva de la tabla de arriba; no es una segunda lista de tareas):
 
@@ -52,7 +61,9 @@ plan.
 | **1.7** | El sello fantasma: un guard permanentemente verdadero | Frontend · Vue | ⬜ |
 | ~~**1.8**~~ | ~~Dos documentos del repo mandan formas de error contrarias~~ | Backend · documental | ✅ **2026-08-14** |
 | **1.10** | La única bitácora de auditoría la puentea el camino automático | Base de datos · triggers | ⬜ |
-| **1.11** | Parámetros de MÁS se ignoran en silencio | Backend · `config/postgres.js` | ⬜ |
+| **1.11** | Parámetros de MÁS se ignoran en silencio | Backend · `config/postgres.js` | 🟡 censo cerrado |
+| **1.15** | **La suite de caracterización está roja**: un golden congela un hash no determinista | Pruebas · `zzz_artifact_draft` | ⬜ **nuevo** |
+| **1.16** | Orden de parámetros cruzado en `context_ancestor_type` (cargo ↔ tipo de unidad) | Backend · firma | ⬜ **nuevo** |
 
 ---
 
@@ -228,27 +239,117 @@ Es el modo de fallo del 1.5 en la otra dirección, y se descubrió al arreglarlo
 // call sites que reutilizan un array de argumentos más largo que la consulta.
 ```
 
-**Se dejó así a propósito**, y la razón sigue siendo válida: mysql2 se comportaba igual y hay llamadas
-que reutilizan a propósito un array más largo que la consulta. El radio de impacto es mucho mayor que
-el del 1.5, donde bastó con lanzar.
+### El censo, cerrado el 2026-08-14 — y **la premisa era falsa**
 
-**Por eso el orden importa**: `T1.11-a` es **censar** esos call sites, y hasta que ese censo exista no
-se toca nada. La fase **D5-b** del [`plan_data/`](../plan_data/) está `⛔ bloqueada` por este censo,
-así que la tarea rinde el doble.
+La segunda mitad de ese comentario —«hay call sites que reutilizan un array más largo»— **no tenía ni
+un respaldo en el árbol**. Medido por tres vías que se cubren entre sí:
 
-Cómo censar, sin invento: la vía que ya funcionó en el 1.5 fue **sonda + barrido** — instrumentar
-`bindParams` para registrar los desajustes, correr `test:char:run` (240 flujos), y barrer las llamadas
-del repo contando placeholders contra parámetros. En el 1.5 el barrido cubrió 493 llamadas y 429
-fueron decidibles estáticamente; el resto exige leer.
+| Vía | Alcance | Resultado |
+|---|---|---|
+| **Escáner estático** (`npm run check:params`) | 423 llamadas decidibles | **0 con parámetros de más** |
+| **Lectura, una a una** | los 61 que el estático no decide (33 con SQL `${}` + params en variable, 24 de ellos construidos con `.push()` condicional) | **61 equilibrados, 0 desajustes** |
+| **Sonda en `bindParams`** (registra, no lanza) | arranque + fixture + bootstrap + seed + los 240 flujos | **0 disparos** |
 
-Tres salidas posibles para `T1.11-b`, y las tres son aceptables si van con su razón:
+**484 de 484 llamadas equilibradas.** El único reuso genuino del mismo array en dos consultas
+—`processDefinitionVersion.js:227` y `:240`— **está equilibrado**, porque ambas comparten el mismo
+fragmento `${excludeSql}`. El clásico `COUNT(*)` + `LIMIT` compartiendo array **no existe**: los seis
+sitios con esa forma usan `[...params, limit, offset]`, que *añade* en vez de reutilizar.
 
-1. **Endurecer** (lanzar, como con los que faltan) — solo si el censo demuestra que nadie lo usa.
-2. **Avisar** (log con el sitio) — captura los casos nuevos sin romper los viejos.
+En todos los indecidibles el idioma es correcto **por construcción**: cada `params.push` condicional
+viaja pegado al fragmento que aporta su `?`, y los `${placeholders}` se generan con `.map(() => "?")`
+sobre el **mismo** array que se pasa como parámetros.
+
+> **Lo que la sonda NO cubre, dicho por su nombre:** los flujos no entran en todas las ramas de los 24
+> `.push()` condicionales. Esas ramas están cerradas **por lectura**, no por ejecución. Las tres vías
+> juntas son la evidencia; ninguna sola bastaba.
+
+**Y esta vez el barrido no se tira.** El del 1.5 se hizo y se perdió —solo quedó una frase en
+`postgres.test.js:157`—, y por eso hubo que rehacerlo entero. Ahora es
+`backend/scripts/audit_bindparams.mjs` + `npm run check:params`, con el idioma de `check:imports`, y
+**es un gate**: sale con código 1 ante un desajuste decidible. Probado en las dos direcciones.
+
+**D5-b: este cerrojo queda retirado.** Ojo, no queda desbloqueada — `plan_data` §D5-b tenía **dos**
+condiciones y la otra sigue puesta (D5-a cerrada primero). De paso se corrigió allí una cifra muerta:
+decía «`bindParams` (CC 59)» y **la Fase F la dejó en ~1**.
+
+### Lo que queda: `T1.11-b`
+
+Con la premisa desmentida, las tres salidas siguen siendo legítimas pero ya no pesan igual:
+
+1. **Endurecer** (lanzar, como con los que faltan) — el censo demuestra que hoy nadie depende de la
+   tolerancia. Coste conocido: **la tolerancia está fijada como contrato en tres sitios** de
+   `postgres.test.js` (el bucle de 32 casos del escáner en `:96`, más `:122` y `:209`), y hay que
+   resolverlos, no borrarlos.
+2. **Avisar** (log permanente) — riesgo cero, pero no converge solo.
 3. **Dejarlo y escribirlo** — con el censo enlazado, para que no se vuelva a proponer a ciegas.
 
-**Criterio de cierre**: el censo publicado, la decisión escrita **encima de la propia función**, y
-D5-b desbloqueada o bloqueada por otra cosa.
+**Criterio de cierre**: la decisión escrita **encima de la propia función**, y la sonda retirada o
+convertida en lo que decida `T1.11-b`.
+
+---
+
+## §8 · Defecto 1.15 — la suite de caracterización está ROJA (golden no determinista)
+
+**Encontrado el 2026-08-14**, de rebote, al correr `test:char:run` como instrumento del censo del 1.11.
+
+**Dónde**: `backend/tests/characterization/flows/zzz_artifact_draft.test.mjs`, **9 casos** (líneas 159
+a 208). El diff que lo delata:
+
+```
++     content_hash: '709460212fb33d79f182182e195da03e5d3bc4ed57f4740f80822e5294327cbd'
+-     content_hash: 'c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1'
+```
+
+El golden congela el **SHA-256 del contenido de una plantilla generada**, y ese hash **no es
+determinista entre corridas**.
+
+**Verificado que es preexistente, no colateral**: se corrió la suite **dos veces**, una con el árbol
+limpio (`git stash`) y otra con los cambios del 1.11. **Los mismos 9 fallos, en el mismo fichero, en
+las mismas líneas.**
+
+**Por qué importa más de lo que parece.** El argumento que abre este plan —«están congelados en
+pruebas, así que el arreglo se verifica solo: cuando el defecto muere, su golden cambia, y ese diff
+*es* la prueba»— **da por hecho que la suite está verde**. No lo está. Mientras siga así, para
+cualquier defecto que toque esa zona el diff de un golden **no prueba nada**: no se distingue el
+arreglo del ruido.
+
+`T1.15-a` es una decisión, y hay al menos tres salidas: normalizar el hash en el snapshot (como ya se
+hace con los `id: "<normalized>"`), hacer determinista la generación, o dejar de capturar ese campo.
+No es obvia cuál — depende de si ese hash es contrato de algo.
+
+---
+
+## §9 · Defecto 1.16 — orden de parámetros cruzado en `context_ancestor_type`
+
+**Encontrado el 2026-08-14** leyendo los 61 indecidibles del censo del 1.11. **`bindParams` no puede
+verlo**: el número de parámetros cuadra (3 y 3); lo que está mal es el **orden**.
+
+**Dónde**: `backend/services/documents/DocumentSignatureWorkflowService.js:413-438`,
+`resolvePersonsForCargoInScope`.
+
+Los `?` salen en este orden en el SQL final: (1) `WHERE id = ?` del CTE `ancestor_units`, (2)
+`up.cargo_id = ?`, que viene dentro de `${query}`, y (3) `WHERE unit_type_id = ?` del `IN`. Pero:
+
+```js
+params.unshift(scope.unitTypeId);
+params.unshift(scope.unitId);      // -> [unitId, unitTypeId, cargoId]
+```
+
+Es decir: **`cargo_id` recibe el tipo de unidad y `unit_type_id` recibe el cargo**. El array correcto
+es `[unitId, cargoId, unitTypeId]`. Resuelve firmantes equivocados, o ninguno, **en silencio**.
+
+**La rama de al lado está bien, y ese contraste es la prueba**: `context_subtree` (`:393-412`) hace un
+solo `unshift` y su CTE no añade `?` al final, así que su orden cuadra.
+
+**Alcanzabilidad, medida**: el `CHECK` de `signature_flow_steps.unit_scope_type` **no admite**
+`context_ancestor_type`, pero esta rama no lee la columna — lee el **JSONB `signers`**, que ningún
+`CHECK` cubre, y el propio fichero lo explica en `:130-148`. Contra la base de la pila C: **0 filas**
+con ese valor en `signers`. Es por tanto un **defecto latente sin disparador en los datos de hoy**,
+como fueron el 1.5 y el 1.13.
+
+> ⚠️ **Pero la base de dev son fixtures, no producción.** Lo medido es que el fixture no lo alcanza;
+> una base desplegada con datos heredados **sí** podría, y `copySignatureFlowSteps` copia `signers`
+> **verbatim** al versionar, así que un valor viejo se propaga solo a cada versión nueva.
 
 ---
 
