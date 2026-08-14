@@ -34,7 +34,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | Frente | Qué entrega | Estado | Control detallado | Evidencia · fecha |
 |---|---|---|---|---|
 | **0** · Modelo de dominio | El modelo deja de contradecirse: cero `document_owner`, la base manda y el YAML se fue | ✅ **9 de 9** | [archivado](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) | `30654db` · medido en base · **2026-08-13** |
-| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas — **salvo donde la suite está roja (1.15)** | 🟡 **5 abiertos** · 11 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **8 de 21 tareas** | 1.11 cerrado · **2026-08-14** |
+| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **5 abiertos** · 12 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **10 de 23 tareas** | 1.15 cerrado, suite en verde · **2026-08-14** |
 | **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ 8 vulnerabilidades | aquí, §Frente 2 | Sonar `:9002` · 2026-08-09 |
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
 | **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 pasos 1-3 y 5 ✅ · 4 y 6 ⬜ | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
@@ -93,7 +93,7 @@ promovieron el día del cierre, porque vivían solo en su prosa.
 
 ---
 
-## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **8 de 21** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
+## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **10 de 23** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
 
 **Lo más rentable que queda, y con diferencia**, porque no es deuda estética: son fallos que un
 usuario puede encontrarse. Y todos están **congelados en pruebas**, así que el arreglo se verifica
@@ -102,7 +102,7 @@ solo: cuando el defecto muere, su golden cambia, y ese diff **es** la prueba.
 **Segundo frente con carpeta propia** (el otro es el 9), desde el **2026-08-14**. El motivo: llevaba
 **catorce fichas en una sola tabla**, nueve de ellas cerradas con párrafos de trescientas palabras, y
 leerlo para saber *qué queda* costaba más que hacerlo. **Las tareas están allí**, con su control de
-ejecución —21 tareas con estado, evidencia y fecha— y no se repiten aquí.
+ejecución —23 tareas con estado, evidencia y fecha— y no se repiten aquí.
 
 | Defecto | Qué es | Superficie |
 |---|---|---|
@@ -110,11 +110,13 @@ ejecución —21 tareas con estado, evidencia y fecha— y no se repiten aquí.
 | **1.7** | El **sello fantasma**: `previewBoxStyle` nace `{display:'none'}` y la asignación del `pointermove` no incluye `display`, así que el tercer término del `v-if` es siempre cierto | Frontend · `MultiSignerPanel.vue` |
 | **1.10** | La **única bitácora de auditoría** del sistema la puentea el camino automático. Remedido: son **tres** caminos que reasignan sin dejar asiento, no uno, y la tabla no la lee **nadie** (un `INSERT`, cero `SELECT`) | Base de datos · triggers |
 | ~~**1.11**~~ | ~~Los parámetros de más se ignoran en silencio~~ — ✅ **cerrado el 2026-08-14**: la premisa que lo justificaba era falsa (484/484 equilibradas) y ahora lanza en las dos direcciones | `backend/config/postgres.js` |
-| **1.15** | **La suite de caracterización está ROJA** en `develop`: 9 casos, un golden que congela un hash SHA-256 no determinista. Mina el argumento de que «el arreglo se verifica solo» | Pruebas · `zzz_artifact_draft` |
+| ~~**1.15**~~ | ~~La suite de caracterización está ROJA~~ — ✅ **cerrado el 2026-08-14**. No era un golden malo: **MinIO servía una semilla obsoleta** y el golden era correcto. Un centinela protegía las ediciones del admin y de paso bloqueaba el catálogo | Bootstrap · MinIO |
 | **1.16** | **Orden de parámetros cruzado** en `context_ancestor_type`: el cargo recibe el tipo de unidad y viceversa. `bindParams` no lo ve —el número cuadra—, y resuelve firmantes equivocados en silencio | Backend · firma |
+| **1.17** | **Nada re-publica la semilla en un entorno ya arrancado** —`publishBaseSeedAssets` cuelga del bootstrap, no del arranque— y `test:char:fixture` no resetea `storage`: el estado de MinIO es una **entrada oculta** al sistema bajo prueba | Bootstrap · arnés |
+| **1.18** | Al editar, `path.basename()` sobre un **prefijo** renombra el PDF subido a `pdf`, sin extensión. Ya congelado en el golden `editar_ok` | Backend · plantillas |
 
-**Once cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
-razonamiento entero — que es donde está el valor: hay **seis sitios donde la corrección obvia es la
+**Doce cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
+razonamiento entero — que es donde está el valor: hay **siete sitios donde la corrección obvia es la
 equivocada**. Entre ellos el **1.9**, que resultó **no ser un defecto**: aplicarle el guard del IDOR
 habría dejado sin chat a 8 de 10 asignados, medido contra la base antes de tocar nada.
 

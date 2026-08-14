@@ -1,4 +1,4 @@
-# Bitácora del frente 1 — los once cerrados
+# Bitácora del frente 1 — los doce cerrados
 
 > Esto **no es historia decorativa**. La mitad del valor de cada ficha es *por qué no se hizo de la
 > otra forma*: hay **seis** sitios de este repo donde la «corrección obvia» es la equivocada, y están
@@ -16,6 +16,7 @@
 | 1.8 | Dos documentos mandaban formas de error contrarias (**eran cinco**) | 2026-08-14 | **ninguno, y es correcto** |
 | **1.9** | «Una copia del IDOR se quedó atrás» | **NO ERA UN DEFECTO** | — |
 | 1.11 | Los parámetros de MÁS se ignoraban en silencio (**y la premisa era falsa**) | 2026-08-14 | **ninguno, y es correcto** |
+| 1.15 | El catálogo de semillas nunca llegaba a un entorno ya arrancado | 2026-08-14 | **ninguno — el golden ya era correcto** |
 | 1.12 | Se activa una configuración con una plantilla sin publicar | 2026-08-10 · `e6d291d`+`73d2e82` | 1 nuevo |
 | 1.13 | `template_artifacts.lifecycle_state` nace `published` | 2026-08-10 · `673f1fb` | **ninguno, y es correcto** |
 | 1.14 | Clonar una configuración convertía en `single` todo lo `routed` | 2026-08-11 · `597cd43` | 1 línea |
@@ -390,3 +391,73 @@ Golden movido: **una línea**, `single` → `routed`.
 - **`controllers/tareas/tareas_controler.js:79`** **no es otra copia del IDOR**: lista *tareas* vía
   `task_assignments` y solo expone un agregado (`task_item_count`, `task_item_names`), no entregables
   individuales. Si algún día se revisa, será por otro motivo.
+
+---
+
+## 1.15 · El catálogo de semillas nunca llegaba a un entorno ya arrancado
+
+**Cerrado el 2026-08-14.** La suite pasó de **4 fallos a 0** y **ningún golden se movió** — porque el
+golden ya era correcto.
+
+### La ficha original decía DOS cosas falsas, y las dos las escribí yo
+
+Decía «un golden que congela un hash SHA-256 **no determinista**» y «**9 casos**».
+
+- **El hash es determinista.** Dos corridas completas e independientes de `test:char:run`, cada una con
+  reset de base, bootstrap y seed, dan **el mismo** `709460…`. Lo di por volátil al ver el diff y no lo
+  comprobé.
+- **Son 4 tests, no 9.** Conté líneas `✖`, y cada test aparece dos veces (subtest + resumen). De los 4,
+  **solo 2 fallan por el hash**; los otros dos caen **en cascada**, porque `matchSnapshot` lanza antes
+  de `happy.id = res.body?.id` y los siguientes hacen `assert.ok(happy.id)`.
+
+> **Y la lección de método**: un diff de golden invita a concluir «el valor es inestable». La pregunta
+> barata que lo desmiente es **¿cambia entre dos corridas, o es estable y distinto del golden?**. Cuesta
+> un `grep` sobre dos salidas ya guardadas, y ahorra el arreglo equivocado — que aquí habría sido
+> **recapturar**, congelando el defecto que `49d41ce4` acababa de arreglar.
+
+### Lo que pasaba de verdad
+
+El paquete del borrador se arma leyendo `Seeds/latex/informe-general/src/**` **de MinIO**, y la pila
+servía un `make.sh` **anterior** a `49d41ce4` (2026-08-13, *«el ZIP de una plantilla creada por la web ya
+se puede renderizar»*). Comprobado leyendo el objeto: el repo dice `for candidate in data.json data.yaml
+…` y MinIO decía `for candidate in data.yaml …`. **El golden era correcto y el entorno el que mentía.**
+
+### El arreglo: un centinela que guardaba dos cosas y solo una lo justificaba
+
+`publishBaseSeedAssets` salía por un `return` temprano si existía `main.tex.j2`:
+
+| Destino | Quién lo edita | Qué se hace ahora |
+|---|---|---|
+| `Seeds/<tipo>/<nombre>/**` (catálogo) | **nadie** — es la copia publicada del repo | **se republica siempre** |
+| `System/<code>/v0001/**` (artifact) | **el admin**, desde la web | el centinela **se queda intacto** |
+
+El comentario decía «respeta ediciones del admin», y para el artifact es cierto. Aplicarlo al catálogo
+era el fallo, y su efecto no era «no reescribir»: era que **ningún cambio en
+`services/system/seeds/**` alcanzara un entorno ya arrancado**.
+
+### Lo que el arreglo NO cubre, y por eso nació el 1.17
+
+Verificando se descubrió que **`publishBaseSeedAssets` no corre en cada arranque**: cuelga de
+`ensureDefaultProcess`, que solo se ejecuta en el bootstrap. Así que reiniciar el backend **no** basta —
+lo comprobé y el catálogo seguía viejo. Lo que sí lo ejercita es `test:char:fixture`, que re-bootstrapea.
+
+**Partir el centinela era necesario pero no suficiente**: en producción sigue sin haber camino. Eso es
+el defecto **1.17**, abierto en el mismo commit.
+
+### Dos trampas de verificación que caí y conviene no repetir
+
+1. **Mi primer chequeo daba falso verde.** Hacía `grep data.json` sobre el fichero entero, y esa cadena
+   aparece en otro punto del `make.sh`. El chequeo correcto compara **la línea `for candidate in`**.
+2. **El test unitario se validó con control positivo**: se restauró temporalmente el `return` temprano y
+   se comprobó que los dos tests que cubren el defecto **fallan**. Un test que no se ha visto fallar no
+   prueba nada.
+
+### Cómo se probó sin MinIO
+
+`publishBaseSeedAssets` acepta sus ayudantes **por parámetro con valor por defecto**. No es API para
+nadie —ningún llamador pasa nada, el comportamiento en producción es idéntico— sino la costura mínima
+para observar **qué claves se suben**, ya que `mock.module` en este Node exige un flag experimental y
+cambiar el `test:unit` global por un test habría sido peor negocio. **6 unitarios nuevos.**
+
+---
+

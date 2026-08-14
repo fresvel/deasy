@@ -1,11 +1,9 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 8 de 21 tareas · 2 de 6 defectos** — abierto el **2026-08-14**.
+> **Estado: 10 de 23 tareas · 3 de 8 defectos** — abierto el **2026-08-14**.
 >
-> ⚠️ **La suite de caracterización NO está verde** (defecto **1.15**, §8). Son 9 casos en un solo
-> fichero y un golden no determinista, pero conviene saberlo antes de apoyarse en el argumento de que
-> «el arreglo se verifica solo»: para cualquier defecto que toque esa zona, el diff del golden no
-> prueba nada hasta que se arregle.
+> ✅ **La suite de caracterización está VERDE** desde el 2026-08-14 (defecto 1.15 cerrado). Estuvo roja
+> 4 tests, y **no por un golden malo**: el golden era correcto y lo que mentía era el entorno.
 >
 > Este es el **ejecutable** del frente 1. El [plan maestro](../plan-maestro-2026-08.md) delega aquí y
 > no repite ninguna tarea. Lo ya cerrado —**diez fichas**— vive en [`bitacora.md`](./bitacora.md),
@@ -49,9 +47,11 @@ plan.
 | `T1.11-d` | 1.11 | **Nueva.** `npm run check:params` como gate permanente — el artefacto que al 1.5 le faltó | ✅ | `scripts/audit_bindparams.mjs`; probado con un desajuste inyectado (salta) y con `?` en comentario/cadena/`IN (?)` (no salta) | 2026-08-14 |
 | `T1.11-b` | 1.11 | **Decisión: ENDURECER.** Escrita encima de `bindParams` con su medición y con por qué no bastaba avisar | ✅ | El gate estático solo ve 423 de 484; lanzar cubre las 484 en runtime | 2026-08-14 |
 | `T1.11-c` | 1.11 | Guard simétrico `paramIndex !== provided`; los 3 tests que fijaban la tolerancia, resueltos | ✅ | **602 unitarios verdes**; char: los **mismos 9 fallos preexistentes**, 0 errores de `bindParams`, 0 goldens movidos | 2026-08-14 |
-| `T1.15-a` | 1.15 | **Decisión escrita**: qué se hace con el golden que congela un hash no determinista | ⬜ | — | — |
-| `T1.15-b` | 1.15 | La suite de caracterización vuelve a verde | ⬜ | — | — |
+| `T1.15-a` | 1.15 | **Diagnóstico**: el golden era CORRECTO y el hash determinista; lo viejo era MinIO | ✅ | Repo dice `data.json`, MinIO no; dos corridas dan el mismo hash | 2026-08-14 |
+| `T1.15-b` | 1.15 | El centinela `ya_existe` deja de gobernar el catálogo `Seeds/`; la suite vuelve a verde | ✅ | **4 fallos → 0**, 0 goldens movidos, `make.sh` publicado ya lleva `data.json`. 6 unitarios nuevos, con control positivo | 2026-08-14 |
 | `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ⬜ | — | — |
+| `T1.17-a` | 1.17 | **Decisión escrita**: cómo llega una semilla nueva a un entorno YA arrancado (hoy: por ningún camino) | ⬜ | — | — |
+| `T1.18-a` | 1.18 | El PDF deja de renombrarse a `pdf` al editar; el golden `editar_ok` se mueve y **ese diff es la prueba** | ⬜ | — | — |
 
 **Resumen por defecto** (se deriva de la tabla de arriba; no es una segunda lista de tareas):
 
@@ -62,8 +62,10 @@ plan.
 | ~~**1.8**~~ | ~~Dos documentos del repo mandan formas de error contrarias~~ | Backend · documental | ✅ **2026-08-14** |
 | **1.10** | La única bitácora de auditoría la puentea el camino automático | Base de datos · triggers | ⬜ |
 | ~~**1.11**~~ | ~~Parámetros de MÁS se ignoran en silencio~~ | Backend · `config/postgres.js` | ✅ **2026-08-14** |
-| **1.15** | **La suite de caracterización está roja**: un golden congela un hash no determinista | Pruebas · `zzz_artifact_draft` | ⬜ **nuevo** |
-| **1.16** | Orden de parámetros cruzado en `context_ancestor_type` (cargo ↔ tipo de unidad) | Backend · firma | ⬜ **nuevo** |
+| ~~**1.15**~~ | ~~El catálogo de semillas nunca llega a un entorno ya arrancado~~ | Bootstrap · MinIO | ✅ **2026-08-14** |
+| **1.16** | Orden de parámetros cruzado en `context_ancestor_type` (cargo ↔ tipo de unidad) | Backend · firma | ⬜ |
+| **1.17** | **Nada re-publica la semilla en un entorno vivo**, y el arnés no resetea `storage` | Bootstrap · arnés | ⬜ **nuevo** |
+| **1.18** | Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf` | Backend · plantillas | ⬜ **nuevo** |
 
 ---
 
@@ -238,34 +240,15 @@ equilibradas—, así que `bindParams` **lanza también cuando sobran**. Dejó d
 
 ---
 
-## §8 · Defecto 1.15 — la suite de caracterización está ROJA (golden no determinista)
+## ~~§8 · Defecto 1.15 — la suite de caracterización está ROJA~~
 
-**Encontrado el 2026-08-14**, de rebote, al correr `test:char:run` como instrumento del censo del 1.11.
+✅ **CERRADO el 2026-08-14.** Y **no era lo que decía esta ficha**: afirmaba «un golden que congela un
+hash no determinista» y «9 casos», y **las dos cosas eran falsas**. La ficha corregida está en
+[`bitacora.md` § 1.15](./bitacora.md#115--el-catalogo-de-semillas-nunca-llegaba-a-un-entorno-ya-arrancado).
 
-**Dónde**: `backend/tests/characterization/flows/zzz_artifact_draft.test.mjs`, **9 casos** (líneas 159
-a 208). El diff que lo delata:
-
-```
-+     content_hash: '709460212fb33d79f182182e195da03e5d3bc4ed57f4740f80822e5294327cbd'
--     content_hash: 'c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1'
-```
-
-El golden congela el **SHA-256 del contenido de una plantilla generada**, y ese hash **no es
-determinista entre corridas**.
-
-**Verificado que es preexistente, no colateral**: se corrió la suite **dos veces**, una con el árbol
-limpio (`git stash`) y otra con los cambios del 1.11. **Los mismos 9 fallos, en el mismo fichero, en
-las mismas líneas.**
-
-**Por qué importa más de lo que parece.** El argumento que abre este plan —«están congelados en
-pruebas, así que el arreglo se verifica solo: cuando el defecto muere, su golden cambia, y ese diff
-*es* la prueba»— **da por hecho que la suite está verde**. No lo está. Mientras siga así, para
-cualquier defecto que toque esa zona el diff de un golden **no prueba nada**: no se distingue el
-arreglo del ruido.
-
-`T1.15-a` es una decisión, y hay al menos tres salidas: normalizar el hash en el snapshot (como ya se
-hace con los `id: "<normalized>"`), hacer determinista la generación, o dejar de capturar ese campo.
-No es obvia cuál — depende de si ese hash es contrato de algo.
+En una línea: el hash **es** determinista, el golden **era** correcto, y lo que mentía era **MinIO** —
+servía una semilla anterior al arreglo del ZIP renderizable. Causa raíz: un centinela que protegía
+ediciones del admin sobre el artifact **y de paso bloqueaba el catálogo, que nadie edita**.
 
 ---
 
@@ -303,17 +286,84 @@ como fueron el 1.5 y el 1.13.
 
 ---
 
-## §7 · Orden sugerido
+## §10 · Defecto 1.17 — nada re-publica la semilla en un entorno ya arrancado
 
-No es arbitrario: va de lo que se decide solo a lo que necesita una decisión de producto.
+**Abierto el 2026-08-14**, al cerrar el 1.15. Es **la mitad del 1.15 que su arreglo NO cubre**, y hay
+que decirlo así de claro: partir el centinela era **necesario pero no suficiente**.
 
-1. **1.8** — es documental, no rompe nada y deja de sembrar deuda desde el minuto uno.
-2. **1.11 (`T1.11-a`)** — el censo, porque además desbloquea D5-b del plan de datos.
-3. **1.7** — pide navegador, pero el radio es un componente y seis líneas.
+**Lo que se descubrió al verificar**: `publishBaseSeedAssets` no corre en cada arranque. Cuelga de
+`ensureDefaultProcess`, que solo se ejecuta en el **bootstrap del sistema**. Así que en un entorno ya
+bootstrapeado —producción incluida— **no hay ningún camino que republique la semilla**: ni reiniciar el
+backend, ni desplegar una imagen nueva. El arreglo del ZIP de `49d41ce4` sigue sin llegar allí.
+
+Lo que sí lo ejercita es `test:char:fixture`, porque resetea la base y re-bootstrapea. Por eso la suite
+volvió a verde y un reinicio no bastaba.
+
+**El agravante, y es el segundo frente de esta ficha**: `backend/package.json` → `test:char:fixture`
+resetea **solo `db`**. `backend/scripts/reset.mjs` ya tiene el objetivo `storage` y nadie lo invoca en
+el arnés, así que **el estado de MinIO es una entrada oculta del sistema bajo prueba**: los buckets
+sobreviven a todas las corridas y una pila puede medir contra objetos de hace semanas. Es exactamente
+lo que pasó.
+
+`T1.17-a` es una **decisión**, y las salidas no son equivalentes: republicar en cada arranque (simple,
+pero hay que ver qué cuesta y si pisa algo), un comando de mantenimiento explícito, o comparar el hash
+del árbol contra lo publicado y republicar solo si difieren. Antes de tocar `test:char:fixture` hay que
+comprobar que **los flujos de firma, que suben PDFs, no dependan de objetos que hoy sobreviven**.
+
+---
+
+## §11 · Defecto 1.18 — al editar, el PDF se renombra a `pdf`
+
+**Abierto el 2026-08-14**, encontrado al reconstruir los hashes del paquete.
+
+**Dónde**: `backend/services/admin/templates/templateLifecycle.js:1290-1300`.
+
+```js
+const fileName = existingEntry?.entry_object_key
+  ? path.basename(existingEntry.entry_object_key)   // <- es un PREFIJO, no un fichero
+  : fallbackFileName;
+```
+
+`available_formats.pdf.entry_object_key` vale `"System/draft_…/1.0.0/template/pdf/"` — **un prefijo
+terminado en `/`**. `path.basename()` de eso devuelve `"pdf"`, así que al editar, `referencia.pdf` se
+guarda como `template/pdf/pdf`, **sin extensión**.
+
+**Ya está congelado en el golden `editar_ok`**, y ahí está la gracia: es la razón de que `crear_ok` y
+`editar_ok` tengan hashes distintos. Cuando se arregle, **el diff de ese golden será la prueba**.
+
+---
+
+## §7 · Orden sugerido — **reescrito el 2026-08-14**
+
+Los tres cerrados fueron **1.8 → 1.11 → 1.15**, en ese orden, y el orden funcionó por un motivo que
+conviene conservar: **cada uno destapó al siguiente**. El 1.11 obligó a correr la suite y ahí salió el
+1.15; el 1.15 obligó a leer el bootstrap y ahí salieron el 1.17 y el 1.18. Medir es lo que produce
+trabajo nuevo, no planificarlo.
+
+Para lo que queda, el criterio sigue siendo el mismo: **lo que se decide solo, antes de lo que necesita
+una decisión tuya**.
+
+1. **1.16** — el más barato del tablero, y ya está diagnosticado: dos líneas, `[unitId, unitTypeId,
+   cargoId]` pasa a `[unitId, cargoId, unitTypeId]`. La rama gemela `context_subtree` está bien y sirve
+   de prueba de contraste. Latente hoy (0 filas en el JSONB de la base), así que **ningún golden se
+   moverá** — su evidencia es un unitario, como en el 1.5 y el 1.13.
+2. **1.18** — también acotado, y su golden `editar_ok` **ya está congelado**, así que el diff *es* la
+   prueba. Cuidado con una cosa: `entry_object_key` guarda un prefijo, y hay que ver si eso es un dato
+   correcto mal usado o un dato mal escrito.
+3. **1.17** — es el que más rinde de los tres, porque **cierra una clase de fallo, no un caso**: el
+   estado de MinIO como entrada oculta al sistema bajo prueba. Pero empieza por `T1.17-a`, que es una
+   decisión, y antes de tocar `test:char:fixture` hay que censar qué flujos dependen de objetos que hoy
+   sobreviven al reset.
 4. **1.10** — el más caro y el que más decisiones tiene; empieza por `T1.10-d`, que puede cambiar todo
    lo demás.
-5. **1.3** — el último a propósito: no se puede escribir el guard hasta que la regla esté decidida, y
+5. **1.7** — pide navegador, pero el radio es un componente y seis líneas.
+6. **1.3** — el último a propósito: no se puede escribir el guard hasta que la regla esté decidida, y
    la regla no es técnica.
+
+> **Y una advertencia sobre el argumento de este frente.** «Están congelados en pruebas, así que el
+> arreglo se verifica solo» resultó ser **condicional**: la suite estuvo roja 4 tests y nadie lo sabía.
+> Antes de apoyarte en un golden, comprueba que la suite esté verde **antes** de tu cambio. Es lo que
+> convirtió el 1.15 en un hallazgo en vez de en una confusión.
 
 ---
 

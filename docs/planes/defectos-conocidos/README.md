@@ -15,22 +15,24 @@ costaba más que hacerlo. Y sin control de ejecución, «⬜» era lo único que
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud | Backend · servicio |
 | **1.7** | El **sello fantasma**: un guard permanentemente verdadero en el panel de firma | Frontend · Vue |
 | **1.10** | La única **bitácora de auditoría** la puentean los caminos automáticos (son **tres**) | Base de datos · triggers |
-| **1.15** | **La suite de caracterización está ROJA**: un golden congela un hash no determinista | Pruebas · `zzz_artifact_draft` |
 | **1.16** | Orden de parámetros cruzado: el cargo y el tipo de unidad van intercambiados | Backend · firma |
+| **1.17** | **Nada re-publica la semilla en un entorno vivo**, y el arnés no resetea `storage` | Bootstrap · arnés |
+| **1.18** | Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf` | Backend · plantillas |
 
-**Once ya están cerrados**, dos de ellos el 2026-08-14: el **1.8** —resultó que **no eran dos
-documentos en conflicto, sino cinco**, y uno era la documentación **publicada**— y el **1.11**, cuya
-justificación para tolerar los parámetros de más **era falsa**: se midió y las 484 llamadas del
-backend están equilibradas. Y uno de los once —el **1.9**— resultó **no ser un defecto**: aplicarle
-el arreglo «obvio» habría roto el chat a ocho de diez personas. Está todo medido en la bitácora.
+**Doce ya están cerrados**, tres de ellos el 2026-08-14 — y los tres resultaron ser **otra cosa** de
+lo que decía su ficha: el **1.8** no eran dos documentos en conflicto sino **cinco**, uno de ellos la
+documentación publicada; la justificación del **1.11** para tolerar los parámetros de más **era falsa**
+(las 484 llamadas están equilibradas); y el **1.15** no era un golden no determinista sino **una
+semilla obsoleta en MinIO** — el golden era correcto. Uno de los doce, el **1.9**, resultó **no ser un
+defecto**: el arreglo «obvio» habría roto el chat a ocho de diez personas. Todo medido en la bitácora.
 
 ## Los ficheros
 
 | Fichero | Qué es | ¿Hay que hacer algo? |
 |---|---|---|
-| **[`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md)** | **El ejecutable.** Su **§0 es el control de ejecución**: 21 tareas con estado, evidencia y fecha. Cada defecto tiene ficha con diagnóstico remedido, decisiones pendientes y criterio de cierre | **SÍ. Empieza aquí** |
+| **[`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md)** | **El ejecutable.** Su **§0 es el control de ejecución**: 23 tareas con estado, evidencia y fecha. Cada defecto tiene ficha con diagnóstico remedido, decisiones pendientes y criterio de cierre | **SÍ. Empieza aquí** |
 | [`CLAUDE.md`](./CLAUDE.md) | **La norma de la carpeta.** Cómo se lleva el control, qué cuenta como evidencia, y lo que NO se hace desde aquí | Se carga sola al trabajar aquí |
-| [`bitacora.md`](./bitacora.md) | Los **once cerrados**, con *por qué no se hizo de la otra forma*. **Seis** sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
+| [`bitacora.md`](./bitacora.md) | Los **doce cerrados**, con *por qué no se hizo de la otra forma*. **Siete** sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
 
 ## Por qué este frente rinde más que los otros
 
@@ -40,10 +42,9 @@ Dos motivos, y el segundo es el bueno:
 2. **Están congelados en pruebas.** El arreglo se verifica solo — cuando el defecto muere, su golden
    cambia, y **ese diff es la prueba**. No hace falta inventar la verificación: ya existe.
 
-⚠️ **Ese segundo motivo tiene hoy una grieta, y es el defecto 1.15**: la suite de caracterización
-**no está verde** (9 casos, un golden que congela un hash no determinista). Mientras siga así, en esa
-zona el diff de un golden no distingue el arreglo del ruido. Medido el 2026-08-14 con dos corridas,
-una de ellas sobre el árbol limpio.
+⚠️ **Pero es CONDICIONAL, y costó descubrirlo**: la suite estuvo **roja 4 tests** sin que nadie lo
+supiera (defecto 1.15, cerrado el 2026-08-14). Un golden solo prueba algo si la suite estaba verde
+**antes** de tu cambio — compruébalo primero.
 
 La otra excepción es el **1.7**, que es frontend y ahí no hay golden que valga: se verifica en
 navegador, con usuario y ruta escritos en su ficha.
