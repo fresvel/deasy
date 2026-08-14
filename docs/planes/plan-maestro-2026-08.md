@@ -42,7 +42,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | **6** · Signer | Cerrar los riesgos de la auditoría del microservicio de firma | 🟡 **8 de 12 abiertos** | [`referencia/signer.md`](./referencia/signer.md) | — |
 | **7** · Método e infraestructura | Lo que evita que el resto se degrade: Sonar en CI, barreras de lint, contenedores vacíos | ⬜ | aquí, §Frente 7 | — |
 | **8** · Deuda de volumen | Los ficheros que el plan no registraba, medidos el 2026-08-09 | ⬜ | aquí, §Frente 8 | remedido · 2026-08-13 |
-| **9** · Capa de datos | Seis fases (D1–D6) sobre el esquema y `config/postgres.js` | ⬜ | [`plan_data/`](./plan_data/) | — |
+| **9** · Capa de datos | **Siete fases** sobre el esquema y `config/postgres.js` — y **D7 audita el modelo**, lo que el frente 0 dejó abierto | ⬜ **0 de 7** | [`plan_data/`](./plan_data/) — D7 con **5 tareas** | D7 medido · 2026-08-14 |
 | **10** · Compilador documental | Auditar la rama que ya existe, y **heredó el generador de Jinja** (S8) | ⬜ | aquí, §Frente 10 | — |
 | **11** · Editor web de plantillas | **Son dos productos, no uno** | ⬜ | aquí, §Frente 11 | — |
 
@@ -81,6 +81,7 @@ endpoints, `meta_object_key`, cinco resolvers y dos ámbitos, bajo un criterio q
 | El **botón de sincronizar del admin da 404** — era el sub-paso 9, el único de frontend | **Frente 7** |
 | El **generador de Jinja** (S8): no es limpieza, es construcción, y depende del compilador | **Frente 10** |
 | La **fusión `task_items`/`documents`**: el §0.8 la dejó sin urgencia, y toca frontend | Sin decidir — [README del archivo](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) |
+| Las **decisiones del modelo que el frente 0 inventarió y no llegó a validar**: la edición `retired` enlazada, la invariante de `published` sin verificar, y las columnas `*_id` sin FK | **Frente 9 · fase D7** (2026-08-14) |
 
 > Las citas a **`§0.4`, `§0.6`, `§0.8`…** que aparecen más abajo (sobre todo en el frente 10) siguen
 > siendo válidas: **apuntan a ese archivo**, no a una sección desaparecida.
@@ -657,13 +658,15 @@ antes del frente 10**: sin compilador, la pieza que da el valor no existe.
 
 ## Frente 9 · La capa de datos — ⬜ · vive en [`plan_data/`](./plan_data/)
 
-**Tiene carpeta propia** —como el 1 y el 4— porque trae su propia referencia medida del esquema. Nació el
+**Tiene carpeta propia** —como el 1 y el 4— porque trae su propia referencia medida del esquema, y desde
+el 2026-08-14 **también su `§0 · Control de ejecución`**. Nació el
 **2026-08-09** al contestar *«¿conviene una clase por cada tabla?»* —la respuesta es **no**, razonada
-con cifras en su §0—, pero la pregunta obligó a mirar la persistencia entera y aparecieron seis
+con cifras en su §1—, pero la pregunta obligó a mirar la persistencia entera y aparecieron seis
 problemas que ningún frente de aquí cubría. **Las tareas están allí**, no en este documento:
 
 | | Fase | Por qué |
 |---|---|---|
+| **D7** | **Auditoría funcional del modelo** | Lo que el **frente 0 inventarió y no llegó a validar**, recogido aquí el 2026-08-14 al archivarlo: la edición `retired` que sigue enlazada, la invariante de `published` que descansa en un razonamiento —`launch.js` **no mira `lifecycle_state`**—, y las columnas `*_id` sin FK, dos de ellas por **descuido de tipo** (`BIGINT` contra `persons.id INT`). **Va la primera pese al número**: es la única fase que no es refactor, y sus dos primeras tareas son decisiones del dueño |
 | **D1** | Un solo `withTransaction` | **20 `beginTransaction` a mano en 11 ficheros**, cada uno con su ciclo. El helper correcto ya existe (`crud/tableHooks.js:65-92`) y solo lo usa el CRUD admin |
 | **D2** | Un vocabulario de estados, no cinco | `task_items.status` está definido en **5 sitios con 3 alfabetos**, y los dos grupos **no comparten ni un literal**. Efecto vivo: el panel cuenta `completada` como cerrado; el motor de relevos lo reasigna |
 | **D3** | Migraciones versionadas | El esquema se reaplica entero en cada arranque (`postgres_initializer.js:23-40`). Idempotente para crear, **incapaz de alterar**. Es el mayor riesgo operativo de la capa |
@@ -675,7 +678,7 @@ problemas que ningún frente de aquí cubría. **Las tareas están allí**, no e
 cierra la pregunta arquitectónica: tablas y extracción, no jerarquías. Y respeta la lista de no-tocar
 —el núcleo CRUD de `SqlAdminService` y `sqlTables.js` como datos—: D2 y D4 trabajan **alrededor**.
 
-**Criterio de cierre:** las seis fases cerradas con sus criterios, y la carpeta archivada.
+**Criterio de cierre:** las **siete** fases cerradas con sus criterios, y la carpeta archivada.
 
 ---
 

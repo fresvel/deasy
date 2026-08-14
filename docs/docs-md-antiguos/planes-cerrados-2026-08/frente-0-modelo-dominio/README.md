@@ -56,6 +56,20 @@ esta lista es el índice, no su ficha.
    Se aplazaron detrás del §0.8 y **el §0.8 los dejó sin urgencia**: el modelo quedó coherente sin
    ellos. Siguen sin decidir, y el paso 4 **toca frontend** (unos 5 sitios usan `documentId` como
    señal de existencia). Si se retoman, se retoman como frente propio, no como resto de éste.
+4. **Las decisiones del modelo que este frente inventarió y no llegó a validar.** → **frente 9,
+   fase D7**, abierta el 2026-08-14. Son tres, y las tres estaban escritas aquí sin dueño:
+   - **La edición `retired` que sigue enlazada** (§0.5): el vínculo 1 usa la v1.0.0 `retired` mientras
+     la v1.1.0 está `published`, y de ese vínculo salen los tres entregables del sistema.
+   - **La invariante de `published` sin verificar** (§0.8, «Riesgos»): descansa en que un `draft` no
+     tenga instancias, y `launch.js` **no mira `lifecycle_state`** — remedido el 2026-08-14, cero
+     ocurrencias.
+   - **Las columnas `*_id` sin FK**, dos de ellas por **descuido de tipo** (`BIGINT` contra
+     `persons.id INT`), medidas en `plan_data/referencia-esquema.md` §5.
+
+> **Y la lección de archivar, que vale para el próximo cierre:** las tres de arriba se quedaron dentro
+> de este documento cuando se archivó, el 2026-08-14, y hubo que rescatarlas el mismo día. **Un frente
+> hace el inventario de un modelo; validarlo contra el negocio es otro trabajo** — si no se le pone
+> dueño antes de archivar, se va con lo cerrado.
 
 ## Lo que se aprendió, y ya no vive solo aquí
 

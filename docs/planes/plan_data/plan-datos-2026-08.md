@@ -1,6 +1,8 @@
-# Plan de datos — seis fases sobre la capa de persistencia
+# Plan de datos — siete fases sobre la capa de persistencia
 
-> **Estado del documento:** ⬜ ninguna fase empezada. Creado el **2026-08-09**.
+> **Estado: 0 de 7 fases.** Creado el **2026-08-09**; D7 añadida el **2026-08-14**.
+> El estado por tarea vive en el [§0 · Control de ejecución](#0--control-de-ejecución), y **se
+> actualiza en el mismo commit** que la tarea que cierra.
 >
 > Este plan **se ejecuta**; el retrato del esquema que lo sustenta está en
 > [`referencia-esquema.md`](./referencia-esquema.md) y **se consulta**.
@@ -14,17 +16,22 @@
 ## Por qué existe este plan
 
 La pregunta que lo originó fue: *«¿conviene crear una clase por cada tabla?»*. La respuesta corta es
-**no**, y está justificada en §0. Pero contestarla obligó a mirar la capa de datos entera por primera
+**no**, y está justificada en §1. Pero contestarla obligó a mirar la capa de datos entera por primera
 vez, y ahí aparecieron **seis problemas reales** que ningún frente del plan maestro cubría: las
 transacciones se abren a mano en once ficheros, el vocabulario de estados de `task_items` está
 definido en cinco sitios con tres alfabetos distintos, y el esquema **no se puede alterar** en un
 entorno con datos.
 
+**Y una séptima fase, añadida el 2026-08-14: D7.** Ésa no salió de mirar la capa de datos, sino de
+archivar el frente 0 y encontrar que **la auditoría funcional del modelo nunca se abrió como trabajo**.
+Por qué vive aquí y no en un frente propio, en su propia sección.
+
 Las fases van **ordenadas por retorno sobre esfuerzo**, como el maestro. Estados: ⬜ sin empezar ·
-🟡 a medias · ⛔ bloqueado.
+🟡 a medias · ⛔ bloqueado · ✅ cerrada, con evidencia y fecha.
 
 | Fase | Qué | Esfuerzo | Retorno |
 |---|---|---|---|
+| **D7** | **Auditoría funcional del modelo documental** — las decisiones que quedaron abiertas | bajo | alto — dos de ellas están vivas hoy en la base |
 | **D1** | Unit of Work: un solo `withTransaction` | bajo | alto — elimina 20 ciclos manuales |
 | **D2** | Vocabulario de estados único + detector de *drift* de metadatos | bajo | alto — cierra una incoherencia viva |
 | **D3** | Migraciones versionadas | medio | alto — hoy el esquema no se puede alterar en prod |
@@ -32,9 +39,43 @@ Las fases van **ordenadas por retorno sobre esfuerzo**, como el maestro. Estados
 | **D5** | Matar el traductor de dialecto MySQL→PG | medio-alto | alto — es el fichero más denso del repo |
 | **D6** | Validación por esquema en el borde de entrada | medio | medio |
 
+⚠️ **D7 va la primera pese a llevar el número más alto.** El número es **orden de descubrimiento, no
+de ejecución** — la misma convención que los frentes A…I del plan de calidad. Y va primera por una
+razón concreta: **es la única fase que no es refactor**. Sus dos primeras tareas son decisiones del
+dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue vivo en la base.
+
 ---
 
-## §0 · La decisión de fondo: por qué NO una clase por tabla
+## §0 · Control de ejecución
+
+> **Esta tabla es el estado del plan.** Se actualiza **en el mismo commit** que la tarea que cierra —
+> la norma está en [`../CLAUDE.md`](../CLAUDE.md). Los identificadores **no se renumeran nunca**.
+>
+> `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
+
+**Estado: 0 de 7 fases · 0 de 5 tareas de D7.**
+
+| Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
+|---|---|---|---|---|---|
+| `TD7-a` | D7 | **Decisión escrita**: si un vínculo puede apuntar a una edición `retired`, y si publicar una edición debe arrastrar sus vínculos | ⬜ | — | — |
+| `TD7-b` | D7 | **La invariante de `published`, verificada**: hoy descansa en que un `draft` no tenga instancias, y `launch.js` **no mira `lifecycle_state`**. Decisión + prueba que la congele | ⬜ | — | — |
+| `TD7-c` | D7 | **Censo de columnas `*_id` sin FK**, clasificadas en las tres categorías: decisión explícita · ciclo evitado · **descuido** | ⬜ | — | — |
+| `TD7-d` | D7 | Los dos `BIGINT` contra `persons.id INT` corregidos, con su FK. **Necesita D3 si hay datos que preservar** | ⬜ | — | — |
+| `TD7-e` | D7 | **Decisión escrita**: cuáles de las 8 columnas de estado sin `CHECK` bajan su dominio a la base. **Va detrás de D2** | ⬜ | — | — |
+| `D1` | — | Un solo `withTransaction`; los 20 ciclos manuales, fuera | ⬜ | — | — |
+| `D2` | — | Un vocabulario de estados, no cinco, + detector de *drift* | ⬜ | — | — |
+| `D3` | — | Migraciones versionadas: el esquema se puede alterar con datos dentro | ⬜ | — | — |
+| `D4` | — | Diez repositorios por agregado; cero SQL en `controllers/` | ⬜ | — | — |
+| `D5` | — | El traductor de dialecto, muerto (**D5-b ⛔** hasta el defecto 1.11) | ⬜ | — | — |
+| `D6` | — | Validación por esquema en el borde de entrada | ⬜ | — | — |
+
+**D1–D6 llevan control por fase y no por tarea, a propósito:** ninguna está empezada, y descomponerlas
+hoy sería inventarse el trabajo. **La descomposición es el primer paso de atacar cada una** y va en el
+mismo commit que su arranque. D7 sí viene descompuesta porque sus tareas ya estaban medidas.
+
+---
+
+## §1 · La decisión de fondo: por qué NO una clase por tabla
 
 Se evaluó y **se descarta**. Queda escrito aquí para que no vuelva a plantearse de cero, igual que la
 pregunta arquitectónica en el plan maestro.
@@ -87,6 +128,106 @@ pregunta arquitectónica en el plan maestro.
 | Entidades con estado | 24 | **Repository por agregado**, no por tabla | ⚠️ 2 repos, el resto suelto → **D4** |
 | Máquinas de estado | 8 | Tabla de transiciones congelada | ✅ ejemplar en `DocumentStateService.js:30` |
 | Transversal | — | **Unit of Work** | ❌ no existe → **D1** |
+
+---
+
+## Fase D7 · Auditoría funcional del modelo documental — ⬜
+
+**Añadida el 2026-08-14**, y no salió de medir la capa de datos: salió de **archivar el frente 0**. Al
+hacerlo se vio que ese frente había hecho el **inventario** del modelo —los cuatro nombres del
+entregable (§0.5) y el censo de 18 fósiles (§0.6)— pero **nunca la validación funcional**: contrastar
+lo que el modelo hace contra lo que el negocio dice que debe hacer. Son cosas distintas, y la segunda
+no tenía dueño en ningún frente.
+
+Peor: **tres hallazgos concretos se quedaron sin asignar**, y dos de ellos siguen vivos en la base hoy.
+Estaban escritos —en el frente 0 y en [`referencia-esquema.md`](./referencia-esquema.md)— pero escrito
+no es asignado, que es exactamente el modo de fallo que abrió el frente 0.
+
+### Por qué vive aquí y no en un frente propio
+
+Decisión del dueño, el 2026-08-14, y las razones aguantan:
+
+- **El material de prueba ya está medido aquí.** `referencia-esquema.md` tiene el grafo de las 137 FKs,
+  las 8 columnas de estado sin `CHECK` y los 10 agregados. Abrir un frente nuevo obligaría a citarlo
+  desde fuera o —peor— a remedirlo.
+- **D3 es su habilitador.** `TD7-d` es un cambio de tipo de columna, o sea **una migración**; y hoy el
+  esquema no se puede alterar en un entorno con datos. En un frente aparte esa dependencia sería un
+  enlace; aquí es la fase de al lado.
+- **`TD7-e` y D2 comparten material**, y hay que decir en qué se diferencian o se pisarán: **D2 unifica
+  el vocabulario de estados en JavaScript; `TD7-e` decide si además baja a la base como `CHECK`.**
+  Primero D2, o se estaría cimentando en la base un vocabulario que aún tiene tres alfabetos.
+
+⚠️ **Y el reparo que va con la decisión, para que no se pierda:** `TD7-a` y `TD7-b` **no son de capa de
+datos**. Son reglas de negocio, se responden con una decisión del dueño y se implementan en
+`services/` y en los guards, no en el esquema. Por eso **D7 va la primera** — si se lee como «trabajo
+de esquema» y se pone en la cola detrás de seis fases de refactor, el efecto sigue vivo mientras tanto.
+
+### `TD7-a` · Un vínculo puede apuntar a una edición RETIRADA
+
+Medido en el §0.5 y sin decidir desde entonces: hoy **el vínculo 1 usa la v1.0.0 `retired`** mientras
+la v1.1.0 está `published` en otro proceso — y de ese vínculo salen **los tres entregables del
+sistema**. Las dos preguntas son: ¿debe permitirse? ¿y publicar una edición debería arrastrar los
+vínculos que apuntan a la anterior?
+
+*No confundir con lo que sí funciona bien*: el mismo entregable enlazado dos veces **con modos
+distintos** (`routed` y `single`) es correcto, y confirma que `item_mode` es del vínculo, no de la
+plantilla.
+
+### `TD7-b` · La inmutabilidad de `published` descansa en un razonamiento
+
+Es el único punto del diseño del §0.8 que se apoyaba en un razonamiento y no en una lectura, y quedó
+escrito así. La invariante buscada —*una instancia en curso no cambia sus pasos bajo los pies*— se
+sustituyó por la inmutabilidad de `published`, **pero eso exige que un `draft` no pueda tener
+instancias**.
+
+Medido el 2026-08-14: **`launch.js` no menciona `lifecycle_state` ni una vez** (cero ocurrencias). Lo
+que sí se cerró en su momento (defectos 1.12 y 1.13) es la otra mitad: que un `draft` no llegue a estar
+**dentro de una configuración activa**. Que `launch` lo mire, no.
+
+**Entrega:** la decisión —¿`launch` rechaza un `draft`, o la invariante se sostiene por otro sitio?— y
+**una prueba que la congele**, porque una invariante sin prueba se rompe en el siguiente refactor.
+
+### `TD7-c` · Censo de columnas `*_id` sin FK
+
+El retrato ya distingue **tres categorías**, y mezclarlas es lo que hace que este tema se lea como
+alarmismo:
+
+| Categoría | Ejemplos | Veredicto |
+|---|---|---|
+| **Decisión explícita** | `chat_*` y `dossiers`: `person_id`, `process_id`, `unit_id` | Correcto: no acoplar los módulos ex-documentales al núcleo relacional. Comentado en el esquema |
+| **Ciclo evitado** | `chat_conversations.last_message_id` | Correcto, y comentado |
+| **Descuido** | los dos de `TD7-d` | **No es decisión: es un tipo mal puesto** |
+
+**Entrega:** el barrido completo, sacado **del esquema y no de la memoria**, con cada columna en una de
+las tres. Lo que hoy hay es una muestra, no un censo.
+
+### `TD7-d` · Dos columnas que no pueden llevar FK aunque se quiera
+
+`signature_batch_jobs.user_id` y `task_item_handovers.performed_by_user_id` son **`BIGINT`** contra
+`persons.id INT` (verificado el 2026-08-14 en `postgres_schema.sql`). No es que les falte la
+restricción: **con ese tipo no se puede declarar**.
+
+`task_item_handovers` es además la tabla del **defecto 1.10** —la bitácora de relevos—, así que las dos
+cosas se tocan: no tiene sentido llenarla de filas sin arreglarle antes la columna que identifica a
+quién hizo el relevo.
+
+### `TD7-e` · Las ocho columnas de estado sin `CHECK`
+
+Su dominio **solo existe en JavaScript**, y una (`signature_flow_steps.selection_mode`) tiene un gemelo
+que **sí** lo lleva: la asimetría es el olor. **Va detrás de D2**, y la razón está arriba.
+
+### Criterio de cierre
+
+Las cinco tareas con su decisión escrita —**incluidas las que se decidan «se queda como está»**, con su
+razón medida— y las dos correcciones aplicadas con prueba. **Una decisión sin razón escrita se vuelve a
+proponer en tres meses**; ya pasó con `document_owner`.
+
+### Lo que D7 NO es
+
+- **No es rediseñar el modelo de entregables.** Eso está decidido y documentado en
+  `docs/arquitecturas/modelo-emision-entregables.md`; D7 audita el cumplimiento, no el diseño.
+- **No es el generador ni el compilador** (frentes 10 y 11).
+- **No es el vocabulario de estados**, que es D2. Aquí solo se decide si baja a la base.
 
 ---
 
@@ -378,7 +519,7 @@ la prueba**; el contrato objetivo es el de
 
 Igual que §7 del maestro, esto vale tanto como las fases:
 
-- **Una clase por tabla.** Descartado en §0 con cinco razones medidas.
+- **Una clase por tabla.** Descartado en §1 con cinco razones medidas.
 - **Un ORM** (Sequelize, TypeORM, Prisma, Objection). Ninguno de los seis problemas de arriba es «nos
   falta un ORM»; cuatro son *falta de un único sitio* y dos son deuda de migración. Un ORM añade una
   capa que hay que aprender, no quita ninguna.
