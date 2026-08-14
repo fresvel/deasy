@@ -1,6 +1,18 @@
 @layer components {
 .deasy-section-card {
-        @apply rounded-[8px] border bg-white p-5 shadow-[var(--elev-1)] sm:p-6 lg:p-8;
+        /* LA SUPERFICIE, con la receta de TailAdmin — 2026-08-13. Su card base es
+           `rounded-2xl border border-gray-200 bg-white`, **sin sombra**: la superficie se
+           dibuja con el BORDE, y la sombra queda para lo que flota (menus, modales).
+
+           Aqui habia `rounded-[8px]` —un valor arbitrario— y `shadow-[var(--elev-1)]`, otro.
+           Los dos desaparecen: el radio pasa a `rounded-2xl`, el mismo de `.deasy-card`, y la
+           sombra se retira. Antes la tarjeta pequena y la grande tenian radios distintos (16 y
+           8 px) sin que la diferencia significara nada.
+
+           El padding SI se queda escalado (`p-5 sm:p-6 lg:p-8`): su propia guia lista seis
+           paddings distintos para la card segun lo que lleve dentro, o sea que la escala es
+           parte de la receta, no deriva. */
+        @apply rounded-2xl border bg-white p-5 sm:p-6 lg:p-8;
         border-color: var(--color-line);
     }
 
