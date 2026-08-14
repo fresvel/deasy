@@ -22,7 +22,7 @@ cuesta más que el trabajo que ahorran— y la lista de **lo que NO hay que toca
 
 ---
 
-## Frente 0 · Limpiar el modelo antes de seguir refactorizando — 🟡 · **8 de 9** · solo queda §0.4
+## Frente 0 · Limpiar el modelo antes de seguir refactorizando — ✅ **CERRADO · 9 de 9** (2026-08-13)
 
 Abierto el **2026-08-09**, y va delante de todo lo demás por un motivo que no es de gravedad sino de
 orden: **el resto del plan refactoriza sobre un modelo que todavía se contradice a sí mismo**. Mientras
@@ -129,7 +129,7 @@ nueva lo arrastra otra vez.
 
 **Criterio de cierre:** el proceso por defecto se siembra por el mismo camino que todo lo demás.
 
-### 0.4 · El generador: de la base al Jinja, para que la firma no se coloque a mano — ⬜
+### 0.4 · El generador: de la base al Jinja, para que la firma no se coloque a mano — ✅ **CERRADO (2026-08-13)** · el S8 se movió al frente 10
 
 **El objetivo, en palabras del dueño (2026-08-13).** Esta ficha estaba mal enfocada: decía que el fin
 era «descargar una base con los valores configurados». El fin real es otro, y explica todo el frente 0.
@@ -181,7 +181,7 @@ ahora, de la base al jinja»*. El §0.8 hizo lo primero (la base es la fuente); 
 | ~~S5~~ | ✅ **HECHO (con S1).** El render **ya sabía leer JSON** (mira la extensión); lo único que fallaba era la búsqueda, que no listaba ninguno. Ahora `data.json` va **primero**. El paquete conserva el `.yaml` hasta que exista el generador, a propósito. ~~El payload pasa a JSON~~: `data.json` en la búsqueda de `make.sh` | Sí |
 | ~~S6~~ | ✅ **HECHO (`38c2b56`+`351a391`).** **Una fila por campo**, no un `jsonb`: un JSONB cierra la copia binaria pero **no la validación ni el orden**, que son los dos que el generador necesita — y el §0.6 ya midió que **un `CHECK` no cubre un JSONB**. Escritura doble a la base y a `schema.json`, versionado copiando **filas** (patrón de `flowRows.js`). **Los seis tokens del seed ya son consultables por SQL.** ~~Los campos a la base, como JSON.~~ El esqueleto que pidió el dueño. Hoy viven solo en `schema.json` de MinIO, **sin tabla**: no se pueden validar contra nada, se copian en binario al versionar, y un fallo de MinIO los borra | **No** |
 | **S7** | **Slot de firma estable.** Hoy es `firma_<orden>` porque el formulario **nunca pone `code`**: insertar un paso en medio renumera los slots y **el token que el `.tex` referenciaba pasa a ser el de otro firmante**, en silencio. Es prerequisito del generador | **No** |
-| **S8** | **El generador**: campos + tokens → Jinja | Sí |
+| ~~S8~~ | ➡️ **MOVIDO al frente 10 (2026-08-13).** No es limpieza, es **construcción**, y su mitad de ejecución **depende del compilador**: emite macros que algo tiene que rellenar con el token del firmante resuelto. Se queda con la pieza de la que depende, no en el frente que lo destapó | — |
 
 > **Tres cosas que costaron aprenderse y no se deducen del código:**
 >
@@ -638,7 +638,7 @@ De los **~60 `S3776`** abiertos, la cabeza ya no está en el backend.
 
 | Cogn. | Dónde | Qué hacer |
 |---:|---|---|
-| **350** | `HomeView.vue` (**5 215 L** en un solo componente) | **Partirlo.** Su red de regresión es [`referencia/linea-base-homeview.md`](./referencia/linea-base-homeview.md), que existe justo para esto — pero **ojo: dos de sus filas ya no son ciertas** (el aside se rediseñó). No está «intacto»: bajó de 7 445 a 5 215 L. Lo que no se ha hecho es **partirlo** |
+| **350** | `HomeView.vue` (**5 130 L** en un solo componente — remedido 2026-08-13; el trabajo de estilos bajó 85) | **Partirlo.** Su red de regresión es [`referencia/linea-base-homeview.md`](./referencia/linea-base-homeview.md), que existe justo para esto — pero **ojo: dos de sus filas ya no son ciertas** (el aside se rediseñó). No está «intacto»: bajó de 7 445 a 5 215 L. Lo que no se ha hecho es **partirlo** |
 | **290** | `AdminTableManager.vue` | **NO es un God y no se polimorfiza** (ver «lo que no se toca»). Su peso son **dos injertos concentrados** (`process_definition_versions`, `template_artifacts`): extraerlos como paneles propios |
 | **262** | `FirmarPdf.vue` | God real, 6 responsabilidades. Incluye la peor función del repo, `confirmSign` (44) |
 
@@ -956,7 +956,7 @@ Resultado: masa sin ruta de trabajo asignada.
 
 | Qué | L | Por qué está aquí |
 |---|---:|---|
-| `backend/services/admin/templates/templateLifecycle.js` | **1 749** | **4.º fichero del repo** y cero menciones en este documento. Su carpeta (`services/admin/templates/`, 4 128 L) es el **6.º directorio**. Contradice de frente el «la cabeza ya no está en el backend» del frente 3 |
+| `backend/services/admin/templates/templateLifecycle.js` | **1 908** | **4.º fichero del repo** y cero menciones en este documento. Su carpeta (`services/admin/templates/`, 4 128 L) es el **6.º directorio**. Contradice de frente el «la cabeza ya no está en el backend» del frente 3 |
 | `frontend/src/shared/components/widgets/WorkspaceChatLauncher.vue` | 813 | **Deuda 100 % invisible: no aparece en NINGÚN fichero de `docs/planes/`.** Componente compartido, 517 L de script |
 | `backend/controllers/users/user_controler.queries.js` | 1 091 | **Fuga de capa autodeclarada**: su propia cabecera dice que es «el candidato natural a promoverse a `services/users/UserWorkspaceRepository.js` cuando se corrija la fuga de capa (SQL crudo en un controller)». El código pide el arreglo y ningún plan lo recoge. Ojo: su CC es ≈0 (824 de sus líneas son literales SQL), así que **esto no es trabajo de complejidad, es de capas** |
 | `backend/services/admin/crud/tableHooks.js` | 1 137 | **El caso que hay que decidir, no asumir.** Su cabecera lo presenta como «el equivalente backend de `FK_TABLE_MAP`» —o sea datos declarativos— pero contiene ~180 bloques de función. No está declarado no-tocar en ninguna parte |
@@ -1034,6 +1034,31 @@ descartarla— con el inventario de qué se aprovecha.
 > 3. **La generación automática de PDFs**, que es el segundo mundo entero del modelo de negocio.
 >
 > Deja de ser una curiosidad histórica: **es de lo que cuelgan tres frentes.**
+
+#### Y hereda el S8 del §0.4 — el generador
+
+**Movido aquí el 2026-08-13**, al cerrar el Frente 0. El §0.4 dejó **todo el terreno preparado** —el
+ZIP compila, los campos tienen tabla y son consultables por SQL, el slot de firma es estable— pero
+**el generador en sí es construcción, no limpieza**, y su mitad de ejecución depende de este frente.
+
+**Qué falta, en concreto:**
+
+- **La mitad de autoría**: emitir `template/jinja2/Preambulo/campos.tex.j2` al guardar la plantilla, con
+  una macro por campo configurado y una por paso de firma con su token. Va en la **zona protegida**, y
+  eso no es un detalle: el re-upload rechaza protegidos modificados, así que **el usuario no puede
+  haber editado el fichero generado** — la pregunta de «¿y si ya lo tocó?» se disuelve por mecanismo.
+  Esta mitad **no depende del compilador** y se puede hacer en cualquier momento.
+- **La mitad de ejecución**: rellenar esas macros con los valores del usuario y **el token del firmante
+  resuelto**, y compilar. **Ésta sí depende de este frente.**
+
+**El criterio de éxito no es un test verde** —char fue ciega tres veces en el §0.4—: es **descargar el
+ZIP, compilar y ver el PDF con los tokens dentro**, como ya consiguió el S1 (`rc=0`, 2 páginas,
+`!-9b6D6WnuUE-!` en el texto).
+
+**Y una decisión que sigue abierta:** el modelo de campo **no tiene valor por defecto**
+(`template_artifact_fields` guarda clave, título, código, componente, grupo y obligatoriedad, pero ni
+`default` ni opciones de `select`). Sin eso, «una base con los valores configurados» solo puede emitir
+**nombres**. No bloquea la mitad de autoría —los tokens no necesitan valor— pero hay que decidirlo.
 
 ---
 

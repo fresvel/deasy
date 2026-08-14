@@ -7,7 +7,7 @@
 
 ---
 
-## 1. Las trece reglas
+## 1. Las diecisiete reglas
 
 1. **Extraer POR SCRIPT, no a mano**, y verificar `count == 1` antes de borrar cada bloque. Si el
    script trocea, dale un **invariante de reconstrucción** (las piezas deben reproducir el original
@@ -47,6 +47,28 @@
     `interceptors`. **Mira la línea `Test Files`, no solo la de `Tests`.**
 13. **`node --watch` no siempre recarga.** Una tanda de caracterización llegó a medir el backend viejo
     y capturó un golden falso. **Antes de capturar: `restart backend` y comprobar «Servidor iniciado».**
+14. **Antes de escribir un cambio de comportamiento, haz un EXPERIMENTO DESECHABLE.** Aplícalo a lo
+    bruto, corre `test:char:run`, **mira qué se rompe**, revierte, y solo entonces escribe la versión
+    buena. **Es la regla que más ha pagado del repositorio — ocho veces en el frente 0**, y dos de
+    ellas destapando fallos que **no eran del cambio**: una vez el limpiador del arnés (tres suites
+    caían en su `after()` por una FK que nadie había mirado) y otra tres claves del **grupo de
+    control** que parecían regresión y eran arrastre de una configuración que no llegaba a activarse.
+    Sin el experimento, las dos habrían aparecido **después**, como rojo intermitente y sin dueño.
+15. **VERDE NO ES SEGURO: la caracterización tiene puntos ciegos, y hay que buscarlos a propósito.**
+    En el §0.4 fue ciega **tres veces seguidas**: anular entero el lector del schema, el lector de
+    campos o el escritor de campos daba **281/281 en verde**. No faltaba un caso — **char no puede
+    verlo por construcción**, porque ningún flow manda `schema_fields` y el único que llega al
+    endpoint descarta esas claves del golden a propósito. **La forma de averiguarlo es la del punto
+    14: anula la pieza y mira si alguien se queja.** Si nadie se queja, la red es unitaria o no hay red.
+16. **VERDE NO ES RETIRABLE.** Que las pruebas pasen sin una pieza no demuestra que sobre: demuestra
+    que **nadie la ejercita**. Al cerrar el §0.8, char daba 266/266 con el `OR` de los gates quitado —
+    pero su productor seguía vivo y char **no publicaba nunca** esa plantilla. Antes de retirar algo,
+    busca **el productor**, no la prueba.
+17. **Una prueba que no falla al romper el código no protege nada: pruébala por MUTACIÓN.** Rompe a
+    propósito lo que acabas de arreglar y comprueba que se pone en rojo. Ahí se ve lo que un «pasa
+    todo» esconde: al arreglar el slot de firma hicieron falta **dos** mutaciones distintas para
+    tumbar los tests, y eso reveló que **la preservación y la acuñación eran mecanismos separados y
+    solo uno estaba roto** — el diagnóstico del plan estaba equivocado y el test lo demostró.
 
 ---
 
