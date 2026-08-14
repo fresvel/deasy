@@ -162,6 +162,49 @@ export const buildStepResolver = (step) => {
   return resolver;
 };
 
+// --- El SLOT de un paso de firma: identidad, no posición ----------------------
+//
+// EL SLOT ES LA IDENTIDAD DEL PASO, y es lo único que lo es. `flowRows.js` lo dice en su propia
+// cabecera: un paso de flujo no tiene identidad propia, se escribe con DELETE + INSERT, y por eso
+// «reconciliar por paso obligaría a decidir qué es *el mismo paso* cuando el usuario reordena, y no
+// hay respuesta». La hay, y no está en el servidor: **la identidad viaja en la carga útil**. El
+// lector la devuelve (`readSignatureSteps` -> `code`), el endpoint la publica
+// (`getTemplateArtifactSchema` -> `code`) y el editor la reenvía tal cual
+// (`useAdminDraftArtifactFlow.js:226`, que serializa el objeto entero). Medido de extremo a extremo:
+// reordenar los pasos conservando su `code` mueve los `step_order` y NO mueve los slots.
+//
+// LO QUE ERA POSICIONAL —y el defecto que cierra el S7— era la ACUÑACIÓN de un slot nuevo:
+// `firma_${order}`. Un paso nuevo tomaba el nombre de la posición que ocupaba, así que insertarlo en
+// medio le daba el slot que otro firmante ya tenía. Medido contra la base: insertar un paso en el
+// orden 2 de una plantilla con tres pasos deja DOS filas con `slot = firma_2` y responde **200** —
+// dos firmantes distintos compartiendo el mismo token, en silencio y con valor legal.
+//
+// Se acuña contra los slots YA RECLAMADOS por el documento, no contra la posición: el primer
+// `firma_N` que nadie use. Con los pasos recién creados (ninguno trae slot) da exactamente la misma
+// secuencia que antes —`firma_1`, `firma_2`, `firma_3`—, así que ningún golden se mueve; la
+// diferencia solo aparece cuando ya hay slots que respetar, que es justo el caso que rompía.
+//
+// La UNICIDAD tiene dos capas y las dos hacen falta: `checkSignatureStepSlots` la valida en autoría
+// (mensaje legible, 422, junto al de orden duplicado) y `uq_signature_flow_steps_slot` la impone en
+// la base (cubre a los otros escritores —el runtime y la copia de versionado— y a los que vengan).
+const readDeclaredSignatureSlot = (step) => String(step?.code || step?.slot || "").trim();
+
+const createSignatureSlotMinter = (steps = []) => {
+  const claimed = new Set(
+    (Array.isArray(steps) ? steps : []).map(readDeclaredSignatureSlot).filter(Boolean)
+  );
+  let sequence = 0;
+  return () => {
+    let candidate = "";
+    do {
+      sequence += 1;
+      candidate = `firma_${sequence}`;
+    } while (claimed.has(candidate));
+    claimed.add(candidate);
+    return candidate;
+  };
+};
+
 // Construye el DOCUMENTO del flujo (fill + signatures) a partir de lo que llega del editor web.
 // Devuelve el objeto; ya no se serializa a ningún sitio.
 //
@@ -207,9 +250,10 @@ export const buildWorkflowsDocument = ({ fillWorkflow, signatureWorkflow } = {})
   const signatures = {
     required: signatureWorkflow?.required === true && sigSteps.length > 0,
   };
+  const mintSignatureSlot = createSignatureSlotMinter(sigSteps);
   signatures.steps = sigSteps.map((step, index) => {
     const order = Number(step?.order) || index + 1;
-    const slot = String(step?.code || step?.slot || `firma_${order}`);
+    const slot = readDeclaredSignatureSlot(step) || mintSignatureSlot();
     const out = { order, code: slot, slot };
     out.name = step?.name || `Firma ${order}`;
     // Multi-firmante: cada paso lleva una lista de firmantes, cada uno con su propio resolutor. Back-compat:
@@ -600,8 +644,28 @@ const collectFillStepIssues = (collector, context, fillSteps) => {
   });
 };
 
+// Gemelo de `checkStepOrders` para la OTRA clave del paso de firma. El orden dice dónde va el paso;
+// el slot dice a quién nombra el `.tex`, y dos pasos con el mismo slot es un token compartido entre
+// firmantes distintos — el fallo que el S7 cierra. La acuñación ya no puede producirlo
+// (`createSignatureSlotMinter`), así que un duplicado solo llega si el cliente manda dos pasos con el
+// mismo `code`; se rechaza aquí para que el usuario lea un error de autoría y no la violación del
+// índice único de PostgreSQL. Solo mira los slots DECLARADOS: los acuñados son únicos por construcción.
+const checkSignatureStepSlots = (collector, steps) => {
+  const seen = new Set();
+  for (const step of steps) {
+    const slot = readDeclaredSignatureSlot(step);
+    if (!slot) continue;
+    if (seen.has(slot)) {
+      collector.error(`Paso de firma: slot duplicado (${slot}).`);
+    } else {
+      seen.add(slot);
+    }
+  }
+};
+
 const collectSignatureStepIssues = (collector, context, signatureSteps) => {
   checkStepOrders(collector, signatureSteps, "Paso de firma");
+  checkSignatureStepSlots(collector, signatureSteps);
   // Mismo gating por tipo de plantilla que llenado (official: +tipo de unidad, sin persona; ad_hoc: +persona).
   const allowedResolverTypes = webFillResolverTypesForScope(context.templateScope);
   const allowedUnitScopeTypes = webFillUnitScopeTypesForScope(context.templateScope);

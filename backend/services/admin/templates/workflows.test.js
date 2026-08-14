@@ -294,6 +294,72 @@ test("normalizeFillSteps deja code en null cuando el paso no lo trae", () => {
   assert.equal(paso.name, "Paso 2");
 });
 
+// --- El SLOT de firma: se asigna una vez y no se vuelve a mover (S7 del §0.4) -------------------
+//
+// EL TEST QUE MANDA es el primero: reordenar NO mueve el slot de un paso existente. Probado por
+// mutación — devolviendo la acuñación a `firma_${order}`, ese test se pone rojo y con él los tres
+// siguientes.
+//
+// La red es unitaria y no de caracterización a propósito: `buildWorkflowsDocument` es la función
+// PURA donde se decide el slot, y por HTTP el mismo hecho exigiría autorar, releer y reguardar una
+// plantilla entera para observar una columna que el contrato del editor ni siquiera publica.
+
+const pasoFirma = (extra = {}) => ({ approval_mode: "and", signers: [{ resolver_type: "task_assignee" }], ...extra });
+
+const slotsDe = (signatureWorkflow) =>
+  buildWorkflowsDocument({ signatureWorkflow }).workflows.signatures.steps.map((step) => step.slot);
+
+test("buildWorkflowsDocument: REORDENAR no mueve el slot de un paso que ya lo tenía", () => {
+  // Los tres pasos vuelven del editor con su `code` (que es lo que el lector devuelve y el
+  // formulario reenvía) y el usuario los invierte. El slot va con el PASO, no con la posición.
+  const invertido = [
+    pasoFirma({ order: 1, code: "firma_3", name: "Aprobado" }),
+    pasoFirma({ order: 2, code: "firma_2", name: "Revisado" }),
+    pasoFirma({ order: 3, code: "firma_1", name: "Elaborado" }),
+  ];
+  const doc = buildWorkflowsDocument({ signatureWorkflow: { required: true, steps: invertido } });
+
+  assert.deepEqual(
+    doc.workflows.signatures.steps.map((step) => [step.order, step.name, step.slot]),
+    [[1, "Aprobado", "firma_3"], [2, "Revisado", "firma_2"], [3, "Elaborado", "firma_1"]],
+    "el orden cambia; el slot de cada firmante NO"
+  );
+  // Y `code` sigue siendo el espejo del slot: es la única copia que el editor recibe de vuelta.
+  assert.deepEqual(doc.workflows.signatures.steps.map((step) => step.code), ["firma_3", "firma_2", "firma_1"]);
+});
+
+test("buildWorkflowsDocument: un paso INTERCALADO no roba el slot de otro", () => {
+  // El defecto medido contra la base: con `firma_${order}`, el paso nuevo en la posición 2 salía con
+  // `slot = firma_2` — el mismo que ya tenía "Revisado", desplazado a la 3.
+  const slots = slotsDe({
+    required: true,
+    steps: [
+      pasoFirma({ order: 1, code: "firma_1" }),
+      pasoFirma({ order: 2, name: "Nuevo intercalado" }),
+      pasoFirma({ order: 3, code: "firma_2" }),
+      pasoFirma({ order: 4, code: "firma_3" }),
+    ],
+  });
+
+  assert.deepEqual(slots, ["firma_1", "firma_4", "firma_2", "firma_3"]);
+  assert.equal(new Set(slots).size, slots.length, "ningún slot repetido");
+});
+
+test("buildWorkflowsDocument: sin slots previos acuña la MISMA secuencia de siempre", () => {
+  // La compatibilidad que hace que ningún golden se mueva: una plantilla nueva, con los pasos tal y
+  // como los crea el formulario (`order` y nada más), sigue dando firma_1, firma_2, firma_3.
+  assert.deepEqual(
+    slotsDe({ required: true, steps: [pasoFirma({ order: 1 }), pasoFirma({ order: 2 }), pasoFirma({ order: 3 })] }),
+    ["firma_1", "firma_2", "firma_3"]
+  );
+});
+
+test("buildWorkflowsDocument: la acuñación NO depende del `order`, sino de lo reclamado", () => {
+  // Un solo paso nuevo en la posición 7 no se llama `firma_7`: se llama con el primer nombre libre.
+  // Es la diferencia exacta entre "el slot es la posición" y "el slot es la identidad".
+  assert.deepEqual(slotsDe({ required: true, steps: [pasoFirma({ order: 7 })] }), ["firma_1"]);
+});
+
 // --- collectAuthoredWorkflowIssues -------------------------------------------------------------
 // 216 líneas de validación que decidían si se puede guardar un flujo autorado y NO tenían un solo
 // test. Es la puerta de todo el editor de flujos: un falso "válido" deja pasos que no resolverán
@@ -432,6 +498,34 @@ test("collectAuthoredWorkflowIssues: firma valida el modo de aprobación y cada 
   });
   assert.equal(multi.errors.length, 1, JSON.stringify(multi));
   assert.match(multi.errors[0], /firmante 2: firmante no permitido/);
+});
+
+test("collectAuthoredWorkflowIssues: dos pasos de firma NO pueden declarar el mismo slot", () => {
+  // La otra mitad del S7. La acuñación ya no puede producir un duplicado, así que este solo llega si
+  // el cliente manda dos pasos con el mismo `code`. Se rechaza en autoría para que el usuario lea un
+  // error y no la violación de `uq_signature_flow_steps_slot` que PostgreSQL le devolvería después.
+  const firmante = { resolver_type: "task_assignee" };
+  const duplicado = collect({
+    signatureWorkflow: {
+      steps: [
+        { order: 1, approval_mode: "and", code: "firma_2", signers: [firmante] },
+        { order: 2, approval_mode: "and", code: "firma_2", signers: [firmante] },
+      ],
+    },
+  });
+  assert.equal(duplicado.errors.length, 1, JSON.stringify(duplicado));
+  assert.match(duplicado.errors[0], /slot duplicado \(firma_2\)/);
+
+  // Y los pasos SIN slot declarado no colisionan entre sí: se lo acuña `buildWorkflowsDocument`.
+  const sinSlot = collect({
+    signatureWorkflow: {
+      steps: [
+        { order: 1, approval_mode: "and", signers: [firmante] },
+        { order: 2, approval_mode: "and", signers: [firmante] },
+      ],
+    },
+  });
+  assert.deepEqual(sinSlot.errors, []);
 });
 
 test("collectAuthoredWorkflowIssues: acepta el responsable anidado además del plano", () => {
