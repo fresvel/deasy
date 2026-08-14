@@ -1,12 +1,7 @@
 <template>
   <div
     class="absolute flex flex-col items-center justify-center p-1 border-2 rounded-lg backdrop-blur-[1px] transition-colors group z-20"
-    :class="[
-      isActive ? 'border-blue-light-500 bg-blue-light-500/20 ring-4 ring-blue-light-500 ring-opacity-30 border-solid' : 'border-dashed border-blue-light-400 bg-blue-light-400/10 hover:border-blue-light-500 hover:bg-blue-light-500/20',
-      isPreview ? 'pointer-events-none opacity-60 z-30' : 'pointer-events-auto custom-drag-cursor',
-      isDragging ? 'opacity-80 scale-105 shadow-elev-2 ring-2 custom-dragging-cursor' : 'shadow-elev-1',
-      customClass
-    ]"
+    :class="[ isActive ? 'border-blue-light-500 bg-blue-light-500/20 ring-4 ring-blue-light-500 ring-opacity-30 border-solid' : 'border-dashed border-blue-light-400 bg-blue-light-400/10 hover:border-blue-light-500 hover:bg-blue-light-500/20', isPreview ? 'pointer-events-none opacity-60 z-30' : 'pointer-events-auto custom-drag-cursor', isDragging ? 'opacity-80 scale-105 ring-2 custom-dragging-cursor' : 'shadow-elev-1', customClass ]"
     :style="computedStyle"
     @mousedown.stop.prevent="startDrag"
     @click.stop="onClick"
@@ -15,7 +10,7 @@
   >
     <div class="h-full w-full border border-blue-light-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
       <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-info drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
-      <span class="text-[9px] sm:text-[10px] font-bold text-action-view bg-white/90 px-1.5 py-0.5 rounded shadow-elev-1 border border-blue-light-200 uppercase tracking-widest text-center truncate max-w-full">
+      <span class="text-[9px] sm:text-[10px] font-bold text-action-view bg-white/90 px-1.5 py-0.5 rounded border border-blue-light-200 uppercase tracking-widest text-center truncate max-w-full">
         {{ label || 'Firma' }}
       </span>
     </div>

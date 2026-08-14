@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-elev-1">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
           <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-line bg-surface/60 p-4">
             <PdfDropField
@@ -110,7 +110,7 @@
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
                 class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
-                :class="index === currentDocumentIndex ? 'border-blue-light-400 bg-blue-light-50 shadow-elev-1' : 'border-line bg-white hover:border-line-strong hover:bg-surface'"
+                :class="index === currentDocumentIndex ? 'border-blue-light-400 bg-blue-light-50' : 'border-line bg-white hover:border-line-strong hover:bg-surface'"
               >
                 <div class="flex w-full items-start justify-between gap-3">
                   <button
@@ -143,7 +143,7 @@
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-elev-1">
+      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white">
         <div
           class="relative grow overflow-hidden bg-gray-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
@@ -262,7 +262,7 @@
                 class="deasy-alert deasy-alert--danger pointer-events-none absolute z-20 border-2 border-dashed mix-blend-multiply"
                 :style="activeSelectionBox"
               >
-                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-elev-1">
+                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-theme-lg">
                   <IconDragDrop class="h-3 w-3" />
                   <span>Calculando Área...</span>
                 </div>
@@ -311,7 +311,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-elev-1">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"

@@ -2,7 +2,7 @@
   <!-- Solo se muestra a quien encabeza alguna unidad (is_supervisor). Si no, no renderiza nada. -->
   <section
     v-if="isSupervisor"
-    class="bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-4"
+    class="bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-4"
   >
     <div class="flex items-start justify-between gap-3">
       <div>

@@ -50,7 +50,7 @@
           <AppButton
             v-if="view === 'conversation'"
             variant="plain"
-            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3.5 text-sm font-semibold text-icon shadow-elev-1 transition hover:border-line-strong hover:bg-surface hover:text-navy"
+            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3.5 text-sm font-semibold text-icon transition hover:border-line-strong hover:bg-surface hover:text-navy"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
@@ -80,7 +80,7 @@
         <label
           v-if="view !== 'conversation'"
           aria-label="Buscar conversación"
-          class="mt-3 flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2.5 shadow-elev-1 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
+          class="mt-3 flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2.5 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
         >
           <IconSearch class="h-4 w-4 text-muted" />
           <input
@@ -108,7 +108,7 @@
               <article
                 v-for="message in messages"
                 :key="message.id"
-                class="max-w-[88%] rounded-xl px-4 py-3 shadow-elev-1"
+                class="max-w-[88%] rounded-xl px-4 py-3"
                 :class="Number(message.sender_person_id) === Number(currentPersonId)
                   ? 'ml-auto bg-blue-light-700 text-white'
                   : 'mr-auto border border-line bg-white text-strong'"
@@ -192,7 +192,7 @@
 
         <template v-else-if="activeMode === 'processes'">
           <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-elev-1">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
               <IconInbox class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-body">Sin contexto de proceso</p>
@@ -207,7 +207,7 @@
                 v-for="item in filteredThreadItems"
                 :key="item.id"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
+                class="rounded-xl border border-line bg-white px-4 py-4 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
                 @click="openThreadItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -242,7 +242,7 @@
                 v-for="item in filteredUnitItems"
                 :key="item.unitId"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
+                class="rounded-xl border border-line bg-white px-4 py-4 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
                 @click="openUnitItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -270,7 +270,7 @@
           </div>
 
           <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-elev-1">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
               <IconBuildingCommunity class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-body">Sin unidades</p>
@@ -281,7 +281,7 @@
         </div>
 
         <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted shadow-elev-1">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
             <IconMessages class="h-6 w-6" />
           </div>
           <p class="m-0 text-sm font-bold text-body">Modo en preparación</p>

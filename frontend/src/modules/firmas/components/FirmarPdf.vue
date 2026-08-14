@@ -100,7 +100,7 @@
       />
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8 shadow-elev-1">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
           <h3 class="text-xl font-bold text-strong m-0">PDF del flujo de firma</h3>
@@ -148,22 +148,22 @@
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6 shadow-elev-1">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-danger">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
       </div>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8 shadow-elev-1">
+    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8">
       <div
         id="signature-launchers-grid"
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
         :class="enableHomeShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
-        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -175,7 +175,7 @@
           />
         </div>
 
-        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -187,7 +187,7 @@
           />
         </div>
 
-        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -202,7 +202,7 @@
         <div
           id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center"
         >
           <PdfDropField
             title="Multifirmador"
@@ -220,11 +220,11 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Solicitudes recibidas</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8 shadow-elev-1">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
               <span class="mt-5 text-base font-semibold text-body">Ver solicitudes</span>
@@ -239,12 +239,12 @@
           id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
           :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Buscar en BD</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8 shadow-elev-1">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
               <span class="mt-5 text-base font-semibold text-body">
@@ -263,11 +263,11 @@
           id="signature-launcher-pending"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md xl:col-start-3"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md xl:col-start-3"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Bandeja de pendientes</h3>
-          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8 shadow-elev-1">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />
               <span class="mt-5 text-base font-semibold text-body">Tabla de procesos</span>
@@ -279,8 +279,8 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6 shadow-elev-1">
-        <div class="bg-white p-1 rounded-2xl border border-rose-100 shadow-elev-1 text-danger">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
@@ -288,10 +288,10 @@
     </div>
 
     <div v-else-if="!multiOnly" class="mt-4">
-      <div class="bg-white rounded-2xl shadow-elev-1 border border-line p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="bg-white rounded-2xl border border-line p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div 
-            class="relative shadow-elev-1 border border-line" 
+            class="relative border border-line" 
             ref="pdfViewer"
             @mousemove="handleMouseMove"
             @mouseleave="handleMouseLeave"
@@ -368,7 +368,7 @@
         <div
           v-for="field in visibleFields"
           :key="field.id"
-          class="bg-white border border-line rounded-xl p-4 hover:border-blue-light-300 hover:shadow-elev-1 transition-all relative overflow-hidden group"
+          class="bg-white border border-line rounded-xl p-4 hover:border-blue-light-300 hover:transition-all relative overflow-hidden group"
           :class="{ 'ring-2 ring-blue-light-500 border-transparent': field.id === lastFieldId }"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
@@ -434,7 +434,7 @@
     <div v-else class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 bg-surface p-2 rounded-xl border border-line">
         <label :for="fieldId('filterpage')" class="font-semibold text-sm text-body ml-2">Filtrar por pagina</label>
-        <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-2xl border border-line-strong bg-white px-3 py-1.5 text-sm text-strong shadow-elev-1 outline-none transition">
+        <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-2xl border border-line-strong bg-white px-3 py-1.5 text-sm text-strong outline-none transition">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
             Pagina {{ page }}
@@ -495,7 +495,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
           <label :for="fieldId('statusfilter')" class="font-semibold text-sm text-body mb-0">Estado</label>
-          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition">
+          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition">
             <option value="all">Todos</option>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
@@ -508,13 +508,13 @@
           <input :id="fieldId('signerinput')"
             v-model="signerInput"
             type="text"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
             placeholder="Nombre, correo o cédula"
           />
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunittypefilter')" class="font-semibold text-sm text-body mb-0">Tipo de unidad</label>
-          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition">
+          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition">
             <option value="">Todos</option>
             <option v-for="option in signerUnitTypeOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -523,7 +523,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunitfilter')" class="font-semibold text-sm text-body mb-0">Unidad</label>
-          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
+          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
             <option v-for="option in signerUnitOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -532,7 +532,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signercargofilter')" class="font-semibold text-sm text-body mb-0">Cargo</label>
-          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong shadow-elev-1 outline-none transition" :disabled="isLoadingSignerOptions">
+          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
             <option v-for="option in signerCargoOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -556,7 +556,7 @@
             v-for="user in userResults"
             :key="user.id || user._id"
             type="button"
-            class="flex flex-col p-3 border rounded-xl text-left transition w-full shadow-elev-1"
+            class="flex flex-col p-3 border rounded-xl text-left transition w-full"
             :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectSigner(user)"
           >
@@ -693,7 +693,7 @@
           <input :id="fieldId('certpassword')"
             v-model="certPassword"
             type="password"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
             placeholder="Contraseña del .p12"
             autocomplete="current-password"
           />
@@ -703,7 +703,7 @@
           <input :id="fieldId('stamptext')"
             v-model="stampText"
             type="text"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
             placeholder="Ej: Dr. Juan Pérez"
           />
         </div>
@@ -781,7 +781,7 @@
     title="Validar documento"
     size="xl"
     :show-close-button="false"
-    content-class="rounded-xl shadow-elev-2 border-0 overflow-hidden"
+    content-class="rounded-xl border-0 overflow-hidden"
     body-class="p-0 bg-surface relative"
   >
     <template #title>
@@ -798,7 +798,7 @@
       </button>
     </template>
     <div class="px-6 pt-6 pb-4">
-      <div class="bg-white rounded-2xl p-5 border border-line shadow-elev-1 flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+      <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-blue-light-50 rounded-full blur-2xl opacity-60"></div>
         <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
           <label :for="fieldId('validationcedula')" class="font-bold text-sm text-body flex items-center justify-start gap-2">
@@ -809,7 +809,7 @@
               :id="fieldId('validationcedula')"
               v-model="validationCedula"
               type="text"
-              class="block w-full rounded-xl border border-line bg-surface pl-4 py-2.5 text-sm text-strong shadow-elev-1 outline-none transition focus:bg-white focus:ring-4"
+              class="block w-full rounded-xl border border-line bg-surface pl-4 py-2.5 text-sm text-strong outline-none transition focus:bg-white focus:ring-4"
               placeholder="Ej. 0999999999 (Opcional)"
             />
           </div>
@@ -827,13 +827,13 @@
         </div>
       </div>
 
-      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 shadow-elev-1 animate-fade-in">
+      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 animate-fade-in">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
 
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-        <div class="deasy-card p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="deasy-card p-4 flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-muted mb-1 z-10">
             <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
             <div class="deasy-eyebrow">Firmas Detectadas</div>
@@ -841,7 +841,7 @@
           <div class="text-3xl font-black text-strong z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
 
-        <div class="deasy-alert deasy-alert--success shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="deasy-alert deasy-alert--success flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-success mb-1 z-10">
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
@@ -850,7 +850,7 @@
           <div class="text-3xl font-black text-success z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-blue-light-200 bg-blue-light-50/50 p-4 shadow-elev-1 flex flex-col items-start gap-2 relative overflow-hidden">
+        <div class="rounded-2xl border border-blue-light-200 bg-blue-light-50/50 p-4 flex flex-col items-start gap-2 relative overflow-hidden">
            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-light-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-info mb-1 z-10">
             <div class="p-1.5 bg-blue-light-100 rounded-2xl"><IconSearch class="w-4 h-4" /></div>
@@ -859,7 +859,7 @@
           <div class="text-3xl font-black text-info z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 shadow-elev-1 flex flex-col justify-center relative overflow-hidden">
+        <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 flex flex-col justify-center relative overflow-hidden">
           <div class="flex items-center gap-2 text-primary mb-2 z-10">
             <div class="p-1.5 bg-brand-100 rounded-2xl"><IconFileCheck class="w-4 h-4" /></div>
             <div class="deasy-eyebrow">Documento Activo</div>
@@ -870,7 +870,7 @@
 
       <div
         v-if="validationResult?.summary?.timestampCount"
-        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3 shadow-elev-1 animate-fade-in"
+        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3 animate-fade-in"
       >
         <IconAlertTriangle class="w-5 h-5 shrink-0 text-warning mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
@@ -878,7 +878,7 @@
 
       <div
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 shadow-elev-1 animate-fade-in"
+        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 animate-fade-in"
       >
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <div class="flex flex-col gap-1">
@@ -1055,7 +1055,7 @@ const fieldId = (name) => `${uid}-${name}`;
     h(
       'div',
       {
-        class: `signature-workspace-icon shrink-0 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border shadow-elev-1 ${colorClasses}`
+        class: `signature-workspace-icon shrink-0 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border ${colorClasses}`
       },
       [h(IconComponent, { class: 'h-7 w-7', 'stroke-width': 1.5 })]
     );

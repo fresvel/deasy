@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node graph-node--config relative rounded-2xl border-l-4 px-2.5 py-1.5 shadow-elev-1 transition-all"
+    class="graph-node graph-node--config relative rounded-2xl border-l-4 px-2.5 py-1.5 transition-all"
     :class="[statusBorderClass, data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '']"
     :title="data.definition_name"
     @mouseenter="hover = true"

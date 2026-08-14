@@ -1,10 +1,10 @@
 <template>
   <section class="flex flex-col gap-5">
     <!-- Barra de acción: propósito + botón principal. El título del proceso lo pone la cabecera de la página. -->
-    <div class="overflow-hidden rounded-[1.75rem] border border-brand-100 bg-linear-to-br from-brand-50/70 via-white to-blue-light-50/50 shadow-elev-1">
+    <div class="overflow-hidden rounded-[1.75rem] border border-brand-100 bg-linear-to-br from-brand-50/70 via-white to-blue-light-50/50">
       <div class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
         <div class="flex items-start gap-3.5">
-          <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-white text-primary shadow-elev-1">
+          <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-white text-primary">
             <IconSend class="h-6 w-6" />
           </span>
           <div class="flex min-w-0 flex-col">
@@ -30,14 +30,14 @@
     </div>
 
     <!-- Pestañas: enviados / recibidos -->
-    <div class="flex items-center gap-1.5 rounded-2xl border border-line/80 bg-white p-1.5 shadow-elev-1">
+    <div class="flex items-center gap-1.5 rounded-2xl border border-line/80 bg-white p-1.5">
       <button
         v-for="tab in tabs"
         :key="tab.key"
         type="button"
         class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition"
         :class="activeTab === tab.key
-          ? 'bg-brand-600 text-white shadow-elev-1'
+          ? 'bg-brand-600 text-white'
           : 'text-muted hover:bg-surface hover:text-body'"
         @click="activeTab = tab.key"
       >

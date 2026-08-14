@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node relative rounded-xl border px-3 py-2 shadow-elev-1 transition-all"
+    class="graph-node relative rounded-xl border px-3 py-2 transition-all"
     :class="[
       data.is_active ? 'border-line-strong bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
       data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '',

@@ -26,7 +26,7 @@
     <div v-if="generalTaskError" class="deasy-alert deasy-alert--danger">{{ generalTaskError }}</div>
 
     <!-- Documento -->
-    <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-elev-1">
+    <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-brand-50 text-primary"><IconFileDescription class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Documento</h6>
@@ -42,7 +42,7 @@
     </section>
 
     <!-- Flujo del envío -->
-    <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-elev-1">
+    <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-brand-50 text-primary"><IconSend class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Flujo del envío</h6>
@@ -140,7 +140,7 @@
     </section>
 
     <!-- Destino y plazo -->
-    <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4 shadow-elev-1">
+    <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
       <div class="flex items-center gap-2">
         <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-brand-50 text-primary"><IconBuildingMonument class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Destino y plazo</h6>

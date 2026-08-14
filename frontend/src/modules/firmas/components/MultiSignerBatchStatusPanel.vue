@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-    <div class="deasy-card p-4 shadow-elev-1">
+    <div class="deasy-card p-4">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div class="block text-sm font-bold text-strong">Campos de Firma</div>
         <BtnDelete
@@ -11,7 +11,7 @@
         />
       </div>
       <div class="flex flex-col gap-3">
-        <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1 shadow-elev-1">
+        <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1">
           <button
             v-if="showFieldControls"
             type="button"
@@ -41,7 +41,7 @@
 
         <div v-if="showPageReference" class="flex flex-col gap-2">
           <div class="text-xs font-semibold text-muted">Referencia de página</div>
-          <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1 shadow-elev-1">
+          <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1">
             <button
               v-if="showFieldControls"
               type="button"
@@ -117,7 +117,7 @@
         <div class="h-full rounded-full bg-blue-light-500 transition-all duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
       </div>
 
-      <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5 shadow-elev-1">
+      <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5">
         <div class="flex items-center justify-between gap-3">
           <div class="flex flex-col">
             <span class="deasy-eyebrow">Estado</span>
@@ -136,7 +136,7 @@
       </div>
     </div>
 
-    <div v-if="batchError" class="deasy-alert deasy-alert--danger mt-auto flex items-start gap-2 shadow-elev-1">
+    <div v-if="batchError" class="deasy-alert deasy-alert--danger mt-auto flex items-start gap-2">
       <IconAlertCircle class="mt-0.5 h-5 w-5 shrink-0" />
       <span class="font-medium">{{ batchError }}</span>
     </div>

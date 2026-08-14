@@ -118,7 +118,7 @@ const isStepLocked = (step, index) =>
   Boolean(step.locked || step.disabled || (props.lockAfterFirstUntilContext && index > 0 && !hasDefinition.value));
 
 const stepButtonClass = (step, index) => {
-  if (step.key === props.currentStep) return "bg-white shadow-elev-1 ring-1 ring-brand-300";
+  if (step.key === props.currentStep) return "bg-white ring-1 ring-brand-300";
   if (isStepLocked(step, index)) return "opacity-50 cursor-not-allowed";
   return "hover:bg-white/70";
 };

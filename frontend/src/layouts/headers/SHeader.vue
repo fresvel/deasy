@@ -5,7 +5,7 @@
     <AppLogo
       to="/home"
       size="sm"
-      class-name="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white p-1 shadow-elev-1"
+      class-name="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white p-1"
       image-class="max-h-8 max-w-8 rounded-xl"
       aria-label="Ir al inicio"
     />

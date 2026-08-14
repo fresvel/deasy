@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-flex items-center rounded-xl border border-line bg-white p-1 shadow-elev-1">
+  <div class="inline-flex items-center rounded-xl border border-line bg-white p-1">
     <button
       type="button"
       class="rounded-2xl p-2 text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"

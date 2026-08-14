@@ -17,7 +17,7 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_20rem] gap-4">
-      <div class="bg-white rounded-2xl border border-line p-4 shadow-elev-1">
+      <div class="bg-white rounded-2xl border border-line p-4">
         <AppAlert v-if="errorMessage">
           {{ errorMessage }}
         </AppAlert>
@@ -38,7 +38,7 @@
             v-for="certificate in certificates"
             :key="certificate.id"
             type="button"
-            class="w-full rounded-2xl border px-4 py-4 text-left transition shadow-elev-1"
+            class="w-full rounded-2xl border px-4 py-4 text-left transition"
             :class="isSelected(certificate.id) ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectCertificate(certificate)"
           >
@@ -77,7 +77,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-line p-4 shadow-elev-1 flex flex-col gap-4">
+      <div class="bg-white rounded-2xl border border-line p-4 flex flex-col gap-4">
         <div>
           <h4 class="text-sm font-bold text-strong m-0">Subir certificado</h4>
           <p class="text-xs text-muted m-0 mt-1">
@@ -90,7 +90,7 @@
           <input :id="fieldId('uploadlabel')"
             v-model="uploadLabel"
             type="text"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong shadow-elev-1 outline-none transition focus:ring-2"
+            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
             placeholder="Ej: Token personal 2026"
           />
         </div>

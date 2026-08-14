@@ -136,7 +136,7 @@
 
     <div v-if="!table" class="flex">
       <div class="w-full">
-        <div class="deasy-card shadow-elev-1">
+        <div class="deasy-card">
           <div class="p-5">
             <p class="mb-0 text-sm text-muted">Selecciona una tabla para administrar.</p>
           </div>

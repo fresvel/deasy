@@ -30,7 +30,7 @@
           inputmode="numeric"
           pattern="[0-9]*"
           maxlength="1"
-          class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-2xl font-bold text-strong bg-surface border border-line rounded-xl focus:bg-white focus:ring-4 outline-none transition-all shadow-elev-1"
+          class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-2xl font-bold text-strong bg-surface border border-line rounded-xl focus:bg-white focus:ring-4 outline-none transition-all"
           v-model="code[index]"
           @input="onInput(index, $event)"
           @keydown.backspace="onBackspace(index, $event)"

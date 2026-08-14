@@ -88,7 +88,7 @@
                   </button>
                   <div
                     v-if="showProcessMultiSelect && consolidatedCargoProcesses.length"
-                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-elev-2 shadow-line/60"
+                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-theme-lg shadow-line/60"
                   >
                     <button
                       type="button"
@@ -161,7 +161,7 @@
             <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
-            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger shadow-elev-1">
+            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger">
               {{ processPanelError }}
             </section>
             <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted text-center text-sm font-medium">
@@ -170,13 +170,13 @@
 
             <template v-else>
 
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
               <!-- Tarjetas de entregables -->
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
 
                   <div v-if="!consolidatedCargoProcesses.length" class="deasy-empty deasy-empty--lg">
                     No hay procesos asignados para este cargo.
@@ -274,7 +274,7 @@
               <template v-for="unit in unitsPanelData" :key="unit.id">
                 <div v-if="activeUnitPanelTab === unit.id" class="flex flex-col gap-5">
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4">
+                    <section class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4">
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <div v-if="unit.groupName" class="deasy-eyebrow">{{ unit.groupName }}</div>
@@ -290,7 +290,7 @@
                           v-for="process in unit.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:shadow-md"
+                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left transition hover:border-blue-light-200 hover:shadow-md"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -356,7 +356,7 @@
                     <section
                       v-for="pos in cargo.positions"
                       :key="pos.unitId"
-                      class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4"
+                      class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4"
                     >
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
@@ -385,7 +385,7 @@
                           v-for="process in pos.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:shadow-md"
+                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left transition hover:border-blue-light-200 hover:shadow-md"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -447,11 +447,11 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
                 @click="scrollToProcessNav"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis procesos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconChecklist class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeProcesses.length }} proceso(s) disponible(s)</span>
@@ -462,12 +462,12 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
                 :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
                 @click="navigateToGlobalSignaturePage"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Centro de firmas</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1"
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8"
                   :class="homeSignatureCount ? 'border-amber-200/80' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-warning' : 'text-muted'" />
@@ -481,11 +481,11 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
                 @click="openMySends"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis envíos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSend class="h-10 w-10 text-primary" />
                     <span class="mt-4 text-sm font-semibold text-body">Documentos que has enviado</span>
@@ -496,11 +496,11 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
                 @click="navigateToDocumentCenterPage"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Centro documental</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconFileDescription class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeDocumentCount }} documento(s) accesibles</span>
@@ -511,11 +511,11 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
                 @click="navigateTo('perfil')"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconUserCheck class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeDossierCompletion }}% completado · {{ homeDossierTotal }} registro(s)</span>
@@ -526,11 +526,11 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-line-strong hover:bg-surface/40 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-line-strong hover:bg-surface/40 hover:shadow-md"
                 @click="openCargosPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis cargos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBriefcase class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeCargoCount }} cargo(s) asignado(s)</span>
@@ -541,11 +541,11 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left shadow-elev-1 transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
                 @click="openUnitsPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis unidades</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8 shadow-elev-1">
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBuildingMonument class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ unitsPanelData.length }} unidad(es) activa(s)</span>
@@ -560,7 +560,7 @@
             <div v-else-if="homeDashTab === 'resumen'" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
               <!-- Columna izquierda: Acciones pendientes -->
-              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4">
+              <section class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4">
                 <div class="flex items-center justify-between gap-3">
                   <h3 class="text-lg font-semibold text-strong m-0">Acciones pendientes</h3>
                   <AppButton variant="softNeutral" size="sm" :disabled="homeLoading" @click="loadHomeData">
@@ -581,7 +581,7 @@
                     v-for="action in homeActions"
                     :key="action.key"
                     type="button"
-                    class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3.5 text-left shadow-elev-1 transition hover:shadow-md"
+                    class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3.5 text-left transition hover:shadow-md"
                     :class="{
                       'hover:border-amber-200': action.tone === 'warning',
                       'hover:border-blue-light-200': action.tone === 'info',
@@ -610,13 +610,13 @@
               </section>
 
               <!-- Columna derecha: Estadísticas -->
-              <section class="bg-surface/50 rounded-2xl border border-line p-6 shadow-elev-1 flex flex-col gap-4">
+              <section class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4">
                 <h3 class="text-lg font-semibold text-strong m-0">Estadísticas de cuenta</h3>
                 <div class="flex flex-col gap-2">
                   <div
                     v-for="stat in homeStats"
                     :key="stat.label"
-                    class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3 shadow-elev-1"
+                    class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3"
                   >
                     <span
                       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
@@ -693,12 +693,12 @@
               Cargando la configuración seleccionada...
             </section>
 
-            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger shadow-elev-1">
+            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger">
               {{ processPanelError }}
             </section>
 
             <template v-else>
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-elev-1" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
                 {{ processActionMessage.text }}
               </section>
 
@@ -716,7 +716,7 @@
 
               <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
                   <section class="overflow-hidden rounded-[2rem] border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -871,7 +871,7 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-elev-2 shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
                     <h2 class="text-lg font-bold text-strong m-0 leading-tight">Dependencias de la configuración</h2>
                     <p class="text-muted text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
@@ -905,7 +905,7 @@
                         Sin artifacts vinculados.
                       </div>
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
-                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-body flex flex-col gap-1 bg-white p-3 rounded-xl border border-line shadow-elev-1">
+                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-body flex flex-col gap-1 bg-white p-3 rounded-xl border border-line">
                           <span>{{ template.template_artifact_name }}</span>
                         </li>
                       </ul>
@@ -950,7 +950,7 @@
           </div>
         </div>
 
-        <div v-if="taskLaunchError" class="deasy-alert deasy-alert--danger shadow-elev-1">
+        <div v-if="taskLaunchError" class="deasy-alert deasy-alert--danger">
           {{ taskLaunchError }}
         </div>
 
@@ -1554,7 +1554,7 @@
               <div
                 v-for="step in fillWorkflowState.subject.workflow.fill_steps"
                 :key="`fill-step-${step.id}-${step.request_id || 'na'}`"
-                class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 shadow-elev-1 transition"
+                class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 transition"
                 :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
               >
                 <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
@@ -1755,7 +1755,7 @@
                 Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
               </p>
             </section>
-            <section class="deasy-card p-4 flex flex-col gap-2 shadow-elev-1">
+            <section class="deasy-card p-4 flex flex-col gap-2">
               <p class="text-xs uppercase tracking-wider font-semibold text-muted">Responsable actual</p>
               <p class="text-sm font-semibold text-strong mb-0">
                 {{ signatureFlowState.snapshot?.responsableActual

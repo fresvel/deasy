@@ -5,7 +5,7 @@
       <div
         v-for="card in cards"
         :key="card.key"
-        class="deasy-card p-4 shadow-elev-1"
+        class="deasy-card p-4"
       >
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 min-w-0">
