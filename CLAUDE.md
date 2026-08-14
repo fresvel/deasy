@@ -172,7 +172,7 @@ Cuatro cosas que cuestan caro y no son evidentes:
    `@custom-variant` en `tokens.css`, `vue/no-restricted-class` y `pnpm run check:no-dark`.
 
 **Las reglas completas están en `frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. El plan,
-la bitácora y la auditoría, en **`docs/planes/sistema-diseno-plantillas/`**. La primera vuelta
+la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. La primera vuelta
 (el CSS) está cerrada y archivada en `docs/docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/`.
 
 ### Documentación — el sitio Astro Starlight

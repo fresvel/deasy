@@ -591,7 +591,7 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 
 ## Frente 4 · Sistema de diseño — 🟡 · pasos 1-3 cerrados, el 5 a medias, el 4 y el 6 abiertos
 
-> **Plan, evidencia y bitácora: [`sistema-diseno-plantillas/`](./sistema-diseno-plantillas/).** El frente ocupaba 20 líneas
+> **Plan, evidencia y bitácora: [`sistema-diseno-componentes/`](./sistema-diseno-componentes/).** El frente ocupaba 20 líneas
 > aquí y necesitaba más: la medición del 2026-08-09 encontró **tres cosas que no estaban en ningún
 > plan** y que iban *antes* de los pasos ya escritos.
 >
@@ -604,7 +604,7 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 > ---
 >
 > ⚠️ **ESTA SECCIÓN SE QUEDÓ EN EL 2026-08-11. NO ES EL ESTADO DE HOY.** El desarrollo del frente
-> siguió en `sistema-diseno-plantillas/` y el maestro no se actualizó con él. **Manda la tabla de
+> siguió en `sistema-diseno-componentes/` y el maestro no se actualizó con él. **Manda la tabla de
 > `plan-plantillas-2026-08.md`**, no ésta. Lo que ha cambiado desde entonces:
 >
 > - **La paleta se colapsó el 08-12.** Todo `--brand-*` que se lea aquí abajo está **muerto**: hoy son
@@ -785,7 +785,7 @@ antes/después, no build ni tests.
 | `css-hex-a-token.mjs` | Sustituye hex por `var(--token)` con dos salvaguardas ganadas a golpes: el hex corto que es prefijo del largo (`#fff` dentro de `#fff0ed`) y la autorreferencia que deja el token **sin valor** | **Se queda.** Es la herramienta del paso 5, que sigue abierto |
 
 **Criterio de cierre del frente:** pasos 4, 5 (con el criterio redefinido) y 6 cerrados, más el
-`<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno-plantillas/` se archiva y esto se marca ✅.
+`<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno-componentes/` se archiva y esto se marca ✅.
 
 > **Actualizado el 2026-08-13.** El paso 5 se cerró con F3 y F4.5 el 08-12. Lo que queda del frente
 > pasa a ser el trabajo de `develop-styles`: adoptar la paleta y el markup de TailAdmin, migrar
@@ -800,9 +800,19 @@ antes/después, no build ni tests.
 > disciplina (hoy no existen `bg-state-warning` ni `text-brand-text-muted`, así que ~660 de esas
 > apariciones **no tenían alternativa**).
 >
-> El ejecutable es ahora [`sistema-diseno-plantillas/plan-plantillas-2026-08.md`](./sistema-diseno-plantillas/plan-plantillas-2026-08.md);
-> la evidencia, [`auditoria-2026-08-11.md`](./sistema-diseno-plantillas/auditoria-2026-08-11.md). **Eso redefine
-> el paso 5 de este frente**, que aquí seguía contado como «hex en `.vue`».
+> **Y la segunda vuelta tambien se cerro, el 2026-08-13.** Esta archivada en
+> [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/`](../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/),
+> y su bitacora sigue valiendo: es donde estan las trampas ya pagadas.
+>
+> **El ejecutable es ahora la TERCERA vuelta:
+> [`sistema-diseno-componentes/plan-2026-08-13.md`](./sistema-diseno-componentes/plan-2026-08-13.md).**
+> Va a por lo que un script no puede decidir: partir `HomeView` y `FirmarPdf` (8 159 lineas entre los
+> dos), los 206 colores que viven en un ternario, el `z-index` y los tags de las tablas de admin.
+>
+> Lo que la segunda vuelta dejo hecho, y que este frente ya puede dar por bueno: la paleta de
+> TailAdmin adoptada en dos capas, seis componentes declarados en un solo sitio, **cero repintados
+> de utilidad**, **cero utilidades de foco en plantillas**, y **cuatro gates encadenados a `lint`**
+> —incluido el patron de nombres de clase, que estaba en `null` y no vigilaba nada—.
 
 ---
 

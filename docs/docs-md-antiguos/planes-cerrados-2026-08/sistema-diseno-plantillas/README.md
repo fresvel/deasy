@@ -1,3 +1,37 @@
+# `sistema-diseno-plantillas/` — Frente 4, SEGUNDA vuelta · ARCHIVADO
+
+> ## ⚠️ ARCHIVADO el 2026-08-13. No es fuente de verdad y no se sacan tareas de aquí.
+>
+> Sus seis fases se ejecutaron. Lo que quedó pendiente **no es la continuación de esto**: es otro
+> problema, y vive en [`docs/planes/sistema-diseno-componentes/`](../../../planes/sistema-diseno-componentes/).
+>
+> Se conserva por una razón concreta: **`bitacora.md` es donde están las trampas ya pagadas.**
+> Cuarenta y pico hallazgos medidos que no se pueden reconstruir leyendo el código.
+
+## Qué ganó esta vuelta
+
+| | antes | después |
+|---|---:|---:|
+| Colores de Tailwind por nombre en plantillas | 2 117 | **206** |
+| Reglas fuera de capa | 52 | **33** |
+| Repintados de utilidad en `overrides.css` | 5 | **0** |
+| Utilidades de foco en plantillas | 111 | **0** |
+| Valores arbitrarios `X-[…]` | 423 | **374** |
+| Strings de clase >120 caracteres | 203 | **174** |
+| Clases propias sin regla | 23 | **0** |
+| `!important` | 5 | **3** |
+| Tests | 304 | **316** |
+| Gates automáticos | 1 (suelto) | **4 encadenados** |
+
+Y lo que no es un número: **se adoptó la paleta de TailAdmin** en dos capas —91 primitivas más los
+22 tokens semánticos como alias encima— y **seis componentes pasaron a declararse en un solo sitio**,
+cuatro de ellos con la geometría de TailAdmin.
+
+⚠️ **Las cifras del plan y de la auditoría son del 08-11 y ya no son ciertas.** Manda esta tabla, y
+el estado de hoy está en el plan nuevo.
+
+---
+
 # `docs/planes/sistema-diseno-plantillas/` — Frente 4, segunda vuelta
 
 > Este directorio **no compite** con [`plan-maestro-2026-08.md`](../plan-maestro-2026-08.md). Es el

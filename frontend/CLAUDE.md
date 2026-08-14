@@ -614,6 +614,6 @@ Es **el patrón dominante de este repo**, y por eso va aquí y no en una lista d
 - **`workspaceNavIcons.js` compone `` `${prefix}--${tone}` `` sin comprobar que la variante exista** —
   que es como «Mis envíos» estuvo sin color. Un tono nuevo desaparece en silencio.
 
-El plan y la bitácora están en **`docs/planes/sistema-diseno-plantillas/`**. La primera vuelta está
+El plan y la bitácora están en **`docs/planes/sistema-diseno-componentes/`**. La primera vuelta está
 archivada en `docs/docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/`; su bitácora sigue
 valiendo, porque es donde están las trampas ya pagadas.
