@@ -320,7 +320,7 @@ const processConfigurationStatusLabel = (value) => ({
    borrador siempre va a ser el gris apagado. Ojo, esto ademas ARREGLA una incoherencia: `draft`
    salia gris aqui y AMBAR en el nodo del grafo (`ProcessConfigNode`), para el mismo estado. */
 const processConfigurationStatusClass = (value) => ({
-  draft: "deasy-tag--muted",
+  draft: "deasy-tag--neutral",
   active: "deasy-tag--success",
   retired: "deasy-tag--warning"
 }[String(value || "").trim().toLowerCase()] || "deasy-tag--neutral");

@@ -73,7 +73,7 @@ const statusBorderClass = computed(() => {
    mismo estado con dos colores segun la pantalla. */
 const statusChipClass = computed(() => {
   if (props.data.status === "active") return "deasy-tag--success";
-  if (props.data.status === "draft") return "deasy-tag--muted";
+  if (props.data.status === "draft") return "deasy-tag--neutral";
   return "deasy-tag--neutral";
 });
 const seriesLabel = computed(() => {
