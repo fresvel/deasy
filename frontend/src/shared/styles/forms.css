@@ -92,11 +92,22 @@
         color: var(--color-body);
     }
 
+    /* ⚠️ AQUI HABIA UN `--tw-ring-color` ESCRITO A MANO, y era la segunda forma de pintar el
+       mismo anillo en este fichero. Dos motivos para retirarlo, y el orden importa:
+
+       1. **No pintaba.** El anillo del campo enfocado lo pone `overrides.css` FUERA DE CAPA
+          (`input:focus { box-shadow: var(--focus-ring) }`), y fuera de capa gana a todo lo
+          capado. Medido: el `ring-4` de aqui nunca llegaba al DOM.
+       2. `--tw-ring-*` es variable INTERNA de Tailwind, no API. Si cambia de nombre en una
+          actualizacion, el anillo se apaga y no falla el build, ni el lint, ni los tests.
+
+       El anillo del proyecto es UNO y se llama `--focus-ring` (`tokens.css`). El dia que la
+       fase 6 cape la regla suelta de `overrides.css`, hay que decidir ahi si el foco cambia de
+       color por estado — que es la decision §4.2, no una linea de este fichero. */
     .deasy-field-input:focus,
     .deasy-field-select:focus {
-        @apply bg-white ring-4;
+        @apply bg-white;
         border-color: color-mix(in srgb, var(--color-primary) 44%, transparent);
-        --tw-ring-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
     }
 
     /* ⚠️ EL PLACEHOLDER SE QUEDA EN `--color-muted`, el mismo que el del campo normal de
@@ -118,10 +129,10 @@
         color: var(--color-danger);
     }
 
+    /* Mismo caso que el foco normal de arriba: el `--tw-ring-color` no llegaba al DOM. */
     .deasy-field-input--error:focus {
-        @apply bg-white ring-4;
+        @apply bg-white;
         border-color: var(--color-danger);
-        --tw-ring-color: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
     }
 
     .deasy-field-message {
@@ -156,14 +167,14 @@
     /* ── LA ZONA DE SUBIDA ───────────────────────────────────────────────────────────
        Sus tres estados eran el ultimo color de familia propia fuera de la paleta:
        `sky-200/300/500` para «vacia», `emerald-400/500` para «llena». Ahora derivan de
-       `--color-action-view` (el azul de accion) y `--color-success`, con la misma escala
+       `--color-info` (el azul de accion) y `--color-success`, con la misma escala
        que el resto: 71 % el borde en reposo, 85 % al pasar el raton o al arrastrar.
 
        El borde AQUI no es decorativo: es discontinuo y de 2 px, y es lo unico que dibuja
        la zona. `sky-200` daba **1.33:1** contra el blanco; al 71 % da 3.83. */
     .deasy-dropzone__surface {
         @apply relative flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-white px-5 py-6 text-center transition-all;
-        border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
+        border-color: color-mix(in srgb, var(--color-info) 71%, var(--color-white));
     }
 
     .deasy-dropzone__surface--card {
@@ -181,8 +192,8 @@
 
     .deasy-dropzone__surface--active {
         @apply shadow-[var(--focus-ring)];
-        border-color: var(--color-action-view);
-        background: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
+        border-color: var(--color-info);
+        background: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
     }
 
     .deasy-dropzone__surface--filled {
@@ -193,8 +204,8 @@
 
     @media (hover: hover) {
         .deasy-dropzone__surface--clickable:hover {
-            border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
-            background: color-mix(in srgb, var(--color-action-view) 4%, var(--color-white));
+            border-color: color-mix(in srgb, var(--color-info) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--color-info) 4%, var(--color-white));
         }
 
         .deasy-dropzone__surface--filled:hover {
@@ -214,11 +225,11 @@
     }
 
     .deasy-dropzone__surface--disabled {
-        @apply cursor-not-allowed border-line bg-slate-100 opacity-70;
+        @apply cursor-not-allowed border-line bg-gray-100 opacity-70;
     }
 
     .deasy-dropzone__icon {
-        @apply h-8 w-8 shrink-0 text-action-view;
+        @apply h-8 w-8 shrink-0 text-info;
     }
 
     .deasy-dropzone__icon--compact,
@@ -250,7 +261,7 @@
     .deasy-dropzone__selected {
         @apply flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5;
         border-color: var(--color-line);
-        background: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
+        background: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
     }
 
     .deasy-dropzone__file-name {

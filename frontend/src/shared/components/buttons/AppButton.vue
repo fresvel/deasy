@@ -11,7 +11,7 @@
     <span v-if="variant === 'close'" class="flex items-center justify-center w-full h-full">
       <IconX class="w-4 h-4" stroke-width="2.5" />
     </span>
-    <span v-else-if="$slots.default && showInnerWrapper" class="btn-inner">
+    <span v-else-if="$slots.default && showInnerWrapper">
       <slot />
     </span>
     <slot v-else />
@@ -61,28 +61,50 @@ defineEmits(["click"]);
 
 const attrs = useAttrs();
 
+/* [F1.3 2026-08-14] AQUI HABIA UN GEMELO `admin-btn--*` PEGADO A CADA VARIANTE, y no pintaba
+   nada propio: `buttons.css` declaraba los once **en la misma lista de selectores** que su
+   hermano `deasy-btn--*`, o sea que el elemento recibia dos nombres para una regla. Retirados
+   con su mitad del CSS, en el mismo commit y con cambio cero en el CSS construido.
+
+   Cuatro de los que habia aqui eran peores que redundantes: `admin-btn--icon`, `--sm`, `--lg` y
+   `person-assignment-menu-btn` **no los declaraba ningun CSS**. Llevaban meses viajando al DOM
+   sin pintar, y no los veia ningun gate: los gates leen atributos `class` del markup, y estos
+   viven en un MAPA DE JAVASCRIPT. La clase base `admin-btn` si se queda — la consume
+   `.admin-page-header__actions .admin-btn`, que es deuda de la fase 6, no de esta. */
 const variantClassMap = {
-  primary: "deasy-btn--primary admin-btn--primary",
-  secondary: "deasy-btn--secondary admin-btn--secondary",
-  cancel: "deasy-btn--cancel admin-btn--cancel",
-  outlinePrimary: "deasy-btn--outline-primary admin-btn--outline-primary",
-  outlineDanger: "deasy-btn--outline-danger admin-btn--outline-danger",
+  primary: "deasy-btn--primary",
+  secondary: "deasy-btn--secondary",
+  cancel: "deasy-btn--cancel",
+  outlinePrimary: "deasy-btn--outline-primary",
+  outlineDanger: "deasy-btn--outline-danger",
   softPrimary: "deasy-btn--soft-primary",
   softNeutral: "deasy-btn--soft-neutral",
   softSuccess: "deasy-btn--soft-success",
   softWarning: "deasy-btn--soft-warning",
   softDanger: "deasy-btn--soft-danger",
-  success: "deasy-btn--success admin-btn--success",
-  danger: "deasy-btn--danger admin-btn--danger",
-  close: "deasy-btn--close admin-btn--close",
-  menu: "deasy-btn--menu person-assignment-menu-btn",
+  /* [F3.4 2026-08-14] Los dos tonos que le faltaban a la familia suave, y que existian solo
+     dentro de `hope-action-*`: el azul de «ver» y el indigo de «subir/versionar/descargar». Con
+     ellos, los 12 botones de accion de tabla colapsan a variantes y su familia entera muere. */
+  softInfo: "deasy-btn--soft-info",
+  softActionUpload: "deasy-btn--soft-action-upload",
+  success: "deasy-btn--success",
+  /* [F3.2 2026-08-14] `warning` FALTABA, y no como capricho: los solidos eran `primary`,
+     `success` y `danger`, sin el de aviso, mientras las SUAVES si tenian los cuatro tonos. La
+     asimetria estaba viva — `HomeView` pedia `variant="warning"` para confirmar el reseteo de un
+     flujo y el boton salia SIN NINGUNA clase de variante, porque el mapa resuelve por pertenencia
+     y devuelve cadena vacia para lo desconocido. Solo avisaba la consola, y solo en desarrollo.
+     `--color-warning` sobre blanco da 5.43:1, que pasa AA. Lo vigila `check:variants`. */
+  warning: "deasy-btn--warning",
+  danger: "deasy-btn--danger",
+  close: "deasy-btn--close",
+  menu: "deasy-btn--menu",
   plain: ""
 };
 
 const sizeClassMap = {
-  sm: "deasy-btn--sm admin-btn--sm",
+  sm: "deasy-btn--sm",
   md: "deasy-btn--md",
-  lg: "deasy-btn--lg admin-btn--lg"
+  lg: "deasy-btn--lg"
 };
 
 /* [F1.6 2026-08-11] ANTES ESTO ERA `mapa[clave] || clave`, y estampaba la clave como si
@@ -111,7 +133,7 @@ const classes = computed(() => [
     : "deasy-btn admin-btn",
   resolveClass(variantClassMap, props.variant, "variant"),
   props.variant !== "plain" && !props.iconOnly ? resolveClass(sizeClassMap, props.size, "size") : "",
-  props.iconOnly ? "deasy-btn deasy-btn--icon admin-btn admin-btn--icon" : "",
+  props.iconOnly ? "deasy-btn deasy-btn--icon admin-btn" : "",
   props.className
 ]);
 

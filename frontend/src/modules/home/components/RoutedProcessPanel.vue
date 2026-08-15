@@ -51,7 +51,7 @@
     </div>
 
     <!-- Contenido -->
-    <div v-if="loading" class="rounded-2xl border border-blue-light-100 bg-blue-light-50/60 p-6 text-center text-sm font-semibold text-action-view animate-pulse">
+    <div v-if="loading" class="rounded-2xl border border-blue-light-100 bg-blue-light-50/60 p-6 text-center text-sm font-semibold text-info animate-pulse">
       Cargando…
     </div>
 

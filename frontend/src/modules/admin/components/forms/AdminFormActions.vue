@@ -1,5 +1,5 @@
 <template>
-  <div class="person-assignment-form-actions">
+  <div>
     <AdminButton
       v-if="showPrimary"
       :variant="primaryVariant"

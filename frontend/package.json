@@ -6,14 +6,18 @@
     "dev": "vite --host 0.0.0.0 --port 8080",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 8080",
-    "lint": "eslint . && node scripts/check-no-dark.mjs && node scripts/check-orphan-classes.mjs && node scripts/check-no-arbitrary.mjs",
+    "lint": "pnpm run build && eslint . && node scripts/check-no-dark.mjs && node scripts/check-orphan-classes.mjs && node scripts/check-no-arbitrary.mjs && node scripts/check-color-theme.mjs && node scripts/css-prune.mjs && node scripts/check-variants.mjs && node scripts/contraste.mjs --gate && pnpm run lint:css",
     "lint:css": "stylelint \"src/**/*.css\"",
     "check:no-dark": "node scripts/check-no-dark.mjs",
     "check:orphan-classes": "node scripts/check-orphan-classes.mjs",
     "test:unit": "vitest run",
     "test:unit:coverage": "vitest run --coverage && sed -i 's|^SF:|SF:frontend/|' coverage/lcov.info",
     "test:unit:watch": "vitest",
-    "check:no-arbitrary": "node scripts/check-no-arbitrary.mjs"
+    "check:no-arbitrary": "node scripts/check-no-arbitrary.mjs",
+    "check:contraste": "node scripts/contraste.mjs --gate",
+    "check:color-theme": "node scripts/check-color-theme.mjs",
+    "check:css-prune": "node scripts/css-prune.mjs",
+    "check:variants": "node scripts/check-variants.mjs"
   },
   "dependencies": {
     "@tabler/icons-vue": "^3.41.1",

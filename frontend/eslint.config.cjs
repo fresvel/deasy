@@ -30,9 +30,11 @@ module.exports = [
             // Lo que prohibe es el `style="..."` estatico, que siempre es una clase
             // disfrazada.
             //
-            // Lo que estas reglas NO ven: los 221 strings de clase de mas de 120
-            // caracteres. Para eso no hay regla; esta el contador de `lint:css` y la
-            // fase 6 del frente 4.
+            // Lo que estas reglas NO ven: los strings de clase de mas de 120 caracteres.
+            // Son **164** el 2026-08-14 (este comentario decia 221, de una medicion
+            // anterior). Para eso no hay regla ni contador: `lint:css` no los mira —solo
+            // abre los `.css`— y decia lo contrario. Bajarlos es dar nombre a la receta
+            // repetida, o sea las fases 2 y 3 del frente 4.
             "vue/no-static-inline-styles": ["error", { allowBinding: true }],
             "vue/prefer-separate-static-class": "error",
 

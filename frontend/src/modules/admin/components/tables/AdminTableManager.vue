@@ -56,7 +56,7 @@
     />
 
     <div v-if="table && isTemplateArtifactsTable" class="mb-3 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3">
-      <p class="m-0 flex items-start gap-2 text-sm text-action-view">
+      <p class="m-0 flex items-start gap-2 text-sm text-info">
         <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
         <span>
           <strong>Consulta y versionado.</strong>

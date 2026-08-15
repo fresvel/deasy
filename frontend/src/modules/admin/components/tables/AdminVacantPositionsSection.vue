@@ -89,10 +89,10 @@
             </template>
             <template v-if="canUpdate" #actions="{ row }">
               <div class="inline-flex items-center gap-1">
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-delete" title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
+                <AdminButton variant="softDanger" size="sm" icon-only title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
                   <font-awesome-icon icon="times-circle" />
                 </AdminButton>
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
+                <AdminButton variant="softSuccess" size="sm" icon-only title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
                   <font-awesome-icon icon="user-plus" />
                 </AdminButton>
               </div>

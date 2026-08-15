@@ -76,7 +76,7 @@
                         :key="`${section.mode}-${entry.format}`"
                         class="flex min-w-0 flex-wrap items-center gap-2"
                       >
-                        <span class="is-viewer" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                        <span :style="getAvailableFormatBadgeStyle(section.mode, entry)">
                           {{ entry.formatLabel }}
                         </span>
                         <code class="min-w-0 break-all text-xs font-medium text-muted">{{ entry.entryObjectKey }}</code>
@@ -147,7 +147,7 @@
             :fields="relatedSectionFields(section)"
             :rows="section.rows"
             :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
-            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            table-class="min-w-full border-separate border-spacing-0 text-sm"
             responsive-class="overflow-x-auto deasy-card"
             scroll-class=""
             actions-label="Accion"

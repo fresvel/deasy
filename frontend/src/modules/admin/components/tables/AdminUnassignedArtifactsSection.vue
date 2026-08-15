@@ -65,10 +65,10 @@
             </template>
             <template #actions="{ row }">
               <div class="inline-flex items-center gap-1">
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-view" title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
+                <AdminButton variant="softInfo" size="sm" icon-only title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
                   <font-awesome-icon icon="eye" />
                 </AdminButton>
-                <AdminButton v-if="canLink" variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
+                <AdminButton v-if="canLink" variant="softSuccess" size="sm" icon-only title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
                   <font-awesome-icon icon="link" />
                 </AdminButton>
               </div>

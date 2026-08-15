@@ -27,11 +27,9 @@
         @apply h-10 w-10 rounded-[10px] px-0 py-0 justify-center;
     }
 
-    .deasy-filter-btn .deasy-fa-icon {
-        width: 1rem;
-        height: 1rem;
-        flex: 0 0 auto;
-    }
+    /* Aqui dimensionabamos `.deasy-filter-btn .deasy-fa-icon`. La clase se retiro de
+       `FontAwesomeIcon.vue` —que ya renderiza iconos de Tabler, no FontAwesome— y esta regla se
+       quedo sin poder casar con ningun nodo. La caza `css-prune` desde el 2026-08-14. */
 
     
 }
@@ -40,24 +38,25 @@
         @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border font-semibold shadow-none transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
-    .deasy-btn--primary,
-    .admin-btn--primary {
+    .deasy-btn--primary {
         @apply text-white;
         border-color: var(--color-primary);
         background: var(--color-primary);
     }
 
-    .deasy-btn--secondary,
-    .admin-btn--secondary {
+    .deasy-btn--secondary {
         @apply bg-white;
         border-color: var(--color-line-strong);
         color: var(--color-body);
     }
 
-    /* El hover rojo lo lleva SOLO la variante `deasy-*`, no la `admin-*`: por eso las dos
-       reglas no se pueden agrupar. Y el `:hover` va envuelto en `@media (hover: hover)`,
-       que es exactamente lo que Tailwind compila a partir de `@apply hover:` — a pelo se
-       activaria tambien en tactil, donde el «hover» se queda pegado tras el toque. */
+    /* Esta regla estaba separada de `--secondary`, que declara exactamente lo mismo, porque su
+       gemela `admin-btn--cancel` no llevaba el hover rojo. **Ese gemelo ya no existe**
+       (2026-08-14), asi que hoy sigue aparte solo por su `:hover`.
+
+       Y el `:hover` va envuelto en `@media (hover: hover)`, que es exactamente lo que Tailwind
+       compila a partir de un `@apply hover:` — a pelo se activaria tambien en tactil, donde el
+       «hover» se queda pegado tras el toque. */
     .deasy-btn--cancel {
         @apply bg-white;
         border-color: var(--color-line-strong);
@@ -71,14 +70,7 @@
         }
     }
 
-    .admin-btn--cancel {
-        @apply bg-white;
-        border-color: var(--color-line-strong);
-        color: var(--color-body);
-    }
-
-    .deasy-btn--outline-primary,
-    .admin-btn--outline-primary {
+    .deasy-btn--outline-primary {
         @apply bg-white;
         border-color: var(--color-primary);
         color: var(--color-primary);
@@ -88,8 +80,7 @@
        lee como tal: borde = token entero, fondo blanco, texto = token. Escrito con la
        escala de Tailwind (`red-600` de borde y `red-700` de texto) parecian dos rojos
        distintos y eran el mismo papel. */
-    .deasy-btn--outline-danger,
-    .admin-btn--outline-danger {
+    .deasy-btn--outline-danger {
         @apply bg-white;
         border-color: var(--color-danger);
         color: var(--color-danger);
@@ -106,33 +97,54 @@
     .deasy-btn--soft-success { --tone: var(--color-success); }
     .deasy-btn--soft-warning { --tone: var(--color-warning); }
     .deasy-btn--soft-danger  { --tone: var(--color-danger); }
+    .deasy-btn--soft-info   { --tone: var(--color-info); }
+    .deasy-btn--soft-action-upload { --tone: var(--color-action-upload); }
 
+    /* ⚠️ EL RELLENO DE REPOSO TIENE DOS VALORES, y no es un matiz: se lo come el contenido que
+       lleva encima. §2.4 de `frontend/CLAUDE.md`, medido — **6 % si encima va TEXTO** (que pide
+       4.5:1) y **10 % si encima va un ICONO** (que pide 3:1). Al 10 % con texto, `--color-warning`
+       da 4.39 y NO pasa AA.
+
+       Antes esto vivia partido: la familia suave al 6 % fijo, y los 12 botones de accion de tabla
+       —que son de icono— con su propia familia al 9, 10 y 11 %, tres porcentajes para una regla.
+       Ahora el eje es UNO: `--tone-fill`, que el modificador de icono sube a 10 %.
+
+       Comprobado antes de unificar: lo que WCAG 1.4.11 exige es el borde contra LA FILA, no
+       contra su propio relleno, y eso **no depende del porcentaje** — success 3.14, danger 3.86,
+       warning 3.23, ver 3.84, subir 3.69. Y el icono sobre el relleno al 10 % queda entre 4.71 y
+       6.43. Las dos condiciones pasan en los seis tonos. */
     .deasy-btn--soft-primary,
     .deasy-btn--soft-success,
     .deasy-btn--soft-warning,
-    .deasy-btn--soft-danger {
+    .deasy-btn--soft-danger,
+    .deasy-btn--soft-info,
+    .deasy-btn--soft-action-upload {
         border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
-        background: color-mix(in srgb, var(--tone) 6%, var(--color-white));
+        background: color-mix(in srgb, var(--tone) var(--tone-fill, 6%), var(--color-white));
         color: var(--tone);
     }
 
     .deasy-btn--soft-neutral {
-        @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-slate-100 hover:text-navy;
+        @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-gray-100 hover:text-navy;
     }
 
     /* ── LAS DOS SOLIDAS ─────────────────────────────────────────────────────────────
        ⚠️ `--success` llevaba `emerald-600`, que contra su propio texto blanco da 3.65:1
        y NO llega al 4.5 de AA. `--color-success` da 5.49. `--danger` iba de `red-600`
        (4.77) a `--color-danger` (6.57). Las dos suben. */
-    .deasy-btn--success,
-    .admin-btn--success {
+    .deasy-btn--success {
         @apply text-white;
         border-color: var(--color-success);
         background: var(--color-success);
     }
 
-    .deasy-btn--danger,
-    .admin-btn--danger {
+    .deasy-btn--warning {
+        @apply text-white;
+        border-color: var(--color-warning);
+        background: var(--color-warning);
+    }
+
+    .deasy-btn--danger {
         @apply text-white;
         border-color: var(--color-danger);
         background: var(--color-danger);
@@ -151,34 +163,37 @@
         .deasy-btn--soft-primary:hover,
         .deasy-btn--soft-success:hover,
         .deasy-btn--soft-warning:hover,
-        .deasy-btn--soft-danger:hover {
+        .deasy-btn--soft-danger:hover,
+        .deasy-btn--soft-info:hover,
+        .deasy-btn--soft-action-upload:hover {
             border-color: color-mix(in srgb, var(--tone) 85%, var(--color-white));
             background: color-mix(in srgb, var(--tone) 16%, var(--color-white));
             color: color-mix(in srgb, var(--tone) 85%, var(--black));
         }
 
-        .deasy-btn--outline-danger:hover,
-        .admin-btn--outline-danger:hover {
+        .deasy-btn--outline-danger:hover {
             border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
             background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
             color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
         }
 
-        .deasy-btn--success:hover,
-        .admin-btn--success:hover {
+        .deasy-btn--success:hover {
             border-color: color-mix(in srgb, var(--color-success) 85%, var(--black));
             background: color-mix(in srgb, var(--color-success) 85%, var(--black));
         }
 
-        .deasy-btn--danger:hover,
-        .admin-btn--danger:hover {
+        .deasy-btn--warning:hover {
+            border-color: color-mix(in srgb, var(--color-warning) 85%, var(--black));
+            background: color-mix(in srgb, var(--color-warning) 85%, var(--black));
+        }
+
+        .deasy-btn--danger:hover {
             border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
             background: color-mix(in srgb, var(--color-danger) 85%, var(--black));
         }
     }
 
-    .deasy-btn--close,
-    .admin-btn--close {
+    .deasy-btn--close {
         @apply h-9 w-9 rounded-2xl border border-line bg-white p-0 text-muted hover:border-line-strong hover:bg-surface hover:text-navy;
     }
 
@@ -208,14 +223,43 @@
         @apply px-5 py-2.5 text-base;
     }
 
+    /* EL BOTON CUADRADO DE ICONO. Absorbe `hope-action-btn`, que era su copia con otro nombre:
+       misma caja (2.25rem = h-9/w-9), mismo `padding: 0`.
+
+       · `--tone-fill: 10%` — encima va un icono, no texto. Ver la receta suave mas arriba.
+       · `rounded-lg` (8 px) y `shadow-theme-xs` son la geometria ADOPTADA de TailAdmin, que
+         estrena aqui. El resto de los botones la reciben en la tarea 3.3; hasta entonces convive
+         con el `rounded-2xl` heredado del bloque, y es a proposito: 35 nodos son suficientes para
+         calibrar el aspecto y demasiado pocos para que una equivocacion cueste cara.
+       ⚠️ El `min-h-9` NO es redundante con el `h-9`: `.deasy-btn` declara `min-h-10`, y un
+         `min-height` mayor gana a la altura. Sin el, el boton sale de 36 de ancho por **40 de
+         alto** y deja de ser cuadrado. Antes lo tapaba de rebote la regla de densidad de tabla
+         (`min-height: 2rem`), que ya no le aplica — o sea que el fallo aparecio al arreglar
+         otra cosa, y lo caza `getComputedStyle` en el navegador, no el CSS servido.
+
+       · Lo que NO se hereda de `hope-action-btn`: su `margin: 0 0.15rem` —el espacio entre
+         botones lo pone el contenedor con `gap`, no el boton— y su `transform: translateY(-1px)`
+         al pasar el raton, que ningun otro boton del sistema tiene. Homogeneizar es que el mismo
+         boton se comporte igual en todas partes. */
     .deasy-btn--icon {
-        @apply h-9 w-9 p-0;
+        @apply h-9 w-9 min-h-9 rounded-lg p-0 shadow-theme-xs;
+        --tone-fill: 10%;
     }
 
     
 }
 @layer components {
-    .deasy-table-responsive .deasy-btn {
+    /* ⚠️ EL `:not(--icon)` ES LO QUE DESBLOQUEA LA FASE 3, y no es un parche.
+       Esta regla es de DENSIDAD: aprieta el padding, el tamaño de letra y la altura de los
+       botones dentro de una tabla. Nada de eso le aplica a un boton CUADRADO de icono, que no
+       tiene texto ni padding y cuya caja es su definicion.
+
+       Y era el ultimo motivo por el que los 12 `hope-action-*` no podian entrar en una capa: al
+       ser (0,2,0) le ganaba a cualquier `.deasy-btn--*` (0,1,0), asi que los botones de accion
+       solo conservaban su cuadrado por estar FUERA DE CAPA. Medido en su dia: capados sin esto,
+       239 nodos del organigrama se pintaban como un secundario cualquiera. Excluyendo la forma
+       que la regla no gobierna, la familia entera pudo morir. */
+    .deasy-table-responsive .deasy-btn:not(.deasy-btn--icon) {
         @apply rounded-xl px-3 py-1.5 text-[13px] font-medium shadow-none;
         min-height: 2rem;
     }
@@ -275,83 +319,21 @@
 
     
 }
-/* ======================================================================================
-   LOS 12 BOTONES DE ACCION SE QUEDAN ENTEROS FUERA DE CAPA — Y ESTE FICHERO Y
-   `overrides.css` SON UNA SOLA PIEZA: aqui la caja y los `:hover`, alli los reposos de
-   color. Mover una mitad sin la otra mata o los 12 bordes o los 12 `:hover`.
+/* ══ LOS 12 BOTONES DE ACCION DE TABLA MURIERON AQUI — 2026-08-14 ═══════════════════════
+   Eran `hope-action-btn` + 12 modificadores, ENTEROS FUERA DE CAPA, y este fichero y
+   `overrides.css` los sostenian a medias: aqui la caja y los `:hover`, alli los reposos.
 
-   ⚠️ Y bajar las dos a la vez TAMPOCO vale: dentro de `@layer components` ya viven
-   `.deasy-table-responsive .deasy-btn` y `… .deasy-btn--secondary` (0,2,0), mas especificas
-   que `.hope-action-*` (0,1,0). Capados, los 12 se pintan como un `--secondary` cualquiera —
-   239 nodos en `/admin/…/organigrama`. Estar fuera de capa es lo unico que les hace ganar.
+   No eran un componente aparte: eran `.deasy-btn--icon` con la familia suave, escritos otra
+   vez con otro nombre. La prueba, byte a byte: su `:hover` es la receta de `--soft-*`
+   (borde 85 %, relleno 16 %, texto 85 % sobre negro) y su caja es la de `--icon`
+   (2.25rem cuadrados, `padding: 0`). Lo unico que de verdad los distinguia era el relleno de
+   reposo —9, 10 y 11 % frente al 6 %—, y eso no era una variante: es la regla de §2.4 para lo
+   que lleva un ICONO encima. Hoy es el eje `--tone-fill`.
 
-   ⚠️ Segundo motivo, independiente: `AdminButton.vue` estampa utilidades CRUDAS en su mapa
-   de tamaños (`sm: "admin-btn--sm px-3 py-2 text-sm"`), y `@layer utilities` gana a
-   `components`. En cuanto el `padding: 0` de aqui entre en una capa, los 28 botones dejan
-   de ser el cuadrado de 2.25 rem y revientan la columna de acciones de todas las tablas.
-
-   Para que puedan bajar hay que decidir si un boton de accion dentro de una tabla es un
-   `.deasy-btn` — hoy `AdminButton` le estampa las dos cosas. Es cambio de componente. */
-
-.hope-action-btn {
-  border: 1px solid transparent;
-  border-radius: 0.625rem;
-  margin: 0 0.15rem;
-  min-width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-.hope-action-btn:hover {
-  transform: translateY(-1px);
-}
-
-/* Los doce `:hover`, fuera de capa con el resto de la familia (ver cabecera). */
-.hope-action-edit:hover,
-.hope-action-select:hover,
-.hope-action-assign:hover,
-.hope-action-launch:hover {
-  color: color-mix(in srgb, var(--color-success) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-success) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-white));
-}
-
-.hope-action-delete:hover {
-  color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-white));
-}
-
-.hope-action-delete-strong:hover {
-  color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-white));
-}
-
-.hope-action-view:hover {
-  color: color-mix(in srgb, var(--color-action-view) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-action-view) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
-}
-
-.hope-action-download:hover,
-.hope-action-upload:hover,
-.hope-action-version:hover {
-  color: color-mix(in srgb, var(--color-action-upload) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-action-upload) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-action-upload) 85%, var(--color-white));
-}
-
-.hope-action-delete-pdf:hover,
-.hope-action-retire:hover {
-  color: color-mix(in srgb, var(--color-warning) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-warning) 85%, var(--color-white));
-}
+   Los 12 colapsan a cinco tonos: success (editar, seleccionar, asignar, lanzar), danger
+   (borrar x2), `--soft-info` (ver), `--soft-action-upload` (versionar, descargar,
+   subir) y warning (borrar PDF, retirar).
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
     .admin-page-header__actions .admin-btn {

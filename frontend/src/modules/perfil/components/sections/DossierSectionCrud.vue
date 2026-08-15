@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full animate-fade-in">
+  <div class="w-full">
     <ProfileSectionShell
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."

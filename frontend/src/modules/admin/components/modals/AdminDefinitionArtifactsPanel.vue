@@ -13,7 +13,7 @@
     </div>
 
     <AppAlert v-if="error">{{ error }}</AppAlert>
-    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-action-view">
+    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info">
       Esta configuracion no esta en draft. Solo puedes gestionar plantillas cuando la configuracion este en draft.
     </div>
 
@@ -32,13 +32,12 @@
     <div v-if="loading" class="text-sm text-muted">Cargando plantillas vinculadas...</div>
     <AppDataTable
       v-else
-      class="person-assignment-table"
       :fields="displayTableFields"
       :rows="rows"
       :row-key="(row) => row.id"
       empty-text="Sin plantillas vinculadas."
-      table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="mt-3 overflow-x-auto deasy-card person-assignment-table"
+      table-class="min-w-full border-separate border-spacing-0 text-sm"
+      responsive-class="mt-3 overflow-x-auto deasy-card"
       scroll-class=""
     >
       <template #cell="{ row, field }">

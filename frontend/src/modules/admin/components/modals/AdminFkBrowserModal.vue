@@ -41,10 +41,9 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
             variant="secondary"
-            class-name="fk-inline-clear-btn"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!fkPositionFilters.unit_type_id"
@@ -83,10 +82,9 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
             variant="secondary"
-            class-name="fk-inline-clear-btn"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkProcessDefinitionFilters"
@@ -128,10 +126,9 @@
             <option value="0">No</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
             variant="secondary"
-            class-name="fk-inline-clear-btn"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkTemplateArtifactFilters"
@@ -208,10 +205,9 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <div class="md:col-span-12 md:flex md:justify-end fk-inline-clear-col">
+      <div class="md:col-span-12 md:flex md:justify-end">
         <AdminButton
           variant="secondary"
-          class-name="fk-inline-clear-btn"
           title="Limpiar filtro"
           aria-label="Limpiar filtro"
           :disabled="!fkPositionFilters.unit_type_id && !fkPositionFilters.unit_id && !fkPositionFilters.cargo_id"
@@ -262,12 +258,11 @@
         </template>
       </template>
       <template #actions="{ row }">
-        <div class="inline-flex items-center gap-1 fk-row-actions">
+        <div class="inline-flex items-center gap-1">
           <AdminButton
-            variant="secondary"
+            variant="softInfo"
             size="sm"
             icon-only
-            class-name="hope-action-btn hope-action-view"
             title="Visualizar"
             aria-label="Visualizar"
             @click="$emit('open-fk-viewer', row)"
@@ -275,10 +270,9 @@
             <font-awesome-icon icon="eye" />
           </AdminButton>
           <AdminButton
-            variant="secondary"
+            variant="softSuccess"
             size="sm"
             icon-only
-            class-name="hope-action-btn hope-action-select"
             title="Seleccionar"
             aria-label="Seleccionar"
             @click="$emit('select-fk-row', row)"

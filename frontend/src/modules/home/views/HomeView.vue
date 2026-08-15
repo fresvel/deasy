@@ -158,7 +158,7 @@
             </div>
 
             <!-- Estado de carga / error -->
-            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-info rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
             <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger">
@@ -689,7 +689,7 @@
               </div>
             </div>
 
-            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-info rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando la configuración seleccionada...
             </section>
 
@@ -1950,7 +1950,7 @@
             ? 'bg-rose-50 border border-rose-200 text-danger'
             : deliverableOperationState.type === 'success'
               ? 'bg-emerald-50 border border-emerald-200 text-success'
-              : 'bg-blue-light-50 border border-blue-light-200 text-action-view'"
+              : 'bg-blue-light-50 border border-blue-light-200 text-info'"
         >
           {{ deliverableOperationState.message }}
         </div>

@@ -1,11 +1,11 @@
 <template>
   <AppModalShell ref="modalRef" labelled-by="personAssignmentsModalLabel" title="Asignaciones del usuario" size="xl">
-    <div class="person-assignment-panel">
-      <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-action-view">
+    <div>
+      <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info">
         Usa el boton de asignaciones en la fila de una persona para empezar.
       </div>
       <template v-else>
-        <div class="person-assignment-context mb-3">
+        <div class="mb-3">
           <strong>{{ personAssignmentName }}</strong>
           <span class="ml-2 text-success/80">{{ personAssignmentMeta }}</span>
         </div>
@@ -13,7 +13,7 @@
         <div v-if="personAssignmentsLoading" class="mb-2 text-sm text-muted">Cargando asignaciones...</div>
         <div v-else class="grid gap-4">
           <div>
-            <div class="person-assignment-menu">
+            <div>
               <AdminButton
                 v-for="section in personAssignmentSections"
                 :key="section.key"
@@ -33,7 +33,7 @@
               <span>Ocupaciones</span>
             </h6>
             <AppAlert v-if="personCargoError">{{ personCargoError }}</AppAlert>
-            <div class="person-assignment-form">
+            <div>
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
                   <label :for="fieldId('cargo-position')" class="deasy-form-label deasy-form-label--inline">Puesto</label>
@@ -67,7 +67,7 @@
               />
             </div>
 
-            <div class="mt-3 person-assignment-table">
+            <div class="mt-3">
               <AppDataTable :fields="personCargoTableFields" :rows="personCargoRows" :row-key="rowKey" empty-text="Sin ocupaciones asignadas.">
                 <template #cell="{ row, field }">
                   <template v-if="field.name === 'position_id'">
@@ -108,7 +108,7 @@
               <span>Roles</span>
             </h6>
             <AppAlert v-if="personRoleError">{{ personRoleError }}</AppAlert>
-            <div class="person-assignment-form">
+            <div>
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-6">
                   <label :for="fieldId('role-role')" class="deasy-form-label deasy-form-label--inline">Rol</label>
@@ -146,7 +146,7 @@
               />
             </div>
 
-            <div class="mt-3 person-assignment-table">
+            <div class="mt-3">
               <AppDataTable :fields="personRoleTableFields" :rows="personRoleRows" :row-key="rowKey" empty-text="Sin roles asignados.">
                 <template #cell="{ row, field }">
                   <template v-if="field.name === 'role_id'">
@@ -178,7 +178,7 @@
               <span>Contratos / Puestos</span>
             </h6>
             <AppAlert v-if="personContractError">{{ personContractError }}</AppAlert>
-            <div class="person-assignment-form">
+            <div>
               <div class="grid gap-3 md:grid-cols-12">
                 <div class="md:col-span-4">
                   <label :for="fieldId('contract-position')" class="deasy-form-label deasy-form-label--inline">Puesto</label>
@@ -222,7 +222,7 @@
               />
             </div>
 
-            <div class="mt-3 person-assignment-table">
+            <div class="mt-3">
               <AppDataTable :fields="personContractTableFields" :rows="personContractRows" :row-key="rowKey" empty-text="Sin contratos asignados.">
                 <template #cell="{ row, field }">
                   <template v-if="field.name === 'position_id'">

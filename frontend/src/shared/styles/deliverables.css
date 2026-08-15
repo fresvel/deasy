@@ -6,7 +6,7 @@
 
        --start   `--color-primary`      «aun no has empezado»
        --sign    `--color-step-ink`     «te toca firmar»    (relleno `--step-rgb`)
-       --open    `--color-action-view`  «abrir», el neutro  (el marco si es `--color-line`)
+       --open    `--color-info`  «abrir», el neutro  (el marco si es `--color-line`)
 
    ⚠️ `group` se queda en la plantilla a proposito: es un marcador de variante de Tailwind,
    no una utilidad, y `@apply group` NO COMPILA. */
@@ -84,15 +84,15 @@
     }
 
     .deasy-deliverable-action--open .deasy-deliverable-action__chip {
-        border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
-        background-color: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
-        color: var(--color-action-view);
+        border-color: color-mix(in srgb, var(--color-info) 71%, var(--color-white));
+        background-color: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
+        color: var(--color-info);
     }
 
     @media (hover: hover) {
         .deasy-deliverable-action--open:hover {
-            border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
-            background-color: color-mix(in srgb, var(--color-action-view) 4%, var(--color-white));
+            border-color: color-mix(in srgb, var(--color-info) 85%, var(--color-white));
+            background-color: color-mix(in srgb, var(--color-info) 4%, var(--color-white));
         }
     }
 }

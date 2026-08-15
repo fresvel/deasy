@@ -2,6 +2,34 @@
 
 @plugin "@tailwindcss/typography";
 
+/* LOS SCRIPTS DE `frontend/scripts/` NO SON CODIGO DE INTERFAZ, Y TAILWIND NO DEBE MIRARLOS.
+   Tailwind v4 no tiene una lista fija de utilidades: las EMITE escaneando el codigo fuente en
+   busca de candidatos, y por defecto ese barrido incluye los `.mjs` de las puertas de calidad.
+   Como esas puertas hablan precisamente DE clases, acaban creando las que nombran.
+
+   Ha pasado dos veces, las dos verificadas en el diff del CSS construido:
+     · 2026-08-13 — `check-orphan-classes.mjs` citaba tres utilidades de ejemplo en un comentario
+       en prosa, y las tres acabaron emitidas.
+     · 2026-08-14 — un gate nuevo llevaba los nombres de las propiedades que pintan en un array
+       de cadenas; dos de ellas son utilidades validas por si solas y se emitieron, con su
+       `@property` detras. Y otro citaba un escalon tipografico que **no usa nadie**, dandole un
+       consumidor falso justo cuando se iba a medir si sobraba.
+
+   La norma «documenta la clase, no la escribas» no basta: depende de acordarse, y un array de
+   configuracion no es prosa. Esta linea lo corta de raiz — a partir de aqui, lo que se escriba
+   en un script no puede inventar CSS. */
+@source not "../../../scripts";
+
+/* Y LA DOCUMENTACION, POR EL MISMO MOTIVO Y CON MAS IRONIA. Un `.md` no ejecuta nada, pero el
+   barrido de Tailwind no distingue: `frontend/CLAUDE.md` —el fichero que dice «si documentas una
+   clase, describela; no la escribas»— estaba **emitiendo cuatro utilidades `slate` al CSS de
+   produccion**, con sus primitivas detras, citandolas al explicar por que se retiraron. La
+   documentacion de un borrado impidiendo el borrado.
+
+   Medido el 2026-08-14: ningun fichero de `src/` escribia una sola de esas clases. */
+@source not "../../../**/*.md";
+
+
 /* MODO OSCURO: NO HAY, Y ESTA LINEA ES LA QUE LO GARANTIZA.
 
    Sin ella Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)`, asi que
@@ -157,7 +185,9 @@
     /* LA ESCALA TIPOGRAFICA. `theme-*` es la de interfaz y tiene HUECOS a proposito: para
        16 px se usa el `text-base` nativo. Convive con la escala de Tailwind, no la sustituye
        — a diferencia de `--font-*` y `--breakpoint-*`, que TailAdmin si resetea y aqui no.
-       Es el destino de los 189 `text-[…]` en ocho tamanos que hay hoy en las plantillas. */
+       Es el destino de los `text-[…]` sueltos de las plantillas: **144** el 2026-08-14 (el
+       contador decia 189, de una medicion anterior). El techo vivo esta en
+       `scripts/check-no-arbitrary.mjs`, que es lo unico que no se desincroniza. */
     --text-theme-xs: 12px;
     --text-theme-xs--line-height: 18px;
     --text-theme-sm: 14px;
@@ -172,9 +202,10 @@
     --text-title-lg--line-height: 60px;
 
     /* LA ESCALA DE SOMBRA. Todas son el mismo negro del sistema con alfa —`rgba(16,24,40,α)`,
-       que es `gray-900`—, y esa coherencia es la mitad del efecto. Es el destino de las 19
-       recetas distintas de `shadow-[…]` que hay hoy. `--elev-*` se mantiene abajo: es la
-       escala semantica de tres, y ahora se apoya en estos valores. */
+       que es `gray-900`—, y esa coherencia es la mitad del efecto. Es el destino de las
+       **20 recetas distintas de `shadow-[…]` en 31 usos** que hay hoy (2026-08-14; el
+       contador decia 19). `--elev-*` se mantiene abajo: es la escala semantica de tres, y
+       ahora se apoya en estos valores. */
     --shadow-theme-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
     --shadow-theme-sm: 0 1px 3px 0 rgba(16, 24, 40, 0.1), 0 1px 2px 0 rgba(16, 24, 40, 0.06);
     --shadow-theme-md: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
@@ -256,14 +287,23 @@
        estado: es el color de UN componente (BtnSera). Los dos problemas van juntos. */
     --color-gold: #d4af37;
 
-    /* Botones de accion de las tablas. UN color por accion: el del icono. El fondo NO se
-       declara, se calcula mezclandolo con blanco (~10%); el borde tambien se deriva, y vive
-       junto a su regla en `overrides.css`.
-       ⚠️ El 71% del borde no es arbitrario: es el porcentaje al que los seis llegan a 3:1
-       contra la fila blanca (WCAG 1.4.11). Al 35% ninguno cumple. */
-    --color-action-neutral: #23384f;              /* azul grisaceo sin familia equivalente */
-    --color-action-view: var(--color-blue-light-800);  /* 7.56 -> 7.55 */
-    --color-action-upload: #3751a3;               /* idem: no es su `brand` */
+    /* ══ LOS TONOS DE ACCION, unificados el 2026-08-14 ══════════════════════════════════
+       Eran TRES tokens propios de esta familia. Quedan uno, y de la paleta adoptada:
+
+       · `--color-action-neutral` (#23384f) — BORRADO. Era el color de la caja
+         `hope-action-btn`, y esa caja murio al colapsar los 12 botones de accion sobre el
+         componente. Se quedo con cero consumidores el mismo dia.
+       · `--color-info` — BORRADO, y sus 27 consumidores pasan a `--color-info`. Era
+         `blue-light-800` y `info` es `blue-light-700`: **la misma familia en pasos contiguos,
+         con dos nombres segun el componente que lo escribiera**. El tag y la alerta
+         informativos ya usaban `info`; los botones, la zona de subida y las tarjetas de
+         entregable usaban el otro. Contraste 7.55 -> 5.86: baja, y sigue pasando AA para
+         texto (4.5) y 1.4.11 para el borde derivado (3.32).
+       · `--color-action-upload` — se queda, pero deja de ser un hex inventado.
+
+       ⚠️ El 71 % del borde no es arbitrario: es el porcentaje al que estos tonos llegan a
+       3:1 contra la fila blanca (WCAG 1.4.11). Al 35 % ninguno cumple. */
+    --color-action-upload: var(--color-brand-900);  /* era #3751a3, propio. 7.32 -> 11.45 */
 }
 
 /* Aqui habia un `@layer base` con `html`, `body` y `#app`. Se fue a `base.css` el 2026-08-13:

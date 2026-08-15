@@ -21,7 +21,7 @@
         class="deasy-alert deasy-alert--warning flex flex-wrap items-center justify-between gap-3"
       >
         <span>Ya existe una configuración para esa variación y versión.</span>
-        <AdminButton variant="outline-primary" @click="$emit('edit-existing-definition', duplicateDefinition)">
+        <AdminButton variant="outlinePrimary" @click="$emit('edit-existing-definition', duplicateDefinition)">
           Editar existente
         </AdminButton>
       </div>

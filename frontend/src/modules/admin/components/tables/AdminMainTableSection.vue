@@ -226,10 +226,9 @@
                 <template #between>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions'"
-                    variant="secondary"
+                    variant="softActionUpload"
                     size="sm"
                     icon-only
-                    class-name="hope-action-btn hope-action-version"
                     title="Versionar"
                     aria-label="Versionar"
                     @click="$emit('start-process-definition-versioning', row)"
@@ -238,10 +237,9 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'draft'"
-                    variant="secondary"
+                    variant="softSuccess"
                     size="sm"
                     icon-only
-                    class-name="hope-action-btn hope-action-assign"
                     title="Activar"
                     aria-label="Activar"
                     @click="$emit('open-process-definition-activation-for-row', row)"
@@ -250,10 +248,9 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
-                    variant="secondary"
+                    variant="softWarning"
                     size="sm"
                     icon-only
-                    class-name="hope-action-btn hope-action-retire"
                     title="Retirar (desactivar)"
                     aria-label="Retirar (desactivar)"
                     @click="$emit('retire-process-definition', row)"
@@ -262,10 +259,9 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'terms'"
-                    variant="secondary"
+                    variant="softSuccess"
                     size="sm"
                     icon-only
-                    class-name="hope-action-btn hope-action-launch"
                     title="Lanzar procesos del periodo"
                     aria-label="Lanzar procesos del periodo"
                     @click="$emit('launch-term', row)"
@@ -274,10 +270,9 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
-                    variant="secondary"
+                    variant="softSuccess"
                     size="sm"
                     icon-only
-                    class-name="hope-action-btn hope-action-launch"
                     title="Lanzar en un periodo"
                     aria-label="Lanzar en un periodo"
                     @click="$emit('launch-definition', row)"
@@ -286,10 +281,9 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && isPersonTable"
-                    variant="secondary"
+                    variant="softSuccess"
                     size="sm"
                     icon-only
-                    class-name="hope-action-btn hope-action-assign"
                     title="Gestionar asignaciones"
                     aria-label="Gestionar asignaciones"
                     @click="$emit('open-person-assignments', row)"
@@ -301,10 +295,9 @@
                   <!-- Borrador: editar contenido. Publicada/retirada: inmutable → versionar (crea borrador). -->
                   <AdminButton
                     v-if="canUpdate && (row?.lifecycle_state || 'published') === 'draft'"
-                    variant="secondary"
+                    variant="softSuccess"
                     size="sm"
                     icon-only
-                    class-name="text-primary hope-action-btn hope-action-edit"
                     title="Editar"
                     aria-label="Editar"
                     @click="$emit('open-edit', row)"
@@ -317,10 +310,9 @@
                   </AdminButton>
                   <AdminButton
                     v-else-if="canUpdate"
-                    variant="secondary"
+                    variant="softActionUpload"
                     size="sm"
                     icon-only
-                    class-name="text-primary hope-action-btn"
                     title="Versionar (crea una versión en borrador editable)"
                     aria-label="Versionar plantilla"
                     @click="$emit('version-template', row)"

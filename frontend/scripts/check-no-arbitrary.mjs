@@ -20,8 +20,23 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-/* El techo, medido el 2026-08-13. SOLO BAJA. */
-const TECHO = { total: 374, "text-": 144, "rounded-": 29, "shadow-": 31 };
+/* El techo. SOLO BAJA.
+ *
+ * 2026-08-13 · 374 / text- 144 / rounded- 29 / shadow- 31 — mirando solo `.vue` y `.js`.
+ * 2026-08-14 · 416 / text- 155 / rounded- 35 / shadow- 36 — **el gate abre tambien los `.css`**.
+ *
+ * ⚠️ El techo SUBIO una vez, y esta es esa vez: no porque creciera la deuda, sino porque el gate
+ * estaba mirando a otro lado. Recorria `.vue` y `.js` y NO abria las hojas de estilo, asi que los
+ * valores arbitrarios escritos dentro de un `@apply` —en el propio sistema de diseño— no los
+ * contaba nadie. Son 42, repartidos en 10 modulos, y entre ellos **cinco radios distintos**
+ * (`10px` x2, `12px`, `1rem`, `0.85rem`, `0.8rem`) y **once tamanos de texto**, con
+ * `tables.css` escribiendo `text-[12px]` mientras `misc.css` usa `text-theme-xs`: el mismo valor
+ * de dos formas, en la misma carpeta.
+ *
+ * A partir de aqui vuelve a ser un trinquete y solo baja. Bajarlo es la fase 5 del plan de la
+ * 3.ª vuelta (`docs/planes/sistema-diseno-componentes/`), que es donde se decide la escala.
+ */
+const TECHO = { total: 416, "text-": 155, "rounded-": 35, "shadow-": 36 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;
@@ -30,16 +45,26 @@ const ficheros = (dir, acc = []) => {
   for (const n of readdirSync(dir)) {
     const r = join(dir, n);
     if (statSync(r).isDirectory()) ficheros(r, acc);
-    else if (r.endsWith(".vue") || r.endsWith(".js")) acc.push(r);
+    else if (r.endsWith(".vue") || r.endsWith(".js") || r.endsWith(".css")) acc.push(r);
   }
   return acc;
+};
+
+/* ⚠️ En un `.css` hay que quitar los comentarios ANTES de contar. Estos modulos se documentan
+   citando las clases de las que hablan —`overrides.css` nombra un radio arbitrario en prosa al
+   explicar por que murio—, y esas citas no son usos: inflarian el contador y, peor, no bajarian
+   nunca al arreglar el codigo. En `.vue`/`.js` no se toca nada: cambiarlo moveria el censo
+   heredado y el techo dejaria de ser comparable. */
+const fuente = (ruta) => {
+  const texto = readFileSync(ruta, "utf8");
+  return ruta.endsWith(".css") ? texto.replace(/\/\*[\s\S]*?\*\//g, "") : texto;
 };
 
 const cuenta = { total: 0 };
 const porFichero = new Map();
 for (const ruta of ficheros(SRC)) {
   let n = 0;
-  for (const [, prefijo] of readFileSync(ruta, "utf8").matchAll(RE)) {
+  for (const [, prefijo] of fuente(ruta).matchAll(RE)) {
     cuenta.total += 1;
     n += 1;
     if (prefijo in TECHO) cuenta[prefijo] = (cuenta[prefijo] ?? 0) + 1;

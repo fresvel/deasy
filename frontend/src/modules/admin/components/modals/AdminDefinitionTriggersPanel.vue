@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-4">
-    <div v-if="!embedded && context" class="person-assignment-context">
+    <div v-if="!embedded && context">
       <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
       <span class="ml-2 text-success/80">
         Variación {{ context.variation_key || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
@@ -8,7 +8,7 @@
     </div>
 
     <AppAlert v-if="error">{{ error }}</AppAlert>
-    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-action-view">
+    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info">
       Esta configuracion no esta en draft. Solo puedes gestionar los periodos del proceso cuando la configuracion este en draft.
     </div>
 
@@ -65,8 +65,8 @@
       :rows="rows"
       :row-key="(row) => row.id"
       empty-text="Sin periodos vinculados."
-      table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="overflow-x-auto deasy-card person-assignment-table"
+      table-class="min-w-full border-separate border-spacing-0 text-sm"
+      responsive-class="overflow-x-auto deasy-card"
       scroll-class=""
     >
       <template #cell="{ row, field }">

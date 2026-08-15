@@ -148,7 +148,7 @@
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex items-center gap-3 mt-6">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
@@ -279,7 +279,7 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex items-center gap-3 mt-6">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
@@ -625,7 +625,7 @@
         class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Lote preparado</div>
-        <div class="mt-1 text-action-view">
+        <div class="mt-1 text-info">
           Se iniciará una firma masiva para {{ multiBatchRequest.documents.length }} documento(s) en modo
           <span class="font-semibold">
             {{
@@ -644,7 +644,7 @@
         class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Firma por token</div>
-        <div v-if="currentSignatureMarker" class="mt-1 text-action-view">
+        <div v-if="currentSignatureMarker" class="mt-1 text-info">
           Se buscarán todas las coincidencias del marcador <span class="font-mono font-semibold">{{ currentSignatureMarker }}</span> y se estampará la firma en cada una.
         </div>
         <div v-else class="mt-1 text-danger">
@@ -786,13 +786,6 @@
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <!-- [F4.4-d 2026-08-12] `border-line` SIN MIGRAR a proposito. Es la unica
-           excepcion de la fase, y esta medida: este boton vive dentro de
-           `.deasy-dialog-header`, cuya regla se quedo SIN CAPA en R5. Migrado a
-           `border-line`, la utilidad pierde el `!important` que le prestaba el
-           repintado y la regla suelta pasa a ganar: el borde iria de `--color-line` a
-           `--color-line-field`. Son 5 nodos y los cazo la huella.
-           Muere cuando se decida si un boton del slot `#title` es «boton de dialogo». -->
       <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-surface/50 border border-line text-icon hover:bg-surface hover:text-strong font-semibold text-sm transition-colors cursor-pointer z-20">
         <IconX class="w-4 h-4" stroke-width="2.5" />
       </button>
@@ -827,12 +820,12 @@
         </div>
       </div>
 
-      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 animate-fade-in">
+      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
 
-      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="deasy-card p-4 flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-muted mb-1 z-10">
             <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
@@ -870,7 +863,7 @@
 
       <div
         v-if="validationResult?.summary?.timestampCount"
-        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3 animate-fade-in"
+        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3"
       >
         <IconAlertTriangle class="w-5 h-5 shrink-0 text-warning mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
@@ -878,7 +871,7 @@
 
       <div
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 animate-fade-in"
+        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3"
       >
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <div class="flex flex-col gap-1">

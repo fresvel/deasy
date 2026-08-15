@@ -87,10 +87,10 @@
                 Archivos
                 <span class="ml-1 text-xs font-semibold text-muted">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
               </div>
-              <BtnDelete
+              <BtnDelete variant="softDanger"
                 v-if="documents.length"
                 message="Limpiar cola completa"
-                class-name="mx-0 self-center hope-action-delete-strong"
+                class-name="mx-0 self-center"
                 @onpress="clearQueue"
               />
             </div>
@@ -271,7 +271,7 @@
 
             <div
               v-if="!currentDocument"
-              class="relative z-5 mx-auto flex h-full w-full max-w-sm animate-fade-in flex-col items-center justify-center text-center opacity-70"
+              class="relative z-5 mx-auto flex h-full w-full max-w-sm flex-col items-center justify-center text-center opacity-70"
             >
               <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-300/50 shadow-inner ring-8 ring-white/40">
                 <IconFiles class="ml-1 h-10 w-10 text-muted" />

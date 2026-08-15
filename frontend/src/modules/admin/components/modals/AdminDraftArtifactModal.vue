@@ -297,10 +297,9 @@
               <p class="m-0 truncate text-xs text-muted">{{ fillWhoSummary(step) }}</p>
             </div>
             <AdminButton
-              variant="secondary"
+              variant="softSuccess"
               size="sm"
               icon-only
-              :class-name="expandedFillStep === index ? 'hope-action-btn hope-action-select' : 'hope-action-btn hope-action-edit'"
               :title="expandedFillStep === index ? 'Listo' : 'Editar paso'"
               :aria-label="expandedFillStep === index ? 'Listo' : 'Editar paso'"
               @click="toggleFillStep(index)"
@@ -308,10 +307,9 @@
               <font-awesome-icon :icon="expandedFillStep === index ? 'check' : 'edit'" />
             </AdminButton>
             <AdminButton
-              variant="secondary"
+              variant="softDanger"
               size="sm"
               icon-only
-              class-name="hope-action-btn hope-action-delete"
               title="Eliminar paso"
               aria-label="Eliminar paso"
               @click="removeFillStep(index)"
@@ -433,10 +431,9 @@
               <p class="m-0 truncate text-xs text-muted">{{ signatureSummary(step) }}</p>
             </div>
             <AdminButton
-              variant="secondary"
+              variant="softSuccess"
               size="sm"
               icon-only
-              :class-name="expandedSignatureStep === index ? 'hope-action-btn hope-action-select' : 'hope-action-btn hope-action-edit'"
               :title="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
               :aria-label="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
               @click="toggleSignatureStep(index)"
@@ -444,10 +441,9 @@
               <font-awesome-icon :icon="expandedSignatureStep === index ? 'check' : 'edit'" />
             </AdminButton>
             <AdminButton
-              variant="secondary"
+              variant="softDanger"
               size="sm"
               icon-only
-              class-name="hope-action-btn hope-action-delete"
               title="Eliminar paso"
               aria-label="Eliminar paso"
               @click="removeSignatureStep(index)"
