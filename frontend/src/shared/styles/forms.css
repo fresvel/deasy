@@ -43,6 +43,28 @@
         box-shadow: var(--focus-ring);
     }
 
+    /* El disparador de un desplegable propio — se ve como un `<select>` porque HACE de `<select>`,
+       pero es un `<button>` porque el nativo no admite seleccion multiple con casillas. Solo
+       cambia la distribucion interna: la etiqueta a la izquierda y el chevron a la derecha.
+       (2026-08-15, censo estructural de G6: ese reparto viajaba en el atributo.) */
+    .deasy-filter-control--trigger {
+        @apply flex items-center justify-between gap-2 text-left;
+    }
+
+    /* Una opcion dentro de ese desplegable. NO es un boton del sistema: no ejecuta una accion,
+       marca una eleccion — por eso no lleva caja, ni borde, ni variante. Estaba escrita dos veces
+       en `HomeView` con nueve utilidades cada una, y las dos discrepaban en el peso y el color:
+       `font-medium text-icon` para cada proceso y `font-semibold text-body` para el «Todos» de
+       arriba. Esa diferencia SI es intencionada —el «Todos» manda sobre la lista— asi que se
+       queda, pero como modificador. (2026-08-15, censo estructural de G6.) */
+    .deasy-option {
+        @apply flex w-full cursor-pointer items-center gap-2.5 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-sm font-medium text-icon transition-colors hover:bg-surface focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .deasy-option--strong {
+        @apply font-semibold text-body;
+    }
+
     .admin-select-field.deasy-filter-control {
         padding-right: 2.75rem;
     }

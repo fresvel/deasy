@@ -149,20 +149,15 @@
     </div>
 
     <div v-if="isFkTemplateArtifacts && hasProcessFilterContext" class="mb-3 flex items-center gap-2">
-      <button
-        type="button"
-        role="switch"
-        :aria-checked="processContextFilterActive"
-        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2"
-        :class="processContextFilterActive ? 'bg-blue-light-600' : 'bg-gray-300'"
-        @click="toggleProcessContextFilter"
-      >
-        <span
-          class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-          :class="processContextFilterActive ? 'translate-x-4' : 'translate-x-1'"
-        ></span>
-      </button>
-      <span class="text-sm font-medium text-icon">Solo plantillas de este proceso</span>
+      <!-- Era un `role="switch"` de 13 lineas escrito a mano, con su propio ancho (36 px frente a
+           los 44 de SToggle) y su propio color activo (`blue-light-600` en vez de `primary`).
+           SToggle existe desde antes y ya lo usan el wizard de procesos y el editor de borradores. -->
+      <SToggle
+        :model-value="processContextFilterActive"
+        label="Solo plantillas de este proceso"
+        label-position="end"
+        @update:model-value="toggleProcessContextFilter"
+      />
     </div>
 
     <div v-if="isFkUnitPositions" class="mb-3 grid gap-3 md:grid-cols-12 md:items-end">
@@ -314,6 +309,7 @@
 </template>
 
 <script setup>
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";

@@ -79,7 +79,7 @@
                   <span class="sr-only">Procesos</span>
                   <button
                     type="button"
-                    class="deasy-filter-control flex w-full items-center justify-between gap-2 text-left"
+                    class="deasy-filter-control deasy-filter-control--trigger w-full"
                     :disabled="!consolidatedCargoProcesses.length"
                     @click="showProcessMultiSelect = !showProcessMultiSelect"
                   >
@@ -92,7 +92,7 @@
                   >
                     <button
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-semibold text-body hover:bg-surface"
+                      class="deasy-option deasy-option--strong"
                       @click="toggleAllConsolidatedProcesses"
                     >
                       <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">
@@ -105,7 +105,7 @@
                       v-for="process in consolidatedCargoProcesses"
                       :key="process.process_definition_id || process.id"
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-medium text-icon hover:bg-surface"
+                      class="deasy-option"
                       @click="toggleConsolidatedProcess(process.process_definition_id || process.id)"
                     >
                       <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">

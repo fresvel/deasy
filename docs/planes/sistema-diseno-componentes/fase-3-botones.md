@@ -6,9 +6,10 @@
 
 ## ⓿ · Estado por GRUPO — la tabla que se mira primero
 
-**5 de los 11 grupos cerrados · 146 de los 480 botones.**
+**5 de los 11 grupos cerrados · 151 de los 480 botones.**
 
-> G2 se **reabrió y se volvió a cerrar el 2026-08-15**: eran 48, no 29. Ver 3.4-ter.
+> **G2 y G6 se reabrieron y se volvieron a cerrar el 2026-08-15** al censarlos por estructura:
+> eran 48 y 28, no 29 y 23. Los dos quedan con gate propio. Ver 3.4-ter y 3.5a-bis.
 
 | Grupo | Botones | Estado | Dónde quedó |
 |---|--:|:--:|---|
@@ -17,7 +18,7 @@
 | **G3** · cerrar diálogo | 26 | ✅ | Tareas 3.5b y 3.5b-bis · manda la etiqueta |
 | **G4** · paginación | 26 | ✅ | Tarea 3.5b-2a · `deasy-counter-nav` |
 | **G5** · destructivo | 23 | ✅ | Tarea 3.5b-2b · `AppDeleteButton` + `deasy-inline-action` |
-| **G6** · filtro | 23 | ✅ | Tarea 3.5a · `deasy-filter-btn` muerta |
+| **G6** · filtro | **28** | ✅ | Tareas 3.5a y **3.5a-bis** · censo por estructura + gate `check:filter-actions` |
 | **G7** · pestaña | 19 | ⬜ | 100 % crudos. Componente propio, no variante |
 | **G8** · navegación / menú | 14 | ⬜ | 100 % crudos. Con G7 |
 | **G9** · auth | 9 | ⬜ | `deasy-auth-button`, vivo en 5 ficheros |
@@ -410,6 +411,7 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.5a** | **G6 · filtro** (23) | ✅ | `deasy-filter-btn` muere entera: existía por geometría (ya resuelta en 3.3) y por **repintar 5 variantes en 3 aspectos** — `secondary`≡`softNeutral` y `primary`≡`softPrimary`, o sea la prop mintiendo en 2 de cada 5. Seis variantes corregidas a lo que ya renderizaban | 2026-08-14 |
 | **3.5b** | **G3 · cerrar** (26) | ✅ | La ✕ tenía **tres radios** tras 3.3 (base 8 · `--close` 16 · `dialogs.css` 8.8) y ahora tiene uno: la regla del panel se sube a la clase base y muere. Dos «Cerrar» pintados en **rojo de contorno** pasan a `secondary` — cerrar no es destruir. Un `<button>` crudo de 15 utilidades pasa a componente. La decisión pendiente («`cancel` o `secondary` para el mismo botón de pie») **la resolvió el censo de 3.5b-bis**: manda la etiqueta — «Cancelar» es `cancel`, «Cerrar» es `secondary`, y 6 botones decían una cosa y pintaban la otra | 2026-08-15 |
 | **3.4-ter** | **G2 recensado por ESTRUCTURA** + gate `check:row-actions` | ✅ | Los tres censos anteriores buscaban **donde ya se sabía que había algo**; éste busca la señal estructural: **un botón dentro de un `v-for` actúa sobre un elemento de una colección**. G2 pasa de 29 a **48**, con **21 no conformes** que ningún censo por función vio. Cerrado en **48/48** y **atornillado con un gate de techo 0**, probado en rojo. Nacen `deasy-chip-remove`, `deasy-pdf-action` y 3 tonos de `deasy-inline-action`. Arbitrarios **397→394**, colores fuera de paleta **244→240** | 2026-08-15 |
+| **3.5a-bis** | **G6 recensado por ESTRUCTURA** + gate `check:filter-actions` | ✅ | Su señal no es el `v-for` sino **el contenedor**: un botón dentro de `deasy-filter-*` filtra, se llame como se llame; y para lo que vive fuera de una shell, el manejador. **28 botones, 4 no conformes**, y los 4 resultaron ser **controles de formulario disfrazados de `<button>`**: un switch `role="switch"` de 13 líneas **con `SToggle` ya en el repo**, el disparador de un desplegable y sus opciones. Nacen `deasy-filter-control--trigger` y `deasy-option`. Gate de techo 0, probado en rojo | 2026-08-15 |
 | **3.5b-bis** | **Censo por función sobre G2 y G3** | ✅ | Buscando por lo que el botón **dice que hace** (no por cómo está escrito), G3 pasa de 22 a **62** elementos: 14 huecos que los dos censos por implementación no vieron. **G2 limpio** (`AdminTableActions`, `DossierDocumentActions`, `HomeSignatureEntry`: componente + `soft*` + `icon-only`). G3 cerrado en **55/55**. Detalle en §5-bis | 2026-08-15 |
 | **3.5b-2a** | **G4 · paginación** | ✅ | El navegador de contador estaba escrito **cuatro veces**: el componente y tres copias a mano. Le faltaban cuatro cosas y por eso se copiaba (`valueLabel`, `size="sm"`, `tone="floating"`, `controls`); ahora las tiene y no viaja ni una utilidad. Las copias **ocultaban** las flechas donde el componente las **deshabilita**, así que el contador saltaba de sitio al llegar al extremo. Estilo entero en `nav.css` como `deasy-counter-nav`. Arbitrarios **412→404** | 2026-08-15 |
 | **3.5b-2b** | **G5 · destructivo** | ✅ | Censo por función: **19 destructivos reales**, 11 no conformes → **13/14 conformes** (queda el `graph-edge-btn` del lienzo, que es G10). `BtnDelete`→**`AppDeleteButton`**: sobrevive como componente (cumple las 3 señales, como la ✕) pero pierde el `<svg>` a mano, el `@onpress` inventado, el `className` y una **prop `variant` fantasma que no declaraba**. Nace `deasy-inline-action--danger` para los 4 «Quitar»/«Desvincular» que tenían **dos tamaños y dos hovers**, uno de ellos inerte. `FirmarPdf` llamaba a la **misma** función desde dos botones distintos. Arbitrarios **404→401**, colores fuera de paleta **257→244** | 2026-08-15 |
@@ -588,3 +590,52 @@ Con eso G2 pasa de 29 botones a **48**, con **21 no conformes** que ningún cens
 
 **Sin esto, G2 se vuelve a abrir en silencio**, que es exactamente lo que pasó entre el 14 y el 15
 de agosto sin que ningún gate dijera nada — lo vio el dueño mirando la pantalla.
+
+---
+
+## §8 · G6 por estructura — y lo que enseña que su señal sea otra (2026-08-15)
+
+G6 se cerró el 14-08 buscando `deasy-filter-btn`, y esa búsqueda **no vio ni uno de home ni de
+perfil**: la clase acababa de morir justo ahí. Mismo error que dejó G2 abierto, así que se recensa
+igual — por dónde vive el botón, no por cómo está escrito.
+
+**Pero su señal no puede ser el `v-for`.** Un botón de filtro no se repite: hay uno por zona de
+filtros. La suya es el **contenedor**:
+
+> Un botón dentro de `deasy-filter-shell`, `-toolbar`, `-field`, `-search-row`, `-actions` o
+> `-grid` filtra, se llame como se llame. Y para lo que vive fuera de una shell —el organigrama
+> tiene su barra suelta— la segunda señal es el manejador: `resetXFilters`, `clearXFilters`,
+> `applyFilters`, `searchAndCenter`.
+
+⚠️ **Tres falsos amigos descartados a propósito**, y los tres empiezan por «clear»: `clearToast`
+cierra una alerta (G3), `clearQueue` borra la cola de firma (G5) y `closeTaskFiltersModal` cierra un
+diálogo (G3). Ninguno filtra nada. Buscar por prefijo de nombre habría metido los tres.
+
+**Resultado: 28 botones, 4 no conformes** — bastante mejor que G2, que tenía 21. Y el hallazgo
+interesante no es el número: **los cuatro resultaron no ser botones**.
+
+### Los cuatro eran controles de formulario disfrazados de `<button>`
+
+| Dónde | Qué era | A dónde va |
+|---|---|---|
+| `AdminFkBrowserModal:152` | un `role="switch"` de **13 líneas escrito a mano** | **`SToggle`, que ya existía en el repo** |
+| `HomeView:80` | el disparador de un desplegable multiselect | `deasy-filter-control--trigger` |
+| `HomeView:93` y `:104` | dos opciones de ese desplegable | `deasy-option` |
+
+El del switch es el que más duele: `SToggle` lleva en el repo desde antes de esta vuelta y ya lo
+usan el wizard de procesos y el editor de borradores. La copia tenía **36 px de ancho frente a los
+44 del componente** y **`blue-light-600` como color activo en vez de `primary`**, o sea que el
+mismo interruptor se veía de dos tamaños y dos azules según la pantalla.
+
+Y las dos opciones discrepaban en peso y color —`font-medium text-icon` para cada proceso,
+`font-semibold text-body` para el «Todos» de arriba—. Esa diferencia **sí era intencionada**: el
+«Todos» manda sobre la lista. Se queda, pero como `deasy-option--strong`, no como nueve utilidades
+repetidas.
+
+### La lección, que ya va por tres
+
+`v-for` para G2, contenedor para G6. **La señal estructural existe siempre, pero es distinta en cada
+grupo**, y encontrarla es el trabajo. Lo que se repite es el error de no buscarla: mirar por dónde
+sabes que hay algo encuentra lo que ya sabías.
+
+Gate: `frontend/scripts/check-filter-actions.mjs`, techo 0, probado en rojo. Es el **undécimo**.
