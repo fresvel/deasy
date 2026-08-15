@@ -232,8 +232,29 @@
                   </div>
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
                     <span class="truncate text-muted">{{ ch.slug }}</span>
-                    <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openProcessDetail(ch.id)">Abrir</button>
-                    <button v-if="editable" type="button" class="deasy-inline-action deasy-inline-action--danger" @click="detachChild(ch.id)">Desvincular</button>
+                    <div class="ml-auto flex items-center gap-1">
+                      <AppButton
+                        variant="softInfo"
+                        size="sm"
+                        icon-only
+                        title="Abrir el sub-proceso"
+                        aria-label="Abrir el sub-proceso"
+                        @click="openProcessDetail(ch.id)"
+                      >
+                        <IconEye class="h-5 w-5" />
+                      </AppButton>
+                      <AppButton
+                        v-if="editable"
+                        variant="softDanger"
+                        size="sm"
+                        icon-only
+                        title="Desvincular del proceso padre"
+                        aria-label="Desvincular del proceso padre"
+                        @click="detachChild(ch.id)"
+                      >
+                        <IconUnlink class="h-5 w-5" />
+                      </AppButton>
+                    </div>
                   </div>
                 </li>
               </ul>
@@ -348,7 +369,7 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
-import { IconPencil, IconArrowLeft, IconRefresh, IconDownload, IconPlus } from "@tabler/icons-vue";
+import { IconArrowLeft, IconDownload, IconEye, IconPencil, IconPlus, IconRefresh, IconUnlink } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
 import ProcessConfigNode from "./ProcessConfigNode.vue";
 import ProcessTemplateNode from "./ProcessTemplateNode.vue";

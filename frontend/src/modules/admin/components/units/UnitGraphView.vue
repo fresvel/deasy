@@ -263,14 +263,43 @@
                 <template v-if="pos.person_id">
                   <span class="deasy-tag deasy-tag--success">Ocupado</span>
                   <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
-                  <template v-if="editable">
-                    <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openAssign(pos.id)">Cambiar</button>
-                    <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="unassign(pos.id)">Quitar</button>
-                  </template>
+                  <div v-if="editable" class="ml-auto flex items-center gap-1">
+                    <AppButton
+                      variant="softSuccess"
+                      size="sm"
+                      icon-only
+                      title="Cambiar persona asignada"
+                      aria-label="Cambiar persona asignada"
+                      @click="openAssign(pos.id)"
+                    >
+                      <IconUserEdit class="h-5 w-5" />
+                    </AppButton>
+                    <AppButton
+                      variant="softDanger"
+                      size="sm"
+                      icon-only
+                      title="Quitar persona del puesto"
+                      aria-label="Quitar persona del puesto"
+                      @click="unassign(pos.id)"
+                    >
+                      <IconUserMinus class="h-5 w-5" />
+                    </AppButton>
+                  </div>
                 </template>
                 <template v-else>
                   <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
-                  <button v-if="editable" type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openAssign(pos.id)">Asignar</button>
+                  <AppButton
+                    v-if="editable"
+                    variant="softSuccess"
+                    size="sm"
+                    icon-only
+                    class-name="ml-auto"
+                    title="Asignar persona al puesto"
+                    aria-label="Asignar persona al puesto"
+                    @click="openAssign(pos.id)"
+                  >
+                    <IconUserPlus class="h-5 w-5" />
+                  </AppButton>
                 </template>
               </div>
 
@@ -336,10 +365,28 @@
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
-                  <template v-if="editable && proc.origin === 'direct' && proc.status === 'draft'">
-                    <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openEditProcessRule(proc)">Editar</button>
-                    <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="detachProcess(proc.rule_id)">Quitar</button>
-                  </template>
+                  <div v-if="editable && proc.origin === 'direct' && proc.status === 'draft'" class="ml-auto flex items-center gap-1">
+                    <AppButton
+                      variant="softSuccess"
+                      size="sm"
+                      icon-only
+                      title="Editar alcance de la regla"
+                      aria-label="Editar alcance de la regla"
+                      @click="openEditProcessRule(proc)"
+                    >
+                      <IconPencil class="h-5 w-5" />
+                    </AppButton>
+                    <AppButton
+                      variant="softDanger"
+                      size="sm"
+                      icon-only
+                      title="Quitar el proceso de esta unidad"
+                      aria-label="Quitar el proceso de esta unidad"
+                      @click="detachProcess(proc.rule_id)"
+                    >
+                      <IconUnlink class="h-5 w-5" />
+                    </AppButton>
+                  </div>
                   <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-muted">Versiona el proceso para cambiar el alcance</span>
                   <span v-else class="ml-auto text-[11px] italic text-muted">Definido a nivel de proceso</span>
                 </div>
@@ -503,7 +550,7 @@ import SToggle from "@/shared/components/forms/SToggle.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconCrown, IconTrash, IconPencil, IconFileDescription } from "@tabler/icons-vue";
+import { IconCrown, IconFileDescription, IconPencil, IconTrash, IconUnlink, IconUserEdit, IconUserMinus, IconUserPlus } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
