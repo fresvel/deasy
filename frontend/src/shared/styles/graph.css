@@ -85,6 +85,20 @@
         background: var(--color-surface);
     }
 
+    /* El color de reposo, que antes viajaba por el atributo como `text-muted`. Sin el, el boton
+       heredaba el color del contenedor y cada sitio le ponia el suyo. */
+    .graph-icon-btn {
+        color: var(--color-muted);
+    }
+
+    /* Su hermano destructivo. `graph-edge-btn` ya tenia el suyo desde el principio; este no, y
+       por eso «Eliminar puesto» llevaba `text-muted hover:text-danger` sueltos en el atributo
+       (2026-08-15, G5) — la misma pareja de utilidades que la clase ya intentaba resolver. */
+    .graph-icon-btn--danger:hover {
+        background: color-mix(in srgb, var(--color-danger) 10%, var(--color-white));
+        color: var(--color-danger);
+    }
+
     /* ── Barra de acciones de una relacion (arista) ──────────────────────────────────
        Flota sobre el lienzo, de ahi la elevacion. Los dos hover usan los mismos
        porcentajes que los botones de accion de las tablas: relleno al 10 % sobre blanco y

@@ -410,14 +410,12 @@
             
           </div>
           
-          <button
+          <AppDeleteButton
             v-if="signMode !== 'token'"
+            class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100 lg:opacity-100"
+            label="Eliminar campo"
             @click.stop="requestDeleteField(field.id)"
-            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-muted hover:bg-red-50 hover:text-danger rounded-2xl transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
-            title="Eliminar campo"
-          >
-            <IconTrash class="w-5 h-5" stroke-width="1.5" />
-          </button>
+          />
         </div>
       </div>
     </AppModalShell>
@@ -468,14 +466,7 @@
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
               Ver en documento
             </button>
-            <button 
-              type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-danger hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2" 
-              @click.stop="requestDeleteField(field.id)"
-            >
-              <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
-              Eliminar
-            </button>
+            <AppDeleteButton label="Eliminar" @click.stop="requestDeleteField(field.id)" />
           </div>
         </div>
       </div>
@@ -991,6 +982,7 @@
   </AppModalShell>
 </template>
   <script setup>
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h, useId } from "vue";
   import { useRouter } from 'vue-router';

@@ -45,7 +45,7 @@
           </p>
         </div>
         <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-info transition hover:border-blue-light-300 hover:bg-blue-light-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
+        <AppDeleteButton label="Eliminar anexo" @click="handleAttachmentDelete(attachment)" />
       </li>
     </ul>
   </section>
@@ -59,6 +59,7 @@
 //
 // De las 4 pestañas del modal es la de frontera más limpia (7 deps). formatAttachmentSize se
 // importa del módulo de helpers, no se recibe.
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import { IconUpload, IconDownload, IconFileDescription, IconX } from '@tabler/icons-vue';
 import { formatAttachmentSize } from '@/modules/home/views/homeView.helpers.js';
 

@@ -40,7 +40,7 @@ import { join, resolve } from "node:path";
  * OCHO ficheros son «activo / borrador / retirado», o sea **un componente de estado que falta**
  * (fase 3.3). Y `homeView.helpers.js` y `useDeliverableView.js` los generan desde mapas en
  * JavaScript, que es la fase 8. Bajar este contador es ese trabajo, no una sustitucion. */
-const TECHO = { total: 257, familia: 239, hex: 14, rgb: 4 };
+const TECHO = { total: 244, familia: 226, hex: 14, rgb: 4 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const TOKENS_CSS = join(SRC, "shared/styles/tokens.css");

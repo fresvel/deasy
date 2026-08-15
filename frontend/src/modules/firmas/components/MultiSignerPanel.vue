@@ -87,12 +87,7 @@
                 Archivos
                 <span class="ml-1 text-xs font-semibold text-muted">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
               </div>
-              <BtnDelete variant="softDanger"
-                v-if="documents.length"
-                message="Limpiar cola completa"
-                class-name="mx-0 self-center"
-                @onpress="clearQueue"
-              />
+              <AppDeleteButton v-if="documents.length" label="Limpiar cola completa" @click="clearQueue" />
             </div>
 
             <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface/50 p-8 text-center text-muted">
@@ -123,7 +118,7 @@
                     <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-info' : 'text-strong'" :title="doc.name">{{ formatDisplayFileName(doc.name) }}</div>
                   </button>
                   <div class="shrink-0" @click.stop>
-                    <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
+                    <AppDeleteButton label="Quitar" @click="removeDocument(index)" />
                   </div>
                 </div>
                 <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
@@ -206,53 +201,29 @@
 
                 <template #navigation>
                   <div class="grid w-full grid-cols-2 gap-1.5">
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Documento anterior"
-                        :disabled="!canPrevDocument"
-                        @click.stop="prevDocument"
-                      >
-                        <IconChevronLeft class="h-3 w-3" />
-                      </button>
-                      <span class="min-w-0 flex-1 border-x border-line px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-icon">
-                        D {{ currentDocumentIndex + 1 }}/{{ filteredDocumentCount }}
-                      </span>
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Siguiente documento"
-                        :disabled="!canNextDocument"
-                        @click.stop="nextDocument"
-                      >
-                        <IconChevronRight class="h-3 w-3" />
-                      </button>
-                    </div>
+                    <AppCounterNavigator
+                      size="sm"
+                      tone="floating"
+                      :value-label="`D ${currentDocumentIndex + 1}/${filteredDocumentCount}`"
+                      :previous-disabled="!canPrevDocument"
+                      :next-disabled="!canNextDocument"
+                      previous-title="Documento anterior"
+                      next-title="Siguiente documento"
+                      @previous="prevDocument"
+                      @next="nextDocument"
+                    />
 
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-2xl border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Página anterior"
-                        :disabled="!canPrevPage"
-                        @click.stop="prevPage"
-                      >
-                        <IconChevronLeft class="h-3 w-3" />
-                      </button>
-                      <span class="min-w-0 flex-1 border-x border-line px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-icon">
-                        P {{ currentPage }}/{{ Math.max(totalPages, 1) }}
-                      </span>
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Página siguiente"
-                        :disabled="!canNextPage"
-                        @click.stop="nextPage"
-                      >
-                        <IconChevronRight class="h-3 w-3" />
-                      </button>
-                    </div>
+                    <AppCounterNavigator
+                      size="sm"
+                      tone="floating"
+                      :value-label="`P ${currentPage}/${Math.max(totalPages, 1)}`"
+                      :previous-disabled="!canPrevPage"
+                      :next-disabled="!canNextPage"
+                      previous-title="Página anterior"
+                      next-title="Página siguiente"
+                      @previous="prevPage"
+                      @next="nextPage"
+                    />
                   </div>
                 </template>
               </SignatureBox>
@@ -387,8 +358,6 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";
 import {
-  IconChevronLeft,
-  IconChevronRight,
   IconFiles,
   IconFileCheck,
   IconAlertCircle,
@@ -397,10 +366,9 @@ import {
   // Se usaba en la plantilla (linea ~104) SIN importarlo: Vue no podia resolver el
   // componente, lo avisaba por consola y no pintaba nada donde deberia ir el icono.
   IconInfoCircle,
-  IconX,
-} from "@tabler/icons-vue";
+  IconX } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";

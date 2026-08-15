@@ -372,7 +372,8 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.5a** | **G6 · filtro** (23) | ✅ | `deasy-filter-btn` muere entera: existía por geometría (ya resuelta en 3.3) y por **repintar 5 variantes en 3 aspectos** — `secondary`≡`softNeutral` y `primary`≡`softPrimary`, o sea la prop mintiendo en 2 de cada 5. Seis variantes corregidas a lo que ya renderizaban | 2026-08-14 |
 | **3.5b** | **G3 · cerrar** (26) | 🟡 | La ✕ tenía **tres radios** tras 3.3 (base 8 · `--close` 16 · `dialogs.css` 8.8) y ahora tiene uno: la regla del panel se sube a la clase base y muere. Dos «Cerrar» pintados en **rojo de contorno** pasan a `secondary` — cerrar no es destruir. Un `<button>` crudo de 15 utilidades pasa a componente. **Falta una decisión: `cancel` (5) frente a `secondary` (13) para el mismo botón de pie** | 2026-08-14 |
 | **3.5b-bis** | **Censo por función sobre G2 y G3** | ✅ | Buscando por lo que el botón **dice que hace** (no por cómo está escrito), G3 pasa de 22 a **62** elementos: 14 huecos que los dos censos por implementación no vieron. **G2 limpio** (`AdminTableActions`, `DossierDocumentActions`, `HomeSignatureEntry`: componente + `soft*` + `icon-only`). G3 cerrado en **55/55**. Detalle en §5-bis | 2026-08-15 |
-| **3.5b-2** | **G4 · paginación** (26) · **G5 · destructivo** (23) | ⬜ | — | — |
+| **3.5b-2a** | **G4 · paginación** | ✅ | El navegador de contador estaba escrito **cuatro veces**: el componente y tres copias a mano. Le faltaban cuatro cosas y por eso se copiaba (`valueLabel`, `size="sm"`, `tone="floating"`, `controls`); ahora las tiene y no viaja ni una utilidad. Las copias **ocultaban** las flechas donde el componente las **deshabilita**, así que el contador saltaba de sitio al llegar al extremo. Estilo entero en `nav.css` como `deasy-counter-nav`. Arbitrarios **412→404** | 2026-08-15 |
+| **3.5b-2b** | **G5 · destructivo** | ✅ | Censo por función: **19 destructivos reales**, 11 no conformes → **13/14 conformes** (queda el `graph-edge-btn` del lienzo, que es G10). `BtnDelete`→**`AppDeleteButton`**: sobrevive como componente (cumple las 3 señales, como la ✕) pero pierde el `<svg>` a mano, el `@onpress` inventado, el `className` y una **prop `variant` fantasma que no declaraba**. Nace `deasy-inline-action--danger` para los 4 «Quitar»/«Desvincular» que tenían **dos tamaños y dos hovers**, uno de ellos inerte. `FirmarPdf` llamaba a la **misma** función desde dos botones distintos. Arbitrarios **404→401**, colores fuera de paleta **257→244** | 2026-08-15 |
 | **3.5c** | **G9 · auth** (9) · **G10 · solo icono** (6) · **G11 · envío** (2) | ⬜ | — | — |
 | **3.6** | G1 · los 123 `<button>` crudos de acción general | ⬜ | — | — |
 | **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ⬜ | — | — |
@@ -413,3 +414,80 @@ Por la regla de §1-bis esto **no** se resuelve metiéndolos todos en `AppButton
 nodo del lienzo tiene una función propia (y una geometría propia, que es la razón de que exista
 `graph-node__btn`). Lo que sí es defecto es que esa función esté escrita tres veces con tres
 nombres. Es material de G10, no de aquí.
+
+---
+
+## §6 · G4 y G5 (2026-08-15)
+
+### G4 · el navegador de contador, escrito cuatro veces
+
+`AppCounterNavigator` **ya existía**, y aun así el mismo widget estaba copiado a mano tres veces
+más: dos en `MultiSignerBatchStatusPanel` y dos en `MultiSignerPanel`. Eso no se arregla con
+disciplina, porque al que copiaba le faltaba algo real y copiar salía más barato que ampliarlo:
+
+| Faltaba | Quién lo necesitaba |
+|---|---|
+| `valueLabel` — leer un **estado** («Coordenadas compartidas») en vez de `n / total` | `MultiSignerBatchStatusPanel` navega modos, no números |
+| `size="sm"` — 24 px en vez de 36 | el navegador superpuesto sobre la página del PDF |
+| `tone="floating"` — desenfoque y sombra | sobre un PDF el fondo es variable y un borde de línea no se ve |
+| `controls` — mostrar solo la lectura | el panel de lotes, cuando no hay campos |
+
+⚠️ **Y una diferencia que no era de aspecto sino un defecto.** Las copias **ocultaban** las flechas
+con `v-if` cuando no había a dónde ir; el componente las **deshabilita**. No es lo mismo: al
+ocultarlas el widget cambia de ancho y **el contador salta de sitio** justo al llegar al primero o
+al último, que es cuando el usuario está mirando. `controls: false` sigue existiendo para el caso
+legítimo —un contador que de verdad no navega—, que es otra cosa.
+
+### G5 · destructivo — y la lección de que el verbo no basta
+
+El primer criterio marcó **50 elementos y 38 no conformes**, y estaba mal: incluía los 17
+«Limpiar filtros». **Limpiar un filtro no destruye nada** — restablece una vista, y por eso es
+`secondary` y está bien así. La distinción que importa no es el verbo sino qué se pierde:
+
+> **Destructivo es lo que borra datos del servidor. Restablecer un control de la interfaz no lo es.**
+
+Con eso: **19 destructivos reales**, 11 no conformes, ahora 13 de 14 conformes.
+
+#### `BtnDelete` → `AppDeleteButton`
+
+Cumple las **tres señales de §1-bis** igual que la ✕ —trae su propio contenido, no admite variante
+ni tamaño, su papel es siempre el mismo—, así que **sobrevive como componente**. Lo que no
+sobrevive es cómo estaba escrito: un `<svg>` de papelera pegado a mano en vez del `IconTrash` que
+usa el resto del repo (dos papeleras distintas en la misma pantalla), un evento `@onpress` que no
+comparte ningún otro componente, y un `className` que dejaba viajar estilo.
+
+Y el fallo que demuestra que el contrato no estaba claro: `MultiSignerPanel` le pasaba
+**`variant="softDanger"`, una prop que `BtnDelete` no declara**. Vue la deja caer como atributo
+suelto en el `<button>` del DOM y no falla nada. `check-variants` no lo veía porque solo mira los
+mapas de `AppButton` — es el mismo agujero que el gate cerró para `AppButton` en 3.2, abierto un
+nivel más arriba.
+
+#### La acción en línea — cuatro copias, dos tamaños, un hover inerte
+
+«Quitar» y «Desvincular» aparecen cuatro veces como texto rojo diminuto dentro de una lista. Las
+cuatro copias discrepaban en las **dos únicas** cosas que tenían: el tamaño (`text-[11px]` en tres,
+`text-[0.7rem]` = 11.2 px en la cuarta — distintos de verdad, pero por 0.2 px, así que nadie lo
+decidió) y el hover (`hover:underline` en tres, `hover:text-danger` en la cuarta, que sobre un
+texto **que ya es** `text-danger` no hace absolutamente nada: uno de los cuatro no tenía
+realimentación al pasar el ratón).
+
+No es un `deasy-btn` ni debe serlo — el bloque base pone caja, borde, alto mínimo de 40 px y
+sombra, y un modificador tendría que deshacer las cuatro. Bloque propio, `deasy-inline-action`,
+como `deasy-tab` en §2-bis. Se queda el subrayado: sobre 11 px un cambio de color no se percibe, y
+es además lo que WCAG pide cuando el color es el único distintivo.
+
+#### El mismo botón dos veces en la misma pantalla
+
+`FirmarPdf` llama a **`requestDeleteField(field.id)` desde dos botones distintos**: una papelera
+flotante que aparece al pasar el ratón sobre el campo, y un botón con borde y texto «Eliminar» en
+la lista lateral. Misma función exacta, dos aspectos sin relación. Ahora los dos son
+`AppDeleteButton`.
+
+### Lo que queda vivo a propósito
+
+`UnitEdge` y `UnitGraphView` conservan `graph-edge-btn` y `graph-icon-btn`: son los botones del
+**lienzo**, con geometría propia (24 px) y contexto propio. Por §1-bis no se fuerzan a `AppButton`.
+Lo que sí se corrigió es que `graph-icon-btn` no tenía modificador destructivo mientras
+`graph-edge-btn` sí, y por eso «Eliminar puesto» llevaba `text-muted hover:text-danger` sueltos en
+el atributo — exactamente la pareja de utilidades que la clase ya intentaba resolver. Ahora existe
+`graph-icon-btn--danger`. La unificación de los tres nombres del grafo sigue siendo material de G10.

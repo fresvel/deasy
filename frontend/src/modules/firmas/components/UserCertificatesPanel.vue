@@ -70,7 +70,7 @@
                 >
                   Descargar
                 </AdminButton>
-                <BtnDelete message="Eliminar" @onpress="deleteCertificate(certificate)" />
+                <AppDeleteButton label="Eliminar" @click="deleteCertificate(certificate)" />
               </div>
             </div>
           </button>
@@ -127,7 +127,7 @@ import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { IconCertificate } from "@tabler/icons-vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
-import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";

@@ -80,7 +80,7 @@
                 </select>
                 <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 rounded-xl border border-line bg-white px-2 py-1 text-[0.7rem] text-body outline-none" />
               </template>
-              <button type="button" class="text-[0.7rem] font-semibold text-danger hover:text-danger" @click="removeFirmaStep(si)">Quitar</button>
+              <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="removeFirmaStep(si)">Quitar</button>
             </div>
           </div>
           <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">

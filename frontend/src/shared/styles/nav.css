@@ -128,4 +128,73 @@
         @apply flex shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.04] text-white/78 shadow-none transition-all hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/14;
     }
 
+    /* EL NAVEGADOR DE CONTADOR — «‹ 3 / 12 ›»
+     *
+     * Estaba escrito CUATRO veces (2026-08-15, G4): el componente AppCounterNavigator y tres
+     * copias a mano, dos en MultiSignerBatchStatusPanel y dos en MultiSignerPanel. Las copias no
+     * divergian por diseno sino por descuido: una usa bg-surface/80 y otra bg-white, una pone
+     * hover:bg-white y otra hover:bg-blue-light-50, y una OCULTA las flechas con v-if donde el
+     * componente las DESHABILITA — que no es lo mismo, porque al ocultarlas el contador salta de
+     * sitio.
+     *
+     * Es un widget compuesto, no un boton, y por eso no vive en buttons.css ni sale de AppButton.
+     * La regla de §1-bis lo dice al reves de la ✕: aquella era un boton disfrazado de variante;
+     * este es un widget con dos botones dentro.
+     *
+     * Dos tamanos y dos tonos, y nada mas. El --floating existe porque el navegador del visor de
+     * PDF va SUPERPUESTO sobre la pagina, y ahi un borde de linea sobre fondo variable no se ve:
+     * necesita el desenfoque y la sombra. */
+    .deasy-counter-nav {
+        @apply inline-flex items-center overflow-hidden rounded-lg border border-line bg-white p-1;
+    }
+
+    .deasy-counter-nav--floating {
+        @apply border-white/90 bg-white/95 p-0 shadow-md backdrop-blur-sm;
+    }
+
+    .deasy-counter-nav__step {
+        @apply flex shrink-0 items-center justify-center rounded-lg p-2 text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40;
+    }
+
+    .deasy-counter-nav--sm .deasy-counter-nav__step {
+        @apply h-6 w-6 p-0;
+    }
+
+    .deasy-counter-nav__value {
+        @apply flex min-w-20 flex-col justify-center px-3 py-1 text-center;
+    }
+
+    .deasy-counter-nav__value--framed {
+        @apply border-x border-line;
+    }
+
+    .deasy-counter-nav--editable .deasy-counter-nav__value {
+        @apply min-w-30;
+    }
+
+    .deasy-counter-nav--sm .deasy-counter-nav__value {
+        @apply min-w-0 flex-1 px-1 py-0.5;
+    }
+
+    .deasy-counter-nav__label {
+        @apply text-[0.625rem] font-bold uppercase tracking-wider text-muted;
+    }
+
+    .deasy-counter-nav__reading {
+        @apply flex items-center justify-center gap-1 text-sm font-bold text-body;
+    }
+
+    .deasy-counter-nav--sm .deasy-counter-nav__reading {
+        @apply text-[0.5625rem] font-black uppercase tracking-[0.14em] text-icon;
+    }
+
+    .deasy-counter-nav__input {
+        @apply w-10 rounded-lg border border-line bg-surface px-1.5 py-1 text-center text-sm font-black text-body shadow-inner outline-none transition [appearance:textfield] focus:bg-white;
+    }
+
+    .deasy-counter-nav__input::-webkit-inner-spin-button,
+    .deasy-counter-nav__input::-webkit-outer-spin-button {
+        @apply appearance-none;
+    }
+
 }

@@ -622,4 +622,31 @@
       color: var(--color-danger);
       background: color-mix(in srgb, var(--color-danger) 12%, var(--color-white));
     }
+
+    /* LA ACCION EN LINEA — «Quitar», «Desvincular»
+     *
+     * No es un `deasy-btn` y no debe serlo: el bloque base pone caja, borde, alto minimo de 40 px
+     * y sombra, y esto vive DENTRO de una linea de lista, al lado del texto que retira. Si fuera
+     * un modificador de `deasy-btn` tendria que deshacer las cinco cosas que el bloque pone, que
+     * es la senal de que no era una variante. Bloque propio, como `deasy-tab` (§2-bis).
+     *
+     * Estaba escrito CUATRO veces (2026-08-15, G5): `ProcessGraphView` («Desvincular»),
+     * `UnitGraphView` («Quitar», dos veces) y `GeneralTaskModal` («Quitar»). Y las cuatro copias
+     * discrepaban en las dos unicas cosas que tenian:
+     *
+     *   - el tamano, `text-[11px]` en tres y `text-[0.7rem]` (= 11.2 px) en la cuarta. Distintos
+     *     de verdad, pero por 0.2 px: nadie lo decidio, se copio mal.
+     *   - el hover, `hover:underline` en tres y `hover:text-danger` en la cuarta — que sobre un
+     *     texto que YA es `text-danger` no hace absolutamente nada. O sea que uno de los cuatro
+     *     no tenia realimentacion al pasar el raton.
+     *
+     * Se queda el subrayado: sobre un texto de 11 px, cambiar de color no se percibe, y el
+     * subrayado es ademas lo que WCAG pide cuando el color es el unico distintivo. */
+    .deasy-inline-action {
+        @apply cursor-pointer border-0 bg-transparent p-0 text-[0.6875rem] font-semibold transition-colors hover:underline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .deasy-inline-action--danger {
+        @apply text-danger;
+    }
 }

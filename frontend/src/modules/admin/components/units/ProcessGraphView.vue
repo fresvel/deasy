@@ -225,7 +225,7 @@
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
                     <span class="truncate text-muted">{{ ch.slug }}</span>
                     <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openProcessDetail(ch.id)">Abrir</button>
-                    <button v-if="editable" type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="detachChild(ch.id)">Desvincular</button>
+                    <button v-if="editable" type="button" class="deasy-inline-action deasy-inline-action--danger" @click="detachChild(ch.id)">Desvincular</button>
                   </div>
                 </li>
               </ul>

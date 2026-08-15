@@ -230,10 +230,10 @@
                   <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-warning' : 'text-muted'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
                     <IconCrown class="h-4 w-4" />
                   </button>
-                  <button type="button" class="graph-icon-btn text-muted hover:text-primary" title="Editar puesto" @click="openEditPosition(pos)">
+                  <button type="button" class="graph-icon-btn" title="Editar puesto" @click="openEditPosition(pos)">
                     <IconPencil class="h-4 w-4" />
                   </button>
-                  <button type="button" class="graph-icon-btn text-muted hover:text-danger" title="Eliminar puesto" @click="removePosition(pos.id)">
+                  <button type="button" class="graph-icon-btn graph-icon-btn--danger" title="Eliminar puesto" @click="removePosition(pos.id)">
                     <IconTrash class="h-4 w-4" />
                   </button>
                 </div>
@@ -244,7 +244,7 @@
                   <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                   <template v-if="editable">
                     <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openAssign(pos.id)">Cambiar</button>
-                    <button type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="unassign(pos.id)">Quitar</button>
+                    <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="unassign(pos.id)">Quitar</button>
                   </template>
                 </template>
                 <template v-else>
@@ -317,7 +317,7 @@
                   <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
                   <template v-if="editable && proc.origin === 'direct' && proc.status === 'draft'">
                     <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openEditProcessRule(proc)">Editar</button>
-                    <button type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="detachProcess(proc.rule_id)">Quitar</button>
+                    <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="detachProcess(proc.rule_id)">Quitar</button>
                   </template>
                   <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-muted">Versiona el proceso para cambiar el alcance</span>
                   <span v-else class="ml-auto text-[11px] italic text-muted">Definido a nivel de proceso</span>
