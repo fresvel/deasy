@@ -6,16 +6,17 @@
 
 ## ⓿ · Estado por GRUPO — la tabla que se mira primero
 
-**5 de los 11 grupos cerrados · 151 de los 480 botones.**
+**5 de los 11 grupos cerrados · 188 de los 480 botones.**
 
-> **G2 y G6 se reabrieron y se volvieron a cerrar el 2026-08-15** al censarlos por estructura:
-> eran 48 y 28, no 29 y 23. Los dos quedan con gate propio. Ver 3.4-ter y 3.5a-bis.
+> **G2, G6 y G3 se recensaron por estructura el 2026-08-15**: eran **48, 28 y 63**, no 29, 23 y 26.
+> El inventario original contaba de menos en los tres. Los tres quedan con **gate propio de techo 0**.
+> Ver 3.4-ter, 3.5a-bis y 3.5b-ter.
 
 | Grupo | Botones | Estado | Dónde quedó |
 |---|--:|:--:|---|
 | **G1** · acción general | 303 | ⬜ | 123 son `<button>` crudo. Es el grueso que queda |
 | **G2** · acción de fila | **48** | ✅ | Tareas 3.4 y **3.4-ter** · censo por estructura + gate `check:row-actions` |
-| **G3** · cerrar diálogo | 26 | ✅ | Tareas 3.5b y 3.5b-bis · manda la etiqueta |
+| **G3** · cerrar diálogo | **63** | ✅ | Tareas 3.5b, 3.5b-bis y **3.5b-ter** · censo por estructura + gate `check:dismiss-actions` |
 | **G4** · paginación | 26 | ✅ | Tarea 3.5b-2a · `deasy-counter-nav` |
 | **G5** · destructivo | 23 | ✅ | Tarea 3.5b-2b · `AppDeleteButton` + `deasy-inline-action` |
 | **G6** · filtro | **28** | ✅ | Tareas 3.5a y **3.5a-bis** · censo por estructura + gate `check:filter-actions` |
@@ -413,6 +414,7 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.4-ter** | **G2 recensado por ESTRUCTURA** + gate `check:row-actions` | ✅ | Los tres censos anteriores buscaban **donde ya se sabía que había algo**; éste busca la señal estructural: **un botón dentro de un `v-for` actúa sobre un elemento de una colección**. G2 pasa de 29 a **48**, con **21 no conformes** que ningún censo por función vio. Cerrado en **48/48** y **atornillado con un gate de techo 0**, probado en rojo. Nacen `deasy-chip-remove`, `deasy-pdf-action` y 3 tonos de `deasy-inline-action`. Arbitrarios **397→394**, colores fuera de paleta **244→240** | 2026-08-15 |
 | **3.5a-bis** | **G6 recensado por ESTRUCTURA** + gate `check:filter-actions` | ✅ | Su señal no es el `v-for` sino **el contenedor**: un botón dentro de `deasy-filter-*` filtra, se llame como se llame; y para lo que vive fuera de una shell, el manejador. **28 botones, 4 no conformes**, y los 4 resultaron ser **controles de formulario disfrazados de `<button>`**: un switch `role="switch"` de 13 líneas **con `SToggle` ya en el repo**, el disparador de un desplegable y sus opciones. Nacen `deasy-filter-control--trigger` y `deasy-option`. Gate de techo 0, probado en rojo | 2026-08-15 |
 | **3.5b-bis** | **Censo por función sobre G2 y G3** | ✅ | Buscando por lo que el botón **dice que hace** (no por cómo está escrito), G3 pasa de 22 a **62** elementos: 14 huecos que los dos censos por implementación no vieron. **G2 limpio** (`AdminTableActions`, `DossierDocumentActions`, `HomeSignatureEntry`: componente + `soft*` + `icon-only`). G3 cerrado en **55/55**. Detalle en §5-bis | 2026-08-15 |
+| **3.5b-ter** | **G3 recensado por ESTRUCTURA** + gate `check:dismiss-actions` | ✅ | Tercera señal distinta: ni el `v-for` de G2 ni el contenedor de G6, sino **lo que el botón le hace al contenedor** — emitir `close`, poner a `null`/`false` la variable que lo abre, llamar a `closeX()`. **63 botones y 0 no conformes**: el censo por función de 3.5b-bis ya los había cerrado. Pero encuentra **10 que aquel no habría visto nunca** («Ahora no», «Aplicar» y siete ✕ sin etiqueta), o sea que el verde es real y no suerte. Gate probado en rojo por dos vías | 2026-08-15 |
 | **3.5b-2a** | **G4 · paginación** | ✅ | El navegador de contador estaba escrito **cuatro veces**: el componente y tres copias a mano. Le faltaban cuatro cosas y por eso se copiaba (`valueLabel`, `size="sm"`, `tone="floating"`, `controls`); ahora las tiene y no viaja ni una utilidad. Las copias **ocultaban** las flechas donde el componente las **deshabilita**, así que el contador saltaba de sitio al llegar al extremo. Estilo entero en `nav.css` como `deasy-counter-nav`. Arbitrarios **412→404** | 2026-08-15 |
 | **3.5b-2b** | **G5 · destructivo** | ✅ | Censo por función: **19 destructivos reales**, 11 no conformes → **13/14 conformes** (queda el `graph-edge-btn` del lienzo, que es G10). `BtnDelete`→**`AppDeleteButton`**: sobrevive como componente (cumple las 3 señales, como la ✕) pero pierde el `<svg>` a mano, el `@onpress` inventado, el `className` y una **prop `variant` fantasma que no declaraba**. Nace `deasy-inline-action--danger` para los 4 «Quitar»/«Desvincular» que tenían **dos tamaños y dos hovers**, uno de ellos inerte. `FirmarPdf` llamaba a la **misma** función desde dos botones distintos. Arbitrarios **404→401**, colores fuera de paleta **257→244** | 2026-08-15 |
 | **3.5c** | **G9 · auth** (9) · **G10 · solo icono** (6) · **G11 · envío** (2) | ⬜ | — | — |
@@ -639,3 +641,50 @@ grupo**, y encontrarla es el trabajo. Lo que se repite es el error de no buscarl
 sabes que hay algo encuentra lo que ya sabías.
 
 Gate: `frontend/scripts/check-filter-actions.mjs`, techo 0, probado en rojo. Es el **undécimo**.
+
+---
+
+## §9 · G3 por estructura — y la tercera señal (2026-08-15)
+
+G3 se había censado **dos veces**: por `data-modal-dismiss` (perdió 5) y por función (encontró 14
+huecos más). El segundo fue el que arregló el grupo, pero seguía dependiendo de que alguien
+**escribiera** «Cerrar» o «Cancelar». Un botón que ponga «Volver», «Listo» o «Ahora no» cierra
+igual, y ninguno de los dos censos lo habría visto.
+
+Ni el `v-for` de G2 ni el contenedor de G6 sirven aquí: un botón de cerrar **no se repite** y vive
+en cualquier sitio —un modal, una alerta, un panel lateral, el chat—. Su señal es lo que le **hace**
+al contenedor:
+
+> **Un botón es de cierre cuando su acción hace desaparecer aquello en lo que vive.**
+
+Y eso se lee en el `@click`: emitir `close`/`cancel`/`dismiss`, poner a `null` o `false` la variable
+que abre el contenedor, llamar a un `closeX()` / `dismissX()` / `hideX()`, o vaciar a `""` el mensaje
+de una alerta.
+
+### 63 botones, 0 no conformes — y por qué eso no es suerte
+
+Un verde a la primera es sospechoso, así que se comprobó al revés: **¿ve el censo algo que el
+anterior no veía?** Sí — **10 de los 63 no tienen ningún verbo de cierre en la etiqueta**:
+
+- **«Ahora no»** (`AdminDefinitionCreatedPromptModal`) y **«Aplicar»** (`HomeView`). El segundo
+  llama **al mismo manejador que el «Cerrar»** de al lado: los filtros se aplican en vivo, así que
+  «Aplicar» no aplica nada, solo cierra. Es correcto que sea `primary` —es la confirmación— pero
+  es un botón de cierre y ningún censo por etiqueta lo habría clasificado.
+- **Siete ✕ sin etiqueta visible**, en los dos armazones (`AppDialogOverlay`, `AppFormModalLayout`),
+  los dos paneles de grafo, el visor de PDF y el toast de admin.
+- Y el `{{ cancelLabel }}` de `AdminFormActions`, cuya etiqueta **es una variable**: por definición
+  ningún censo de texto puede leerla.
+
+El gate se probó en rojo **por dos vías distintas** —devolviendo una ✕ a `<button>` crudo, y
+pintando de `cancel` un «Cerrar»— y en verde al revertir ambas.
+
+### Las tres señales, juntas
+
+| Grupo | Señal estructural | Por qué esa |
+|---|---|---|
+| **G2** · acción de fila | está **dentro de un `v-for`** | actúa sobre un elemento de una colección |
+| **G6** · filtro | está **dentro de `deasy-filter-*`** | no se repite: hay uno por zona de filtros |
+| **G3** · cerrar | **hace desaparecer su contenedor** | no se repite y vive en cualquier sitio |
+
+**La señal estructural existe siempre, pero es distinta en cada grupo, y encontrarla es el
+trabajo.** Los tres grupos que se cerraron «a ojo» estaban mal contados: **29→48, 23→28, 26→63**.

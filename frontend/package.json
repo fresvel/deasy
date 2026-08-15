@@ -6,7 +6,7 @@
     "dev": "vite --host 0.0.0.0 --port 8080",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 8080",
-    "lint": "pnpm run build && eslint . && node scripts/check-no-dark.mjs && node scripts/check-orphan-classes.mjs && node scripts/check-no-arbitrary.mjs && node scripts/check-color-theme.mjs && node scripts/css-prune.mjs && node scripts/check-variants.mjs && node scripts/check-row-actions.mjs && node scripts/check-filter-actions.mjs && node scripts/contraste.mjs --gate && pnpm run lint:css",
+    "lint": "pnpm run build && eslint . && node scripts/check-no-dark.mjs && node scripts/check-orphan-classes.mjs && node scripts/check-no-arbitrary.mjs && node scripts/check-color-theme.mjs && node scripts/css-prune.mjs && node scripts/check-variants.mjs && node scripts/check-row-actions.mjs && node scripts/check-filter-actions.mjs && node scripts/check-dismiss-actions.mjs && node scripts/contraste.mjs --gate && pnpm run lint:css",
     "lint:css": "stylelint \"src/**/*.css\"",
     "check:no-dark": "node scripts/check-no-dark.mjs",
     "check:orphan-classes": "node scripts/check-orphan-classes.mjs",
@@ -19,7 +19,8 @@
     "check:css-prune": "node scripts/css-prune.mjs",
     "check:variants": "node scripts/check-variants.mjs",
     "check:row-actions": "node scripts/check-row-actions.mjs src",
-    "check:filter-actions": "node scripts/check-filter-actions.mjs src"
+    "check:filter-actions": "node scripts/check-filter-actions.mjs src",
+    "check:dismiss-actions": "node scripts/check-dismiss-actions.mjs src"
   },
   "dependencies": {
     "@tabler/icons-vue": "^3.41.1",
