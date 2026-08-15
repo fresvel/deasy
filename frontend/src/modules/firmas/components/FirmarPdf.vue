@@ -579,7 +579,7 @@
       <p v-if="userSearchError" class="text-danger text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>
+      <AdminButton variant="cancel" data-modal-dismiss>
         Cancelar
       </AdminButton>
       <AdminButton variant="primary" @click="confirmSigner">
@@ -723,7 +723,7 @@
       <p v-if="signError" class="mb-0 text-sm font-medium text-danger">{{ signError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss :disabled="isSigning">
+      <AdminButton variant="cancel" data-modal-dismiss :disabled="isSigning">
         Cancelar
       </AdminButton>
       <AdminButton variant="primary" :disabled="isSigning" @click="confirmSign">

@@ -165,7 +165,7 @@
     </section>
   </div>
   <template #footer>
-    <AppButton variant="secondary" data-modal-dismiss>Cancelar</AppButton>
+    <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
     <AppButton variant="primary" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="$emit('submit')">
       {{ generalTaskSubmitting
         ? 'Creando…'

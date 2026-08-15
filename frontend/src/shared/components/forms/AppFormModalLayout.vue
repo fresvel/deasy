@@ -30,7 +30,7 @@
       <div class="mt-5 flex w-full flex-col-reverse justify-end gap-3 border-t border-line pt-4 sm:flex-row">
         <AppButton
           type="button"
-          variant="secondary"
+          variant="cancel"
           data-modal-dismiss
           :disabled="isSubmitting"
           @click="$emit('cancel')"
