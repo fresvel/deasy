@@ -317,6 +317,35 @@ más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extr
    columnas del `SET` **sin cualificar**. Al escribir SQL nuevo: pruébalo con `PREPARE` en psql, y
    recuerda que **`grep "UPDATE.*JOIN"` no encuentra nada** porque el SQL ocupa varias líneas.
 
+### ⛔ Si trabajas sobre algo de `docs/planes/`, el avance se MUESTRA
+
+**Cada vez que cierres una tarea de un plan, enseña el estado actualizado antes de terminar el
+turno.** No al final de la fase, no cuando lo pidan: en el mismo turno en que la cerraste.
+
+**Y di siempre de QUÉ tabla hablas**, porque los planes están anidados y cada nivel tiene la suya:
+
+```
+plan-maestro-2026-08.md      FRENTES  (0…11)     ← el mapa de todo el repo
+  └─ <plan del frente>/      FASES / TAREAS      ← p. ej. sistema-diseno-componentes/
+       └─ <fichero de fase>  la unidad del plan  ← p. ej. los 11 GRUPOS de botones
+```
+
+Un `✅` en un nivel **no cierra el de arriba**: cerrar una tarea no cierra su fase, y cerrar una
+fase no cierra el frente. Decir «7 de 11» sin decir *de qué* es lo que hace perder el hilo — pasó el
+2026-08-15, y costó dos respuestas contradictorias seguidas.
+
+Tres obligaciones concretas:
+
+1. **Actualiza la tabla de control en el MISMO commit** que la tarea que cierra, con evidencia y
+   fecha. Un `✅` con la evidencia vacía no vale (es la norma de
+   `feedback_planes_control_ejecucion`, y esto solo dice dónde se enseña).
+2. **Enseña la tabla del nivel que el dueño sigue**, no la que a ti te resulte cómoda. Si no sabes
+   cuál es, es la más concreta: la del fichero donde estás trabajando.
+3. **Si al medir descubres que el plan estaba mal —un conteo, un estado, una fila obsoleta—,
+   corrígelo y dilo.** No lo arregles en silencio: el desfase entre plan y realidad es información,
+   y esconderlo es cómo un plan deja de servir. El paso 4 del Frente 4 estuvo marcado ⬜ un día
+   entero describiendo un fichero que ya no existía.
+
 ### Plan de calidad
 
 `docs/planes/referencia/calidad-y-medicion.md` es el **documento maestro** de deuda técnica y complejidad: **mapa de

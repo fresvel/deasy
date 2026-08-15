@@ -51,7 +51,7 @@
 
     <button
       type="button"
-      class="deasy-auth-button"
+      class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block"
       :disabled="loading || !isCodeComplete"
       @click="submit"
     >

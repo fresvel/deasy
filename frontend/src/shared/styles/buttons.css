@@ -443,32 +443,67 @@
     
 }
 @layer components {
-.deasy-auth-button {
-        @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold text-white shadow-none transition-all focus:outline-none active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
-        border-color: var(--color-primary);
-        background: var(--gradient-angled);
+    /* ══ LA FAMILIA `deasy-auth-button` MURIO AQUI — 2026-08-15, G9 ════════════════════════
+       Eran tres clases (`--secondary`, `--compact`) en 11 usos de las cinco vistas de acceso, y
+       eran **la quinta geometria**: la que el inventario listaba como «propia» y la unica que
+       sobrevivio a la unificacion de la tarea 3.3.
+
+           radio    16 px (`rounded-2xl`)   frente a los 8 del sistema
+           peso     600 (`font-semibold`)   frente a 500
+           sombra   `shadow-none`           frente a `shadow-theme-xs`
+           fondo    `var(--gradient-angled)`  un DEGRADADO, donde el resto usa color plano
+
+       ⚠️ **Se pierde el degradado del boton de «Ingresar», y es a proposito.** Por §1-bis la
+       funcion de «Ingresar» es la misma que la de «Guardar»: ejecutar la accion principal de un
+       formulario. Un degradado es aspecto, no estructura ni contrato, asi que no justifica una
+       familia aparte — justificaria como mucho una variante, y una variante que solo usan cinco
+       pantallas de las cuarenta es una excepcion disfrazada.
+
+       Se lleva por delante dos cosas mas:
+         · `--gradient-angled` en `tokens.css`, que **no tenia otro consumidor**;
+         · dos reglas de `overrides.css` FUERA DE CAPA que repintaban `--secondary`, o sea deuda
+           de la fase 6 que se va sin tocarla.
+
+       Lo unico que hacia falta de verdad era el ancho completo, y eso es `--block`, aqui abajo.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
+
+    /* ANCHO COMPLETO — el boton ocupa la fila.
+       Es lo unico que `deasy-auth-button` aportaba y el sistema no tenia: el pie de un formulario
+       de acceso quiere el boton de lado a lado. Antes viajaba como `w-full` en el atributo, o
+       peor, venia de serie en el bloque y habia que DESHACERLO con `w-auto px-5` / `w-auto px-6`
+       — dos paddings distintos en la misma barra, asi que los botones de cada lado no median
+       igual. Ahora se pide cuando se necesita, que es al reves y es lo correcto. */
+    .deasy-btn--block {
+        @apply w-full;
     }
 
-    .deasy-auth-button--secondary {
-        @apply bg-white shadow-none;
-        border-color: var(--color-line);
-        color: var(--color-body);
+    /* A LA ALTURA DEL CAMPO — cuando el boton va PEGADO a un input o a un textarea y las dos
+       cajas tienen que casar. El composer del chat lo necesita dos veces (adjuntar y enviar,
+       junto a un textarea de `min-h-13`), y los dos lo llevaban como `h-[52px]` en el atributo
+       — uno de ellos ademas con `w-[52px]`, o sea la medida repetida en dos ejes y en dos
+       botones. 52 px NO es un tamaño del sistema (los tres son 32/36/44) y por eso no entra en
+       la escala: es una medida de ALINEACION, y el nombre lo dice. (2026-08-15, G10.) */
+    .deasy-btn--field {
+        @apply h-13 min-h-13;
     }
 
-    /* El bloque nace `w-full` porque su sitio natural es el pie de un formulario de acceso, donde
-       ocupa la fila entera. El wizard de arranque lo usa para «Atrás» y «Siguiente», que van uno a
-       cada lado y NO deben estirarse, y por eso los dos llevaban `w-auto px-5` / `w-auto px-6`
-       sueltos en el atributo — con dos paddings distintos, ademas, asi que los botones de la misma
-       barra no median lo mismo. (2026-08-15, censo estructural de G4.)
-
-       ⚠️ Esto NO prejuzga G9: la familia `deasy-auth-button` entera esta pendiente de decidir si
-       muere o se queda. Lo unico que hace este modificador es sacar el estilo del atributo, que es
-       lo que G4 exige hoy. */
-    .deasy-auth-button--compact {
-        @apply w-auto px-6;
+    /* Y si ademas es de solo icono, cuadrado — si no, hereda el ancho de `--icon` (36 px) y
+       queda un rectangulo de 36×52 al lado del textarea. */
+    .deasy-btn--field.deasy-btn--icon {
+        @apply w-13;
     }
 
-    
+    /* EL BOTON FLOTANTE — uno solo en toda la aplicacion: el que abre el chat.
+       Va `fixed` sobre el contenido, asi que no puede compartir la caja del sistema: necesita
+       ser redondo, grande y con sombra de elevacion para despegarse de la pagina. Estaba entero
+       en el `class-name`, 18 utilidades. */
+    .deasy-fab {
+        @apply fixed bottom-6 right-4 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-info transition hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50 focus:outline-none focus:ring-4 sm:right-6 sm:h-16 sm:w-16;
+        z-index: 90;
+        box-shadow: 0 1px 2px rgba(var(--elev-ink-rgb), 0.05), 0 14px 34px rgba(var(--elev-ink-rgb), 0.12);
+    }
+
+
 }
 /* ══ LOS 12 BOTONES DE ACCION DE TABLA MURIERON AQUI — 2026-08-14 ═══════════════════════
    Eran `hope-action-btn` + 12 modificadores, ENTEROS FUERA DE CAPA, y este fichero y

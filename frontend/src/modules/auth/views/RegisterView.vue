@@ -11,7 +11,7 @@
                 Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
               </p>
             </div>
-            <button type="button" class="deasy-auth-button deasy-auth-button--secondary w-full lg:w-auto" @click="goToLogin">
+            <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg deasy-btn--block lg:w-auto" @click="goToLogin">
               Volver al login
             </button>
           </div>
@@ -244,7 +244,7 @@
                     />
                     <button
                       type="button"
-                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto h-9 w-9"
+                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
                       aria-label="Mostrar u ocultar contraseña"
                       @click="showPassword = !showPassword"
                     >
@@ -278,7 +278,7 @@
                     />
                     <button
                       type="button"
-                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto h-9 w-9"
+                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
                       aria-label="Mostrar u ocultar confirmación"
                       @click="showConfirmPassword = !showConfirmPassword"
                     >

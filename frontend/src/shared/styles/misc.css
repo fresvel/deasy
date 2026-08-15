@@ -67,8 +67,12 @@
     
 }
 @layer components {
-.deasy-inline-icon-button {
-        @apply inline-flex items-center justify-center rounded-2xl text-muted transition-colors hover:bg-gray-100 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/15;
+/* EL OJO DE MOSTRAR/OCULTAR CONTRASEÑA — y lo que costo que no llevara tamano.
+       Esta tres veces (login y las dos del registro) y hasta el 2026-08-15 se pintaba de DOS
+       formas: dos con `deasy-inline-icon-button h-9 w-9` y la del login con `pr-4 text-muted`
+       sueltas, sin la clase. O sea que el mismo ojo tenia dos cajas segun la pantalla. */
+    .deasy-inline-icon-button {
+        @apply inline-flex h-9 w-9 items-center justify-center rounded-2xl text-muted transition-colors hover:bg-gray-100 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     

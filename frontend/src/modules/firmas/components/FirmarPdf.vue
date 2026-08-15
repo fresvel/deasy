@@ -27,15 +27,16 @@
     <div v-if="!multiOnly && pdfReady" class="flex flex-col gap-4 mt-4 border-b border-line pb-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-line-strong text-icon hover:bg-surface transition"
+          <AppButton
+            variant="secondary"
+            size="sm"
+            icon-only
             title="Regresar"
             aria-label="Regresar"
             @click="goBackToStart"
           >
             <IconArrowLeft class="w-5 h-5" />
-          </button>
+          </AppButton>
         </div>
 
         <div class="flex items-center justify-center gap-3 flex-wrap xl:flex-nowrap">
@@ -895,14 +896,16 @@
           </template>
           <template v-else-if="field.name === 'certificateAuthority'">
             <div class="flex items-center justify-center">
-              <button
+              <AppButton
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
-                @click="openCertificateAuthorityModal(row)"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-surface text-icon hover:bg-blue-light-100 hover:text-info transition-colors"
+                variant="softInfo"
+                size="sm"
+                icon-only
                 title="Ver entidad certificadora"
+                @click="openCertificateAuthorityModal(row)"
               >
                 <IconCertificate class="w-4 h-4" />
-              </button>
+           </AppButton>
               <span v-else class="text-muted text-xs font-semibold uppercase">N/A</span>
             </div>
           </template>

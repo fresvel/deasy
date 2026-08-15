@@ -376,7 +376,6 @@
   --gradient-soft: linear-gradient(135deg,
       color-mix(in srgb, var(--color-primary) 9%, transparent) 0%,
       color-mix(in srgb, var(--color-blue-light-500) 7%, transparent) 100%);
-  --gradient-angled: linear-gradient(135deg, var(--color-primary) 0%, var(--color-blue-light-500) 100%);
 
   /* ⚠️ `--typeface` y `--type-*` NO se llaman `--font-*` ni `--text-*` a proposito: los dos
      son namespaces de Tailwind y este `:root` esta sin capa, asi que le ganaria. */

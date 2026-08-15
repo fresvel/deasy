@@ -65,7 +65,7 @@
       <AdminButton variant="outlinePrimary" @click="$emit('clear')">
         Limpiar
       </AdminButton>
-      <AdminButton variant="primary" title="Buscar" aria-label="Buscar" @click="$emit('apply')">
+      <AdminButton variant="primary" title="Buscar" aria-label="Buscar" @click="$emit('apply')" icon-only>
         <font-awesome-icon icon="search" />
       </AdminButton>
     </template>

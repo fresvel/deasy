@@ -9,8 +9,7 @@
           :disabled="!table"
           title="Regresar"
           aria-label="Regresar"
-          @click="$emit('go-back')"
-        >
+          @click="$emit('go-back')" icon-only>
           <font-awesome-icon icon="backward" />
         </AdminButton>
         <AdminButton

@@ -102,8 +102,7 @@ const onCardClick = (event) => {
             aria-label="Abrir detalle del entregable"
             title="Abrir detalle del entregable"
             @click.stop
-            @click="emit('open', deliverable)"
-          >
+            @click="emit('open', deliverable)" icon-only>
             <IconEye class="h-[1.15rem] w-[1.15rem]" />
           </AppButton>
         </div>
@@ -140,11 +139,11 @@ const onCardClick = (event) => {
           </button>
 
           <div class="flex h-full items-center justify-end gap-1.5">
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-success transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Descargar PDF" @click="emit('download', deliverable.item)"><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)"><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Ver PDF" @click="emit('preview', deliverable.item)"><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton variant="plain" :class-name="['group inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4', h.getDeliverableHeaderActionTone(deliverable.item)].join(' ')" :disabled="!deliverable.item.actions?.can_open_process_chat" aria-label="Abrir chat" @click="emit('chat', deliverable.item)"><IconMessages class="h-[1.3rem] w-[1.3rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="softSuccess" size="sm" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)" icon-only><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="softInfo" size="sm" aria-label="Descargar PDF" @click="emit('download', deliverable.item)" icon-only><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="softInfo" size="sm" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)" icon-only><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="softInfo" size="sm" aria-label="Ver PDF" @click="emit('preview', deliverable.item)" icon-only><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton variant="plain" :class-name="['group inline-flex rounded-xl border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4', h.getDeliverableHeaderActionTone(deliverable.item)].join(' ')" :disabled="!deliverable.item.actions?.can_open_process_chat" aria-label="Abrir chat" @click="emit('chat', deliverable.item)" icon-only><IconMessages class="h-[1.3rem] w-[1.3rem]" /></AppButton>
           </div>
         </div>
       </div>

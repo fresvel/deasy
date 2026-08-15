@@ -6,7 +6,9 @@
 
 ## ⓿ · Estado por GRUPO — la tabla que se mira primero
 
-**7 de los 11 grupos cerrados · 209 botones, y los SIETE con gate de techo 0.**
+**10 de los 11 grupos cerrados · 338 botones, y los DIEZ con gate de techo 0.**
+
+> Solo queda **G1 · acción general** (303), que es el 63 % de todos los botones del sistema.
 
 > **Los cinco grupos cerrados se recensaron por estructura el 2026-08-15.** El inventario
 > original contaba mal en los cinco: **29→48, 23→28, 26→63, 26→14, 23→27**. Los cinco tienen ya
@@ -23,9 +25,9 @@
 | **G6** · filtro | **28** | ✅ | Tareas 3.5a y **3.5a-bis** · censo por estructura + gate `check:filter-actions` |
 | **G7** · pestaña | **14** | ✅ | Tarea **3.7** · censo por estructura + gate `check:nav-actions` |
 | **G8** · navegación / menú | **15** | ✅ | Tarea **3.7** · con G7, mismo gate |
-| **G9** · auth | 9 | ⬜ | `deasy-auth-button`, vivo en 5 ficheros |
-| **G10** · solo icono | 6 | ⬜ | Aquí entra unificar los 2 nombres del lienzo |
-| **G11** · envío | 2 | ⬜ | — |
+| **G9** · auth | **20** | ✅ | Tarea **3.5c** · `deasy-auth-button` MUERTA (era la 5.ª geometría) + gate `check:buttons-g9-g11` |
+| **G10** · solo icono | **104** | ✅ | Tarea **3.5c** · el inventario contó **6 de 104** · mismo gate |
+| **G11** · envío | **5** | ✅ | Tarea **3.5c** · `type="submit"`, la señal más nítida de las once |
 
 ⚠️ **Hay DOS tablas de control en este plan y confundirlas ya costó una respuesta entera
 (2026-08-15).** Ésta —por **grupo de botón**, G1…G11— es la que sigue el dueño y la que se enseña
@@ -420,7 +422,7 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.5b-2b** | **G5 · destructivo** | ✅ | Censo por función: **19 destructivos reales**, 11 no conformes → **13/14 conformes** (queda el `graph-edge-btn` del lienzo, que es G10). `BtnDelete`→**`AppDeleteButton`**: sobrevive como componente (cumple las 3 señales, como la ✕) pero pierde el `<svg>` a mano, el `@onpress` inventado, el `className` y una **prop `variant` fantasma que no declaraba**. Nace `deasy-inline-action--danger` para los 4 «Quitar»/«Desvincular» que tenían **dos tamaños y dos hovers**, uno de ellos inerte. `FirmarPdf` llamaba a la **misma** función desde dos botones distintos. Arbitrarios **404→401**, colores fuera de paleta **257→244** | 2026-08-15 |
 | **3.5b-2c** | **G4 recensado por ESTRUCTURA** + gate `check:paging-actions` | ✅ | Señal: **el @click mueve un índice** (`prevX`/`nextX`, `goToPage`, `++`/`--` sobre él). **14 botones, 3 no conformes**. Los dos «Atrás»/«Siguiente» del arranque llevaban `w-auto px-5` y `w-auto px-6` — **dos paddings distintos en la misma barra**; nace `deasy-auth-button--compact`. El tercero destapó un `AppButton` **sin variante**, que salía sin color | 2026-08-15 |
 | **3.5b-2d** | **G5 recensado por ESTRUCTURA** + gate `check:destructive-actions` | ✅ | Señal: **el @click invoca un borrado**. Buscar el verbo solo como *prefijo* perdía 5 de 19 (`requestDeleteField`, `handleAttachmentDelete`, `confirmDeleteEdge`). **27 botones**. Sale el **gemelo rojo de `deasy-pdf-action`** en `SignatureBox`, que G2 no vio por no estar en un `v-for` | 2026-08-15 |
-| **3.5c** | **G9 · auth** (9) · **G10 · solo icono** (6) · **G11 · envío** (2) | ⬜ | — | — |
+| **3.5c** | **G9 · auth** · **G10 · solo icono** · **G11 · envío** | ✅ | **20 · 104 · 5**, no 9 · 6 · 2. Muere `deasy-auth-button`, **la quinta geometría** —la única que sobrevivió a 3.3— y con ella `--gradient-angled` (sin otro consumidor) y **dos reglas fuera de capa** de `overrides.css`. G10 tenía **104, no 6**: el inventario contó los que ya usaban el componente. Nacen `deasy-btn--block`, `--field` y `deasy-fab`. Arbitrarios **387→381**, colores **238→235** | 2026-08-15 |
 | **3.6** | G1 · los 123 `<button>` crudos de acción general | ⬜ | — | — |
 | **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ✅ | **G7: 14 · G8: 15.** Dos señales: la pestaña **selecciona una vista de un conjunto excluyente** (`role="tab"`/`aria-selected`), la navegación **vive dentro de una estructura de navegación**. HomeView tenía **un segundo estilo de pestaña** —tipo carpeta— con sus colores **en JavaScript** (`getDeliverableWorkspaceTabClass`, retirada); colapsa sobre `deasy-inline-tab`. El selector de modos del chat era un **tercer aspecto de «segmento activo»**: pasa a `deasy-section-nav--stacked`. Arbitrarios **394→388** | 2026-08-15 |
 | **3.8** | `BtnDelete` y `BtnSera` absorbidos o justificados | 🟡 | **`BtnDelete` cerrado en 3.5b-2b**: justificado como componente propio (`AppDeleteButton`) por las 3 señales de §1-bis, y reescrito. Falta `BtnSera` | 2026-08-15 |
@@ -828,3 +830,65 @@ del selector del chat: TailAdmin solo oscurece el texto y sobre 54 px eso no se 
 
 El icono va en `.deasy-inline-tab__icon` y no en el atributo **por un motivo medido**: cuando cada
 pestaña traía su `h-4 w-4` o `h-5 w-5`, dos barras contiguas no alineaban.
+
+---
+
+## §13 · G9, G10 y G11 — y el inventario que contaba 6 donde había 104 (2026-08-15)
+
+Tres señales distintas, como siempre:
+
+| Grupo | Señal | Inventario decía | Hay |
+|---|---|--:|--:|
+| **G9** · auth | vive en `modules/auth/` | 9 | **20** |
+| **G10** · solo icono | su cuerpo **no tiene texto** | 6 | **104** |
+| **G11** · envío | `type="submit"` | 2 | **5** |
+
+G9 es la **única señal de ubicación** de las once, y está justificada: lo que define al grupo no es
+lo que hace el botón sino que la pantalla se ve **sin sesión**, con su propia caja y su propio ancho.
+
+⚠️ **Los tres solapan con otros grupos a propósito.** «Ingresar» es G9 (vive en auth), G11 (es
+submit) y podría ser G1. Un botón pertenece a varios grupos porque **los grupos son preguntas
+distintas sobre el mismo objeto**; lo que no puede es conformar en uno e incumplir en otro.
+
+### G9 · muere `deasy-auth-button`, que era la quinta geometría
+
+El inventario la listaba como «propia» y era **la única de las cinco que sobrevivió a la
+unificación de la tarea 3.3**:
+
+| | `deasy-auth-button` | el sistema |
+|---|--:|--:|
+| radio | **16 px** | 8 px |
+| peso | **600** | 500 |
+| sombra | ninguna | `shadow-theme-xs` |
+| fondo | **un degradado** | color plano |
+
+**Se pierde el degradado del botón de «Ingresar», y es a propósito.** Por §1-bis la función de
+«Ingresar» es la misma que la de «Guardar»: ejecutar la acción principal de un formulario. Un
+degradado es aspecto, no estructura ni contrato — justificaría como mucho una variante, y una
+variante que usan cinco pantallas de cuarenta es una excepción disfrazada.
+
+Se lleva por delante **`--gradient-angled`**, que no tenía otro consumidor, y **dos reglas de
+`overrides.css` fuera de capa** que repintaban su `--secondary`: deuda de la fase 6 que se va sin
+tocarla. Medido en el navegador: «Ingresar» pasa de radio 16 a **8**, de peso 600 a **500** y de
+degradado a `rgb(70,95,255)` plano.
+
+### G10 · el inventario contó 6 de 104
+
+«El único grupo limpio», decía. Lo era porque **contó solo los que ya usaban el componente**. Con la
+señal estructural —cuerpo sin texto visible— salen **104**, y 29 no conformaban. Lo que apareció:
+
+- **14 `AppButton` de solo icono sin declarar `icon-only`**, o sea con el padding de un botón con
+  etiqueta. El icono no queda centrado y nadie lo había visto.
+- **El ojo de mostrar/ocultar contraseña, con dos cajas distintas**: dos usos con
+  `deasy-inline-icon-button h-9 w-9` y el del login con `pr-4 text-muted` sueltas, **sin la clase**.
+- **Cuatro acciones de `DeliverableCard` que eran variantes suaves escritas a mano**
+  (`border-emerald-200/90 bg-white text-success` = `softSuccess`), con `variant="plain"` y diez
+  utilidades encima. El mismo patrón que los `hope-action-*` de G2, un año después.
+- **Tres tamaños repetidos en el atributo** (`h-9 w-9` de `deasy-nav-action` en sus tres usos,
+  `h-10 w-10`, `h-[52px]`), que ahora los ponen sus bloques.
+
+Nacen tres modificadores, y los tres por una necesidad medida: **`--block`** (el botón ocupa la
+fila — lo único que `deasy-auth-button` aportaba de verdad), **`--field`** (el botón mide lo que el
+campo que tiene al lado: 52 px, que **no** es un tamaño del sistema sino una medida de alineación) y
+**`deasy-fab`**, el botón flotante del chat, que va `fixed` sobre el contenido y por eso no puede
+compartir la caja del sistema.

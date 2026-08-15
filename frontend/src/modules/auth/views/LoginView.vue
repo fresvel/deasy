@@ -41,7 +41,7 @@
           <button
             type="button"
             @click="showPassword = !showPassword"
-            class="absolute inset-y-0 right-0 flex items-center pr-4 text-muted transition-colors hover:text-info"
+            class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
             aria-label="Mostrar u ocultar contraseña"
           >
             <IconEye v-if="!showPassword" class="h-5 w-5" />
@@ -54,7 +54,7 @@
         <router-link to="/recover-password" class="deasy-auth-link">¿Olvidaste tu contraseña?</router-link>
       </div>
 
-      <button type="submit" class="deasy-auth-button">
+      <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block">
         Ingresar
         <IconArrowRight class="h-5 w-5" />
       </button>
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <router-link to="/register" class="deasy-auth-button deasy-auth-button--secondary">Crear usuario</router-link>
+    <router-link to="/register" class="deasy-btn deasy-btn--secondary deasy-btn--lg deasy-btn--block">Crear usuario</router-link>
   </AuthLayout>
 </template>
 

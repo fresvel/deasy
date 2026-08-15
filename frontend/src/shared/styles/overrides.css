@@ -191,14 +191,12 @@ textarea:focus {
 
    Estas reglas estan fuera de capa para ganarle a `.deasy-table-responsive .deasy-btn--secondary`
    (0,2,0), que solo apunta a `--secondary`. `--cancel` nunca necesito estar aqui. */
-.deasy-btn--secondary,
-.deasy-auth-button--secondary {
+.deasy-btn--secondary {
   background-color: var(--color-white);
   border-color: var(--color-line);
 }
 
-.deasy-btn--secondary,
-.deasy-auth-button--secondary {
+.deasy-btn--secondary {
   color: var(--color-strong);
 }
 

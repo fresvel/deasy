@@ -2,11 +2,10 @@
   <div>
     <AppButton
       variant="plain"
-      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-info shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.05),0_14px_34px_rgba(var(--elev-ink-rgb),0.12)] transition hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50 focus:outline-none focus:ring-4 sm:right-6 sm:h-16 sm:w-16"
+      class-name="deasy-fab"
       aria-label="Abrir chat"
       title="Abrir chat"
-      @click="openLauncher"
-    >
+      @click="openLauncher" icon-only>
       <IconMessages class="relative z-10 h-7 w-7 sm:h-8 sm:w-8" />
     </AppButton>
 
@@ -151,11 +150,10 @@
               <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center deasy-card text-muted transition hover:bg-surface hover:text-body"
+                class-name="deasy-btn--field shrink-0"
                 aria-label="Adjuntar archivos"
                 title="Adjuntar archivos"
-                @click="attachmentInputRef?.click?.()"
-              >
+                @click="attachmentInputRef?.click?.()" icon-only>
                 <IconPaperclip class="h-5 w-5" />
               </AppButton>
               <textarea
@@ -171,7 +169,7 @@
               <AppButton
                 variant="primary"
                 size="sm"
-                class-name="h-[52px] shrink-0 rounded-2xl px-4"
+                class-name="deasy-btn--field shrink-0"
                 :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
                 @click="sendMessage"
               >

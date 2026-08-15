@@ -11,7 +11,7 @@
     />
     <div class="mx-auto flex w-full max-w-[2560px] items-center gap-2 sm:gap-3">
       <button
-        class="deasy-nav-action h-9 w-9"
+        class="deasy-nav-action"
         type="button"
         aria-label="Abrir menu"
         @click="onClick('User')"

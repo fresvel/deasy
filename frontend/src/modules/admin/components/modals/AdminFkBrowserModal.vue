@@ -47,8 +47,7 @@
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!fkPositionFilters.unit_type_id"
-            @click="$emit('clear-fk-unit-position-filters')"
-          >
+            @click="$emit('clear-fk-unit-position-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
@@ -88,8 +87,7 @@
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkProcessDefinitionFilters"
-            @click="$emit('clear-fk-process-definition-filters')"
-          >
+            @click="$emit('clear-fk-process-definition-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
@@ -132,8 +130,7 @@
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkTemplateArtifactFilters"
-            @click="$emit('clear-fk-template-artifact-filters')"
-          >
+            @click="$emit('clear-fk-template-artifact-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
@@ -206,8 +203,7 @@
           title="Limpiar filtro"
           aria-label="Limpiar filtro"
           :disabled="!fkPositionFilters.unit_type_id && !fkPositionFilters.unit_id && !fkPositionFilters.cargo_id"
-          @click="$emit('clear-fk-unit-position-filters')"
-        >
+          @click="$emit('clear-fk-unit-position-filters')" icon-only>
           <font-awesome-icon icon="times" />
         </AdminButton>
       </div>
@@ -285,8 +281,7 @@
           variant="secondary"
           title="Buscar"
           aria-label="Buscar"
-          @click="$emit('open-fk-filter')"
-        >
+          @click="$emit('open-fk-filter')" icon-only>
           <font-awesome-icon icon="search" />
         </AdminButton>
         <AdminButton

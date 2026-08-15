@@ -13,15 +13,16 @@
           </div>
         </div>
         <div class="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
+          <AppButton
+            variant="secondary"
+            size="sm"
+            icon-only
             title="Actualizar"
             aria-label="Actualizar"
             @click="$emit('refresh')"
           >
             <IconRefresh class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
-          </button>
+          </AppButton>
           <AppButton variant="primary" @click="$emit('create')">
             <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4.5 w-4.5" /> {{ createLabel }}</span>
           </AppButton>
