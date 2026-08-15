@@ -14,16 +14,20 @@
         <div v-else class="grid gap-4">
           <div>
             <div>
-              <AdminButton
+              <!-- NAVEGA entre secciones, no ejecuta una accion: por eso deja de ser un boton
+                   del sistema. Tiene estado ACTIVO, que es justo lo que un boton no tiene. Se
+                   pliega con las pestañas y el menu cuando G7/G8 hagan su componente. -->
+              <button
                 v-for="section in personAssignmentSections"
                 :key="section.key"
-                variant="menu"
-                :class="{ 'is-active': personAssignmentSection === section.key }"
+                type="button"
+                class="deasy-section-nav"
+                :class="{ 'deasy-section-nav--active': personAssignmentSection === section.key }"
                 @click="$emit('update:person-assignment-section', section.key)"
               >
                 <font-awesome-icon :icon="section.icon" />
                 {{ section.label }}
-              </AdminButton>
+              </button>
             </div>
           </div>
 

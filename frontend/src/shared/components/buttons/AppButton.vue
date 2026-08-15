@@ -96,7 +96,6 @@ const variantClassMap = {
      `--color-warning` sobre blanco da 5.43:1, que pasa AA. Lo vigila `check:variants`. */
   warning: "deasy-btn--warning",
   danger: "deasy-btn--danger",
-  menu: "deasy-btn--menu",
   plain: ""
 };
 

@@ -282,14 +282,23 @@
         color: var(--color-icon);
     }
 
-    .deasy-btn--menu {
+    /* ── NAVEGACION DE SECCION — no es un boton, y por eso ya no se llama asi ────────
+       Era `deasy-btn--menu`, una "variante" del boton. No lo era: tiene **estado activo**, y
+       eso es lo que separa navegar de ejecutar — un boton no esta "activo". Ademas traia una
+       geometria que ningun boton tiene (ancho minimo de 9.5rem, gradiente propio, y el salto de
+       1px al pasar el raton que a los de accion se les quito por homogeneidad).
+
+       Se queda como BLOQUE propio hasta que G7/G8 construyan el componente de navegacion; ahi
+       se pliega con las pestañas y los elementos de menu. Lo que importa hoy es que el boton
+       deje de fingir que es esto. */
+    .deasy-section-nav {
         @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
         border-color: rgba(var(--navy-menu-rgb), 0.14);
         background: linear-gradient(180deg, var(--color-white) 0%, var(--color-surface) 100%);
         color: var(--color-body);
     }
 
-    .deasy-btn--menu.is-active {
+    .deasy-section-nav--active {
         @apply shadow-[var(--focus-ring)];
         border-color: rgba(var(--navy-menu-rgb), 0.22);
         background: var(--gradient-soft);

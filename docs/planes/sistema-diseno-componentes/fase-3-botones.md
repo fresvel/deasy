@@ -85,6 +85,31 @@ Y el segundo defecto destapó un hueco real del sistema, no un typo: **los sóli
 
 ---
 
+## 1-bis · La regla, corregida el 2026-08-14 — y por qué la anterior hacía daño
+
+La fase arrancó con **«si dos botones hacen lo mismo, son exactamente el mismo»**, y eso es
+correcto. Lo que se aplicó mal fue lo contrario: **empujar hacia el mismo componente cosas que no
+hacen lo mismo**, y resolver la diferencia con una variante. Eso no es reutilizar: es forzar.
+
+> **Se reutiliza cuando la FUNCIÓN es la misma. Si no, es otro componente.**
+>
+> Y una variante solo es legítima cuando cambia el **aspecto**. En cuanto cambia la
+> **estructura** o el **contrato**, ya no es una variante.
+
+Las tres señales de que una «variante» es en realidad otro componente — las tres las cumplía la ✕
+antes de separarla, y las tres estaban a la vista:
+
+1. **Trae su propio contenido** e ignora el slot (una rama `v-if` en la plantilla solo para ella).
+2. **Rechaza props que todas las demás aceptan** — y eso no está escrito en ninguna parte, así que
+   quien la usa no puede saberlo.
+3. **Tiene un estado o un papel que las otras no tienen** (activo/actual, una etiqueta fija).
+
+⚠️ **El coste de no verlo se paga en silencio.** `close` prohibía el tamaño sin decirlo:
+`AppFormModalLayout` le pasó el `--md` por defecto, el `px-4 py-2` dejó la caja interna en 4 px y
+**el icono se aplastó a 2 px — invisible durante meses**. Y como su contrato no estaba claro, dos
+armazones se saltaron el componente y copiaron el markup a mano, que es justo la duplicación que
+esta fase venía a eliminar. **Forzar la reutilización produjo más copias, no menos.**
+
 ## 2 · El alcance decidido
 
 **447 son ACCIÓN → un solo componente.** Acción general, acción de fila, destructivo, filtro,
