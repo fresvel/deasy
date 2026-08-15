@@ -227,15 +227,36 @@
                 <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
                 <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-danger">Inactivo</span>
                 <div v-if="editable" class="ml-auto flex items-center gap-1">
-                  <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-warning' : 'text-muted'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
-                    <IconCrown class="h-4 w-4" />
-                  </button>
-                  <button type="button" class="graph-icon-btn" title="Editar puesto" @click="openEditPosition(pos)">
-                    <IconPencil class="h-4 w-4" />
-                  </button>
-                  <button type="button" class="graph-icon-btn graph-icon-btn--danger" title="Eliminar puesto" @click="removePosition(pos.id)">
-                    <IconTrash class="h-4 w-4" />
-                  </button>
+                  <AppButton
+                    :variant="pos.is_unit_head ? 'softWarning' : 'softNeutral'"
+                    size="sm"
+                    icon-only
+                    title="Marcar/quitar jefatura"
+                    aria-label="Marcar/quitar jefatura"
+                    @click="toggleHead(pos)"
+                  >
+                    <IconCrown class="h-5 w-5" />
+                  </AppButton>
+                  <AppButton
+                    variant="softSuccess"
+                    size="sm"
+                    icon-only
+                    title="Editar puesto"
+                    aria-label="Editar puesto"
+                    @click="openEditPosition(pos)"
+                  >
+                    <IconPencil class="h-5 w-5" />
+                  </AppButton>
+                  <AppButton
+                    variant="softDanger"
+                    size="sm"
+                    icon-only
+                    title="Eliminar puesto"
+                    aria-label="Eliminar puesto"
+                    @click="removePosition(pos.id)"
+                  >
+                    <IconTrash class="h-5 w-5" />
+                  </AppButton>
                 </div>
               </div>
               <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">

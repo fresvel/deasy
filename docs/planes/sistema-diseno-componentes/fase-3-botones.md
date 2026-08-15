@@ -4,6 +4,35 @@
 > propio porque el inventario no cabe en una fila de tabla y porque **el mapa de revisión se usa en
 > cada punto de control**, no una vez.
 
+## ⓿ · Estado por GRUPO — la tabla que se mira primero
+
+**5 de los 11 grupos cerrados · 127 de los 480 botones.**
+
+| Grupo | Botones | Estado | Dónde quedó |
+|---|--:|:--:|---|
+| **G1** · acción general | 303 | ⬜ | 123 son `<button>` crudo. Es el grueso que queda |
+| **G2** · acción de fila | 29 | ✅ | Tarea 3.4 · los 12 `hope-action-*` muertos |
+| **G3** · cerrar diálogo | 26 | ✅ | Tareas 3.5b y 3.5b-bis · manda la etiqueta |
+| **G4** · paginación | 26 | ✅ | Tarea 3.5b-2a · `deasy-counter-nav` |
+| **G5** · destructivo | 23 | ✅ | Tarea 3.5b-2b · `AppDeleteButton` + `deasy-inline-action` |
+| **G6** · filtro | 23 | ✅ | Tarea 3.5a · `deasy-filter-btn` muerta |
+| **G7** · pestaña | 19 | ⬜ | 100 % crudos. Componente propio, no variante |
+| **G8** · navegación / menú | 14 | ⬜ | 100 % crudos. Con G7 |
+| **G9** · auth | 9 | ⬜ | `deasy-auth-button`, vivo en 5 ficheros |
+| **G10** · solo icono | 6 | ⬜ | Aquí entra unificar los 2 nombres del lienzo |
+| **G11** · envío | 2 | ⬜ | — |
+
+⚠️ **Hay DOS tablas de control en este plan y confundirlas ya costó una respuesta entera
+(2026-08-15).** Ésta —por **grupo de botón**, G1…G11— es la que sigue el dueño y la que se enseña
+cuando pregunta «cómo va». La otra, más abajo en §7, es por **tarea de ejecución** (3.0, 3.1,
+3.2…) e incluye trabajo que no es de ningún grupo: la geometría única, los tres gates nuevos, la
+convención de nombres. **Una tarea cerrada no es un grupo cerrado.** Y por encima de las dos está
+el control de ejecución del [plan maestro](./plan-2026-08-13.md#0--control-de-ejecución), donde
+todo esto es **una sola fila, F3.2**.
+
+**Al informar del estado se dice de qué tabla se habla.** Si no, pasa lo del 15-08: «7 de 11
+grupos» contando la geometría y los gates, que no son grupos. Son **5**.
+
 ## Contexto — por qué esta fase, y por qué ahora
 
 El plan la tenía como «las tres extracciones que faltan». La ejecución de las fases 0 y 1 cambió dos

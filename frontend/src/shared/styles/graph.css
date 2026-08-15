@@ -67,37 +67,21 @@
         box-shadow: var(--elev-1);
     }
 
-    /* ── Boton de icono del panel lateral ───────────────────────────────────────────
-       El color lo pone cada instancia (corona ambar, lapiz, papelera); aqui solo la caja
-       y el realce al pasar por encima. */
-
-    .graph-icon-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 24px;
-        width: 24px;
-        border-radius: 6px;
-        transition: background 0.15s ease, color 0.15s ease;
-    }
-
-    .graph-icon-btn:hover {
-        background: var(--color-surface);
-    }
-
-    /* El color de reposo, que antes viajaba por el atributo como `text-muted`. Sin el, el boton
-       heredaba el color del contenedor y cada sitio le ponia el suyo. */
-    .graph-icon-btn {
-        color: var(--color-muted);
-    }
-
-    /* Su hermano destructivo. `graph-edge-btn` ya tenia el suyo desde el principio; este no, y
-       por eso «Eliminar puesto» llevaba `text-muted hover:text-danger` sueltos en el atributo
-       (2026-08-15, G5) — la misma pareja de utilidades que la clase ya intentaba resolver. */
-    .graph-icon-btn--danger:hover {
-        background: color-mix(in srgb, var(--color-danger) 10%, var(--color-white));
-        color: var(--color-danger);
-    }
+    /* [2026-08-15] AQUI VIVIA `graph-icon-btn`, Y SU SITIO ERA UN ERROR DE CLASIFICACION.
+     *
+     * Se llamaba «boton de icono del panel lateral», y ahi esta el fallo: el panel lateral NO es
+     * el lienzo. Es una LISTA de puestos con sus acciones de fila — o sea G2, exactamente lo
+     * mismo que la columna de acciones de una tabla de admin. Editar un puesto desde el
+     * organigrama y editarlo desde la tabla son la misma funcion, asi que son el mismo boton.
+     *
+     * El dia antes de borrarla se le anadio un modificador `--danger` para que «Eliminar puesto»
+     * dejara de llevar utilidades sueltas. Fue arreglar la fachada del sitio equivocado: el
+     * problema no era que le faltara un tono, era que la clase no debia existir. Lo detecto el
+     * dueno mirando la pantalla, no un gate — de ahi que este escrito aqui.
+     *
+     * Lo que SI se queda en este fichero es `graph-node__btn` y `graph-edge-btn`: esos van
+     * encima de los nodos y las aristas DEL LIENZO, escalan con el zoom y tienen caja propia de
+     * 24 px. La regla es donde vive el boton, no en que modulo esta el fichero. */
 
     /* ── Barra de acciones de una relacion (arista) ──────────────────────────────────
        Flota sobre el lienzo, de ahi la elevacion. Los dos hover usan los mismos

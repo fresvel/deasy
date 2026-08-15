@@ -145,9 +145,17 @@
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailProcess.name }}</h3>
           </div>
           <div class="flex shrink-0 items-center gap-1">
-            <button v-if="editable" type="button" class="text-muted transition-colors hover:text-primary" title="Editar datos del proceso" @click="openEditModal(detailProcess.id)">
+            <AppButton
+              v-if="editable"
+              variant="softSuccess"
+              size="sm"
+              icon-only
+              title="Editar datos del proceso"
+              aria-label="Editar datos del proceso"
+              @click="openEditModal(detailProcess.id)"
+            >
               <IconPencil class="h-5 w-5" />
-            </button>
+            </AppButton>
             <AppCloseButton @click="closeDetail" />
           </div>
         </header>
