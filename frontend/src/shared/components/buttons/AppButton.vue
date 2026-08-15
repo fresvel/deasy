@@ -8,10 +8,7 @@
     v-bind="attrs"
     @click="$emit('click', $event)"
   >
-    <span v-if="variant === 'close'" class="flex items-center justify-center w-full h-full">
-      <IconX class="w-4 h-4" stroke-width="2.5" />
-    </span>
-    <span v-else-if="$slots.default && showInnerWrapper">
+    <span v-if="$slots.default && showInnerWrapper">
       <slot />
     </span>
     <slot v-else />
@@ -20,7 +17,6 @@
 
 <script setup>
 import { computed, useAttrs } from "vue";
-import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({
   type: {
@@ -100,7 +96,6 @@ const variantClassMap = {
      `--color-warning` sobre blanco da 5.43:1, que pasa AA. Lo vigila `check:variants`. */
   warning: "deasy-btn--warning",
   danger: "deasy-btn--danger",
-  close: "deasy-btn--close",
   menu: "deasy-btn--menu",
   plain: ""
 };
@@ -132,24 +127,25 @@ const resolveClass = (map, key, kind) => {
 };
 
 const classes = computed(() => [
-  ["close", "plain"].includes(props.variant)
+  props.variant === "plain"
     ? ""
     : "deasy-btn admin-btn",
   resolveClass(variantClassMap, props.variant, "variant"),
-  /* [G3 2026-08-14] `close` se une a `plain` e `iconOnly` en NO recibir tamaño, y no es un
-     matiz: la ✕ es un cuadrado FIJO de 36 px, y un tamaño le mete padding dentro de esa caja.
-     Con `--md` (`px-4 py-2`) la caja interna de un boton de 36 de ancho se queda en **4 px**, el
-     `w-full` del span la hereda y el icono se aplasta a **2 px de ancho**: la ✕ desaparece.
+  /* [G3 2026-08-14] AQUI HABIA UNA EXCEPCION PARA `close`, y su historia vale como norma:
+     `variant="close"` no admitia tamaño —la ✕ es un cuadrado fijo— pero eso no estaba escrito en
+     ninguna parte, asi que `AppFormModalLayout` recibio el `--md` por defecto, su `px-4 py-2`
+     dejo la caja interna en 4 px y el icono se aplasto a **2 px: invisible**.
 
-     Pasaba en los modales del perfil y no en los de administracion porque estos ultimos pintan
-     su ✕ como `<button>` directo desde `AppModalShell`, sin pasar por el componente. Medido con
-     `getBoundingClientRect`: 36x36 el boton, 2x16 el svg. */
-  ["plain", "close"].includes(props.variant) || props.iconOnly
+     El primer arreglo fue añadir `close` a esta lista de excepciones. El bueno fue quitarlo del
+     componente: `close` no era una variante —traia su propio icono, ignoraba el slot y prohibia
+     el tamaño— sino OTRO BOTON. Vive en `AppCloseButton.vue`, sin `variant` ni `size` que puedan
+     estropearlo. La combinacion invalida ya no se puede escribir. */
+  props.variant === "plain" || props.iconOnly
     ? ""
     : resolveClass(sizeClassMap, props.size, "size"),
   props.iconOnly ? "deasy-btn deasy-btn--icon admin-btn" : "",
   props.className
 ]);
 
-const showInnerWrapper = computed(() => props.iconOnly || props.variant === "close");
+const showInnerWrapper = computed(() => props.iconOnly);
 </script>

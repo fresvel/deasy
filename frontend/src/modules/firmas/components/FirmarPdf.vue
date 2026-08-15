@@ -786,11 +786,9 @@
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <AdminButton
-        variant="close"
+      <AppCloseButton
         data-modal-dismiss
-        aria-label="Cerrar"
-        class-name="absolute right-5 top-4 z-20"
+        class="absolute right-5 top-4 z-20"
       />
     </template>
     <div class="px-6 pt-6 pb-4">
@@ -993,6 +991,7 @@
   </AppModalShell>
 </template>
   <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h, useId } from "vue";
   import { useRouter } from 'vue-router';
   import axios from '@/core/services/httpClient';
