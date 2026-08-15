@@ -1,8 +1,17 @@
 @layer components {
+/* El `mb-4` es la separacion con lo que viene DEBAJO, que casi siempre es una tabla. Sin el,
+       el borde inferior de este contenedor y el borde superior de la tabla quedan pegados y se
+       leen como una sola caja partida. Va aqui —en el contenedor de filtros— y no en la tabla,
+       porque el filtro es quien sabe que esta separandose de lo que filtra. */
 .deasy-filter-shell {
-        @apply rounded-xl border bg-white p-4 shadow-none md:p-4;
+        @apply mb-4 rounded-xl border bg-white p-4 shadow-none md:p-4;
         border-color: var(--color-line);
     }
+
+    /* ⚠️ La variante embebida SI hereda ese `mb-4`. Se penso lo contrario —«vive dentro de otro
+       bloque que ya separa»— y era falso: medido en la tabla de personas, el contenedor de
+       filtros y `.deasy-table-responsive` estaban a **0.0 px**, pegados. Lo que quita
+       `--embedded` es el MARCO (borde, fondo, padding), no la separacion con lo que filtra. */
 
     .deasy-filter-shell--embedded {
         @apply rounded-none border-0 bg-transparent p-0 md:p-0;

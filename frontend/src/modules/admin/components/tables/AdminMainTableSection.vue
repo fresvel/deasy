@@ -92,96 +92,68 @@
             <div :class="actionColumnClass">
               <div class="deasy-filter-actions">
                 <AdminButton
- v-if="!isPositionFilterTable && !isProcessDefinitionFilterTable && !isProcessTargetRuleFilterTable && !isTemplateArtifactsTable"
- variant="secondary"
- size="sm"
-                  
- title="Limpiar búsqueda"
- aria-label="Limpiar búsqueda"
- :disabled="!searchTerm"
- @click="resetGenericSearch"
-                >
-                  <font-awesome-icon icon="times" />
-                  <span>Reset</span>
-                </AdminButton>
+                  v-if="!isPositionFilterTable && !isProcessDefinitionFilterTable && !isProcessTargetRuleFilterTable && !isTemplateArtifactsTable"
+                  variant="secondary" icon-only
+                  size="sm"
+                  title="Limpiar búsqueda"
+                  aria-label="Limpiar búsqueda"
+                  :disabled="!searchTerm"
+                  @click="resetGenericSearch"
+                ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
- v-if="isPositionFilterTable"
- variant="secondary"
- size="sm"
-                  
- title="Limpiar filtros"
- aria-label="Limpiar filtros"
- :disabled="!hasUnitPositionFilters"
- @click="$emit('clear-unit-position-inline-filters')"
-                >
-                  <font-awesome-icon icon="times" />
-                  <span>Reset</span>
-                </AdminButton>
+                  v-if="isPositionFilterTable"
+                  variant="secondary" icon-only
+                  size="sm"
+                  title="Limpiar filtros"
+                  aria-label="Limpiar filtros"
+                  :disabled="!hasUnitPositionFilters"
+                  @click="$emit('clear-unit-position-inline-filters')"
+                ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
- v-else-if="isProcessDefinitionFilterTable"
- variant="secondary"
- size="sm"
-                  
- title="Limpiar filtros"
- aria-label="Limpiar filtros"
- :disabled="!hasProcessDefinitionInlineFilters"
- @click="$emit('clear-process-definition-inline-filters')"
-                >
-                  <font-awesome-icon icon="times" />
-                  <span>Reset</span>
-                </AdminButton>
+                  v-else-if="isProcessDefinitionFilterTable"
+                  variant="secondary" icon-only
+                  size="sm"
+                  title="Limpiar filtros"
+                  aria-label="Limpiar filtros"
+                  :disabled="!hasProcessDefinitionInlineFilters"
+                  @click="$emit('clear-process-definition-inline-filters')"
+                ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
- v-else-if="isProcessTargetRuleFilterTable"
- variant="secondary"
- size="sm"
-                  
- title="Limpiar filtros"
- aria-label="Limpiar filtros"
- :disabled="!hasProcessTargetRuleInlineFilters"
- @click="$emit('clear-process-target-rule-inline-filters')"
-                >
-                  <font-awesome-icon icon="times" />
-                  <span>Reset</span>
-                </AdminButton>
+                  v-else-if="isProcessTargetRuleFilterTable"
+                  variant="secondary" icon-only
+                  size="sm"
+                  title="Limpiar filtros"
+                  aria-label="Limpiar filtros"
+                  :disabled="!hasProcessTargetRuleInlineFilters"
+                  @click="$emit('clear-process-target-rule-inline-filters')"
+                ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
- v-else-if="isTemplateArtifactsTable"
- variant="secondary"
- size="sm"
-                  
- title="Limpiar filtros"
- aria-label="Limpiar filtros"
- :disabled="!hasTemplateArtifactInlineFilters"
- @click="$emit('clear-template-artifact-inline-filters')"
-                >
-                  <font-awesome-icon icon="times" />
-                  <span>Reset</span>
-                </AdminButton>
-                <AdminButton variant="outlinePrimary" size="sm" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')">
-                  <font-awesome-icon icon="search" />
-                  <span>Search</span>
-                </AdminButton>
+                  v-else-if="isTemplateArtifactsTable"
+                  variant="secondary" icon-only
+                  size="sm"
+                  title="Limpiar filtros"
+                  aria-label="Limpiar filtros"
+                  :disabled="!hasTemplateArtifactInlineFilters"
+                  @click="$emit('clear-template-artifact-inline-filters')"
+                ><font-awesome-icon icon="times" /></AdminButton>
+                <AdminButton variant="outlinePrimary" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
                 <AdminButton
- v-if="hasExpandableFilters"
- variant="secondary"
- size="sm"
- icon-only
-                  
- :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
- :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
- @click="showAdvancedFilters = !showAdvancedFilters"
+                  v-if="hasExpandableFilters"
+                  variant="secondary"
+                  size="sm"
+                  icon-only
+                  :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                  :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                  @click="showAdvancedFilters = !showAdvancedFilters"
                 >
                   <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
                 </AdminButton>
+                <!-- «Actualizar» vivia en una SEGUNDA fila (`deasy-filter-toolbar`), acompañado
+                     de un `deasy-filter-summary` VACIO que era lo unico que justificaba esa
+                     fila. Por eso caia debajo en vez de al lado. Sube aqui con sus hermanos:
+                     los tres actuan sobre la misma tabla. -->
+                <AdminButton variant="primary" icon-only size="sm" title="Actualizar" aria-label="Actualizar" @click="$emit('fetch-rows')"><font-awesome-icon icon="rotate-right" /></AdminButton>
               </div>
-            </div>
-          </div>
-          <div class="deasy-filter-toolbar">
-            <div class="deasy-filter-summary"></div>
-            <div class="deasy-filter-actions">
-              <AdminButton variant="primary" size="sm" title="Refresh" aria-label="Refresh" @click="$emit('fetch-rows')">
-                <font-awesome-icon icon="rotate-right" />
-                <span>Refresh</span>
-              </AdminButton>
             </div>
           </div>
           </div>

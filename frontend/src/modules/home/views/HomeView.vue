@@ -136,7 +136,7 @@
                   Entregables visibles: <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
                 </div>
                 <div class="deasy-filter-actions">
-                  <AppButton variant="secondary" size="sm" @click="resetTaskListFilters">Reset</AppButton>
+                  <AppButton variant="secondary" icon-only size="sm" @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
                 </div>
               </div>
             </div>
@@ -1221,7 +1221,7 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="secondary" @click="resetTaskListFilters">Reset</AppButton>
+        <AppButton variant="secondary" icon-only @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
         <AppButton variant="secondary" @click="closeTaskFiltersModal">Cerrar</AppButton>
         <AppButton variant="primary" @click="closeTaskFiltersModal">Aplicar</AppButton>
       </template>
