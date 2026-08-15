@@ -183,21 +183,35 @@ textarea:focus {
    alli. Capadas, el secundario de cabecera de tabla cambia de borde y su `:hover` pasa de
    la tinta violeta al gris de tabla — y el `:hover` la huella NO lo ve.
    ------------------------------------------------------------------------------------ */
+/* ⚠️ `--cancel` SALE TAMBIEN DE ESTAS DOS, y no solo del `:hover` de abajo. Una regla SIN CAPA
+   gana a CUALQUIER regla capada — tambien a un `:hover`. Asi que mientras el REPOSO de
+   `--cancel` estuviera aqui, su `:hover` de `@layer components` no podia pintar aunque el
+   hover azul se retirara: el reposo suelto seguia ganando. Comprobado con el raton encima:
+   el boton mostraba borde `--color-line` y texto `--color-strong`, o sea su reposo.
+
+   Estas reglas estan fuera de capa para ganarle a `.deasy-table-responsive .deasy-btn--secondary`
+   (0,2,0), que solo apunta a `--secondary`. `--cancel` nunca necesito estar aqui. */
 .deasy-btn--secondary,
-.deasy-btn--cancel,
 .deasy-auth-button--secondary {
   background-color: var(--color-white);
   border-color: var(--color-line);
 }
 
 .deasy-btn--secondary,
-.deasy-btn--cancel,
 .deasy-auth-button--secondary {
   color: var(--color-strong);
 }
 
-.deasy-btn--secondary:hover,
-.deasy-btn--cancel:hover {
+/* ⚠️ `--cancel` SALE DE ESTA LISTA — 2026-08-14, y el motivo enseña mas que el arreglo.
+   `buttons.css` declara un `:hover` ROJO para `--cancel` desde hace meses, dentro de
+   `@layer components`. Esta regla esta FUERA DE CAPA y le gana siempre, asi que ese hover
+   rojo **no ha pintado nunca**: `cancel` y `secondary` eran identicos tambien al pasar el
+   raton, y la variante no distinguia nada.
+
+   Se detecto porque alguien lo MIRO en el navegador despues de que se afirmara, leyendo solo
+   el CSS, que se diferenciaban. Es el patron dominante de este repo —reglas que existen y no
+   aplican— y la unica defensa es abrir la pagina. */
+.deasy-btn--secondary:hover {
   color: var(--color-primary);
   background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
   border-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
