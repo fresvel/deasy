@@ -6,7 +6,7 @@
 
 ## ⓿ · Estado por GRUPO — la tabla que se mira primero
 
-**5 de los 11 grupos cerrados · 180 botones, y los CINCO con gate de techo 0.**
+**7 de los 11 grupos cerrados · 209 botones, y los SIETE con gate de techo 0.**
 
 > **Los cinco grupos cerrados se recensaron por estructura el 2026-08-15.** El inventario
 > original contaba mal en los cinco: **29→48, 23→28, 26→63, 26→14, 23→27**. Los cinco tienen ya
@@ -21,8 +21,8 @@
 | **G4** · paginación | **14** | ✅ | Tareas 3.5b-2a y **3.5b-2c** · censo por estructura + gate `check:paging-actions` |
 | **G5** · destructivo | **27** | ✅ | Tareas 3.5b-2b y **3.5b-2d** · censo por estructura + gate `check:destructive-actions` |
 | **G6** · filtro | **28** | ✅ | Tareas 3.5a y **3.5a-bis** · censo por estructura + gate `check:filter-actions` |
-| **G7** · pestaña | 19 | ⬜ | 100 % crudos. Componente propio, no variante |
-| **G8** · navegación / menú | 14 | ⬜ | 100 % crudos. Con G7 |
+| **G7** · pestaña | **14** | ✅ | Tarea **3.7** · censo por estructura + gate `check:nav-actions` |
+| **G8** · navegación / menú | **15** | ✅ | Tarea **3.7** · con G7, mismo gate |
 | **G9** · auth | 9 | ⬜ | `deasy-auth-button`, vivo en 5 ficheros |
 | **G10** · solo icono | 6 | ⬜ | Aquí entra unificar los 2 nombres del lienzo |
 | **G11** · envío | 2 | ⬜ | — |
@@ -422,7 +422,7 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.5b-2d** | **G5 recensado por ESTRUCTURA** + gate `check:destructive-actions` | ✅ | Señal: **el @click invoca un borrado**. Buscar el verbo solo como *prefijo* perdía 5 de 19 (`requestDeleteField`, `handleAttachmentDelete`, `confirmDeleteEdge`). **27 botones**. Sale el **gemelo rojo de `deasy-pdf-action`** en `SignatureBox`, que G2 no vio por no estar en un `v-for` | 2026-08-15 |
 | **3.5c** | **G9 · auth** (9) · **G10 · solo icono** (6) · **G11 · envío** (2) | ⬜ | — | — |
 | **3.6** | G1 · los 123 `<button>` crudos de acción general | ⬜ | — | — |
-| **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ⬜ | — | — |
+| **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ✅ | **G7: 14 · G8: 15.** Dos señales: la pestaña **selecciona una vista de un conjunto excluyente** (`role="tab"`/`aria-selected`), la navegación **vive dentro de una estructura de navegación**. HomeView tenía **un segundo estilo de pestaña** —tipo carpeta— con sus colores **en JavaScript** (`getDeliverableWorkspaceTabClass`, retirada); colapsa sobre `deasy-inline-tab`. El selector de modos del chat era un **tercer aspecto de «segmento activo»**: pasa a `deasy-section-nav--stacked`. Arbitrarios **394→388** | 2026-08-15 |
 | **3.8** | `BtnDelete` y `BtnSera` absorbidos o justificados | 🟡 | **`BtnDelete` cerrado en 3.5b-2b**: justificado como componente propio (`AppDeleteButton`) por las 3 señales de §1-bis, y reescrito. Falta `BtnSera` | 2026-08-15 |
 
 ---
@@ -754,3 +754,50 @@ Dos decisiones que quedaron escritas en el gate, para que nadie las «corrija»:
 **El inventario original contaba mal en los cinco: 29→48, 23→28, 26→63, 26→14, 23→27.** No por
 descuido al contar, sino porque contar «botones que se parecen» no es contar «botones que hacen lo
 mismo». Los cinco tienen ya gate de techo 0.
+
+---
+
+## §11 · G7 y G8 — navegar no es ejecutar (2026-08-15)
+
+Van juntos porque comparten lo que los separa del resto: **no ejecutan, llevan**. Y por eso §2
+decidió que no salen de `AppButton` — un botón no tiene estado «activo / actual», y dárselo obliga
+al componente entero a cargar con un estado que solo usan estos 29.
+
+| Grupo | Señal | Nº |
+|---|---|--:|
+| **G7** · pestaña | selecciona una vista de un conjunto **excluyente** (`role="tab"`, `aria-selected`) | 14 |
+| **G8** · navegación | **vive dentro de una estructura de navegación** | 15 |
+
+⚠️ **G8 no se define por «navega», y ese fue mi primer error aquí.** Con esa señal el censo marcaba
+15 falsos: «Ir al login», «Volver», «Continuar», las tarjetas grandes del panel de inicio… Cualquier
+botón puede navegar, y meterlos todos convierte G8 en G1. Un elemento de **menú** se reconoce por
+dónde vive, igual que un botón de filtro. Lo que navega puntualmente desde otro sitio es una acción
+general y le toca su grupo.
+
+### Lo que salió
+
+**Había un segundo estilo de pestaña, y sus colores vivían en JavaScript.** `HomeView` pintaba las
+cuatro pestañas del entregable —General, Entrega, Firmas, Anexos— como *carpetas*
+(`rounded-t-xl border border-b-0`, fondo blanco al activarse) mientras el resto de la aplicación
+usa `deasy-inline-tab`, que subraya. Dos aspectos para la misma función.
+
+Y el activo no lo ponía el CSS sino un helper del composable:
+
+```js
+const getDeliverableWorkspaceTabClass = (tab) => {
+  if (…) return 'border-line bg-white text-navy shadow-[0_-1px_0_rgba(var(--white-rgb),0.9)]';
+  return 'border-transparent bg-surface text-muted hover:border-line …';
+};
+```
+
+Eso es **material de la fase 8** («los colores que viven en JS») apareciendo dentro de la 3, y es la
+razón de que ningún gate de CSS lo hubiera visto nunca: no está en un `.css` ni en un `class=`
+estático. Colapsa sobre `deasy-inline-tab` + `--active`, y el helper se retira.
+
+**Y un tercer aspecto de «segmento activo»**: el selector de modos del chat pintaba el activo con
+`bg-white` y una sombra arbitraria. Es el mismo objeto que `deasy-section-nav` —elegir una sección
+de un conjunto excluyente— y lo único que cambia es que su panel mide 27,5 rem y tres etiquetas en
+horizontal no caben. Eso es un modificador, `--stacked`, no un bloque nuevo.
+
+Resultado: **tres aspectos de «pestaña/segmento activo» pasan a uno**, y los arbitrarios bajan de
+394 a 388.

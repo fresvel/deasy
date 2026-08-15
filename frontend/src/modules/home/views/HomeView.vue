@@ -1255,7 +1255,7 @@
       <div class="flex flex-col gap-5">
         <div
           v-if="fillWorkflowState.subject || signatureFlowState.subject"
-          class="flex flex-wrap items-center gap-2 border-b border-line pb-3"
+          class="deasy-inline-tabs"
           role="tablist"
           aria-label="Secciones del entregable"
         >
@@ -1265,8 +1265,8 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'summary'"
             :tabindex="deliverableWorkspaceState.tab === 'summary' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('summary')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'summary' }"
             @click="deliverableWorkspaceState.tab = 'summary'"
           >
             General
@@ -1277,8 +1277,8 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'fill'"
             :tabindex="deliverableWorkspaceState.tab === 'fill' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('fill')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'fill' }"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
             Entrega
@@ -1289,8 +1289,8 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'signature'"
             :tabindex="deliverableWorkspaceState.tab === 'signature' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('signature')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'signature' }"
             @click="deliverableWorkspaceState.tab = 'signature'"
           >
             Firmas
@@ -1301,8 +1301,8 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'attachments'"
             :tabindex="deliverableWorkspaceState.tab === 'attachments' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('attachments')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'attachments' }"
             @click="deliverableWorkspaceState.tab = 'attachments'"
           >
             Anexos
@@ -3163,7 +3163,6 @@ const {
   getDeliverableTagGroups,
   getDeliverableUnitLabel,
   getDeliverableWorkspacePayload,
-  getDeliverableWorkspaceTabClass,
   getFileExtension,
   getFileNameFromPath,
   getFillApproveActionLabelForPayload,

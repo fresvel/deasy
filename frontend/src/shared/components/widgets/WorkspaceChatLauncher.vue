@@ -49,7 +49,7 @@
             Volver
           </AppButton>
 
-          <nav v-else class="flex items-center gap-1 rounded-2xl border border-line bg-surface/70 p-1">
+          <nav v-else class="deasy-section-nav-group deasy-section-nav-group--stacked">
             <button
               v-for="mode in modeOptions"
               :key="mode"
@@ -57,10 +57,8 @@
               :title="modeLabels[mode]"
               :aria-label="modeLabels[mode]"
               :aria-pressed="activeMode === mode"
-              class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition"
-              :class="activeMode === mode
-                ? 'bg-white text-info shadow-[0_2px_8px_rgba(var(--elev-ink-rgb),0.08)]'
-                : 'text-muted hover:text-body'"
+              class="deasy-section-nav deasy-section-nav--stacked"
+              :class="{ 'deasy-section-nav--active': activeMode === mode }"
               @click="switchMode(mode)"
             >
               <component :is="modeIcons[mode]" class="h-5 w-5" :stroke="1.8" />

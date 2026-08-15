@@ -377,13 +377,6 @@ export function useDeliverableView({
     return Array.isArray(subject.workflow?.signature_steps) ? subject.workflow.signature_steps : [];
   };
 
-  const getDeliverableWorkspaceTabClass = (tab) => {
-    if (deliverableWorkspaceState.value.tab === tab) {
-      return 'border-line bg-white text-navy shadow-[0_-1px_0_rgba(var(--white-rgb),0.9)]';
-    }
-    return 'border-transparent bg-surface text-muted hover:border-line hover:bg-surface hover:text-body';
-  };
-
   const shouldShowResetWorkflow = (payload) => {
     const subject = getDeliverableSubject(payload);
     return Boolean(subject.actions?.can_reset_workflow && subject.actions?.implemented?.reset_workflow);
@@ -943,7 +936,6 @@ export function useDeliverableView({
     getDeliverableTagGroups,
     getDeliverableUnitLabel,
     getDeliverableWorkspacePayload,
-    getDeliverableWorkspaceTabClass,
     getFileExtension,
     getFileNameFromPath,
     getFillApproveActionLabelForPayload,
