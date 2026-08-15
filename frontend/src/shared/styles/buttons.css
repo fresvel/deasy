@@ -290,19 +290,43 @@
 
        Se queda como BLOQUE propio hasta que G7/G8 construyan el componente de navegacion; ahi
        se pliega con las pestañas y los elementos de menu. Lo que importa hoy es que el boton
-       deje de fingir que es esto. */
+       deje de fingir que es esto.
+
+       ── LA FORMA ES EL «BUTTON GROUP» DE TAILADMIN (2026-08-14) ──────────────────────
+       Su mecanica son tres piezas y las tres importan:
+         · el CONTENEDOR lleva la sombra (`.deasy-section-nav-group`), no cada boton;
+         · el borde se dibuja con `ring-1 ring-inset`, no con `border`, para que el
+           solapamiento no sume grosor;
+         · `first:rounded-l-lg last:rounded-r-lg` redondea SOLO los extremos, y el `-ml-px`
+           desde el segundo colapsa los bordes contiguos en una sola linea.
+
+       Se adopta su variante PRIMARY y no la secondary: en su demo la secondary deja el
+       activo en `text-gray-800` y el inactivo en `gray-700`, que a ojo es lo mismo — un
+       selector de seccion tiene que decir cual esta puesto. En primary el activo es solido
+       y el inactivo va en contorno, que es la distincion que hace falta.
+
+       Contraste: `--color-primary` sobre blanco da 4.84 (texto del inactivo) y el blanco
+       sobre `--color-primary`, lo mismo por simetria. Las dos pasan AA. */
+    .deasy-section-nav-group {
+        @apply inline-flex items-center shadow-theme-xs;
+    }
+
     .deasy-section-nav {
-        @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
-        border-color: rgba(var(--navy-menu-rgb), 0.14);
-        background: linear-gradient(180deg, var(--color-white) 0%, var(--color-surface) 100%);
-        color: var(--color-body);
+        @apply inline-flex items-center gap-2 bg-white px-4 py-3 text-sm font-medium text-primary ring-1 ring-inset ring-primary transition first:rounded-l-lg last:rounded-r-lg;
+    }
+
+    .deasy-section-nav + .deasy-section-nav {
+        margin-left: -1px;
     }
 
     .deasy-section-nav--active {
-        @apply shadow-[var(--focus-ring)];
-        border-color: rgba(var(--navy-menu-rgb), 0.22);
-        background: var(--gradient-soft);
-        color: var(--color-primary);
+        @apply bg-primary text-white;
+    }
+
+    @media (hover: hover) {
+        .deasy-section-nav:hover {
+            @apply bg-primary text-white;
+        }
     }
 
     .deasy-btn--sm {

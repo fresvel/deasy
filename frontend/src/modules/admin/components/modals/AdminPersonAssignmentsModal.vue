@@ -15,19 +15,23 @@
           <div>
             <div>
               <!-- NAVEGA entre secciones, no ejecuta una accion: por eso deja de ser un boton
-                   del sistema. Tiene estado ACTIVO, que es justo lo que un boton no tiene. Se
-                   pliega con las pestañas y el menu cuando G7/G8 hagan su componente. -->
-              <button
-                v-for="section in personAssignmentSections"
-                :key="section.key"
-                type="button"
-                class="deasy-section-nav"
-                :class="{ 'deasy-section-nav--active': personAssignmentSection === section.key }"
-                @click="$emit('update:person-assignment-section', section.key)"
-              >
-                <font-awesome-icon :icon="section.icon" />
-                {{ section.label }}
-              </button>
+                   del sistema. Tiene estado ACTIVO, que es justo lo que un boton no tiene.
+                   La forma es el «button group» de TailAdmin: la sombra la lleva el
+                   CONTENEDOR y los bordes contiguos se colapsan, asi que los tres se leen
+                   como una sola pieza segmentada y no como tres botones sueltos. -->
+              <div class="deasy-section-nav-group">
+                <button
+                  v-for="section in personAssignmentSections"
+                  :key="section.key"
+                  type="button"
+                  class="deasy-section-nav"
+                  :class="{ 'deasy-section-nav--active': personAssignmentSection === section.key }"
+                  @click="$emit('update:person-assignment-section', section.key)"
+                >
+                  <font-awesome-icon :icon="section.icon" />
+                  {{ section.label }}
+                </button>
+              </div>
             </div>
           </div>
 
