@@ -654,7 +654,7 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 
 ---
 
-## Frente 4 · Sistema de diseño — 🟡 · pasos 1-3 y 5 cerrados; el 4 y el 6 abiertos (fases E y F de la 3.ª vuelta)
+## Frente 4 · Sistema de diseño — 🟡 · **pasos 1-5 cerrados; solo queda el 6** (el 4 cerró el 2026-08-14)
 
 > **Plan, evidencia y bitácora: [`sistema-diseno-componentes/`](./sistema-diseno-componentes/).** El frente ocupaba 20 líneas
 > aquí y necesitaba más: la medición del 2026-08-09 encontró **tres cosas que no estaban en ningún
@@ -693,7 +693,7 @@ sitio donde hoy hay un color escrito a mano. Y la sesión del 2026-08-09 le aña
 | 1 | Fusionar los dos `@layer components` en conflicto | ✅ `63b901e` | Ya no existe `tailwind.css`. Los `@layer components` que quedan son **uno por módulo de familia** y no se solapan; las marcas del corte siguen anotadas en `buttons.css:36` y `auth.css:60` |
 | 2 | Eliminar los componentes muertos y su CSS | ✅ `9ebe307` + `331322d` | CSS total 3 997 → **2 054 L**; `AdminTableManager.css` borrado entero |
 | 3 | Colapsar los tokens `--deasy-*` / `--brand-*` | ✅ `6e60d74` | **Cero `--deasy-*` vivos.** Las 4 apariciones que quedan en el árbol son **comentarios** de `tokens.css` (`:44`, `:51`, `:52`, `:92`) que explican el colapso. Un solo juego, y `@theme` (`tokens.css:23-40`) registra 16 colores en Tailwind — **hoy son 22**, tras el colapso del 08-12 |
-| 4 | Cerrar el fork `AdminButton.vue` | ⬜ **abierto** → **fase E** de la 3.ª vuelta | El fichero **sigue vivo**: `frontend/src/modules/admin/components/ui/AdminButton.vue`. Ver abajo: el alcance es más pequeño de lo que decía el plan, y la razón que daba era falsa |
+| 4 | Cerrar el fork `AdminButton.vue` | ✅ **cerrado el 2026-08-14** (tarea F1.3a de la 3.ª vuelta) | El fichero **ya no existe**: 88 L y 11 modificadores fuera. Llevaba 2 regresiones de contraste (3.65:1) y el bug de la variante desconocida. La única mención que queda en el árbol es un comentario en `DossierDocumentActions.vue:94`, que era **su único importador** ~~El fichero **sigue vivo**: `frontend/src/modules/admin/components/ui/AdminButton.vue`. Ver abajo: el alcance es más pequeño de lo que decía el plan, y la razón que daba era falsa |
 | 5 | Migrar los colores hardcodeados | ✅ **cerrado el 2026-08-13** | `647030a` + `2f1a158` dejaron `lint:css` en **0 errores**. Pero el contador ve el CSS, no la app. Ver el desglose abajo |
 | 6 | Las 33 incidencias de contraste (`css:S7924`) | ⬜ **sin medir** → **fase F** de la 3.ª vuelta | No se puede consultar: el SonarQube es local y **no se levantó** en esta auditoría. Ver abajo qué se sabe sin él |
 
