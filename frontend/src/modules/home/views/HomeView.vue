@@ -49,6 +49,7 @@
                   :aria-selected="activeConsolidatedUnitTab === unit.id"
                   @click="selectConsolidatedUnit(unit)"
                 >
+                  <IconBuilding class="deasy-inline-tab__icon" />
                   {{ unit.name }}
                 </button>
               </div>
@@ -153,6 +154,7 @@
                 :aria-selected="activeConsolidatedCargoTab === cargo.id"
                 @click="selectConsolidatedCargo(cargo)"
               >
+                <IconBriefcase class="deasy-inline-tab__icon" />
                 {{ cargo.name }}
               </button>
             </div>
@@ -268,6 +270,7 @@
                   :aria-selected="activeUnitPanelTab === unit.id"
                   @click="activeUnitPanelTab = unit.id"
                 >
+                  <IconBuilding class="deasy-inline-tab__icon" />
                   {{ unit.name }}
                 </button>
               </div>
@@ -343,6 +346,7 @@
                   :aria-selected="activeCargoPanelTab === cargo.id"
                   @click="activeCargoPanelTab = cargo.id"
                 >
+                  <IconBriefcase class="deasy-inline-tab__icon" />
                   {{ cargo.name }}
                 </button>
               </div>
@@ -425,6 +429,7 @@
                 :aria-selected="homeDashTab === 'inicio'"
                 @click="homeDashTab = 'inicio'"
               >
+                <IconHome2 class="deasy-inline-tab__icon" />
                 Inicio
               </button>
               <button
@@ -435,6 +440,7 @@
                 :aria-selected="homeDashTab === 'resumen'"
                 @click="homeDashTab = 'resumen'"
               >
+                <IconChartBar class="deasy-inline-tab__icon" />
                 Resumen
                 <span v-if="homeActions.length" class="deasy-inline-tab__badge" :class="homeDashTab === 'resumen' ? 'deasy-inline-tab__badge--active' : ''">
                   {{ homeActions.length }}
@@ -660,6 +666,7 @@
                   :aria-selected="activeProcessUnitTab === tab.key"
                   @click="activeProcessUnitTab = tab.key"
                 >
+                  <IconBuilding class="deasy-inline-tab__icon" />
                   {{ tab.label }}
                 </button>
               </div>
@@ -1269,6 +1276,7 @@
             :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'summary' }"
             @click="deliverableWorkspaceState.tab = 'summary'"
           >
+            <IconInfoCircle class="deasy-inline-tab__icon" />
             General
           </button>
           <button
@@ -1281,6 +1289,7 @@
             :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'fill' }"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
+            <IconSend class="deasy-inline-tab__icon" />
             Entrega
           </button>
           <button
@@ -1293,6 +1302,7 @@
             :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'signature' }"
             @click="deliverableWorkspaceState.tab = 'signature'"
           >
+            <IconSignature class="deasy-inline-tab__icon" />
             Firmas
           </button>
           <button
@@ -1305,6 +1315,7 @@
             :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'attachments' }"
             @click="deliverableWorkspaceState.tab = 'attachments'"
           >
+            <IconPaperclip class="deasy-inline-tab__icon" />
             Anexos
             <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brand-100 px-1 text-[0.65rem] font-bold text-primary">{{ attachmentsState.items.length }}</span>
           </button>
@@ -2174,33 +2185,37 @@ import {
 } from '@/shared/utils/workspaceNavIcons.js';
 
 import {
-  IconGlobe,
-  IconDownload,
-  IconFileDescription,
-  IconEye,
-  IconSignature,
-  IconUpload,
   IconAlertTriangle,
+  IconArrowBackUp,
   IconArrowLeft,
   IconArrowRight,
   IconBuildingMonument,
   IconBriefcase,
+  IconBuilding,
+  IconChartBar,
   IconCheck,
+  IconChecklist,
   IconChevronDown,
-  IconArrowBackUp,
   IconCircleCheck,
+  IconDownload,
+  IconEye,
   IconFileCheck,
+  IconFileDescription,
   IconFiles,
+  IconGlobe,
+  IconHome2,
   IconInfoCircle,
   IconMessages,
-  IconSend,
   IconMinus,
+  IconPaperclip,
   IconPlayerPlayFilled,
   IconPlus,
   IconRefresh,
-  IconChecklist,
   IconSearch,
+  IconSend,
+  IconSignature,
   IconSquareCheck,
+  IconUpload,
   IconUserCheck,
   IconX
 } from '@tabler/icons-vue';

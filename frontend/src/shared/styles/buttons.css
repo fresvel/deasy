@@ -323,21 +323,13 @@
         @apply bg-primary text-white;
     }
 
-    /* APILADO — el icono encima de la etiqueta, y los segmentos repartiendose el ancho.
+    /* [2026-08-15] AQUI ESTABA `deasy-section-nav--stacked`, Y DURO UN DIA.
      *
-     * El selector de modos del chat es el mismo objeto que este (elegir una seccion de un
-     * conjunto excluyente), pero su panel mide 27,5 rem y tres etiquetas en horizontal no caben.
-     * Esa es la unica diferencia, asi que es un modificador y no un bloque nuevo. Antes estaba
-     * escrito a mano con nueve utilidades y un `:class` ternario que pintaba el activo con
-     * `bg-white` + una sombra arbitraria — o sea, un tercer aspecto de «segmento activo» en la
-     * misma aplicacion. (2026-08-15, censo estructural de G8.) */
-    .deasy-section-nav-group--stacked {
-        @apply flex w-full items-stretch;
-    }
-
-    .deasy-section-nav--stacked {
-        @apply flex-1 flex-col justify-center gap-1 px-1 py-2 text-[0.6875rem] font-semibold;
-    }
+     * Se creo para el selector de modos del chat, tratandolo como un «grupo de botones de
+     * seccion». El dueño lo miro y dijo lo evidente: eso es una pestaña, y todas las pestañas
+     * tienen que verse igual. Tenia razon — elegir el modo del chat y elegir la seccion de un
+     * entregable son la misma accion, asi que el bloque es `deasy-inline-tab` (nav.css) con su
+     * modificador `--stacked`, no un bloque aparte que se le parece. */
 
     @media (hover: hover) {
         .deasy-section-nav:hover {

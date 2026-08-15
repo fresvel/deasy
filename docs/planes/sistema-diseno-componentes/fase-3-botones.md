@@ -801,3 +801,30 @@ horizontal no caben. Eso es un modificador, `--stacked`, no un bloque nuevo.
 
 Resultado: **tres aspectos de «pestaña/segmento activo» pasan a uno**, y los arbitrarios bajan de
 394 a 388.
+
+
+---
+
+## §12 · La pestaña, rediseñada a petición del dueño (2026-08-15)
+
+Al revisar G7/G8 vio lo que el censo no puede ver: **las pestañas del chat y las del modal se
+parecían pero no eran iguales**, y las del chat le gustaban más. Tenía razón en el fondo —elegir el
+modo del chat y elegir la sección de un entregable son la misma acción— así que `deasy-section-nav`
+y su `--stacked`, creados el día anterior, mueren: **hay un solo bloque de pestaña**.
+
+Y de paso pidió tres cosas concretas: seguir la receta de TailAdmin, **con iconos**, y **más altas**.
+
+| | Antes | Ahora |
+|---|--:|--:|
+| Alto | 49 px | **54 px** (62 en la apilada) |
+| Iconos | ninguno | **los 15**, todos de 20 px |
+| Bloques distintos para lo mismo | 3 | **1** |
+
+De TailAdmin se toma el mecanismo de su variante *Underline + icon*: `border-b-2` transparente que
+se tiñe al activarse, dentro de un contenedor con `border-b`. Lo que **no** se toma es su altura
+—sus tabs son `py-2`, 36 px— porque con icono al lado el texto queda apretado y porque estas
+pestañas mandan sobre paneles enteros, no sobre un párrafo. El fondo suave al pasar el ratón viene
+del selector del chat: TailAdmin solo oscurece el texto y sobre 54 px eso no se nota.
+
+El icono va en `.deasy-inline-tab__icon` y no en el atributo **por un motivo medido**: cuando cada
+pestaña traía su `h-4 w-4` o `h-5 w-5`, dos barras contiguas no alineaban.

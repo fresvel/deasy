@@ -49,7 +49,7 @@
             Volver
           </AppButton>
 
-          <nav v-else class="deasy-section-nav-group deasy-section-nav-group--stacked">
+          <nav v-else class="deasy-inline-tabs deasy-inline-tabs--stacked" role="tablist" aria-label="Modo del chat">
             <button
               v-for="mode in modeOptions"
               :key="mode"
@@ -57,11 +57,12 @@
               :title="modeLabels[mode]"
               :aria-label="modeLabels[mode]"
               :aria-pressed="activeMode === mode"
-              class="deasy-section-nav deasy-section-nav--stacked"
-              :class="{ 'deasy-section-nav--active': activeMode === mode }"
+              role="tab"
+              class="deasy-inline-tab deasy-inline-tab--stacked"
+              :class="{ 'deasy-inline-tab--active': activeMode === mode }"
               @click="switchMode(mode)"
             >
-              <component :is="modeIcons[mode]" class="h-5 w-5" :stroke="1.8" />
+              <component :is="modeIcons[mode]" class="deasy-inline-tab__icon" :stroke="1.8" />
               <span>{{ modeLabels[mode] }}</span>
             </button>
           </nav>

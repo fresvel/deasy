@@ -8,8 +8,8 @@
     <!-- Solo plantillas: dos pestañas — Crear una nueva, o Seleccionar una existente (lista filtrable). -->
     <div v-if="createTabEnabled" class="mt-1 mb-3">
       <div class="deasy-inline-tabs" role="tablist" aria-label="Crear o seleccionar plantilla">
-        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'create' }" :aria-selected="activeTab === 'create'" @click="$emit('update:activeTab', 'create')"><span class="truncate">Crear nueva</span></button>
-        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'select' }" :aria-selected="activeTab === 'select'" @click="$emit('update:activeTab', 'select')"><span class="truncate">Seleccionar existente</span></button>
+        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'create' }" :aria-selected="activeTab === 'create'" @click="$emit('update:activeTab', 'create')"><IconPlus class="deasy-inline-tab__icon" /><span class="truncate">Crear nueva</span></button>
+        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'select' }" :aria-selected="activeTab === 'select'" @click="$emit('update:activeTab', 'select')"><IconListSearch class="deasy-inline-tab__icon" /><span class="truncate">Seleccionar existente</span></button>
       </div>
     </div>
 
@@ -309,6 +309,7 @@
 </template>
 
 <script setup>
+import { IconListSearch, IconPlus } from "@tabler/icons-vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";

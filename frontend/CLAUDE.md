@@ -398,6 +398,47 @@ ruta en el DOM**, así que un cambio de orden da diferencias falsas.
    Construir con y sin el cambio y comparar el emitido es más barato que una sesión de navegador y
    más fuerte: si el diff son las líneas que tocaste y nada más, no hay nada que verificar a ojo.
 
+### Cómo se ENTREGA un cambio visual — obligatorio, no cortesía
+
+Verificar no basta: **el dueño tiene que poder ver lo mismo que tú viste, sin adivinar dónde.** Un
+cambio de estilo entregado sin decir dónde mirar es un cambio sin revisar, porque el único
+instrumento que ve un estilo roto es un par de ojos delante de la pantalla.
+
+**Toda entrega de un cambio visual lleva estas cuatro cosas. Sin excepción, y aunque el cambio
+parezca trivial:**
+
+1. **La auditoría** que lo motivó, con su resultado en números — cuántos elementos hay, cuántos no
+   conformaban, cuántos quedan. Un «ya está arreglado» sin cifras no se puede comprobar.
+2. **La comparación antes/después, MEDIDA y no descrita.** Los valores computados que cambiaron
+   (`getComputedStyle`), el diff del CSS construido, o la huella de `scripts/css-huella.mjs`.
+   «Ahora se ve mejor» no es una comparación; «el subrayado pasa de 0 a 2 px en `rgb(70,95,255)`, y
+   las tres barras de esa pantalla miden ya lo mismo» sí lo es.
+3. **La ruta EXACTA para verlo**, con todo lo necesario para llegar:
+   - la **URL completa**, con protocolo y puerto de la pila usada (`https://localhost:8543` para la
+     B, no «localhost» ni «el dev»);
+   - **con qué usuario y contraseña**, porque el mismo cambio no se ve desde todas las cuentas;
+   - **cada clic hasta el elemento**: qué entrada de menú, qué tarjeta, qué botón abre el modal.
+4. **Lo que NO se pudo verificar y por qué**, cuando toque. Si a una pantalla no se llegó porque la
+   base no tenía datos, se dice — así el dueño sabe que un vacío es del entorno y no del cambio.
+
+⚠️ **«Mira los campos», «revisa el admin» o «entra a /home» NO son rutas.** Son tres formas de
+devolverle al dueño el trabajo de encontrar lo que acabas de tocar. Ya pasó dos veces: una revisión
+se perdió porque la ruta valía para dos pantallas distintas, y otra porque la cuenta indicada no
+tenía permiso para ver el cambio.
+
+**Ejemplo de lo que sí vale:**
+
+> `https://localhost:8543` — pila B, por HTTPS (acepta el aviso del certificado).
+> 1. Entra como **usuario**: `1122334455` / `Demo1234!` *(el gestor no sirve aquí: su cuenta tiene 0
+>    procesos en esta base)*
+> 2. `/home` → barra lateral → **Mis procesos**
+> 3. En la tarjeta **«Informe general»**, el icono redondo azul de la esquina — *«Abrir detalle del
+>    entregable»*
+> 4. Arriba del modal: **General · Entrega · Firmas · Anexos**
+
+**Si el cambio toca varios grupos o varias pantallas, se dan las rutas de TODOS.** Enseñar uno y
+callar los otros deja el resto sin revisar, que a efectos prácticos es no haberlos hecho.
+
 ---
 
 ## 5. Recomendaciones de UX/UI
