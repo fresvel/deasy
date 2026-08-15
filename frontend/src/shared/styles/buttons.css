@@ -1,41 +1,45 @@
+/* ══ EL BOTON DE FILTRO MURIO AQUI — 2026-08-14 ═══════════════════════════════════════════
+   Eran `deasy-filter-btn` + `--icon` + cuatro reglas de repintado, y hacian dos cosas:
+
+   1. **Cambiar la geometria**: `h-10 rounded-[10px] px-3.5 font-medium`. Existia porque la
+      base del boton era `rounded-2xl` (16 px) y `font-semibold`, y un filtro no se queria ver
+      asi. Con la base ya en la geometria de TailAdmin —radio 8, peso 500— no queda diferencia
+      que declarar: el filtro es un boton normal.
+
+   2. **Repintar la variante desde fuera**, y esto era peor. Colapsaba CINCO variantes en TRES
+      aspectos: `secondary` y `softNeutral` salian identicos, y `primary` y `softPrimary`
+      tambien. O sea que la prop `variant` era una mentira en dos de cada cinco filtros — se
+      pedia un tono suave y salia un solido de marca.
+
+   Al retirarlo, cada boton pasa a declarar la variante que YA renderizaba: seis se
+   corrigieron (`softNeutral` -> `secondary`, `softPrimary` -> `primary`). Cambio visual cero
+   en esos seis, y ahora el DOM dice la verdad.
+
+   Aqui vivia tambien el dimensionado de `.deasy-filter-btn .deasy-fa-icon`, que ya estaba
+   muerto: la clase se retiro de `FontAwesomeIcon.vue` —que renderiza iconos de Tabler, no
+   FontAwesome— y la regla no podia casar con ningun nodo.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
 @layer components {
-.deasy-filter-btn {
-        @apply inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 py-0 text-sm font-medium shadow-none;
-    }
+/* ── LA GEOMETRIA, ADOPTADA DE TAILADMIN EL 2026-08-14 ──────────────────────────────
+   Su base es `inline-flex items-center gap-2` + `text-sm font-medium` + `rounded-lg` +
+   `shadow-theme-xs` + `transition`. Tres deltas frente a lo que habia, y los tres se
+   notan en los 447 botones a la vez:
 
-    .deasy-filter-btn.deasy-btn--secondary,
-    .deasy-filter-btn.deasy-btn--soft-neutral {
-        border-color: var(--color-line-field);
-        background: var(--color-white);
-        color: var(--color-strong);
-    }
+     radio    16 px (`rounded-2xl`) -> 8 px (`rounded-lg`)
+     peso     600 (`font-semibold`) -> 500 (`font-medium`)
+     sombra   ninguna              -> `shadow-theme-xs`
 
-    .deasy-filter-btn.deasy-btn--outline-primary {
-        border-color: color-mix(in srgb, var(--color-primary) 33%, var(--color-white));
-        background: var(--color-white);
-        color: var(--color-primary);
-    }
+   ⚠️ El radio era el desorden mas visible del sistema: convivian CINCO geometrias —16 px
+   la base, 10 px el filtro, 10 px el boton de accion, 16 el de cerrar—, y cada una existia
+   porque la anterior no le servia. Con una sola, las familias que solo existian para
+   cambiar la forma se quedan sin motivo.
 
-    .deasy-filter-btn.deasy-btn--soft-primary,
-    .deasy-filter-btn.deasy-btn--primary {
-        border-color: transparent;
-        background: var(--color-primary);
-        color: var(--color-white);
-    }
-
-    .deasy-filter-btn--icon {
-        @apply h-10 w-10 rounded-[10px] px-0 py-0 justify-center;
-    }
-
-    /* Aqui dimensionabamos `.deasy-filter-btn .deasy-fa-icon`. La clase se retiro de
-       `FontAwesomeIcon.vue` —que ya renderiza iconos de Tabler, no FontAwesome— y esta regla se
-       quedo sin poder casar con ningun nodo. La caza `css-prune` desde el 2026-08-14. */
-
-    
-}
-@layer components {
+   ⚠️ `min-h-10` se queda en 40 px y NO sube a los 44 de su receta. Su `md` es `px-4 py-3`,
+   pero aqui `--md` es `py-2` y subirlo cambia la altura de fila de cada tabla y cada barra
+   de filtros del proyecto. Es una decision de densidad, no de geometria de boton, y va con
+   el resto de la escala en F5. */
 .deasy-btn {
-        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border font-semibold shadow-none transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
     .deasy-btn--primary {

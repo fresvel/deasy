@@ -203,8 +203,8 @@
             Seleccionados: <span class="font-bold text-body">{{ selectedItems.length }}</span>
           </div>
           <div class="deasy-filter-actions">
-            <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTableFilters">Reset</AppButton>
-            <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
+            <AppButton variant="secondary" size="sm" @click="resetTableFilters">Reset</AppButton>
+            <AppButton variant="primary" size="sm" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
               {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
             </AppButton>
           </div>

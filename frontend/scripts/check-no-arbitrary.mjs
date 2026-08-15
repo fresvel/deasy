@@ -36,7 +36,10 @@ import { join, resolve } from "node:path";
  * A partir de aqui vuelve a ser un trinquete y solo baja. Bajarlo es la fase 5 del plan de la
  * 3.ª vuelta (`docs/planes/sistema-diseno-componentes/`), que es donde se decide la escala.
  */
-const TECHO = { total: 416, "text-": 155, "rounded-": 35, "shadow-": 36 };
+/* 2026-08-14 · 414 / rounded- 33 — mueren los dos `rounded-[10px]` de `deasy-filter-btn` al
+ * adoptar la base la geometria de TailAdmin: ese radio existia SOLO para no ser el 16 px de la
+ * base, y con la base en 8 el filtro dejo de necesitar geometria propia. */
+const TECHO = { total: 414, "text-": 155, "rounded-": 33, "shadow-": 36 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

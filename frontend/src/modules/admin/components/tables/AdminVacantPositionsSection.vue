@@ -34,22 +34,22 @@
               </div>
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
               <div class="deasy-filter-actions">
-                <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
+                <AdminButton variant="secondary" size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
                   <font-awesome-icon icon="times" />
                   <span>Reset</span>
                 </AdminButton>
-                <AdminButton variant="outlinePrimary" size="sm" class-name="deasy-filter-btn" title="Buscar" aria-label="Buscar" @click="$emit('load')">
+                <AdminButton variant="outlinePrimary" size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')">
                   <font-awesome-icon icon="search" />
                   <span>Search</span>
                 </AdminButton>
                 <AdminButton
-                  variant="secondary"
-                  size="sm"
-                  icon-only
-                  class-name="deasy-filter-btn deasy-filter-btn--icon"
-                  :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
-                  :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
-                  @click="showAdvancedFilters = !showAdvancedFilters"
+ variant="secondary"
+ size="sm"
+ icon-only
+                  
+ :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+ :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+ @click="showAdvancedFilters = !showAdvancedFilters"
                 >
                   <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
                 </AdminButton>
@@ -59,7 +59,7 @@
           <div class="deasy-filter-toolbar">
             <div class="deasy-filter-summary"></div>
             <div class="deasy-filter-actions">
-              <AdminButton variant="primary" size="sm" class-name="deasy-filter-btn" title="Refresh" aria-label="Refresh" @click="$emit('load')">
+              <AdminButton variant="primary" size="sm" title="Refresh" aria-label="Refresh" @click="$emit('load')">
                 <font-awesome-icon icon="rotate-right" />
                 <span>Refresh</span>
               </AdminButton>

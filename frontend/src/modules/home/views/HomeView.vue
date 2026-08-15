@@ -136,7 +136,7 @@
                   Entregables visibles: <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
                 </div>
                 <div class="deasy-filter-actions">
-                  <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTaskListFilters">Reset</AppButton>
+                  <AppButton variant="secondary" size="sm" @click="resetTaskListFilters">Reset</AppButton>
                 </div>
               </div>
             </div>
@@ -1221,9 +1221,9 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="softNeutral" class-name="deasy-filter-btn" @click="resetTaskListFilters">Reset</AppButton>
+        <AppButton variant="secondary" @click="resetTaskListFilters">Reset</AppButton>
         <AppButton variant="secondary" @click="closeTaskFiltersModal">Cerrar</AppButton>
-        <AppButton variant="primary" class-name="deasy-filter-btn" @click="closeTaskFiltersModal">Aplicar</AppButton>
+        <AppButton variant="primary" @click="closeTaskFiltersModal">Aplicar</AppButton>
       </template>
     </AppModalShell>
 

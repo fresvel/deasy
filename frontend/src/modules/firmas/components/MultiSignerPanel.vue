@@ -35,13 +35,13 @@
                     class="deasy-filter-search-input"
                   />
                   <AdminButton
-                    variant="secondary"
-                    size="sm"
-                    icon-only
-                    title="Limpiar filtros"
-                    aria-label="Limpiar filtros"
-                    class-name="deasy-filter-btn deasy-filter-btn--icon shrink-0"
-                    @click="resetFilters"
+ variant="secondary"
+ size="sm"
+ icon-only
+ title="Limpiar filtros"
+ aria-label="Limpiar filtros"
+ class-name="shrink-0"
+ @click="resetFilters"
                   >
                     <IconX class="h-4 w-4" stroke-width="2.5" />
                   </AdminButton>
