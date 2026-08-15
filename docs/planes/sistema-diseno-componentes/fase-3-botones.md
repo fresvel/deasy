@@ -139,7 +139,14 @@ deasy-nav-item   deasy-nav-item--active
 ```
 
 **Mueren:** `deasy-filter-btn`, `deasy-auth-button`, los 12 `hope-action-*`, `admin-btn`,
-`deasy-inline-icon-button`, `deasy-hero-back-button`, `graph-icon-btn`, `graph-edge-btn`.
+`deasy-inline-icon-button`, `deasy-hero-back-button`.
+
+⚠️ **Corrección del 2026-08-15.** Esta lista incluía también `graph-icon-btn` y `graph-edge-btn`, y
+eso se escribió **antes** de la regla corregida de §1-bis. Los botones del lienzo tienen geometría
+propia (24 px) y contexto propio: forzarlos a `deasy-btn` sería el mismo error que forzar la ✕ a ser
+una variante. **Se quedan.** Lo que sí es defecto es que el lienzo escriba el mismo botón con
+**tres** nombres —`graph-node__btn`, `graph-icon-btn`, `graph-edge-btn`—, y eso es lo que unifica
+G10.
 
 ⚠️ **Por qué DOS guiones y no uno.** Se consideró `deasy-btn-xxx` (un guion, más corto). No se toma,
 y el motivo es que no son dos estilos de lo mismo: **son dos conceptos**. En BEM, `--` significa «esto
