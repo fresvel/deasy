@@ -42,7 +42,7 @@ import { join, resolve } from "node:path";
 /* 2026-08-14 · 412 / shadow- 35 — el menu de seccion adopta el «button group» de TailAdmin y
  * pierde su `shadow-[var(--focus-ring)]` y su `min-w-[9.5rem]`: la sombra pasa al contenedor
  * (`shadow-theme-xs`, que es escalon de la escala) y el ancho lo da el contenido. */
-const TECHO = { total: 381, "text-": 140, "rounded-": 33, "shadow-": 31 };
+const TECHO = { total: 348, "text-": 138, "rounded-": 25, "shadow-": 19 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

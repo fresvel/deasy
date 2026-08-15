@@ -115,25 +115,14 @@
     /* Pestañas del panel: subrayado, no pildora. El `margin-bottom:-1px` monta el borde de la
        pestaña sobre el del contenedor para que se lean como una sola linea. */
 
-    .deasy-drawer__tab {
-        position: relative;
-        padding: 0.6rem 0.15rem;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--color-muted);
-        border-bottom: 2px solid transparent;
-        margin-bottom: -1px;
-        transition: color 0.15s ease, border-color 0.15s ease;
-    }
-
-    .deasy-drawer__tab:hover {
-        color: var(--color-ink);
-    }
-
-    .deasy-drawer__tab--active {
-        color: var(--color-primary);
-        border-bottom-color: var(--color-primary);
-    }
+    /* [2026-08-15, G1] AQUI ESTABA `deasy-drawer__tab`, Y ERA `deasy-inline-tab` CON OTRO NOMBRE.
+     * Mismo mecanismo exacto —`border-bottom: 2px solid transparent` que se tiñe al activarse,
+     * texto de `--color-muted` a `--color-primary`— y solo se apartaba en los detalles: 0.6rem de
+     * padding en vez de 1, peso 600 en vez de 500.
+     *
+     * ⚠️ El censo de G7 NO la vio, y el motivo importa: sus cinco botones **no llevaban
+     * `role="tab"` ni `aria-selected`**, que es la señal de G7 — o sea que el fallo de estilo y el
+     * de accesibilidad eran el mismo fallo. Al colapsarla se arreglan los dos. */
 
     /* Vista previa del dossier en PDF. Ojo al medirla: `.pdf-preview-frame` y su `iframe`
        van tras un `v-if` que pide un PDF real, asi que hay que inyectarlos a mano. */

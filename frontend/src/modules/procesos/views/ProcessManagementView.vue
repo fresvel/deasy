@@ -160,7 +160,7 @@
               <div v-if="traceabilityTables.length" class="col-span-full mt-2">
                 <button
                   type="button"
-                  class="flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left transition-colors hover:bg-surface"
+                  class="deasy-picker deasy-picker--flat justify-between"
                   @click="traceabilityOpen = !traceabilityOpen"
                 >
                   <span>

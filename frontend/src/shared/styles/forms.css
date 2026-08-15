@@ -65,6 +65,17 @@
         @apply font-semibold text-body;
     }
 
+    /* En pila: las opciones se separan con una linea en vez de con espacio, y por eso pierden el
+       radio (una esquina redondeada dentro de una columna continua deja una muesca). */
+    .deasy-option--stacked {
+        @apply rounded-none border-b border-line last:border-b-0;
+    }
+
+    /* Con dato a la derecha: nombre a la izquierda, cedula o contador al otro extremo. */
+    .deasy-option--split {
+        @apply justify-between;
+    }
+
     .admin-select-field.deasy-filter-control {
         padding-right: 2.75rem;
     }

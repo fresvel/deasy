@@ -26,7 +26,7 @@ const TECHO = 0;
 
 const PULSABLE = /^(button|AppButton|AdminButton|AppCloseButton|AppDeleteButton|BtnSera)$/;
 /* Bloques propios del sistema: un boton que lleva uno NO necesita salir de AppButton */
-const BLOQUE = /^(deasy-btn|deasy-inline-tab|deasy-inline-action|deasy-inline-icon-button|deasy-chip-remove|deasy-pdf-action|deasy-fab|deasy-nav-|deasy-section-nav|deasy-counter-nav|deasy-option|graph-|btnsera)/;
+const BLOQUE = /^(deasy-tile|deasy-picker|deasy-btn|deasy-inline-tab|deasy-inline-action|deasy-inline-icon-button|deasy-chip-remove|deasy-pdf-action|deasy-fab|deasy-nav-|deasy-stepper__|deasy-section-nav|deasy-counter-nav|deasy-option|graph-|btnsera)/;
 
 const ficheros = (d, a = []) => {
   for (const n of readdirSync(d)) {

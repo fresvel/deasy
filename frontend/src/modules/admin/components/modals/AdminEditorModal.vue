@@ -41,7 +41,7 @@
                 v-for="option in inlineFkSuggestions[field.name]"
                 :key="`${field.name}-${option.id}`"
                 variant="plain"
-                class-name="w-full justify-start rounded-none border-0 border-b border-line px-4 py-3 text-left text-sm font-medium text-body last:border-b-0 hover:bg-surface"
+                class-name="deasy-option deasy-option--stacked"
                 @mousedown.prevent="$emit('select-inline-fk-suggestion', field, option)"
               >
                 {{ formatInlineFkOption(field, option) }}

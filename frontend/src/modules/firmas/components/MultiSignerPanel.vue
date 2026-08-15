@@ -131,7 +131,7 @@
             variant="primary"
             :disabled="!canRequestStart"
             @click="requestBatchStart"
-            class-name="w-full justify-center rounded-xl py-3 font-bold shadow-md shadow-blue-light-500/20 transition-all hover:shadow-lg hover:shadow-blue-light-500/30"
+            class-name="w-full justify-center"
           >
             {{ isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
           </AdminButton>

@@ -221,7 +221,7 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="deasy-tile signature-workspace-card xl:col-start-1"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Solicitudes recibidas</h3>
@@ -240,7 +240,7 @@
           id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+          class="deasy-tile signature-workspace-card"
           :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
@@ -264,7 +264,7 @@
           id="signature-launcher-pending"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md xl:col-start-3"
+          class="deasy-tile signature-workspace-card xl:col-start-3"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Bandeja de pendientes</h3>
@@ -544,7 +544,7 @@
             v-for="user in userResults"
             :key="user.id || user._id"
             type="button"
-            class="flex flex-col p-3 border rounded-xl text-left transition w-full"
+            class="deasy-picker deasy-picker--flat flex-col items-start"
             :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectSigner(user)"
           >
@@ -662,7 +662,7 @@
             v-for="certificate in availableCertificates"
             :key="certificate.id"
             type="button"
-            class="w-full rounded-xl border px-3 py-3 text-left transition"
+            class="deasy-picker deasy-picker--flat"
             :class="selectedCertificateId === certificate.id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectedCertificateId = certificate.id"
           >
@@ -797,15 +797,16 @@
           </div>
         </div>
         <div class="relative z-10 w-full md:w-auto">
-          <button 
-            class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-blue-light-600 text-info hover:bg-blue-light-50 hover:border-blue-light-700 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="isValidatingDocument || !validationFile" 
+          <AppButton
+            variant="outlinePrimary"
+            class-name="w-full md:w-auto"
+            :disabled="isValidatingDocument || !validationFile"
             @click="validateDocument"
           >
             <IconRefresh v-if="isValidatingDocument" class="w-4 h-4 animate-spin" />
             <IconShieldCheck v-else class="w-4 h-4" />
             {{ isValidatingDocument ? 'Validando...' : 'Revalidar documento' }}
-          </button>
+          </AppButton>
         </div>
       </div>
 

@@ -46,7 +46,7 @@
       <button
         v-if="data.definitions_count"
         type="button"
-        class="nodrag inline-flex items-center gap-0.5 rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1 transition-colors hover:brightness-95"
+        class="nodrag graph-node__badge graph-node__badge--brand"
         :class="configBadgeClass"
         :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
         @click.stop="data.onToggleConfigs?.(data.id)"

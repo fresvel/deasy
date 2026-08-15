@@ -160,10 +160,10 @@
           </div>
         </header>
 
-        <div class="flex gap-4 border-b border-line px-5">
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'configuraciones' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'configuraciones'">Configuraciones</button>
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'subprocesos' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'subprocesos'">Sub-procesos</button>
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'corridas' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'corridas'">Lanzamientos</button>
+        <div class="deasy-inline-tabs px-5" role="tablist">
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'configuraciones' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'configuraciones'" @click="detailTab = 'configuraciones'">Configuraciones</button>
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'subprocesos' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'subprocesos'" @click="detailTab = 'subprocesos'">Sub-procesos</button>
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'corridas' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'corridas'" @click="detailTab = 'corridas'">Lanzamientos</button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
@@ -309,7 +309,7 @@
           <p class="m-0 mt-0.5">
             <template v-if="drawerHealthWarning.publishedVersion && editable">
               Debería usar la versión publicada
-              <button type="button" class="font-semibold text-primary underline" @click="useVersionInConfig(drawerHealthWarning.publishedVersion)">v{{ drawerHealthWarning.publishedVersion.storage_version }}</button>.
+              <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="useVersionInConfig(drawerHealthWarning.publishedVersion)">v{{ drawerHealthWarning.publishedVersion.storage_version }}</button>.
             </template>
             <template v-else-if="!drawerHealthWarning.publishedVersion">Este entregable no tiene ninguna versión publicada. Publica una o crea una nueva versión.</template>
           </p>

@@ -38,7 +38,7 @@
             v-for="certificate in certificates"
             :key="certificate.id"
             type="button"
-            class="w-full rounded-2xl border px-4 py-4 text-left transition"
+            class="deasy-picker deasy-picker--flat"
             :class="isSelected(certificate.id) ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectCertificate(certificate)"
           >

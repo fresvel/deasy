@@ -67,7 +67,7 @@ for (const ruta of ficheros(SRC)) {
       /* posicion y separacion las decide el contenedor: no cuentan como estilo por fuera */
       const sobra = clases.filter((c) =>
         !/^(absolute|relative|shrink-0|self-|ml-auto|mr-auto|m[trblxy]?-\d|w-full|flex|inline-flex)/.test(c)
-        && !/^(deasy|graph|btnsera)-/.test(c)                      /* clase del sistema: esta en su sitio */
+        && !/deasy-tile|deasy-picker|deasy-stepper__|deasy-nav-avatar|graph-node__badge|^(deasy|graph|btnsera)-/.test(c)                      /* clase del sistema: esta en su sitio */
         && !/^(top-|right-|bottom-|left-|-?translate-|opacity-|group-hover:|z-|transition-opacity|(focus|lg|sm|md):opacity-)/.test(c));  /* posicion: la decide el contenedor */
 
       filas.push({

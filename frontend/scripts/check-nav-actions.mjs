@@ -41,7 +41,7 @@ const TAB_POR_ACCION = /^[\s\w$.]*\b\w*[Tt]ab\w*\s*=\s*/;
 const ZONA_NAV = /\b(deasy-nav-shell|deasy-nav-group|deasy-nav-section|deasy-nav-tree)\b|\brole="navigation"/;
 
 /* Los bloques del sistema que ya son navegacion */
-const BLOQUE_TAB = /^(deasy-inline-tab|deasy-inline-tab--active|admin-related-tabs)$/;
+const BLOQUE_TAB = /^(deasy-tile|deasy-picker|deasy-stepper__|deasy-nav-avatar|graph-node__badge|deasy-inline-tab|deasy-inline-tab--active|admin-related-tabs)$/;
 const BLOQUE_NAV = /^(deasy-nav-item|deasy-nav-item--active|deasy-nav-item--subtle-active|deasy-nav-action|deasy-nav-group-title|deasy-hero-back-button|deasy-section-nav|deasy-section-nav--active|deasy-section-nav--stacked)$/;
 
 const ficheros = (d, a = []) => {

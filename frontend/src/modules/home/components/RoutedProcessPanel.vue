@@ -31,15 +31,13 @@
     </div>
 
     <!-- Pestañas: enviados / recibidos -->
-    <div class="flex items-center gap-1.5 rounded-2xl border border-line/80 bg-white p-1.5">
+    <div class="deasy-section-nav-group w-full">
       <button
         v-for="tab in tabs"
         :key="tab.key"
         type="button"
-        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition"
-        :class="activeTab === tab.key
-          ? 'bg-brand-600 text-white'
-          : 'text-muted hover:bg-surface hover:text-body'"
+        class="deasy-section-nav flex-1 justify-center"
+        :class="{ 'deasy-section-nav--active': activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
         <component :is="tab.icon" class="h-4.5 w-4.5" />

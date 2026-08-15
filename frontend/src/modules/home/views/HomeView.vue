@@ -54,14 +54,14 @@
                 </button>
               </div>
               <div class="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-full border border-brand-300 bg-white px-3.5 py-2 text-sm font-semibold text-primary transition hover:-translate-y-0.5 hover:bg-brand-50"
+                <AppButton
+                  variant="outlinePrimary"
+                  size="sm"
                   @click="openGeneralTaskModal('free')"
                 >
                   <IconPlus class="h-4 w-4" />
                   <span>Nueva tarea</span>
-                </button>
+                </AppButton>
                 <button
                   type="button"
                   class="deasy-hero-back-button"
@@ -193,8 +193,8 @@
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
-                        variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
+                        variant="secondary"
+                        size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir todo' : 'Colapsar todo'"
                         @click="toggleDeliverableProcess"
                       >
@@ -293,7 +293,7 @@
                           v-for="process in unit.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left transition hover:border-blue-light-200 hover:shadow-md"
+                          class="deasy-picker"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -389,7 +389,7 @@
                           v-for="process in pos.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left transition hover:border-blue-light-200 hover:shadow-md"
+                          class="deasy-picker"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -453,7 +453,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+                class="deasy-tile"
                 @click="scrollToProcessNav"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis procesos</h3>
@@ -468,7 +468,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+                class="deasy-tile"
                 :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
                 @click="navigateToGlobalSignaturePage"
               >
@@ -487,7 +487,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="openMySends"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis envíos</h3>
@@ -502,7 +502,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="navigateToDocumentCenterPage"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Centro documental</h3>
@@ -517,7 +517,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="navigateTo('perfil')"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>
@@ -532,7 +532,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-line-strong hover:bg-surface/40 hover:shadow-md"
+                class="deasy-tile"
                 @click="openCargosPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis cargos</h3>
@@ -547,7 +547,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="openUnitsPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis unidades</h3>
@@ -587,7 +587,7 @@
                     v-for="action in homeActions"
                     :key="action.key"
                     type="button"
-                    class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3.5 text-left transition hover:shadow-md"
+                    class="deasy-picker"
                     :class="{
                       'hover:border-amber-200': action.tone === 'warning',
                       'hover:border-blue-light-200': action.tone === 'info',
@@ -727,7 +727,7 @@
                   <section class="overflow-hidden rounded-[2rem] border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="openTaskFiltersModal">
+                        <button type="button" class="deasy-picker group" @click="openTaskFiltersModal">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
                             <IconSearch class="h-5 w-5" />
                           </span>
@@ -735,7 +735,7 @@
                             <span class="text-sm font-bold text-strong">Filtrar tareas</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="navigateToDocumentCenterPage">
+                        <button type="button" class="deasy-picker group" @click="navigateToDocumentCenterPage">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
                             <IconFileDescription class="h-5 w-5" />
                           </span>
@@ -743,7 +743,7 @@
                             <span class="text-sm font-bold text-strong">Centro documental</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="navigateToGlobalSignaturePage">
+                        <button type="button" class="deasy-picker group" @click="navigateToGlobalSignaturePage">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
                             <IconSignature class="h-5 w-5" />
                           </span>
@@ -751,7 +751,7 @@
                             <span class="text-sm font-bold text-strong">Firma global</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface/70" @click="openGeneralTaskModal('free')">
+                        <button type="button" class="deasy-picker group" @click="openGeneralTaskModal('free')">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-line bg-surface/80 text-icon transition-all group-hover:border-line-strong group-hover:bg-surface">
                             <IconPlus class="h-5 w-5" />
                           </span>
@@ -836,8 +836,8 @@
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
-                        variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
+                        variant="secondary"
+                        size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         :title="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         @click="toggleDeliverableProcess"
@@ -2063,7 +2063,7 @@
               <button
                 v-if="canReplacePreviewFillFile"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker group"
                 :disabled="isUploadingDeliverable"
                 @click="openPreviewDeliverableUploadModal"
               >
@@ -2079,7 +2079,7 @@
               <button
                 v-if="canApprovePreviewFillRequest"
                 type="button"
-                class="deasy-alert deasy-alert--success group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker deasy-picker--flat deasy-alert deasy-alert--success"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'approve')"
               >
@@ -2095,7 +2095,7 @@
               <button
                 v-if="canReturnPreviewFillRequest"
                 type="button"
-                class="deasy-alert deasy-alert--warning group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/45 hover:shadow-[0_10px_20px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker deasy-picker--flat deasy-alert deasy-alert--warning"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'return')"
               >
@@ -2109,7 +2109,7 @@
               <button
                 v-if="canRejectPreviewFillRequest"
                 type="button"
-                class="deasy-alert deasy-alert--danger group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50/45 hover:shadow-[0_10px_20px_rgba(244,63,94,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker deasy-picker--flat deasy-alert deasy-alert--danger"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'reject')"
               >

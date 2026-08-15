@@ -179,9 +179,9 @@
         </header>
 
         <!-- Pestañas del panel -->
-        <div class="flex gap-4 border-b border-line px-5">
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'ocupaciones' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'procesos' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('procesos')">Procesos</button>
+        <div class="deasy-inline-tabs px-5" role="tablist">
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'ocupaciones' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'ocupaciones'" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'procesos' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'procesos'" @click="setDetailTab('procesos')">Procesos</button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
@@ -328,7 +328,7 @@
                 <div v-if="personSearching" class="mt-1 px-1 text-[11px] text-muted">Buscando…</div>
                 <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
                   <li v-for="per in personResults" :key="per.id">
-                    <button type="button" class="flex w-full items-center justify-between rounded-xl px-2 py-1 text-left text-xs hover:bg-brand-50" @click="pickPerson(per.id)">
+                    <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
                       <span class="truncate text-body">{{ per.first_name }} {{ per.last_name }}</span>
                       <span class="ml-2 shrink-0 text-muted">{{ per.cedula }}</span>
                     </button>

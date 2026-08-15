@@ -141,4 +141,39 @@
     .deasy-card {
         @apply rounded-2xl border border-line bg-white;
     }
+
+    /* ── DOS SUPERFICIES PULSABLES, sacadas del censo de G1 (2026-08-15) ──────────────────
+       Las dos son `<button>` porque se pulsan, pero **no son botones**: no ejecutan una accion
+       sobre un objeto, LLEVAN a una pantalla o SELECCIONAN un elemento. Por §1-bis no salen de
+       `AppButton` —su caja es una tarjeta, no la caja de 40 px del sistema— y por eso viven
+       aqui, con las superficies, y no en `buttons.css`.
+
+       Lo que si era defecto es que estuvieran copiadas. */
+
+    /* LA BALDOSA — el acceso grande del panel de inicio.
+       Diez copias exactas: siete en `HomeView` («Mis procesos», «Centro de firmas», «Mis envios»,
+       «Centro documental», «Mi dossier», «Mis cargos», «Mis unidades») y tres en `FirmarPdf`
+       («Solicitudes recibidas», «Buscar en BD», «Bandeja de pendientes»). Once utilidades cada
+       una, identicas, incluido el `min-h-[19rem]` que fija la altura de la rejilla. */
+    .deasy-tile {
+        @apply flex h-full min-h-76 flex-col rounded-2xl border border-line bg-surface/50 p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md;
+    }
+
+    /* LA FILA ELEGIBLE — un elemento de una lista que se pulsa para escogerlo.
+       ⚠️ Estaba escrita **doce veces con CUATRO radios distintos** —`rounded-xl`, `rounded-2xl`,
+       `rounded-[1rem]` y `rounded-[1.2rem]`, o sea 12, 16, 16 y 19.2 px— para el mismo objeto y a
+       veces en la misma pantalla. Dos de los cuatro eran valores arbitrarios que existian **para
+       caer entre dos pasos de la escala**, que es exactamente el sintoma que el plan describe en
+       §3.1 para `deasy-icon-box`. Se queda uno: el de la escala. */
+    .deasy-picker {
+        @apply relative flex w-full items-center gap-3 rounded-xl border border-line bg-white px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40;
+        box-shadow: 0 8px 18px rgba(var(--elev-ink-rgb), 0.05);
+    }
+
+    /* Sin relieve: cuando la fila va DENTRO de una tarjeta que ya tiene su sombra, apilar dos
+       elevaciones hace que la de dentro parezca despegada del papel. */
+    .deasy-picker--flat {
+        @apply hover:translate-y-0;
+        box-shadow: none;
+    }
 }

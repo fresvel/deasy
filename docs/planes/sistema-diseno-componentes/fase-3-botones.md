@@ -6,9 +6,10 @@
 
 ## ⓿ · Estado por GRUPO — la tabla que se mira primero
 
-**10 de los 11 grupos cerrados · 338 botones, y los DIEZ con gate de techo 0.**
+# ✅ **LOS 11 GRUPOS CERRADOS · 543 botones · 11 gates de techo 0**
 
-> Solo queda **G1 · acción general** (303), que es el 63 % de todos los botones del sistema.
+> La fase 3 termina el 2026-08-15. Ninguno de los once puede reabrirse en silencio: cada uno
+> tiene su gate encadenado a `pnpm run lint`, y los once están probados en rojo.
 
 > **Los cinco grupos cerrados se recensaron por estructura el 2026-08-15.** El inventario
 > original contaba mal en los cinco: **29→48, 23→28, 26→63, 26→14, 23→27**. Los cinco tienen ya
@@ -17,7 +18,7 @@
 
 | Grupo | Botones | Estado | Dónde quedó |
 |---|--:|:--:|---|
-| **G1** · acción general | 303 | ⬜ | 123 son `<button>` crudo. Es el grueso que queda |
+| **G1** · acción general | **205** | ✅ | Tarea **3.6** · se define por DESCARTE (no es ninguno de los otros diez) + gate `check:general-actions` |
 | **G2** · acción de fila | **48** | ✅ | Tareas 3.4 y **3.4-ter** · censo por estructura + gate `check:row-actions` |
 | **G3** · cerrar diálogo | **63** | ✅ | Tareas 3.5b, 3.5b-bis y **3.5b-ter** · censo por estructura + gate `check:dismiss-actions` |
 | **G4** · paginación | **14** | ✅ | Tareas 3.5b-2a y **3.5b-2c** · censo por estructura + gate `check:paging-actions` |
@@ -423,7 +424,7 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.5b-2c** | **G4 recensado por ESTRUCTURA** + gate `check:paging-actions` | ✅ | Señal: **el @click mueve un índice** (`prevX`/`nextX`, `goToPage`, `++`/`--` sobre él). **14 botones, 3 no conformes**. Los dos «Atrás»/«Siguiente» del arranque llevaban `w-auto px-5` y `w-auto px-6` — **dos paddings distintos en la misma barra**; nace `deasy-auth-button--compact`. El tercero destapó un `AppButton` **sin variante**, que salía sin color | 2026-08-15 |
 | **3.5b-2d** | **G5 recensado por ESTRUCTURA** + gate `check:destructive-actions` | ✅ | Señal: **el @click invoca un borrado**. Buscar el verbo solo como *prefijo* perdía 5 de 19 (`requestDeleteField`, `handleAttachmentDelete`, `confirmDeleteEdge`). **27 botones**. Sale el **gemelo rojo de `deasy-pdf-action`** en `SignatureBox`, que G2 no vio por no estar en un `v-for` | 2026-08-15 |
 | **3.5c** | **G9 · auth** · **G10 · solo icono** · **G11 · envío** | ✅ | **20 · 104 · 5**, no 9 · 6 · 2. Muere `deasy-auth-button`, **la quinta geometría** —la única que sobrevivió a 3.3— y con ella `--gradient-angled` (sin otro consumidor) y **dos reglas fuera de capa** de `overrides.css`. G10 tenía **104, no 6**: el inventario contó los que ya usaban el componente. Nacen `deasy-btn--block`, `--field` y `deasy-fab`. Arbitrarios **387→381**, colores **238→235** | 2026-08-15 |
-| **3.6** | G1 · los 123 `<button>` crudos de acción general | ⬜ | — | — |
+| **3.6** | G1 · acción general | ✅ | **205**, no 303: los otros diez grupos ya se habían llevado el resto. **66 no conformes**. Nacen `deasy-tile` (la baldosa del panel, **10 copias exactas**) y `deasy-picker` (la fila elegible, **12 copias con CUATRO radios**). Muere `deasy-drawer__tab`, que era `deasy-inline-tab` con otro nombre — G7 no lo vio porque **le faltaba `role="tab"`**, o sea que el fallo de estilo y el de accesibilidad eran el mismo. Cae otro helper de clases en JS (`stepButtonClass`). Arbitrarios **360→348**, colores **231→225** | 2026-08-15 |
 | **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ✅ | **G7: 14 · G8: 15.** Dos señales: la pestaña **selecciona una vista de un conjunto excluyente** (`role="tab"`/`aria-selected`), la navegación **vive dentro de una estructura de navegación**. HomeView tenía **un segundo estilo de pestaña** —tipo carpeta— con sus colores **en JavaScript** (`getDeliverableWorkspaceTabClass`, retirada); colapsa sobre `deasy-inline-tab`. El selector de modos del chat era un **tercer aspecto de «segmento activo»**: pasa a `deasy-section-nav--stacked`. Arbitrarios **394→388** | 2026-08-15 |
 | **3.8** | `BtnDelete` y `BtnSera` absorbidos o justificados | 🟡 | **`BtnDelete` cerrado en 3.5b-2b**: justificado como componente propio (`AppDeleteButton`) por las 3 señales de §1-bis, y reescrito. Falta `BtnSera` | 2026-08-15 |
 
@@ -892,3 +893,73 @@ fila — lo único que `deasy-auth-button` aportaba de verdad), **`--field`** (e
 campo que tiene al lado: 52 px, que **no** es un tamaño del sistema sino una medida de alineación) y
 **`deasy-fab`**, el botón flotante del chat, que va `fixed` sobre el contenido y por eso no puede
 compartir la caja del sistema.
+
+---
+
+## §14 · G1 — el grupo que se define por descarte, y el cierre de la fase (2026-08-15)
+
+Los otros diez tienen señal propia. **G1 no**: G1 es «un botón que ejecuta algo y no es ninguno de
+los otros diez». Es el grupo más grande y precisamente por eso el que menos se puede describir.
+
+⚠️ **Definirse por descarte no lo convierte en cajón de sastre.** Si un botón de aquí resulta tener
+señal propia —se repite en una lista, cierra algo, mueve un índice— pertenece a otro grupo y hay que
+**moverlo**, no ensancharle a G1 la definición. Es lo que pasó con los paneles de los grafos:
+parecían G1 y eran G2.
+
+**El inventario decía 303. Son 205**, porque los otros diez ya se habían llevado el resto. De ellos,
+**66 no conformaban**.
+
+### Dos superficies que estaban copiadas
+
+Ninguna de las dos es un botón —no ejecutan una acción sobre un objeto, **llevan** a una pantalla o
+**seleccionan** un elemento— así que por §1-bis no salen de `AppButton` y viven en `surfaces.css`:
+
+- **`deasy-tile`**, la baldosa del panel de inicio: **diez copias exactas** de once utilidades, siete
+  en `HomeView` y tres en `FirmarPdf`. Y el mismo panel usaba **dos colores de hover distintos**
+  (azul en siete, brand en tres), que no era diseño sino descuido.
+- **`deasy-picker`**, la fila elegible: **doce copias con CUATRO radios** —`rounded-xl`,
+  `rounded-2xl`, `rounded-[1rem]` y `rounded-[1.2rem]`, o sea 12, 16, 16 y 19.2 px— para el mismo
+  objeto y a veces en la misma pantalla. **Dos de los cuatro eran arbitrarios que existían para caer
+  entre dos pasos de la escala**, exactamente el síntoma que §3.1 describe para `deasy-icon-box`.
+
+### Una tercera familia de pestañas, y por qué G7 no la vio
+
+`deasy-drawer__tab` era **`deasy-inline-tab` con otro nombre**: mismo `border-bottom: 2px` que se
+tiñe al activarse, mismo paso de `--color-muted` a `--color-primary`. Se apartaba en los detalles
+(0.6 rem de padding, peso 600).
+
+**El censo de G7 no la encontró, y el motivo importa: a sus cinco botones les faltaba `role="tab"` y
+`aria-selected`** — que es justo la señal de G7. O sea que el fallo de estilo y el de accesibilidad
+eran el mismo fallo, y colapsarla arregla los dos. G7 sube de 15 a 20.
+
+### Y otro helper de clases en JavaScript
+
+`stepButtonClass` devolvía cadenas de Tailwind desde el composable del wizard, igual que
+`getDeliverableWorkspaceTabClass` en §11. Van dos en dos grupos distintos, y las dos invisibles para
+todos los gates de CSS: no están en un `.css` ni en un `class=` estático. Es material de la **fase 8**
+apareciendo dentro de la 3, y conviene contarlo cuando se planifique aquella.
+
+---
+
+# La fase 3 cierra — 11 grupos, 543 botones, 11 gates
+
+| Grupo | Señal estructural | Nº |
+|---|---|--:|
+| **G1** · acción general | **no es ninguno de los otros diez** | 205 |
+| **G2** · acción de fila | está dentro de un `v-for` | 50 |
+| **G3** · cerrar | hace desaparecer su contenedor | 63 |
+| **G4** · paginación | mueve un índice | 14 |
+| **G5** · destructivo | invoca un borrado | 27 |
+| **G6** · filtro | está dentro de `deasy-filter-*` | 28 |
+| **G7** · pestaña | selecciona una vista excluyente | 20 |
+| **G8** · navegación | está dentro de una estructura de navegación | 14 |
+| **G9** · auth | vive en `modules/auth/` | 20 |
+| **G10** · solo icono | su cuerpo no tiene texto | 105 |
+| **G11** · envío | `type="submit"` | 5 |
+
+**El inventario original contaba mal en los once.** No por descuido al contar, sino porque **contar
+«botones que se parecen» no es contar «botones que hacen lo mismo»** — y la única forma fiable de
+saber lo segundo resultó ser buscar la señal estructural de cada grupo, que es distinta en cada uno.
+
+Los once tienen gate de techo 0 encadenado a `pnpm run lint`, y los once se probaron en rojo antes
+de aceptarse.

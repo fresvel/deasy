@@ -237,4 +237,22 @@
         @apply appearance-none;
     }
 
+
+    /* EL PASO DE UN ASISTENTE — la fila numerada de `AdminProcessWizardShell`.
+       No es una pestaña (no selecciona una vista de un panel: marca en que punto de una
+       SECUENCIA estas, y los pasos futuros pueden estar bloqueados), asi que no colapsa sobre
+       `deasy-inline-tab`. (2026-08-15, G1.) */
+    .deasy-stepper__step {
+        @apply flex min-w-30 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-muted transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .deasy-stepper__step--active {
+        @apply bg-white font-semibold text-primary shadow-theme-xs;
+    }
+
+    /* EL AVATAR PULSABLE de la barra lateral colapsada. Va sobre fondo oscuro, como el resto de
+       `deasy-nav-*`, y por eso sus colores son blancos con alfa y no tokens de superficie. */
+    .deasy-nav-avatar {
+        @apply relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-1.5 text-white transition-all hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-white/18;
+    }
 }

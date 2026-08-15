@@ -40,8 +40,8 @@
         <div class="mt-4">
           <AppButton
             v-if="view === 'conversation'"
-            variant="plain"
-            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3.5 text-sm font-semibold text-icon transition hover:border-line-strong hover:bg-surface hover:text-navy"
+            variant="secondary"
+            size="sm"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
@@ -111,7 +111,7 @@
                     v-for="(attachment, attachmentIndex) in message.attachments"
                     :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
                     type="button"
-                    class="inline-flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-xs font-semibold"
+                    class="deasy-picker deasy-picker--flat justify-between"
                     :class="Number(message.sender_person_id) === Number(currentPersonId)
                       ? 'border-blue-light-500 bg-blue-light-600 text-white hover:bg-blue-light-800'
                       : 'border-line bg-surface text-body hover:bg-surface'"
@@ -196,7 +196,7 @@
                 v-for="item in filteredThreadItems"
                 :key="item.id"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
+                class="deasy-picker deasy-picker--flat"
                 @click="openThreadItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -231,7 +231,7 @@
                 v-for="item in filteredUnitItems"
                 :key="item.unitId"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
+                class="deasy-picker deasy-picker--flat"
                 @click="openUnitItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">

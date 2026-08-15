@@ -18,8 +18,8 @@
         v-for="(step, index) in steps"
         :key="step.key"
         type="button"
-        class="group flex flex-1 min-w-[7.5rem] items-center gap-2 rounded-xl px-3 py-2 text-left transition"
-        :class="stepButtonClass(step, index)"
+        class="deasy-stepper__step group"
+        :class="{ 'deasy-stepper__step--active': step.key === currentStep }"
         :disabled="isStepLocked(step, index)"
         @click="$emit('go-to-step', step.key)"
       >
@@ -117,11 +117,10 @@ const isStepComplete = (step) => {
 const isStepLocked = (step, index) =>
   Boolean(step.locked || step.disabled || (props.lockAfterFirstUntilContext && index > 0 && !hasDefinition.value));
 
-const stepButtonClass = (step, index) => {
-  if (step.key === props.currentStep) return "bg-white ring-1 ring-brand-300";
-  if (isStepLocked(step, index)) return "opacity-50 cursor-not-allowed";
-  return "hover:bg-white/70";
-};
+/* `stepButtonClass` se retiro el 2026-08-15 (G1): devolvia clases de Tailwind en una cadena, o
+   sea colores viviendo en JavaScript — invisibles para todos los gates de CSS. Las tres ramas que
+   tenia las cubre ahora `deasy-stepper__step`: el activo con `--active`, el bloqueado con el
+   `:disabled` que el propio boton ya declara, y el resto con su `:hover`. */
 const stepBadgeClass = (step, index) => {
   if (isStepComplete(step)) return "bg-emerald-500 text-white";
   if (step.key === props.currentStep) return "bg-brand-500 text-white";

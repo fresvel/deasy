@@ -30,7 +30,7 @@
     <p v-if="data.templatesCount" class="m-0 mt-1">
       <button
         type="button"
-        class="nodrag inline-flex items-center gap-0.5 rounded bg-brand-50 px-1 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-brand-200 transition-colors hover:bg-brand-100"
+        class="nodrag graph-node__badge graph-node__badge--brand"
         :title="data.templatesExpanded ? 'Ocultar entregables' : 'Mostrar entregables'"
         @click.stop="data.onToggleTemplates?.(data.definition_id)"
       >

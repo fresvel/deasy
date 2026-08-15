@@ -52,7 +52,7 @@
       <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
           <span class="deasy-eyebrow">Elabora (entrega) *</span>
-          <button type="button" class="text-xs font-semibold text-primary hover:text-primary" @click="openFlowPicker('entrega')">+ Agregar</button>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('entrega')">+ Agregar</button>
         </div>
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
           <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
@@ -66,7 +66,7 @@
       <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
           <span class="deasy-eyebrow">Firma (pasos en orden)</span>
-          <button type="button" class="text-xs font-semibold text-primary hover:text-primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
         </div>
         <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
           <div class="flex items-center justify-between gap-2">
@@ -98,9 +98,9 @@
         <p class="m-0 text-[0.7rem] font-semibold text-primary">
           {{ flowPickerTarget === 'entrega' ? 'Quién elabora' : (flowPickerTarget === 'firma:new' ? 'Nuevo paso de firma' : 'Añadir firmante al paso') }}
         </p>
-        <div class="inline-flex self-start deasy-card p-0.5 text-xs font-semibold">
-          <button type="button" :class="flowPickerMode === 'person' ? 'bg-brand-600 text-white' : 'text-muted'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'person'">Persona</button>
-          <button type="button" :class="flowPickerMode === 'cargo' ? 'bg-brand-600 text-white' : 'text-muted'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'cargo'">Por cargo</button>
+        <div class="deasy-section-nav-group self-start">
+          <button type="button" class="deasy-section-nav" :class="{ 'deasy-section-nav--active': flowPickerMode === 'person' }" @click="flowPickerMode = 'person'">Persona</button>
+          <button type="button" class="deasy-section-nav" :class="{ 'deasy-section-nav--active': flowPickerMode === 'cargo' }" @click="flowPickerMode = 'cargo'">Por cargo</button>
         </div>
 
         <div v-if="flowPickerMode === 'person'" class="relative flex flex-col gap-1">
@@ -114,7 +114,7 @@
           />
           <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
             <li v-for="person in recipientResults" :key="`fp-${person.id}`">
-              <button type="button" class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-body hover:bg-blue-light-50" @click="addFlowPerson(person)">
+              <button type="button" class="deasy-option" @click="addFlowPerson(person)">
                 {{ person.full_name }}
                 <span class="text-xs text-muted">· {{ person.cedula || person.email || '' }}</span>
               </button>
@@ -134,7 +134,7 @@
               <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
             </select>
           </div>
-          <button type="button" class="self-start rounded-2xl bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</button>
+          <AppButton variant="primary" size="sm" class-name="self-start" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</AppButton>
         </div>
       </div>
     </section>

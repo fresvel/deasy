@@ -70,7 +70,7 @@ for (const ruta of ficheros(SRC)) {
       variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z]+)"/) || [, null])[1],
       dinamica: /:variant=/.test(attrs), sobra,
       /* Los bloques del sistema que YA son destructivos por si mismos */
-      bloqueRojo: clases.some((c) => /^(deasy-inline-action--danger|deasy-chip-remove|deasy-pdf-action--danger|graph-edge-btn--danger|graph-icon-btn--danger)$/.test(c)),
+      bloqueRojo: clases.some((c) => /^(deasy-tile|deasy-picker|deasy-stepper__|deasy-nav-avatar|graph-node__badge|deasy-inline-action--danger|deasy-chip-remove|deasy-pdf-action--danger|graph-edge-btn--danger|graph-icon-btn--danger)$/.test(c)),
       sistema: clases.some((c) => /^(deasy|graph)-/.test(c)),
     });
   }
