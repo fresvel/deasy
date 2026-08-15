@@ -82,9 +82,13 @@ const variantClassMap = {
   softSuccess: "deasy-btn--soft-success",
   softWarning: "deasy-btn--soft-warning",
   softDanger: "deasy-btn--soft-danger",
-  /* [F3.4 2026-08-14] Los dos tonos que le faltaban a la familia suave, y que existian solo
-     dentro de `hope-action-*`: el azul de «ver» y el indigo de «subir/versionar/descargar». Con
-     ellos, los 12 botones de accion de tabla colapsan a variantes y su familia entera muere. */
+  /* [F3.4 2026-08-14] `softInfo` y `softActionUpload` son los dos tonos que le faltaban a la
+     familia suave: el azul de «ver» y el indigo de «subir/versionar/descargar». Existian solo
+     dentro de `hope-action-*`, y con ellos los 12 botones de accion colapsaron a variantes.
+
+     El tratamiento se decidio en el navegador, comparando los cuatro pintados sobre la tabla de
+     personas (178 botones a la vez): el solido se probo y se descarto — cada boton se leia mejor,
+     pero la columna entera se convertia en una franja de color que pesaba mas que los datos. */
   softInfo: "deasy-btn--soft-info",
   softActionUpload: "deasy-btn--soft-action-upload",
   success: "deasy-btn--success",

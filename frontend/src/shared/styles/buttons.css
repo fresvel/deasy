@@ -93,12 +93,43 @@
 
        ⚠️ `--soft-neutral` NO entra en la receta: su gris no es un estado, no se deriva de
        un token de color y su hover ya vive en la escala de superficie. */
-    .deasy-btn--soft-primary { --tone: var(--color-primary); }
-    .deasy-btn--soft-success { --tone: var(--color-success); }
-    .deasy-btn--soft-warning { --tone: var(--color-warning); }
-    .deasy-btn--soft-danger  { --tone: var(--color-danger); }
-    .deasy-btn--soft-info   { --tone: var(--color-info); }
-    .deasy-btn--soft-action-upload { --tone: var(--color-action-upload); }
+    /* Cada variante declara TRES piezas, y cada una tiene su trabajo:
+         --tone         el color del sistema (paso -700). Es el que se usa con TEXTO encima.
+         --tone-soft    el relleno del badge de TailAdmin: su paso -50 REAL, no una mezcla.
+         --tone-bright  el paso -600, el color de icono de su badge. Mas vivo que el -700. */
+    .deasy-btn--soft-primary {
+        --tone: var(--color-primary);
+        --tone-soft: var(--color-brand-50);
+        --tone-bright: var(--color-brand-600);
+    }
+    .deasy-btn--soft-success {
+        --tone: var(--color-success);
+        --tone-soft: var(--color-success-50);
+        --tone-bright: var(--color-success-600);
+    }
+    .deasy-btn--soft-warning {
+        --tone: var(--color-warning);
+        --tone-soft: var(--color-warning-50);
+        --tone-bright: var(--color-warning-600);
+    }
+    .deasy-btn--soft-danger {
+        --tone: var(--color-danger);
+        --tone-soft: var(--color-error-50);
+        --tone-bright: var(--color-error-600);
+    }
+    .deasy-btn--soft-info {
+        --tone: var(--color-info);
+        --tone-soft: var(--color-blue-light-50);
+        /* ⚠️ SU BADGE USA `blue-light-500` AQUI, y es el unico de los cinco que no vale: sobre
+           su propio `-50` da **2.59** y un icono pide 3:1. `-600` da 3.75. Es la misma
+           desviacion que ya hace el tag, y por el mismo motivo. */
+        --tone-bright: var(--color-blue-light-600);
+    }
+    .deasy-btn--soft-action-upload {
+        --tone: var(--color-action-upload);
+        --tone-soft: var(--color-brand-50);
+        --tone-bright: var(--color-brand-600);
+    }
 
     /* ⚠️ EL RELLENO DE REPOSO TIENE DOS VALORES, y no es un matiz: se lo come el contenido que
        lleva encima. §2.4 de `frontend/CLAUDE.md`, medido — **6 % si encima va TEXTO** (que pide
@@ -124,30 +155,62 @@
         color: var(--tone);
     }
 
+    /* ── EL BOTON DE ICONO SUAVE ES EL BADGE DE TAILADMIN ────────────────────────────
+       Adoptado el 2026-08-14 despues de comparar cuatro tratamientos en el navegador. Su
+       badge claro es `bg-{fam}-50` + `text-{fam}-600` **y NO lleva borde**; lo que teniamos
+       era un relleno DERIVADO con `color-mix` al 10 %, que sale mas gris que su paso `-50`
+       —`#e6f2ed` frente a `#ecfdf3`— y un icono en el `-700`, mas apagado. Se notaba a
+       simple vista, y por eso el dueño lo pidió.
+
+       ⚠️ POR QUE SOLO EL DE ICONO. Encima de un boton suave CON TEXTO va texto, que pide
+       4.5:1, y el `-600` sobre el `-50` da entre 3.34 y 4.44: no llega. Un icono pide 3:1 y
+       si llega. Es el mismo reparto que ya hace `--tone-fill`, y la razon es la misma: lo
+       que decide el color no es la variante, es lo que lleva encima.
+
+       ⚠️ Y POR QUE SIN BORDE. Derivar el borde al 71 % de un tono MAS CLARO lo deja por
+       debajo del minimo: con el `-600`, success da 2.52, warning 2.41 e info 2.64 contra la
+       fila blanca. O borde con el tono oscuro, o sin borde con el claro — y el badge de
+       TailAdmin no lo lleva. Lo que identifica el control pasa a ser el icono, que queda
+       entre 3.34 y 5.83.
+
+       Contraste medido, icono sobre su relleno: success 3.54 · danger 4.44 · warning 3.34 ·
+       info 3.75 · subir 5.83. Los cinco por encima de 3:1. */
+    .deasy-btn--icon.deasy-btn--soft-primary,
+    .deasy-btn--icon.deasy-btn--soft-success,
+    .deasy-btn--icon.deasy-btn--soft-warning,
+    .deasy-btn--icon.deasy-btn--soft-danger,
+    .deasy-btn--icon.deasy-btn--soft-info,
+    .deasy-btn--icon.deasy-btn--soft-action-upload {
+        border-color: transparent;
+        background: var(--tone-soft);
+        color: var(--tone-bright);
+    }
+
     .deasy-btn--soft-neutral {
         @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-gray-100 hover:text-navy;
     }
 
-    /* ── LAS DOS SOLIDAS ─────────────────────────────────────────────────────────────
+    /* ── LAS SOLIDAS ────────────────────────────────────────────────────────────────
        ⚠️ `--success` llevaba `emerald-600`, que contra su propio texto blanco da 3.65:1
        y NO llega al 4.5 de AA. `--color-success` da 5.49. `--danger` iba de `red-600`
-       (4.77) a `--color-danger` (6.57). Las dos suben. */
-    .deasy-btn--success {
-        @apply text-white;
-        border-color: var(--color-success);
-        background: var(--color-success);
-    }
+       (4.77) a `--color-danger` (6.57). Las dos suben.
 
-    .deasy-btn--warning {
-        @apply text-white;
-        border-color: var(--color-warning);
-        background: var(--color-warning);
-    }
+       Mismo eje `--tone` que las suaves: cada variante declara SOLO su token y la receta se
+       escribe una vez. Eran tres cuerpos identicos salvo el nombre del color.
 
+       ⚠️ `--primary` se queda FUERA de la lista a proposito: no tiene `:hover` propio, y
+       meterlo aqui le daria uno. Eso repinta el hover de todos los primarios de la app, que
+       no es lo que esta tarea vino a hacer. */
+    .deasy-btn--success  { --tone: var(--color-success); }
+    .deasy-btn--warning  { --tone: var(--color-warning); }
+    .deasy-btn--danger   { --tone: var(--color-danger); }
+
+    .deasy-btn--success,
+    .deasy-btn--warning,
     .deasy-btn--danger {
         @apply text-white;
-        border-color: var(--color-danger);
-        background: var(--color-danger);
+        border-color: var(--tone);
+        background: var(--tone);
     }
 
     /* ── EL HOVER DE LAS SIETE, EN UN SITIO ──────────────────────────────────────────
@@ -171,25 +234,32 @@
             color: color-mix(in srgb, var(--tone) 85%, var(--black));
         }
 
+        /* El de icono no recupera el borde al pasar el raton: intensifica el relleno y
+           oscurece el icono, que es la direccion de §5.2 —el mismo color, mas presente— sin
+           introducir un limite que en reposo no existe. El 16 % derivado queda por debajo del
+           paso `-50`, asi que el hover se ve mas, no menos. */
+        .deasy-btn--icon.deasy-btn--soft-primary:hover,
+        .deasy-btn--icon.deasy-btn--soft-success:hover,
+        .deasy-btn--icon.deasy-btn--soft-warning:hover,
+        .deasy-btn--icon.deasy-btn--soft-danger:hover,
+        .deasy-btn--icon.deasy-btn--soft-info:hover,
+        .deasy-btn--icon.deasy-btn--soft-action-upload:hover {
+            border-color: transparent;
+            background: color-mix(in srgb, var(--tone) 16%, var(--color-white));
+            color: color-mix(in srgb, var(--tone) 85%, var(--black));
+        }
+
         .deasy-btn--outline-danger:hover {
             border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
             background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
             color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
         }
 
-        .deasy-btn--success:hover {
-            border-color: color-mix(in srgb, var(--color-success) 85%, var(--black));
-            background: color-mix(in srgb, var(--color-success) 85%, var(--black));
-        }
-
-        .deasy-btn--warning:hover {
-            border-color: color-mix(in srgb, var(--color-warning) 85%, var(--black));
-            background: color-mix(in srgb, var(--color-warning) 85%, var(--black));
-        }
-
+        .deasy-btn--success:hover,
+        .deasy-btn--warning:hover,
         .deasy-btn--danger:hover {
-            border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
-            background: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+            border-color: color-mix(in srgb, var(--tone) 85%, var(--black));
+            background: color-mix(in srgb, var(--tone) 85%, var(--black));
         }
     }
 
