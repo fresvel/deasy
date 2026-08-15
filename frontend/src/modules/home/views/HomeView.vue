@@ -1112,7 +1112,7 @@
         </section>
       </div>
       <template #footer>
-        <AppButton variant="secondary" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
+        <AppButton variant="cancel" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
           Cancelar
         </AppButton>
         <AppButton
@@ -1682,7 +1682,7 @@
               </AppButton>
               <AppButton
                 v-if="canCancelFillRequest"
-                variant="softNeutral"
+                variant="cancel"
                 size="sm"
                 :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
@@ -1926,7 +1926,7 @@
         />
       </div>
       <template #footer>
-        <AppButton variant="secondary" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">
+        <AppButton variant="cancel" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">
           Cancelar
         </AppButton>
         <AppButton variant="primary" :disabled="!selectedDeliverableUploadFile || isUploadingDeliverable" @click="submitDeliverableUpload">
@@ -2022,7 +2022,7 @@
         </p>
       </div>
       <template #footer>
-        <AppButton variant="secondary" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
+        <AppButton variant="cancel" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
           Cancelar
         </AppButton>
         <AppButton variant="warning" :disabled="deliverableResetState.submitting" @click="submitDeliverableReset">

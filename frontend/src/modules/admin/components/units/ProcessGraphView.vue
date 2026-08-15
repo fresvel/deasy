@@ -148,9 +148,7 @@
             <button v-if="editable" type="button" class="text-muted transition-colors hover:text-primary" title="Editar datos del proceso" @click="openEditModal(detailProcess.id)">
               <IconPencil class="h-5 w-5" />
             </button>
-            <button type="button" class="text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeDetail">
-              <IconX class="h-5 w-5" />
-            </button>
+            <AppCloseButton @click="closeDetail" />
           </div>
         </header>
 
@@ -270,9 +268,7 @@
               {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
             </p>
           </div>
-          <button type="button" class="text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeTemplateVersions">
-            <IconX class="h-5 w-5" />
-          </button>
+          <AppCloseButton @click="closeTemplateVersions" />
         </div>
         <div v-if="editable" class="flex flex-wrap gap-2 border-b border-line px-4 py-2.5">
           <AppButton variant="secondary" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
@@ -330,6 +326,7 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
@@ -343,7 +340,7 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
-import { IconX, IconPencil, IconArrowLeft, IconRefresh, IconDownload, IconPlus } from "@tabler/icons-vue";
+import { IconPencil, IconArrowLeft, IconRefresh, IconDownload, IconPlus } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
 import ProcessConfigNode from "./ProcessConfigNode.vue";
 import ProcessTemplateNode from "./ProcessTemplateNode.vue";

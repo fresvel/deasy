@@ -326,21 +326,14 @@
               <div v-if="errorMessage" class="deasy-alert deasy-alert--danger mt-5 flex">
                 <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
                 <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
-                <button
-                  type="button"
-                  class="deasy-inline-icon-button ml-3 h-8 w-8 text-red-400 hover:bg-red-100 hover:text-danger"
-                  aria-label="Cerrar alerta"
-                  @click="errorMessage = ''"
-                >
-                  <IconX class="h-5 w-5" />
-                </button>
+                <AppCloseButton class="ml-3" label="Cerrar alerta" @click="errorMessage = ''" />
               </div>
             </Transition>
 
             <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row">
-              <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg w-full sm:w-1/2" @click="goToLogin">
+              <AppButton variant="cancel" size="lg" class-name="w-full sm:w-1/2" @click="goToLogin">
                 Cancelar
-              </button>
+              </AppButton>
               <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg w-full sm:w-1/2">
                 Crear cuenta
                 <IconArrowRight class="h-5 w-5" />
@@ -378,6 +371,7 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, watch, onMounted, onUnmounted, useId } from "vue";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";

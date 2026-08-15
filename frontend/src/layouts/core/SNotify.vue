@@ -27,13 +27,7 @@
           <IconBellFilled class="h-5 w-5 text-info" />
           <h3 class="m-0 text-sm font-semibold leading-tight">Notificaciones</h3>
         </div>
-        <button
-          class="rounded-2xl p-1 text-muted transition hover:bg-surface hover:text-icon focus:outline-none focus:ring-2 sm:hidden"
-          aria-label="Cerrar notificaciones"
-          @click="$emit('close')"
-        >
-          <IconX class="h-5 w-5" />
-        </button>
+        <AppCloseButton class="sm:hidden" label="Cerrar notificaciones" @click="$emit('close')" />
       </header>
 
       <div class="custom-scrollbar flex max-h-[60vh] flex-1 flex-col overflow-y-auto p-3">
@@ -55,7 +49,8 @@
 </template>
 
 <script setup>
-import { IconBellFilled, IconX, IconInbox } from "@tabler/icons-vue";
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
+import { IconBellFilled, IconInbox } from "@tabler/icons-vue";
 
 defineProps({
   show: {

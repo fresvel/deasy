@@ -35,15 +35,7 @@
             </div>
           </div>
 
-          <AppButton
-            variant="plain"
-            class-name="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-surface hover:text-body"
-            aria-label="Cerrar chat"
-            title="Cerrar chat"
-            @click="closePanel"
-          >
-            <IconX class="h-5 w-5" />
-          </AppButton>
+          <AppCloseButton class="shrink-0" label="Cerrar chat" @click="closePanel" />
         </div>
 
         <div class="mt-4">
@@ -297,6 +289,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
+import AppCloseButton from '@/shared/components/buttons/AppCloseButton.vue';
 import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
 import realtimeClient from '@/core/services/realtimeClient.js';
 import {

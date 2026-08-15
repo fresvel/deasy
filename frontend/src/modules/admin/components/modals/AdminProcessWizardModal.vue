@@ -148,7 +148,7 @@
     <div v-show="currentStep === 'activate'"><slot name="activate" /></div>
 
     <template #footer>
-      <AdminButton variant="cancel" @click="$emit('close')">Cerrar</AdminButton>
+      <AdminButton variant="secondary" @click="$emit('close')">Cerrar</AdminButton>
       <AdminButton v-if="currentStep !== 'definition'" variant="secondary" :disabled="prevDisabled" @click="goPrev">Atrás</AdminButton>
       <AdminButton
         v-if="currentStep === 'definition'"

@@ -36,7 +36,6 @@
       </div>
     </div>
 
-
     <!-- Controles: buscar/centrar, salud, exportar -->
     <div class="flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-1.5">
@@ -176,9 +175,7 @@
             <p class="deasy-eyebrow">Detalle de unidad</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailUnit.name }}</h3>
           </div>
-          <button type="button" class="shrink-0 text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeDetail">
-            <IconX class="h-5 w-5" />
-          </button>
+          <AppCloseButton class="shrink-0" @click="closeDetail" />
         </header>
 
         <!-- Pestañas del panel -->
@@ -468,6 +465,7 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
@@ -484,7 +482,7 @@ import SToggle from "@/shared/components/forms/SToggle.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconX, IconCrown, IconTrash, IconPencil, IconFileDescription } from "@tabler/icons-vue";
+import { IconCrown, IconTrash, IconPencil, IconFileDescription } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
