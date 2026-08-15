@@ -304,15 +304,16 @@
               </div>
 
               <!-- Acceso al wizard de perfil (visible, con texto) -->
-              <button
+              <AppButton
                 v-if="editable"
-                type="button"
-                class="mt-2 inline-flex items-center gap-1.5 rounded-2xl border border-line px-2.5 py-1 text-[11px] font-semibold text-icon transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-primary"
+                variant="secondary"
+                size="sm"
+                class-name="mt-2"
                 @click="openProfileWizard(pos)"
               >
                 <IconFileDescription class="h-3.5 w-3.5" />
                 {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
-              </button>
+              </AppButton>
 
               <!-- Buscador de persona para asignar -->
               <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-line bg-surface p-2">

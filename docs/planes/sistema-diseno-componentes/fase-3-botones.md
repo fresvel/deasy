@@ -6,12 +6,14 @@
 
 ## ⓿ · Estado por GRUPO — la tabla que se mira primero
 
-**5 de los 11 grupos cerrados · 127 de los 480 botones.**
+**5 de los 11 grupos cerrados · 146 de los 480 botones.**
+
+> G2 se **reabrió y se volvió a cerrar el 2026-08-15**: eran 48, no 29. Ver 3.4-ter.
 
 | Grupo | Botones | Estado | Dónde quedó |
 |---|--:|:--:|---|
 | **G1** · acción general | 303 | ⬜ | 123 son `<button>` crudo. Es el grueso que queda |
-| **G2** · acción de fila | 29 | ✅ | Tarea 3.4 · los 12 `hope-action-*` muertos |
+| **G2** · acción de fila | **48** | ✅ | Tareas 3.4 y **3.4-ter** · censo por estructura + gate `check:row-actions` |
 | **G3** · cerrar diálogo | 26 | ✅ | Tareas 3.5b y 3.5b-bis · manda la etiqueta |
 | **G4** · paginación | 26 | ✅ | Tarea 3.5b-2a · `deasy-counter-nav` |
 | **G5** · destructivo | 23 | ✅ | Tarea 3.5b-2b · `AppDeleteButton` + `deasy-inline-action` |
@@ -407,6 +409,7 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.4-bis** | El botón de icono suave adopta el badge de TailAdmin | ✅ | Sus colores no eran los suyos: relleno derivado al 10 % (más gris que el paso `-50` real) e icono en `-700` en vez de `-600`. Ahora relleno `-50`, icono `-600`, **sin borde** — el borde derivado del tono claro caía a 2.41-2.64 y no llega a 3:1. Se probó el sólido sobre 178 botones y se descartó | 2026-08-14 |
 | **3.5a** | **G6 · filtro** (23) | ✅ | `deasy-filter-btn` muere entera: existía por geometría (ya resuelta en 3.3) y por **repintar 5 variantes en 3 aspectos** — `secondary`≡`softNeutral` y `primary`≡`softPrimary`, o sea la prop mintiendo en 2 de cada 5. Seis variantes corregidas a lo que ya renderizaban | 2026-08-14 |
 | **3.5b** | **G3 · cerrar** (26) | ✅ | La ✕ tenía **tres radios** tras 3.3 (base 8 · `--close` 16 · `dialogs.css` 8.8) y ahora tiene uno: la regla del panel se sube a la clase base y muere. Dos «Cerrar» pintados en **rojo de contorno** pasan a `secondary` — cerrar no es destruir. Un `<button>` crudo de 15 utilidades pasa a componente. La decisión pendiente («`cancel` o `secondary` para el mismo botón de pie») **la resolvió el censo de 3.5b-bis**: manda la etiqueta — «Cancelar» es `cancel`, «Cerrar» es `secondary`, y 6 botones decían una cosa y pintaban la otra | 2026-08-15 |
+| **3.4-ter** | **G2 recensado por ESTRUCTURA** + gate `check:row-actions` | ✅ | Los tres censos anteriores buscaban **donde ya se sabía que había algo**; éste busca la señal estructural: **un botón dentro de un `v-for` actúa sobre un elemento de una colección**. G2 pasa de 29 a **48**, con **21 no conformes** que ningún censo por función vio. Cerrado en **48/48** y **atornillado con un gate de techo 0**, probado en rojo. Nacen `deasy-chip-remove`, `deasy-pdf-action` y 3 tonos de `deasy-inline-action`. Arbitrarios **397→394**, colores fuera de paleta **244→240** | 2026-08-15 |
 | **3.5b-bis** | **Censo por función sobre G2 y G3** | ✅ | Buscando por lo que el botón **dice que hace** (no por cómo está escrito), G3 pasa de 22 a **62** elementos: 14 huecos que los dos censos por implementación no vieron. **G2 limpio** (`AdminTableActions`, `DossierDocumentActions`, `HomeSignatureEntry`: componente + `soft*` + `icon-only`). G3 cerrado en **55/55**. Detalle en §5-bis | 2026-08-15 |
 | **3.5b-2a** | **G4 · paginación** | ✅ | El navegador de contador estaba escrito **cuatro veces**: el componente y tres copias a mano. Le faltaban cuatro cosas y por eso se copiaba (`valueLabel`, `size="sm"`, `tone="floating"`, `controls`); ahora las tiene y no viaja ni una utilidad. Las copias **ocultaban** las flechas donde el componente las **deshabilita**, así que el contador saltaba de sitio al llegar al extremo. Estilo entero en `nav.css` como `deasy-counter-nav`. Arbitrarios **412→404** | 2026-08-15 |
 | **3.5b-2b** | **G5 · destructivo** | ✅ | Censo por función: **19 destructivos reales**, 11 no conformes → **13/14 conformes** (queda el `graph-edge-btn` del lienzo, que es G10). `BtnDelete`→**`AppDeleteButton`**: sobrevive como componente (cumple las 3 señales, como la ✕) pero pierde el `<svg>` a mano, el `@onpress` inventado, el `className` y una **prop `variant` fantasma que no declaraba**. Nace `deasy-inline-action--danger` para los 4 «Quitar»/«Desvincular» que tenían **dos tamaños y dos hovers**, uno de ellos inerte. `FirmarPdf` llamaba a la **misma** función desde dos botones distintos. Arbitrarios **404→401**, colores fuera de paleta **257→244** | 2026-08-15 |
@@ -527,3 +530,61 @@ Lo que sí se corrigió es que `graph-icon-btn` no tenía modificador destructiv
 `graph-edge-btn` sí, y por eso «Eliminar puesto» llevaba `text-muted hover:text-danger` sueltos en
 el atributo — exactamente la pareja de utilidades que la clase ya intentaba resolver. Ahora existe
 `graph-icon-btn--danger`. La unificación de los tres nombres del grafo sigue siendo material de G10.
+
+---
+
+## §7 · El censo por ESTRUCTURA — y por qué los tres anteriores fallaron igual (2026-08-15)
+
+Cuatro veces se dio un grupo por cerrado y cuatro veces apareció una familia entera fuera. Siempre
+el mismo error, cada vez con otra cara:
+
+| Grupo | Se buscó por… | Qué se perdió |
+|---|---|---|
+| G3 | `data-modal-dismiss` | 5 «Cerrar» que cierran por su propio `@click` |
+| G6 | `deasy-filter-btn` | todos los de home y de perfil |
+| G2 | los ficheros donde yo sabía que había acciones de fila | **los paneles de los grafos** |
+| G2 (2.º intento) | `<td>` | **cero resultados** — aquí las tablas se pintan por metadata y las listas de panel son `<ul>` |
+
+El censo por función (§5-bis) corrigió los dos primeros y aun así **no habría encontrado el
+tercero**: busca por el verbo de la etiqueta, y «Cambiar» o «Abrir» no son verbos de ningún grupo.
+
+**La señal fiable no es el contenedor ni la etiqueta: es el `v-for`.**
+
+> Un botón dentro de un `v-for` actúa sobre **un** elemento de una colección repetida. Eso *es*
+> una acción de fila — de un `<tr>`, de un `<li>` de panel o de una tarjeta, da igual.
+
+Con eso G2 pasa de 29 botones a **48**, con **21 no conformes** que ningún censo anterior vio.
+
+### Los dos refinamientos que hicieron falta, y qué enseñan
+
+1. **`v-for` en el propio botón ≠ `v-for` en un ancestro.** Si el `v-for` está en el botón, el
+   botón **es** el elemento (una pestaña de `deasy-inline-tab`, un `deasy-nav-item`): eso es G7/G8.
+   Si está en un ancestro, el botón es una **acción sobre** el elemento: eso es G2. Sin distinguirlo
+   el censo marcaba 55 y mezclaba navegación con acción.
+2. **`text-left` o `w-full` = el botón ocupa la fila entera.** Es el ítem seleccionable —un
+   resultado de búsqueda de persona, un documento de la cola de firma—, no una acción dentro de él.
+
+### Lo que salió, por familias
+
+- **Seis enlaces de texto en la fila de una configuración** (`ProcessGraphView`): «Editar»,
+  «Reglas», «Disparadores», «Plantillas», «Ver», «Lanzar», los seis con
+  `font-semibold text-X hover:underline` a mano. Son el mismo objeto que el «Quitar» de G5, así que
+  entran en `deasy-inline-action`, que estrena tres tonos.
+- **La ✕ de una pastilla, escrita tres veces** — y las tres discrepaban en el hover: dos a
+  `text-danger` y una a `text-icon`, o sea que **quitar un adjunto del chat no avisaba de que era
+  destructivo**. Nace `deasy-chip-remove`, que no es `AppCloseButton` (36 px, cierra un diálogo) ni
+  `AppDeleteButton` (trae caja): vive dentro de un chip de 24 px.
+- **El botón verde de firmar, escrito dos veces para la misma acción**: `FirmarPdf` lo pintaba
+  redondo con `p-1.5` y `MultiSignerPanel` cuadrado con `h-8 w-8 rounded-xl`, uno en
+  `bg-emerald-500` y otro en `bg-emerald-500/88` con desenfoque. Nace `deasy-pdf-action`. **No sale
+  de `AppButton` a propósito**, por el mismo motivo que los del lienzo del grafo: va encima de la
+  página del PDF y el borde blanco es lo único que lo separa del papel.
+- Cinco más con caja propia que sí eran `AppButton` sin saberlo.
+
+### Y esta vez queda atornillado
+
+`frontend/scripts/check-row-actions.mjs`, encadenado a `lint`, **con techo 0**. Probado en rojo
+(devolviendo un botón a sus utilidades → exit 1) y en verde al revertir. Es el décimo gate.
+
+**Sin esto, G2 se vuelve a abrir en silencio**, que es exactamente lo que pasó entre el 14 y el 15
+de agosto sin que ningún gate dijera nada — lo vio el dueño mirando la pantalla.

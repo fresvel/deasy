@@ -189,7 +189,7 @@
                 <template #actions>
                   <button
                     type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-emerald-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-emerald-600/92 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="deasy-pdf-action"
                     title="Iniciar firma masiva"
                     aria-label="Iniciar firma masiva"
                     :disabled="!canRequestStart"

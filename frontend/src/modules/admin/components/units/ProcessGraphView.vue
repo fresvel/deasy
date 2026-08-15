@@ -196,15 +196,15 @@
                   </div>
                   <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                     <template v-if="editable && cfg.status === 'draft'">
-                      <button type="button" class="font-semibold text-primary hover:underline" @click="editConfiguration(cfg, 'definition')">Editar</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Editar</button>
                       <span class="text-gray-300">·</span>
-                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'rules')">Reglas</button>
-                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
-                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'rules')">Reglas</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
                     </template>
                     <template v-else>
-                      <button type="button" class="font-semibold text-primary hover:underline" @click="editConfiguration(cfg, 'definition')">Ver</button>
-                      <button v-if="editable && cfg.status === 'active'" type="button" class="font-semibold text-success hover:underline" @click="launchConfiguration(cfg)">Lanzar</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Ver</button>
+                      <button v-if="editable && cfg.status === 'active'" type="button" class="deasy-inline-action deasy-inline-action--success" @click="launchConfiguration(cfg)">Lanzar</button>
                     </template>
                   </div>
                 </li>
@@ -337,13 +337,13 @@
               </div>
               <div class="mt-1 flex items-center justify-between gap-2">
                 <span class="text-[11px] text-muted">{{ formatVersionDate(v.created_at) }}</span>
-                <button
+                <AppButton
                   v-if="editable && v.lifecycle_state !== 'retired' && String(v.id) !== String(templateDetail.pinnedArtifactId)"
-                  type="button"
-                  class="rounded-xl border border-brand-200 px-2 py-0.5 text-[11px] font-semibold text-primary transition-colors hover:bg-brand-100"
+                  variant="outlinePrimary"
+                  size="sm"
                   :title="templateDetail.configStatus === 'active' ? 'Prepara un borrador de la configuración con esta versión' : 'La configuración (borrador) usará esta versión'"
                   @click.stop="useVersionInConfig(v)"
-                >Usar en esta config</button>
+                >Usar en esta config</AppButton>
               </div>
             </li>
           </ul>

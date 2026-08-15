@@ -143,7 +143,7 @@
                 class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-icon"
               >
                 <span class="max-w-40 truncate">{{ file.name }}</span>
-                <button type="button" class="text-muted transition hover:text-icon" @click="removePendingAttachment(index)">
+                <button type="button" class="deasy-chip-remove" @click="removePendingAttachment(index)">
                   <IconX class="h-3.5 w-3.5" />
                 </button>
               </span>

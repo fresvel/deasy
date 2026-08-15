@@ -330,7 +330,7 @@
                 <button
                   v-if="signMode !== 'token'"
                   type="button"
-                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
+                  class="deasy-pdf-action"
                   title="Firmar documento"
                   aria-label="Firmar documento"
                   @click.stop="submitAction"
@@ -458,14 +458,10 @@
           </div>
           
           <div class="flex items-center gap-2 sm:self-center self-end">
-            <button 
-              type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-line text-icon hover:bg-surface hover:text-strong transition font-medium focus:outline-none focus:ring-2 focus:ring-line" 
-              @click.stop="goToFieldLocation(field.id)"
-            >
+            <AppButton variant="secondary" size="sm" @click.stop="goToFieldLocation(field.id)">
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
               Ver en documento
-            </button>
+            </AppButton>
             <AppDeleteButton label="Eliminar" @click.stop="requestDeleteField(field.id)" />
           </div>
         </div>

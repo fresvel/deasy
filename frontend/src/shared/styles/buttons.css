@@ -649,4 +649,21 @@
     .deasy-inline-action--danger {
         @apply text-danger;
     }
+
+    /* Los otros tres tonos salieron al censar G2 por estructura (2026-08-15): la fila de una
+       configuracion en el panel de procesos lleva SEIS de estas —«Editar», «Reglas»,
+       «Disparadores», «Plantillas», «Ver», «Lanzar»— y las seis estaban escritas a mano con
+       `font-semibold text-X hover:underline`. Mismo objeto que el «Quitar» de arriba, y por eso
+       mismo bloque: lo unico que cambia es el tono. */
+    .deasy-inline-action--primary {
+        @apply text-primary;
+    }
+
+    .deasy-inline-action--neutral {
+        @apply text-icon;
+    }
+
+    .deasy-inline-action--success {
+        @apply text-success;
+    }
 }

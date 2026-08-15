@@ -57,7 +57,7 @@
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
           <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
             <span class="text-[0.65rem] font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
-            <button type="button" class="text-muted hover:text-danger" @click="removeFromEntrega(i)">×</button>
+            <button type="button" class="deasy-chip-remove" @click="removeFromEntrega(i)">×</button>
           </li>
           <li v-if="!flowEntrega.length" class="text-xs text-muted">Nadie asignado.</li>
         </ul>
@@ -86,10 +86,10 @@
           <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">
             <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-body">
               {{ sg.label }}
-              <button type="button" class="text-muted hover:text-danger" @click="removeSignerFromStep(si, gi)">×</button>
+              <button type="button" class="deasy-chip-remove" @click="removeSignerFromStep(si, gi)">×</button>
             </li>
           </ul>
-          <button type="button" class="mt-1.5 text-[0.7rem] font-semibold text-primary hover:text-primary" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary mt-1.5" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>
         </div>
         <p v-if="!flowFirma.length" class="m-0 mt-2 text-xs text-muted">Sin firma. Usa “+ Agregar paso” si el documento debe firmarse.</p>
       </div>

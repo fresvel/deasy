@@ -10,6 +10,23 @@
         margin-top: 0.5rem;
         margin-bottom: 1rem;
     }
+
+    /* EL BOTON DE FIRMAR SUPERPUESTO AL DOCUMENTO
+     *
+     * No sale de `AppButton` a proposito, y por el mismo motivo que los botones del lienzo del
+     * grafo: va ENCIMA de la pagina del PDF, sobre un fondo que no controlamos. De ahi el borde
+     * blanco y la sombra —son lo unico que lo separa del papel— y de ahi que no tenga la caja de
+     * 36 px del sistema.
+     *
+     * Lo que si era defecto: estaba escrito DOS veces con dos formas distintas para la MISMA
+     * accion (2026-08-15, censo estructural de G2). `FirmarPdf` lo pintaba redondo con `p-1.5` y
+     * `MultiSignerPanel` cuadrado con `h-8 w-8 rounded-xl`, uno en `bg-emerald-500` y el otro en
+     * `bg-emerald-500/88` con desenfoque. Firmar un documento y firmar el lote son la misma
+     * accion sobre el mismo objeto: ahora es el mismo boton. Se queda la forma redonda, que es
+     * la que se distingue de los campos rectangulares del formulario. */
+    .deasy-pdf-action {
+        @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-success text-white shadow-md outline-none transition-colors hover:bg-success-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+    }
 }
 
 /* ⚠️ CURSORES DE ARRASTRE (SignatureBox) — SIN CAPA POR PREVENCION, y es la unica regla
