@@ -371,8 +371,45 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.4-bis** | El botón de icono suave adopta el badge de TailAdmin | ✅ | Sus colores no eran los suyos: relleno derivado al 10 % (más gris que el paso `-50` real) e icono en `-700` en vez de `-600`. Ahora relleno `-50`, icono `-600`, **sin borde** — el borde derivado del tono claro caía a 2.41-2.64 y no llega a 3:1. Se probó el sólido sobre 178 botones y se descartó | 2026-08-14 |
 | **3.5a** | **G6 · filtro** (23) | ✅ | `deasy-filter-btn` muere entera: existía por geometría (ya resuelta en 3.3) y por **repintar 5 variantes en 3 aspectos** — `secondary`≡`softNeutral` y `primary`≡`softPrimary`, o sea la prop mintiendo en 2 de cada 5. Seis variantes corregidas a lo que ya renderizaban | 2026-08-14 |
 | **3.5b** | **G3 · cerrar** (26) | 🟡 | La ✕ tenía **tres radios** tras 3.3 (base 8 · `--close` 16 · `dialogs.css` 8.8) y ahora tiene uno: la regla del panel se sube a la clase base y muere. Dos «Cerrar» pintados en **rojo de contorno** pasan a `secondary` — cerrar no es destruir. Un `<button>` crudo de 15 utilidades pasa a componente. **Falta una decisión: `cancel` (5) frente a `secondary` (13) para el mismo botón de pie** | 2026-08-14 |
+| **3.5b-bis** | **Censo por función sobre G2 y G3** | ✅ | Buscando por lo que el botón **dice que hace** (no por cómo está escrito), G3 pasa de 22 a **62** elementos: 14 huecos que los dos censos por implementación no vieron. **G2 limpio** (`AdminTableActions`, `DossierDocumentActions`, `HomeSignatureEntry`: componente + `soft*` + `icon-only`). G3 cerrado en **55/55**. Detalle en §5-bis | 2026-08-15 |
 | **3.5b-2** | **G4 · paginación** (26) · **G5 · destructivo** (23) | ⬜ | — | — |
 | **3.5c** | **G9 · auth** (9) · **G10 · solo icono** (6) · **G11 · envío** (2) | ⬜ | — | — |
 | **3.6** | G1 · los 123 `<button>` crudos de acción general | ⬜ | — | — |
 | **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ⬜ | — | — |
 | **3.8** | `BtnDelete` y `BtnSera` absorbidos o justificados | ⬜ | — | — |
+
+---
+
+## §5-bis · El censo por función (2026-08-15)
+
+Los dos huecos de G3 salieron del mismo error, cometido dos veces: **buscar por implementación**.
+El primer censo buscó `data-modal-dismiss` y no vio los 5 «Cerrar» rojos que cierran por su propio
+`@click`; el de G6 buscó `deasy-filter-btn` y no vio ni uno de home ni de perfil. Un botón no se
+identifica por cómo está escrito — se identifica por **lo que su etiqueta dice que hace**.
+
+El censo de `censo-funcional.mjs` recorre todo elemento pulsable (componente o `<button>` crudo),
+le saca la etiqueta de `title` / `aria-label` / el texto del cuerpo, y clasifica por el **verbo**.
+G3 pasa de 22 elementos a **62**. Los 14 no conformes, en tres familias:
+
+| Familia | Cuántos | Qué pasaba |
+|---|---|---|
+| La etiqueta y la variante no dicen lo mismo | 6 | 5 dicen «Cancelar» y usaban `secondary`/`softNeutral`; 1 dice «Cerrar» y usaba `cancel` |
+| La ✕ escrita a mano | 6 | `<button>` + `IconX` en notificaciones, dos paneles de grafo, dos alertas de auth y el chat |
+| Copiar el botón en vez de usarlo | 2 | uno pega `deasy-btn deasy-btn--secondary` en un `<button>` crudo; otro reimplementa la caja entera en el `class-name` de un `variant="plain"` |
+
+**G2 está limpio**, y eso también lo dice el censo: los tres únicos sitios que emiten acciones de
+fila —`AdminTableActions`, `DossierDocumentActions`, `HomeSignatureEntry`— usan componente,
+variante `soft*` y `icon-only`, sin una clase de estilo por fuera.
+
+### Lo que destapó de paso, y NO es de G2 ni de G3
+
+Ampliar el censo a **todo botón de solo icono** saca 60 fuera del componente, concentrados donde
+la fase 3 aún no ha entrado. La familia grande es el **grafo**: `ProcessNode`, `UnitNode`,
+`UnitEdge`, `ProcessConfigNode` y `ProcessTemplateNode` escriben el mismo botón con **tres nombres
+de clase distintos** —`graph-node__btn`, `graph-icon-btn`, `graph-edge-btn`—. Detrás va
+`FirmarPdf` con cuatro más, cada uno con su propio juego de utilidades.
+
+Por la regla de §1-bis esto **no** se resuelve metiéndolos todos en `AppButton`: un botón sobre un
+nodo del lienzo tiene una función propia (y una geometría propia, que es la razón de que exista
+`graph-node__btn`). Lo que sí es defecto es que esa función esté escrita tres veces con tres
+nombres. Es material de G10, no de aquí.
