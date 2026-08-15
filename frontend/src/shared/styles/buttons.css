@@ -388,6 +388,18 @@
         color: var(--color-strong);
     }
 
+    /* ⚠️ ESTA REGLA NO PINTA — verificado sobre el CSS construido el 2026-08-14.
+       Es (0,2,0) y esta DENTRO de `@layer components`; el `.deasy-btn--secondary:hover` de
+       `overrides.css` es (0,1,0) pero esta FUERA DE CAPA, y fuera de capa gana siempre. Asi
+       que un secundario dentro de una tabla hoverea AZUL de marca, no este gris.
+
+       NO se borra, y el motivo importa: su borrado esta acoplado a la fase 6. Cuando esa regla
+       suelta se cape, esta volvera a la vida y sera la que decida el hover del secundario en
+       tabla — o sea que aqui esta escrito lo que ese hover DEBE ser, no lo que es. Borrarla
+       ahora seria tirar la decision, no limpiar basura.
+
+       (Es el mismo mecanismo que dejo el `:hover` rojo de `--cancel` sin pintar durante meses:
+       una regla capada nunca le gana a una suelta.) */
     .deasy-table-responsive .deasy-btn--secondary:hover {
         border-color: var(--color-line-strong);
         background: var(--color-surface);
