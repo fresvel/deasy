@@ -136,7 +136,17 @@ const classes = computed(() => [
     ? ""
     : "deasy-btn admin-btn",
   resolveClass(variantClassMap, props.variant, "variant"),
-  props.variant !== "plain" && !props.iconOnly ? resolveClass(sizeClassMap, props.size, "size") : "",
+  /* [G3 2026-08-14] `close` se une a `plain` e `iconOnly` en NO recibir tamaño, y no es un
+     matiz: la ✕ es un cuadrado FIJO de 36 px, y un tamaño le mete padding dentro de esa caja.
+     Con `--md` (`px-4 py-2`) la caja interna de un boton de 36 de ancho se queda en **4 px**, el
+     `w-full` del span la hereda y el icono se aplasta a **2 px de ancho**: la ✕ desaparece.
+
+     Pasaba en los modales del perfil y no en los de administracion porque estos ultimos pintan
+     su ✕ como `<button>` directo desde `AppModalShell`, sin pasar por el componente. Medido con
+     `getBoundingClientRect`: 36x36 el boton, 2x16 el svg. */
+  ["plain", "close"].includes(props.variant) || props.iconOnly
+    ? ""
+    : resolveClass(sizeClassMap, props.size, "size"),
   props.iconOnly ? "deasy-btn deasy-btn--icon admin-btn" : "",
   props.className
 ]);
