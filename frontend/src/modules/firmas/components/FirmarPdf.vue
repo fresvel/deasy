@@ -786,9 +786,12 @@
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-surface/50 border border-line text-icon hover:bg-surface hover:text-strong font-semibold text-sm transition-colors cursor-pointer z-20">
-        <IconX class="w-4 h-4" stroke-width="2.5" />
-      </button>
+      <AdminButton
+        variant="close"
+        data-modal-dismiss
+        aria-label="Cerrar"
+        class-name="absolute right-5 top-4 z-20"
+      />
     </template>
     <div class="px-6 pt-6 pb-4">
       <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">

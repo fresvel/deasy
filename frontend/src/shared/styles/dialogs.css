@@ -73,24 +73,18 @@
         background: transparent;
     }
 
-    /* Aqui hubo un `!important`, y peleaba contra el `.border-slate-200 !important` suelto de
-       `overrides.css`. **Esa regla se borro el 2026-08-13** con sus 54 consumidores migrados.
-       Lo unico que queda declarando el borde de este boton es `buttons.css:182`
-       (`@apply … border border-line`, 0,1,0, y en un fichero que `index.css` importa ANTES),
-       asi que esta regla (0,2,0, y posterior) gana sin ayuda. Y ninguna de las tres plantillas
-       que escriben `deasy-btn--close` le pasa una utilidad de borde, de modo que tampoco hay
-       nada en `@layer utilities` que reclamar. Retirado el 2026-08-14 (fase 0.1). */
-    .deasy-dialog-panel .deasy-btn--close {
-        border-radius: 0.55rem;
-        border-color: var(--color-line-field);
-        background: var(--color-white);
-        color: var(--color-icon);
-    }
+    /* ══ AQUI SE REPINTABA LA ✕ CUANDO VIVE EN UN PANEL — retirado el 2026-08-14 (G3) ═══════
+       Era la tercera regla que le fijaba el radio: la base daba 8 px, `--close` lo subia a 16 y
+       esta lo bajaba a 8.8 (`0.55rem`), un valor que solo existia para no ser ninguno de los
+       otros dos. Y sus tres colores —`line-field`, blanco, `icon`— eran los que de verdad
+       renderizaban casi todas las ✕ del proyecto, porque casi todas viven dentro de un panel.
 
-    .deasy-dialog-panel .deasy-btn--close:hover {
-        background: var(--color-surface);
-        color: var(--color-navy);
-    }
+       Asi que no se han perdido: se han subido a `.deasy-btn--close`, que ahora los declara
+       para TODAS. Un boton, una regla, un radio. El `:hover` tambien, que era identico al que
+       ya tenia la clase base.
+
+       (Esta regla llevaba ademas un `!important` retirado en la fase 0.1, y su comentario
+       explicaba contra que peleaba. Ese adversario tampoco existe.) */
 
     /* PANEL LATERAL (drawer) — la otra forma de la familia de dialogos: se ancla al borde
        derecho en vez de al centro, y por eso comparte velo, blanco y nivel de elevacion en

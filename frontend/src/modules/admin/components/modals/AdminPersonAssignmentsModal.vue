@@ -254,7 +254,7 @@
       </template>
     </div>
     <template #footer>
-      <AdminButton variant="outlineDanger" data-modal-dismiss>Cerrar</AdminButton>
+      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
   </AppModalShell>
 </template>

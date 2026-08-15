@@ -267,8 +267,19 @@
         }
     }
 
+    /* LA ✕ DE LA ESQUINA. Una sola declaracion, y desde el 2026-08-14 un solo radio.
+       Tenia TRES: la base daba 8 px, esta lo subia a 16 (`rounded-2xl`, resto de la geometria
+       anterior) y `dialogs.css` lo volvia a bajar a 8.8 px (`0.55rem`) para los que viven
+       dentro de un panel — que son casi todos. Tres reglas para un boton.
+
+       Los valores que se quedan son los del diálogo, no los de aqui: `--color-line-field` de
+       borde y `--color-icon` de icono, que es lo que de verdad renderizaban las ✕ de los
+       modales. Las dos que viven fuera de un panel (`AdminFeedbackToast` y la del velo) se
+       alinean con ellas. */
     .deasy-btn--close {
-        @apply h-9 w-9 rounded-2xl border border-line bg-white p-0 text-muted hover:border-line-strong hover:bg-surface hover:text-navy;
+        @apply h-9 w-9 min-h-9 rounded-lg border bg-white p-0 hover:border-line-strong hover:bg-surface hover:text-navy;
+        border-color: var(--color-line-field);
+        color: var(--color-icon);
     }
 
     .deasy-btn--menu {

@@ -306,7 +306,7 @@
           {{ fkCreateActionLabel }}
         </AdminButton>
       </template>
-      <AdminButton variant="outlineDanger" data-modal-dismiss>
+      <AdminButton variant="secondary" data-modal-dismiss>
         Cerrar
       </AdminButton>
     </template>

@@ -328,14 +328,26 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 
 ## 5 · Control de ejecución
 
+> ⚠️ **Los grupos son ONCE: G1…G11.** Durante la ejecución se dijo «12» en varios sitios: el
+> script del inventario parte *acción general* en dos (173 por componente + 130 escritos a mano) y
+> al unirlos en la fila G1 no se corrigió el conteo. **G1 es uno solo, con dos mitades.**
+>
+> ⚠️ **Y el orden de ejecución NO es el del inventario.** El inventario los ordena por tamaño; se
+> atacan por otro criterio. Hasta ahora: G2 (aprobado), luego la geometría (3.3) y con ella G6, que
+> se cayó sola. Los saltos se anotan aquí para que la tabla, no la memoria, diga qué queda.
+
 | # | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
-| **3.0** | Inventario de los 480 botones clasificados por función | ✅ | Este documento. 12 grupos, 8 formas de nombre, 5 geometrías, 2 defectos vivos | 2026-08-14 |
+| **3.0** | Inventario de los 480 botones clasificados por función | ✅ | Este documento. **11 grupos** (G1…G11), 8 formas de nombre, 5 geometrías, 2 defectos vivos | 2026-08-14 |
 | **3.1** | La convención de nombres, decidida y escrita | ✅ | §2-bis. `deasy-btn--MOD` (BEM, dos guiones); navegación en bloques propios `deasy-tab` / `deasy-nav-item`. **18 de las 48 clases ya cumplían**; se someten las otras 30 | 2026-08-14 |
 | **3.2** | Gate: toda `variant="…"` de plantilla existe en el componente | ✅ | `check-variants.mjs`, encadenado a `lint`: **386 atributos** contrastados contra los mapas **del propio componente** (no una copia). Cazó los 2 defectos vivos y los dos están corregidos | 2026-08-14 |
-| **3.3** | Geometría única (TailAdmin) dentro del componente | ⬜ | — | — |
+| **3.3** | Geometría única (TailAdmin) dentro del componente | ✅ | Radio 16→**8**, peso 600→**500**, `shadow-theme-xs`. Medido en la pantalla de control: **248 de 248 botones en UNA geometría**, donde convivían cinco. Cae también `.admin-lookup-field .deasy-btn--icon` (6 px «para no ser el estándar de 16», y ganaba **por orden de `@import`**). Techo de arbitrarios 416→414 | 2026-08-14 |
 | **3.4** | G2 · los 12 `hope-action-*` colapsan a variantes | ✅ | **0 `hope-action` en el CSS servido.** 29 botones en 9 ficheros pasan a `variant`, sin una sola clase de estilo por fuera. Mueren **2 bloques enteros fuera de capa**: la deuda de la F6 baja de **28 a 14**. 9 gates verdes, 316/316 tests | 2026-08-14 |
-| **3.5** | G6 · filtro · G3 · cerrar · G9 · auth · G4 · paginación | ⬜ | — | — |
+| **3.4-bis** | El botón de icono suave adopta el badge de TailAdmin | ✅ | Sus colores no eran los suyos: relleno derivado al 10 % (más gris que el paso `-50` real) e icono en `-700` en vez de `-600`. Ahora relleno `-50`, icono `-600`, **sin borde** — el borde derivado del tono claro caía a 2.41-2.64 y no llega a 3:1. Se probó el sólido sobre 178 botones y se descartó | 2026-08-14 |
+| **3.5a** | **G6 · filtro** (23) | ✅ | `deasy-filter-btn` muere entera: existía por geometría (ya resuelta en 3.3) y por **repintar 5 variantes en 3 aspectos** — `secondary`≡`softNeutral` y `primary`≡`softPrimary`, o sea la prop mintiendo en 2 de cada 5. Seis variantes corregidas a lo que ya renderizaban | 2026-08-14 |
+| **3.5b** | **G3 · cerrar** (26) | 🟡 | La ✕ tenía **tres radios** tras 3.3 (base 8 · `--close` 16 · `dialogs.css` 8.8) y ahora tiene uno: la regla del panel se sube a la clase base y muere. Dos «Cerrar» pintados en **rojo de contorno** pasan a `secondary` — cerrar no es destruir. Un `<button>` crudo de 15 utilidades pasa a componente. **Falta una decisión: `cancel` (5) frente a `secondary` (13) para el mismo botón de pie** | 2026-08-14 |
+| **3.5b-2** | **G4 · paginación** (26) · **G5 · destructivo** (23) | ⬜ | — | — |
+| **3.5c** | **G9 · auth** (9) · **G10 · solo icono** (6) · **G11 · envío** (2) | ⬜ | — | — |
 | **3.6** | G1 · los 123 `<button>` crudos de acción general | ⬜ | — | — |
 | **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ⬜ | — | — |
 | **3.8** | `BtnDelete` y `BtnSera` absorbidos o justificados | ⬜ | — | — |
