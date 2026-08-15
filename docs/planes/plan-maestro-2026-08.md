@@ -34,7 +34,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | Frente | Qué entrega | Estado | Control detallado | Evidencia · fecha |
 |---|---|---|---|---|
 | **0** · Modelo de dominio | El modelo deja de contradecirse: cero `document_owner`, la base manda y el YAML se fue | ✅ **9 de 9** | [archivado](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) | `30654db` · medido en base · **2026-08-13** |
-| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **5 abiertos** · 12 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **10 de 23 tareas** | 1.15 cerrado, suite en verde · **2026-08-14** |
+| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **4 abiertos** · 13 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **11 de 23 tareas** | 1.16 cerrado · **2026-08-14** |
 | **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ 8 vulnerabilidades | aquí, §Frente 2 | Sonar `:9002` · 2026-08-09 |
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
 | **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 pasos 1-3 y 5 ✅ · 4 y 6 ⬜ | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
@@ -93,7 +93,7 @@ promovieron el día del cierre, porque vivían solo en su prosa.
 
 ---
 
-## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **10 de 23** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
+## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **11 de 23** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
 
 **Lo más rentable que queda, y con diferencia**, porque no es deuda estética: son fallos que un
 usuario puede encontrarse. Y todos están **congelados en pruebas**, así que el arreglo se verifica
@@ -111,12 +111,12 @@ ejecución —23 tareas con estado, evidencia y fecha— y no se repiten aquí.
 | **1.10** | La **única bitácora de auditoría** del sistema la puentea el camino automático. Remedido: son **tres** caminos que reasignan sin dejar asiento, no uno, y la tabla no la lee **nadie** (un `INSERT`, cero `SELECT`) | Base de datos · triggers |
 | ~~**1.11**~~ | ~~Los parámetros de más se ignoran en silencio~~ — ✅ **cerrado el 2026-08-14**: la premisa que lo justificaba era falsa (484/484 equilibradas) y ahora lanza en las dos direcciones | `backend/config/postgres.js` |
 | ~~**1.15**~~ | ~~La suite de caracterización está ROJA~~ — ✅ **cerrado el 2026-08-14**. No era un golden malo: **MinIO servía una semilla obsoleta** y el golden era correcto. Un centinela protegía las ediciones del admin y de paso bloqueaba el catálogo | Bootstrap · MinIO |
-| **1.16** | **Orden de parámetros cruzado** en `context_ancestor_type`: el cargo recibe el tipo de unidad y viceversa. `bindParams` no lo ve —el número cuadra—, y resuelve firmantes equivocados en silencio | Backend · firma |
+| ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ — ✅ **cerrado el 2026-08-14**: eran dos `unshift` donde hacía falta un `unshift` y un `push`. Censo: 6 en el backend, **el único que antepone Y añade a la cola** | Backend · firma |
 | **1.17** | **Nada re-publica la semilla en un entorno ya arrancado** —`publishBaseSeedAssets` cuelga del bootstrap, no del arranque— y `test:char:fixture` no resetea `storage`: el estado de MinIO es una **entrada oculta** al sistema bajo prueba | Bootstrap · arnés |
 | **1.18** | Al editar, `path.basename()` sobre un **prefijo** renombra el PDF subido a `pdf`, sin extensión. Ya congelado en el golden `editar_ok` | Backend · plantillas |
 
-**Doce cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
-razonamiento entero — que es donde está el valor: hay **siete sitios donde la corrección obvia es la
+**Trece cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
+razonamiento entero — que es donde está el valor: hay **ocho sitios donde la corrección obvia es la
 equivocada**. Entre ellos el **1.9**, que resultó **no ser un defecto**: aplicarle el guard del IDOR
 habría dejado sin chat a 8 de 10 asignados, medido contra la base antes de tocar nada.
 

@@ -15,16 +15,16 @@ costaba más que hacerlo. Y sin control de ejecución, «⬜» era lo único que
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud | Backend · servicio |
 | **1.7** | El **sello fantasma**: un guard permanentemente verdadero en el panel de firma | Frontend · Vue |
 | **1.10** | La única **bitácora de auditoría** la puentean los caminos automáticos (son **tres**) | Base de datos · triggers |
-| **1.16** | Orden de parámetros cruzado: el cargo y el tipo de unidad van intercambiados | Backend · firma |
 | **1.17** | **Nada re-publica la semilla en un entorno vivo**, y el arnés no resetea `storage` | Bootstrap · arnés |
 | **1.18** | Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf` | Backend · plantillas |
 
-**Doce ya están cerrados**, tres de ellos el 2026-08-14 — y los tres resultaron ser **otra cosa** de
-lo que decía su ficha: el **1.8** no eran dos documentos en conflicto sino **cinco**, uno de ellos la
-documentación publicada; la justificación del **1.11** para tolerar los parámetros de más **era falsa**
-(las 484 llamadas están equilibradas); y el **1.15** no era un golden no determinista sino **una
-semilla obsoleta en MinIO** — el golden era correcto. Uno de los doce, el **1.9**, resultó **no ser un
-defecto**: el arreglo «obvio» habría roto el chat a ocho de diez personas. Todo medido en la bitácora.
+**Trece ya están cerrados**, cuatro de ellos el 2026-08-14 — y **tres de esos cuatro resultaron ser
+otra cosa** de lo que decía su ficha: el **1.8** no eran dos documentos en conflicto sino **cinco**,
+uno de ellos la documentación publicada; la justificación del **1.11** para tolerar los parámetros de
+más **era falsa** (las 484 llamadas están equilibradas); y el **1.15** no era un golden no determinista
+sino **una semilla obsoleta en MinIO** — el golden era correcto. El cuarto, el **1.16**, sí era lo que
+decía, y se cerró en dos líneas. Y uno de los trece, el **1.9**, resultó **no ser un defecto**: el
+arreglo «obvio» habría roto el chat a ocho de diez personas. Todo medido en la bitácora.
 
 ## Los ficheros
 
@@ -32,7 +32,7 @@ defecto**: el arreglo «obvio» habría roto el chat a ocho de diez personas. To
 |---|---|---|
 | **[`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md)** | **El ejecutable.** Su **§0 es el control de ejecución**: 23 tareas con estado, evidencia y fecha. Cada defecto tiene ficha con diagnóstico remedido, decisiones pendientes y criterio de cierre | **SÍ. Empieza aquí** |
 | [`CLAUDE.md`](./CLAUDE.md) | **La norma de la carpeta.** Cómo se lleva el control, qué cuenta como evidencia, y lo que NO se hace desde aquí | Se carga sola al trabajar aquí |
-| [`bitacora.md`](./bitacora.md) | Los **doce cerrados**, con *por qué no se hizo de la otra forma*. **Siete** sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
+| [`bitacora.md`](./bitacora.md) | Los **trece cerrados**, con *por qué no se hizo de la otra forma*. **Ocho** sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
 
 ## Por qué este frente rinde más que los otros
 

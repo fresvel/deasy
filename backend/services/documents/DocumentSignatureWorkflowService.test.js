@@ -12,7 +12,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { getActiveSignatureFlowTemplateForDefinitionTemplate } from "./DocumentSignatureWorkflowService.js";
+import {
+  getActiveSignatureFlowTemplateForDefinitionTemplate,
+  resolvePersonsForCargoInScope,
+} from "./DocumentSignatureWorkflowService.js";
 
 const VINCULO = 7; // process_definition_templates.id
 const OTRO_VINCULO = 8;
@@ -150,4 +153,100 @@ test("firma: el escalón de plantilla no cruza ediciones ni se cuela por otro v�
 test("firma: un flujo de plantilla inactivo no se devuelve", async () => {
   const conexion = conexionDeFlujos([fila({ id: 3, plantilla: PLANTILLA, activo: 0 })]);
   assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(conexion, VINCULO, null), null);
+});
+
+
+// --- Ámbitos: el ORDEN de los parámetros (defecto 1.16) --------------------------------------
+//
+// POR QUÉ ESTO NO PUEDE SER UN GOLDEN. El `CHECK` de `signature_flow_steps.unit_scope_type`
+// (`database/postgres_schema.sql`) admite solo `unit_exact`, `unit_subtree`, `unit_type`,
+// `all_units` y `context_exact`. Los ámbitos `context_*` retirados llegan aquí **por el JSONB
+// `signers`**, que ningún `CHECK` cubre (ver la nota de `:130-147` del módulo), así que la
+// caracterización **no puede sembrarlos por CRUD**: cero apariciones en los 21 goldens. Un unitario
+// es el único guardián posible de estas ramas.
+//
+// Y lo que se afirma es la POSICIÓN, no la cantidad: `bindParams` ya vigila que el número de `?` y
+// de parámetros coincida, y el defecto 1.16 cuadraba en número (3 y 3) estando cruzado. Lo que no
+// vigila nadie es cuál va en cada sitio.
+//
+// La conexión falsa captura el SQL y sus parámetros, mismo idioma que
+// `services/admin/org/taskAssignment.test.js`.
+
+const UNIDAD = 10;
+const TIPO_UNIDAD = 4;
+const CARGO = 7;
+
+const resolverAmbito = async (signer) => {
+  const capturado = [];
+  const conexion = {
+    async query(sql, params = []) {
+      capturado.push({ sql: sql.replace(/\s+/g, " ").trim(), params });
+      return [[]];
+    },
+  };
+  await resolvePersonsForCargoInScope(conexion, { requiredCargoId: CARGO, ...signer });
+  return capturado[0];
+};
+
+// Los `?` del SQL, en orden de aparición, emparejados con la cláusula que los aloja.
+const clausulasEnOrden = (sql) =>
+  [...sql.matchAll(/([A-Za-z_.]+)\s*=\s*\?/g)].map((m) => m[1]);
+
+test("ámbito context_ancestor_type: cada parámetro cae en SU cláusula", async () => {
+  // El defecto 1.16: dos `unshift` dejaban [unidad, tipo, cargo], así que `up.cargo_id` recibía el
+  // TIPO DE UNIDAD y `unit_type_id` recibía el CARGO. Silencioso: resolvía firmantes equivocados.
+  const { sql, params } = await resolverAmbito({
+    unitScopeType: "context_ancestor_type",
+    unitId: UNIDAD,
+    unitTypeId: TIPO_UNIDAD,
+  });
+
+  assert.deepEqual(clausulasEnOrden(sql), ["id", "up.cargo_id", "unit_type_id"]);
+  assert.deepEqual(params, [UNIDAD, CARGO, TIPO_UNIDAD]);
+});
+
+test("ámbito context_ancestor_type: es la única rama que antepone Y añade a la cola", async () => {
+  // Por eso rompió aquí y no en las otras cinco: el `?` de cabeza se paga con `unshift` y el de
+  // cola con `push`. Mezclarlos con dos `unshift` es lo que cruzó los valores.
+  const { sql } = await resolverAmbito({
+    unitScopeType: "context_ancestor_type",
+    unitId: UNIDAD,
+    unitTypeId: TIPO_UNIDAD,
+  });
+  assert.ok(sql.indexOf("WITH RECURSIVE") < sql.indexOf("up.cargo_id = ?"), "el CTE va DELANTE");
+  assert.ok(sql.indexOf("up.cargo_id = ?") < sql.lastIndexOf("unit_type_id = ?"), "y el filtro DETRÁS");
+});
+
+test("ámbito context_subtree: sigue cuadrando (grupo de control, un solo unshift)", async () => {
+  const { params } = await resolverAmbito({ unitScopeType: "context_subtree", unitId: UNIDAD });
+  assert.deepEqual(params, [UNIDAD, CARGO]);
+});
+
+test("ámbito unit_subtree: sigue cuadrando (grupo de control)", async () => {
+  const { params } = await resolverAmbito({ unitScopeType: "unit_subtree", unitId: UNIDAD });
+  assert.deepEqual(params, [UNIDAD, CARGO]);
+});
+
+test("ámbito unit_type: el parámetro va a la COLA, con push", async () => {
+  const { params } = await resolverAmbito({ unitScopeType: "unit_type", unitTypeId: TIPO_UNIDAD });
+  assert.deepEqual(params, [CARGO, TIPO_UNIDAD]);
+});
+
+test("context_ancestor_type sin tipo de unidad no consulta: devuelve vacío", async () => {
+  // La guarda de `:414`. Sin ella, el `?` del `IN` se quedaría sin su parámetro y hoy `bindParams`
+  // lanzaría (defecto 1.5) en vez de resolver de más.
+  const capturado = [];
+  const conexion = { async query(sql, params) { capturado.push({ sql, params }); return [[]]; } };
+  const gente = await resolvePersonsForCargoInScope(conexion, {
+    requiredCargoId: CARGO,
+    unitScopeType: "context_ancestor_type",
+    unitId: UNIDAD,
+  });
+  assert.deepEqual(gente, []);
+  assert.equal(capturado.length, 0, "ni siquiera llega a consultar");
+});
+
+test("sin cargo no hay nada que resolver", async () => {
+  const conexion = { async query() { throw new Error("no debe consultar"); } };
+  assert.deepEqual(await resolvePersonsForCargoInScope(conexion, { unitScopeType: "all_units" }), []);
 });

@@ -1,7 +1,7 @@
-# Bitácora del frente 1 — los doce cerrados
+# Bitácora del frente 1 — los trece cerrados
 
 > Esto **no es historia decorativa**. La mitad del valor de cada ficha es *por qué no se hizo de la
-> otra forma*: hay **seis** sitios de este repo donde la «corrección obvia» es la equivocada, y están
+> otra forma*: hay **ocho** sitios de este repo donde la «corrección obvia» es la equivocada, y están
 > aquí. Léela antes de proponer un arreglo que se le parezca.
 >
 > Lo pendiente está en [`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md).
@@ -16,10 +16,11 @@
 | 1.8 | Dos documentos mandaban formas de error contrarias (**eran cinco**) | 2026-08-14 | **ninguno, y es correcto** |
 | **1.9** | «Una copia del IDOR se quedó atrás» | **NO ERA UN DEFECTO** | — |
 | 1.11 | Los parámetros de MÁS se ignoraban en silencio (**y la premisa era falsa**) | 2026-08-14 | **ninguno, y es correcto** |
-| 1.15 | El catálogo de semillas nunca llegaba a un entorno ya arrancado | 2026-08-14 | **ninguno — el golden ya era correcto** |
 | 1.12 | Se activa una configuración con una plantilla sin publicar | 2026-08-10 · `e6d291d`+`73d2e82` | 1 nuevo |
 | 1.13 | `template_artifacts.lifecycle_state` nace `published` | 2026-08-10 · `673f1fb` | **ninguno, y es correcto** |
 | 1.14 | Clonar una configuración convertía en `single` todo lo `routed` | 2026-08-11 · `597cd43` | 1 línea |
+| 1.15 | El catálogo de semillas nunca llegaba a un entorno ya arrancado | 2026-08-14 | **ninguno — el golden ya era correcto** |
+| 1.16 | Orden de parámetros cruzado en `context_ancestor_type` | 2026-08-14 | **ninguno, y es correcto** |
 
 ---
 
@@ -461,3 +462,72 @@ cambiar el `test:unit` global por un test habría sido peor negocio. **6 unitari
 
 ---
 
+---
+
+## 1.16 · Orden de parámetros cruzado en `context_ancestor_type`
+
+**Cerrado el 2026-08-14.** Ningún golden se movió, y **eso es lo correcto**: la rama es inalcanzable
+con los datos de hoy. Su evidencia son **7 unitarios**, como en el 1.5 y el 1.13.
+
+### El defecto
+
+`resolvePersonsForCargoInScope` arma `params = [cargoId]` sobre una consulta cuyo único `?` es
+`up.cargo_id = ?`. La rama `context_ancestor_type` **antepone un CTE** (que añade un `?` DELANTE) **y
+añade una cláusula al final** (un `?` DETRÁS), pero pagaba los dos con `unshift`:
+
+```js
+params.unshift(scope.unitTypeId);
+params.unshift(scope.unitId);      // -> [unitId, unitTypeId, cargoId]
+```
+
+Los `?` salen en el orden (1) CTE `WHERE id = ?`, (2) `up.cargo_id = ?`, (3) `WHERE unit_type_id = ?`.
+Así que **`up.cargo_id` recibía el tipo de unidad y `unit_type_id` recibía el cargo**. Resolvía
+firmantes equivocados, o ninguno, **en silencio**.
+
+**`bindParams` no puede verlo**: la CANTIDAD cuadra (3 y 3). El defecto 1.11 endureció el conteo en las
+dos direcciones y aun así este pasa — el conteo no dice **cuál** va en cada sitio.
+
+### Por qué rompió aquí y en ningún otro sitio: el censo
+
+**Seis `unshift` en todo el backend, y los seis son el mismo patrón** (CTE recursivo antepuesto a una
+consulta que ya tenía placeholders):
+
+| Sitio | Rama | ¿Cuadra? |
+|---|---|---|
+| `admin/generation/assignees.js:70` | `unit_subtree` | ✅ |
+| `admin/generation/queries.js:342` | `unit_subtree` | ✅ |
+| `DocumentSignatureWorkflowService.js:380` | `unit_subtree` | ✅ |
+| `DocumentSignatureWorkflowService.js:412` | `context_subtree` | ✅ |
+| `DocumentSignatureWorkflowService.js:437-438` | `context_ancestor_type` | ❌ |
+
+> **No hay un segundo desajuste, y no es suerte.** Los cinco sanos comparten la misma forma —**un solo
+> `unshift` y ningún `?` a la cola**—; `context_ancestor_type` es **el único sitio del backend que
+> antepone Y añade a la vez**. Esa mezcla es la que rompe el `unshift`. La regla que queda escrita en
+> el código: **el `?` de cabeza se paga con `unshift`, el de cola con `push`.**
+
+El arreglo es exactamente eso, dos líneas.
+
+### Por qué NO se borró la rama, que era la otra opción obvia
+
+`context_ancestor_type` es un ámbito **retirado**: el `CHECK` de `signature_flow_steps.unit_scope_type`
+no lo admite. Tentador borrarlo, por el criterio del frente 0 («lo que la web no autora, no existe»).
+**Sería peor**: si ninguna rama casa, la consulta se queda **sin filtro de ámbito** y resolvería a
+todo el que tenga ese cargo **en cualquier unidad** — una sobre-resolución silenciosa, más grave que el
+cruce. Lo que cerraría el agujero de verdad ya está escrito en el propio fichero (`:146-148`): filtrar
+contra los catálogos **y** migrar el JSONB, en ese orden. Es otro trabajo, no éste.
+
+### Por qué el guardián solo puede ser un unitario
+
+La rama llega **por el JSONB `signers`**, que ningún `CHECK` cubre — no por la columna. La
+caracterización **no puede sembrarla por CRUD**, y se comprobó: **cero apariciones** de `unit_subtree`,
+`context_subtree` o `context_ancestor_type` en los 21 goldens. Por eso `resolvePersonsForCargoInScope`
+se exporta, con el mismo criterio que ya se aplicó a
+`getActiveSignatureFlowTemplateForDefinitionTemplate`.
+
+Los tests afirman **la POSICIÓN, no la cantidad** —`assert.deepEqual(params, [UNIDAD, CARGO, TIPO])` y
+las cláusulas en orden extraídas del SQL—, e incluyen **grupo de control**: las tres ramas sanas
+(`context_subtree`, `unit_subtree`, `unit_type`) se afirman también. Validados con **control positivo**:
+al restaurar los dos `unshift`, **falla exactamente uno** — el de las posiciones — y los otros doce
+pasan.
+
+---

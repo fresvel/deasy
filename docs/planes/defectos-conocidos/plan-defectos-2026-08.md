@@ -1,6 +1,6 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 10 de 23 tareas · 3 de 8 defectos** — abierto el **2026-08-14**.
+> **Estado: 11 de 23 tareas · 4 de 8 defectos** — abierto el **2026-08-14**.
 >
 > ✅ **La suite de caracterización está VERDE** desde el 2026-08-14 (defecto 1.15 cerrado). Estuvo roja
 > 4 tests, y **no por un golden malo**: el golden era correcto y lo que mentía era el entorno.
@@ -49,7 +49,7 @@ plan.
 | `T1.11-c` | 1.11 | Guard simétrico `paramIndex !== provided`; los 3 tests que fijaban la tolerancia, resueltos | ✅ | **602 unitarios verdes**; char: los **mismos 9 fallos preexistentes**, 0 errores de `bindParams`, 0 goldens movidos | 2026-08-14 |
 | `T1.15-a` | 1.15 | **Diagnóstico**: el golden era CORRECTO y el hash determinista; lo viejo era MinIO | ✅ | Repo dice `data.json`, MinIO no; dos corridas dan el mismo hash | 2026-08-14 |
 | `T1.15-b` | 1.15 | El centinela `ya_existe` deja de gobernar el catálogo `Seeds/`; la suite vuelve a verde | ✅ | **4 fallos → 0**, 0 goldens movidos, `make.sh` publicado ya lleva `data.json`. 6 unitarios nuevos, con control positivo | 2026-08-14 |
-| `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ⬜ | — | — |
+| `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ✅ | `[unitId, cargoId, unitTypeId]`; **7 unitarios nuevos** con control positivo (solo falla el de posiciones al restaurar el bug); censo: 6 `unshift` en el backend, este era el único roto | 2026-08-14 |
 | `T1.17-a` | 1.17 | **Decisión escrita**: cómo llega una semilla nueva a un entorno YA arrancado (hoy: por ningún camino) | ⬜ | — | — |
 | `T1.18-a` | 1.18 | El PDF deja de renombrarse a `pdf` al editar; el golden `editar_ok` se mueve y **ese diff es la prueba** | ⬜ | — | — |
 
@@ -63,7 +63,7 @@ plan.
 | **1.10** | La única bitácora de auditoría la puentea el camino automático | Base de datos · triggers | ⬜ |
 | ~~**1.11**~~ | ~~Parámetros de MÁS se ignoran en silencio~~ | Backend · `config/postgres.js` | ✅ **2026-08-14** |
 | ~~**1.15**~~ | ~~El catálogo de semillas nunca llega a un entorno ya arrancado~~ | Bootstrap · MinIO | ✅ **2026-08-14** |
-| **1.16** | Orden de parámetros cruzado en `context_ancestor_type` (cargo ↔ tipo de unidad) | Backend · firma | ⬜ |
+| ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ | Backend · firma | ✅ **2026-08-14** |
 | **1.17** | **Nada re-publica la semilla en un entorno vivo**, y el arnés no resetea `storage` | Bootstrap · arnés | ⬜ **nuevo** |
 | **1.18** | Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf` | Backend · plantillas | ⬜ **nuevo** |
 
@@ -252,37 +252,14 @@ ediciones del admin sobre el artifact **y de paso bloqueaba el catálogo, que na
 
 ---
 
-## §9 · Defecto 1.16 — orden de parámetros cruzado en `context_ancestor_type`
+## ~~§9 · Defecto 1.16 — orden de parámetros cruzado en `context_ancestor_type`~~
 
-**Encontrado el 2026-08-14** leyendo los 61 indecidibles del censo del 1.11. **`bindParams` no puede
-verlo**: el número de parámetros cuadra (3 y 3); lo que está mal es el **orden**.
+✅ **CERRADO el 2026-08-14.** Ficha completa en
+[`bitacora.md` § 1.16](./bitacora.md#116--orden-de-parametros-cruzado-en-context_ancestor_type).
 
-**Dónde**: `backend/services/documents/DocumentSignatureWorkflowService.js:413-438`,
-`resolvePersonsForCargoInScope`.
-
-Los `?` salen en este orden en el SQL final: (1) `WHERE id = ?` del CTE `ancestor_units`, (2)
-`up.cargo_id = ?`, que viene dentro de `${query}`, y (3) `WHERE unit_type_id = ?` del `IN`. Pero:
-
-```js
-params.unshift(scope.unitTypeId);
-params.unshift(scope.unitId);      // -> [unitId, unitTypeId, cargoId]
-```
-
-Es decir: **`cargo_id` recibe el tipo de unidad y `unit_type_id` recibe el cargo**. El array correcto
-es `[unitId, cargoId, unitTypeId]`. Resuelve firmantes equivocados, o ninguno, **en silencio**.
-
-**La rama de al lado está bien, y ese contraste es la prueba**: `context_subtree` (`:393-412`) hace un
-solo `unshift` y su CTE no añade `?` al final, así que su orden cuadra.
-
-**Alcanzabilidad, medida**: el `CHECK` de `signature_flow_steps.unit_scope_type` **no admite**
-`context_ancestor_type`, pero esta rama no lee la columna — lee el **JSONB `signers`**, que ningún
-`CHECK` cubre, y el propio fichero lo explica en `:130-148`. Contra la base de la pila C: **0 filas**
-con ese valor en `signers`. Es por tanto un **defecto latente sin disparador en los datos de hoy**,
-como fueron el 1.5 y el 1.13.
-
-> ⚠️ **Pero la base de dev son fixtures, no producción.** Lo medido es que el fixture no lo alcanza;
-> una base desplegada con datos heredados **sí** podría, y `copySignatureFlowSteps` copia `signers`
-> **verbatim** al versionar, así que un valor viejo se propaga solo a cada versión nueva.
+En una línea: dos `unshift` donde hacía falta **un `unshift` y un `push`**. El censo dice que es la
+**única rama del backend que antepone Y añade a la cola a la vez** — por eso rompió aquí y no en las
+otras cinco.
 
 ---
 
