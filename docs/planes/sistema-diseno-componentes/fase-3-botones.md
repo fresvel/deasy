@@ -6,19 +6,20 @@
 
 ## ⓿ · Estado por GRUPO — la tabla que se mira primero
 
-**5 de los 11 grupos cerrados · 188 de los 480 botones.**
+**5 de los 11 grupos cerrados · 180 botones, y los CINCO con gate de techo 0.**
 
-> **G2, G6 y G3 se recensaron por estructura el 2026-08-15**: eran **48, 28 y 63**, no 29, 23 y 26.
-> El inventario original contaba de menos en los tres. Los tres quedan con **gate propio de techo 0**.
-> Ver 3.4-ter, 3.5a-bis y 3.5b-ter.
+> **Los cinco grupos cerrados se recensaron por estructura el 2026-08-15.** El inventario
+> original contaba mal en los cinco: **29→48, 23→28, 26→63, 26→14, 23→27**. Los cinco tienen ya
+> **gate propio de techo 0**, así que ninguno puede reabrirse en silencio.
+> Ver 3.4-ter, 3.5a-bis, 3.5b-ter, 3.5b-2c y 3.5b-2d.
 
 | Grupo | Botones | Estado | Dónde quedó |
 |---|--:|:--:|---|
 | **G1** · acción general | 303 | ⬜ | 123 son `<button>` crudo. Es el grueso que queda |
 | **G2** · acción de fila | **48** | ✅ | Tareas 3.4 y **3.4-ter** · censo por estructura + gate `check:row-actions` |
 | **G3** · cerrar diálogo | **63** | ✅ | Tareas 3.5b, 3.5b-bis y **3.5b-ter** · censo por estructura + gate `check:dismiss-actions` |
-| **G4** · paginación | 26 | ✅ | Tarea 3.5b-2a · `deasy-counter-nav` |
-| **G5** · destructivo | 23 | ✅ | Tarea 3.5b-2b · `AppDeleteButton` + `deasy-inline-action` |
+| **G4** · paginación | **14** | ✅ | Tareas 3.5b-2a y **3.5b-2c** · censo por estructura + gate `check:paging-actions` |
+| **G5** · destructivo | **27** | ✅ | Tareas 3.5b-2b y **3.5b-2d** · censo por estructura + gate `check:destructive-actions` |
 | **G6** · filtro | **28** | ✅ | Tareas 3.5a y **3.5a-bis** · censo por estructura + gate `check:filter-actions` |
 | **G7** · pestaña | 19 | ⬜ | 100 % crudos. Componente propio, no variante |
 | **G8** · navegación / menú | 14 | ⬜ | 100 % crudos. Con G7 |
@@ -417,6 +418,8 @@ bash scripts/stack.sh b exec -T frontend pnpm run test:unit
 | **3.5b-ter** | **G3 recensado por ESTRUCTURA** + gate `check:dismiss-actions` | ✅ | Tercera señal distinta: ni el `v-for` de G2 ni el contenedor de G6, sino **lo que el botón le hace al contenedor** — emitir `close`, poner a `null`/`false` la variable que lo abre, llamar a `closeX()`. **63 botones y 0 no conformes**: el censo por función de 3.5b-bis ya los había cerrado. Pero encuentra **10 que aquel no habría visto nunca** («Ahora no», «Aplicar» y siete ✕ sin etiqueta), o sea que el verde es real y no suerte. Gate probado en rojo por dos vías | 2026-08-15 |
 | **3.5b-2a** | **G4 · paginación** | ✅ | El navegador de contador estaba escrito **cuatro veces**: el componente y tres copias a mano. Le faltaban cuatro cosas y por eso se copiaba (`valueLabel`, `size="sm"`, `tone="floating"`, `controls`); ahora las tiene y no viaja ni una utilidad. Las copias **ocultaban** las flechas donde el componente las **deshabilita**, así que el contador saltaba de sitio al llegar al extremo. Estilo entero en `nav.css` como `deasy-counter-nav`. Arbitrarios **412→404** | 2026-08-15 |
 | **3.5b-2b** | **G5 · destructivo** | ✅ | Censo por función: **19 destructivos reales**, 11 no conformes → **13/14 conformes** (queda el `graph-edge-btn` del lienzo, que es G10). `BtnDelete`→**`AppDeleteButton`**: sobrevive como componente (cumple las 3 señales, como la ✕) pero pierde el `<svg>` a mano, el `@onpress` inventado, el `className` y una **prop `variant` fantasma que no declaraba**. Nace `deasy-inline-action--danger` para los 4 «Quitar»/«Desvincular» que tenían **dos tamaños y dos hovers**, uno de ellos inerte. `FirmarPdf` llamaba a la **misma** función desde dos botones distintos. Arbitrarios **404→401**, colores fuera de paleta **257→244** | 2026-08-15 |
+| **3.5b-2c** | **G4 recensado por ESTRUCTURA** + gate `check:paging-actions` | ✅ | Señal: **el @click mueve un índice** (`prevX`/`nextX`, `goToPage`, `++`/`--` sobre él). **14 botones, 3 no conformes**. Los dos «Atrás»/«Siguiente» del arranque llevaban `w-auto px-5` y `w-auto px-6` — **dos paddings distintos en la misma barra**; nace `deasy-auth-button--compact`. El tercero destapó un `AppButton` **sin variante**, que salía sin color | 2026-08-15 |
+| **3.5b-2d** | **G5 recensado por ESTRUCTURA** + gate `check:destructive-actions` | ✅ | Señal: **el @click invoca un borrado**. Buscar el verbo solo como *prefijo* perdía 5 de 19 (`requestDeleteField`, `handleAttachmentDelete`, `confirmDeleteEdge`). **27 botones**. Sale el **gemelo rojo de `deasy-pdf-action`** en `SignatureBox`, que G2 no vio por no estar en un `v-for` | 2026-08-15 |
 | **3.5c** | **G9 · auth** (9) · **G10 · solo icono** (6) · **G11 · envío** (2) | ⬜ | — | — |
 | **3.6** | G1 · los 123 `<button>` crudos de acción general | ⬜ | — | — |
 | **3.7** | G7 y G8 · pestaña y navegación a su propio componente | ⬜ | — | — |
@@ -688,3 +691,66 @@ pintando de `cancel` un «Cerrar»— y en verde al revertir ambas.
 
 **La señal estructural existe siempre, pero es distinta en cada grupo, y encontrarla es el
 trabajo.** Los tres grupos que se cerraron «a ojo» estaban mal contados: **29→48, 23→28, 26→63**.
+
+---
+
+## §10 · G4 y G5 por estructura — las cinco señales, completas (2026-08-15)
+
+### G4 · mueve un índice
+
+Un botón de paginación lleva de un elemento al siguiente de una secuencia ordenada — página 3 de
+12, paso 2 de 5, documento 4 de 9. Eso se ve en el `@click`: `prevX`/`nextX`, `goToPage`, o un
+`++`/`--` sobre el índice.
+
+Aquí caen **dos cosas que parecen distintas y no lo son**: el navegador de páginas de un PDF y el
+«Atrás»/«Siguiente» de un wizard. Las dos mueven un índice; lo que cambia es el destino —una usa
+`AppCounterNavigator` (el widget con la lectura en medio) y la otra `AppButton`, porque un wizard
+no muestra «2 / 5» dentro del propio botón—.
+
+**14 botones, 3 no conformes.** Los dos «Atrás»/«Siguiente» del arranque llevaban `w-auto px-5` y
+`w-auto px-6`: **dos paddings distintos en la misma barra**, así que los dos botones que van uno a
+cada lado no medían lo mismo. Nace `deasy-auth-button--compact` — que **no prejuzga G9**: la familia
+`deasy-auth-button` sigue pendiente de decidir si muere, y lo único que hace el modificador es sacar
+el estilo del atributo.
+
+⚠️ Y un **falso positivo que enseña**: `goToLogin` casaba con `goTo`. Navegar a una **ruta** no es
+mover un índice, y el censo se afinó a `goToPage|Step|Slide|Index|Item`. Pero el botón que destapó
+tenía un defecto real: era un `AppButton` **sin variante**, o sea que salía sin color.
+
+### G5 · invoca un borrado
+
+El censo por función de G5 empezó marcando 38 no conformes y **estaba mal**: contaba los 17
+«Limpiar filtros». El verbo de la etiqueta no distingue *borrar* de *restablecer*; lo que el
+`@click` invoca, sí.
+
+🪤 **Buscar el verbo solo como prefijo perdía 5 de 19.** Los botones que confirman o envuelven se
+llaman `requestDeleteField`, `handleAttachmentDelete`, `confirmDeleteEdge` — el verbo va **en medio**.
+Con la señal corregida: **27 botones**.
+
+Y salió el hallazgo que cierra el círculo: **el gemelo rojo de `deasy-pdf-action`**. `SignatureBox`
+tenía la receta entera copiada otra vez —`h-8 w-8 rounded-xl`, `border-white/80`, `shadow-md`,
+`backdrop-blur-sm`, `active:scale-95`— cambiando solo `emerald` por `rose`. **El censo de G2 no lo
+vio porque ese botón no vive en un `v-for`**: hizo falta la señal de G5 para que apareciera. Es la
+prueba de que las señales no se solapan y de que cada grupo necesita la suya.
+
+Dos decisiones que quedaron escritas en el gate, para que nadie las «corrija»:
+
+- **El ámbar cuenta como aviso destructivo.** «Eliminar solo PDF» va en `softWarning` a propósito:
+  distingue borrar el PDF —conservando el registro del entregable— de borrar el entregable entero,
+  que está al lado en rojo. Los dos destruyen; uno destruye menos.
+- **`showDeleteModal = false` no es destructivo**: cancela el borrado. La palabra «Delete» está en
+  el nombre de la variable, no en la acción. Eso es G3.
+
+### Las cinco señales
+
+| Grupo | Señal estructural | Nº |
+|---|---|--:|
+| **G2** · acción de fila | está dentro de un **`v-for`** | 48 |
+| **G3** · cerrar | **hace desaparecer su contenedor** | 63 |
+| **G4** · paginación | **mueve un índice** | 14 |
+| **G5** · destructivo | **invoca un borrado** | 27 |
+| **G6** · filtro | está dentro de **`deasy-filter-*`** | 28 |
+
+**El inventario original contaba mal en los cinco: 29→48, 23→28, 26→63, 26→14, 23→27.** No por
+descuido al contar, sino porque contar «botones que se parecen» no es contar «botones que hacen lo
+mismo». Los cinco tienen ya gate de techo 0.

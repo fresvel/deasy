@@ -447,6 +447,19 @@
         color: var(--color-body);
     }
 
+    /* El bloque nace `w-full` porque su sitio natural es el pie de un formulario de acceso, donde
+       ocupa la fila entera. El wizard de arranque lo usa para «Atrás» y «Siguiente», que van uno a
+       cada lado y NO deben estirarse, y por eso los dos llevaban `w-auto px-5` / `w-auto px-6`
+       sueltos en el atributo — con dos paddings distintos, ademas, asi que los botones de la misma
+       barra no median lo mismo. (2026-08-15, censo estructural de G4.)
+
+       ⚠️ Esto NO prejuzga G9: la familia `deasy-auth-button` entera esta pendiente de decidir si
+       muere o se queda. Lo unico que hace este modificador es sacar el estilo del atributo, que es
+       lo que G4 exige hoy. */
+    .deasy-auth-button--compact {
+        @apply w-auto px-6;
+    }
+
     
 }
 /* ══ LOS 12 BOTONES DE ACCION DE TABLA MURIERON AQUI — 2026-08-14 ═══════════════════════

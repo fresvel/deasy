@@ -363,7 +363,7 @@
       Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
     </p>
     <template #footer>
-      <AppButton class-name="w-full" @click="goToLogin">
+      <AppButton variant="primary" class-name="w-full" @click="goToLogin">
         Ir al login
       </AppButton>
     </template>

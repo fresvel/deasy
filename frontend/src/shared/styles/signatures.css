@@ -25,7 +25,29 @@
      * accion sobre el mismo objeto: ahora es el mismo boton. Se queda la forma redonda, que es
      * la que se distingue de los campos rectangulares del formulario. */
     .deasy-pdf-action {
-        @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-success text-white shadow-md outline-none transition-colors hover:bg-success-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+        @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-white text-white shadow-md outline-none transition-colors active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+        background: var(--color-success);
+    }
+
+    /* El oscurecido del hover va por `color-mix`, como el de `deasy-btn--primary`, y NO por un
+       paso de la escala: `--color-success` YA es `success-700`, asi que un `success-600` seria
+       mas CLARO al pasar el raton — al reves de lo que se espera. Y `--color-danger` ni siquiera
+       tiene escala propia con ese nombre: es un alias de `error-700`. */
+    .deasy-pdf-action:hover {
+        background: color-mix(in srgb, var(--color-success) 86%, var(--black));
+    }
+
+    /* El gemelo rojo, que aparecio DESPUES (censo estructural de G5) y confirma que el bloque
+       hacia falta: `SignatureBox` tenia la receta entera copiada otra vez —`h-8 w-8 rounded-xl`,
+       `border-white/80`, `shadow-md`, `backdrop-blur-sm`, `active:scale-95`— cambiando solo
+       `emerald` por `rose`. El censo de G2 no lo vio porque ese boton no vive en un `v-for`; hizo
+       falta la señal de G5 —lo que el @click invoca— para que saliera. */
+    .deasy-pdf-action--danger {
+        background: var(--color-danger);
+    }
+
+    .deasy-pdf-action--danger:hover {
+        background: color-mix(in srgb, var(--color-danger) 86%, var(--black));
     }
 }
 

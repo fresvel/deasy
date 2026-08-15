@@ -24,7 +24,7 @@
       <button
         v-if="allowDelete"
         @click.stop="$emit('delete')"
-        class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-rose-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-rose-600/92 active:scale-95"
+        class="deasy-pdf-action deasy-pdf-action--danger"
       >
         <IconTrash class="w-3.5 h-3.5" />
       </button>

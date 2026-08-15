@@ -268,9 +268,9 @@
 
       <!-- Navegación -->
       <div class="flex items-center justify-between gap-3 pt-1">
-        <button v-if="step > 1" type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-5" @click="prevStep">Atrás</button>
+        <button v-if="step > 1" type="button" class="deasy-auth-button deasy-auth-button--secondary deasy-auth-button--compact" @click="prevStep">Atrás</button>
         <span v-else></span>
-        <button v-if="step < steps.length" type="button" class="deasy-auth-button w-auto px-6" :disabled="!canAdvance" @click="nextStep">
+        <button v-if="step < steps.length" type="button" class="deasy-auth-button deasy-auth-button--compact" :disabled="!canAdvance" @click="nextStep">
           Siguiente <IconArrowRight class="h-5 w-5" />
         </button>
         <button v-else type="button" class="deasy-auth-button w-auto px-6" :disabled="isSubmitting" @click="submitBootstrap">
