@@ -667,10 +667,13 @@
         </div>
 
         <!-- Confirmación con tono de advertencia: la activación es irreversible en esta versión. -->
-        <AppDialogOverlay
+        <AppModalShell
+      v-if="showWizardActivateConfirm"
+      controlled
+      nested
           :open="showWizardActivateConfirm"
           title="Confirmar activación"
-          panel-class="max-w-md"
+          content-class="max-w-md"
           @close="showWizardActivateConfirm = false"
         >
           <div class="deasy-alert deasy-alert--warning flex items-start gap-3 leading-relaxed">
@@ -685,7 +688,7 @@
             <AdminButton variant="cancel" @click="showWizardActivateConfirm = false">Cancelar</AdminButton>
             <AdminButton variant="success" :disabled="processDefinitionActivationChecking" @click="confirmWizardActivation">Sí, activar</AdminButton>
           </template>
-        </AppDialogOverlay>
+        </AppModalShell>
       </template>
     </AdminProcessWizardModal>
 
@@ -1129,7 +1132,6 @@ import AdminVacantPositionsSection from "@/modules/admin/components/tables/Admin
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import { Modal } from "@/shared/utils/modalController";

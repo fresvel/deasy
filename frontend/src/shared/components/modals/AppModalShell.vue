@@ -1,11 +1,12 @@
 <template>
   <div
     ref="rootElement"
-    class="deasy-dialog-root fixed inset-0 z-1060 overflow-y-auto px-4 py-8"
-    :class="controlled ? (open ? 'flex' : 'hidden') : 'hidden'"
+    class="deasy-dialog-root fixed inset-0 overflow-y-auto px-4 py-8"
+    :class="[controlled ? (open ? 'flex' : 'hidden') : 'hidden', nested ? 'z-[1075]' : 'z-1060']"
     data-dialog-root
     tabindex="-1"
-    :aria-labelledby="labelledBy"
+    role="dialog"
+    :aria-labelledby="labelledBy || undefined"
     :aria-hidden="controlled ? (!open).toString() : 'true'"
     aria-modal="true"
     v-bind="attrs"
@@ -53,9 +54,19 @@ const props = defineProps({
     type: String,
     default: ""
   },
+  /* Deja de ser obligatorio al absorber `AppDialogOverlay` (2026-08-15): aquel no lo pedia y sus
+     nueve consumidores no lo pasan. Sin el, no se emite el atributo en vez de emitirlo vacio. */
   labelledBy: {
     type: String,
-    required: true
+    default: ""
+  },
+  /* ANIDADO — un modal que se abre DESDE otro modal, como el alta de alcance o de periodo dentro
+     del asistente. Sube una capa (1075) para quedar por encima del que lo abrio, y por debajo del
+     selector de clave ajena (1090). Era la unica razon de ser de `AppDialogOverlay`, junto con su
+     mecanica de `v-if`, que ahora la pone el consumidor. */
+  nested: {
+    type: Boolean,
+    default: false
   },
   size: {
     type: String,

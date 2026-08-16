@@ -40,10 +40,13 @@
     </div>
 
     <!-- Diálogo de nueva versión: elige el nivel de cambio semver. Anidado sobre el modal de la plantilla. -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="showVersionDialog"
+      controlled
+      nested
       :open="showVersionDialog"
       title="Crear nueva versión"
-      panel-class="max-w-md"
+      content-class="max-w-md"
       @close="showVersionDialog = false"
     >
       <p class="mb-3 mt-0 text-sm text-icon">
@@ -67,7 +70,7 @@
         <AdminButton variant="cancel" @click="showVersionDialog = false">Cancelar</AdminButton>
         <AdminButton variant="primary" @click="confirmNewVersion">Crear versión</AdminButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Aviso de solo lectura: versión publicada/retirada (inmutable). -->
     <div v-if="isReadOnly" class="deasy-alert deasy-alert--warning mt-3">
@@ -579,7 +582,6 @@ import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vu
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInlineShell from "@/shared/components/modals/AppInlineShell.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";

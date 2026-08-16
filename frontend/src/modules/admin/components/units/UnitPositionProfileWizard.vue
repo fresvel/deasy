@@ -1,8 +1,11 @@
 <template>
-  <AppDialogOverlay
+  <AppModalShell
+      v-if="open"
+      controlled
+      nested
     :open="open"
     :title="`Perfil del puesto${positionLabel ? ' · ' + positionLabel : ''}`"
-    panel-class="max-w-lg"
+    content-class="max-w-lg"
     @close="$emit('close')"
   >
     <!-- Indicador de pasos -->
@@ -56,14 +59,14 @@
         </div>
       </div>
     </template>
-  </AppDialogOverlay>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { ref, computed, watch, useId } from "vue";
 import { IconCheck } from "@tabler/icons-vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 // El nombre visible del textarea es el <h4> del paso; se enlaza por aria-labelledby.
 // useId() da un prefijo distinto por instancia para no duplicar el id.

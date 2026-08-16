@@ -20,7 +20,10 @@
     </div>
 
     <!-- Alta/edición de una regla en un modal enfocado (mismo patrón que Paquetes). -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="canManage && formOpen"
+      controlled
+      nested
       :open="canManage && formOpen"
       :title="editId ? 'Editar regla de alcance' : 'Nueva regla de alcance'"
       @close="cancelForm"
@@ -161,7 +164,7 @@
           @cancel="cancelForm"
         />
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <div v-if="loading" class="text-sm text-muted">Cargando reglas vinculadas...</div>
     <AppDataTable
@@ -209,7 +212,7 @@ import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 const props = defineProps({
   context: { type: Object, default: null },

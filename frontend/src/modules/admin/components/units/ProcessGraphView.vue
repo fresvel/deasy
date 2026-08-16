@@ -81,7 +81,10 @@
     </div>
 
     <!-- Confirmar desvincular -->
-    <AppDialogOverlay :open="Boolean(selectedEdge)" title="Desvincular proceso" panel-class="max-w-md" @close="selectedEdge = null">
+    <AppModalShell
+      v-if="Boolean(selectedEdge)"
+      controlled
+      nested :open="Boolean(selectedEdge)" title="Desvincular proceso" content-class="max-w-md" @close="selectedEdge = null">
       <p class="m-0 text-sm text-icon">
         ¿Desvincular <strong>{{ selectedEdgeLabel }}</strong>? El sub-proceso quedará como proceso raíz (sin padre).
       </p>
@@ -89,10 +92,13 @@
         <AppButton variant="cancel" @click="selectedEdge = null">Cancelar</AppButton>
         <AppButton variant="danger" @click="confirmDeleteEdge">Desvincular</AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Crear proceso (raíz / hijo / hermano) -->
-    <AppDialogOverlay :open="Boolean(createContext)" :title="createDialogTitle" panel-class="max-w-md" @close="createContext = null">
+    <AppModalShell
+      v-if="Boolean(createContext)"
+      controlled
+      nested :open="Boolean(createContext)" :title="createDialogTitle" content-class="max-w-md" @close="createContext = null">
       <p class="m-0 mb-3 text-sm text-icon">{{ createDialogHint }}</p>
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
@@ -108,10 +114,13 @@
         <AppButton variant="cancel" @click="createContext = null">Cancelar</AppButton>
         <AppButton variant="primary" :disabled="!createForm.name.trim()" @click="confirmCreateProcess">Crear</AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Editar datos generales del proceso (modal, como en unidades) -->
-    <AppDialogOverlay :open="Boolean(editingProcess)" title="Editar proceso" panel-class="max-w-md" @close="closeEditModal">
+    <AppModalShell
+      v-if="Boolean(editingProcess)"
+      controlled
+      nested :open="Boolean(editingProcess)" title="Editar proceso" content-class="max-w-md" @close="closeEditModal">
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
@@ -134,7 +143,7 @@
         <AppButton variant="cancel" :disabled="savingEdit" @click="closeEditModal">Cancelar</AppButton>
         <AppButton variant="primary" :disabled="savingEdit || !editForm.name.trim()" @click="saveProcessEdit">{{ savingEdit ? "Guardando…" : "Guardar" }}</AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Drawer: cockpit del proceso (configuraciones, sub-procesos, lanzamientos) -->
     <div v-if="detailProcess" class="deasy-drawer-overlay" @click.self="closeDetail">
@@ -369,7 +378,7 @@ import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import { IconArrowLeft, IconDownload, IconEye, IconPencil, IconPlus, IconRefresh, IconUnlink } from "@tabler/icons-vue";

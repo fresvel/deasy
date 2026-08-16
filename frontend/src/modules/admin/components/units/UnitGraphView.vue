@@ -101,10 +101,13 @@
     </div>
 
     <!-- Confirmar quitar relación -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="Boolean(selectedEdge)"
+      controlled
+      nested
       :open="Boolean(selectedEdge)"
       title="Quitar relación"
-      panel-class="max-w-md"
+      content-class="max-w-md"
       @close="selectedEdge = null"
     >
       <p class="m-0 text-sm text-icon">
@@ -114,13 +117,16 @@
         <AppButton variant="cancel" @click="selectedEdge = null">Cancelar</AppButton>
         <AppButton variant="danger" @click="confirmDeleteEdge">Quitar</AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Cambiar el tipo de una relación existente -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="Boolean(editingEdge)"
+      controlled
+      nested
       :open="Boolean(editingEdge)"
       title="Cambiar tipo de relación"
-      panel-class="max-w-md"
+      content-class="max-w-md"
       @close="editingEdge = null"
     >
       <p class="m-0 mb-3 text-sm text-icon">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
@@ -134,13 +140,16 @@
         <AppButton variant="cancel" @click="editingEdge = null">Cancelar</AppButton>
         <AppButton variant="primary" @click="confirmEditEdge">Guardar</AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Crear unidad hija/hermana (con su relación) en un paso -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="Boolean(createContext)"
+      controlled
+      nested
       :open="Boolean(createContext)"
       :title="createDialogTitle"
-      panel-class="max-w-md"
+      content-class="max-w-md"
       @close="createContext = null"
     >
       <p class="m-0 mb-3 text-sm text-icon">{{ createDialogHint }}</p>
@@ -165,7 +174,7 @@
         <AppButton variant="cancel" @click="createContext = null">Cancelar</AppButton>
         <AppButton variant="primary" :disabled="!createForm.name.trim() || !createForm.unit_type_id" @click="confirmCreateUnit">Crear</AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Drawer: detalle de unidad (puestos y ocupaciones) -->
     <div v-if="detailUnit" class="deasy-drawer-overlay" @click.self="closeDetail">
@@ -404,10 +413,13 @@
     </div>
 
     <!-- Editar puesto (cargo, título, tipo, jefatura, activo) -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="Boolean(editingPosition)"
+      controlled
+      nested
       :open="Boolean(editingPosition)"
       title="Editar puesto"
-      panel-class="max-w-md"
+      content-class="max-w-md"
       @close="editingPosition = null"
     >
       <div class="flex flex-col gap-3">
@@ -440,7 +452,7 @@
         <AppButton variant="cancel" @click="editingPosition = null">Cancelar</AppButton>
         <AppButton variant="primary" :disabled="!editPositionForm.cargo_id" @click="confirmEditPosition">Guardar</AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <!-- Wizard de perfil del puesto -->
     <UnitPositionProfileWizard
@@ -451,10 +463,13 @@
     />
 
     <!-- Vincular / editar proceso de la unidad (regla de alcance) -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="processModalOpen"
+      controlled
+      nested
       :open="processModalOpen"
       :title="processEditingRuleId ? 'Editar proceso de la unidad' : 'Vincular proceso a la unidad'"
-      panel-class="max-w-md"
+      content-class="max-w-md"
       @close="processModalOpen = false"
     >
       <div class="flex flex-col gap-3">
@@ -529,7 +544,7 @@
           {{ processSaving ? 'Guardando…' : (processEditingRuleId ? 'Guardar' : 'Vincular') }}
         </AppButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
   </div>
 </template>
 
@@ -548,7 +563,7 @@ import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import UnitNode from "./UnitNode.vue";

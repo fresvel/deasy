@@ -26,7 +26,7 @@
  *      se aplastaba a 2 px de ancho y desaparecia.
  *   3. Siempre tiene la misma etiqueta y el mismo papel.
  *
- * Y como su contrato no estaba claro, DOS armazones —`AppModalShell` y `AppDialogOverlay`— se
+ * Y como su contrato no estaba claro, DOS armazones —`AppModalShell` (que absorbio al otro el 2026-08-15) y `AppDialogOverlay`— se
  * saltaron el componente y copiaron el markup a mano. O sea que el mismo boton llegaba al DOM
  * por dos caminos y con tres combinaciones de clases distintas.
  *

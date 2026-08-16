@@ -1,5 +1,8 @@
 <template>
-  <AppDialogOverlay :open="open" :title="guided ? 'Actualizar plantilla de configuración activa' : 'Crear nueva versión'" panel-class="max-w-md" @close="$emit('close')">
+  <AppModalShell
+      v-if="open"
+      controlled
+      nested :open="open" :title="guided ? 'Actualizar plantilla de configuración activa' : 'Crear nueva versión'" content-class="max-w-md" @close="$emit('close')">
     <p v-if="guided" class="mb-3 mt-0 text-sm text-icon">
       Crea borradores de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>
       y de su configuración activa. Editarás el contenido y, al publicar, se <strong>publica la plantilla y se
@@ -27,12 +30,12 @@
       <AppButton variant="cancel" :disabled="busy" @click="$emit('close')">Cancelar</AppButton>
       <AppButton variant="primary" :disabled="busy" @click="$emit('confirm', level)">{{ busy ? "Creando…" : (guided ? "Crear borradores" : "Crear versión") }}</AppButton>
     </template>
-  </AppDialogOverlay>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { ref, watch } from "vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 
 const props = defineProps({

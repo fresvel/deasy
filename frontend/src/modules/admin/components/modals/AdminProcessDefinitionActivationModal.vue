@@ -33,10 +33,13 @@
     />
 
     <!-- Confirmación con tono de advertencia: la activación es irreversible en esta versión. -->
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="showConfirm"
+      controlled
+      nested
       :open="showConfirm"
       title="Confirmar activación"
-      panel-class="max-w-md"
+      content-class="max-w-md"
       @close="showConfirm = false"
     >
       <div class="deasy-alert deasy-alert--warning flex items-start gap-3 leading-relaxed">
@@ -51,7 +54,7 @@
         <AdminButton variant="cancel" @click="showConfirm = false">Cancelar</AdminButton>
         <AdminButton variant="success" @click="confirmActivate">Sí, activar</AdminButton>
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <template #footer>
       <AdminButton variant="cancel" @click="$emit('cancel')">Cancelar</AdminButton>
@@ -66,7 +69,7 @@ import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminProcessWizardShell from "@/modules/admin/components/modals/AdminProcessWizardShell.vue";
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminConfigActivationDiff from "@/modules/admin/components/modals/AdminConfigActivationDiff.vue";
 
 const props = defineProps({

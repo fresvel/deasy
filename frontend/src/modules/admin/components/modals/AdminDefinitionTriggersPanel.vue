@@ -20,10 +20,13 @@
       </AdminButton>
     </div>
 
-    <AppDialogOverlay
+    <AppModalShell
+      v-if="canManage && formOpen"
+      controlled
+      nested
       :open="canManage && formOpen"
       :title="editId ? 'Editar periodo' : 'Nuevo periodo'"
-      panel-class="max-w-2xl"
+      content-class="max-w-2xl"
       @close="cancelForm"
     >
       <div class="grid gap-3 md:grid-cols-12">
@@ -56,7 +59,7 @@
           @cancel="cancelForm"
         />
       </template>
-    </AppDialogOverlay>
+    </AppModalShell>
 
     <div v-if="loading" class="text-sm text-muted">Cargando periodos del proceso...</div>
     <AppDataTable
@@ -105,7 +108,7 @@ import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
-import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
 // instancia, así el panel puede montarse dos veces sin duplicar ids.
