@@ -1,8 +1,6 @@
 <template>
-  <div class="admin-page-header">
-    <div class="admin-page-header__main" />
-    <div class="admin-page-header__actions">
-      <div class="flex flex-wrap items-center gap-2">
+  <AppActionBar>
+    <div class="flex flex-wrap items-center gap-2">
         <AdminButton
           variant="secondary"
           size="sm"
@@ -35,13 +33,13 @@
           <font-awesome-icon :icon="isProcessDefinitionsTable ? 'list-check' : 'plus'" class="mr-2" />
           {{ isProcessDefinitionsTable ? "Configurar proceso" : "Agregar" }}
         </AdminButton>
-      </div>
     </div>
-  </div>
+  </AppActionBar>
 </template>
 
 <script setup>
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AppActionBar from "@/shared/components/layout/AppActionBar.vue";
 
 defineProps({
   tableHeaderIcon: {

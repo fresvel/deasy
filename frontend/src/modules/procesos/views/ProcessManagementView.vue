@@ -14,14 +14,7 @@
     @primary-nav="revealSidebarForNav"
   >
     <template #header>
-      <div class="deasy-context-header">
-        <div class="deasy-context-header__copy">
-          <div class="deasy-context-header__title">{{ shellHeaderTitle }}</div>
-          <div v-if="shellHeaderSubtitle" class="deasy-context-header__subtitle">
-            {{ shellHeaderSubtitle }}
-          </div>
-        </div>
-      </div>
+      <AppContextHeader :title="shellHeaderTitle" :subtitle="shellHeaderSubtitle" />
     </template>
 
     <template #sidebar>
@@ -214,6 +207,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref } from "vue";
+import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 import { useRouter } from "vue-router";
 import axios from "@/core/services/httpClient";

@@ -15,14 +15,7 @@
   >
 
       <template #header>
-        <div class="deasy-context-header">
-          <div class="deasy-context-header__copy">
-            <div class="deasy-context-header__title">{{ adminShellHeaderTitle }}</div>
-            <div v-if="adminShellHeaderSubtitle" class="deasy-context-header__subtitle">
-              {{ adminShellHeaderSubtitle }}
-            </div>
-          </div>
-        </div>
+        <AppContextHeader :title="adminShellHeaderTitle" :subtitle="adminShellHeaderSubtitle" />
       </template>
 
       <template #sidebar>
@@ -352,6 +345,7 @@
 <script setup>
 
 import { computed, onMounted, ref } from "vue";
+import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 
 import { 

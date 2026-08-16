@@ -14,11 +14,7 @@
     @primary-nav="revealSidebarForNav"
   >
     <template #header>
-      <div class="deasy-context-header">
-        <div class="deasy-context-header__copy">
-          <div class="deasy-context-header__title">Centro de firmas</div>
-        </div>
-      </div>
+      <AppContextHeader title="Centro de firmas" />
     </template>
 
     <template #sidebar>
@@ -56,6 +52,7 @@
  * mas frescos que antes, no menos.
  */
 import { computed, nextTick, watch } from "vue";
+import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useRoute, useRouter } from "vue-router";
 import { IconChecklist, IconMessages, IconSearch, IconSignature } from "@tabler/icons-vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";

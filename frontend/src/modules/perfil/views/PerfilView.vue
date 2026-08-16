@@ -17,12 +17,7 @@
     @primary-nav="revealSidebarForNav"
   >
     <template #header>
-      <div class="deasy-context-header">
-        <div class="deasy-context-header__copy">
-          <div class="deasy-context-header__title">{{ profileContextTitle }}</div>
-          <div v-if="profileContextSubtitle" class="deasy-context-header__subtitle">{{ profileContextSubtitle }}</div>
-        </div>
-      </div>
+      <AppContextHeader :title="profileContextTitle" :subtitle="profileContextSubtitle" />
     </template>
 
     <template #sidebar>
@@ -92,6 +87,7 @@
     
     
 import { ref, computed, onMounted, onBeforeUnmount, provide } from 'vue';
+import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRoute, useRouter } from 'vue-router';
 import axios from '@/core/services/httpClient';

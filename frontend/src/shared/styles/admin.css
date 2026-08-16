@@ -75,6 +75,14 @@
         min-width: 8.75rem;
     }
 
+    /* LA BARRA DE ACCIONES — lo que `admin-page-header` era en sus DOS consumidores de admin y
+       perfil, donde `__main` iba vacío y autocerrado para empujar los botones a la derecha.
+       Un `justify-end` escrito con un elemento de relleno, y con un nombre que prometía un título
+       que no existía. Aquí no hace falta el hueco. */
+    .deasy-action-bar {
+        @apply flex flex-wrap items-start justify-end gap-2;
+    }
+
     /* Los puntos numerados del asistente de perfiles de puesto. Receta de siempre: 10 % de
        relleno, 38 % de borde y el token como texto. */
 

@@ -522,15 +522,18 @@
    ═══════════════════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
+    .deasy-action-bar .admin-btn,
     .admin-page-header__actions .admin-btn {
         min-height: 2.45rem;
     }
 
+    .deasy-action-bar .deasy-btn--sm,
     .admin-page-header__actions .deasy-btn--sm {
         padding-inline: 0.9rem;
         font-size: 0.88rem;
     }
 
+    .deasy-action-bar .deasy-btn--md,
     .admin-page-header__actions .deasy-btn--md {
         padding-inline: 1rem;
         font-size: 0.94rem;

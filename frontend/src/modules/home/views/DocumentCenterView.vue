@@ -14,11 +14,7 @@
     @primary-nav="revealSidebarForNav"
   >
     <template #header>
-      <div class="deasy-context-header">
-        <div class="deasy-context-header__copy">
-          <div class="deasy-context-header__title">Centro documental</div>
-        </div>
-      </div>
+      <AppContextHeader title="Centro documental" />
     </template>
 
     <template #sidebar>
@@ -157,6 +153,7 @@
  * HomeView tuviera abierto --funcionaba de casualidad porque las filas traen su propio process_id--.
  */
 import { computed, onMounted, ref } from "vue";
+import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useRouter } from "vue-router";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";

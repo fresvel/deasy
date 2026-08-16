@@ -14,12 +14,7 @@
     @primary-nav="handlePrimaryNavInteraction"
   >
     <template #header>
-      <div class="deasy-context-header">
-        <div class="deasy-context-header__copy">
-          <div class="deasy-context-header__title">{{ homeContextTitle }}</div>
-          <div v-if="homeContextSubtitle" class="deasy-context-header__subtitle">{{ homeContextSubtitle }}</div>
-        </div>
-      </div>
+      <AppContextHeader :title="homeContextTitle" :subtitle="homeContextSubtitle" />
     </template>
 
     <template #sidebar>
@@ -2126,6 +2121,7 @@
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
+import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRouter, useRoute } from 'vue-router';
 import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';

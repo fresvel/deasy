@@ -1,8 +1,6 @@
 <template>
-  <div class="admin-page-header">
-    <div class="admin-page-header__main" />
-    <div class="admin-page-header__actions">
-      <AppButton
+  <AppActionBar>
+    <AppButton
         v-if="showAdd"
         variant="primary"
         size="md"
@@ -13,16 +11,16 @@
         @click="$emit('add')"
       >
         <IconPlus class="w-4 h-4 mr-2 stroke-[2.5]" />
-        {{ addLabel }}
-      </AppButton>
-    </div>
-  </div>
+      {{ addLabel }}
+    </AppButton>
+  </AppActionBar>
   <slot />
 </template>
 
 <script setup>
 import { IconPlus } from '@tabler/icons-vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
+import AppActionBar from '@/shared/components/layout/AppActionBar.vue';
 
 defineProps({
   addLabel: { type: String, default: 'Agregar' },
