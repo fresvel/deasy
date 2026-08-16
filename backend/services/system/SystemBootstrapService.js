@@ -345,7 +345,7 @@ const putSeedFileObject = async (bucket, objectName, absPath) => {
 // EL CENTINELA `ya_existe` VALE PARA UN DESTINO Y NO PARA EL OTRO, y confundirlos fue el defecto 1.15:
 //
 //   Seeds/<tipo>/<nombre>/**   el CATÁLOGO. Es la copia publicada de `services/system/seeds/` y NADIE
-//                              lo edita a mano -> se republica SIEMPRE, en cada arranque.
+//                              lo edita a mano -> se republica SIEMPRE que se llame a esta función.
 //   System/<code>/v0001/**     el ARTIFACT instanciado. El admin SÍ lo edita desde la web -> si su
 //                              `main.tex.j2` ya está, no se toca. Ahí el centinela es correcto.
 //
@@ -356,7 +356,15 @@ const putSeedFileObject = async (bucket, objectName, absPath) => {
 // MinIO servía un `make.sh` sin `data.json`. Lo destapó el `content_hash` de `zzz_artifact_draft`, que
 // es el único sensor que hay sobre el paquete publicado: el golden era correcto y el entorno el que
 // mentía. Agravante: `test:char:fixture` resetea solo `db`, así que los buckets sobreviven a cada
-// corrida (defecto 1.17).
+// corrida (defecto 1.17, cerrado el 2026-08-14).
+//
+// ⚠️ QUIÉN LLAMA A ESTO, Y POR QUÉ IMPORTA. Hasta el 1.17 el único llamador era `ensureDefaultProcess`,
+// que cuelga de `POST /system/bootstrap/initialize` — y ese endpoint **responde 409 en cuanto la
+// instalación deja de ser virgen**. O sea: partir el centinela arreglaba la lógica, pero **no había
+// forma de ejecutarla en un entorno vivo**. Desde el 1.17 la llama también `index.js` en cada arranque
+// (`publishSeedsOnBoot`), que es lo que hace que una semilla actualizada llegue de verdad al
+// desplegar. Si algún día se quita esa llamada, este comentario vuelve a describir una intención en
+// vez de un hecho.
 //
 // Los tres ayudantes de MinIO entran por parámetro CON SU VALOR POR DEFECTO: es la única costura que
 // permite probar el reparto catálogo/artifact sin `mock.module` (que en este Node pide un flag

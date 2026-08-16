@@ -1,6 +1,6 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 12 de 23 tareas · 5 de 9 defectos** — abierto el **2026-08-14**.
+> **Estado: 15 de 25 tareas · 7 de 10 defectos** — abierto el **2026-08-14**.
 >
 > ✅ **La suite de caracterización está VERDE** desde el 2026-08-14 (defecto 1.15 cerrado). Estuvo roja
 > 4 tests, y **no por un golden malo**: el golden era correcto y lo que mentía era el entorno.
@@ -50,7 +50,9 @@ plan.
 | `T1.15-a` | 1.15 | **Diagnóstico**: el golden era CORRECTO y el hash determinista; lo viejo era MinIO | ✅ | Repo dice `data.json`, MinIO no; dos corridas dan el mismo hash | 2026-08-14 |
 | `T1.15-b` | 1.15 | El centinela `ya_existe` deja de gobernar el catálogo `Seeds/`; la suite vuelve a verde | ✅ | **4 fallos → 0**, 0 goldens movidos, `make.sh` publicado ya lleva `data.json`. 6 unitarios nuevos, con control positivo | 2026-08-14 |
 | `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ✅ | `[unitId, cargoId, unitTypeId]`; **7 unitarios nuevos** con control positivo (solo falla el de posiciones al restaurar el bug); censo: 6 `unshift` en el backend, este era el único roto | 2026-08-14 |
-| `T1.17-a` | 1.17 | **Decisión escrita**: cómo llega una semilla nueva a un entorno YA arrancado (hoy: por ningún camino) | ⬜ | — | — |
+| `T1.17-a` | 1.17 | **Decisión: publicar en el ARRANQUE.** Los otros caminos se midieron y no existen: `/bootstrap/initialize` da **409 para siempre**, el despliegue solo hace `pull`+`up -d`, y `/template_seeds/sync` va en dirección contraria | ✅ | Mapa completo de caminos, con rutas y líneas | 2026-08-14 |
+| `T1.17-b` | 1.17 | **Nueva.** `publishSeedsOnBoot` en `index.js`: una semilla actualizada llega al reiniciar o desplegar, sin intervención | ✅ | Log del arranque: «Semilla base publicada en MinIO (artifact: respetado)». 48 PUT, ~92 KB, &lt;1 s | 2026-08-14 |
+| `T1.17-c` | 1.17 | **Nueva.** `test:char:fixture` resetea también `storage`: MinIO deja de ser una entrada oculta | ✅ | Suite verde **sin capturar** y 0 goldens movidos; el bucket baja de 435 a 332 objetos (fuera la basura acumulada) | 2026-08-14 |
 | `T1.18-a` | 1.18 | El PDF deja de renombrarse a `pdf` al editar; el golden `editar_ok` se mueve y **ese diff es la prueba** | ✅ | **Una línea en un golden**: `editar_ok` pasa a valer lo mismo que `crear_ok` — crear y editar producen ya el paquete idéntico. 4 unitarios del predicado | 2026-08-14 |
 
 **Resumen por defecto** (se deriva de la tabla de arriba; no es una segunda lista de tareas):
@@ -64,7 +66,7 @@ plan.
 | ~~**1.11**~~ | ~~Parámetros de MÁS se ignoran en silencio~~ | Backend · `config/postgres.js` | ✅ **2026-08-14** |
 | ~~**1.15**~~ | ~~El catálogo de semillas nunca llega a un entorno ya arrancado~~ | Bootstrap · MinIO | ✅ **2026-08-14** |
 | ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ | Backend · firma | ✅ **2026-08-14** |
-| **1.17** | **Nada re-publica la semilla en un entorno vivo**, y el arnés no resetea `storage` | Bootstrap · arnés | ⬜ **nuevo** |
+| ~~**1.17**~~ | ~~Nada re-publica la semilla en un entorno vivo~~ | Bootstrap · arnés | ✅ **2026-08-14** |
 | ~~**1.18**~~ | ~~Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf`~~ | Backend · plantillas | ✅ **2026-08-14** |
 
 ---
@@ -263,29 +265,14 @@ otras cinco.
 
 ---
 
-## §10 · Defecto 1.17 — nada re-publica la semilla en un entorno ya arrancado
+## ~~§10 · Defecto 1.17 — nada re-publica la semilla en un entorno ya arrancado~~
 
-**Abierto el 2026-08-14**, al cerrar el 1.15. Es **la mitad del 1.15 que su arreglo NO cubre**, y hay
-que decirlo así de claro: partir el centinela era **necesario pero no suficiente**.
+✅ **CERRADO el 2026-08-14.** Ficha completa en
+[`bitacora.md` § 1.17](./bitacora.md#117--nada-re-publicaba-la-semilla-en-un-entorno-ya-arrancado).
 
-**Lo que se descubrió al verificar**: `publishBaseSeedAssets` no corre en cada arranque. Cuelga de
-`ensureDefaultProcess`, que solo se ejecuta en el **bootstrap del sistema**. Así que en un entorno ya
-bootstrapeado —producción incluida— **no hay ningún camino que republique la semilla**: ni reiniciar el
-backend, ni desplegar una imagen nueva. El arreglo del ZIP de `49d41ce4` sigue sin llegar allí.
-
-Lo que sí lo ejercita es `test:char:fixture`, porque resetea la base y re-bootstrapea. Por eso la suite
-volvió a verde y un reinicio no bastaba.
-
-**El agravante, y es el segundo frente de esta ficha**: `backend/package.json` → `test:char:fixture`
-resetea **solo `db`**. `backend/scripts/reset.mjs` ya tiene el objetivo `storage` y nadie lo invoca en
-el arnés, así que **el estado de MinIO es una entrada oculta del sistema bajo prueba**: los buckets
-sobreviven a todas las corridas y una pila puede medir contra objetos de hace semanas. Es exactamente
-lo que pasó.
-
-`T1.17-a` es una **decisión**, y las salidas no son equivalentes: republicar en cada arranque (simple,
-pero hay que ver qué cuesta y si pisa algo), un comando de mantenimiento explícito, o comparar el hash
-del árbol contra lo publicado y republicar solo si difieren. Antes de tocar `test:char:fixture` hay que
-comprobar que **los flujos de firma, que suben PDFs, no dependan de objetos que hoy sobreviven**.
+En una línea: la semilla ahora se publica **en cada arranque**, así que llega al reiniciar o
+desplegar; y `test:char:fixture` resetea también `storage`, con lo que MinIO deja de ser una entrada
+oculta al sistema bajo prueba.
 
 ---
 
@@ -317,15 +304,23 @@ una decisión tuya**.
 2. **1.18** — también acotado, y su golden `editar_ok` **ya está congelado**, así que el diff *es* la
    prueba. Cuidado con una cosa: `entry_object_key` guarda un prefijo, y hay que ver si eso es un dato
    correcto mal usado o un dato mal escrito.
-3. **1.17** — es el que más rinde de los tres, porque **cierra una clase de fallo, no un caso**: el
-   estado de MinIO como entrada oculta al sistema bajo prueba. Pero empieza por `T1.17-a`, que es una
-   decisión, y antes de tocar `test:char:fixture` hay que censar qué flujos dependen de objetos que hoy
-   sobreviven al reset.
+3. ~~**1.17**~~ ✅ — cerrado el 2026-08-14. Era el que más rendía, y se confirmó: **cerró una clase de
+   fallo, no un caso**.
+
+**Lo que queda son los tres que estaban desde el principio**, y los tres piden una decisión tuya antes
+que trabajo:
+
 4. **1.10** — el más caro y el que más decisiones tiene; empieza por `T1.10-d`, que puede cambiar todo
    lo demás.
 5. **1.7** — pide navegador, pero el radio es un componente y seis líneas.
 6. **1.3** — el último a propósito: no se puede escribir el guard hasta que la regla esté decidida, y
    la regla no es técnica.
+
+> **Lo que enseñó la tanda del 2026-08-14.** Se cerraron seis defectos y **aparecieron cuatro nuevos**
+> (1.15, 1.16, 1.17, 1.18), todos de *medir*, ninguno de planificar. Y **tres de los seis resultaron
+> ser otra cosa** de lo que decía su ficha. La moraleja para el que siga: **remide la ficha antes de
+> creértela**, y desconfía especialmente de los diagnósticos que suenan a explicación cómoda —
+> «el hash no es determinista» lo era, y costó una corrida entera descubrirlo.
 
 > **Y una advertencia sobre el argumento de este frente.** «Están congelados en pruebas, así que el
 > arreglo se verifica solo» resultó ser **condicional**: la suite estuvo roja 4 tests y nadie lo sabía.

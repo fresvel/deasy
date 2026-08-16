@@ -1,7 +1,7 @@
-# Bitácora del frente 1 — los catorce cerrados
+# Bitácora del frente 1 — los quince cerrados
 
 > Esto **no es historia decorativa**. La mitad del valor de cada ficha es *por qué no se hizo de la
-> otra forma*: hay **ocho** sitios de este repo donde la «corrección obvia» es la equivocada, y están
+> otra forma*: hay **nueve** sitios de este repo donde la «corrección obvia» es la equivocada, y están
 > aquí. Léela antes de proponer un arreglo que se le parezca.
 >
 > Lo pendiente está en [`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md).
@@ -21,6 +21,7 @@
 | 1.14 | Clonar una configuración convertía en `single` todo lo `routed` | 2026-08-11 · `597cd43` | 1 línea |
 | 1.15 | El catálogo de semillas nunca llegaba a un entorno ya arrancado | 2026-08-14 | **ninguno — el golden ya era correcto** |
 | 1.16 | Orden de parámetros cruzado en `context_ancestor_type` | 2026-08-14 | **ninguno, y es correcto** |
+| 1.17 | Nada re-publicaba la semilla en un entorno ya arrancado | 2026-08-14 | **ninguno, y es correcto** |
 | 1.18 | Al editar, el PDF se renombraba a `pdf` | 2026-08-14 | **`editar_ok`, una línea — y ES la prueba** |
 
 ---
@@ -594,3 +595,71 @@ idéntico**, que es lo semánticamente correcto. Que difirieran ERA el defecto.
 
 Más **4 unitarios** sobre el predicado, incluido el caso que da la trampa: `main.tex.j2/` es un
 directorio aunque su nombre lleve puntos.
+
+---
+
+## 1.17 · Nada re-publicaba la semilla en un entorno ya arrancado
+
+**Cerrado el 2026-08-14.** Es **la mitad que el arreglo del 1.15 no cubría**, y por eso nació con él:
+partir el centinela arreglaba la lógica, pero **no había forma de ejecutarla en un entorno vivo**.
+
+### No era latente: era un productor activo de artefactos obsoletos
+
+Crear una plantilla desde una semilla **descarga de MinIO** (`templateLifecycle.js:1229`). Con el
+catálogo congelado, **cada plantilla que un admin creara en producción heredaba la semilla vieja**. El
+arreglo del ZIP renderizable de `49d41ce4` llevaba un día en el repo y estaba ausente de todas las
+pilas.
+
+### Los caminos que NO existen, medidos uno a uno
+
+Esto es lo que más costó averiguar, y lo que evita que alguien lo intente otra vez:
+
+| Camino | Por qué no vale |
+|---|---|
+| `POST /system/bootstrap/initialize` | **Responde 409 en cuanto la instalación deja de ser virgen** (`SystemBootstrapService.js:829-838`). En producción está cerrado para siempre |
+| Reiniciar el backend | `index.js` solo hacía `assertPostgresConnection` + `ensurePostgresSchema`. **Cero MinIO** |
+| Desplegar una imagen nueva | `apply-env.sh:190-193` hace `pull` + `up -d`. **Ni migraciones ni bootstrap**: el árbol viaja dentro de la imagen y se queda ahí |
+| `POST /template_seeds/sync` | **Va en dirección contraria**: lee de MinIO y escribe en Postgres. Con el catálogo viejo solo consolida lo viejo |
+
+### El arreglo: publicar en el arranque
+
+`publishSeedsOnBoot` en `index.js`, tras `ensurePostgresSchema`. **Es lo que el comentario del 1.15 ya
+afirmaba que pasaba** — decía «se republica SIEMPRE, en cada arranque» y era falso; ahora es cierto, y
+el comentario se corrigió para no volver a describir una intención como un hecho.
+
+Es seguro reescribir en cada arranque **porque el centinela sigue protegiendo lo que el admin edita**:
+solo se republica el catálogo `Seeds/`; el artifact `System/` se respeta si ya existe. Verificado en el
+log del arranque: `Semilla base publicada en MinIO (artifact: respetado)`.
+
+**Best-effort a propósito**: un MinIO caído no impide que el backend sirva. Coste medido: **48 PUT,
+~92 KB, menos de un segundo**.
+
+> **Se descartó comparar hashes** (`hashDirectory(BASE_SEED_DIR)` contra una huella publicada). Daría
+> un arranque más barato y un sensor explícito de «lo publicado está al día», que hoy no existe — pero
+> con 92 KB medidos la optimización es prematura, y habría que decidir dónde vive la huella y qué pasa
+> cuando falta, que es el caso de **todos** los entornos actuales. Queda como evolución natural.
+
+### El segundo frente: MinIO era una entrada oculta a las pruebas
+
+`test:char:fixture` reseteaba **solo `db`**, así que los buckets sobrevivían a todas las corridas. Eso
+es exactamente lo que causó el 1.15. Ahora resetea `db storage`.
+
+**Se censó antes de tocarlo**, porque `reset.mjs storage` es todo-o-nada sobre siete buckets:
+
+- **Ningún flow lee el bucket de certificados** — comprobado. Los casos de firma usan
+  `certificate_id: "999999"` y salen por 404 antes de tocar el almacenamiento.
+- **Ningún golden depende de un objeto que no cree la propia corrida.** Los seis casos de «ruta
+  fabricada» (`approve_ok` y cinco de descarga) dependen de la **ausencia** de objetos, que el reset
+  refuerza.
+- El único objeto que se asumía presente era el catálogo `Seeds/`, y el bootstrap lo republica.
+
+**La verificación fue correr la suite SIN capturar**: verde y **cero goldens movidos**. Eso convierte
+en demostrada la premisa que `lib/db.mjs:84` daba por supuesta —«ningún golden observa los objetos de
+MinIO»— en vez de dejarla escrita como suposición.
+
+**Efecto secundario medible**: el bucket pasó de **435 a 332 objetos**. Los 103 que sobraban eran
+paquetes huérfanos que `cleanupDraftArtifactByCode` dejaba a propósito y que se acumulaban corrida
+tras corrida. Además cierra un hueco real: la rama de edición hace `downloadMinioPrefixToDirectory`
+sobre el prefijo del artifact y `uploadDirectoryToMinio` **no purga antes de subir**, así que un
+residuo de una versión vieja del código habría entrado en el `content_hash`. Dependía de la suerte;
+ahora no.

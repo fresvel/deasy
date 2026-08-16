@@ -6,6 +6,7 @@ import user_router from "./routes/user_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
 import { assertPostgresConnection } from "./config/postgres.js";
+import { publishBaseSeedAssets } from "./services/system/SystemBootstrapService.js";
 import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
@@ -177,6 +178,36 @@ app.use(express.static("public"));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Publica la semilla base en MinIO EN CADA ARRANQUE (defecto 1.17).
+//
+// POR QUÉ AQUÍ. `publishBaseSeedAssets` solo colgaba de `ensureDefaultProcess`, que a su vez solo
+// corre desde `POST /system/bootstrap/initialize` — y ese endpoint **se niega con 409 en cuanto la
+// instalación deja de ser virgen**. Así que en un entorno ya bootstrapeado NO HABÍA NINGÚN CAMINO
+// que llevara una semilla actualizada a MinIO: ni reiniciar, ni desplegar (`apply-env.sh` solo hace
+// `pull` + `up -d`), ni el `POST /template_seeds/sync`, que va en la dirección contraria (lee de
+// MinIO y escribe en Postgres, así que con el catálogo viejo solo consolida lo viejo).
+//
+// Y no era latente: crear una plantilla desde una semilla **descarga de MinIO**
+// (`templateLifecycle.js:1229`), así que cada plantilla nueva heredaba la semilla obsoleta. Medido:
+// el arreglo de `49d41ce4` llevaba un día en el repo y estaba ausente de todas las pilas.
+//
+// Es SEGURO reescribir en cada arranque porque el centinela de `publishBaseSeedAssets` sigue
+// protegiendo lo que el admin edita: solo se republica el catálogo `Seeds/` —que nadie toca a mano—;
+// el artifact instanciado `System/` se respeta si ya existe. Coste medido: 48 PUT y ~92 KB, menos de
+// un segundo contra un MinIO local.
+//
+// Best-effort a propósito: un MinIO caído NO debe impedir que el backend sirva. La función ya captura
+// y devuelve `{ published: false, reason }` en vez de lanzar.
+const publishSeedsOnBoot = async () => {
+  const resultado = await publishBaseSeedAssets();
+  if (resultado?.published) {
+    console.log(`✅ Semilla base publicada en MinIO (artifact: ${resultado.artifact ? "sí" : "respetado"})`);
+    return;
+  }
+  console.warn(`⚠️  No se pudo publicar la semilla base en MinIO (${resultado?.reason || "desconocido"}). ` +
+    "El backend sigue en ejecución; las plantillas nuevas heredarían la semilla anterior.");
+};
+
 const initializeDatabaseWithRetry = async () => {
   const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || "0") === "1";
   const maxAttempts = Number(process.env.DB_INIT_MAX_ATTEMPTS || 20);
@@ -187,6 +218,7 @@ const initializeDatabaseWithRetry = async () => {
       await assertPostgresConnection(); // PostgreSQL vía el adaptador
       await ensurePostgresSchema({ reset: shouldResetSchema });
       console.log("✅ PostgreSQL inicializada correctamente");
+      await publishSeedsOnBoot();
       return;
     } catch (error) {
       const isLastAttempt = attempt === maxAttempts;

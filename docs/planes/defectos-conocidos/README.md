@@ -15,9 +15,8 @@ costaba más que hacerlo. Y sin control de ejecución, «⬜» era lo único que
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud | Backend · servicio |
 | **1.7** | El **sello fantasma**: un guard permanentemente verdadero en el panel de firma | Frontend · Vue |
 | **1.10** | La única **bitácora de auditoría** la puentean los caminos automáticos (son **tres**) | Base de datos · triggers |
-| **1.17** | **Nada re-publica la semilla en un entorno vivo**, y el arnés no resetea `storage` | Bootstrap · arnés |
 
-**Catorce ya están cerrados**, y **cinco de ellos el 2026-08-14**. De esos cinco, **tres resultaron
+**Quince ya están cerrados**, y **seis de ellos el 2026-08-14**. De esos cinco, **tres resultaron
 ser otra cosa** de lo que decía su ficha:
 
 - el **1.8** no eran dos documentos en conflicto sino **cinco**, y uno era la documentación publicada;
@@ -39,7 +38,7 @@ habría roto el chat a ocho de diez personas. Todo medido en la bitácora.
 |---|---|---|
 | **[`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md)** | **El ejecutable.** Su **§0 es el control de ejecución**: 23 tareas con estado, evidencia y fecha. Cada defecto tiene ficha con diagnóstico remedido, decisiones pendientes y criterio de cierre | **SÍ. Empieza aquí** |
 | [`CLAUDE.md`](./CLAUDE.md) | **La norma de la carpeta.** Cómo se lleva el control, qué cuenta como evidencia, y lo que NO se hace desde aquí | Se carga sola al trabajar aquí |
-| [`bitacora.md`](./bitacora.md) | Los **catorce cerrados**, con *por qué no se hizo de la otra forma*. **Ocho** sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
+| [`bitacora.md`](./bitacora.md) | Los **quince cerrados**, con *por qué no se hizo de la otra forma*. **Nueve** sitios donde la corrección obvia es la equivocada | Léela antes de proponer un arreglo parecido |
 
 ## Por qué este frente rinde más que los otros
 
