@@ -1,7 +1,14 @@
 <template>
+  <!-- [F4.C 2026-08-16] DOS DELTAS ADOPTADOS de su receta de notifications:
+       · radio 16 -> 12 (`rounded-2xl` -> `rounded-xl`). Era el ultimo panel del sistema en 16 px;
+         el dropzone y la tabla ya habian bajado a 12.
+       · `bg-white/95 backdrop-blur` -> BLANCO SOLIDO. El alfa hacia que el color del aviso
+         dependiera de lo que hubiera debajo —el mismo toast en dos grises segun la pantalla—, que
+         es el anti-patron que este repo evita en todo lo demas. Su receta lo pinta opaco. Con el
+         se va el desenfoque, que solo estaba ahi para disimular ese problema. -->
   <div
     v-if="visible"
-    class="fixed right-6 top-6 z-1080 w-full max-w-md rounded-2xl border bg-white/95 p-4 shadow-theme-lg backdrop-blur"
+    class="fixed right-6 top-6 z-1080 w-full max-w-md rounded-xl border bg-white p-4 shadow-theme-lg"
     :class="`is-${kind}`"
     role="status"
     aria-live="polite"
