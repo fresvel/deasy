@@ -13,8 +13,14 @@
 #
 #   bash scripts/stack.sh b up -d --build
 #   bash scripts/stack.sh b exec -T backend npm run test:char:run
-#   bash scripts/stack.sh b down
+#   bash scripts/stack.sh b stop      <- te vas por hoy, el worktree sigue
+#   bash scripts/stack.sh b down      <- SOLO al retirar el worktree que monta
 #   bash scripts/stack.sh status
+#
+# La pila vive con su WORKTREE, no con la sesion (regla cambiada el 2026-08-14).
+# Antes se bajaba al terminar cada tanda; salia caro, porque el primer `up --build`
+# de una pila es un `npm install` completo. Y lo que aquella regla protegia -medir
+# contra codigo ajeno- ya lo impide el guard de abajo.
 #
 # La pila A ES la `dev` de siempre: mismo proyecto, mismos volumenes, mismos puertos.
 # `docker-env.sh dev` y `stack.sh a` son la misma pila; no hay una quinta.
@@ -57,7 +63,11 @@ QUE la levantas.
   bash scripts/stack.sh b up -d --build
   bash scripts/stack.sh b exec -T backend npm run test:unit
   bash scripts/stack.sh b logs -f backend
-  bash scripts/stack.sh b down            <- OBLIGATORIO al terminar (salvo la A)
+  bash scripts/stack.sh b stop            <- te vas por hoy y tu worktree sigue vivo
+  bash scripts/stack.sh b down            <- al RETIRAR el worktree que monta (salvo la A)
+
+La pila vive con su worktree, no con la sesion: no se baja al terminar una tanda.
+`stop` libera la RAM y conserva base, volumenes y node_modules; `start` la devuelve.
 
 Puertos (A no desplaza; B, C y D suman 100, 200 y 300):
         proxy  https  postgres  minio  consola  signer  rabbit  rabbit-ui  docs  azimutt

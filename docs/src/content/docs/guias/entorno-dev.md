@@ -19,6 +19,21 @@ bash scripts/docker-env.sh dev logs -f backend
 Con eso tienes la aplicación en `http://localhost:8088` (o `https://localhost:8443`) y
 esta documentación en `http://localhost:4321`.
 
+## Antes de cambiar código: tu propio worktree
+
+**Quien va a modificar el repositorio no trabaja en el worktree principal.** Se crea el suyo,
+con rama salida de `develop`, y levanta su pila desde ahí:
+
+```bash
+git worktree add -b <rama> ../deasy-<algo> develop
+cd ../deasy-<algo> && bash scripts/stack.sh <letra> up -d
+```
+
+No es ceremonia: dos personas —o dos sesiones— sobre el mismo árbol **no chocan con un
+conflicto de git, simplemente la última escritura gana**, y además comparten pila, donde un
+`test:char:run` **resetea la base que la otra está usando**. Al terminar: `merge --ff-only`
+en `develop`, `stack.sh <letra> down` y `git worktree remove`.
+
 ## Trabajar en paralelo: las pilas A–D
 
 **Si hay varias sesiones trabajando a la vez, cada una necesita su pila.** Los montajes de
@@ -31,7 +46,8 @@ sin que nadie se enterara.
 bash scripts/stack.sh status                              # qué pila hay y qué worktree monta
 bash scripts/stack.sh c up -d --build                     # levanta la pila C con ESTE worktree
 bash scripts/stack.sh c exec -T backend npm run test:unit
-bash scripts/stack.sh c down                              # OBLIGATORIO al terminar
+bash scripts/stack.sh c stop                              # te vas por hoy, el worktree sigue
+bash scripts/stack.sh c down                              # al RETIRAR el worktree que monta
 ```
 
 | Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | docs |
@@ -48,7 +64,12 @@ Detalles que cuestan tiempo si no se saben:
 - Cada pila tiene **base, MinIO, RabbitMQ, `node_modules` y red propios**. Compartirlos era
   el fallo: con el mismo volumen de Postgres, un `test:char:run` **resetea la base de la
   otra sesión**.
-- **Quien levanta B, C o D la baja al terminar.** Cuatro pilas son 28 contenedores.
+- **La pila vive con su worktree, no con la sesión.** Se baja (`down`) el día que se retira
+  el worktree que monta, no al terminar una tanda de trabajo: el primer `up --build` cuesta
+  un `npm install` completo y volver a pagarlo cada mañana no compensa. Si te vas y tu
+  worktree sigue, **`stop`** — libera la RAM y conserva base, volúmenes y `node_modules`.
+  Cuatro pilas son 28 contenedores, así que dejar corriendo la que no usas sigue sin tener
+  sentido; pero `stop` no es `down`.
 - El primer `up --build` de cada pila cuesta un `npm install` completo, porque el volumen de
   `node_modules` es suyo. A partir de ahí es rápido.
 - `stack.sh` **comprueba** que la pila que vas a usar monta el worktree desde el que la

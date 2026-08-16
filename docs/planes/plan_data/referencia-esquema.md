@@ -43,7 +43,7 @@ sobre `dossiers` + `dossier_items`. Los binarios viven en MinIO, no en la base.
 ## 2. Clasificación por naturaleza
 
 Asignación primaria única; suma 67. **Esta tabla es la que sostiene el rechazo de «una clase por
-tabla»** ([plan §0](./plan-datos-2026-08.md#0--la-decisión-de-fondo-por-qué-no-una-clase-por-tabla)).
+tabla»** ([plan §1](./plan-datos-2026-08.md#1--la-decisión-de-fondo-por-qué-no-una-clase-por-tabla)).
 
 **(a) Catálogo puro — 12 (18 %).** `unit_types`, `relation_unit_types`, `cargos`, `roles`,
 `resources`, `actions`, `term_types`, `template_seeds`, `signature_statuses`,

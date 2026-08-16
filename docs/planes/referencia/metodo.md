@@ -7,7 +7,7 @@
 
 ---
 
-## 1. Las diecisiete reglas
+## 1. Las dieciocho reglas
 
 1. **Extraer POR SCRIPT, no a mano**, y verificar `count == 1` antes de borrar cada bloque. Si el
    script trocea, dale un **invariante de reconstrucción** (las piezas deben reproducir el original
@@ -69,10 +69,23 @@
     todo» esconde: al arreglar el slot de firma hicieron falta **dos** mutaciones distintas para
     tumbar los tests, y eso reveló que **la preservación y la acuñación eran mecanismos separados y
     solo uno estaba roto** — el diagnóstico del plan estaba equivocado y el test lo demostró.
+18. **WORKTREE PROPIO ANTES DE ESCRIBIR.** Una sesión que va a cambiar el repositorio **no trabaja en
+    el worktree principal**: `git worktree add -b <rama> ../deasy-<algo> develop`, y su pila levantada
+    **desde ahí**. Aquí trabajan varias sesiones a la vez, y dos sobre el mismo árbol no chocan con un
+    conflicto de git: **la última escritura gana, en silencio**. Peor aún, comparten pila, y un
+    `test:char:run` **resetea la base que la otra está usando** — pasó tres veces, y las dos primeras
+    se midieron pruebas contra código ajeno sin que nadie se enterara. Es además lo que hace barata la
+    regla 14: una rama separada se descarta entera. Ciclo completo y comandos, en el `CLAUDE.md` de la
+    raíz. **La pila se baja al retirar el worktree, no al terminar la sesión** — mientras tanto,
+    `stop`.
 
 ---
 
 ## 2. Comandos (todo dentro de los contenedores)
+
+⚠️ **`docker-env.sh dev` es la pila A.** Si trabajas en tu propio worktree —y por la regla 18 deberías—
+sustituye `docker-env.sh dev` por **`stack.sh <tu letra>`** en todo lo que sigue: son la misma orden
+contra otra pila, y usar la A desde otro worktree **recrea los contenedores apuntando a tu código**.
 
 ```bash
 bash scripts/docker-env.sh dev exec -T backend  npm run check:imports      # OBLIGATORIO tras mover código
