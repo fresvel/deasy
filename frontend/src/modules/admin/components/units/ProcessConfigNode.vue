@@ -20,8 +20,8 @@
       </button>
     </div>
     <p class="m-0 flex items-center gap-1.5">
-      <span class="max-w-[9.5rem] truncate text-[12px] font-semibold text-body">{{ data.definition_name }}</span>
-      <AppTag :variant="tonoEstado" size="sm" outlined class-name="ml-auto">{{ statusLabel }}</AppTag>
+      <span class="min-w-0 flex-1 truncate text-[12px] font-semibold text-body">{{ data.definition_name }}</span>
+      <AppTag :variant="tonoEstado" size="sm" outlined>{{ statusLabel }}</AppTag>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1 text-[10px] text-muted">
       <span class="truncate">{{ seriesLabel }}</span>

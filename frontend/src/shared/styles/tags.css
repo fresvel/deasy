@@ -116,11 +116,42 @@
         box-shadow: inset 0 0 0 1px var(--tone-line);
     }
 
-    /* PEQUEÑA — para los nodos del grafo, que miden 170-190 px de ancho FIJO y hoy escriben
-       `text-[10px]` a mano. El destino es `text-theme-xs` (12 px), que es lo que F5.1 ya decidio
-       para los 127 sub-12. El radio NO cambia: sigue `rounded-full`, una geometria. */
+    /* PEQUEÑA — para los nodos del grafo, que miden 170-190 px de ancho FIJO.
+     *
+     * ⚠️ NO BASTA CON BAJAR LA FUENTE, y la primera version de este modificador lo hacia asi:
+     * solo `px-2 text-theme-xs`. Medido en el nodo, una pastilla con el codigo de plantilla salia
+     * a **362 px dentro de un nodo de 340** —mas ancha que el nodo entero— y la de version se
+     * partia en dos lineas. El dueno lo vio antes de que ningun gate dijera nada, porque ninguno
+     * mide cajas.
+     *
+     * Hacen falta las tres cosas, no una:
+     *   · la fuente (`text-theme-xs`, 12 px — lo que F5.1 decidio para los 127 sub-12);
+     *   · el padding, que en la base es `px-2.5 py-0.5` porque alli la pastilla va suelta en una
+     *     fila; dentro de un nodo eso es un tercio del ancho disponible;
+     *   · y el LIMITE: `max-w-full` + `truncate`, que es lo que impide que un nombre largo
+     *     desborde. La base es `w-fit` a proposito —una pastilla suelta se ajusta a su texto— y
+     *     eso es justo lo que aqui no vale.
+     *
+     * El radio no cambia: sigue `rounded-full`, una geometria. */
     .deasy-tag--sm {
-        @apply px-2 text-theme-xs;
+        @apply shrink-0 px-1.5 py-0 text-theme-xs leading-5;
+    }
+
+    /* RECORTABLE — la excepcion, y por eso es un modificador aparte y no parte de `--sm`.
+     *
+     * Una pastilla NO cede: su contenido es el dato («Activa» a medias no dice nada), y por eso
+     * `--sm` lleva `shrink-0`. La unica que si puede cortarse es aquella cuyo contenido es un
+     * IDENTIFICADOR LARGO que el `title` ya repite entero — el codigo de plantilla,
+     * `tpl_informe_gestion_docente` en 170 px. Ahi recortar es lo correcto y no se pierde nada.
+     *
+     * `min-w-0` no es adorno: sin el, un hijo flex nunca baja de su ancho de contenido y el
+     * `truncate` no llega a activarse. Y `justify-start` TAMPOCO: la base centra el contenido
+     * —correcto para una pastilla corta—, pero centrado + `overflow:hidden` recorta por LOS DOS
+     * lados y se come el principio del identificador, que es justo la parte que lo distingue
+     * (`tpl_informe_general` salia como «nforme_gen», sin elipsis). Alineado al inicio, el corte
+     * cae al final y la elipsis aparece donde debe. */
+    .deasy-tag--truncate {
+        @apply min-w-0 shrink justify-start truncate;
     }
 
     /* EL PUNTO. Hermano de `__icon`: el mismo papel —el simbolo que precede a la etiqueta— pero
