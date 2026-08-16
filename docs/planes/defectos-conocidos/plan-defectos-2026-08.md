@@ -1,6 +1,6 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 11 de 23 tareas · 4 de 8 defectos** — abierto el **2026-08-14**.
+> **Estado: 12 de 23 tareas · 5 de 9 defectos** — abierto el **2026-08-14**.
 >
 > ✅ **La suite de caracterización está VERDE** desde el 2026-08-14 (defecto 1.15 cerrado). Estuvo roja
 > 4 tests, y **no por un golden malo**: el golden era correcto y lo que mentía era el entorno.
@@ -51,7 +51,7 @@ plan.
 | `T1.15-b` | 1.15 | El centinela `ya_existe` deja de gobernar el catálogo `Seeds/`; la suite vuelve a verde | ✅ | **4 fallos → 0**, 0 goldens movidos, `make.sh` publicado ya lleva `data.json`. 6 unitarios nuevos, con control positivo | 2026-08-14 |
 | `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ✅ | `[unitId, cargoId, unitTypeId]`; **7 unitarios nuevos** con control positivo (solo falla el de posiciones al restaurar el bug); censo: 6 `unshift` en el backend, este era el único roto | 2026-08-14 |
 | `T1.17-a` | 1.17 | **Decisión escrita**: cómo llega una semilla nueva a un entorno YA arrancado (hoy: por ningún camino) | ⬜ | — | — |
-| `T1.18-a` | 1.18 | El PDF deja de renombrarse a `pdf` al editar; el golden `editar_ok` se mueve y **ese diff es la prueba** | ⬜ | — | — |
+| `T1.18-a` | 1.18 | El PDF deja de renombrarse a `pdf` al editar; el golden `editar_ok` se mueve y **ese diff es la prueba** | ✅ | **Una línea en un golden**: `editar_ok` pasa a valer lo mismo que `crear_ok` — crear y editar producen ya el paquete idéntico. 4 unitarios del predicado | 2026-08-14 |
 
 **Resumen por defecto** (se deriva de la tabla de arriba; no es una segunda lista de tareas):
 
@@ -65,7 +65,7 @@ plan.
 | ~~**1.15**~~ | ~~El catálogo de semillas nunca llega a un entorno ya arrancado~~ | Bootstrap · MinIO | ✅ **2026-08-14** |
 | ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ | Backend · firma | ✅ **2026-08-14** |
 | **1.17** | **Nada re-publica la semilla en un entorno vivo**, y el arnés no resetea `storage` | Bootstrap · arnés | ⬜ **nuevo** |
-| **1.18** | Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf` | Backend · plantillas | ⬜ **nuevo** |
+| ~~**1.18**~~ | ~~Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf`~~ | Backend · plantillas | ✅ **2026-08-14** |
 
 ---
 
@@ -289,24 +289,14 @@ comprobar que **los flujos de firma, que suben PDFs, no dependan de objetos que 
 
 ---
 
-## §11 · Defecto 1.18 — al editar, el PDF se renombra a `pdf`
+## ~~§11 · Defecto 1.18 — al editar, el PDF se renombra a `pdf`~~
 
-**Abierto el 2026-08-14**, encontrado al reconstruir los hashes del paquete.
+✅ **CERRADO el 2026-08-14.** Ficha completa en
+[`bitacora.md` § 1.18](./bitacora.md#118--al-editar-el-pdf-se-renombraba-a-pdf).
 
-**Dónde**: `backend/services/admin/templates/templateLifecycle.js:1290-1300`.
-
-```js
-const fileName = existingEntry?.entry_object_key
-  ? path.basename(existingEntry.entry_object_key)   // <- es un PREFIJO, no un fichero
-  : fallbackFileName;
-```
-
-`available_formats.pdf.entry_object_key` vale `"System/draft_…/1.0.0/template/pdf/"` — **un prefijo
-terminado en `/`**. `path.basename()` de eso devuelve `"pdf"`, así que al editar, `referencia.pdf` se
-guarda como `template/pdf/pdf`, **sin extensión**.
-
-**Ya está congelado en el golden `editar_ok`**, y ahí está la gracia: es la razón de que `crear_ok` y
-`editar_ok` tengan hashes distintos. Cuando se arregle, **el diff de ese golden será la prueba**.
+En una línea: `entry_object_key` **es un prefijo por diseño**, y la rama de subida le hacía
+`path.basename()` a pelo. El predicado correcto **ya existía duplicado en dos sitios** y faltaba justo
+en el tercero. **Es el primer defecto de este frente cuyo golden se mueve**, y el diff es de una línea.
 
 ---
 

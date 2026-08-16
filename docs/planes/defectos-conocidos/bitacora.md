@@ -1,4 +1,4 @@
-# Bitácora del frente 1 — los trece cerrados
+# Bitácora del frente 1 — los catorce cerrados
 
 > Esto **no es historia decorativa**. La mitad del valor de cada ficha es *por qué no se hizo de la
 > otra forma*: hay **ocho** sitios de este repo donde la «corrección obvia» es la equivocada, y están
@@ -21,6 +21,7 @@
 | 1.14 | Clonar una configuración convertía en `single` todo lo `routed` | 2026-08-11 · `597cd43` | 1 línea |
 | 1.15 | El catálogo de semillas nunca llegaba a un entorno ya arrancado | 2026-08-14 | **ninguno — el golden ya era correcto** |
 | 1.16 | Orden de parámetros cruzado en `context_ancestor_type` | 2026-08-14 | **ninguno, y es correcto** |
+| 1.18 | Al editar, el PDF se renombraba a `pdf` | 2026-08-14 | **`editar_ok`, una línea — y ES la prueba** |
 
 ---
 
@@ -531,3 +532,65 @@ al restaurar los dos `unshift`, **falla exactamente uno** — el de las posicion
 pasan.
 
 ---
+
+---
+
+## 1.18 · Al editar, el PDF se renombraba a `pdf`
+
+**Cerrado el 2026-08-14.** **El primer defecto de este frente cuyo golden se mueve** — los cuatro
+anteriores eran latentes o documentales. Y el diff es de **una línea**.
+
+### El defecto
+
+`setAvailableFormatEntry` (`templateLifecycle.js:201-205`) escribe **siempre** un prefijo:
+
+```js
+entry_object_key: `${baseObjectPrefix}template/${format}/`   // <- ojo a la barra final
+```
+
+La rama de subida le hacía `path.basename()` a pelo, y **el basename de un prefijo terminado en `/`
+es su último segmento**: `"pdf"`. Así que al editar, `referencia.pdf` se guardaba como
+`template/pdf/pdf`, **sin extensión**.
+
+**Lo que lo hacía algo más que un nombre feo**: el nombre del fichero entra en `hashDirectory`, así
+que el paquete resultante era distinto — y `crear_ok` y `editar_ok` tenían hashes diferentes **para
+el mismo contenido**. Ese era el síntoma que había que leer.
+
+### El diagnóstico se contestó solo, diez líneas más abajo
+
+La duda al abrir la ficha era: *¿`entry_object_key` es un dato correcto mal usado, o un dato mal
+escrito?* La respuesta estaba en el propio fichero — **la rama hermana ya preguntaba**:
+
+```js
+if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+  const fileName = path.basename(existingObjectKey);   // es un FICHERO
+  ...
+} else {
+  await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);   // es un PREFIJO
+}
+```
+
+Es decir: el código **sabía** que la clave puede ser un prefijo, y lo comprobaba. En **dos** sitios
+(`:1200` y `:1306`). **Faltaba justo en el tercero**, que es el que subía el fichero.
+
+> **Por eso el arreglo no fue añadir un `if`, sino extraer el predicado** (`esClaveDeFichero`) y
+> usarlo en los tres. Un predicado duplicado dos veces y ausente una es la forma exacta que tenía el
+> defecto: la pregunta existía, pero no estaba en un sitio donde se pudiera olvidar de aplicarla.
+
+### La prueba
+
+**Ningún otro golden se movió**, y eso se predijo por escrito **antes** de correr: debía fallar
+exactamente `editar_ok`, y solo por su `content_hash`. Falló exactamente eso.
+
+Y el valor nuevo lo dice todo:
+
+```diff
+-      "content_hash": "7dba45afa3b893a56716b2c406bd4f0025ea8881ff4b567bb29ebf7a6a6e81b9",
++      "content_hash": "c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1",
+```
+
+`c43d7b58…` **es el hash de `crear_ok`**. O sea: tras el arreglo, **crear y editar producen el paquete
+idéntico**, que es lo semánticamente correcto. Que difirieran ERA el defecto.
+
+Más **4 unitarios** sobre el predicado, incluido el caso que da la trampa: `main.tex.j2/` es un
+directorio aunque su nombre lleve puntos.
