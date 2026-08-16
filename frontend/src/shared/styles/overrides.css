@@ -130,6 +130,9 @@ textarea:focus {
 
 /* ⚠️ FUERA DE CAPA por lo mismo: los `:focus` capados de `.deasy-filter-control` y
    `.deasy-filter-search-input` en `forms.css`. §4.2. */
+.deasy-control,
+.deasy-field-input,
+.deasy-field-select,
 .deasy-filter-control,
 .deasy-filter-search-input,
 .profile-text-input,
@@ -138,6 +141,16 @@ textarea:focus {
 .admin-select-field {
   border-color: var(--color-line-field);
 }
+
+/* ⚠️ `.deasy-control` ENTRA AQUI EL 2026-08-15 (F4) y no antes, y el motivo es una trampa de capas
+   que ya costo tres depuraciones en este fichero: la receta declara su borde en `forms.css`, dentro
+   de `@layer components`, y **no llegaba al DOM**. Le ganaba la regla de elemento de mas arriba
+   —`input { border-color: var(--color-line) }`, sin capa—, asi que la receta del sistema salia con
+   `gray-200` mientras las otras tres familias de control salian con `gray-300`. La unica
+   desalineada era la que manda. Medido en el DOM, no leido.
+
+   Cuando §4.2 baje de capa este bloque, las nueve entradas se van juntas y la declaracion de
+   `forms.css` empieza a valer sola. */
 
 /* `.admin-select-field` tenia aqui dos reglas propias, y las dos se colapsaron el 2026-08-13:
    · `border-radius: 10px` — un numero magico que existia SOLO para diferenciarse del 0.5rem

@@ -33,9 +33,16 @@
         @apply flex flex-col gap-2;
     }
 
+    /* EL CONTROL DE UN FILTRO — es `deasy-control` con otro nombre, y se demuestra midiendo:
+       misma altura (44), mismo radio (8), mismo padding (16/10), misma sombra, mismo borde
+       (`gray-300`) y misma fuente (14). Lo unico que difiere es el color del TEXTO —`text-strong`
+       (gray-800) frente a `text-body` (gray-700)— y ese medio escalon no sostiene una familia
+       aparte: un filtro no es un tipo de control distinto, es el mismo control en otro sitio.
+
+       Se queda como modificador vacio a proposito, para no tocar sus 39 consumidores de golpe:
+       hereda todo de `deasy-control` y solo declara lo suyo. (2026-08-15, F4.) */
     .deasy-filter-control {
-        @apply block h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-strong shadow-theme-xs outline-none transition placeholder:text-muted;
-        border-color: var(--color-line-field);
+        @apply text-strong;
     }
 
     .deasy-filter-control:focus {
@@ -127,11 +134,17 @@
         @apply mb-2 block text-sm font-semibold text-strong;
     }
 
+    /* TERCERA FAMILIA, COLAPSADA SOBRE LA RECETA (2026-08-15, F4). Media 38 px de alto y 12/8 de
+       padding, frente a los 44 y 16/10 del sistema: una tercera altura de control en la misma
+       aplicacion, con 5 consumidores.
+
+       🪤 Su `rounded-2xl` NUNCA PINTO. La regla de elemento de `overrides.css` —fuera de capa—
+       impone `border-radius: 0.5rem` a todo `input`, y fuera de capa gana a `@layer components`.
+       Medido: 8 px, no 16. O sea que el unico eje en el que esta familia parecia distinta ya
+       estaba unificado por accidente; lo que de verdad la separaba era la altura. */
     .deasy-field-input,
     .deasy-field-select {
-        @apply block w-full rounded-2xl border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm placeholder:text-muted;
-        border-color: var(--color-line-strong);
-        color: var(--color-body);
+        @apply text-body;
     }
 
     /* ⚠️ AQUI HABIA UN `--tw-ring-color` ESCRITO A MANO, y era la segunda forma de pintar el
@@ -524,7 +537,10 @@
        colapsar las cuatro cadenas se cayo, y los 29 controles del modal se quedaron con
        `border-top-width: 0px`: sin borde. No lo vio el CSS ni el lint — lo cazo la medida en el
        DOM, comparando la forma de los 29. */
-    .deasy-control {
+    .deasy-control,
+    .deasy-filter-control,
+    .deasy-field-input,
+    .deasy-field-select {
         /* LA FORMA ES LA DE TAILADMIN — adoptada el 2026-08-13. Su input canonico:
              h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
 
@@ -543,6 +559,12 @@
            valor (8 px) y porque el dia que esa regla baje de capa, esto ya dice la verdad. */
         @apply h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-body shadow-theme-xs transition-colors duration-150;
         @apply placeholder:text-muted;
+        /* ⚠️ EL BORDE SE DECLARA AQUI, y hasta hoy no lo hacia. Su receta es `border-gray-300`; al
+           no decirlo, caia al `--color-line` (gray-200) de la regla de elemento de `overrides.css`
+           y quedaba **un escalon mas claro que las otras tres familias de control**, que si lo
+           declaran. Medido: gray-200 en esta y gray-300 en `deasy-filter-control`,
+           `deasy-field-input` y `profile-text-input`. La receta era la unica desalineada. */
+        border-color: var(--color-line-field);
         /* DESHABILITADO — la receta completa, no media. Le faltaban las dos senales que hacen
            que un campo bloqueado se LEA como bloqueado en vez de solo resistirse: el borde baja
            un escalon (`gray-100`, mas claro que el `gray-300` normal) y el marcador de posicion
