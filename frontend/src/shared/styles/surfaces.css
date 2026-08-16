@@ -190,16 +190,30 @@
        texto blanco sobre relleno `-50`, o sea invisible—. Se completan las seis el 2026-08-15,
        cuando el numero del asistente volvio a sólido por decision del dueño.
 
-       El ancla es el token semantico, que en esta paleta es el paso `-700`, NO el `-500` que
-       escribian a mano los sitios migrados: `success-500` sobre blanco da ≈2.4:1 y el `-500` de
-       TailAdmin es relleno o icono, nunca fondo de texto. Con el `-700` el blanco encima pasa AA.
+       ⚠️ **CADA TONO SE ANCLA AL PASO QUE LE SIRVE A SU CONTENIDO, no todos al mismo.** Parece
+       incoherente y no lo es: lo que hay encima no es igual en todos.
+         · Si encima va un NUMERO o una letra, es texto y pide 4.5:1 (WCAG 1.4.3).
+         · Si encima va un ICONO —una marca de verificacion, una advertencia—, es un componente
+           grafico y pide 3:1 (WCAG 1.4.11).
+       Por eso `primary` se queda en `brand-500` (4.84:1, y encima lleva el numero del paso) y
+       `success` baja al `-600` (3.73:1, y encima lleva SIEMPRE un ✓ — `tonoPaso` solo devuelve
+       `success` cuando el paso esta completo, y ese caso pinta el check, nunca el numero).
 
-       `neutral` es la excepcion y por eso NO lleva `--solid`: un gris claro con texto blanco no
-       se lee. Quien quiera un paso apagado usa el tono suave, que ya es gris. */
+       El `-600` de success es ademas decision del dueño (2026-08-15): con el `-700` el verde salia
+       MAS OSCURO que el azul de al lado, cuando el original —`emerald-500`, 2.54:1, que no cumplia
+       ninguno de los dos minimos— era mucho mas claro. El `-600` recupera el equilibrio sin bajar
+       del minimo que le toca.
+
+       🪤 **Si alguna vez pones un numero sobre el verde, este anclaje deja de valer**: 3.73:1 no
+       llega a 4.5. Entonces sube a `--color-success` (`-700`, 5.41:1) y asume que quedara mas
+       oscuro que el azul.
+
+       `neutral` es la otra excepcion y por eso NO lleva `--solid`: un gris claro con texto blanco
+       no se lee a ningun paso. Quien quiera algo apagado usa el tono suave, que ya es gris. */
     .deasy-icon-box--solid { @apply text-white; }
     .deasy-icon-box--solid.deasy-icon-box--primary { background: var(--color-primary); }
     .deasy-icon-box--solid.deasy-icon-box--info    { background: var(--color-info); }
-    .deasy-icon-box--solid.deasy-icon-box--success { background: var(--color-success); }
+    .deasy-icon-box--solid.deasy-icon-box--success { background: var(--color-success-600); }
     .deasy-icon-box--solid.deasy-icon-box--warning { background: var(--color-warning); }
     .deasy-icon-box--solid.deasy-icon-box--danger  { background: var(--color-danger); }
 
