@@ -128,14 +128,4 @@
         @apply flex shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.04] text-white/78 shadow-none transition-all hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/14;
     }
 
-    /* Pestana de la barra del entregable. Nace al anadir la de Historial (defecto 1.10): sus cuatro
-       hermanas repetian estas mismas clases con un `tracking-[0.14em]` arbitrario, y el gate
-       `check:no-arbitrary` es un TRINQUETE —el techo baja cuando el trabajo lo baja, y nunca sube—.
-       Anadir una quinta copia habria pedido subirlo; extraerlas las cinco lo baja.
-       El `letter-spacing` va en declaracion propia porque no tiene escalon en la escala. */
-    .deasy-tab {
-        @apply rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase transition-colors;
-        letter-spacing: 0.14em;
-    }
-
 }

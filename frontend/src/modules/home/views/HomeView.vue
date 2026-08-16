@@ -1265,7 +1265,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'summary'"
             :tabindex="deliverableWorkspaceState.tab === 'summary' ? 0 : -1"
-            class="deasy-tab"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
             :class="getDeliverableWorkspaceTabClass('summary')"
             @click="deliverableWorkspaceState.tab = 'summary'"
           >
@@ -1277,7 +1277,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'fill'"
             :tabindex="deliverableWorkspaceState.tab === 'fill' ? 0 : -1"
-            class="deasy-tab"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
             :class="getDeliverableWorkspaceTabClass('fill')"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
@@ -1289,7 +1289,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'signature'"
             :tabindex="deliverableWorkspaceState.tab === 'signature' ? 0 : -1"
-            class="deasy-tab"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
             :class="getDeliverableWorkspaceTabClass('signature')"
             @click="deliverableWorkspaceState.tab = 'signature'"
           >
@@ -1301,7 +1301,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'attachments'"
             :tabindex="deliverableWorkspaceState.tab === 'attachments' ? 0 : -1"
-            class="deasy-tab"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
             :class="getDeliverableWorkspaceTabClass('attachments')"
             @click="deliverableWorkspaceState.tab = 'attachments'"
           >
@@ -1314,7 +1314,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'history'"
             :tabindex="deliverableWorkspaceState.tab === 'history' ? 0 : -1"
-            class="deasy-tab"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-widest transition-colors"
             :class="getDeliverableWorkspaceTabClass('history')"
             @click="deliverableWorkspaceState.tab = 'history'"
           >

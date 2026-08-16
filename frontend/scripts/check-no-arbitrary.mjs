@@ -20,11 +20,8 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-/* El techo, medido el 2026-08-13. SOLO BAJA.
-   2026-08-14: total 374 -> 370. Al anadir la pestana de Historial del entregable (defecto 1.10)
-   habrian sido cinco copias del mismo `tracking-[0.14em]`; extraerlas a `.deasy-tab` (nav.css)
-   quito las cinco. El trinquete funcionando: el techo bajo porque el trabajo lo bajo. */
-const TECHO = { total: 370, "text-": 144, "rounded-": 29, "shadow-": 31 };
+/* El techo, medido el 2026-08-13. SOLO BAJA. */
+const TECHO = { total: 374, "text-": 144, "rounded-": 29, "shadow-": 31 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;
