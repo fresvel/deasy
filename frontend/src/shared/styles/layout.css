@@ -101,11 +101,64 @@
 
     /* ⚠️ En escritorio el panel NO flota: es una COLUMNA del layout. Con `absolute` se
        superponia a la primera columna de tarjetas y las hacia INALCANZABLES con el raton
-       —y el panel arranca abierto en escritorio, asi que no era un caso raro. */
+       —y el panel arranca abierto en escritorio, asi que no era un caso raro.
+
+       📌 Aqui habia ademas `visible`, `translate-x-0` y `opacity-100`, y la plantilla los repetia
+       en su `:class`. Eran de cuando el panel se ESCONDIA al cerrarse; desde que el cerrado es un
+       rail de iconos ya no hay nada que revelar, y el estado se lleva entero en el ancho. */
     @media (min-width: 1280px) {
         .deasy-sidebar__flyout {
-            @apply visible relative h-full w-full shrink-0 translate-x-0 overflow-y-auto p-3 opacity-100 [scrollbar-width:thin];
+            @apply relative h-full w-full shrink-0 overflow-y-auto p-3 [scrollbar-width:thin];
             background: var(--color-navy-deep);
+        }
+    }
+
+    /* ══ EL ESTADO COLAPSADO — restaurado el 2026-08-16, y el error que lo mato enseña ═════════
+       Al mover la navegacion primaria al header (F4.C·B) retire el rail de 80 px tratandolo como
+       «una segunda navegacion que sobra». **Era el ESTADO COLAPSADO**, que es justo lo que la
+       receta de TailAdmin tiene: su aside se pliega de 290 a 90 px con un boton y deja los iconos
+       a la vista. Al quitarlo, el sistema se quedo sin colapso — y peor: al cerrar el panel la
+       aside seguia midiendo 282 px, oscura y VACIA, una franja muerta a la izquierda del
+       contenido. Lo vio el dueño, no yo.
+
+       Lo que se restaura NO es el rail viejo. Aquel llevaba OTRO menu (la primaria, que ahora vive
+       en el header); esto es el MISMO menu de la columna, con las etiquetas escondidas — que es
+       literalmente lo que hace su `xl:w-[90px]`. Un estado, no un segundo arbol.
+
+       No hace falta que el consumidor del slot sepa nada: el menu secundario ya escribe su icono
+       en `deasy-nav-item__icon` y su texto en `deasy-nav-item__label`, asi que el colapso es
+       apagar lo segundo. Que estuviera nombrado es lo que lo hace posible en cinco reglas. */
+    @media (min-width: 1280px) {
+
+        .deasy-sidebar--collapsed .deasy-nav-item,
+        .deasy-sidebar--collapsed .deasy-nav-group-title,
+        .deasy-sidebar--collapsed .deasy-nav-group-title > div {
+            @apply justify-center px-0;
+        }
+
+        /* Se va TODO lo que no sea el icono: la etiqueta, el chevron del grupo, el contador.
+           La regla apunta a «lo que NO es el icono», y eso no es pereza: **el menu lateral tiene
+           DOS anatomias y el icono DOS nombres**, cosa que solo se vio al mirar el DOM.
+
+             item de menu   `deasy-nav-item`        > `deasy-nav-item__icon` + `<span>` etiqueta
+             titulo de grupo `deasy-nav-group-title` > `<div>` > `deasy-nav-glyph` + `<span>`
+                                                    > `<svg>` chevron
+
+           Y encima la etiqueta del item se envuelve en `deasy-nav-item__label` en `HomeSidebar`,
+           `SignatureSidebar` y `PerfilView`, pero en `AdminView` va en un `<span>` pelado — o sea
+           que apuntar a la clase habria funcionado en tres menus de cuatro, y el que fallaba es el
+           mas grande. (Anotado para F11: el mismo bloque con dos anatomias y su icono con dos
+           nombres es exactamente lo que esa fase busca.) */
+        .deasy-sidebar--collapsed .deasy-nav-item > :not(.deasy-nav-item__icon),
+        .deasy-sidebar--collapsed .deasy-nav-group-title > svg,
+        .deasy-sidebar--collapsed .deasy-nav-group-title > div > :not(.deasy-nav-glyph) {
+            @apply hidden;
+        }
+
+        /* El perfil completo no cabe en 88 px: en colapsado queda su avatar, que `UserProfile`
+           ya sabe pintar solo — es el mismo componente, no una copia. */
+        .deasy-sidebar--collapsed .deasy-nav-shell {
+            @apply px-1;
         }
     }
 

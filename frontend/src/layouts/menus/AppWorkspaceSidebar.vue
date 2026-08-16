@@ -3,7 +3,7 @@
     <div
       ref="sidebarRef"
       class="deasy-sidebar"
-      @mouseleave="handleSidebarMouseLeave"
+      :class="{ 'deasy-sidebar--collapsed': !show }"
     >
       <!-- ══ AQUI VIVIA EL RAIL DE 80 px — retirado el 2026-08-16 (F4.C·B) ═════════════════════
            La barra lateral llevaba DOS navegaciones a la vez: este rail con la primaria (Inicio ·
@@ -23,14 +23,8 @@
                DOM, con una copia oculta por `hidden`/`xl:hidden`.
            ══════════════════════════════════════════════════════════════════════════════════════ -->
       <div
-        class="deasy-sidebar__flyout" :class="[
-          containerClass,
-          // Cerrado en escritorio => xl:hidden (fuera del flujo), para que el contenido
-          // RECUPERE el espacio. Con invisible/opacity-0 seguia ocupando su columna.
-          show
-            ? 'xl:visible xl:translate-x-0 xl:opacity-100'
-            : 'xl:hidden'
-        ]"
+        class="deasy-sidebar__flyout"
+        :class="containerClass"
       >
         <div v-if="showLogo" class="mb-2 flex px-1 xl:hidden">
           <AppLogo to="/home" size="md" class-name="max-w-full" />
@@ -106,13 +100,16 @@ const requestClose = () => {
   emit("close-mobile");
 };
 
-const handleSidebarMouseLeave = () => {
-  if (!props.show || !isDesktopViewport()) {
-    return;
-  }
-  requestClose();
-};
+/* ⚠️ AQUI VIVIA `handleSidebarMouseLeave` — retirado el 2026-08-16.
+   Cerraba el panel al SACAR EL RATON de la barra, en escritorio. Eso hacia que la navegacion
+   desapareciera sola al mover el raton hacia el contenido, que es exactamente lo que uno hace
+   despues de leerla: el menu se iba justo cuando ibas a usar lo de al lado, y para recuperarlo
+   habia que volver al boton. El dueño lo describio como «se oculta en base al hover del
+   contenido», y tenia razon: el disparador era el raton, no una intencion.
 
+   La receta de TailAdmin lo controla con un BOTON y nada mas — su `sidebarToggle` solo cambia al
+   pulsarlo—, y esa es la mecanica que se adopta. El cierre al pulsar FUERA (`pointerdown`, aqui
+   abajo) si se queda: ese si es una intencion, no un roce. */
 const handlePointerDownOutside = (event) => {
   if (!props.show || !isDesktopViewport()) {
     return;
