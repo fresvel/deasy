@@ -6,6 +6,24 @@
           <slot name="header" />
         </div>
 
+        <!-- LA NAVEGACION PRIMARIA — subio aqui desde el rail de la barra lateral el 2026-08-16
+             (F4.C·B, decision del dueño). Aqui gana etiqueta: en el rail era solo icono porque
+             cabian 80 px, y en horizontal hay sitio para decir el nombre. -->
+        <nav class="deasy-primary-nav" aria-label="Navegacion principal">
+          <router-link
+            v-for="item in primaryNavItems"
+            :key="item.key"
+            :to="item.to"
+            class="deasy-primary-nav__item"
+            :class="{ 'deasy-primary-nav__item--active': isNavActive(item) }"
+            :title="item.label"
+            @click="emit('primary-nav', { key: item.key, active: isNavActive(item) })"
+          >
+            <component :is="item.icon" class="h-5 w-5 shrink-0" />
+            <span class="deasy-primary-nav__label">{{ item.label }}</span>
+          </router-link>
+        </nav>
+
         <div class="deasy-workspace-header__actions">
           <button
             v-if="showSignatureAction"
@@ -52,25 +70,6 @@
         @close-mobile="emit('close-mobile')"
         @photo-selected="emit('photo-selected', $event)"
       >
-        <template #rail>
-          <nav class="deasy-sidebar-rail-nav" aria-label="Navegacion principal">
-            <router-link
-              v-for="item in primaryNavItems"
-              :key="item.key"
-              :to="item.to"
-              class="deasy-sidebar-rail-nav__item"
-              :class="{ 'deasy-sidebar-rail-nav__item--active': isNavActive(item) }"
-              :title="item.label"
-              :aria-label="item.label"
-              @click="emit('primary-nav', { key: item.key, active: isNavActive(item) })"
-            >
-              <span class="deasy-sidebar-rail-nav__icon">
-                <component :is="item.icon" class="h-6 w-6 shrink-0" />
-              </span>
-            </router-link>
-          </nav>
-        </template>
-
         <div v-if="$slots.sidebar" class="deasy-secondary-nav">
           <slot name="sidebar" />
         </div>

@@ -5,27 +5,23 @@
       class="deasy-sidebar"
       @mouseleave="handleSidebarMouseLeave"
     >
-      <div class="deasy-sidebar__rail">
-        <AppLogo
-          v-if="showLogo"
-          to="/home"
-          size="sm"
-          class-name="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white/8 p-1"
-          image-class="max-h-8 max-w-8 object-contain"
-        />
-        <UserProfile
-          compact
-          :photo="photo"
-          :username="username"
-          :subtitle="profileSubtitle"
-          :signature-marker="signatureMarker"
-          :show-signature-details="false"
-          :editable="editable"
-          @photo-selected="$emit('photo-selected', $event)"
-        />
-        <slot name="rail" />
-      </div>
+      <!-- ══ AQUI VIVIA EL RAIL DE 80 px — retirado el 2026-08-16 (F4.C·B) ═════════════════════
+           La barra lateral llevaba DOS navegaciones a la vez: este rail con la primaria (Inicio ·
+           Procesos · Sistema) y el panel de al lado con la secundaria. Eran 424 px de ancho fijo
+           en escritorio, frente a los 290 de la receta de TailAdmin, que monta UNA sola barra.
 
+           Por decision del dueño la primaria sube al HEADER y aqui queda solo la secundaria. Se
+           eligio esa colocacion sobre la alternativa —meter los tres destinos como primer nivel
+           del mismo arbol, que es lo que hace su `layout-one`— porque aquella habria añadido un
+           TERCER nivel de profundidad: llegar a «Tareas» pasaria de dos clics a tres.
+
+           Con el rail se van tres cosas mas:
+             · el avatar COMPACTO, que era una segunda copia del `UserProfile` de aqui abajo;
+             · el logo pequeño del rail, ya duplicado con el del panel;
+             · el doble renderizado del slot `rail`, que se pintaba una vez aqui (escritorio) y
+               otra en `deasy-sidebar__rail-mobile` (movil). El mismo menu estaba DOS VECES en el
+               DOM, con una copia oculta por `hidden`/`xl:hidden`.
+           ══════════════════════════════════════════════════════════════════════════════════════ -->
       <div
         class="deasy-sidebar__flyout" :class="[
           containerClass,
@@ -48,9 +44,6 @@
           :editable="editable"
           @photo-selected="$emit('photo-selected', $event)"
         />
-        <div class="deasy-sidebar__rail-mobile xl:hidden">
-          <slot name="rail" />
-        </div>
         <slot />
       </div>
     </div>

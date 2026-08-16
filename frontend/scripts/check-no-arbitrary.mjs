@@ -47,7 +47,12 @@ import { join, resolve } from "node:path";
  * `rounded-[0.8rem]` de su caja de icono (12,8 px, que no es un paso de la escala). Los dos
  * existian por lo mismo que el `rounded-[10px]` del filtro dos dias antes: para NO ser el valor
  * de la base. Con la base ya unificada, el motivo desaparece y el valor sobra. */
-const TECHO = { total: 292, "text-": 118, "rounded-": 11, "shadow-": 16 };
+/* 2026-08-16 · 291 — muere el `w-[21.5rem]` del panel lateral al colapsar rail+panel en una sola
+ * barra (F4.C·B): el ancho pasa a ser `w-full` dentro de una aside que ya mide 282 px, asi que el
+ * numero deja de escribirse dos veces (uno para movil, otro para escritorio) y deja de ser un
+ * valor suelto. Es el tercer arbitrario del dia que cae por lo mismo: existia para NO ser el valor
+ * de al lado. */
+const TECHO = { total: 291, "text-": 118, "rounded-": 11, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

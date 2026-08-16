@@ -78,12 +78,21 @@
         @apply mt-4 min-h-0 flex-1 overflow-y-auto border-t border-white/8 pt-4 pr-1 [scrollbar-width:thin];
     }
 
-    .deasy-sidebar {
-        @apply relative flex h-full min-h-0 w-full flex-col xl:w-auto xl:flex-row;
-    }
+    /* ══ UNA SOLA BARRA — F4.C·B, 2026-08-16 ═══════════════════════════════════════════════════
+       Aqui vivian `deasy-sidebar__rail` (80 px), `deasy-sidebar__rail-mobile` y las cuatro clases
+       de `deasy-sidebar-rail-nav`. La barra llevaba DOS navegaciones a la vez —primaria en el rail,
+       secundaria en el panel— y sumaba 424 px fijos en escritorio frente a los 290 de la receta.
 
-    .deasy-sidebar__rail {
-        @apply hidden h-full w-20 shrink-0 flex-col items-center gap-4 px-3 py-4 xl:flex;
+       La primaria subio al header (`deasy-primary-nav`, mas abajo) y aqui queda una sola columna.
+       De 424 a 282, que es el ancho que la barra YA tenia por debajo de `xl`: el mismo numero para
+       las dos formas, en vez de uno para movil y otro para escritorio.
+
+       Con el rail se fueron tambien un avatar compacto duplicado, un logo duplicado, y el DOBLE
+       RENDERIZADO del menu primario —se pintaba en el rail y otra vez en `rail-mobile`, o sea el
+       mismo menu dos veces en el DOM con una copia tapada por `hidden`—.
+       ══════════════════════════════════════════════════════════════════════════════════════════ */
+    .deasy-sidebar {
+        @apply relative flex h-full min-h-0 w-full flex-col;
     }
 
     .deasy-sidebar__flyout {
@@ -95,32 +104,34 @@
        —y el panel arranca abierto en escritorio, asi que no era un caso raro. */
     @media (min-width: 1280px) {
         .deasy-sidebar__flyout {
-            @apply visible relative h-full w-[21.5rem] shrink-0 translate-x-0 overflow-y-auto border-l p-3 opacity-100 [scrollbar-width:thin];
-            border-color: rgba(var(--white-rgb), 0.08);
+            @apply visible relative h-full w-full shrink-0 translate-x-0 overflow-y-auto p-3 opacity-100 [scrollbar-width:thin];
             background: var(--color-navy-deep);
         }
     }
 
-    .deasy-sidebar__rail-mobile {
-        @apply mb-2 border-b border-white/8 pb-3;
+    /* ── LA NAVEGACION PRIMARIA, EN EL HEADER ────────────────────────────────────────────────
+       Hereda los valores del rail que sustituye —vive sobre el mismo `navy-deep`, asi que el
+       texto al 72 % y el hover al 8 % de blanco siguen siendo los correctos—, pero cambia de eje:
+       en horizontal hay sitio para la etiqueta, y un icono suelto en una barra superior es mucho
+       menos descubrible que en una columna de tres. */
+    .deasy-primary-nav {
+        @apply hidden shrink-0 items-center gap-1 sm:flex;
     }
 
-    .deasy-sidebar-rail-nav {
-        @apply flex flex-col items-center gap-2.5;
+    .deasy-primary-nav__item {
+        @apply inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-medium text-white/72 transition-all hover:bg-white/8 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/16;
     }
 
-    .deasy-sidebar-rail-nav__item {
-        @apply inline-flex h-12 w-12 items-center justify-center rounded-xl border border-transparent text-white/72 transition-all hover:bg-white/8 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/16;
-    }
-
-    .deasy-sidebar-rail-nav__item--active {
+    .deasy-primary-nav__item--active {
         @apply border text-white;
         border-color: rgba(var(--white-rgb), 0.1);
         background: rgba(var(--white-rgb), 0.1);
     }
 
-    .deasy-sidebar-rail-nav__icon {
-        @apply inline-flex items-center justify-center;
+    /* La etiqueta se esconde en pantallas medias: por debajo de `lg` el header tiene que caber
+       con el titulo de la pagina y las tres acciones, y el icono con su `title` basta. */
+    .deasy-primary-nav__label {
+        @apply hidden lg:inline;
     }
 
     
