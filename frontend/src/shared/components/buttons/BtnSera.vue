@@ -17,7 +17,7 @@
     labelled-by="btn-sera-status-label"
     size="md"
     dialog-class="items-center"
-    content-class="profile-admin-skin"
+    content-class="deasy-dialog-panel--plain"
     body-class="pb-2"
     @close="closeModal"
   >

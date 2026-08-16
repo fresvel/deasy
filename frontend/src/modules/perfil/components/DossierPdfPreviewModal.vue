@@ -5,7 +5,7 @@
     labelled-by="dossier-pdf-preview-modal-title"
     size="xl"
     dialog-class="items-center"
-    content-class="profile-admin-skin"
+    content-class="deasy-dialog-panel--plain"
     body-class="p-0"
   >
     <div class="pdf-preview-shell">

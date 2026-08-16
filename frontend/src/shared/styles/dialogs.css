@@ -69,7 +69,15 @@
         padding: 1rem 1.25rem;
     }
 
-    .deasy-dialog-panel .profile-admin-skin {
+    /* PANEL SIN FONDO — para lo que trae su propia superficie y no quiere la del dialogo: el visor
+       de PDF a pantalla completa y el lanzador de firma.
+
+       ⚠️ Se llamaba `profile-admin-skin` hasta el 2026-08-15, y el nombre mentia dos veces: no era
+       una «piel» —hace UNA cosa, quitar el fondo— y no tenia nada que ver con perfil ni con admin.
+       Venia de cuando `AppFormModalLayout` sí era una piel aparte; al colapsar esa piel sobre la
+       del sistema, estos dos usos se quedaron con un nombre huerfano que describia un componente
+       que ya no existe. */
+    .deasy-dialog-panel--plain {
         background: transparent;
     }
 
