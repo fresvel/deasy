@@ -39,9 +39,9 @@
       </div>
     </div>
 
-    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-danger ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
+    <AppAlert v-if="feedback.message" :variant="feedback.kind === 'error' ? 'danger' : 'success'">
       {{ feedback.message }}
-    </div>
+    </AppAlert>
 
     <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando mapa de procesos…</div>
@@ -182,7 +182,7 @@
                 <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
-                    <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="configStatusClass(cfg.status)">{{ configStatusLabel(cfg.status) }}</span>
+                    <AppTag :variant="tonoCicloVida(cfg.status)" size="sm" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ seriesLabel(cfg) }}</span>
@@ -227,7 +227,7 @@
                     <span v-if="!ch.is_active" class="text-[11px] font-semibold text-danger">Inactivo</span>
                     <span
                       class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
-                      :class="ch.active_count ? 'bg-emerald-50 text-success ring-emerald-200' : (ch.definitions_count ? 'bg-amber-50 text-warning ring-amber-200' : 'bg-surface text-muted ring-line')"
+                      :class="`graph-node__badge--${ch.active_count ? 'success' : (ch.definitions_count ? 'warning' : 'neutral')}`"
                     >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</span>
                   </div>
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
@@ -270,7 +270,7 @@
                 <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong">{{ run.term_name || "Sin periodo" }}</span>
-                    <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="runStatusClass(run.status)">{{ run.status }}</span>
+                    <AppTag :variant="tonoCorrida(run.status)" size="sm" outlined class-name="ml-auto capitalize">{{ run.status }}</AppTag>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                     <span class="truncate">{{ run.definition_name }} · v{{ run.definition_version }}</span>
@@ -331,7 +331,7 @@
             >
               <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-strong">v{{ v.storage_version }}</span>
-                <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="versionStateClass(v.lifecycle_state)">{{ versionStateLabel(v.lifecycle_state) }}</span>
+                <AppTag :variant="tonoCicloVida(v.lifecycle_state)" size="sm" outlined>{{ versionStateLabel(v.lifecycle_state) }}</AppTag>
                 <span v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" class="deasy-tag deasy-tag--accent" title="Versión vinculada a esta configuración">Vinculada aquí</span>
                 <span class="ml-auto text-[11px] font-semibold text-primary">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
               </div>
@@ -355,6 +355,9 @@
 </template>
 
 <script setup>
+import AppTag from "@/shared/components/data/AppTag.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+import { tonoCicloVida, tonoCorrida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType } from "@vue-flow/core";
@@ -802,11 +805,6 @@ const drawerHealthWarning = computed(() => {
   const publishedVersion = td.versions.find((v) => v.lifecycle_state === "published") || null;
   return { pinnedLabel: versionStateLabel(pinned.lifecycle_state).toLowerCase(), publishedVersion };
 });
-const versionStateClass = (s) => ({
-  published: "bg-emerald-50 text-success ring-emerald-200",
-  draft: "bg-amber-50 text-warning ring-amber-200",
-  retired: "bg-surface text-muted ring-line"
-}[String(s)] || "bg-surface text-muted ring-line");
 const formatVersionDate = (value) => {
   if (!value) return "";
   try {
@@ -958,23 +956,14 @@ const detachChild = async (childId) => {
   }
 };
 
-const configStatusClass = (status) => {
-  if (status === "active") return "bg-emerald-50 text-success ring-emerald-200";
-  if (status === "draft") return "bg-amber-50 text-warning ring-amber-200";
-  return "bg-surface text-muted ring-line";
-};
-const configStatusLabel = (status) => ({ active: "Activa", draft: "Borrador", retired: "Retirada" }[status] || status);
+
+const configStatusLabel = (status) => etiquetaCicloVida(status);
 const seriesLabel = (cfg) => {
   if (cfg.series_source_type === "cargo") return `Cargo · ${cfg.series_cargo_name || cfg.series_code}`;
   if (cfg.series_source_type === "unit_type") return `Tipo · ${cfg.series_unit_type_name || cfg.series_code}`;
   return "General";
 };
-const runStatusClass = (status) => {
-  if (status === "active") return "bg-emerald-50 text-success ring-emerald-200";
-  if (status === "completed") return "bg-blue-light-50 text-info ring-blue-light-200";
-  if (status === "pending") return "bg-amber-50 text-warning ring-amber-200";
-  return "bg-surface text-muted ring-line";
-};
+
 
 // Acciones de configuración: cierran el drawer y delegan en el padre (wizard / lanzar).
 const createConfiguration = () => {

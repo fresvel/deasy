@@ -65,9 +65,9 @@
       </span>
     </div>
 
-    <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-danger ring-1 ring-rose-200' : 'bg-emerald-50 text-success ring-1 ring-emerald-200'">
+    <AppAlert v-if="feedback.message" :variant="feedback.kind === 'error' ? 'danger' : 'success'">
       {{ feedback.message }}
-    </div>
+    </AppAlert>
 
     <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando organigrama…</div>
@@ -357,8 +357,8 @@
               <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-line px-3 py-2.5">
                 <div class="flex items-center gap-2">
                   <span class="truncate text-sm font-semibold text-strong">{{ proc.process_name }}</span>
-                  <span class="ml-auto inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold ring-1" :class="processOriginMeta(proc.origin).class">{{ processOriginMeta(proc.origin).label }}</span>
-                  <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="processStatusClass(proc.status)">{{ proc.status }}</span>
+                  <AppTag :variant="tonoOrigen(proc.origin)" size="sm" outlined class-name="ml-auto">{{ processOriginMeta(proc.origin).label }}</AppTag>
+                  <AppTag :variant="tonoCicloVida(proc.status)" size="sm" outlined>{{ etiquetaCicloVida(proc.status) }}</AppTag>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                   <span class="truncate">{{ proc.definition_name }} · v{{ proc.definition_version }}</span>
@@ -534,6 +534,8 @@
 </template>
 
 <script setup>
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+import { tonoCicloVida, tonoOrigen, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
@@ -899,11 +901,7 @@ const PROCESS_SCOPE_LABELS = {
   all_units: "Todas las unidades"
 };
 const processScopeLabel = (code) => PROCESS_SCOPE_LABELS[code] || code || "—";
-const processStatusClass = (status) => {
-  if (status === "active") return "bg-emerald-50 text-success ring-emerald-200";
-  if (status === "retired") return "bg-rose-50 text-danger ring-rose-200";
-  return "bg-surface text-icon ring-line";
-};
+
 
 // --- Administración de procesos de la unidad (vía reglas de alcance) ---
 const RECIPIENT_POLICY_LABELS = {
@@ -911,11 +909,12 @@ const RECIPIENT_POLICY_LABELS = {
   one_per_unit: "Jefatura de la unidad",
   exact_position: "Puesto exacto"
 };
+/* El ORIGEN de la regla ya no lleva su clase: solo la etiqueta. El tono lo pone `tonoOrigen`. */
 const PROCESS_ORIGIN_META = {
-  direct: { label: "Directo", class: "bg-brand-50 text-primary ring-brand-200" },
-  type: { label: "Por tipo", class: "bg-brand-50 text-primary ring-brand-200" },
-  global: { label: "Global", class: "bg-surface text-icon ring-line" },
-  other: { label: "Otro", class: "bg-surface text-muted ring-line" }
+  direct: { label: "Directa" },
+  type: { label: "Por tipo" },
+  global: { label: "Global" },
+  other: { label: "Heredada" }
 };
 const recipientPolicyLabel = (code) => RECIPIENT_POLICY_LABELS[code] || code || "—";
 const processOriginMeta = (origin) => PROCESS_ORIGIN_META[origin] || PROCESS_ORIGIN_META.other;
