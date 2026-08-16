@@ -117,3 +117,76 @@ Tres cosas, y las tres están fuera de esta carpeta:
    crea el suyo con rama desde `develop`. Está en el `CLAUDE.md` de la raíz.
 3. **Tu pila, y la que te hayan asignado.** `bash scripts/stack.sh <letra> …`, nunca `npm`/`pnpm` en
    el host.
+
+---
+
+## 6. El avance se MUESTRA, y con un formato fijo
+
+Las cinco reglas de arriba son para **mantener** el control. Ésta es para **enseñarlo**: un plan que
+sólo se actualiza en el fichero obliga al dueño a abrirlo para saber por dónde va, y entonces deja de
+cumplir su función.
+
+**Cada vez que cierres una tarea, enseña el estado actualizado antes de terminar el turno.** No al
+final de la fase, no cuando lo pidan: en el mismo turno en que la cerraste — que es también cuando
+lo commiteas (§2).
+
+**Y di siempre de QUÉ nivel hablas**, porque los planes están anidados y cada uno tiene su tabla:
+
+```
+plan-maestro-2026-08.md      FRENTES  (0…11)     ← el mapa de todo el repo
+  └─ <plan del frente>/      FASES / TAREAS      ← p. ej. sistema-diseno-componentes/
+       └─ <fichero de fase>  la unidad del plan  ← p. ej. los 11 GRUPOS de botones
+```
+
+Un `✅` en un nivel **no cierra el de arriba**: cerrar una tarea no cierra su fase, y cerrar una fase
+no cierra el frente. Decir «7 de 11» sin decir *de qué* es exactamente lo que hace perder el hilo.
+
+### El formato: DOS tablas, siempre las mismas
+
+Es fijo a propósito. Cuando cambia de un turno a otro, el dueño tiene que releer la estructura antes
+de leer el avance, y ahí es donde se pierde.
+
+**Tabla 1 — el mapa completo.** Una fila por fase, y **las tareas de cada una en la segunda
+columna**, con su estado pegado a cada nombre:
+
+```markdown
+## Estado general — **13 de 25**
+
+| Fase | Tareas | Estado |
+|---|---|---|
+| **F0** · Cerrar los gates | F0.1 · F0.2 · F0.3 · F0.4 · F0.5 · F0.6 | ✅ **6 de 6** |
+| **F1** · Borrar lo que no pelea | F1.1 ✅ · F1.2 ✅ · F1.3a ✅ · F1.3b ✅ · F1.3c ⬜ · F1.3d ✅ · F1.3e ⛔ | 🟡 5 de 7 |
+| **F3** · Las extracciones que faltan | F3.1 ✅ · F3.2 ✅ · F3.3 ⬜ · F3.4 ⬜ | 🟡 **2 de 4** |
+| **F4** · Seguir adoptando TailAdmin | — | ⬜ |
+```
+
+- Una fase **cerrada entera** o **sin empezar** no necesita desglose: `✅ 6 de 6` o un `—`.
+- Una fase **en curso** sí lo lleva, para que se vea qué queda dentro.
+- El numerador y el denominador son de **tareas**, no de fases, **y se recuentan al enseñarlos**.
+  Precedente: el denominador dijo «22» tres días después de que la tabla pasara a 25 filas.
+
+**Tabla 2 — el detalle de la fase que se está atacando.** Sus tareas en filas, con lo que entrega
+cada una. Es la que dice *qué sigue*:
+
+```markdown
+## F3 · Las extracciones que faltan — 2 de 4
+
+| Tarea | Qué entrega | Estado |
+|---|---|:--:|
+| **F3.1** | `deasy-icon-box` — la caja de icono | ✅ |
+| **F3.2** | El botón — 11 grupos, 11 gates | ✅ |
+| **F3.3** | El estado de grafo — 73 colores en 8 ficheros | ⬜ |
+| **F3.4** | Los dos colapsos de plantilla | ⬜ |
+```
+
+**Y el tercer nivel solo si lo piden.** Si la tarea en curso tiene su propio desglose —los 11 grupos
+de botones dentro de `F3.2`— **no se enseña por defecto**: se menciona en una línea que existe y
+dónde está. Enseñar tres tablas a la vez es lo que produjo un «7 de 11» sin decir de qué.
+
+⚠️ **Nunca colapses varias tareas en una fila de la tabla 2**, ni mezcles dos numeraciones en el
+mismo mensaje. Las dos cosas hicieron perder el hilo el 2026-08-15: la primera rompe el patrón justo
+donde el ojo busca el detalle, y la segunda obliga a adivinar si «5 de 6» y «F0 a F10» hablan de lo
+mismo — no hablaban, eran dos numeraciones distintas del mismo frente.
+
+**Esto no contradice §4.** Ahí se prohíbe *replicar* cifras y tareas en otro documento; aquí se
+enseñan en una respuesta, que es efímera y se recalcula cada vez.
