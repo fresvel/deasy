@@ -17,7 +17,7 @@
         <p class="m-0 mb-1 text-[11px] font-semibold text-muted">Entregables</p>
         <ul class="m-0 mb-2 flex list-none flex-col gap-1 p-0">
           <li v-for="t in diff.templates" :key="t.template_code" class="flex items-center gap-2 text-xs">
-            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold ring-1" :class="changeClass(t.change)">{{ changeLabel(t.change) }}</span>
+            <AppTag :variant="tonoDiff(t.change)" size="sm" outlined>{{ changeLabel(t.change) }}</AppTag>
             <span class="font-medium text-body">{{ t.display_name || t.template_code }}</span>
             <span v-if="t.change === 'changed'" class="text-muted">v{{ t.from_version }} → <strong>v{{ t.to_version }}</strong></span>
             <span v-else-if="t.change === 'added'" class="text-muted">nueva · v{{ t.to_version }}</span>
@@ -38,6 +38,8 @@
 <script setup>
 import { ref, watch } from "vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoDiff } from "@/shared/utils/estadoTono.js";
 
 const props = defineProps({
   definitionId: { type: [String, Number], default: null }
@@ -68,10 +70,8 @@ const load = async () => {
 watch(() => props.definitionId, load, { immediate: true });
 
 const changeLabel = (c) => ({ changed: "Cambia", added: "Nuevo", removed: "Quita", unchanged: "Igual" }[c] || c);
-const changeClass = (c) => ({
-  changed: "bg-amber-50 text-warning ring-amber-200",
-  added: "bg-emerald-50 text-success ring-emerald-200",
-  removed: "bg-rose-50 text-danger ring-rose-200",
-  unchanged: "bg-surface text-muted ring-line"
-}[c] || "bg-surface text-muted ring-line");
+/* `changeClass` murio el 2026-08-15 (F3.3 · L5). `changeLabel` se queda: es TEXTO, y el corte de
+   esta fase es justamente ese —quien pregunta por el color se va, quien pregunta por el dato se
+   queda—. `changed` pasa de ambar a INFO, porque el ambar ya significa «retirado» y un cambio no
+   es bueno ni malo; `removed` conserva el rojo, que quitar si es destruir. */
 </script>

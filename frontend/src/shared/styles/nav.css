@@ -250,6 +250,27 @@
         @apply bg-white font-semibold text-primary shadow-theme-xs;
     }
 
+    /* Un paso COMPLETADO. Es dato, no color: lo decide `isStepComplete`, que compara el estado
+       real de la configuracion. El color lo pone el CSS a partir de el, que es el corte de F3.3. */
+    .deasy-stepper__step--complete {
+        @apply text-body;
+    }
+
+    /* LA PISTA («Completo» / «Pendiente» / «Bloqueado»). Se pinta POR DESCENDENCIA del paso, no
+       con una clase que calcule el JS: el estado ya esta en el boton y repetirlo en un `:class`
+       era la tercera funcion de este fichero que devolvia color en una cadena. */
+    .deasy-stepper__hint {
+        @apply text-[0.65rem] font-semibold uppercase tracking-wide text-muted;
+    }
+
+    .deasy-stepper__step--complete .deasy-stepper__hint {
+        @apply text-success;
+    }
+
+    .deasy-stepper__step--active .deasy-stepper__hint {
+        @apply text-primary;
+    }
+
     /* EL AVATAR PULSABLE de la barra lateral colapsada. Va sobre fondo oscuro, como el resto de
        `deasy-nav-*`, y por eso sus colores son blancos con alfa y no tokens de superficie. */
     .deasy-nav-avatar {

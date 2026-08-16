@@ -19,20 +19,23 @@
         :key="step.key"
         type="button"
         class="deasy-stepper__step group"
-        :class="{ 'deasy-stepper__step--active': step.key === currentStep }"
+        :class="{
+          'deasy-stepper__step--active': step.key === currentStep,
+          'deasy-stepper__step--complete': isStepComplete(step)
+        }"
         :disabled="isStepLocked(step, index)"
         @click="$emit('go-to-step', step.key)"
       >
         <span
           class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
-          :class="stepBadgeClass(step, index)"
+          :class="`deasy-icon-box--${tonoPaso(step, index)}`"
         >
           <font-awesome-icon v-if="isStepComplete(step)" icon="check" />
           <template v-else>{{ index + 1 }}</template>
         </span>
         <span class="flex flex-col">
           <span class="text-sm font-bold leading-tight">{{ step.label }}</span>
-          <span class="text-[0.65rem] font-semibold uppercase tracking-wide" :class="stepHintClass(step, index)">
+          <span class="deasy-stepper__hint">
             {{ stepHint(step, index) }}
           </span>
         </span>
@@ -51,9 +54,9 @@
       <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
         {{ definitionContext.definition_version || "—" }}
       </span>
-      <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadgeClass">
+      <AppTag :variant="tonoEstadoDefinicion" size="sm">
         {{ definitionStatusLabel }}
-      </span>
+      </AppTag>
     </div>
 
     <slot />
@@ -67,6 +70,8 @@
 <script setup>
 import { computed, ref } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 const props = defineProps({
@@ -92,25 +97,19 @@ defineEmits(["close", "go-to-step"]);
 const modalRef = ref(null);
 const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
 
-const DEFINITION_STATUS_META = {
-  draft: { label: "Borrador", class: "bg-gray-200 text-body" },
-  active: { label: "Activa", class: "bg-emerald-500 text-white" },
-  retired: { label: "Retirada", class: "bg-amber-200 text-warning" }
-};
-const definitionStatusMeta = computed(() =>
-  DEFINITION_STATUS_META[String(props.definitionContext?.status || "draft").toLowerCase()]
-  || { label: props.definitionContext?.status || "—", class: "bg-gray-200 text-body" }
-);
-const definitionStatusLabel = computed(() => definitionStatusMeta.value.label);
-const definitionStatusBadgeClass = computed(() => definitionStatusMeta.value.class);
-
-const definitionStatus = computed(() => String(props.definitionContext?.status || "").toLowerCase());
+/* `DEFINITION_STATUS_META` murio el 2026-08-15 (F3.3 · L5). Era un mapa de tres ramas que
+   devolvia cadenas de Tailwind —color viviendo en JavaScript, invisible a todo gate de CSS— y
+   estaba DUPLICADO byte a byte en `AdminMainTableSection`. Las dos copias son ahora el mismo
+   diccionario, `estadoTono.js`, con el mismo esquema que el resto del repo. */
+const estadoDefinicion = computed(() => String(props.definitionContext?.status || "draft").toLowerCase());
+const tonoEstadoDefinicion = computed(() => tonoCicloVida(estadoDefinicion.value));
+const definitionStatusLabel = computed(() => etiquetaCicloVida(estadoDefinicion.value));
 
 // El paso "Activar" refleja el estado real de la configuración: una configuración ya activa
 // (o retirada) no está "pendiente" de activación, sino completada/cerrada.
 const isStepComplete = (step) => {
   if (step.key === "activate") {
-    return definitionStatus.value === "active" || definitionStatus.value === "retired";
+    return estadoDefinicion.value === "active" || estadoDefinicion.value === "retired";
   }
   return Boolean(props.stepStatus?.[step.key]);
 };
@@ -121,23 +120,22 @@ const isStepLocked = (step, index) =>
    sea colores viviendo en JavaScript — invisibles para todos los gates de CSS. Las tres ramas que
    tenia las cubre ahora `deasy-stepper__step`: el activo con `--active`, el bloqueado con el
    `:disabled` que el propio boton ya declara, y el resto con su `:hover`. */
-const stepBadgeClass = (step, index) => {
-  if (isStepComplete(step)) return "bg-emerald-500 text-white";
-  if (step.key === props.currentStep) return "bg-brand-500 text-white";
-  if (isStepLocked(step, index)) return "bg-gray-200 text-muted";
-  return "bg-gray-200 text-muted";
-};
-const stepHintClass = (step, index) => {
-  if (isStepComplete(step)) return "text-success";
-  if (step.key === props.currentStep) return "text-primary";
-  if (isStepLocked(step, index)) return "text-muted";
-  return "text-muted";
+/* `stepBadgeClass` y `stepHintClass` murieron el 2026-08-15 (F3.3 · L5), como su hermano
+   `stepButtonClass` en G1: devolvian cadenas de Tailwind. Quedan reducidos a lo unico que era
+   suyo —decidir en que estado esta el paso— y el color lo pone el CSS:
+     · el NUMERO pide un tono de `deasy-icon-box`, que ya tiene los seis (F3.1);
+     · la PISTA se pinta por descendencia de `--complete` / `--active`, sin funcion ninguna.
+   Las dos ultimas ramas de `stepBadgeClass` devolvian lo MISMO, asi que `isStepLocked` no
+   pintaba nada distinto: el bloqueado ya se ve por el `:disabled` que el boton declara. */
+const tonoPaso = (step) => {
+  if (isStepComplete(step)) return "success";
+  if (step.key === props.currentStep) return "primary";
+  return "neutral";
 };
 const stepHint = (step, index) => {
   if (step.hint) return step.hint;
   if (step.key === "activate") {
-    if (definitionStatus.value === "active") return "Activa";
-    if (definitionStatus.value === "retired") return "Retirada";
+    if (["active", "retired"].includes(estadoDefinicion.value)) return etiquetaCicloVida(estadoDefinicion.value);
   }
   if (isStepComplete(step)) return "Completo";
   if (isStepLocked(step, index)) return "Bloqueado";

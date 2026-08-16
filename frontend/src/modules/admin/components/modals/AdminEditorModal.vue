@@ -141,13 +141,9 @@
         scroll-class=""
       >
         <template #cell="{ row, field }">
-          <span
-            v-if="field.name === 'status'"
-            class="deasy-tag"
-            :class="processConfigurationStatusClass(row[field.name])"
-          >
-            {{ processConfigurationStatusLabel(row[field.name]) }}
-          </span>
+          <AppTag v-if="field.name === 'status'" :variant="tonoCicloVida(row[field.name])">
+            {{ etiquetaCicloVida(row[field.name]) }}
+          </AppTag>
           <template v-else>
             {{ formatProcessConfigurationCell(row, field) }}
           </template>
@@ -244,6 +240,8 @@ import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
@@ -309,21 +307,14 @@ const showProcessConfigurations = computed(() =>
   && Boolean(props.selectedRow?.id)
 );
 
-const processConfigurationStatusLabel = (value) => ({
-  draft: "Borrador",
-  active: "Activa",
-  retired: "Retirada"
-}[String(value || "").trim().toLowerCase()] || (value || "—"));
 
-/* El ciclo de vida de una configuracion usa las variantes que YA existen, no un eje propio:
-   una variante nueva solo se justifica si el concepto puede cambiar de color por su cuenta, y un
-   borrador siempre va a ser el gris apagado. Ojo, esto ademas ARREGLA una incoherencia: `draft`
-   salia gris aqui y AMBAR en el nodo del grafo (`ProcessConfigNode`), para el mismo estado. */
-const processConfigurationStatusClass = (value) => ({
-  draft: "deasy-tag--neutral",
-  active: "deasy-tag--success",
-  retired: "deasy-tag--warning"
-}[String(value || "").trim().toLowerCase()] || "deasy-tag--neutral");
+
+/* Este fichero era el UNICO del repo que ya tenia el esquema correcto —`draft` gris, `retired`
+   ambar— y su comentario explicaba por que. F3.3 no lo cambio: alineo a los demas con el, y
+   ahora los dos mapas que vivian aqui (el de clase y el de etiqueta) son `estadoTono.js`.
+
+   Lo que se pierde es la clase CRUDA `deasy-tag--*`, que se escribia saltandose `AppTag` y por
+   tanto sin validacion ninguna. */
 
 const updateFormField = (fieldName, value) => {
   emit("update:form-data", {

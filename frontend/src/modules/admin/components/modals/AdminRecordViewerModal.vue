@@ -42,16 +42,9 @@
                 Informacion general
               </h6>
             </div>
-            <span
-              v-if="activeValue"
-              class="inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold"
-              :class="activeValue === 'Si'
-                ? 'border-emerald-200 bg-emerald-50 text-success'
-                : 'border-line bg-surface text-icon'"
-            >
-              <span class="h-1.5 w-1.5 rounded-full" :class="activeValue === 'Si' ? 'bg-emerald-500' : 'bg-gray-400'" />
+            <AppTag v-if="activeValue" :variant="tonoActividad(activeValue === 'Si')" outlined dot>
               {{ activeValue === "Si" ? "Activo" : "Inactivo" }}
-            </span>
+            </AppTag>
           </div>
 
           <dl class="grid grid-cols-1 overflow-hidden border-y border-line sm:grid-cols-2 lg:grid-cols-3">
@@ -173,14 +166,15 @@
     </div>
 
     <template #footer>
-      <span
+      <AppTag
         v-if="syncBadge"
-        class="mr-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1"
-        :class="syncBadge.class"
+        :variant="syncBadge.tono"
+        outlined
+        class-name="mr-auto"
         :title="syncStatus?.status === 'no_link' ? 'El flujo existe en la plantilla pero aún no está vinculado a ninguna configuración (no está activo).' : (syncStatus?.status === 'stale' ? 'La proyección del flujo en la base de datos no coincide con la versión actual de la plantilla.' : 'La proyección del flujo está al día con la plantilla.')"
       >
         {{ syncBadge.label }}
-      </span>
+      </AppTag>
       <AdminButton
         v-if="canResyncWorkflows"
         variant="outlinePrimary"
@@ -233,6 +227,8 @@ import {
   IconSettings
 } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoActividad, tonoSincronizacion } from "@/shared/utils/estadoTono.js";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
@@ -303,15 +299,18 @@ const emit = defineEmits([
 ]);
 
 // Indicador de sincronización del flujo (plantillas): synced / stale / no_link.
-const SYNC_BADGE_META = {
-  synced: { label: "Flujo sincronizado", class: "bg-emerald-100 text-success ring-emerald-200" },
-  stale: { label: "Flujo desincronizado", class: "bg-amber-100 text-warning ring-amber-200" },
-  no_link: { label: "Flujo sin vínculo", class: "bg-surface text-icon ring-line" }
+/* Solo la ETIQUETA se queda aqui: el tono lo da `tonoSincronizacion`. Antes cada entrada
+   llevaba su cadena de clases —color en JavaScript, invisible a los gates— y ademas era el
+   unico sitio del repo que pintaba el tinte al paso `-100` en vez de `-50`. */
+const SYNC_LABELS = {
+  synced: "Flujo sincronizado",
+  stale: "Flujo desincronizado",
+  no_link: "Flujo sin vínculo"
 };
 const syncBadge = computed(() => {
   const status = props.syncStatus?.status;
-  if (!status || !SYNC_BADGE_META[status]) return null;
-  return SYNC_BADGE_META[status];
+  if (!status || !SYNC_LABELS[status]) return null;
+  return { label: SYNC_LABELS[status], tono: tonoSincronizacion(status) };
 });
 const canResyncWorkflows = computed(() =>
   props.recordViewerTable?.table === "template_artifacts"

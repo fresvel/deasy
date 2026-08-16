@@ -17,10 +17,9 @@
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between gap-2">
           <span class="text-xs font-bold uppercase tracking-wide text-muted">Requisitos para activar</span>
-          <span
-            class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold ring-1"
-            :class="allRequirementsMet ? 'bg-emerald-100 text-success ring-emerald-200' : 'bg-surface text-icon ring-line'"
-          >{{ completedRequirements }}/3</span>
+          <AppTag :variant="tonoCobertura(coberturaEstado(completedRequirements, 3))" size="sm" outlined>
+            {{ completedRequirements }}/3
+          </AppTag>
         </div>
         <div class="grid gap-2 sm:grid-cols-3">
           <div
@@ -163,6 +162,8 @@
 
 <script setup>
 import { computed } from "vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoCobertura, coberturaEstado } from "@/shared/utils/estadoTono.js";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";

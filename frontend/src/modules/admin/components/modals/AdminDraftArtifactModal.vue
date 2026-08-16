@@ -108,13 +108,9 @@
         <template #labelSuffix>
           <AppInfoTip>{{ isAdHoc ? "Extensión puntual de usuario: permite persona concreta; sin tipo de unidad." : "Desde admin solo se crean oficiales: permiten tipo de unidad; sin persona concreta." }}</AppInfoTip>
         </template>
-        <span
-          class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-          :class="isAdHoc ? 'bg-amber-100 text-warning' : 'bg-brand-100 text-primary'"
-        >
-          <span class="h-1.5 w-1.5 rounded-full" :class="isAdHoc ? 'bg-amber-500' : 'bg-brand-500'"></span>
+        <AppTag :variant="tonoAmbito(isAdHoc ? 'ad_hoc' : 'official')" dot>
           {{ isAdHoc ? "De usuario (ad-hoc)" : "De proceso (oficial)" }}
-        </span>
+        </AppTag>
       </AdminFieldGroup>
       <AdminFieldGroup label="Nombre de la plantilla" :label-for="fieldId('display-name')" group-class="md:col-span-6">
         <AdminInputField
@@ -571,6 +567,8 @@
 
 <script setup>
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoAmbito } from "@/shared/utils/estadoTono.js";
 import { ref, computed, watch, onMounted, useId } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import axios from "@/core/services/httpClient";
@@ -913,7 +911,12 @@ const expandedSignatureStep = ref(null);
 const toggleFillStep = (index) => { expandedFillStep.value = expandedFillStep.value === index ? null : index; };
 const toggleSignatureStep = (index) => { expandedSignatureStep.value = expandedSignatureStep.value === index ? null : index; };
 
-// Paleta de tonos para diferenciar pasos (se cicla por índice).
+/* Paleta de tonos para diferenciar pasos (se cicla por indice).
+   ⚠️ NO ENTRA en `estadoTono.js`, y la razon es el criterio de F3.3: esto NO es estado. El color
+   no significa nada —no dice si el paso esta bien o mal—, solo separa un paso del siguiente, igual
+   que los `…AccentClass` de `homeView.helpers.js`. Un diccionario valor→tono no tiene aqui ningun
+   valor que traducir. El `badge` ya pide un NOMBRE de tono, que es lo correcto; el `card` sigue
+   devolviendo un color y eso si es deuda, pero de F8 (color en JavaScript), no de esta fase. */
 const STEP_TONES = [
   { card: "border-brand-200", badge: "deasy-icon-box--primary" },
   { card: "border-emerald-200", badge: "deasy-icon-box--success" },

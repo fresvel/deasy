@@ -178,9 +178,9 @@
                 </div>
               </template>
               <template v-else-if="isDefinitionStatusField(field) && row[field.name]">
-                <span class="inline-flex items-center rounded-xl px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadge(row[field.name]).class">
-                  {{ definitionStatusBadge(row[field.name]).label }}
-                </span>
+                <AppTag :variant="tonoCicloVida(row[field.name])" size="sm">
+                  {{ etiquetaCicloVida(row[field.name]) }}
+                </AppTag>
               </template>
               <template v-else>
                 {{ formatCell(row[field.name], field, row) }}
@@ -303,6 +303,8 @@
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
@@ -416,17 +418,13 @@ const resetGenericSearch = () => {
 
 // Badge de estado de la configuración: aplica al status de process_definition_versions y al estado de la
 // definición activa en la tabla de procesos. El resto de columnas 'status' siguen como texto plano.
-const DEFINITION_STATUS_BADGES = {
-  draft: { label: "Borrador", class: "bg-gray-200 text-body" },
-  active: { label: "Activa", class: "bg-emerald-500 text-white" },
-  retired: { label: "Retirada", class: "bg-amber-200 text-warning" }
-};
+/* `DEFINITION_STATUS_BADGES` murio el 2026-08-15 (F3.3 · L5). Era la COPIA byte a byte del
+   `DEFINITION_STATUS_META` de `AdminProcessWizardShell` —el mismo estado pintado dos veces desde
+   dos ficheros—, y las dos son ahora el mismo diccionario, `estadoTono.js`.
+
+   Lo que decide QUE columna lleva pastilla sigue aqui, porque es negocio y no color. */
 const isDefinitionStatusField = (field) =>
   field?.name === "active_definition_status"
   || (field?.name === "status" && props.table?.table === "process_definition_versions");
-const definitionStatusBadge = (value) =>
-  DEFINITION_STATUS_BADGES[String(value || "").toLowerCase()]
-  || { label: value, class: "bg-gray-200 text-body" };
-
 defineExpose({ searchInputRef });
 </script>
