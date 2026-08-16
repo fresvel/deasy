@@ -63,17 +63,11 @@ const hover = ref(false);
 
 // Estado de la versión vinculada (badge en el nodo). El detalle de TODAS las versiones va en el drawer.
 const lifecycleState = computed(() => String(props.data.lifecycle_state || "published"));
-const stateLabel = computed(() => ({ draft: "Borrador", published: "Publicada", retired: "Retirada" }[lifecycleState.value] || lifecycleState.value));
-const stateBadgeClass = computed(() => ({
-  published: "bg-emerald-50 text-success ring-emerald-200",
-  draft: "bg-amber-50 text-warning ring-amber-200",
-  retired: "bg-surface text-muted ring-line"
-}[lifecycleState.value] || "bg-surface text-muted ring-line"));
-const stateDotClass = computed(() => ({
-  published: "bg-emerald-500",
-  draft: "bg-amber-500",
-  retired: "bg-gray-400"
-}[lifecycleState.value] || "bg-gray-400"));
+const stateLabel = computed(() => etiquetaCicloVida(lifecycleState.value));
+/* El tono y el punto salen del diccionario. Antes eran DOS mapas independientes —`stateBadgeClass`
+   y `stateDotClass`— para el mismo campo, y discrepaban: «retirado» era `surface/line` en la
+   pastilla y `gray-400` en el punto. */
+const tonoEstado = computed(() => tonoCicloVida(lifecycleState.value));
 // Señal de salud: una config ACTIVA debería usar la versión publicada. Si usa una no publicada (retirada/borrador)
 // = "hueco" → ⚠. En configs borrador es normal (trabajo en curso), no se marca.
 const isUnhealthy = computed(() => String(props.data.parentConfigStatus) === "active" && lifecycleState.value !== "published");
