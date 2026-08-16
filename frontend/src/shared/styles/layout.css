@@ -3,12 +3,25 @@
         @apply min-h-screen bg-navy-deep font-sans text-body;
     }
 
+    /* ══ EL PAPEL ES GRIS, LAS SUPERFICIES BLANCAS — F4.C·C, 2026-08-16 ═══════════════════════
+       Adoptado de TailAdmin por decision del dueño. Hasta hoy el fondo de pagina y las tarjetas
+       eran **el mismo blanco**, asi que un panel solo se distinguia por su borde de 1 px. Ese es
+       el motivo de que su «card base» se lea sin depender del borde: el papel va en `gray-50` y
+       lo que se apoya encima, en blanco.
+
+       Comprobado antes de tocarlo, porque el cambio habria sido malo si no: las tablas SI viven
+       dentro de superficies acotadas —`deasy-table-responsive` (blanca, radio 12) dentro de
+       `admin-surface-frame` (blanca, radio 16)—, asi que el gris las DESPEGA en vez de teñirlas.
+       Si la tabla hubiera sido transparente sobre la pagina, esto la habria puesto gris entera.
+
+       ⚠️ Es visible en TODAS las pantallas a la vez, y se revierte cambiando estas dos lineas.
+       ═══════════════════════════════════════════════════════════════════════════════════════ */
     .deasy-workspace-layout {
-        @apply mx-auto flex w-full max-w-[2560px] flex-1 flex-col items-stretch bg-white xl:flex-row;
+        @apply mx-auto flex w-full max-w-[2560px] flex-1 flex-col items-stretch bg-surface xl:flex-row;
     }
 
     .deasy-workspace-content {
-        @apply min-w-0 flex-1 bg-white;
+        @apply min-w-0 flex-1 bg-surface;
     }
 
     .deasy-workspace-header {

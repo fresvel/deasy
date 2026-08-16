@@ -1,5 +1,5 @@
 <template>
-  <main class="flex min-w-0 flex-1 flex-col w-full bg-white px-3 py-4 transition-all duration-300 sm:px-4 lg:px-5">
+  <main class="flex min-w-0 flex-1 flex-col w-full bg-surface px-3 py-4 transition-all duration-300 sm:px-4 lg:px-5">
     <!-- EL TOPE DE ANCHO — adoptado de TailAdmin el 2026-08-16 (F4.C, delta 1).
          Su contenedor de pagina es `mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6`; aqui no habia
          tope, asi que el contenido se estiraba de borde a borde sin limite. En una ventana de 2560
