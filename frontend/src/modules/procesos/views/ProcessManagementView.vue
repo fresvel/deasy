@@ -77,7 +77,7 @@
         </div>
 
         <template v-else>
-          <AppPageHeader size="hero" shell-class="mb-8" :eyebrow="heroKicker" :title="heroTitle" :description="heroDescription">
+          <AppPageHeader size="hero" shell-class="mb-8" :overline="heroKicker" :title="heroTitle" :description="heroDescription">
             <template #media><component :is="heroIcon" class="h-10 w-10" /></template>
             <template #actions>
               <button type="button" class="deasy-hero-back-button" @click="handleHeroBack">

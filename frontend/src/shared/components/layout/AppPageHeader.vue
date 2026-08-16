@@ -9,7 +9,7 @@
           </div>
         </div>
         <div class="deasy-hero-copy sm:pt-0">
-          <div v-if="eyebrow" class="deasy-hero-kicker">{{ eyebrow }}</div>
+          <p v-if="overline" class="deasy-overline deasy-overline--spaced">{{ overline }}</p>
           <h2 class="deasy-hero-title">{{ title }}</h2>
           <p v-if="description" class="deasy-hero-description">{{ description }}</p>
         </div>
@@ -23,7 +23,7 @@
   <!-- SECTION: la misma cabecera sin caja, dentro de un panel que ya la tiene -->
   <div v-else class="admin-page-header">
     <div class="admin-page-header__main">
-      <p v-if="eyebrow" class="deasy-overline deasy-overline--spaced">{{ eyebrow }}</p>
+      <p v-if="overline" class="deasy-overline deasy-overline--spaced">{{ overline }}</p>
       <h1 class="admin-page-header__title">{{ title }}</h1>
       <p v-if="description" class="admin-page-header__description">{{ description }}</p>
     </div>
@@ -57,7 +57,7 @@ import { computed, useSlots } from "vue";
 
 const props = defineProps({
   /* El rótulo pequeño de encima del título. `kicker` en la familia hero. */
-  eyebrow: { type: String, default: "" },
+  overline: { type: String, default: "" },
   title: { type: String, default: "" },
   description: { type: String, default: "" },
   /* `hero` trae caja, sombra y sitio para media; `section` es la fila desnuda. */

@@ -4,7 +4,7 @@
     <AppPageHeader
       size="hero"
       shell-class="mb-8"
-      eyebrow="Perfil académico"
+      overline="Perfil académico"
       :title="displayName"
       description="Gestiona tu dossier académico y tu información profesional."
       avatar-media

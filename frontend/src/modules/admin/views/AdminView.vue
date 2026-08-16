@@ -179,7 +179,7 @@
             </div>
             <div v-else-if="metaError" class="deasy-alert deasy-alert--danger text-center">{{ metaError }}</div>
             <template v-else>
-               <AppPageHeader size="hero" shell-class="mb-8" :eyebrow="adminHeroKicker" :title="adminHeroTitle" :description="adminHeroDescription">
+               <AppPageHeader size="hero" shell-class="mb-8" :overline="adminHeroKicker" :title="adminHeroTitle" :description="adminHeroDescription">
                  <template #media><component :is="adminHeroIcon" class="h-10 w-10" /></template>
                  <template #actions>
                    <button type="button" class="deasy-hero-back-button" @click="handleHeroBack">

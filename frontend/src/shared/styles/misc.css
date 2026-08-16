@@ -42,9 +42,9 @@
         @apply overflow-hidden p-0;
     }
 
-    .deasy-hero-kicker {
-        @apply inline-flex w-fit items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-strong shadow-none;
-    }
+    /* 📌 AQUI ESTUVO `deasy-hero-kicker` (†2026-08-15). Era una pastilla con borde y fondo para
+       decir lo mismo que `deasy-overline` dice con texto: la categoria del titulo que va debajo.
+       Sus 3 usos pasan al overline. Ver el porque en el bloque de `deasy-overline`. */
 
     .deasy-hero-title {
         @apply m-0 text-[1.25rem] font-bold leading-[1.05] tracking-tight text-navy md:text-[1.45rem];
@@ -127,15 +127,24 @@
        venga de fuera; y al no ser ninguno de los dos que ya convivian, obliga a renombrar los dos
        sin dejar un «ganador» a medias.
 
-       📌 `deasy-hero-kicker` NO entra en este renombrado, y no es un olvido: no es un rotulo de
-       texto sino una PASTILLA —borde, fondo, radio, `px-3 py-1`—. Es otro componente con otro
-       problema, y le toca en F6.2.
+       📌 Y EL 2026-08-15, EN EL MISMO DIA, `deasy-hero-kicker` SE COLAPSO AQUI TAMBIEN. Era la
+       tercera forma: no un rotulo de texto sino una PASTILLA —borde, fondo, radio, `px-3 py-1`,
+       `tracking-[0.2em]`—. El dueño la descarto por aspecto («el kicker no me gusta para nada») y
+       pidio una sola forma, tomada de TailAdmin. Con eso mueren las tres.
+
+       ⚠️ SE ADOPTA SU FORMA, NO SU COLOR, y la diferencia esta medida. Su rotulo de grupo
+       (`menu-group-title`) es 12 px, peso **400**, versalitas, SIN interletra y en `gray-400`. Los
+       tres primeros se adoptan —de ahi que este bloque pase de `font-bold` a `font-medium` y
+       pierda el `tracking-wide`—, pero su gris da **2.58:1 sobre blanco** y no llega a AA. Se
+       queda `--color-muted` (gray-600, 7.69:1), que `frontend/CLAUDE.md` llama «el SUELO, nada mas
+       claro para texto». La norma del repo gana a la fuente de diseño, que es justo lo que la
+       propia skill de TailAdmin dice.
 
        Esto contesta media F6.1 en la practica: la escala por debajo de 14px tiene DOS
        escalones y este es el de abajo, `text-theme-xs` (12/18), que es el de la paleta
        adoptada. Se lleva de paso 38 de los `text-[…]` arbitrarios. */
     .deasy-overline {
-        @apply m-0 text-theme-xs font-bold uppercase tracking-wide text-muted;
+        @apply m-0 text-theme-xs font-medium uppercase text-muted;
     }
 
     /* Cuando va sobre un titulo y necesita separarse de el. */

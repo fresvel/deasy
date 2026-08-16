@@ -660,7 +660,7 @@
 
             <!-- Cabecera con título y botón volver -->
             <AppPageHeader
-              :eyebrow="isRoutedProcess ? 'Documentos' : (selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso')"
+              :overline="isRoutedProcess ? 'Documentos' : (selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso')"
               :title="isRoutedProcess ? routedHeaderTitle : (selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Proceso')"
             >
               <template #actions>
