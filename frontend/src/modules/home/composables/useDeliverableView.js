@@ -446,95 +446,43 @@ export function useDeliverableView({
     );
   };
 
-  const getDeliverableCardTone = (payload) => {
-    if (shouldShowStartDeliverable(payload)) {
-      return {
-        card: 'border-brand-200 hover:border-brand-300',
-        header: 'border-brand-100 bg-brand-50/60 text-primary',
-        accent: 'bg-brand-500',
-        responsibility: 'border-brand-100 bg-brand-50/40',
-        responsibilityLabel: 'text-primary',
-        iconChip: 'deasy-icon-box--primary'
-      };
-    }
-
-    if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-      return {
-        card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-success',
-        accent: 'bg-emerald-400',
-        responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-success',
-        iconChip: 'deasy-icon-box--success'
-      };
-    }
-
-    if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
-      return {
-        card: 'border-blue-light-200 hover:border-blue-light-300',
-        header: 'border-blue-light-100 bg-blue-light-50/60 text-info',
-        accent: 'bg-blue-light-400',
-        responsibility: 'border-blue-light-100 bg-blue-light-50/40',
-        responsibilityLabel: 'text-info',
-        iconChip: 'deasy-icon-box--info'
-      };
-    }
-
+  /* EN QUE ESTADO ESTA LA TARJETA — una sola cascada, y antes eran TRES.
+   *
+   * `getDeliverableCardTone`, `getDeliverableStateIcon` y `getDeliverableHeaderActionTone`
+   * preguntaban exactamente lo mismo, en el mismo orden, cada una por su cuenta: si se puede
+   * empezar, si toca firmar, si toca subir, si ya esta hecho. Tres copias de una decision de
+   * negocio es como acaban discrepando —basta tocar una— y ademas `DeliverableCard` llamaba a
+   * la primera SIETE veces por tarjeta, una por cada campo de color que devolvia.
+   *
+   * Esto es negocio y se queda en JavaScript. Lo que se va es el color: los seis campos que
+   * devolvia `…CardTone` son ahora `deasy-deliverable-card--{estado}` en `deliverables.css`,
+   * que ya tenia el patron escrito para `deasy-deliverable-action--{estado}` con los MISMOS
+   * nombres. No se inventa vocabulario: se reutiliza el que el fichero ya hablaba. */
+  const getDeliverableCardState = (payload) => {
+    if (shouldShowStartDeliverable(payload)) return 'start';
+    if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) return 'sign';
+    if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) return 'upload';
     const subject = getDeliverableSubject(payload);
-    const variant = getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral');
-    if (variant === 'success') {
-      return {
-        card: 'border-emerald-200 hover:border-emerald-300',
-        header: 'border-emerald-100 bg-emerald-50/60 text-success',
-        accent: 'bg-emerald-400',
-        responsibility: 'border-emerald-100 bg-emerald-50/40',
-        responsibilityLabel: 'text-success',
-        iconChip: 'deasy-icon-box--success'
-      };
-    }
-
-    return {
-      card: 'border-line hover:border-line-strong',
-      header: 'border-line bg-surface/70 text-muted',
-      accent: 'bg-gray-300',
-      responsibility: 'border-line bg-surface/50',
-      responsibilityLabel: 'text-muted',
-      iconChip: 'bg-surface text-muted'
-    };
+    if (getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral') === 'success') return 'done';
+    return 'idle';
   };
 
-  const getDeliverableStateIcon = (payload) => {
-    if (shouldShowStartDeliverable(payload)) return IconPlayerPlayFilled;
-    if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) return IconSignature;
-    if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) return IconUpload;
-    const subject = getDeliverableSubject(payload);
-    if (getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral') === 'success') return IconCircleCheck;
-    return IconFileDescription;
+  const ICONO_POR_ESTADO = {
+    start: IconPlayerPlayFilled,
+    sign: IconSignature,
+    upload: IconUpload,
+    done: IconCircleCheck,
+    idle: IconFileDescription
   };
 
-  const getDeliverableHeaderActionTone = (payload) => {
-    if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-      // [F1.8 2026-08-11] Era el hex `#4BF1A1` escrito a mano, con su tinta `#118a57`.
-      // [F2.4] El BORDE lo pone la tinta, no la menta: la menta al 65 % daba 1.46:1 y el
-      // limite de un componente pide 3:1. La menta se queda para el relleno, que no tiene
-      // minimo. Y el hover ya no aclara — antes iba al 100 % de la menta, o sea a un borde
-      // MAS claro, justo lo que §5.2 prohibe.
-      //
-      // ⚠️ `rgba(var(--x), 0.1)` y NO `rgb(var(--x)/0.1)`. El segundo compila —Tailwind
-      // emite la regla tal cual— pero es CSS INVALIDO: el triplete del token va separado
-      // por comas, y la sintaxis heredada por comas no admite la barra del alfa. El
-      // navegador descarta la declaracion y el color cae a `currentColor` SIN avisar.
-      // El CSS servido decia que la utilidad existia.
-      return 'border-step-ink text-step-ink hover:border-[color-mix(in_srgb,var(--color-step-ink)_85%,var(--black))] hover:bg-[rgba(var(--step-rgb),0.1)] focus:ring-[rgba(var(--step-rgb),0.35)]';
-    }
-    if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
-      return 'border-blue-light-100/95 text-info hover:border-blue-light-200 hover:bg-blue-light-50';
-    }
-    if (shouldShowStartDeliverable(payload)) {
-      return 'border-brand-100/95 text-primary hover:border-brand-200 hover:bg-brand-50';
-    }
-    return 'border-line text-icon hover:border-line-strong hover:bg-surface focus:ring-line/70';
-  };
+  const getDeliverableStateIcon = (payload) => ICONO_POR_ESTADO[getDeliverableCardState(payload)];
+
+  /* Las cuatro recetas de este boton se fueron a `deasy-deliverable-headaction--{estado}`, en
+     `deliverables.css`. La de firmar es la que mas se agradece que salga de aqui: era una cadena
+     con dos `color-mix` y dos `rgba(var(--x), .1)` dentro de corchetes arbitrarios, y su propio
+     comentario documentaba que la sintaxis `rgb(var(--x)/.1)` compila pero es CSS invalido y el
+     navegador la descarta sin avisar. Ese aviso viaja con la regla, no se pierde. */
+  const getDeliverableHeaderActionTone = (payload) => `deasy-deliverable-headaction--${getDeliverableCardState(payload)}`;
 
   const isDeliverableSignatureFlowCompleted = (payload) => {
     const subject = getDeliverableSubject(payload);
@@ -920,7 +868,7 @@ export function useDeliverableView({
     getCurrentSignatureWorkflowRequest,
     getDeliverableAccessSource,
     getDeliverableActionFilterState,
-    getDeliverableCardTone,
+    getDeliverableCardState,
     getDeliverableCurrentResponsibility,
     getDeliverableDateRangeLabel,
     getDeliverableDocumentTagVariant,

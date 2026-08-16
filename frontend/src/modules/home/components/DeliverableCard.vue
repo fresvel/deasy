@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
 import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
@@ -41,6 +42,11 @@ const emit = defineEmits([
 
 const h = props.helpers;
 
+/* UNA sola evaluacion de la cascada por tarjeta. Antes el template llamaba siete veces a
+   `getDeliverableCardTone` —una por cada campo de color que devolvia— y cada llamada rehacia
+   las comprobaciones de negocio enteras. */
+const estado = computed(() => h.getDeliverableCardState(props.deliverable.item));
+
 // Click en el header o el cuerpo de la tarjeta abre el modal de detalle, EXCEPTO si el clic fue sobre un control
 // interactivo (botones de acción, campo de subida, enlaces): esos conservan su propio comportamiento.
 const onCardClick = (event) => {
@@ -52,15 +58,14 @@ const onCardClick = (event) => {
 <template>
   <article
     class="group/card relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_8px_24px_-12px_rgba(var(--elev-ink-rgb),0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(var(--elev-ink-rgb),0.06),0_16px_32px_-16px_rgba(var(--elev-ink-rgb),0.18)]"
-    :class="h.getDeliverableCardTone(deliverable.item).card"
+    :class="`deasy-deliverable-card--${estado} deasy-deliverable-card__shell`"
     @click="onCardClick"
   >
-    <span class="absolute inset-x-0 top-0 h-1" :class="h.getDeliverableCardTone(deliverable.item).accent"></span>
+    <span class="deasy-deliverable-card__accent absolute inset-x-0 top-0 h-1"></span>
     <div class="flex h-full flex-col p-4 pt-[1.3125rem]">
       <div class="flex min-w-0 flex-col gap-3">
         <div
-          class="-mx-4 -mt-[1.3125rem] flex cursor-pointer items-start justify-between gap-3 border-b px-4 pb-3 pt-3.5"
-          :class="h.getDeliverableCardTone(deliverable.item).header"
+          class="deasy-deliverable-card__header -mx-4 -mt-[1.3125rem] flex cursor-pointer items-start justify-between gap-3 border-b px-4 pb-3 pt-3.5"
           role="button"
           tabindex="0"
           aria-label="Abrir detalle del entregable"
@@ -69,10 +74,10 @@ const onCardClick = (event) => {
         >
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
-              <span class="deasy-icon-box deasy-icon-box--sm" :class="h.getDeliverableCardTone(deliverable.item).iconChip">
+              <span class="deasy-icon-box deasy-icon-box--sm deasy-deliverable-card__chip">
                 <component :is="h.getDeliverableStateIcon(deliverable.item)" class="h-3.5 w-3.5" />
               </span>
-              <span class="truncate text-[0.7rem] font-semibold uppercase tracking-[0.14em]" :class="h.getDeliverableCardTone(deliverable.item).responsibilityLabel">
+              <span class="deasy-deliverable-card__label truncate text-[0.7rem] font-semibold uppercase tracking-[0.14em]">
                 {{ h.getDeliverableUnitLabel(deliverable.item) || 'Unidad' }}
               </span>
               <span
@@ -85,7 +90,7 @@ const onCardClick = (event) => {
             </div>
             <p class="m-0 line-clamp-2 text-[0.95rem] font-semibold leading-snug text-strong" :title="deliverable.item.template_artifact_name">
               {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
-              <span v-if="deliverable.item.document_version" class="ml-0.5 whitespace-nowrap align-middle text-[0.72rem] font-bold" :class="h.getDeliverableCardTone(deliverable.item).responsibilityLabel">
+              <span v-if="deliverable.item.document_version" class="deasy-deliverable-card__label ml-0.5 whitespace-nowrap align-middle text-[0.72rem] font-bold">
                 v{{ deliverable.item.document_version }}
               </span>
             </p>
@@ -117,7 +122,7 @@ const onCardClick = (event) => {
           <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
           <div class="flex items-center gap-2.5">
             <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
-              <div class="h-full rounded-full transition-all duration-300" :class="h.getDeliverableCardTone(deliverable.item).accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
+              <div class="deasy-deliverable-card__accent h-full rounded-full transition-all duration-300" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
             </div>
             <span class="shrink-0 text-[0.7rem] font-semibold text-muted">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
           </div>

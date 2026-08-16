@@ -15,8 +15,6 @@ import {
   getSignatureStepStatusCode,
   getSignatureStepStatusLabel,
   getSignatureStepStatusVariant,
-  getSignatureStepCardClass,
-  getSignatureStepAccentClass,
   formatTriggerLabel,
   getFillStepStatusLabel,
   getFillStepStatusTagVariant,
@@ -119,27 +117,36 @@ describe('getSignatureStepStatusLabel / Variant', () => {
     expect(getSignatureStepStatusVariant('rejected')).toBe('danger');
     expect(getSignatureStepStatusVariant('pending')).toBe('salmon');
     expect(getSignatureStepStatusVariant('unresolved')).toBe('salmon');
-    expect(getSignatureStepStatusVariant('otro')).toBe('muted');
+    expect(getSignatureStepStatusVariant('otro')).toBe('neutral');
   });
 });
 
-/* Igual que el bloque de abajo: afirmaba `toContain('emerald')` y `toContain('sky')`, o sea el
-   nombre de la paleta. Lo que estas funciones prometen es DELEGAR en el codigo de estado y que el
-   turno mande, y eso es lo que se comprueba ahora. */
-describe('getSignatureStepCardClass / AccentClass (delegan en el status code)', () => {
+/* Antes probaba `getSignatureStepCardClass`/`AccentClass`, que murieron en L6: eran una segunda
+   traduccion del mismo codigo de estado, esta vez a cadenas de Tailwind. Lo que las pruebas
+   afirmaban de verdad —que el estado y el turno cambian lo que se pinta— sigue siendo cierto y
+   sigue probandose, pero sobre la pieza que queda: el CODIGO. Es mejor sitio, porque no depende
+   de que el CSS se llame de una forma u otra. */
+describe('getSignatureStepStatusCode (el estado y el turno mandan)', () => {
   const paso = { step_order: 1 };
   const conEstado = (code) => [{ stepOrder: 1, requestStatusCode: code }];
 
-  test('delegan en el codigo de estado: estados distintos dan clases distintas', () => {
-    expect(getSignatureStepCardClass(paso, conEstado('completado')))
-      .not.toBe(getSignatureStepCardClass(paso, conEstado('pendiente')));
-    expect(getSignatureStepAccentClass(paso, conEstado('completado')))
-      .not.toBe(getSignatureStepAccentClass(paso, conEstado('pendiente')));
+  test('estados distintos dan codigos distintos', () => {
+    expect(getSignatureStepStatusCode(paso, conEstado('completado')))
+      .not.toBe(getSignatureStepStatusCode(paso, conEstado('pendiente')));
   });
 
-  test('ser el paso ACTUAL cambia la clase aunque el estado sea el mismo', () => {
-    expect(getSignatureStepCardClass(paso, conEstado('pendiente'), 1))
-      .not.toBe(getSignatureStepCardClass(paso, conEstado('pendiente')));
+  test('ser el paso ACTUAL cambia el codigo aunque el estado sea el mismo', () => {
+    expect(getSignatureStepStatusCode(paso, conEstado('pendiente'), 1))
+      .not.toBe(getSignatureStepStatusCode(paso, conEstado('pendiente')));
+  });
+
+  test('todo codigo tiene tono, y el tono es una variante viva de AppTag', () => {
+    /* Cierra el agujero que dejo L1: `muted` se quedo aqui despues de morir en `tags.css`, y
+       ningun gate podia verlo porque `:variant` se compone en tiempo de ejecucion. */
+    const vivas = ['success', 'warning', 'danger', 'info', 'salmon', 'accent', 'primary', 'neutral'];
+    for (const code of ['completed', 'current', 'rejected', 'pending', 'unresolved', 'loquesea']) {
+      expect(vivas).toContain(getSignatureStepStatusVariant(code));
+    }
   });
 });
 
@@ -194,7 +201,7 @@ describe('getWorkflowStateTagVariant', () => {
   test('usa el fallback ante vacio o desconocido', () => {
     expect(getWorkflowStateTagVariant('')).toBe('neutral');
     expect(getWorkflowStateTagVariant('loquesea')).toBe('neutral');
-    expect(getWorkflowStateTagVariant('', 'muted')).toBe('muted');
+    expect(getWorkflowStateTagVariant('', 'accent')).toBe('accent');
   });
 });
 
@@ -202,7 +209,7 @@ describe('getDeliverableAccessTagVariant', () => {
   test('directo/derivado/otro', () => {
     expect(getDeliverableAccessTagVariant('Directo')).toBe('success');
     expect(getDeliverableAccessTagVariant('derivado')).toBe('accent');
-    expect(getDeliverableAccessTagVariant('otro')).toBe('muted');
+    expect(getDeliverableAccessTagVariant('otro')).toBe('neutral');
   });
 });
 

@@ -49,6 +49,50 @@
     .deasy-pdf-action--danger:hover {
         background: color-mix(in srgb, var(--color-danger) 86%, var(--black));
     }
+
+    /* ═══ LA TARJETA DE UN PASO DE FIRMA ═══════════════════════════════════════════════════
+     *
+     * Estaba escrita en DOS funciones de `homeView.helpers.js` —`getSignatureStepCardClass` y
+     * `getSignatureStepAccentClass`— que devolvian cadenas de Tailwind, con dos consumidores
+     * cada una (`DeliverableSignatureTab` y `HomeView`). Es la forma de deuda que F3.3 persigue:
+     * color en JavaScript, invisible para los diecisiete gates.
+     *
+     * Lo que se conserva es `getSignatureStepStatusCode`, que es negocio —mira los `requests` y
+     * el paso actual—, y `getSignatureStepStatusVariant`, que YA traducia ese codigo a un nombre
+     * de tono. O sea: media pieza estaba bien hecha desde el principio y las otras dos funciones
+     * la duplicaban en forma de color.
+     *
+     * ⚠️ Aqui MUEREN LOS 9 HEX SUELTOS del estado «pendiente» (`#f8a895`, `#fa8072`, `#4BF1A1`…).
+     * Los de esa rama eran salmon literal —`#fa8072` **es** el color «salmon» de CSS— y el
+     * sistema ya tiene ese tono: `--color-pending` sobre la familia `orange`, que es como lo
+     * declara `deasy-tag--salmon`. No se inventa nada: se nombra lo que ya estaba.
+     *
+     * 🪤 Los tonos cambian de FAMILIA aunque no lo parezca: el original usaba `emerald-*` y
+     * `rose-*`, que son de Tailwind y no de la paleta adoptada. Pasan a `success-*` y `error-*`,
+     * que son el mismo verde y el mismo rojo del resto de la app pero calibrados por TailAdmin.
+     * El cambio es sutil y deliberado. */
+    .deasy-signature-step {
+        @apply relative overflow-hidden rounded-[5%] border bg-white p-4 ring-1 ring-white/70 transition;
+        box-shadow: 0 16px 32px rgba(var(--elev-ink-rgb), 0.07);
+    }
+
+    .deasy-signature-step--success { @apply border-success-200 bg-linear-to-br from-success-50/80 via-white to-success-100/40; }
+    .deasy-signature-step--info    { @apply border-blue-light-200 bg-linear-to-br from-blue-light-50/80 via-white to-blue-light-100/50; }
+    .deasy-signature-step--danger  { @apply border-error-200 bg-linear-to-br from-error-50/80 via-white to-error-100/40; }
+    .deasy-signature-step--salmon  { @apply border-orange-200 bg-linear-to-br from-orange-50/85 via-white to-orange-100/45; }
+    .deasy-signature-step--neutral { @apply border-line bg-linear-to-br from-surface/90 via-white to-gray-100/60; }
+
+    /* La banda superior. Va como HIJO y no como `border-top` porque mide 12 px y lleva su propio
+       degradado horizontal, que un borde no puede dar. */
+    .deasy-signature-step__accent {
+        @apply absolute inset-x-0 top-0 h-3;
+    }
+
+    .deasy-signature-step--success .deasy-signature-step__accent { @apply bg-linear-to-r from-success-300 via-success-400 to-success-300; }
+    .deasy-signature-step--info    .deasy-signature-step__accent { @apply bg-linear-to-r from-blue-light-300 via-blue-light-400 to-blue-light-300; }
+    .deasy-signature-step--danger  .deasy-signature-step__accent { @apply bg-linear-to-r from-error-300 via-error-400 to-error-300; }
+    .deasy-signature-step--salmon  .deasy-signature-step__accent { @apply bg-linear-to-r from-orange-300 via-orange-400 to-orange-300; }
+    .deasy-signature-step--neutral .deasy-signature-step__accent { @apply bg-linear-to-r from-gray-200 via-line-strong to-gray-200; }
 }
 
 /* ⚠️ CURSORES DE ARRASTRE (SignatureBox) — SIN CAPA POR PREVENCION, y es la unica regla

@@ -99,4 +99,145 @@
             background-color: color-mix(in srgb, var(--color-info) 4%, var(--color-white));
         }
     }
+
+    /* ═══ LA TARJETA DE UN ENTREGABLE ══════════════════════════════════════════════════════
+     *
+     * Los cinco estados son los MISMOS que `deasy-deliverable-action--*` de arriba, y a
+     * proposito: `start` es empezar, `sign` es firmar, `upload` es subir. Este fichero ya
+     * hablaba ese vocabulario; lo que faltaba era que la tarjeta lo hablara tambien en vez de
+     * llevar seis cadenas de Tailwind en un objeto de JavaScript.
+     *
+     * ⚠️ `DeliverableCard` llamaba a esa funcion SIETE VECES por tarjeta —una por campo— y cada
+     * llamada reevaluaba la cascada entera de condiciones de negocio. Ahora la llama una vez.
+     *
+     * Las variables van en la tarjeta y los hijos las leen, que es lo mismo que hace
+     * `graph-node--estado` con `--tono-borde`: asi un estado nuevo es UN bloque de cinco lineas
+     * y no cinco reglas repartidas. */
+    .deasy-deliverable-card--start {
+        --tarjeta-linea: var(--color-brand-200);
+        --tarjeta-linea-fuerte: var(--color-brand-300);
+        --tarjeta-cabecera-linea: var(--color-brand-100);
+        --tarjeta-cabecera-fondo: color-mix(in srgb, var(--color-brand-50) 60%, var(--color-white));
+        --tarjeta-tinta: var(--color-primary);
+        --tarjeta-acento: var(--color-brand-500);
+    }
+
+    .deasy-deliverable-card--sign {
+        --tarjeta-linea: var(--color-success-200);
+        --tarjeta-linea-fuerte: var(--color-success-300);
+        --tarjeta-cabecera-linea: var(--color-success-100);
+        --tarjeta-cabecera-fondo: color-mix(in srgb, var(--color-success-50) 60%, var(--color-white));
+        --tarjeta-tinta: var(--color-success);
+        --tarjeta-acento: var(--color-success-400);
+    }
+
+    .deasy-deliverable-card--upload,
+    .deasy-deliverable-card--done {
+        --tarjeta-linea: var(--color-blue-light-200);
+        --tarjeta-linea-fuerte: var(--color-blue-light-300);
+        --tarjeta-cabecera-linea: var(--color-blue-light-100);
+        --tarjeta-cabecera-fondo: color-mix(in srgb, var(--color-blue-light-50) 60%, var(--color-white));
+        --tarjeta-tinta: var(--color-info);
+        --tarjeta-acento: var(--color-blue-light-400);
+    }
+
+    /* `done` reusa el azul de `upload` y NO el verde de `sign`, que es lo que hacia el original:
+       su rama de «ya esta hecho» devolvia el bloque verde entero. Se deja como estaba —esto es
+       una migracion, no un rediseño— pero queda anotado que **dos estados distintos se ven
+       igual**, y eso es una decision de UX pendiente, no una propiedad del sistema. */
+    .deasy-deliverable-card--done {
+        --tarjeta-linea: var(--color-success-200);
+        --tarjeta-linea-fuerte: var(--color-success-300);
+        --tarjeta-cabecera-linea: var(--color-success-100);
+        --tarjeta-cabecera-fondo: color-mix(in srgb, var(--color-success-50) 60%, var(--color-white));
+        --tarjeta-tinta: var(--color-success);
+        --tarjeta-acento: var(--color-success-400);
+    }
+
+    .deasy-deliverable-card--idle {
+        --tarjeta-linea: var(--color-line);
+        --tarjeta-linea-fuerte: var(--color-line-strong);
+        --tarjeta-cabecera-linea: var(--color-line);
+        --tarjeta-cabecera-fondo: color-mix(in srgb, var(--color-surface) 70%, var(--color-white));
+        --tarjeta-tinta: var(--color-muted);
+        --tarjeta-acento: var(--color-gray-300);
+    }
+
+    .deasy-deliverable-card__shell { border-color: var(--tarjeta-linea); }
+    .deasy-deliverable-card__accent { background-color: var(--tarjeta-acento); }
+    .deasy-deliverable-card__label { color: var(--tarjeta-tinta); }
+
+    .deasy-deliverable-card__header {
+        border-color: var(--tarjeta-cabecera-linea);
+        background-color: var(--tarjeta-cabecera-fondo);
+        color: var(--tarjeta-tinta);
+    }
+
+    .deasy-deliverable-card__chip {
+        background-color: var(--tarjeta-cabecera-fondo);
+        color: var(--tarjeta-tinta);
+    }
+
+    @media (hover: hover) {
+        .deasy-deliverable-card__shell:hover { border-color: var(--tarjeta-linea-fuerte); }
+    }
+
+    /* ── El boton de la cabecera de la tarjeta ──────────────────────────────────────────────
+     *
+     * ⚠️ EL BORDE LO PONE LA TINTA, NO EL RELLENO, y el aviso viene del original: la menta al
+     * 65 % daba 1.46:1 y el limite de un componente pide 3:1 (WCAG 1.4.11). El relleno no tiene
+     * minimo, asi que ahi si va la menta.
+     *
+     * 🪤 `rgba(var(--step-rgb), 0.1)` y NO `rgb(var(--step-rgb) / 0.1)`. El segundo COMPILA
+     * —Tailwind emite la regla tal cual— pero es CSS invalido: el triplete del token va separado
+     * por comas y la sintaxis heredada por comas no admite la barra del alfa. El navegador
+     * descarta la declaracion y el color cae a `currentColor` sin avisar en ningun sitio. */
+    .deasy-deliverable-headaction--sign {
+        border-color: var(--color-step-ink);
+        color: var(--color-step-ink);
+    }
+
+    .deasy-deliverable-headaction--upload,
+    .deasy-deliverable-headaction--done {
+        border-color: color-mix(in srgb, var(--color-blue-light-100) 95%, transparent);
+        color: var(--color-info);
+    }
+
+    .deasy-deliverable-headaction--start {
+        border-color: color-mix(in srgb, var(--color-brand-100) 95%, transparent);
+        color: var(--color-primary);
+    }
+
+    .deasy-deliverable-headaction--idle {
+        border-color: var(--color-line);
+        color: var(--color-icon);
+    }
+
+    @media (hover: hover) {
+        /* El hover OSCURECE. Mezclar hacia el 100 % de la menta daria un borde MAS claro al
+           pasar el raton, que es justo lo que la norma prohibe. */
+        .deasy-deliverable-headaction--sign:hover {
+            border-color: color-mix(in srgb, var(--color-step-ink) 85%, var(--black));
+            background-color: rgba(var(--step-rgb), 0.1);
+        }
+
+        .deasy-deliverable-headaction--upload:hover,
+        .deasy-deliverable-headaction--done:hover {
+            border-color: var(--color-blue-light-200);
+            background-color: var(--color-blue-light-50);
+        }
+
+        .deasy-deliverable-headaction--start:hover {
+            border-color: var(--color-brand-200);
+            background-color: var(--color-brand-50);
+        }
+
+        .deasy-deliverable-headaction--idle:hover {
+            border-color: var(--color-line-strong);
+            background-color: var(--color-surface);
+        }
+    }
+
+    .deasy-deliverable-headaction--sign:focus { --tw-ring-color: rgba(var(--step-rgb), 0.35); }
+    .deasy-deliverable-headaction--idle:focus { --tw-ring-color: color-mix(in srgb, var(--color-line) 70%, transparent); }
 }

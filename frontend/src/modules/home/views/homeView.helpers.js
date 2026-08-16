@@ -93,43 +93,19 @@ export const getSignatureStepStatusVariant = (statusCode) => {
     case 'unresolved':
       return 'salmon';
     default:
-      return 'muted';
+      /* `muted` murio en L1 el 2026-08-15 —declaraba el mismo cuerpo que `neutral`— y estos dos
+         productores se quedaron atras: ningun gate podia verlos porque `:variant` es dinamico y
+         `check-variants` solo lee atributos literales. Lo que hacian era caer al fallback de
+         `AppTag` (que es `neutral`, o sea el mismo pixel) avisando por consola en desarrollo. */
+      return 'neutral';
   }
 };
 
-export const getSignatureStepCardClass = (step, requests = [], currentStepOrder = null) => {
-  const statusCode = getSignatureStepStatusCode(step, requests, currentStepOrder);
-  switch (statusCode) {
-    case 'completed':
-      return 'border-emerald-200 bg-linear-to-br from-emerald-50/80 via-white to-emerald-100/40';
-    case 'current':
-      return 'border-blue-light-200 bg-linear-to-br from-blue-light-50/80 via-white to-blue-light-100/50';
-    case 'rejected':
-      return 'border-rose-200 bg-linear-to-br from-rose-50/80 via-white to-rose-100/40';
-    case 'pending':
-    case 'unresolved':
-      return 'border-[#f8a895] bg-linear-to-br from-[#fdeae3]/85 via-white to-[#fbccbd]/45';
-    default:
-      return 'border-line bg-linear-to-br from-surface/90 via-white to-gray-100/60';
-  }
-};
-
-export const getSignatureStepAccentClass = (step, requests = [], currentStepOrder = null) => {
-  const statusCode = getSignatureStepStatusCode(step, requests, currentStepOrder);
-  switch (statusCode) {
-    case 'completed':
-      return 'bg-linear-to-r from-emerald-300 via-emerald-400 to-green-300';
-    case 'current':
-      return 'bg-linear-to-r from-[#4BF1A1] via-[#3DE08F] to-[#2ec97d]';
-    case 'rejected':
-      return 'bg-linear-to-r from-rose-300 via-rose-400 to-red-300';
-    case 'pending':
-    case 'unresolved':
-      return 'bg-linear-to-r from-[#ffa792] via-[#fa8072] to-[#f0664f]';
-    default:
-      return 'bg-linear-to-r from-gray-200 via-line-strong to-gray-200';
-  }
-};
+/* `getSignatureStepCardClass` y `getSignatureStepAccentClass` murieron el 2026-08-15 (F3.3 · L6).
+   Devolvian cadenas de Tailwind —incluidos 9 hex sueltos— para lo mismo que `…StatusVariant` ya
+   resolvia bien: el nombre del tono. Su cuerpo vive ahora en `deasy-signature-step--{tono}` y su
+   banda en `__accent`, ambos en `signatures.css`. Lo unico que hacia falta era dejar de traducir
+   dos veces el mismo codigo de estado. */
 
 export const formatTriggerLabel = (periodType) => {
   if (!periodType) return 'Periodo';
@@ -163,7 +139,7 @@ export const getDeliverableAccessTagVariant = (accessSource) => {
   const normalized = String(accessSource || '').trim().toLowerCase();
   if (normalized === 'directo') return 'success';
   if (normalized === 'derivado') return 'accent';
-  return 'muted';
+  return 'neutral';
 };
 
 export const getFillStepStatusLabel = (status) => {

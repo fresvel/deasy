@@ -46,10 +46,10 @@
       <div
         v-for="step in signatureFlowState.snapshot.signatureSteps"
         :key="`combined-signature-step-${step.id || step.step_order}`"
-        class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(var(--elev-ink-rgb),0.07)] ring-1 ring-white/70 transition"
-        :class="getSignatureStepCardClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"
+        class="deasy-signature-step"
+        :class="`deasy-signature-step--${getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
       >
-        <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
+        <div class="deasy-signature-step__accent"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
@@ -107,8 +107,6 @@
 import AppTag from '@/shared/components/data/AppTag.vue';
 import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
 import {
-  getSignatureStepCardClass,
-  getSignatureStepAccentClass,
   getSignatureStepStatusCode,
   getSignatureStepStatusLabel,
   getSignatureStepStatusVariant,
