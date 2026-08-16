@@ -2,11 +2,10 @@
   <div>
     <AppButton
       variant="plain"
-      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-info shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.05),0_14px_34px_rgba(var(--elev-ink-rgb),0.12)] transition hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50 focus:outline-none focus:ring-4 sm:right-6 sm:h-16 sm:w-16"
+      class-name="deasy-fab"
       aria-label="Abrir chat"
       title="Abrir chat"
-      @click="openLauncher"
-    >
+      @click="openLauncher" icon-only>
       <IconMessages class="relative z-10 h-7 w-7 sm:h-8 sm:w-8" />
     </AppButton>
 
@@ -24,7 +23,7 @@
       <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">
         <div class="flex items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
-            <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-light-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
+            <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--solid shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
               <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
             </span>
             <div class="min-w-0">
@@ -35,29 +34,21 @@
             </div>
           </div>
 
-          <AppButton
-            variant="plain"
-            class-name="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-surface hover:text-body"
-            aria-label="Cerrar chat"
-            title="Cerrar chat"
-            @click="closePanel"
-          >
-            <IconX class="h-5 w-5" />
-          </AppButton>
+          <AppCloseButton class="shrink-0" label="Cerrar chat" @click="closePanel" />
         </div>
 
         <div class="mt-4">
           <AppButton
             v-if="view === 'conversation'"
-            variant="plain"
-            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3.5 text-sm font-semibold text-icon transition hover:border-line-strong hover:bg-surface hover:text-navy"
+            variant="secondary"
+            size="sm"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
             Volver
           </AppButton>
 
-          <nav v-else class="flex items-center gap-1 rounded-2xl border border-line bg-surface/70 p-1">
+          <nav v-else class="deasy-inline-tabs deasy-inline-tabs--stacked" role="tablist" aria-label="Modo del chat">
             <button
               v-for="mode in modeOptions"
               :key="mode"
@@ -65,13 +56,12 @@
               :title="modeLabels[mode]"
               :aria-label="modeLabels[mode]"
               :aria-pressed="activeMode === mode"
-              class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition"
-              :class="activeMode === mode
-                ? 'bg-white text-info shadow-[0_2px_8px_rgba(var(--elev-ink-rgb),0.08)]'
-                : 'text-muted hover:text-body'"
+              role="tab"
+              class="deasy-inline-tab deasy-inline-tab--stacked"
+              :class="{ 'deasy-inline-tab--active': activeMode === mode }"
               @click="switchMode(mode)"
             >
-              <component :is="modeIcons[mode]" class="h-5 w-5" :stroke="1.8" />
+              <component :is="modeIcons[mode]" class="deasy-inline-tab__icon" :stroke="1.8" />
               <span>{{ modeLabels[mode] }}</span>
             </button>
           </nav>
@@ -121,7 +111,7 @@
                     v-for="(attachment, attachmentIndex) in message.attachments"
                     :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
                     type="button"
-                    class="inline-flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-xs font-semibold"
+                    class="deasy-picker deasy-picker--flat justify-between"
                     :class="Number(message.sender_person_id) === Number(currentPersonId)
                       ? 'border-blue-light-500 bg-blue-light-600 text-white hover:bg-blue-light-800'
                       : 'border-line bg-surface text-body hover:bg-surface'"
@@ -151,7 +141,7 @@
                 class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-icon"
               >
                 <span class="max-w-40 truncate">{{ file.name }}</span>
-                <button type="button" class="text-muted transition hover:text-icon" @click="removePendingAttachment(index)">
+                <button type="button" class="deasy-chip-remove" @click="removePendingAttachment(index)">
                   <IconX class="h-3.5 w-3.5" />
                 </button>
               </span>
@@ -160,11 +150,10 @@
               <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center deasy-card text-muted transition hover:bg-surface hover:text-body"
+                class-name="deasy-btn--field shrink-0"
                 aria-label="Adjuntar archivos"
                 title="Adjuntar archivos"
-                @click="attachmentInputRef?.click?.()"
-              >
+                @click="attachmentInputRef?.click?.()" icon-only>
                 <IconPaperclip class="h-5 w-5" />
               </AppButton>
               <textarea
@@ -180,7 +169,7 @@
               <AppButton
                 variant="primary"
                 size="sm"
-                class-name="h-[52px] shrink-0 rounded-2xl px-4"
+                class-name="deasy-btn--field shrink-0"
                 :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
                 @click="sendMessage"
               >
@@ -192,7 +181,7 @@
 
         <template v-else-if="activeMode === 'processes'">
           <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
+            <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
               <IconInbox class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-body">Sin contexto de proceso</p>
@@ -207,7 +196,7 @@
                 v-for="item in filteredThreadItems"
                 :key="item.id"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
+                class="deasy-picker deasy-picker--flat"
                 @click="openThreadItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -242,7 +231,7 @@
                 v-for="item in filteredUnitItems"
                 :key="item.unitId"
                 type="button"
-                class="rounded-xl border border-line bg-white px-4 py-4 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40"
+                class="deasy-picker deasy-picker--flat"
                 @click="openUnitItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -270,7 +259,7 @@
           </div>
 
           <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
+            <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
               <IconBuildingCommunity class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-body">Sin unidades</p>
@@ -281,7 +270,7 @@
         </div>
 
         <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
+          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
             <IconMessages class="h-6 w-6" />
           </div>
           <p class="m-0 text-sm font-bold text-body">Modo en preparación</p>
@@ -297,6 +286,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
+import AppCloseButton from '@/shared/components/buttons/AppCloseButton.vue';
 import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
 import realtimeClient from '@/core/services/realtimeClient.js';
 import {

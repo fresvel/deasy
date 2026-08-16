@@ -11,7 +11,7 @@
                 Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
               </p>
             </div>
-            <button type="button" class="deasy-auth-button deasy-auth-button--secondary w-full lg:w-auto" @click="goToLogin">
+            <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg deasy-btn--block lg:w-auto" @click="goToLogin">
               Volver al login
             </button>
           </div>
@@ -244,7 +244,7 @@
                     />
                     <button
                       type="button"
-                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto h-9 w-9"
+                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
                       aria-label="Mostrar u ocultar contraseña"
                       @click="showPassword = !showPassword"
                     >
@@ -278,7 +278,7 @@
                     />
                     <button
                       type="button"
-                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto h-9 w-9"
+                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
                       aria-label="Mostrar u ocultar confirmación"
                       @click="showConfirmPassword = !showConfirmPassword"
                     >
@@ -326,21 +326,14 @@
               <div v-if="errorMessage" class="deasy-alert deasy-alert--danger mt-5 flex">
                 <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
                 <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
-                <button
-                  type="button"
-                  class="deasy-inline-icon-button ml-3 h-8 w-8 text-red-400 hover:bg-red-100 hover:text-danger"
-                  aria-label="Cerrar alerta"
-                  @click="errorMessage = ''"
-                >
-                  <IconX class="h-5 w-5" />
-                </button>
+                <AppCloseButton class="ml-3" label="Cerrar alerta" @click="errorMessage = ''" />
               </div>
             </Transition>
 
             <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row">
-              <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg w-full sm:w-1/2" @click="goToLogin">
+              <AppButton variant="cancel" size="lg" class-name="w-full sm:w-1/2" @click="goToLogin">
                 Cancelar
-              </button>
+              </AppButton>
               <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg w-full sm:w-1/2">
                 Crear cuenta
                 <IconArrowRight class="h-5 w-5" />
@@ -363,14 +356,14 @@
     footer-class="justify-center"
     @close="goToLogin"
   >
-    <div class="deasy-alert deasy-alert--success mx-auto mb-6 flex h-16 w-16 items-center justify-center">
+    <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--success mx-auto mb-6">
       <IconCheck class="h-9 w-9 text-success" />
     </div>
     <p class="mb-0 text-sm text-muted">
       Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
     </p>
     <template #footer>
-      <AppButton class-name="w-full" @click="goToLogin">
+      <AppButton variant="primary" class-name="w-full" @click="goToLogin">
         Ir al login
       </AppButton>
     </template>
@@ -378,6 +371,7 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, watch, onMounted, onUnmounted, useId } from "vue";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";

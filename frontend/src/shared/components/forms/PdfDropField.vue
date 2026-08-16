@@ -34,14 +34,14 @@
 
     <div v-if="selectedFile" class="deasy-dropzone__selected">
       <span class="deasy-dropzone__file-name">{{ selectedFile.name }}</span>
-      <BtnDelete message="Eliminar" @onpress="$emit('clear')" />
+      <AppDeleteButton label="Eliminar" @click="$emit('clear')" />
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from "vue";
-import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 
 let inputSequence = 0;
 

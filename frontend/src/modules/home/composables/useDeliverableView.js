@@ -377,13 +377,6 @@ export function useDeliverableView({
     return Array.isArray(subject.workflow?.signature_steps) ? subject.workflow.signature_steps : [];
   };
 
-  const getDeliverableWorkspaceTabClass = (tab) => {
-    if (deliverableWorkspaceState.value.tab === tab) {
-      return 'border-line bg-white text-navy shadow-[0_-1px_0_rgba(var(--white-rgb),0.9)]';
-    }
-    return 'border-transparent bg-surface text-muted hover:border-line hover:bg-surface hover:text-body';
-  };
-
   const shouldShowResetWorkflow = (payload) => {
     const subject = getDeliverableSubject(payload);
     return Boolean(subject.actions?.can_reset_workflow && subject.actions?.implemented?.reset_workflow);
@@ -461,7 +454,7 @@ export function useDeliverableView({
         accent: 'bg-brand-500',
         responsibility: 'border-brand-100 bg-brand-50/40',
         responsibilityLabel: 'text-primary',
-        iconChip: 'bg-brand-100 text-primary'
+        iconChip: 'deasy-icon-box--primary'
       };
     }
 
@@ -472,7 +465,7 @@ export function useDeliverableView({
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
         responsibilityLabel: 'text-success',
-        iconChip: 'bg-emerald-100 text-success'
+        iconChip: 'deasy-icon-box--success'
       };
     }
 
@@ -483,7 +476,7 @@ export function useDeliverableView({
         accent: 'bg-blue-light-400',
         responsibility: 'border-blue-light-100 bg-blue-light-50/40',
         responsibilityLabel: 'text-info',
-        iconChip: 'bg-blue-light-100 text-info'
+        iconChip: 'deasy-icon-box--info'
       };
     }
 
@@ -496,7 +489,7 @@ export function useDeliverableView({
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
         responsibilityLabel: 'text-success',
-        iconChip: 'bg-emerald-100 text-success'
+        iconChip: 'deasy-icon-box--success'
       };
     }
 
@@ -943,7 +936,6 @@ export function useDeliverableView({
     getDeliverableTagGroups,
     getDeliverableUnitLabel,
     getDeliverableWorkspacePayload,
-    getDeliverableWorkspaceTabClass,
     getFileExtension,
     getFileNameFromPath,
     getFillApproveActionLabelForPayload,

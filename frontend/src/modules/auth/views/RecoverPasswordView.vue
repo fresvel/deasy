@@ -9,7 +9,7 @@
     </router-link>
 
     <div class="mb-8">
-      <div class="w-14 h-14 bg-blue-light-50 rounded-2xl flex flex-col items-center justify-center text-info mb-6">
+      <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--info mb-6">
         <IconKey class="h-7 w-7" />
       </div>
       <h1 class="text-2xl font-bold text-strong tracking-tight">Recuperar contraseña</h1>
@@ -46,7 +46,7 @@
       <button 
         type="submit" 
         :disabled="isLoading"
-        class="deasy-auth-button"
+        class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block"
       >
         <template v-if="!isLoading">
           Enviar código
@@ -127,7 +127,7 @@
       <div class="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
-          class="deasy-auth-button deasy-auth-button--secondary"
+          class="deasy-btn deasy-btn--secondary deasy-btn--lg deasy-btn--block"
           :disabled="isLoading"
           @click="step = 'request'"
         >
@@ -136,7 +136,7 @@
         <button
           type="submit"
           :disabled="isLoading"
-          class="deasy-auth-button"
+          class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block"
         >
           <template v-if="!isLoading">
             Actualizar contraseña

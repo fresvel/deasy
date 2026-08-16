@@ -30,7 +30,7 @@
           />
           <div
             v-if="shouldShowInlineFkSuggestions(field.name)"
-            class="fk-inline-suggestions overflow-hidden rounded-xl border border-line bg-white shadow-lg"
+            class="overflow-hidden rounded-xl border border-line bg-white shadow-lg"
             @mousedown.prevent
           >
             <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-muted">
@@ -41,7 +41,7 @@
                 v-for="option in inlineFkSuggestions[field.name]"
                 :key="`${field.name}-${option.id}`"
                 variant="plain"
-                class-name="w-full justify-start rounded-none border-0 border-b border-line px-4 py-3 text-left text-sm font-medium text-body last:border-b-0 hover:bg-surface"
+                class-name="deasy-option deasy-option--stacked"
                 @mousedown.prevent="$emit('select-inline-fk-suggestion', field, option)"
               >
                 {{ formatInlineFkOption(field, option) }}
@@ -136,7 +136,7 @@
         :rows="processConfigurationRows"
         :row-key="(row) => row.id"
         empty-text="Este proceso aun no tiene configuraciones."
-        table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+        table-class="min-w-full border-separate border-spacing-0 text-sm"
         responsive-class="overflow-x-auto deasy-card"
         scroll-class=""
       >
@@ -169,24 +169,24 @@
         Las configuraciones activas o retiradas no se eliminan desde este bloque; gestionalas con versionado o cambio de estado.
       </p>
     </section>
-    <div v-if="table?.table === 'process_definition_versions'" class="definition-checklist mt-4">
-      <div class="definition-checklist-head">
+    <div v-if="table?.table === 'process_definition_versions'" class="mt-4">
+      <div>
         <strong>Checklist de activacion</strong>
         <span v-if="processDefinitionChecklistLoading" class="text-sm text-muted">Validando...</span>
         <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-sm text-muted">
           Disponible despues de guardar la configuracion.
         </span>
       </div>
-      <div class="definition-checklist-items">
-        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.rules }">
+      <div>
+        <div :class="{ 'is-complete': processDefinitionChecklist.rules }">
           <font-awesome-icon :icon="processDefinitionChecklist.rules ? 'check' : 'times'" />
           <span>Al menos una regla de alcance activa</span>
         </div>
-        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.triggers }">
+        <div :class="{ 'is-complete': processDefinitionChecklist.triggers }">
           <font-awesome-icon :icon="processDefinitionChecklist.triggers ? 'check' : 'times'" />
           <span>Al menos un tipo de periodo activo</span>
         </div>
-        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.artifacts }">
+        <div :class="{ 'is-complete': processDefinitionChecklist.artifacts }">
           <font-awesome-icon :icon="processDefinitionChecklist.artifacts ? 'check' : 'times'" />
           <span>Al menos un paquete (plantilla) vinculado</span>
         </div>

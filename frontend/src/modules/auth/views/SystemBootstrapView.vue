@@ -14,7 +14,7 @@
       <ol class="flex items-center justify-center gap-1.5 text-xs font-semibold">
         <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
           <span
-            class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
+            class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round transition-colors"
             :class="step >= i + 1 ? 'bg-blue-light-600 text-white' : 'bg-surface text-muted'"
           >{{ i + 1 }}</span>
           <span class="hidden sm:inline" :class="step === i + 1 ? 'text-strong' : 'text-muted'">{{ s.label }}</span>
@@ -268,12 +268,12 @@
 
       <!-- Navegación -->
       <div class="flex items-center justify-between gap-3 pt-1">
-        <button v-if="step > 1" type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-5" @click="prevStep">Atrás</button>
+        <button v-if="step > 1" type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg" @click="prevStep">Atrás</button>
         <span v-else></span>
-        <button v-if="step < steps.length" type="button" class="deasy-auth-button w-auto px-6" :disabled="!canAdvance" @click="nextStep">
+        <button v-if="step < steps.length" type="button" class="deasy-btn deasy-btn--primary deasy-btn--lg" :disabled="!canAdvance" @click="nextStep">
           Siguiente <IconArrowRight class="h-5 w-5" />
         </button>
-        <button v-else type="button" class="deasy-auth-button w-auto px-6" :disabled="isSubmitting" @click="submitBootstrap">
+        <button v-else type="button" class="deasy-btn deasy-btn--primary deasy-btn--lg" :disabled="isSubmitting" @click="submitBootstrap">
           <IconLoader2 v-if="isSubmitting" class="h-5 w-5 animate-spin" />
           <template v-else>Crear sistema <IconArrowRight class="h-5 w-5" /></template>
         </button>
@@ -336,7 +336,7 @@
     </Transition>
 
     <div v-if="mode === 'normal'" class="mt-8 flex justify-center">
-      <button type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-6" @click="router.replace({ name: 'login' })">
+      <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg" @click="router.replace({ name: 'login' })">
         Ir al login
       </button>
     </div>

@@ -14,7 +14,7 @@
   >
     <template #header>
       <div class="flex min-w-0 items-center gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-primary">
+        <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--primary">
           <IconFileDescription class="h-5 w-5" />
         </span>
         <div class="min-w-0">
@@ -76,7 +76,7 @@
                         :key="`${section.mode}-${entry.format}`"
                         class="flex min-w-0 flex-wrap items-center gap-2"
                       >
-                        <span class="is-viewer" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                        <span :style="getAvailableFormatBadgeStyle(section.mode, entry)">
                           {{ entry.formatLabel }}
                         </span>
                         <code class="min-w-0 break-all text-xs font-medium text-muted">{{ entry.entryObjectKey }}</code>
@@ -103,7 +103,7 @@
         <section v-for="section in relatedSections" :key="section.key" class="border-t border-line pt-5">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-icon">
+              <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                 <IconSettings class="h-4.5 w-4.5" />
               </span>
               <div class="min-w-0">
@@ -147,7 +147,7 @@
             :fields="relatedSectionFields(section)"
             :rows="section.rows"
             :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
-            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            table-class="min-w-full border-separate border-spacing-0 text-sm"
             responsive-class="overflow-x-auto deasy-card"
             scroll-class=""
             actions-label="Accion"

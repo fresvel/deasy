@@ -15,24 +15,10 @@
               </div>
               <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
                 <div class="deasy-filter-actions">
-                  <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                    <font-awesome-icon icon="times" />
-                    <span>Reset</span>
-                  </AdminButton>
-                  <AdminButton variant="outlinePrimary" size="sm" class-name="deasy-filter-btn" title="Buscar" aria-label="Buscar" @click="$emit('load')">
-                    <font-awesome-icon icon="search" />
-                    <span>Search</span>
-                  </AdminButton>
+                  <AdminButton variant="secondary" icon-only size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+                  <AdminButton variant="outlinePrimary" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+                  <AdminButton variant="primary" icon-only size="sm" title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
                 </div>
-              </div>
-            </div>
-            <div class="deasy-filter-toolbar">
-              <div class="deasy-filter-summary"></div>
-              <div class="deasy-filter-actions">
-                <AdminButton variant="primary" size="sm" class-name="deasy-filter-btn" title="Refresh" aria-label="Refresh" @click="$emit('load')">
-                  <font-awesome-icon icon="rotate-right" />
-                  <span>Refresh</span>
-                </AdminButton>
               </div>
             </div>
           </div>
@@ -65,10 +51,10 @@
             </template>
             <template #actions="{ row }">
               <div class="inline-flex items-center gap-1">
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-view" title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
+                <AdminButton variant="softInfo" size="sm" icon-only title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
                   <font-awesome-icon icon="eye" />
                 </AdminButton>
-                <AdminButton v-if="canLink" variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
+                <AdminButton v-if="canLink" variant="softSuccess" size="sm" icon-only title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
                   <font-awesome-icon icon="link" />
                 </AdminButton>
               </div>

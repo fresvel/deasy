@@ -11,15 +11,13 @@
         <strong class="block text-sm font-bold text-navy">{{ title }}</strong>
         <div class="mt-1 text-sm text-icon">{{ message }}</div>
       </div>
-      <AdminButton variant="close" size="sm" icon-only title="Cerrar" aria-label="Cerrar" @click="$emit('close')">
-        <font-awesome-icon icon="times" />
-      </AdminButton>
+      <AppCloseButton @click="$emit('close')" />
     </div>
   </div>
 </template>
 
 <script setup>
-import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 
 defineProps({
   visible: {

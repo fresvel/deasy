@@ -1,63 +1,66 @@
+/* ══ EL BOTON DE FILTRO MURIO AQUI — 2026-08-14 ═══════════════════════════════════════════
+   Eran `deasy-filter-btn` + `--icon` + cuatro reglas de repintado, y hacian dos cosas:
+
+   1. **Cambiar la geometria**: `h-10 rounded-[10px] px-3.5 font-medium`. Existia porque la
+      base del boton era `rounded-2xl` (16 px) y `font-semibold`, y un filtro no se queria ver
+      asi. Con la base ya en la geometria de TailAdmin —radio 8, peso 500— no queda diferencia
+      que declarar: el filtro es un boton normal.
+
+   2. **Repintar la variante desde fuera**, y esto era peor. Colapsaba CINCO variantes en TRES
+      aspectos: `secondary` y `softNeutral` salian identicos, y `primary` y `softPrimary`
+      tambien. O sea que la prop `variant` era una mentira en dos de cada cinco filtros — se
+      pedia un tono suave y salia un solido de marca.
+
+   Al retirarlo, cada boton pasa a declarar la variante que YA renderizaba: seis se
+   corrigieron (`softNeutral` -> `secondary`, `softPrimary` -> `primary`). Cambio visual cero
+   en esos seis, y ahora el DOM dice la verdad.
+
+   Aqui vivia tambien el dimensionado de `.deasy-filter-btn .deasy-fa-icon`, que ya estaba
+   muerto: la clase se retiro de `FontAwesomeIcon.vue` —que renderiza iconos de Tabler, no
+   FontAwesome— y la regla no podia casar con ningun nodo.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
 @layer components {
-.deasy-filter-btn {
-        @apply inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 py-0 text-sm font-medium shadow-none;
-    }
+/* ── LA GEOMETRIA, ADOPTADA DE TAILADMIN EL 2026-08-14 ──────────────────────────────
+   Su base es `inline-flex items-center gap-2` + `text-sm font-medium` + `rounded-lg` +
+   `shadow-theme-xs` + `transition`. Tres deltas frente a lo que habia, y los tres se
+   notan en los 447 botones a la vez:
 
-    .deasy-filter-btn.deasy-btn--secondary,
-    .deasy-filter-btn.deasy-btn--soft-neutral {
-        border-color: var(--color-line-field);
-        background: var(--color-white);
-        color: var(--color-strong);
-    }
+     radio    16 px (`rounded-2xl`) -> 8 px (`rounded-lg`)
+     peso     600 (`font-semibold`) -> 500 (`font-medium`)
+     sombra   ninguna              -> `shadow-theme-xs`
 
-    .deasy-filter-btn.deasy-btn--outline-primary {
-        border-color: color-mix(in srgb, var(--color-primary) 33%, var(--color-white));
-        background: var(--color-white);
-        color: var(--color-primary);
-    }
+   ⚠️ El radio era el desorden mas visible del sistema: convivian CINCO geometrias —16 px
+   la base, 10 px el filtro, 10 px el boton de accion, 16 el de cerrar—, y cada una existia
+   porque la anterior no le servia. Con una sola, las familias que solo existian para
+   cambiar la forma se quedan sin motivo.
 
-    .deasy-filter-btn.deasy-btn--soft-primary,
-    .deasy-filter-btn.deasy-btn--primary {
-        border-color: transparent;
-        background: var(--color-primary);
-        color: var(--color-white);
-    }
-
-    .deasy-filter-btn--icon {
-        @apply h-10 w-10 rounded-[10px] px-0 py-0 justify-center;
-    }
-
-    .deasy-filter-btn .deasy-fa-icon {
-        width: 1rem;
-        height: 1rem;
-        flex: 0 0 auto;
-    }
-
-    
-}
-@layer components {
+   ⚠️ `min-h-10` se queda en 40 px y NO sube a los 44 de su receta. Su `md` es `px-4 py-3`,
+   pero aqui `--md` es `py-2` y subirlo cambia la altura de fila de cada tabla y cada barra
+   de filtros del proyecto. Es una decision de densidad, no de geometria de boton, y va con
+   el resto de la escala en F5. */
 .deasy-btn {
-        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border font-semibold shadow-none transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
-    .deasy-btn--primary,
-    .admin-btn--primary {
+    .deasy-btn--primary {
         @apply text-white;
         border-color: var(--color-primary);
         background: var(--color-primary);
     }
 
-    .deasy-btn--secondary,
-    .admin-btn--secondary {
+    .deasy-btn--secondary {
         @apply bg-white;
         border-color: var(--color-line-strong);
         color: var(--color-body);
     }
 
-    /* El hover rojo lo lleva SOLO la variante `deasy-*`, no la `admin-*`: por eso las dos
-       reglas no se pueden agrupar. Y el `:hover` va envuelto en `@media (hover: hover)`,
-       que es exactamente lo que Tailwind compila a partir de `@apply hover:` — a pelo se
-       activaria tambien en tactil, donde el «hover» se queda pegado tras el toque. */
+    /* Esta regla estaba separada de `--secondary`, que declara exactamente lo mismo, porque su
+       gemela `admin-btn--cancel` no llevaba el hover rojo. **Ese gemelo ya no existe**
+       (2026-08-14), asi que hoy sigue aparte solo por su `:hover`.
+
+       Y el `:hover` va envuelto en `@media (hover: hover)`, que es exactamente lo que Tailwind
+       compila a partir de un `@apply hover:` — a pelo se activaria tambien en tactil, donde el
+       «hover» se queda pegado tras el toque. */
     .deasy-btn--cancel {
         @apply bg-white;
         border-color: var(--color-line-strong);
@@ -71,14 +74,7 @@
         }
     }
 
-    .admin-btn--cancel {
-        @apply bg-white;
-        border-color: var(--color-line-strong);
-        color: var(--color-body);
-    }
-
-    .deasy-btn--outline-primary,
-    .admin-btn--outline-primary {
+    .deasy-btn--outline-primary {
         @apply bg-white;
         border-color: var(--color-primary);
         color: var(--color-primary);
@@ -88,8 +84,7 @@
        lee como tal: borde = token entero, fondo blanco, texto = token. Escrito con la
        escala de Tailwind (`red-600` de borde y `red-700` de texto) parecian dos rojos
        distintos y eran el mismo papel. */
-    .deasy-btn--outline-danger,
-    .admin-btn--outline-danger {
+    .deasy-btn--outline-danger {
         @apply bg-white;
         border-color: var(--color-danger);
         color: var(--color-danger);
@@ -102,40 +97,124 @@
 
        ⚠️ `--soft-neutral` NO entra en la receta: su gris no es un estado, no se deriva de
        un token de color y su hover ya vive en la escala de superficie. */
-    .deasy-btn--soft-primary { --tone: var(--color-primary); }
-    .deasy-btn--soft-success { --tone: var(--color-success); }
-    .deasy-btn--soft-warning { --tone: var(--color-warning); }
-    .deasy-btn--soft-danger  { --tone: var(--color-danger); }
+    /* Cada variante declara TRES piezas, y cada una tiene su trabajo:
+         --tone         el color del sistema (paso -700). Es el que se usa con TEXTO encima.
+         --tone-soft    el relleno del badge de TailAdmin: su paso -50 REAL, no una mezcla.
+         --tone-bright  el paso -600, el color de icono de su badge. Mas vivo que el -700. */
+    .deasy-btn--soft-primary {
+        --tone: var(--color-primary);
+        --tone-soft: var(--color-brand-50);
+        --tone-bright: var(--color-brand-600);
+    }
+    .deasy-btn--soft-success {
+        --tone: var(--color-success);
+        --tone-soft: var(--color-success-50);
+        --tone-bright: var(--color-success-600);
+    }
+    .deasy-btn--soft-warning {
+        --tone: var(--color-warning);
+        --tone-soft: var(--color-warning-50);
+        --tone-bright: var(--color-warning-600);
+    }
+    .deasy-btn--soft-danger {
+        --tone: var(--color-danger);
+        --tone-soft: var(--color-error-50);
+        --tone-bright: var(--color-error-600);
+    }
+    .deasy-btn--soft-info {
+        --tone: var(--color-info);
+        --tone-soft: var(--color-blue-light-50);
+        /* ⚠️ SU BADGE USA `blue-light-500` AQUI, y es el unico de los cinco que no vale: sobre
+           su propio `-50` da **2.59** y un icono pide 3:1. `-600` da 3.75. Es la misma
+           desviacion que ya hace el tag, y por el mismo motivo. */
+        --tone-bright: var(--color-blue-light-600);
+    }
+    .deasy-btn--soft-action-upload {
+        --tone: var(--color-action-upload);
+        --tone-soft: var(--color-brand-50);
+        --tone-bright: var(--color-brand-600);
+    }
 
+    /* ⚠️ EL RELLENO DE REPOSO TIENE DOS VALORES, y no es un matiz: se lo come el contenido que
+       lleva encima. §2.4 de `frontend/CLAUDE.md`, medido — **6 % si encima va TEXTO** (que pide
+       4.5:1) y **10 % si encima va un ICONO** (que pide 3:1). Al 10 % con texto, `--color-warning`
+       da 4.39 y NO pasa AA.
+
+       Antes esto vivia partido: la familia suave al 6 % fijo, y los 12 botones de accion de tabla
+       —que son de icono— con su propia familia al 9, 10 y 11 %, tres porcentajes para una regla.
+       Ahora el eje es UNO: `--tone-fill`, que el modificador de icono sube a 10 %.
+
+       Comprobado antes de unificar: lo que WCAG 1.4.11 exige es el borde contra LA FILA, no
+       contra su propio relleno, y eso **no depende del porcentaje** — success 3.14, danger 3.86,
+       warning 3.23, ver 3.84, subir 3.69. Y el icono sobre el relleno al 10 % queda entre 4.71 y
+       6.43. Las dos condiciones pasan en los seis tonos. */
     .deasy-btn--soft-primary,
     .deasy-btn--soft-success,
     .deasy-btn--soft-warning,
-    .deasy-btn--soft-danger {
+    .deasy-btn--soft-danger,
+    .deasy-btn--soft-info,
+    .deasy-btn--soft-action-upload {
         border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
-        background: color-mix(in srgb, var(--tone) 6%, var(--color-white));
+        background: color-mix(in srgb, var(--tone) var(--tone-fill, 6%), var(--color-white));
         color: var(--tone);
     }
 
-    .deasy-btn--soft-neutral {
-        @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-slate-100 hover:text-navy;
+    /* ── EL BOTON DE ICONO SUAVE ES EL BADGE DE TAILADMIN ────────────────────────────
+       Adoptado el 2026-08-14 despues de comparar cuatro tratamientos en el navegador. Su
+       badge claro es `bg-{fam}-50` + `text-{fam}-600` **y NO lleva borde**; lo que teniamos
+       era un relleno DERIVADO con `color-mix` al 10 %, que sale mas gris que su paso `-50`
+       —`#e6f2ed` frente a `#ecfdf3`— y un icono en el `-700`, mas apagado. Se notaba a
+       simple vista, y por eso el dueño lo pidió.
+
+       ⚠️ POR QUE SOLO EL DE ICONO. Encima de un boton suave CON TEXTO va texto, que pide
+       4.5:1, y el `-600` sobre el `-50` da entre 3.34 y 4.44: no llega. Un icono pide 3:1 y
+       si llega. Es el mismo reparto que ya hace `--tone-fill`, y la razon es la misma: lo
+       que decide el color no es la variante, es lo que lleva encima.
+
+       ⚠️ Y POR QUE SIN BORDE. Derivar el borde al 71 % de un tono MAS CLARO lo deja por
+       debajo del minimo: con el `-600`, success da 2.52, warning 2.41 e info 2.64 contra la
+       fila blanca. O borde con el tono oscuro, o sin borde con el claro — y el badge de
+       TailAdmin no lo lleva. Lo que identifica el control pasa a ser el icono, que queda
+       entre 3.34 y 5.83.
+
+       Contraste medido, icono sobre su relleno: success 3.54 · danger 4.44 · warning 3.34 ·
+       info 3.75 · subir 5.83. Los cinco por encima de 3:1. */
+    .deasy-btn--icon.deasy-btn--soft-primary,
+    .deasy-btn--icon.deasy-btn--soft-success,
+    .deasy-btn--icon.deasy-btn--soft-warning,
+    .deasy-btn--icon.deasy-btn--soft-danger,
+    .deasy-btn--icon.deasy-btn--soft-info,
+    .deasy-btn--icon.deasy-btn--soft-action-upload {
+        border-color: transparent;
+        background: var(--tone-soft);
+        color: var(--tone-bright);
     }
 
-    /* ── LAS DOS SOLIDAS ─────────────────────────────────────────────────────────────
+    .deasy-btn--soft-neutral {
+        @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-gray-100 hover:text-navy;
+    }
+
+    /* ── LAS SOLIDAS ────────────────────────────────────────────────────────────────
        ⚠️ `--success` llevaba `emerald-600`, que contra su propio texto blanco da 3.65:1
        y NO llega al 4.5 de AA. `--color-success` da 5.49. `--danger` iba de `red-600`
-       (4.77) a `--color-danger` (6.57). Las dos suben. */
-    .deasy-btn--success,
-    .admin-btn--success {
-        @apply text-white;
-        border-color: var(--color-success);
-        background: var(--color-success);
-    }
+       (4.77) a `--color-danger` (6.57). Las dos suben.
 
-    .deasy-btn--danger,
-    .admin-btn--danger {
+       Mismo eje `--tone` que las suaves: cada variante declara SOLO su token y la receta se
+       escribe una vez. Eran tres cuerpos identicos salvo el nombre del color.
+
+       ⚠️ `--primary` se queda FUERA de la lista a proposito: no tiene `:hover` propio, y
+       meterlo aqui le daria uno. Eso repinta el hover de todos los primarios de la app, que
+       no es lo que esta tarea vino a hacer. */
+    .deasy-btn--success  { --tone: var(--color-success); }
+    .deasy-btn--warning  { --tone: var(--color-warning); }
+    .deasy-btn--danger   { --tone: var(--color-danger); }
+
+    .deasy-btn--success,
+    .deasy-btn--warning,
+    .deasy-btn--danger {
         @apply text-white;
-        border-color: var(--color-danger);
-        background: var(--color-danger);
+        border-color: var(--tone);
+        background: var(--tone);
     }
 
     /* ── EL HOVER DE LAS SIETE, EN UN SITIO ──────────────────────────────────────────
@@ -151,49 +230,111 @@
         .deasy-btn--soft-primary:hover,
         .deasy-btn--soft-success:hover,
         .deasy-btn--soft-warning:hover,
-        .deasy-btn--soft-danger:hover {
+        .deasy-btn--soft-danger:hover,
+        .deasy-btn--soft-info:hover,
+        .deasy-btn--soft-action-upload:hover {
             border-color: color-mix(in srgb, var(--tone) 85%, var(--color-white));
             background: color-mix(in srgb, var(--tone) 16%, var(--color-white));
             color: color-mix(in srgb, var(--tone) 85%, var(--black));
         }
 
-        .deasy-btn--outline-danger:hover,
-        .admin-btn--outline-danger:hover {
+        /* El de icono no recupera el borde al pasar el raton: intensifica el relleno y
+           oscurece el icono, que es la direccion de §5.2 —el mismo color, mas presente— sin
+           introducir un limite que en reposo no existe. El 16 % derivado queda por debajo del
+           paso `-50`, asi que el hover se ve mas, no menos. */
+        .deasy-btn--icon.deasy-btn--soft-primary:hover,
+        .deasy-btn--icon.deasy-btn--soft-success:hover,
+        .deasy-btn--icon.deasy-btn--soft-warning:hover,
+        .deasy-btn--icon.deasy-btn--soft-danger:hover,
+        .deasy-btn--icon.deasy-btn--soft-info:hover,
+        .deasy-btn--icon.deasy-btn--soft-action-upload:hover {
+            border-color: transparent;
+            background: color-mix(in srgb, var(--tone) 16%, var(--color-white));
+            color: color-mix(in srgb, var(--tone) 85%, var(--black));
+        }
+
+        .deasy-btn--outline-danger:hover {
             border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
             background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
             color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
         }
 
         .deasy-btn--success:hover,
-        .admin-btn--success:hover {
-            border-color: color-mix(in srgb, var(--color-success) 85%, var(--black));
-            background: color-mix(in srgb, var(--color-success) 85%, var(--black));
-        }
-
-        .deasy-btn--danger:hover,
-        .admin-btn--danger:hover {
-            border-color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
-            background: color-mix(in srgb, var(--color-danger) 85%, var(--black));
+        .deasy-btn--warning:hover,
+        .deasy-btn--danger:hover {
+            border-color: color-mix(in srgb, var(--tone) 85%, var(--black));
+            background: color-mix(in srgb, var(--tone) 85%, var(--black));
         }
     }
 
-    .deasy-btn--close,
-    .admin-btn--close {
-        @apply h-9 w-9 rounded-2xl border border-line bg-white p-0 text-muted hover:border-line-strong hover:bg-surface hover:text-navy;
+    /* LA ✕ DE LA ESQUINA. Una sola declaracion, y desde el 2026-08-14 un solo radio.
+       Tenia TRES: la base daba 8 px, esta lo subia a 16 (`rounded-2xl`, resto de la geometria
+       anterior) y `dialogs.css` lo volvia a bajar a 8.8 px (`0.55rem`) para los que viven
+       dentro de un panel — que son casi todos. Tres reglas para un boton.
+
+       Los valores que se quedan son los del diálogo, no los de aqui: `--color-line-field` de
+       borde y `--color-icon` de icono, que es lo que de verdad renderizaban las ✕ de los
+       modales. Las dos que viven fuera de un panel (`AdminFeedbackToast` y la del velo) se
+       alinean con ellas. */
+    .deasy-btn--close {
+        @apply h-9 w-9 min-h-9 rounded-lg border bg-white p-0 hover:border-line-strong hover:bg-surface hover:text-navy;
+        border-color: var(--color-line-field);
+        color: var(--color-icon);
     }
 
-    .deasy-btn--menu {
-        @apply inline-flex min-w-[9.5rem] items-center justify-center gap-1.5 border px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px;
-        border-color: rgba(var(--navy-menu-rgb), 0.14);
-        background: linear-gradient(180deg, var(--color-white) 0%, var(--color-surface) 100%);
-        color: var(--color-body);
+    /* ── NAVEGACION DE SECCION — no es un boton, y por eso ya no se llama asi ────────
+       Era `deasy-btn--menu`, una "variante" del boton. No lo era: tiene **estado activo**, y
+       eso es lo que separa navegar de ejecutar — un boton no esta "activo". Ademas traia una
+       geometria que ningun boton tiene (ancho minimo de 9.5rem, gradiente propio, y el salto de
+       1px al pasar el raton que a los de accion se les quito por homogeneidad).
+
+       Se queda como BLOQUE propio hasta que G7/G8 construyan el componente de navegacion; ahi
+       se pliega con las pestañas y los elementos de menu. Lo que importa hoy es que el boton
+       deje de fingir que es esto.
+
+       ── LA FORMA ES EL «BUTTON GROUP» DE TAILADMIN (2026-08-14) ──────────────────────
+       Su mecanica son tres piezas y las tres importan:
+         · el CONTENEDOR lleva la sombra (`.deasy-section-nav-group`), no cada boton;
+         · el borde se dibuja con `ring-1 ring-inset`, no con `border`, para que el
+           solapamiento no sume grosor;
+         · `first:rounded-l-lg last:rounded-r-lg` redondea SOLO los extremos, y el `-ml-px`
+           desde el segundo colapsa los bordes contiguos en una sola linea.
+
+       Se adopta su variante PRIMARY y no la secondary: en su demo la secondary deja el
+       activo en `text-gray-800` y el inactivo en `gray-700`, que a ojo es lo mismo — un
+       selector de seccion tiene que decir cual esta puesto. En primary el activo es solido
+       y el inactivo va en contorno, que es la distincion que hace falta.
+
+       Contraste: `--color-primary` sobre blanco da 4.84 (texto del inactivo) y el blanco
+       sobre `--color-primary`, lo mismo por simetria. Las dos pasan AA. */
+    .deasy-section-nav-group {
+        @apply inline-flex items-center shadow-theme-xs;
     }
 
-    .deasy-btn--menu.is-active {
-        @apply shadow-[var(--focus-ring)];
-        border-color: rgba(var(--navy-menu-rgb), 0.22);
-        background: var(--gradient-soft);
-        color: var(--color-primary);
+    .deasy-section-nav {
+        @apply inline-flex items-center gap-2 bg-white px-4 py-3 text-sm font-medium text-primary ring-1 ring-inset ring-primary transition first:rounded-l-lg last:rounded-r-lg;
+    }
+
+    .deasy-section-nav + .deasy-section-nav {
+        margin-left: -1px;
+    }
+
+    .deasy-section-nav--active {
+        @apply bg-primary text-white;
+    }
+
+    /* [2026-08-15] AQUI ESTABA `deasy-section-nav--stacked`, Y DURO UN DIA.
+     *
+     * Se creo para el selector de modos del chat, tratandolo como un «grupo de botones de
+     * seccion». El dueño lo miro y dijo lo evidente: eso es una pestaña, y todas las pestañas
+     * tienen que verse igual. Tenia razon — elegir el modo del chat y elegir la seccion de un
+     * entregable son la misma accion, asi que el bloque es `deasy-inline-tab` (nav.css) con su
+     * modificador `--stacked`, no un bloque aparte que se le parece. */
+
+    @media (hover: hover) {
+        .deasy-section-nav:hover {
+            @apply bg-primary text-white;
+        }
     }
 
     .deasy-btn--sm {
@@ -208,14 +349,43 @@
         @apply px-5 py-2.5 text-base;
     }
 
+    /* EL BOTON CUADRADO DE ICONO. Absorbe `hope-action-btn`, que era su copia con otro nombre:
+       misma caja (2.25rem = h-9/w-9), mismo `padding: 0`.
+
+       · `--tone-fill: 10%` — encima va un icono, no texto. Ver la receta suave mas arriba.
+       · `rounded-lg` (8 px) y `shadow-theme-xs` son la geometria ADOPTADA de TailAdmin, que
+         estrena aqui. El resto de los botones la reciben en la tarea 3.3; hasta entonces convive
+         con el `rounded-2xl` heredado del bloque, y es a proposito: 35 nodos son suficientes para
+         calibrar el aspecto y demasiado pocos para que una equivocacion cueste cara.
+       ⚠️ El `min-h-9` NO es redundante con el `h-9`: `.deasy-btn` declara `min-h-10`, y un
+         `min-height` mayor gana a la altura. Sin el, el boton sale de 36 de ancho por **40 de
+         alto** y deja de ser cuadrado. Antes lo tapaba de rebote la regla de densidad de tabla
+         (`min-height: 2rem`), que ya no le aplica — o sea que el fallo aparecio al arreglar
+         otra cosa, y lo caza `getComputedStyle` en el navegador, no el CSS servido.
+
+       · Lo que NO se hereda de `hope-action-btn`: su `margin: 0 0.15rem` —el espacio entre
+         botones lo pone el contenedor con `gap`, no el boton— y su `transform: translateY(-1px)`
+         al pasar el raton, que ningun otro boton del sistema tiene. Homogeneizar es que el mismo
+         boton se comporte igual en todas partes. */
     .deasy-btn--icon {
-        @apply h-9 w-9 p-0;
+        @apply h-9 w-9 min-h-9 rounded-lg p-0 shadow-theme-xs;
+        --tone-fill: 10%;
     }
 
     
 }
 @layer components {
-    .deasy-table-responsive .deasy-btn {
+    /* ⚠️ EL `:not(--icon)` ES LO QUE DESBLOQUEA LA FASE 3, y no es un parche.
+       Esta regla es de DENSIDAD: aprieta el padding, el tamaño de letra y la altura de los
+       botones dentro de una tabla. Nada de eso le aplica a un boton CUADRADO de icono, que no
+       tiene texto ni padding y cuya caja es su definicion.
+
+       Y era el ultimo motivo por el que los 12 `hope-action-*` no podian entrar en una capa: al
+       ser (0,2,0) le ganaba a cualquier `.deasy-btn--*` (0,1,0), asi que los botones de accion
+       solo conservaban su cuadrado por estar FUERA DE CAPA. Medido en su dia: capados sin esto,
+       239 nodos del organigrama se pintaban como un secundario cualquiera. Excluyendo la forma
+       que la regla no gobierna, la familia entera pudo morir. */
+    .deasy-table-responsive .deasy-btn:not(.deasy-btn--icon) {
         @apply rounded-xl px-3 py-1.5 text-[13px] font-medium shadow-none;
         min-height: 2rem;
     }
@@ -226,6 +396,18 @@
         color: var(--color-strong);
     }
 
+    /* ⚠️ ESTA REGLA NO PINTA — verificado sobre el CSS construido el 2026-08-14.
+       Es (0,2,0) y esta DENTRO de `@layer components`; el `.deasy-btn--secondary:hover` de
+       `overrides.css` es (0,1,0) pero esta FUERA DE CAPA, y fuera de capa gana siempre. Asi
+       que un secundario dentro de una tabla hoverea AZUL de marca, no este gris.
+
+       NO se borra, y el motivo importa: su borrado esta acoplado a la fase 6. Cuando esa regla
+       suelta se cape, esta volvera a la vida y sera la que decida el hover del secundario en
+       tabla — o sea que aqui esta escrito lo que ese hover DEBE ser, no lo que es. Borrarla
+       ahora seria tirar la decision, no limpiar basura.
+
+       (Es el mismo mecanismo que dejo el `:hover` rojo de `--cancel` sin pintar durante meses:
+       una regla capada nunca le gana a una suelta.) */
     .deasy-table-responsive .deasy-btn--secondary:hover {
         border-color: var(--color-line-strong);
         background: var(--color-surface);
@@ -261,97 +443,83 @@
     
 }
 @layer components {
-.deasy-auth-button {
-        @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold text-white shadow-none transition-all focus:outline-none active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
-        border-color: var(--color-primary);
-        background: var(--gradient-angled);
+    /* ══ LA FAMILIA `deasy-auth-button` MURIO AQUI — 2026-08-15, G9 ════════════════════════
+       Eran tres clases (`--secondary`, `--compact`) en 11 usos de las cinco vistas de acceso, y
+       eran **la quinta geometria**: la que el inventario listaba como «propia» y la unica que
+       sobrevivio a la unificacion de la tarea 3.3.
+
+           radio    16 px (`rounded-2xl`)   frente a los 8 del sistema
+           peso     600 (`font-semibold`)   frente a 500
+           sombra   `shadow-none`           frente a `shadow-theme-xs`
+           fondo    `var(--gradient-angled)`  un DEGRADADO, donde el resto usa color plano
+
+       ⚠️ **Se pierde el degradado del boton de «Ingresar», y es a proposito.** Por §1-bis la
+       funcion de «Ingresar» es la misma que la de «Guardar»: ejecutar la accion principal de un
+       formulario. Un degradado es aspecto, no estructura ni contrato, asi que no justifica una
+       familia aparte — justificaria como mucho una variante, y una variante que solo usan cinco
+       pantallas de las cuarenta es una excepcion disfrazada.
+
+       Se lleva por delante dos cosas mas:
+         · `--gradient-angled` en `tokens.css`, que **no tenia otro consumidor**;
+         · dos reglas de `overrides.css` FUERA DE CAPA que repintaban `--secondary`, o sea deuda
+           de la fase 6 que se va sin tocarla.
+
+       Lo unico que hacia falta de verdad era el ancho completo, y eso es `--block`, aqui abajo.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
+
+    /* ANCHO COMPLETO — el boton ocupa la fila.
+       Es lo unico que `deasy-auth-button` aportaba y el sistema no tenia: el pie de un formulario
+       de acceso quiere el boton de lado a lado. Antes viajaba como `w-full` en el atributo, o
+       peor, venia de serie en el bloque y habia que DESHACERLO con `w-auto px-5` / `w-auto px-6`
+       — dos paddings distintos en la misma barra, asi que los botones de cada lado no median
+       igual. Ahora se pide cuando se necesita, que es al reves y es lo correcto. */
+    .deasy-btn--block {
+        @apply w-full;
     }
 
-    .deasy-auth-button--secondary {
-        @apply bg-white shadow-none;
-        border-color: var(--color-line);
-        color: var(--color-body);
+    /* A LA ALTURA DEL CAMPO — cuando el boton va PEGADO a un input o a un textarea y las dos
+       cajas tienen que casar. El composer del chat lo necesita dos veces (adjuntar y enviar,
+       junto a un textarea de `min-h-13`), y los dos lo llevaban como `h-[52px]` en el atributo
+       — uno de ellos ademas con `w-[52px]`, o sea la medida repetida en dos ejes y en dos
+       botones. 52 px NO es un tamaño del sistema (los tres son 32/36/44) y por eso no entra en
+       la escala: es una medida de ALINEACION, y el nombre lo dice. (2026-08-15, G10.) */
+    .deasy-btn--field {
+        @apply h-13 min-h-13;
     }
 
-    
+    /* Y si ademas es de solo icono, cuadrado — si no, hereda el ancho de `--icon` (36 px) y
+       queda un rectangulo de 36×52 al lado del textarea. */
+    .deasy-btn--field.deasy-btn--icon {
+        @apply w-13;
+    }
+
+    /* EL BOTON FLOTANTE — uno solo en toda la aplicacion: el que abre el chat.
+       Va `fixed` sobre el contenido, asi que no puede compartir la caja del sistema: necesita
+       ser redondo, grande y con sombra de elevacion para despegarse de la pagina. Estaba entero
+       en el `class-name`, 18 utilidades. */
+    .deasy-fab {
+        @apply fixed bottom-6 right-4 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-info transition hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50 focus:outline-none focus:ring-4 sm:right-6 sm:h-16 sm:w-16;
+        z-index: 90;
+        box-shadow: 0 1px 2px rgba(var(--elev-ink-rgb), 0.05), 0 14px 34px rgba(var(--elev-ink-rgb), 0.12);
+    }
+
+
 }
-/* ======================================================================================
-   LOS 12 BOTONES DE ACCION SE QUEDAN ENTEROS FUERA DE CAPA — Y ESTE FICHERO Y
-   `overrides.css` SON UNA SOLA PIEZA: aqui la caja y los `:hover`, alli los reposos de
-   color. Mover una mitad sin la otra mata o los 12 bordes o los 12 `:hover`.
+/* ══ LOS 12 BOTONES DE ACCION DE TABLA MURIERON AQUI — 2026-08-14 ═══════════════════════
+   Eran `hope-action-btn` + 12 modificadores, ENTEROS FUERA DE CAPA, y este fichero y
+   `overrides.css` los sostenian a medias: aqui la caja y los `:hover`, alli los reposos.
 
-   ⚠️ Y bajar las dos a la vez TAMPOCO vale: dentro de `@layer components` ya viven
-   `.deasy-table-responsive .deasy-btn` y `… .deasy-btn--secondary` (0,2,0), mas especificas
-   que `.hope-action-*` (0,1,0). Capados, los 12 se pintan como un `--secondary` cualquiera —
-   239 nodos en `/admin/…/organigrama`. Estar fuera de capa es lo unico que les hace ganar.
+   No eran un componente aparte: eran `.deasy-btn--icon` con la familia suave, escritos otra
+   vez con otro nombre. La prueba, byte a byte: su `:hover` es la receta de `--soft-*`
+   (borde 85 %, relleno 16 %, texto 85 % sobre negro) y su caja es la de `--icon`
+   (2.25rem cuadrados, `padding: 0`). Lo unico que de verdad los distinguia era el relleno de
+   reposo —9, 10 y 11 % frente al 6 %—, y eso no era una variante: es la regla de §2.4 para lo
+   que lleva un ICONO encima. Hoy es el eje `--tone-fill`.
 
-   ⚠️ Segundo motivo, independiente: `AdminButton.vue` estampa utilidades CRUDAS en su mapa
-   de tamaños (`sm: "admin-btn--sm px-3 py-2 text-sm"`), y `@layer utilities` gana a
-   `components`. En cuanto el `padding: 0` de aqui entre en una capa, los 28 botones dejan
-   de ser el cuadrado de 2.25 rem y revientan la columna de acciones de todas las tablas.
-
-   Para que puedan bajar hay que decidir si un boton de accion dentro de una tabla es un
-   `.deasy-btn` — hoy `AdminButton` le estampa las dos cosas. Es cambio de componente. */
-
-.hope-action-btn {
-  border: 1px solid transparent;
-  border-radius: 0.625rem;
-  margin: 0 0.15rem;
-  min-width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-.hope-action-btn:hover {
-  transform: translateY(-1px);
-}
-
-/* Los doce `:hover`, fuera de capa con el resto de la familia (ver cabecera). */
-.hope-action-edit:hover,
-.hope-action-select:hover,
-.hope-action-assign:hover,
-.hope-action-launch:hover {
-  color: color-mix(in srgb, var(--color-success) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-success) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-white));
-}
-
-.hope-action-delete:hover {
-  color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-white));
-}
-
-.hope-action-delete-strong:hover {
-  color: color-mix(in srgb, var(--color-danger) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-danger) 85%, var(--color-white));
-}
-
-.hope-action-view:hover {
-  color: color-mix(in srgb, var(--color-action-view) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-action-view) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
-}
-
-.hope-action-download:hover,
-.hope-action-upload:hover,
-.hope-action-version:hover {
-  color: color-mix(in srgb, var(--color-action-upload) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-action-upload) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-action-upload) 85%, var(--color-white));
-}
-
-.hope-action-delete-pdf:hover,
-.hope-action-retire:hover {
-  color: color-mix(in srgb, var(--color-warning) 85%, var(--black));
-  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-warning) 85%, var(--color-white));
-}
+   Los 12 colapsan a cinco tonos: success (editar, seleccionar, asignar, lanzar), danger
+   (borrar x2), `--soft-info` (ver), `--soft-action-upload` (versionar, descargar,
+   subir) y warning (borrar PDF, retirar).
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
     .admin-page-header__actions .admin-btn {
@@ -509,5 +677,49 @@
     .btnsera-status--denied {
       color: var(--color-danger);
       background: color-mix(in srgb, var(--color-danger) 12%, var(--color-white));
+    }
+
+    /* LA ACCION EN LINEA — «Quitar», «Desvincular»
+     *
+     * No es un `deasy-btn` y no debe serlo: el bloque base pone caja, borde, alto minimo de 40 px
+     * y sombra, y esto vive DENTRO de una linea de lista, al lado del texto que retira. Si fuera
+     * un modificador de `deasy-btn` tendria que deshacer las cinco cosas que el bloque pone, que
+     * es la senal de que no era una variante. Bloque propio, como `deasy-tab` (§2-bis).
+     *
+     * Estaba escrito CUATRO veces (2026-08-15, G5): `ProcessGraphView` («Desvincular»),
+     * `UnitGraphView` («Quitar», dos veces) y `GeneralTaskModal` («Quitar»). Y las cuatro copias
+     * discrepaban en las dos unicas cosas que tenian:
+     *
+     *   - el tamano, `text-[11px]` en tres y `text-[0.7rem]` (= 11.2 px) en la cuarta. Distintos
+     *     de verdad, pero por 0.2 px: nadie lo decidio, se copio mal.
+     *   - el hover, `hover:underline` en tres y `hover:text-danger` en la cuarta — que sobre un
+     *     texto que YA es `text-danger` no hace absolutamente nada. O sea que uno de los cuatro
+     *     no tenia realimentacion al pasar el raton.
+     *
+     * Se queda el subrayado: sobre un texto de 11 px, cambiar de color no se percibe, y el
+     * subrayado es ademas lo que WCAG pide cuando el color es el unico distintivo. */
+    .deasy-inline-action {
+        @apply cursor-pointer border-0 bg-transparent p-0 text-[0.6875rem] font-semibold transition-colors hover:underline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .deasy-inline-action--danger {
+        @apply text-danger;
+    }
+
+    /* Los otros tres tonos salieron al censar G2 por estructura (2026-08-15): la fila de una
+       configuracion en el panel de procesos lleva SEIS de estas —«Editar», «Reglas»,
+       «Disparadores», «Plantillas», «Ver», «Lanzar»— y las seis estaban escritas a mano con
+       `font-semibold text-X hover:underline`. Mismo objeto que el «Quitar» de arriba, y por eso
+       mismo bloque: lo unico que cambia es el tono. */
+    .deasy-inline-action--primary {
+        @apply text-primary;
+    }
+
+    .deasy-inline-action--neutral {
+        @apply text-icon;
+    }
+
+    .deasy-inline-action--success {
+        @apply text-success;
     }
 }

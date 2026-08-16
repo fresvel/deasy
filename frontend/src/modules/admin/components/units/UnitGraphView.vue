@@ -36,7 +36,6 @@
       </div>
     </div>
 
-
     <!-- Controles: buscar/centrar, salud, exportar -->
     <div class="flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-1.5">
@@ -176,15 +175,13 @@
             <p class="deasy-eyebrow">Detalle de unidad</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailUnit.name }}</h3>
           </div>
-          <button type="button" class="shrink-0 text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeDetail">
-            <IconX class="h-5 w-5" />
-          </button>
+          <AppCloseButton class="shrink-0" @click="closeDetail" />
         </header>
 
         <!-- Pestañas del panel -->
-        <div class="flex gap-4 border-b border-line px-5">
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'ocupaciones' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'procesos' ? 'deasy-drawer__tab--active' : ''" @click="setDetailTab('procesos')">Procesos</button>
+        <div class="deasy-inline-tabs px-5" role="tablist">
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'ocupaciones' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'ocupaciones'" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'procesos' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'procesos'" @click="setDetailTab('procesos')">Procesos</button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
@@ -230,42 +227,93 @@
                 <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
                 <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-danger">Inactivo</span>
                 <div v-if="editable" class="ml-auto flex items-center gap-1">
-                  <button type="button" class="graph-icon-btn" :class="pos.is_unit_head ? 'text-warning' : 'text-muted'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
-                    <IconCrown class="h-4 w-4" />
-                  </button>
-                  <button type="button" class="graph-icon-btn text-muted hover:text-primary" title="Editar puesto" @click="openEditPosition(pos)">
-                    <IconPencil class="h-4 w-4" />
-                  </button>
-                  <button type="button" class="graph-icon-btn text-muted hover:text-danger" title="Eliminar puesto" @click="removePosition(pos.id)">
-                    <IconTrash class="h-4 w-4" />
-                  </button>
+                  <AppButton
+                    :variant="pos.is_unit_head ? 'softWarning' : 'softNeutral'"
+                    size="sm"
+                    icon-only
+                    title="Marcar/quitar jefatura"
+                    aria-label="Marcar/quitar jefatura"
+                    @click="toggleHead(pos)"
+                  >
+                    <IconCrown class="h-5 w-5" />
+                  </AppButton>
+                  <AppButton
+                    variant="softSuccess"
+                    size="sm"
+                    icon-only
+                    title="Editar puesto"
+                    aria-label="Editar puesto"
+                    @click="openEditPosition(pos)"
+                  >
+                    <IconPencil class="h-5 w-5" />
+                  </AppButton>
+                  <AppButton
+                    variant="softDanger"
+                    size="sm"
+                    icon-only
+                    title="Eliminar puesto"
+                    aria-label="Eliminar puesto"
+                    @click="removePosition(pos.id)"
+                  >
+                    <IconTrash class="h-5 w-5" />
+                  </AppButton>
                 </div>
               </div>
               <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <template v-if="pos.person_id">
                   <span class="deasy-tag deasy-tag--success">Ocupado</span>
                   <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
-                  <template v-if="editable">
-                    <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openAssign(pos.id)">Cambiar</button>
-                    <button type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="unassign(pos.id)">Quitar</button>
-                  </template>
+                  <div v-if="editable" class="ml-auto flex items-center gap-1">
+                    <AppButton
+                      variant="softSuccess"
+                      size="sm"
+                      icon-only
+                      title="Cambiar persona asignada"
+                      aria-label="Cambiar persona asignada"
+                      @click="openAssign(pos.id)"
+                    >
+                      <IconUserEdit class="h-5 w-5" />
+                    </AppButton>
+                    <AppButton
+                      variant="softDanger"
+                      size="sm"
+                      icon-only
+                      title="Quitar persona del puesto"
+                      aria-label="Quitar persona del puesto"
+                      @click="unassign(pos.id)"
+                    >
+                      <IconUserMinus class="h-5 w-5" />
+                    </AppButton>
+                  </div>
                 </template>
                 <template v-else>
                   <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
-                  <button v-if="editable" type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openAssign(pos.id)">Asignar</button>
+                  <AppButton
+                    v-if="editable"
+                    variant="softSuccess"
+                    size="sm"
+                    icon-only
+                    class-name="ml-auto"
+                    title="Asignar persona al puesto"
+                    aria-label="Asignar persona al puesto"
+                    @click="openAssign(pos.id)"
+                  >
+                    <IconUserPlus class="h-5 w-5" />
+                  </AppButton>
                 </template>
               </div>
 
               <!-- Acceso al wizard de perfil (visible, con texto) -->
-              <button
+              <AppButton
                 v-if="editable"
-                type="button"
-                class="mt-2 inline-flex items-center gap-1.5 rounded-2xl border border-line px-2.5 py-1 text-[11px] font-semibold text-icon transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-primary"
+                variant="secondary"
+                size="sm"
+                class-name="mt-2"
                 @click="openProfileWizard(pos)"
               >
                 <IconFileDescription class="h-3.5 w-3.5" />
                 {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
-              </button>
+              </AppButton>
 
               <!-- Buscador de persona para asignar -->
               <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-line bg-surface p-2">
@@ -280,7 +328,7 @@
                 <div v-if="personSearching" class="mt-1 px-1 text-[11px] text-muted">Buscando…</div>
                 <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
                   <li v-for="per in personResults" :key="per.id">
-                    <button type="button" class="flex w-full items-center justify-between rounded-xl px-2 py-1 text-left text-xs hover:bg-brand-50" @click="pickPerson(per.id)">
+                    <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
                       <span class="truncate text-body">{{ per.first_name }} {{ per.last_name }}</span>
                       <span class="ml-2 shrink-0 text-muted">{{ per.cedula }}</span>
                     </button>
@@ -318,10 +366,28 @@
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
-                  <template v-if="editable && proc.origin === 'direct' && proc.status === 'draft'">
-                    <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openEditProcessRule(proc)">Editar</button>
-                    <button type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="detachProcess(proc.rule_id)">Quitar</button>
-                  </template>
+                  <div v-if="editable && proc.origin === 'direct' && proc.status === 'draft'" class="ml-auto flex items-center gap-1">
+                    <AppButton
+                      variant="softSuccess"
+                      size="sm"
+                      icon-only
+                      title="Editar alcance de la regla"
+                      aria-label="Editar alcance de la regla"
+                      @click="openEditProcessRule(proc)"
+                    >
+                      <IconPencil class="h-5 w-5" />
+                    </AppButton>
+                    <AppButton
+                      variant="softDanger"
+                      size="sm"
+                      icon-only
+                      title="Quitar el proceso de esta unidad"
+                      aria-label="Quitar el proceso de esta unidad"
+                      @click="detachProcess(proc.rule_id)"
+                    >
+                      <IconUnlink class="h-5 w-5" />
+                    </AppButton>
+                  </div>
                   <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-muted">Versiona el proceso para cambiar el alcance</span>
                   <span v-else class="ml-auto text-[11px] italic text-muted">Definido a nivel de proceso</span>
                 </div>
@@ -468,6 +534,7 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
@@ -484,7 +551,7 @@ import SToggle from "@/shared/components/forms/SToggle.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconX, IconCrown, IconTrash, IconPencil, IconFileDescription } from "@tabler/icons-vue";
+import { IconCrown, IconFileDescription, IconPencil, IconTrash, IconUnlink, IconUserEdit, IconUserMinus, IconUserPlus } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({

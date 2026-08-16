@@ -67,23 +67,21 @@
         box-shadow: var(--elev-1);
     }
 
-    /* ── Boton de icono del panel lateral ───────────────────────────────────────────
-       El color lo pone cada instancia (corona ambar, lapiz, papelera); aqui solo la caja
-       y el realce al pasar por encima. */
-
-    .graph-icon-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 24px;
-        width: 24px;
-        border-radius: 6px;
-        transition: background 0.15s ease, color 0.15s ease;
-    }
-
-    .graph-icon-btn:hover {
-        background: var(--color-surface);
-    }
+    /* [2026-08-15] AQUI VIVIA `graph-icon-btn`, Y SU SITIO ERA UN ERROR DE CLASIFICACION.
+     *
+     * Se llamaba «boton de icono del panel lateral», y ahi esta el fallo: el panel lateral NO es
+     * el lienzo. Es una LISTA de puestos con sus acciones de fila — o sea G2, exactamente lo
+     * mismo que la columna de acciones de una tabla de admin. Editar un puesto desde el
+     * organigrama y editarlo desde la tabla son la misma funcion, asi que son el mismo boton.
+     *
+     * El dia antes de borrarla se le anadio un modificador `--danger` para que «Eliminar puesto»
+     * dejara de llevar utilidades sueltas. Fue arreglar la fachada del sitio equivocado: el
+     * problema no era que le faltara un tono, era que la clase no debia existir. Lo detecto el
+     * dueno mirando la pantalla, no un gate — de ahi que este escrito aqui.
+     *
+     * Lo que SI se queda en este fichero es `graph-node__btn` y `graph-edge-btn`: esos van
+     * encima de los nodos y las aristas DEL LIENZO, escalan con el zoom y tienen caja propia de
+     * 24 px. La regla es donde vive el boton, no en que modulo esta el fichero. */
 
     /* ── Barra de acciones de una relacion (arista) ──────────────────────────────────
        Flota sobre el lienzo, de ahi la elevacion. Los dos hover usan los mismos
@@ -210,4 +208,32 @@
 .vue-flow__handle.graph-node__handle--hidden {
     opacity: 0;
     pointer-events: none;
+
+    /* EL CONTADOR PULSABLE DE UN NODO — «3 entregables», «2/5 config.».
+       Se pulsa para desplegar, asi que es un `<button>`, pero su caja es la de una pastilla
+       dentro del nodo. Estaba escrito dos veces con dos radios (`rounded` = 4 px en
+       `ProcessConfigNode`, `rounded-xl` = 12 px en `ProcessNode`) y dos tamanos de letra
+       (10 y 11 px) para el mismo objeto. (2026-08-15, G1.) */
+    .graph-node__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.125rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 8px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        transition: filter 0.15s ease;
+    }
+
+    .graph-node__badge:hover {
+        filter: brightness(0.95);
+    }
+
+    /* Su unico tono. Iba en el atributo (`bg-brand-50 text-primary ring-1 ring-brand-200`),
+       repetido en los dos usos y con un `ring` de mas en uno de ellos. */
+    .graph-node__badge--brand {
+        background: var(--color-brand-50);
+        color: var(--color-primary);
+        box-shadow: inset 0 0 0 1px var(--color-brand-200);
+    }
 }

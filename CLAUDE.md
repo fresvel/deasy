@@ -353,6 +353,13 @@ más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extr
    columnas del `SET` **sin cualificar**. Al escribir SQL nuevo: pruébalo con `PREPARE` en psql, y
    recuerda que **`grep "UPDATE.*JOIN"` no encuentra nada** porque el SQL ocupa varias líneas.
 
+### El avance de un plan se MUESTRA — norma en `docs/planes/CLAUDE.md`
+
+Si trabajas sobre algo de `docs/planes/`, **el estado se enseña en el mismo turno en que cierras la
+tarea**, con el formato de dos tablas que fija §6 de [`docs/planes/CLAUDE.md`](docs/planes/CLAUDE.md).
+Ahí está también por qué el formato es fijo y qué no se debe mezclar.
+
+
 ### Plan de calidad
 
 `docs/planes/referencia/calidad-y-medicion.md` es el **documento maestro** de deuda técnica y complejidad: **mapa de

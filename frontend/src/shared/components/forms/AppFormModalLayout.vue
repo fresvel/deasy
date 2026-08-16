@@ -1,15 +1,10 @@
 <template>
   <div class="profile-admin-skin relative w-full px-4 py-6 sm:px-6">
-    <AppButton
-      type="button"
-      variant="close"
-      class-name="absolute right-4 top-4 z-10"
+    <AppCloseButton
+      class="absolute right-4 top-4 z-10"
       data-modal-dismiss
-      aria-label="Cerrar"
       @click="$emit('close')"
-    >
-      <span class="text-xl leading-none">&times;</span>
-    </AppButton>
+    />
 
     <header class="mx-auto mt-2 mb-5 w-full max-w-xl text-center">
       <h2 class="mb-1 text-xl font-semibold tracking-tight text-navy">{{ title }}</h2>
@@ -30,7 +25,7 @@
       <div class="mt-5 flex w-full flex-col-reverse justify-end gap-3 border-t border-line pt-4 sm:flex-row">
         <AppButton
           type="button"
-          variant="secondary"
+          variant="cancel"
           data-modal-dismiss
           :disabled="isSubmitting"
           @click="$emit('cancel')"
@@ -52,6 +47,7 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 
 defineProps({

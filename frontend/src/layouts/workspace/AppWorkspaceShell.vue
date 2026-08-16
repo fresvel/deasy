@@ -9,7 +9,7 @@
         <div class="deasy-workspace-header__actions">
           <button
             v-if="showSignatureAction"
-            class="deasy-nav-action h-9 w-9"
+            class="deasy-nav-action"
             type="button"
             title="Firmas"
             aria-label="Firmas"
@@ -18,7 +18,7 @@
             <IconSignature class="h-5 w-5" />
           </button>
           <button
-            class="deasy-nav-action h-9 w-9"
+            class="deasy-nav-action"
             type="button"
             title="Notificaciones"
             aria-label="Notificaciones"
@@ -28,7 +28,7 @@
           </button>
           <router-link
             to="/logout"
-            class="deasy-nav-action h-9 w-9"
+            class="deasy-nav-action"
             title="Cerrar sesion"
             aria-label="Cerrar sesion"
           >

@@ -4,7 +4,7 @@
     <div class="overflow-hidden rounded-[1.75rem] border border-brand-100 bg-linear-to-br from-brand-50/70 via-white to-blue-light-50/50">
       <div class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
         <div class="flex items-start gap-3.5">
-          <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-white text-primary">
+          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--outlined">
             <IconSend class="h-6 w-6" />
           </span>
           <div class="flex min-w-0 flex-col">
@@ -13,15 +13,16 @@
           </div>
         </div>
         <div class="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
+          <AppButton
+            variant="secondary"
+            size="sm"
+            icon-only
             title="Actualizar"
             aria-label="Actualizar"
             @click="$emit('refresh')"
           >
             <IconRefresh class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
-          </button>
+          </AppButton>
           <AppButton variant="primary" @click="$emit('create')">
             <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4.5 w-4.5" /> {{ createLabel }}</span>
           </AppButton>
@@ -30,28 +31,26 @@
     </div>
 
     <!-- Pestañas: enviados / recibidos -->
-    <div class="flex items-center gap-1.5 rounded-2xl border border-line/80 bg-white p-1.5">
+    <div class="deasy-section-nav-group w-full">
       <button
         v-for="tab in tabs"
         :key="tab.key"
         type="button"
-        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition"
-        :class="activeTab === tab.key
-          ? 'bg-brand-600 text-white'
-          : 'text-muted hover:bg-surface hover:text-body'"
+        class="deasy-section-nav flex-1 justify-center"
+        :class="{ 'deasy-section-nav--active': activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
         <component :is="tab.icon" class="h-4.5 w-4.5" />
         {{ tab.label }}
         <span
-          class="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-black"
+          class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
           :class="activeTab === tab.key ? 'bg-white/25 text-white' : 'bg-surface text-muted'"
         >{{ tab.items.length }}</span>
       </button>
     </div>
 
     <!-- Contenido -->
-    <div v-if="loading" class="rounded-2xl border border-blue-light-100 bg-blue-light-50/60 p-6 text-center text-sm font-semibold text-action-view animate-pulse">
+    <div v-if="loading" class="rounded-2xl border border-blue-light-100 bg-blue-light-50/60 p-6 text-center text-sm font-semibold text-info animate-pulse">
       Cargando…
     </div>
 
@@ -76,7 +75,7 @@
         class="group flex items-center gap-3.5 rounded-2xl border border-line/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition hover:border-brand-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
       >
         <span
-          class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
+          class="deasy-icon-box deasy-icon-box--lg"
           :class="activeTab === 'sends' ? 'border-brand-100 bg-brand-50/70 text-primary' : 'border-emerald-100 bg-emerald-50/70 text-success'"
         >
           <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-5 w-5" />

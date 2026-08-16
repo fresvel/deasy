@@ -122,4 +122,19 @@
         --tone-edge: var(--color-blue-light-500);
         --tone-soft: var(--color-blue-light-50);
     }
+
+    /* LA ✕ DE UNA PASTILLA — quitar ese elemento de una seleccion.
+     *
+     * No es `AppCloseButton` y no puede serlo: aquella mide 36 px porque cierra un dialogo, y
+     * esta vive DENTRO de un chip de 24 px de alto. Tampoco es `AppDeleteButton`, que trae caja
+     * y color de fondo. Es un tercer objeto, y sale de aqui —no de `buttons.css`— porque su
+     * tamano y su color los manda la pastilla que la contiene, no el sistema de botones.
+     *
+     * Estaba escrita tres veces (2026-08-15, censo estructural de G2): dos en `GeneralTaskModal`
+     * (quitar un destinatario, quitar un firmante de un paso) y una en `WorkspaceChatLauncher`
+     * (quitar un adjunto pendiente). Y las tres discrepaban en el hover — dos a `text-danger` y
+     * una a `text-icon`—, o sea que quitar un adjunto no avisaba de que era destructivo. */
+    .deasy-chip-remove {
+        @apply inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 leading-none text-muted transition-colors hover:text-danger focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
 }

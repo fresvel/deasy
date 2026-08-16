@@ -3,7 +3,7 @@
     ref="modalRef"
     labelled-by="processDefinitionActivationModalLabel"
     title="Activar configuracion"
-    dialog-class="definition-activation-shell max-w-6xl"
+    dialog-class="max-w-6xl"
     :steps="activationSteps"
     :current-step="view"
     :step-status="activationStepStatus"

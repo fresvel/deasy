@@ -81,8 +81,8 @@
           <div class="deasy-filter-toolbar">
             <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-body">{{ filteredItems.length }}</span></div>
             <div class="deasy-filter-actions">
-              <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetFilters">Reset</AppButton>
-              <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="load">Actualizar</AppButton>
+              <AppButton variant="secondary" icon-only size="sm" @click="resetFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
+              <AppButton variant="primary" icon-only size="sm" @click="load" title="Actualizar" aria-label="Actualizar"><font-awesome-icon icon="rotate-right" /></AppButton>
             </div>
           </div>
         </div>

@@ -255,7 +255,7 @@
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar campo" @click="removeSchemaField(index)">✕</button>
+            <AppDeleteButton label="Eliminar campo" @click="removeSchemaField(index)" />
           </div>
         </div>
       </div>
@@ -297,10 +297,9 @@
               <p class="m-0 truncate text-xs text-muted">{{ fillWhoSummary(step) }}</p>
             </div>
             <AdminButton
-              variant="secondary"
+              variant="softSuccess"
               size="sm"
               icon-only
-              :class-name="expandedFillStep === index ? 'hope-action-btn hope-action-select' : 'hope-action-btn hope-action-edit'"
               :title="expandedFillStep === index ? 'Listo' : 'Editar paso'"
               :aria-label="expandedFillStep === index ? 'Listo' : 'Editar paso'"
               @click="toggleFillStep(index)"
@@ -308,10 +307,9 @@
               <font-awesome-icon :icon="expandedFillStep === index ? 'check' : 'edit'" />
             </AdminButton>
             <AdminButton
-              variant="secondary"
+              variant="softDanger"
               size="sm"
               icon-only
-              class-name="hope-action-btn hope-action-delete"
               title="Eliminar paso"
               aria-label="Eliminar paso"
               @click="removeFillStep(index)"
@@ -433,10 +431,9 @@
               <p class="m-0 truncate text-xs text-muted">{{ signatureSummary(step) }}</p>
             </div>
             <AdminButton
-              variant="secondary"
+              variant="softSuccess"
               size="sm"
               icon-only
-              :class-name="expandedSignatureStep === index ? 'hope-action-btn hope-action-select' : 'hope-action-btn hope-action-edit'"
               :title="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
               :aria-label="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
               @click="toggleSignatureStep(index)"
@@ -444,10 +441,9 @@
               <font-awesome-icon :icon="expandedSignatureStep === index ? 'check' : 'edit'" />
             </AdminButton>
             <AdminButton
-              variant="secondary"
+              variant="softDanger"
               size="sm"
               icon-only
-              class-name="hope-action-btn hope-action-delete"
               title="Eliminar paso"
               aria-label="Eliminar paso"
               @click="removeSignatureStep(index)"
@@ -483,7 +479,7 @@
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
               <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
-              <button type="button" class="rounded-2xl border border-brand-200 px-2 py-1 text-xs font-semibold text-primary transition hover:bg-brand-50" @click="addSignatureSigner(index)">+ Añadir firmante</button>
+              <AppButton variant="outlinePrimary" size="sm" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
             </div>
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-line bg-surface/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
@@ -496,7 +492,7 @@
                   </select>
                 </div>
                 <div v-if="stepSigners(step).length > 1" class="col-span-1 flex items-center justify-end pb-1">
-                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-line text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
+                  <AppDeleteButton label="Eliminar firmante" @click="removeSignatureSigner(index, si)" />
                 </div>
               </div>
               <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
@@ -574,6 +570,7 @@
 </template>
 
 <script setup>
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import { ref, computed, watch, onMounted, useId } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import axios from "@/core/services/httpClient";
@@ -918,12 +915,12 @@ const toggleSignatureStep = (index) => { expandedSignatureStep.value = expandedS
 
 // Paleta de tonos para diferenciar pasos (se cicla por índice).
 const STEP_TONES = [
-  { card: "border-brand-200", badge: "bg-brand-100 text-primary" },
-  { card: "border-emerald-200", badge: "bg-emerald-100 text-success" },
-  { card: "border-amber-200", badge: "bg-amber-100 text-warning" },
-  { card: "border-blue-light-200", badge: "bg-blue-light-100 text-info" },
-  { card: "border-rose-200", badge: "bg-rose-100 text-danger" },
-  { card: "border-brand-200", badge: "bg-brand-100 text-primary" }
+  { card: "border-brand-200", badge: "deasy-icon-box--primary" },
+  { card: "border-emerald-200", badge: "deasy-icon-box--success" },
+  { card: "border-amber-200", badge: "deasy-icon-box--warning" },
+  { card: "border-blue-light-200", badge: "deasy-icon-box--info" },
+  { card: "border-rose-200", badge: "deasy-icon-box--danger" },
+  { card: "border-brand-200", badge: "deasy-icon-box--primary" }
 ];
 const stepToneClass = (index) => STEP_TONES[index % STEP_TONES.length].card;
 const stepBadgeClass = (index) => STEP_TONES[index % STEP_TONES.length].badge;

@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full animate-fade-in">
+  <div class="w-full">
     <ProfileSectionShell
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
@@ -70,7 +70,7 @@
         </slot>
       </p>
       <template #footer>
-        <AppButton variant="secondary" @click="showDeleteModal = false">Cancelar</AppButton>
+        <AppButton variant="cancel" @click="showDeleteModal = false">Cancelar</AppButton>
         <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
       </template>
     </AppModalShell>

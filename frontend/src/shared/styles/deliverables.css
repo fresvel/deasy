@@ -6,7 +6,7 @@
 
        --start   `--color-primary`      «aun no has empezado»
        --sign    `--color-step-ink`     «te toca firmar»    (relleno `--step-rgb`)
-       --open    `--color-action-view`  «abrir», el neutro  (el marco si es `--color-line`)
+       --open    `--color-info`  «abrir», el neutro  (el marco si es `--color-line`)
 
    ⚠️ `group` se queda en la plantilla a proposito: es un marcador de variante de Tailwind,
    no una utilidad, y `@apply group` NO COMPILA. */
@@ -21,8 +21,12 @@
         box-shadow: 0 6px 16px rgba(var(--elev-ink-rgb), 0.04);
     }
 
+    /* [F3.1, 2026-08-15] Era la SEXTA caja de icono privada, con su propio radio arbitrario
+       (`0.85rem`, un valor que existia para caer entre `rounded-xl` y `rounded-2xl`). Ahora se
+       COMPONE del bloque: la plantilla escribe `deasy-icon-box deasy-icon-box--md` y aqui solo
+       queda lo que es de este componente — que su borde y su color los hereda del estado. */
     .deasy-deliverable-action__chip {
-        @apply flex h-9 w-9 items-center justify-center rounded-[0.85rem] border;
+        @apply border;
     }
 
     .deasy-deliverable-action__label {
@@ -84,15 +88,15 @@
     }
 
     .deasy-deliverable-action--open .deasy-deliverable-action__chip {
-        border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
-        background-color: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
-        color: var(--color-action-view);
+        border-color: color-mix(in srgb, var(--color-info) 71%, var(--color-white));
+        background-color: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
+        color: var(--color-info);
     }
 
     @media (hover: hover) {
         .deasy-deliverable-action--open:hover {
-            border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
-            background-color: color-mix(in srgb, var(--color-action-view) 4%, var(--color-white));
+            border-color: color-mix(in srgb, var(--color-info) 85%, var(--color-white));
+            background-color: color-mix(in srgb, var(--color-info) 4%, var(--color-white));
         }
     }
 }

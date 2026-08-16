@@ -13,6 +13,42 @@ continuación: es otro problema.**
 | 2.ª (2026-08-11) | **Las plantillas**: 2 117 colores de Tailwind escritos a mano, reglas que no aplicaban | ✅ archivada |
 | **3.ª (ésta)** | **Los componentes**: dos ficheros de 8 000 líneas y lo que no se pudo tocar con un script | 🟡 |
 
+## 🗺️ El mapa — dónde encaja cada cosa
+
+**Hay TRES niveles de plan y cuatro tablas de control.** Confundirlos ya costó dos respuestas
+contradictorias al dueño (2026-08-15), así que aquí está el árbol entero. **Al informar del estado
+se dice de qué nivel se habla.**
+
+```
+plan-maestro-2026-08.md          12 FRENTES  (0…11)  ── el mapa de todo el repo
+   └─ Frente 4 · Sistema de diseño        🟡  6 pasos, 5 cerrados
+        └─ sistema-diseno-componentes/    ← ESTA CARPETA: la 3.ª vuelta del frente 4
+             └─ plan-2026-08-13.md        11 FASES (F0…F10) · 22 tareas, 12 cerradas
+                  └─ F3.2 · el botón      ✅ (una sola fila ahí dentro)
+                       └─ fase-3-botones.md
+                            ├─ 11 GRUPOS  (G1…G11) · 5 cerrados   ← la tabla que se enseña
+                            └─ ~15 TAREAS (3.0, 3.1, 3.2…)        ← incluye trabajo sin grupo
+```
+
+| Nivel | Fichero | Unidad | Estado |
+|---|---|---|---|
+| 1 · Repo | `../plan-maestro-2026-08.md` | **Frente** 0…11 | Frente 4 en 🟡 |
+| 2 · Frente 4 | `plan-2026-08-13.md` §0 | **Fase / tarea** F0…F10 | 12 de 22 |
+| 3 · Fase 3 | `fase-3-botones.md` §0 | **Grupo** G1…G11 | 5 de 11 |
+| 3-bis · Fase 3 | `fase-3-botones.md` §7 | **Tarea** 3.0, 3.1… | incluye lo que no es de ningún grupo |
+
+⚠️ **Las tres trampas que ya se pisaron:**
+
+1. **Una tarea cerrada no es un grupo cerrado.** La geometría única, los 3 gates nuevos y la
+   convención de nombres son tareas de la fase 3 y **no pertenecen a ningún grupo**. Contarlas
+   dio un falso «7 de 11 grupos» cuando son **5**.
+2. **Cerrar F3.2 no cierra la fase 3.** La fase 3 tiene cuatro tareas (`deasy-icon-box`, el
+   botón, el estado de grafo, los dos colapsos de plantilla) y **solo el botón está hecho**.
+3. **El maestro se queda atrás y no avisa.** El paso 4 del Frente 4 (cerrar el fork
+   `AdminButton.vue`) estuvo marcado ⬜ **desde el 14-08 hasta el 15-08**, con el fichero ya
+   borrado. Un nivel se actualiza **en el commit que cierra la tarea**, y eso incluye el de
+   arriba cuando le toca.
+
 ## El argumento de una frase
 
 **Lo que queda no lo arregla una sustitución, y lo que ya se hizo no aguantó.** La segunda vuelta

@@ -2,7 +2,7 @@
   <div v-if="compact" class="w-full">
     <button
       type="button"
-      class="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-1.5 text-white transition-all hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-white/18"
+      class="deasy-nav-avatar group"
       :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
       :title="username"
       :aria-label="`Perfil de ${username}`"

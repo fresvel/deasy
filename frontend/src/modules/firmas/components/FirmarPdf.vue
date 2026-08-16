@@ -27,15 +27,16 @@
     <div v-if="!multiOnly && pdfReady" class="flex flex-col gap-4 mt-4 border-b border-line pb-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-line-strong text-icon hover:bg-surface transition"
+          <AppButton
+            variant="secondary"
+            size="sm"
+            icon-only
             title="Regresar"
             aria-label="Regresar"
             @click="goBackToStart"
           >
             <IconArrowLeft class="w-5 h-5" />
-          </button>
+          </AppButton>
         </div>
 
         <div class="flex items-center justify-center gap-3 flex-wrap xl:flex-nowrap">
@@ -148,7 +149,7 @@
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex items-center gap-3 mt-6">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
@@ -220,7 +221,7 @@
           id="signature-launcher-received"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          class="deasy-tile signature-workspace-card xl:col-start-1"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Solicitudes recibidas</h3>
@@ -239,7 +240,7 @@
           id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+          class="deasy-tile signature-workspace-card"
           :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
@@ -263,7 +264,7 @@
           id="signature-launcher-pending"
           v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md xl:col-start-3"
+          class="deasy-tile signature-workspace-card xl:col-start-3"
           @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-strong mb-4 text-left">Bandeja de pendientes</h3>
@@ -279,7 +280,7 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex animate-fade-in items-center gap-3 mt-6">
+      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex items-center gap-3 mt-6">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
@@ -330,7 +331,7 @@
                 <button
                   v-if="signMode !== 'token'"
                   type="button"
-                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
+                  class="deasy-pdf-action"
                   title="Firmar documento"
                   aria-label="Firmar documento"
                   @click.stop="submitAction"
@@ -355,7 +356,7 @@
       size="lg"
     >
       <div v-if="!visibleFields.length" class="text-center py-10 px-4">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-surface text-muted rounded-full mb-4">
+        <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-4">
           <IconSignature class="w-8 h-8" />
         </div>
         <h3 class="text-xl font-semibold text-strong mb-2">No hay firmas</h3>
@@ -374,7 +375,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
             
             <div class="flex items-start gap-4">
-              <div class="shrink-0 w-10 h-10 bg-blue-light-50 text-info rounded-2xl flex items-center justify-center font-bold">
+              <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info">
                 <IconSignature class="w-5 h-5" />
               </div>
               <div>
@@ -410,14 +411,12 @@
             
           </div>
           
-          <button
+          <AppDeleteButton
             v-if="signMode !== 'token'"
+            class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100 lg:opacity-100"
+            label="Eliminar campo"
             @click.stop="requestDeleteField(field.id)"
-            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-muted hover:bg-red-50 hover:text-danger rounded-2xl transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
-            title="Eliminar campo"
-          >
-            <IconTrash class="w-5 h-5" stroke-width="1.5" />
-          </button>
+          />
         </div>
       </div>
     </AppModalShell>
@@ -460,22 +459,11 @@
           </div>
           
           <div class="flex items-center gap-2 sm:self-center self-end">
-            <button 
-              type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-line text-icon hover:bg-surface hover:text-strong transition font-medium focus:outline-none focus:ring-2 focus:ring-line" 
-              @click.stop="goToFieldLocation(field.id)"
-            >
+            <AppButton variant="secondary" size="sm" @click.stop="goToFieldLocation(field.id)">
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
               Ver en documento
-            </button>
-            <button 
-              type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-2xl border border-red-200 text-danger hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2" 
-              @click.stop="requestDeleteField(field.id)"
-            >
-              <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
-              Eliminar
-            </button>
+            </AppButton>
+            <AppDeleteButton label="Eliminar" @click.stop="requestDeleteField(field.id)" />
           </div>
         </div>
       </div>
@@ -556,7 +544,7 @@
             v-for="user in userResults"
             :key="user.id || user._id"
             type="button"
-            class="flex flex-col p-3 border rounded-xl text-left transition w-full"
+            class="deasy-picker deasy-picker--flat flex-col items-start"
             :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectSigner(user)"
           >
@@ -579,7 +567,7 @@
       <p v-if="userSearchError" class="text-danger text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>
+      <AdminButton variant="cancel" data-modal-dismiss>
         Cancelar
       </AdminButton>
       <AdminButton variant="primary" @click="confirmSigner">
@@ -625,7 +613,7 @@
         class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Lote preparado</div>
-        <div class="mt-1 text-action-view">
+        <div class="mt-1 text-info">
           Se iniciará una firma masiva para {{ multiBatchRequest.documents.length }} documento(s) en modo
           <span class="font-semibold">
             {{
@@ -644,7 +632,7 @@
         class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Firma por token</div>
-        <div v-if="currentSignatureMarker" class="mt-1 text-action-view">
+        <div v-if="currentSignatureMarker" class="mt-1 text-info">
           Se buscarán todas las coincidencias del marcador <span class="font-mono font-semibold">{{ currentSignatureMarker }}</span> y se estampará la firma en cada una.
         </div>
         <div v-else class="mt-1 text-danger">
@@ -674,7 +662,7 @@
             v-for="certificate in availableCertificates"
             :key="certificate.id"
             type="button"
-            class="w-full rounded-xl border px-3 py-3 text-left transition"
+            class="deasy-picker deasy-picker--flat"
             :class="selectedCertificateId === certificate.id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
             @click="selectedCertificateId = certificate.id"
           >
@@ -723,7 +711,7 @@
       <p v-if="signError" class="mb-0 text-sm font-medium text-danger">{{ signError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss :disabled="isSigning">
+      <AdminButton variant="cancel" data-modal-dismiss :disabled="isSigning">
         Cancelar
       </AdminButton>
       <AdminButton variant="primary" :disabled="isSigning" @click="confirmSign">
@@ -786,16 +774,10 @@
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <!-- [F4.4-d 2026-08-12] `border-line` SIN MIGRAR a proposito. Es la unica
-           excepcion de la fase, y esta medida: este boton vive dentro de
-           `.deasy-dialog-header`, cuya regla se quedo SIN CAPA en R5. Migrado a
-           `border-line`, la utilidad pierde el `!important` que le prestaba el
-           repintado y la regla suelta pasa a ganar: el borde iria de `--color-line` a
-           `--color-line-field`. Son 5 nodos y los cazo la huella.
-           Muere cuando se decida si un boton del slot `#title` es «boton de dialogo». -->
-      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-surface/50 border border-line text-icon hover:bg-surface hover:text-strong font-semibold text-sm transition-colors cursor-pointer z-20">
-        <IconX class="w-4 h-4" stroke-width="2.5" />
-      </button>
+      <AppCloseButton
+        data-modal-dismiss
+        class="absolute right-5 top-4 z-20"
+      />
     </template>
     <div class="px-6 pt-6 pb-4">
       <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
@@ -815,24 +797,25 @@
           </div>
         </div>
         <div class="relative z-10 w-full md:w-auto">
-          <button 
-            class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-blue-light-600 text-info hover:bg-blue-light-50 hover:border-blue-light-700 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="isValidatingDocument || !validationFile" 
+          <AppButton
+            variant="outlinePrimary"
+            class-name="w-full md:w-auto"
+            :disabled="isValidatingDocument || !validationFile"
             @click="validateDocument"
           >
             <IconRefresh v-if="isValidatingDocument" class="w-4 h-4 animate-spin" />
             <IconShieldCheck v-else class="w-4 h-4" />
             {{ isValidatingDocument ? 'Validando...' : 'Revalidar documento' }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
-      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 animate-fade-in">
+      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
 
-      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="deasy-card p-4 flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-muted mb-1 z-10">
             <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
@@ -870,7 +853,7 @@
 
       <div
         v-if="validationResult?.summary?.timestampCount"
-        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3 animate-fade-in"
+        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3"
       >
         <IconAlertTriangle class="w-5 h-5 shrink-0 text-warning mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
@@ -878,7 +861,7 @@
 
       <div
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3 animate-fade-in"
+        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3"
       >
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <div class="flex flex-col gap-1">
@@ -914,14 +897,16 @@
           </template>
           <template v-else-if="field.name === 'certificateAuthority'">
             <div class="flex items-center justify-center">
-              <button
+              <AppButton
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
-                @click="openCertificateAuthorityModal(row)"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-surface text-icon hover:bg-blue-light-100 hover:text-info transition-colors"
+                variant="softInfo"
+                size="sm"
+                icon-only
                 title="Ver entidad certificadora"
+                @click="openCertificateAuthorityModal(row)"
               >
                 <IconCertificate class="w-4 h-4" />
-              </button>
+           </AppButton>
               <span v-else class="text-muted text-xs font-semibold uppercase">N/A</span>
             </div>
           </template>
@@ -949,7 +934,7 @@
         </template>
         <template #empty>
           <div class="flex flex-col items-center justify-center py-12 px-4">
-            <div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-muted mb-4">
+            <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-4">
               <IconShieldCheck class="w-8 h-8" />
             </div>
             <h4 class="text-lg font-bold text-body mb-1">Sin firmas detectadas</h4>
@@ -997,6 +982,8 @@
   </AppModalShell>
 </template>
   <script setup>
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h, useId } from "vue";
   import { useRouter } from 'vue-router';
   import axios from '@/core/services/httpClient';

@@ -398,6 +398,47 @@ ruta en el DOM**, así que un cambio de orden da diferencias falsas.
    Construir con y sin el cambio y comparar el emitido es más barato que una sesión de navegador y
    más fuerte: si el diff son las líneas que tocaste y nada más, no hay nada que verificar a ojo.
 
+### Cómo se ENTREGA un cambio visual — obligatorio, no cortesía
+
+Verificar no basta: **el dueño tiene que poder ver lo mismo que tú viste, sin adivinar dónde.** Un
+cambio de estilo entregado sin decir dónde mirar es un cambio sin revisar, porque el único
+instrumento que ve un estilo roto es un par de ojos delante de la pantalla.
+
+**Toda entrega de un cambio visual lleva estas cuatro cosas. Sin excepción, y aunque el cambio
+parezca trivial:**
+
+1. **La auditoría** que lo motivó, con su resultado en números — cuántos elementos hay, cuántos no
+   conformaban, cuántos quedan. Un «ya está arreglado» sin cifras no se puede comprobar.
+2. **La comparación antes/después, MEDIDA y no descrita.** Los valores computados que cambiaron
+   (`getComputedStyle`), el diff del CSS construido, o la huella de `scripts/css-huella.mjs`.
+   «Ahora se ve mejor» no es una comparación; «el subrayado pasa de 0 a 2 px en `rgb(70,95,255)`, y
+   las tres barras de esa pantalla miden ya lo mismo» sí lo es.
+3. **La ruta EXACTA para verlo**, con todo lo necesario para llegar:
+   - la **URL completa**, con protocolo y puerto de la pila usada (`https://localhost:8543` para la
+     B, no «localhost» ni «el dev»);
+   - **con qué usuario y contraseña**, porque el mismo cambio no se ve desde todas las cuentas;
+   - **cada clic hasta el elemento**: qué entrada de menú, qué tarjeta, qué botón abre el modal.
+4. **Lo que NO se pudo verificar y por qué**, cuando toque. Si a una pantalla no se llegó porque la
+   base no tenía datos, se dice — así el dueño sabe que un vacío es del entorno y no del cambio.
+
+⚠️ **«Mira los campos», «revisa el admin» o «entra a /home» NO son rutas.** Son tres formas de
+devolverle al dueño el trabajo de encontrar lo que acabas de tocar. Ya pasó dos veces: una revisión
+se perdió porque la ruta valía para dos pantallas distintas, y otra porque la cuenta indicada no
+tenía permiso para ver el cambio.
+
+**Ejemplo de lo que sí vale:**
+
+> `https://localhost:8543` — pila B, por HTTPS (acepta el aviso del certificado).
+> 1. Entra como **usuario**: `1122334455` / `Demo1234!` *(el gestor no sirve aquí: su cuenta tiene 0
+>    procesos en esta base)*
+> 2. `/home` → barra lateral → **Mis procesos**
+> 3. En la tarjeta **«Informe general»**, el icono redondo azul de la esquina — *«Abrir detalle del
+>    entregable»*
+> 4. Arriba del modal: **General · Entrega · Firmas · Anexos**
+
+**Si el cambio toca varios grupos o varias pantallas, se dan las rutas de TODOS.** Enseñar uno y
+callar los otros deja el resto sin revisar, que a efectos prácticos es no haberlos hecho.
+
 ---
 
 ## 5. Recomendaciones de UX/UI
@@ -542,9 +583,28 @@ bash scripts/stack.sh b exec -T frontend node scripts/contraste.mjs --tabla
 bash scripts/stack.sh b exec -T frontend node scripts/contraste.mjs muted=gray-600 primary=brand-500
 ```
 
-**`lint` encadena los tres desde el 2026-08-13.** Antes `check:no-dark` estaba suelto: existía, y
-dependía de que alguien se acordara de invocarlo. Los dos scripts siguen siendo llamables por
-separado (`check:no-dark`, `check:orphan-classes`) para depurar.
+**`lint` CONSTRUYE y encadena los siete gates y stylelint desde el 2026-08-14**: `build` →
+`eslint` → `check:no-dark` → `check:orphan-classes` → `check:no-arbitrary` → `check:color-theme` →
+`check:css-prune` → `check:contraste` → `lint:css`. Son **7,3 s** en total. Cada uno sigue siendo
+llamable por separado para depurar.
+
+⚠️ **Construye a propósito, y no es un rodeo: `check:orphan-classes` mide contra el CSS CONSTRUIDO.**
+Es el único sitio donde consta qué existe de verdad — Tailwind no tiene un catálogo fijo de
+utilidades, las **emite escaneando el código fuente**. Antes el gate adivinaba por prefijo con una
+lista a mano, y esa lista se queda corta sola: le faltaba `person-` y dejó pasar 6 clases muertas.
+Contra el CSS emitido caen también las utilidades **mal escritas** y los restos de otro framework
+(así salieron `d-inline-flex` y `align-items-center`, de Bootstrap). Hay guarda contra un `dist/`
+rancio: medir contra un CSS viejo daría un verde falso.
+
+⚠️ **Y ahí es donde hay que enganchar un gate nuevo, no en el workflow.** El job `frontend-lint` de
+`cd-multienv.yml` ejecuta `pnpm run lint` y nada más, así que lo que entre en esta cadena entra en CI
+solo. Hasta el 2026-08-14 `lint:css` era un script suelto que **no invocaba ningún workflow**: sus
+tres reglas estaban escritas y no bloqueaban un merge, y `declaration-no-important` estaba además en
+`severity: "warning"`, o sea que aunque se ejecutara no fallaba.
+
+⚠️ **Un gate que nunca se ha visto rojo no está probado.** Los cuatro que había daban verde y tres
+estaban rotos. Al escribir uno, rómpelo a propósito y comprueba que sale con 1 — así se validó
+`check:contraste`, bajando `--color-muted` a `gray-400`.
 
 > **`check:orphan-classes` es nuevo** y cubre el sentido que no vigilaba nadie: una clase **propia**
 > que una plantilla escribe y **ningún CSS declara**. Eran 23 nombres en 40 sitios, restos de
@@ -564,7 +624,7 @@ no crea una pila nueva, repunta la de siempre a tu código. Está en el `CLAUDE.
 | Colores a mano fuera del CSS | **47** | *Arbitrary values* y mapas de tono en `.vue` y `.js` |
 | Strings de clase >120 caracteres | **203** | `HomeView.vue`, `FirmarPdf.vue` |
 | *Arbitrary values* (`text-[11px]`…) | **436** | 8 tamaños distintos por debajo de `text-sm` |
-| `!important` con motivo escrito | **3** | `dialogs.css`, `overrides.css` |
+| `!important` en el CSS propio | **0** | Eran 3, y los **tres** eran huérfanos (2026-08-14). Lo vigila `declaration-no-important`, ya en `error` |
 | Reglas fuera de capa | **33** | Todas con su motivo escrito al lado |
 | **Colores de Tailwind por nombre** | **824** | Eran 2 117. Ningún linter ve uno. Ver el desglose abajo |
 | Colores de Tailwind **dentro de `@apply`** | **3** | Los `bg-slate-100`, abajo |
@@ -589,16 +649,33 @@ inesperada. Cambio visual cero.
   tres, ganando el último **por orden de `@import`**. Consolidado en `base.css`, que es su módulo.
 - **`graph.css` escribía `rgba(15,23,42,.12)`**, el mismo triplete que `--elev-ink-rgb`.
 
-> 🪤 **Tailwind escanea también los `.mjs` de `scripts/`.** El primer `check-orphan-classes.mjs`
-> citaba tres utilidades de ejemplo **en un comentario en prosa** y las tres acabaron **emitidas en
-> el CSS construido**. Si documentas una clase, descríbela; no la escribas.
+> 🪤 **Tailwind escaneaba también los `.mjs` de `scripts/`, y ya no.** Pasó **dos veces**: el primer
+> `check-orphan-classes.mjs` citaba tres utilidades en prosa y las tres acabaron emitidas; y el
+> 2026-08-14, un gate nuevo llevaba nombres de propiedad en un **array de configuración** (dos eran
+> utilidades válidas y se emitieron) mientras otro citaba un escalón tipográfico **sin consumidores**,
+> creándole uno falso. Al taparlo aparecieron además **dos reglas fantasma vivas en producción**,
+> `.rounded-\[…\]` y `.text-\[…\]`, con el valor literal `…`, nacidas de unos puntos suspensivos.
+>
+> La norma «descríbela, no la escribas» **no basta: depende de acordarse, y un array no es prosa**.
+> El corte es estructural y está en `tokens.css`: `@source not "../../../scripts"`. **No lo quites.**
 
-**Dentro de los módulos ya no queda ni un color de familia propia fuera de la paleta.** Eran **151**
-—`color-no-hex` no entra en `@apply`, así que el contador en verde los escondía— y quedan **tres**:
-los `bg-slate-100` de `buttons.css`, `forms.css` y `misc.css`. Se quedan a propósito: son un **segundo
-escalón de superficie que la paleta no declara**, y colapsarlo sobre `--color-surface` (ΔE 1.29)
-mataría el *hover* de `.deasy-btn--soft-neutral`, que va justamente de slate-50 a slate-100. Es el
-mismo criterio que se aplicó a `bg-slate-200` en 4.4: sin escalón declarado no se inventa uno.
+**Dentro de los módulos no queda ni un color de familia propia fuera de la paleta, y desde el
+2026-08-14 tampoco queda `slate`: son CERO.** Eran 151, luego tres (`buttons.css`, `forms.css`,
+`misc.css`), y esos tres se mantenían con un motivo correcto en su momento: eran un **segundo
+escalón de superficie que la paleta no declaraba**, y colapsarlos sobre `--color-surface` (ΔE 1.29)
+mataría el *hover* de `.deasy-btn--soft-neutral`. La regla era «sin escalón declarado no se inventa
+uno».
+
+**Lo que cambió es que el escalón SÍ está declarado**: al adoptar TailAdmin entró `gray-100`
+(`#f2f4f7`) en `@theme`. Frente a `slate-100` (`#f1f5f9`) el Δcontraste es **+0.01** — el mismo
+escalón, ya con nombre propio. Migrados los tres.
+
+⚠️ Y al comprobarlo salió lo de verdad interesante: **`slate` seguía en el CSS de producción sin que
+una sola plantilla lo escribiera**. Cuatro utilidades y sus primitivas, emitidas porque **este mismo
+fichero las nombra** al explicar por qué se retiraron. Tailwind escanea los `.md`. Está cortado en
+`tokens.css` con `@source not "../../../**/*.md"` — la documentación no es código fuente. (Los `.css`
+del propio sistema **no** generan clases: comprobado escribiendo una en un comentario y midiendo el
+build. Ahí sí puedes nombrarlas.)
 
 ### La que ningún contador recoge: reglas que existen y no aplican
 

@@ -75,6 +75,287 @@ el repo ya sabe de esa puerta.**
 
 ---
 
+## 2026-08-14 · Fase 0 — cerrar los gates. Y lo que apareció al abrirlos
+
+Worktree `deasy-diseno3`, rama `feat/sistema-diseno-v3`, **pila B**. La A se dejó intacta sobre
+`develop` a propósito: es el baseline A/B de las fases 2 en adelante.
+
+**Antes de tocar nada** se remidió, y el plan aguantó salvo en dos cifras: `HomeView` **5 130** L y
+`FirmarPdf` **2 890** (el plan decía 5 215 y 2 944). Los cuatro gates daban verde y `lint:css` daba
+verde **con tres avisos**, que es la forma exacta del problema: la regla estaba escrita en
+`severity: "warning"` y además ningún workflow la invocaba.
+
+### Los tres `!important` eran huérfanos — incluido el que el plan daba por vivo
+
+El plan (§1.1) marcaba `dialogs.css:238` como «vivo y justificado». **No lo es**, y el motivo enseña
+más que el arreglo:
+
+| dónde | contra qué decía pelear | qué se midió |
+|---|---|---|
+| `overrides.css:59` | el `.border-slate-*` del bloque (A) | (A) es **solo comentarios** desde el 13-08: ni una regla |
+| `dialogs.css:81` | el `.border-slate-200 !important` de `overrides.css` | esa regla se borró el 13-08 con sus 54 consumidores |
+| `dialogs.css:238` | `.admin-typography h5` (0,1,1) gana a (0,1,0) | **la comparación de especificidad ya no aplica**: esa regla bajó a `@layer base` el 13-08, y `components` va después — gana sin ella |
+
+> **La lección: un comentario que compara ESPECIFICIDADES caduca en silencio el día que una de las
+> dos reglas cambia de CAPA.** El propio `base.css:49-53` documentaba la bajada y decía que con ella
+> «deja de haber conflicto». Nadie volvió a `dialogs.css` a cobrarlo.
+
+Y el tercero no se retiró por eso solo: `.process-dialog-content .deasy-dialog-title` (0,2,0) declara
+`font-weight: 400` y **sí** le ganaría. No alcanza ningún nodo, porque `AdminEditorModal` usa
+`AppModalShell` sin sobreescribir el slot `header` y todo título nace dentro de
+`.deasy-dialog-header`, donde la regla (0,3,0) repone el 600. **Comprobar el adversario que el
+comentario nombra no basta: hay que buscar los que no nombra.**
+
+Verificación: **diff del CSS construido**, partido por reglas. 2 591 reglas antes y después, y el
+diff son **exactamente 3 líneas**, cada una perdiendo su `!important`. 30 bytes.
+
+### El gate de clases huérfanas tenía DOS agujeros, no uno
+
+El plan describía el del regex (`(?<![:@\w-])class="` excluye el `-` de `table-class`). Al taparlo
+salieron los 8 `admin-data-table` anunciados… y nada más. El segundo agujero es **la lista de
+prefijos**, que es la que decide qué nombres son «nuestros»: `person-` no estaba, así que
+**6 clases más en 16 usos** eran invisibles aunque el regex fuera perfecto — toda la familia
+`person-assignment-*`, restos del `AdminTableManager.css` que se borró (§6.3: 604 líneas, 0 de 86
+reglas aplicaban).
+
+**Las dos listas —`PREFIJOS` y `selector-class-pattern`— describen lo mismo desde los dos lados y
+habían divergido.** Ahora están alineadas.
+
+> ⚠️ **Y queda un agujero que NO se ha cerrado, escrito aquí para que no se redescubra:** una clase
+> propia inventada con un prefijo nuevo sigue siendo invisible, porque **por prefijo no hay forma de
+> distinguirla de una utilidad de Tailwind**. La única fuente que sabe la diferencia es el **CSS
+> construido** —Tailwind emite ahí toda utilidad que genera—, y usarlo ataría `lint` a un `build`
+> previo. Es una decisión de coste, no de código, y está sin tomar.
+
+Las 24 clases se borraron **por script y a nivel de token**, no de atributo (trampa 2 de la vuelta
+anterior). Diff limpio, 316/316 tests, y **cero diferencias en el CSS construido**: era la prueba de
+que no pintaban nada.
+
+### `contraste.mjs` no estaba «solo sin enganchar»: estaba fosilizado
+
+El plan (§0.4) decía que define el criterio de aceptación y que no lo invoca nadie. Al ir a
+engancharlo apareció lo otro: **llevaba los hex de los tokens copiados a mano**, y el 13-08 los
+tokens se reanclaron a las primitivas de TailAdmin sin actualizar la copia.
+
+**17 de 21 tokens tenían un valor que ya no existe en el proyecto.** `primary` decía `#5e4eff` con el
+sistema en `#465fff`; `step-ink`, `#108353` por `#027a48`. Es el mismo fallo que `frontend/CLAUDE.md`
+§2.1 describe para los tripletes `-rgb` —una copia no se entera de que el original se movió— pero en
+la herramienta que **decide si un color es aceptable**.
+
+Consecuencia práctica: **daba por roto lo que ya estaba arreglado.** Reportaba `info` en 4.02 (falla)
+cuando el reanclaje a `blue-light-700` lo había dejado en **5.86**. Los fallos reales de hoy son
+**cuatro**: `accent` 2.64 (y pinta *todos* los `<a>` por la regla sin capa de `base.css`) y los tres
+`line-*` en 1.24/1.47/1.47.
+
+> **La lección: antes de enganchar una herramienta a una puerta, comprueba que mide lo que hay.**
+> Un gate que corre sobre datos fósiles no es un gate a medias: es peor que ninguno, porque su verde
+> tiene autoridad.
+
+Ahora **lee `tokens.css`** y resuelve la cadena de alias, así que no puede volver a derivar. Y falla
+si aparece un token semántico sin clasificar o una fila sin token — que es lo que hace cierto el
+«ningún token nuevo se escapa».
+
+El modo `--gate` es un **trinquete**, no un aprobado: los cuatro que fallan no se arreglan en un
+lint (los `line-*` son el borde de 228 controles, y `accent` repinta todos los enlaces; fases 5 y 6).
+El criterio es el del §3: *contraste_después ≥ contraste_antes*.
+
+**Y se probó en rojo antes de darlo por bueno**: bajando `--color-muted` a `gray-400`, el gate sale
+con 1 y nombra las dos infracciones. Revertido.
+
+> **Un gate que nunca se ha visto fallar no está probado.** Es la forma general de lo que esta vuelta
+> descubrió: cuatro puertas en verde, tres rotas.
+
+### La decisión que cerró la fase: la verdad la da el CSS construido
+
+El gate de huérfanas **adivinaba**. Decidía si una clase era «nuestra» por su prefijo, con una lista
+a mano, y todo lo demás lo daba por utilidad de Tailwind. Ese diseño tiene el fallo dentro: la lista
+se queda corta sola.
+
+Se midió el coste de la alternativa antes de decidir, y resultó ser el argumento: **el build tarda
+2,6 s** y la cadena entera de gates **7,3 s**. La opción exacta salía prácticamente gratis. Decisión
+del usuario: `pnpm run lint` construye primero y los gates leen `dist/assets/*.css`.
+
+Lo que apareció al mirar ahí, con la lista de prefijos ya retirada — **17 clases más, en 39 usos**,
+donde el gate anterior veía **cero**:
+
+| qué | dónde | qué era |
+|---|---|---|
+| `animate-fade-in` | 8 usos, 3 ficheros | **una animación que nunca existió**: ni `@keyframes` ni token `--animate-*` en todo el árbol |
+| `d-inline-flex`, `align-items-center` | `DossierDocumentActions` | **Bootstrap**, sobrevivido a la migración |
+| `btn-inner` | `AppButton` y `AdminButton` | envoltorio con nombre y sin regla |
+| `fk-*` (10) · `definition-*` (8) · `is-viewer` · `deliverable-inline-upload` | 6 modales | restos de hojas `scoped` borradas |
+
+Nada de esto es una clase «propia mal escrita»: son **utilidades inventadas o de otro framework**, y
+por definición ninguna lista de prefijos nuestra las iba a ver.
+
+Tres cosas hubo que resolver para que el gate no mintiera, y las tres valen para el próximo:
+
+1. **En el CSS emitido los nombres van escapados de DOS formas.** La conocida es la barra (`\/`,
+   `\:`, `\.`). La que no se ve venir es el **escape hexadecimal con espacio final**: un
+   identificador CSS no puede empezar por dígito, así que una utilidad con prefijo de punto de
+   ruptura sale como `\32 xl\:…`, con el `2` codificado **y un espacio que forma parte del escape**.
+   Leerlo como escape normal parte el nombre justo ahí y declara huérfana una clase viva.
+2. **Hay clases que no pintan a propósito y es correcto.** `nodrag`/`nopan` son la **API de Vue
+   Flow** —comportamiento, no aspecto— y `group`/`peer` son marcadores de Tailwind cuyo contenedor
+   no genera regla. Van excluidas con su motivo, no por conveniencia.
+3. **Un gate no debe leer la documentación como uso.** `AppButton` explica en prosa, dentro de su
+   `<script>`, que una variante desconocida acababa estampada como clase literal — y escribe el
+   atributo tal cual. El gate acusó a dos clases que nadie escribe. Ahora sólo mira el markup.
+
+Y una guarda que no es opcional: **un `dist/` rancio daría un verde falso**, midiendo el árbol de
+antes de tu cambio. El gate compara la fecha del CSS emitido con la del fuente más nuevo y se niega.
+Probado en rojo.
+
+### 🪤 Y la trampa del repo me la comí entera, con la advertencia delante
+
+La bitácora de la vuelta anterior avisa: **Tailwind escanea también los `.mjs` de `scripts/`**, y el
+primer `check-orphan-classes.mjs` citó tres utilidades en un comentario y las tres acabaron emitidas.
+Escribí esa misma advertencia en un comentario nuevo **y caí igual**, de dos formas:
+
+- El gate de colores lleva las propiedades que pintan en un **array de cadenas**. Dos de ellas son
+  utilidades válidas por sí solas, y Tailwind emitió sus reglas con su `@property` detrás.
+- Otro comentario citaba un escalón tipográfico **que no usa nadie**, dándole un consumidor falso
+  justo cuando el plan iba a medir si sobraba.
+
+> **La norma «documenta la clase, no la escribas» no basta: depende de acordarse, y un array de
+> configuración no es prosa.** El arreglo es estructural — `@source not "../../../scripts"` en
+> `tokens.css` —, y a partir de ahí lo que se escriba en un script no puede inventar CSS.
+
+Y al aplicarlo apareció lo que llevaba ahí sin que nadie lo viera: **dos reglas fantasma vivas en
+producción**, `.rounded-\[…\]` y `.text-\[…\]`, con el valor literal `…`. Las generó Tailwind a
+partir de los **puntos suspensivos** de un comentario que hablaba de esas familias.
+
+**El diff del CSS construido de toda la fase 0 son 8 líneas**: 3 reglas que pierden su `!important`
+y estas 2 que desaparecen. Las 39 clases borradas de las plantillas **no movieron un solo byte**, que
+es exactamente la prueba de que no pintaban nada.
+
+### `check-no-arbitrary`: el techo subió una vez, y por qué está bien
+
+Abrir los `.css` añade **42** valores arbitrarios que nadie contaba, dentro de los `@apply` del
+propio sistema de diseño: **cinco radios distintos** y **once tamaños de texto**, con `tables.css`
+escribiendo `text-[12px]` mientras `misc.css` usa `text-theme-xs`. El techo pasa de 374 a 416 **por
+ampliación de alcance, no por deuda nueva**, y queda escrito en el fichero. A partir de ahí, solo
+baja; bajarlo es la fase 5.
+
+Detalle que costaría un contador falso: **en un `.css` hay que quitar los comentarios antes de
+contar.** Estos módulos se documentan citando las clases de las que hablan, y esas citas ni son usos
+ni bajarían nunca al arreglar el código. El plan decía 51; medido sin comentarios son 42.
+
+---
+
+## 2026-08-14 · Fase 1 — borrar lo que ya no pelea
+
+**El patrón de la fase, en una frase: de nueve afirmaciones del plan, tres eran falsas y una era
+peligrosa.** Remedir antes de borrar no es burocracia; aquí evitó romper tres formularios.
+
+| El plan decía | Lo medido |
+|---|---|
+| «`SInput.vue` — 0 usos» | **3 importadores** (`AgregarCapacitacion`, `AgregarCertificacion`, `AgregarTitulo`) y test propio. **Borrarlo rompe el dossier** |
+| «`deasy-alert--info`, la única clase muerta de verdad» | `AppAlert.vue:2` la compone en runtime: está cableada. Lo muerto es la **variante**, no la clase |
+| «`dialogs.css:238` vivo y justificado» | Huérfano (ver la entrada de la fase 0) |
+| «`FirmarPdf` conserva su `border-slate-200` sin migrar» | Ya migrado, y **0 `slate-200` en todo el árbol** |
+
+Ese último tiene una lección propia. El comentario que documentaba la excepción decía
+«`border-line` SIN MIGRAR a proposito» — una frase sin sentido. Lo que paso es que **un rename
+masivo entro dentro del comentario** y sustituyo ahí el nombre viejo, dejando la explicación
+diciendo lo contrario de lo que significaba. Es la trampa 6.6 del `CLAUDE.md` del frontend vista
+desde otro lado: no solo hay que no tocar la línea que DECLARA algo — tampoco la que lo EXPLICA.
+
+### Lo que sí se fue, y lo que destapó
+
+**El fork `AdminButton.vue`** (88 L, **un** importador). No era duplicación inocente: se quedó sin
+recibir tres arreglos que su hermano sí tuvo —dos regresiones de contraste a **3.65:1**, el bug de
+la variante desconocida estampada como clase literal, y el `px-3 py-2` que gana al `p-0` del botón
+de icono—. Con él, **los 11 modificadores `admin-btn--*`**, que `buttons.css` declaraba en la misma
+lista de selectores que su gemelo `deasy-btn--*`: dos nombres para una regla.
+
+Cuatro de esos strings eran peores que redundantes: **`admin-btn--icon`, `--sm`, `--lg` y
+`person-assignment-menu-btn` no los declaraba ningún CSS**. Llevaban meses viajando al DOM sin
+pintar.
+
+> 🪤 **Y ningún gate podía verlos, incluido el que acabo de escribir.** Los gates leen atributos
+> `class` del **markup**; estos viven en un **mapa de JavaScript**. Es el punto ciego que queda:
+> una clase escrita en un `.js` no la mira nadie. La forma de cerrarlo sin falsos positivos está
+> anotada abajo.
+
+**Y borrarlo desbloqueó medio F6.** `buttons.css` documentaba **dos** motivos por los que los 12
+botones de acción no pueden bajar de capa. El segundo era, literalmente, que `AdminButton` estampaba
+utilidades crudas. Ese componente ya no existe: queda un blocker, no dos.
+
+### El gate nuevo falló a las dos horas de escribirlo, y el fallo es instructivo
+
+Al retirar la familia `admin-btn--*` **documenté la retirada nombrándola** en un comentario del
+componente que la escribía. `css-prune` leyó ese comentario como un USO, y dejó pasar seis reglas
+que acababan de quedarse muertas en `overrides.css`. Las encontró un `grep` a mano.
+
+Es la misma forma que la trampa de Tailwind escaneando los `.mjs`, pero con una diferencia que
+importa: **ahí la salida es «no escribas la clase», y aquí no puede serlo** — explicar por qué
+borraste algo es exactamente lo que hay que hacer. Así que quien tiene que aprender a distinguir
+documentación de uso es el script. Ahora `css-prune` quita los comentarios del código antes de
+buscar, y al hacerlo apareció una tercera regla muerta que nadie había contado: `deasy-fa-icon`,
+escondida detrás de otro comentario que la nombraba.
+
+### Y un bug mío, cazado por el diff del CSS construido
+
+El script que retiró los selectores gemelos dejó **tres `:hover:hover`**: casó `,\n .admin-btn--X`
+y abandonó el `:hover` pegado al selector anterior. No cambia el aspecto —`:hover:hover` se
+comporta igual— pero **sube la especificidad de (0,2,0) a (0,3,0)**, que es justo la clase de
+cambio invisible que arruina una comparación posterior.
+
+**No lo vio el lint, ni los 316 tests, ni el navegador.** Lo vio el diff del CSS emitido, que es
+para lo que existe el criterio de esta fase.
+
+Resultado final: **15 reglas menos, 75 líneas de diff, y las 75 explicadas** — los gemelos
+retirados, las utilidades crudas del fork borrado, los dos anillos que no pintaban, la regla sin
+nodo, y dos primitivas (`red-600`, `red-700`) que Tailwind deja de emitir porque ya no las
+referencia nadie.
+
+### Los tres `slate-100`: el plan y la norma decían cosas contrarias, y lo resolvió una medida
+
+El plan mandaba borrarlos («las últimas tres apariciones de `slate`»). `frontend/CLAUDE.md` §8 decía
+mantenerlos, con un motivo bueno: eran un **segundo escalón de superficie que la paleta no
+declaraba**, y colapsarlos sobre `--color-surface` (ΔE 1.29) mataría el *hover* de
+`.deasy-btn--soft-neutral`. La regla era «sin escalón declarado no se inventa uno».
+
+**Lo que ninguno de los dos tenía en cuenta es que el escalón ya está declarado**: al adoptar
+TailAdmin entró `gray-100` en `@theme`. `slate-100` es `#f1f5f9` y `gray-100` es `#f2f4f7` —
+**Δcontraste +0.01**. Migrados los tres, y el diff del CSS son exactamente tres reglas.
+
+> **Cuando un plan y una norma se contradicen, casi siempre es que una de las dos se escribió antes
+> de un cambio que las afecta a las dos.** No hay que elegir bando: hay que buscar qué cambió.
+
+### 🪤 Y la trampa, por TERCERA vez — ahora en el propio fichero de normas
+
+Migrados los tres, `slate` **seguía en el CSS de producción**: cuatro utilidades
+(`.bg-slate-50/100/200`, `.border-slate-200`) con sus primitivas detrás, sin que **una sola
+plantilla las escribiera**. Búsqueda exhaustiva en `src/`: cero.
+
+El origen es **`frontend/CLAUDE.md`** — el fichero que contiene, literalmente, la frase «si
+documentas una clase, descríbela; no la escribas». Las nombra al explicar por qué se retiraron, y
+Tailwind escanea los `.md`. **La documentación de un borrado impidiendo el borrado.**
+
+Dos cosas se midieron antes de arreglarlo, y las dos ahorran trabajo al siguiente:
+
+1. **`@source not` no puede excluir un `.css` del propio grafo de la hoja.** Se probó con ruta de
+   directorio y con glob: ninguna de las dos formas cambia nada.
+2. **Los comentarios de los `.css` NO generan utilidades.** Comprobado escribiendo una clase inédita
+   en un comentario de `misc.css` y midiendo el build: no se emitió. Así que **dentro del CSS del
+   sistema sí se pueden nombrar las clases**, que es donde más falta hace. Antes de saberlo se
+   habían neutralizado 11 nombres en comentarios «por si acaso»; se restauraron todos.
+
+El corte definitivo es una línea en `tokens.css`: `@source not "../../../**/*.md"`. Tras ella,
+**cero** rastro de la paleta `slate` de Tailwind en el CSS servido. Lo único que queda con esa
+cadena son `.deasy-nav-glyph--slate` —modificador BEM **nuestro**, el único tono real de
+navegación— y `.prose-slate`, del plugin de tipografía.
+
+> ⚠️ **Y una lección de instrumental, pagada en el momento:** para revertir una prueba temporal se
+> usó `git checkout -- misc.css`, y **se llevó por delante un cambio bueno del mismo fichero**. En
+> un árbol con trabajo sin commitear, `git checkout` de un fichero no es «deshacer lo último»: es
+> «tirar TODO lo que ese fichero tenga sin guardar». Se detectó al releer el fichero, no por el
+> lint — ningún gate ve que un cambio correcto haya desaparecido.
+
+---
+
 ## Las cuatro trampas que se pagaron en la segunda vuelta
 
 Ninguna la vio el build, ni el lint, ni los tests. Las cuatro salieron **midiendo**.

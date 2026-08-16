@@ -8,8 +8,8 @@
     <!-- Solo plantillas: dos pestañas — Crear una nueva, o Seleccionar una existente (lista filtrable). -->
     <div v-if="createTabEnabled" class="mt-1 mb-3">
       <div class="deasy-inline-tabs" role="tablist" aria-label="Crear o seleccionar plantilla">
-        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'create' }" :aria-selected="activeTab === 'create'" @click="$emit('update:activeTab', 'create')"><span class="truncate">Crear nueva</span></button>
-        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'select' }" :aria-selected="activeTab === 'select'" @click="$emit('update:activeTab', 'select')"><span class="truncate">Seleccionar existente</span></button>
+        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'create' }" :aria-selected="activeTab === 'create'" @click="$emit('update:activeTab', 'create')"><IconPlus class="deasy-inline-tab__icon" /><span class="truncate">Crear nueva</span></button>
+        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'select' }" :aria-selected="activeTab === 'select'" @click="$emit('update:activeTab', 'select')"><IconListSearch class="deasy-inline-tab__icon" /><span class="truncate">Seleccionar existente</span></button>
       </div>
     </div>
 
@@ -41,15 +41,13 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
             variant="secondary"
-            class-name="fk-inline-clear-btn"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!fkPositionFilters.unit_type_id"
-            @click="$emit('clear-fk-unit-position-filters')"
-          >
+            @click="$emit('clear-fk-unit-position-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
@@ -83,15 +81,13 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
             variant="secondary"
-            class-name="fk-inline-clear-btn"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkProcessDefinitionFilters"
-            @click="$emit('clear-fk-process-definition-filters')"
-          >
+            @click="$emit('clear-fk-process-definition-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
@@ -128,15 +124,13 @@
             <option value="0">No</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
             variant="secondary"
-            class-name="fk-inline-clear-btn"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkTemplateArtifactFilters"
-            @click="$emit('clear-fk-template-artifact-filters')"
-          >
+            @click="$emit('clear-fk-template-artifact-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
@@ -152,20 +146,15 @@
     </div>
 
     <div v-if="isFkTemplateArtifacts && hasProcessFilterContext" class="mb-3 flex items-center gap-2">
-      <button
-        type="button"
-        role="switch"
-        :aria-checked="processContextFilterActive"
-        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2"
-        :class="processContextFilterActive ? 'bg-blue-light-600' : 'bg-gray-300'"
-        @click="toggleProcessContextFilter"
-      >
-        <span
-          class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-          :class="processContextFilterActive ? 'translate-x-4' : 'translate-x-1'"
-        ></span>
-      </button>
-      <span class="text-sm font-medium text-icon">Solo plantillas de este proceso</span>
+      <!-- Era un `role="switch"` de 13 lineas escrito a mano, con su propio ancho (36 px frente a
+           los 44 de SToggle) y su propio color activo (`blue-light-600` en vez de `primary`).
+           SToggle existe desde antes y ya lo usan el wizard de procesos y el editor de borradores. -->
+      <SToggle
+        :model-value="processContextFilterActive"
+        label="Solo plantillas de este proceso"
+        label-position="end"
+        @update:model-value="toggleProcessContextFilter"
+      />
     </div>
 
     <div v-if="isFkUnitPositions" class="mb-3 grid gap-3 md:grid-cols-12 md:items-end">
@@ -208,15 +197,13 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <div class="md:col-span-12 md:flex md:justify-end fk-inline-clear-col">
+      <div class="md:col-span-12 md:flex md:justify-end">
         <AdminButton
           variant="secondary"
-          class-name="fk-inline-clear-btn"
           title="Limpiar filtro"
           aria-label="Limpiar filtro"
           :disabled="!fkPositionFilters.unit_type_id && !fkPositionFilters.unit_id && !fkPositionFilters.cargo_id"
-          @click="$emit('clear-fk-unit-position-filters')"
-        >
+          @click="$emit('clear-fk-unit-position-filters')" icon-only>
           <font-awesome-icon icon="times" />
         </AdminButton>
       </div>
@@ -262,12 +249,11 @@
         </template>
       </template>
       <template #actions="{ row }">
-        <div class="inline-flex items-center gap-1 fk-row-actions">
+        <div class="inline-flex items-center gap-1">
           <AdminButton
-            variant="secondary"
+            variant="softInfo"
             size="sm"
             icon-only
-            class-name="hope-action-btn hope-action-view"
             title="Visualizar"
             aria-label="Visualizar"
             @click="$emit('open-fk-viewer', row)"
@@ -275,10 +261,9 @@
             <font-awesome-icon icon="eye" />
           </AdminButton>
           <AdminButton
-            variant="secondary"
+            variant="softSuccess"
             size="sm"
             icon-only
-            class-name="hope-action-btn hope-action-select"
             title="Seleccionar"
             aria-label="Seleccionar"
             @click="$emit('select-fk-row', row)"
@@ -296,8 +281,7 @@
           variant="secondary"
           title="Buscar"
           aria-label="Buscar"
-          @click="$emit('open-fk-filter')"
-        >
+          @click="$emit('open-fk-filter')" icon-only>
           <font-awesome-icon icon="search" />
         </AdminButton>
         <AdminButton
@@ -312,7 +296,7 @@
           {{ fkCreateActionLabel }}
         </AdminButton>
       </template>
-      <AdminButton variant="outlineDanger" data-modal-dismiss>
+      <AdminButton variant="secondary" data-modal-dismiss>
         Cerrar
       </AdminButton>
     </template>
@@ -320,6 +304,8 @@
 </template>
 
 <script setup>
+import { IconListSearch, IconPlus } from "@tabler/icons-vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";

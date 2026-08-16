@@ -145,19 +145,25 @@
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailProcess.name }}</h3>
           </div>
           <div class="flex shrink-0 items-center gap-1">
-            <button v-if="editable" type="button" class="text-muted transition-colors hover:text-primary" title="Editar datos del proceso" @click="openEditModal(detailProcess.id)">
+            <AppButton
+              v-if="editable"
+              variant="softSuccess"
+              size="sm"
+              icon-only
+              title="Editar datos del proceso"
+              aria-label="Editar datos del proceso"
+              @click="openEditModal(detailProcess.id)"
+            >
               <IconPencil class="h-5 w-5" />
-            </button>
-            <button type="button" class="text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeDetail">
-              <IconX class="h-5 w-5" />
-            </button>
+            </AppButton>
+            <AppCloseButton @click="closeDetail" />
           </div>
         </header>
 
-        <div class="flex gap-4 border-b border-line px-5">
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'configuraciones' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'configuraciones'">Configuraciones</button>
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'subprocesos' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'subprocesos'">Sub-procesos</button>
-          <button type="button" class="deasy-drawer__tab" :class="detailTab === 'corridas' ? 'deasy-drawer__tab--active' : ''" @click="detailTab = 'corridas'">Lanzamientos</button>
+        <div class="deasy-inline-tabs px-5" role="tablist">
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'configuraciones' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'configuraciones'" @click="detailTab = 'configuraciones'">Configuraciones</button>
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'subprocesos' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'subprocesos'" @click="detailTab = 'subprocesos'">Sub-procesos</button>
+          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'corridas' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'corridas'" @click="detailTab = 'corridas'">Lanzamientos</button>
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
@@ -190,15 +196,15 @@
                   </div>
                   <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
                     <template v-if="editable && cfg.status === 'draft'">
-                      <button type="button" class="font-semibold text-primary hover:underline" @click="editConfiguration(cfg, 'definition')">Editar</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Editar</button>
                       <span class="text-gray-300">·</span>
-                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'rules')">Reglas</button>
-                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
-                      <button type="button" class="font-semibold text-icon hover:underline" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'rules')">Reglas</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
                     </template>
                     <template v-else>
-                      <button type="button" class="font-semibold text-primary hover:underline" @click="editConfiguration(cfg, 'definition')">Ver</button>
-                      <button v-if="editable && cfg.status === 'active'" type="button" class="font-semibold text-success hover:underline" @click="launchConfiguration(cfg)">Lanzar</button>
+                      <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Ver</button>
+                      <button v-if="editable && cfg.status === 'active'" type="button" class="deasy-inline-action deasy-inline-action--success" @click="launchConfiguration(cfg)">Lanzar</button>
                     </template>
                   </div>
                 </li>
@@ -226,8 +232,29 @@
                   </div>
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
                     <span class="truncate text-muted">{{ ch.slug }}</span>
-                    <button type="button" class="ml-auto text-[11px] font-semibold text-primary hover:underline" @click="openProcessDetail(ch.id)">Abrir</button>
-                    <button v-if="editable" type="button" class="text-[11px] font-semibold text-danger hover:underline" @click="detachChild(ch.id)">Desvincular</button>
+                    <div class="ml-auto flex items-center gap-1">
+                      <AppButton
+                        variant="softInfo"
+                        size="sm"
+                        icon-only
+                        title="Abrir el sub-proceso"
+                        aria-label="Abrir el sub-proceso"
+                        @click="openProcessDetail(ch.id)"
+                      >
+                        <IconEye class="h-5 w-5" />
+                      </AppButton>
+                      <AppButton
+                        v-if="editable"
+                        variant="softDanger"
+                        size="sm"
+                        icon-only
+                        title="Desvincular del proceso padre"
+                        aria-label="Desvincular del proceso padre"
+                        @click="detachChild(ch.id)"
+                      >
+                        <IconUnlink class="h-5 w-5" />
+                      </AppButton>
+                    </div>
                   </div>
                 </li>
               </ul>
@@ -270,9 +297,7 @@
               {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
             </p>
           </div>
-          <button type="button" class="text-muted transition-colors hover:text-icon" title="Cerrar" @click="closeTemplateVersions">
-            <IconX class="h-5 w-5" />
-          </button>
+          <AppCloseButton @click="closeTemplateVersions" />
         </div>
         <div v-if="editable" class="flex flex-wrap gap-2 border-b border-line px-4 py-2.5">
           <AppButton variant="secondary" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
@@ -284,7 +309,7 @@
           <p class="m-0 mt-0.5">
             <template v-if="drawerHealthWarning.publishedVersion && editable">
               Debería usar la versión publicada
-              <button type="button" class="font-semibold text-primary underline" @click="useVersionInConfig(drawerHealthWarning.publishedVersion)">v{{ drawerHealthWarning.publishedVersion.storage_version }}</button>.
+              <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="useVersionInConfig(drawerHealthWarning.publishedVersion)">v{{ drawerHealthWarning.publishedVersion.storage_version }}</button>.
             </template>
             <template v-else-if="!drawerHealthWarning.publishedVersion">Este entregable no tiene ninguna versión publicada. Publica una o crea una nueva versión.</template>
           </p>
@@ -312,13 +337,13 @@
               </div>
               <div class="mt-1 flex items-center justify-between gap-2">
                 <span class="text-[11px] text-muted">{{ formatVersionDate(v.created_at) }}</span>
-                <button
+                <AppButton
                   v-if="editable && v.lifecycle_state !== 'retired' && String(v.id) !== String(templateDetail.pinnedArtifactId)"
-                  type="button"
-                  class="rounded-xl border border-brand-200 px-2 py-0.5 text-[11px] font-semibold text-primary transition-colors hover:bg-brand-100"
+                  variant="outlinePrimary"
+                  size="sm"
                   :title="templateDetail.configStatus === 'active' ? 'Prepara un borrador de la configuración con esta versión' : 'La configuración (borrador) usará esta versión'"
                   @click.stop="useVersionInConfig(v)"
-                >Usar en esta config</button>
+                >Usar en esta config</AppButton>
               </div>
             </li>
           </ul>
@@ -330,6 +355,7 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
@@ -343,7 +369,7 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
-import { IconX, IconPencil, IconArrowLeft, IconRefresh, IconDownload, IconPlus } from "@tabler/icons-vue";
+import { IconArrowLeft, IconDownload, IconEye, IconPencil, IconPlus, IconRefresh, IconUnlink } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
 import ProcessConfigNode from "./ProcessConfigNode.vue";
 import ProcessTemplateNode from "./ProcessTemplateNode.vue";

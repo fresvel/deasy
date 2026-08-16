@@ -10,7 +10,7 @@
   >
     <div class="h-full w-full border border-blue-light-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
       <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-info drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
-      <span class="text-[9px] sm:text-[10px] font-bold text-action-view bg-white/90 px-1.5 py-0.5 rounded border border-blue-light-200 uppercase tracking-widest text-center truncate max-w-full">
+      <span class="text-[9px] sm:text-[10px] font-bold text-info bg-white/90 px-1.5 py-0.5 rounded border border-blue-light-200 uppercase tracking-widest text-center truncate max-w-full">
         {{ label || 'Firma' }}
       </span>
     </div>
@@ -24,7 +24,7 @@
       <button
         v-if="allowDelete"
         @click.stop="$emit('delete')"
-        class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-rose-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-rose-600/92 active:scale-95"
+        class="deasy-pdf-action deasy-pdf-action--danger"
       >
         <IconTrash class="w-3.5 h-3.5" />
       </button>

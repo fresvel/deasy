@@ -53,10 +53,13 @@
     }
 
     .admin-workspace-frame--table {
-        /* El `!important` no es contra su hermano de arriba (a ese le gana por orden), sino
-           contra el `.border-slate-*` suelto del bloque (A), que gana a cualquier regla
-           capada que no sea importante. Muere con (A). */
-        border-color: transparent !important;
+        /* Aqui hubo un `!important`, y su motivo escrito era «contra el `.border-slate-*` suelto
+           del bloque (A)». **El bloque (A) esta vacio desde el 2026-08-13**: de la cabecera de
+           (A) hasta el final del fichero solo quedan comentarios de defuncion, ni una regla. Sin
+           adversario fuera de capa, este `border-color` gana a su hermano de arriba por ORDEN DE
+           DOCUMENTO dentro de la misma capa, que es como el comentario decia que ya ganaba.
+           Retirado el 2026-08-14 (fase 0.1): el `!important` no suprimia nada. */
+        border-color: transparent;
         box-shadow: none;
     }
 }
@@ -180,92 +183,50 @@ textarea:focus {
    alli. Capadas, el secundario de cabecera de tabla cambia de borde y su `:hover` pasa de
    la tinta violeta al gris de tabla — y el `:hover` la huella NO lo ve.
    ------------------------------------------------------------------------------------ */
-.deasy-btn--secondary,
-.deasy-btn--cancel,
-.deasy-auth-button--secondary,
-.admin-btn--secondary,
-.admin-btn--cancel {
+/* ⚠️ `--cancel` SALE TAMBIEN DE ESTAS DOS, y no solo del `:hover` de abajo. Una regla SIN CAPA
+   gana a CUALQUIER regla capada — tambien a un `:hover`. Asi que mientras el REPOSO de
+   `--cancel` estuviera aqui, su `:hover` de `@layer components` no podia pintar aunque el
+   hover azul se retirara: el reposo suelto seguia ganando. Comprobado con el raton encima:
+   el boton mostraba borde `--color-line` y texto `--color-strong`, o sea su reposo.
+
+   Estas reglas estan fuera de capa para ganarle a `.deasy-table-responsive .deasy-btn--secondary`
+   (0,2,0), que solo apunta a `--secondary`. `--cancel` nunca necesito estar aqui. */
+.deasy-btn--secondary {
   background-color: var(--color-white);
   border-color: var(--color-line);
 }
 
-.deasy-btn--secondary,
-.deasy-btn--cancel,
-.deasy-auth-button--secondary,
-.admin-btn--secondary,
-.admin-btn--cancel {
+.deasy-btn--secondary {
   color: var(--color-strong);
 }
 
-.deasy-btn--secondary:hover,
-.deasy-btn--cancel:hover,
-.admin-btn--secondary:hover,
-.admin-btn--cancel:hover {
+/* ⚠️ `--cancel` SALE DE ESTA LISTA — 2026-08-14, y el motivo enseña mas que el arreglo.
+   `buttons.css` declara un `:hover` ROJO para `--cancel` desde hace meses, dentro de
+   `@layer components`. Esta regla esta FUERA DE CAPA y le gana siempre, asi que ese hover
+   rojo **no ha pintado nunca**: `cancel` y `secondary` eran identicos tambien al pasar el
+   raton, y la variante no distinguia nada.
+
+   Se detecto porque alguien lo MIRO en el navegador despues de que se afirmara, leyendo solo
+   el CSS, que se diferenciaban. Es el patron dominante de este repo —reglas que existen y no
+   aplican— y la unica defensa es abrir la pagina. */
+.deasy-btn--secondary:hover {
   color: var(--color-primary);
   background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
   border-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
-/* ── Los 12 botones de accion. FUERA DE CAPA — LEER LA CABECERA DE `buttons.css` ──────
-   Estos reposos y la caja de `buttons.css` son una sola pieza en dos ficheros y ninguna
-   mitad puede bajar: dentro de la capa les gana `.deasy-table-responsive .deasy-btn`
-   (0,2,0) y los 12 se pintan como un `--secondary`. Medido: 239 nodos en el organigrama.
+/* ══ AQUI VIVIAN LOS REPOSOS DE LOS 12 BOTONES DE ACCION — muertos el 2026-08-14 ═══════
+   Esta era la otra mitad de la pieza; la caja y los `:hover` estaban en `buttons.css`, y su
+   cabecera lo decia: ninguna mitad podia bajar sola. Ya no hay pieza — los 12 son variantes
+   del componente, y su relleno de reposo sale del eje `--tone-fill` en vez de tres
+   porcentajes escritos a mano.
 
-   ⚠️ El ancestro es `.deasy-table-responsive`, NO `.deasy-table-shell`: esa segunda
-   compartia lista de selectores con ella y no estaba en una sola plantilla, asi que los
-   239 nodos siempre los puso la primera. */
-.hope-action-btn {
-  background-color: color-mix(in srgb, var(--color-action-neutral) 3%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-action-neutral) 71%, var(--color-white));
-  color: var(--color-action-neutral);
-  box-shadow: var(--elev-1);
-}
-
-.hope-action-view {
-  background-color: color-mix(in srgb, var(--color-action-view) 11%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
-  color: var(--color-action-view);
-}
-
-.hope-action-edit,
-.hope-action-select,
-.hope-action-assign,
-.hope-action-launch {
-  background-color: color-mix(in srgb, var(--color-success) 10%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-success) 71%, var(--color-white));
-  color: var(--color-success);
-}
-
-.hope-action-version,
-.hope-action-download,
-.hope-action-upload {
-  background-color: color-mix(in srgb, var(--color-action-upload) 11%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-action-upload) 71%, var(--color-white));
-  color: var(--color-action-upload);
-}
-
-.hope-action-delete,
-.hope-action-delete-strong {
-  background-color: color-mix(in srgb, var(--color-danger) 9%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-danger) 71%, var(--color-white));
-  color: var(--color-danger);
-}
-
-/* ⚠️ Este par pasa 1.4.11 POR 0.01 (3.01:1). No retoques `--color-warning` sin volver a
-   medir estos dos botones. */
-.hope-action-delete-pdf,
-.hope-action-retire {
-  background-color: color-mix(in srgb, var(--color-warning) 9%, var(--color-white));
-  border-color: color-mix(in srgb, var(--color-warning) 71%, var(--color-white));
-  color: var(--color-warning);
-}
-
-/* Gana a los seis `:hover` de `buttons.css` por ORDEN DE DOCUMENTO: `index.css` importa
-   `buttons.css` antes que este. */
-.hope-action-btn:hover {
-  border-color: currentColor;
-  filter: saturate(1.05);
-}
+   Con ellos se van **dos bloques enteros fuera de capa**, que eran 20 de las 28 reglas de
+   deuda que la fase 6 tiene que capar. El motivo por el que no podian entrar en una capa
+   —`.deasy-table-responsive .deasy-btn` (0,2,0) les ganaba y los pintaba como un secundario,
+   239 nodos medidos en el organigrama— se resolvio donde tocaba: esa regla es de DENSIDAD y
+   ahora excluye la forma que no gobierna, el boton cuadrado de icono.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
 
 /* ======================================================================================
    (A) REPINTADO DE UTILIDADES DE TAILWIND — y NADA MAS. Ni un selector de componente.
@@ -277,7 +238,7 @@ textarea:focus {
    escaparan 120 apariciones.
 
    ⚠️ **ESTOS SELECTORES NO SON USOS.** Un script de migracion los reescribio una vez y
-   rompio el repintado en silencio (el escape del `/` en `.bg-slate-50\/70` burla el limite
+   rompio el repintado en silencio (el escape del `/` en `.bg-slate-50\\/70` burla el limite
    por la derecha). Al migrar por script, excluye este fichero o revisalo a mano.
    ====================================================================================== */
 

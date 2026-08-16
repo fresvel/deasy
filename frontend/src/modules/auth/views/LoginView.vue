@@ -41,7 +41,7 @@
           <button
             type="button"
             @click="showPassword = !showPassword"
-            class="absolute inset-y-0 right-0 flex items-center pr-4 text-muted transition-colors hover:text-info"
+            class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
             aria-label="Mostrar u ocultar contraseña"
           >
             <IconEye v-if="!showPassword" class="h-5 w-5" />
@@ -54,7 +54,7 @@
         <router-link to="/recover-password" class="deasy-auth-link">¿Olvidaste tu contraseña?</router-link>
       </div>
 
-      <button type="submit" class="deasy-auth-button">
+      <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block">
         Ingresar
         <IconArrowRight class="h-5 w-5" />
       </button>
@@ -71,9 +71,7 @@
       <div v-if="errorMessage" class="deasy-alert deasy-alert--danger mt-5 flex">
         <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
         <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
-        <button @click="clearToast" class="ml-3 text-red-400 transition-colors hover:text-danger" aria-label="Cerrar alerta">
-          <IconX class="h-5 w-5" />
-        </button>
+        <AppCloseButton class="ml-3" label="Cerrar alerta" @click="clearToast" />
       </div>
     </Transition>
 
@@ -84,11 +82,12 @@
       </div>
     </div>
 
-    <router-link to="/register" class="deasy-auth-button deasy-auth-button--secondary">Crear usuario</router-link>
+    <router-link to="/register" class="deasy-btn deasy-btn--secondary deasy-btn--lg deasy-btn--block">Crear usuario</router-link>
   </AuthLayout>
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
@@ -96,7 +95,7 @@ import AuthLayout from "@/layouts/auth/AuthLayout.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import { getDefaultAuthenticatedRoute } from "@/core/utils/accessControl.js";
 import { resolveApiErrorMessage } from "@/shared/utils/apiError.js";
-import { IconUser, IconLock, IconEye, IconEyeOff, IconAlertCircle, IconX, IconArrowRight } from "@tabler/icons-vue";
+import { IconUser, IconLock, IconEye, IconEyeOff, IconAlertCircle, IconArrowRight } from "@tabler/icons-vue";
 
 // El login escala el mensaje por codigo de estado, cosa que el resto de pantallas no hace: un 500 se
 // traduce a un texto propio ignorando lo que diga el backend (un fallo interno no es asunto del usuario),

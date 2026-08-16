@@ -69,7 +69,7 @@ const onCardClick = (event) => {
         >
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
-              <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-2xl" :class="h.getDeliverableCardTone(deliverable.item).iconChip">
+              <span class="deasy-icon-box deasy-icon-box--sm" :class="h.getDeliverableCardTone(deliverable.item).iconChip">
                 <component :is="h.getDeliverableStateIcon(deliverable.item)" class="h-3.5 w-3.5" />
               </span>
               <span class="truncate text-[0.7rem] font-semibold uppercase tracking-[0.14em]" :class="h.getDeliverableCardTone(deliverable.item).responsibilityLabel">
@@ -102,8 +102,7 @@ const onCardClick = (event) => {
             aria-label="Abrir detalle del entregable"
             title="Abrir detalle del entregable"
             @click.stop
-            @click="emit('open', deliverable)"
-          >
+            @click="emit('open', deliverable)" icon-only>
             <IconEye class="h-[1.15rem] w-[1.15rem]" />
           </AppButton>
         </div>
@@ -126,25 +125,25 @@ const onCardClick = (event) => {
 
         <div class="mt-auto grid grid-cols-[minmax(0,1fr)_auto] gap-2.5 border-t border-line pt-3">
           <button v-if="h.shouldShowStartDeliverable(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--start" :disabled="processingFillItemId === deliverable.item.id || !h.canStartDeliverableAction(deliverable.item)" @click="emit('start', deliverable.item)">
-            <div class="deasy-deliverable-action__chip"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
+            <div class="deasy-icon-box deasy-icon-box--md deasy-deliverable-action__chip"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
             <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
           </button>
-          <PdfDropField v-else-if="h.shouldShowUploadDeliverable(deliverable.item)" class="deliverable-inline-upload h-full" :input-id="`deliverable-upload-${deliverable.item.id}`" variant="compact" :icon="IconUpload" :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable" :title="''" :action-text="h.getUploadActionLabel(deliverable.item)" help-text="" :accept="UPLOAD_ACCEPT" @files-selected="emit('upload', { item: deliverable.item, files: $event })" />
+          <PdfDropField v-else-if="h.shouldShowUploadDeliverable(deliverable.item)" class="h-full" :input-id="`deliverable-upload-${deliverable.item.id}`" variant="compact" :icon="IconUpload" :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable" :title="''" :action-text="h.getUploadActionLabel(deliverable.item)" help-text="" :accept="UPLOAD_ACCEPT" @files-selected="emit('upload', { item: deliverable.item, files: $event })" />
           <button v-else-if="h.shouldShowSign(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--sign" :disabled="!deliverable.item.actions?.implemented?.sign" @click="emit('sign', deliverable.item)">
-            <div class="deasy-deliverable-action__chip"><IconSignature class="h-4.5 w-4.5" /></div>
+            <div class="deasy-icon-box deasy-icon-box--md deasy-deliverable-action__chip"><IconSignature class="h-4.5 w-4.5" /></div>
             <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Firmar</span></div>
           </button>
           <button v-else type="button" class="group deasy-deliverable-action deasy-deliverable-action--open" @click="emit('open', deliverable)">
-            <div class="deasy-deliverable-action__chip"><IconChecklist class="h-4.5 w-4.5" /></div>
+            <div class="deasy-icon-box deasy-icon-box--md deasy-deliverable-action__chip"><IconChecklist class="h-4.5 w-4.5" /></div>
             <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Abrir</span></div>
           </button>
 
           <div class="flex h-full items-center justify-end gap-1.5">
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/90 bg-white text-success transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)"><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Descargar PDF" @click="emit('download', deliverable.item)"><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)"><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="plain" class-name="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-blue-light-200/90 bg-white text-info transition-all hover:-translate-y-0.5 hover:border-blue-light-300 hover:bg-blue-light-50 focus:outline-none focus:ring-4" aria-label="Ver PDF" @click="emit('preview', deliverable.item)"><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>
-            <AppButton variant="plain" :class-name="['group inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4', h.getDeliverableHeaderActionTone(deliverable.item)].join(' ')" :disabled="!deliverable.item.actions?.can_open_process_chat" aria-label="Abrir chat" @click="emit('chat', deliverable.item)"><IconMessages class="h-[1.3rem] w-[1.3rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="softSuccess" size="sm" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)" icon-only><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="softInfo" size="sm" aria-label="Descargar PDF" @click="emit('download', deliverable.item)" icon-only><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="softInfo" size="sm" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)" icon-only><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadPdfPath" variant="softInfo" size="sm" aria-label="Ver PDF" @click="emit('preview', deliverable.item)" icon-only><IconEye class="h-[1.15rem] w-[1.15rem]" /></AppButton>
+            <AppButton variant="plain" :class-name="['group inline-flex rounded-xl border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4', h.getDeliverableHeaderActionTone(deliverable.item)].join(' ')" :disabled="!deliverable.item.actions?.can_open_process_chat" aria-label="Abrir chat" @click="emit('chat', deliverable.item)" icon-only><IconMessages class="h-[1.3rem] w-[1.3rem]" /></AppButton>
           </div>
         </div>
       </div>

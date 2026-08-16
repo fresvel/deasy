@@ -1,12 +1,14 @@
 <template>
-  <div class="inline-flex items-center gap-1">
+  <!-- `gap-2` (8 px) reemplaza al `gap-1` mas el `margin: 0 0.15rem` que cada boton llevaba
+       dentro de si: 8.8 px repartidos en dos sitios pasan a 8 en uno solo. El espacio entre
+       botones es del contenedor, no del boton. -->
+  <div class="inline-flex items-center gap-2">
     <slot name="prepend" />
     <AdminButton
       v-if="showView"
-      variant="secondary"
+      variant="softInfo"
       size="sm"
       icon-only
-      class-name="hope-action-btn hope-action-view"
       :title="viewTitle"
       :aria-label="viewLabel"
       @click="$emit('view')"
@@ -17,10 +19,9 @@
     <slot name="edit">
       <AdminButton
         v-if="showEdit"
-        variant="secondary"
+        variant="softSuccess"
         size="sm"
         icon-only
-        class-name="hope-action-btn hope-action-edit"
         :title="editTooltip"
         :aria-label="editTooltip"
         @click="$emit('edit')"
@@ -35,10 +36,9 @@
     <slot name="append" />
     <AdminButton
       v-if="showDelete"
-      variant="secondary"
+      variant="softDanger"
       size="sm"
       icon-only
-      class-name="hope-action-btn hope-action-delete"
       :title="deleteMessage"
       :aria-label="deleteMessage"
       @click="$emit('delete')"

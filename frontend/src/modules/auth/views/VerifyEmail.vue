@@ -9,7 +9,7 @@
     </router-link>
 
     <div class="mb-8 flex flex-col items-center text-center">
-      <div class="w-14 h-14 bg-blue-light-50 rounded-2xl flex items-center justify-center text-info mb-6">
+      <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--info mb-6">
         <IconMailCheck class="h-7 w-7" />
       </div>
       <h1 class="deasy-auth-title text-2xl">Verificar correo</h1>
@@ -51,7 +51,7 @@
 
     <button
       type="button"
-      class="deasy-auth-button"
+      class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block"
       :disabled="loading || !isCodeComplete"
       @click="submit"
     >

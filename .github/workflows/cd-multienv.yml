@@ -122,6 +122,12 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: pnpm install --frozen-lockfile
+      # ⚠️ `pnpm run lint` es la cadena ENTERA a propósito: eslint + no-dark + orphan-classes +
+      # no-arbitrary + contraste + stylelint. No añadas aquí un paso por gate. Hasta el
+      # 2026-08-14 `lint:css` era un script suelto que no invocaba ningún workflow, así que sus
+      # tres reglas estaban escritas y no bloqueaban un solo merge; encadenarlas en el `lint` del
+      # package.json hace que un gate nuevo entre en CI sin tocar este fichero — que es
+      # exactamente el olvido que las dejó fuera.
       - name: Lint frontend
         working-directory: frontend
         run: pnpm run lint

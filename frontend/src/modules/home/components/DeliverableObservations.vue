@@ -88,7 +88,7 @@ const onAdd = () => {
           <button
             v-else-if="observation.can_resolve"
             type="button"
-            class="mt-1 text-xs font-semibold text-info transition hover:text-info disabled:opacity-50"
+            class="deasy-inline-action deasy-inline-action--primary mt-1"
             :disabled="resolvingId === observation.id"
             @click="emit('resolve', observation)"
           >

@@ -22,17 +22,12 @@
               <slot name="title">{{ title }}</slot>
             </h5>
           </slot>
-          <button
+          <AppCloseButton
             v-if="showCloseButton"
-            type="button"
-            class="deasy-btn--close flex h-9 w-9 items-center justify-center transition-colors"
-            :aria-label="closeLabel"
-            :title="closeLabel"
+            :label="closeLabel"
             v-bind="closeButtonAttrs"
             @click="handleClose"
-          >
-            <IconX class="h-4 w-4" stroke-width="2.5" />
-          </button>
+          />
         </div>
         <div class="deasy-dialog-body" :class="bodyClass">
           <slot />
@@ -50,8 +45,8 @@
 </template>
 
 <script setup>
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { computed, ref, useAttrs } from "vue";
-import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({
   title: {

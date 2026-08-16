@@ -11,12 +11,12 @@
           Entregables abiertos en tus unidades (y sus dependencias) que no tienen responsable o cuyo titular ya no ocupa el puesto.
         </p>
       </div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1 rounded-2xl border border-line px-2.5 py-1 text-xs font-semibold text-icon transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-50"
+      <AppButton
+        variant="secondary"
+        size="sm"
         :disabled="loading"
         @click="load"
-      >↻ Actualizar</button>
+      >↻ Actualizar</AppButton>
     </div>
 
     <div v-if="loading" class="rounded-xl border border-line bg-surface px-4 py-4 text-sm font-medium text-muted">

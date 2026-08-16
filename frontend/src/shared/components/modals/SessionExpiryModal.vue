@@ -10,7 +10,7 @@
   >
     <template #title>
       <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-warning">
+        <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round deasy-icon-box--warning">
           <IconAlertTriangle class="w-6 h-6" />
         </div>
         <span>Sesión por expirar</span>

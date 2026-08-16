@@ -35,7 +35,7 @@
         :key="`attachment-${attachment.id}`"
         class="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2.5"
       >
-        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-surface text-muted"><IconFileDescription class="h-4.5 w-4.5" /></span>
+        <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral"><IconFileDescription class="h-4.5 w-4.5" /></span>
         <div class="min-w-0 flex-1">
           <p class="m-0 truncate text-sm font-semibold text-strong" :title="attachment.file_name">{{ attachment.file_name }}</p>
           <p class="m-0 mt-0.5 flex items-center gap-2 text-[0.7rem] font-medium text-muted">
@@ -44,8 +44,8 @@
             <span v-if="attachment.description" class="truncate">· {{ attachment.description }}</span>
           </p>
         </div>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-info transition hover:border-blue-light-300 hover:bg-blue-light-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
-        <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center deasy-card text-danger transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
+        <AppButton variant="softInfo" size="sm" icon-only title="Descargar anexo" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-5 w-5" /></AppButton>
+        <AppDeleteButton label="Eliminar anexo" @click="handleAttachmentDelete(attachment)" />
       </li>
     </ul>
   </section>
@@ -59,6 +59,7 @@
 //
 // De las 4 pestañas del modal es la de frontera más limpia (7 deps). formatAttachmentSize se
 // importa del módulo de helpers, no se recibe.
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import { IconUpload, IconDownload, IconFileDescription, IconX } from '@tabler/icons-vue';
 import { formatAttachmentSize } from '@/modules/home/views/homeView.helpers.js';
 

@@ -49,18 +49,19 @@
                   :aria-selected="activeConsolidatedUnitTab === unit.id"
                   @click="selectConsolidatedUnit(unit)"
                 >
+                  <IconBuilding class="deasy-inline-tab__icon" />
                   {{ unit.name }}
                 </button>
               </div>
               <div class="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-full border border-brand-300 bg-white px-3.5 py-2 text-sm font-semibold text-primary transition hover:-translate-y-0.5 hover:bg-brand-50"
+                <AppButton
+                  variant="outlinePrimary"
+                  size="sm"
                   @click="openGeneralTaskModal('free')"
                 >
                   <IconPlus class="h-4 w-4" />
                   <span>Nueva tarea</span>
-                </button>
+                </AppButton>
                 <button
                   type="button"
                   class="deasy-hero-back-button"
@@ -79,7 +80,7 @@
                   <span class="sr-only">Procesos</span>
                   <button
                     type="button"
-                    class="deasy-filter-control flex w-full items-center justify-between gap-2 text-left"
+                    class="deasy-filter-control deasy-filter-control--trigger w-full"
                     :disabled="!consolidatedCargoProcesses.length"
                     @click="showProcessMultiSelect = !showProcessMultiSelect"
                   >
@@ -92,7 +93,7 @@
                   >
                     <button
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-semibold text-body hover:bg-surface"
+                      class="deasy-option deasy-option--strong"
                       @click="toggleAllConsolidatedProcesses"
                     >
                       <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">
@@ -105,7 +106,7 @@
                       v-for="process in consolidatedCargoProcesses"
                       :key="process.process_definition_id || process.id"
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-medium text-icon hover:bg-surface"
+                      class="deasy-option"
                       @click="toggleConsolidatedProcess(process.process_definition_id || process.id)"
                     >
                       <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">
@@ -136,7 +137,7 @@
                   Entregables visibles: <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
                 </div>
                 <div class="deasy-filter-actions">
-                  <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTaskListFilters">Reset</AppButton>
+                  <AppButton variant="secondary" icon-only size="sm" @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
                 </div>
               </div>
             </div>
@@ -153,12 +154,13 @@
                 :aria-selected="activeConsolidatedCargoTab === cargo.id"
                 @click="selectConsolidatedCargo(cargo)"
               >
+                <IconBriefcase class="deasy-inline-tab__icon" />
                 {{ cargo.name }}
               </button>
             </div>
 
             <!-- Estado de carga / error -->
-            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-info rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
             <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger">
@@ -191,8 +193,8 @@
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
-                        variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
+                        variant="secondary"
+                        size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir todo' : 'Colapsar todo'"
                         @click="toggleDeliverableProcess"
                       >
@@ -203,7 +205,7 @@
                     </div>
                     <div v-for="group in deliverableGroups" :key="group.id" class="flex flex-col gap-3">
                       <div v-if="showDeliverableGroupHeaders" class="flex items-center gap-2 px-1">
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-2xl bg-brand-100 text-primary"><IconChecklist class="h-3.5 w-3.5" /></span>
+                        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconChecklist class="h-3.5 w-3.5" /></span>
                         <h3 class="m-0 text-sm font-bold text-body">{{ group.name }}</h3>
                         <span class="text-xs font-semibold text-muted">{{ group.items.length }}</span>
                       </div>
@@ -268,6 +270,7 @@
                   :aria-selected="activeUnitPanelTab === unit.id"
                   @click="activeUnitPanelTab = unit.id"
                 >
+                  <IconBuilding class="deasy-inline-tab__icon" />
                   {{ unit.name }}
                 </button>
               </div>
@@ -290,7 +293,7 @@
                           v-for="process in unit.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left transition hover:border-blue-light-200 hover:shadow-md"
+                          class="deasy-picker"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -343,6 +346,7 @@
                   :aria-selected="activeCargoPanelTab === cargo.id"
                   @click="activeCargoPanelTab = cargo.id"
                 >
+                  <IconBriefcase class="deasy-inline-tab__icon" />
                   {{ cargo.name }}
                 </button>
               </div>
@@ -367,9 +371,9 @@
                           v-if="pos.positionType"
                           class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
                           :class="{
-                            'bg-emerald-100 text-success': pos.positionType === 'real',
-                            'bg-blue-light-100 text-info': pos.positionType === 'simbolico',
-                            'bg-amber-100 text-warning': pos.positionType === 'promocion',
+                            'deasy-icon-box--success': pos.positionType === 'real',
+                            'deasy-icon-box--info': pos.positionType === 'simbolico',
+                            'deasy-icon-box--warning': pos.positionType === 'promocion',
                           }"
                         >
                           {{ { real: 'Real', simbolico: 'Simbólico', promocion: 'Promoción' }[pos.positionType] ?? pos.positionType }}
@@ -385,7 +389,7 @@
                           v-for="process in pos.processes"
                           :key="process.process_definition_id || process.id"
                           type="button"
-                          class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3 text-left transition hover:border-blue-light-200 hover:shadow-md"
+                          class="deasy-picker"
                           @click="handleProcessSelect(process)"
                         >
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
@@ -425,6 +429,7 @@
                 :aria-selected="homeDashTab === 'inicio'"
                 @click="homeDashTab = 'inicio'"
               >
+                <IconHome2 class="deasy-inline-tab__icon" />
                 Inicio
               </button>
               <button
@@ -435,6 +440,7 @@
                 :aria-selected="homeDashTab === 'resumen'"
                 @click="homeDashTab = 'resumen'"
               >
+                <IconChartBar class="deasy-inline-tab__icon" />
                 Resumen
                 <span v-if="homeActions.length" class="deasy-inline-tab__badge" :class="homeDashTab === 'resumen' ? 'deasy-inline-tab__badge--active' : ''">
                   {{ homeActions.length }}
@@ -447,7 +453,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+                class="deasy-tile"
                 @click="scrollToProcessNav"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis procesos</h3>
@@ -462,7 +468,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md"
+                class="deasy-tile"
                 :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
                 @click="navigateToGlobalSignaturePage"
               >
@@ -481,7 +487,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="openMySends"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis envíos</h3>
@@ -496,7 +502,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="navigateToDocumentCenterPage"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Centro documental</h3>
@@ -511,7 +517,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="navigateTo('perfil')"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>
@@ -526,7 +532,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-line-strong hover:bg-surface/40 hover:shadow-md"
+                class="deasy-tile"
                 @click="openCargosPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis cargos</h3>
@@ -541,7 +547,7 @@
 
               <button
                 type="button"
-                class="flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-left transition hover:border-brand-200 hover:bg-brand-50/30 hover:shadow-md"
+                class="deasy-tile"
                 @click="openUnitsPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis unidades</h3>
@@ -581,7 +587,7 @@
                     v-for="action in homeActions"
                     :key="action.key"
                     type="button"
-                    class="flex items-center gap-3 rounded-xl border border-line/80 bg-white px-4 py-3.5 text-left transition hover:shadow-md"
+                    class="deasy-picker"
                     :class="{
                       'hover:border-amber-200': action.tone === 'warning',
                       'hover:border-blue-light-200': action.tone === 'info',
@@ -590,12 +596,12 @@
                     @click="runHomeAction(action)"
                   >
                     <span
-                      class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      class="deasy-icon-box deasy-icon-box--lg"
                       :class="{
-                        'bg-amber-100 text-warning': action.tone === 'warning',
-                        'bg-blue-light-100 text-info': action.tone === 'info',
-                        'bg-emerald-100 text-success': action.tone === 'success',
-                        'bg-surface text-icon': !['warning','info','success'].includes(action.tone),
+                        'deasy-icon-box--warning': action.tone === 'warning',
+                        'deasy-icon-box--info': action.tone === 'info',
+                        'deasy-icon-box--success': action.tone === 'success',
+                        'deasy-icon-box--neutral': !['warning','info','success'].includes(action.tone),
                       }"
                     >
                       <component :is="action.icon" class="h-5 w-5" />
@@ -619,13 +625,13 @@
                     class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3"
                   >
                     <span
-                      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
+                      class="deasy-icon-box deasy-icon-box--md"
                       :class="{
-                        'bg-blue-light-100 text-info': stat.tone === 'sky',
-                        'bg-emerald-100 text-success': stat.tone === 'emerald',
-                        'bg-brand-100 text-primary': stat.tone === 'indigo',
-                        'bg-amber-100 text-warning': stat.tone === 'amber',
-                        'bg-surface text-icon': stat.tone === 'slate',
+                        'deasy-icon-box--info': stat.tone === 'sky',
+                        'deasy-icon-box--success': stat.tone === 'emerald',
+                        'deasy-icon-box--primary': stat.tone === 'indigo',
+                        'deasy-icon-box--warning': stat.tone === 'amber',
+                        'deasy-icon-box--neutral': stat.tone === 'slate',
                       }"
                     >
                       <component :is="stat.icon" class="h-4.5 w-4.5" />
@@ -660,6 +666,7 @@
                   :aria-selected="activeProcessUnitTab === tab.key"
                   @click="activeProcessUnitTab = tab.key"
                 >
+                  <IconBuilding class="deasy-inline-tab__icon" />
                   {{ tab.label }}
                 </button>
               </div>
@@ -689,7 +696,7 @@
               </div>
             </div>
 
-            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-action-view rounded-2xl p-5 font-semibold text-sm animate-pulse">
+            <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-info rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando la configuración seleccionada...
             </section>
 
@@ -720,32 +727,32 @@
                   <section class="overflow-hidden rounded-[2rem] border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="openTaskFiltersModal">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                        <button type="button" class="deasy-picker group" @click="openTaskFiltersModal">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--outlined">
                             <IconSearch class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
                             <span class="text-sm font-bold text-strong">Filtrar tareas</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="navigateToDocumentCenterPage">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                        <button type="button" class="deasy-picker group" @click="navigateToDocumentCenterPage">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--outlined">
                             <IconFileDescription class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
                             <span class="text-sm font-bold text-strong">Centro documental</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40" @click="navigateToGlobalSignaturePage">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                        <button type="button" class="deasy-picker group" @click="navigateToGlobalSignaturePage">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--outlined">
                             <IconSignature class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
                             <span class="text-sm font-bold text-strong">Firma global</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-line/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(var(--elev-ink-rgb),0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface/70" @click="openGeneralTaskModal('free')">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-line bg-surface/80 text-icon transition-all group-hover:border-line-strong group-hover:bg-surface">
+                        <button type="button" class="deasy-picker group" @click="openGeneralTaskModal('free')">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--neutral deasy-icon-box--outlined">
                             <IconPlus class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
@@ -778,7 +785,7 @@
                   <section v-if="isRoutedProcess" class="px-2 md:px-3 xl:px-4">
                     <div class="rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50/60 via-white to-blue-light-50/40 p-4 flex flex-wrap items-center justify-between gap-3">
                       <div class="flex items-center gap-3">
-                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 bg-white text-primary">
+                        <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--outlined">
                           <IconSend class="h-5 w-5" />
                         </span>
                         <div class="flex min-w-0 flex-col">
@@ -829,8 +836,8 @@
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
-                        variant="plain"
-                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-line bg-white text-xs font-semibold text-muted transition hover:border-blue-light-200 hover:bg-blue-light-50 hover:text-info"
+                        variant="secondary"
+                        size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         :title="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         @click="toggleDeliverableProcess"
@@ -943,7 +950,7 @@
             class="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition-colors"
             :class="taskLaunchStep >= step.id ? 'border-blue-light-200 bg-blue-light-50 text-info' : 'border-line bg-white text-muted'"
           >
-            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]" :class="taskLaunchStep >= step.id ? 'bg-blue-light-600 text-white' : 'bg-gray-200 text-muted'">
+            <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round" :class="taskLaunchStep >= step.id ? 'bg-blue-light-600 text-white' : 'bg-gray-200 text-muted'">
               {{ step.id }}
             </span>
             <span>{{ step.label }}</span>
@@ -1112,7 +1119,7 @@
         </section>
       </div>
       <template #footer>
-        <AppButton variant="secondary" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
+        <AppButton variant="cancel" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
           Cancelar
         </AppButton>
         <AppButton
@@ -1221,9 +1228,9 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="softNeutral" class-name="deasy-filter-btn" @click="resetTaskListFilters">Reset</AppButton>
+        <AppButton variant="secondary" icon-only @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
         <AppButton variant="secondary" @click="closeTaskFiltersModal">Cerrar</AppButton>
-        <AppButton variant="primary" class-name="deasy-filter-btn" @click="closeTaskFiltersModal">Aplicar</AppButton>
+        <AppButton variant="primary" @click="closeTaskFiltersModal">Aplicar</AppButton>
       </template>
     </AppModalShell>
 
@@ -1255,7 +1262,7 @@
       <div class="flex flex-col gap-5">
         <div
           v-if="fillWorkflowState.subject || signatureFlowState.subject"
-          class="flex flex-wrap items-center gap-2 border-b border-line pb-3"
+          class="deasy-inline-tabs"
           role="tablist"
           aria-label="Secciones del entregable"
         >
@@ -1265,10 +1272,11 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'summary'"
             :tabindex="deliverableWorkspaceState.tab === 'summary' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('summary')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'summary' }"
             @click="deliverableWorkspaceState.tab = 'summary'"
           >
+            <IconInfoCircle class="deasy-inline-tab__icon" />
             General
           </button>
           <button
@@ -1277,10 +1285,11 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'fill'"
             :tabindex="deliverableWorkspaceState.tab === 'fill' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('fill')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'fill' }"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
+            <IconSend class="deasy-inline-tab__icon" />
             Entrega
           </button>
           <button
@@ -1289,10 +1298,11 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'signature'"
             :tabindex="deliverableWorkspaceState.tab === 'signature' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('signature')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'signature' }"
             @click="deliverableWorkspaceState.tab = 'signature'"
           >
+            <IconSignature class="deasy-inline-tab__icon" />
             Firmas
           </button>
           <button
@@ -1301,10 +1311,11 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'attachments'"
             :tabindex="deliverableWorkspaceState.tab === 'attachments' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('attachments')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'attachments' }"
             @click="deliverableWorkspaceState.tab = 'attachments'"
           >
+            <IconPaperclip class="deasy-inline-tab__icon" />
             Anexos
             <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brand-100 px-1 text-[0.65rem] font-bold text-primary">{{ attachmentsState.items.length }}</span>
           </button>
@@ -1581,7 +1592,7 @@
                 <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
+                    <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                       {{ step.step_order }}
                     </span>
                     <div class="flex flex-col gap-1">
@@ -1703,7 +1714,7 @@
               </AppButton>
               <AppButton
                 v-if="canCancelFillRequest"
-                variant="softNeutral"
+                variant="cancel"
                 size="sm"
                 :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
@@ -1822,7 +1833,7 @@
                 <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
+                    <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                       {{ step.step_order || '—' }}
                     </span>
                     <div class="flex flex-col gap-1">
@@ -1947,7 +1958,7 @@
         />
       </div>
       <template #footer>
-        <AppButton variant="secondary" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">
+        <AppButton variant="cancel" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">
           Cancelar
         </AppButton>
         <AppButton variant="primary" :disabled="!selectedDeliverableUploadFile || isUploadingDeliverable" @click="submitDeliverableUpload">
@@ -1971,7 +1982,7 @@
             ? 'bg-rose-50 border border-rose-200 text-danger'
             : deliverableOperationState.type === 'success'
               ? 'bg-emerald-50 border border-emerald-200 text-success'
-              : 'bg-blue-light-50 border border-blue-light-200 text-action-view'"
+              : 'bg-blue-light-50 border border-blue-light-200 text-info'"
         >
           {{ deliverableOperationState.message }}
         </div>
@@ -2043,7 +2054,7 @@
         </p>
       </div>
       <template #footer>
-        <AppButton variant="secondary" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
+        <AppButton variant="cancel" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
           Cancelar
         </AppButton>
         <AppButton variant="warning" :disabled="deliverableResetState.submitting" @click="submitDeliverableReset">
@@ -2073,11 +2084,11 @@
               <button
                 v-if="canReplacePreviewFillFile"
                 type="button"
-                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-line/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker group"
                 :disabled="isUploadingDeliverable"
                 @click="openPreviewDeliverableUploadModal"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-blue-light-100/95 bg-blue-light-50/55 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--info deasy-icon-box--outlined">
                   <IconUpload class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2089,11 +2100,11 @@
               <button
                 v-if="canApprovePreviewFillRequest"
                 type="button"
-                class="deasy-alert deasy-alert--success group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker deasy-picker--flat deasy-alert deasy-alert--success"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'approve')"
               >
-                <div class="deasy-alert deasy-alert--success flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-emerald-100/95 transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--success">
                   <IconCircleCheck class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2105,11 +2116,11 @@
               <button
                 v-if="canReturnPreviewFillRequest"
                 type="button"
-                class="deasy-alert deasy-alert--warning group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/45 hover:shadow-[0_10px_20px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker deasy-picker--flat deasy-alert deasy-alert--warning"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'return')"
               >
-                <div class="deasy-alert deasy-alert--warning flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-amber-100/95 transition-all group-hover:border-amber-200 group-hover:bg-amber-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--warning">
                   <IconMinus class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2119,11 +2130,11 @@
               <button
                 v-if="canRejectPreviewFillRequest"
                 type="button"
-                class="deasy-alert deasy-alert--danger group relative flex items-center gap-2.5 rounded-[1rem] border-line/90 bg-white text-left shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50/45 hover:shadow-[0_10px_20px_rgba(244,63,94,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                class="deasy-picker deasy-picker--flat deasy-alert deasy-alert--danger"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'reject')"
               >
-                <div class="deasy-alert deasy-alert--danger flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-rose-100/95 transition-all group-hover:border-rose-200 group-hover:bg-rose-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--danger">
                   <IconX class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2196,33 +2207,37 @@ import {
 } from '@/shared/utils/workspaceNavIcons.js';
 
 import {
-  IconGlobe,
-  IconDownload,
-  IconFileDescription,
-  IconEye,
-  IconSignature,
-  IconUpload,
   IconAlertTriangle,
+  IconArrowBackUp,
   IconArrowLeft,
   IconArrowRight,
   IconBuildingMonument,
   IconBriefcase,
+  IconBuilding,
+  IconChartBar,
   IconCheck,
+  IconChecklist,
   IconChevronDown,
-  IconArrowBackUp,
   IconCircleCheck,
+  IconDownload,
+  IconEye,
   IconFileCheck,
+  IconFileDescription,
   IconFiles,
+  IconGlobe,
+  IconHome2,
   IconInfoCircle,
   IconMessages,
-  IconSend,
   IconMinus,
+  IconPaperclip,
   IconPlayerPlayFilled,
   IconPlus,
   IconRefresh,
-  IconChecklist,
   IconSearch,
+  IconSend,
+  IconSignature,
   IconSquareCheck,
+  IconUpload,
   IconUserCheck,
   IconX
 } from '@tabler/icons-vue';
@@ -3192,7 +3207,6 @@ const {
   getDeliverableTagGroups,
   getDeliverableUnitLabel,
   getDeliverableWorkspacePayload,
-  getDeliverableWorkspaceTabClass,
   getFileExtension,
   getFileNameFromPath,
   getFillApproveActionLabelForPayload,

@@ -1,6 +1,6 @@
 <template>
   <div class="relative" :class="groupClass">
-    <div class="admin-lookup-field flex h-10 items-stretch gap-2">
+    <div class="flex h-10 items-stretch gap-2">
       <input
         ref="inputRef"
         :id="inputId"

@@ -3,13 +3,50 @@
         @apply mb-5 flex overflow-x-auto border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
     }
 
+    /* LA PESTAÑA — receta «Underline + icon» de TailAdmin, con dos ajustes pedidos por el dueño
+     * (2026-08-15): **icono siempre** y **más alta**.
+     *
+     * De TailAdmin se toma el mecanismo: `border-b-2` transparente en reposo que se tiñe al
+     * activarse, dentro de un contenedor con `border-b`. El `-mb-px` del contenedor hace que los
+     * dos bordes se solapen en una sola linea, que es lo que da el efecto de «lengüeta»; sin él se
+     * ven dos rayas de 1 px pegadas.
+     *
+     * Lo que NO se toma de TailAdmin es su altura: sus tabs son `py-2` (36 px) y aqui van a `py-4`
+     * (56 px). El motivo es que con icono al lado el texto queda apretado, y que estas pestañas
+     * mandan sobre paneles enteros — no sobre un parrafo—, asi que tienen que pesar mas que un
+     * enlace.
+     *
+     * El fondo suave al pasar el raton viene del selector de modos del chat, que es el que al
+     * dueño le gustaba: TailAdmin solo oscurece el texto, y sobre 56 px de alto eso casi no se
+     * nota. */
     .deasy-inline-tab {
-        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-muted transition-colors hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
+        @apply inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-4 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     .deasy-inline-tab--active {
         color: var(--color-primary);
         border-bottom-color: var(--color-primary);
+    }
+
+    /* El icono. Va aqui y no en el atributo para que las 14 pestañas midan lo mismo: cuando cada
+       una traia su `h-4 w-4` o `h-5 w-5`, dos barras contiguas no alineaban. */
+    .deasy-inline-tab__icon {
+        @apply h-5 w-5 shrink-0;
+    }
+
+    /* APILADO — el icono encima de la etiqueta.
+     *
+     * Es el selector de modos del chat: mismo bloque, otra disposicion, porque su panel mide
+     * 27,5 rem y cuatro etiquetas con icono al lado no caben en horizontal. Antes era
+     * `deasy-section-nav--stacked`, o sea un bloque distinto para lo mismo; el dueño pidio que
+     * TODAS las pestañas se vean iguales y tenia razon: elegir el modo del chat y elegir la
+     * seccion de un entregable son la misma accion. */
+    .deasy-inline-tabs--stacked {
+        @apply mb-0 w-full;
+    }
+
+    .deasy-inline-tab--stacked {
+        @apply flex-1 flex-col justify-center gap-1 px-1 py-2.5 text-[0.6875rem] font-semibold;
     }
 
     .deasy-inline-tab__badge {
@@ -124,8 +161,98 @@
         border-color: rgba(var(--white-rgb), 0.14);
     }
 
+    /* El `h-9 w-9` estaba en el atributo, repetido en los TRES usos (la campana y las firmas de
+       `AppWorkspaceShell`, el menu de `SHeader`). Un boton de icono de barra siempre mide lo
+       mismo: eso es del bloque. (2026-08-15, G10.) */
     .deasy-nav-action {
-        @apply flex shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.04] text-white/78 shadow-none transition-all hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/14;
+        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.04] text-white/78 shadow-none transition-all hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/14;
     }
 
+    /* EL NAVEGADOR DE CONTADOR — «‹ 3 / 12 ›»
+     *
+     * Estaba escrito CUATRO veces (2026-08-15, G4): el componente AppCounterNavigator y tres
+     * copias a mano, dos en MultiSignerBatchStatusPanel y dos en MultiSignerPanel. Las copias no
+     * divergian por diseno sino por descuido: una usa bg-surface/80 y otra bg-white, una pone
+     * hover:bg-white y otra hover:bg-blue-light-50, y una OCULTA las flechas con v-if donde el
+     * componente las DESHABILITA — que no es lo mismo, porque al ocultarlas el contador salta de
+     * sitio.
+     *
+     * Es un widget compuesto, no un boton, y por eso no vive en buttons.css ni sale de AppButton.
+     * La regla de §1-bis lo dice al reves de la ✕: aquella era un boton disfrazado de variante;
+     * este es un widget con dos botones dentro.
+     *
+     * Dos tamanos y dos tonos, y nada mas. El --floating existe porque el navegador del visor de
+     * PDF va SUPERPUESTO sobre la pagina, y ahi un borde de linea sobre fondo variable no se ve:
+     * necesita el desenfoque y la sombra. */
+    .deasy-counter-nav {
+        @apply inline-flex items-center overflow-hidden rounded-lg border border-line bg-white p-1;
+    }
+
+    .deasy-counter-nav--floating {
+        @apply border-white/90 bg-white/95 p-0 shadow-md backdrop-blur-sm;
+    }
+
+    .deasy-counter-nav__step {
+        @apply flex shrink-0 items-center justify-center rounded-lg p-2 text-muted transition hover:bg-blue-light-50 hover:text-info disabled:cursor-not-allowed disabled:opacity-40;
+    }
+
+    .deasy-counter-nav--sm .deasy-counter-nav__step {
+        @apply h-6 w-6 p-0;
+    }
+
+    .deasy-counter-nav__value {
+        @apply flex min-w-20 flex-col justify-center px-3 py-1 text-center;
+    }
+
+    .deasy-counter-nav__value--framed {
+        @apply border-x border-line;
+    }
+
+    .deasy-counter-nav--editable .deasy-counter-nav__value {
+        @apply min-w-30;
+    }
+
+    .deasy-counter-nav--sm .deasy-counter-nav__value {
+        @apply min-w-0 flex-1 px-1 py-0.5;
+    }
+
+    .deasy-counter-nav__label {
+        @apply text-[0.625rem] font-bold uppercase tracking-wider text-muted;
+    }
+
+    .deasy-counter-nav__reading {
+        @apply flex items-center justify-center gap-1 text-sm font-bold text-body;
+    }
+
+    .deasy-counter-nav--sm .deasy-counter-nav__reading {
+        @apply text-[0.5625rem] font-black uppercase tracking-[0.14em] text-icon;
+    }
+
+    .deasy-counter-nav__input {
+        @apply w-10 rounded-lg border border-line bg-surface px-1.5 py-1 text-center text-sm font-black text-body shadow-inner outline-none transition [appearance:textfield] focus:bg-white;
+    }
+
+    .deasy-counter-nav__input::-webkit-inner-spin-button,
+    .deasy-counter-nav__input::-webkit-outer-spin-button {
+        @apply appearance-none;
+    }
+
+
+    /* EL PASO DE UN ASISTENTE — la fila numerada de `AdminProcessWizardShell`.
+       No es una pestaña (no selecciona una vista de un panel: marca en que punto de una
+       SECUENCIA estas, y los pasos futuros pueden estar bloqueados), asi que no colapsa sobre
+       `deasy-inline-tab`. (2026-08-15, G1.) */
+    .deasy-stepper__step {
+        @apply flex min-w-30 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-muted transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .deasy-stepper__step--active {
+        @apply bg-white font-semibold text-primary shadow-theme-xs;
+    }
+
+    /* EL AVATAR PULSABLE de la barra lateral colapsada. Va sobre fondo oscuro, como el resto de
+       `deasy-nav-*`, y por eso sus colores son blancos con alfa y no tokens de superficie. */
+    .deasy-nav-avatar {
+        @apply relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-1.5 text-white transition-all hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-white/18;
+    }
 }

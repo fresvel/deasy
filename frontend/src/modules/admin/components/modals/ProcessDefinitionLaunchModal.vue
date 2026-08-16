@@ -92,7 +92,7 @@
     </div>
 
     <template #footer>
-      <AppButton variant="outlineDanger" :disabled="busy" @click="close">Cerrar</AppButton>
+      <AppButton variant="secondary" :disabled="busy" @click="close">Cerrar</AppButton>
     </template>
   </AppModalShell>
 </template>

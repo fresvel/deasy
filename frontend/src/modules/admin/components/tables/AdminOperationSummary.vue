@@ -9,7 +9,7 @@
       >
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 min-w-0">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="card.iconWrap">
+            <span class="deasy-icon-box deasy-icon-box--md" :class="card.iconWrap">
               <font-awesome-icon :icon="card.icon" />
             </span>
             <span class="truncate text-sm font-bold text-body">{{ card.title }}</span>
@@ -41,7 +41,7 @@ const cards = computed(() => {
       key: "tasks",
       title: "Tareas",
       icon: "square-check",
-      iconWrap: "bg-blue-light-100 text-info",
+      iconWrap: "deasy-icon-box--info",
       total: sumCounts(n(by, "pendiente"), n(by, "en_proceso"), stats.tasks.overdue)
     });
   }
@@ -52,7 +52,7 @@ const cards = computed(() => {
       key: "documents",
       title: "Documentos",
       icon: "info-circle",
-      iconWrap: "bg-brand-100 text-primary",
+      iconWrap: "deasy-icon-box--primary",
       total: sumCounts(
         n(by, "En proceso"),
         n(by, "Observado"),
@@ -68,7 +68,7 @@ const cards = computed(() => {
       key: "deliveries",
       title: "Entregas",
       icon: "check-double",
-      iconWrap: "bg-amber-100 text-warning",
+      iconWrap: "deasy-icon-box--warning",
       total: sumCounts(n(by, "pending"), n(by, "in_progress"), n(by, "returned"), n(by, "approved"))
     });
   }
@@ -79,7 +79,7 @@ const cards = computed(() => {
       key: "signatures",
       title: "Firmas",
       icon: "check",
-      iconWrap: "bg-emerald-100 text-success",
+      iconWrap: "deasy-icon-box--success",
       total: sumCounts(n(by, "pendiente"), n(by, "en_progreso"), n(by, "completado"))
     });
   }

@@ -1,8 +1,17 @@
 @layer components {
+/* El `mb-4` es la separacion con lo que viene DEBAJO, que casi siempre es una tabla. Sin el,
+       el borde inferior de este contenedor y el borde superior de la tabla quedan pegados y se
+       leen como una sola caja partida. Va aqui —en el contenedor de filtros— y no en la tabla,
+       porque el filtro es quien sabe que esta separandose de lo que filtra. */
 .deasy-filter-shell {
-        @apply rounded-xl border bg-white p-4 shadow-none md:p-4;
+        @apply mb-4 rounded-xl border bg-white p-4 shadow-none md:p-4;
         border-color: var(--color-line);
     }
+
+    /* ⚠️ La variante embebida SI hereda ese `mb-4`. Se penso lo contrario —«vive dentro de otro
+       bloque que ya separa»— y era falso: medido en la tabla de personas, el contenedor de
+       filtros y `.deasy-table-responsive` estaban a **0.0 px**, pegados. Lo que quita
+       `--embedded` es el MARCO (borde, fondo, padding), no la separacion con lo que filtra. */
 
     .deasy-filter-shell--embedded {
         @apply rounded-none border-0 bg-transparent p-0 md:p-0;
@@ -32,6 +41,39 @@
     .deasy-filter-control:focus {
         border-color: var(--color-primary);
         box-shadow: var(--focus-ring);
+    }
+
+    /* El disparador de un desplegable propio — se ve como un `<select>` porque HACE de `<select>`,
+       pero es un `<button>` porque el nativo no admite seleccion multiple con casillas. Solo
+       cambia la distribucion interna: la etiqueta a la izquierda y el chevron a la derecha.
+       (2026-08-15, censo estructural de G6: ese reparto viajaba en el atributo.) */
+    .deasy-filter-control--trigger {
+        @apply flex items-center justify-between gap-2 text-left;
+    }
+
+    /* Una opcion dentro de ese desplegable. NO es un boton del sistema: no ejecuta una accion,
+       marca una eleccion — por eso no lleva caja, ni borde, ni variante. Estaba escrita dos veces
+       en `HomeView` con nueve utilidades cada una, y las dos discrepaban en el peso y el color:
+       `font-medium text-icon` para cada proceso y `font-semibold text-body` para el «Todos» de
+       arriba. Esa diferencia SI es intencionada —el «Todos» manda sobre la lista— asi que se
+       queda, pero como modificador. (2026-08-15, censo estructural de G6.) */
+    .deasy-option {
+        @apply flex w-full cursor-pointer items-center gap-2.5 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-sm font-medium text-icon transition-colors hover:bg-surface focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .deasy-option--strong {
+        @apply font-semibold text-body;
+    }
+
+    /* En pila: las opciones se separan con una linea en vez de con espacio, y por eso pierden el
+       radio (una esquina redondeada dentro de una columna continua deja una muesca). */
+    .deasy-option--stacked {
+        @apply rounded-none border-b border-line last:border-b-0;
+    }
+
+    /* Con dato a la derecha: nombre a la izquierda, cedula o contador al otro extremo. */
+    .deasy-option--split {
+        @apply justify-between;
     }
 
     .admin-select-field.deasy-filter-control {
@@ -92,11 +134,22 @@
         color: var(--color-body);
     }
 
+    /* ⚠️ AQUI HABIA UN `--tw-ring-color` ESCRITO A MANO, y era la segunda forma de pintar el
+       mismo anillo en este fichero. Dos motivos para retirarlo, y el orden importa:
+
+       1. **No pintaba.** El anillo del campo enfocado lo pone `overrides.css` FUERA DE CAPA
+          (`input:focus { box-shadow: var(--focus-ring) }`), y fuera de capa gana a todo lo
+          capado. Medido: el `ring-4` de aqui nunca llegaba al DOM.
+       2. `--tw-ring-*` es variable INTERNA de Tailwind, no API. Si cambia de nombre en una
+          actualizacion, el anillo se apaga y no falla el build, ni el lint, ni los tests.
+
+       El anillo del proyecto es UNO y se llama `--focus-ring` (`tokens.css`). El dia que la
+       fase 6 cape la regla suelta de `overrides.css`, hay que decidir ahi si el foco cambia de
+       color por estado — que es la decision §4.2, no una linea de este fichero. */
     .deasy-field-input:focus,
     .deasy-field-select:focus {
-        @apply bg-white ring-4;
+        @apply bg-white;
         border-color: color-mix(in srgb, var(--color-primary) 44%, transparent);
-        --tw-ring-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
     }
 
     /* ⚠️ EL PLACEHOLDER SE QUEDA EN `--color-muted`, el mismo que el del campo normal de
@@ -118,10 +171,10 @@
         color: var(--color-danger);
     }
 
+    /* Mismo caso que el foco normal de arriba: el `--tw-ring-color` no llegaba al DOM. */
     .deasy-field-input--error:focus {
-        @apply bg-white ring-4;
+        @apply bg-white;
         border-color: var(--color-danger);
-        --tw-ring-color: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
     }
 
     .deasy-field-message {
@@ -156,14 +209,14 @@
     /* ── LA ZONA DE SUBIDA ───────────────────────────────────────────────────────────
        Sus tres estados eran el ultimo color de familia propia fuera de la paleta:
        `sky-200/300/500` para «vacia», `emerald-400/500` para «llena». Ahora derivan de
-       `--color-action-view` (el azul de accion) y `--color-success`, con la misma escala
+       `--color-info` (el azul de accion) y `--color-success`, con la misma escala
        que el resto: 71 % el borde en reposo, 85 % al pasar el raton o al arrastrar.
 
        El borde AQUI no es decorativo: es discontinuo y de 2 px, y es lo unico que dibuja
        la zona. `sky-200` daba **1.33:1** contra el blanco; al 71 % da 3.83. */
     .deasy-dropzone__surface {
         @apply relative flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-white px-5 py-6 text-center transition-all;
-        border-color: color-mix(in srgb, var(--color-action-view) 71%, var(--color-white));
+        border-color: color-mix(in srgb, var(--color-info) 71%, var(--color-white));
     }
 
     .deasy-dropzone__surface--card {
@@ -181,8 +234,8 @@
 
     .deasy-dropzone__surface--active {
         @apply shadow-[var(--focus-ring)];
-        border-color: var(--color-action-view);
-        background: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
+        border-color: var(--color-info);
+        background: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
     }
 
     .deasy-dropzone__surface--filled {
@@ -193,8 +246,8 @@
 
     @media (hover: hover) {
         .deasy-dropzone__surface--clickable:hover {
-            border-color: color-mix(in srgb, var(--color-action-view) 85%, var(--color-white));
-            background: color-mix(in srgb, var(--color-action-view) 4%, var(--color-white));
+            border-color: color-mix(in srgb, var(--color-info) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--color-info) 4%, var(--color-white));
         }
 
         .deasy-dropzone__surface--filled:hover {
@@ -214,11 +267,11 @@
     }
 
     .deasy-dropzone__surface--disabled {
-        @apply cursor-not-allowed border-line bg-slate-100 opacity-70;
+        @apply cursor-not-allowed border-line bg-gray-100 opacity-70;
     }
 
     .deasy-dropzone__icon {
-        @apply h-8 w-8 shrink-0 text-action-view;
+        @apply h-8 w-8 shrink-0 text-info;
     }
 
     .deasy-dropzone__icon--compact,
@@ -250,7 +303,7 @@
     .deasy-dropzone__selected {
         @apply flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5;
         border-color: var(--color-line);
-        background: color-mix(in srgb, var(--color-action-view) 6%, var(--color-white));
+        background: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
     }
 
     .deasy-dropzone__file-name {
@@ -366,13 +419,12 @@
         color: var(--color-muted);
     }
 
-    /* Los iconos de accion del buscador (limpiar / buscar), menos redondos que el boton
-       estandar. ⚠️ Dos cosas: estas clases NO estan en plantilla, las compone
-       `AdminButton.vue`; y esta regla le gana a `.deasy-table-shell .deasy-btn` —empatan en
-       especificidad— solo porque `index.css` importa `forms.css` DESPUES de `buttons.css`. */
-    .admin-lookup-field .deasy-btn--icon {
-        border-radius: 0.375rem;
-    }
+    /* Aqui los iconos del buscador (limpiar / buscar) se declaraban a 6 px, y el motivo escrito
+       era «menos redondos que el boton estandar» — cuando el estandar era 16 px. El 2026-08-14
+       la base adopto los 8 px de TailAdmin, asi que la diferencia pasa a ser de 2 px y el motivo
+       desaparece con ella. Retirada: una geometria para todos.
+       (De paso muere una regla que ganaba por ORDEN DE `@import`, no por especificidad — de las
+       que se rompen sin avisar si alguien reordena `index.css`.) */
 }
 
 /* DOS TAMAÑOS DE ZONA DE SUBIDA. La variante se escribe en la RAIZ del `<PdfDropField>`

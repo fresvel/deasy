@@ -3,71 +3,30 @@
     <div class="deasy-card p-4">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div class="block text-sm font-bold text-strong">Campos de Firma</div>
-        <BtnDelete
-          v-if="showFieldControls"
-          :disabled="!canClearCurrentModeFields"
-          message="Limpiar firmas cargadas"
-          @onpress="$emit('clear-fields')"
-        />
+        <AppDeleteButton v-if="showFieldControls" :disabled="!canClearCurrentModeFields" label="Limpiar firmas cargadas" @click="$emit('clear-fields')" />
       </div>
       <div class="flex flex-col gap-3">
-        <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1">
-          <button
-            v-if="showFieldControls"
-            type="button"
-            class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
-            title="Modo anterior"
-            @click="$emit('previous-batch-mode')"
-          >
-            <IconChevronLeft class="h-5 w-5" />
-          </button>
-          <div
-            class="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-1 text-center"
-            :class="showFieldControls ? 'border-x border-line' : ''"
-          >
-            <div class="text-[10px] font-bold uppercase tracking-wider text-muted">Modo</div>
-            <div class="text-sm font-bold text-strong">{{ currentBatchModeLabel }}</div>
-          </div>
-          <button
-            v-if="showFieldControls"
-            type="button"
-            class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
-            title="Siguiente modo"
-            @click="$emit('next-batch-mode')"
-          >
-            <IconChevronRight class="h-5 w-5" />
-          </button>
-        </div>
+        <AppCounterNavigator
+          label="Modo"
+          :value-label="currentBatchModeLabel"
+          :controls="showFieldControls"
+          previous-title="Modo anterior"
+          next-title="Siguiente modo"
+          @previous="$emit('previous-batch-mode')"
+          @next="$emit('next-batch-mode')"
+        />
 
         <div v-if="showPageReference" class="flex flex-col gap-2">
           <div class="text-xs font-semibold text-muted">Referencia de página</div>
-          <div class="flex items-center rounded-xl border border-line bg-surface/80 p-1">
-            <button
-              v-if="showFieldControls"
-              type="button"
-              class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
-              title="Referencia anterior"
-              @click="$emit('previous-page-reference')"
-            >
-              <IconChevronLeft class="h-5 w-5" />
-            </button>
-            <div
-              class="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-1 text-center"
-              :class="showFieldControls ? 'border-x border-line' : ''"
-            >
-              <div class="text-[10px] font-bold uppercase tracking-wider text-muted">Referencia</div>
-              <div class="text-sm font-bold text-strong">{{ currentPageReferenceLabel }}</div>
-            </div>
-            <button
-              v-if="showFieldControls"
-              type="button"
-              class="rounded-2xl p-2 text-muted transition hover:bg-white hover:text-info"
-              title="Siguiente referencia"
-              @click="$emit('next-page-reference')"
-            >
-              <IconChevronRight class="h-5 w-5" />
-            </button>
-          </div>
+          <AppCounterNavigator
+            label="Referencia"
+            :value-label="currentPageReferenceLabel"
+            :controls="showFieldControls"
+            previous-title="Referencia anterior"
+            next-title="Siguiente referencia"
+            @previous="$emit('previous-page-reference')"
+            @next="$emit('next-page-reference')"
+          />
         </div>
 
         <div
@@ -144,10 +103,11 @@
 </template>
 
 <script setup>
+import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
 import { computed } from "vue";
-import { IconAlertCircle, IconCheck, IconChevronLeft, IconChevronRight } from "@tabler/icons-vue";
+import { IconAlertCircle, IconCheck} from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 
 const props = defineProps({
   batchJob: {

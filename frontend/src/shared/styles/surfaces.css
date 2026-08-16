@@ -138,7 +138,96 @@
 
        No se confunda con `.deasy-section-card`, que es la superficie GRANDE de una seccion
        (mas padding y otro radio). Esta es la pequena: la que se repite dentro de un panel. */
+    /* ══ LA CAJA DE ICONO — F3.1 del plan, 2026-08-15 ═══════════════════════════════════════
+       El cuadrado centrado que sostiene un icono: en la cabecera de una sección, dentro de un
+       elemento de menú, en un mensaje de estado vacío, delante de una pastilla.
+
+       Medido hoy: **42 usos en 32 recetas distintas** (76 % de unicidad — casi cada uso es su
+       propio copo de nieve), con **once tamaños**, **tres radios** y **once fondos**. Y en el CSS
+       no había ninguna clase: lo que había eran cinco fragmentos privados de otros componentes
+       —`deasy-nav-item__icon`, `deasy-dropzone__icon`, `btnsera-status__icon`,
+       `deasy-form-section__icon`, `deasy-tag__icon`— o sea **cinco componentes reinventando la
+       misma caja**, cada uno dentro de su fichero.
+
+       🪤 El síntoma que lo delataba, y que sigue vivo: **cuatro sitios usan `deasy-alert` como
+       caja de icono** y le tapan el borde después. Un componente de MENSAJE DE ESTADO usado por
+       su color, porque no existía una caja tintada. Eso es exactamente «falta
+       `deasy-icon-box--{tono}`».
+
+       ⚠️ **La escala colapsa once tamaños en cuatro, y eso mueve píxeles.** 16 de las 42 cajas
+       cambian ±4 px (`w-10`→`lg`, `w-12`→`lg`, `w-6`→`sm`), y dos cambian 8. Es el precio de
+       tener una escala en vez de once medidas sueltas, y es el mismo criterio con el que la
+       tarea 3.3 unificó la geometría del botón.
+       ═══════════════════════════════════════════════════════════════════════════════════════ */
+    .deasy-icon-box {
+        @apply inline-flex shrink-0 items-center justify-center rounded-xl;
+    }
+
+    /* Cuatro pasos, +2 cada uno. `md` es el tamaño por defecto y no hace falta declararlo. */
+    .deasy-icon-box--sm { @apply h-7 w-7; }
+    .deasy-icon-box--md { @apply h-9 w-9; }
+    .deasy-icon-box--lg { @apply h-11 w-11; }
+    .deasy-icon-box--xl { @apply h-14 w-14; }
+
+    /* La forma redonda es un eje aparte del tamaño: hay cajas de 28 px redondas y de 56 cuadradas. */
+    .deasy-icon-box--round { @apply rounded-full; }
+
+    /* Los tonos. El relleno es el paso `-50` REAL de cada familia, no una mezcla — el mismo
+       criterio que las variantes suaves del botón (§ `buttons.css`), y por el mismo motivo: el
+       `-50` de TailAdmin está calibrado y una mezcla al 6 % sale más gris. */
+    .deasy-icon-box--neutral { @apply bg-surface text-icon; }
+    .deasy-icon-box--primary { @apply bg-brand-50 text-primary; }
+    .deasy-icon-box--info    { @apply bg-blue-light-50 text-info; }
+    .deasy-icon-box--success { @apply bg-success-50 text-success; }
+    .deasy-icon-box--warning { @apply bg-warning-50 text-warning; }
+    .deasy-icon-box--danger  { @apply bg-error-50 text-danger; }
+
+    /* Sólido: el icono en blanco sobre el color entero. Para cuando la caja ES el acento de la
+       pantalla y no un adorno al lado del texto. */
+    .deasy-icon-box--solid { @apply text-white; }
+    .deasy-icon-box--solid.deasy-icon-box--primary { background: var(--color-primary); }
+    .deasy-icon-box--solid.deasy-icon-box--info    { background: var(--color-info); }
+
+    /* Con borde: cuando la caja va sobre una superficie del mismo tono que su relleno y necesita
+       un límite propio. WCAG 1.4.11 pide 3:1 para ese límite, que es lo que da el `-200`. */
+    .deasy-icon-box--outlined { @apply border border-line; }
+
     .deasy-card {
         @apply rounded-2xl border border-line bg-white;
+    }
+
+    /* ── DOS SUPERFICIES PULSABLES, sacadas del censo de G1 (2026-08-15) ──────────────────
+       Las dos son `<button>` porque se pulsan, pero **no son botones**: no ejecutan una accion
+       sobre un objeto, LLEVAN a una pantalla o SELECCIONAN un elemento. Por §1-bis no salen de
+       `AppButton` —su caja es una tarjeta, no la caja de 40 px del sistema— y por eso viven
+       aqui, con las superficies, y no en `buttons.css`.
+
+       Lo que si era defecto es que estuvieran copiadas. */
+
+    /* LA BALDOSA — el acceso grande del panel de inicio.
+       Diez copias exactas: siete en `HomeView` («Mis procesos», «Centro de firmas», «Mis envios»,
+       «Centro documental», «Mi dossier», «Mis cargos», «Mis unidades») y tres en `FirmarPdf`
+       («Solicitudes recibidas», «Buscar en BD», «Bandeja de pendientes»). Once utilidades cada
+       una, identicas, incluido el `min-h-[19rem]` que fija la altura de la rejilla. */
+    .deasy-tile {
+        @apply flex h-full min-h-76 flex-col rounded-2xl border border-line bg-surface/50 p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md;
+    }
+
+    /* LA FILA ELEGIBLE — un elemento de una lista que se pulsa para escogerlo.
+       ⚠️ Estaba escrita **doce veces con CUATRO radios distintos** —`rounded-xl`, `rounded-2xl`,
+       `rounded-[1rem]` y `rounded-[1.2rem]`, o sea 12, 16, 16 y 19.2 px— para el mismo objeto y a
+       veces en la misma pantalla. Dos de los cuatro eran valores arbitrarios que existian **para
+       caer entre dos pasos de la escala**, que es exactamente el sintoma que el plan describe en
+       §3.1 para `deasy-icon-box`. Se queda uno: el de la escala. */
+    .deasy-picker {
+        @apply relative flex w-full items-center gap-3 rounded-xl border border-line bg-white px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40;
+        box-shadow: 0 8px 18px rgba(var(--elev-ink-rgb), 0.05);
+    }
+
+    /* Sin relieve: cuando la fila va DENTRO de una tarjeta que ya tiene su sombra, apilar dos
+       elevaciones hace que la de dentro parezca despegada del papel. */
+    .deasy-picker--flat {
+        @apply hover:translate-y-0;
+        box-shadow: none;
     }
 }

@@ -8,7 +8,7 @@
   >
     <button
       type="button"
-      class="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted transition-colors hover:text-icon focus:text-icon focus:outline-none"
+      class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round transition-colors hover:text-icon"
       :aria-label="ariaLabel"
       :aria-expanded="open"
       @click.stop="open = !open"

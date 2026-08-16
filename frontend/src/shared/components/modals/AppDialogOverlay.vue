@@ -12,15 +12,7 @@
     <div class="deasy-dialog-panel relative w-full overflow-hidden" :class="panelClass">
       <div class="deasy-dialog-header flex items-center justify-between gap-4">
         <h5 class="deasy-dialog-title">{{ title }}</h5>
-        <button
-          type="button"
-          class="deasy-btn--close flex h-9 w-9 items-center justify-center transition-colors"
-          aria-label="Cerrar"
-          title="Cerrar"
-          @click="$emit('close')"
-        >
-          <IconX class="h-4 w-4" stroke-width="2.5" />
-        </button>
+        <AppCloseButton @click="$emit('close')" />
       </div>
       <div class="deasy-dialog-body">
         <slot />
@@ -33,7 +25,7 @@
 </template>
 
 <script setup>
-import { IconX } from "@tabler/icons-vue";
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 
 defineProps({
   open: { type: Boolean, default: false },

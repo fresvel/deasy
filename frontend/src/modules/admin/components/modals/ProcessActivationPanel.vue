@@ -30,7 +30,7 @@
             :class="req.done ? 'bg-emerald-50 text-success ring-emerald-200' : 'bg-rose-50 text-danger ring-rose-200'"
           >
             <span
-              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"
+              class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
               :class="req.done ? 'bg-emerald-500' : 'bg-rose-400'"
             >
               <font-awesome-icon :icon="req.done ? 'check' : 'times'" class="h-3.5 w-3.5" />
@@ -40,8 +40,8 @@
         </div>
       </div>
 
-      <div v-if="view !== 'activate'" class="definition-activation-panel mt-3">
-        <div v-if="showMenu" class="definition-activation-menu flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
+      <div v-if="view !== 'activate'" class="mt-3">
+        <div v-if="showMenu" class="flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
           <AdminButton variant="secondary" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Configuracion</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Alcance</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Periodos</AdminButton>
@@ -64,7 +64,7 @@
             :fields="ruleTableFields"
             :rows="rules"
             :row-key="(row) => `activation-rule-${row.id}`"
-            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            table-class="min-w-full border-separate border-spacing-0 text-sm"
             responsive-class="overflow-x-auto deasy-card"
             scroll-class=""
           >
@@ -98,7 +98,7 @@
             :fields="triggerTableFields"
             :rows="triggers"
             :row-key="(row) => `activation-trigger-${row.id}`"
-            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            table-class="min-w-full border-separate border-spacing-0 text-sm"
             responsive-class="overflow-x-auto deasy-card"
             scroll-class=""
           >
@@ -132,7 +132,7 @@
             :fields="artifactTableFields"
             :rows="artifacts"
             :row-key="(row) => `activation-artifact-${row.id}`"
-            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            table-class="min-w-full border-separate border-spacing-0 text-sm"
             responsive-class="overflow-x-auto deasy-card"
             scroll-class=""
           >

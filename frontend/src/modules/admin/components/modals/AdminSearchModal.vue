@@ -22,8 +22,7 @@
         :title="searchTitle"
         :aria-label="searchAriaLabel"
         :disabled="searchDisabled"
-        @click="$emit('search')"
-      >
+        @click="$emit('search')" icon-only>
         <font-awesome-icon icon="search" />
       </AdminButton>
     </template>

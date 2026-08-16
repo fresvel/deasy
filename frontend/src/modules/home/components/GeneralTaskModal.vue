@@ -28,7 +28,7 @@
     <!-- Documento -->
     <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
       <div class="flex items-center gap-2">
-        <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-brand-50 text-primary"><IconFileDescription class="h-4 w-4" /></span>
+        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconFileDescription class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Documento</h6>
       </div>
       <label class="flex flex-col gap-1">
@@ -44,7 +44,7 @@
     <!-- Flujo del envío -->
     <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
       <div class="flex items-center gap-2">
-        <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-brand-50 text-primary"><IconSend class="h-4 w-4" /></span>
+        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconSend class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Flujo del envío</h6>
       </div>
       <p class="m-0 -mt-1 text-xs font-medium text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
@@ -52,12 +52,12 @@
       <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
           <span class="deasy-eyebrow">Elabora (entrega) *</span>
-          <button type="button" class="text-xs font-semibold text-primary hover:text-primary" @click="openFlowPicker('entrega')">+ Agregar</button>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('entrega')">+ Agregar</button>
         </div>
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
           <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
             <span class="text-[0.65rem] font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
-            <button type="button" class="text-muted hover:text-danger" @click="removeFromEntrega(i)">×</button>
+            <button type="button" class="deasy-chip-remove" @click="removeFromEntrega(i)">×</button>
           </li>
           <li v-if="!flowEntrega.length" class="text-xs text-muted">Nadie asignado.</li>
         </ul>
@@ -66,7 +66,7 @@
       <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
           <span class="deasy-eyebrow">Firma (pasos en orden)</span>
-          <button type="button" class="text-xs font-semibold text-primary hover:text-primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
         </div>
         <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
           <div class="flex items-center justify-between gap-2">
@@ -80,16 +80,16 @@
                 </select>
                 <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 rounded-xl border border-line bg-white px-2 py-1 text-[0.7rem] text-body outline-none" />
               </template>
-              <button type="button" class="text-[0.7rem] font-semibold text-danger hover:text-danger" @click="removeFirmaStep(si)">Quitar</button>
+              <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="removeFirmaStep(si)">Quitar</button>
             </div>
           </div>
           <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">
             <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-body">
               {{ sg.label }}
-              <button type="button" class="text-muted hover:text-danger" @click="removeSignerFromStep(si, gi)">×</button>
+              <button type="button" class="deasy-chip-remove" @click="removeSignerFromStep(si, gi)">×</button>
             </li>
           </ul>
-          <button type="button" class="mt-1.5 text-[0.7rem] font-semibold text-primary hover:text-primary" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary mt-1.5" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>
         </div>
         <p v-if="!flowFirma.length" class="m-0 mt-2 text-xs text-muted">Sin firma. Usa “+ Agregar paso” si el documento debe firmarse.</p>
       </div>
@@ -98,9 +98,9 @@
         <p class="m-0 text-[0.7rem] font-semibold text-primary">
           {{ flowPickerTarget === 'entrega' ? 'Quién elabora' : (flowPickerTarget === 'firma:new' ? 'Nuevo paso de firma' : 'Añadir firmante al paso') }}
         </p>
-        <div class="inline-flex self-start deasy-card p-0.5 text-xs font-semibold">
-          <button type="button" :class="flowPickerMode === 'person' ? 'bg-brand-600 text-white' : 'text-muted'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'person'">Persona</button>
-          <button type="button" :class="flowPickerMode === 'cargo' ? 'bg-brand-600 text-white' : 'text-muted'" class="rounded-xl px-3 py-1" @click="flowPickerMode = 'cargo'">Por cargo</button>
+        <div class="deasy-section-nav-group self-start">
+          <button type="button" class="deasy-section-nav" :class="{ 'deasy-section-nav--active': flowPickerMode === 'person' }" @click="flowPickerMode = 'person'">Persona</button>
+          <button type="button" class="deasy-section-nav" :class="{ 'deasy-section-nav--active': flowPickerMode === 'cargo' }" @click="flowPickerMode = 'cargo'">Por cargo</button>
         </div>
 
         <div v-if="flowPickerMode === 'person'" class="relative flex flex-col gap-1">
@@ -114,7 +114,7 @@
           />
           <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
             <li v-for="person in recipientResults" :key="`fp-${person.id}`">
-              <button type="button" class="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-body hover:bg-blue-light-50" @click="addFlowPerson(person)">
+              <button type="button" class="deasy-option" @click="addFlowPerson(person)">
                 {{ person.full_name }}
                 <span class="text-xs text-muted">· {{ person.cedula || person.email || '' }}</span>
               </button>
@@ -134,7 +134,7 @@
               <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
             </select>
           </div>
-          <button type="button" class="self-start rounded-2xl bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</button>
+          <AppButton variant="primary" size="sm" class-name="self-start" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</AppButton>
         </div>
       </div>
     </section>
@@ -142,7 +142,7 @@
     <!-- Destino y plazo -->
     <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
       <div class="flex items-center gap-2">
-        <span class="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-brand-50 text-primary"><IconBuildingMonument class="h-4 w-4" /></span>
+        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconBuildingMonument class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Destino y plazo</h6>
       </div>
       <div class="grid grid-cols-1 gap-3" :class="showSenderUnitSelect ? 'sm:grid-cols-2' : ''">
@@ -165,7 +165,7 @@
     </section>
   </div>
   <template #footer>
-    <AppButton variant="secondary" data-modal-dismiss>Cancelar</AppButton>
+    <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
     <AppButton variant="primary" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="$emit('submit')">
       {{ generalTaskSubmitting
         ? 'Creando…'
