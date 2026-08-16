@@ -31,7 +31,7 @@
       </div>
     </div>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss @click="closeModal">
+      <AdminButton variant="neutralOutline" data-modal-dismiss @click="closeModal">
         Cerrar
       </AdminButton>
     </template>

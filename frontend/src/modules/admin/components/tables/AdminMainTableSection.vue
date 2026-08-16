@@ -93,7 +93,7 @@
               <div class="deasy-filter-actions">
                 <AdminButton
                   v-if="!isPositionFilterTable && !isProcessDefinitionFilterTable && !isProcessTargetRuleFilterTable && !isTemplateArtifactsTable"
-                  variant="secondary" icon-only
+                  variant="neutralOutline" icon-only
                   size="sm"
                   title="Limpiar búsqueda"
                   aria-label="Limpiar búsqueda"
@@ -102,7 +102,7 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-if="isPositionFilterTable"
-                  variant="secondary" icon-only
+                  variant="neutralOutline" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
@@ -111,7 +111,7 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-else-if="isProcessDefinitionFilterTable"
-                  variant="secondary" icon-only
+                  variant="neutralOutline" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
@@ -120,7 +120,7 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-else-if="isProcessTargetRuleFilterTable"
-                  variant="secondary" icon-only
+                  variant="neutralOutline" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
@@ -129,17 +129,17 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-else-if="isTemplateArtifactsTable"
-                  variant="secondary" icon-only
+                  variant="neutralOutline" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
                   :disabled="!hasTemplateArtifactInlineFilters"
                   @click="$emit('clear-template-artifact-inline-filters')"
                 ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="outlinePrimary" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
+                <AdminButton variant="primaryOutline" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
                 <AdminButton
                   v-if="hasExpandableFilters"
-                  variant="secondary"
+                  variant="neutralOutline"
                   size="sm"
                   icon-only
                   :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
@@ -198,7 +198,7 @@
                 <template #between>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions'"
-                    variant="softActionUpload"
+                    variant="primarySoft"
                     size="sm"
                     icon-only
                     title="Versionar"
@@ -209,7 +209,7 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'draft'"
-                    variant="softSuccess"
+                    variant="successSoft"
                     size="sm"
                     icon-only
                     title="Activar"
@@ -220,7 +220,7 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
-                    variant="softWarning"
+                    variant="warningSoft"
                     size="sm"
                     icon-only
                     title="Retirar (desactivar)"
@@ -231,7 +231,7 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'terms'"
-                    variant="softSuccess"
+                    variant="successSoft"
                     size="sm"
                     icon-only
                     title="Lanzar procesos del periodo"
@@ -242,7 +242,7 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
-                    variant="softSuccess"
+                    variant="successSoft"
                     size="sm"
                     icon-only
                     title="Lanzar en un periodo"
@@ -253,7 +253,7 @@
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && isPersonTable"
-                    variant="softSuccess"
+                    variant="successSoft"
                     size="sm"
                     icon-only
                     title="Gestionar asignaciones"
@@ -267,7 +267,7 @@
                   <!-- Borrador: editar contenido. Publicada/retirada: inmutable → versionar (crea borrador). -->
                   <AdminButton
                     v-if="canUpdate && (row?.lifecycle_state || 'published') === 'draft'"
-                    variant="softSuccess"
+                    variant="successSoft"
                     size="sm"
                     icon-only
                     title="Editar"
@@ -282,7 +282,7 @@
                   </AdminButton>
                   <AdminButton
                     v-else-if="canUpdate"
-                    variant="softActionUpload"
+                    variant="primarySoft"
                     size="sm"
                     icon-only
                     title="Versionar (crea una versión en borrador editable)"

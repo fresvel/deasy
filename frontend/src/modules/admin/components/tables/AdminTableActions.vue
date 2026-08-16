@@ -6,7 +6,7 @@
     <slot name="prepend" />
     <AdminButton
       v-if="showView"
-      variant="softInfo"
+      variant="infoSoft"
       size="sm"
       icon-only
       :title="viewTitle"
@@ -19,7 +19,7 @@
     <slot name="edit">
       <AdminButton
         v-if="showEdit"
-        variant="softSuccess"
+        variant="successSoft"
         size="sm"
         icon-only
         :title="editTooltip"
@@ -36,7 +36,7 @@
     <slot name="append" />
     <AdminButton
       v-if="showDelete"
-      variant="softDanger"
+      variant="dangerSoft"
       size="sm"
       icon-only
       :title="deleteMessage"

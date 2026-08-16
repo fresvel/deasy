@@ -21,7 +21,7 @@
       <h6 class="m-0 text-sm font-bold text-strong">Plantillas del proceso</h6>
       <AdminButton
         v-if="canManage"
-        variant="outlinePrimary"
+        variant="primaryOutline"
         @click="$emit('open-fk-search')"
       >
         <font-awesome-icon icon="search" class="mr-2" />

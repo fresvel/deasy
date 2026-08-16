@@ -28,7 +28,7 @@
       />
       <AdminButton
         v-if="showClear"
-        variant="secondary"
+        variant="neutralOutline"
         icon-only
         :title="clearTitle"
         :aria-label="clearLabel"
@@ -40,7 +40,7 @@
       </AdminButton>
       <AdminButton
         v-if="showSearch"
-        variant="secondary"
+        variant="neutralOutline"
         icon-only
         :title="searchTitle"
         :aria-label="searchLabel"

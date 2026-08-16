@@ -27,7 +27,7 @@
       </label>
     </div>
     <template #footer>
-      <AppButton variant="cancel" :disabled="busy" @click="$emit('close')">Cancelar</AppButton>
+      <AppButton variant="dangerOutline" :disabled="busy" @click="$emit('close')">Cancelar</AppButton>
       <AppButton variant="primary" :disabled="busy" @click="$emit('confirm', level)">{{ busy ? "Creando…" : (guided ? "Crear borradores" : "Crear versión") }}</AppButton>
     </template>
   </AppModalShell>

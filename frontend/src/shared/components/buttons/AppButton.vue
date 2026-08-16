@@ -25,7 +25,7 @@ const props = defineProps({
   },
   variant: {
     type: String,
-    default: "secondary"
+    default: "neutralOutline"
   },
   size: {
     type: String,
@@ -67,35 +67,58 @@ const attrs = useAttrs();
    sin pintar, y no los veia ningun gate: los gates leen atributos `class` del markup, y estos
    viven en un MAPA DE JAVASCRIPT. La clase base `admin-btn` si se queda — la consume
    `.admin-page-header__actions .admin-btn`, que es deuda de la fase 6, no de esta. */
+/* [F4 2026-08-16] EL NOMBRE DICE EL TONO Y EL MODO, EN ESE ORDEN — `{tono}{Modo}`.
+   Antes el prefijo mandaba (`softSuccess`, `outlinePrimary`) y el mismo tono aparecia en tres
+   sitios distintos de una lista ordenada alfabeticamente: para saber que formas tenia `danger`
+   habia que leerla entera. Ahora las cinco lineas de abajo SON la matriz — tono a la izquierda,
+   sus modos a la derecha — y lo que falta se ve de un vistazo.
+
+   Tres modos, y el que no lleva sufijo es el solido:
+     `{tono}`          relleno del token, texto blanco
+     `{tono}Soft`      relleno al 6 % (10 % si lleva icono), borde al 71 %, texto el token
+     `{tono}Outline`   fondo blanco, borde y texto el token
+
+   ⚠️ DOS VARIANTES MURIERON AQUI, y las dos por medicion, no por gusto:
+
+   · `cancel` -> `dangerOutline`. Era gris en reposo y ROJO al pasar el raton, o sea la unica
+     variante del sistema —con `secondary`— que cambiaba de color en vez de intensificar el suyo
+     (§5.2). Decision del dueño: cancelar ES danger, asi que lo es tambien en reposo.
+   · `softActionUpload` -> `primarySoft`. Sus 4 usos eran todos `icon-only`, y en esa forma la
+     receta manda a `--color-brand-50` / `--color-brand-600`: **el mismo pixel que `softPrimary`**,
+     medido en el navegador. Su tono propio (`--color-action-upload`) no llegaba a la pantalla, y
+     con el se va el token, que no tenia otro consumidor.
+
+   Lo que si aporto `softActionUpload` en su dia sigue vivo en `infoSoft`: el reparto de los 12
+   botones de accion de tabla en tonos. El tratamiento se decidio en el navegador comparando los
+   cuatro pintados sobre la tabla de personas (178 botones a la vez): el solido se probo y se
+   descarto — cada boton se leia mejor, pero la columna entera se convertia en una franja de color
+   que pesaba mas que los datos.
+
+   [F3.2 2026-08-14] `warning` solido FALTABA, y no como capricho: los solidos eran `primary`,
+   `success` y `danger`, sin el de aviso, mientras las suaves si tenian los cuatro tonos. La
+   asimetria estaba viva — `HomeView` pedia `variant="warning"` y el boton salia SIN NINGUNA clase
+   de variante, porque el mapa resuelve por pertenencia y devuelve cadena vacia para lo
+   desconocido. Solo avisaba la consola, y solo en desarrollo. Lo vigila `check:variants`. */
 const variantClassMap = {
   primary: "deasy-btn--primary",
-  secondary: "deasy-btn--secondary",
-  cancel: "deasy-btn--cancel",
-  outlinePrimary: "deasy-btn--outline-primary",
-  outlineDanger: "deasy-btn--outline-danger",
-  softPrimary: "deasy-btn--soft-primary",
-  softNeutral: "deasy-btn--soft-neutral",
-  softSuccess: "deasy-btn--soft-success",
-  softWarning: "deasy-btn--soft-warning",
-  softDanger: "deasy-btn--soft-danger",
-  /* [F3.4 2026-08-14] `softInfo` y `softActionUpload` son los dos tonos que le faltaban a la
-     familia suave: el azul de «ver» y el indigo de «subir/versionar/descargar». Existian solo
-     dentro de `hope-action-*`, y con ellos los 12 botones de accion colapsaron a variantes.
+  primarySoft: "deasy-btn--primary-soft",
+  primaryOutline: "deasy-btn--primary-outline",
 
-     El tratamiento se decidio en el navegador, comparando los cuatro pintados sobre la tabla de
-     personas (178 botones a la vez): el solido se probo y se descarto — cada boton se leia mejor,
-     pero la columna entera se convertia en una franja de color que pesaba mas que los datos. */
-  softInfo: "deasy-btn--soft-info",
-  softActionUpload: "deasy-btn--soft-action-upload",
   success: "deasy-btn--success",
-  /* [F3.2 2026-08-14] `warning` FALTABA, y no como capricho: los solidos eran `primary`,
-     `success` y `danger`, sin el de aviso, mientras las SUAVES si tenian los cuatro tonos. La
-     asimetria estaba viva — `HomeView` pedia `variant="warning"` para confirmar el reseteo de un
-     flujo y el boton salia SIN NINGUNA clase de variante, porque el mapa resuelve por pertenencia
-     y devuelve cadena vacia para lo desconocido. Solo avisaba la consola, y solo en desarrollo.
-     `--color-warning` sobre blanco da 5.43:1, que pasa AA. Lo vigila `check:variants`. */
+  successSoft: "deasy-btn--success-soft",
+
   warning: "deasy-btn--warning",
+  warningSoft: "deasy-btn--warning-soft",
+
   danger: "deasy-btn--danger",
+  dangerSoft: "deasy-btn--danger-soft",
+  dangerOutline: "deasy-btn--danger-outline",
+
+  infoSoft: "deasy-btn--info-soft",
+
+  neutralSoft: "deasy-btn--neutral-soft",
+  neutralOutline: "deasy-btn--neutral-outline",
+
   plain: ""
 };
 

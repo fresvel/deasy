@@ -11,10 +11,10 @@
   >
     <slot />
     <template #footer>
-      <AdminButton variant="cancel" data-modal-dismiss>
+      <AdminButton variant="dangerOutline" data-modal-dismiss>
         Cancelar
       </AdminButton>
-      <AdminButton variant="outlinePrimary" :disabled="clearDisabled" @click="$emit('clear')">
+      <AdminButton variant="primaryOutline" :disabled="clearDisabled" @click="$emit('clear')">
         Limpiar
       </AdminButton>
       <AdminButton

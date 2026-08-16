@@ -27,7 +27,7 @@
             </span>
             <AppButton
               v-if="pendingCount > 0"
-              variant="outlinePrimary"
+              variant="primaryOutline"
               :disabled="busy"
               @click="launchAllPending"
             >
@@ -57,7 +57,7 @@
                   </AppButton>
                   <AppButton
                     v-else
-                    variant="secondary"
+                    variant="neutralOutline"
                     :disabled="busy"
                     @click="toggleRelaunch(def.definition_id)"
                   >
@@ -75,7 +75,7 @@
                   placeholder="Ej. se agregaron nuevos destinatarios"
                 />
                 <div class="flex justify-end gap-2">
-                  <AppButton variant="cancel" :disabled="busy" @click="relaunchOpenId = null">Cancelar</AppButton>
+                  <AppButton variant="dangerOutline" :disabled="busy" @click="relaunchOpenId = null">Cancelar</AppButton>
                   <AppButton variant="success" :disabled="busy" @click="launch(def, true)">Confirmar relanzamiento</AppButton>
                 </div>
               </div>
@@ -86,7 +86,7 @@
     </div>
 
     <template #footer>
-      <AppButton variant="secondary" :disabled="busy" @click="close">Cerrar</AppButton>
+      <AppButton variant="neutralOutline" :disabled="busy" @click="close">Cerrar</AppButton>
     </template>
   </AppModalShell>
 </template>

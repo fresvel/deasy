@@ -83,7 +83,7 @@
             v-if="showDownloadButton"
             :disabled="isDownloadingBatch"
             size="sm"
-            variant="outlinePrimary"
+            variant="primaryOutline"
             @click="$emit('download-batch')"
           >
             {{ isDownloadingBatch ? 'Descargando...' : 'Descargar' }}

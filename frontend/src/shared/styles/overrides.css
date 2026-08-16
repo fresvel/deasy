@@ -198,42 +198,34 @@ textarea:focus {
    regla no deshacia nada de una libreria — solo tapaba cualquier `text-*` puesto sobre el icono,
    y por eso dos triangulos de aviso salian del color de su parrafo en vez de ambar. */
 
-/* ⚠️ FUERA DE CAPA LAS TRES, y NO por una utilidad de Tailwind: dentro de la capa les gana
-   `.deasy-table-responsive .deasy-btn--secondary` (0,2,0) de `buttons.css`, que ya vive
-   alli. Capadas, el secundario de cabecera de tabla cambia de borde y su `:hover` pasa de
-   la tinta violeta al gris de tabla — y el `:hover` la huella NO lo ve.
-   ------------------------------------------------------------------------------------ */
-/* ⚠️ `--cancel` SALE TAMBIEN DE ESTAS DOS, y no solo del `:hover` de abajo. Una regla SIN CAPA
-   gana a CUALQUIER regla capada — tambien a un `:hover`. Asi que mientras el REPOSO de
-   `--cancel` estuviera aqui, su `:hover` de `@layer components` no podia pintar aunque el
-   hover azul se retirara: el reposo suelto seguia ganando. Comprobado con el raton encima:
-   el boton mostraba borde `--color-line` y texto `--color-strong`, o sea su reposo.
+/* ══ AQUI VIVIAN LAS TRES REGLAS SUELTAS DE `--secondary` — muertas el 2026-08-16, F4 ═══════
+   Eran la ultima deuda de fase 6 que quedaba en este fichero sobre el boton, y su historia es
+   el ejemplo mas limpio del problema que la fase 6 viene a resolver.
 
-   Estas reglas estan fuera de capa para ganarle a `.deasy-table-responsive .deasy-btn--secondary`
-   (0,2,0), que solo apunta a `--secondary`. `--cancel` nunca necesito estar aqui. */
-.deasy-btn--secondary {
-  background-color: var(--color-white);
-  border-color: var(--color-line);
-}
+   El nudo tenia tres cabos y ninguno se podia tirar solo:
 
-.deasy-btn--secondary {
-  color: var(--color-strong);
-}
+     1. `.deasy-table-responsive .deasy-btn--secondary` (0,2,0) vivia en `buttons.css` DENTRO de
+        `@layer components`, repintando el secundario de tabla.
+     2. Estas tres estaban FUERA DE CAPA **solo para ganarle** — una regla suelta gana a
+        cualquier regla capada, tenga la especificidad que tenga.
+     3. Y como efecto colateral le ganaban tambien a la propia variante: `.deasy-btn--secondary`
+        declaraba en `buttons.css` borde `line-strong` y texto `body`, y el DOM mostraba borde
+        `line` y texto `strong`. La receta declarada **no llegaba a la pantalla**.
 
-/* ⚠️ `--cancel` SALE DE ESTA LISTA — 2026-08-14, y el motivo enseña mas que el arreglo.
-   `buttons.css` declara un `:hover` ROJO para `--cancel` desde hace meses, dentro de
-   `@layer components`. Esta regla esta FUERA DE CAPA y le gana siempre, asi que ese hover
-   rojo **no ha pintado nunca**: `cancel` y `secondary` eran identicos tambien al pasar el
-   raton, y la variante no distinguia nada.
+   El `:hover` azul de aqui hizo ademas que el `:hover` ROJO de `--cancel` no pintara durante
+   meses. Se detecto el 2026-08-14 porque alguien lo MIRO en el navegador despues de que se
+   afirmara, leyendo solo el CSS, que se diferenciaban. Es el patron dominante de este repo
+   —reglas que existen y no aplican— y la unica defensa es abrir la pagina.
 
-   Se detecto porque alguien lo MIRO en el navegador despues de que se afirmara, leyendo solo
-   el CSS, que se diferenciaban. Es el patron dominante de este repo —reglas que existen y no
-   aplican— y la unica defensa es abrir la pagina. */
-.deasy-btn--secondary:hover {
-  color: var(--color-primary);
-  background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
-  border-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
-}
+   Al renombrar la variante a `--neutral-outline` (F4) los tres cabos caen juntos: se fue la
+   regla contextual de `buttons.css`, y sin ella estas no tienen a quien ganarle. La decision
+   que guardaban NO se tira — el gris de tabla es hoy el `:hover` de `--neutral-outline`, y en
+   toda la aplicacion, no solo dentro de una tabla.
+
+   ⚠️ El hover azul SI se tira, y es lo unico que se pierde a proposito: era una de las dos
+   unicas variantes del sistema que cambiaba de COLOR al pasar el raton en vez de intensificar
+   el suyo (§5.2). La otra era `--cancel`. Las dos eran accidentes con fecha.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
 
 /* ══ AQUI VIVIAN LOS REPOSOS DE LOS 12 BOTONES DE ACCION — muertos el 2026-08-14 ═══════
    Esta era la otra mitad de la pieza; la caja y los `:hover` estaban en `buttons.css`, y su

@@ -24,7 +24,7 @@
     <template #footer>
       <AppButton
         type="button"
-        variant="secondary"
+        variant="neutralOutline"
         class-name="w-full sm:w-auto"
         @click="handleLogout"
         :disabled="loading"

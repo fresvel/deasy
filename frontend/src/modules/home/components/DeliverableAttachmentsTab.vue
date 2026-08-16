@@ -44,7 +44,7 @@
             <span v-if="attachment.description" class="truncate">· {{ attachment.description }}</span>
           </p>
         </div>
-        <AppButton variant="softInfo" size="sm" icon-only title="Descargar anexo" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-5 w-5" /></AppButton>
+        <AppButton variant="infoSoft" size="sm" icon-only title="Descargar anexo" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-5 w-5" /></AppButton>
         <AppDeleteButton label="Eliminar anexo" @click="handleAttachmentDelete(attachment)" />
       </li>
     </ul>

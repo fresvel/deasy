@@ -86,13 +86,22 @@ for (const ruta of ficheros(SRC)) {
 
 /* Conforme: componente propio del sistema, sin estilo por fuera, y —si es de solo icono—
    con variante suave. Un boton de fila CON TEXTO es legitimo (un «Abrir» ancho), pero
-   tiene que salir del componente igual. */
+   tiene que salir del componente igual.
+
+   ⚠️ EL SUFIJO ERA UN PREFIJO HASTA EL 2026-08-16. Las variantes se llamaban `softSuccess`;
+   hoy se llaman `successSoft`, porque el nombre dice antes el tono que el modo y asi la
+   matriz de variantes se lee por filas. Este gate fue el unico de los diecinueve que se
+   entero del renombrado —los demas leen los mapas del componente— y grito con 14 falsos
+   positivos. Vale como recordatorio: una convencion de nombres codificada en un script es
+   una copia de la verdad, y las copias caducan. */
+const SUAVE = /Soft$/;
+
 const motivos = (r) => [
   r.tag === "button" && !r.sistema ? "<button> CRUDO" : null,
   r.tag === "AppButton" || r.tag === "AdminButton"
     ? (!r.variante && !r.varDinamica ? "sin variante" : null) : null,
-  (r.tag === "AppButton" || r.tag === "AdminButton") && r.variante && !r.texto && !/^soft/.test(r.variante)
-    ? `icono con variante ${r.variante}, no es soft*` : null,
+  (r.tag === "AppButton" || r.tag === "AdminButton") && r.variante && !r.texto && !SUAVE.test(r.variante)
+    ? `icono con variante ${r.variante}, no es {tono}Soft` : null,
   r.sobra.length ? `estilo por fuera: ${r.sobra.slice(0, 4).join(" ")}` : null,
 ].filter(Boolean);
 
@@ -106,7 +115,7 @@ if (mal.length > TECHO) {
     console.error(`  ${f}  (${rs.length})`);
     for (const r of rs) console.error(`     :${String(r.linea).padEnd(5)} «${r.etiqueta}»  →  ${motivos(r).join(" · ")}`);
   }
-  console.error("\nUna accion de fila sale de AppButton con variante soft*, o de un bloque propio");
+  console.error("\nUna accion de fila sale de AppButton con variante {tono}Soft, o de un bloque propio");
   console.error("del sistema (deasy-inline-action, deasy-chip-remove). Nunca con utilidades sueltas.\n");
   process.exit(1);
 }

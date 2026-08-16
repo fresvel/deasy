@@ -299,11 +299,15 @@
          informativos ya usaban `info`; los botones, la zona de subida y las tarjetas de
          entregable usaban el otro. Contraste 7.55 -> 5.86: baja, y sigue pasando AA para
          texto (4.5) y 1.4.11 para el borde derivado (3.32).
-       · `--color-action-upload` — se queda, pero deja de ser un hex inventado.
+       · `--color-action-upload` — sobrevivio a aquella poda y murio en la siguiente
+         (2026-08-16, F4). Su unico consumidor era `.deasy-btn--soft-action-upload`, y esa
+         variante resulto ser `--soft-primary` con otro nombre: sus cuatro usos eran todos
+         `icon-only`, forma en la que la receta solo mira `--tone-soft` y `--tone-bright`, y los
+         dos los tenia **prestados de la marca**. O sea que este token no llego nunca al DOM.
+         Ya no queda ninguno de los tres.
 
        ⚠️ El 71 % del borde no es arbitrario: es el porcentaje al que estos tonos llegan a
        3:1 contra la fila blanca (WCAG 1.4.11). Al 35 % ninguno cumple. */
-    --color-action-upload: var(--color-brand-900);  /* era #3751a3, propio. 7.32 -> 11.45 */
 }
 
 /* Aqui habia un `@layer base` con `html`, `body` y `#app`. Se fue a `base.css` el 2026-08-13:

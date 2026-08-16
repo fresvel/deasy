@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <router-link to="/register" class="deasy-btn deasy-btn--secondary deasy-btn--lg deasy-btn--block">Crear usuario</router-link>
+    <router-link to="/register" class="deasy-btn deasy-btn--neutral-outline deasy-btn--lg deasy-btn--block">Crear usuario</router-link>
   </AuthLayout>
 </template>
 

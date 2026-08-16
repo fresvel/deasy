@@ -203,7 +203,7 @@
             Seleccionados: <span class="font-bold text-body">{{ selectedItems.length }}</span>
           </div>
           <div class="deasy-filter-actions">
-            <AppButton variant="secondary" icon-only size="sm" @click="resetTableFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
+            <AppButton variant="neutralOutline" icon-only size="sm" @click="resetTableFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
             <AppButton variant="primary" size="sm" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
               {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
             </AppButton>
@@ -244,10 +244,10 @@
           </template>
           <template #actions="{ row }">
             <div class="flex flex-wrap justify-end gap-2">
-              <AppButton variant="softNeutral" size="sm" :disabled="rowActionLoading[row.signature_request_id] === 'preview'" @click="previewItem(row)">
+              <AppButton variant="neutralSoft" size="sm" :disabled="rowActionLoading[row.signature_request_id] === 'preview'" @click="previewItem(row)">
                 Ver PDF
               </AppButton>
-              <AppButton variant="softPrimary" size="sm" :disabled="rowActionLoading[row.signature_request_id] === 'download'" @click="downloadItem(row)">
+              <AppButton variant="primarySoft" size="sm" :disabled="rowActionLoading[row.signature_request_id] === 'download'" @click="downloadItem(row)">
                 Descargar
               </AppButton>
             </div>

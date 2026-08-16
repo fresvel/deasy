@@ -28,7 +28,7 @@
         <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-danger">
           <IconAlertCircle class="mb-4 h-12 w-12" />
           <p class="text-lg font-medium">{{ error }}</p>
-          <AppButton variant="softInfo" class-name="mt-6" @click="fetchTerms">
+          <AppButton variant="infoSoft" class-name="mt-6" @click="fetchTerms">
             <IconRefresh class="h-5 w-5" /> Intentar de nuevo
           </AppButton>
         </div>

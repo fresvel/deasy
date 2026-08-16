@@ -40,7 +40,7 @@
         <div class="mt-4">
           <AppButton
             v-if="view === 'conversation'"
-            variant="secondary"
+            variant="neutralOutline"
             size="sm"
             @click="view = 'inbox'"
           >

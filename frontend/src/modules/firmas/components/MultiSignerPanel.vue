@@ -35,7 +35,7 @@
                     class="deasy-control"
                   />
                   <AdminButton
-                    variant="secondary"
+                    variant="neutralOutline"
                     size="sm"
                     icon-only
                     title="Limpiar filtros"

@@ -1,6 +1,6 @@
 <template>
   <AppButton
-    variant="softDanger"
+    variant="dangerSoft"
     size="sm"
     icon-only
     :title="label"
@@ -27,7 +27,7 @@
  *   3. **Aceptaba `className`**, o sea estilo viajando por el atributo — justo lo que la fase 3
  *      viene a quitar. `MultiSignerPanel` lo usaba para un `mx-0 self-center` que no hace falta.
  *   4. Y el fallo que prueba que el contrato no estaba claro: ese mismo uso le pasaba
- *      **`variant="softDanger"`, una prop que `BtnDelete` NO declara**. Vue la deja pasar como
+ *      **`variant="dangerSoft"`, una prop que `BtnDelete` NO declara**. Vue la deja pasar como
  *      atributo suelto al `<button>` del DOM y no falla nada. `check-variants` no lo veia porque
  *      solo mira los mapas de `AppButton`.
  *

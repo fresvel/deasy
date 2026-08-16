@@ -28,7 +28,7 @@
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-wrap items-center gap-3">
           <AppButton
-            variant="secondary"
+            variant="neutralOutline"
             size="sm"
             icon-only
             title="Regresar"
@@ -60,14 +60,14 @@
         <div class="flex items-center justify-start xl:justify-end gap-3 flex-wrap">
           <AdminButton
             v-if="signMode !== 'token'"
-            variant="outlineDanger"
+            variant="dangerOutline"
             @click="openDeleteModal"
           >
             Eliminar
           </AdminButton>
           <AdminButton
             v-if="!requestMode"
-            variant="outlinePrimary"
+            variant="primaryOutline"
             @click="submitTokenAction"
           >
             Firmar por token
@@ -130,13 +130,13 @@
           </div>
           <div class="flex flex-col gap-3">
             <AdminButton
-              variant="outlinePrimary"
+              variant="primaryOutline"
               :disabled="!workflowSignContext?.preloadPdfPath"
               @click="retryWorkflowPdfLoad"
             >
               Reintentar carga automática
             </AdminButton>
-            <AdminButton variant="secondary" @click="goBackToStart">
+            <AdminButton variant="neutralOutline" @click="goBackToStart">
               Limpiar PDF actual
             </AdminButton>
           </div>
@@ -452,7 +452,7 @@
           </div>
           
           <div class="flex items-center gap-2 sm:self-center self-end">
-            <AppButton variant="secondary" size="sm" @click.stop="goToFieldLocation(field.id)">
+            <AppButton variant="neutralOutline" size="sm" @click.stop="goToFieldLocation(field.id)">
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
               Ver en documento
             </AppButton>
@@ -521,7 +521,7 @@
           </select>
         </div>
         <div class="flex items-end justify-end">
-          <AdminButton variant="outlinePrimary" class-name="w-full md:w-auto" @click="clearSignerFilters">
+          <AdminButton variant="primaryOutline" class-name="w-full md:w-auto" @click="clearSignerFilters">
             Limpiar filtros
           </AdminButton>
         </div>
@@ -560,7 +560,7 @@
       <p v-if="userSearchError" class="text-danger text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="cancel" data-modal-dismiss>
+      <AdminButton variant="dangerOutline" data-modal-dismiss>
         Cancelar
       </AdminButton>
       <AdminButton variant="primary" @click="confirmSigner">
@@ -582,7 +582,7 @@
       ¿Deseas eliminar este campo de firma? Esta acción no se puede deshacer.
     </p>
     <template #footer>
-      <AdminButton variant="outlineDanger" @click="confirmDeleteField">
+      <AdminButton variant="dangerOutline" @click="confirmDeleteField">
         Eliminar
       </AdminButton>
     </template>
@@ -639,7 +639,7 @@
             <div class="text-sm font-bold text-strong">Certificados disponibles</div>
             <div class="text-xs text-muted">Puedes gestionarlos aquí sin salir de la vista de firmas.</div>
           </div>
-          <AdminButton variant="outlinePrimary" size="sm" @click="openCertificatesManagerModal">
+          <AdminButton variant="primaryOutline" size="sm" @click="openCertificatesManagerModal">
             Gestionar certificados
           </AdminButton>
         </div>
@@ -704,7 +704,7 @@
       <p v-if="signError" class="mb-0 text-sm font-medium text-danger">{{ signError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="cancel" data-modal-dismiss :disabled="isSigning">
+      <AdminButton variant="dangerOutline" data-modal-dismiss :disabled="isSigning">
         Cancelar
       </AdminButton>
       <AdminButton variant="primary" :disabled="isSigning" @click="confirmSign">
@@ -726,13 +726,13 @@
           {{ signResultMessage || `El documento fue firmado correctamente con ${signedFieldsCount} campo(s).` }}
         </p>
         <div v-if="signedMinioPath" class="flex flex-wrap gap-3">
-          <AdminButton variant="outlinePrimary" @click="viewSignedDocument">Visualizar documento</AdminButton>
+          <AdminButton variant="primaryOutline" @click="viewSignedDocument">Visualizar documento</AdminButton>
           <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
         </div>
     </div>
     <p v-else class="mb-0 text-sm text-danger font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del flujo.' }}</p>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+      <AdminButton variant="neutralOutline" data-modal-dismiss>Cerrar</AdminButton>
     </template>
   </AppModalShell>
 
@@ -752,7 +752,7 @@
       @loaded="handleCertificatesLoaded"
     />
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+      <AdminButton variant="neutralOutline" data-modal-dismiss>Cerrar</AdminButton>
     </template>
   </AppModalShell>
 
@@ -791,7 +791,7 @@
         </div>
         <div class="relative z-10 w-full md:w-auto">
           <AppButton
-            variant="outlinePrimary"
+            variant="primaryOutline"
             class-name="w-full md:w-auto"
             :disabled="isValidatingDocument || !validationFile"
             @click="validateDocument"
@@ -892,7 +892,7 @@
             <div class="flex items-center justify-center">
               <AppButton
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
-                variant="softInfo"
+                variant="infoSoft"
                 size="sm"
                 icon-only
                 title="Ver entidad certificadora"

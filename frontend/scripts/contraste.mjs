@@ -114,13 +114,14 @@ const META = {
   "warning":        ["#ffffff", 4.5, "estado"],
   "pending":        ["#ffffff", 4.5, "estado"],
   "step-ink":       ["#ffffff", 4.5, "«te toca a ti»"],
-  /* [2026-08-14] Eran TRES tonos de accion y queda uno. `action-neutral` se quedo sin
-     consumidores al colapsar los 12 botones de accion sobre el componente, y `action-view` se
-     unifico con `info`: eran `blue-light-800` y `blue-light-700`, la misma familia en pasos
-     contiguos con dos nombres segun quien lo escribiera. `action-upload` sobrevive porque su
-     accion —subir/versionar/descargar— si es una categoria propia, pero deja de ser un hex
-     inventado: pasa a `brand-900`. */
-  "action-upload":  ["#ffffff", 3.0, "icono de accion"],
+  /* [2026-08-14 → 2026-08-16] Eran TRES tonos de accion y no queda ninguno. `action-neutral` se
+     quedo sin consumidores al colapsar los 12 botones de accion sobre el componente; `action-view`
+     se unifico con `info` —eran `blue-light-800` y `blue-light-700`, la misma familia en pasos
+     contiguos con dos nombres segun quien lo escribiera—; y `action-upload` cayo en F4 al medir
+     que su variante era `soft-primary` con otro nombre. Los tres eran categorias de ACCION
+     («ver», «subir», «neutro») en un sistema cuyos tonos son de ESTADO, y ninguno sobrevivio al
+     contacto con la medicion. La leccion, que ya vale como norma: un token nuevo se justifica
+     por lo que RENDERIZA distinto, no por lo que significa. */
   /* Los tres FONDOS. Su contraste contra blanco no dice nada por si mismo —un fondo no se lee—,
      asi que llevan minimo 1.0 y estan aqui para que el gate no los de por sin clasificar. Lo que
      de verdad hay que medir en ellos es el TEXTO que se les pone encima, y eso no lo hace esta
@@ -196,8 +197,8 @@ const FAMILIA = {
   icon: "gray", line: "gray", "line-strong": "gray", "line-field": "gray", surface: "gray",
   success: "success", danger: "error", warning: "warning", pending: "orange",
   "step-ink": "success", "action-view": "blue-light", info: "blue-light",
-  /* Sin familia en TailAdmin: `accent` (turquesa), `action-neutral` y `action-upload` (azules
-     grisaceos que no son su `brand`). Se quedan con su hex propio. */
+  /* Sin familia en TailAdmin: `accent` (turquesa). Se queda con su hex propio. Los dos que le
+     acompañaban aqui, `action-neutral` y `action-upload`, ya no existen. */
 };
 
 const f = (n) => n.toFixed(2).padStart(5);
@@ -224,8 +225,7 @@ const BASE = {
   "body": 10.46, "muted": 7.69, "icon": 7.69, "line": 1.24, "line-strong": 1.47,
   "line-field": 1.47, "surface": 1.05, "success": 5.41, "danger": 6.57, "warning": 5.43,
   "pending": 5.52, "step-ink": 5.41,
-  /* 7.32 -> 11.45 el 2026-08-14, al dejar de ser `#3751a3` y anclarse a `brand-900`. Sube. */
-  "action-upload": 11.45,
+  /* `action-upload` estuvo aqui con 11.45. Murio en F4 (2026-08-16) con su variante. */
   "white": 1.00, "navy-deep": 17.84, "gold": 2.10,
 };
 

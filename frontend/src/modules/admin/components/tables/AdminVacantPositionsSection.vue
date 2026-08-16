@@ -34,10 +34,10 @@
               </div>
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
               <div class="deasy-filter-actions">
-                <AdminButton variant="secondary" icon-only size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="outlinePrimary" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+                <AdminButton variant="neutralOutline" icon-only size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+                <AdminButton variant="primaryOutline" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
                 <AdminButton
-                  variant="secondary"
+                  variant="neutralOutline"
                   size="sm"
                   icon-only
                   :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
@@ -74,10 +74,10 @@
             </template>
             <template v-if="canUpdate" #actions="{ row }">
               <div class="inline-flex items-center gap-1">
-                <AdminButton variant="softDanger" size="sm" icon-only title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
+                <AdminButton variant="dangerSoft" size="sm" icon-only title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
                   <font-awesome-icon icon="times-circle" />
                 </AdminButton>
-                <AdminButton variant="softSuccess" size="sm" icon-only title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
+                <AdminButton variant="successSoft" size="sm" icon-only title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
                   <font-awesome-icon icon="user-plus" />
                 </AdminButton>
               </div>

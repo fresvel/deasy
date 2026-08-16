@@ -18,8 +18,8 @@
       v-on="panelListeners"
     />
     <template #footer>
-      <AdminButton variant="secondary" @click="$emit('close')">Cerrar</AdminButton>
-      <AdminButton variant="outlinePrimary" @click="$emit('accept')">Aceptar</AdminButton>
+      <AdminButton variant="neutralOutline" @click="$emit('close')">Cerrar</AdminButton>
+      <AdminButton variant="primaryOutline" @click="$emit('accept')">Aceptar</AdminButton>
     </template>
   </AppModalShell>
 </template>

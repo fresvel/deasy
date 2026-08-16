@@ -84,16 +84,30 @@ for (const ruta of ficheros(SRC)) {
 }
 
 /* La ✕ (sin texto) es AppCloseButton; la de texto sale de AppButton, y ahi manda la ETIQUETA:
-   «Cancelar» es `cancel` —el que descarta lo escrito— y cerrar sin más es `secondary`. */
+   «Cancelar» descarta lo escrito y por eso es `dangerOutline`; cerrar sin más no descarta nada
+   y es `neutralOutline`.
+
+   ⚠️ LOS DOS NOMBRES CAMBIARON EL 2026-08-16 y este gate los tenia escritos a mano — `cancel`
+   y `secondary`—, asi que dio 47 falsos positivos sobre codigo correcto. Es el segundo de los
+   diecinueve al que le pasa en el mismo commit, y por el mismo motivo: los demas leen el mapa
+   de variantes del propio componente, y estos dos guardaban una COPIA de la convencion. La
+   copia caduca; el mapa no.
+
+   Y la distincion que vigila sigue siendo la misma, solo que ahora el nombre la dice: cancelar
+   es una accion con consecuencia (se pierde lo escrito) y por eso va en el tono de peligro;
+   cerrar no la tiene y va en el neutro. Antes habia que saberselo. */
+const CANCELAR = "dangerOutline";
+const CERRAR = "neutralOutline";
+
 const motivos = (r) => {
   const et = r.etiqueta.toLowerCase();
   return [
     !r.texto && r.tag !== "AppCloseButton" && r.tag !== "AppDeleteButton"
       ? "la ✕ de cerrar sale de AppCloseButton" : null,
     r.texto && r.tag === "button" && !r.sistema ? "<button> CRUDO" : null,
-    r.texto && /^cancelar/.test(et) && r.variante && r.variante !== "cancel"
+    r.texto && /^cancelar/.test(et) && r.variante && r.variante !== CANCELAR
       ? `dice «Cancelar» y usa ${r.variante}` : null,
-    r.texto && /^cerrar/.test(et) && r.variante && r.variante !== "secondary"
+    r.texto && /^cerrar/.test(et) && r.variante && r.variante !== CERRAR
       ? `dice «Cerrar» y usa ${r.variante}` : null,
     r.sobra.length ? `estilo por fuera: ${r.sobra.slice(0, 4).join(" ")}` : null,
   ].filter(Boolean);
@@ -118,7 +132,7 @@ if (mal.length > TECHO) {
     for (const r of rs) console.error(`     :${String(r.linea).padEnd(5)} «${r.etiqueta}»  →  ${motivos(r).join(" · ")}`);
   }
   console.error("\nLa ✕ es AppCloseButton. El de texto es AppButton, y manda la etiqueta:");
-  console.error("«Cancelar» → variant=\"cancel\"; cerrar sin descartar nada → variant=\"secondary\".\n");
+  console.error(`«Cancelar» → variant="${CANCELAR}"; cerrar sin descartar nada → variant="${CERRAR}".\n`);
   process.exit(1);
 }
 console.log(`check:dismiss-actions OK — ${filas.length} botones de cierre, todos por el componente.`);

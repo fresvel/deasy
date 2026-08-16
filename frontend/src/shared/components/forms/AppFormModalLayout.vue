@@ -18,7 +18,7 @@
     </div>
 
     <div class="deasy-dialog-footer flex flex-wrap items-center justify-end gap-3">
-      <AppButton type="button" variant="cancel" data-modal-dismiss :disabled="isSubmitting" @click="$emit('cancel')">
+      <AppButton type="button" variant="dangerOutline" data-modal-dismiss :disabled="isSubmitting" @click="$emit('cancel')">
         Cancelar
       </AppButton>
       <AppButton type="submit" :form="formId" variant="primary" :disabled="isSubmitting">
