@@ -654,7 +654,30 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 
 ---
 
-## Frente 4 · Sistema de diseño — 🟡 · **pasos 1-5 cerrados; solo queda el 6** (el 4 cerró el 2026-08-14)
+## Frente 4 · Sistema de diseño — 🟡 · **13 de 25 tareas** (3.ª vuelta)
+
+> ### ⛔ El estado de este frente vive en [`sistema-diseno-componentes/plan-2026-08-13.md`](./sistema-diseno-componentes/plan-2026-08-13.md#0--control-de-ejecución), NO aquí.
+>
+> **Una sola numeración: `F0`…`F10`.** Si lees un número de fase de este frente en cualquier sitio,
+> es de esa tabla.
+>
+> ⚠️ **Aquí abajo hay una tabla de «pasos 1-6» que ya no se usa, y confundirla con las fases costó
+> una respuesta entera (2026-08-15).** Eran la planificación del 2026-08-09/11 —sobre **el CSS**,
+> que es la 1.ª y la 2.ª vuelta, las dos archivadas— y **sus dos pendientes ya los absorbió la 3.ª**:
+>
+> | Paso viejo | Dónde vive hoy |
+> |---|---|
+> | 1 · Fusionar los `@layer` en conflicto | cerrado en la 1.ª vuelta (`63b901e`) |
+> | 2 · Eliminar componentes muertos | cerrado en la 1.ª vuelta (`9ebe307`) |
+> | 3 · Colapsar `--deasy-*` / `--brand-*` | cerrado en la 2.ª vuelta (`6e60d74`) |
+> | 4 · Cerrar el fork `AdminButton.vue` | **= tarea `F1.3a`**, cerrada el 2026-08-14 |
+> | 5 · Migrar los colores hardcodeados | cerrado el 2026-08-13 |
+> | 6 · Las 33 incidencias de contraste | **= fase `F10`**, sin empezar |
+>
+> **La tabla se conserva porque explica de dónde viene el frente, no porque haya que seguirla.**
+> Y el paso 6 dice «fase F de la 3.ª vuelta»: **eso es un error de escritura de 2026-08-11**, de
+> cuando se confundieron las fases `F0…F10` con las fases `A…I` del plan de calidad, que son de otro
+> documento y de otro tema.
 
 > **Plan, evidencia y bitácora: [`sistema-diseno-componentes/`](./sistema-diseno-componentes/).** El frente ocupaba 20 líneas
 > aquí y necesitaba más: la medición del 2026-08-09 encontró **tres cosas que no estaban en ningún
