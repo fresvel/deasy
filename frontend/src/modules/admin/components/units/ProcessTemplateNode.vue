@@ -27,17 +27,18 @@
       <span class="max-w-[8.5rem] truncate text-[12px] font-semibold text-body">{{ data.display_name }}</span>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1">
-      <span class="inline-flex items-center rounded bg-brand-100 px-1 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-brand-200" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</span>
-      <span
+      <span class="deasy-tag deasy-tag--primary deasy-tag--sm deasy-tag--outlined" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</span>
+      <AppTag
         v-if="data.storage_version"
-        class="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold ring-1"
-        :class="stateBadgeClass"
+        :variant="tonoEstado"
+        size="sm"
+        outlined
+        dot
         :title="`Versión vinculada: ${data.storage_version} (${stateLabel})${Number(data.version_count) > 1 ? ` · ${data.version_count} versiones` : ''}`"
       >
-        <span class="h-1.5 w-1.5 rounded-full" :class="stateDotClass"></span>
         v{{ data.storage_version }}
         <span v-if="Number(data.version_count) > 1" class="opacity-70">· {{ data.version_count }}</span>
-      </span>
+      </AppTag>
       <IconAlertTriangle
         v-if="isUnhealthy"
         class="h-3.5 w-3.5 shrink-0 text-warning"
@@ -48,6 +49,8 @@
 </template>
 
 <script setup>
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import { ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import { IconFileText, IconGitBranch, IconPlus, IconCopy, IconRefresh, IconAlertTriangle } from "@tabler/icons-vue";

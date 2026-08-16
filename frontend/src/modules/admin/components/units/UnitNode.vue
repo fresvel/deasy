@@ -2,7 +2,7 @@
   <div
     class="graph-node relative rounded-xl border px-3 py-2 transition-all"
     :class="[
-      data.is_active ? 'border-line-strong bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
+      data.is_active ? 'border-line-strong bg-white' : 'border-line bg-white opacity-80',
       data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '',
       data.dimmed ? 'opacity-35' : ''
     ]"
@@ -57,13 +57,15 @@
         :class="positionsBadgeClass"
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</span>
-      <span v-if="!data.is_active" class="text-[11px] font-semibold text-danger">Inactiva</span>
+      <AppTag v-if="!data.is_active" variant="warning" size="sm" outlined>Inactiva</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
 </template>
 
 <script setup>
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { coberturaEstado, tonoCobertura } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import {
@@ -77,12 +79,10 @@ const props = defineProps({
 
 const hover = ref(false);
 const positionsBadgeClass = computed(() => {
-  const total = Number(props.data.positions_count) || 0;
-  const occ = Number(props.data.occupied_count) || 0;
-  if (total === 0) return "bg-surface text-muted ring-line";
-  if (occ >= total) return "bg-emerald-50 text-success ring-emerald-200";
-  if (occ === 0) return "bg-rose-50 text-danger ring-rose-200";
-  return "bg-amber-50 text-warning ring-amber-200";
+  /* Aqui SI aplica la rampa entera: una unidad con puestos y nadie dentro es la alarma, y por eso
+     `vacio` conserva el rojo. `coberturaEstado` decide el grado; el diccionario, el tono. */
+  const estado = coberturaEstado(Number(props.data.occupied_count) || 0, Number(props.data.positions_count) || 0);
+  return `graph-node__badge--${tonoCobertura(estado)}`;
 });
 </script>
 

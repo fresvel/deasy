@@ -188,6 +188,28 @@
         color: var(--color-white);
     }
 
+    /* EL BORDE IZQUIERDO QUE TIÑE UN NODO DE CONFIGURACION CON SU ESTADO.
+     *
+     * Antes eran tres ternarios con `border-l-emerald-400` / `border-l-amber-400` /
+     * `border-l-line-strong` escritos en el componente. Y decian AMBAR para `draft` mientras la
+     * pastilla del mismo nodo, a dos centimetros, decia neutral — para el mismo dato.
+     *
+     * Ahora el tono lo nombra `estadoTono.js` y el color lo pone aqui, una vez. El paso es el
+     * `-500`: es un BORDE de 4 px, no texto, asi que no le aplica el minimo de 4.5:1 sino el 3:1
+     * de WCAG 1.4.11 para limites de componente, que el `-500` cumple de sobra. */
+    .graph-node--estado {
+        border-top: 1px solid var(--color-line);
+        border-right: 1px solid var(--color-line);
+        border-bottom: 1px solid var(--color-line);
+        border-left: 4px solid var(--tono-borde, var(--color-line-strong));
+    }
+
+    .graph-node--estado-success { --tono-borde: var(--color-success-500); }
+    .graph-node--estado-warning { --tono-borde: var(--color-warning-500); }
+    .graph-node--estado-danger  { --tono-borde: var(--color-error-500); }
+    .graph-node--estado-info    { --tono-borde: var(--color-blue-light-500); }
+    .graph-node--estado-neutral { --tono-borde: var(--color-line-strong); }
+
     /* ══ EL CONTADOR PULSABLE DE UN NODO — «3 entregables», «2/5 config.» ═══════════════════
        Se pulsa para desplegar, asi que es un `<button>`, pero su caja es la de una pastilla
        dentro del nodo.

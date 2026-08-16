@@ -2,7 +2,7 @@
   <div
     class="graph-node relative rounded-xl border px-3 py-2 transition-all"
     :class="[
-      data.is_active ? 'border-line-strong bg-white' : 'border-rose-200 bg-rose-50/70 opacity-80',
+      data.is_active ? 'border-line-strong bg-white' : 'border-line bg-white opacity-80',
       data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '',
       data.dimmed ? 'opacity-35' : ''
     ]"
@@ -46,7 +46,7 @@
       <button
         v-if="data.definitions_count"
         type="button"
-        class="nodrag graph-node__badge graph-node__badge--brand"
+        class="nodrag graph-node__badge"
         :class="configBadgeClass"
         :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
         @click.stop="data.onToggleConfigs?.(data.id)"
@@ -54,14 +54,15 @@
         <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
         {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
-      <span v-else class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-muted ring-1 ring-line">Sin config.</span>
-      <span v-if="!data.is_active" class="text-[11px] font-semibold text-danger">Inactivo</span>
+      <AppTag v-else variant="neutral" size="sm" outlined>Sin config.</AppTag>
+      <AppTag v-if="!data.is_active" variant="warning" size="sm" outlined>Inactivo</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
 </template>
 
 <script setup>
+import AppTag from "@/shared/components/data/AppTag.vue";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import { IconPencil, IconCornerDownRight, IconPlus, IconChevronUp, IconChevronDown, IconChevronRight } from "@tabler/icons-vue";
@@ -71,12 +72,15 @@ const props = defineProps({
 });
 
 const hover = ref(false);
+/* El TONO sale del diccionario; aqui solo queda decidir el ESTADO, que es negocio. */
 const configBadgeClass = computed(() => {
   const total = Number(props.data.definitions_count) || 0;
-  const active = Number(props.data.active_count) || 0;
-  if (total === 0) return "bg-surface text-muted ring-line";
-  if (active >= 1) return "bg-emerald-50 text-success ring-emerald-200";
-  return "bg-amber-50 text-warning ring-amber-200";
+  const activas = Number(props.data.active_count) || 0;
+  /* ⚠️ La cobertura de configuraciones NO usa `coberturaEstado`: aqui «cero activas» y «ninguna
+     configuracion» no son dos grados de lo mismo, asi que solo hay tres escalones y falta el
+     `danger`. Un proceso sin configuraciones esta pendiente de definir, no roto. */
+  if (total === 0) return "graph-node__badge--neutral";
+  return activas >= 1 ? "graph-node__badge--success" : "graph-node__badge--warning";
 });
 </script>
 

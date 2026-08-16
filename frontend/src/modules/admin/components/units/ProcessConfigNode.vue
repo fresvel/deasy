@@ -21,7 +21,7 @@
     </div>
     <p class="m-0 flex items-center gap-1.5">
       <span class="max-w-[9.5rem] truncate text-[12px] font-semibold text-body">{{ data.definition_name }}</span>
-      <span class="ml-auto inline-flex items-center rounded px-1 py-0.5 text-[10px] font-semibold ring-1" :class="statusChipClass">{{ statusLabel }}</span>
+      <AppTag :variant="tonoEstado" size="sm" outlined class-name="ml-auto">{{ statusLabel }}</AppTag>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1 text-[10px] text-muted">
       <span class="truncate">{{ seriesLabel }}</span>
@@ -43,6 +43,8 @@
 </template>
 
 <script setup>
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import { IconChevronRight, IconFilePlus, IconGitBranch, IconPlus } from "@tabler/icons-vue";
@@ -64,18 +66,12 @@ const statusLabel = computed(() => ({ active: "Activa", draft: "Borrador", retir
 // han reescrito CUATRO scripts de migración distintos (F4.1, F4.4-a, F4.4-d y uno anterior),
 // porque contenía literales que sus expresiones regulares casaban. Un reemplazo masivo no
 // distingue código de prosa. Si vuelves a nombrarlas aquí, volverá a pasar.
-const statusBorderClass = computed(() => {
-  if (props.data.status === "active") return "border-l-emerald-400 border-y border-r border-y-line border-r-line";
-  if (props.data.status === "draft") return "border-l-amber-400 border-y border-r border-y-line border-r-line";
-  return "border-l-line-strong border-y border-r border-y-line border-r-line";
-});
+/* El borde izquierdo tiñe el nodo entero con el mismo tono que su pastilla: antes decia AMBAR
+   para `draft` mientras el chip decia neutral, para el mismo dato y a dos centimetros. */
+const statusBorderClass = computed(() => `graph-node--estado graph-node--estado-${tonoCicloVida(props.data.status)}`);
 /* Mismas variantes que el modal de edicion. Antes `draft` salia AMBAR aqui y gris alla: el
    mismo estado con dos colores segun la pantalla. */
-const statusChipClass = computed(() => {
-  if (props.data.status === "active") return "deasy-tag--success";
-  if (props.data.status === "draft") return "deasy-tag--neutral";
-  return "deasy-tag--neutral";
-});
+const tonoEstado = computed(() => tonoCicloVida(props.data.status));
 const seriesLabel = computed(() => {
   if (props.data.series_source_type === "cargo") return `Cargo · ${props.data.series_cargo_name || props.data.series_code}`;
   if (props.data.series_source_type === "unit_type") return `Tipo · ${props.data.series_unit_type_name || props.data.series_code}`;
