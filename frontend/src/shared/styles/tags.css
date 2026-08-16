@@ -29,36 +29,64 @@
     .deasy-tag--danger {
         --tone: var(--color-danger);
         --tone-soft: var(--color-error-50);
+        --tone-line: var(--color-error-200);
+        --tone-edge: var(--color-error-500);
     }
     .deasy-tag--success {
         --tone: var(--color-success);
         --tone-soft: var(--color-success-50);
+        --tone-line: var(--color-success-200);
+        --tone-edge: var(--color-success-500);
     }
     .deasy-tag--warning {
         --tone: var(--color-warning);
         --tone-soft: var(--color-warning-50);
+        --tone-line: var(--color-warning-200);
+        --tone-edge: var(--color-warning-500);
     }
     .deasy-tag--info {
         --tone: var(--color-info);
         --tone-soft: var(--color-blue-light-50);
+        --tone-line: var(--color-blue-light-200);
+        --tone-edge: var(--color-blue-light-500);
     }
     /* Salmon: pendiente de firma. NO es el rojo de «rechazado». */
     .deasy-tag--salmon {
         --tone: var(--color-pending);
         --tone-soft: var(--color-orange-50);
+        --tone-line: var(--color-orange-200);
+        --tone-edge: var(--color-orange-500);
     }
     /* Sin familia en la paleta adoptada: el relleno se deriva al 6 %, el mismo porcentaje
        al que un tinte `-50` se sitúa sobre blanco. */
     .deasy-tag--accent {
         --tone: var(--color-accent);
         --tone-soft: color-mix(in srgb, var(--color-accent) 6%, var(--color-white));
+        --tone-line: color-mix(in srgb, var(--color-accent) 45%, var(--color-white));
+        --tone-edge: var(--color-accent);
     }
     /* El estado apagado: gris CON fondo, para que se lea como pastilla y no como texto
        suelto. `--muted` (fondo blanco) desaparecia sobre una fila blanca. */
-    .deasy-tag--neutral,
-    .deasy-tag--muted {
+    .deasy-tag--neutral {
         --tone: var(--color-icon);
         --tone-soft: var(--color-gray-100);
+        --tone-line: var(--color-line);
+        --tone-edge: var(--color-muted);
+    }
+
+    /* EL TONO DE MARCA — no existia, y F3.3 lo necesita: el chip de «origen de la regla» y el
+       del codigo de plantilla son de marca, no de estado.
+
+       ⚠️ NO puede anclarse a `--color-primary` copiando lo que hace el resto del sistema.
+       `--color-primary` mide **4.84 sobre BLANCO**, que es lo unico que ve `contraste.mjs`, pero
+       aqui va sobre `brand-50` y ahi cae a **4.31** — por debajo de AA. Sobre `brand-100`, a 4.0.
+       Se ancla al paso `-600`, que sobre `brand-50` da 5.6. Es un caso que el gate de contraste
+       NO puede detectar hoy, y por eso se deja escrito aqui. (2026-08-15, F3.3.) */
+    .deasy-tag--primary {
+        --tone: var(--color-brand-600);
+        --tone-soft: var(--color-brand-50);
+        --tone-line: var(--color-brand-200);
+        --tone-edge: var(--color-brand-500);
     }
 
     /* LA RECETA, escrita una vez para las ocho variantes. */
@@ -68,15 +96,46 @@
     .deasy-tag--info,
     .deasy-tag--salmon,
     .deasy-tag--accent,
-    .deasy-tag--neutral,
-    .deasy-tag--muted {
+    .deasy-tag--primary,
+    .deasy-tag--neutral {
         background-color: var(--tone-soft);
         color: var(--tone);
     }
 
-    /* Habia aqui `--contrast` y `--hero`, IDENTICAS byte a byte entre si y sin un solo
-       consumidor: `AppTag` compone `deasy-tag--${variant}` y ninguna plantilla pasa esos dos
-       valores. Borradas el 2026-08-13. Las variantes vivas son las nueve de arriba. */
+    /* ── TRES EJES MAS, que F3.3 necesita y la pastilla no tenia ─────────────────────────── */
+
+    /* CON BORDE. Sobre blanco es decoracion; sobre el lienzo del grafo —que es `bg-surface`, o
+       sea `gray-50`— un relleno `-50` es practicamente invisible y **el borde es lo unico que
+       dibuja la pastilla**. Por eso es modificador y no base: los 54 usos actuales van sobre
+       blanco y no lo quieren.
+
+       Va por `box-shadow: inset`, NO por `ring-*`: F1.3b midio que los `--tw-ring-color` propios
+       no llegan al DOM porque el anillo lo pone `overrides.css` desde fuera de capa. Es la misma
+       tecnica que `graph-node__badge--brand` ya usa con exito. */
+    .deasy-tag--outlined {
+        box-shadow: inset 0 0 0 1px var(--tone-line);
+    }
+
+    /* PEQUEÑA — para los nodos del grafo, que miden 170-190 px de ancho FIJO y hoy escriben
+       `text-[10px]` a mano. El destino es `text-theme-xs` (12 px), que es lo que F5.1 ya decidio
+       para los 127 sub-12. El radio NO cambia: sigue `rounded-full`, una geometria. */
+    .deasy-tag--sm {
+        @apply px-2 text-theme-xs;
+    }
+
+    /* EL PUNTO. Hermano de `__icon`: el mismo papel —el simbolo que precede a la etiqueta— pero
+       sin icono, solo color. Estaba escrito tres veces con `bg-{fam}-500` a mano. */
+    .deasy-tag__dot {
+        @apply h-1.5 w-1.5 shrink-0 rounded-full;
+        background-color: var(--tone-edge);
+    }
+
+    /* [2026-08-15, F3.3] AQUI ESTABA `--muted`, Y ERA `--neutral` CON OTRO NOMBRE.
+       Declaraban el mismo cuerpo byte a byte y convivian con 9 y 7 usos respectivamente, para el
+       mismo aspecto. Los nueve `variant="muted"` pasan a `neutral` en este commit y el render es
+       identico. Ya paso antes en este fichero con `--contrast` y `--hero`, borradas el 08-13 por
+       lo mismo: `AppTag` compone la clase en runtime, asi que una variante duplicada no molesta a
+       nadie hasta que alguien se pregunta cual de las dos usar. */
 }
 
 @layer components {

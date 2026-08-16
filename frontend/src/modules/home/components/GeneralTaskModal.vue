@@ -20,7 +20,7 @@
 
     <div v-if="generalTaskForm.templateName" class="flex flex-wrap items-center gap-2">
       <AppTag :variant="generalTaskForm.itemMode === 'routed' ? 'info' : 'success'">{{ generalTaskForm.templateName }}</AppTag>
-      <AppTag variant="muted">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
+      <AppTag variant="neutral">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
     </div>
 
     <div v-if="generalTaskError" class="deasy-alert deasy-alert--danger">{{ generalTaskError }}</div>

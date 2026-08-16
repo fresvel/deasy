@@ -39,6 +39,14 @@ const COMPONENTES = [
     etiquetas: ["AppButton", "AdminButton"],
     mapas: { variant: "variantClassMap", size: "sizeClassMap" },
   },
+  /* `AppTag` entra el 2026-08-15 (F3.3). Hasta entonces componia `deasy-tag--${variant}` sin
+     validar: una variante inventada salia sin color y sin fallar, y aqui eso es una pastilla
+     INVISIBLE. Ahora tiene mapa, y este gate lo lee del propio fichero. */
+  {
+    fichero: "shared/components/data/AppTag.vue",
+    etiquetas: ["AppTag"],
+    mapas: { variant: "variantClassMap", size: "sizeClassMap" },
+  },
 ];
 
 const ficheros = (dir, acc = []) => {

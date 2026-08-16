@@ -35,7 +35,7 @@
   <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
     <div class="flex items-center justify-between gap-2">
       <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
-      <AppTag variant="muted">
+      <AppTag variant="neutral">
         {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
       </AppTag>
     </div>

@@ -965,7 +965,7 @@
           <div class="md:col-span-2 rounded-xl border border-line bg-surface/60 p-5">
             <div class="flex flex-wrap gap-2">
               <AppTag variant="info">Tarea ligada a proceso</AppTag>
-              <AppTag variant="muted">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
+              <AppTag variant="neutral">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
             </div>
             <p class="mt-3 mb-0 text-sm font-medium text-icon">
               Define el contexto operativo de la tarea. El backend la materializará usando los templates activos de esta configuración.
@@ -1057,7 +1057,7 @@
                   <h3 class="m-0 text-base font-bold text-strong">Artifacts generales</h3>
                   <p class="mt-1 mb-0 text-sm font-medium text-muted">Disponibles para iteraciones posteriores del flujo manual.</p>
                 </div>
-                <AppTag variant="muted">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
+                <AppTag variant="neutral">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
               </header>
               <div v-if="!selectedProcessPanel?.user_packages?.length" class="deasy-empty">
                 No tienes artifacts generales registrados en esta cuenta.
@@ -1068,7 +1068,7 @@
                     <strong class="block truncate text-sm font-bold text-strong">{{ item.display_name }}</strong>
                     <p class="mt-1 mb-0 text-xs font-medium text-muted">{{ item.description || 'Plantilla de documento registrada por el usuario.' }}</p>
                   </div>
-                  <AppTag :variant="Number(item.is_active) === 1 ? 'success' : 'muted'" class-name="shrink-0">{{ Number(item.is_active) === 1 ? 'Activa' : 'Inactiva' }}</AppTag>
+                  <AppTag :variant="Number(item.is_active) === 1 ? 'success' : 'neutral'" class-name="shrink-0">{{ Number(item.is_active) === 1 ? 'Activa' : 'Inactiva' }}</AppTag>
                 </article>
               </div>
             </article>
@@ -1107,7 +1107,7 @@
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.period_types?.length || 0 }} tipos de periodo activos</AppTag>
-                <AppTag variant="muted">{{ selectedProcessPanel?.dependencies?.rules?.length || 0 }} reglas vigentes</AppTag>
+                <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.rules?.length || 0 }} reglas vigentes</AppTag>
               </div>
               <ul class="m-0 pl-5 text-sm font-medium text-icon flex flex-col gap-2">
                 <li>La tarea se creará en modo manual dentro de esta configuración.</li>
@@ -1519,7 +1519,7 @@
             </div>
             <div class="flex items-center gap-3 text-xs text-muted">
               <span>{{ String(s.created_at || '').slice(0, 10) }}</span>
-              <AppTag variant="muted">{{ s.status }}</AppTag>
+              <AppTag variant="neutral">{{ s.status }}</AppTag>
             </div>
           </li>
         </ul>
@@ -1752,7 +1752,7 @@
                 <AppTag variant="neutral">
                   {{ signatureFlowState.subject?.documentId ? `Documento #${signatureFlowState.subject.documentId}` : 'Sin documento' }}
                 </AppTag>
-                <AppTag variant="muted">
+                <AppTag variant="neutral">
                   {{ signatureFlowState.subject?.documentVersion ? `Versión v${signatureFlowState.subject.documentVersion}` : `v${signatureFlowState.subject?.documentVersionId || '—'}` }}
                 </AppTag>
                 <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
@@ -1773,7 +1773,7 @@
                   ? `${signatureFlowState.snapshot.responsableActual.firstName || ''} ${signatureFlowState.snapshot.responsableActual.lastName || ''}`.trim()
                   : 'Sin responsable resuelto' }}
               </p>
-              <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
+              <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'neutral'">
                 {{ signatureFlowState.snapshot?.canOperate ? 'Puedes operar este paso' : 'Solo visualización' }}
               </AppTag>
               <p class="text-xs text-muted">
@@ -1795,7 +1795,7 @@
           <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
-              <AppTag variant="muted">
+              <AppTag variant="neutral">
                 {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
               </AppTag>
             </div>
@@ -1886,7 +1886,7 @@
                 <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Firmar documento</h3>
                 <p class="text-xs text-muted m-0">Utiliza el visor integrado para completar tu paso actual.</p>
               </div>
-              <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
+              <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'neutral'">
                 {{ signatureFlowState.snapshot?.canOperate ? 'Listo para operar' : 'Acceso en modo lectura' }}
               </AppTag>
             </div>
@@ -2776,7 +2776,7 @@ const homeDossierRows = computed(() => [
   { key: 'referencias', label: 'Referencias', count: homeDossierCounts.value.referencias, icon: IconUserCheck }
 ].map((row) => ({
   ...row,
-  variant: row.count > 0 ? 'success' : 'muted'
+  variant: row.count > 0 ? 'success' : 'neutral'
 })));
 
 const homeDossierTotal = computed(() =>
@@ -3546,7 +3546,7 @@ const signatureRequestTagVariant = (statusCode) => {
   if (['en_progreso', 'pendiente'].includes(normalized)) {
     return 'warning';
   }
-  return 'muted';
+  return 'neutral';
 };
 
 const loadDocumentCenterPage = async () => {
