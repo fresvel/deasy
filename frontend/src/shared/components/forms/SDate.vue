@@ -7,7 +7,7 @@
           type="date"
           :value="formattedValue"
           @input="updateValue"
-          class="deasy-field-input"
+          class="deasy-control"
           :placeholder="placeholder"
         />
       </div>

@@ -4,7 +4,7 @@
       <label :for="selectId" class="deasy-field-label">{{ label }}</label>
       <select
         :id="selectId"
-        class="deasy-field-select"
+        class="deasy-control deasy-control--select"
         :multiple="multiple"
         v-model="model"
       >

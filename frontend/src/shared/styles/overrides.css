@@ -72,16 +72,11 @@
    Estan partidas en tres —elemento como suelo, clases encima— porque agrupadas hacian que
    `--color-line-field` y `--color-line-strong` no llegaran nunca al DOM.
    ------------------------------------------------------------------------------------ */
-.deasy-field-input,
-.deasy-field-select,
 .deasy-auth-field,
 /* ⚠️ NO PARTAS ESTA REGLA POR DECLARACION. Se intento bajar el `background-color` a
    `@layer components` («no tapa nada») y aparecieron 10 nodos: dos controles con
    `bg-…/alfa` que salian blancos y ocho `input` ocultos que perdian el fondo. */
 
-.profile-text-input,
-.profile-select-input,
-.profile-textarea,
 input,
 select,
 textarea {
@@ -122,22 +117,14 @@ textarea:focus {
 /* ⚠️ FUERA DE CAPA: si bajase, ganaria el `:focus` de `forms.css` y los campos cambiarian
    de borde al recibir el teclado. El indicador no se pierde hoy — el `box-shadow:
    var(--focus-ring)` de esa misma regla si aplica. Encenderlo es §4.2. */
-.deasy-field-input,
-.deasy-field-select,
 .deasy-auth-field {
   border-color: var(--color-line-strong);
 }
 
-/* ⚠️ FUERA DE CAPA por lo mismo: los `:focus` capados de `.deasy-filter-control` y
-   `.deasy-filter-search-input` en `forms.css`. §4.2. */
+/* ⚠️ FUERA DE CAPA por lo mismo: el `:focus` capado de `.deasy-control` en `forms.css`. §4.2.
+   (Antes esta nota hablaba de `.deasy-filter-control` y `.deasy-filter-search-input`; las dos se
+   colapsaron sobre la receta el 2026-08-15.) */
 .deasy-control,
-.deasy-field-input,
-.deasy-field-select,
-.deasy-filter-control,
-.deasy-filter-search-input,
-.profile-text-input,
-.profile-select-input,
-.profile-textarea,
 .admin-select-field {
   border-color: var(--color-line-field);
 }

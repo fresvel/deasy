@@ -12,7 +12,7 @@
       <label :for="fieldId('tema')" class="profile-field-label">Tema</label>
       <textarea
         :id="fieldId('tema')"
-        class="profile-textarea"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         v-model="form.tema"
         placeholder="Nombre del evento o curso"
@@ -30,7 +30,7 @@
       <input
         v-if="form.institucion === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"

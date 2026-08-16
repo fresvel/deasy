@@ -41,20 +41,12 @@
 
        Se queda como modificador vacio a proposito, para no tocar sus 39 consumidores de golpe:
        hereda todo de `deasy-control` y solo declara lo suyo. (2026-08-15, F4.) */
-    .deasy-filter-control {
-        @apply text-strong;
-    }
-
-    .deasy-filter-control:focus {
-        border-color: var(--color-primary);
-        box-shadow: var(--focus-ring);
-    }
 
     /* El disparador de un desplegable propio — se ve como un `<select>` porque HACE de `<select>`,
        pero es un `<button>` porque el nativo no admite seleccion multiple con casillas. Solo
        cambia la distribucion interna: la etiqueta a la izquierda y el chevron a la derecha.
        (2026-08-15, censo estructural de G6: ese reparto viajaba en el atributo.) */
-    .deasy-filter-control--trigger {
+    .deasy-control--trigger {
         @apply flex items-center justify-between gap-2 text-left;
     }
 
@@ -83,7 +75,7 @@
         @apply justify-between;
     }
 
-    .admin-select-field.deasy-filter-control {
+    .admin-select-field.deasy-control {
         padding-right: 2.75rem;
     }
 
@@ -91,15 +83,10 @@
         @apply flex items-center gap-2;
     }
 
-    .deasy-filter-search-input {
-        @apply block h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-strong shadow-theme-xs outline-none transition placeholder:text-muted;
-        border-color: var(--color-line-field);
+    /* El buscador de una barra de filtros era la receta ESCRITA OTRA VEZ, palabra por palabra,
+       mas un `min-width: 0` que necesita por vivir en un flex. Solo sobrevive eso. */
+    .deasy-control--flex {
         min-width: 0;
-    }
-
-    .deasy-filter-search-input:focus {
-        border-color: var(--color-primary);
-        box-shadow: var(--focus-ring);
     }
 
     .deasy-filter-toolbar {
@@ -142,11 +129,6 @@
        impone `border-radius: 0.5rem` a todo `input`, y fuera de capa gana a `@layer components`.
        Medido: 8 px, no 16. O sea que el unico eje en el que esta familia parecia distinta ya
        estaba unificado por accidente; lo que de verdad la separaba era la altura. */
-    .deasy-field-input,
-    .deasy-field-select {
-        @apply text-body;
-    }
-
     /* ⚠️ AQUI HABIA UN `--tw-ring-color` ESCRITO A MANO, y era la segunda forma de pintar el
        mismo anillo en este fichero. Dos motivos para retirarlo, y el orden importa:
 
@@ -159,8 +141,7 @@
        El anillo del proyecto es UNO y se llama `--focus-ring` (`tokens.css`). El dia que la
        fase 6 cape la regla suelta de `overrides.css`, hay que decidir ahi si el foco cambia de
        color por estado — que es la decision §4.2, no una linea de este fichero. */
-    .deasy-field-input:focus,
-    .deasy-field-select:focus {
+    .deasy-control:focus {
         @apply bg-white;
         border-color: color-mix(in srgb, var(--color-primary) 44%, transparent);
     }
@@ -178,14 +159,14 @@
        `color`. No es deuda que entre este commit —ya era asi con los tintes de Tailwind—
        pero se escribe para que nadie lo mida y crea que la migracion lo rompio. Se
        encienden cuando §4.2 decida borde y foco de los 228 controles. */
-    .deasy-field-input--error {
+    .deasy-control--error {
         border-color: color-mix(in srgb, var(--color-danger) 71%, var(--color-white));
         background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
         color: var(--color-danger);
     }
 
     /* Mismo caso que el foco normal de arriba: el `--tw-ring-color` no llegaba al DOM. */
-    .deasy-field-input--error:focus {
+    .deasy-control--error:focus {
         @apply bg-white;
         border-color: var(--color-danger);
     }
@@ -407,36 +388,21 @@
         color: var(--color-ink);
     }
 
-    .profile-text-input,
-    .profile-select-input,
-    .profile-textarea {
-        min-height: var(--input-height);
-        width: 100%;
-        border-radius: 1rem;
-        border: 1px solid var(--color-line-field);
-        background: var(--color-white);
-        box-shadow: var(--elev-1);
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: var(--color-navy);
-        padding: 0.8rem 1rem;
-    }
-
-    .profile-textarea {
-        min-height: 5.5rem;
-        resize: vertical;
-    }
+    /* 📌 AQUI VIVIO LA CUARTA FAMILIA DE CONTROL, `profile-*` (†2026-08-15, F4). Era la mas
+       alejada de las cuatro: 52 px de alto frente a 44, fuente de 15.2 frente a 14, y su propia
+       sombra. Sus 49 consumidores usan la receta del sistema; lo unico suyo que sobrevive es la
+       altura minima del area de texto, abajo, porque una caja de varias lineas no tiene altura de
+       control. Su `border-radius: 1rem` no hace falta migrarlo: **nunca pinto** —la regla de
+       elemento de `overrides.css` impone 8 px desde fuera de capa— asi que ya se veia a 8. */
 }
 
-/* ⚠️ SE QUEDA SIN CAPA — EL FOCO DE LOS 49 CONTROLES DEL DOSSIER. Es (0,2,0) y hoy le gana
-   por especificidad al grupo `.profile-*` de `overrides.css` (0,1,0), que tambien esta
-   suelto. Capada perderia POR CAPA —fuera de capa vale mas que cualquier especificidad— y
-   los 49 controles del dossier se quedarian con `--color-line-field` tambien al recibir
-   el teclado. El `box-shadow: var(--focus-ring)` no se pierde; el borde si. §4.2. */
+/* ⚠️ SE QUEDA SIN CAPA — EL FOCO DE **TODOS** LOS CONTROLES. Era el de los 49 del dossier y
+   desde el colapso de las cuatro familias (2026-08-15, F4) lo es de los 228. Capada perderia POR
+   CAPA —fuera de capa vale mas que cualquier especificidad— frente al grupo de `overrides.css`
+   que fija el borde en reposo, y los controles se quedarian con `--color-line-field` tambien al
+   recibir el teclado. El `box-shadow: var(--focus-ring)` no se pierde; el borde si. §4.2. */
 
-.profile-text-input:focus,
-.profile-select-input:focus,
-.profile-textarea:focus {
+.deasy-control:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
@@ -537,10 +503,7 @@
        colapsar las cuatro cadenas se cayo, y los 29 controles del modal se quedaron con
        `border-top-width: 0px`: sin borde. No lo vio el CSS ni el lint — lo cazo la medida en el
        DOM, comparando la forma de los 29. */
-    .deasy-control,
-    .deasy-filter-control,
-    .deasy-field-input,
-    .deasy-field-select {
+    .deasy-control {
         /* LA FORMA ES LA DE TAILADMIN — adoptada el 2026-08-13. Su input canonico:
              h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
 
@@ -562,8 +525,9 @@
         /* ⚠️ EL BORDE SE DECLARA AQUI, y hasta hoy no lo hacia. Su receta es `border-gray-300`; al
            no decirlo, caia al `--color-line` (gray-200) de la regla de elemento de `overrides.css`
            y quedaba **un escalon mas claro que las otras tres familias de control**, que si lo
-           declaran. Medido: gray-200 en esta y gray-300 en `deasy-filter-control`,
-           `deasy-field-input` y `profile-text-input`. La receta era la unica desalineada. */
+           declaraban. Medido el 2026-08-15: gray-200 en la receta y gray-300 en las otras TRES
+           familias que entonces existian. La receta era la unica desalineada — y hoy es la unica
+           que queda, porque las tres se colapsaron sobre ella. */
         border-color: var(--color-line-field);
         /* DESHABILITADO — la receta completa, no media. Le faltaban las dos senales que hacen
            que un campo bloqueado se LEA como bloqueado en vez de solo resistirse: el borde baja
@@ -575,6 +539,13 @@
     /* El `<select>` añade lo suyo: sitio para la flecha y supresion del adorno del navegador. */
     .deasy-control--select {
         @apply appearance-none pr-11;
+    }
+
+    /* EL AREA DE TEXTO. Es lo unico que sobrevive de la familia `profile-*`, y por un motivo que no
+       es historico: una caja de VARIAS LINEAS no puede tener la altura fija de un control. Renuncia
+       al `h-11` y pone un suelo, dejando que crezca. */
+    .deasy-control--textarea {
+        @apply h-auto min-h-22 resize-y py-2.5;
     }
 
     /* EL INPUT REAL DEL INTERRUPTOR — invisible, pero es quien lleva el estado y quien recibe el

@@ -21,7 +21,7 @@
       <label :for="fieldId('institution')" class="profile-field-label">Institución</label>
       <input :id="fieldId('institution')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="Nombre de la institución o empresa"
         v-model="form.institution"
       />
@@ -31,7 +31,7 @@
       <label :for="fieldId('nombre')" class="profile-field-label">Nombres</label>
       <input :id="fieldId('nombre')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="Nombres completos"
         v-model="form.nombre"
       />
@@ -41,7 +41,7 @@
       <label :for="fieldId('cargo-parentesco')" class="profile-field-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
       <input :id="fieldId('cargo-parentesco')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         :placeholder="form.tipo === 'laboral' ? 'Cargo en la institución' : form.tipo === 'familiar' ? 'Ej: Padre, Madre, Hermano' : 'Cargo o parentesco'"
         v-model="form.cargo_parentesco"
       />
@@ -51,7 +51,7 @@
       <label :for="fieldId('email')" class="profile-field-label">Correo electrónico</label>
       <input :id="fieldId('email')"
         type="email"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="usuario@dominio.com"
         v-model="form.email"
       />
@@ -61,7 +61,7 @@
       <label :for="fieldId('telefono')" class="profile-field-label">Teléfono</label>
       <input :id="fieldId('telefono')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="+593987654321"
         v-model="form.telefono"
       />

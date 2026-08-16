@@ -8,7 +8,7 @@
                 ref="searchInputRef"
                 :model-value="searchTerm"
                 placeholder="Buscar en la tabla"
-                input-class="deasy-filter-control"
+                input-class="deasy-control"
                 @update:model-value="$emit('update:search-term', $event)"
                 @input="$emit('debounced-search')"
               />
@@ -16,7 +16,7 @@
 
             <template v-if="showAdvancedFilters && isPositionFilterTable">
               <div class="md:col-span-4 lg:col-span-2">
-                <AdminSelectField :model-value="unitPositionFilters.unit_type_id" select-class="deasy-filter-control" :disabled="unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('unit_type_id', $event)" @change="$emit('handle-unit-position-type-change')">
+                <AdminSelectField :model-value="unitPositionFilters.unit_type_id" select-class="deasy-control" :disabled="unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('unit_type_id', $event)" @change="$emit('handle-unit-position-type-change')">
                   <option value="">Tipo de unidad</option>
                   <option v-for="row in unitPositionUnitTypeOptions" :key="row.id" :value="String(row.id)">
                     {{ formatFkOptionLabel("unit_types", row) }}
@@ -24,7 +24,7 @@
                 </AdminSelectField>
               </div>
               <div class="md:col-span-4 lg:col-span-2">
-                <AdminSelectField :model-value="unitPositionFilters.unit_id" select-class="deasy-filter-control" :disabled="!unitPositionFilters.unit_type_id || unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('unit_id', $event)" @change="$emit('handle-unit-position-unit-change')">
+                <AdminSelectField :model-value="unitPositionFilters.unit_id" select-class="deasy-control" :disabled="!unitPositionFilters.unit_type_id || unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('unit_id', $event)" @change="$emit('handle-unit-position-unit-change')">
                   <option value="">Unidad</option>
                   <option v-for="row in unitPositionUnitOptions" :key="row.id" :value="String(row.id)">
                     {{ formatFkOptionLabel("units", row) }}
@@ -32,7 +32,7 @@
                 </AdminSelectField>
               </div>
               <div class="md:col-span-4 lg:col-span-2">
-                <AdminSelectField :model-value="unitPositionFilters.cargo_id" select-class="deasy-filter-control" :disabled="unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('cargo_id', $event)" @change="$emit('handle-unit-position-cargo-change')">
+                <AdminSelectField :model-value="unitPositionFilters.cargo_id" select-class="deasy-control" :disabled="unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('cargo_id', $event)" @change="$emit('handle-unit-position-cargo-change')">
                   <option value="">Cargo</option>
                   <option v-for="row in unitPositionCargoOptions" :key="row.id" :value="String(row.id)">
                     {{ formatFkOptionLabel("cargos", row) }}
@@ -43,7 +43,7 @@
 
             <template v-else-if="showAdvancedFilters && isProcessDefinitionFilterTable">
               <div class="md:col-span-6 lg:col-span-2">
-                <AdminSelectField :model-value="processDefinitionInlineFilters.process_id" select-class="deasy-filter-control" @update:model-value="updateProcessDefinitionFilter('process_id', $event)" @change="$emit('fetch-rows')">
+                <AdminSelectField :model-value="processDefinitionInlineFilters.process_id" select-class="deasy-control" @update:model-value="updateProcessDefinitionFilter('process_id', $event)" @change="$emit('fetch-rows')">
                   <option value="">Proceso</option>
                   <option v-for="row in processDefinitionProcessOptions" :key="row.id" :value="String(row.id)">
                     {{ formatFkOptionLabel("processes", row) }}
@@ -51,7 +51,7 @@
                 </AdminSelectField>
               </div>
               <div class="md:col-span-6 lg:col-span-2">
-                <AdminSelectField :model-value="processDefinitionInlineFilters.status" select-class="deasy-filter-control" @update:model-value="updateProcessDefinitionFilter('status', $event)" @change="$emit('fetch-rows')">
+                <AdminSelectField :model-value="processDefinitionInlineFilters.status" select-class="deasy-control" @update:model-value="updateProcessDefinitionFilter('status', $event)" @change="$emit('fetch-rows')">
                   <option value="">Estado</option>
                   <option value="draft">draft</option>
                   <option value="active">active</option>
@@ -59,7 +59,7 @@
                 </AdminSelectField>
               </div>
               <div class="md:col-span-12 lg:col-span-3">
-                <AdminSelectField :model-value="processDefinitionInlineFilters.variation_key" select-class="deasy-filter-control" @update:model-value="updateProcessDefinitionFilter('variation_key', $event)" @change="$emit('fetch-rows')">
+                <AdminSelectField :model-value="processDefinitionInlineFilters.variation_key" select-class="deasy-control" @update:model-value="updateProcessDefinitionFilter('variation_key', $event)" @change="$emit('fetch-rows')">
                   <option value="">Variación</option>
                   <option v-for="row in processDefinitionSeriesOptions" :key="row.id" :value="String(row.code || '')">
                     {{ formatFkOptionLabel("process_definition_series", row) }}
@@ -70,7 +70,7 @@
 
             <template v-else-if="showAdvancedFilters && isProcessTargetRuleFilterTable">
               <div class="md:col-span-6 lg:col-span-2">
-                <AdminSelectField :model-value="processTargetRuleInlineFilters.definition_status" select-class="deasy-filter-control" @update:model-value="updateProcessTargetRuleFilter('definition_status', $event)" @change="$emit('fetch-rows')">
+                <AdminSelectField :model-value="processTargetRuleInlineFilters.definition_status" select-class="deasy-control" @update:model-value="updateProcessTargetRuleFilter('definition_status', $event)" @change="$emit('fetch-rows')">
                   <option value="">Estado</option>
                   <option value="draft">draft</option>
                   <option value="active">active</option>
@@ -81,7 +81,7 @@
 
             <template v-else-if="showAdvancedFilters && isTemplateArtifactsTable">
               <div class="md:col-span-6 lg:col-span-3">
-                <AdminSelectField :model-value="templateArtifactInlineFilters.is_active" select-class="deasy-filter-control" @update:model-value="updateTemplateArtifactFilter('is_active', $event)" @change="$emit('fetch-rows')">
+                <AdminSelectField :model-value="templateArtifactInlineFilters.is_active" select-class="deasy-control" @update:model-value="updateTemplateArtifactFilter('is_active', $event)" @change="$emit('fetch-rows')">
                   <option value="">Estado</option>
                   <option value="1">Activas</option>
                   <option value="0">Inactivas</option>

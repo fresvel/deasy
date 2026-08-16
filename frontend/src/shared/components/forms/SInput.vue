@@ -8,7 +8,7 @@
         :placeholder="placeholder" 
         :value="input"
         @input="updateValue"
-        class="deasy-field-input"
+        class="deasy-control"
       />
     </div>
   </div>

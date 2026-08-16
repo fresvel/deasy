@@ -58,7 +58,7 @@
                     required
                     maxlength="10"
                     class="deasy-auth-field"
-                    :class="{ 'deasy-field-input--error': cedulaError }"
+                    :class="{ 'deasy-control--error': cedulaError }"
                     placeholder="Número de identificación"
                   />
                   <span v-if="cedulaError" class="deasy-field-message deasy-field-message--error">{{ cedulaError }}</span>
@@ -96,7 +96,7 @@
                         type="tel"
                         maxlength="10"
                         class="deasy-auth-field pl-14"
-                        :class="{ 'deasy-field-input--error': whatsappError }"
+                        :class="{ 'deasy-control--error': whatsappError }"
                         placeholder="991234567"
                       />
                     </div>

@@ -173,26 +173,26 @@
               v-model="tableFilters.query"
               type="text"
               placeholder="Documento, proceso, unidad o paso"
-              class="deasy-filter-search-input"
+              class="deasy-control"
             />
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Año</span>
-            <select v-model="tableFilters.year" class="deasy-filter-control">
+            <select v-model="tableFilters.year" class="deasy-control">
               <option value="all">Año</option>
               <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Unidad</span>
-            <select v-model="tableFilters.unit" class="deasy-filter-control">
+            <select v-model="tableFilters.unit" class="deasy-control">
               <option value="all">Unidad</option>
               <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Proceso</span>
-            <select v-model="tableFilters.process" class="deasy-filter-control">
+            <select v-model="tableFilters.process" class="deasy-control">
               <option value="all">Proceso</option>
               <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
             </select>

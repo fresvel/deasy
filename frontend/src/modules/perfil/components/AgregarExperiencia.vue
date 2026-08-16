@@ -28,7 +28,7 @@
       <input
         v-if="form.institucion === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
@@ -55,7 +55,7 @@
     <div class="w-full space-y-2">
       <label :for="fieldId('actividades')" class="profile-field-label">Funciones, cátedras o actividades</label>
       <textarea :id="fieldId('actividades')"
-        class="profile-textarea"
+        class="deasy-control deasy-control--textarea"
         rows="3"
         v-model="form.actividades"
         placeholder="Describe las funciones o cátedras separadas por comas"

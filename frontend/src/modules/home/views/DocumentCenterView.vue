@@ -43,32 +43,32 @@
           <div class="deasy-filter-grid">
             <label class="deasy-filter-field deasy-filter-search-span">
               <span class="sr-only">Buscar</span>
-              <input v-model="filters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-filter-search-input" />
+              <input v-model="filters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-control" />
             </label>
             <label class="deasy-filter-field">
               <span class="sr-only">Año</span>
-              <select v-model="filters.year" class="deasy-filter-control">
+              <select v-model="filters.year" class="deasy-control">
                 <option value="all">Año</option>
                 <option v-for="option in filterYears" :key="option" :value="option">{{ option }}</option>
               </select>
             </label>
             <label class="deasy-filter-field">
               <span class="sr-only">Tipo de periodo</span>
-              <select v-model="filters.termType" class="deasy-filter-control">
+              <select v-model="filters.termType" class="deasy-control">
                 <option value="all">Tipo de periodo</option>
                 <option v-for="option in filterTermTypes" :key="option" :value="option">{{ option }}</option>
               </select>
             </label>
             <label class="deasy-filter-field">
               <span class="sr-only">Unidad</span>
-              <select v-model="filters.unit" class="deasy-filter-control">
+              <select v-model="filters.unit" class="deasy-control">
                 <option value="all">Unidad</option>
                 <option v-for="option in filterUnits" :key="option" :value="option">{{ option }}</option>
               </select>
             </label>
             <label class="deasy-filter-field">
               <span class="sr-only">Proceso</span>
-              <select v-model="filters.process" class="deasy-filter-control">
+              <select v-model="filters.process" class="deasy-control">
                 <option value="all">Proceso</option>
                 <option v-for="option in filterProcesses" :key="option" :value="option">{{ option }}</option>
               </select>

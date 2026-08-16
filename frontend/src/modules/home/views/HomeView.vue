@@ -75,7 +75,7 @@
                   <span class="sr-only">Procesos</span>
                   <button
                     type="button"
-                    class="deasy-filter-control deasy-filter-control--trigger w-full"
+                    class="deasy-control deasy-control--trigger w-full"
                     :disabled="!consolidatedCargoProcesses.length"
                     @click="showProcessMultiSelect = !showProcessMultiSelect"
                   >
@@ -114,14 +114,14 @@
                 </div>
                 <label class="deasy-filter-field">
                   <span class="sr-only">Año</span>
-                  <select v-model="taskListFilters.year" class="deasy-filter-control">
+                  <select v-model="taskListFilters.year" class="deasy-control">
                     <option value="all">Año</option>
                     <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
                 <label class="deasy-filter-field">
                   <span class="sr-only">Estado</span>
-                  <select v-model="taskListFilters.status" class="deasy-filter-control">
+                  <select v-model="taskListFilters.status" class="deasy-control">
                     <option value="all">Estado</option>
                     <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
                   </select>
@@ -1140,7 +1140,7 @@
               v-model="taskListFilters.query"
               type="text"
               placeholder="Buscar entregables, periodos o unidades"
-              class="deasy-filter-search-input py-3 pl-11 pr-4"
+              class="deasy-control py-3 pl-11 pr-4"
             />
           </div>
         </label>
@@ -1148,55 +1148,55 @@
         <div class="deasy-filter-grid md:grid-cols-3 xl:grid-cols-3">
           <label class="deasy-filter-field">
             <span class="sr-only">Año</span>
-            <select v-model="taskListFilters.year" class="deasy-filter-control">
+            <select v-model="taskListFilters.year" class="deasy-control">
               <option value="all">Año</option>
               <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Tipo de periodo</span>
-            <select v-model="taskListFilters.termType" class="deasy-filter-control">
+            <select v-model="taskListFilters.termType" class="deasy-control">
               <option value="all">Tipo de periodo</option>
               <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Unidad</span>
-            <select v-model="taskListFilters.unit" class="deasy-filter-control">
+            <select v-model="taskListFilters.unit" class="deasy-control">
               <option value="all">Unidad</option>
               <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Proceso</span>
-            <select v-model="taskListFilters.process" class="deasy-filter-control">
+            <select v-model="taskListFilters.process" class="deasy-control">
               <option value="all">Proceso</option>
               <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Periodo</span>
-            <select v-model="taskListFilters.term" class="deasy-filter-control">
+            <select v-model="taskListFilters.term" class="deasy-control">
               <option value="all">Periodo</option>
               <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Estado</span>
-            <select v-model="taskListFilters.status" class="deasy-filter-control">
+            <select v-model="taskListFilters.status" class="deasy-control">
               <option value="all">Estado</option>
               <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Participación</span>
-            <select v-model="taskListFilters.participation" class="deasy-filter-control">
+            <select v-model="taskListFilters.participation" class="deasy-control">
               <option v-for="option in taskFilterParticipationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
           <label class="deasy-filter-field">
             <span class="sr-only">Acción</span>
-            <select v-model="taskListFilters.actionState" class="deasy-filter-control">
+            <select v-model="taskListFilters.actionState" class="deasy-control">
               <option v-for="option in taskFilterActionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>

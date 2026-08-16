@@ -32,7 +32,7 @@
                     v-model="filters.query"
                     type="text"
                     placeholder="Buscar por documento, proceso, unidad o periodo"
-                    class="deasy-filter-search-input"
+                    class="deasy-control"
                   />
                   <AdminButton
                     variant="secondary"
@@ -51,28 +51,28 @@
               <div class="grid grid-cols-1 gap-3">
                 <label class="deasy-filter-field">
                   <span class="sr-only">Unidad</span>
-                  <select v-model="filters.unit" class="deasy-filter-control">
+                  <select v-model="filters.unit" class="deasy-control">
                     <option value="all">Unidad: Todas</option>
                     <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
                 <label class="deasy-filter-field">
                   <span class="sr-only">Proceso</span>
-                  <select v-model="filters.process" class="deasy-filter-control">
+                  <select v-model="filters.process" class="deasy-control">
                     <option value="all">Proceso: Todos</option>
                     <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
                 <label class="deasy-filter-field">
                   <span class="sr-only">Año</span>
-                  <select v-model="filters.year" class="deasy-filter-control">
+                  <select v-model="filters.year" class="deasy-control">
                     <option value="all">Año: Todos</option>
                     <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
                 <label class="deasy-filter-field">
                   <span class="sr-only">Periodo</span>
-                  <select v-model="filters.period" class="deasy-filter-control">
+                  <select v-model="filters.period" class="deasy-control">
                     <option value="all">Periodo: Todos</option>
                     <option v-for="option in periodOptions" :key="option" :value="option">{{ option }}</option>
                   </select>

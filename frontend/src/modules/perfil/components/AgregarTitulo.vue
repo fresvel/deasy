@@ -19,7 +19,7 @@
       <input
         v-if="form.titulo === 'Otro'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         aria-label="Especifique el título"
         placeholder="Especifique el título"
         v-model="form.tituloPersonalizado"
@@ -37,7 +37,7 @@
       <input
         v-if="form.ies === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         aria-label="Especifique la institución"
         placeholder="Especifique la institución"
         v-model="form.iesPersonalizada"
@@ -83,7 +83,7 @@
       <textarea
         :id="fieldId('campo-amplio')"
         v-model="form.campo_amplio"
-        class="profile-textarea"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         placeholder="Ej. Ingeniería, Ciencias Sociales, Educación..."
       ></textarea>

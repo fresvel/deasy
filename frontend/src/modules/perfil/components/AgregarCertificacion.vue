@@ -12,7 +12,7 @@
       <label :for="fieldId('titulo')" class="profile-field-label">Nombre de la certificación</label>
       <textarea
         :id="fieldId('titulo')"
-        class="profile-textarea"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         v-model="form.titulo"
         placeholder="Ej. Certificación en Gestión de Proyectos"
@@ -30,7 +30,7 @@
       <input
         v-if="form.institucion === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
@@ -63,7 +63,7 @@
       <label :for="fieldId('descripcion')" class="profile-field-label">Descripción (opcional)</label>
       <textarea
         :id="fieldId('descripcion')"
-        class="profile-textarea"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         v-model="form.descripcion"
         placeholder="Información adicional relevante"

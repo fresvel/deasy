@@ -4,10 +4,10 @@
           <div class="deasy-filter-shell deasy-filter-shell--embedded">
             <div class="deasy-filter-grid deasy-filter-grid--admin">
               <div class="md:col-span-4 lg:col-span-3">
-                <AdminInputField :model-value="searchTerm" input-class="deasy-filter-control" placeholder="Buscar plantillas sin configuracion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+                <AdminInputField :model-value="searchTerm" input-class="deasy-control" placeholder="Buscar plantillas sin configuracion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
               </div>
               <div class="md:col-span-4 lg:col-span-2">
-                <AdminSelectField :model-value="filters.is_active" select-class="deasy-filter-control" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
+                <AdminSelectField :model-value="filters.is_active" select-class="deasy-control" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
                   <option value="">Activo</option>
                   <option value="1">Si</option>
                   <option value="0">No</option>
