@@ -32,11 +32,11 @@
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Documento</h6>
       </div>
       <label class="flex flex-col gap-1">
-        <span class="deasy-eyebrow">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
+        <span class="deasy-overline">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
         <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none" />
       </label>
       <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
-        <span class="deasy-eyebrow">Descripción</span>
+        <span class="deasy-overline">Descripción</span>
         <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none"></textarea>
       </label>
     </section>
@@ -51,7 +51,7 @@
 
       <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
-          <span class="deasy-eyebrow">Elabora (entrega) *</span>
+          <span class="deasy-overline">Elabora (entrega) *</span>
           <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('entrega')">+ Agregar</button>
         </div>
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
@@ -65,7 +65,7 @@
 
       <div class="rounded-xl border border-line bg-surface/60 p-3">
         <div class="flex items-center justify-between">
-          <span class="deasy-eyebrow">Firma (pasos en orden)</span>
+          <span class="deasy-overline">Firma (pasos en orden)</span>
           <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
         </div>
         <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
@@ -148,14 +148,14 @@
       <div class="grid grid-cols-1 gap-3" :class="showSenderUnitSelect ? 'sm:grid-cols-2' : ''">
         <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->
         <label v-if="showSenderUnitSelect" class="flex flex-col gap-1">
-          <span class="deasy-eyebrow">Unidad emisora *</span>
+          <span class="deasy-overline">Unidad emisora *</span>
           <select v-model="generalTaskForm.unitId" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
             <option :value="null" disabled>Selecciona una unidad</option>
             <option v-for="unit in senderUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
           </select>
         </label>
         <label class="flex flex-col gap-1">
-          <span class="deasy-eyebrow">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
+          <span class="deasy-overline">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
           <input v-model="generalTaskForm.endDate" type="date" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none" />
         </label>
       </div>

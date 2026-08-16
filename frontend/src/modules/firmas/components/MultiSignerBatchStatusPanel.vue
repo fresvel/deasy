@@ -76,7 +76,7 @@
       <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5">
         <div class="flex items-center justify-between gap-3">
           <div class="flex flex-col">
-            <span class="deasy-eyebrow">Estado</span>
+            <span class="deasy-overline">Estado</span>
             <span class="text-sm font-semibold text-strong">{{ batchStatusLabel }}</span>
           </div>
           <AdminButton

@@ -812,7 +812,7 @@
         <div class="deasy-card p-4 flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="flex items-center gap-2 text-muted mb-1 z-10">
             <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
-            <div class="deasy-eyebrow">Firmas Detectadas</div>
+            <div class="deasy-overline">Firmas Detectadas</div>
           </div>
           <div class="text-3xl font-black text-strong z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
@@ -821,7 +821,7 @@
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-success mb-1 z-10">
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
-            <div class="deasy-eyebrow">Firmas Válidas</div>
+            <div class="deasy-overline">Firmas Válidas</div>
           </div>
           <div class="text-3xl font-black text-success z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
         </div>
@@ -830,7 +830,7 @@
            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-light-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-info mb-1 z-10">
             <div class="p-1.5 bg-blue-light-100 rounded-2xl"><IconSearch class="w-4 h-4" /></div>
-            <div class="deasy-eyebrow">Coincidencias</div>
+            <div class="deasy-overline">Coincidencias</div>
           </div>
           <div class="text-3xl font-black text-info z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
         </div>
@@ -838,7 +838,7 @@
         <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 flex flex-col justify-center relative overflow-hidden">
           <div class="flex items-center gap-2 text-primary mb-2 z-10">
             <div class="p-1.5 bg-brand-100 rounded-2xl"><IconFileCheck class="w-4 h-4" /></div>
-            <div class="deasy-eyebrow">Documento Activo</div>
+            <div class="deasy-overline">Documento Activo</div>
           </div>
           <div class="text-sm font-bold text-primary truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
         </div>
@@ -948,7 +948,7 @@
   >
     <div class="flex flex-col gap-4">
       <div class="rounded-2xl border border-line bg-surface px-4 py-3">
-        <div class="deasy-eyebrow">Entidad</div>
+        <div class="deasy-overline">Entidad</div>
         <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-strong">
           {{ selectedCertificateAuthority?.certificateAuthority || 'No disponible' }}
         </div>
@@ -958,7 +958,7 @@
         v-if="selectedCertificateAuthority?.extras?.issuer"
         class="deasy-card px-4 py-3"
       >
-        <div class="deasy-eyebrow">Issuer completo</div>
+        <div class="deasy-overline">Issuer completo</div>
         <div class="mt-2 whitespace-pre-wrap text-sm text-body">
           {{ selectedCertificateAuthority.extras.issuer }}
         </div>
@@ -968,7 +968,7 @@
         v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
         class="deasy-card px-4 py-3"
       >
-        <div class="deasy-eyebrow">Atributos detectados</div>
+        <div class="deasy-overline">Atributos detectados</div>
         <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-icon">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
       </div>
     </div>

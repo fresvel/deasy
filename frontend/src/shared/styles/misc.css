@@ -114,21 +114,32 @@
 }
 
 @layer components {
-    /* EL KICKER (o *eyebrow*): el rotulo pequeno en versalitas que va encima de un titulo o
+    /* EL OVERLINE: el rotulo pequeno en versalitas que va encima de un titulo o
        de un dato. Habia 75 escritos a mano en DIEZ formas, y entre ellas cuatro tamanos de
        fuente distintos —`text-[0.6rem]` (9.6px), `text-[11px]`, `text-[0.7rem]` (11.2px) y
        `text-xs`—, cuatro valores de `tracking`, dos pesos y dos colores. Nadie distingue 9.6
        de 11 de 11.2 px: eran tres formas de escribir el mismo escalon.
 
+       ⚠️ SE LLAMABA `deasy-eyebrow` HASTA EL 2026-08-15. El dueño lo renombro al preguntar «¿que
+       es el kicker?», y la pregunta destapo que el sistema tenia TRES nombres para esto: `eyebrow`
+       aqui, `kicker` en el hero y un `admin-page-header__eyebrow` que duró un dia. `overline` es
+       el termino que usan Material Design y la mayoria de sistemas, asi que lo reconoce quien
+       venga de fuera; y al no ser ninguno de los dos que ya convivian, obliga a renombrar los dos
+       sin dejar un «ganador» a medias.
+
+       📌 `deasy-hero-kicker` NO entra en este renombrado, y no es un olvido: no es un rotulo de
+       texto sino una PASTILLA —borde, fondo, radio, `px-3 py-1`—. Es otro componente con otro
+       problema, y le toca en F6.2.
+
        Esto contesta media F6.1 en la practica: la escala por debajo de 14px tiene DOS
        escalones y este es el de abajo, `text-theme-xs` (12/18), que es el de la paleta
        adoptada. Se lleva de paso 38 de los `text-[…]` arbitrarios. */
-    .deasy-eyebrow {
+    .deasy-overline {
         @apply m-0 text-theme-xs font-bold uppercase tracking-wide text-muted;
     }
 
     /* Cuando va sobre un titulo y necesita separarse de el. */
-    .deasy-eyebrow--spaced {
+    .deasy-overline--spaced {
         @apply mb-1 block;
     }
 }

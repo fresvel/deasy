@@ -242,20 +242,20 @@
       <!-- Paso 4: Resumen -->
       <div v-show="step === 4" class="space-y-2.5 text-sm">
         <div class="rounded-xl border border-line p-4">
-          <p class="deasy-eyebrow">Administrador</p>
+          <p class="deasy-overline">Administrador</p>
           <p class="m-0 mt-1 font-semibold text-body">{{ form.first_name }} {{ form.last_name }}</p>
           <p class="m-0 text-muted">{{ form.email }}</p>
         </div>
         <div class="rounded-xl border border-line p-4">
-          <p class="deasy-eyebrow">Gestor por defecto</p>
+          <p class="deasy-overline">Gestor por defecto</p>
           <p class="m-0 mt-1 text-muted">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
         </div>
         <div class="rounded-xl border border-line p-4">
-          <p class="deasy-eyebrow">Usuario de prueba</p>
+          <p class="deasy-overline">Usuario de prueba</p>
           <p class="m-0 mt-1 text-muted">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
         </div>
         <div class="rounded-xl border border-line p-4">
-          <p class="deasy-eyebrow">Catálogos a preconfigurar</p>
+          <p class="deasy-overline">Catálogos a preconfigurar</p>
           <ul v-if="selectedCatalogSummary.length" class="m-0 mt-2 space-y-2 p-0">
             <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-muted">
               <span class="font-semibold text-body">{{ item.label }}:</span>

@@ -44,17 +44,16 @@
         min-width: 0;
     }
 
-    /* EL ROTULO DE ENCIMA DEL TITULO. Estaba escrito a mano en el unico sitio que lo usaba
-       (`text-[11px] font-bold uppercase tracking-wider text-muted m-0`) y es el hermano de
-       `deasy-hero-kicker`, que en la familia hero si tenia nombre.
+    /* 📌 AQUI ESTUVO `admin-page-header__eyebrow` UN DIA (2026-08-15 → 2026-08-15).
+       Lo escribi al crear `AppPageHeader` sin comprobar si ya existia, y existia: `deasy-overline`
+       hace exactamente lo mismo —`text-theme-xs font-bold uppercase text-muted`— y su modificador
+       `--spaced` es literalmente el `mb-1` que yo estaba anadiendo. Cincuenta usos llevaban ahi.
+       Es el error que este frente entero persigue, cometido dentro del frente: escribir de nuevo
+       algo que ya tenia nombre. El componente usa ahora las dos clases que ya estaban.
 
-       🪤 Su `margin-bottom` es el que arregla el `mt-1` que NUNCA PINTO: el consumidor lo escribia
-       en el titulo, pero `.admin-page-header__title` esta declarada FUERA de `@layer` y gana a
-       `@layer utilities`. Aqui el hueco lo pone el rotulo, que si esta dentro de la capa. */
-    .admin-page-header__eyebrow {
-        @apply m-0 mb-1 text-theme-xs font-bold uppercase tracking-wider text-muted;
-    }
-
+       🪤 Y el `mb-1` sigue siendo necesario por el mismo motivo de antes: el `mt-1` del titulo NO
+       PINTA, porque `.admin-page-header__title` esta fuera de `@layer` y gana a las utilidades.
+       Quien da el hueco es el rotulo, no el titulo. */
     .admin-page-header__description {
         @apply m-0 mt-1 text-theme-sm text-icon;
     }

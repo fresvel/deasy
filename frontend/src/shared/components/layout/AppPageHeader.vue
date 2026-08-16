@@ -23,7 +23,7 @@
   <!-- SECTION: la misma cabecera sin caja, dentro de un panel que ya la tiene -->
   <div v-else class="admin-page-header">
     <div class="admin-page-header__main">
-      <p v-if="eyebrow" class="admin-page-header__eyebrow">{{ eyebrow }}</p>
+      <p v-if="eyebrow" class="deasy-overline deasy-overline--spaced">{{ eyebrow }}</p>
       <h1 class="admin-page-header__title">{{ title }}</h1>
       <p v-if="description" class="admin-page-header__description">{{ description }}</p>
     </div>
@@ -47,7 +47,7 @@
  * 🪤 EL `mt-1` QUE NO PINTA. Un consumidor escribía `class="admin-page-header__title mt-1"` para
  * separar el título de su kicker, y ese `mt-1` **nunca se aplicó**: `.admin-page-header__title` está
  * declarada FUERA de `@layer` (ver el aviso en `admin.css`) y por tanto gana a `@layer utilities`,
- * donde vive `mt-1`. El hueco lo da ahora `__eyebrow` con su propio margen, que sí está en la capa.
+ * donde vive `mt-1`. El hueco lo da ahora `deasy-overline--spaced`, que sí está en la capa.
  * Es un pixel que cambia —el título baja 4 px respecto a hoy— y es el arreglo, no la regresión.
  *
  * ⚠️ Este componente colapsa la PLANTILLA, no el CSS: sigue componiendo las clases que ya existían.

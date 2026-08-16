@@ -22,7 +22,7 @@
 
         <div v-else class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <span class="deasy-eyebrow">
+            <span class="deasy-overline">
               {{ pendingCount }} pendiente(s) · {{ definitions.length }} configuracion(es)
             </span>
             <AppButton

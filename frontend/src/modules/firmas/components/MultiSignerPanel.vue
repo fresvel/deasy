@@ -324,7 +324,7 @@
             <IconSignature class="h-5 w-5" />
           </div>
           <div class="min-w-0">
-            <div class="deasy-eyebrow">Multifirmador</div>
+            <div class="deasy-overline">Multifirmador</div>
             <div class="truncate text-base font-bold text-strong">
               {{ batchProgressModalTitle }}
             </div>

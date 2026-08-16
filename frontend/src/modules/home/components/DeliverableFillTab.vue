@@ -39,11 +39,11 @@
           </div>
         </div>
         <div class="mt-3 flex flex-col gap-0.5">
-          <p class="deasy-eyebrow">Responsable</p>
+          <p class="deasy-overline">Responsable</p>
           <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">{{ step.display_label }}</p>
         </div>
         <div v-if="step.response_note" class="mt-2 rounded-xl border border-line bg-surface/70 px-3 py-2">
-          <p class="deasy-eyebrow">Nota</p>
+          <p class="deasy-overline">Nota</p>
           <p class="mt-0.5 mb-0 text-xs font-medium text-icon">{{ step.response_note }}</p>
         </div>
       </div>

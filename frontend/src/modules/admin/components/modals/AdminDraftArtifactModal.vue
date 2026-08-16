@@ -26,7 +26,7 @@
     <!-- Gobierno del ciclo de vida: estado (draft/published/retired) + publicar/retirar/versionar (solo al editar) -->
     <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-brand-300 bg-brand-50' : 'border-brand-200 bg-brand-50/50'">
       <div class="flex items-center gap-3">
-        <span class="deasy-eyebrow">Estado</span>
+        <span class="deasy-overline">Estado</span>
         <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>
         <span v-if="draftArtifactForm.storage_version" class="text-xs font-medium text-muted">· {{ draftArtifactForm.storage_version }}</span>
         <span v-if="guidedConfigId" class="text-xs font-medium text-primary">· Actualización guiada: al publicar se activa la nueva configuración</span>
@@ -317,11 +317,11 @@
           <div v-show="expandedFillStep === index" class="border-t border-line px-3 py-2.5">
             <div class="grid grid-cols-12 items-end gap-2">
               <div class="col-span-6">
-                <label :for="fieldId(`fill-name-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Nombre</label>
+                <label :for="fieldId(`fill-name-${index}`)" class="deasy-overline deasy-overline--spaced">Nombre</label>
                 <input :id="fieldId(`fill-name-${index}`)" :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateFillStep(index, 'name', $event.target.value)" />
               </div>
               <div class="col-span-3">
-                <label :for="fieldId(`fill-who-mode-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Quién hace el paso</label>
+                <label :for="fieldId(`fill-who-mode-${index}`)" class="deasy-overline deasy-overline--spaced">Quién hace el paso</label>
                 <select :id="fieldId(`fill-who-mode-${index}`)" :value="stepWhoMode(step)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStepWho(index, $event.target.value)">
                   <option value="task_assignee">Responsable del entregable</option>
                   <option value="scope">Por cargo</option>
@@ -329,7 +329,7 @@
                 </select>
               </div>
               <div v-if="fillStepShowsMode(step)" class="col-span-3">
-                <label :for="fieldId(`fill-selection-mode-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Modo</label>
+                <label :for="fieldId(`fill-selection-mode-${index}`)" class="deasy-overline deasy-overline--spaced">Modo</label>
                 <select :id="fieldId(`fill-selection-mode-${index}`)" :value="step.selection_mode" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
                   <option value="auto_one">Uno cualquiera</option>
                   <option value="auto_all">Todas</option>
@@ -339,7 +339,7 @@
             <!-- "Por cargo": primero la UBICACIÓN; el cargo se ofrece solo entre los que tienen titular vigente ahí. -->
             <div v-if="stepWhoMode(step) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
               <div class="col-span-4">
-                <label :for="fieldId(`fill-unit-scope-type-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Ubicación</label>
+                <label :for="fieldId(`fill-unit-scope-type-${index}`)" class="deasy-overline deasy-overline--spaced">Ubicación</label>
                 <select :id="fieldId(`fill-unit-scope-type-${index}`)" :value="step.unit_scope_type" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStepUbicacion(index, $event.target.value)">
                   <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
                   <option value="unit_exact">En una unidad específica…</option>
@@ -348,14 +348,14 @@
               </div>
               <template v-if="fillStepNeedsUnit(step)">
                 <div class="col-span-4">
-                  <label :for="fieldId(`fill-filter-unit-type-id-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Tipo (filtro)</label>
+                  <label :for="fieldId(`fill-filter-unit-type-id-${index}`)" class="deasy-overline deasy-overline--spaced">Tipo (filtro)</label>
                   <select :id="fieldId(`fill-filter-unit-type-id-${index}`)" :value="step.filter_unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onUnitTypeFilterChange(index, Number($event.target.value) || null)">
                     <option value="">Todos los tipos</option>
                     <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                   </select>
                 </div>
                 <div class="col-span-4">
-                  <label :for="fieldId(`fill-unit-id-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Unidad</label>
+                  <label :for="fieldId(`fill-unit-id-${index}`)" class="deasy-overline deasy-overline--spaced">Unidad</label>
                   <select :id="fieldId(`fill-unit-id-${index}`)" :value="step.unit_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onUnitExactUnitChange(index, Number($event.target.value) || null)">
                     <option value="">— Selecciona unidad —</option>
                     <option v-for="u in fillStepUnitOptions(step)" :key="u.id" :value="u.id">{{ u.name }}</option>
@@ -363,14 +363,14 @@
                 </div>
               </template>
               <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
-                <label :for="fieldId(`fill-unit-type-id-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Tipo de unidad</label>
+                <label :for="fieldId(`fill-unit-type-id-${index}`)" class="deasy-overline deasy-overline--spaced">Tipo de unidad</label>
                 <select :id="fieldId(`fill-unit-type-id-${index}`)" :value="step.unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onUnitTypeScopeChange(index, Number($event.target.value) || null)">
                   <option value="">— Selecciona tipo —</option>
                   <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                 </select>
               </div>
               <div class="col-span-4">
-                <label :for="fieldId(`fill-cargo-id-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Cargo</label>
+                <label :for="fieldId(`fill-cargo-id-${index}`)" class="deasy-overline deasy-overline--spaced">Cargo</label>
                 <select :id="fieldId(`fill-cargo-id-${index}`)" :value="step.cargo_id || ''" :disabled="!fillStepCargoReady(step)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none disabled:bg-surface disabled:text-muted" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
                   <option value="">{{ fillStepCargoPlaceholder(step) }}</option>
                   <option v-for="c in fillStepCargoOptions(step)" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -379,7 +379,7 @@
             </div>
             <div v-else-if="stepWhoMode(step) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
               <div class="col-span-6">
-                <label :for="fieldId(`fill-person-id-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Persona</label>
+                <label :for="fieldId(`fill-person-id-${index}`)" class="deasy-overline deasy-overline--spaced">Persona</label>
                 <select :id="fieldId(`fill-person-id-${index}`)" :value="step.person_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
                   <option value="">— Selecciona persona —</option>
                   <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
@@ -451,7 +451,7 @@
           <div v-show="expandedSignatureStep === index" class="border-t border-line px-3 py-2.5">
           <div class="grid grid-cols-12 items-end gap-2">
             <div class="col-span-7">
-              <label :for="fieldId(`sig-name-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Nombre</label>
+              <label :for="fieldId(`sig-name-${index}`)" class="deasy-overline deasy-overline--spaced">Nombre</label>
               <input :id="fieldId(`sig-name-${index}`)" :value="step.name" placeholder="ej. Firma de dirección" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
             <div class="col-span-5">
@@ -466,7 +466,7 @@
           <!-- "Al menos N": mínimo de firmas requerido del conjunto de firmantes del paso. -->
           <div v-if="step.approval_mode === 'at_least'" class="mt-2 grid grid-cols-12 gap-2">
             <div class="col-span-3">
-              <label :for="fieldId(`sig-required-signers-min-${index}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Mínimo de firmas</label>
+              <label :for="fieldId(`sig-required-signers-min-${index}`)" class="deasy-overline deasy-overline--spaced">Mínimo de firmas</label>
               <input :id="fieldId(`sig-required-signers-min-${index}`)" type="number" min="1" :value="step.required_signers_min || 1" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @input="updateSignatureStep(index, 'required_signers_min', Number($event.target.value) || 1)" />
             </div>
           </div>
@@ -480,7 +480,7 @@
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-line bg-surface/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
                 <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
-                  <label :for="fieldId(`signer-who-mode-${index}-${si}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Quién firma</label>
+                  <label :for="fieldId(`signer-who-mode-${index}-${si}`)" class="deasy-overline deasy-overline--spaced">Quién firma</label>
                   <select :id="fieldId(`signer-who-mode-${index}-${si}`)" :value="stepWhoMode(signer)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureWho(index, si, $event.target.value)">
                     <option value="task_assignee">Responsable del entregable</option>
                     <option value="scope">Por cargo</option>
@@ -493,7 +493,7 @@
               </div>
               <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
                 <div class="col-span-4">
-                  <label :for="fieldId(`signer-unit-scope-type-${index}-${si}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Ubicación</label>
+                  <label :for="fieldId(`signer-unit-scope-type-${index}-${si}`)" class="deasy-overline deasy-overline--spaced">Ubicación</label>
                   <select :id="fieldId(`signer-unit-scope-type-${index}-${si}`)" :value="signer.unit_scope_type" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureUbicacion(index, si, $event.target.value)">
                     <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
                     <option value="unit_exact">En una unidad específica…</option>
@@ -502,14 +502,14 @@
                 </div>
                 <template v-if="fillStepNeedsUnit(signer)">
                   <div class="col-span-4">
-                    <label :for="fieldId(`signer-filter-unit-type-id-${index}-${si}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Tipo (filtro)</label>
+                    <label :for="fieldId(`signer-filter-unit-type-id-${index}-${si}`)" class="deasy-overline deasy-overline--spaced">Tipo (filtro)</label>
                     <select :id="fieldId(`signer-filter-unit-type-id-${index}-${si}`)" :value="signer.filter_unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onSignatureUnitTypeFilterChange(index, si, Number($event.target.value) || null)">
                       <option value="">Todos los tipos</option>
                       <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                     </select>
                   </div>
                   <div class="col-span-4">
-                    <label :for="fieldId(`signer-unit-id-${index}-${si}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Unidad</label>
+                    <label :for="fieldId(`signer-unit-id-${index}-${si}`)" class="deasy-overline deasy-overline--spaced">Unidad</label>
                     <select :id="fieldId(`signer-unit-id-${index}-${si}`)" :value="signer.unit_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onSignatureUnitExactChange(index, si, Number($event.target.value) || null)">
                       <option value="">— Selecciona unidad —</option>
                       <option v-for="u in fillStepUnitOptions(signer)" :key="u.id" :value="u.id">{{ u.name }}</option>
@@ -517,14 +517,14 @@
                   </div>
                 </template>
                 <div v-else-if="fillStepNeedsUnitType(signer)" class="col-span-4">
-                  <label :for="fieldId(`signer-unit-type-id-${index}-${si}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Tipo de unidad</label>
+                  <label :for="fieldId(`signer-unit-type-id-${index}-${si}`)" class="deasy-overline deasy-overline--spaced">Tipo de unidad</label>
                   <select :id="fieldId(`signer-unit-type-id-${index}-${si}`)" :value="signer.unit_type_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="onSignatureUnitTypeScopeChange(index, si, Number($event.target.value) || null)">
                     <option value="">— Selecciona tipo —</option>
                     <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                   </select>
                 </div>
                 <div class="col-span-4">
-                  <label :for="fieldId(`signer-cargo-id-${index}-${si}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Cargo</label>
+                  <label :for="fieldId(`signer-cargo-id-${index}-${si}`)" class="deasy-overline deasy-overline--spaced">Cargo</label>
                   <select :id="fieldId(`signer-cargo-id-${index}-${si}`)" :value="signer.cargo_id || ''" :disabled="!fillStepCargoReady(signer)" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none disabled:bg-surface disabled:text-muted" @change="updateSignatureSigner(index, si, 'cargo_id', Number($event.target.value) || null)">
                     <option value="">{{ fillStepCargoPlaceholder(signer) }}</option>
                     <option v-for="c in fillStepCargoOptions(signer)" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -533,7 +533,7 @@
               </div>
               <div v-else-if="stepWhoMode(signer) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
                 <div class="col-span-6">
-                  <label :for="fieldId(`signer-person-id-${index}-${si}`)" class="deasy-eyebrow deasy-eyebrow--spaced">Persona</label>
+                  <label :for="fieldId(`signer-person-id-${index}-${si}`)" class="deasy-overline deasy-overline--spaced">Persona</label>
                   <select :id="fieldId(`signer-person-id-${index}-${si}`)" :value="signer.person_id || ''" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureSigner(index, si, 'person_id', Number($event.target.value) || null)">
                     <option value="">— Selecciona persona —</option>
                     <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>

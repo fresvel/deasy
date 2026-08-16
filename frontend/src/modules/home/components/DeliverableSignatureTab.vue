@@ -72,7 +72,7 @@
           </div>
         </div>
         <div class="mt-3 flex flex-col gap-0.5">
-          <p class="deasy-eyebrow">Firmante</p>
+          <p class="deasy-overline">Firmante</p>
           <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">
             {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
           </p>

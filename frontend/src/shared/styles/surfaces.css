@@ -118,7 +118,7 @@
     .deasy-empty {
         /* ⚠️ TailAdmin NO tiene receta para esto: su kit no trae un «estado vacio». Asi que
            la forma es la propia de Deasy por necesidad, no por omision — y lo mismo vale para
-           `.deasy-eyebrow`. Lo que si se alinea es el RADIO: esto es una superficie, y las
+           `.deasy-overline`. Lo que si se alinea es el RADIO: esto es una superficie, y las
            superficies quedaron en `rounded-2xl` al adoptar su card. */
         @apply rounded-2xl border border-dashed border-line bg-surface px-4 py-6 text-center text-sm font-medium text-muted;
     }
