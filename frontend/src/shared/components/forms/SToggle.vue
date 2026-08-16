@@ -1,11 +1,19 @@
 <template>
   <div :class="rootClass">
-    <!-- ⚠️ `<label>` SOLO SI HAY TEXTO QUE ETIQUETAR. Sin el, esto emitia un segundo
-         `<label for="mismo-id">` vacio en todos los formularios donde el grupo de campo YA pone su
-         etiqueta encima — trece campos del modal de personas, medidos con dos `label[for]` cada
-         uno. Un `<span>` mantiene el clic (el input vive dentro) y deja un solo `<label>`. -->
-    <component
-      :is="tieneEtiqueta ? 'label' : 'span'"
+    <!-- ⚠️ SIEMPRE `<label>`; LO QUE SOBRA ES EL `for`, NO LA ETIQUETA.
+         El envoltorio emitia un segundo `<label for="mismo-id">` vacio en los formularios donde el
+         grupo de campo YA pone su etiqueta encima — trece campos del modal de personas, con dos
+         `label[for]` cada uno.
+
+         🪤 El primer arreglo cambio el `<label>` por un `<span>` cuando no habia texto, y **rompio
+         el control**: el input real es invisible y quien recibe el clic son los `<span>` de la
+         pista y el pulgar; sin `<label>` alrededor, ese clic no llega a ninguna parte y el
+         interruptor dejo de cambiar de estado. Lo encontro el dueño al usarlo, no un test.
+
+         La salida es quitar el `for`, no el `<label>`: un `<label>` que CONTIENE al input lo
+         asocia igual (asociacion implicita), asi que el clic sigue funcionando, y al no llevar
+         `for` no compite con el del grupo ni duplica el nombre accesible. -->
+    <label
       :for="tieneEtiqueta ? toggleId : undefined"
       class="items-center gap-3"
       :class="[
@@ -36,7 +44,7 @@
           class="absolute top-1/2 left-0.5 -translate-y-1/2 size-5 rounded-full bg-white shadow-theme-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-full"
         ></span>
       </span>
-    </component>
+    </label>
   </div>
 </template>
 
