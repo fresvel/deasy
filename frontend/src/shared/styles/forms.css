@@ -543,7 +543,11 @@
            valor (8 px) y porque el dia que esa regla baje de capa, esto ya dice la verdad. */
         @apply h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-body shadow-theme-xs transition-colors duration-150;
         @apply placeholder:text-muted;
-        @apply disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted;
+        /* DESHABILITADO — la receta completa, no media. Le faltaban las dos senales que hacen
+           que un campo bloqueado se LEA como bloqueado en vez de solo resistirse: el borde baja
+           un escalon (`gray-100`, mas claro que el `gray-300` normal) y el marcador de posicion
+           se apaga. Sin ellas, un campo deshabilitado y uno vacio se ven igual. */
+        @apply disabled:cursor-not-allowed disabled:border-gray-100 disabled:bg-surface disabled:text-muted disabled:placeholder:text-gray-300;
     }
 
     /* El `<select>` añade lo suyo: sitio para la flecha y supresion del adorno del navegador. */

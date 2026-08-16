@@ -72,9 +72,20 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "input", "change", "focus", "blur"]);
 
 const tagName = computed(() => (props.as === "textarea" ? "textarea" : "input"));
-// Altura uniforme (h-10 = 40px) para que inputs, selects y lookups queden alineados en los grids;
-// los textarea conservan padding vertical en vez de altura fija.
-const sizeClass = computed(() => (tagName.value === "textarea" ? "py-2.5" : "h-10 py-2"));
+/* ⚠️ AQUI HABIA UN `h-10 py-2` QUE PISABA LA RECETA, con un comentario que decia «altura uniforme
+   para que inputs, selects y lookups queden alineados en los grids». Conseguia lo contrario:
+   `AdminSelectField` NO lo llevaba, asi que en el mismo formulario el input media **40 px y el
+   select 44**. Medido en el modal de personas el 2026-08-15, con celdas de 68 y 72 px en la misma
+   rejilla.
+
+   Y ademas deshacia una decision ya tomada: `deasy-control` es la receta de TailAdmin adoptada el
+   2026-08-13, que sube la altura de 40 a 44 «mejor objetivo tactil» — su propio bloque en
+   `forms.css` avisa de que **el `h-11` solo gana si la plantilla no escribe `h-10`**. Esta era la
+   plantilla que lo escribia.
+
+   El `textarea` si conserva padding en vez de altura fija: una caja de varias lineas no tiene
+   altura de control. */
+const sizeClass = computed(() => (tagName.value === "textarea" ? "py-2.5" : ""));
 
 const handleInput = (event) => {
   emit("update:modelValue", event.target.value);

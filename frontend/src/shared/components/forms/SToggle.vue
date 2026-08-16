@@ -18,7 +18,7 @@
       class="items-center gap-3"
       :class="[
         labelPosition === 'end' ? 'inline-flex flex-row-reverse' : 'flex justify-between',
-        fieldAligned ? 'h-10' : ''
+        fieldAligned ? 'h-11' : ''
       ]"
     >
       <span v-if="$slots.default || label || description" class="min-w-0">

@@ -1,6 +1,8 @@
 <template>
   <div class="relative" :class="groupClass">
-    <div class="flex h-10 items-stretch gap-2">
+    <!-- Sin altura propia: la impone el `deasy-control` de dentro (44 px), y los botones se estiran
+         con `items-stretch`. Antes fijaba `h-10` y arrastraba al control a 40. -->
+    <div class="flex items-stretch gap-2">
       <input
         ref="inputRef"
         :id="inputId"
