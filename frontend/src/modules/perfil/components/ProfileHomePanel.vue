@@ -11,7 +11,7 @@
       centered
       compact-actions
     >
-      <template #media><img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo.value" alt="Foto de perfil" /></template>
+      <template #media><img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo" alt="Foto de perfil" /></template>
       <template #actions>
         <button type="button" class="deasy-hero-back-button" @click="goBack">
           <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
@@ -59,6 +59,13 @@ import {
 import { PROFILE_CONTEXT, PROFILE_SECTIONS, cardIconFor } from "@/modules/perfil/profileSections.js";
 
 const router = useRouter();
+/* 🪤 `photo` ES UN REF Y EN EL TEMPLATE NO LLEVA `.value`. El markup escribia
+   `:src="photo.value"` y la foto NO SE VEIA NUNCA: `PerfilView` provee `photo: userPhoto`, que es
+   un `ref`, y Vue **auto-desenvuelve** los refs devueltos por `setup` al usarlos en la plantilla.
+   Asi que ahi `photo` YA es la URL y `photo.value` es `undefined` — Vue omite el atributo sin
+   avisar y solo queda el texto alternativo. Visible desde siempre, invisible para el build, el
+   lint y los 339 tests; lo caza mirar la pantalla, que es la norma de este repo para lo visual.
+   (Encontrado el 2026-08-15 al verificar F3.4.) */
 const { currentUser, photo, dossierCounts, goBack } = inject(PROFILE_CONTEXT);
 
 const getIcon = (name) => {
