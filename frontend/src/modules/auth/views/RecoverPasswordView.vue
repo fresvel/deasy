@@ -157,13 +157,10 @@
       leave-from-class="transform translate-y-0 opacity-100"
       leave-to-class="transform -translate-y-2 opacity-0"
     >
-      <div v-if="statusMessage" class="mt-6 flex p-4 rounded-2xl border text-sm font-medium" :class="[
-        isError ? 'bg-red-50 border-red-100 text-danger' : 'bg-emerald-50 border-emerald-100 text-success'
-      ]">
-        <IconAlertCircle v-if="isError" class="h-5 w-5 shrink-0 mr-3 mt-0.5 text-danger" />
-        <IconCheck class="h-5 w-5 shrink-0 mr-3 mt-0.5" v-else />
+      <AppAlert v-if="statusMessage" :variant="isError ? 'danger' : 'success'" class="mt-6 flex text-sm font-medium">
+        <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />
         <div class="flex-1">{{ statusMessage }}</div>
-      </div>
+      </AppAlert>
     </Transition>
 
   </AuthLayout>
@@ -171,6 +168,7 @@
 
 <script setup>
 import { ref, useId } from 'vue';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import AuthLayout from '@/layouts/auth/AuthLayout.vue';
 import AuthService from '@/modules/auth/services/AuthService';

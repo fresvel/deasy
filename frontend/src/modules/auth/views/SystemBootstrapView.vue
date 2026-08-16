@@ -324,15 +324,10 @@
       leave-from-class="translate-y-0 opacity-100"
       leave-to-class="-translate-y-2 opacity-0"
     >
-      <div
-        v-if="message"
-        class="mt-6 flex rounded-xl border p-4" :class="[
-          isError ? 'border-red-100 bg-red-50 text-danger' : 'border-emerald-100 bg-emerald-50 text-success'
-        ]"
-      >
+      <AppAlert v-if="message" :variant="isError ? 'danger' : 'success'" class="mt-6 flex">
         <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />
         <div class="flex-1 text-sm font-medium">{{ message }}</div>
-      </div>
+      </AppAlert>
     </Transition>
 
     <div v-if="mode === 'normal'" class="mt-8 flex justify-center">
@@ -345,6 +340,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, useId } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import AuthLayout from '@/layouts/auth/AuthLayout.vue';
 import { useRouter } from "vue-router";

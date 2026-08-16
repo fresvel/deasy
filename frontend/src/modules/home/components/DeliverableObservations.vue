@@ -28,15 +28,18 @@ const kindLabel = (kind) => ({
   internal_note: 'Nota interna',
 }[kind] || 'Observación');
 
-// Color del punto del timeline y del texto del tipo, según la clase de observación.
+/* Que CLASE de observacion es —eso es dato— y su tono. El color lo pone `deasy-dot--{tono}`:
+   antes esta funcion devolvia la utilidad de fondo, o sea color viviendo en JavaScript. */
 const dotClass = (observation) => {
-  if (observation.resolved_at) return 'bg-emerald-400';
-  return {
-    return_reason: 'bg-amber-400',
-    rejection_reason: 'bg-rose-400',
-    internal_note: 'bg-gray-300',
-    observation: 'bg-blue-light-400',
-  }[observation.kind] || 'bg-blue-light-400';
+  const tono = observation.resolved_at
+    ? 'success'
+    : ({
+        return_reason: 'warning',
+        rejection_reason: 'danger',
+        internal_note: 'neutral',
+        observation: 'info',
+      }[observation.kind] || 'info');
+  return `deasy-dot deasy-dot--${tono}`;
 };
 const kindTextClass = (kind) => ({
   return_reason: 'text-warning',
@@ -76,7 +79,7 @@ const onAdd = () => {
           :key="`obs-${observation.id}`"
           class="relative"
         >
-          <span class="absolute -left-[1.42rem] top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white" :class="dotClass(observation)"></span>
+          <span class="absolute -left-[1.42rem] top-1" :class="dotClass(observation)"></span>
           <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span class="text-xs font-bold text-body">{{ observation.author_name || 'Sistema' }}</span>
             <span class="text-[11px] font-semibold uppercase tracking-wide" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>

@@ -22,20 +22,20 @@
           </AppTag>
         </div>
         <div class="grid gap-2 sm:grid-cols-3">
-          <div
+          <AppAlert
             v-for="req in requirements"
             :key="req.key"
-            class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold ring-1 transition-colors"
-            :class="req.done ? 'bg-emerald-50 text-success ring-emerald-200' : 'bg-rose-50 text-danger ring-rose-200'"
+            :variant="req.done ? 'success' : 'danger'"
+            class="deasy-alert--row"
           >
             <span
-              class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
-              :class="req.done ? 'bg-emerald-500' : 'bg-rose-400'"
+              class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round deasy-icon-box--solid"
+              :class="req.done ? 'deasy-icon-box--success' : 'deasy-icon-box--danger'"
             >
               <font-awesome-icon :icon="req.done ? 'check' : 'times'" class="h-3.5 w-3.5" />
             </span>
             <span>{{ req.label }}</span>
-          </div>
+          </AppAlert>
         </div>
       </div>
 
@@ -162,6 +162,7 @@
 
 <script setup>
 import { computed } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoCobertura, coberturaEstado } from "@/shared/utils/estadoTono.js";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";

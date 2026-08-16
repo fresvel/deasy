@@ -44,14 +44,10 @@
             <span class="text-xs font-medium text-muted">Estado: {{ item.status }}</span>
           </div>
           <div class="flex items-center gap-1.5">
-            <span
-              class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.65rem] font-semibold"
-              :class="item.reason === 'sin_responsable' ? 'bg-amber-100 text-warning' : 'bg-rose-100 text-danger'"
-            >{{ item.reason === 'sin_responsable' ? 'Sin responsable' : 'Titular se fue' }}</span>
-            <span
-              v-if="item.started"
-              class="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[0.65rem] font-semibold text-primary"
-            >Iniciado</span>
+            <AppTag :variant="item.reason === 'sin_responsable' ? 'warning' : 'danger'" size="sm">
+              {{ item.reason === 'sin_responsable' ? 'Sin responsable' : 'Titular se fue' }}
+            </AppTag>
+            <AppTag v-if="item.started" variant="primary" size="sm">Iniciado</AppTag>
           </div>
         </div>
       </div>
@@ -64,6 +60,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
 import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 

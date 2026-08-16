@@ -112,16 +112,9 @@
           </p>
         </div>
 
-        <div
-          class="rounded-2xl border px-4 py-4 text-sm font-medium"
-          :class="workflowPdfStatus.type === 'error'
-            ? 'border-rose-200 bg-rose-50 text-danger'
-            : workflowPdfStatus.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-success'
-              : 'border-blue-light-200 bg-blue-light-50 text-info'"
-        >
+        <AppAlert :variant="tonoEstadoPdf" class="text-sm font-medium">
           {{ workflowPdfStatus.message || 'Preparando la sesión de firma embebida.' }}
-        </div>
+        </AppAlert>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div class="rounded-2xl border border-line bg-surface/70 p-5">
@@ -983,6 +976,7 @@
 </template>
   <script setup>
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h, useId } from "vue";
   import { useRouter } from 'vue-router';

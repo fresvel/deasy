@@ -372,6 +372,19 @@ sobre blanco.
 | Los conectores de Vue Flow volvieron a los valores de la librería | verde |
 | Tres tarjetas de firmas perdieron los márgenes de su icono | verde |
 
+⚠️ **Antes de creerte que una regla nueva «no aplica», comprueba que el dev server la sirve.**
+El HMR de Vite puede quedarse con una versión anterior de un `.css`: el 2026-08-15 una regla recién
+escrita daba `display:block` en el navegador estando `display:flex` en el fuente **y en el CSS
+construido**. Distinguirlo cuesta un minuto y evita «arreglar» algo que ya estaba bien:
+
+```bash
+bash scripts/stack.sh b exec -T frontend sh -lc 'grep -o "\.mi-clase{[^}]*}" dist/assets/*.css'
+```
+
+Si la regla **está** en `dist` pero el navegador no la ve, es la caché del dev server, no tu CSS:
+`bash scripts/stack.sh <letra> restart frontend` y recarga. Señal inequívoca del caso: reglas que
+escribiste **antes** en la misma sesión sí aplican y solo falta la última.
+
 **Para cualquier cambio de CSS la verificación es el navegador.** Y si es amplio, la **huella de
 estilos computados**, que está en `scripts/css-huella.mjs`:
 

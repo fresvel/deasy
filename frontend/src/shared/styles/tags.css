@@ -161,6 +161,25 @@
         background-color: var(--tone-edge);
     }
 
+    /* EL PUNTO SUELTO — hermano de `__dot`, pero fuera de una pastilla.
+     *
+     * Lo pide la linea de tiempo de observaciones, donde el punto marca la clase de cada entrada
+     * (devuelta, rechazada, nota interna, resuelta) sin que haya pastilla ninguna. No puede reusar
+     * `__dot` porque aquel lee `--tone-edge`, y esa variable la declara `.deasy-tag--{tono}`: sin
+     * pastilla alrededor no hay quien la ponga. De ahi que este declare su color directamente.
+     *
+     * Es mas grande que el de la pastilla —10 px frente a 6— porque alli es un adorno junto al
+     * texto y aqui es el unico marcador de la fila. */
+    .deasy-dot {
+        @apply h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white;
+    }
+
+    .deasy-dot--success { background-color: var(--color-success-400); }
+    .deasy-dot--warning { background-color: var(--color-warning-400); }
+    .deasy-dot--danger  { background-color: var(--color-error-400); }
+    .deasy-dot--info    { background-color: var(--color-blue-light-400); }
+    .deasy-dot--neutral { background-color: var(--color-gray-300); }
+
     /* [2026-08-15, F3.3] AQUI ESTABA `--muted`, Y ERA `--neutral` CON OTRO NOMBRE.
        Declaraban el mismo cuerpo byte a byte y convivian con 9 y 7 usos respectivamente, para el
        mismo aspecto. Los nueve `variant="muted"` pasan a `neutral` en este commit y el render es
@@ -211,6 +230,16 @@
     .deasy-alert--info {
         --tone-edge: var(--color-blue-light-500);
         --tone-soft: var(--color-blue-light-50);
+    }
+
+    /* FILA — la alerta en formato lista, para cuando hay varias seguidas y cada una es un punto
+       de una comprobacion, no un mensaje. Nace de los tres «Requisitos para activar» del panel de
+       activacion, que estaban escritos con `bg-{fam}-50 + ring-{fam}-200`.
+       ⚠️ Y ese cambio ARREGLA algo, no solo renombra: el propio encabezado de este bloque explica
+       que los tintes `-200` como borde miden 1.21-1.49:1 y no cumplen WCAG 1.4.11. Al pasar por
+       `deasy-alert` el borde se deriva al 71 %, que es donde llega a 3:1. */
+    .deasy-alert--row {
+        @apply flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors;
     }
 
     /* LA ✕ DE UNA PASTILLA — quitar ese elemento de una seleccion.
