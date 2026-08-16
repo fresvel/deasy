@@ -80,10 +80,10 @@
           <AppPageHeader size="hero" shell-class="mb-8" :overline="heroKicker" :title="heroTitle" :description="heroDescription">
             <template #media><component :is="heroIcon" class="h-10 w-10" /></template>
             <template #actions>
-              <button type="button" class="deasy-hero-back-button" @click="handleHeroBack">
-                <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
-                <span>Volver atrás</span>
-              </button>
+              <AppButton variant="neutral-outline" @click="handleHeroBack">
+          <IconArrowLeft class="h-4.5 w-4.5" />
+          <span>Volver</span>
+        </AppButton>
             </template>
           </AppPageHeader>
 
@@ -193,6 +193,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from "vue";
 import AppPageHeader from "@/shared/components/layout/AppPageHeader.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 import { useRouter } from "vue-router";

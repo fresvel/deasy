@@ -13,10 +13,10 @@
     >
       <template #media><img class="h-full w-full object-cover" :src="photo" alt="Foto de perfil" /></template>
       <template #actions>
-        <button type="button" class="deasy-hero-back-button" @click="goBack">
-          <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
-          <span>Volver atrás</span>
-        </button>
+        <AppButton variant="neutral-outline" @click="goBack">
+          <IconArrowLeft class="h-4.5 w-4.5" />
+          <span>Volver</span>
+        </AppButton>
       </template>
     </AppPageHeader>
 
@@ -51,6 +51,7 @@
  */
 import { computed, inject } from "vue";
 import AppPageHeader from '@/shared/components/layout/AppPageHeader.vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
 import { useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import {

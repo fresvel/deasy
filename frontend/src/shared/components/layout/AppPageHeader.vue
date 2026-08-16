@@ -40,9 +40,16 @@
  * caja y media) y `admin-page-header` con título (2 usos). Las dos dicen lo mismo —dónde estás y
  * qué puedes hacer aquí— y sólo se diferencian en si la cabecera trae su propia caja.
  *
- * Que ya se habían mezclado lo demuestra `deasy-hero-back-button`: se usa **14 veces**, y varias de
- * ellas **dentro de `admin-page-header`**. El botón de una familia viviendo en la caja de la otra
- * es la señal de que la frontera entre ambas no existía.
+ * Que ya se habían mezclado lo demostraba `deasy-hero-back-button`: se usaba **14 veces**, y varias
+ * de ellas **dentro de `admin-page-header`**. El botón de una familia viviendo en la caja de la
+ * otra es la señal de que la frontera entre ambas no existía.
+ *
+ * ⚠️ Ese botón MURIÓ el 2026-08-16 y su final cierra la historia de esta cabecera: al medirlo
+ * resultó ser **la quinta geometría** —50 px de alto, radio 16, peso 600, y una caja de icono de
+ * 32×32 con radio 12,8 px DENTRO de la caja del propio botón— sobreviviendo a la unificación del
+ * 14-ago porque era un `<button>` CRUDO con clase `deasy-*`, y los gates de botón tratan ese
+ * prefijo como «bloque del sistema» y dejan de mirarlo. Sus 7 usos hacían lo mismo que el
+ * «Regresar» de la cabecera de tabla, que ya era `AppButton`. Hoy los siete lo son.
  *
  * 🪤 EL `mt-1` QUE NO PINTA. Un consumidor escribía `class="admin-page-header__title mt-1"` para
  * separar el título de su kicker, y ese `mt-1` **nunca se aplicó**: `.admin-page-header__title` está

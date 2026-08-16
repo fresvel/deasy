@@ -42,7 +42,12 @@ import { join, resolve } from "node:path";
 /* 2026-08-14 · 412 / shadow- 35 — el menu de seccion adopta el «button group» de TailAdmin y
  * pierde su `shadow-[var(--focus-ring)]` y su `min-w-[9.5rem]`: la sombra pasa al contenedor
  * (`shadow-theme-xs`, que es escalon de la escala) y el ancho lo da el contenido. */
-const TECHO = { total: 294, "text-": 118, "rounded-": 12, "shadow-": 16 };
+/* 2026-08-16 · 292 / rounded- 11 — muere `deasy-hero-back-button` y con el sus DOS arbitrarios:
+ * `min-h-[2.85rem]` (45,6 px, que no era ninguno de los tres tamaños del sistema) y el
+ * `rounded-[0.8rem]` de su caja de icono (12,8 px, que no es un paso de la escala). Los dos
+ * existian por lo mismo que el `rounded-[10px]` del filtro dos dias antes: para NO ser el valor
+ * de la base. Con la base ya unificada, el motivo desaparece y el valor sobra. */
+const TECHO = { total: 292, "text-": 118, "rounded-": 11, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

@@ -62,19 +62,36 @@
         @apply w-full lg:w-auto;
     }
 
-    /* ⚠️ El `/10` del anillo se conserva TAL CUAL: aqui solo se cambia la familia
-       (`blue-500` -> el token de marca), no la opacidad. El hermano de abajo lleva `/15`
-       para lo mismo, y cual de los dos vale es la decision de «como se ve el foco», que
-       va aparte — §5.3 dice que el foco es UNO y hoy no lo es. */
-    .deasy-hero-back-button {
-        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-strong shadow-none transition-all duration-200 hover:border-line-strong hover:bg-surface hover:text-navy focus:outline-none focus:ring-4 focus:ring-primary/10;
-    }
+    /* ══ AQUI VIVIA `deasy-hero-back-button` — muerto el 2026-08-16 ═══════════════════════════
+       Era **LA QUINTA GEOMETRIA**, la que `buttons.css` daba por eliminada el 14-ago. Sobrevivio
+       dos dias a la unificacion por un motivo que vale la pena anotar: es un `<button>` CRUDO con
+       una clase `deasy-*`, y todos los gates de boton tratan cualquier clase con ese prefijo como
+       «bloque propio del sistema» y dejan de mirarla. O sea que el prefijo que marca lo nuestro
+       era tambien el que lo hacia invisible.
 
-    .deasy-hero-back-button__icon {
-        @apply flex h-8 w-8 items-center justify-center rounded-[0.8rem] border border-line bg-surface text-strong shadow-none;
-    }
+       Medido antes de retirarlo, contra el boton del sistema con texto:
 
-    
+           alto     50 px          frente a 40    (y 50 no es NINGUNO de los tres: 36/40/46)
+           radio    16 px          frente a 8
+           peso     600            frente a 500
+           fondo    gray-50        frente a blanco
+           borde    gray-200       frente a gray-300
+           texto    #1d2939        frente a #344054
+           icono    CAJA PROPIA de 32x32, radio 12.8 px (`rounded-[0.8rem]`, que no es un paso
+                    de la escala) y con su propio borde — una caja dentro de una caja
+
+       Sus 7 usos hacen exactamente lo mismo que el «Regresar» de la cabecera de tabla —salir de
+       aqui hacia arriba— y ese ya era `AppButton` con `neutral-outline`. Lo unico que de verdad
+       los separaba es que este lleva etiqueta y aquel es de solo icono, y eso es el mismo
+       componente con o sin texto, no dos componentes. Habia ademas un TERCER sitio que ya lo
+       hacia bien (`ProcessGraphView.vue:6`), que es la prueba de que no faltaba nada.
+
+       El icono baja al slot: `AppButton` ya trae `gap-2`, asi que la caja intermedia sobraba.
+       Y la etiqueta se unifica en «Volver» — habia cuatro «Volver» y tres «Volver atras» para el
+       mismo control, y «atras» no añade nada a «volver».
+       ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+
 }
 @layer components {
 /* EL OJO DE MOSTRAR/OCULTAR CONTRASEÑA — y lo que costo que no llevara tamano.

@@ -57,14 +57,10 @@
                   <IconPlus class="h-4 w-4" />
                   <span>Nueva tarea</span>
                 </AppButton>
-                <button
-                  type="button"
-                  class="deasy-hero-back-button"
-                  @click="showProcessesPanel = false; clearSelectedProcess()"
-                >
-                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
-                  <span>Volver</span>
-                </button>
+                <AppButton variant="neutral-outline" @click="showProcessesPanel = false; clearSelectedProcess()">
+          <IconArrowLeft class="h-4.5 w-4.5" />
+          <span>Volver</span>
+        </AppButton>
               </div>
             </div>
 
@@ -241,10 +237,10 @@
           <div v-if="showUnitsPanel" class="flex flex-col gap-5">
             <AppPageHeader title="Mis unidades">
               <template #actions>
-                <button type="button" class="deasy-hero-back-button" @click="showUnitsPanel = false">
-                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
-                  <span>Volver</span>
-                </button>
+                <AppButton variant="neutral-outline" @click="showUnitsPanel = false">
+          <IconArrowLeft class="h-4.5 w-4.5" />
+          <span>Volver</span>
+        </AppButton>
               </template>
             </AppPageHeader>
             <div v-if="!unitsPanelData.length" class="text-sm font-medium text-muted py-4">
@@ -310,10 +306,10 @@
 
             <!-- Cabecera con botón volver -->
             <AppActionBar>
-              <button type="button" class="deasy-hero-back-button" @click="showCargosPanel = false">
-                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
-                  <span>Volver</span>
-                </button>
+              <AppButton variant="neutral-outline" @click="showCargosPanel = false">
+          <IconArrowLeft class="h-4.5 w-4.5" />
+          <span>Volver</span>
+        </AppButton>
             </AppActionBar>
 
             <div v-if="!cargosPanelData.length" class="text-sm font-medium text-muted py-4">
@@ -664,10 +660,10 @@
               :title="isRoutedProcess ? routedHeaderTitle : (selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Proceso')"
             >
               <template #actions>
-                <button type="button" class="deasy-hero-back-button" @click="clearSelectedProcess">
-                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
-                  <span>Volver</span>
-                </button>
+                <AppButton variant="neutral-outline" @click="clearSelectedProcess">
+          <IconArrowLeft class="h-4.5 w-4.5" />
+          <span>Volver</span>
+        </AppButton>
               </template>
             </AppPageHeader>
 
