@@ -58,7 +58,7 @@ const props = defineProps({
   },
   actionsLabel: {
     type: String,
-    default: "ACCION"
+    default: "Acción"
   },
   tableClass: {
     type: String,

@@ -216,7 +216,7 @@
           :rows="filteredItems"
           :row-key="(row) => `home-signature-${row.signature_request_id}`"
           empty-text="No hay documentos pendientes por firma."
-          actions-label="ACCIONES"
+          actions-label="Acciones"
         >
           <template #cell="{ row, field }">
             <template v-if="field.name === 'select'">

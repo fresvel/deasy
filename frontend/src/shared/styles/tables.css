@@ -13,9 +13,26 @@
         border-color: var(--color-line);
     }
 
+    /* LA CABECERA, ALINEADA CON TAILADMIN (2026-08-15, a peticion del dueño).
+     *
+     * Medido en su demo de `data-tables`, no copiado de oido: su `<th>` es
+     * `text-theme-xs font-medium text-gray-700` dentro de una celda `px-4 py-3`. En numeros:
+     * 12 px, peso 500, `#344054`, **sin mayusculas y sin `letter-spacing`**.
+     *
+     * Deasy tenia las cuatro cosas distintas: 600, `uppercase`, `tracking-[0.04em]` y `--color-navy`
+     * (gray-900). Todo lo demas de la tabla —el padding de celda, el radio de la caja, el borde
+     * `gray-200`, el fondo blanco— YA coincidia, asi que el cambio se reduce a esta regla.
+     *
+     * ⚠️ ES EL CAMBIO MAS VISIBLE de toda la vuelta: las cabeceras dejan de ir en MAYUSCULAS. Se
+     * gana legibilidad —una palabra larga en versalitas se lee peor— y se pierde el contraste de
+     * forma que separaba cabecera de dato; lo compensa que el peso y el color siguen distinguiendola.
+     *
+     * `--color-body` NO es una aproximacion: es un alias de `--color-gray-700`, el mismo `#344054`
+     * que usa su demo. Y `text-theme-xs` sustituye a `text-[12px]`, que era un valor arbitrario
+     * escrito a mano para el mismo 12 px que la escala ya define. */
     .deasy-table th {
-        @apply px-4 py-3 text-[12px] font-semibold uppercase tracking-[0.04em];
-        color: var(--color-navy);
+        @apply px-4 py-3 text-theme-xs font-medium;
+        color: var(--color-body);
     }
 
     .deasy-table td {

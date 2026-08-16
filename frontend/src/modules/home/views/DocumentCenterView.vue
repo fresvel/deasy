@@ -95,7 +95,7 @@
           :rows="filteredItems"
           :row-key="(row) => `document-center-${row.document_id}`"
           empty-text="No hay documentos para mostrar."
-          actions-label="ACCIONES"
+          actions-label="Acciones"
         >
           <template #cell="{ row, field }">
             <template v-if="field.name === 'document'">
