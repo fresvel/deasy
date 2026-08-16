@@ -256,4 +256,55 @@
     .deasy-chip-remove {
         @apply inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 leading-none text-muted transition-colors hover:text-danger focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
+
+    /* ── EL ARO DE CARGA ─────────────────────────────────────────────────────────────
+     * Vive aqui, con la pastilla y la alerta, porque es el tercer atomo de FEEDBACK del
+     * sistema. No es de `buttons.css` —aparece dentro de un boton pero tambien suelto en
+     * una pagina— ni de `misc.css`, que es para lo que aun no tiene familia.
+     *
+     * ── DE DONDE SALE (F4, 2026-08-16) ──────────────────────────────────────────────
+     * El plan contaba «13 spinners escritos a mano». Medidos, son DOS OBJETOS distintos:
+     *
+     *   · 9 son un ICONO QUE GIRA — `IconRefresh`/`IconLoader2` con `animate-spin` puesto
+     *     condicionalmente. Eso no es un componente: es un ESTADO sobre un icono que ya
+     *     existe, y `animate-spin` es exactamente la utilidad que le corresponde. No
+     *     necesitan clase y no la tienen: quedan como estan.
+     *   · 4 son ESTE aro, construido a mano con `border-2 … border-t-transparent
+     *     rounded-full`. Y las cuatro copias discrepaban en TODO lo que se puede
+     *     discrepar: tres tamanos (16/20/24) y tres parejas de color.
+     *
+     * ⚠️ Y DOS DE LAS CUATRO ESTABAN ROTAS EN ESE MISMO MOMENTO. Escribian
+     * `border-white/40 border-t-white` porque vivian dentro de un boton SOLIDO azul; al
+     * pasar el sistema a contorno en reposo (F4, ese mismo dia) el fondo de ese boton
+     * quedo BLANCO y el aro se volvio invisible — blanco sobre blanco, 1.0:1. No lo vio
+     * ningun gate, y no podia: un aro hecho con utilidades sueltas no tiene nombre que
+     * vigilar. Es el argumento entero de este frente en un solo objeto.
+     *
+     * ⚠️ Y las otras dos tampoco cumplian, pero de antes: `blue-light-400` da **2.10:1**
+     * sobre blanco y WCAG 1.4.11 pide 3:1 para un grafico. Pasan a `--color-info` (5.86).
+     *
+     * ── POR QUE `currentColor` Y NO UN TONO ─────────────────────────────────────────
+     * El aro hereda el color del texto de quien lo contiene, y eso resuelve el problema
+     * de raiz en vez de parchearlo: dentro de un `--primary-outline` sale azul sobre
+     * blanco, y al pasar el raton —cuando el boton se rellena y el texto pasa a blanco—
+     * sale blanco sobre azul. Se corrige solo. Y el contraste viene dado: el color del
+     * texto ya cumple 4.5:1, que es mas de los 3:1 que pide un grafico.
+     *
+     * ── POR QUE NO SE ADOPTA EL DE TAILADMIN ────────────────────────────────────────
+     * El suyo es un SVG, y de sus tres variantes **dos llevan el color en un `fill`
+     * hardcodeado** (`#465FFF`) que no se retematiza con clases; la unica theme-able usa
+     * `stroke="currentStroke"`, que no es una propiedad CSS real sino un truco de su SVG.
+     * Aqui el aro es CSS puro: sin activo que mantener, sin hex, y retintable por
+     * herencia. Se adopta su IDEA —pista y arco de distinto color— y se descarta su
+     * implementacion, igual que se hizo con el dropzone. */
+    .deasy-spinner {
+        @apply inline-block shrink-0 animate-spin rounded-full border-2 border-current;
+        /* El hueco que gira. Va DESPUES del `@apply` a proposito: `border-current` es el
+           atajo de los cuatro lados y esta linea le quita el de arriba. */
+        border-top-color: transparent;
+    }
+
+    .deasy-spinner--sm { @apply h-4 w-4; }
+    .deasy-spinner--md { @apply h-5 w-5; }
+    .deasy-spinner--lg { @apply h-6 w-6; }
 }

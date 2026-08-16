@@ -24,7 +24,7 @@
       <AppButton type="submit" :form="formId" variant="primary-outline" :disabled="isSubmitting">
         <span
           v-if="isSubmitting"
-          class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+          class="deasy-spinner deasy-spinner--sm"
           role="status"
           aria-hidden="true"
         ></span>

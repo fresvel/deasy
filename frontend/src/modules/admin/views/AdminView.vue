@@ -173,7 +173,7 @@
           <div class="deasy-section-card flex flex-col min-h-100">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
                <div class="inline-flex items-center gap-3">
-                 <div class="w-6 h-6 border-2 border-blue-light-400 border-t-transparent rounded-full animate-spin"></div>
+                 <div class="deasy-spinner deasy-spinner--lg text-info"></div>
                  <span class="text-muted font-medium">Cargando catálogos...</span>
                </div>
             </div>

@@ -55,7 +55,7 @@
       :disabled="loading || !isCodeComplete"
       @click="submit"
     >
-      <span v-if="loading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+      <span v-if="loading" class="deasy-spinner deasy-spinner--md"></span>
       <span>{{ loading ? 'Verificando...' : 'Verificar correo' }}</span>
     </button>
 
