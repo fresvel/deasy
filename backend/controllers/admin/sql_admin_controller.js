@@ -367,7 +367,8 @@ export const listResolvableCargos = async (req, res) => {
 export const reconcileTaskItemAssignments = async (req, res) => {
   try {
     const result = await service.reconcileOpenTaskItemAssignments({
-      positionId: req.body?.position_id || req.query?.position_id || null
+      positionId: req.body?.position_id || req.query?.position_id || null,
+      performedByUserId: req.user?.uid ?? null
     });
     res.json(result);
   } catch (error) {

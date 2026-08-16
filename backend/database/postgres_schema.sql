@@ -1124,7 +1124,17 @@ CREATE TABLE IF NOT EXISTS task_item_handovers (
   from_person_id INT NULL,
   to_person_id INT NULL,
   reason VARCHAR(255) NULL,
-  trigger_kind TEXT CHECK (trigger_kind IN ('occupancy_end','position_deactivated','manual')) NOT NULL DEFAULT 'manual',
+  -- El vocabulario de CAUSAS del relevo. Hasta el 2026-08-14 tenia tres valores y DOS eran
+  -- inalcanzables, porque el unico que escribia en esta tabla era el traspaso manual (defecto 1.10).
+  -- Ahora hay un valor por cada camino que reasigna `task_items.assigned_person_id`:
+  --   occupancy_start        alguien paso a ocupar el puesto  (triggers de INSERT y de UPDATE)
+  --   occupancy_end          alguien dejo el puesto           (trigger de UPDATE)
+  --   position_deactivated   el puesto se desactivo           (SIN emisor todavia: ningun trigger
+  --                          desactiva un puesto reasignando; se conserva porque el dia que exista
+  --                          ese camino, este es su nombre)
+  --   reconcile             el backfill de reconciliacion realineo en bloque
+  --   manual                un admin lo traspaso a proposito  (el unico con performed_by_user_id)
+  trigger_kind TEXT CHECK (trigger_kind IN ('occupancy_start','occupancy_end','position_deactivated','reconcile','manual')) NOT NULL DEFAULT 'manual',
   performed_by_user_id BIGINT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_task_item_handovers_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
@@ -1329,7 +1339,11 @@ BEGIN
       ('fill_flow_steps',      'resolver_type',   $chk$resolver_type IN ('task_assignee', 'specific_person', 'cargo_in_scope')$chk$),
       ('fill_flow_steps',      'unit_scope_type', $chk$unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact')$chk$),
       ('signature_flow_steps', 'resolver_type',   $chk$resolver_type IN ('task_assignee', 'specific_person', 'cargo_in_scope')$chk$),
-      ('signature_flow_steps', 'unit_scope_type', $chk$unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact')$chk$)
+      ('signature_flow_steps', 'unit_scope_type', $chk$unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact')$chk$),
+      -- Defecto 1.10: este NO retira valores, los AMPLIA. Va en el mismo bucle porque el mecanismo es
+      -- el mismo —y porque `CREATE TABLE IF NOT EXISTS` no toca una tabla que ya existe, asi que sin
+      -- este ALTER el vocabulario nuevo solo valdria para bases nuevas (leccion del defecto 1.13)—.
+      ('task_item_handovers',  'trigger_kind',    $chk$trigger_kind IN ('occupancy_start', 'occupancy_end', 'position_deactivated', 'reconcile', 'manual')$chk$)
     ) AS t(tabla, columna, expresion)
   LOOP
     EXECUTE format(
@@ -1692,12 +1706,25 @@ BEGIN
     WHERE up.id = NEW.position_id
     ON CONFLICT DO NOTHING;
 
+    -- El asiento de auditoria va con la reasignacion, no aparte (defecto 1.10). El CTE evalua el
+    -- predicado UNA vez y alimenta a los dos: sin el habria que repetirlo, y este predicado ya vive
+    -- duplicado en los otros caminos de relevo. `performed_by_user_id` queda NULL a proposito: en un
+    -- relevo automatico no lo hizo nadie, y `trigger_kind` ya dice la causa.
+    WITH objetivo AS (
+      SELECT ti.id, ti.assigned_person_id AS antes
+      FROM task_items ti
+      WHERE ti.responsible_position_id = NEW.position_id
+        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+        AND ti.user_started_at IS NULL
+        AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id)
+    ), asiento AS (
+      INSERT INTO task_item_handovers (task_item_id, from_person_id, to_person_id, reason, trigger_kind)
+      SELECT o.id, o.antes, NEW.person_id, 'Alta de ocupacion del puesto', 'occupancy_start' FROM objetivo o
+    )
     UPDATE task_items ti
        SET assigned_person_id = NEW.person_id
-     WHERE ti.responsible_position_id = NEW.position_id
-       AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-       AND ti.user_started_at IS NULL
-       AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id);
+      FROM objetivo o
+     WHERE ti.id = o.id;
   END IF;
   RETURN NULL;
 END;
@@ -1718,20 +1745,38 @@ BEGIN
         revoked_reason = 'position_assignment_closed'
     WHERE source = 'derived' AND derived_from_assignment_id = OLD.id AND is_current = 1;
 
+    WITH objetivo AS (
+      SELECT ti.id, ti.assigned_person_id AS antes
+      FROM task_items ti
+      WHERE ti.responsible_position_id = NEW.position_id
+        AND ti.assigned_person_id = OLD.person_id
+        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+        AND ti.user_started_at IS NULL
+    ), asiento AS (
+      INSERT INTO task_item_handovers (task_item_id, from_person_id, to_person_id, reason, trigger_kind)
+      SELECT o.id, o.antes, NULL, 'Fin de ocupacion del puesto', 'occupancy_end' FROM objetivo o
+    )
     UPDATE task_items ti
        SET assigned_person_id = NULL
-     WHERE ti.responsible_position_id = NEW.position_id
-       AND ti.assigned_person_id = OLD.person_id
-       AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-       AND ti.user_started_at IS NULL;
+      FROM objetivo o
+     WHERE ti.id = o.id;
   END IF;
   IF NEW.is_current = 1 THEN
+    WITH objetivo AS (
+      SELECT ti.id, ti.assigned_person_id AS antes
+      FROM task_items ti
+      WHERE ti.responsible_position_id = NEW.position_id
+        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+        AND ti.user_started_at IS NULL
+        AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id)
+    ), asiento AS (
+      INSERT INTO task_item_handovers (task_item_id, from_person_id, to_person_id, reason, trigger_kind)
+      SELECT o.id, o.antes, NEW.person_id, 'Alta de ocupacion del puesto', 'occupancy_start' FROM objetivo o
+    )
     UPDATE task_items ti
        SET assigned_person_id = NEW.person_id
-     WHERE ti.responsible_position_id = NEW.position_id
-       AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-       AND ti.user_started_at IS NULL
-       AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id);
+      FROM objetivo o
+     WHERE ti.id = o.id;
   END IF;
   RETURN NULL;
 END;

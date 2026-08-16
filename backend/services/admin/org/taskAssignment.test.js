@@ -20,7 +20,9 @@ const conexionFalsa = () => {
     queries,
     async query(sql, params = []) {
       queries.push({ sql, params });
-      return [{ affectedRows: 3 }];
+      // El backfill cuenta por RETURNING, no por `affectedRows`: su sentencia empieza por `WITH` y
+      // el adaptador solo calcula `affectedRows` cuando el texto empieza por INSERT/UPDATE/DELETE.
+      return [[{ id: 11 }, { id: 22 }, { id: 33 }]];
     },
   };
 };
@@ -55,23 +57,43 @@ test("solo reconcilia entregables abiertos y con puesto responsable", async () =
 test("es PostgreSQL: UPDATE ... FROM, nunca UPDATE ... INNER JOIN ... SET", async () => {
   const { sql } = await reconciliar();
   assert.ok(/UPDATE task_items ti\s+SET/.test(sql));
-  assert.ok(sql.includes("FROM position_assignments pa"));
-  assert.ok(!/UPDATE[\s\S]*JOIN[\s\S]*SET/.test(sql), "la sintaxis multi-tabla de MySQL no vale aquí");
+  assert.ok(/UPDATE task_items ti[\s\S]*FROM objetivo o/.test(sql), "el UPDATE se alimenta del CTE");
+  // El `INNER JOIN` que hay ahora vive DENTRO del SELECT del CTE, que es legítimo. Lo que no vale
+  // es la sintaxis multi-tabla de MySQL: un JOIN entre el UPDATE y su SET.
+  assert.ok(!/UPDATE task_items ti\s+SET[\s\S]*INNER JOIN/.test(sql), "nada de UPDATE ... JOIN ... SET");
 });
 
-test("sin positionId no hay filtro de puesto ni parámetros", async () => {
+test("el asiento de auditoría va en la MISMA sentencia que la reasignación", async () => {
+  // Defecto 1.10: si el asiento fuera una sentencia aparte podría quedarse sin escribir, y el
+  // predicado tendría que repetirse por cuarta vez. El CTE lo evalúa una sola vez.
+  const { sql } = await reconciliar();
+  assert.ok(/WITH objetivo AS/.test(sql), "el predicado se evalúa una vez, en un CTE");
+  assert.ok(/INSERT INTO task_item_handovers/.test(sql), "y alimenta al asiento");
+  assert.ok(sql.includes("'reconcile'"), "con su causa propia, distinta de `manual`");
+});
+
+test("sin positionId no hay filtro de puesto; el único parámetro es el actor", async () => {
   const { sql, params } = await reconciliar();
-  assert.deepEqual(params, []);
+  assert.deepEqual(params, [null], "sin actor conocido, el asiento lo deja en NULL");
   assert.ok(!sql.includes("AND ti.responsible_position_id = ?"));
 });
 
-test("positionId acota el backfill a un puesto y viaja como parámetro", async () => {
-  const { sql, params } = await reconciliar({ positionId: 25 });
+test("positionId acota el backfill a un puesto y viaja ANTES que el actor", async () => {
+  // El orden importa: el `?` del filtro está en el CTE, y el del actor en el INSERT que va después.
+  const { sql, params } = await reconciliar({ positionId: 25, performedByUserId: 7 });
   assert.ok(sql.includes("AND ti.responsible_position_id = ?"));
-  assert.deepEqual(params, [25]);
+  assert.deepEqual(params, [25, 7]);
 });
 
-test("devuelve cuántas filas movió", async () => {
-  const { resultado } = await reconciliar();
+test("el backfill SÍ registra quién lo lanzó, a diferencia de los relevos por trigger", async () => {
+  // Este camino lo dispara alguien a propósito, así que `performed_by_user_id` tiene dueño. Los
+  // relevos automáticos lo dejan en NULL porque no lo hizo nadie.
+  const { params } = await reconciliar({ performedByUserId: 42 });
+  assert.deepEqual(params, [42]);
+});
+
+test("devuelve cuántas filas movió, contadas por RETURNING", async () => {
+  const { sql, resultado } = await reconciliar();
+  assert.ok(/RETURNING ti\.id/.test(sql), "sin RETURNING el conteo sería 0 siempre");
   assert.deepEqual(resultado, { reconciled: 3 });
 });

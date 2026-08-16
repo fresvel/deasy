@@ -1,6 +1,6 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 15 de 25 tareas · 7 de 10 defectos** — abierto el **2026-08-14**.
+> **Estado: 18 de 27 tareas · 7 de 10 defectos** — abierto el **2026-08-14**.
 >
 > ✅ **La suite de caracterización está VERDE** desde el 2026-08-14 (defecto 1.15 cerrado). Estuvo roja
 > 4 tests, y **no por un golden malo**: el golden era correcto y lo que mentía era el entorno.
@@ -39,10 +39,12 @@ plan.
 | `T1.8-b` | 1.8 | Frontera escrita: el helper `fail()` es la puerta del frente 7, no de éste. Y la cifra del censo deja de estar en dos sitios | ✅ | Nota en contrato §6 + fila del frente 7 del maestro reescrita (decía 309/15, no reproducible) | 2026-08-14 |
 | `T1.8-c` | 1.8 | **Nueva.** El §4.1 del contrato define qué es `code` y qué no, y retira `login_user.js` como ejemplo bendecido | ✅ | Censo: 8 de 10 emisores repiten el status; 0 lectores en front/signer/scripts | 2026-08-14 |
 | `T1.8-d` | 1.8 | **Nueva.** La página publicada de Starlight remite al contrato y deja de leerse como norma | ✅ | `docs pnpm run build` verde; +1 router corregido (eran 4, no 3) | 2026-08-14 |
-| `T1.10-a` | 1.10 | **Censo cerrado** de los caminos que reasignan sin dejar asiento (hoy son **tres**, no uno) | ⬜ | — | — |
-| `T1.10-b` | 1.10 | **Decisión escrita**: dónde se escribe el asiento — en el trigger plpgsql o en la capa de servicio | ⬜ | — | — |
-| `T1.10-c` | 1.10 | El asiento se escribe en los tres caminos; `occupancy_end` y `position_deactivated` dejan de ser inalcanzables | ⬜ | — | — |
-| `T1.10-d` | 1.10 | **Decisión escrita**: quién LEE `task_item_handovers` (hoy: nadie, cero `SELECT` en el repo) | ⬜ | — | — |
+| `T1.10-a` | 1.10 | **Censo cerrado**: son **cinco sentencias en cuatro sitios**, no tres — se había escapado el trigger `AFTER INSERT` | ✅ | 3 en el esquema + backfill + handover; los de `fill_requests` son otra tabla y quedan fuera | 2026-08-14 |
+| `T1.10-b` | 1.10 | **Decisión: EN EL TRIGGER.** Es el único sitio que no se puede puentear, y ser puenteado *es* el defecto | ✅ | `position_assignments` la escriben **4 sitios**, incluido el CRUD genérico | 2026-08-14 |
+| `T1.10-c` | 1.10 | El asiento se escribe en los **cuatro** caminos automáticos; el vocabulario de causas pasa de 3 a 5 | ✅ | Control positivo contra la base: `occupancy_end` → `occupancy_start` → `reconcile` con actor. 621 unitarios, char verde, 0 goldens movidos | 2026-08-14 |
+| `T1.10-d` | 1.10 | **Decisión: se ve en la app.** El entregable gana un historial de relevos legible | ✅ | Antes: 0 `SELECT` en todo el repo | 2026-08-14 |
+| `T1.10-e` | 1.10 | **Nueva.** Endpoint de lectura del historial, con su permiso | ⬜ | — | — |
+| `T1.10-f` | 1.10 | **Nueva.** La sección de historial en el entregable, verificada en navegador | ⬜ | — | — |
 | `T1.11-a` | 1.11 | **Censo cerrado**: 423 decidibles por escáner + 61 leídos uno a uno + sonda sobre los 240 flujos | ✅ | **484/484 equilibradas · 0 de más**; sonda 0 disparos (arranque, fixture y flujos) | 2026-08-14 |
 | `T1.11-d` | 1.11 | **Nueva.** `npm run check:params` como gate permanente — el artefacto que al 1.5 le faltó | ✅ | `scripts/audit_bindparams.mjs`; probado con un desajuste inyectado (salta) y con `?` en comentario/cadena/`IN (?)` (no salta) | 2026-08-14 |
 | `T1.11-b` | 1.11 | **Decisión: ENDURECER.** Escrita encima de `bindParams` con su medición y con por qué no bastaba avisar | ✅ | El gate estático solo ve 423 de 484; lanzar cubre las 484 en runtime | 2026-08-14 |
@@ -62,7 +64,7 @@ plan.
 | **1.3** | Auto-apropiación de una solicitud manual | Backend · servicio | ⬜ |
 | **1.7** | El sello fantasma: un guard permanentemente verdadero | Frontend · Vue | ⬜ |
 | ~~**1.8**~~ | ~~Dos documentos del repo mandan formas de error contrarias~~ | Backend · documental | ✅ **2026-08-14** |
-| **1.10** | La única bitácora de auditoría la puentea el camino automático | Base de datos · triggers | ⬜ |
+| **1.10** | La única bitácora de auditoría la puentea el camino automático | BD · triggers · UI | 🟡 **backend hecho**; falta el historial visible |
 | ~~**1.11**~~ | ~~Parámetros de MÁS se ignoran en silencio~~ | Backend · `config/postgres.js` | ✅ **2026-08-14** |
 | ~~**1.15**~~ | ~~El catálogo de semillas nunca llega a un entorno ya arrancado~~ | Bootstrap · MinIO | ✅ **2026-08-14** |
 | ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ | Backend · firma | ✅ **2026-08-14** |
