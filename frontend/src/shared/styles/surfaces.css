@@ -259,4 +259,64 @@
         @apply hover:translate-y-0;
         box-shadow: none;
     }
+
+    /* ══ LA BURBUJA DE MENSAJE — F4, 2026-08-16 ═══════════════════════════════════════════════
+       Ultima receta del censo de las 48, y el unico hueco real de las 23 que quedaban. El chat
+       existe (`WorkspaceChatLauncher.vue`, 803 lineas) y consume SIETE familias del sistema
+       —picker, pestaña en linea, caja de icono, alerta, chip, FAB, boton `--field`—, o sea que
+       estaba bien construido. Pero su objeto central, la burbuja, **no tenia ni una clase**: dos
+       ternarios en la plantilla repartian cuatro tratamientos de color escritos con CUATRO PASOS
+       CONTIGUOS de la misma familia (`blue-light-500/600/700/800`).
+
+       Vive aqui, junto al `--picker`, porque el adjunto de dentro de la burbuja ES un picker; el
+       dia que el chat crezca (cabecera, lista de conversaciones, scroller) se lleva su modulo.
+
+       ── DOS DEFECTOS QUE DESTAPO LA MEDICION ────────────────────────────────────────────────
+       1. **El adjunto de un mensaje PROPIO no pasa AA.** Iba `bg-blue-light-600` (#0086c9) con
+          texto blanco: **4.00:1**, por debajo del 4.5 que pide el texto. Pasa a `-800` (7.55) —
+          y ademas es la direccion correcta: una superficie anidada sobre una burbuja oscura se
+          OSCURECE, no se aclara. Su hover baja al `-900`.
+       2. **El adjunto de un mensaje AJENO no tenia hover.** Declaraba
+          `bg-surface hover:bg-surface`: el mismo color en reposo y con el raton encima. Pasa a
+          `gray-100`, que es el hover que ya usa `--neutral-soft`.
+
+       ── Y UN NOMBRE CRUDO QUE ERA UN TOKEN ──────────────────────────────────────────────────
+       El fondo de la burbuja propia era `bg-blue-light-700`, que es **exactamente**
+       `--color-info` (#026aa2, medido). Mismo pixel, nombre que ahora dice lo que significa.
+
+       El adjunto lee su color de VARIABLES que pone la burbuja, que es el patron que
+       `deliverables.css` ya usa con `--tarjeta-acento`: asi el mismo boton sirve en las dos
+       burbujas sin un selector contextual ni una segunda clase. */
+    .deasy-chat-bubble {
+        @apply max-w-[88%] rounded-xl px-4 py-3;
+    }
+
+    .deasy-chat-bubble--sent {
+        @apply ml-auto text-white;
+        background: var(--color-info);
+        --adjunto-borde: var(--color-blue-light-600);
+        --adjunto-fondo: var(--color-blue-light-800);
+        --adjunto-hover: var(--color-blue-light-900);
+        --adjunto-tinta: var(--color-white);
+    }
+
+    .deasy-chat-bubble--received {
+        @apply mr-auto border border-line bg-white text-strong;
+        --adjunto-borde: var(--color-line);
+        --adjunto-fondo: var(--color-surface);
+        --adjunto-hover: var(--color-gray-100);
+        --adjunto-tinta: var(--color-body);
+    }
+
+    .deasy-chat-attachment {
+        border-color: var(--adjunto-borde);
+        background: var(--adjunto-fondo);
+        color: var(--adjunto-tinta);
+    }
+
+    @media (hover: hover) {
+        .deasy-chat-attachment:hover {
+            background: var(--adjunto-hover);
+        }
+    }
 }

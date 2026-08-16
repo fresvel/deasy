@@ -98,10 +98,10 @@
               <article
                 v-for="message in messages"
                 :key="message.id"
-                class="max-w-[88%] rounded-xl px-4 py-3"
+                class="deasy-chat-bubble"
                 :class="Number(message.sender_person_id) === Number(currentPersonId)
-                  ? 'ml-auto bg-blue-light-700 text-white'
-                  : 'mr-auto border border-line bg-white text-strong'"
+                  ? 'deasy-chat-bubble--sent'
+                  : 'deasy-chat-bubble--received'"
               >
                 <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
                   {{ message.content || 'Adjunto sin texto' }}
@@ -111,10 +111,7 @@
                     v-for="(attachment, attachmentIndex) in message.attachments"
                     :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
                     type="button"
-                    class="deasy-picker deasy-picker--flat justify-between"
-                    :class="Number(message.sender_person_id) === Number(currentPersonId)
-                      ? 'border-blue-light-500 bg-blue-light-600 text-white hover:bg-blue-light-800'
-                      : 'border-line bg-surface text-body hover:bg-surface'"
+                    class="deasy-picker deasy-picker--flat deasy-chat-attachment justify-between"
                     @click="downloadAttachment(message, attachmentIndex)"
                   >
                     <span class="truncate">{{ attachment.filename }}</span>

@@ -24,8 +24,15 @@ const VOID = new Set(["input", "img", "br", "hr", "meta", "link", "source", "are
 const PULSABLE = /^(button|AppButton|AdminButton)$/;
 /* Bloques del sistema, incluidos los que no empiezan por `deasy-`: `admin-page-header__create`
    y `signature-workspace-card` son de familias de modulo, y `nodrag` es de Vue Flow (marca un
-   nodo como no arrastrable — no es estilo). */
-const BLOQUE = /^(deasy-btn|deasy-inline-tab|deasy-inline-action|deasy-inline-icon-button|deasy-chip-remove|deasy-pdf-action|deasy-fab|deasy-hero-back-button|deasy-nav-|deasy-stepper__|deasy-section-nav|deasy-counter-nav|deasy-option|deasy-tile|deasy-picker|deasy-alert|deasy-deliverable-action|graph-toggle|graph-|btnsera|admin-page-header__|signature-workspace-card|nodrag)/;
+   nodo como no arrastrable — no es estilo).
+
+   ⚠️ ES UNA LISTA A MANO Y NO UN COMODIN `^deasy-`, y es deliberado: un prefijo dejaria pasar
+   cualquier clase inventada con tal de llamarse `deasy-algo`, que es justo lo que este gate viene
+   a impedir. El precio es mantenerla — cada bloque nuevo se apunta aqui EN EL MISMO COMMIT que lo
+   crea, y cada bloque que muere se borra. El 2026-08-16 hubo de las dos: entra
+   `deasy-chat-attachment` (el adjunto de la burbuja de chat) y sale `deasy-hero-back-button`, que
+   dejo de existir ese mismo dia al colapsar sobre `AppButton`. */
+const BLOQUE = /^(deasy-btn|deasy-inline-tab|deasy-inline-action|deasy-inline-icon-button|deasy-chip-remove|deasy-pdf-action|deasy-fab|deasy-chat-attachment|deasy-nav-|deasy-stepper__|deasy-section-nav|deasy-counter-nav|deasy-option|deasy-tile|deasy-picker|deasy-alert|deasy-deliverable-action|graph-toggle|graph-|btnsera|admin-page-header__|signature-workspace-card|nodrag)/;
 
 /* Las señales de los OTROS diez, para descartarlos. Cada una es la del gate que le toca. */
 const CIERRA = [/\$emit\(\s*['"](close|cancel|dismiss|closed)['"]/, /^\s*(close|dismiss|hide)[A-Z$_(]/, /=\s*(null|false)\s*$/, /=\s*['"]{2}\s*$/];
