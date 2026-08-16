@@ -332,7 +332,7 @@
               <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-strong">v{{ v.storage_version }}</span>
                 <AppTag :variant="tonoCicloVida(v.lifecycle_state)" size="sm" outlined>{{ versionStateLabel(v.lifecycle_state) }}</AppTag>
-                <span v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" class="deasy-tag deasy-tag--accent" title="Versión vinculada a esta configuración">Vinculada aquí</span>
+                <AppTag v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" variant="accent" title="Versión vinculada a esta configuración">Vinculada aquí</AppTag>
                 <span class="ml-auto text-[11px] font-semibold text-primary">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
               </div>
               <div class="mt-1 flex items-center justify-between gap-2">

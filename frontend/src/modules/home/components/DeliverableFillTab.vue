@@ -12,10 +12,10 @@
       <div
         v-for="step in fillWorkflowState.subject.workflow.fill_steps"
         :key="`fill-step-combined-${step.id}-${step.request_id || 'na'}`"
-        class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(var(--elev-ink-rgb),0.07)] ring-1 ring-white/70 transition"
-        :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
+        class="deasy-flow-step"
+        :class="`deasy-flow-step--${getFillStepTono(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)}`"
       >
-        <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
+        <div class="deasy-flow-step__accent"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
           <div class="flex items-center gap-2">
             <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
@@ -73,8 +73,7 @@
 import AppTag from '@/shared/components/data/AppTag.vue';
 import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
 import {
-  getFillStepCardClass,
-  getFillStepAccentClass,
+  getFillStepTono,
   getFillStepStatusLabel,
   getFillStepStatusTagVariant,
 } from '@/modules/home/views/homeView.helpers.js';

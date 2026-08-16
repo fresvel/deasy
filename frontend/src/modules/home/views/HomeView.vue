@@ -1565,10 +1565,10 @@
               <div
                 v-for="step in fillWorkflowState.subject.workflow.fill_steps"
                 :key="`fill-step-${step.id}-${step.request_id || 'na'}`"
-                class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 transition"
-                :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
+                class="deasy-flow-step"
+                :class="`deasy-flow-step--${getFillStepTono(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)}`"
               >
-                <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
+                <div class="deasy-flow-step__accent"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex items-center gap-2">
                     <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
@@ -1806,10 +1806,10 @@
               <div
                 v-for="step in signatureFlowState.snapshot.signatureSteps"
                 :key="`signature-step-${step.id || step.step_order}`"
-                class="deasy-signature-step"
-                :class="`deasy-signature-step--${getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
+                class="deasy-flow-step"
+                :class="`deasy-flow-step--${getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
               >
-                <div class="deasy-signature-step__accent"></div>
+                <div class="deasy-flow-step__accent"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex flex-wrap items-center gap-2">
                     <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
@@ -1955,16 +1955,12 @@
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
-        <div
-          class="rounded-2xl px-4 py-3 text-sm font-semibold"
-          :class="deliverableOperationState.type === 'error'
-            ? 'bg-rose-50 border border-rose-200 text-danger'
-            : deliverableOperationState.type === 'success'
-              ? 'bg-emerald-50 border border-emerald-200 text-success'
-              : 'bg-blue-light-50 border border-blue-light-200 text-info'"
+        <AppAlert
+          :variant="{ error: 'danger', success: 'success' }[deliverableOperationState.type] || 'info'"
+          class="text-sm font-semibold"
         >
           {{ deliverableOperationState.message }}
-        </div>
+        </AppAlert>
         <p v-if="deliverableOperationState.detail" class="text-sm text-icon m-0">
           {{ deliverableOperationState.detail }}
         </p>
@@ -2171,8 +2167,7 @@ import {
   formatTriggerLabel,
   getFillStepStatusLabel,
   getFillStepStatusTagVariant,
-  getFillStepCardClass,
-  getFillStepAccentClass,
+  getFillStepTono,
   getFillRequestStatusCode,
   getFillStepResolverLabel,
   getSignatureStepResolverLabel,

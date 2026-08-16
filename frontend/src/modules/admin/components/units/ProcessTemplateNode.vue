@@ -27,7 +27,7 @@
       <span class="min-w-0 flex-1 truncate text-[12px] font-semibold text-body">{{ data.display_name }}</span>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1">
-      <span class="deasy-tag deasy-tag--primary deasy-tag--sm deasy-tag--outlined deasy-tag--truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</span>
+      <AppTag variant="primary" size="sm" outlined class-name="deasy-tag--truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</AppTag>
       <AppTag
         v-if="data.storage_version"
         :variant="tonoEstado"

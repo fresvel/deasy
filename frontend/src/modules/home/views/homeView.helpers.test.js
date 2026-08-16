@@ -18,8 +18,7 @@ import {
   formatTriggerLabel,
   getFillStepStatusLabel,
   getFillStepStatusTagVariant,
-  getFillStepCardClass,
-  getFillStepAccentClass,
+  getFillStepTono,
   getWorkflowStateTagVariant,
   getDeliverableAccessTagVariant,
   getFillRequestStatusCode,
@@ -234,24 +233,29 @@ describe('getFillStepStatusLabel / TagVariant', () => {
    no protege la regla: protege la implementacion, y estorba justo cuando hace falta cambiarla.
    Reescritas el 2026-08-13 para afirmar lo que sus propios nombres dicen —que el turno manda sobre
    el estado, y que cada estado se distingue del resto—, que sobrevive a repintar la aplicacion. */
-describe('getFillStepCardClass / AccentClass', () => {
-  const card = (estado, actual) => getFillStepCardClass({ step_order: 2, request_status: estado }, actual);
-  const accent = (estado, actual) => getFillStepAccentClass({ step_order: 2, request_status: estado }, actual);
+describe('getFillStepTono', () => {
+  const tono = (estado, actual) => getFillStepTono({ step_order: 2, request_status: estado }, actual);
 
   test('el paso ACTUAL manda sobre el estado', () => {
-    /* Mismo estado, distinto turno: si el turno no mandara, las dos saldrian iguales. */
-    expect(card('approved', 2)).not.toBe(card('approved', 1));
-    expect(accent('approved', 2)).not.toBe(accent('approved', 1));
+    /* Mismo estado, distinto turno: si el turno no mandara, los dos saldrian iguales. */
+    expect(tono('approved', 2)).not.toBe(tono('approved', 1));
   });
 
   test('si no es el actual, cada estado se distingue de los demas', () => {
-    const clases = ['approved', 'rejected', 'returned', 'pendiente'].map((e) => card(e, 1));
-    expect(new Set(clases).size).toBe(clases.length);
+    const tonos = ['approved', 'rejected', 'returned', 'pendiente'].map((e) => tono(e, 1));
+    expect(new Set(tonos).size).toBe(tonos.length);
   });
 
   test('un estado desconocido cae en el neutro, no en el de otro estado', () => {
-    expect(card('lo-que-sea', 1)).toBe(card('pendiente', 1));
-    expect(card('lo-que-sea', 1)).toContain('border-line');
+    expect(tono('loquesea', 1)).toBe('neutral');
+  });
+
+  test('todo tono devuelto tiene bloque en `deasy-flow-step--*`', () => {
+    /* Lo que impide el fallo que L3 dejo pasar: un tono sin bloque no falla, sale sin pintar. */
+    const conBloque = ['success', 'info', 'danger', 'salmon', 'warning', 'neutral'];
+    for (const e of ['approved', 'rejected', 'returned', 'loquesea']) {
+      expect(conBloque).toContain(tono(e, 1));
+    }
   });
 });
 

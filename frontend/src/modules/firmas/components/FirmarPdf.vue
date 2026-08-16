@@ -543,7 +543,7 @@
           >
             <div class="font-semibold text-strong text-sm flex items-center justify-between w-full gap-3">
               <span>{{ user.first_name }} {{ user.last_name }}</span>
-              <span v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" class="text-info bg-blue-light-100 px-2 py-0.5 rounded text-xs">Seleccionado</span>
+              <AppTag v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" variant="info" size="sm">Seleccionado</AppTag>
             </div>
             <div class="text-xs text-muted mt-1 flex flex-wrap items-center gap-2">
               <span class="bg-surface px-1.5 py-0.5 rounded border border-line">{{ user.cedula }}</span>
@@ -880,12 +880,12 @@
         <template #cell="{ row, field }">
           <template v-if="field.name === 'validLabel'">
             <div class="flex items-center justify-center">
-              <span v-if="row.valid" class="deasy-tag deasy-tag--success">
+              <AppTag v-if="row.valid" variant="success">
                 <IconCheck class="w-3.5 h-3.5" /> Válida
-              </span>
-              <span v-else class="deasy-tag deasy-tag--danger">
+              </AppTag>
+              <AppTag v-else variant="danger">
                 <IconX class="w-3.5 h-3.5" /> Inválida
-              </span>
+              </AppTag>
             </div>
           </template>
           <template v-else-if="field.name === 'certificateAuthority'">
@@ -906,9 +906,9 @@
           <template v-else-if="field.name === 'signerCedula'">
             <div class="flex flex-col gap-1.5 items-start">
               <span class="font-semibold text-strong">{{ row.signerCedula }}</span>
-              <span v-if="row.matchesCedula" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-light-100 text-info text-[10px] font-bold uppercase tracking-wider border border-blue-light-200">
+              <AppTag v-if="row.matchesCedula" variant="info" size="sm">
                 <IconCheck class="w-3 h-3" /> Coincide
-              </span>
+              </AppTag>
             </div>
           </template>
           <template v-else-if="field.name === 'details'">
@@ -1036,18 +1036,18 @@ const fieldId = (name) => `${uid}-${name}`;
     h(
       'div',
       {
-        class: `signature-workspace-icon shrink-0 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border ${colorClasses}`
+        class: `signature-workspace-icon deasy-icon-box deasy-icon-box--xl deasy-icon-box--outlined mx-auto ${colorClasses}`
       },
       [h(IconComponent, { class: 'h-7 w-7', 'stroke-width': 1.5 })]
     );
 
-  const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-blue-light-50 border-blue-light-100 text-info');
-  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-surface border-line text-muted');
-  const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-success');
-  const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-warning');
-  const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-brand-50 border-brand-100 text-primary');
-  const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'bg-blue-light-50 border-blue-light-100 text-info');
-  const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'bg-emerald-50 border-emerald-100 text-success');
+  const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'deasy-icon-box--info');
+  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'deasy-icon-box--neutral');
+  const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'deasy-icon-box--success');
+  const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'deasy-icon-box--warning');
+  const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'deasy-icon-box--primary');
+  const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'deasy-icon-box--info');
+  const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'deasy-icon-box--success');
   const normalizedLauncherMode = computed(() => String(props.launcherMode || "all").trim().toLowerCase());
   const canShowLauncher = (mode) => {
     const normalizedMode = String(mode || "").trim().toLowerCase();

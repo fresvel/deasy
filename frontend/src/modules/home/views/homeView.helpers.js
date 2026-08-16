@@ -175,26 +175,23 @@ export const formatWorkflowDateTime = (value) => {
   }).format(date);
 };
 
-export const getFillStepCardClass = (step, currentStepOrder) => {
-  if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) {
-    return 'border-blue-light-200 bg-linear-to-br from-blue-light-50/80 via-white to-blue-light-100/50';
-  }
-  const code = String(step?.request_status || '').trim().toLowerCase();
-  if (code === 'approved') return 'border-emerald-200 bg-linear-to-br from-emerald-50/80 via-white to-emerald-100/40';
-  if (code === 'rejected') return 'border-rose-200 bg-linear-to-br from-rose-50/80 via-white to-rose-100/40';
-  if (code === 'returned') return 'border-amber-200 bg-linear-to-br from-amber-50/80 via-white to-amber-100/40';
-  return 'border-line bg-linear-to-br from-surface/90 via-white to-gray-100/60';
-};
+/* `getFillStepCardClass` y `getFillStepAccentClass` murieron el 2026-08-15 (F3.3 · L7), y no las
+   encontro el censo de L6 sino el GATE: `check-state-tone` las saco a la primera pasada. Eran las
+   gemelas exactas de las dos de firma —misma forma, mismos degradados, mismo par card/accent— pero
+   su nombre no decia «signature», asi que la busqueda de L6 paso por encima.
 
-export const getFillStepAccentClass = (step, currentStepOrder) => {
-  if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) {
-    return 'bg-linear-to-r from-blue-light-300 via-blue-light-400 to-blue-light-300';
-  }
-  const code = String(step?.request_status || '').trim().toLowerCase();
-  if (code === 'approved') return 'bg-linear-to-r from-emerald-300 via-emerald-400 to-green-300';
-  if (code === 'rejected') return 'bg-linear-to-r from-rose-300 via-rose-400 to-red-300';
-  if (code === 'returned') return 'bg-linear-to-r from-amber-300 via-amber-400 to-orange-300';
-  return 'bg-linear-to-r from-gray-200 via-line-strong to-gray-200';
+   Lo unico que queda es la traduccion valor -> tono, que es el contrato. El cuerpo vive en
+   `deasy-flow-step--{tono}`, el mismo bloque que usa el flujo de firma: son el mismo componente.
+
+   `returned` -> `warning` es el unico tono que el flujo de firma no gasta: un paso de llenado
+   puede estar DEVUELTO, y eso no existe firmando. */
+export const getFillStepTono = (step, currentStepOrder) => {
+  if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) return 'info';
+  return ({
+    approved: 'success',
+    rejected: 'danger',
+    returned: 'warning'
+  }[String(step?.request_status || '').trim().toLowerCase()] || 'neutral');
 };
 
 export const getFillStepResolverLabel = (step) => {

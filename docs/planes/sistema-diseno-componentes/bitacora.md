@@ -6,6 +6,90 @@
 > [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md)
 > y **sigue valiendo**: es donde están las trampas ya pagadas.
 
+## 2026-08-15 · F3.3 cerrada — el estado deja de vivir en JavaScript
+
+**Lo que el enunciado prometía:** «el estado de grafo — 73 de los 201 colores restantes», ocho
+ficheros repitiendo el trío `emerald/amber/rose`.
+
+**Lo que había al medir**, y por eso el enunciado no sobrevivió a la primera hora:
+
+- `ProcessConfigNode` —uno de los ocho— **no contenía ni un `emerald-50`**: ya estaba migrado.
+- `rose` casi nunca significaba «retirado»: **en un solo sitio** del repo.
+- No eran 3 estados sino **27 valores en 8 ejes**, en más de 20 ficheros.
+- Y lo grave: **el color no vivía en el CSS sino en ~20 funciones de JavaScript** que devolvían
+  cadenas de utilidades. Los diecisiete gates eran ciegos a todas ellas.
+
+**La consecuencia medible de esa ceguera:** `processStatusClass` y `configStatusClass` leían **el
+mismo campo de la misma tabla** y pintaban `draft` y `retired` **al revés una de otra**. Llevaba
+meses así.
+
+### El corte que ordenó todo, en una frase
+
+> Si la función pregunta por los **datos**, se queda. Si pregunta por el **color**, se va. Entre las
+> dos está el **nombre del tono**, y ése es el contrato.
+
+De ahí `shared/utils/estadoTono.js` (precedente exacto del repo: `workspaceNavIcons.js`).
+
+### Resultado
+
+| | |
+|---|---|
+| Colores fuera de la paleta | **201 → 42** |
+| Hex sueltos | 14 → **5** |
+| Valores arbitrarios | 326 → **302** |
+| Tests | 316 → **339** |
+| Gates | 17 → **18** (`check-state-tone`) |
+
+### Las siete cosas que costaron caro y no se pueden deducir leyendo el plan
+
+1. **Un `}` mal contado dejó un bloque entero sin pintar.** `graph-node__badge` se añadió con un
+   script que quitó la última llave dando por hecho que cerraba `@layer components`; cerraba otra
+   regla, y las tres del contador quedaron **anidadas dentro** de un selector imposible. `css-prune`
+   y `check-orphan-classes` daban verde. Nació `check-selector-reach`, y **su señal se acertó a la
+   tercera**: por clase daba verde (el `:hover` sí alcanzaba) y por ancestro daba 20 falsos
+   positivos. La buena es el anidamiento **en el fuente**.
+2. **Un gate no puede ver un `:variant` dinámico.** En L3 la variable del tono no llegó a crearse en
+   `ProcessTemplateNode` y **todas las pastillas de versión salieron azules**. Ningún gate podía
+   cazarlo. Lo cazó mirar la pantalla.
+3. **Las pastillas del nodo tienen ancho fijo y nadie avisa.** Al subir de 10 a 12 px, una salió a
+   **181 px dentro de un nodo de 170**. Y el reparto estaba escrito con anchos mágicos
+   (`max-w-[9.5rem]`), así que cedía la pastilla en vez del título. Lo vio el dueño.
+4. **`--muted` murió en L1 pero dos productores seguían devolviéndolo**, y eso ya estaba roto:
+   caían al *fallback* de `AppTag` avisando por consola. Invisible para `check-variants`, que lee
+   atributos literales. Hoy lo cubre un test del vocabulario.
+5. **Los hex sueltos del estado «pendiente» eran salmón literal.** `#fa8072` **es** el color
+   `salmon` de CSS, y el sistema ya tenía ese tono en `--color-pending`. No hacía falta inventar
+   nada: hacía falta reconocerlo.
+6. **El eje `--solid` de `deasy-icon-box` estaba a medias** —sólo `primary` e `info`—, así que pedir
+   `--solid --success` daba blanco sobre relleno `-50`: invisible. Al completarlo salió la regla que
+   faltaba: **el sólido se ancla al paso que le sirve a SU contenido**; un número encima pide 4.5:1
+   y un ✓ pide 3:1.
+7. **El gate encontró lo que el que migró no pensó en mirar.** `check-state-tone`, en su primera
+   pasada, sacó `getFillStepCardClass`/`getFillStepAccentClass`: las **gemelas exactas** de las dos
+   de firma que sí se habían migrado, con la misma forma y los mismos degradados. El censo de L6 no
+   las vio porque su nombre no decía «signature». Por eso el bloque se llama `deasy-flow-step` y no
+   `deasy-signature-step`.
+
+### 🪤 Y una del instrumental, que costó estar a punto de «arreglar» algo que ya estaba bien
+
+`deasy-alert--row` daba `display:block` en el navegador estando `display:flex` en el fuente **y en
+el CSS construido**. No era el CSS: era el **HMR de Vite sirviendo una versión anterior** del
+fichero. La señal que lo distingue es que las reglas escritas *antes* en la misma sesión sí aplican
+y sólo falta la última. Se confirma con un `grep` al `dist` y se cura con `restart frontend`. Queda
+escrito en `frontend/CLAUDE.md`, y volvió a pasar en L7 — ya con la receta, costó un minuto.
+
+### Lo que se dejó fuera a propósito
+
+No todo color es estado, y meterlo en el diccionario habría sido peor que dejarlo:
+
+- **`STEP_TONES`** de `AdminDraftArtifactModal`: decoración cíclica por índice. No hay valor que traducir.
+- **El medidor de fuerza de contraseña**: una **escala**, no un eje de estado.
+- **Los degradados decorativos** de las tarjetas de proceso y los desenfoques de `FirmarPdf`.
+- **Los 8 banners informativos** que quedan en el techo de S1: son `AppAlert` sin propagar, o sea
+  **F2**, no F3.3. Meterlos aquí habría sido hacer otra fase dentro de ésta.
+
+---
+
 ## Lo que la vuelta anterior dejó aprendido, y aquí se da por sabido
 
 Cinco cosas que costaron caro y que valen para todo lo que queda:

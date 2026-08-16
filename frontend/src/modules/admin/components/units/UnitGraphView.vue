@@ -52,7 +52,7 @@
       <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
         <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-warning" />
         Resaltar pendientes
-        <span v-if="pendingCount" class="deasy-tag deasy-tag--warning">{{ pendingCount }}</span>
+        <AppTag v-if="pendingCount" variant="warning">{{ pendingCount }}</AppTag>
       </label>
       <AppButton variant="secondary" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
@@ -261,7 +261,7 @@
               </div>
               <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <template v-if="pos.person_id">
-                  <span class="deasy-tag deasy-tag--success">Ocupado</span>
+                  <AppTag variant="success">Ocupado</AppTag>
                   <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                   <div v-if="editable" class="ml-auto flex items-center gap-1">
                     <AppButton
@@ -535,6 +535,7 @@
 
 <script setup>
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoCicloVida, tonoOrigen, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";

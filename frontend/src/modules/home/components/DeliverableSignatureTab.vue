@@ -46,10 +46,10 @@
       <div
         v-for="step in signatureFlowState.snapshot.signatureSteps"
         :key="`combined-signature-step-${step.id || step.step_order}`"
-        class="deasy-signature-step"
-        :class="`deasy-signature-step--${getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
+        class="deasy-flow-step"
+        :class="`deasy-flow-step--${getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
       >
-        <div class="deasy-signature-step__accent"></div>
+        <div class="deasy-flow-step__accent"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">

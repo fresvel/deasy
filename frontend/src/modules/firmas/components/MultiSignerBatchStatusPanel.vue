@@ -29,13 +29,10 @@
           />
         </div>
 
-        <div
-          v-if="currentModeFieldsCount"
-          class="deasy-tag deasy-tag--success"
-        >
+        <AppTag v-if="currentModeFieldsCount" variant="success">
           <IconCheck class="h-4 w-4" />
           {{ currentModeFieldsCount }} preparada(s)
-        </div>
+        </AppTag>
       </div>
     </div>
 
@@ -104,6 +101,7 @@
 
 <script setup>
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
 import { computed } from "vue";
 import { IconAlertCircle, IconCheck} from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
