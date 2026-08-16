@@ -1,15 +1,24 @@
 @layer components {
-.deasy-inline-tabs {
-        @apply mb-5 flex overflow-x-auto border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+/* ⚠️ LA LINEA BASE LA PONEN LAS PESTAÑAS, NO EL CONTENEDOR (2026-08-15, F4). Antes iba aqui, un
+       `border-b` de 1 px, y el indicador de la activa medía 2: al pasar de una pestaña a otra la
+       linea **cambiaba de grosor**, con un salto de medio pixel a cada lado.
+
+       Medido en su demo de `/tabs`: su contenedor tiene `border-bottom-width: 0` y son las
+       pestañas inactivas las que llevan `border-b-2` en `gray-200`. Asi la linea y el indicador
+       miden lo mismo y solo cambian de color. (El comentario de abajo decia que TailAdmin usaba
+       «un contenedor con border-b»: era una lectura, no una medicion, y estaba equivocada.)
+
+       El `gap-2` es suyo tambien —`space-x-2`—: sin el, dos pestañas contiguas se tocan. */
+    .deasy-inline-tabs {
+        @apply mb-5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
     }
 
     /* LA PESTAÑA — receta «Underline + icon» de TailAdmin, con dos ajustes pedidos por el dueño
      * (2026-08-15): **icono siempre** y **más alta**.
      *
-     * De TailAdmin se toma el mecanismo: `border-b-2` transparente en reposo que se tiñe al
-     * activarse, dentro de un contenedor con `border-b`. El `-mb-px` del contenedor hace que los
-     * dos bordes se solapen en una sola linea, que es lo que da el efecto de «lengüeta»; sin él se
-     * ven dos rayas de 1 px pegadas.
+     * De TailAdmin se toma el mecanismo: `border-b-2` en reposo —GRIS, no transparente— que se
+     * tiñe de marca al activarse. La linea base de la barra es la suma de esos bordes, y por eso
+     * el indicador nunca cambia de grosor: solo de color.
      *
      * Lo que NO se toma de TailAdmin es su altura: sus tabs son `py-2` (36 px) y aqui van a `py-4`
      * (56 px). El motivo es que con icono al lado el texto queda apretado, y que estas pestañas
@@ -20,7 +29,7 @@
      * dueño le gustaba: TailAdmin solo oscurece el texto, y sobre 56 px de alto eso casi no se
      * nota. */
     .deasy-inline-tab {
-        @apply inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-4 text-sm font-medium text-muted transition-colors hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
+        @apply inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 border-line px-4 py-4 text-sm font-medium text-body transition-colors hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     .deasy-inline-tab--active {
