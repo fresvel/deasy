@@ -49,7 +49,20 @@
      * 27,5 rem y cuatro etiquetas con icono al lado no caben en horizontal. Antes era
      * `deasy-section-nav--stacked`, o sea un bloque distinto para lo mismo; el dueño pidio que
      * TODAS las pestañas se vean iguales y tenia razon: elegir el modo del chat y elegir la
-     * seccion de un entregable son la misma accion. */
+     * seccion de un entregable son la misma accion.
+     *
+     * ⚠️ ES LA UNICA PESTAÑA QUE NO MIDE 54 px, y la diferencia esta justificada: mide **62**.
+     * Medido el 2026-08-15, el desglose lo explica entero:
+     *
+     *     normal   contenido 22 px (una linea, icono al lado)  + 16+16 de relleno = 54
+     *     apilada  contenido 42 px (icono ENCIMA del texto)    + 10+10 de relleno = 62
+     *
+     * O sea que no es otra decision de tamaño: es la consecuencia aritmetica de poner el icono
+     * sobre la etiqueta en vez de al lado. De hecho su relleno es MENOR (10 frente a 16) para
+     * compensar; igualarla a 54 exigiria bajarlo a 6 px y el texto quedaria pegado al borde.
+     *
+     * Todas las demas —con icono, sin icono y con contador— miden 54 exactas. Verificado en el
+     * DOM en tres vistas. */
     .deasy-inline-tabs--stacked {
         @apply mb-0 w-full;
     }
