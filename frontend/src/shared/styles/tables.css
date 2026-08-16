@@ -1,6 +1,9 @@
 @layer components {
+    /* EL MARCO — `rounded-xl` (12 px) y no `rounded-2xl` (16), medido en su demo de `data-tables`
+       el 2026-08-15. La medicion anterior dio 16 porque cogio el ancestro equivocado: la caja de
+       la tabla es la que lleva `border`, no la seccion que la envuelve. */
     .deasy-table-responsive {
-        @apply overflow-x-auto rounded-2xl border bg-white;
+        @apply overflow-x-auto rounded-xl border bg-white;
         border-color: var(--color-line);
     }
 
@@ -40,9 +43,17 @@
         color: var(--color-strong);
     }
 
+    /* ⚠️ EL DIVISOR DE FILA VA UN ESCALON MAS CLARO QUE EL MARCO, y no es un matiz: es lo que
+       hace que la tabla se lea como un bloque con lineas dentro en vez de como una rejilla. En su
+       demo estan medidos los dos —marco `gray-200` (#e4e7ec), divisor `gray-100` (#f2f4f7)— y
+       Deasy usaba `--color-line` (gray-200) para ambos.
+
+       Va con el gris primitivo y no con un token semantico porque **no hay ninguno para esto**:
+       `--color-line` ya esta ocupado por el limite de un componente, que es otra cosa y tiene otro
+       minimo (WCAG 1.4.11 pide 3:1 para un limite; una linea decorativa dentro de una caja no). */
     .deasy-table tbody tr {
         @apply border-b transition-colors;
-        border-color: var(--color-line);
+        border-color: var(--color-gray-100);
     }
 
     .deasy-table tbody tr:last-child {
