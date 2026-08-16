@@ -213,9 +213,27 @@
        que el resto: 71 % el borde en reposo, 85 % al pasar el raton o al arrastrar.
 
        El borde AQUI no es decorativo: es discontinuo y de 2 px, y es lo unico que dibuja
-       la zona. `sky-200` daba **1.33:1** contra el blanco; al 71 % da 3.83. */
+       la zona. `sky-200` daba **1.33:1** contra el blanco; al 71 % da 3.83.
+
+       ═══ F4, 2026-08-15 · ESTA RECETA DE TAILADMIN NO SE ADOPTA, Y ESO ES EL RESULTADO ═══
+
+       Medida en su demo de `form-elements`, su zona de subida es: borde **1 px** `gray-300`
+       discontinuo, fondo `gray-50`, radio `rounded-xl`, padding 20 px. Cuatro de esos cinco ejes
+       se descartan, y no por gusto:
+
+       **Su borde sobre su fondo da 1.41:1.** Es lo unico que dibuja la caja, asi que WCAG 1.4.11
+       le pide 3:1. Y es practicamente el mismo numero que el `sky-200` (1.33:1) que ESTE PROYECTO
+       YA DESCARTO por ese motivo, con la medicion escrita cuatro parrafos mas arriba. Adoptarlo
+       seria deshacer una decision de accesibilidad tomada con datos para parecerse mas a la
+       fuente. `frontend/CLAUDE.md` gana a TailAdmin, y este es el caso de manual.
+
+       De ahi que se queden el borde de 2 px (uno discontinuo de 1 px se ve la mitad), el fondo
+       blanco (es contra el que se midieron los 3.83) y el azul de accion.
+
+       ✅ Lo unico que SI se adopta es el RADIO: `rounded-2xl` (16) -> `rounded-xl` (12), que
+       ademas alinea esta caja con la de la tabla, bajada el mismo dia por la misma razon. */
     .deasy-dropzone__surface {
-        @apply relative flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-white px-5 py-6 text-center transition-all;
+        @apply relative flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-white px-5 py-6 text-center transition-all;
         border-color: color-mix(in srgb, var(--color-info) 71%, var(--color-white));
     }
 
