@@ -14,7 +14,7 @@
 
     <!-- Por defecto solo se ve la lista; el formulario se abre con este botón (mismo patrón que Paquetes). -->
     <div v-if="canManage && !formOpen" class="flex justify-end">
-      <AdminButton variant="primaryOutline" @click="openForm">
+      <AdminButton variant="primary" @click="openForm">
         <font-awesome-icon icon="plus" class="mr-2" />
         Agregar periodo
       </AdminButton>

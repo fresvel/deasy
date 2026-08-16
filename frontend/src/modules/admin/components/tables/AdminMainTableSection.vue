@@ -93,7 +93,7 @@
               <div class="deasy-filter-actions">
                 <AdminButton
                   v-if="!isPositionFilterTable && !isProcessDefinitionFilterTable && !isProcessTargetRuleFilterTable && !isTemplateArtifactsTable"
-                  variant="neutralOutline" icon-only
+                  variant="neutral" icon-only
                   size="sm"
                   title="Limpiar búsqueda"
                   aria-label="Limpiar búsqueda"
@@ -102,7 +102,7 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-if="isPositionFilterTable"
-                  variant="neutralOutline" icon-only
+                  variant="neutral" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
@@ -111,7 +111,7 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-else-if="isProcessDefinitionFilterTable"
-                  variant="neutralOutline" icon-only
+                  variant="neutral" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
@@ -120,7 +120,7 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-else-if="isProcessTargetRuleFilterTable"
-                  variant="neutralOutline" icon-only
+                  variant="neutral" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
@@ -129,17 +129,17 @@
                 ><font-awesome-icon icon="times" /></AdminButton>
                 <AdminButton
                   v-else-if="isTemplateArtifactsTable"
-                  variant="neutralOutline" icon-only
+                  variant="neutral" icon-only
                   size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
                   :disabled="!hasTemplateArtifactInlineFilters"
                   @click="$emit('clear-template-artifact-inline-filters')"
                 ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="primaryOutline" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
+                <AdminButton variant="primary" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
                 <AdminButton
                   v-if="hasExpandableFilters"
-                  variant="neutralOutline"
+                  variant="neutral"
                   size="sm"
                   icon-only
                   :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"

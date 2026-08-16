@@ -25,7 +25,7 @@ const props = defineProps({
   },
   variant: {
     type: String,
-    default: "neutralOutline"
+    default: "neutral"
   },
   size: {
     type: String,
@@ -73,16 +73,28 @@ const attrs = useAttrs();
    habia que leerla entera. Ahora las cinco lineas de abajo SON la matriz — tono a la izquierda,
    sus modos a la derecha — y lo que falta se ve de un vistazo.
 
-   Tres modos, y el que no lleva sufijo es el solido:
-     `{tono}`          relleno del token, texto blanco
+   DOS MODOS, y el que no lleva sufijo es el normal:
+     `{tono}`          contorno en reposo — fondo blanco, borde y texto el token — y SOLIDO al
+                       pasar el raton, con el texto en blanco
      `{tono}Soft`      relleno al 6 % (10 % si lleva icono), borde al 71 %, texto el token
-     `{tono}Outline`   fondo blanco, borde y texto el token
 
-   ⚠️ DOS VARIANTES MURIERON AQUI, y las dos por medicion, no por gusto:
+   Eran TRES modos hasta el 2026-08-16, cuando el dueño pidió «outline en reposo y solido en
+   hover» para TODOS los botones, «Guardar» incluido. En cuanto el contorno es el reposo de
+   todos, `primaryOutline` **es** `primary` y `dangerOutline` **es** `danger`: el modo entero
+   se queda sin nada que distinguir y mueren los dos nombres (84 usos reasignados). `neutral`
+   pierde el sufijo por lo mismo — nombrar el contorno cuando es lo normal es ruido.
 
-   · `cancel` -> `dangerOutline`. Era gris en reposo y ROJO al pasar el raton, o sea la unica
-     variante del sistema —con `secondary`— que cambiaba de color en vez de intensificar el suyo
-     (§5.2). Decision del dueño: cancelar ES danger, asi que lo es tambien en reposo.
+   ⚠️ Y con eso el pie de un formulario PIERDE LA JERARQUIA DE PESO: «Guardar» y «Cancelar» eran
+   solido azul contra contorno gris, y ahora son dos contornos separados solo por el color. Es un
+   intercambio deliberado —homogeneidad por jerarquia—, y el hover devuelve el solido justo
+   cuando apuntas. Queda escrito para que dentro de tres meses no se lea como un descuido.
+
+   ⚠️ TRES VARIANTES MURIERON AQUI, y todas por medicion o por regla, no por gusto:
+
+   · `cancel` -> `danger`. Era gris en reposo y ROJO al pasar el raton, o sea la unica variante
+     del sistema —con `secondary`— que cambiaba de color en vez de intensificar el suyo (§5.2).
+     Decision del dueño: cancelar ES danger, asi que lo es tambien en reposo.
+   · `primaryOutline` y `dangerOutline` -> `primary` y `danger`, por lo dicho arriba.
    · `softActionUpload` -> `primarySoft`. Sus 4 usos eran todos `icon-only`, y en esa forma la
      receta manda a `--color-brand-50` / `--color-brand-600`: **el mismo pixel que `softPrimary`**,
      medido en el navegador. Su tono propio (`--color-action-upload`) no llegaba a la pantalla, y
@@ -102,7 +114,6 @@ const attrs = useAttrs();
 const variantClassMap = {
   primary: "deasy-btn--primary",
   primarySoft: "deasy-btn--primary-soft",
-  primaryOutline: "deasy-btn--primary-outline",
 
   success: "deasy-btn--success",
   successSoft: "deasy-btn--success-soft",
@@ -112,12 +123,13 @@ const variantClassMap = {
 
   danger: "deasy-btn--danger",
   dangerSoft: "deasy-btn--danger-soft",
-  dangerOutline: "deasy-btn--danger-outline",
 
+  /* `info` no tiene forma normal: su unico papel es el badge de «ver» de las tablas, que es de
+     icono. Un contorno azul claro con texto seria indistinguible de `primary` a un metro. */
   infoSoft: "deasy-btn--info-soft",
 
+  neutral: "deasy-btn--neutral",
   neutralSoft: "deasy-btn--neutral-soft",
-  neutralOutline: "deasy-btn--neutral-outline",
 
   plain: ""
 };

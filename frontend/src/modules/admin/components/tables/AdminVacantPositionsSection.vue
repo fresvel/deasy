@@ -34,10 +34,10 @@
               </div>
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
               <div class="deasy-filter-actions">
-                <AdminButton variant="neutralOutline" icon-only size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="primaryOutline" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+                <AdminButton variant="neutral" icon-only size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+                <AdminButton variant="primary" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
                 <AdminButton
-                  variant="neutralOutline"
+                  variant="neutral"
                   size="sm"
                   icon-only
                   :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"

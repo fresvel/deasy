@@ -34,8 +34,8 @@
       <div class="flex flex-wrap items-center gap-2">
         <AdminButton v-if="lifecycleState === 'draft' && guidedConfigId" variant="primary" @click="$emit('finish-guided')">Publicar y activar config</AdminButton>
         <AdminButton v-else-if="lifecycleState === 'draft'" variant="primary" @click="$emit('publish')">Publicar</AdminButton>
-        <AdminButton v-if="lifecycleState === 'published'" variant="dangerOutline" @click="$emit('retire')">Retirar</AdminButton>
-        <AdminButton v-if="!guidedConfigId" variant="primaryOutline" @click="openVersionDialog">Nueva versión</AdminButton>
+        <AdminButton v-if="lifecycleState === 'published'" variant="danger" @click="$emit('retire')">Retirar</AdminButton>
+        <AdminButton v-if="!guidedConfigId" variant="primary" @click="openVersionDialog">Nueva versión</AdminButton>
       </div>
     </div>
 
@@ -67,7 +67,7 @@
         </label>
       </div>
       <template #footer>
-        <AdminButton variant="dangerOutline" @click="showVersionDialog = false">Cancelar</AdminButton>
+        <AdminButton variant="danger" @click="showVersionDialog = false">Cancelar</AdminButton>
         <AdminButton variant="primary" @click="confirmNewVersion">Crear versión</AdminButton>
       </template>
     </AppModalShell>
@@ -153,7 +153,7 @@
               {{ proc.label }}
             </option>
           </AdminSelectField>
-          <AdminButton variant="dangerOutline" @click="$emit('create-process')">+ Nueva configuración</AdminButton>
+          <AdminButton variant="danger" @click="$emit('create-process')">+ Nueva configuración</AdminButton>
         </div>
       </AdminFieldGroup>
       <!-- Modo de emisión del vínculo a proceso. Solo al crear; en edición se ajusta desde el proceso. -->
@@ -217,7 +217,7 @@
           <h4 class="m-0 text-sm font-bold text-strong">Campos del formulario</h4>
           <AppInfoTip>Definen los datos que el usuario llenará en el entregable (schema.json).</AppInfoTip>
         </div>
-        <AdminButton variant="primaryOutline" @click="addSchemaField">+ Añadir campo</AdminButton>
+        <AdminButton variant="primary" @click="addSchemaField">+ Añadir campo</AdminButton>
       </div>
       <div v-if="!schemaFields.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
         Aún no hay campos. Añade al menos uno para generar el formulario del entregable.
@@ -267,7 +267,7 @@
           <h4 class="m-0 text-sm font-bold text-strong">Flujo de entrega</h4>
           <AppInfoTip>Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</AppInfoTip>
         </div>
-        <AdminButton variant="primaryOutline" @click="addFillStep">+ Añadir paso</AdminButton>
+        <AdminButton variant="primary" @click="addFillStep">+ Añadir paso</AdminButton>
       </div>
       <div v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading" class="deasy-alert deasy-alert--warning mt-3">
         El proceso vinculado aún no tiene <strong>reglas objetivo</strong>. Los ámbitos “Unidad del proceso” quedan deshabilitados (resolverían a nadie); define primero las reglas o usa una unidad específica.
@@ -403,7 +403,7 @@
           <h4 class="m-0 text-sm font-bold text-strong">Flujo de firmas</h4>
           <AppInfoTip>Quién firma cada paso (mismo modelo que entrega). Los pasos van en orden; dentro de un paso, la “Aprobación” define si firman todas, cualquiera o un mínimo.</AppInfoTip>
         </div>
-        <AdminButton variant="primaryOutline" @click="addSignatureStep">+ Añadir paso</AdminButton>
+        <AdminButton variant="primary" @click="addSignatureStep">+ Añadir paso</AdminButton>
       </div>
 
       <div v-if="!signatureSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-muted">
@@ -478,7 +478,7 @@
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
               <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
-              <AppButton variant="primaryOutline" size="sm" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
+              <AppButton variant="primary" size="sm" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
             </div>
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-line bg-surface/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
@@ -552,12 +552,12 @@
     </fieldset>
 
     <template #footer>
-      <AdminButton variant="dangerOutline" @click="$emit('close')">{{ isReadOnly ? "Cerrar" : "Cancelar" }}</AdminButton>
-      <AdminButton v-if="!isFirstTab" variant="neutralOutline" @click="goPrevTab">Atrás</AdminButton>
+      <AdminButton variant="danger" @click="$emit('close')">{{ isReadOnly ? "Cerrar" : "Cancelar" }}</AdminButton>
+      <AdminButton v-if="!isFirstTab" variant="neutral" @click="goPrevTab">Atrás</AdminButton>
       <AdminButton v-if="!isLastTab" variant="primary" @click="goNextTab">Siguiente →</AdminButton>
       <AdminButton
         v-if="!isReadOnly"
-        variant="primaryOutline"
+        variant="primary"
         :disabled="draftArtifactLoading || !canSubmit"
         :title="submitBlockReason"
         @click="$emit('submit')"

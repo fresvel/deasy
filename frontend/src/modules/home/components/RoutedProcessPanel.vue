@@ -14,7 +14,7 @@
         </div>
         <div class="flex shrink-0 items-center gap-2">
           <AppButton
-            variant="neutralOutline"
+            variant="neutral"
             size="sm"
             icon-only
             title="Actualizar"

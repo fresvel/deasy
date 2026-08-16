@@ -42,42 +42,62 @@
         @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
-    .deasy-btn--primary {
-        @apply text-white;
-        border-color: var(--color-primary);
-        background: var(--color-primary);
-    }
+    /* ══ EL REPOSO DE TODO BOTON ES CONTORNO. EL HOVER LO RELLENA ══════════════════════════
+       Decision del dueño, 2026-08-16, y en una frase: «outline en reposo y sólido en hover»,
+       para TODOS — tambien para «Guardar».
 
-    /* ── LAS DE CONTORNO ────────────────────────────────────────────────────────────
-       Fondo blanco, borde y texto = el token entero. Cada una declara SOLO su tono; la receta
-       esta una vez, y el `:hover` de las tres esta abajo con el de todas las demas.
+       Lo que se gana no es solo consistencia. El eje «modo» pasa de TRES valores a DOS:
 
-       ⚠️ `--neutral-outline` ERA `--secondary`, y su renombrado es lo que paga una deuda vieja
-       de la fase 6. `buttons.css` declaraba justo lo que hay aqui —borde `line-strong`, texto
-       `body`— y **no era lo que se veia**: dos reglas SIN CAPA de `overrides.css` lo repintaban
-       a borde `line` y texto `strong`, y una regla suelta le gana a cualquier regla capada.
-       Estaban ahi para vencer a `.deasy-table-responsive .deasy-btn--secondary` (0,2,0), que
-       tambien se ha ido. Sin ninguna de las dos, el boton por fin renderiza su propia receta,
-       que ademas es la de TailAdmin (`border-gray-300`, `text-gray-700`).
+           antes                                    ahora
+           `{tono}`          relleno del token      `{tono}`      contorno -> solido al hover
+           `{tono}Outline`   contorno               `{tono}Soft`  relleno palido (badge de icono)
+           `{tono}Soft`      relleno al 6 %
 
-       ⚠️ `--danger-outline` ABSORBE `--cancel` — decision del dueño, 2026-08-16. `--cancel` era
-       gris en reposo y rojo al pasar el raton: la unica variante, con `--secondary`, que cambiaba
-       de COLOR en vez de intensificar el suyo. Si cancelar es danger, lo es tambien en reposo.
-       Sus 38 usos y los 4 de `--outline-danger` son hoy la misma clase. */
-    .deasy-btn--primary-outline { --tone: var(--color-primary); }
-    .deasy-btn--danger-outline  { --tone: var(--color-danger); }
+       Porque si el reposo de todos es contorno, entonces `primaryOutline` **es** `primary` y
+       `dangerOutline` **es** `danger`: eran la misma cosa con dos nombres en cuanto la regla
+       dejo de tener excepciones. Mueren las dos, 84 usos reasignados. Y `neutralOutline` pierde
+       el sufijo por lo mismo — cuando el contorno es el reposo de todos, nombrarlo es ruido.
 
-    .deasy-btn--neutral-outline {
-        @apply bg-white;
-        border-color: var(--color-line-strong);
-        color: var(--color-body);
-    }
+       ⚠️ LO QUE ESTO CUESTA, y hay que saberlo: **el pie de un formulario pierde la jerarquia
+       de PESO**. «Guardar» y «Cancelar» eran solido azul contra contorno gris; ahora son dos
+       contornos y lo que los separa es el color, no la presencia. La accion principal deja de
+       tener el unico tratamiento solido de la pantalla. Es un intercambio deliberado: se cambia
+       jerarquia por homogeneidad, y el hover recupera el solido justo cuando lo apuntas.
 
-    .deasy-btn--primary-outline,
-    .deasy-btn--danger-outline {
+       ⚠️ POR QUE PASA EL CONTRASTE. El texto ya no va en blanco sobre el token, va en el token
+       sobre blanco — y la razon es la misma que lo justificaba antes, porque el contraste es
+       simetrico: primary 4.84 · success 5.41 · warning 5.43 · danger 6.57. Los cuatro sobre 4.5
+       (AA texto). El borde es el token entero, asi que cumple 1.4.11 (3:1) de sobra. Y al pasar
+       el raton se invierte a blanco sobre el token, que son las mismas cifras.
+
+       Cada variante declara SOLO su tono; la receta esta escrita una vez, y el `:hover` de las
+       cinco vive abajo con el de todas las demas. */
+    .deasy-btn--primary { --tone: var(--color-primary); }
+    .deasy-btn--success { --tone: var(--color-success); }
+    .deasy-btn--warning { --tone: var(--color-warning); }
+    .deasy-btn--danger  { --tone: var(--color-danger); }
+
+    .deasy-btn--primary,
+    .deasy-btn--success,
+    .deasy-btn--warning,
+    .deasy-btn--danger {
         @apply bg-white;
         border-color: var(--tone);
         color: var(--tone);
+    }
+
+    /* EL NEUTRO no se deriva de un token de color, asi que va aparte y con sus propios valores.
+       Era `--secondary`, y su renombrado pago una deuda vieja de la fase 6: `buttons.css`
+       declaraba justo lo que hay aqui —borde `line-strong`, texto `body`— y **no era lo que se
+       veia**, porque dos reglas SIN CAPA de `overrides.css` lo repintaban a borde `line` y texto
+       `strong`. Una regla suelta le gana a cualquier regla capada. Estaban ahi para vencer a
+       `.deasy-table-responsive .deasy-btn--secondary` (0,2,0), que tambien se ha ido; sin ninguna
+       de las dos, el boton renderiza por fin su propia receta, que ademas es la de TailAdmin
+       (`border-gray-300`, `text-gray-700`). */
+    .deasy-btn--neutral {
+        @apply bg-white;
+        border-color: var(--color-line-strong);
+        color: var(--color-body);
     }
 
     /* ── LAS CUATRO VARIANTES SUAVES ─────────────────────────────────────────────────
@@ -187,28 +207,18 @@
         @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-gray-100 hover:text-navy;
     }
 
-    /* ── LAS SOLIDAS ────────────────────────────────────────────────────────────────
-       ⚠️ `--success` llevaba `emerald-600`, que contra su propio texto blanco da 3.65:1
-       y NO llega al 4.5 de AA. `--color-success` da 5.49. `--danger` iba de `red-600`
-       (4.77) a `--color-danger` (6.57). Las dos suben.
+    /* ══ AQUI VIVIAN LAS SOLIDAS — 2026-08-16 ══════════════════════════════════════════════
+       `--success`, `--warning` y `--danger` declaraban relleno del token y texto blanco. Hoy su
+       reposo es el contorno de arriba y ese relleno es su `:hover`. Se conservan las dos cosas
+       que aquel bloque habia aprendido y siguen valiendo:
 
-       Mismo eje `--tone` que las suaves: cada variante declara SOLO su token y la receta se
-       escribe una vez. Eran tres cuerpos identicos salvo el nombre del color.
-
-       ⚠️ `--primary` se queda FUERA de la lista a proposito: no tiene `:hover` propio, y
-       meterlo aqui le daria uno. Eso repinta el hover de todos los primarios de la app, que
-       no es lo que esta tarea vino a hacer. */
-    .deasy-btn--success  { --tone: var(--color-success); }
-    .deasy-btn--warning  { --tone: var(--color-warning); }
-    .deasy-btn--danger   { --tone: var(--color-danger); }
-
-    .deasy-btn--success,
-    .deasy-btn--warning,
-    .deasy-btn--danger {
-        @apply text-white;
-        border-color: var(--tone);
-        background: var(--tone);
-    }
+       · `--success` llevo `emerald-600`, que contra texto blanco da 3.65:1 y NO llega al 4.5 de
+         AA; `--color-success` da 5.41. `--danger` paso de `red-600` (4.77) a 6.57. Esas cifras
+         son las que ahora sostienen el hover, porque el contraste es simetrico: da igual que el
+         blanco este encima o debajo.
+       · el eje `--tone`: cada variante declara su token y la receta se escribe una vez. Eran
+         tres cuerpos identicos salvo el nombre del color, y ahora son cuatro con `--primary`.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
 
     /* ── EL HOVER DE TODAS, EN UN SITIO ──────────────────────────────────────────────
        `@media (hover: hover)` es exactamente lo que Tailwind compila a partir de
@@ -224,26 +234,27 @@
        Nunca otro color y nunca mas claro. Antes las siete iban cada una a su aire con la
        escala de Tailwind, y tres aclaraban el borde al pasar el raton.
 
-       Y desde el 2026-08-16 la regla es mas fuerte, por decision del dueño — **el contorno
-       hoverea a SOLIDO**. No es solo consistencia:
+       Y desde el 2026-08-16 la regla es mas fuerte, por decision del dueño — **el reposo de
+       todo boton es contorno y el hover lo RELLENA**. No es solo consistencia:
 
-         · lo que habia era «contorno con un 6 % de relleno», que es casi invisible. Es el
-           mismo defecto que §5.2 documenta del boton de eliminar, medido a ΔE 1.08: la
-           regla existia y el ojo no la veia.
+         · lo que habia en los contornos era «contorno con un 6 % de relleno», que es casi
+           invisible. Es el mismo defecto que §5.2 documenta del boton de eliminar, medido a
+           ΔE 1.08: la regla existia y el ojo no la veia.
          · un contorno que se rellena dice lo que va a pasar al pulsar. Un contorno que se
            oscurece un poco no dice nada.
          · y mata la ultima anomalia del sistema: `--secondary` hovereaba a AZUL y `--cancel`
            a ROJO, o sea las dos unicas variantes que cambiaban de color en vez de intensificar
            el suyo. Las dos eran accidentes con fecha, no diseño.
 
-       ⚠️ `--neutral-outline` ES LA EXCEPCION, y va declarada: el neutro NO TIENE SOLIDO. Un
-       gris oscuro relleno convertiria en botones casi negros los 80 «Buscar», «Recargar» y
-       «Regresar» de la aplicacion al pasar el raton. Hoverea a su propia forma suave —el
-       relleno de `--neutral-soft`— que es la misma direccion: mas presente, no otro color.
+       Con la regla aplicada a los cuatro tonos, `--primary` deja de ser la excepcion que era:
+       hasta hoy **no tenia `:hover` propio** —el unico boton del sistema que no reaccionaba al
+       raton— y no se le daba uno para no repintar los primarios de golpe. Ahora reacciona como
+       los demas, y el cambio de golpe es justo lo que se pidio.
 
-       ⚠️ `--primary` solido se queda FUERA de la lista a proposito: no tiene `:hover` propio,
-       y meterlo aqui le daria uno. Eso repinta el hover de todos los primarios de la app, que
-       no es lo que esta tarea vino a hacer. */
+       ⚠️ `--neutral` ES LA EXCEPCION QUE QUEDA, y va declarada: el neutro NO TIENE SOLIDO. Un
+       gris oscuro relleno convertiria en botones casi negros los 81 «Buscar», «Recargar» y
+       «Regresar» de la aplicacion al pasar el raton. Hoverea a su propia forma suave —el
+       relleno de `--neutral-soft`— que es la misma direccion: mas presente, no otro color. */
     @media (hover: hover) {
         .deasy-btn--primary-soft:hover,
         .deasy-btn--success-soft:hover,
@@ -269,29 +280,31 @@
             color: color-mix(in srgb, var(--tone) 85%, var(--black));
         }
 
-        /* CONTORNO -> SOLIDO. El texto pasa a blanco, y los dos tonos lo aguantan con su
-           relleno entero: `--color-primary` da 4.63:1 contra blanco y `--color-danger` 6.57.
-           Los dos por encima de 4.5 (AA para texto), que es lo que ya justifica que las
-           solidas `--primary` y `--danger` lleven texto blanco. */
-        .deasy-btn--primary-outline:hover,
-        .deasy-btn--danger-outline:hover {
+        /* CONTORNO -> SOLIDO. El texto pasa a blanco, y los cuatro tonos lo aguantan con su
+           relleno entero: primary 4.84 · success 5.41 · warning 5.43 · danger 6.57. Los cuatro
+           por encima de 4.5 (AA para texto) — son las MISMAS cifras que justificaban el texto
+           blanco cuando estas variantes eran solidas en reposo, porque el contraste no depende
+           de cual de los dos colores esta encima. */
+        .deasy-btn--primary:hover,
+        .deasy-btn--success:hover,
+        .deasy-btn--warning:hover,
+        .deasy-btn--danger:hover {
             border-color: var(--tone);
             background: var(--tone);
             color: var(--color-white);
         }
 
-        .deasy-btn--neutral-outline:hover {
+        .deasy-btn--neutral:hover {
             border-color: var(--color-line-strong);
             background: var(--color-gray-100);
             color: var(--color-navy);
         }
 
-        .deasy-btn--success:hover,
-        .deasy-btn--warning:hover,
-        .deasy-btn--danger:hover {
-            border-color: color-mix(in srgb, var(--tone) 85%, var(--black));
-            background: color-mix(in srgb, var(--tone) 85%, var(--black));
-        }
+        /* ⚠️ AQUI ESTABA EL HOVER DE LAS SOLIDAS —el token al 85 % hacia negro— y borrarlo era
+           OBLIGATORIO, no limpieza: venia DESPUES del bloque de arriba con la misma
+           especificidad (0,2,0), asi que le habria ganado por orden de aparicion y los cuatro
+           tonos seguirian oscureciendo en vez de rellenar. La regla nueva no habria pintado y
+           el CSS habria compilado igual de bien. */
     }
 
     /* LA ✕ DE LA ESQUINA. Una sola declaracion, y desde el 2026-08-14 un solo radio.
@@ -436,41 +449,36 @@
        tabla. Un caso especial menos en el camino generico.
        ══════════════════════════════════════════════════════════════════════════════════════ */
 
-    /* ⚠️ DENTRO DE UNA TABLA, `--primary-soft` Y `--primary-outline` SE PINTAN IGUAL, y es a
-       proposito: se probaron los dos tratamientos sobre la tabla de personas (178 botones a la
-       vez) y el relleno hacia que la columna pesara mas que los datos. Aqui los dos son un
-       contorno palido.
+    /* ⚠️ DENTRO DE UNA TABLA, `--primary-soft` ES UN CONTORNO PALIDO, y es a proposito: se
+       probaron los dos tratamientos sobre la tabla de personas (178 botones a la vez) y el
+       relleno hacia que la columna pesara mas que los datos.
 
-       Y por eso el `:hover` de estas dos NO adopta el contorno->solido: dentro de una tabla el
-       reposo ya es mas claro que fuera, asi que el salto a solido seria el doble de brusco que
-       en cualquier otro sitio. Es la unica excepcion a la regla, y esta acotada a un contexto. */
-    .deasy-table-responsive .deasy-btn--primary-soft,
-    .deasy-table-responsive .deasy-btn--primary-outline {
+       Y por eso su `:hover` NO adopta el contorno->solido: aqui el reposo ya es mas claro que
+       fuera, asi que el salto a solido seria el doble de brusco que en cualquier otro sitio.
+       Es la unica excepcion a la regla, y esta acotada a un contexto.
+
+       (Acompañaba a `--primary-outline`, que ya no existe: al pasar TODO el sistema a contorno
+       en reposo, esa variante era `--primary` con otro nombre.) */
+    .deasy-table-responsive .deasy-btn--primary-soft {
         border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-white));
         background: var(--color-white);
         color: var(--color-primary);
     }
 
-    .deasy-table-responsive .deasy-btn--primary-soft:hover,
-    .deasy-table-responsive .deasy-btn--primary-outline:hover {
+    .deasy-table-responsive .deasy-btn--primary-soft:hover {
         border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-white));
         background: var(--color-surface);
         color: color-mix(in srgb, var(--color-primary) 86%, var(--black));
     }
 
-    .deasy-table-responsive .deasy-btn--primary {
-        border-color: var(--color-primary);
-        background: var(--color-primary);
-        color: var(--color-white);
-        box-shadow: none;
-    }
+    /* ══ Y AQUI SE FORZABA `--primary` A SOLIDO DENTRO DE UNA TABLA — muerto el 2026-08-16 ══
+       Era la ultima regla que contradecia la decision del dueño: el «Agregar» de la cabecera de
+       cada tabla habria seguido siendo el unico boton relleno de toda la aplicacion, y por vivir
+       en un selector (0,2,0) le habria ganado a la variante sin que nadie lo notara. Ahora el
+       primario de tabla es contorno como el de fuera, con la densidad que le da la regla de
+       `:not(--icon)` de mas arriba —que es lo unico que un contexto tiene derecho a cambiar—.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
 
-    .deasy-table-responsive .deasy-btn--primary:hover {
-        border-color: color-mix(in srgb, var(--color-primary) 86%, var(--black));
-        background: color-mix(in srgb, var(--color-primary) 86%, var(--black));
-    }
-
-    
 }
 @layer components {
     /* ══ LA FAMILIA `deasy-auth-button` MURIO AQUI — 2026-08-15, G9 ════════════════════════

@@ -11,7 +11,7 @@
                 Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
               </p>
             </div>
-            <button type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--lg deasy-btn--block lg:w-auto" @click="goToLogin">
+            <button type="button" class="deasy-btn deasy-btn--neutral deasy-btn--lg deasy-btn--block lg:w-auto" @click="goToLogin">
               Volver al login
             </button>
           </div>
@@ -193,7 +193,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <button
                     type="button"
-                    class="deasy-btn deasy-btn--neutral-outline deasy-btn--md w-full sm:w-auto"
+                    class="deasy-btn deasy-btn--neutral deasy-btn--md w-full sm:w-auto"
                     :class="!newuser.direccion ? 'border-red-300 text-danger hover:bg-red-50' : ''"
                     @click="toggleMap"
                   >
@@ -331,7 +331,7 @@
             </Transition>
 
             <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row">
-              <AppButton variant="dangerOutline" size="lg" class-name="w-full sm:w-1/2" @click="goToLogin">
+              <AppButton variant="danger" size="lg" class-name="w-full sm:w-1/2" @click="goToLogin">
                 Cancelar
               </AppButton>
               <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg w-full sm:w-1/2">

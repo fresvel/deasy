@@ -84,20 +84,23 @@ for (const ruta of ficheros(SRC)) {
 }
 
 /* La ✕ (sin texto) es AppCloseButton; la de texto sale de AppButton, y ahi manda la ETIQUETA:
-   «Cancelar» descarta lo escrito y por eso es `dangerOutline`; cerrar sin más no descarta nada
-   y es `neutralOutline`.
+   «Cancelar» descarta lo escrito y por eso es `danger`; cerrar sin más no descarta nada y es
+   `neutral`.
 
-   ⚠️ LOS DOS NOMBRES CAMBIARON EL 2026-08-16 y este gate los tenia escritos a mano — `cancel`
-   y `secondary`—, asi que dio 47 falsos positivos sobre codigo correcto. Es el segundo de los
-   diecinueve al que le pasa en el mismo commit, y por el mismo motivo: los demas leen el mapa
-   de variantes del propio componente, y estos dos guardaban una COPIA de la convencion. La
-   copia caduca; el mapa no.
+   ⚠️ LOS DOS NOMBRES CAMBIARON DOS VECES EL MISMO DIA, el 2026-08-16 — `cancel`/`secondary`
+   pasaron a `dangerOutline`/`neutralOutline` y de ahi a `danger`/`neutral`, cuando el sistema
+   entero se fue a contorno en reposo y el sufijo dejo de distinguir nada. La primera vez este
+   gate dio **47 falsos positivos** sobre codigo correcto, porque tenia los nombres escritos a
+   mano. Es uno de los dos —de diecinueve— al que le paso, y por el mismo motivo: los demas
+   leen el mapa de variantes del propio componente, y estos dos guardaban una COPIA de la
+   convencion. La copia caduca; el mapa no. Que se rompiera DOS veces en un dia es la medida de
+   lo cara que sale.
 
    Y la distincion que vigila sigue siendo la misma, solo que ahora el nombre la dice: cancelar
    es una accion con consecuencia (se pierde lo escrito) y por eso va en el tono de peligro;
    cerrar no la tiene y va en el neutro. Antes habia que saberselo. */
-const CANCELAR = "dangerOutline";
-const CERRAR = "neutralOutline";
+const CANCELAR = "danger";
+const CERRAR = "neutral";
 
 const motivos = (r) => {
   const et = r.etiqueta.toLowerCase();

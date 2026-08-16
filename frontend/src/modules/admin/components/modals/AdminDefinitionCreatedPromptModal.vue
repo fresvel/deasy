@@ -8,10 +8,10 @@
       ¿Deseas agregar reglas o paquetes ahora? Recuerda registrar periodos del proceso antes de activarla.
     </p>
     <template #footer>
-      <AdminButton variant="neutralOutline" @click="$emit('close')">Ahora no</AdminButton>
-      <AdminButton variant="primaryOutline" @click="$emit('open-rules')">Alcance</AdminButton>
-      <AdminButton variant="primaryOutline" @click="$emit('open-triggers')">Periodos</AdminButton>
-      <AdminButton variant="primaryOutline" @click="$emit('open-artifacts')">Paquetes</AdminButton>
+      <AdminButton variant="neutral" @click="$emit('close')">Ahora no</AdminButton>
+      <AdminButton variant="primary" @click="$emit('open-rules')">Alcance</AdminButton>
+      <AdminButton variant="primary" @click="$emit('open-triggers')">Periodos</AdminButton>
+      <AdminButton variant="primary" @click="$emit('open-artifacts')">Paquetes</AdminButton>
       <AdminButton variant="primary" @click="$emit('open-wizard')">Continuar guiado →</AdminButton>
     </template>
   </AppModalShell>

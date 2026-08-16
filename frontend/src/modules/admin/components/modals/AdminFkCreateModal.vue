@@ -61,7 +61,7 @@
     </form>
     <template #footer>
       <AdminButton
-        variant="dangerOutline"
+        variant="danger"
         :disabled="fkCreateLoading"
         @click="$emit('cancel')"
       >

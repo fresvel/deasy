@@ -117,7 +117,7 @@
         </div>
         <AdminButton
           v-if="canCreateProcessConfiguration"
-          variant="primaryOutline"
+          variant="primary"
           @click="$emit('add-process-configuration')"
         >
           <font-awesome-icon icon="plus" />
@@ -192,7 +192,7 @@
     <template #footer>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="primaryOutline"
+        variant="primary"
         @click="$emit('open-definition-rules')"
       >
         <font-awesome-icon icon="sitemap" />
@@ -200,7 +200,7 @@
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="primaryOutline"
+        variant="primary"
         @click="$emit('open-definition-triggers')"
       >
         <font-awesome-icon icon="sitemap" />
@@ -208,15 +208,15 @@
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="primaryOutline"
+        variant="primary"
         @click="$emit('open-definition-artifacts')"
       >
         <font-awesome-icon icon="link" />
         Paquetes
       </AdminButton>
-      <AdminButton variant="dangerOutline" data-modal-dismiss>Cancelar</AdminButton>
+      <AdminButton variant="danger" data-modal-dismiss>Cancelar</AdminButton>
       <AdminButton
-        :variant="table?.table === 'processes' && editorMode === 'create' ? 'neutralOutline' : 'primary'"
+        :variant="table?.table === 'processes' && editorMode === 'create' ? 'neutral' : 'primary'"
         @click="$emit('submit')"
       >
         Guardar

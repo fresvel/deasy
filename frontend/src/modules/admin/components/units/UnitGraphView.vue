@@ -31,8 +31,8 @@
           <input v-model="showInactive" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-primary" />
           Mostrar inactivas
         </label>
-        <AppButton v-if="editable" variant="neutralOutline" size="sm" :disabled="loading" @click="$emit('create-unit')">+ Unidad</AppButton>
-        <AppButton variant="neutralOutline" size="sm" :disabled="loading" @click="loadGraph">Refrescar</AppButton>
+        <AppButton v-if="editable" variant="neutral" size="sm" :disabled="loading" @click="$emit('create-unit')">+ Unidad</AppButton>
+        <AppButton variant="neutral" size="sm" :disabled="loading" @click="loadGraph">Refrescar</AppButton>
       </div>
     </div>
 
@@ -47,14 +47,14 @@
           class="h-8 w-52 rounded-2xl border border-line-strong px-3 text-xs outline-none"
           @keyup.enter="searchAndCenter"
         />
-        <AppButton variant="neutralOutline" size="sm" @click="searchAndCenter">Buscar</AppButton>
+        <AppButton variant="neutral" size="sm" @click="searchAndCenter">Buscar</AppButton>
       </div>
       <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
         <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-warning" />
         Resaltar pendientes
         <AppTag v-if="pendingCount" variant="warning">{{ pendingCount }}</AppTag>
       </label>
-      <AppButton variant="neutralOutline" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
+      <AppButton variant="neutral" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
 
     <!-- Leyenda de tipos de relación presentes -->
@@ -114,7 +114,7 @@
         ¿Quitar la relación <strong>{{ selectedEdgeLabel }}</strong>? La unidad hija quedará sin padre en este tipo de relación.
       </p>
       <template #footer>
-        <AppButton variant="dangerOutline" @click="selectedEdge = null">Cancelar</AppButton>
+        <AppButton variant="danger" @click="selectedEdge = null">Cancelar</AppButton>
         <AppButton variant="danger" @click="confirmDeleteEdge">Quitar</AppButton>
       </template>
     </AppModalShell>
@@ -137,7 +137,7 @@
         </select>
       </label>
       <template #footer>
-        <AppButton variant="dangerOutline" @click="editingEdge = null">Cancelar</AppButton>
+        <AppButton variant="danger" @click="editingEdge = null">Cancelar</AppButton>
         <AppButton variant="primary" @click="confirmEditEdge">Guardar</AppButton>
       </template>
     </AppModalShell>
@@ -171,7 +171,7 @@
         </label>
       </div>
       <template #footer>
-        <AppButton variant="dangerOutline" @click="createContext = null">Cancelar</AppButton>
+        <AppButton variant="danger" @click="createContext = null">Cancelar</AppButton>
         <AppButton variant="primary" :disabled="!createForm.name.trim() || !createForm.unit_type_id" @click="confirmCreateUnit">Crear</AppButton>
       </template>
     </AppModalShell>
@@ -198,7 +198,7 @@
           <div v-show="detailTab === 'ocupaciones'">
           <div class="mb-3 flex items-center justify-between gap-2">
             <p class="deasy-overline">Puestos y ocupaciones</p>
-            <AppButton v-if="editable" variant="neutralOutline" size="sm" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
+            <AppButton v-if="editable" variant="neutral" size="sm" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
           </div>
 
           <!-- Formulario de nuevo puesto -->
@@ -218,7 +218,7 @@
                 <SToggle v-model="positionForm.is_unit_head" label="Jefatura" label-position="end" />
               </div>
               <div class="flex justify-end gap-2">
-                <AppButton variant="dangerOutline" size="sm" @click="addingPosition = false">Cancelar</AppButton>
+                <AppButton variant="danger" size="sm" @click="addingPosition = false">Cancelar</AppButton>
                 <AppButton variant="primary" size="sm" :disabled="!positionForm.cargo_id" @click="confirmAddPosition">Crear puesto</AppButton>
               </div>
             </div>
@@ -315,7 +315,7 @@
               <!-- Acceso al wizard de perfil (visible, con texto) -->
               <AppButton
                 v-if="editable"
-                variant="neutralOutline"
+                variant="neutral"
                 size="sm"
                 class-name="mt-2"
                 @click="openProfileWizard(pos)"
@@ -354,7 +354,7 @@
             <div class="mb-3 flex items-center justify-between gap-2">
               <p class="deasy-overline">Procesos de la unidad</p>
               <div class="flex items-center gap-2">
-                <AppButton v-if="editable" variant="neutralOutline" size="sm" title="Vincular una configuración en borrador existente a esta unidad" @click="openAttachProcess">Vincular</AppButton>
+                <AppButton v-if="editable" variant="neutral" size="sm" title="Vincular una configuración en borrador existente a esta unidad" @click="openAttachProcess">Vincular</AppButton>
                 <AppButton v-if="editable && canCreateProcess" variant="primary" size="sm" @click="$emit('create-process')">+ Nueva configuración</AppButton>
               </div>
             </div>
@@ -449,7 +449,7 @@
 
       </div>
       <template #footer>
-        <AppButton variant="dangerOutline" @click="editingPosition = null">Cancelar</AppButton>
+        <AppButton variant="danger" @click="editingPosition = null">Cancelar</AppButton>
         <AppButton variant="primary" :disabled="!editPositionForm.cargo_id" @click="confirmEditPosition">Guardar</AppButton>
       </template>
     </AppModalShell>
@@ -533,7 +533,7 @@
         </label>
       </div>
       <template #footer>
-        <AppButton variant="dangerOutline" @click="processModalOpen = false">Cancelar</AppButton>
+        <AppButton variant="danger" @click="processModalOpen = false">Cancelar</AppButton>
         <AppButton
           variant="primary"
           :disabled="processSaving || !processForm.process_definition_id

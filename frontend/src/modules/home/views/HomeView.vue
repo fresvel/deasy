@@ -50,7 +50,7 @@
               </div>
               <div class="flex shrink-0 items-center gap-2">
                 <AppButton
-                  variant="primaryOutline"
+                  variant="primary"
                   size="sm"
                   @click="openGeneralTaskModal('free')"
                 >
@@ -132,7 +132,7 @@
                   Entregables visibles: <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
                 </div>
                 <div class="deasy-filter-actions">
-                  <AppButton variant="neutralOutline" icon-only size="sm" @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
+                  <AppButton variant="neutral" icon-only size="sm" @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
                 </div>
               </div>
             </div>
@@ -188,7 +188,7 @@
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
-                        variant="neutralOutline"
+                        variant="neutral"
                         size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir todo' : 'Colapsar todo'"
                         @click="toggleDeliverableProcess"
@@ -811,7 +811,7 @@
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
-                        variant="neutralOutline"
+                        variant="neutral"
                         size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         :title="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
@@ -1094,7 +1094,7 @@
         </section>
       </div>
       <template #footer>
-        <AppButton variant="dangerOutline" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
+        <AppButton variant="danger" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
           Cancelar
         </AppButton>
         <AppButton
@@ -1203,8 +1203,8 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="neutralOutline" icon-only @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
-        <AppButton variant="neutralOutline" @click="closeTaskFiltersModal">Cerrar</AppButton>
+        <AppButton variant="neutral" icon-only @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
+        <AppButton variant="neutral" @click="closeTaskFiltersModal">Cerrar</AppButton>
         <AppButton variant="primary" @click="closeTaskFiltersModal">Aplicar</AppButton>
       </template>
     </AppModalShell>
@@ -1219,7 +1219,7 @@
     >
       <FirmarPdf ref="embeddedSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
       <template #footer>
-        <AppButton variant="neutralOutline" data-modal-dismiss>
+        <AppButton variant="neutral" data-modal-dismiss>
           Cerrar
         </AppButton>
       </template>
@@ -1424,7 +1424,7 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="neutralOutline" data-modal-dismiss>
+        <AppButton variant="neutral" data-modal-dismiss>
           Cerrar
         </AppButton>
       </template>
@@ -1500,7 +1500,7 @@
         </ul>
       </div>
       <template #footer>
-        <AppButton variant="neutralOutline" data-modal-dismiss>Cerrar</AppButton>
+        <AppButton variant="neutral" data-modal-dismiss>Cerrar</AppButton>
       </template>
     </AppModalShell>
 
@@ -1668,7 +1668,7 @@
               </AppButton>
               <AppButton
                 v-if="canCancelFillRequest"
-                variant="dangerOutline"
+                variant="danger"
                 size="sm"
                 :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
@@ -1696,7 +1696,7 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="neutralOutline" data-modal-dismiss>
+        <AppButton variant="neutral" data-modal-dismiss>
           Cerrar
         </AppButton>
       </template>
@@ -1878,7 +1878,7 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="neutralOutline" data-modal-dismiss>
+        <AppButton variant="neutral" data-modal-dismiss>
           Cerrar
         </AppButton>
       </template>
@@ -1912,7 +1912,7 @@
         />
       </div>
       <template #footer>
-        <AppButton variant="dangerOutline" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">
+        <AppButton variant="danger" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">
           Cancelar
         </AppButton>
         <AppButton variant="primary" :disabled="!selectedDeliverableUploadFile || isUploadingDeliverable" @click="submitDeliverableUpload">
@@ -1941,7 +1941,7 @@
         </p>
       </div>
       <template #footer>
-        <AppButton variant="neutralOutline" data-modal-dismiss>
+        <AppButton variant="neutral" data-modal-dismiss>
           Cerrar
         </AppButton>
       </template>
@@ -1960,7 +1960,7 @@
           {{ deliverableSignResultState.message || 'La firma del entregable se registró correctamente.' }}
         </p>
         <div v-if="deliverableSignResultState.signedPath" class="flex flex-wrap gap-3">
-          <AppButton variant="primaryOutline" @click="viewSignedDeliverableResult">
+          <AppButton variant="primary" @click="viewSignedDeliverableResult">
             Visualizar documento
           </AppButton>
           <AppButton variant="primary" @click="downloadSignedDeliverableResult">
@@ -1972,7 +1972,7 @@
         {{ deliverableSignResultState.message || 'No se pudo completar la firma.' }}
       </p>
       <template #footer>
-        <AppButton variant="neutralOutline" data-modal-dismiss>
+        <AppButton variant="neutral" data-modal-dismiss>
           Cerrar
         </AppButton>
       </template>
@@ -2004,7 +2004,7 @@
         </p>
       </div>
       <template #footer>
-        <AppButton variant="dangerOutline" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
+        <AppButton variant="danger" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
           Cancelar
         </AppButton>
         <AppButton variant="warning" :disabled="deliverableResetState.submitting" @click="submitDeliverableReset">

@@ -268,7 +268,7 @@
 
       <!-- Navegación -->
       <div class="flex items-center justify-between gap-3 pt-1">
-        <button v-if="step > 1" type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--lg" @click="prevStep">Atrás</button>
+        <button v-if="step > 1" type="button" class="deasy-btn deasy-btn--neutral deasy-btn--lg" @click="prevStep">Atrás</button>
         <span v-else></span>
         <button v-if="step < steps.length" type="button" class="deasy-btn deasy-btn--primary deasy-btn--lg" :disabled="!canAdvance" @click="nextStep">
           Siguiente <IconArrowRight class="h-5 w-5" />
@@ -331,7 +331,7 @@
     </Transition>
 
     <div v-if="mode === 'normal'" class="mt-8 flex justify-center">
-      <button type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--lg" @click="router.replace({ name: 'login' })">
+      <button type="button" class="deasy-btn deasy-btn--neutral deasy-btn--lg" @click="router.replace({ name: 'login' })">
         Ir al login
       </button>
     </div>

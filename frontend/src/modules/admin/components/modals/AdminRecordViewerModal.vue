@@ -177,7 +177,7 @@
       </AppTag>
       <AdminButton
         v-if="canResyncWorkflows"
-        variant="primaryOutline"
+        variant="primary"
         :disabled="syncBusy"
         @click="$emit('resync-workflows')"
       >
@@ -186,7 +186,7 @@
       </AdminButton>
       <AdminButton
         v-if="canDownloadArchive"
-        variant="primaryOutline"
+        variant="primary"
         :disabled="downloading"
         @click="$emit('download-archive')"
       >
@@ -195,7 +195,7 @@
       </AdminButton>
       <AdminButton
         v-if="canEditSource"
-        variant="neutralOutline"
+        variant="neutral"
         :disabled="sourceBusy"
         @click="$emit('download-source')"
       >
@@ -212,7 +212,7 @@
         <span>{{ sourceBusy ? "Verificando…" : "Subir código editado" }}</span>
       </AdminButton>
       <input ref="sourceInputRef" type="file" accept=".zip" class="hidden" aria-label="Subir código editado (ZIP)" @change="onSourcePicked" />
-      <AdminButton variant="neutralOutline" @click="$emit('close')">Cerrar</AdminButton>
+      <AdminButton variant="neutral" @click="$emit('close')">Cerrar</AdminButton>
     </template>
   </AppModalShell>
 </template>

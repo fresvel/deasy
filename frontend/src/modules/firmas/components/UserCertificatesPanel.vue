@@ -7,7 +7,7 @@
       </div>
       <AdminButton
         v-if="refreshable"
-        variant="neutralOutline"
+        variant="neutral"
         size="sm"
         :disabled="isLoading"
         @click="loadCertificates"
@@ -57,14 +57,14 @@
               <div class="flex items-center gap-2 shrink-0" @click.stop>
                 <AdminButton
                   v-if="!certificate.is_default"
-                  variant="primaryOutline"
+                  variant="primary"
                   size="sm"
                   @click="markDefault(certificate)"
                 >
                   Usar por defecto
                 </AdminButton>
                 <AdminButton
-                  variant="neutralOutline"
+                  variant="neutral"
                   size="sm"
                   @click="downloadCertificate(certificate)"
                 >

@@ -61,7 +61,7 @@
               </AppButton>
               <AppButton
                 v-else
-                variant="neutralOutline"
+                variant="neutral"
                 :disabled="busy"
                 @click="launch(true)"
               >
@@ -92,7 +92,7 @@
     </div>
 
     <template #footer>
-      <AppButton variant="neutralOutline" :disabled="busy" @click="close">Cerrar</AppButton>
+      <AppButton variant="neutral" :disabled="busy" @click="close">Cerrar</AppButton>
     </template>
   </AppModalShell>
 </template>
