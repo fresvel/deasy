@@ -399,7 +399,7 @@ de nodos de la base** (una salió con 4 porque la página seguía cargando). Dos
 pseudo-elementos** (`::placeholder`, `::before`) ni estados (`:hover`, `:focus`), y **empareja por
 ruta en el DOM**, así que un cambio de orden da diferencias falsas.
 
-### Tres trampas del instrumental, todas pagadas
+### Cuatro trampas del instrumental, todas pagadas
 
 1. **`diff` a través del proxy `rtk` puede mentir.** Devolvió «Files are identical» sobre dos ficheros
    que difieren en 70 bytes, con CSS de una sola línea muy larga. Comprueba con `cmp`, o salta el
@@ -410,6 +410,24 @@ ruta en el DOM**, así que un cambio de orden da diferencias falsas.
 3. **Cuando un cambio no puede mover un píxel, pruébalo con el CSS construido, no con la huella.**
    Construir con y sin el cambio y comparar el emitido es más barato que una sesión de navegador y
    más fuerte: si el diff son las líneas que tocaste y nada más, no hay nada que verificar a ojo.
+4. **El Chrome de DevTools MCP dice que NO TIENE RATÓN, así que ningún `:hover` del sistema se puede
+   medir en él.** Medido el 2026-08-16: `matchMedia('(hover: hover)').matches === false`, y también
+   `(any-hover: hover)` y `(pointer: fine)`. Como **todos** los hover de `buttons.css` van envueltos
+   en `@media (hover: hover)` —para que no se queden pegados tras un toque en táctil—, la consulta
+   no casa y el estilo **no existe** en ese navegador. El elemento sí entra en `:hover`
+   (`el.matches(':hover') === true`), o sea que la señal engaña: parece que mides el hover y estás
+   midiendo el reposo. Así reporté `--cancel` como gris cuando su hover es **danger**.
+   Se verifica leyendo la regla en el CSSOM, no el computado:
+   ```js
+   const ver = (sel) => { const o = []; const w = (rs) => { for (const r of rs) {
+     if (r.selectorText === sel) o.push(r.cssText); if (r.cssRules?.length) w(r.cssRules); } };
+     for (const s of document.styleSheets) { try { w(s.cssRules) } catch {} } return o; };
+   ver('.deasy-btn--cancel:hover')
+   ```
+   ⚠️ Y ahí, **`regla.style.cssText` MIENTE por debajo**: Lightning CSS parte cada `color-mix()` en
+   un fallback más un `@supports` anidado, que `style` no incluye. Lee **`regla.cssText`**, el de la
+   regla entera. Con `style` faltaba el `background` y parecía que el hover solo movía el borde.
+   El navegador del dueño sí tiene ratón: lo que no se puede es *comprobarlo* desde aquí.
 
 ### Cómo se ENTREGA un cambio visual — obligatorio, no cortesía
 
