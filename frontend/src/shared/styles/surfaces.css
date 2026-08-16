@@ -183,10 +183,25 @@
     .deasy-icon-box--danger  { @apply bg-error-50 text-danger; }
 
     /* Sólido: el icono en blanco sobre el color entero. Para cuando la caja ES el acento de la
-       pantalla y no un adorno al lado del texto. */
+       pantalla y no un adorno al lado del texto.
+
+       ⚠️ El eje estaba a MEDIAS: nacio con `primary` e `info` porque eran los dos unicos que el
+       censo de F3.1 encontro, y eso lo convertia en una trampa —pedir `--solid --success` daba
+       texto blanco sobre relleno `-50`, o sea invisible—. Se completan las seis el 2026-08-15,
+       cuando el numero del asistente volvio a sólido por decision del dueño.
+
+       El ancla es el token semantico, que en esta paleta es el paso `-700`, NO el `-500` que
+       escribian a mano los sitios migrados: `success-500` sobre blanco da ≈2.4:1 y el `-500` de
+       TailAdmin es relleno o icono, nunca fondo de texto. Con el `-700` el blanco encima pasa AA.
+
+       `neutral` es la excepcion y por eso NO lleva `--solid`: un gris claro con texto blanco no
+       se lee. Quien quiera un paso apagado usa el tono suave, que ya es gris. */
     .deasy-icon-box--solid { @apply text-white; }
     .deasy-icon-box--solid.deasy-icon-box--primary { background: var(--color-primary); }
     .deasy-icon-box--solid.deasy-icon-box--info    { background: var(--color-info); }
+    .deasy-icon-box--solid.deasy-icon-box--success { background: var(--color-success); }
+    .deasy-icon-box--solid.deasy-icon-box--warning { background: var(--color-warning); }
+    .deasy-icon-box--solid.deasy-icon-box--danger  { background: var(--color-danger); }
 
     /* Con borde: cuando la caja va sobre una superficie del mismo tono que su relleno y necesita
        un límite propio. WCAG 1.4.11 pide 3:1 para ese límite, que es lo que da el `-200`. */

@@ -28,7 +28,7 @@
       >
         <span
           class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
-          :class="`deasy-icon-box--${tonoPaso(step, index)}`"
+          :class="clasesPaso(step)"
         >
           <font-awesome-icon v-if="isStepComplete(step)" icon="check" />
           <template v-else>{{ index + 1 }}</template>
@@ -131,6 +131,20 @@ const tonoPaso = (step) => {
   if (isStepComplete(step)) return "success";
   if (step.key === props.currentStep) return "primary";
   return "neutral";
+};
+
+/* EL NUMERO VA SOLIDO — decision del dueño el 2026-08-15, revirtiendo el aspecto que L5 le habia
+   dado sin querer. L5 movio el color de JavaScript al CSS, que era el objetivo, pero de paso
+   convirtio el numero en suave como el resto de pastillas, y en un stepper el numero **es** el
+   acento de la pantalla: es lo que dice de un vistazo por donde vas.
+   Lo que NO se revierte es la arquitectura: aqui sigue saliendo un NOMBRE DE TONO, no un color.
+   `neutral` se queda suave a proposito — es el unico que no admite `--solid` (blanco sobre gris
+   claro no se lee), y ademas es lo correcto: el paso pendiente no debe competir con el actual. */
+const clasesPaso = (step) => {
+  const tono = tonoPaso(step);
+  return tono === "neutral"
+    ? "deasy-icon-box--neutral"
+    : `deasy-icon-box--${tono} deasy-icon-box--solid`;
 };
 const stepHint = (step, index) => {
   if (step.hint) return step.hint;
