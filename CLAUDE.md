@@ -344,7 +344,56 @@ Tres obligaciones concretas:
 3. **Si al medir descubres que el plan estaba mal —un conteo, un estado, una fila obsoleta—,
    corrígelo y dilo.** No lo arregles en silencio: el desfase entre plan y realidad es información,
    y esconderlo es cómo un plan deja de servir. El paso 4 del Frente 4 estuvo marcado ⬜ un día
-   entero describiendo un fichero que ya no existía.
+   entero describiendo un fichero que ya no existía, y su denominador dijo «22» tres días después
+   de pasar a 25.
+
+#### El formato: DOS tablas, siempre las mismas
+
+**Se enseña así, para cualquier plan.** El formato es fijo a propósito: cuando cambia de un turno a
+otro, el dueño tiene que releer la estructura antes de leer el avance, y ahí es donde se pierde el
+hilo.
+
+**Tabla 1 — el mapa completo.** Una fila por fase, y **las tareas de cada una en la segunda
+columna**, con su estado individual pegado a cada nombre. Así se ve de un vistazo dónde está el
+trabajo sin abrir nada:
+
+```markdown
+## Estado general — **13 de 25**
+
+| Fase | Tareas | Estado |
+|---|---|---|
+| **F0** · Cerrar los gates | F0.1 · F0.2 · F0.3 · F0.4 · F0.5 · F0.6 | ✅ **6 de 6** |
+| **F1** · Borrar lo que no pelea | F1.1 ✅ · F1.2 ✅ · F1.3a ✅ · F1.3b ✅ · F1.3c ⬜ · F1.3d ✅ · F1.3e ⛔ | 🟡 5 de 7 |
+| **F3** · Las extracciones que faltan | F3.1 ✅ · F3.2 ✅ · F3.3 ⬜ · F3.4 ⬜ | 🟡 **2 de 4** |
+| **F4** · Seguir adoptando TailAdmin | — | ⬜ |
+```
+
+- Una fase **cerrada entera** o **sin empezar** no necesita desglose: `✅ 6 de 6` o un `—`.
+- Una fase **en curso** sí lo lleva, para que se vea qué queda dentro.
+- El numerador y el denominador son de **tareas**, no de fases, y se recuentan al enseñarlos.
+
+**Tabla 2 — el detalle de la fase que se está atacando.** Sus tareas en filas, con lo que entrega
+cada una. Es la que dice *qué sigue*:
+
+```markdown
+## F3 · Las extracciones que faltan — 2 de 4
+
+| Tarea | Qué entrega | Estado |
+|---|---|:--:|
+| **F3.1** | `deasy-icon-box` — la caja de icono | ✅ |
+| **F3.2** | El botón — 11 grupos, 11 gates | ✅ |
+| **F3.3** | El estado de grafo — 73 colores en 8 ficheros | ⬜ |
+| **F3.4** | Los dos colapsos de plantilla | ⬜ |
+```
+
+**Y el tercer nivel solo si lo piden.** Si la tarea en curso tiene su propio desglose —los 11 grupos
+de botones dentro de `F3.2`, por ejemplo— **no se enseña por defecto**: se menciona en una línea que
+existe y dónde está. Enseñar tres tablas a la vez es lo que produjo el «7 de 11» sin decir de qué.
+
+⚠️ **Nunca colapses varias tareas en una fila de la tabla 2**, ni mezcles dos numeraciones en el
+mismo mensaje. Las dos cosas pasaron el 2026-08-15 y las dos hicieron perder el hilo: la primera
+rompe el patrón visual justo donde el ojo busca el detalle, y la segunda obliga a adivinar si «5 de
+6» y «F0 a F10» hablan de lo mismo (no hablaban).
 
 ### Plan de calidad
 
