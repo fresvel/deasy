@@ -63,7 +63,7 @@
                   <AdminInputField :id="fieldId('cargo-end-date')" :model-value="personCargoForm.end_date" type="date" @update:model-value="updateCargoField('end_date', $event)" />
                 </AdminFieldGroup>
                 <AdminFieldGroup label="Actual" :label-for="fieldId('cargo-is-current')" group-class="md:col-span-4">
-                  <SToggle :id="fieldId('cargo-is-current')" :model-value="Number(personCargoForm.is_current) === 1" label-position="end" @change="(value) => updateCargoField('is_current', value ? '1' : '0')" />
+                  <SToggle :id="fieldId('cargo-is-current')" :model-value="Number(personCargoForm.is_current) === 1" label-position="end" field-aligned @change="(value) => updateCargoField('is_current', value ? '1' : '0')" />
                 </AdminFieldGroup>
               </div>
               <AdminFormActions

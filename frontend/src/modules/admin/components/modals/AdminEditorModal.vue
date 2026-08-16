@@ -89,6 +89,7 @@
           :model-value="Number(formData[field.name]) === 1"
           :disabled="isFieldLocked(field)"
           label-position="end"
+          field-aligned
           @change="(value) => updateFormField(field.name, value ? '1' : '0')"
         />
         <AdminInputField

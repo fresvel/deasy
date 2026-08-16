@@ -1,9 +1,17 @@
 <template>
   <div :class="rootClass">
-    <label
-      :for="toggleId"
+    <!-- ⚠️ `<label>` SOLO SI HAY TEXTO QUE ETIQUETAR. Sin el, esto emitia un segundo
+         `<label for="mismo-id">` vacio en todos los formularios donde el grupo de campo YA pone su
+         etiqueta encima — trece campos del modal de personas, medidos con dos `label[for]` cada
+         uno. Un `<span>` mantiene el clic (el input vive dentro) y deja un solo `<label>`. -->
+    <component
+      :is="tieneEtiqueta ? 'label' : 'span'"
+      :for="tieneEtiqueta ? toggleId : undefined"
       class="items-center gap-3"
-      :class="labelPosition === 'end' ? 'inline-flex flex-row-reverse' : 'flex justify-between'"
+      :class="[
+        labelPosition === 'end' ? 'inline-flex flex-row-reverse' : 'flex justify-between',
+        fieldAligned ? 'h-10' : ''
+      ]"
     >
       <span v-if="$slots.default || label || description" class="min-w-0">
         <slot>
@@ -28,16 +36,17 @@
           class="absolute top-1/2 left-0.5 -translate-y-1/2 size-5 rounded-full bg-white shadow-theme-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-full"
         ></span>
       </span>
-    </label>
+    </component>
   </div>
 </template>
 
 <script setup>
-import { computed, useId } from "vue";
+import { computed, useId, useSlots } from "vue";
 
 // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
 // instancia, para que dos montajes simultaneos no compartan el mismo id.
 const uid = useId();
+const slots = useSlots();
 const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
@@ -68,6 +77,14 @@ const props = defineProps({
   wide: {
     type: String
   },
+  /* DENTRO DE UN GRUPO DE CAMPO, donde el grupo ya pone la etiqueta encima y el control de al lado
+     mide 40 px de alto. Sin esto el interruptor mide 24 y su celda 35 frente a las 68 de un campo
+     normal: las filas de la rejilla dejan de cuadrar y el formulario se ve torcido. Medido en el
+     modal de personas el 2026-08-15. */
+  fieldAligned: {
+    type: Boolean,
+    default: false
+  },
   id: {
     type: String
   }
@@ -95,8 +112,19 @@ const columnClass = computed(() => {
 
 const rootClass = computed(() => {
   if (props.wide) return ["deasy-field-wrapper", columnClass.value];
+  /* ⚠️ DENTRO DE UN GRUPO DE CAMPO EL ENVOLTORIO ES DE BLOQUE, y aqui estaba el defecto que se
+     veia «chueco»: con `inline-block`, el interruptor compartia LINEA con la etiqueta del grupo
+     —que es `inline-flex`— y ambos se alineaban por linea base. Medido en el modal de personas:
+     la etiqueta caia en Y=1102 y el control en Y=1085, o sea **el rotulo quedaba DEBAJO de su
+     propio interruptor**, al reves que en todos los campos de al lado (etiqueta 763, control 789).
+     Un `<input>` no lo sufre porque es de bloque y rompe la linea el solo. */
+  if (props.fieldAligned) return "block";
   return props.labelPosition === "end" ? "inline-block" : "w-full";
 });
+
+/* Solo hay etiqueta propia si alguien la pasa. Cuando no, el envoltorio deja de ser `<label>`:
+   ver el aviso de la plantilla. */
+const tieneEtiqueta = computed(() => Boolean(slots.default || props.label || props.description));
 
 // La prop `id` manda; el id por instancia de useId() es solo el respaldo estable.
 const toggleId = computed(() => props.id || fieldId("toggle"));

@@ -133,7 +133,7 @@
             <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
           </AdminFieldGroup>
           <AdminFieldGroup label="Activo" group-class="md:col-span-2">
-            <SToggle :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" @change="(value) => updateField('is_active', value ? '1' : '0')" />
+            <SToggle :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" field-aligned @change="(value) => updateField('is_active', value ? '1' : '0')" />
           </AdminFieldGroup>
           <AdminFieldGroup label="Vigencia desde" group-class="md:col-span-5">
             <div class="flex items-stretch gap-2">

@@ -43,7 +43,7 @@
           />
         </div>
         <AdminFieldGroup label="Activo" :label-for="fieldId('is-active')" group-class="md:col-span-4">
-          <SToggle :id="fieldId('is-active')" :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" @change="(value) => updateField('is_active', value ? '1' : '0')" />
+          <SToggle :id="fieldId('is-active')" :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" field-aligned @change="(value) => updateField('is_active', value ? '1' : '0')" />
         </AdminFieldGroup>
       </div>
       <template #footer>
