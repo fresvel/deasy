@@ -307,4 +307,39 @@
     .deasy-spinner--sm { @apply h-4 w-4; }
     .deasy-spinner--md { @apply h-5 w-5; }
     .deasy-spinner--lg { @apply h-6 w-6; }
+
+    /* ── LA BARRA DE PROGRESO ────────────────────────────────────────────────────────
+     * Cuarto atomo de feedback, y el hermano del aro de arriba: los dos dicen «esto va
+     * avanzando», uno sin saber cuanto y el otro sabiendolo.
+     *
+     * ── DE DONDE SALE (F4, 2026-08-16) ──────────────────────────────────────────────
+     * Otra receta que el plan daba por «sin equivalente en Deasy». Habia TRES, sin una
+     * sola clase compartida, y discrepaban en todo lo discrepable:
+     *
+     *     pista       `bg-surface`   ·  `bg-gray-200/70`  ·  `bg-surface`
+     *     alto        6 px           ·  8 px              ·  6 px
+     *     transicion  300 ms         ·  500 ms ease-out   ·  300 ms
+     *     radio barra —              ·  `rounded-full`    ·  `rounded-full`
+     *
+     * (fuerza de contraseña en el registro · lote de firma multiple · tarjeta de
+     * entregable). La del medio ademas pintaba la pista con ALFA —`gray-200/70`—, que es
+     * justo lo que este repo evita: el color resultante depende del fondo de debajo, asi
+     * que la misma barra da dos grises segun donde caiga.
+     *
+     * EL RELLENO NO SE DECLARA AQUI a proposito: las tres lo tienen distinto y por buenas
+     * razones —una lo deriva del estado de la contraseña, otra de la tarjeta de entregable
+     * (`--tarjeta-acento`) y la tercera es fija—. Aqui va la GEOMETRIA, que es lo que no
+     * tenia por que variar. */
+    .deasy-progress {
+        @apply h-1.5 w-full overflow-hidden rounded-full bg-surface;
+    }
+
+    /* 8 px — el lote de firma multiple, que es una barra de panel y no de tarjeta. */
+    .deasy-progress--lg {
+        @apply h-2;
+    }
+
+    .deasy-progress__bar {
+        @apply h-full rounded-full transition-all duration-300;
+    }
 }

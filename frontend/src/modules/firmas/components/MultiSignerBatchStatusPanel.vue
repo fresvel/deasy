@@ -69,8 +69,8 @@
           {{ progressPercent }}%
         </div>
       </div>
-      <div class="mb-4 h-2 w-full overflow-hidden rounded-full bg-gray-200/70">
-        <div class="h-full rounded-full bg-blue-light-500 transition-all duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
+      <div class="deasy-progress deasy-progress--lg mb-4">
+        <div class="deasy-progress__bar bg-blue-light-500" :style="{ width: `${progressPercent}%` }" />
       </div>
 
       <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5">

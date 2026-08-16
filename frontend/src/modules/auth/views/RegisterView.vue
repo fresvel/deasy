@@ -253,9 +253,9 @@
                     </button>
                   </div>
                   <div v-if="newuser.password" class="mt-2">
-                    <div class="mb-1 flex h-1.5 w-full overflow-hidden rounded-full bg-surface">
+                    <div class="deasy-progress mb-1">
                       <div
-                        class="h-full transition-all duration-300"
+                        class="deasy-progress__bar"
                         :class="passwordStrengthColors[passwordStrengthScore]"
                         :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
                       ></div>
@@ -445,13 +445,26 @@ const cedulaError = ref("");
 
 const passwordStrengthScore = ref(0);
 const passwordStrengthText = ref("No segura");
+/* ⚠️ AQUI VIVIAN CINCO ANCHURAS QUE NO PINTABAN — `w-1/5` … `w-full`, una por escalon.
+   El mismo elemento lleva `:style="{ width: … }"` con el porcentaje calculado, y un estilo
+   EN LINEA le gana a cualquier utilidad, asi que esas cinco clases llevaban ahi desde
+   siempre sin ningun efecto. Retiradas el 2026-08-16 al extraer `deasy-progress`: el ancho
+   lo pone el `:style`, y solo el.
+
+   📌 Lo que SI queda pendiente y no se toca aqui: estos cinco colores salen de la paleta
+   CRUDA (`red-500`, `orange-500`, `amber-400`, `lime-500`, `green-500` — cinco familias, y
+   tres de ellas ni siquiera son tonos del sistema), mientras que `passwordTextColors`, ocho
+   lineas mas abajo y para el MISMO estado, usa tokens (`text-danger`, `text-warning`). La
+   barra y su leyenda se pintan con dos vocabularios distintos. Colapsar un degradado de
+   cinco pasos sobre los tonos del sistema es una decision de diseño, no una limpieza: va
+   con el resto de los colores que viven en JavaScript, en la fase 8. */
 const passwordStrengthColors = {
   0: "bg-gray-200",
-  1: "bg-red-500 w-1/5",
-  2: "bg-orange-500 w-2/5",
-  3: "bg-amber-400 w-3/5",
-  4: "bg-lime-500 w-4/5",
-  5: "bg-green-500 w-full"
+  1: "bg-red-500",
+  2: "bg-orange-500",
+  3: "bg-amber-400",
+  4: "bg-lime-500",
+  5: "bg-green-500"
 };
 const passwordTextColors = {
   0: "text-muted",

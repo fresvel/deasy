@@ -121,8 +121,8 @@ const onCardClick = (event) => {
           </div>
           <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
           <div class="flex items-center gap-2.5">
-            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
-              <div class="deasy-deliverable-card__accent h-full rounded-full transition-all duration-300" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
+            <div class="deasy-progress flex-1">
+              <div class="deasy-progress__bar deasy-deliverable-card__accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
             </div>
             <span class="shrink-0 text-[0.7rem] font-semibold text-muted">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
           </div>
