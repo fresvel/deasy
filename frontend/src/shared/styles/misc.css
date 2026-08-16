@@ -28,8 +28,18 @@
         @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-strong shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
     }
 
+    /* CON AVATAR — una foto en vez de un icono.
+     *
+     * ⚠️ Antes era `h-auto w-auto p-2`, o sea: **renunciaba al tamaño de la caja** y lo dejaba al
+     * contenido más 8 px de relleno por lado. Resultado medido: la caja del hero del perfil salía a
+     * **90 px y la del hero de admin a 72**, para el mismo componente y en la misma posición. Nadie
+     * lo veía porque las dos cabeceras nunca están en la misma pantalla.
+     *
+     * Ahora la caja manda y la foto se ajusta a ella: mismo cuadrado en los dos heroes. El
+     * `overflow-hidden` es lo que recorta la foto al radio de la caja, que es lo que antes hacía el
+     * `rounded-[1rem]` de la propia imagen. */
     .deasy-hero-media-card--avatar {
-        @apply h-auto w-auto p-2;
+        @apply overflow-hidden p-0;
     }
 
     .deasy-hero-kicker {

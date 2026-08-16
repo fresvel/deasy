@@ -11,7 +11,7 @@
       centered
       compact-actions
     >
-      <template #media><img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo" alt="Foto de perfil" /></template>
+      <template #media><img class="h-full w-full object-cover" :src="photo" alt="Foto de perfil" /></template>
       <template #actions>
         <button type="button" class="deasy-hero-back-button" @click="goBack">
           <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
