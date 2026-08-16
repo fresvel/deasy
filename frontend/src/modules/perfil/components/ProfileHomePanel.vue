@@ -1,32 +1,24 @@
 <template>
   <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8 w-full flex flex-col font-sans">
     
-    <section class="deasy-hero-shell mb-8">
-      <div class="deasy-hero-layout">
-        <div class="deasy-hero-main deasy-hero-main--with-media text-center sm:text-left">
-          <div class="deasy-hero-media flex flex-col items-center gap-3 sm:items-start">
-            <div class="deasy-hero-media-card deasy-hero-media-card--avatar">
-              <img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo.value" alt="Foto de perfil" />
-            </div>
-          </div>
-          <div class="deasy-hero-copy sm:pt-0">
-            <div class="deasy-hero-kicker">Perfil académico</div>
-            <h1 class="deasy-hero-title">{{ displayName }}</h1>
-            <p class="deasy-hero-description">
-              Gestiona tu dossier académico y tu información profesional.
-            </p>
-          </div>
-        </div>
-        <div class="deasy-hero-side deasy-hero-side--compact">
-          <button type="button" class="deasy-hero-back-button" @click="goBack">
-            <span class="deasy-hero-back-button__icon">
-              <IconArrowLeft class="h-4.5 w-4.5" />
-            </span>
-            <span>Volver atrás</span>
-          </button>
-        </div>
-      </div>
-    </section>
+    <AppPageHeader
+      size="hero"
+      shell-class="mb-8"
+      eyebrow="Perfil académico"
+      :title="displayName"
+      description="Gestiona tu dossier académico y tu información profesional."
+      avatar-media
+      centered
+      compact-actions
+    >
+      <template #media><img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo.value" alt="Foto de perfil" /></template>
+      <template #actions>
+        <button type="button" class="deasy-hero-back-button" @click="goBack">
+          <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
+          <span>Volver atrás</span>
+        </button>
+      </template>
+    </AppPageHeader>
 
     <!-- Sections Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -58,6 +50,7 @@
  * PROFILE_SECTIONS.
  */
 import { computed, inject } from "vue";
+import AppPageHeader from '@/shared/components/layout/AppPageHeader.vue';
 import { useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import {

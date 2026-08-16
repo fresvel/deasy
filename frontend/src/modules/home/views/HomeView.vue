@@ -239,17 +239,14 @@
 
           <!-- Panel: Mis unidades -->
           <div v-if="showUnitsPanel" class="flex flex-col gap-5">
-            <div class="admin-page-header">
-              <div class="admin-page-header__main">
-                <h1 class="admin-page-header__title">Mis unidades</h1>
-              </div>
-              <div class="admin-page-header__actions">
+            <AppPageHeader title="Mis unidades">
+              <template #actions>
                 <button type="button" class="deasy-hero-back-button" @click="showUnitsPanel = false">
                   <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
                   <span>Volver</span>
                 </button>
-              </div>
-            </div>
+              </template>
+            </AppPageHeader>
             <div v-if="!unitsPanelData.length" class="text-sm font-medium text-muted py-4">
               No hay unidades con procesos asignados.
             </div>
@@ -312,18 +309,12 @@
           <div v-else-if="showCargosPanel" class="flex flex-col gap-5">
 
             <!-- Cabecera con botón volver -->
-            <div class="admin-page-header">
-              <button
-                type="button"
-                class="deasy-hero-back-button"
-                @click="showCargosPanel = false"
-              >
-                <span class="deasy-hero-back-button__icon">
-                  <IconArrowLeft class="h-4.5 w-4.5" />
-                </span>
-                <span>Volver</span>
-              </button>
-            </div>
+            <AppActionBar>
+              <button type="button" class="deasy-hero-back-button" @click="showCargosPanel = false">
+                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
+                  <span>Volver</span>
+                </button>
+            </AppActionBar>
 
             <div v-if="!cargosPanelData.length" class="text-sm font-medium text-muted py-4">
               No hay cargos asignados para mostrar.
@@ -668,28 +659,17 @@
             </div>
 
             <!-- Cabecera con título y botón volver -->
-            <div class="admin-page-header">
-              <div class="admin-page-header__main">
-                <p class="text-[11px] font-bold uppercase tracking-wider text-muted m-0">
-                  {{ isRoutedProcess ? 'Documentos' : (selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso') }}
-                </p>
-                <h1 class="admin-page-header__title mt-1">
-                  {{ isRoutedProcess ? routedHeaderTitle : (selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Configuración de proceso') }}
-                </h1>
-              </div>
-              <div class="admin-page-header__actions">
-                <button
-                  type="button"
-                  class="deasy-hero-back-button"
-                  @click="clearSelectedProcess"
-                >
-                  <span class="deasy-hero-back-button__icon">
-                    <IconArrowLeft class="h-4.5 w-4.5" />
-                  </span>
+            <AppPageHeader
+              :eyebrow="isRoutedProcess ? 'Documentos' : (selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso')"
+              :title="isRoutedProcess ? routedHeaderTitle : (selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Proceso')"
+            >
+              <template #actions>
+                <button type="button" class="deasy-hero-back-button" @click="clearSelectedProcess">
+                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
                   <span>Volver</span>
                 </button>
-              </div>
-            </div>
+              </template>
+            </AppPageHeader>
 
             <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-info rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando la configuración seleccionada...
@@ -2122,6 +2102,8 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
 import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
+import AppPageHeader from "@/shared/components/layout/AppPageHeader.vue";
+import AppActionBar from "@/shared/components/layout/AppActionBar.vue";
 import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRouter, useRoute } from 'vue-router';
 import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';

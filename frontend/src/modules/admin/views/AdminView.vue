@@ -179,30 +179,15 @@
             </div>
             <div v-else-if="metaError" class="deasy-alert deasy-alert--danger text-center">{{ metaError }}</div>
             <template v-else>
-               <section class="deasy-hero-shell mb-8">
-                 <div class="deasy-hero-layout">
-                  <div class="deasy-hero-main deasy-hero-main--with-media">
-                    <div class="deasy-hero-media">
-                      <div class="deasy-hero-media-card">
-                      <component :is="adminHeroIcon" class="h-10 w-10" />
-                      </div>
-                    </div>
-                    <div class="deasy-hero-copy sm:pt-0">
-                      <div class="deasy-hero-kicker">{{ adminHeroKicker }}</div>
-                      <h2 class="deasy-hero-title">{{ adminHeroTitle }}</h2>
-                      <p class="deasy-hero-description">{{ adminHeroDescription }}</p>
-                    </div>
-                  </div>
-                  <div class="deasy-hero-side">
-                    <button type="button" class="deasy-hero-back-button" @click="handleHeroBack">
-                      <span class="deasy-hero-back-button__icon">
-                        <IconArrowLeft class="h-4.5 w-4.5" />
-                      </span>
-                      <span>Volver atrás</span>
-                    </button>
-                  </div>
-                 </div>
-               </section>
+               <AppPageHeader size="hero" shell-class="mb-8" :eyebrow="adminHeroKicker" :title="adminHeroTitle" :description="adminHeroDescription">
+                 <template #media><component :is="adminHeroIcon" class="h-10 w-10" /></template>
+                 <template #actions>
+                   <button type="button" class="deasy-hero-back-button" @click="handleHeroBack">
+                     <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
+                     <span>Volver atrás</span>
+                   </button>
+                 </template>
+               </AppPageHeader>
                
                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
                  <template v-if="showAcademiaIndex">
@@ -345,6 +330,7 @@
 <script setup>
 
 import { computed, onMounted, ref } from "vue";
+import AppPageHeader from "@/shared/components/layout/AppPageHeader.vue";
 import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 
