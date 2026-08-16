@@ -1,6 +1,23 @@
 @layer components {
-.deasy-workspace {
-        @apply min-h-screen bg-navy-deep font-sans text-body;
+/* ══ QUIEN SE DESPLAZA ES EL CONTENIDO, NO LA VENTANA — F4.C·A, 2026-08-16 ═══════════════
+       Adoptado de TailAdmin: su esqueleto es `flex h-screen overflow-hidden` en el envoltorio y
+       `overflow-y-auto` en el area de contenido, de modo que la ventana NUNCA se desplaza.
+
+       ⚠️ AVISO HONESTO SOBRE LO QUE ESTO APORTA. Los tres efectos practicos de su arquitectura
+       —cabecera quieta, barra lateral quieta, menu lateral largo recorrible— **Deasy ya los tenia**,
+       conseguidos con `sticky` y con `h-[calc(100vh-60px)]` en la propia aside. Medido antes de
+       tocar nada: al bajar 900 px, la cabecera seguia en `top: 0` y la aside en `top: 60`. Lo unico
+       que cambia de verdad es DONDE SE PINTA LA BARRA DE DESPLAZAMIENTO: antes al borde de la
+       ventana, ahora dentro del area de contenido. Se adopta por decision del dueño, sabiendo eso.
+
+       🪤 Y una alarma mia que resulto FALSA, anotada porque el razonamiento vale: avise de que esto
+       romperia la colocacion de firmas sobre el PDF, porque `FirmarPdf` calcula con
+       `rect.left + window.scrollX` contra `event.pageX`. No la rompe — los dos terminos se desplazan
+       con la ventana y se cancelan, asi que con el scroll de ventana fijo en 0 la resta sigue dando
+       coordenadas relativas al elemento. La pareja `getBoundingClientRect + pageX` es robusta a esto
+       por construccion; lo que no lo seria es mezclar `clientX` con coordenadas de documento. */
+    .deasy-workspace {
+        @apply flex h-screen flex-col overflow-hidden bg-navy-deep font-sans text-body;
     }
 
     /* ══ EL PAPEL ES GRIS, LAS SUPERFICIES BLANCAS — F4.C·C, 2026-08-16 ═══════════════════════
@@ -16,12 +33,15 @@
 
        ⚠️ Es visible en TODAS las pantallas a la vez, y se revierte cambiando estas dos lineas.
        ═══════════════════════════════════════════════════════════════════════════════════════ */
+    /* `min-h-0` es obligatorio y no es adorno: un hijo flex tiene `min-height: auto` por defecto,
+       asi que se niega a encogerse por debajo de su contenido y el `overflow-y-auto` de mas abajo
+       no llegaria a activarse nunca — la fila crecería y el desplazamiento volveria a la ventana. */
     .deasy-workspace-layout {
-        @apply mx-auto flex w-full max-w-[2560px] flex-1 flex-col items-stretch bg-surface xl:flex-row;
+        @apply mx-auto flex w-full min-h-0 max-w-[2560px] flex-1 flex-col items-stretch bg-surface xl:flex-row;
     }
 
     .deasy-workspace-content {
-        @apply min-w-0 flex-1 bg-surface;
+        @apply min-w-0 min-h-0 flex-1 overflow-y-auto bg-surface;
     }
 
     .deasy-workspace-header {
