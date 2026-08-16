@@ -1265,7 +1265,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'summary'"
             :tabindex="deliverableWorkspaceState.tab === 'summary' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            class="deasy-tab"
             :class="getDeliverableWorkspaceTabClass('summary')"
             @click="deliverableWorkspaceState.tab = 'summary'"
           >
@@ -1277,7 +1277,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'fill'"
             :tabindex="deliverableWorkspaceState.tab === 'fill' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            class="deasy-tab"
             :class="getDeliverableWorkspaceTabClass('fill')"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
@@ -1289,7 +1289,7 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'signature'"
             :tabindex="deliverableWorkspaceState.tab === 'signature' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            class="deasy-tab"
             :class="getDeliverableWorkspaceTabClass('signature')"
             @click="deliverableWorkspaceState.tab = 'signature'"
           >
@@ -1301,12 +1301,24 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'attachments'"
             :tabindex="deliverableWorkspaceState.tab === 'attachments' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            class="deasy-tab"
             :class="getDeliverableWorkspaceTabClass('attachments')"
             @click="deliverableWorkspaceState.tab = 'attachments'"
           >
             Anexos
             <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brand-100 px-1 text-[0.65rem] font-bold text-primary">{{ attachmentsState.items.length }}</span>
+          </button>
+          <button
+            v-if="deliverableWorkspaceSubject"
+            type="button"
+            role="tab"
+            :aria-selected="deliverableWorkspaceState.tab === 'history'"
+            :tabindex="deliverableWorkspaceState.tab === 'history' ? 0 : -1"
+            class="deasy-tab"
+            :class="getDeliverableWorkspaceTabClass('history')"
+            @click="deliverableWorkspaceState.tab = 'history'"
+          >
+            Historial
           </button>
         </div>
 
@@ -1431,6 +1443,15 @@
             :handle-attachment-upload="handleAttachmentUpload"
             :handle-attachment-download="handleAttachmentDownload"
             :handle-attachment-delete="handleAttachmentDelete"
+          />
+        </template>
+        <template v-else-if="deliverableWorkspaceState.tab === 'history'">
+          <!-- Autocontenida: pide sus propios datos. No añade estado a este componente a propósito
+               (ver la cabecera de DeliverableHistoryTab.vue y el frente 3 del plan maestro). -->
+          <DeliverableHistoryTab
+            :user-id="deliverableHistoryContext.userId"
+            :definition-id="deliverableHistoryContext.definitionId"
+            :task-item-id="deliverableHistoryContext.taskItemId"
           />
         </template>
         <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm font-semibold text-icon text-center">
@@ -2147,6 +2168,7 @@ import DeliverablePreviewModal from '@/modules/home/components/DeliverablePrevie
 import { useGeneralTask } from '@/modules/home/composables/useGeneralTask.js';
 import GeneralTaskModal from '@/modules/home/components/GeneralTaskModal.vue';
 import DeliverableAttachmentsTab from '@/modules/home/components/DeliverableAttachmentsTab.vue';
+import DeliverableHistoryTab from '@/modules/home/components/DeliverableHistoryTab.vue';
 import DeliverableFillTab from '@/modules/home/components/DeliverableFillTab.vue';
 import DeliverableSignatureTab from '@/modules/home/components/DeliverableSignatureTab.vue';
 import { useDeliverableView } from '@/modules/home/composables/useDeliverableView.js';
@@ -2370,6 +2392,13 @@ const resolveAttachmentContext = (payload) => {
   );
   return { userId, definitionId, taskItemId: subject.itemId, documentId: subject.documentId || null };
 };
+
+// El contexto que necesita la pestaña de historial. Reutiliza `resolveAttachmentContext`, que ya
+// resuelve el mismo trío (usuario, configuración, entregable) para los anexos: son el mismo endpoint
+// de usuario y el mismo guard, así que duplicar la resolución sería pedir que se desincronicen.
+const deliverableHistoryContext = computed(() =>
+  resolveAttachmentContext(deliverableWorkspaceSubject.value || null)
+);
 
 const loadDeliverableAttachments = async (payload) => {
   const { userId, definitionId, taskItemId, documentId } = resolveAttachmentContext(payload);

@@ -376,6 +376,16 @@ export const reconcileTaskItemAssignments = async (req, res) => {
   }
 };
 
+// El historial de relevos de un entregable (defecto 1.10). Hasta el 2026-08-14 la bitácora era de
+// solo escritura: cero SELECT en todo el repo. Éste es su primer lector.
+export const listTaskItemHandovers = async (req, res) => {
+  try {
+    res.json(await service.listTaskItemHandovers(req.params.id));
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
 // F-C handover: traspasa el MISMO entregable a otra persona (no duplica) + asiento de auditoría.
 export const handoverTaskItem = async (req, res) => {
   try {

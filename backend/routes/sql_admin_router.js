@@ -25,6 +25,7 @@ import {
   listResolvableCargos,
   reconcileTaskItemAssignments,
   handoverTaskItem,
+  listTaskItemHandovers,
   listStuckTaskItems,
   getImmediateBoss,
   getProcessDefinitionSeriesScope,
@@ -96,6 +97,9 @@ router.get("/process_definitions/:id/resolvable-cargos", requireSqlAdminPermissi
 router.post("/task-items/reconcile-assignments", requireAnyRole(["AdminSistema"]), reconcileTaskItemAssignments);
 router.get("/task-items/stuck", requireSqlAdminPermission({ resource: "templates", action: "read" }), listStuckTaskItems);
 router.post("/task-items/:id/handover", requireSqlAdminPermission({ resource: "templates", action: "update" }), handoverTaskItem);
+// Leer el historial pide `read`, no `update`: consultar por qué cambió un responsable no debería
+// exigir permiso para cambiarlo. Mismo criterio que `/task-items/stuck`, justo arriba.
+router.get("/task-items/:id/handovers", requireSqlAdminPermission({ resource: "templates", action: "read" }), listTaskItemHandovers);
 router.get("/positions/:id/immediate-boss", requireSqlAdminPermission({ resource: "templates", action: "read" }), getImmediateBoss);
 router.get("/process_definitions/:id/series-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessDefinitionSeriesScope);
 // Edición de código LaTeX: descarga/re-subida del contrato. SOLO AdminSistema (es código ejecutable).

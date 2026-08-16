@@ -317,6 +317,37 @@ export default class TaskAssignmentService {
   }
 
 
+  // El HISTORIAL de relevos de un entregable (defecto 1.10). Responde a «¿por qué esto, que era de
+  // Juan, ahora es de María?» — que es la pregunta para la que existe `task_item_handovers`.
+  //
+  // Resuelve los nombres aquí y no en el cliente: son dos LEFT JOIN y evita que la interfaz tenga que
+  // pedir una persona por fila. Los LEFT son necesarios, no defensivos: `from_person_id` es NULL en el
+  // primer relevo (nadie lo tenía antes) y `to_person_id` es NULL cuando alguien deja el puesto y el
+  // entregable se queda huérfano.
+  async listTaskItemHandovers(taskItemId, connection = this.pool) {
+    const tiId = normalizeNumericId(taskItemId);
+    if (!tiId) throw new Error("Entregable (task_item) inválido.");
+    const [rows] = await connection.query(
+      `SELECT h.id,
+              h.task_item_id,
+              h.from_person_id,
+              h.to_person_id,
+              h.reason,
+              h.trigger_kind,
+              h.performed_by_user_id,
+              h.created_at,
+              CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
+              CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
+         FROM task_item_handovers h
+         LEFT JOIN persons fp ON fp.id = h.from_person_id
+         LEFT JOIN persons tp ON tp.id = h.to_person_id
+        WHERE h.task_item_id = ?
+        ORDER BY h.id DESC`,
+      [tiId]
+    );
+    return rows;
+  }
+
   // F-C (lista de atascados): task_items ABIERTOS que requieren atención — por persona (los que tiene asignados),
   // por puesto, por unidad, o (sin filtros) los huérfanos (sin persona). Marca `started` (tiene documento).
   async listStuckTaskItems({ personId = null, positionId = null, unitId = null } = {}, connection = this.pool) {
