@@ -414,10 +414,16 @@ parezca trivial:**
    «Ahora se ve mejor» no es una comparación; «el subrayado pasa de 0 a 2 px en `rgb(70,95,255)`, y
    las tres barras de esa pantalla miden ya lo mismo» sí lo es.
 3. **La ruta EXACTA para verlo**, con todo lo necesario para llegar:
-   - la **URL completa**, con protocolo y puerto de la pila usada (`https://localhost:8543` para la
-     B, no «localhost» ni «el dev»);
+   - **La URL MÁS PROFUNDA a la que el router llegue solo**, con protocolo y puerto de la pila
+     usada. No la raíz: `https://localhost:8543/admin/gestiones/procesos/process_definition_versions`,
+     **no** `https://localhost:8543` seguido de cuatro clics de menú. Casi toda pantalla de Deasy
+     tiene URL propia —las pestañas de admin son segmentos de ruta, no estado interno—, así que si
+     estás escribiendo «→ Gestiones → Procesos → pestaña X», **esa cadena es una URL que no
+     buscaste**. Míralas en la barra de direcciones mientras verificas: es de donde salen.
    - **con qué usuario y contraseña**, porque el mismo cambio no se ve desde todas las cuentas;
-   - **cada clic hasta el elemento**: qué entrada de menú, qué tarjeta, qué botón abre el modal.
+   - **los clics que la URL NO puede sustituir, y solo esos**: abrir un modal, desplegar un panel,
+     activar un conmutador, elegir una fila concreta. Ahí sí hacen falta y hay que darlos enteros
+     —qué botón, en qué fila, con qué rótulo—, porque un modal no tiene dirección propia.
 4. **Lo que NO se pudo verificar y por qué**, cuando toque. Si a una pantalla no se llegó porque la
    base no tenía datos, se dice — así el dueño sabe que un vacío es del entorno y no del cambio.
 
@@ -426,15 +432,30 @@ devolverle al dueño el trabajo de encontrar lo que acabas de tocar. Ya pasó do
 se perdió porque la ruta valía para dos pantallas distintas, y otra porque la cuenta indicada no
 tenía permiso para ver el cambio.
 
+⚠️ **Y dar la raíz más una lista de clics es la MISMA falta, más disimulada.** Pasó el 2026-08-15
+con el stepper: la entrega decía `https://localhost:8543` → Gestiones → Procesos → pestaña
+«Configuración de procesos», cuando esa pantalla **es**
+`/admin/gestiones/procesos/process_definition_versions` y se pega en la barra de una vez. Cada clic
+que la URL podía ahorrar es una oportunidad de acabar en otro sitio, y quien verifica no tiene por
+qué reconstruir un camino que tú ya recorriste.
+
 **Ejemplo de lo que sí vale:**
 
-> `https://localhost:8543` — pila B, por HTTPS (acepta el aviso del certificado).
-> 1. Entra como **usuario**: `1122334455` / `Demo1234!` *(el gestor no sirve aquí: su cuenta tiene 0
->    procesos en esta base)*
-> 2. `/home` → barra lateral → **Mis procesos**
-> 3. En la tarjeta **«Informe general»**, el icono redondo azul de la esquina — *«Abrir detalle del
->    entregable»*
-> 4. Arriba del modal: **General · Entrega · Firmas · Anexos**
+> **Pila B, por HTTPS** (acepta el aviso del certificado). Entra como **admin**:
+> `1234567890` / `Demo1234!`
+>
+> 1. **La columna ESTADO de la tabla** —
+>    `https://localhost:8543/admin/gestiones/procesos/process_definition_versions`
+>    *(la pestaña «Configuración de procesos» ES esta URL: no hay que navegar el menú)*
+> 2. **El asistente, paso actual** — en esa misma página, botón **«Configurar proceso»** (arriba a
+>    la derecha). Es un modal: aquí el clic sí es imprescindible.
+> 3. **El asistente, paso completado** — en la fila con estado **Borrador**, el botón **«Editar»**
+>    (el lápiz verde de la columna ACCION).
+> 4. **El visor de registro** — `https://localhost:8543/admin/gestiones/plantillas/template_artifacts`
+>    → botón **«Visualizar»** (el ojo) de cualquier fila.
+>
+> Fíjate en que dos de los cuatro son URL directa y los otros dos llevan un clic **porque abren un
+> modal**, que es la única razón válida para pedir uno.
 
 **Si el cambio toca varios grupos o varias pantallas, se dan las rutas de TODOS.** Enseñar uno y
 callar los otros deja el resto sin revisar, que a efectos prácticos es no haberlos hecho.
