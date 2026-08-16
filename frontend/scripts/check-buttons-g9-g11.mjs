@@ -73,7 +73,7 @@ for (const ruta of ficheros(SRC)) {
     filas.push({
       grupos, f: corto, linea: tpl.slice(0, m.index).split("\n").length,
       tag, etiqueta: ((attrs.match(/(?<![:@\w-])(?:title|aria-label|label)="([^"]*)"/) || [])[1] || texto || "?").slice(0, 28),
-      variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z]+)"/) || [, null])[1],
+      variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z][a-zA-Z-]*)"/) || [, null])[1],
       dinamica: /:variant=/.test(attrs),
       iconOnly: /\bicon-only\b/.test(attrs), soloIcono, sobra,
       bloque: clases.some((c) => BLOQUE.test(c)),

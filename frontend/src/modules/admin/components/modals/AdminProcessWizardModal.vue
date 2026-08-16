@@ -21,7 +21,7 @@
         class="deasy-alert deasy-alert--warning flex flex-wrap items-center justify-between gap-3"
       >
         <span>Ya existe una configuración para esa variación y versión.</span>
-        <AdminButton variant="primary" @click="$emit('edit-existing-definition', duplicateDefinition)">
+        <AdminButton variant="primary-outline" @click="$emit('edit-existing-definition', duplicateDefinition)">
           Editar existente
         </AdminButton>
       </div>
@@ -46,7 +46,7 @@
               :disabled="isDefinitionLocked"
               @update:model-value="updateForm('new_process_name', $event)"
             />
-            <AdminButton variant="danger" :disabled="isDefinitionLocked" @click="toggleProcessMode">
+            <AdminButton variant="danger-outline" :disabled="isDefinitionLocked" @click="toggleProcessMode">
               {{ form.process_mode === 'existing' ? '+ Nuevo' : 'Existente' }}
             </AdminButton>
           </div>
@@ -148,17 +148,17 @@
     <div v-show="currentStep === 'activate'"><slot name="activate" /></div>
 
     <template #footer>
-      <AdminButton variant="neutral" @click="$emit('close')">Cerrar</AdminButton>
-      <AdminButton v-if="currentStep !== 'definition'" variant="neutral" :disabled="prevDisabled" @click="goPrev">Atrás</AdminButton>
+      <AdminButton variant="neutral-outline" @click="$emit('close')">Cerrar</AdminButton>
+      <AdminButton v-if="currentStep !== 'definition'" variant="neutral-outline" :disabled="prevDisabled" @click="goPrev">Atrás</AdminButton>
       <AdminButton
         v-if="currentStep === 'definition'"
-        variant="primary"
+        variant="primary-outline"
         :disabled="creatingDefinition"
         @click="handleDefinitionPrimary"
       >{{ creatingDefinition ? 'Creando…' : (definitionContext?.id ? 'Continuar' : 'Crear configuración →') }}</AdminButton>
       <AdminButton
         v-else-if="currentStep !== 'activate'"
-        variant="primary"
+        variant="primary-outline"
         @click="goNext"
       >Siguiente →</AdminButton>
     </template>

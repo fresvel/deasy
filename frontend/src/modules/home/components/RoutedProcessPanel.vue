@@ -14,7 +14,7 @@
         </div>
         <div class="flex shrink-0 items-center gap-2">
           <AppButton
-            variant="neutral"
+            variant="neutral-outline"
             size="sm"
             icon-only
             title="Actualizar"
@@ -23,7 +23,7 @@
           >
             <IconRefresh class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
           </AppButton>
-          <AppButton variant="primary" @click="$emit('create')">
+          <AppButton variant="primary-outline" @click="$emit('create')">
             <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4.5 w-4.5" /> {{ createLabel }}</span>
           </AppButton>
         </div>
@@ -63,7 +63,7 @@
       </span>
       <p class="m-0 text-sm font-bold text-icon">{{ emptyTitle }}</p>
       <p class="m-0 max-w-sm text-xs font-medium text-muted">{{ emptyHint }}</p>
-      <AppButton v-if="activeTab === 'sends'" variant="primarySoft" size="sm" class="mt-1" @click="$emit('create')">
+      <AppButton v-if="activeTab === 'sends'" variant="primary-soft" size="sm" class="mt-1" @click="$emit('create')">
         <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> {{ createLabel }}</span>
       </AppButton>
     </div>

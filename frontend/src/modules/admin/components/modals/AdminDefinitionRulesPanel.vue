@@ -13,7 +13,7 @@
     </div>
     <!-- Por defecto solo se ve la lista; el formulario se abre con este botón -->
     <div v-if="canManage && !formOpen" class="flex justify-end">
-      <AdminButton variant="primary" @click="openForm">
+      <AdminButton variant="primary-outline" @click="openForm">
         <font-awesome-icon icon="plus" class="mr-2" />
         Agregar regla
       </AdminButton>
@@ -141,8 +141,8 @@
           <AdminFieldGroup label="Vigencia desde" group-class="md:col-span-5">
             <div class="flex items-stretch gap-2">
               <AdminInputField class="flex-1" :model-value="form.effective_from" type="date" :disabled="!canManage" @update:model-value="updateField('effective_from', $event)" />
-              <AdminButton variant="neutral" :disabled="!canManage" title="Usar la fecha de hoy" @click="updateField('effective_from', todayIso)">Hoy</AdminButton>
-              <AdminButton variant="neutral" icon-only :disabled="!canManage || !form.effective_from" title="Quitar fecha" aria-label="Quitar fecha" @click="updateField('effective_from', '')">
+              <AdminButton variant="neutral-outline" :disabled="!canManage" title="Usar la fecha de hoy" @click="updateField('effective_from', todayIso)">Hoy</AdminButton>
+              <AdminButton variant="neutral-outline" icon-only :disabled="!canManage || !form.effective_from" title="Quitar fecha" aria-label="Quitar fecha" @click="updateField('effective_from', '')">
                 <font-awesome-icon icon="times" />
               </AdminButton>
             </div>

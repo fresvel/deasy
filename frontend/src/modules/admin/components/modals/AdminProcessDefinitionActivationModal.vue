@@ -51,15 +51,15 @@
       </div>
       <AdminConfigActivationDiff v-if="showConfirm" :definition-id="selectedRow?.id" class="mt-3" />
       <template #footer>
-        <AdminButton variant="danger" @click="showConfirm = false">Cancelar</AdminButton>
-        <AdminButton variant="success" @click="confirmActivate">Sí, activar</AdminButton>
+        <AdminButton variant="danger-outline" @click="showConfirm = false">Cancelar</AdminButton>
+        <AdminButton variant="success-outline" @click="confirmActivate">Sí, activar</AdminButton>
       </template>
     </AppModalShell>
 
     <template #footer>
-      <AdminButton variant="danger" @click="$emit('cancel')">Cancelar</AdminButton>
-      <AdminButton v-if="primaryAction" variant="primary" :disabled="checking" @click="$emit('primary-action')">{{ primaryActionLabel }}</AdminButton>
-      <AdminButton variant="success" :disabled="checking || !allRequirementsMet" @click="showConfirm = true">Activar</AdminButton>
+      <AdminButton variant="danger-outline" @click="$emit('cancel')">Cancelar</AdminButton>
+      <AdminButton v-if="primaryAction" variant="primary-outline" :disabled="checking" @click="$emit('primary-action')">{{ primaryActionLabel }}</AdminButton>
+      <AdminButton variant="success-outline" :disabled="checking || !allRequirementsMet" @click="showConfirm = true">Activar</AdminButton>
     </template>
   </AdminProcessWizardShell>
 </template>

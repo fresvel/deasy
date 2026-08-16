@@ -3,7 +3,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
       <!-- Izquierda: regresar + título + contador + ayuda -->
       <div class="flex items-center gap-2 text-sm text-muted">
-        <AppButton variant="neutral" size="sm" icon-only title="Regresar" aria-label="Regresar" @click="$emit('go-back')">
+        <AppButton variant="neutral-outline" size="sm" icon-only title="Regresar" aria-label="Regresar" @click="$emit('go-back')">
           <IconArrowLeft class="h-4 w-4" />
         </AppButton>
         <span class="font-semibold text-body">Mapa de procesos</span>
@@ -27,13 +27,13 @@
           <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
           <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
         </div>
-        <AppButton variant="neutral" size="sm" icon-only :disabled="loading" title="Refrescar" aria-label="Refrescar" @click="loadGraph">
+        <AppButton variant="neutral-outline" size="sm" icon-only :disabled="loading" title="Refrescar" aria-label="Refrescar" @click="loadGraph">
           <IconRefresh class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
         </AppButton>
-        <AppButton variant="neutral" size="sm" icon-only :disabled="exporting" title="Exportar PNG" aria-label="Exportar PNG" @click="exportPng">
+        <AppButton variant="neutral-outline" size="sm" icon-only :disabled="exporting" title="Exportar PNG" aria-label="Exportar PNG" @click="exportPng">
           <IconDownload class="h-4 w-4" />
         </AppButton>
-        <AppButton v-if="editable" variant="primary" size="sm" :disabled="loading" title="Crear proceso raíz" @click="openCreateProcess('root', null, '')">
+        <AppButton v-if="editable" variant="primary-outline" size="sm" :disabled="loading" title="Crear proceso raíz" @click="openCreateProcess('root', null, '')">
           <IconPlus class="mr-1 h-4 w-4" /> Proceso
         </AppButton>
       </div>
@@ -89,8 +89,8 @@
         ¿Desvincular <strong>{{ selectedEdgeLabel }}</strong>? El sub-proceso quedará como proceso raíz (sin padre).
       </p>
       <template #footer>
-        <AppButton variant="danger" @click="selectedEdge = null">Cancelar</AppButton>
-        <AppButton variant="danger" @click="confirmDeleteEdge">Desvincular</AppButton>
+        <AppButton variant="danger-outline" @click="selectedEdge = null">Cancelar</AppButton>
+        <AppButton variant="danger-outline" @click="confirmDeleteEdge">Desvincular</AppButton>
       </template>
     </AppModalShell>
 
@@ -111,8 +111,8 @@
         </label>
       </div>
       <template #footer>
-        <AppButton variant="danger" @click="createContext = null">Cancelar</AppButton>
-        <AppButton variant="primary" :disabled="!createForm.name.trim()" @click="confirmCreateProcess">Crear</AppButton>
+        <AppButton variant="danger-outline" @click="createContext = null">Cancelar</AppButton>
+        <AppButton variant="primary-outline" :disabled="!createForm.name.trim()" @click="confirmCreateProcess">Crear</AppButton>
       </template>
     </AppModalShell>
 
@@ -140,8 +140,8 @@
         <SToggle v-model="editForm.is_active" label="Activo" label-position="end" />
       </div>
       <template #footer>
-        <AppButton variant="danger" :disabled="savingEdit" @click="closeEditModal">Cancelar</AppButton>
-        <AppButton variant="primary" :disabled="savingEdit || !editForm.name.trim()" @click="saveProcessEdit">{{ savingEdit ? "Guardando…" : "Guardar" }}</AppButton>
+        <AppButton variant="danger-outline" :disabled="savingEdit" @click="closeEditModal">Cancelar</AppButton>
+        <AppButton variant="primary-outline" :disabled="savingEdit || !editForm.name.trim()" @click="saveProcessEdit">{{ savingEdit ? "Guardando…" : "Guardar" }}</AppButton>
       </template>
     </AppModalShell>
 
@@ -156,7 +156,7 @@
           <div class="flex shrink-0 items-center gap-1">
             <AppButton
               v-if="editable"
-              variant="successSoft"
+              variant="success-soft"
               size="sm"
               icon-only
               title="Editar datos del proceso"
@@ -182,7 +182,7 @@
             <div v-show="detailTab === 'configuraciones'">
               <div class="mb-3 flex items-center justify-between gap-2">
                 <p class="deasy-overline">Configuraciones</p>
-                <AppButton v-if="editable" variant="primary" size="sm" @click="createConfiguration">+ Nueva configuración</AppButton>
+                <AppButton v-if="editable" variant="primary-outline" size="sm" @click="createConfiguration">+ Nueva configuración</AppButton>
               </div>
               <div v-if="!detailConfigurations.length" class="deasy-empty">
                 Este proceso no tiene configuraciones.
@@ -224,7 +224,7 @@
             <div v-show="detailTab === 'subprocesos'">
               <div class="mb-3 flex items-center justify-between gap-2">
                 <p class="deasy-overline">Sub-procesos</p>
-                <AppButton v-if="editable" variant="neutral" size="sm" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
+                <AppButton v-if="editable" variant="neutral-outline" size="sm" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
               </div>
               <div v-if="!detailChildren.length" class="deasy-empty">
                 Este proceso no tiene sub-procesos.
@@ -243,7 +243,7 @@
                     <span class="truncate text-muted">{{ ch.slug }}</span>
                     <div class="ml-auto flex items-center gap-1">
                       <AppButton
-                        variant="infoSoft"
+                        variant="info-soft"
                         size="sm"
                         icon-only
                         title="Abrir el sub-proceso"
@@ -254,7 +254,7 @@
                       </AppButton>
                       <AppButton
                         v-if="editable"
-                        variant="dangerSoft"
+                        variant="danger-soft"
                         size="sm"
                         icon-only
                         title="Desvincular del proceso padre"
@@ -309,8 +309,8 @@
           <AppCloseButton @click="closeTemplateVersions" />
         </div>
         <div v-if="editable" class="flex flex-wrap gap-2 border-b border-line px-4 py-2.5">
-          <AppButton variant="neutral" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
-          <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
+          <AppButton variant="neutral-outline" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
+          <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary-outline" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
         </div>
         <!-- Señal de salud: la config usa una versión NO publicada de este entregable. -->
         <div v-if="drawerHealthWarning" class="deasy-alert deasy-alert--warning border-b">
@@ -348,7 +348,7 @@
                 <span class="text-[11px] text-muted">{{ formatVersionDate(v.created_at) }}</span>
                 <AppButton
                   v-if="editable && v.lifecycle_state !== 'retired' && String(v.id) !== String(templateDetail.pinnedArtifactId)"
-                  variant="primary"
+                  variant="primary-outline"
                   size="sm"
                   :title="templateDetail.configStatus === 'active' ? 'Prepara un borrador de la configuración con esta versión' : 'La configuración (borrador) usará esta versión'"
                   @click.stop="useVersionInConfig(v)"

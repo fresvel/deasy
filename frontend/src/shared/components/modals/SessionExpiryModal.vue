@@ -24,7 +24,7 @@
     <template #footer>
       <AppButton
         type="button"
-        variant="neutral"
+        variant="neutral-outline"
         class-name="w-full sm:w-auto"
         @click="handleLogout"
         :disabled="loading"
@@ -34,7 +34,7 @@
       </AppButton>
       <AppButton
         type="button"
-        variant="primary"
+        variant="primary-outline"
         class-name="w-full sm:w-auto"
         @click="handleKeepAlive"
         :disabled="loading"

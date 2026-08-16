@@ -50,12 +50,12 @@
 
     <template #footer>
       <div class="flex w-full items-center justify-between gap-3">
-        <AppButton v-if="current > 0" variant="neutral" @click="current--">Atrás</AppButton>
+        <AppButton v-if="current > 0" variant="neutral-outline" @click="current--">Atrás</AppButton>
         <span v-else></span>
         <div class="flex items-center gap-3">
-          <AppButton variant="danger" @click="$emit('close')">Cancelar</AppButton>
-          <AppButton v-if="!isReview" variant="primary" @click="current++">Siguiente</AppButton>
-          <AppButton v-else variant="primary" @click="submit">Guardar perfil</AppButton>
+          <AppButton variant="danger-outline" @click="$emit('close')">Cancelar</AppButton>
+          <AppButton v-if="!isReview" variant="primary-outline" @click="current++">Siguiente</AppButton>
+          <AppButton v-else variant="primary-outline" @click="submit">Guardar perfil</AppButton>
         </div>
       </div>
     </template>

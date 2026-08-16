@@ -2,7 +2,7 @@
   <AppActionBar>
     <AppButton
         v-if="showAdd"
-        variant="primary"
+        variant="primary-outline"
         size="md"
         class-name="admin-page-header__create"
         :disabled="addDisabled"

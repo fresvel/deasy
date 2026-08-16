@@ -117,7 +117,7 @@
         </div>
         <AdminButton
           v-if="canCreateProcessConfiguration"
-          variant="primary"
+          variant="primary-outline"
           @click="$emit('add-process-configuration')"
         >
           <font-awesome-icon icon="plus" />
@@ -192,7 +192,7 @@
     <template #footer>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="primary"
+        variant="primary-outline"
         @click="$emit('open-definition-rules')"
       >
         <font-awesome-icon icon="sitemap" />
@@ -200,7 +200,7 @@
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="primary"
+        variant="primary-outline"
         @click="$emit('open-definition-triggers')"
       >
         <font-awesome-icon icon="sitemap" />
@@ -208,22 +208,22 @@
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="primary"
+        variant="primary-outline"
         @click="$emit('open-definition-artifacts')"
       >
         <font-awesome-icon icon="link" />
         Paquetes
       </AdminButton>
-      <AdminButton variant="danger" data-modal-dismiss>Cancelar</AdminButton>
+      <AdminButton variant="danger-outline" data-modal-dismiss>Cancelar</AdminButton>
       <AdminButton
-        :variant="table?.table === 'processes' && editorMode === 'create' ? 'neutral' : 'primary'"
+        :variant="table?.table === 'processes' && editorMode === 'create' ? 'neutral-outline' : 'primary-outline'"
         @click="$emit('submit')"
       >
         Guardar
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'processes' && editorMode === 'create'"
-        variant="primary"
+        variant="primary-outline"
         @click="$emit('submit-and-configure')"
       >
         <font-awesome-icon icon="plus" />

@@ -54,7 +54,7 @@
         <router-link to="/recover-password" class="deasy-auth-link">¿Olvidaste tu contraseña?</router-link>
       </div>
 
-      <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block">
+      <button type="submit" class="deasy-btn deasy-btn--primary-outline deasy-btn--lg deasy-btn--block">
         Ingresar
         <IconArrowRight class="h-5 w-5" />
       </button>
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <router-link to="/register" class="deasy-btn deasy-btn--neutral deasy-btn--lg deasy-btn--block">Crear usuario</router-link>
+    <router-link to="/register" class="deasy-btn deasy-btn--neutral-outline deasy-btn--lg deasy-btn--block">Crear usuario</router-link>
   </AuthLayout>
 </template>
 

@@ -111,7 +111,7 @@
             </div>
             <AdminButton
               v-if="canAddProcessConfiguration(section)"
-              variant="primary"
+              variant="primary-outline"
               size="sm"
               @click="$emit('add-process-configuration')"
             >
@@ -177,7 +177,7 @@
       </AppTag>
       <AdminButton
         v-if="canResyncWorkflows"
-        variant="primary"
+        variant="primary-outline"
         :disabled="syncBusy"
         @click="$emit('resync-workflows')"
       >
@@ -186,7 +186,7 @@
       </AdminButton>
       <AdminButton
         v-if="canDownloadArchive"
-        variant="primary"
+        variant="primary-outline"
         :disabled="downloading"
         @click="$emit('download-archive')"
       >
@@ -195,7 +195,7 @@
       </AdminButton>
       <AdminButton
         v-if="canEditSource"
-        variant="neutral"
+        variant="neutral-outline"
         :disabled="sourceBusy"
         @click="$emit('download-source')"
       >
@@ -204,7 +204,7 @@
       </AdminButton>
       <AdminButton
         v-if="canEditSource"
-        variant="primary"
+        variant="primary-outline"
         :disabled="sourceBusy"
         @click="triggerSourceUpload"
       >
@@ -212,7 +212,7 @@
         <span>{{ sourceBusy ? "Verificando…" : "Subir código editado" }}</span>
       </AdminButton>
       <input ref="sourceInputRef" type="file" accept=".zip" class="hidden" aria-label="Subir código editado (ZIP)" @change="onSourcePicked" />
-      <AdminButton variant="neutral" @click="$emit('close')">Cerrar</AdminButton>
+      <AdminButton variant="neutral-outline" @click="$emit('close')">Cerrar</AdminButton>
     </template>
   </AppModalShell>
 </template>

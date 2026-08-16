@@ -26,10 +26,10 @@
         <slot name="actions" />
 
         <div class="flex flex-wrap items-center justify-end gap-3">
-          <AppButton variant="neutral" data-modal-dismiss>
+          <AppButton variant="neutral-outline" data-modal-dismiss>
             Cerrar
           </AppButton>
-          <AppButton variant="primary" @click="emit('download')">
+          <AppButton variant="primary-outline" @click="emit('download')">
             Descargar archivo
           </AppButton>
         </div>

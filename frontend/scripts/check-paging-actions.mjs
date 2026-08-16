@@ -67,7 +67,7 @@ for (const ruta of ficheros(SRC)) {
     filas.push({
       f: ruta.slice(SRC.length + 1), linea: tpl.slice(0, m.index).split("\n").length,
       tag, etiqueta: etiqueta.slice(0, 30),
-      variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z]+)"/) || [, null])[1],
+      variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z][a-zA-Z-]*)"/) || [, null])[1],
       dinamica: /:variant=/.test(attrs), sobra,
       sistema: clases.some((c) => /^deasy-/.test(c)),
     });

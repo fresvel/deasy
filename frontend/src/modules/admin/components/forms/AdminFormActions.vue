@@ -10,7 +10,7 @@
     </AdminButton>
     <AdminButton
       v-if="showCancel"
-      variant="danger"
+      variant="danger-outline"
       :disabled="cancelDisabled"
       @click="$emit('cancel')"
     >

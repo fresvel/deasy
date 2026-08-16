@@ -18,10 +18,10 @@
     </div>
 
     <div class="deasy-dialog-footer flex flex-wrap items-center justify-end gap-3">
-      <AppButton type="button" variant="danger" data-modal-dismiss :disabled="isSubmitting" @click="$emit('cancel')">
+      <AppButton type="button" variant="danger-outline" data-modal-dismiss :disabled="isSubmitting" @click="$emit('cancel')">
         Cancelar
       </AppButton>
-      <AppButton type="submit" :form="formId" variant="primary" :disabled="isSubmitting">
+      <AppButton type="submit" :form="formId" variant="primary-outline" :disabled="isSubmitting">
         <span
           v-if="isSubmitting"
           class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"

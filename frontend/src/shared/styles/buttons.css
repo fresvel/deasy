@@ -72,15 +72,15 @@
 
        Cada variante declara SOLO su tono; la receta esta escrita una vez, y el `:hover` de las
        cinco vive abajo con el de todas las demas. */
-    .deasy-btn--primary { --tone: var(--color-primary); }
-    .deasy-btn--success { --tone: var(--color-success); }
-    .deasy-btn--warning { --tone: var(--color-warning); }
-    .deasy-btn--danger  { --tone: var(--color-danger); }
+    .deasy-btn--primary-outline { --tone: var(--color-primary); }
+    .deasy-btn--success-outline { --tone: var(--color-success); }
+    .deasy-btn--warning-outline { --tone: var(--color-warning); }
+    .deasy-btn--danger-outline  { --tone: var(--color-danger); }
 
-    .deasy-btn--primary,
-    .deasy-btn--success,
-    .deasy-btn--warning,
-    .deasy-btn--danger {
+    .deasy-btn--primary-outline,
+    .deasy-btn--success-outline,
+    .deasy-btn--warning-outline,
+    .deasy-btn--danger-outline {
         @apply bg-white;
         border-color: var(--tone);
         color: var(--tone);
@@ -94,7 +94,7 @@
        `.deasy-table-responsive .deasy-btn--secondary` (0,2,0), que tambien se ha ido; sin ninguna
        de las dos, el boton renderiza por fin su propia receta, que ademas es la de TailAdmin
        (`border-gray-300`, `text-gray-700`). */
-    .deasy-btn--neutral {
+    .deasy-btn--neutral-outline {
         @apply bg-white;
         border-color: var(--color-line-strong);
         color: var(--color-body);
@@ -285,16 +285,16 @@
            por encima de 4.5 (AA para texto) — son las MISMAS cifras que justificaban el texto
            blanco cuando estas variantes eran solidas en reposo, porque el contraste no depende
            de cual de los dos colores esta encima. */
-        .deasy-btn--primary:hover,
-        .deasy-btn--success:hover,
-        .deasy-btn--warning:hover,
-        .deasy-btn--danger:hover {
+        .deasy-btn--primary-outline:hover,
+        .deasy-btn--success-outline:hover,
+        .deasy-btn--warning-outline:hover,
+        .deasy-btn--danger-outline:hover {
             border-color: var(--tone);
             background: var(--tone);
             color: var(--color-white);
         }
 
-        .deasy-btn--neutral:hover {
+        .deasy-btn--neutral-outline:hover {
             border-color: var(--color-line-strong);
             background: var(--color-gray-100);
             color: var(--color-navy);

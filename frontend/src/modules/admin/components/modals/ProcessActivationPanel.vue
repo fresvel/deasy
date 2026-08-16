@@ -41,10 +41,10 @@
 
       <div v-if="view !== 'activate'" class="mt-3">
         <div v-if="showMenu" class="flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
-          <AdminButton variant="neutral" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Configuracion</AdminButton>
-          <AdminButton variant="neutral" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Alcance</AdminButton>
-          <AdminButton variant="neutral" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Periodos</AdminButton>
-          <AdminButton variant="neutral" :class="{ active: view === 'artifacts' }" @click="$emit('update:view', 'artifacts')">Paquetes</AdminButton>
+          <AdminButton variant="neutral-outline" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Configuracion</AdminButton>
+          <AdminButton variant="neutral-outline" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Alcance</AdminButton>
+          <AdminButton variant="neutral-outline" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Periodos</AdminButton>
+          <AdminButton variant="neutral-outline" :class="{ active: view === 'artifacts' }" @click="$emit('update:view', 'artifacts')">Paquetes</AdminButton>
         </div>
 
         <div v-if="view === 'definition'" class="mt-3">

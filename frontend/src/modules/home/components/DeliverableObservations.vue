@@ -110,7 +110,7 @@ const onAdd = () => {
         ></textarea>
         <div class="flex justify-end">
           <AppButton
-            variant="primary"
+            variant="primary-outline"
             size="sm"
             :disabled="!draft.trim() || submitting"
             @click="onAdd"

@@ -134,7 +134,7 @@
               <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
             </select>
           </div>
-          <AppButton variant="primary" size="sm" class-name="self-start" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</AppButton>
+          <AppButton variant="primary-outline" size="sm" class-name="self-start" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</AppButton>
         </div>
       </div>
     </section>
@@ -165,8 +165,8 @@
     </section>
   </div>
   <template #footer>
-    <AppButton variant="danger" data-modal-dismiss>Cancelar</AppButton>
-    <AppButton variant="primary" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="$emit('submit')">
+    <AppButton variant="danger-outline" data-modal-dismiss>Cancelar</AppButton>
+    <AppButton variant="primary-outline" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="$emit('submit')">
       {{ generalTaskSubmitting
         ? 'Creando…'
         : (generalTaskForm.itemMode === 'routed'

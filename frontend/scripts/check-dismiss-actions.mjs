@@ -68,7 +68,7 @@ for (const ruta of ficheros(SRC)) {
     const texto = cuerpo.replace(/<[^>]*>/g, "").trim();
     const etiqueta = (attrs.match(/(?<![:@\w-])(?:title|aria-label|label)="([^"]*)"/) || [])[1] || texto || "?";
 
-    const variante = (attrs.match(/(?<![:@\w-])variant="([a-zA-Z]+)"/) || [, null])[1];
+    const variante = (attrs.match(/(?<![:@\w-])variant="([a-zA-Z][a-zA-Z-]*)"/) || [, null])[1];
     const clases = ((attrs.match(/(?<![:@\w-])class(?:-name)?="([^"]*)"/) || [, ""])[1]).split(/\s+/).filter(Boolean);
     const sobra = clases.filter((c) =>
       !/^(absolute|relative|fixed|shrink-0|self-|ml-auto|mr-auto|m[trblxy]?-\d|w-full|flex|inline-flex|sm:|md:|lg:)/.test(c)
@@ -99,8 +99,8 @@ for (const ruta of ficheros(SRC)) {
    Y la distincion que vigila sigue siendo la misma, solo que ahora el nombre la dice: cancelar
    es una accion con consecuencia (se pierde lo escrito) y por eso va en el tono de peligro;
    cerrar no la tiene y va en el neutro. Antes habia que saberselo. */
-const CANCELAR = "danger";
-const CERRAR = "neutral";
+const CANCELAR = "danger-outline";
+const CERRAR = "neutral-outline";
 
 const motivos = (r) => {
   const et = r.etiqueta.toLowerCase();

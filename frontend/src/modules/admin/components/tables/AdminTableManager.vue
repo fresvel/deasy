@@ -425,8 +425,8 @@
         no podrás reactivarla. Si más adelante necesitas estos ajustes, crea una nueva versión a partir de ella.
       </div>
       <template #footer>
-        <AdminButton variant="danger" data-modal-dismiss>Cancelar</AdminButton>
-        <AdminButton variant="danger" @click="confirmRetireProcessDefinition">Retirar</AdminButton>
+        <AdminButton variant="danger-outline" data-modal-dismiss>Cancelar</AdminButton>
+        <AdminButton variant="danger-outline" @click="confirmRetireProcessDefinition">Retirar</AdminButton>
       </template>
     </AppModalShell>
 
@@ -660,7 +660,7 @@
           </span>
           <AdminButton
             v-if="!processWizardReadonly"
-            variant="success"
+            variant="success-outline"
             :disabled="processDefinitionActivationChecking || !allProcessDefinitionActivationRequirementsMet"
             @click="showWizardActivateConfirm = true"
           >Activar proceso</AdminButton>
@@ -685,8 +685,8 @@
           </div>
           <AdminConfigActivationDiff v-if="showWizardActivateConfirm" :definition-id="processWizardDefinition?.id" class="mt-3" />
           <template #footer>
-            <AdminButton variant="danger" @click="showWizardActivateConfirm = false">Cancelar</AdminButton>
-            <AdminButton variant="success" :disabled="processDefinitionActivationChecking" @click="confirmWizardActivation">Sí, activar</AdminButton>
+            <AdminButton variant="danger-outline" @click="showWizardActivateConfirm = false">Cancelar</AdminButton>
+            <AdminButton variant="success-outline" :disabled="processDefinitionActivationChecking" @click="confirmWizardActivation">Sí, activar</AdminButton>
           </template>
         </AppModalShell>
       </template>

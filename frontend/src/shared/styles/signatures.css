@@ -29,7 +29,7 @@
         background: var(--color-success);
     }
 
-    /* El oscurecido del hover va por `color-mix`, como el de `deasy-btn--primary`, y NO por un
+    /* El oscurecido del hover va por `color-mix`, como el de `deasy-btn--primary-outline`, y NO por un
        paso de la escala: `--color-success` YA es `success-700`, asi que un `success-600` seria
        mas CLARO al pasar el raton — al reves de lo que se espera. Y `--color-danger` ni siquiera
        tiene escala propia con ese nombre: es un alias de `error-700`. */

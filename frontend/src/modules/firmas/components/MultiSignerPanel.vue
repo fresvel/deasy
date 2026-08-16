@@ -35,7 +35,7 @@
                     class="deasy-control"
                   />
                   <AdminButton
-                    variant="neutral"
+                    variant="neutral-outline"
                     size="sm"
                     icon-only
                     title="Limpiar filtros"
@@ -128,7 +128,7 @@
           </div>
 
           <AdminButton
-            variant="primary"
+            variant="primary-outline"
             :disabled="!canRequestStart"
             @click="requestBatchStart"
             class-name="w-full justify-center"

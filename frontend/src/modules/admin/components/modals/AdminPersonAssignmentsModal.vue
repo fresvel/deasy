@@ -262,7 +262,7 @@
       </template>
     </div>
     <template #footer>
-      <AdminButton variant="neutral" data-modal-dismiss>Cerrar</AdminButton>
+      <AdminButton variant="neutral-outline" data-modal-dismiss>Cerrar</AdminButton>
     </template>
   </AppModalShell>
 </template>

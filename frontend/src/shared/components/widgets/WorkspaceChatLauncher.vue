@@ -40,7 +40,7 @@
         <div class="mt-4">
           <AppButton
             v-if="view === 'conversation'"
-            variant="neutral"
+            variant="neutral-outline"
             size="sm"
             @click="view = 'inbox'"
           >
@@ -167,7 +167,7 @@
                 @keydown.enter.exact.prevent="sendMessage"
               />
               <AppButton
-                variant="primary"
+                variant="primary-outline"
                 size="sm"
                 class-name="deasy-btn--field shrink-0"
                 :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"

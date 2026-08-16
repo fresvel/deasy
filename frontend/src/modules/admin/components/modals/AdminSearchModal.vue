@@ -11,14 +11,14 @@
   >
     <slot />
     <template #footer>
-      <AdminButton variant="danger" data-modal-dismiss>
+      <AdminButton variant="danger-outline" data-modal-dismiss>
         Cancelar
       </AdminButton>
-      <AdminButton variant="primary" :disabled="clearDisabled" @click="$emit('clear')">
+      <AdminButton variant="primary-outline" :disabled="clearDisabled" @click="$emit('clear')">
         Limpiar
       </AdminButton>
       <AdminButton
-        variant="primary"
+        variant="primary-outline"
         :title="searchTitle"
         :aria-label="searchAriaLabel"
         :disabled="searchDisabled"

@@ -67,7 +67,7 @@ for (const ruta of ficheros(SRC)) {
     filas.push({
       f: ruta.slice(SRC.length + 1), linea: tpl.slice(0, m.index).split("\n").length,
       tag, etiqueta: etiqueta.slice(0, 30), texto: Boolean(texto),
-      variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z]+)"/) || [, null])[1],
+      variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z][a-zA-Z-]*)"/) || [, null])[1],
       dinamica: /:variant=/.test(attrs), sobra,
       /* Los bloques del sistema que YA son destructivos por si mismos */
       bloqueRojo: clases.some((c) => /^(deasy-tile|deasy-picker|deasy-stepper__|deasy-nav-avatar|graph-node__badge|deasy-inline-action--danger|deasy-chip-remove|deasy-pdf-action--danger|graph-edge-btn--danger|graph-icon-btn--danger)$/.test(c)),

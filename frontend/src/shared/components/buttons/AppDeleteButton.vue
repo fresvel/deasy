@@ -1,6 +1,6 @@
 <template>
   <AppButton
-    variant="dangerSoft"
+    variant="danger-soft"
     size="sm"
     icon-only
     :title="label"

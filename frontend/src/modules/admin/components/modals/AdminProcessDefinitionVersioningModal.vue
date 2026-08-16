@@ -10,8 +10,8 @@
     <p class="mb-2">La configuracion activa no puede modificarse directamente en sus campos funcionales.</p>
     <p class="mb-0 text-sm text-muted">Puedes cancelar esta edicion o convertir el formulario actual en una nueva version en borrador.</p>
     <template #footer>
-      <AdminButton variant="danger" @click="$emit('cancel-edit')">Cancelar edicion</AdminButton>
-      <AdminButton variant="primary" @click="$emit('promote')">Crear nueva version</AdminButton>
+      <AdminButton variant="danger-outline" @click="$emit('cancel-edit')">Cancelar edicion</AdminButton>
+      <AdminButton variant="primary-outline" @click="$emit('promote')">Crear nueva version</AdminButton>
     </template>
   </AppModalShell>
 </template>

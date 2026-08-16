@@ -2,7 +2,7 @@
   <AppActionBar>
     <div class="flex flex-wrap items-center gap-2">
         <AdminButton
-          variant="neutral"
+          variant="neutral-outline"
           size="sm"
           :disabled="!table"
           title="Regresar"
@@ -12,7 +12,7 @@
         </AdminButton>
         <AdminButton
           v-if="isTemplateSeedsTable && canUpdate"
-          variant="neutral"
+          variant="neutral-outline"
           size="sm"
           :disabled="!table || loading"
           @click="$emit('sync-template-seeds')"
@@ -22,7 +22,7 @@
         </AdminButton>
         <AdminButton
           v-if="canCreate"
-          variant="primary"
+          variant="primary-outline"
           size="md"
           class-name="admin-page-header__create"
           :disabled="!table"

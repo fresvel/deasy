@@ -61,7 +61,7 @@ for (const ruta of ficheros(SRC)) {
       const texto = cuerpo.replace(/<[^>]*>/g, "").trim();   /* {{ }} cuenta: es texto visible */
       const etiqueta = (attrs.match(/(?<![:@\w-])(?:title|aria-label|label|message)="([^"]*)"/) || [])[1] || texto || "?";
 
-      const variante = (attrs.match(/(?<![:@\w-])variant="([a-zA-Z]+)"/) || [, null])[1];
+      const variante = (attrs.match(/(?<![:@\w-])variant="([a-zA-Z][a-zA-Z-]*)"/) || [, null])[1];
       const varDinamica = /:variant=/.test(attrs);
       const clases = ((attrs.match(/(?<![:@\w-])class(?:-name)?="([^"]*)"/) || [, ""])[1]).split(/\s+/).filter(Boolean);
       /* posicion y separacion las decide el contenedor: no cuentan como estilo por fuera */
@@ -94,14 +94,14 @@ for (const ruta of ficheros(SRC)) {
    entero del renombrado —los demas leen los mapas del componente— y grito con 14 falsos
    positivos. Vale como recordatorio: una convencion de nombres codificada en un script es
    una copia de la verdad, y las copias caducan. */
-const SUAVE = /Soft$/;
+const SUAVE = /-soft$/;
 
 const motivos = (r) => [
   r.tag === "button" && !r.sistema ? "<button> CRUDO" : null,
   r.tag === "AppButton" || r.tag === "AdminButton"
     ? (!r.variante && !r.varDinamica ? "sin variante" : null) : null,
   (r.tag === "AppButton" || r.tag === "AdminButton") && r.variante && !r.texto && !SUAVE.test(r.variante)
-    ? `icono con variante ${r.variante}, no es {tono}Soft` : null,
+    ? `icono con variante ${r.variante}, no es {tono}-soft` : null,
   r.sobra.length ? `estilo por fuera: ${r.sobra.slice(0, 4).join(" ")}` : null,
 ].filter(Boolean);
 
@@ -115,7 +115,7 @@ if (mal.length > TECHO) {
     console.error(`  ${f}  (${rs.length})`);
     for (const r of rs) console.error(`     :${String(r.linea).padEnd(5)} «${r.etiqueta}»  →  ${motivos(r).join(" · ")}`);
   }
-  console.error("\nUna accion de fila sale de AppButton con variante {tono}Soft, o de un bloque propio");
+  console.error("\nUna accion de fila sale de AppButton con variante {tono}-soft, o de un bloque propio");
   console.error("del sistema (deasy-inline-action, deasy-chip-remove). Nunca con utilidades sueltas.\n");
   process.exit(1);
 }

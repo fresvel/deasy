@@ -70,8 +70,8 @@
         </slot>
       </p>
       <template #footer>
-        <AppButton variant="danger" @click="showDeleteModal = false">Cancelar</AppButton>
-        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+        <AppButton variant="danger-outline" @click="showDeleteModal = false">Cancelar</AppButton>
+        <AppButton variant="danger-outline" @click="confirmDelete">Eliminar</AppButton>
       </template>
     </AppModalShell>
 

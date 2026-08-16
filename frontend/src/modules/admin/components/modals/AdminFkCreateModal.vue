@@ -61,14 +61,14 @@
     </form>
     <template #footer>
       <AdminButton
-        variant="danger"
+        variant="danger-outline"
         :disabled="fkCreateLoading"
         @click="$emit('cancel')"
       >
         Cancelar
       </AdminButton>
       <AdminButton
-        variant="primary"
+        variant="primary-outline"
         :disabled="!canCreateFkReference || fkCreateLoading"
         @click="$emit('submit')"
       >

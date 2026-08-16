@@ -43,7 +43,7 @@
         </AdminFieldGroup>
         <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
-            variant="neutral"
+            variant="neutral-outline"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!fkPositionFilters.unit_type_id"
@@ -83,7 +83,7 @@
         </AdminFieldGroup>
         <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
-            variant="neutral"
+            variant="neutral-outline"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkProcessDefinitionFilters"
@@ -126,7 +126,7 @@
         </AdminFieldGroup>
         <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
-            variant="neutral"
+            variant="neutral-outline"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkTemplateArtifactFilters"
@@ -199,7 +199,7 @@
       </AdminFieldGroup>
       <div class="md:col-span-12 md:flex md:justify-end">
         <AdminButton
-          variant="neutral"
+          variant="neutral-outline"
           title="Limpiar filtro"
           aria-label="Limpiar filtro"
           :disabled="!fkPositionFilters.unit_type_id && !fkPositionFilters.unit_id && !fkPositionFilters.cargo_id"
@@ -251,7 +251,7 @@
       <template #actions="{ row }">
         <div class="inline-flex items-center gap-1">
           <AdminButton
-            variant="infoSoft"
+            variant="info-soft"
             size="sm"
             icon-only
             title="Visualizar"
@@ -261,7 +261,7 @@
             <font-awesome-icon icon="eye" />
           </AdminButton>
           <AdminButton
-            variant="successSoft"
+            variant="success-soft"
             size="sm"
             icon-only
             title="Seleccionar"
@@ -278,7 +278,7 @@
       <template v-if="!createTabEnabled || activeTab === 'select'">
         <AdminButton
           v-if="canOpenFkFilterModal"
-          variant="neutral"
+          variant="neutral-outline"
           title="Buscar"
           aria-label="Buscar"
           @click="$emit('open-fk-filter')" icon-only>
@@ -286,7 +286,7 @@
         </AdminButton>
         <AdminButton
           v-if="!createTabEnabled"
-          variant="primary"
+          variant="primary-outline"
           :disabled="!canCreateFkReference"
           :title="fkCreateActionLabel"
           :aria-label="fkCreateActionLabel"
@@ -296,7 +296,7 @@
           {{ fkCreateActionLabel }}
         </AdminButton>
       </template>
-      <AdminButton variant="neutral" data-modal-dismiss>
+      <AdminButton variant="neutral-outline" data-modal-dismiss>
         Cerrar
       </AdminButton>
     </template>

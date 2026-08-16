@@ -53,7 +53,7 @@
             <div class="flex justify-end">
               <AppButton
                 v-if="!selectedTerm.launched"
-                variant="success"
+                variant="success-outline"
                 :disabled="busy"
                 @click="launch(false)"
               >
@@ -61,7 +61,7 @@
               </AppButton>
               <AppButton
                 v-else
-                variant="neutral"
+                variant="neutral-outline"
                 :disabled="busy"
                 @click="launch(true)"
               >
@@ -92,7 +92,7 @@
     </div>
 
     <template #footer>
-      <AppButton variant="neutral" :disabled="busy" @click="close">Cerrar</AppButton>
+      <AppButton variant="neutral-outline" :disabled="busy" @click="close">Cerrar</AppButton>
     </template>
   </AppModalShell>
 </template>

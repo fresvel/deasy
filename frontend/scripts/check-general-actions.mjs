@@ -98,7 +98,7 @@ for (const ruta of ficheros(SRC)) {
       filas.push({
         f: corto, linea: tpl.slice(0, m.index).split("\n").length, tag,
         etiqueta: ((attrs.match(/(?<![:@\w-])(?:title|aria-label)="([^"]*)"/) || [])[1] || texto || accion || "?").replace(/\s+/g, " ").slice(0, 34),
-        variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z]+)"/) || [, null])[1],
+        variante: (attrs.match(/(?<![:@\w-])variant="([a-zA-Z][a-zA-Z-]*)"/) || [, null])[1],
         dinamica: /:variant=/.test(attrs),
         sobra, bloque: clases.some((c) => BLOQUE.test(c)),
       });

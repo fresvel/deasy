@@ -12,7 +12,7 @@
         </p>
       </div>
       <AppButton
-        variant="neutral"
+        variant="neutral-outline"
         size="sm"
         :disabled="loading"
         @click="load"

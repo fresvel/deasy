@@ -40,7 +40,7 @@
       </div>
 
       <footer class="border-t border-line bg-surface/70 p-3">
-        <button class="deasy-btn deasy-btn--neutral deasy-btn--sm w-full">
+        <button class="deasy-btn deasy-btn--neutral-outline deasy-btn--sm w-full">
           Marcar todo como leído
         </button>
       </footer>

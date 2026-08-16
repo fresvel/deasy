@@ -7,7 +7,7 @@
       </div>
       <AdminButton
         v-if="refreshable"
-        variant="neutral"
+        variant="neutral-outline"
         size="sm"
         :disabled="isLoading"
         @click="loadCertificates"
@@ -57,14 +57,14 @@
               <div class="flex items-center gap-2 shrink-0" @click.stop>
                 <AdminButton
                   v-if="!certificate.is_default"
-                  variant="primary"
+                  variant="primary-outline"
                   size="sm"
                   @click="markDefault(certificate)"
                 >
                   Usar por defecto
                 </AdminButton>
                 <AdminButton
-                  variant="neutral"
+                  variant="neutral-outline"
                   size="sm"
                   @click="downloadCertificate(certificate)"
                 >
@@ -110,7 +110,7 @@
         <SToggle v-model="uploadAsDefault" label="Marcar como predeterminado" label-position="end" />
 
         <AdminButton
-          variant="primary"
+          variant="primary-outline"
           :disabled="isUploading || !selectedFile"
           @click="uploadCertificate"
         >

@@ -51,7 +51,7 @@
 
     <button
       type="button"
-      class="deasy-btn deasy-btn--primary deasy-btn--lg deasy-btn--block"
+      class="deasy-btn deasy-btn--primary-outline deasy-btn--lg deasy-btn--block"
       :disabled="loading || !isCodeComplete"
       @click="submit"
     >

@@ -59,13 +59,13 @@
       </AdminFieldGroup>
     </form>
     <template #footer>
-      <AdminButton variant="danger" @click="$emit('cancel')">
+      <AdminButton variant="danger-outline" @click="$emit('cancel')">
         Cancelar
       </AdminButton>
-      <AdminButton variant="primary" @click="$emit('clear')">
+      <AdminButton variant="primary-outline" @click="$emit('clear')">
         Limpiar
       </AdminButton>
-      <AdminButton variant="primary" title="Buscar" aria-label="Buscar" @click="$emit('apply')" icon-only>
+      <AdminButton variant="primary-outline" title="Buscar" aria-label="Buscar" @click="$emit('apply')" icon-only>
         <font-awesome-icon icon="search" />
       </AdminButton>
     </template>
