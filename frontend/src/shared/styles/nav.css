@@ -251,9 +251,16 @@
     }
 
     /* Un paso COMPLETADO. Es dato, no color: lo decide `isStepComplete`, que compara el estado
-       real de la configuracion. El color lo pone el CSS a partir de el, que es el corte de F3.3. */
+       real de la configuracion. El color lo pone el CSS a partir de el, que es el corte de F3.3.
+
+       ⚠️ VA DESPUES DE `--active` A PROPOSITO, y no es orden alfabetico: un paso puede ser los dos
+       a la vez —estas en el paso 1 y el paso 1 ya esta hecho— y entonces gana el ultimo declarado,
+       porque las dos reglas tienen la misma especificidad. Que gane `--complete` es lo correcto:
+       es el mismo criterio que usa `tonoPaso` para el numero, asi que **la letra y el numero
+       siempre dicen lo mismo**. Si se invirtiera el orden, un paso saldria con el numero verde y
+       el rotulo azul. */
     .deasy-stepper__step--complete {
-        @apply text-body;
+        @apply text-success;
     }
 
     /* LA PISTA («Completo» / «Pendiente» / «Bloqueado»). Se pinta POR DESCENDENCIA del paso, no
@@ -263,12 +270,15 @@
         @apply text-[0.65rem] font-semibold uppercase tracking-wide text-muted;
     }
 
-    .deasy-stepper__step--complete .deasy-stepper__hint {
-        @apply text-success;
-    }
-
+    /* El mismo orden que arriba, y por el mismo motivo: `--complete` va DESPUES de `--active` para
+       que en un paso que es las dos cosas gane el verde. Estaba al reves y se veia: el numero y el
+       rotulo salian verdes y la pista azul, en el mismo boton. */
     .deasy-stepper__step--active .deasy-stepper__hint {
         @apply text-primary;
+    }
+
+    .deasy-stepper__step--complete .deasy-stepper__hint {
+        @apply text-success;
     }
 
     /* EL AVATAR PULSABLE de la barra lateral colapsada. Va sobre fondo oscuro, como el resto de
