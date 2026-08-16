@@ -532,4 +532,13 @@
     .deasy-control--select {
         @apply appearance-none pr-11;
     }
+
+    /* EL INPUT REAL DEL INTERRUPTOR — invisible, pero es quien lleva el estado y quien recibe el
+       teclado. Era `sr-only` a secas; tiene nombre propio desde que las casillas se estilaron
+       (2026-08-15, F4), porque el bloque de `input[type="checkbox"]` tiene que poder excluirlo y
+       la norma de stylelint solo admite clases de la familia `deasy-` en un selector. Nombrarlo
+       sale mas barato que abrir una excepcion en la norma. */
+    .deasy-toggle__input {
+        @apply sr-only;
+    }
 }

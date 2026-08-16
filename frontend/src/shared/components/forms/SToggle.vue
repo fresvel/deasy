@@ -16,7 +16,7 @@
         <input
           :id="toggleId"
           type="checkbox"
-          class="peer sr-only"
+          class="peer deasy-toggle__input"
           :checked="modelValue"
           :disabled="disabled"
           @change="onChange"
