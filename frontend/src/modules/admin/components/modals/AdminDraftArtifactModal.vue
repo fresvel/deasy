@@ -915,12 +915,12 @@ const toggleSignatureStep = (index) => { expandedSignatureStep.value = expandedS
 
 // Paleta de tonos para diferenciar pasos (se cicla por índice).
 const STEP_TONES = [
-  { card: "border-brand-200", badge: "bg-brand-100 text-primary" },
-  { card: "border-emerald-200", badge: "bg-emerald-100 text-success" },
-  { card: "border-amber-200", badge: "bg-amber-100 text-warning" },
-  { card: "border-blue-light-200", badge: "bg-blue-light-100 text-info" },
-  { card: "border-rose-200", badge: "bg-rose-100 text-danger" },
-  { card: "border-brand-200", badge: "bg-brand-100 text-primary" }
+  { card: "border-brand-200", badge: "deasy-icon-box--primary" },
+  { card: "border-emerald-200", badge: "deasy-icon-box--success" },
+  { card: "border-amber-200", badge: "deasy-icon-box--warning" },
+  { card: "border-blue-light-200", badge: "deasy-icon-box--info" },
+  { card: "border-rose-200", badge: "deasy-icon-box--danger" },
+  { card: "border-brand-200", badge: "deasy-icon-box--primary" }
 ];
 const stepToneClass = (index) => STEP_TONES[index % STEP_TONES.length].card;
 const stepBadgeClass = (index) => STEP_TONES[index % STEP_TONES.length].badge;

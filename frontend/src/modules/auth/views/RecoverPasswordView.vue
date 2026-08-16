@@ -9,7 +9,7 @@
     </router-link>
 
     <div class="mb-8">
-      <div class="w-14 h-14 bg-blue-light-50 rounded-2xl flex flex-col items-center justify-center text-info mb-6">
+      <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--info mb-6">
         <IconKey class="h-7 w-7" />
       </div>
       <h1 class="text-2xl font-bold text-strong tracking-tight">Recuperar contraseña</h1>

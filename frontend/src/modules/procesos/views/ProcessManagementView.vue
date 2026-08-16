@@ -133,7 +133,7 @@
                 badge="Acción especial"
                 badge-variant="info"
                 class-name="min-h-[170px] bg-gradient-to-br from-blue-light-50 to-white border-blue-light-200 hover:border-blue-light-400"
-                icon-wrapper-class="w-12 h-12 rounded-xl bg-blue-light-100 text-info flex items-center justify-center shrink-0 border border-blue-light-200 group-hover:border-blue-light-300 group-hover:bg-blue-light-50 group-hover:text-info transition-colors"
+                icon-wrapper-class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info group-hover:border-blue-light-300 group-hover:bg-blue-light-50 group-hover:text-info transition-colors"
                 title-class="text-info group-hover:text-info"
                 @click="openTemplateArtifactDraftFromHome"
               />

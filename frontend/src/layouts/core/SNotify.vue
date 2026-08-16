@@ -32,7 +32,7 @@
 
       <div class="custom-scrollbar flex max-h-[60vh] flex-1 flex-col overflow-y-auto p-3">
         <div class="flex flex-col items-center justify-center gap-3 py-10 text-muted">
-          <div class="flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-surface">
+          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--neutral">
             <IconInbox class="h-6 w-6 stroke-[1.5]" />
           </div>
           <span class="text-sm font-medium">Bandeja vacía</span>

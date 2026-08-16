@@ -963,3 +963,50 @@ saber lo segundo resultó ser buscar la señal estructural de cada grupo, que es
 
 Los once tienen gate de techo 0 encadenado a `pnpm run lint`, y los once se probaron en rojo antes
 de aceptarse.
+
+---
+
+## §15 · F3.1 · la caja de icono (2026-08-15)
+
+**Su señal es puramente FORMAL, y es la única de la familia que lo es:** `flex` + `items-center` +
+`justify-center` + alto y ancho **iguales** + un radio. No pregunta qué hace el elemento sino qué
+forma tiene, y es correcto — una caja de icono no hace nada: la acción, si la hay, la tiene el botón
+que la contiene.
+
+**Medido hoy, no heredado del plan: 42 usos en 32 recetas** (76 % de unicidad), con **once
+tamaños**, **tres radios** y **once fondos**. El plan decía 96/70; la diferencia es criterio, no
+cambio — aquél contaba también cajas sin `justify-center` o con un solo eje.
+
+Y en el CSS **no existía ninguna clase**. Lo que había eran **seis** fragmentos privados de otros
+componentes —el plan citaba cinco y faltaba `deasy-deliverable-action__chip`— o sea seis componentes
+reinventando la misma caja, cada uno dentro de su fichero.
+
+### El síntoma que el plan describía, confirmado y cerrado
+
+**Cuatro sitios usaban `deasy-alert` como caja de icono** y le tapaban el borde después. Un
+componente de *mensaje de estado* usado por su color, porque no existía una caja tintada. Eran tres
+según el plan; son cuatro.
+
+### Los dos radios arbitrarios, y por qué existían
+
+`rounded-[0.95rem]` (15.2 px) y `rounded-[0.85rem]` (13.6 px) existían **para caer entre
+`rounded-xl` (12) y `rounded-2xl` (16)**. Nueve usos. No eran una decisión de diseño: eran el
+síntoma de que nadie podía elegir un radio porque no había escala que elegir. Los dos mueren.
+
+### La escala mueve píxeles, y eso se dice
+
+Once tamaños colapsan en cuatro (`sm` 28 · `md` 36 · `lg` 44 · `xl` 56). **16 de las 42 cajas
+cambian ±4 px y dos cambian 8.** Es el precio de tener una escala, y el mismo criterio con el que
+3.3 unificó la geometría del botón. Medido en el navegador después: de once tamaños a **dos** en la
+pantalla de inicio (44 y 36), y de tres radios a **uno**.
+
+### El tercer, cuarto y quinto helper de colores en JavaScript
+
+Al migrar apareció que varios tonos no venían del atributo sino de cadenas en JS
+(`iconWrap: "bg-emerald-100 text-success"` en `AdminOperationSummary`, `badge:` en
+`AdminDraftArtifactModal`, `iconChip:` en `useDeliverableView`). Van **cinco** contando los de §11 y
+§14, en cuatro grupos distintos, y todos comparten lo mismo: **son invisibles para cualquier gate de
+CSS**, porque no están ni en un `.css` ni en un `class=` estático.
+
+Eso es la **fase 8** del plan («los colores que viven en JS»), y esta fase se ha ido llevando por
+delante los que estorbaban. Cuando se planifique aquella, contar con que una parte ya no está.

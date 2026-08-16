@@ -24,7 +24,7 @@
         @click="$emit('go-to-step', step.key)"
       >
         <span
-          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+          class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
           :class="stepBadgeClass(step, index)"
         >
           <font-awesome-icon v-if="isStepComplete(step)" icon="check" />

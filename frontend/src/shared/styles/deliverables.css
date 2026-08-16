@@ -21,8 +21,12 @@
         box-shadow: 0 6px 16px rgba(var(--elev-ink-rgb), 0.04);
     }
 
+    /* [F3.1, 2026-08-15] Era la SEXTA caja de icono privada, con su propio radio arbitrario
+       (`0.85rem`, un valor que existia para caer entre `rounded-xl` y `rounded-2xl`). Ahora se
+       COMPONE del bloque: la plantilla escribe `deasy-icon-box deasy-icon-box--md` y aqui solo
+       queda lo que es de este componente — que su borde y su color los hereda del estado. */
     .deasy-deliverable-action__chip {
-        @apply flex h-9 w-9 items-center justify-center rounded-[0.85rem] border;
+        @apply border;
     }
 
     .deasy-deliverable-action__label {

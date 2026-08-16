@@ -356,7 +356,7 @@
     footer-class="justify-center"
     @close="goToLogin"
   >
-    <div class="deasy-alert deasy-alert--success mx-auto mb-6 flex h-16 w-16 items-center justify-center">
+    <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--success mx-auto mb-6">
       <IconCheck class="h-9 w-9 text-success" />
     </div>
     <p class="mb-0 text-sm text-muted">

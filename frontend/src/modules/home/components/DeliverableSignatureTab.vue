@@ -52,7 +52,7 @@
         <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
+            <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
               {{ step.step_order || '—' }}
             </span>
             <div class="flex flex-col gap-1">

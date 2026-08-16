@@ -14,7 +14,7 @@
   >
     <template #header>
       <div class="flex min-w-0 items-center gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-primary">
+        <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--primary">
           <IconFileDescription class="h-5 w-5" />
         </span>
         <div class="min-w-0">
@@ -103,7 +103,7 @@
         <section v-for="section in relatedSections" :key="section.key" class="border-t border-line pt-5">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-icon">
+              <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                 <IconSettings class="h-4.5 w-4.5" />
               </span>
               <div class="min-w-0">

@@ -244,7 +244,7 @@
               v-if="!currentDocument"
               class="relative z-5 mx-auto flex h-full w-full max-w-sm flex-col items-center justify-center text-center opacity-70"
             >
-              <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-300/50 shadow-inner ring-8 ring-white/40">
+              <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-6 shadow-inner ring-8 ring-white/40">
                 <IconFiles class="ml-1 h-10 w-10 text-muted" />
               </div>
               <h3 class="mb-2 text-xl font-bold text-body">No hay ningún PDF para visualizar</h3>
@@ -320,7 +320,7 @@
     >
       <template #header>
         <div id="multi-signer-progress-modal-title" class="flex min-w-0 flex-1 items-center gap-4">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-light-100 text-info">
+          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info">
             <IconSignature class="h-5 w-5" />
           </div>
           <div class="min-w-0">

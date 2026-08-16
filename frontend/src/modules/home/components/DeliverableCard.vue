@@ -69,7 +69,7 @@ const onCardClick = (event) => {
         >
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
-              <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-2xl" :class="h.getDeliverableCardTone(deliverable.item).iconChip">
+              <span class="deasy-icon-box deasy-icon-box--sm" :class="h.getDeliverableCardTone(deliverable.item).iconChip">
                 <component :is="h.getDeliverableStateIcon(deliverable.item)" class="h-3.5 w-3.5" />
               </span>
               <span class="truncate text-[0.7rem] font-semibold uppercase tracking-[0.14em]" :class="h.getDeliverableCardTone(deliverable.item).responsibilityLabel">
@@ -125,16 +125,16 @@ const onCardClick = (event) => {
 
         <div class="mt-auto grid grid-cols-[minmax(0,1fr)_auto] gap-2.5 border-t border-line pt-3">
           <button v-if="h.shouldShowStartDeliverable(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--start" :disabled="processingFillItemId === deliverable.item.id || !h.canStartDeliverableAction(deliverable.item)" @click="emit('start', deliverable.item)">
-            <div class="deasy-deliverable-action__chip"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
+            <div class="deasy-icon-box deasy-icon-box--md deasy-deliverable-action__chip"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
             <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
           </button>
           <PdfDropField v-else-if="h.shouldShowUploadDeliverable(deliverable.item)" class="h-full" :input-id="`deliverable-upload-${deliverable.item.id}`" variant="compact" :icon="IconUpload" :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable" :title="''" :action-text="h.getUploadActionLabel(deliverable.item)" help-text="" :accept="UPLOAD_ACCEPT" @files-selected="emit('upload', { item: deliverable.item, files: $event })" />
           <button v-else-if="h.shouldShowSign(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--sign" :disabled="!deliverable.item.actions?.implemented?.sign" @click="emit('sign', deliverable.item)">
-            <div class="deasy-deliverable-action__chip"><IconSignature class="h-4.5 w-4.5" /></div>
+            <div class="deasy-icon-box deasy-icon-box--md deasy-deliverable-action__chip"><IconSignature class="h-4.5 w-4.5" /></div>
             <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Firmar</span></div>
           </button>
           <button v-else type="button" class="group deasy-deliverable-action deasy-deliverable-action--open" @click="emit('open', deliverable)">
-            <div class="deasy-deliverable-action__chip"><IconChecklist class="h-4.5 w-4.5" /></div>
+            <div class="deasy-icon-box deasy-icon-box--md deasy-deliverable-action__chip"><IconChecklist class="h-4.5 w-4.5" /></div>
             <div class="deasy-deliverable-action__label"><span class="deasy-deliverable-action__text">Abrir</span></div>
           </button>
 

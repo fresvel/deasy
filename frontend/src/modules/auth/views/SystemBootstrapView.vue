@@ -14,7 +14,7 @@
       <ol class="flex items-center justify-center gap-1.5 text-xs font-semibold">
         <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
           <span
-            class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
+            class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round transition-colors"
             :class="step >= i + 1 ? 'bg-blue-light-600 text-white' : 'bg-surface text-muted'"
           >{{ i + 1 }}</span>
           <span class="hidden sm:inline" :class="step === i + 1 ? 'text-strong' : 'text-muted'">{{ s.label }}</span>

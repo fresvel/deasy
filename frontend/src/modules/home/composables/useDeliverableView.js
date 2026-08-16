@@ -454,7 +454,7 @@ export function useDeliverableView({
         accent: 'bg-brand-500',
         responsibility: 'border-brand-100 bg-brand-50/40',
         responsibilityLabel: 'text-primary',
-        iconChip: 'bg-brand-100 text-primary'
+        iconChip: 'deasy-icon-box--primary'
       };
     }
 
@@ -465,7 +465,7 @@ export function useDeliverableView({
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
         responsibilityLabel: 'text-success',
-        iconChip: 'bg-emerald-100 text-success'
+        iconChip: 'deasy-icon-box--success'
       };
     }
 
@@ -476,7 +476,7 @@ export function useDeliverableView({
         accent: 'bg-blue-light-400',
         responsibility: 'border-blue-light-100 bg-blue-light-50/40',
         responsibilityLabel: 'text-info',
-        iconChip: 'bg-blue-light-100 text-info'
+        iconChip: 'deasy-icon-box--info'
       };
     }
 
@@ -489,7 +489,7 @@ export function useDeliverableView({
         accent: 'bg-emerald-400',
         responsibility: 'border-emerald-100 bg-emerald-50/40',
         responsibilityLabel: 'text-success',
-        iconChip: 'bg-emerald-100 text-success'
+        iconChip: 'deasy-icon-box--success'
       };
     }
 

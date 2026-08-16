@@ -30,7 +30,7 @@
             :class="req.done ? 'bg-emerald-50 text-success ring-emerald-200' : 'bg-rose-50 text-danger ring-rose-200'"
           >
             <span
-              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"
+              class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
               :class="req.done ? 'bg-emerald-500' : 'bg-rose-400'"
             >
               <font-awesome-icon :icon="req.done ? 'check' : 'times'" class="h-3.5 w-3.5" />

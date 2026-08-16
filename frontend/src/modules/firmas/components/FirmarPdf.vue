@@ -356,7 +356,7 @@
       size="lg"
     >
       <div v-if="!visibleFields.length" class="text-center py-10 px-4">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-surface text-muted rounded-full mb-4">
+        <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-4">
           <IconSignature class="w-8 h-8" />
         </div>
         <h3 class="text-xl font-semibold text-strong mb-2">No hay firmas</h3>
@@ -375,7 +375,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
             
             <div class="flex items-start gap-4">
-              <div class="shrink-0 w-10 h-10 bg-blue-light-50 text-info rounded-2xl flex items-center justify-center font-bold">
+              <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info">
                 <IconSignature class="w-5 h-5" />
               </div>
               <div>
@@ -934,7 +934,7 @@
         </template>
         <template #empty>
           <div class="flex flex-col items-center justify-center py-12 px-4">
-            <div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-muted mb-4">
+            <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-4">
               <IconShieldCheck class="w-8 h-8" />
             </div>
             <h4 class="text-lg font-bold text-body mb-1">Sin firmas detectadas</h4>

@@ -23,7 +23,7 @@
       <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">
         <div class="flex items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
-            <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-light-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
+            <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--solid shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
               <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
             </span>
             <div class="min-w-0">
@@ -181,7 +181,7 @@
 
         <template v-else-if="activeMode === 'processes'">
           <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
+            <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
               <IconInbox class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-body">Sin contexto de proceso</p>
@@ -259,7 +259,7 @@
           </div>
 
           <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
+            <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
               <IconBuildingCommunity class="h-6 w-6" />
             </div>
             <p class="m-0 text-sm font-bold text-body">Sin unidades</p>
@@ -270,7 +270,7 @@
         </div>
 
         <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-muted">
+          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
             <IconMessages class="h-6 w-6" />
           </div>
           <p class="m-0 text-sm font-bold text-body">Modo en preparación</p>

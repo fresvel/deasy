@@ -205,7 +205,7 @@
                     </div>
                     <div v-for="group in deliverableGroups" :key="group.id" class="flex flex-col gap-3">
                       <div v-if="showDeliverableGroupHeaders" class="flex items-center gap-2 px-1">
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-2xl bg-brand-100 text-primary"><IconChecklist class="h-3.5 w-3.5" /></span>
+                        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconChecklist class="h-3.5 w-3.5" /></span>
                         <h3 class="m-0 text-sm font-bold text-body">{{ group.name }}</h3>
                         <span class="text-xs font-semibold text-muted">{{ group.items.length }}</span>
                       </div>
@@ -371,9 +371,9 @@
                           v-if="pos.positionType"
                           class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
                           :class="{
-                            'bg-emerald-100 text-success': pos.positionType === 'real',
-                            'bg-blue-light-100 text-info': pos.positionType === 'simbolico',
-                            'bg-amber-100 text-warning': pos.positionType === 'promocion',
+                            'deasy-icon-box--success': pos.positionType === 'real',
+                            'deasy-icon-box--info': pos.positionType === 'simbolico',
+                            'deasy-icon-box--warning': pos.positionType === 'promocion',
                           }"
                         >
                           {{ { real: 'Real', simbolico: 'Simbólico', promocion: 'Promoción' }[pos.positionType] ?? pos.positionType }}
@@ -596,12 +596,12 @@
                     @click="runHomeAction(action)"
                   >
                     <span
-                      class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      class="deasy-icon-box deasy-icon-box--lg"
                       :class="{
-                        'bg-amber-100 text-warning': action.tone === 'warning',
-                        'bg-blue-light-100 text-info': action.tone === 'info',
-                        'bg-emerald-100 text-success': action.tone === 'success',
-                        'bg-surface text-icon': !['warning','info','success'].includes(action.tone),
+                        'deasy-icon-box--warning': action.tone === 'warning',
+                        'deasy-icon-box--info': action.tone === 'info',
+                        'deasy-icon-box--success': action.tone === 'success',
+                        'deasy-icon-box--neutral': !['warning','info','success'].includes(action.tone),
                       }"
                     >
                       <component :is="action.icon" class="h-5 w-5" />
@@ -625,13 +625,13 @@
                     class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3"
                   >
                     <span
-                      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
+                      class="deasy-icon-box deasy-icon-box--md"
                       :class="{
-                        'bg-blue-light-100 text-info': stat.tone === 'sky',
-                        'bg-emerald-100 text-success': stat.tone === 'emerald',
-                        'bg-brand-100 text-primary': stat.tone === 'indigo',
-                        'bg-amber-100 text-warning': stat.tone === 'amber',
-                        'bg-surface text-icon': stat.tone === 'slate',
+                        'deasy-icon-box--info': stat.tone === 'sky',
+                        'deasy-icon-box--success': stat.tone === 'emerald',
+                        'deasy-icon-box--primary': stat.tone === 'indigo',
+                        'deasy-icon-box--warning': stat.tone === 'amber',
+                        'deasy-icon-box--neutral': stat.tone === 'slate',
                       }"
                     >
                       <component :is="stat.icon" class="h-4.5 w-4.5" />
@@ -728,7 +728,7 @@
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <button type="button" class="deasy-picker group" @click="openTaskFiltersModal">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--outlined">
                             <IconSearch class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
@@ -736,7 +736,7 @@
                           </span>
                         </button>
                         <button type="button" class="deasy-picker group" @click="navigateToDocumentCenterPage">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--outlined">
                             <IconFileDescription class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
@@ -744,7 +744,7 @@
                           </span>
                         </button>
                         <button type="button" class="deasy-picker group" @click="navigateToGlobalSignaturePage">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-blue-light-100 bg-blue-light-50/70 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--outlined">
                             <IconSignature class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
@@ -752,7 +752,7 @@
                           </span>
                         </button>
                         <button type="button" class="deasy-picker group" @click="openGeneralTaskModal('free')">
-                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-line bg-surface/80 text-icon transition-all group-hover:border-line-strong group-hover:bg-surface">
+                          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--neutral deasy-icon-box--outlined">
                             <IconPlus class="h-5 w-5" />
                           </span>
                           <span class="flex min-w-0 flex-col">
@@ -785,7 +785,7 @@
                   <section v-if="isRoutedProcess" class="px-2 md:px-3 xl:px-4">
                     <div class="rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50/60 via-white to-blue-light-50/40 p-4 flex flex-wrap items-center justify-between gap-3">
                       <div class="flex items-center gap-3">
-                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 bg-white text-primary">
+                        <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--outlined">
                           <IconSend class="h-5 w-5" />
                         </span>
                         <div class="flex min-w-0 flex-col">
@@ -950,7 +950,7 @@
             class="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition-colors"
             :class="taskLaunchStep >= step.id ? 'border-blue-light-200 bg-blue-light-50 text-info' : 'border-line bg-white text-muted'"
           >
-            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]" :class="taskLaunchStep >= step.id ? 'bg-blue-light-600 text-white' : 'bg-gray-200 text-muted'">
+            <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round" :class="taskLaunchStep >= step.id ? 'bg-blue-light-600 text-white' : 'bg-gray-200 text-muted'">
               {{ step.id }}
             </span>
             <span>{{ step.label }}</span>
@@ -1571,7 +1571,7 @@
                 <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
+                    <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                       {{ step.step_order }}
                     </span>
                     <div class="flex flex-col gap-1">
@@ -1812,7 +1812,7 @@
                 <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-2xl bg-surface px-3 text-sm font-extrabold text-body">
+                    <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                       {{ step.step_order || '—' }}
                     </span>
                     <div class="flex flex-col gap-1">
@@ -2067,7 +2067,7 @@
                 :disabled="isUploadingDeliverable"
                 @click="openPreviewDeliverableUploadModal"
               >
-                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-blue-light-100/95 bg-blue-light-50/55 text-info transition-all group-hover:border-blue-light-200 group-hover:bg-blue-light-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--info deasy-icon-box--outlined">
                   <IconUpload class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2083,7 +2083,7 @@
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'approve')"
               >
-                <div class="deasy-alert deasy-alert--success flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-emerald-100/95 transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--success">
                   <IconCircleCheck class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2099,7 +2099,7 @@
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'return')"
               >
-                <div class="deasy-alert deasy-alert--warning flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-amber-100/95 transition-all group-hover:border-amber-200 group-hover:bg-amber-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--warning">
                   <IconMinus class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">
@@ -2113,7 +2113,7 @@
                 :disabled="fillWorkflowSubmitting"
                 @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'reject')"
               >
-                <div class="deasy-alert deasy-alert--danger flex h-9 w-9 items-center justify-center rounded-[0.85rem] border-rose-100/95 transition-all group-hover:border-rose-200 group-hover:bg-rose-50">
+                <div class="deasy-icon-box deasy-icon-box--md deasy-icon-box--danger">
                   <IconX class="h-4.5 w-4.5" />
                 </div>
                 <div class="flex min-w-0 flex-col">

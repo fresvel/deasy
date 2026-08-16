@@ -35,7 +35,7 @@
         :key="`attachment-${attachment.id}`"
         class="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2.5"
       >
-        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-surface text-muted"><IconFileDescription class="h-4.5 w-4.5" /></span>
+        <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral"><IconFileDescription class="h-4.5 w-4.5" /></span>
         <div class="min-w-0 flex-1">
           <p class="m-0 truncate text-sm font-semibold text-strong" :title="attachment.file_name">{{ attachment.file_name }}</p>
           <p class="m-0 mt-0.5 flex items-center gap-2 text-[0.7rem] font-medium text-muted">
