@@ -4,7 +4,7 @@
            `rounded-2xl border border-gray-200 bg-white`, **sin sombra**: la superficie se
            dibuja con el BORDE, y la sombra queda para lo que flota (menus, modales).
 
-           Aqui habia `rounded-[8px]` —un valor arbitrario— y `shadow-[var(--elev-1)]`, otro.
+           Aqui habia `rounded-lg` —un valor arbitrario— y `shadow-[var(--elev-1)]`, otro.
            Los dos desaparecen: el radio pasa a `rounded-2xl`, el mismo de `.deasy-card`, y la
            sombra se retira. Antes la tarjeta pequena y la grande tenian radios distintos (16 y
            8 px) sin que la diferencia significara nada.
@@ -244,7 +244,7 @@
 
     /* LA FILA ELEGIBLE — un elemento de una lista que se pulsa para escogerlo.
        ⚠️ Estaba escrita **doce veces con CUATRO radios distintos** —`rounded-xl`, `rounded-2xl`,
-       `rounded-[1rem]` y `rounded-[1.2rem]`, o sea 12, 16, 16 y 19.2 px— para el mismo objeto y a
+       `rounded-2xl` y `rounded-[1.2rem]`, o sea 12, 16, 16 y 19.2 px— para el mismo objeto y a
        veces en la misma pantalla. Dos de los cuatro eran valores arbitrarios que existian **para
        caer entre dos pasos de la escala**, que es exactamente el sintoma que el plan describe en
        §3.1 para `deasy-icon-box`. Se queda uno: el de la escala. */

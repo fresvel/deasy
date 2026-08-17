@@ -12,7 +12,7 @@
     }
 
     .deasy-auth-card {
-        @apply w-full overflow-hidden rounded-[12px] border bg-white shadow-[var(--elev-3)];
+        @apply w-full overflow-hidden rounded-xl border bg-white shadow-[var(--elev-3)];
         border-color: var(--color-line);
     }
 

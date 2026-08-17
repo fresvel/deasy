@@ -37,7 +37,7 @@
      *
      * Ahora la caja manda y la foto se ajusta a ella: mismo cuadrado en los dos heroes. El
      * `overflow-hidden` es lo que recorta la foto al radio de la caja, que es lo que antes hacía el
-     * `rounded-[1rem]` de la propia imagen. */
+     * `rounded-2xl` de la propia imagen. */
     .deasy-hero-media-card--avatar {
         @apply overflow-hidden p-0;
     }
