@@ -28,7 +28,7 @@
 
   <div v-else class="mb-3 w-full">
     <div
-      class="overflow-hidden rounded-2xl border border-white/10 bg-white/8 p-3 shadow-none backdrop-blur-sm"
+      class="overflow-hidden rounded-2xl border border-line bg-surface p-3 shadow-none"
     >
       <div class="flex items-center gap-3">
         <div 
@@ -36,7 +36,7 @@
           :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
           @click="handleImageClick"
         >
-          <div class="group relative h-12 w-12 rounded-xl border border-white/15 bg-white/10 p-1 shadow-none">
+          <div class="group relative h-12 w-12 rounded-xl border border-line bg-white p-1 shadow-none">
             <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
             <div 
               v-if="editable" 
@@ -57,15 +57,15 @@
         </div>
 
         <div class="min-w-0 flex-1">
-          <h3 class="m-0 truncate text-sm font-semibold leading-tight text-white">
+          <h3 class="m-0 truncate text-sm font-semibold leading-tight text-strong">
             {{ username }}
           </h3>
-          <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58">
+          <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
             {{ subtitle }}
           </p>
-          <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-2xl border border-white/10 bg-white/8 px-2.5 py-1.5">
-            <p class="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-white/52">Token firma</p>
-            <p class="mt-1 truncate font-mono text-xs text-white/92">
+          <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-2xl border border-line bg-white px-2.5 py-1.5">
+            <p class="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">Token firma</p>
+            <p class="mt-1 truncate font-mono text-xs text-body">
               {{ signatureMarker }}
             </p>
           </div>

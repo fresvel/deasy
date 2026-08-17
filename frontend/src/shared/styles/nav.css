@@ -86,8 +86,8 @@
 }
 @layer components {
 .deasy-nav-shell {
-        @apply flex flex-col gap-2 rounded-2xl border p-2.5 shadow-none backdrop-blur-sm;
-        border-color: rgba(var(--white-rgb), 0.08);
+        @apply flex flex-col gap-2 rounded-2xl border p-2.5 shadow-none;
+        border-color: var(--color-line);
         background: transparent;
     }
 
@@ -101,15 +101,15 @@
 
     .deasy-nav-section + .deasy-nav-section {
         @apply border-t pt-2.5;
-        border-color: rgba(var(--white-rgb), 0.14);
+        border-color: var(--color-line);
     }
 
     .deasy-nav-group-title {
-        @apply flex w-full items-center justify-between rounded-2xl border border-transparent px-3 py-2.5 text-left text-sm font-medium text-white/84 transition-all;
+        @apply flex w-full items-center justify-between rounded-2xl border border-transparent px-3 py-2.5 text-left text-sm font-medium text-strong transition-all;
     }
 
     .deasy-nav-item {
-        @apply flex w-full items-start gap-2.5 rounded-2xl px-3 py-2 text-left text-sm font-medium text-white/76 transition-all duration-200 hover:bg-white/6 hover:text-white;
+        @apply flex w-full items-start gap-2.5 rounded-2xl px-3 py-2 text-left text-sm font-medium text-body transition-all duration-200 hover:bg-surface hover:text-navy;
     }
 
     .deasy-nav-item__label {
@@ -130,40 +130,45 @@
     .deasy-nav-glyph,
     .deasy-nav-item__icon {
         @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border shadow-none;
-        color: rgba(var(--white-rgb), 0.88);
-        border-color: rgba(var(--white-rgb), 0.08);
-        background: rgba(var(--white-rgb), 0.04);
+        color: var(--color-body);
+        border-color: var(--color-line);
+        background: var(--color-surface);
     }
 
     /* El unico tono real. Va DESPUES a proposito: misma especificidad (0,1,0), gana por orden. */
     .deasy-nav-glyph--slate,
     .deasy-nav-item__icon--slate {
-        color: rgba(var(--white-rgb), 0.68);
-        border-color: rgba(var(--white-rgb), 0.06);
-        background: rgba(var(--white-rgb), 0.03);
+        color: var(--color-muted);
+        border-color: var(--color-line);
+        background: var(--color-white);
     }
 
-    .deasy-nav-item--active {
-        @apply border bg-white/10 font-semibold text-white shadow-none;
-        border-color: rgba(var(--white-rgb), 0.1);
+    /* ⚠️ EL ACTIVO PASA A LA RECETA DE TAILADMIN: `bg-brand-50` con texto de marca y SIN borde.
+       Sobre chrome oscuro se marcaba con un velo de blanco al 10 % porque no habia otra forma —un
+       tinte de color sobre navy no se ve—; sobre blanco si la hay, y es la suya.
+
+       El texto va en `--color-brand-600` y no en `--color-primary`, y el motivo esta medido en este
+       repo desde F3.3: **`primary` sobre `brand-50` da 4.31 y no pasa AA**. Es la misma desviacion
+       que ya hace `deasy-tag--primary`, por la misma razon y hacia el mismo escalon. */
+    .deasy-nav-item--active,
+    .deasy-nav-item.router-link-active {
+        @apply border border-transparent font-semibold shadow-none;
+        background: var(--color-brand-50);
+        color: var(--color-brand-600);
     }
 
     .deasy-nav-item--subtle-active {
-        @apply border bg-white/14 font-bold text-white;
-        border-color: rgba(var(--white-rgb), 0.16);
-    }
-
-    .deasy-nav-item.router-link-active {
-        @apply border bg-white/10 font-semibold text-white shadow-none;
-        border-color: rgba(var(--white-rgb), 0.1);
+        @apply border border-transparent font-bold;
+        background: var(--color-brand-50);
+        color: var(--color-brand-600);
     }
 
     .deasy-nav-item--active .deasy-nav-item__icon,
     .deasy-nav-item--subtle-active .deasy-nav-glyph,
     .deasy-nav-item.router-link-active .deasy-nav-item__icon {
-        color: var(--color-white);
-        border-color: rgba(var(--white-rgb), 0.14);
-        background: rgba(var(--white-rgb), 0.08);
+        color: var(--color-brand-600);
+        border-color: transparent;
+        background: var(--color-white);
     }
 
     .deasy-nav-feedback {
@@ -171,23 +176,23 @@
     }
 
     .deasy-nav-feedback--info {
-        @apply border border-line-field bg-white/90 text-strong;
+        @apply border border-line-field bg-surface text-strong;
     }
 
     .deasy-nav-feedback--muted {
-        @apply border border-line-field bg-white/85 text-icon;
+        @apply border border-line-field bg-surface text-icon;
     }
 
     .deasy-nav-tree {
         @apply ml-0.5 mt-0.5 flex flex-col gap-1 border-l py-1.5 pl-2.5;
-        border-color: rgba(var(--white-rgb), 0.14);
+        border-color: var(--color-line);
     }
 
     /* El `h-9 w-9` estaba en el atributo, repetido en los TRES usos (la campana y las firmas de
        `AppWorkspaceShell`, el menu de `SHeader`). Un boton de icono de barra siempre mide lo
        mismo: eso es del bloque. (2026-08-15, G10.) */
     .deasy-nav-action {
-        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.04] text-white/78 shadow-none transition-all hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/14;
+        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-body shadow-none transition-all hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     /* EL NAVEGADOR DE CONTADOR — «‹ 3 / 12 ›»
@@ -306,6 +311,6 @@
     /* EL AVATAR PULSABLE de la barra lateral colapsada. Va sobre fondo oscuro, como el resto de
        `deasy-nav-*`, y por eso sus colores son blancos con alfa y no tokens de superficie. */
     .deasy-nav-avatar {
-        @apply relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-1.5 text-white transition-all hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-white/18;
+        @apply relative flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-surface p-1.5 text-body transition-all hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 }

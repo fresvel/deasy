@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 z-50 flex h-[60px] w-full flex-col justify-center border-b border-white/10 bg-navy-deep pl-[4.25rem] pr-3 text-white shadow-none transition-all duration-300 xl:pl-20"
+    class="sticky top-0 z-50 flex h-[60px] w-full flex-col justify-center border-b border-line bg-white pl-[4.25rem] pr-3 text-body shadow-none transition-all duration-300 xl:pl-20"
   >
     <AppLogo
       to="/home"

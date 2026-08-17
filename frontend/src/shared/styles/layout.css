@@ -17,7 +17,7 @@
        coordenadas relativas al elemento. La pareja `getBoundingClientRect + pageX` es robusta a esto
        por construccion; lo que no lo seria es mezclar `clientX` con coordenadas de documento. */
     .deasy-workspace {
-        @apply flex h-screen flex-col overflow-hidden bg-navy-deep font-sans text-body;
+        @apply flex h-screen flex-col overflow-hidden bg-surface font-sans text-body;
     }
 
     /* ══ EL PAPEL ES GRIS, LAS SUPERFICIES BLANCAS — F4.C·C, 2026-08-16 ═══════════════════════
@@ -46,7 +46,7 @@
 
     .deasy-workspace-header {
         @apply flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-1 py-1 shadow-none;
-        border-color: rgba(var(--white-rgb), 0.08);
+        border-color: var(--color-line);
         background: transparent;
     }
 
@@ -67,15 +67,15 @@
     }
 
     .deasy-context-header__title {
-        @apply truncate text-[1.05rem] font-semibold leading-tight text-white;
+        @apply truncate text-[1.05rem] font-semibold leading-tight text-strong;
     }
 
     .deasy-context-header__subtitle {
-        @apply mt-0.5 truncate text-[0.8rem] leading-tight text-white/55;
+        @apply mt-0.5 truncate text-[0.8rem] leading-tight text-muted;
     }
 
     .deasy-secondary-nav {
-        @apply mt-4 min-h-0 flex-1 overflow-y-auto border-t border-white/8 pt-4 pr-1 [scrollbar-width:thin];
+        @apply mt-4 min-h-0 flex-1 overflow-y-auto border-t border-line pt-4 pr-1 [scrollbar-width:thin];
     }
 
     /* ══ UNA SOLA BARRA — F4.C·B, 2026-08-16 ═══════════════════════════════════════════════════
@@ -109,7 +109,7 @@
     @media (min-width: 1280px) {
         .deasy-sidebar__flyout {
             @apply relative h-full w-full shrink-0 overflow-y-auto p-3 [scrollbar-width:thin];
-            background: var(--color-navy-deep);
+            background: var(--color-white);
         }
     }
 
@@ -172,13 +172,13 @@
     }
 
     .deasy-primary-nav__item {
-        @apply inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-medium text-white/72 transition-all hover:bg-white/8 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/16;
+        @apply inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-medium text-body transition-all hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     .deasy-primary-nav__item--active {
-        @apply border text-white;
-        border-color: rgba(var(--white-rgb), 0.1);
-        background: rgba(var(--white-rgb), 0.1);
+        @apply border border-transparent font-semibold;
+        background: var(--color-brand-50);
+        color: var(--color-brand-600);
     }
 
     /* La etiqueta se esconde en pantallas medias: por debajo de `lg` el header tiene que caber

@@ -92,18 +92,39 @@
     }
 }
 
-/* SE QUEDAN SIN CAPA (3 y 4 de 4) — el color de los enlaces. `a` es (0,0,1), la
-   especificidad mas baja que existe, y aun asi gana a todo lo capado: tapa 3 `text-*` de
-   plantilla y `.deasy-auth-link`, que declara `--color-primary` desde `@layer components`.
-   Por eso el «¿Olvidaste tu contraseña?» del login sale TEAL y no violeta. Capar `a` lo
-   arregla de golpe, y por eso no se hace aqui: es cambio visual, y es §4.2. */
+/* ══ EL COLOR DE LOS ENLACES — capado y reanclado el 2026-08-16 (F4.C) ═══════════════════════
+   Estas dos reglas eran las ultimas SIN CAPA de este fichero, y el comentario que habia aqui ya
+   decia lo que pasaba: `a` es (0,0,1), la especificidad mas baja que existe, y aun asi ganaba a
+   todo lo capado — tapaba tres `text-*` de plantilla y `.deasy-auth-link`, que declara
+   `--color-primary` desde `@layer components`. Por eso el «¿Olvidaste tu contraseña?» del login
+   salia TEAL. Decia tambien que caparlo «lo arregla de golpe», y que se aplazaba por ser cambio
+   visual.
 
-a {
-  color: var(--color-accent);
-}
+   Lo desbloqueo el chrome claro: al pasar la barra y la cabecera a blanco, la navegacion primaria
+   y el boton de salir —que son `<router-link>`, o sea `<a>`— salieron en teal a **2.64:1**, por
+   debajo del 4.5 que pide el texto. Ya no era deuda aplazable: era un fallo a la vista.
 
-a:hover {
-  color: var(--color-primary);
+   ── DOS MITADES, Y LAS DOS HACIAN FALTA ────────────────────────────────────────────────────
+   1. EL COLOR. `--color-accent` no salio de TailAdmin: su §9 no tiene ningun enlace teal. Sus dos
+      enlaces son `gray-500` (al que llaman «Primary») y `brand-500` («Secondary») — y el propio
+      fichero avisa de que los nombres de su demo no son fiables, porque cuatro de sus ocho links
+      «Colored» se llaman «Primary link». Se adopta el de marca, que es el que se lee como enlace.
+      Decision del dueño: «usa los colores de TailAdmin, ahi veo un primary (algo azul)».
+   2. LA CAPA. Cambiar solo el color no habria arreglado el menu: la regla seguiria ganando y los
+      items de navegacion saldrian AZULES en vez de teal — igual de mal, porque un item de menu en
+      color de marca se come la distincion con el item ACTIVO, que es lo que dice donde estas.
+
+   Capada, cada enlace con clase propia pinta lo que declara (el menu en `body`, 10.46:1) y el
+   enlace pelado se queda con el color de la receta. `--color-accent` NO muere: sigue siendo el
+   turquesa de `deasy-tag--accent`. Lo que deja de ser es el color de todos los enlaces. */
+@layer base {
+  a {
+    color: var(--color-primary);
+  }
+
+  a:hover {
+    color: color-mix(in srgb, var(--color-primary) 85%, var(--black));
+  }
 }
 
 /* El segundo `@layer base` con `body, #app` se fusiono con el primero el 2026-08-13. Existia
