@@ -65,7 +65,23 @@ import { join, resolve } from "node:path";
  * COLORES escritos con la sintaxis de tamaño — la ambiguedad de Tailwind v4 que el skill
  * advierte y que aqui costo 114 nodos con el borde en `currentColor`. Van a la fase de color,
  * no a esta. */
-const TECHO = { total: 187, "text-": 17, "rounded-": 11, "shadow-": 16 };
+/* 2026-08-17 · 186 — el `w-[282px]` de la `aside` pasa a `w-(--ancho-barra-lateral)`. Al devolver
+ * el despliegue por hover, el panel del vistazo necesitaba ESE MISMO ancho, y escribirlo otra vez
+ * habria hecho 188. Es el cuarto arbitrario que cae por el mismo motivo de siempre: existia para
+ * decir un numero que ya decia otro sitio. Ojo con la sintaxis — `w-(--var)` es el atajo de v4
+ * para `w-[var(--var)]` y NO cuenta como arbitrario, que es justo lo que se quiere: el valor pasa
+ * a tener un nombre. */
+/* 2026-08-17 · 185 — muere el relleno izquierdo del header (68 px, y 80 a partir de `xl`). Existia
+ * para reservarle sitio a un logo posicionado en absoluto; al pasar el logo a una celda del flujo
+ * que mide lo que mide la barra lateral, el hueco lo da el ancho de la celda. Quinto arbitrario
+ * que cae por lo de siempre: era un numero a mano para imitar otro que ya existia.
+ *
+ * 🪤 Y ESTE CONTADOR LEE LOS COMENTARIOS. Al documentar ese cambio, citar en prosa las dos
+ * utilidades que se retiraban las dejo VIVAS en el censo, y el gate salio rojo (187 > 186) por un
+ * commit que solo restaba. Es la trampa que `tokens.css` corta para Tailwind con `@source not`,
+ * vista por el otro lado: alli la prosa CREA la utilidad, aqui la MANTIENE. En un comentario,
+ * describe el valor —«68 px»—, no escribas la clase. */
+const TECHO = { total: 185, "text-": 17, "rounded-": 11, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

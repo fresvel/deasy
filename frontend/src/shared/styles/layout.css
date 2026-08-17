@@ -58,6 +58,25 @@
         @apply flex shrink-0 items-center gap-1.5 sm:gap-2;
     }
 
+    /* ══ LA CELDA DE MARCA DEL HEADER — la columna de la barra, arriba ═════════════════════════
+       Mide lo que mide la `aside` (el `xl:w-…` lo pone la plantilla segun `menuOpen`) y centra el
+       logo dentro, que es exactamente el tratamiento que el avatar tiene abajo: centro 141 con la
+       barra abierta, 44 colapsada. Antes el logo iba en `absolute left-3` y su centro valia 32 en
+       LOS DOS estados —ni una cosa ni la otra—, y el boton de menu ocupaba 80..116 con el canto de
+       la barra colapsada en 88: partido por la linea. Eso es lo que el dueño vio como
+       «desordenados respecto del aside».
+
+       `shrink-0` no es adorno: sin el, el flex le roba ancho a la celda en cuanto el titulo de la
+       pagina aprieta, y la alineacion se perderia justo en las pantallas donde mas se nota.
+
+       El `pl-3` es solo para el tramo SIN barra: por debajo de `xl` la `aside` esta fuera de
+       pantalla y no hay columna que seguir, asi que la celda mide lo que mide el logo y este
+       necesita su margen contra el borde. En `xl` manda el ancho y el padding estorbaria —
+       descentraria el logo dentro de la columna, que es justo lo que se viene a arreglar. */
+    .deasy-header-marca {
+        @apply flex shrink-0 items-center justify-center pl-3 transition-all duration-300 xl:pl-0;
+    }
+
     .deasy-context-header {
         @apply flex min-w-0 items-center gap-3;
     }
@@ -110,6 +129,33 @@
         .deasy-sidebar__flyout {
             @apply relative h-full w-full shrink-0 overflow-y-auto p-3 [scrollbar-width:thin];
             background: var(--color-white);
+        }
+
+        /* ══ EL VISTAZO — el rail se abre al pasar el raton, y FLOTA ═══════════════════════════
+           La linea de arriba dice que en escritorio el panel NO flota, y sigue siendo cierta para
+           el estado ABIERTO: ahi es una columna y empuja el contenido, que es lo que arreglo B5.
+           El vistazo es lo contrario y por eso puede flotar: dura lo que dura el roce.
+
+           Y tiene que flotar, porque esto esta MEDIDO: la columna abierta deja el area de datos en
+           x=282 · 1318 px y el rail en x=88 · 1512 px. Si el vistazo cambiara el ancho de la
+           `aside`, al salir de ella el contenido daria un salto de 194 px hacia la izquierda —
+           justo debajo del puntero que iba a pulsar algo. Seria el fallo del 2026-08-16 otra vez
+           («el menu se va cuando mueves el raton hacia lo que ibas a usar»), solo que moviendo el
+           blanco en vez de quitarlo. Flotando, `deasy-workspace-content` no se entera: el rail
+           sigue ocupando sus 88 px en la fila y el panel se pinta encima.
+
+           📌 El `absolute` cuelga de `.deasy-sidebar`, que ya es `relative`. Como es un
+           descendiente POSICIONADO, se pinta por encima del fondo y del `border-r` de la `aside`,
+           asi que el filo gris de los 88 px queda tapado y no cruza el panel. La `aside` ya trae
+           `xl:overflow-visible`, de modo que el desbordamiento se ve sin tocarla, y su
+           `z-(--z-menu-lateral)` la deja por encima del area de datos.
+
+           El ancho sale del MISMO sitio que el del estado abierto (`--ancho-barra-lateral`, en
+           `tokens.css`): son el mismo panel, no dos. */
+        .deasy-sidebar--peek .deasy-sidebar__flyout {
+            @apply absolute inset-y-0 left-0 border-r border-line;
+            width: var(--ancho-barra-lateral);
+            box-shadow: var(--elev-3);
         }
     }
 
