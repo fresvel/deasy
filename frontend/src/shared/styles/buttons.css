@@ -39,7 +39,14 @@
    de filtros del proyecto. Es una decision de densidad, no de geometria de boton, y va con
    el resto de la escala en F5. */
 .deasy-btn {
-        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+        /* ⚠️ EL `text-sm` VA EN LA BASE, Y NO ES DECORATIVO — F5.4, 2026-08-17.
+           Sin el, un boton sin clase de tamaño —los de solo icono— HEREDABA la letra de donde
+           estuviera (16 px), y los que llevaban `--md` la tenian en 14. Eso no se nota en el
+           texto, porque un boton de icono no lo tiene… pero **los iconos de Tabler se miden en
+           `em`**, asi que heredaban esa diferencia: en la MISMA fila de la MISMA tabla convivian
+           90 iconos de 20 px con 86 de 17,5. Era el ultimo sitio donde el boton dependia de su
+           contexto en vez de su clase. */
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border text-sm font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
     /* ══ EL REPOSO DE TODO BOTON ES CONTORNO. EL HOVER LO RELLENA ══════════════════════════
@@ -377,8 +384,27 @@
         }
     }
 
+    /* EL ICONO LO MIDE EL BOTON, NO LA LIBRERIA — F5.4, 2026-08-17.
+       Los botones ya median todos igual y aun asi se veian distintos, porque **el icono de
+       dentro no lo gobernaba nadie**. Medido en la tabla de personas: 91 iconos de 17,5 px
+       conviviendo con 86 de 20, en las mismas filas. Son dos librerias con dos criterios:
+       · los `tabler-icon` se miden en `em`, asi que heredaban la letra del boton;
+       · los SVG en linea de las acciones de fila traen `width="20" height="20"` **en el
+         atributo**, o sea que no heredaban nada.
+       Ninguno de los dos es del sistema. Aqui se fija uno: 20 px, que es el de las recetas
+       adoptadas y el que deja 8 px de aire a cada lado dentro del cuadrado de 36.
+
+       ⚠️ Se declara como DESCENDIENTE (`.deasy-btn svg`) y no como hijo directo a proposito:
+       la mitad de los iconos van envueltos en un `<span>`. Y una utilidad en la plantilla
+       sigue ganando —vive en `@layer utilities`, que va despues de `components`—, asi que el
+       boton flotante del chat conserva sus 32 px sin necesidad de excepcion. */
+    .deasy-btn svg,
+    .deasy-btn img {
+        @apply h-5 w-5;
+    }
+
     .deasy-btn--md {
-        @apply px-4 py-2 text-sm;
+        @apply px-4 py-2;   /* la letra la pone la base, para todos por igual */
     }
 
     /* EL BOTON CUADRADO DE ICONO. Absorbe `hope-action-btn`, que era su copia con otro nombre:

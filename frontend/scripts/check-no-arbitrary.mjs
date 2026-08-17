@@ -81,7 +81,7 @@ import { join, resolve } from "node:path";
  * commit que solo restaba. Es la trampa que `tokens.css` corta para Tailwind con `@source not`,
  * vista por el otro lado: alli la prosa CREA la utilidad, aqui la MANTIENE. En un comentario,
  * describe el valor —«68 px»—, no escribas la clase. */
-const TECHO = { total: 174, "text-": 17, "rounded-": 1, "shadow-": 16 };
+const TECHO = { total: 173, "text-": 16, "rounded-": 1, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;
