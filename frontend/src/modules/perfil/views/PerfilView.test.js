@@ -158,10 +158,24 @@ describe("la URL manda", () => {
 });
 
 describe("cabecera", () => {
-  it("en Inicio, titulo generico y subtitulo", async () => {
+  /* ⚠️ ESTE BLOQUE CAMBIO DE SENTIDO EL 2026-08-16, y lo cazo el propio test — que es justo para
+   * lo que estaba.
+   *
+   * `AppContextHeader` dejo de pintar su subtitulo por decision del dueño, y al medirlo resulto
+   * ser un DUPLICADO: en `/admin` la barra repetia palabra por palabra el subtitulo del hero que
+   * hay tres centimetros mas abajo, y en `/home` la carrera que el propio menu lateral ya nombra.
+   * La prop sigue existiendo y las cuatro vistas la siguen pasando; lo que se fue es el `<div>`
+   * que la pintaba.
+   *
+   * Asi que la pareja «con subtitulo / sin subtitulo» ya no puede afirmarse. Lo que SI sigue
+   * teniendo sentido —y era lo que de verdad se vigilaba— es que el TITULO cambia segun donde
+   * estes: generico en la portada del dossier y el nombre de la seccion dentro. Eso se conserva
+   * entero, y los dos casos pasan a afirmar que el subtitulo NO se pinta, que es la garantia
+   * nueva y la que se romperia si alguien lo devolviera sin querer. */
+  it("en Inicio, titulo generico y sin subtitulo", async () => {
     const { wrapper } = await montarEn("/perfil");
     expect(wrapper.find(".deasy-context-header__title").text()).toBe("Dossier profesional");
-    expect(wrapper.find(".deasy-context-header__subtitle").exists()).toBe(true);
+    expect(wrapper.find(".deasy-context-header__subtitle").exists()).toBe(false);
   });
 
   it("en una seccion, su nombre y sin subtitulo", async () => {

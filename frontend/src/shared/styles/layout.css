@@ -187,5 +187,40 @@
         @apply hidden lg:inline;
     }
 
+    /* ── EL MENU DE PERFIL DE LA BARRA — receta §3.5 de TailAdmin, 2026-08-16 ─────────────────
+       Su panel es LA CARD BASE con sombra y `absolute right-0`, o sea el mismo objeto que el
+       `deasy-picker` y el toast; no se inventa superficie. Lo unico propio es el disparador. */
+    .deasy-user-menu {
+        @apply relative shrink-0;
+    }
+
+    .deasy-user-menu__trigger {
+        @apply flex h-10 items-center gap-2 rounded-xl border border-transparent px-2 text-sm font-medium text-body transition-all hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
+    }
+
+    .deasy-user-menu__avatar {
+        @apply block h-8 w-8 shrink-0 overflow-hidden rounded-full border border-line bg-white;
+    }
+
+    /* El nombre desaparece antes que el avatar: por debajo de `md` la barra ya lleva el titulo de
+       la pagina, la navegacion primaria y dos acciones. El avatar solo sigue siendo reconocible. */
+    .deasy-user-menu__nombre {
+        @apply hidden max-w-40 truncate md:block;
+    }
+
+    .deasy-user-menu__panel {
+        @apply absolute right-0 top-full z-1090 mt-2 flex w-64 flex-col gap-1 rounded-2xl border border-line bg-white p-3 shadow-theme-lg;
+    }
+
+    /* La cabecera del panel es donde vuelve el nombre completo y el subtitulo que se fueron de la
+       barra: ahi estorbaban y aqui hay sitio, que es el reparto que hace su receta. */
+    .deasy-user-menu__cabecera {
+        @apply mb-1 border-b border-line px-3 pb-3;
+    }
+
+    .deasy-user-menu__item {
+        @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-body transition-colors hover:bg-surface hover:text-navy;
+    }
+
     
 }

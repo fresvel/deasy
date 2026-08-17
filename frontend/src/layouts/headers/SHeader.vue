@@ -18,7 +18,16 @@
       >
         <IconMenu2 class="h-5.5 w-5.5" />
       </button>
-      <div class="flex w-full items-center justify-between gap-2 overflow-x-auto [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
+      <!-- 🪤 AQUI HABIA UN `overflow-x-auto` Y RECORTABA EL MENU DE PERFIL — 2026-08-16.
+           En CSS, poner UN eje del desbordamiento en algo distinto de `visible` **fuerza el otro a
+           `auto`**. Asi que este contenedor, pensado solo para que el titulo pudiera desplazarse en
+           horizontal, recortaba TAMBIEN en vertical: el panel del menu de perfil se abria en y=58 y
+           la caja terminaba en y=55, o sea que se montaba entero y no se veia ni un pixel.
+
+           Y sobraba: `deasy-workspace-header__context`, que es quien contiene el titulo, YA declara
+           su propio `overflow-x-auto` con el mismo ocultado de barra. El desplazamiento horizontal
+           no se pierde — estaba escrito dos veces, y la copia de fuera era la que clipaba. -->
+      <div class="flex w-full items-center justify-between gap-2 sm:gap-3">
         <slot></slot>
       </div>
     </div>

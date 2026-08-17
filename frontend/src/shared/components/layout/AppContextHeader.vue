@@ -2,7 +2,16 @@
   <div class="deasy-context-header">
     <div class="deasy-context-header__copy">
       <div class="deasy-context-header__title">{{ title }}</div>
-      <div v-if="subtitle" class="deasy-context-header__subtitle">{{ subtitle }}</div>
+      <!-- ⚠️ AQUI IBA EL SUBTITULO — retirado el 2026-08-16 por decision del dueño, y al medirlo
+           resulto ser un DUPLICADO en las dos vistas que lo llenaban:
+
+             /admin  la barra decia «Accesos organizados para crear, editar, leer y eliminar datos
+                     del sistema» y el hero de la pagina, justo debajo, decia LO MISMO;
+             /home   la barra repetia la carrera del usuario, que el propio menu lateral ya nombra.
+
+           La prop `subtitle` se conserva a proposito: la pasan cuatro vistas desde un `computed`,
+           y quitarla obligaria a tocarlas todas para no ganar nada. Deja de pintarse, no de
+           existir. Si algun dia vuelve, vuelve aqui y en un solo sitio. -->
     </div>
   </div>
 </template>

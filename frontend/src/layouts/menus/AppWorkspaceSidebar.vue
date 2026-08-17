@@ -29,12 +29,21 @@
         <div v-if="showLogo" class="mb-2 flex px-1 xl:hidden">
           <AppLogo to="/home" size="md" class-name="max-w-full" />
         </div>
+        <!-- SOLO EL AVATAR, CENTRADO — decision del dueño, 2026-08-16.
+             Aqui iba la tarjeta completa: avatar + nombre + subtitulo + el bloque del token de
+             firma. Se va entera y usa el modo `compact`, que YA EXISTIA en el componente (era el
+             del rail que murio esta misma tarde) — o sea que no hay forma nueva, hay una que
+             estaba sin consumidor.
+
+             📌 El bloque del token NO se pierde: no se pintaba nunca. `showSignatureDetails` llega
+             desde `showSidebarSignatureDetails` de `AppWorkspaceShell`, y **ninguna vista lo pasa**,
+             asi que su `v-if` era falso en las seis. Comprobado antes de quitarlo. -->
         <UserProfile
+          compact
           :photo="photo"
           :username="username"
           :subtitle="profileSubtitle"
           :signature-marker="signatureMarker"
-          :show-signature-details="showSignatureDetails"
           :editable="editable"
           @photo-selected="$emit('photo-selected', $event)"
         />

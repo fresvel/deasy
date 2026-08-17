@@ -1,5 +1,10 @@
 <template>
-  <div v-if="compact" class="w-full">
+  <!-- ⚠️ EL CENTRADO VIVE AQUI DESDE EL 2026-08-16, y antes no hacia falta: la forma `compact`
+       nacio para el rail de 80 px, que la centraba con su propio `items-center`. Al morir el rail
+       (F4.C·B) el avatar se quedo pegado a la izquierda de una columna de 282, y no se noto hasta
+       medir la distancia al centro. Una forma que depende de que su contenedor la centre no esta
+       terminada: el centrado es suyo. -->
+  <div v-if="compact" class="flex w-full justify-center">
     <button
       type="button"
       class="deasy-nav-avatar group"

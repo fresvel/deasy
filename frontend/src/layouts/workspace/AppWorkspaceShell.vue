@@ -44,14 +44,16 @@
           >
             <IconBell class="h-5 w-5" />
           </button>
-          <router-link
-            to="/logout"
-            class="deasy-nav-action"
-            title="Cerrar sesion"
-            aria-label="Cerrar sesion"
-          >
-            <IconLogout class="h-5 w-5" />
-          </router-link>
+          <!-- ⚠️ AQUI ESTABA EL BOTON DE CERRAR SESION, y se fue al menu de perfil el 2026-08-16.
+               Es lo que hace la receta §3.5, y ademas libera un hueco en una barra que desde hoy
+               lleva tambien la navegacion primaria. -->
+          <AppUserMenu
+            :nombre="username"
+            :subtitulo="sidebarSubtitle"
+            :foto="photo"
+            :es-admin="isAdminUser()"
+            :puede-ver-perfil="canReadResource('dossier')"
+          />
         </div>
       </div>
     </SHeader>
@@ -91,16 +93,15 @@ import {
   IconBell,
   IconFileText,
   IconHome,
-  IconLogout,
-  IconSettings,
+    IconSettings,
   IconSignature,
   IconSitemap,
-  IconUser,
 } from "@tabler/icons-vue";
 import SHeader from "@/layouts/headers/SHeader.vue";
 import SBody from "@/layouts/core/SBody.vue";
 import SMessage from "@/layouts/core/SNotify.vue";
 import AppWorkspaceSidebar from "@/layouts/menus/AppWorkspaceSidebar.vue";
+import AppUserMenu from "@/shared/components/widgets/AppUserMenu.vue";
 import {
   canAccessAdmin,
   canAccessProcessManagement,
@@ -220,15 +221,12 @@ const primaryNavItems = computed(() => {
       requiresResource: "signature_flows",
       exactRouteNames: ["home-signatures"]
     },
-    {
-      key: "profile",
-      label: "Perfil",
-      to: { name: "perfil" },
-      icon: IconUser,
-      hideForAdminOnly: true,
-      requiresResource: "dossier",
-      exactRouteNames: ["perfil"]
-    },
+    /* ⚠️ AQUI ESTABA EL ITEM «Perfil» — se fue al menu de la esquina el 2026-08-16.
+       Al montar `AppUserMenu` quedaba DUPLICADO: el mismo destino en la navegacion primaria y en
+       el menu del avatar, a dos centimetros uno de otro. La receta §3.5 lo pone en el menu, y es
+       donde lo busca cualquiera: el perfil se abre desde tu propia cara, no desde el menu de
+       secciones. Su condicion de visibilidad viaja con el —`requiresResource: "dossier"` y oculto
+       para el administrador, que tiene `/perfil` bloqueado por el router—. */
     {
       key: "admin",
       label: "Sistema",
