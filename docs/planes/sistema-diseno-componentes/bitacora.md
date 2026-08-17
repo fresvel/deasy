@@ -6,6 +6,91 @@
 > [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md)
 > y **sigue valiendo**: es donde están las trampas ya pagadas.
 
+## 2026-08-17 · F5.3 — la altura, y por qué los niveles fijos duraron dos días
+
+> ⚠️ **Hueco declarado:** entre esta entrada y la del 15-ago falta lo de F3.4, F4, F4.C y F5.1. Se
+> quedó sin escribir mientras se ejecutaba; está en los mensajes de commit y en la tabla §0 del
+> plan, pero no aquí. Se anota para no darlo por documentado.
+
+### Lo que el enunciado decía, y lo que había
+
+El plan prometía «`z-index` — **cinco pisos** coordinados solo por comentarios». Eran **diecinueve**,
+y el problema no era el orden sino que **no había forma de verlos juntos**: se escribían en cuatro
+grafías que ningún gate podía relacionar —utilidad, arbitraria, `z-index:` en CSS crudo, y siete
+`:style="{ zIndex: 1090 }"` que no veía nadie—. Se coordinaban por comentario, y uno remitía a un
+fichero borrado dos días antes.
+
+De ahí salieron **tres fallos que ni el build, ni el lint, ni los 347 tests ven, porque los tres
+renderizan perfectamente**: el aviso quedaba detrás del modal que lo disparaba; la confirmación del
+asistente (1075) por debajo del asistente (1080); y el contenedor del mapa llevaba un `z-10` que
+**parecía un no-op** —un `z-index` sobre un elemento `static` no hace nada— y era lo único que
+impedía que los 1000 de Leaflet taparan la barra superior.
+
+### La primera versión era elegante y estaba mal
+
+Se diseñó una escala de dos ejes (la magnitud dice en cuál estás: 1-2 cifras local, 4 cifras global)
+con **cinco niveles de modal declarados por componente**, y el dueño la aprobó tras preguntar
+expresamente si tres niveles bastaban. Se implementó, se midió, pasó los 21 gates y se cerró.
+
+**Duró dos días.** La tumbó una pregunta suya, no un test:
+
+> «como se reutilizan modales, estos podrían ir cambiando de nivel mientras se les va llamando,
+> ¿consideraste eso?»
+
+No se había considerado. Al medirlo: **`openProcessWizard()` se llama desde SIETE sitios** de la
+misma vista — seis desde la tabla, con nada abierto, y uno desde dentro del editor de registro. Un
+componente, un número, dos profundidades.
+
+**El caso lo encontró él antes que nadie**, y no como un fallo de altura: «di clic en agregar
+configuración y no pasó nada». El modal se abría — en 4020, debajo del editor en 4021. Invisible.
+
+### Por qué la corrección obvia también era la equivocada
+
+La reacción inmediata fue `nivel="1"` → `nivel="2"`. **También está mal**: arregla ese camino y miente
+en los otros seis. Y pasar el nivel desde quien abre reparte el problema entre siete llamadas, ninguna
+comprueba nada, y la octava falla en silencio — que es exactamente el acuerdo por convención que esta
+fase venía a quitar.
+
+**El dato no cabe en el componente.** La altura de un modal no es una propiedad suya: es consecuencia
+de la pila que hay cuando se abre.
+
+### Lo que no hubo que inventar
+
+`modalController.js` **ya lo hacía** para la mitad antigua de los modales: al mostrarse, un escalón
+sobre el más alto visible. Y ésa es precisamente la mitad que **nunca se rompió**. Lo que faltaba era
+que la mitad nueva —la de Vue, con `:open`— llamara al mismo sitio. Se extrajo a
+`elevarSobreLoVisible` / `liberarAltura`, y las dos mitades pasaron a obedecer una regla.
+
+Al hacerlo se vio algo que invalidaba media narración anterior: **el controlador pisa la clase**,
+porque escribe en línea. O sea que los cinco niveles eran ya inertes para la mitad antigua, y sólo
+gobernaban la de Vue — que es, otra vez, la única que se podía romper.
+
+Se retiraron `--z-modal-2`…`-5`. Queda `--z-modal` como **suelo** (dónde caen si el cálculo no llega
+a correr) y la banda 4030-4090 libre a propósito: es el margen por el que trepa el apilado. Y la
+pregunta «¿bastan cinco niveles?» **desaparece en vez de responderse**, porque la profundidad deja de
+tener tope.
+
+### Lo que enseñó, más allá del z-index
+
+1. **Un diseño aprobado no es un diseño verificado.** Éste pasó gates, tests y navegador, y aun así
+   era estructuralmente incapaz de funcionar. Lo que lo destapó fue una pregunta sobre el *modelo*,
+   no una medición del *resultado*.
+2. **Antes de dar un valor a un componente reutilizable, cuenta sus llamadas.** Siete, a dos
+   profundidades, se ven con un `grep` de treinta segundos. No se hizo.
+3. **Cuando ya existe un mecanismo que resuelve el problema en la mitad del sistema, la pregunta no
+   es qué inventar sino por qué la otra mitad no lo usa.**
+4. **Un `z-index` que parece un no-op puede ser lo único que sostiene algo.** El del mapa. Ahora es
+   `isolate`, que hace lo mismo sin depender de la altura y dice lo que hace.
+
+### Y una trampa nueva del instrumental
+
+`check:no-arbitrary` **lee los comentarios**. Al documentar en prosa las dos utilidades que un commit
+retiraba, las mantuvo vivas en el censo y el gate salió **rojo por un cambio que sólo restaba**. Es la
+misma trampa que `tokens.css` corta para Tailwind con `@source not`, vista por el otro lado: allí la
+prosa **crea** la utilidad, aquí la **mantiene**.
+
+---
+
 ## 2026-08-15 · F3.3 cerrada — el estado deja de vivir en JavaScript
 
 **Lo que el enunciado prometía:** «el estado de grafo — 73 de los 201 colores restantes», ocho

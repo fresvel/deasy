@@ -4,7 +4,7 @@ description: "Modular por dominio, sin Pinia ni Vuex, y cómo se habla con la AP
 sidebar:
   order: 13
 ---
-**Vue 3 + Vite 8 + vue-router 5 + Tailwind v4 + Vitest**, sin TypeScript. 216 ficheros en `src/`: 126 `.vue`, 87 `.js` y 3 `.css`.
+**Vue 3 + Vite 8 + vue-router 5 + Tailwind v4 + Vitest**, sin TypeScript. 216 ficheros en `src/`: 126 `.vue`, 87 `.js` y **18 `.css`** — el CSS no es un fichero, es un sistema de diseño repartido en 18 modulos por familia dentro de `shared/styles/`, encadenados por `index.css`, que es lo unico que importa `main.js`. **El orden de esos `@import` es parte del diseno y no es alfabetico**: en CSS dos reglas de la misma especificidad se resuelven por orden de aparicion, asi que `overrides.css` va el ultimo a proposito.
 
 ## Organización: modular por dominio
 
@@ -39,7 +39,7 @@ No hay carpeta `src/assets/` (los estaticos viven en `frontend/public/`), ni `sr
 
 `App.vue` solo tiene dos cosas: un `<router-view :key="route.fullPath">` y un `SessionExpiryModal` global gobernado por `useSessionMonitor`.
 
-Sobre Vite: no hay `server.proxy` — el proxy es nginx, externo. El alias `@` apunta a `src`. Y de Tailwind v4 **no hay `tailwind.config.js` ni `postcss.config.js`**: se usa el plugin de Vite mas directivas dentro del propio CSS (`@import "tailwindcss";` en `shared/styles/tailwind.css`).
+Sobre Vite: no hay `server.proxy` — el proxy es nginx, externo. El alias `@` apunta a `src`. Y de Tailwind v4 **no hay `tailwind.config.js` ni `postcss.config.js`**: se usa el plugin de Vite mas directivas dentro del propio CSS. El `@import "tailwindcss"` vive en `shared/styles/tokens.css`, que es tambien donde se declara la paleta con `@theme` — en v4 el tema **es** CSS. (Este parrafo apuntaba a `shared/styles/tailwind.css`, que no existe.)
 
 ## Estado: no hay Pinia ni Vuex
 

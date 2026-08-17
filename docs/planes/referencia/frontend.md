@@ -158,6 +158,16 @@ Ese último punto revela el acoplamiento invisible: **los 6 `Agregar*.vue` hacen
 
 ### 3.4 El sistema de diseño está escrito pero no enchufado
 
+> ⚠️ **CIFRAS DE JULIO DE 2026. Este diagnóstico ya se ejecutó y las de abajo NO son el estado
+> actual** — se dejan porque son el punto de partida contra el que se mide, no porque describan hoy.
+> Al 2026-08-17: los valores arbitrarios son **183**, no 424; no queda **ni un** hex crudo fuera de
+> `tokens.css`; `--deasy-*` y `--brand-*` se colapsaron sobre `--color-*` (un solo juego, 22 tokens
+> semánticos sobre 91 primitivas); `tailwind.css` **no existe** —son 18 módulos en `shared/styles/`—
+> y los dos `@layer components` en conflicto se fueron con él. Lo vigilan 21 gates encadenados a
+> `pnpm run lint`. El estado vivo está en
+> [`sistema-diseno-componentes/plan-2026-08-13.md`](../sistema-diseno-componentes/plan-2026-08-13.md).
+
+
 | Categoría | Ocurrencias |
 |---|---:|
 | Utilidades de paleta crudas (`bg-<color>-<n>`) | **592** |
