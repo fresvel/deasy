@@ -53,7 +53,7 @@
 
       <!-- Bloque 1: a quién va dirigida la regla -->
       <fieldset class="flex flex-col gap-2.5">
-        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-muted">Alcance y destinatarios</p>
+        <p class="m-0 text-theme-xs font-bold uppercase tracking-wide text-muted">Alcance y destinatarios</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup v-if="showScopeField" label="Alcance" group-class="md:col-span-4">
             <AdminSelectField
@@ -130,7 +130,7 @@
 
       <!-- Bloque 2: prioridad, estado y vigencia -->
       <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-line pt-4">
-        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-muted">Prioridad y vigencia</p>
+        <p class="m-0 text-theme-xs font-bold uppercase tracking-wide text-muted">Prioridad y vigencia</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
             <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />

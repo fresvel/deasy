@@ -392,7 +392,7 @@
 
             <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-line sm:pl-5">
               <div class="bg-surface border border-line rounded-2xl px-3 py-1.5 text-center">
-                <span class="block text-[10px] font-bold uppercase tracking-wider text-muted">Pág</span>
+                <span class="block text-theme-xs font-bold uppercase tracking-wider text-muted">Pág</span>
                 <span class="block text-lg font-bold text-strong leading-none mt-0.5">{{ field.page }}</span>
               </div>
               
@@ -444,7 +444,7 @@
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-strong">{{ field.name }}</span>
-              <span class="px-2 py-0.5 bg-surface text-muted rounded-xl text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
+              <span class="px-2 py-0.5 bg-surface text-muted rounded-xl text-theme-xs font-bold tracking-wide">Pág {{ field.page }}</span>
             </div>
             <span class="text-muted text-xs font-medium">
               {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
@@ -918,7 +918,7 @@
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>
               </summary>
-              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-icon bg-surface p-3 rounded-xl border border-line shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-theme-xs text-icon bg-surface p-3 rounded-xl border border-line shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
             </details>
           </template>
           <template v-else>

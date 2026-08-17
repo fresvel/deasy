@@ -14,7 +14,7 @@
           Reemplaza la versión activa <strong>v{{ diff.from_version }}</strong> por la <strong>v{{ diff.to_version }}</strong>.
         </p>
 
-        <p class="m-0 mb-1 text-[11px] font-semibold text-muted">Entregables</p>
+        <p class="m-0 mb-1 text-theme-xs font-semibold text-muted">Entregables</p>
         <ul class="m-0 mb-2 flex list-none flex-col gap-1 p-0">
           <li v-for="t in diff.templates" :key="t.template_code" class="flex items-center gap-2 text-xs">
             <AppTag :variant="tonoDiff(t.change)" size="sm" outlined>{{ changeLabel(t.change) }}</AppTag>
@@ -27,7 +27,7 @@
           <li v-if="!diff.templates.length" class="text-xs text-muted">Sin entregables.</li>
         </ul>
 
-        <p class="m-0 text-[11px] text-muted">
+        <p class="m-0 text-theme-xs text-muted">
           Reglas: {{ diff.rules.from }} → {{ diff.rules.to }} · Periodos: {{ diff.period_types.from }} → {{ diff.period_types.to }}
         </p>
       </template>

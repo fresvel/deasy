@@ -45,7 +45,7 @@
             <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
             <div 
               v-if="editable" 
-              class="absolute inset-1 flex items-center justify-center rounded-full bg-navy/80 px-1 text-center text-[10px] font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              class="absolute inset-1 flex items-center justify-center rounded-full bg-navy/80 px-1 text-center text-theme-xs font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
             >
               <span>Foto</span>
             </div>
@@ -65,11 +65,11 @@
           <h3 class="m-0 truncate text-sm font-semibold leading-tight text-strong">
             {{ username }}
           </h3>
-          <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+          <p class="mt-1 text-theme-xs font-semibold uppercase tracking-[0.14em] text-muted">
             {{ subtitle }}
           </p>
           <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-2xl border border-line bg-white px-2.5 py-1.5">
-            <p class="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">Token firma</p>
+            <p class="m-0 text-theme-xs font-bold uppercase tracking-[0.12em] text-muted">Token firma</p>
             <p class="mt-1 truncate font-mono text-xs text-body">
               {{ signatureMarker }}
             </p>

@@ -77,12 +77,12 @@ const onCardClick = (event) => {
               <span class="deasy-icon-box deasy-icon-box--sm deasy-deliverable-card__chip">
                 <component :is="h.getDeliverableStateIcon(deliverable.item)" class="h-3.5 w-3.5" />
               </span>
-              <span class="deasy-deliverable-card__label truncate text-[0.7rem] font-semibold uppercase tracking-[0.14em]">
+              <span class="deasy-deliverable-card__label truncate text-theme-xs font-semibold uppercase tracking-[0.14em]">
                 {{ h.getDeliverableUnitLabel(deliverable.item) || 'Unidad' }}
               </span>
               <span
                 v-if="deliverable.item.attachment_count"
-                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 text-[0.62rem] font-bold text-muted"
+                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 text-theme-xs font-bold text-muted"
                 :title="`${deliverable.item.attachment_count} anexo(s)`"
               >
                 <IconPaperclip class="h-3 w-3" />{{ deliverable.item.attachment_count }}
@@ -90,7 +90,7 @@ const onCardClick = (event) => {
             </div>
             <p class="m-0 line-clamp-2 text-[0.95rem] font-semibold leading-snug text-strong" :title="deliverable.item.template_artifact_name">
               {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
-              <span v-if="deliverable.item.document_version" class="deasy-deliverable-card__label ml-0.5 whitespace-nowrap align-middle text-[0.72rem] font-bold">
+              <span v-if="deliverable.item.document_version" class="deasy-deliverable-card__label ml-0.5 whitespace-nowrap align-middle text-theme-xs font-bold">
                 v{{ deliverable.item.document_version }}
               </span>
             </p>
@@ -116,7 +116,7 @@ const onCardClick = (event) => {
       <div v-show="!h.isDeliverableCollapsed(deliverable.item)" class="mt-3 flex flex-col gap-3">
         <div v-if="h.getDeliverableProgress(deliverable.item)" class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-3">
-            <p class="m-0 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
+            <p class="m-0 text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
             <AppTag :variant="h.getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ h.getDeliverableDueState(deliverable.item).value }}</AppTag>
           </div>
           <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
@@ -124,7 +124,7 @@ const onCardClick = (event) => {
             <div class="deasy-progress flex-1">
               <div class="deasy-progress__bar deasy-deliverable-card__accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
             </div>
-            <span class="shrink-0 text-[0.7rem] font-semibold text-muted">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
+            <span class="shrink-0 text-theme-xs font-semibold text-muted">{{ h.getDeliverableProgress(deliverable.item).current }}/{{ h.getDeliverableProgress(deliverable.item).total }}</span>
           </div>
         </div>
 

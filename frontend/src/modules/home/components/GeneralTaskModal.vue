@@ -56,7 +56,7 @@
         </div>
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
           <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
-            <span class="text-[0.65rem] font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
+            <span class="text-theme-xs font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
             <button type="button" class="deasy-chip-remove" @click="removeFromEntrega(i)">×</button>
           </li>
           <li v-if="!flowEntrega.length" class="text-xs text-muted">Nadie asignado.</li>
@@ -70,15 +70,15 @@
         </div>
         <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-[0.65rem] font-bold uppercase tracking-wide text-muted">Paso {{ si + 1 }}</span>
+            <span class="text-theme-xs font-bold uppercase tracking-wide text-muted">Paso {{ si + 1 }}</span>
             <div class="flex items-center gap-1.5">
               <template v-if="step.signers.length > 1">
-                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="rounded-xl border border-line bg-white px-2 py-1 text-[0.7rem] font-semibold text-icon outline-none">
+                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="rounded-xl border border-line bg-white px-2 py-1 text-theme-xs font-semibold text-icon outline-none">
                   <option value="and">Firman todas</option>
                   <option value="or">Cualquiera</option>
                   <option value="at_least">Mínimo</option>
                 </select>
-                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 rounded-xl border border-line bg-white px-2 py-1 text-[0.7rem] text-body outline-none" />
+                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 rounded-xl border border-line bg-white px-2 py-1 text-theme-xs text-body outline-none" />
               </template>
               <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="removeFirmaStep(si)">Quitar</button>
             </div>
@@ -95,7 +95,7 @@
       </div>
 
       <div v-if="flowPickerTarget" class="flex flex-col gap-2 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
-        <p class="m-0 text-[0.7rem] font-semibold text-primary">
+        <p class="m-0 text-theme-xs font-semibold text-primary">
           {{ flowPickerTarget === 'entrega' ? 'Quién elabora' : (flowPickerTarget === 'firma:new' ? 'Nuevo paso de firma' : 'Añadir firmante al paso') }}
         </p>
         <div class="deasy-section-nav-group self-start">
@@ -159,7 +159,7 @@
           <input v-model="generalTaskForm.endDate" type="date" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none" />
         </label>
       </div>
-      <p class="m-0 text-[0.7rem] font-medium text-muted">
+      <p class="m-0 text-theme-xs font-medium text-muted">
         Se emite<template v-if="senderUnitName"> desde <strong class="font-semibold text-muted">{{ senderUnitName }}</strong></template> con fecha de hoy. Indica un vencimiento solo si debe atenderse antes de una fecha.
       </p>
     </section>

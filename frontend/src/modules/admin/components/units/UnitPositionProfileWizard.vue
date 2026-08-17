@@ -16,7 +16,7 @@
             <IconCheck v-if="idx < current" class="h-3.5 w-3.5" />
             <span v-else>{{ idx + 1 }}</span>
           </span>
-          <span class="hidden text-[11px] font-semibold sm:inline" :class="idx === current ? 'text-primary' : 'text-muted'">{{ step }}</span>
+          <span class="hidden text-theme-xs font-semibold sm:inline" :class="idx === current ? 'text-primary' : 'text-muted'">{{ step }}</span>
         </div>
         <div v-if="idx < stepLabels.length - 1" class="h-px flex-1 bg-gray-200"></div>
       </template>

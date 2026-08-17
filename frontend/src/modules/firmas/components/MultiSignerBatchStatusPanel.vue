@@ -40,19 +40,19 @@
 
     <div class="grid grid-cols-2 gap-3">
       <div class="flex flex-col items-center justify-center rounded-xl border border-line bg-surface p-3.5 text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted">Documentos</div>
+        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-muted">Documentos</div>
         <div class="text-2xl font-black leading-none text-strong">{{ documentsCount }}</div>
       </div>
       <div class="deasy-alert deasy-alert--success flex flex-col items-center justify-center text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-success">Éxitos</div>
+        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-success">Éxitos</div>
         <div class="text-2xl font-black leading-none text-success">{{ successCount }}</div>
       </div>
       <div class="deasy-alert deasy-alert--warning flex flex-col items-center justify-center text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-warning">Pendientes</div>
+        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-warning">Pendientes</div>
         <div class="text-2xl font-black leading-none text-warning">{{ pendingCount }}</div>
       </div>
       <div class="deasy-alert deasy-alert--danger flex flex-col items-center justify-center text-center">
-        <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-danger">Fallos</div>
+        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-danger">Fallos</div>
         <div class="text-2xl font-black leading-none text-danger">{{ failedCount }}</div>
       </div>
     </div>
@@ -61,7 +61,7 @@
       <div class="mb-3 flex items-center justify-between gap-3">
         <div>
           <div class="text-sm font-bold text-strong">Progreso del lote</div>
-          <div class="mt-0.5 text-[11px] font-medium text-muted">
+          <div class="mt-0.5 text-theme-xs font-medium text-muted">
             {{ progressLabel }}
           </div>
         </div>

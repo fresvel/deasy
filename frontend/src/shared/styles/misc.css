@@ -51,7 +51,7 @@
     }
 
     .deasy-hero-description {
-        @apply m-0 max-w-3xl text-[0.75rem] font-medium leading-4.5 text-icon md:text-[0.8rem];
+        @apply m-0 max-w-3xl text-theme-xs font-medium leading-4.5 text-icon md:text-[0.8rem];
     }
 
     .deasy-hero-side {
@@ -133,7 +133,7 @@
 @layer components {
     /* EL OVERLINE: el rotulo pequeno en versalitas que va encima de un titulo o
        de un dato. Habia 75 escritos a mano en DIEZ formas, y entre ellas cuatro tamanos de
-       fuente distintos —`text-[0.6rem]` (9.6px), `text-[11px]`, `text-[0.7rem]` (11.2px) y
+       fuente distintos —`text-theme-xs` (9.6px), `text-theme-xs`, `text-theme-xs` (11.2px) y
        `text-xs`—, cuatro valores de `tracking`, dos pesos y dos colores. Nadie distingue 9.6
        de 11 de 11.2 px: eran tres formas de escribir el mismo escalon.
 

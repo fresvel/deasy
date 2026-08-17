@@ -119,7 +119,7 @@
                   </button>
                 </div>
                 <div
-                  class="mt-2 flex items-center gap-2 text-[11px] font-bold"
+                  class="mt-2 flex items-center gap-2 text-theme-xs font-bold"
                   :class="Number(message.sender_person_id) === Number(currentPersonId) ? 'text-white/80' : 'text-muted'"
                 >
                   <span>{{ Number(message.sender_person_id) === Number(currentPersonId) ? 'Tú' : `Persona #${message.sender_person_id}` }}</span>
@@ -202,12 +202,12 @@
                     <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
                   </div>
                   <div class="shrink-0 text-right">
-                    <span class="block text-[11px] font-bold uppercase tracking-wide text-muted">
+                    <span class="block text-theme-xs font-bold uppercase tracking-wide text-muted">
                       {{ item.lastMessageAtLabel }}
                     </span>
                     <span
                       v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
                     >
                       {{ item.unreadCount }}
                     </span>
@@ -237,12 +237,12 @@
                     <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
                   </div>
                   <div class="shrink-0 text-right">
-                    <span class="block text-[11px] font-bold uppercase tracking-wide text-muted">
+                    <span class="block text-theme-xs font-bold uppercase tracking-wide text-muted">
                       {{ item.lastMessageAtLabel }}
                     </span>
                     <span
                       v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
                     >
                       {{ item.unreadCount }}
                     </span>

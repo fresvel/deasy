@@ -297,7 +297,7 @@
             <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">prod</code>):
           </p>
           <pre
-            class="m-0 overflow-x-auto rounded bg-white/80 p-3 text-[12px] leading-relaxed"
+            class="m-0 overflow-x-auto rounded bg-white/80 p-3 text-theme-xs leading-relaxed"
           ><code>bash scripts/docker-env.sh &lt;env&gt; exec -T backend \
   npm run recover:admin -- \
     --cedula 1234567890 \

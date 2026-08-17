@@ -51,7 +51,7 @@
           </div>
         </div>
       </div>
-      <p class="m-0 text-[0.7rem] text-muted">
+      <p class="m-0 text-theme-xs text-muted">
         Total atascados: <span class="font-semibold text-icon">{{ items.length }}</span>. La reasignación (traspaso) se habilitará desde aquí en el siguiente paso.
       </p>
     </div>

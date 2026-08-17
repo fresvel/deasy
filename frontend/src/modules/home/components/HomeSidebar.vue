@@ -24,7 +24,7 @@
             <span class="deasy-nav-item__label">{{ item.label }}</span>
             <span
               v-if="item.badge"
-              class="ml-auto inline-flex shrink-0 items-center rounded-full bg-brand-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary"
+              class="ml-auto inline-flex shrink-0 items-center rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"
             >{{ item.badge }}</span>
           </button>
         </div>

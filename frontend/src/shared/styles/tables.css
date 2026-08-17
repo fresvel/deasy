@@ -31,7 +31,7 @@
      * forma que separaba cabecera de dato; lo compensa que el peso y el color siguen distinguiendola.
      *
      * `--color-body` NO es una aproximacion: es un alias de `--color-gray-700`, el mismo `#344054`
-     * que usa su demo. Y `text-theme-xs` sustituye a `text-[12px]`, que era un valor arbitrario
+     * que usa su demo. Y `text-theme-xs` sustituye a `text-theme-xs`, que era un valor arbitrario
      * escrito a mano para el mismo 12 px que la escala ya define. */
     .deasy-table th {
         @apply px-4 py-3 text-theme-xs font-medium;

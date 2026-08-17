@@ -90,11 +90,11 @@
     }
 
     .deasy-inline-tab--stacked {
-        @apply flex-1 flex-col justify-center gap-1 px-1 py-2.5 text-[0.6875rem] font-semibold;
+        @apply flex-1 flex-col justify-center gap-1 px-1 py-2.5 text-theme-xs font-semibold;
     }
 
     .deasy-inline-tab__badge {
-        @apply inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold;
+        @apply inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-theme-xs font-semibold;
         background: var(--color-surface);
         color: var(--color-muted);
     }
@@ -271,7 +271,7 @@
     }
 
     .deasy-counter-nav__label {
-        @apply text-[0.625rem] font-bold uppercase tracking-wider text-muted;
+        @apply text-theme-xs font-bold uppercase tracking-wider text-muted;
     }
 
     .deasy-counter-nav__reading {
@@ -279,7 +279,7 @@
     }
 
     .deasy-counter-nav--sm .deasy-counter-nav__reading {
-        @apply text-[0.5625rem] font-black uppercase tracking-[0.14em] text-icon;
+        @apply text-theme-xs font-black uppercase tracking-[0.14em] text-icon;
     }
 
     .deasy-counter-nav__input {
@@ -321,7 +321,7 @@
        con una clase que calcule el JS: el estado ya esta en el boton y repetirlo en un `:class`
        era la tercera funcion de este fichero que devolvia color en una cadena. */
     .deasy-stepper__hint {
-        @apply text-[0.65rem] font-semibold uppercase tracking-wide text-muted;
+        @apply text-theme-xs font-semibold uppercase tracking-wide text-muted;
     }
 
     /* El mismo orden que arriba, y por el mismo motivo: `--complete` va DESPUES de `--active` para

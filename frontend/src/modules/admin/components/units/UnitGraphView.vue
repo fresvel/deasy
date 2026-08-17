@@ -234,7 +234,7 @@
                 <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
                 <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
                 <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
-                <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-danger">Inactivo</span>
+                <span v-if="!pos.is_active" class="ml-auto text-theme-xs font-semibold text-danger">Inactivo</span>
                 <div v-if="editable" class="ml-auto flex items-center gap-1">
                   <AppButton
                     :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
@@ -334,7 +334,7 @@
                   class="h-8 w-full rounded-xl border border-line-strong px-2 text-xs outline-none"
                   @input="searchPersons"
                 />
-                <div v-if="personSearching" class="mt-1 px-1 text-[11px] text-muted">Buscando…</div>
+                <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
                 <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
                   <li v-for="per in personResults" :key="per.id">
                     <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
@@ -343,7 +343,7 @@
                     </button>
                   </li>
                 </ul>
-                <div v-else-if="personQuery.trim().length >= 2" class="mt-1 px-1 text-[11px] text-muted">Sin resultados.</div>
+                <div v-else-if="personQuery.trim().length >= 2" class="mt-1 px-1 text-theme-xs text-muted">Sin resultados.</div>
               </div>
             </li>
           </ul>
@@ -397,12 +397,12 @@
                       <IconUnlink class="h-5 w-5" />
                     </AppButton>
                   </div>
-                  <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-muted">Versiona el proceso para cambiar el alcance</span>
-                  <span v-else class="ml-auto text-[11px] italic text-muted">Definido a nivel de proceso</span>
+                  <span v-else-if="proc.origin === 'direct'" class="ml-auto text-theme-xs italic text-muted">Versiona el proceso para cambiar el alcance</span>
+                  <span v-else class="ml-auto text-theme-xs italic text-muted">Definido a nivel de proceso</span>
                 </div>
               </li>
             </ul>
-            <p class="m-0 mt-3 text-[11px] leading-snug text-muted">
+            <p class="m-0 mt-3 text-theme-xs leading-snug text-muted">
               "Directo" = regla propia de esta unidad. El alcance solo se edita mientras la configuración está
               en <span class="font-semibold">borrador</span>; al activarse queda fija (cambiarla ⇒ nueva versión).
               "Por tipo"/"Global" se definen en la configuración del proceso y aplican a varias unidades.
@@ -485,7 +485,7 @@
               {{ def.process_name }} · {{ def.variation_key }} · v{{ def.definition_version }}
             </option>
           </select>
-          <span v-if="!processEditingRuleId && attachableLoaded && !attachableProcesses.length" class="mt-1 block text-[11px] text-warning">
+          <span v-if="!processEditingRuleId && attachableLoaded && !attachableProcesses.length" class="mt-1 block text-theme-xs text-warning">
             No hay configuraciones en borrador acotables por unidad. El alcance solo se edita en borrador; las variaciones por tipo de unidad se gestionan en la configuración del proceso.
           </span>
         </label>

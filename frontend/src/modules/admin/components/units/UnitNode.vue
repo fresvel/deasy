@@ -45,15 +45,15 @@
         class="h-3.5 w-3.5 shrink-0 text-warning"
         :title="data.healthIssues.join(' · ')"
       />
-      <span v-if="data.collapsed" class="text-[11px] font-semibold text-primary">▸</span>
+      <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
-      <span class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-icon ring-1 ring-line">
+      <span class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-theme-xs font-semibold text-icon ring-1 ring-line">
         {{ data.unit_type_name || 'Sin tipo' }}
       </span>
       <span
         v-if="data.positions_count"
-        class="inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
+        class="inline-flex items-center rounded-xl px-1.5 py-0.5 text-theme-xs font-semibold ring-1"
         :class="positionsBadgeClass"
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</span>

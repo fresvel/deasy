@@ -260,7 +260,7 @@
                         :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
                       ></div>
                     </div>
-                    <p class="text-[11px] font-medium" :class="passwordTextColors[passwordStrengthScore]">{{ passwordStrengthText }}</p>
+                    <p class="text-theme-xs font-medium" :class="passwordTextColors[passwordStrengthScore]">{{ passwordStrengthText }}</p>
                   </div>
                 </div>
 
@@ -288,7 +288,7 @@
                   </div>
                   <div
                     v-if="newuser.repassword"
-                    class="mt-1 flex items-center gap-1 text-[11px] font-medium"
+                    class="mt-1 flex items-center gap-1 text-theme-xs font-medium"
                     :class="passwordsMatch ? 'text-success' : 'text-danger'"
                   >
                     <IconCheck v-if="passwordsMatch" class="h-3.5 w-3.5" />

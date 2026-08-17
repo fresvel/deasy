@@ -198,12 +198,12 @@
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.variation_key }}</span>
                     <span>v{{ cfg.definition_version }}</span>
                   </div>
-                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-theme-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.rules_count }} reglas</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.templates_count }} plantillas</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.runs_count }} corridas</span>
                   </div>
-                  <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                  <div class="mt-2 flex flex-wrap items-center gap-2 text-theme-xs">
                     <template v-if="editable && cfg.status === 'draft'">
                       <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Editar</button>
                       <span class="text-gray-300">·</span>
@@ -233,9 +233,9 @@
                 <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong">{{ ch.name }}</span>
-                    <span v-if="!ch.is_active" class="text-[11px] font-semibold text-danger">Inactivo</span>
+                    <span v-if="!ch.is_active" class="text-theme-xs font-semibold text-danger">Inactivo</span>
                     <span
-                      class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-[11px] font-semibold ring-1"
+                      class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-theme-xs font-semibold ring-1"
                       :class="`graph-node__badge--${ch.active_count ? 'success' : (ch.definitions_count ? 'warning' : 'neutral')}`"
                     >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</span>
                   </div>
@@ -288,7 +288,7 @@
                   </div>
                 </li>
               </ul>
-              <p class="m-0 mt-3 text-[11px] leading-snug text-muted">El lanzamiento de nuevas corridas se habilitará en el siguiente paso.</p>
+              <p class="m-0 mt-3 text-theme-xs leading-snug text-muted">El lanzamiento de nuevas corridas se habilitará en el siguiente paso.</p>
             </div>
           </template>
         </div>
@@ -300,7 +300,7 @@
       <aside class="deasy-drawer">
         <div class="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
           <div class="min-w-0">
-            <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-primary">Entregable · versiones</p>
+            <p class="m-0 text-theme-xs font-semibold uppercase tracking-wide text-primary">Entregable · versiones</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
             <p class="m-0 mt-0.5 truncate text-xs text-muted">
               {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
@@ -342,10 +342,10 @@
                 <span class="text-sm font-bold text-strong">v{{ v.storage_version }}</span>
                 <AppTag :variant="tonoCicloVida(v.lifecycle_state)" size="sm" outlined>{{ versionStateLabel(v.lifecycle_state) }}</AppTag>
                 <AppTag v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" variant="accent" title="Versión vinculada a esta configuración">Vinculada aquí</AppTag>
-                <span class="ml-auto text-[11px] font-semibold text-primary">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
+                <span class="ml-auto text-theme-xs font-semibold text-primary">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
               </div>
               <div class="mt-1 flex items-center justify-between gap-2">
-                <span class="text-[11px] text-muted">{{ formatVersionDate(v.created_at) }}</span>
+                <span class="text-theme-xs text-muted">{{ formatVersionDate(v.created_at) }}</span>
                 <AppButton
                   v-if="editable && v.lifecycle_state !== 'retired' && String(v.id) !== String(templateDetail.pinnedArtifactId)"
                   variant="primary-outline"

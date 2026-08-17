@@ -56,7 +56,16 @@ import { join, resolve } from "node:path";
  * escrita con utilidades sueltas pasa al bloque `deasy-inline-tab`, y con ella se va su
  * `min-w-[1.25rem]`. No es una poda buscada: es lo que pasa cuando un elemento vuelve a su
  * bloque — los valores sueltos que necesitaba para imitarlo dejan de hacer falta. */
-const TECHO = { total: 290, "text-": 118, "rounded-": 11, "shadow-": 16 };
+/* 2026-08-16 · 189 / text- 17 — **F5.1, la decision del dueño del 13-ago ejecutada**: los 107
+ * tamanos de texto por debajo de 12 px (y los 5 que YA median 12 escritos a mano) pasan a
+ * `text-theme-xs`, que es el suelo de la escala adoptada. Es la poda mas grande que ha tenido
+ * este contador: `text-` cae de 118 a 17 de golpe.
+ *
+ * ⚠️ Y de los 17 que quedan, DOS NO SON TAMANOS: `text-[#7a869a]` y `text-[#21517a]` son
+ * COLORES escritos con la sintaxis de tamaño — la ambiguedad de Tailwind v4 que el skill
+ * advierte y que aqui costo 114 nodos con el borde en `currentColor`. Van a la fase de color,
+ * no a esta. */
+const TECHO = { total: 189, "text-": 17, "rounded-": 11, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

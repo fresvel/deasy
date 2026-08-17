@@ -13,7 +13,7 @@
               class="deasy-dropzone--rail"
               @files-selected="onFilesSelected"
             />
-            <p v-if="uploadError" class="rounded-2xl bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-danger">
+            <p v-if="uploadError" class="rounded-2xl bg-rose-50 px-3 py-2 text-theme-xs font-semibold leading-snug text-danger">
               {{ uploadError }}
             </p>
           </div>
@@ -121,8 +121,8 @@
                     <AppDeleteButton label="Quitar" @click="removeDocument(index)" />
                   </div>
                 </div>
-                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
-                <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-[11px] font-semibold text-danger">{{ doc.error }}</div>
+                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-theme-xs font-medium text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
+                <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-theme-xs font-semibold text-danger">{{ doc.error }}</div>
               </div>
             </div>
           </div>
@@ -233,7 +233,7 @@
                 class="deasy-alert deasy-alert--danger pointer-events-none absolute z-20 border-2 border-dashed mix-blend-multiply"
                 :style="activeSelectionBox"
               >
-                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-theme-lg">
+                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-theme-xs font-bold text-white shadow-theme-lg">
                   <IconDragDrop class="h-3 w-3" />
                   <span>Calculando Área...</span>
                 </div>

@@ -104,7 +104,7 @@
                         <IconCheck v-if="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id))" class="h-3 w-3" />
                       </span>
                       <span class="truncate">{{ routedMenuLabel(process) }}</span>
-                      <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                      <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                     </button>
                   </div>
                 </div>
@@ -290,7 +290,7 @@
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                             <strong class="text-sm font-semibold text-strong leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
-                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
@@ -351,7 +351,7 @@
                         </div>
                         <span
                           v-if="pos.positionType"
-                          class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
+                          class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-theme-xs font-bold uppercase tracking-wider"
                           :class="{
                             'deasy-icon-box--success': pos.positionType === 'real',
                             'deasy-icon-box--info': pos.positionType === 'simbolico',
@@ -380,7 +380,7 @@
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                             <strong class="text-sm font-semibold text-strong leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
-                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
@@ -1288,7 +1288,7 @@
           >
             <IconPaperclip class="deasy-inline-tab__icon" />
             Anexos
-            <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brand-100 px-1 text-[0.65rem] font-bold text-primary">{{ attachmentsState.items.length }}</span>
+            <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brand-100 px-1 text-theme-xs font-bold text-primary">{{ attachmentsState.items.length }}</span>
           </button>
           <button
             v-if="deliverableWorkspaceSubject"
@@ -1327,7 +1327,7 @@
                     :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-step-ink' : 'border-blue-light-300'"
                   >
                     <dt
-                      class="text-[11px] font-bold uppercase tracking-[0.16em]"
+                      class="text-theme-xs font-bold uppercase tracking-[0.16em]"
                       :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-step-ink' : 'text-info'"
                     >
                       Responsable actual
@@ -1335,15 +1335,15 @@
                     <dd class="m-0 text-sm font-semibold text-strong">{{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
-                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Proceso</dt>
+                    <dt class="text-theme-xs font-bold uppercase tracking-[0.16em] text-muted">Proceso</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
-                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Unidad</dt>
+                    <dt class="text-theme-xs font-bold uppercase tracking-[0.16em] text-muted">Unidad</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableUnitLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
-                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Periodo</dt>
+                    <dt class="text-theme-xs font-bold uppercase tracking-[0.16em] text-muted">Periodo</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</dd>
                     <dd class="m-0 text-xs font-medium text-muted">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
@@ -1569,7 +1569,7 @@
                     </span>
                     <div class="flex flex-col gap-1">
                       <strong class="text-sm font-bold text-strong">Paso {{ step.step_order }}</strong>
-                      <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">Entrega</span>
+                      <span class="text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted">Entrega</span>
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
@@ -1810,7 +1810,7 @@
                     </span>
                     <div class="flex flex-col gap-1">
                       <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
+                      <p class="text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">

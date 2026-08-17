@@ -57,7 +57,7 @@
             </span>
             <div class="flex flex-col gap-1">
               <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
+              <p class="text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end">

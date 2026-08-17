@@ -225,15 +225,15 @@
       <div v-else class="mt-3 flex flex-col gap-2">
         <div v-for="(field, index) in schemaFields" :key="index" class="grid grid-cols-12 items-end gap-2 rounded-xl border border-line bg-white px-3 py-2.5">
           <div class="col-span-3">
-            <label :for="fieldId(`field-key-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Clave</label>
+            <label :for="fieldId(`field-key-${index}`)" class="mb-1 block text-theme-xs font-semibold uppercase tracking-wide text-muted">Clave</label>
             <input :id="fieldId(`field-key-${index}`)" :value="field.key" placeholder="ej. semestre" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSchemaField(index, 'key', $event.target.value)" />
           </div>
           <div class="col-span-3">
-            <label :for="fieldId(`field-title-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Etiqueta</label>
+            <label :for="fieldId(`field-title-${index}`)" class="mb-1 block text-theme-xs font-semibold uppercase tracking-wide text-muted">Etiqueta</label>
             <input :id="fieldId(`field-title-${index}`)" :value="field.title" placeholder="ej. Semestre" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSchemaField(index, 'title', $event.target.value)" />
           </div>
           <div class="col-span-2">
-            <label :for="fieldId(`field-component-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Componente</label>
+            <label :for="fieldId(`field-component-${index}`)" class="mb-1 block text-theme-xs font-semibold uppercase tracking-wide text-muted">Componente</label>
             <select :id="fieldId(`field-component-${index}`)" :value="field.component" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @change="updateSchemaField(index, 'component', $event.target.value)">
               <option value="text">Texto</option>
               <option value="textarea">Área de texto</option>
@@ -246,11 +246,11 @@
             </select>
           </div>
           <div class="col-span-2">
-            <label :for="fieldId(`field-group-${index}`)" class="mb-1 block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Grupo</label>
+            <label :for="fieldId(`field-group-${index}`)" class="mb-1 block text-theme-xs font-semibold uppercase tracking-wide text-muted">Grupo</label>
             <input :id="fieldId(`field-group-${index}`)" :value="field.group" placeholder="general" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSchemaField(index, 'group', $event.target.value)" />
           </div>
           <div class="col-span-1 flex flex-col items-center justify-center gap-1 pb-1.5">
-            <span class="text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Req.</span>
+            <span class="text-theme-xs font-semibold uppercase tracking-wide text-muted">Req.</span>
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
@@ -458,7 +458,7 @@
               <input :id="fieldId(`sig-name-${index}`)" :value="step.name" placeholder="ej. Firma de dirección" class="w-full rounded-2xl border border-line px-2.5 py-1.5 text-sm outline-none" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
             <div class="col-span-5">
-              <label :for="fieldId(`sig-approval-mode-${index}`)" class="mb-1 inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
+              <label :for="fieldId(`sig-approval-mode-${index}`)" class="mb-1 inline-flex items-center gap-1 text-theme-xs font-semibold uppercase tracking-wide text-muted">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
               <select :id="fieldId(`sig-approval-mode-${index}`)" :value="step.approval_mode || 'and'" class="w-full rounded-2xl border border-line px-2 py-1.5 text-sm outline-none" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
                 <option value="and">Todas</option>
                 <option value="or">Cualquiera</option>
@@ -477,7 +477,7 @@
           <!-- Firmantes del paso: cada uno con su propio resolutor; el cupo entre ellos lo define "Aprobación". -->
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
-              <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
+              <span class="inline-flex items-center gap-1 text-theme-xs font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
               <AppButton variant="primary-outline" size="sm" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
             </div>
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-line bg-surface/60 px-2.5 py-2">
