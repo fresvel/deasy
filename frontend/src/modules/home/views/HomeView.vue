@@ -695,7 +695,7 @@
               <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
                 <article class="lg:col-span-12 bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
-                  <section class="overflow-hidden rounded-[2rem] border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
+                  <section class="overflow-hidden rounded-2xl border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <button type="button" class="deasy-picker group" @click="openTaskFiltersModal">
@@ -731,7 +731,7 @@
                           </span>
                         </button>
                       </div>
-                      <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-white/80 px-4 py-3">
+                      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line/80 bg-white/80 px-4 py-3">
                         <div class="text-sm font-medium text-muted">
                           Tareas visibles:
                           <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
@@ -1785,7 +1785,7 @@
             </section>
           </div>
 
-          <section class="rounded-[1.8rem] border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
+          <section class="rounded-2xl border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
               <AppTag variant="neutral">

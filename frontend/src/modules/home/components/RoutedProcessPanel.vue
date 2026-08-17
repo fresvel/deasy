@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-5">
     <!-- Barra de acción: propósito + botón principal. El título del proceso lo pone la cabecera de la página. -->
-    <div class="overflow-hidden rounded-[1.75rem] border border-brand-100 bg-linear-to-br from-brand-50/70 via-white to-blue-light-50/50">
+    <div class="overflow-hidden rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50/70 via-white to-blue-light-50/50">
       <div class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
         <div class="flex items-start gap-3.5">
           <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--outlined">
@@ -56,7 +56,7 @@
 
     <div
       v-else-if="!activeItems.length"
-      class="flex flex-col items-center gap-3 rounded-[1.5rem] border-2 border-dashed border-line bg-surface/50 px-6 py-12 text-center"
+      class="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-surface/50 px-6 py-12 text-center"
     >
       <span class="inline-flex h-14 w-14 items-center justify-center deasy-card text-gray-300">
         <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-7 w-7" />

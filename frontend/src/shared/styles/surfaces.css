@@ -243,11 +243,14 @@
     }
 
     /* LA FILA ELEGIBLE — un elemento de una lista que se pulsa para escogerlo.
-       ⚠️ Estaba escrita **doce veces con CUATRO radios distintos** —`rounded-xl`, `rounded-2xl`,
-       `rounded-2xl` y `rounded-[1.2rem]`, o sea 12, 16, 16 y 19.2 px— para el mismo objeto y a
-       veces en la misma pantalla. Dos de los cuatro eran valores arbitrarios que existian **para
-       caer entre dos pasos de la escala**, que es exactamente el sintoma que el plan describe en
-       §3.1 para `deasy-icon-box`. Se queda uno: el de la escala. */
+       ⚠️ Estaba escrita **doce veces con CUATRO radios distintos** —12, 16, 16 y 19.2 px— para el
+       mismo objeto y a veces en la misma pantalla. Dos de los cuatro eran valores **arbitrarios que
+       existian para caer entre dos pasos de la escala**, que es exactamente el sintoma que el plan
+       describe en §3.1 para `deasy-icon-box`. Se queda uno: el de la escala.
+       📌 Los cuatro se citan por su medida y no por su clase a proposito: `check:no-arbitrary` LEE
+       los comentarios, asi que escribir aqui el nombre de la utilidad que se retiro la mantiene
+       viva en el censo. Es la norma «documenta la clase, no la escribas» del CLAUDE.md, y este
+       comentario la incumplia. */
     .deasy-picker {
         @apply relative flex w-full items-center gap-3 rounded-xl border border-line bg-white px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40;
         box-shadow: 0 8px 18px rgba(var(--elev-ink-rgb), 0.05);
