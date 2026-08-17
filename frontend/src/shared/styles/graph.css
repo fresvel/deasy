@@ -50,7 +50,7 @@
 
     .graph-toggle {
         padding: 0.25rem 0.6rem;
-        border-radius: 0.45rem;
+        border-radius: var(--radius-lg);
         font-size: 0.72rem;
         font-weight: 600;
         color: var(--color-muted);
@@ -58,7 +58,7 @@
     }
 
     .graph-toggle:hover {
-        color: var(--color-ink);
+        color: var(--color-strong);
     }
 
     .graph-toggle--on {
@@ -104,7 +104,7 @@
         justify-content: center;
         height: 22px;
         width: 22px;
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         color: var(--color-icon);
         transition: background 0.15s ease, color 0.15s ease;
     }
@@ -148,7 +148,7 @@
         justify-content: center;
         height: 30px;
         width: 30px;
-        border-radius: 9px;
+        border-radius: var(--radius-lg);
         background: var(--color-white);
         border: 1px solid var(--color-line);
         color: var(--color-icon);

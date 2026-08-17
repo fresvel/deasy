@@ -148,6 +148,60 @@ for (const ruta of ficheros(SRC, [".vue"])) {
   }
 }
 
+/* ── 4. Y QUE COMPONE EL JAVASCRIPT ─────────────────────────────────────────────────────────────
+ * La señal 3 mira el markup a proposito, porque leer el `<script>` entero acusaba a las clases
+ * que un comentario CITA. Pero eso dejaba fuera justo el sitio donde este repo esconde sus
+ * peores clases muertas: **las que se componen en un mapa o en un ternario de JavaScript**.
+ *
+ * Lo pago dos veces el mismo fichero. `AppButton.vue` documento en 2026-08-14 que cuatro clases
+ * viajaban al DOM sin pintar porque «los gates leen atributos `class`, y estas viven en un mapa
+ * de JavaScript»… y en la misma frase dejo viva `admin-btn`, que tres dias despues se quedo sin
+ * su unica regla y siguio estampandose en los ~317 botones de la aplicacion. Nadie la vio.
+ *
+ * La señal esquiva el falso positivo que motivo la exclusion, con dos acotaciones:
+ *   · solo dentro de LITERALES DE CADENA, no en cualquier texto del script;
+ *   · solo nombres con NUESTROS prefijos (`deasy-`, `admin-`), no utilidades de Tailwind —que
+ *     son infinitas y se generan bajo demanda, asi que compararlas contra el CSS no dice nada.
+ * Y se quitan los comentarios antes de mirar, que es la trampa ya pagada tres veces en este repo.
+ */
+const NUESTRA_CLASE = /^(?:deasy|admin)-[a-z0-9]+(?:-{1,2}[a-z0-9]+)*$/;
+
+const sinComentarios = (fuente) => fuente
+  .replace(/\/\*[\s\S]*?\*\//g, "")
+  .replace(/<!--[\s\S]*?-->/g, "")
+  .replace(/^\s*\/\/.*$/gm, "");
+
+const soloScript = (fuente, esVue) => {
+  if (!esVue) return fuente;
+  const trozos = [...fuente.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)];
+  return trozos.map((m) => m[1]).join("\n");
+};
+
+for (const ruta of ficheros(SRC, [".vue", ".js"])) {
+  if (ruta.startsWith(STYLES)) continue;
+  const esVue = ruta.endsWith(".vue");
+  const fuente = sinComentarios(soloScript(readFileSync(ruta, "utf8"), esVue));
+  for (const m of fuente.matchAll(/"([^"\n]*)"|'([^'\n]*)'|`([^`\n]*)`/g)) {
+    const cadena = m[1] ?? m[2] ?? m[3];
+    if (!cadena) continue;
+    const piezas = cadena.split(/\s+/).filter(Boolean);
+    /* ⚠️ UN NOMBRE CON NUESTRO PREFIJO NO ES SIEMPRE UNA CLASE. La primera version de esta señal
+       acuso a `deasy-bootstrap-status`, que es una CLAVE DE `sessionStorage`. Asi que un literal
+       solo cuenta si trae VARIAS clases —que es la forma de las listas de clases: `"deasy-btn
+       admin-btn"`— o si en su vecindario aparece la palabra `class`. Una clave suelta no cumple
+       ninguna de las dos, y una lista de clases cumple la primera siempre. */
+    const vecindario = fuente.slice(Math.max(0, m.index - 90), m.index + cadena.length + 30);
+    if (piezas.length < 2 && !/class/i.test(vecindario)) continue;
+    for (const clase of piezas) {
+      if (!NUESTRA_CLASE.test(clase)) continue;
+      if (SIN_REGLA_A_PROPOSITO.test(clase)) continue;
+      if (existentes.has(clase)) continue;
+      if (!usos.has(clase)) usos.set(clase, []);
+      usos.get(clase).push(ruta.slice(SRC.length + 1) + " (compuesta en JS)");
+    }
+  }
+}
+
 if (usos.size === 0) {
   console.log(`check:orphan-classes OK — ninguna clase escrita fuera del CSS construido (${existentes.size} existen).`);
   process.exit(0);

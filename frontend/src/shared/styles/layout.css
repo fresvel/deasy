@@ -86,11 +86,11 @@
     }
 
     .deasy-context-header__title {
-        @apply truncate text-[1.05rem] font-semibold leading-tight text-strong;
+        @apply truncate text-base font-semibold leading-tight text-strong;
     }
 
     .deasy-context-header__subtitle {
-        @apply mt-0.5 truncate text-[0.8rem] leading-tight text-muted;
+        @apply mt-0.5 truncate text-theme-xs leading-tight text-muted;
     }
 
     .deasy-secondary-nav {

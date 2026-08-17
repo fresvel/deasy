@@ -65,8 +65,14 @@ const attrs = useAttrs();
    Cuatro de los que habia aqui eran peores que redundantes: `admin-btn--icon`, `--sm`, `--lg` y
    `person-assignment-menu-btn` **no los declaraba ningun CSS**. Llevaban meses viajando al DOM
    sin pintar, y no los veia ningun gate: los gates leen atributos `class` del markup, y estos
-   viven en un MAPA DE JAVASCRIPT. La clase base `admin-btn` si se queda — la consume
-   `.admin-page-header__actions .admin-btn`, que es deuda de la fase 6, no de esta. */
+   viven en un MAPA DE JAVASCRIPT.
+
+   📌 Y la base `admin-btn` acabo igual. Aqui se escribio «se queda, la consume
+   `.admin-page-header__actions .admin-btn`» — y esa regla murio con F5.4 el 2026-08-17, dejando
+   la clase estampada en los ~317 botones **sin pintar nada**. O sea: el mismo defecto, en el
+   mismo fichero, sobreviviendo dos fases mas por el mismo motivo. Desde este commit
+   `check:orphan-classes` **tambien lee los literales de JavaScript**, asi que no puede repetirse
+   en silencio. */
 /* [F4 2026-08-16] UN SOLO NOMBRE POR VARIANTE, Y DICE TONO Y FORMA — `{tono}-{modo}`.
    Lo que escribes en la plantilla es LITERALMENTE el sufijo de la clase, asi que este mapa no
    traduce nada: `variant="danger-soft"` -> `.deasy-btn--danger-soft`. Sigue siendo un objeto
@@ -195,9 +201,12 @@ const resolveClass = (map, key, kind) => {
 };
 
 const classes = computed(() => [
-  props.variant === "plain"
-    ? ""
-    : "deasy-btn admin-btn",
+  /* `admin-btn` se estampaba aqui y en la rama de solo-icono, o sea en los ~317 botones de la
+     aplicacion. **No pintaba nada**: su unico consumidor eran dos reglas que cambiaban el boton
+     segun donde estuviera —cabecera de pagina y barra de accion—, y murieron con F5.4. Retirada
+     el 2026-08-17. Sobrevivio a `check:orphan-classes` porque **se componia en JavaScript**, que
+     es el agujero que `frontend/CLAUDE.md` §6.4 ya tenia fichado y que este mismo commit tapa. */
+  props.variant === "plain" ? "" : "deasy-btn",
   resolveClass(variantClassMap, props.variant, "variant"),
   /* [G3 2026-08-14] AQUI HABIA UNA EXCEPCION PARA `close`, y su historia vale como norma:
      `variant="close"` no admitia tamaño —la ✕ es un cuadrado fijo— pero eso no estaba escrito en
@@ -211,7 +220,7 @@ const classes = computed(() => [
   props.variant === "plain" || props.iconOnly
     ? ""
     : resolveClass(sizeClassMap, props.size, "size"),
-  props.iconOnly ? "deasy-btn deasy-btn--icon admin-btn" : "",
+  props.iconOnly ? "deasy-btn deasy-btn--icon" : "",
   props.className
 ]);
 

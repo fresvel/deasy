@@ -100,7 +100,6 @@ const META = {
   "info":           ["#ffffff", 4.5, "texto informativo (era sky-600)"],
   "accent":         ["#ffffff", 3.0, "acento — pinta TODOS los <a> por `base.css`"],
   "navy":           ["#ffffff", 4.5, "titulares"],
-  "ink":            ["#ffffff", 4.5, "texto"],
   "strong":         ["#ffffff", 4.5, "texto"],
   "body":           ["#ffffff", 4.5, "texto"],
   "muted":          ["#ffffff", 4.5, "texto secundario — EL SUELO"],
@@ -113,7 +112,6 @@ const META = {
   "danger":         ["#ffffff", 4.5, "estado"],
   "warning":        ["#ffffff", 4.5, "estado"],
   "pending":        ["#ffffff", 4.5, "estado"],
-  "step-ink":       ["#ffffff", 4.5, "«te toca a ti»"],
   /* [2026-08-14 → 2026-08-16] Eran TRES tonos de accion y no queda ninguno. `action-neutral` se
      quedo sin consumidores al colapsar los 12 botones de accion sobre el componente; `action-view`
      se unifico con `info` —eran `blue-light-800` y `blue-light-700`, la misma familia en pasos
@@ -193,10 +191,10 @@ if (sinHex.length) {
    primera version proponia `primary -> success-700`, o sea la marca en verde—. El tono es una
    decision de diseno; lo unico que se automatiza es a que ESCALON de esa familia se ancla. */
 const FAMILIA = {
-  primary: "brand", navy: "gray", ink: "gray", strong: "gray", body: "gray", muted: "gray",
+  primary: "brand", navy: "gray", strong: "gray", body: "gray", muted: "gray",
   icon: "gray", line: "gray", "line-strong": "gray", "line-field": "gray", surface: "gray",
   success: "success", danger: "error", warning: "warning", pending: "orange",
-  "step-ink": "success", "action-view": "blue-light", info: "blue-light",
+  "action-view": "blue-light", info: "blue-light",
   /* Sin familia en TailAdmin: `accent` (turquesa). Se queda con su hex propio. Los dos que le
      acompañaban aqui, `action-neutral` y `action-upload`, ya no existen. */
 };
@@ -221,11 +219,10 @@ const f = (n) => n.toFixed(2).padStart(5);
  * `blue-light-700` lo habia dejado en 5.86).
  */
 const BASE = {
-  "primary": 4.84, "info": 5.86, "accent": 2.64, "navy": 17.75, "ink": 14.70, "strong": 14.70,
+  "primary": 4.84, "info": 5.86, "accent": 2.64, "navy": 17.75, "strong": 14.70,
   "body": 10.46, "muted": 7.69, "icon": 7.69, "line": 1.24, "line-strong": 1.47,
   "line-field": 1.47, "surface": 1.05, "success": 5.41, "danger": 6.57, "warning": 5.43,
-  "pending": 5.52, "step-ink": 5.41,
-  /* `action-upload` estuvo aqui con 11.45. Murio en F4 (2026-08-16) con su variante. */
+  "pending": 5.52, /* `action-upload` estuvo aqui con 11.45. Murio en F4 (2026-08-16) con su variante. */
   "white": 1.00, "navy-deep": 17.84, "gold": 2.10,
 };
 

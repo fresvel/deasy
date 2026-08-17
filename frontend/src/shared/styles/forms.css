@@ -193,7 +193,7 @@
     }
 
     .deasy-dropzone__title {
-        @apply m-0 text-lg font-semibold text-ink;
+        @apply m-0 text-lg font-semibold text-strong;
     }
 
     .deasy-dropzone__label {
@@ -385,7 +385,7 @@
 @layer components {
     .profile-field-label {
         font-weight: 600;
-        color: var(--color-ink);
+        color: var(--color-strong);
     }
 
     /* 📌 AQUI VIVIO LA CUARTA FAMILIA DE CONTROL, `profile-*` (†2026-08-15, F4). Era la mas

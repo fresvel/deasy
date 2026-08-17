@@ -1319,11 +1319,11 @@
                 <dl class="grid gap-x-6 gap-y-2.5 m-0 sm:grid-cols-2 lg:grid-cols-4">
                   <div
                     class="flex flex-col gap-0.5 border-l-2 pl-3"
-                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-step-ink' : 'border-blue-light-300'"
+                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-success' : 'border-blue-light-300'"
                   >
                     <dt
                       class="text-theme-xs font-bold uppercase tracking-[0.16em]"
-                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-step-ink' : 'text-info'"
+                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-success' : 'text-info'"
                     >
                       Responsable actual
                     </dt>

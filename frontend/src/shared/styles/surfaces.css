@@ -91,7 +91,7 @@
 
     .custom-scrollbar::-webkit-scrollbar-thumb {
         background: var(--color-line);
-        border-radius: 10px;
+        border-radius: 9999px;
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {

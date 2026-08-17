@@ -250,9 +250,15 @@
        Son ahora el mismo valor, asi que uno de los dos sobra — se retira al colapsar la capa
        de clases, no aqui. */
     --color-navy: var(--color-gray-900);    /* 17.74 -> 17.75  titulares */
-    --color-ink: var(--color-gray-800);     /* 14.68 -> 14.70 */
     --color-strong: var(--color-gray-800);  /* 11.87 -> 14.70 */
     --color-body: var(--color-gray-700);    /*  9.91 -> 10.46 */
+    /* ⚠️ ESTOS DOS TIENEN EL MISMO VALOR Y NO SON UN DUPLICADO. Se midio el 2026-08-17 buscando
+       tokens redundantes y aparecieron cuatro pares con el mismo color; dos SI lo eran y se
+       colapsaron (`ink`->`strong`, `step-ink`->`success`), y estos dos NO. El criterio es el de
+       §2.3: un token se justifica si **el concepto puede cambiar de color en el futuro**, no si
+       hoy coincide. Texto secundario e icono son roles distintos —uno se lee, el otro se mira— y
+       el dia que un icono deba aclararse sin tocar 378 textos, hara falta que sean dos.
+       Queda escrito aqui para que la proxima medicion no los cuente otra vez como deuda. */
     --color-muted: var(--color-gray-600);   /*  6.36 ->  7.69  el SUELO. Nada mas claro para texto */
     --color-icon: var(--color-gray-600);    /*  7.58 ->  7.69  iconos de accion secundaria */
 
@@ -261,6 +267,8 @@
        ⚠️ Los tres bordes siguen POR DEBAJO de los 3:1 que pide WCAG 1.4.11, como antes.
        Subirlos repinta 228 controles y esta decidido que es un rediseno aparte. */
     --color-line: var(--color-gray-200);          /* 1.25 -> 1.24  separadores y marcos */
+    /* Mismo caso que `muted`/`icon`: igual valor, roles distintos. El borde de un CONTROL y el
+       borde fuerte de una superficie no tienen por que moverse juntos. Ver la nota de arriba. */
     --color-line-strong: var(--color-gray-300);   /* 1.46 -> 1.47 */
     --color-line-field: var(--color-gray-300);    /* 1.35 -> 1.47  bordes de control */
     --color-surface: var(--color-gray-50);        /* 1.05 -> 1.05 */
@@ -281,7 +289,6 @@
 
     /* «TE TOCA A TI» — el borde y el texto de la tarjeta de entregable cuando es tu turno.
        El RELLENO no esta aqui: es `--step-rgb`, mas abajo. */
-    --color-step-ink: var(--color-success-700); /* 4.78 -> 5.41 */
 
     /* ⚠️ NO CUMPLE EN NINGUNO DE SUS USOS: icono 2.10, tooltip 2.10, chip 1.91. Y no es un
        estado: es el color de UN componente (BtnSera). Los dos problemas van juntos. */

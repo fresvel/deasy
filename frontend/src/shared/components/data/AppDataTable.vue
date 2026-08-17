@@ -84,13 +84,17 @@ const props = defineProps({
     type: String,
     default: ""
   },
+  /* `admin-action-col` acompañaba a estos dos por defecto y **no la declara ningun CSS**: viajaba
+     al DOM de cada tabla sin pintar nada. La cazo la señal nueva de `check:orphan-classes` en su
+     primera ejecucion (2026-08-17), y no la habia visto nadie porque vivia en un valor por
+     defecto de JavaScript, no en un atributo. */
   actionsHeaderClass: {
     type: String,
-    default: "text-start admin-action-col"
+    default: "text-start"
   },
   actionsBodyClass: {
     type: String,
-    default: "text-end admin-action-col"
+    default: "text-end"
   },
   rowClass: {
     type: String,

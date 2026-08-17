@@ -291,10 +291,10 @@
           <p class="m-0">
             Existen datos operativos en la base y ya no es seguro reinicializar desde la UI. Hay que
             recrear el administrador desde el contenedor del backend, sustituyendo
-            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">&lt;env&gt;</code> por el ambiente
-            (<code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">dev</code>,
-            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">qa</code> o
-            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">prod</code>):
+            <code class="rounded bg-white/80 px-1 py-0.5 text-theme-xs">&lt;env&gt;</code> por el ambiente
+            (<code class="rounded bg-white/80 px-1 py-0.5 text-theme-xs">dev</code>,
+            <code class="rounded bg-white/80 px-1 py-0.5 text-theme-xs">qa</code> o
+            <code class="rounded bg-white/80 px-1 py-0.5 text-theme-xs">prod</code>):
           </p>
           <pre
             class="m-0 overflow-x-auto rounded bg-white/80 p-3 text-theme-xs leading-relaxed"
@@ -307,7 +307,7 @@
           <p class="m-0">
             El procedimiento completo, con la alternativa por variables de entorno para no dejar la
             contraseña en el historial del shell, está en
-            <code class="rounded bg-white/80 px-1 py-0.5 text-[13px]">docs/07-despliegue/COMANDOS_PROYECTO.md</code>.
+            <code class="rounded bg-white/80 px-1 py-0.5 text-theme-xs">docs/07-despliegue/COMANDOS_PROYECTO.md</code>.
           </p>
         </div>
       </div>

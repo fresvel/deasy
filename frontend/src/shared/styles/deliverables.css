@@ -5,7 +5,7 @@
    plantillas no las encuentra.
 
        --start   `--color-primary`      «aun no has empezado»
-       --sign    `--color-step-ink`     «te toca firmar»    (relleno `--step-rgb`)
+       --sign    `--color-success`      «te toca firmar»    (relleno `--step-rgb`)
        --open    `--color-info`  «abrir», el neutro  (el marco si es `--color-line`)
 
    ⚠️ `group` se queda en la plantilla a proposito: es un marcador de variante de Tailwind,
@@ -34,7 +34,7 @@
     }
 
     .deasy-deliverable-action__text {
-        @apply text-sm font-semibold text-ink;
+        @apply text-sm font-semibold text-strong;
     }
 
     /* ── Tono: «aun no has empezado» ───────────────────────────────────────────────── */
@@ -67,18 +67,18 @@
        100 % daria un borde MAS claro al pasar el raton. */
 
     .deasy-deliverable-action--sign {
-        border-color: var(--color-step-ink);
+        border-color: var(--color-success);
     }
 
     .deasy-deliverable-action--sign:hover {
-        border-color: color-mix(in srgb, var(--color-step-ink) 85%, var(--black));
+        border-color: color-mix(in srgb, var(--color-success) 85%, var(--black));
         background-color: rgba(var(--step-rgb), 0.1);
     }
 
     .deasy-deliverable-action--sign .deasy-deliverable-action__chip {
-        border-color: var(--color-step-ink);
+        border-color: var(--color-success);
         background-color: rgba(var(--step-rgb), 0.1);
-        color: var(--color-step-ink);
+        color: var(--color-success);
     }
 
     /* ── Tono: «abrir», el neutro ──────────────────────────────────────────────────── */
@@ -193,8 +193,8 @@
      * por comas y la sintaxis heredada por comas no admite la barra del alfa. El navegador
      * descarta la declaracion y el color cae a `currentColor` sin avisar en ningun sitio. */
     .deasy-deliverable-headaction--sign {
-        border-color: var(--color-step-ink);
-        color: var(--color-step-ink);
+        border-color: var(--color-success);
+        color: var(--color-success);
     }
 
     .deasy-deliverable-headaction--upload,
@@ -217,7 +217,7 @@
         /* El hover OSCURECE. Mezclar hacia el 100 % de la menta daria un borde MAS claro al
            pasar el raton, que es justo lo que la norma prohibe. */
         .deasy-deliverable-headaction--sign:hover {
-            border-color: color-mix(in srgb, var(--color-step-ink) 85%, var(--black));
+            border-color: color-mix(in srgb, var(--color-success) 85%, var(--black));
             background-color: rgba(var(--step-rgb), 0.1);
         }
 

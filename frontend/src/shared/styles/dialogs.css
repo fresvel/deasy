@@ -215,7 +215,7 @@
        el repintado de `overrides.css` — las dos declaran `--color-line`. */
 
     .deasy-dialog-panel {
-      border-radius: 0.95rem;
+      border-radius: var(--radius-2xl);
       border: 1px solid var(--color-line);
       background: var(--color-white);
       box-shadow: var(--elev-3);
@@ -293,13 +293,13 @@
       font-family: var(--typeface);
       font-size: var(--type-size);
       font-weight: 400;
-      color: var(--color-ink);
+      color: var(--color-strong);
     }
 
     .process-dialog-content .deasy-dialog-header,
     .process-dialog-content .deasy-dialog-header .deasy-dialog-title {
       font-weight: 600;
-      color: var(--color-ink);
+      color: var(--color-strong);
     }
 
     .process-dialog-content .deasy-dialog-body,
@@ -307,7 +307,7 @@
     .process-dialog-content .deasy-dialog-body small,
     .process-dialog-content .deasy-dialog-footer,
     .process-dialog-content .deasy-dialog-footer .text-muted {
-      color: var(--color-ink);
+      color: var(--color-strong);
     }
 
 }

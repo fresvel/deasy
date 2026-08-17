@@ -88,16 +88,16 @@ const onCardClick = (event) => {
                 <IconPaperclip class="h-3 w-3" />{{ deliverable.item.attachment_count }}
               </span>
             </div>
-            <p class="m-0 line-clamp-2 text-[0.95rem] font-semibold leading-snug text-strong" :title="deliverable.item.template_artifact_name">
+            <p class="m-0 line-clamp-2 text-sm font-semibold leading-snug text-strong" :title="deliverable.item.template_artifact_name">
               {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
               <span v-if="deliverable.item.document_version" class="deasy-deliverable-card__label ml-0.5 whitespace-nowrap align-middle text-theme-xs font-bold">
                 v{{ deliverable.item.document_version }}
               </span>
             </p>
-            <p class="m-0 min-w-0 truncate text-[0.78rem] font-medium leading-snug text-muted">
+            <p class="m-0 min-w-0 truncate text-theme-xs font-medium leading-snug text-muted">
               {{ h.getDeliverablePeriodLabel(deliverable.task) }}
             </p>
-            <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-[0.78rem] font-semibold leading-snug text-primary">
+            <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-theme-xs font-semibold leading-snug text-primary">
               Para: {{ deliverable.item.recipient_name }}
             </p>
           </div>
@@ -119,7 +119,7 @@ const onCardClick = (event) => {
             <p class="m-0 text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
             <AppTag :variant="h.getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ h.getDeliverableDueState(deliverable.item).value }}</AppTag>
           </div>
-          <p class="m-0 line-clamp-1 text-[0.9rem] font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
+          <p class="m-0 line-clamp-1 text-sm font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
           <div class="flex items-center gap-2.5">
             <div class="deasy-progress flex-1">
               <div class="deasy-progress__bar deasy-deliverable-card__accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>

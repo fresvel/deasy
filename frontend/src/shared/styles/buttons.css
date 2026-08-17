@@ -669,7 +669,7 @@
       background-color: var(--tooltip-bg);
       color: var(--color-white);
       padding: 0.35rem 0.5rem;
-      border-radius: 6px;
+      border-radius: var(--radius-md);
       font-size: 0.8rem;
       line-height: 1.2;
       white-space: nowrap;
