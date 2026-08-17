@@ -555,18 +555,23 @@
    subir) y warning (borrar PDF, retirar).
    ═══════════════════════════════════════════════════════════════════════════════════════ */
 
-@layer components {
-    .deasy-action-bar .admin-btn,
-    .admin-page-header__actions .admin-btn {
-        min-height: 2.45rem;
-    }
+/* ══ AQUI HABIA UN TERCER TAMAÑO, Y NO SE LLAMABA DE NINGUNA MANERA — F5.4, 2026-08-17 ══
+   Dos reglas cambiaban el boton segun DONDE estuviera, no segun lo que fuera:
 
-    .deasy-action-bar .deasy-btn--md,
-    .admin-page-header__actions .deasy-btn--md {
-        padding-inline: 1rem;
-        font-size: 0.94rem;
-    }
-}
+       .deasy-action-bar .admin-btn,
+       .admin-page-header__actions .admin-btn      { min-height: 2.45rem }   -> 39.2 px
+       … .deasy-btn--md   { padding-inline: 1rem; font-size: 0.94rem }       -> 15.04 px
+
+   O sea que el MISMO `md` se pintaba con dos letras distintas —14 px en la barra del
+   organigrama y 15.04 en su cabecera— y los botones de icono de esas zonas subian de 36 a
+   39.2. Tres alturas y dos letras para dos tamaños declarados.
+
+   Lo vio el dueño mirando la pantalla, no ningun gate: `check:control-size` vigila que una
+   PLANTILLA no pise la altura de un control, y esto la pisaba desde el CSS y por contexto.
+   Ninguna medicion del componente aislado lo encuentra — hay que mirar el boton EN SU SITIO.
+
+   Se retiran las dos. Un `md` mide 40 px y 14 px de letra en toda la aplicacion.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
 
 
 /* ── BtnSera — el boton de estado del envio a la SERA, con su tooltip y su modal ───────
