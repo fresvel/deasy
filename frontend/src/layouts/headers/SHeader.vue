@@ -10,10 +10,27 @@
       aria-label="Ir al inicio"
     />
     <div class="mx-auto flex w-full max-w-[2560px] items-center gap-2 sm:gap-3">
+      <!-- ⚠️ ESTE BOTON Y EL LOGO NO HACEN LO MISMO, aunque esten pegados: el logo es un
+           `<a href="/home">` que NAVEGA y este alterna la barra lateral. Se comprobo el
+           2026-08-17 al evaluar si sobraba uno, y sobre todo se comprobo que NO sobra: a 600 px
+           el unico enlace visible a `/home` del header es el logo (`deasy-primary-nav` esta en
+           `display:none` por debajo de `sm`) y la `aside` esta fuera de pantalla en x=-310, asi
+           que este boton es el unico modo de abrirla. Son dos funciones y solo hay un control
+           para cada una.
+
+           📌 `aria-expanded` es lo que le faltaba, y por eso `menuOpen` llevaba declarado sin
+           consumidor desde que existe el componente: la prop estaba, el atributo no. Sin el, un
+           lector de pantalla anuncia «boton» y no dice si la barra esta abierta o cerrada.
+
+           Y el nombre accesible es FIJO a proposito («Menu lateral», no «Abrir menu»): el estado
+           lo lleva `aria-expanded`, que es donde se espera. El rotulo viejo ademas mentia la
+           mitad de las veces — el boton alterna, no solo abre. -->
       <button
         class="deasy-nav-action"
         type="button"
-        aria-label="Abrir menu"
+        title="Menu lateral"
+        aria-label="Menu lateral"
+        :aria-expanded="menuOpen"
         @click="onClick('User')"
       >
         <IconMenu2 class="h-5.5 w-5.5" />
