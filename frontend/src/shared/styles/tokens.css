@@ -440,6 +440,18 @@
      salvo que algo use la clase, y una variable sin emitir es una variable rota. */
   --black: #000000;
 
+  /* EL ANCHO DE LA BARRA LATERAL — un solo numero para los DOS sitios que lo pintan: la `aside`
+     de `SMenu` cuando esta abierta, y el panel del vistazo de `layout.css` cuando flota sobre el
+     contenido. Son el mismo panel en dos estados, no dos anchos, y hasta ahora el 282 estaba
+     escrito a mano en cada uno — el mismo reparto que ya costo un `w-[21.5rem]` de mas en el
+     panel movil, retirado el 2026-08-16 justo por esto.
+
+     Va aqui sin registrar en `@theme`, como `--elev-*` o la escala de alturas: no es un escalon
+     de ninguna escala, es la medida de UN componente, y registrarlo generaria utilidades que
+     nadie pide. Se consume con `w-(--ancho-barra-lateral)`, que ademas NO es un valor arbitrario
+     y por eso baja el contador en vez de subirlo. */
+  --ancho-barra-lateral: 282px;
+
   /* ELEVACION — una escala de TRES. `--elev-3-left` es el nivel 3 proyectando a la
      izquierda: el panel lateral se ancla al borde derecho de la pantalla, asi que su unico
      canto visible es el izquierdo. Misma opacidad, solo cambia la direccion. */
