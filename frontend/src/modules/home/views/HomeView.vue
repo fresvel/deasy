@@ -943,7 +943,7 @@
             <span class="font-bold text-body text-sm">Descripción</span>
             <textarea
               v-model="taskLaunchForm.description"
-              class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
+              class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
               rows="3"
               placeholder="Describe brevemente la tarea manual que vas a lanzar."
             />
@@ -952,7 +952,7 @@
           <label class="flex flex-col gap-2">
             <span class="font-bold text-body text-sm">Periodo existente</span>
             <div class="relative">
-              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
+              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
                 <option value="">Seleccionar</option>
                 <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
                   {{ term.name }} · {{ term.term_type_name }}
@@ -971,15 +971,15 @@
           <template v-if="taskLaunchUseCustomTerm">
             <label class="flex flex-col gap-2 md:col-span-2">
               <span class="font-bold text-body text-sm">Nombre del periodo custom</span>
-              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium placeholder-gray-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
+              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium placeholder-gray-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
             </label>
             <label class="flex flex-col gap-2">
               <span class="font-bold text-body text-sm">Fecha inicial</span>
-              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium" type="date" />
             </label>
             <label class="flex flex-col gap-2">
               <span class="font-bold text-body text-sm">Fecha final</span>
-              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium" type="date" />
             </label>
           </template>
         </section>
@@ -1693,7 +1693,7 @@
             <textarea
               v-model="fillWorkflowState.note"
               rows="3"
-              class="block w-full px-4 py-3 bg-surface/50 border border-line rounded-2xl text-navy focus:ring-4 focus:bg-white transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
+              class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
               placeholder="Agrega una nota para esta acción."
             />
           </label>

@@ -105,7 +105,7 @@ const onAdd = () => {
           v-model="draft"
           rows="2"
           aria-label="Escribe una observación"
-          class="rounded-xl border border-line px-3 py-2 text-sm"
+          class="border px-3 py-2 text-sm"
           placeholder="Escribe una observación para el hilo..."
         ></textarea>
         <div class="flex justify-end">

@@ -25,7 +25,7 @@
             <label :for="fieldId('selectedtermid')" class="deasy-overline">Periodo</label>
             <select :id="fieldId('selectedtermid')"
               v-model="selectedTermId"
-              class="h-10 rounded-xl border border-line px-3 text-sm"
+              class="h-10 border px-3 text-sm"
             >
               <option value="" disabled>Selecciona un periodo</option>
               <option v-for="t in terms" :key="t.id" :value="String(t.id)">
@@ -46,7 +46,7 @@
               <input :id="fieldId('relaunchreason')"
                 v-model="relaunchReason"
                 type="text"
-                class="h-10 rounded-xl border border-line px-3 text-sm"
+                class="h-10 border px-3 text-sm"
                 placeholder="Ej. se agregaron nuevos destinatarios"
               />
             </div>

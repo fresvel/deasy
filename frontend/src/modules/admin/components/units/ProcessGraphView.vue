@@ -103,11 +103,11 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
-          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="Nombre del proceso" />
+          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full border px-3 text-sm outline-none" placeholder="Nombre del proceso" />
         </label>
         <label class="deasy-form-label">
           Identificador (slug) <span class="font-normal text-muted">(opcional)</span>
-          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="se deriva del nombre" />
+          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full border px-3 text-sm outline-none" placeholder="se deriva del nombre" />
         </label>
       </div>
       <template #footer>
@@ -124,15 +124,15 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
-          <input v-model="editForm.name" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="Nombre del proceso" />
+          <input v-model="editForm.name" type="text" class="mt-1 h-10 w-full border px-3 text-sm outline-none" placeholder="Nombre del proceso" />
         </label>
         <label class="deasy-form-label">
           Identificador (slug)
-          <input v-model="editForm.slug" type="text" class="mt-1 h-10 w-full rounded-2xl border border-line-strong px-3 text-sm outline-none" placeholder="identificador" />
+          <input v-model="editForm.slug" type="text" class="mt-1 h-10 w-full border px-3 text-sm outline-none" placeholder="identificador" />
         </label>
         <label class="deasy-form-label">
           Proceso padre
-          <select v-model="editForm.parent_id" class="mt-1 h-10 w-full rounded-2xl border border-line-strong bg-white px-2 text-sm outline-none">
+          <select v-model="editForm.parent_id" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
             <option value="">— Sin padre (raíz) —</option>
             <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
           </select>

@@ -29,7 +29,7 @@
         v-model="form[currentSection.key]"
         :aria-labelledby="sectionTitleId"
         rows="5"
-        class="w-full rounded-2xl border border-line-strong px-3 py-2 text-sm outline-none"
+        class="w-full border px-3 py-2 text-sm outline-none"
         :placeholder="currentSection.placeholder"
       ></textarea>
     </div>

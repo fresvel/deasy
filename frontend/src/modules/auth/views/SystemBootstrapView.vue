@@ -25,7 +25,7 @@
       <!-- Paso 1: Administrador -->
       <div v-show="step === 1" class="space-y-4">
         <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
-          <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 rounded border-line-strong text-info" @change="toggleExampleAdmin" />
+          <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 text-info" @change="toggleExampleAdmin" />
           Usar datos de ejemplo (rellena el formulario para crear rápido)
         </label>
         <div class="grid gap-4 md:grid-cols-2">
@@ -73,7 +73,7 @@
         </div>
         <div v-if="gestorEnabled" class="space-y-4">
           <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
-            <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-line-strong text-info" @change="toggleExampleGestor" />
+            <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 text-info" @change="toggleExampleGestor" />
             Usar datos de ejemplo
           </label>
           <div class="grid gap-4 md:grid-cols-2">
@@ -115,7 +115,7 @@
         </div>
         <div v-if="usuarioEnabled" class="space-y-4">
           <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
-            <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-line-strong text-info" @change="toggleExampleUsuario" />
+            <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 text-info" @change="toggleExampleUsuario" />
             Usar datos de ejemplo
           </label>
           <div class="grid gap-4 md:grid-cols-2">
@@ -166,7 +166,7 @@
             <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-icon">
               <input
                 type="checkbox"
-                class="h-4 w-4 rounded border-line-strong text-info"
+                class="h-4 w-4 text-info"
                 :checked="isCatalogGroupFullySelected(group)"
                 @change="toggleCatalogGroup(group, $event.target.checked)"
               />
@@ -184,7 +184,7 @@
                 v-model="preconfig[group.key]"
                 type="checkbox"
                 :value="option.id"
-                class="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-info"
+                class="mt-0.5 h-4 w-4 shrink-0 text-info"
               />
               <span class="min-w-0">
                 <span class="deasy-form-label">{{ option.label }}</span>

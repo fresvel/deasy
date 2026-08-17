@@ -71,7 +71,7 @@
                 <input :id="fieldId('relaunchreason')"
                   v-model="relaunchReason"
                   type="text"
-                  class="h-10 rounded-xl border border-line px-3 text-sm"
+                  class="h-10 border px-3 text-sm"
                   placeholder="Ej. se agregaron nuevos destinatarios"
                 />
                 <div class="flex justify-end gap-2">

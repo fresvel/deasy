@@ -73,12 +73,12 @@
             <span class="text-theme-xs font-bold uppercase tracking-wide text-muted">Paso {{ si + 1 }}</span>
             <div class="flex items-center gap-1.5">
               <template v-if="step.signers.length > 1">
-                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="rounded-xl border border-line bg-white px-2 py-1 text-theme-xs font-semibold text-icon outline-none">
+                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="border px-2 py-1 text-theme-xs font-semibold text-icon outline-none">
                   <option value="and">Firman todas</option>
                   <option value="or">Cualquiera</option>
                   <option value="at_least">Mínimo</option>
                 </select>
-                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 rounded-xl border border-line bg-white px-2 py-1 text-theme-xs text-body outline-none" />
+                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 border px-2 py-1 text-theme-xs text-body outline-none" />
               </template>
               <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="removeFirmaStep(si)">Quitar</button>
             </div>
@@ -109,7 +109,7 @@
             type="text"
             aria-label="Buscar persona por nombre, cédula o correo"
             placeholder="Busca por nombre, cédula o correo…"
-            class="rounded-2xl border border-brand-300 bg-white px-3 py-2 text-sm font-medium text-body outline-none"
+            class="border px-3 py-2 text-sm font-medium text-body outline-none"
             @input="searchRecipients"
           />
           <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-(--z-capa-base) mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">

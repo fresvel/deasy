@@ -425,7 +425,7 @@
     <div v-else class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 bg-surface p-2 rounded-xl border border-line">
         <label :for="fieldId('filterpage')" class="font-semibold text-sm text-body ml-2">Filtrar por pagina</label>
-        <select :id="fieldId('filterpage')" v-model="filterPage" class="rounded-2xl border border-line-strong bg-white px-3 py-1.5 text-sm text-strong outline-none transition">
+        <select :id="fieldId('filterpage')" v-model="filterPage" class="border px-3 py-1.5 text-sm text-strong outline-none transition">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
             Pagina {{ page }}
@@ -475,7 +475,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
           <label :for="fieldId('statusfilter')" class="font-semibold text-sm text-body mb-0">Estado</label>
-          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition">
+          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="border px-3 py-2 text-sm text-strong outline-none transition">
             <option value="all">Todos</option>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
@@ -488,13 +488,13 @@
           <input :id="fieldId('signerinput')"
             v-model="signerInput"
             type="text"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
+            class="block w-full border px-4 py-2 text-sm text-strong outline-none transition"
             placeholder="Nombre, correo o cédula"
           />
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunittypefilter')" class="font-semibold text-sm text-body mb-0">Tipo de unidad</label>
-          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition">
+          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="border px-3 py-2 text-sm text-strong outline-none transition">
             <option value="">Todos</option>
             <option v-for="option in signerUnitTypeOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -503,7 +503,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunitfilter')" class="font-semibold text-sm text-body mb-0">Unidad</label>
-          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
+          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="border px-3 py-2 text-sm text-strong outline-none transition" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
             <option v-for="option in signerUnitOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -512,7 +512,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signercargofilter')" class="font-semibold text-sm text-body mb-0">Cargo</label>
-          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="rounded-2xl border border-line-strong bg-white px-3 py-2 text-sm text-strong outline-none transition" :disabled="isLoadingSignerOptions">
+          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="border px-3 py-2 text-sm text-strong outline-none transition" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
             <option v-for="option in signerCargoOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -673,7 +673,7 @@
           <input :id="fieldId('certpassword')"
             v-model="certPassword"
             type="password"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
+            class="block w-full border px-4 py-2 text-sm text-strong outline-none transition"
             placeholder="Contraseña del .p12"
             autocomplete="current-password"
           />
@@ -683,7 +683,7 @@
           <input :id="fieldId('stamptext')"
             v-model="stampText"
             type="text"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
+            class="block w-full border px-4 py-2 text-sm text-strong outline-none transition"
             placeholder="Ej: Dr. Juan Pérez"
           />
         </div>
@@ -783,7 +783,7 @@
               :id="fieldId('validationcedula')"
               v-model="validationCedula"
               type="text"
-              class="block w-full rounded-xl border border-line bg-surface pl-4 py-2.5 text-sm text-strong outline-none transition focus:bg-white focus:ring-4"
+              class="block w-full border pl-4 py-2.5 text-sm text-strong outline-none transition"
               placeholder="Ej. 0999999999 (Opcional)"
             />
           </div>

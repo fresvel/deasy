@@ -75,7 +75,7 @@
           <input
             v-model="searchQuery"
             type="search"
-            class="w-full border-0 bg-transparent p-0 text-sm font-medium text-body outline-none placeholder:text-muted"
+            class="w-full border-0 p-0 text-sm font-medium text-body outline-none placeholder:text-muted"
             placeholder="Buscar conversación"
           >
         </label>
@@ -157,7 +157,7 @@
                 v-model="draft"
                 rows="1"
                 aria-label="Mensaje del chat"
-                class="max-h-40 min-h-13 flex-1 resize-none rounded-2xl border border-line bg-surface px-4 py-3 text-sm font-medium text-strong outline-none transition placeholder:text-muted focus:bg-white focus:ring-4"
+                class="max-h-40 min-h-13 flex-1 resize-none border px-4 py-3 text-sm font-medium text-strong outline-none transition placeholder:text-muted"
                 placeholder="Escribe un mensaje"
                 @input="resizeComposer"
                 @keydown.enter.exact.prevent="sendMessage"

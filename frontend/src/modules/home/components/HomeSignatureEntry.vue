@@ -223,7 +223,7 @@
               <input
                 type="checkbox"
                 aria-label="Seleccionar documento"
-                class="h-4 w-4 rounded border-line-strong text-info"
+                class="h-4 w-4 text-info"
                 :checked="isSelected(row)"
                 @change="toggleSelection(row)"
               />

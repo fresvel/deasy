@@ -71,7 +71,7 @@
           v-model="email"
           name="recover-reset-email"
           autocomplete="off"
-          class="deasy-auth-field bg-surface"
+          class="deasy-auth-field"
           readonly
         />
       </div>

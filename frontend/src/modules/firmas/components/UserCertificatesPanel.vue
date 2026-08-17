@@ -87,7 +87,7 @@
           <input :id="fieldId('uploadlabel')"
             v-model="uploadLabel"
             type="text"
-            class="block w-full rounded-xl border border-line-strong bg-white px-4 py-2 text-sm text-strong outline-none transition focus:ring-2"
+            class="block w-full border px-4 py-2 text-sm text-strong outline-none transition"
             placeholder="Ej: Token personal 2026"
           />
         </div>
