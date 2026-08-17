@@ -32,9 +32,31 @@
         @apply inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 border-line px-4 py-4 text-sm font-medium text-body transition-colors hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
-    .deasy-inline-tab--active {
-        color: var(--color-primary);
-        border-bottom-color: var(--color-primary);
+    /* ── LA PESTAÑA ACTIVA LLEVA EL MISMO FONDO QUE EL ITEM ACTIVO DE LA BARRA ────────────────
+       Decision del dueño (2026-08-16): le gusto como quedo el seleccionado del menu lateral al
+       pasar el chrome a claro, y pidio ese mismo color para las pestañas — las de pagina y las de
+       los modales. Son la misma clase (`deasy-inline-tab`, seis consumidores), asi que el cambio
+       es uno y cae en los dos sitios a la vez.
+
+       Se toma del TOKEN, no del pixel: `--color-brand-50` es lo que declara `deasy-nav-item--active`
+       en este mismo fichero, treinta lineas mas abajo. Si un dia cambia el tono de marca, cambian
+       los dos juntos.
+
+       ⚠️ Y EL FONDO OBLIGA A MOVER EL TEXTO, que es lo que no era evidente. La pestaña activa iba
+       en `--color-primary`, que sobre blanco da 4.84 y esta bien; **sobre `brand-50` da 4.34 y NO
+       pasa AA** (medido hoy; es el mismo numero que F3.3 encontro al hacer `deasy-tag--primary`).
+       Pasa a `--color-brand-600`: 5.83. Un fondo nuevo nunca es solo un fondo.
+
+       El subrayado se queda —§5.1: un estado se distingue por mas de una señal— y adopta tambien
+       el `-600`, para que el activo entero sea UN color y no dos azules contiguos.
+
+       ⚠️ El `:hover` de la clase base es (0,1,1) y le ganaria a este (0,1,0), asi que pasar el raton
+       por la pestaña ya activa la devolveria al gris. Por eso el selector la nombra dos veces. */
+    .deasy-inline-tab--active,
+    .deasy-inline-tab--active:hover {
+        background: var(--color-brand-50);
+        color: var(--color-brand-600);
+        border-bottom-color: var(--color-brand-600);
     }
 
     /* El icono. Va aqui y no en el atributo para que las 14 pestañas midan lo mismo: cuando cada
@@ -77,9 +99,14 @@
         color: var(--color-muted);
     }
 
+    /* ⚠️ EL CONTADOR SE INVIERTE AL GANAR FONDO LA PESTAÑA. Iba en «marca al 10 % sobre blanco»,
+       que es practicamente `brand-50`: encima de una pestaña que ahora ES `brand-50` habria
+       desaparecido — mismo color sobre mismo color. Pasa a blanco sobre el tono, que es
+       exactamente lo que hace el icono del item activo de la barra treinta lineas mas abajo.
+       Una superficie anidada sobre un relleno claro se ACLARA; sobre uno oscuro se oscurece. */
     .deasy-inline-tab__badge--active {
-        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
-        color: var(--color-primary);
+        background: var(--color-white);
+        color: var(--color-brand-600);
     }
 
     
