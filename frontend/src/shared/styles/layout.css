@@ -125,36 +125,31 @@
        en el header); esto es el MISMO menu de la columna, con las etiquetas escondidas — que es
        literalmente lo que hace su `xl:w-[90px]`. Un estado, no un segundo arbol.
 
-       No hace falta que el consumidor del slot sepa nada: el menu secundario ya escribe su icono
-       en `deasy-nav-item__icon` y su texto en `deasy-nav-item__label`, asi que el colapso es
-       apagar lo segundo. Que estuviera nombrado es lo que lo hace posible en cinco reglas. */
+       ── LA REGLA NO PUEDE DEPENDER DE LA FORMA, y costo dos intentos averiguarlo ───────────────
+       El menu lateral tiene **TRES anatomias** para el mismo bloque, y su icono **dos nombres**.
+       Solo se ve mirando el DOM de las cuatro vistas que lo usan:
+
+         item        `deasy-nav-item`        > `deasy-nav-item__icon` + etiqueta + [contador]
+         grupo (A)   `deasy-nav-group-title` > `<div>`  > `deasy-nav-glyph` + etiqueta   [AdminView]
+         grupo (B)   `deasy-nav-group-title` > `<span>` > `deasy-nav-glyph` + etiqueta   [PerfilView]
+                                             > `<svg>` chevron
+
+       Y la etiqueta va en `deasy-nav-item__label` en `HomeSidebar`, `SignatureSidebar` y
+       `PerfilView`, pero en `AdminView` es un `<span>` pelado.
+
+       Por eso la regla apunta a **«los hermanos que van DESPUES del icono»** y no a la clase de la
+       etiqueta ni a la etiqueta del envoltorio: da igual como se llame lo que acompaña al icono y
+       da igual si cuelga de un `div` o de un `span`. (F11: el mismo bloque con tres anatomias y su
+       icono con dos nombres es exactamente lo que esa fase busca.)
+
+       ⚠️ Y VA EN `@layer utilities`, QUE ES LO CONTRAINTUITIVO DE TODO ESTE BLOQUE. Escrito en
+       `components` la regla **existe y no pinta**: los contadores del dossier llevan `inline-flex`
+       en el atributo, que es una utilidad, y una utilidad le gana a `components` sea cual sea la
+       especificidad — el mismo mecanismo de capas que este repo lleva todo el dia documentando,
+       pero por el otro lado. Dentro de `utilities` compiten por especificidad y `(0,2,0)` gana a
+       `.inline-flex` `(0,1,0)`. No es una utilidad nueva: es un modificador de ESTADO que tiene
+       que poder apagar lo que la plantilla escribio. */
     @media (min-width: 1280px) {
-
-        .deasy-sidebar--collapsed .deasy-nav-item,
-        .deasy-sidebar--collapsed .deasy-nav-group-title,
-        .deasy-sidebar--collapsed .deasy-nav-group-title > div {
-            @apply justify-center px-0;
-        }
-
-        /* Se va TODO lo que no sea el icono: la etiqueta, el chevron del grupo, el contador.
-           La regla apunta a «lo que NO es el icono», y eso no es pereza: **el menu lateral tiene
-           DOS anatomias y el icono DOS nombres**, cosa que solo se vio al mirar el DOM.
-
-             item de menu   `deasy-nav-item`        > `deasy-nav-item__icon` + `<span>` etiqueta
-             titulo de grupo `deasy-nav-group-title` > `<div>` > `deasy-nav-glyph` + `<span>`
-                                                    > `<svg>` chevron
-
-           Y encima la etiqueta del item se envuelve en `deasy-nav-item__label` en `HomeSidebar`,
-           `SignatureSidebar` y `PerfilView`, pero en `AdminView` va en un `<span>` pelado — o sea
-           que apuntar a la clase habria funcionado en tres menus de cuatro, y el que fallaba es el
-           mas grande. (Anotado para F11: el mismo bloque con dos anatomias y su icono con dos
-           nombres es exactamente lo que esa fase busca.) */
-        .deasy-sidebar--collapsed .deasy-nav-item > :not(.deasy-nav-item__icon),
-        .deasy-sidebar--collapsed .deasy-nav-group-title > svg,
-        .deasy-sidebar--collapsed .deasy-nav-group-title > div > :not(.deasy-nav-glyph) {
-            @apply hidden;
-        }
-
         /* El perfil completo no cabe en 88 px: en colapsado queda su avatar, que `UserProfile`
            ya sabe pintar solo — es el mismo componente, no una copia. */
         .deasy-sidebar--collapsed .deasy-nav-shell {
@@ -223,4 +218,38 @@
     }
 
     
+}
+
+/* ══ EL COLAPSO DE LA BARRA — en `utilities` a proposito ═══════════════════════════════════════
+   El resto del estado colapsado vive en `@layer components`, arriba, con su explicacion. Estas
+   tres reglas NO PUEDEN vivir alli, y el motivo esta medido: los contadores del menu del dossier
+   llevan `inline-flex` escrito en el atributo `class`. Una utilidad gana a `components` sea cual
+   sea la especificidad, asi que un `display: none` capado ahi **existe y no pinta** — el dueño lo
+   vio como «iconos con numeros» al colapsar.
+
+   Dentro de `utilities` la pelea vuelve a ser por especificidad, y `(0,2,0)` gana a `.inline-flex`.
+   No son utilidades nuevas: son el modificador de ESTADO de un bloque, y tienen que poder apagar
+   lo que la plantilla escribio.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+    @media (min-width: 1280px) {
+        .deasy-sidebar--collapsed .deasy-nav-item,
+        .deasy-sidebar--collapsed .deasy-nav-group-title,
+        .deasy-sidebar--collapsed .deasy-nav-group-title > * {
+            justify-content: center;
+            padding-inline: 0;
+        }
+
+        /* Todo lo que acompaña al icono, se llame como se llame y cuelgue de donde cuelgue. */
+        .deasy-sidebar--collapsed .deasy-nav-item__icon ~ *,
+        .deasy-sidebar--collapsed .deasy-nav-glyph ~ * {
+            display: none;
+        }
+
+        /* El chevron del titulo de grupo NO es hermano del icono: cuelga del boton, al lado del
+           envoltorio que contiene al icono. Por eso necesita su propia linea. */
+        .deasy-sidebar--collapsed .deasy-nav-group-title > svg {
+            display: none;
+        }
+    }
 }
