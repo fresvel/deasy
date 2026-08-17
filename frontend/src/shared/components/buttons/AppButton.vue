@@ -155,8 +155,14 @@ const variantClassMap = {
   plain: ""
 };
 
+/* DOS TAMAÑOS, NO TRES — F5.4, 2026-08-17.
+   `sm` se retiro porque **no era un tamaño**: medido con la misma etiqueta, `sm` y `md` daban
+   los dos 40 px de alto y 14 px de letra, porque el `min-h-10` de la base se come el `py-1.5`
+   de `sm`. Lo unico que las separaba eran 8 px de anchura total, que nadie percibe.
+   Y era la unica talla que la gente elegia a proposito —132 usos, frente a 2 que pedian `md`
+   explicitamente y 179 que se lo comian por defecto—, o sea que 132 sitios creian estar
+   pidiendo un boton pequeño y no lo recibian. */
 const sizeClassMap = {
-  sm: "deasy-btn--sm",
   md: "deasy-btn--md",
   lg: "deasy-btn--lg"
 };

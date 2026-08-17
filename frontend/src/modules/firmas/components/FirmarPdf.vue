@@ -29,7 +29,6 @@
         <div class="flex flex-wrap items-center gap-3">
           <AppButton
             variant="neutral-outline"
-            size="sm"
             icon-only
             title="Regresar"
             aria-label="Regresar"
@@ -452,7 +451,7 @@
           </div>
           
           <div class="flex items-center gap-2 sm:self-center self-end">
-            <AppButton variant="neutral-outline" size="sm" @click.stop="goToFieldLocation(field.id)">
+            <AppButton variant="neutral-outline" @click.stop="goToFieldLocation(field.id)">
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
               Ver en documento
             </AppButton>
@@ -639,7 +638,7 @@
             <div class="text-sm font-bold text-strong">Certificados disponibles</div>
             <div class="text-xs text-muted">Puedes gestionarlos aquí sin salir de la vista de firmas.</div>
           </div>
-          <AdminButton variant="primary-outline" size="sm" @click="openCertificatesManagerModal">
+          <AdminButton variant="primary-outline" @click="openCertificatesManagerModal">
             Gestionar certificados
           </AdminButton>
         </div>
@@ -893,7 +892,6 @@
               <AppButton
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
                 variant="info-soft"
-                size="sm"
                 icon-only
                 title="Ver entidad certificadora"
                 @click="openCertificateAuthorityModal(row)"

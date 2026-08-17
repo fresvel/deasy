@@ -3,7 +3,6 @@
     <div class="flex flex-wrap items-center gap-2">
         <AdminButton
           variant="neutral-outline"
-          size="sm"
           :disabled="!table"
           title="Regresar"
           aria-label="Regresar"
@@ -13,7 +12,6 @@
         <AdminButton
           v-if="isTemplateSeedsTable && canUpdate"
           variant="neutral-outline"
-          size="sm"
           :disabled="!table || loading"
           @click="$emit('sync-template-seeds')"
         >

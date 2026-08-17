@@ -252,7 +252,6 @@
         <div class="inline-flex items-center gap-1">
           <AdminButton
             variant="info-soft"
-            size="sm"
             icon-only
             title="Visualizar"
             aria-label="Visualizar"
@@ -262,7 +261,6 @@
           </AdminButton>
           <AdminButton
             variant="success-soft"
-            size="sm"
             icon-only
             title="Seleccionar"
             aria-label="Seleccionar"

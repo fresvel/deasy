@@ -51,7 +51,6 @@
               <div class="flex shrink-0 items-center gap-2">
                 <AppButton
                   variant="primary-outline"
-                  size="sm"
                   @click="openGeneralTaskModal('free')"
                 >
                   <IconPlus class="h-4 w-4" />
@@ -128,7 +127,7 @@
                   Entregables visibles: <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
                 </div>
                 <div class="deasy-filter-actions">
-                  <AppButton variant="neutral-outline" icon-only size="sm" @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
+                  <AppButton variant="neutral-outline" icon-only @click="resetTaskListFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
                 </div>
               </div>
             </div>
@@ -185,7 +184,6 @@
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
                         variant="neutral-outline"
-                        size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir todo' : 'Colapsar todo'"
                         @click="toggleDeliverableProcess"
                       >
@@ -551,7 +549,7 @@
               <section class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4">
                 <div class="flex items-center justify-between gap-3">
                   <h3 class="text-lg font-semibold text-strong m-0">Acciones pendientes</h3>
-                  <AppButton variant="neutral-soft" size="sm" :disabled="homeLoading" @click="loadHomeData">
+                  <AppButton variant="neutral-soft" :disabled="homeLoading" @click="loadHomeData">
                     <IconRefresh class="h-4 w-4" />
                     Actualizar
                   </AppButton>
@@ -746,7 +744,7 @@
                           <AppTag v-if="taskListFilters.actionState !== 'all'" variant="success">
                             {{ taskFilterActionOptions.find((option) => option.value === taskListFilters.actionState)?.label || 'Acción' }}
                           </AppTag>
-                          <AppButton variant="neutral-soft" size="sm" @click="resetTaskListFilters">Limpiar</AppButton>
+                          <AppButton variant="neutral-soft" @click="resetTaskListFilters">Limpiar</AppButton>
                         </div>
                       </div>
                     </div>
@@ -764,7 +762,7 @@
                           <p class="m-0 text-xs font-medium text-muted">Crea y endosa un documento a una persona. Lo que te envían llega a tu Centro de firmas.</p>
                         </div>
                       </div>
-                      <AppButton variant="primary-outline" size="sm" @click="openNewSend">
+                      <AppButton variant="primary-outline" @click="openNewSend">
                         <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> Nuevo envío</span>
                       </AppButton>
                     </div>
@@ -781,7 +779,6 @@
                           v-for="entry in addableDeliverableEntries"
                           :key="`add-${entry.task.id}-${entry.template.id}`"
                           variant="primary-soft"
-                          size="sm"
                           @click="openAddDeliverableModal(entry.task, entry.template)"
                         >
                           <span class="inline-flex items-center gap-1.5">
@@ -808,7 +805,6 @@
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
                         variant="neutral-outline"
-                        size="sm"
                         :aria-label="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         :title="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
                         @click="toggleDeliverableProcess"
@@ -1358,33 +1354,33 @@
               </div>
               <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
                 <!-- Acción principal (destacada) -->
-                <AppButton v-if="shouldShowStartDeliverable(deliverableWorkspaceSubject)" variant="primary-outline" size="sm" :disabled="processingFillItemId === deliverableWorkspaceSubject.itemId || !canStartDeliverableAction(deliverableWorkspaceSubject)" @click="startDeliverableFlow(deliverableWorkspaceSubject)">
+                <AppButton v-if="shouldShowStartDeliverable(deliverableWorkspaceSubject)" variant="primary-outline" :disabled="processingFillItemId === deliverableWorkspaceSubject.itemId || !canStartDeliverableAction(deliverableWorkspaceSubject)" @click="startDeliverableFlow(deliverableWorkspaceSubject)">
                   <span class="inline-flex items-center gap-1.5"><IconPlayerPlayFilled class="h-4 w-4" /> {{ processingFillItemId === deliverableWorkspaceSubject.itemId ? 'Iniciando...' : 'Iniciar' }}</span>
                 </AppButton>
-                <AppButton v-else-if="shouldShowUploadDeliverable(deliverableWorkspaceSubject)" variant="primary-outline" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_upload_deliverable || isUploadingDeliverable" @click="openDeliverableUploadModal(deliverableWorkspaceSubject)">
+                <AppButton v-else-if="shouldShowUploadDeliverable(deliverableWorkspaceSubject)" variant="primary-outline" :disabled="!deliverableWorkspaceSubject.actions?.can_upload_deliverable || isUploadingDeliverable" @click="openDeliverableUploadModal(deliverableWorkspaceSubject)">
                   <span class="inline-flex items-center gap-1.5"><IconUpload class="h-4 w-4" /> {{ getUploadActionLabel(deliverableWorkspaceSubject) }}</span>
                 </AppButton>
-                <AppButton v-else-if="shouldShowSign(deliverableWorkspaceSubject)" variant="primary-outline" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.implemented?.sign" @click="openDocumentSignFlow(deliverableWorkspaceSubject)">
+                <AppButton v-else-if="shouldShowSign(deliverableWorkspaceSubject)" variant="primary-outline" :disabled="!deliverableWorkspaceSubject.actions?.implemented?.sign" @click="openDocumentSignFlow(deliverableWorkspaceSubject)">
                   <span class="inline-flex items-center gap-1.5"><IconSignature class="h-4 w-4" /> Firmar</span>
                 </AppButton>
-                <AppButton v-else-if="shouldShowOpenWorkspacePrimary(deliverableWorkspaceSubject)" variant="primary-outline" size="sm" @click="deliverableWorkspaceState.tab = shouldShowManageFill(deliverableWorkspaceSubject) ? 'fill' : 'signature'">
+                <AppButton v-else-if="shouldShowOpenWorkspacePrimary(deliverableWorkspaceSubject)" variant="primary-outline" @click="deliverableWorkspaceState.tab = shouldShowManageFill(deliverableWorkspaceSubject) ? 'fill' : 'signature'">
                   <span class="inline-flex items-center gap-1.5"><IconChecklist class="h-4 w-4" /> Ir al detalle</span>
                 </AppButton>
 
                 <!-- Revisión -->
-                <AppButton v-if="canApproveFillRequest" variant="success-soft" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('approve')"><span class="inline-flex items-center gap-1.5"><IconCircleCheck class="h-4 w-4" /> {{ fillApproveActionLabel }}</span></AppButton>
-                <AppButton v-if="canReturnFillRequest" variant="warning-soft" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('return')"><span class="inline-flex items-center gap-1.5"><IconArrowBackUp class="h-4 w-4" /> Devolver</span></AppButton>
-                <AppButton v-if="canRejectFillRequest" variant="danger-soft" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('reject')"><span class="inline-flex items-center gap-1.5"><IconX class="h-4 w-4" /> Rechazar</span></AppButton>
+                <AppButton v-if="canApproveFillRequest" variant="success-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('approve')"><span class="inline-flex items-center gap-1.5"><IconCircleCheck class="h-4 w-4" /> {{ fillApproveActionLabel }}</span></AppButton>
+                <AppButton v-if="canReturnFillRequest" variant="warning-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('return')"><span class="inline-flex items-center gap-1.5"><IconArrowBackUp class="h-4 w-4" /> Devolver</span></AppButton>
+                <AppButton v-if="canRejectFillRequest" variant="danger-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('reject')"><span class="inline-flex items-center gap-1.5"><IconX class="h-4 w-4" /> Rechazar</span></AppButton>
 
                 <!-- Utilidades -->
-                <AppButton variant="neutral-soft" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_open_process_chat" @click="handleDeliverableFutureAction('process_chat', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMessages class="h-4 w-4" /> Chat</span></AppButton>
-                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" size="sm" @click="previewDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconEye class="h-4 w-4" /> Ver PDF</span></AppButton>
-                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" size="sm" @click="downloadDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconDownload class="h-4 w-4" /> Descargar</span></AppButton>
-                <AppButton v-if="shouldShowTemplateDownload(deliverableWorkspaceSubject)" variant="neutral-soft" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_download_template" @click="handleDeliverableFutureAction('download_template', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconFileDescription class="h-4 w-4" /> Plantilla</span></AppButton>
-                <AppButton v-if="deliverableWorkspaceSubject" variant="neutral-soft" size="sm" @click="openDerivedTaskFromWorkspace"><span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> Agregar entregable</span></AppButton>
+                <AppButton variant="neutral-soft" :disabled="!deliverableWorkspaceSubject.actions?.can_open_process_chat" @click="handleDeliverableFutureAction('process_chat', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMessages class="h-4 w-4" /> Chat</span></AppButton>
+                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" @click="previewDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconEye class="h-4 w-4" /> Ver PDF</span></AppButton>
+                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" @click="downloadDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconDownload class="h-4 w-4" /> Descargar</span></AppButton>
+                <AppButton v-if="shouldShowTemplateDownload(deliverableWorkspaceSubject)" variant="neutral-soft" :disabled="!deliverableWorkspaceSubject.actions?.can_download_template" @click="handleDeliverableFutureAction('download_template', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconFileDescription class="h-4 w-4" /> Plantilla</span></AppButton>
+                <AppButton v-if="deliverableWorkspaceSubject" variant="neutral-soft" @click="openDerivedTaskFromWorkspace"><span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> Agregar entregable</span></AppButton>
 
                 <!-- Destructiva -->
-                <AppButton v-if="shouldShowResetWorkflow(deliverableWorkspaceSubject)" variant="danger-soft" size="sm" :disabled="deliverableResetState.submitting" @click="openDeliverableResetModal(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMinus class="h-4 w-4" /> Reiniciar</span></AppButton>
+                <AppButton v-if="shouldShowResetWorkflow(deliverableWorkspaceSubject)" variant="danger-soft" :disabled="deliverableResetState.submitting" @click="openDeliverableResetModal(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMinus class="h-4 w-4" /> Reiniciar</span></AppButton>
               </div>
             </section>
           </div>
@@ -1643,7 +1639,6 @@
               <AppButton
                 v-if="canReplaceFillFile"
                 variant="neutral-soft"
-                size="sm"
                 :class="isUploadingDeliverable ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="isUploadingDeliverable"
@@ -1654,7 +1649,6 @@
               <AppButton
                 v-if="canApproveFillRequest"
                 variant="success-soft"
-                size="sm"
                 :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
@@ -1665,7 +1659,6 @@
               <AppButton
                 v-if="canReturnFillRequest"
                 variant="warning-soft"
-                size="sm"
                 :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
@@ -1676,7 +1669,6 @@
               <AppButton
                 v-if="canRejectFillRequest"
                 variant="danger-soft"
-                size="sm"
                 :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
@@ -1687,7 +1679,6 @@
               <AppButton
                 v-if="canCancelFillRequest"
                 variant="danger-outline"
-                size="sm"
                 :class="fillWorkflowSubmitting ? 'border-line bg-surface text-muted cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"

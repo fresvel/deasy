@@ -134,7 +134,7 @@
               <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
             </select>
           </div>
-          <AppButton variant="primary-outline" size="sm" class-name="self-start" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</AppButton>
+          <AppButton variant="primary-outline" class-name="self-start" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</AppButton>
         </div>
       </div>
     </section>

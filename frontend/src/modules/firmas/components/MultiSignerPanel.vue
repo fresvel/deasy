@@ -36,7 +36,6 @@
                   />
                   <AdminButton
                     variant="neutral-outline"
-                    size="sm"
                     icon-only
                     title="Limpiar filtros"
                     aria-label="Limpiar filtros"

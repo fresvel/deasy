@@ -31,8 +31,8 @@
           <input v-model="showInactive" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-primary" />
           Mostrar inactivas
         </label>
-        <AppButton v-if="editable" variant="neutral-outline" size="sm" :disabled="loading" @click="$emit('create-unit')">+ Unidad</AppButton>
-        <AppButton variant="neutral-outline" size="sm" :disabled="loading" @click="loadGraph">Refrescar</AppButton>
+        <AppButton v-if="editable" variant="neutral-outline" :disabled="loading" @click="$emit('create-unit')">+ Unidad</AppButton>
+        <AppButton variant="neutral-outline" :disabled="loading" @click="loadGraph">Refrescar</AppButton>
       </div>
     </div>
 
@@ -47,14 +47,14 @@
           class="h-8 w-52 rounded-2xl border border-line-strong px-3 text-xs outline-none"
           @keyup.enter="searchAndCenter"
         />
-        <AppButton variant="neutral-outline" size="sm" @click="searchAndCenter">Buscar</AppButton>
+        <AppButton variant="neutral-outline" @click="searchAndCenter">Buscar</AppButton>
       </div>
       <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
         <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-line-strong text-warning" />
         Resaltar pendientes
         <AppTag v-if="pendingCount" variant="warning">{{ pendingCount }}</AppTag>
       </label>
-      <AppButton variant="neutral-outline" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
+      <AppButton variant="neutral-outline" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
 
     <!-- Leyenda de tipos de relación presentes -->
@@ -195,7 +195,7 @@
           <div v-show="detailTab === 'ocupaciones'">
           <div class="mb-3 flex items-center justify-between gap-2">
             <p class="deasy-overline">Puestos y ocupaciones</p>
-            <AppButton v-if="editable" variant="neutral-outline" size="sm" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
+            <AppButton v-if="editable" variant="neutral-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
           </div>
 
           <!-- Formulario de nuevo puesto -->
@@ -215,8 +215,8 @@
                 <SToggle v-model="positionForm.is_unit_head" label="Jefatura" label-position="end" />
               </div>
               <div class="flex justify-end gap-2">
-                <AppButton variant="danger-outline" size="sm" @click="addingPosition = false">Cancelar</AppButton>
-                <AppButton variant="primary-outline" size="sm" :disabled="!positionForm.cargo_id" @click="confirmAddPosition">Crear puesto</AppButton>
+                <AppButton variant="danger-outline" @click="addingPosition = false">Cancelar</AppButton>
+                <AppButton variant="primary-outline" :disabled="!positionForm.cargo_id" @click="confirmAddPosition">Crear puesto</AppButton>
               </div>
             </div>
           </div>
@@ -235,7 +235,6 @@
                 <div v-if="editable" class="ml-auto flex items-center gap-1">
                   <AppButton
                     :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
-                    size="sm"
                     icon-only
                     title="Marcar/quitar jefatura"
                     aria-label="Marcar/quitar jefatura"
@@ -245,7 +244,6 @@
                   </AppButton>
                   <AppButton
                     variant="success-soft"
-                    size="sm"
                     icon-only
                     title="Editar puesto"
                     aria-label="Editar puesto"
@@ -255,7 +253,6 @@
                   </AppButton>
                   <AppButton
                     variant="danger-soft"
-                    size="sm"
                     icon-only
                     title="Eliminar puesto"
                     aria-label="Eliminar puesto"
@@ -272,7 +269,6 @@
                   <div v-if="editable" class="ml-auto flex items-center gap-1">
                     <AppButton
                       variant="success-soft"
-                      size="sm"
                       icon-only
                       title="Cambiar persona asignada"
                       aria-label="Cambiar persona asignada"
@@ -282,7 +278,6 @@
                     </AppButton>
                     <AppButton
                       variant="danger-soft"
-                      size="sm"
                       icon-only
                       title="Quitar persona del puesto"
                       aria-label="Quitar persona del puesto"
@@ -297,7 +292,6 @@
                   <AppButton
                     v-if="editable"
                     variant="success-soft"
-                    size="sm"
                     icon-only
                     class-name="ml-auto"
                     title="Asignar persona al puesto"
@@ -313,7 +307,6 @@
               <AppButton
                 v-if="editable"
                 variant="neutral-outline"
-                size="sm"
                 class-name="mt-2"
                 @click="openProfileWizard(pos)"
               >
@@ -351,8 +344,8 @@
             <div class="mb-3 flex items-center justify-between gap-2">
               <p class="deasy-overline">Procesos de la unidad</p>
               <div class="flex items-center gap-2">
-                <AppButton v-if="editable" variant="neutral-outline" size="sm" title="Vincular una configuración en borrador existente a esta unidad" @click="openAttachProcess">Vincular</AppButton>
-                <AppButton v-if="editable && canCreateProcess" variant="primary-outline" size="sm" @click="$emit('create-process')">+ Nueva configuración</AppButton>
+                <AppButton v-if="editable" variant="neutral-outline" title="Vincular una configuración en borrador existente a esta unidad" @click="openAttachProcess">Vincular</AppButton>
+                <AppButton v-if="editable && canCreateProcess" variant="primary-outline" @click="$emit('create-process')">+ Nueva configuración</AppButton>
               </div>
             </div>
             <div v-if="detailProcessesLoading" class="text-sm text-muted">Cargando…</div>
@@ -375,7 +368,6 @@
                   <div v-if="editable && proc.origin === 'direct' && proc.status === 'draft'" class="ml-auto flex items-center gap-1">
                     <AppButton
                       variant="success-soft"
-                      size="sm"
                       icon-only
                       title="Editar alcance de la regla"
                       aria-label="Editar alcance de la regla"
@@ -385,7 +377,6 @@
                     </AppButton>
                     <AppButton
                       variant="danger-soft"
-                      size="sm"
                       icon-only
                       title="Quitar el proceso de esta unidad"
                       aria-label="Quitar el proceso de esta unidad"

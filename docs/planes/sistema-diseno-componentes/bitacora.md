@@ -6,6 +6,52 @@
 > [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md)
 > y **sigue valiendo**: es donde están las trampas ya pagadas.
 
+## 2026-08-17 · F5.4 — tres nombres para dos tamaños, y el que sobraba era el más elegido
+
+### Las cifras del plan estaban mal, y no por poco
+
+Decía «`sm` es 156 de 198 usos». Al medir: **317 botones**, repartidos **md 181 · sm 132 · lg 4**.
+La mayoría era `md`, no `sm`.
+
+El motivo del desajuste importa más que el número: **el componente se importa con dos nombres**.
+`AppButton` (160 usos) y `AdminButton` (157) son **el mismo fichero** —`AdminButton` es un alias de
+import en 33 ficheros—, resto del fork que F1.3a borró. Cualquier censo que cuente uno solo se deja
+la mitad fuera, y eso es exactamente lo que había pasado.
+
+### Lo que sí se confirmó
+
+Medido en el navegador con la misma etiqueta en los tres:
+
+    sm   40 px de alto · 14 px de letra · padding-x 12
+    md   40 px de alto · 14 px de letra · padding-x 16
+    lg   46 px de alto · 16 px de letra · padding-x 20
+
+`sm` y `md` son **la misma altura y la misma letra**. Lo único que las separa son 8 px de anchura
+total. La causa está escrita en el CSS: la base pone `min-h-10` (40 px) y se come el `py-1.5` de `sm`.
+
+Y el dato que decidió: **de los 181 `md`, 179 son por defecto**; sólo 2 lo piden a propósito. O sea
+que la única talla que alguien elige activamente es `sm` — y 132 sitios creían estar pidiendo un
+botón pequeño sin recibirlo.
+
+### La decisión
+
+El dueño eligió **que `sm` desaparezca** (opción A de tres). Sus 132 usos pasan a `md`; se van también
+su regla de CSS, su override de barra de acción y el único botón escrito a mano que la llevaba.
+`lg` se queda: aunque sean 4 usos por componente, **sí es una altura distinta con un papel claro**.
+
+### Lo que apareció de paso, y no se tocó
+
+- **`lg` tiene 13 usos más escritos a mano** (`class="deasy-btn … deasy-btn--lg"`), o sea que la
+  mayoría de los botones grandes **se salta el componente**. En `RegisterView`, «Cancelar» va por
+  `AppButton` y su pareja «Registrarme» es un `<button>` a mano: la misma fila, dos caminos.
+- El botón de chat lleva a la vez `deasy-btn--icon` (36 px) y `deasy-fab` (64 px), más un `admin-btn`
+  superviviente del fork.
+
+Ninguno es de esta fase, pero los dos son la misma señal: **el censo de un componente sólo vale si
+antes compruebas por cuántos nombres se le llama.**
+
+---
+
 ## 2026-08-17 · F5.2 — el radio: la cola no era ruido, era una pieza repetida
 
 ### El enunciado decía «no se sostiene»; el problema era otro

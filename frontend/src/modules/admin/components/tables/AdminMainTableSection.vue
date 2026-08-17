@@ -94,7 +94,6 @@
                 <AdminButton
                   v-if="!isPositionFilterTable && !isProcessDefinitionFilterTable && !isProcessTargetRuleFilterTable && !isTemplateArtifactsTable"
                   variant="neutral-outline" icon-only
-                  size="sm"
                   title="Limpiar búsqueda"
                   aria-label="Limpiar búsqueda"
                   :disabled="!searchTerm"
@@ -103,7 +102,6 @@
                 <AdminButton
                   v-if="isPositionFilterTable"
                   variant="neutral-outline" icon-only
-                  size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
                   :disabled="!hasUnitPositionFilters"
@@ -112,7 +110,6 @@
                 <AdminButton
                   v-else-if="isProcessDefinitionFilterTable"
                   variant="neutral-outline" icon-only
-                  size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
                   :disabled="!hasProcessDefinitionInlineFilters"
@@ -121,7 +118,6 @@
                 <AdminButton
                   v-else-if="isProcessTargetRuleFilterTable"
                   variant="neutral-outline" icon-only
-                  size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
                   :disabled="!hasProcessTargetRuleInlineFilters"
@@ -130,17 +126,15 @@
                 <AdminButton
                   v-else-if="isTemplateArtifactsTable"
                   variant="neutral-outline" icon-only
-                  size="sm"
                   title="Limpiar filtros"
                   aria-label="Limpiar filtros"
                   :disabled="!hasTemplateArtifactInlineFilters"
                   @click="$emit('clear-template-artifact-inline-filters')"
                 ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="primary-outline" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
+                <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
                 <AdminButton
                   v-if="hasExpandableFilters"
                   variant="neutral-outline"
-                  size="sm"
                   icon-only
                   :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
                   :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
@@ -152,7 +146,7 @@
                      de un `deasy-filter-summary` VACIO que era lo unico que justificaba esa
                      fila. Por eso caia debajo en vez de al lado. Sube aqui con sus hermanos:
                      los tres actuan sobre la misma tabla. -->
-                <AdminButton variant="primary-outline" icon-only size="sm" title="Actualizar" aria-label="Actualizar" @click="$emit('fetch-rows')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+                <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('fetch-rows')"><font-awesome-icon icon="rotate-right" /></AdminButton>
               </div>
             </div>
           </div>
@@ -199,7 +193,6 @@
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions'"
                     variant="primary-soft"
-                    size="sm"
                     icon-only
                     title="Versionar"
                     aria-label="Versionar"
@@ -210,7 +203,6 @@
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'draft'"
                     variant="success-soft"
-                    size="sm"
                     icon-only
                     title="Activar"
                     aria-label="Activar"
@@ -221,7 +213,6 @@
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
                     variant="warning-soft"
-                    size="sm"
                     icon-only
                     title="Retirar (desactivar)"
                     aria-label="Retirar (desactivar)"
@@ -232,7 +223,6 @@
                   <AdminButton
                     v-if="canUpdate && table?.table === 'terms'"
                     variant="success-soft"
-                    size="sm"
                     icon-only
                     title="Lanzar procesos del periodo"
                     aria-label="Lanzar procesos del periodo"
@@ -243,7 +233,6 @@
                   <AdminButton
                     v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
                     variant="success-soft"
-                    size="sm"
                     icon-only
                     title="Lanzar en un periodo"
                     aria-label="Lanzar en un periodo"
@@ -254,7 +243,6 @@
                   <AdminButton
                     v-if="canUpdate && isPersonTable"
                     variant="success-soft"
-                    size="sm"
                     icon-only
                     title="Gestionar asignaciones"
                     aria-label="Gestionar asignaciones"
@@ -268,7 +256,6 @@
                   <AdminButton
                     v-if="canUpdate && (row?.lifecycle_state || 'published') === 'draft'"
                     variant="success-soft"
-                    size="sm"
                     icon-only
                     title="Editar"
                     aria-label="Editar"
@@ -283,7 +270,6 @@
                   <AdminButton
                     v-else-if="canUpdate"
                     variant="primary-soft"
-                    size="sm"
                     icon-only
                     title="Versionar (crea una versión en borrador editable)"
                     aria-label="Versionar plantilla"

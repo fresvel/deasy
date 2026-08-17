@@ -15,9 +15,9 @@
               </div>
               <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
                 <div class="deasy-filter-actions">
-                  <AdminButton variant="neutral-outline" icon-only size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
-                  <AdminButton variant="primary-outline" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
-                  <AdminButton variant="primary-outline" icon-only size="sm" title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+                  <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+                  <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+                  <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
                 </div>
               </div>
             </div>
@@ -51,10 +51,10 @@
             </template>
             <template #actions="{ row }">
               <div class="inline-flex items-center gap-1">
-                <AdminButton variant="info-soft" size="sm" icon-only title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
+                <AdminButton variant="info-soft" icon-only title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
                   <font-awesome-icon icon="eye" />
                 </AdminButton>
-                <AdminButton v-if="canLink" variant="success-soft" size="sm" icon-only title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
+                <AdminButton v-if="canLink" variant="success-soft" icon-only title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
                   <font-awesome-icon icon="link" />
                 </AdminButton>
               </div>

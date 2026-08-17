@@ -41,7 +41,6 @@
           <AppButton
             v-if="view === 'conversation'"
             variant="neutral-outline"
-            size="sm"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
@@ -165,7 +164,6 @@
               />
               <AppButton
                 variant="primary-outline"
-                size="sm"
                 class-name="deasy-btn--field shrink-0"
                 :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
                 @click="sendMessage"

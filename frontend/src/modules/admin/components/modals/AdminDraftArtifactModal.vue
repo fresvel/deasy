@@ -296,7 +296,6 @@
             </div>
             <AdminButton
               variant="success-soft"
-              size="sm"
               icon-only
               :title="expandedFillStep === index ? 'Listo' : 'Editar paso'"
               :aria-label="expandedFillStep === index ? 'Listo' : 'Editar paso'"
@@ -306,7 +305,6 @@
             </AdminButton>
             <AdminButton
               variant="danger-soft"
-              size="sm"
               icon-only
               title="Eliminar paso"
               aria-label="Eliminar paso"
@@ -430,7 +428,6 @@
             </div>
             <AdminButton
               variant="success-soft"
-              size="sm"
               icon-only
               :title="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
               :aria-label="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
@@ -440,7 +437,6 @@
             </AdminButton>
             <AdminButton
               variant="danger-soft"
-              size="sm"
               icon-only
               title="Eliminar paso"
               aria-label="Eliminar paso"
@@ -477,7 +473,7 @@
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
               <span class="inline-flex items-center gap-1 text-theme-xs font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
-              <AppButton variant="primary-outline" size="sm" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
+              <AppButton variant="primary-outline" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
             </div>
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-line bg-surface/60 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">

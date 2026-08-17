@@ -112,7 +112,6 @@
             <AdminButton
               v-if="canAddProcessConfiguration(section)"
               variant="primary-outline"
-              size="sm"
               @click="$emit('add-process-configuration')"
             >
               <IconPlus class="h-4 w-4" />

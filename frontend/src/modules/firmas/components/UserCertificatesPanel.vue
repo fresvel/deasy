@@ -8,7 +8,6 @@
       <AdminButton
         v-if="refreshable"
         variant="neutral-outline"
-        size="sm"
         :disabled="isLoading"
         @click="loadCertificates"
       >
@@ -58,14 +57,12 @@
                 <AdminButton
                   v-if="!certificate.is_default"
                   variant="primary-outline"
-                  size="sm"
                   @click="markDefault(certificate)"
                 >
                   Usar por defecto
                 </AdminButton>
                 <AdminButton
                   variant="neutral-outline"
-                  size="sm"
                   @click="downloadCertificate(certificate)"
                 >
                   Descargar

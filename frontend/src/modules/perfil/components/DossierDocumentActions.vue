@@ -6,7 +6,6 @@
   <div class="inline-flex items-center gap-2">
     <AdminButton
       variant="success-soft"
-      size="sm"
       icon-only
       :title="canEdit ? 'Editar' : 'No tienes permiso para editar este registro'"
       :aria-label="canEdit ? 'Editar' : 'Edicion bloqueada por permisos'"
@@ -17,7 +16,7 @@
           d="M16.862 4.487 18.549 2.8a1.875 1.875 0 1 1 2.651 2.651L8.093 17.56a4.5 4.5 0 0 1-1.897 1.13l-2.685.805.806-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z" />
       </svg>
     </AdminButton>
-    <AdminButton v-if="hasDocument" variant="info-soft" size="sm" icon-only
+    <AdminButton v-if="hasDocument" variant="info-soft" icon-only
       title="Ver PDF" @click="$emit('preview')">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -30,7 +29,7 @@
           d="M15.75 18.375a1.875 1.875 0 1 0 0-3.75 1.875 1.875 0 0 0 0 3.75Z" />
       </svg>
     </AdminButton>
-    <AdminButton v-if="hasDocument" variant="primary-soft" size="sm" icon-only
+    <AdminButton v-if="hasDocument" variant="primary-soft" icon-only
       title="Descargar PDF" @click="$emit('download')">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -41,7 +40,7 @@
           d="M4.5 15.75v.75A2.25 2.25 0 0 0 6.75 18.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-.75" />
       </svg>
     </AdminButton>
-    <AdminButton variant="primary-soft" size="sm" icon-only 
+    <AdminButton variant="primary-soft" icon-only 
       :title="canUpload ? (hasDocument ? 'Actualizar PDF' : 'Subir PDF') : 'No tienes permiso para subir o actualizar PDFs'"
       :aria-label="canUpload ? (hasDocument ? 'Actualizar PDF' : 'Subir PDF') : 'Subida bloqueada por permisos'"
       :disabled="!canUpload"
@@ -63,7 +62,7 @@
           d="M4.5 15.75v1.5A2.25 2.25 0 0 0 6.75 19.5h10.5a2.25 2.25 0 0 0 2.25-2.25v-1.5" />
       </svg>
     </AdminButton>
-    <AdminButton v-if="hasDocument" variant="warning-soft" size="sm" icon-only
+    <AdminButton v-if="hasDocument" variant="warning-soft" icon-only
       :title="canDeleteDocument ? 'Eliminar solo PDF' : 'No tienes permiso para eliminar PDFs'"
       :aria-label="canDeleteDocument ? 'Eliminar solo PDF' : 'Eliminacion de PDF bloqueada por permisos'"
       :disabled="!canDeleteDocument"
@@ -77,7 +76,7 @@
           d="M17.25 12.75a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
       </svg>
     </AdminButton>
-    <AdminButton variant="danger-soft" size="sm" icon-only 
+    <AdminButton variant="danger-soft" icon-only 
       :title="canDelete ? 'Eliminar registro completo' : 'No tienes permiso para eliminar registros'"
       :aria-label="canDelete ? 'Eliminar registro completo' : 'Eliminacion bloqueada por permisos'"
       :disabled="!canDelete"

@@ -1,7 +1,6 @@
 <template>
   <AppButton
     variant="danger-soft"
-    size="sm"
     icon-only
     :title="label"
     :aria-label="label"

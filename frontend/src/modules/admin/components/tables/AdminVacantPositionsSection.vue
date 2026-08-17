@@ -34,11 +34,10 @@
               </div>
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
               <div class="deasy-filter-actions">
-                <AdminButton variant="neutral-outline" icon-only size="sm" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="primary-outline" icon-only size="sm" title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+                <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+                <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
                 <AdminButton
                   variant="neutral-outline"
-                  size="sm"
                   icon-only
                   :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
                   :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
@@ -46,7 +45,7 @@
                 >
                   <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
                 </AdminButton>
-                <AdminButton variant="primary-outline" icon-only size="sm" title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+                <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
               </div>
             </div>
           </div>
@@ -74,10 +73,10 @@
             </template>
             <template v-if="canUpdate" #actions="{ row }">
               <div class="inline-flex items-center gap-1">
-                <AdminButton variant="danger-soft" size="sm" icon-only title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
+                <AdminButton variant="danger-soft" icon-only title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
                   <font-awesome-icon icon="times-circle" />
                 </AdminButton>
-                <AdminButton variant="success-soft" size="sm" icon-only title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
+                <AdminButton variant="success-soft" icon-only title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
                   <font-awesome-icon icon="user-plus" />
                 </AdminButton>
               </div>

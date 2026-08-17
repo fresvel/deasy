@@ -7,7 +7,6 @@
     <AdminButton
       v-if="showView"
       variant="info-soft"
-      size="sm"
       icon-only
       :title="viewTitle"
       :aria-label="viewLabel"
@@ -20,7 +19,6 @@
       <AdminButton
         v-if="showEdit"
         variant="success-soft"
-        size="sm"
         icon-only
         :title="editTooltip"
         :aria-label="editTooltip"
@@ -37,7 +35,6 @@
     <AdminButton
       v-if="showDelete"
       variant="danger-soft"
-      size="sm"
       icon-only
       :title="deleteMessage"
       :aria-label="deleteMessage"

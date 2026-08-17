@@ -377,10 +377,6 @@
         }
     }
 
-    .deasy-btn--sm {
-        @apply px-3 py-1.5 text-sm;
-    }
-
     .deasy-btn--md {
         @apply px-4 py-2 text-sm;
     }
@@ -563,12 +559,6 @@
     .deasy-action-bar .admin-btn,
     .admin-page-header__actions .admin-btn {
         min-height: 2.45rem;
-    }
-
-    .deasy-action-bar .deasy-btn--sm,
-    .admin-page-header__actions .deasy-btn--sm {
-        padding-inline: 0.9rem;
-        font-size: 0.88rem;
     }
 
     .deasy-action-bar .deasy-btn--md,

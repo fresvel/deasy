@@ -82,7 +82,6 @@
           <AdminButton
             v-if="showDownloadButton"
             :disabled="isDownloadingBatch"
-            size="sm"
             variant="primary-outline"
             @click="$emit('download-batch')"
           >

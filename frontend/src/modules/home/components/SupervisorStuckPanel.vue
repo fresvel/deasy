@@ -13,7 +13,6 @@
       </div>
       <AppButton
         variant="neutral-outline"
-        size="sm"
         :disabled="loading"
         @click="load"
       >↻ Actualizar</AppButton>
