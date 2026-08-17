@@ -46,7 +46,7 @@
       <button 
         type="submit" 
         :disabled="isLoading"
-        class="deasy-btn deasy-btn--primary-outline deasy-btn--lg deasy-btn--block"
+        class="deasy-btn deasy-btn--primary-outline deasy-btn--block"
       >
         <template v-if="!isLoading">
           Enviar código
@@ -127,7 +127,7 @@
       <div class="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
-          class="deasy-btn deasy-btn--neutral-outline deasy-btn--lg deasy-btn--block"
+          class="deasy-btn deasy-btn--neutral-outline deasy-btn--block"
           :disabled="isLoading"
           @click="step = 'request'"
         >
@@ -136,7 +136,7 @@
         <button
           type="submit"
           :disabled="isLoading"
-          class="deasy-btn deasy-btn--primary-outline deasy-btn--lg deasy-btn--block"
+          class="deasy-btn deasy-btn--primary-outline deasy-btn--block"
         >
           <template v-if="!isLoading">
             Actualizar contraseña

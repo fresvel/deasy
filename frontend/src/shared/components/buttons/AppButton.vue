@@ -162,9 +162,16 @@ const variantClassMap = {
    Y era la unica talla que la gente elegia a proposito —132 usos, frente a 2 que pedian `md`
    explicitamente y 179 que se lo comian por defecto—, o sea que 132 sitios creian estar
    pidiendo un boton pequeño y no lo recibian. */
+/* UN SOLO TAMAÑO DE BOTON CON TEXTO — F5.4, 2026-08-17.
+   Cayeron los dos que sobraban, y por el mismo motivo: **no eran tamaños, eran nombres**.
+   · `sm` daba 40 px y 14 px de letra, exactamente igual que `md` — el `min-h-10` de la base
+     se comia su `py-1.5`, y solo quedaban 8 px de anchura que nadie percibe.
+   · `lg` si era distinto (46 px), pero de sus 4 usos por componente **3 estaban en un modal
+     que no se puede abrir**; el resto de botones grandes se escribian a mano.
+   Lo cuadrado (`--icon`, `--close`), lo alineado a un campo (`--field`) y el flotante
+   (`--fab`) no son tamaños de esta escala: son formas con su propio papel. */
 const sizeClassMap = {
-  md: "deasy-btn--md",
-  lg: "deasy-btn--lg"
+  md: "deasy-btn--md"
 };
 
 /* [F1.6 2026-08-11] ANTES ESTO ERA `mapa[clave] || clave`, y estampaba la clave como si

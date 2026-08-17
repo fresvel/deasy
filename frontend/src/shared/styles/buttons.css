@@ -381,10 +381,6 @@
         @apply px-4 py-2 text-sm;
     }
 
-    .deasy-btn--lg {
-        @apply px-5 py-2.5 text-base;
-    }
-
     /* EL BOTON CUADRADO DE ICONO. Absorbe `hope-action-btn`, que era su copia con otro nombre:
        misma caja (2.25rem = h-9/w-9), mismo `padding: 0`.
 
@@ -421,10 +417,23 @@
        solo conservaban su cuadrado por estar FUERA DE CAPA. Medido en su dia: capados sin esto,
        239 nodos del organigrama se pintaban como un secundario cualquiera. Excluyendo la forma
        que la regla no gobierna, la familia entera pudo morir. */
-    .deasy-table-responsive .deasy-btn:not(.deasy-btn--icon) {
-        @apply rounded-xl px-3 py-1.5 text-[13px] font-medium shadow-none;
-        min-height: 2rem;
-    }
+    /* ══ AQUI VIVIA LA CUARTA GEOMETRIA DEL BOTON — muerta el 2026-08-17 ═══════════════════
+       Un boton dentro de una tabla media **32 px con letra de 13 y radio 12**, frente a los
+       40 / 14 / 8 de fuera. No era una variante: era la POSICION cambiando el objeto, y por eso
+       nadie podia responder a «¿el Agregar de una tabla es del mismo tamaño que el del
+       organigrama?». No lo era.
+
+       La regla se defendia como densidad, y el argumento es real —una tabla de admin pinta 172
+       botones a la vez—. Pero la densidad se pide, no se hereda: si un boton tiene que ser mas
+       pequeño, eso es un tamaño con nombre que el llamante elige, no algo que le pase por estar
+       dentro de un contenedor. Con `sm` retirado (medido: no era un tamaño) y esta regla fuera,
+       **un boton con texto mide 40 px y 14 px en toda la aplicacion, sin excepcion**.
+
+       ⚠️ Su `:not(--icon)` no era un parche y conviene no perder el motivo: la regla era (0,2,0)
+       y le ganaba a cualquier `.deasy-btn--*` (0,1,0), asi que los botones cuadrados de accion
+       solo conservaban su forma por vivir FUERA de capa. Al morir la regla, esa presion
+       desaparece entera.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
 
     /* ══ AQUI VIVIAN LAS DOS REGLAS DE `--secondary` EN TABLA — muertas el 2026-08-16 ══════
        Y con ellas se paga la deuda de fase 6 que este fichero llevaba meses señalando.
@@ -455,17 +464,12 @@
 
        (Acompañaba a `--primary-outline`, que ya no existe: al pasar TODO el sistema a contorno
        en reposo, esa variante era `--primary` con otro nombre.) */
-    .deasy-table-responsive .deasy-btn--primary-soft {
-        border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-white));
-        background: var(--color-white);
-        color: var(--color-primary);
-    }
-
-    .deasy-table-responsive .deasy-btn--primary-soft:hover {
-        border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-white));
-        background: var(--color-surface);
-        color: color-mix(in srgb, var(--color-primary) 86%, var(--black));
-    }
+    /* ══ Y AQUI EL COLOR TAMBIEN CAMBIABA POR CONTEXTO — muerto el 2026-08-17 ═════════════
+       `--primary-soft` se pintaba mas palido dentro de una tabla que fuera. Estaba razonado
+       —se probo sobre la tabla de personas, 178 botones a la vez, y el relleno pesaba mas que
+       los datos— y aun asi es el mismo defecto que la regla de arriba con otra propiedad: el
+       boton deja de ser lo que dice su clase y pasa a depender de donde este. Si en una tabla
+       hace falta un tono mas palido, eso es una VARIANTE que se pide. */
 
     /* ══ Y AQUI SE FORZABA `--primary` A SOLIDO DENTRO DE UNA TABLA — muerto el 2026-08-16 ══
        Era la ultima regla que contradecia la decision del dueño: el «Agregar» de la cabecera de

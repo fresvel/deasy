@@ -1086,7 +1086,7 @@
         </section>
       </div>
       <template #footer>
-        <AppButton variant="danger-outline" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
+        <AppButton variant="danger-outline" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
           Cancelar
         </AppButton>
         <AppButton
@@ -1102,14 +1102,13 @@
         <AppButton
           v-if="taskLaunchStep < taskLaunchSteps.length"
           variant="primary-outline"
-          size="lg"
           type="button"
           :disabled="!canAdvanceTaskLaunchStep"
           @click="goToNextTaskLaunchStep"
         >
           Continuar
         </AppButton>
-        <AppButton v-else variant="primary-outline" size="lg" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
+        <AppButton v-else variant="primary-outline" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
           {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
         </AppButton>
       </template>
