@@ -39,11 +39,13 @@
  *   S3 · JavaScript    un `zIndex` con numero literal, en `<script>` o en `.js`.
  *
  * ⚠️ S3 tiene UNA excepcion declarada, y conviene entender por que no es una grieta:
- * `modalController.js` reparte alturas EN EJECUCION (`el.style.zIndex = topZ + 1`) para que un
- * modal abierto desde otro quede encima sin que nadie tenga que numerarlo. Eso es legitimo y es la
- * pieza que hace que los cinco niveles no se queden cortos. Lo que NO puede es inventarse el
- * suelo: lo lee de `--z-modal`. Por eso la excepcion es el fichero, no el patron — si aparece un
- * segundo repartidor, el gate lo caza.
+ * `modalController.js` reparte alturas EN EJECUCION para que un modal abierto desde otro quede
+ * encima sin que nadie tenga que numerarlo. No es un parche: es EL mecanismo. Se probo la
+ * alternativa —un nivel fijo declarado por componente— y no cabe, porque `openProcessWizard()` se
+ * llama desde siete sitios a dos profundidades distintas: cualquier numero esta mal en algun
+ * camino. Lo unico que ese fichero no puede es inventarse el suelo, y por eso lo lee de
+ * `--z-modal`. La excepcion es EL FICHERO, no el patron: si aparece un segundo repartidor, el
+ * gate lo caza, que es justo lo que se quiere.
  *
  * Y una cosa que este gate NO comprueba, para que no se confie en el: **que la altura sirva de
  * algo**. Un `z-index` sobre un elemento `static` no hace nada, y un hijo dentro de un ancestro
@@ -137,7 +139,7 @@ if (roto) {
 
     dentro de un contenedor    z-(--z-capa-fondo|base|elemento|activo|controles|emergente|velo)
     en toda la pagina          z-(--z-menu-lateral|barra-superior|panel-chat|aviso|…)
-    un modal                   no escribas altura: <AppModalShell nivel="2">
+    un modal                   NO escribas altura: el armazon se eleva solo al abrirse
 `);
     process.exit(1);
 }

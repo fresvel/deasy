@@ -2,7 +2,6 @@
   <AppModalShell
       v-if="open"
       controlled
-      nivel="2"
     :open="open"
     :title="`Perfil del puesto${positionLabel ? ' · ' + positionLabel : ''}`"
     content-class="max-w-lg"

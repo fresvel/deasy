@@ -43,7 +43,6 @@
     <AppModalShell
       v-if="showVersionDialog"
       controlled
-      nivel="2"
       :open="showVersionDialog"
       title="Crear nueva versión"
       content-class="max-w-md"

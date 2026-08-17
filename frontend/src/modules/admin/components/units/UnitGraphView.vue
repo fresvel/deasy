@@ -104,7 +104,6 @@
     <AppModalShell
       v-if="Boolean(selectedEdge)"
       controlled
-      nivel="2"
       :open="Boolean(selectedEdge)"
       title="Quitar relación"
       content-class="max-w-md"
@@ -123,7 +122,6 @@
     <AppModalShell
       v-if="Boolean(editingEdge)"
       controlled
-      nivel="2"
       :open="Boolean(editingEdge)"
       title="Cambiar tipo de relación"
       content-class="max-w-md"
@@ -146,7 +144,6 @@
     <AppModalShell
       v-if="Boolean(createContext)"
       controlled
-      nivel="2"
       :open="Boolean(createContext)"
       :title="createDialogTitle"
       content-class="max-w-md"
@@ -416,7 +413,6 @@
     <AppModalShell
       v-if="Boolean(editingPosition)"
       controlled
-      nivel="2"
       :open="Boolean(editingPosition)"
       title="Editar puesto"
       content-class="max-w-md"
@@ -466,7 +462,6 @@
     <AppModalShell
       v-if="processModalOpen"
       controlled
-      nivel="2"
       :open="processModalOpen"
       :title="processEditingRuleId ? 'Editar proceso de la unidad' : 'Vincular proceso a la unidad'"
       content-class="max-w-md"

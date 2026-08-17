@@ -1,8 +1,8 @@
 <template>
   <div
     ref="rootElement"
-    class="deasy-dialog-root fixed inset-0 overflow-y-auto px-4 py-8"
-    :class="[controlled ? (open ? 'flex' : 'hidden') : 'hidden', claseAltura]"
+    class="deasy-dialog-root fixed inset-0 overflow-y-auto px-4 py-8 z-(--z-modal)"
+    :class="controlled ? (open ? 'flex' : 'hidden') : 'hidden'"
     data-dialog-root
     tabindex="-1"
     role="dialog"
@@ -47,7 +47,8 @@
 
 <script setup>
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
-import { computed, ref, useAttrs } from "vue";
+import { computed, nextTick, ref, useAttrs, watch } from "vue";
+import { elevarSobreLoVisible, liberarAltura } from "@/shared/utils/modalController";
 
 const props = defineProps({
   title: {
@@ -59,21 +60,6 @@ const props = defineProps({
   labelledBy: {
     type: String,
     default: ""
-  },
-  /* NIVEL — a que profundidad de la cadena de modales esta este.
-       1  se abre desde la pagina        4  desde uno de tercer nivel
-       2  se abre DESDE otro modal       5  el limite; mas hondo es un problema de diseño
-       3  desde uno de segundo nivel
-     La cadena mas profunda medida en el repo es de TRES (editor de registro -> navegador de clave
-     ajena -> crear/filtrar), pero se escribia con CINCO alturas distintas (1060, 1075, 1080, 1090,
-     1100) porque nadie sabia cual le tocaba: la confirmacion del asistente valia 1075 y el
-     asistente 1080, o sea que **el hijo salia por debajo del padre**.
-     ⚠️ Esto es solo el suelo. `modalController.js` sube ademas +1 en linea al mostrar, asi que dos
-     modales del mismo nivel no empatan: gana el ultimo en abrirse, que es lo que quieres. */
-  nivel: {
-    type: [Number, String],
-    default: 1,
-    validator: (v) => [1, 2, 3, 4, 5].includes(Number(v))
   },
   size: {
     type: String,
@@ -130,17 +116,31 @@ const emit = defineEmits(["close"]);
 const attrs = useAttrs();
 const rootElement = ref(null);
 
-/* Las cinco alturas, escritas ENTERAS a proposito: Tailwind rastrea el codigo como TEXTO, y una
-   clase compuesta (`z-(--z-modal-${n})`) no la encuentra, asi que la utilidad no se generaria.
-   Es el mismo motivo por el que `AppButton` lleva su mapa de variantes literal. */
-const CLASE_POR_NIVEL = {
-  1: "z-(--z-modal)",
-  2: "z-(--z-modal-2)",
-  3: "z-(--z-modal-3)",
-  4: "z-(--z-modal-4)",
-  5: "z-(--z-modal-5)"
-};
-const claseAltura = computed(() => CLASE_POR_NIVEL[Number(props.nivel)] || CLASE_POR_NIVEL[1]);
+/* LA ALTURA — sólo para los modales que gobierna Vue (`controlled`, con `:open`). Los demás pasan
+   por `Modal.show()`, que llama al mismo ayudante: una sola regla para las dos mitades.
+
+   Esta mitad era la unica que NO elevaba, y por eso era la unica que se podia romper: el asistente
+   de procesos se abria por debajo del editor que lo habia lanzado y parecia que el boton no hacia
+   nada. Se intento arreglar declarando un nivel fijo por componente y **no cabe**: ese mismo
+   asistente se abre desde siete sitios a dos profundidades distintas.
+
+   El `nextTick` no es adorno: al abrir hay que medir con las clases YA aplicadas, o el modal que
+   acaba de cerrarse en el mismo ciclo todavia cuenta como visible y el nuevo sale un escalon de
+   mas. Y liberar al cerrar es la otra mitad del mecanismo — sin ello cada apertura deja un peldaño
+   que no vuelve a bajar. */
+watch(
+  () => props.open,
+  async (abierto) => {
+    if (!props.controlled) return;
+    if (!abierto) {
+      liberarAltura(rootElement.value);
+      return;
+    }
+    await nextTick();
+    elevarSobreLoVisible(rootElement.value);
+  }
+);
+
 
 const shellClass = computed(() => {
   const classes = ["items-center"];

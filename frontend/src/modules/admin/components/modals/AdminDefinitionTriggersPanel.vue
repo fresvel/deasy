@@ -23,7 +23,6 @@
     <AppModalShell
       v-if="canManage && formOpen"
       controlled
-      nivel="2"
       :open="canManage && formOpen"
       :title="editId ? 'Editar periodo' : 'Nuevo periodo'"
       content-class="max-w-2xl"

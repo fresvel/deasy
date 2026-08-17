@@ -377,18 +377,18 @@
     --z-panel-chat: 3030;          /* el panel del chat y el velo de «cargando» a pantalla completa */
 
     /* 4000 · los dialogos — lo que INTERRUMPE.
-       Cinco niveles de modal por decision del dueño (2026-08-16), y la banda llega a 4090, asi
-       que quedan tres huecos. Hacian falta: la cadena mas profunda medida es de TRES —editor de
-       registro -> navegador de clave ajena -> crear/filtrar— pero se estaban usando CINCO alturas
-       distintas (1060, 1075, 1080, 1090, 1100) para expresarla, que es el sintoma de que nadie
-       sabia cual le tocaba. Prueba de ello: la confirmacion del asistente valia 1075 y el
-       asistente 1080, o sea que **el hijo quedaba por debajo del padre**. */
+       ⚠️ AQUI SOLO HAY **UN** TOKEN DE MODAL, Y ES EL SUELO, NO LA ALTURA.
+       Un modal no se coloca por lo que declara sino por lo que hay abierto cuando se abre:
+       `modalController.js` lo eleva un escalon sobre el mas alto visible y lo libera al cerrar.
+       Este token es donde caen si eso no llega a correr.
+
+       Hubo cuatro sub-niveles (`--z-modal-2`…`-5`) y se retiraron el 2026-08-17, dos dias despues
+       de nacer, porque **el dato no cabe en el componente**: `openProcessWizard()` se llama desde
+       SIETE sitios a dos profundidades distintas, asi que cualquier numero fijo esta mal en algun
+       camino. Con nivel 1 el asistente se abria por debajo del editor que lo habia lanzado.
+       La banda 4030-4090 queda libre a proposito: es el margen por el que trepa el apilado. */
     --z-panel-lateral: 4010;       /* el panel que entra por la derecha */
-    --z-modal: 4020;
-    --z-modal-2: 4030;             /* uno abierto DESDE otro */
-    --z-modal-3: 4040;
-    --z-modal-4: 4050;
-    --z-modal-5: 4060;
+    --z-modal: 4020;               /* SUELO. La altura real la pone modalController.js */
 
     /* 5000 · los avisos — por encima de todo, incluidos los dialogos.
        ⚠️ Antes NO era asi y era un fallo: el aviso valia 1080 y los modales apilados 1090 y 1100,

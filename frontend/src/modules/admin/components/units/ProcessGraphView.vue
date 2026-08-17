@@ -84,7 +84,7 @@
     <AppModalShell
       v-if="Boolean(selectedEdge)"
       controlled
-      nivel="2" :open="Boolean(selectedEdge)" title="Desvincular proceso" content-class="max-w-md" @close="selectedEdge = null">
+      :open="Boolean(selectedEdge)" title="Desvincular proceso" content-class="max-w-md" @close="selectedEdge = null">
       <p class="m-0 text-sm text-icon">
         ¿Desvincular <strong>{{ selectedEdgeLabel }}</strong>? El sub-proceso quedará como proceso raíz (sin padre).
       </p>
@@ -98,7 +98,7 @@
     <AppModalShell
       v-if="Boolean(createContext)"
       controlled
-      nivel="2" :open="Boolean(createContext)" :title="createDialogTitle" content-class="max-w-md" @close="createContext = null">
+      :open="Boolean(createContext)" :title="createDialogTitle" content-class="max-w-md" @close="createContext = null">
       <p class="m-0 mb-3 text-sm text-icon">{{ createDialogHint }}</p>
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
@@ -120,7 +120,7 @@
     <AppModalShell
       v-if="Boolean(editingProcess)"
       controlled
-      nivel="2" :open="Boolean(editingProcess)" title="Editar proceso" content-class="max-w-md" @close="closeEditModal">
+      :open="Boolean(editingProcess)" title="Editar proceso" content-class="max-w-md" @close="closeEditModal">
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
