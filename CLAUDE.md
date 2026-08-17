@@ -98,6 +98,40 @@ método.
 la base, y responder preguntas. **En cuanto vayas a escribir —código o documentación—, worktree.**
 Y si el usuario te asigna uno («trabaja en `deasy-defectos`»), ése, y no toques los demás.
 
+### ⛔ Regla de salida: cómo se ENTREGA lo que acabas de hacer
+
+Está aquí, y no solo en el `CLAUDE.md` de su carpeta, por un motivo **medido**: los `CLAUDE.md` de
+carpeta se inyectan **una sola vez, al primer acceso**, y **una compactación se los lleva sin volver
+a inyectarlos**. En la sesión del 14 al 17 de agosto de 2026 hubo **2 inyecciones, ambas en la línea
+248 de 13 712**; después, tres compactaciones. **199 de los 332 accesos a `frontend/` ocurrieron sin
+`frontend/CLAUDE.md` en contexto**, y `docs/planes/CLAUDE.md` **no se inyectó ni una vez**. Las dos
+reglas de abajo se incumplieron varias veces por eso, no por criterio.
+
+Y no basta con un puntero: la del avance **ya estuvo aquí entera**, se mudó a su carpeta dejando un
+enlace, y **con ese enlace presente en todo momento se incumplió cuatro veces seguidas**. Un enlace
+dice *que hay una norma*; no dice *qué hacer*. Por eso lo que sigue es el disparador accionable —el
+porqué, los precedentes y los ejemplos siguen siendo normativos y viven en su carpeta.
+
+**1 · Cerraste una tarea de un plan → enseña el avance EN ESE TURNO.** No al cerrar la fase, no
+cuando lo pidan. Son **dos tablas**: el mapa completo (una fila por fase, con sus tareas en la
+segunda columna y el estado pegado a cada nombre) y el detalle de la fase en curso (una fila por
+tarea, con qué entrega). Di siempre **de qué nivel hablas** —frente, fase o tarea—, **recuenta el
+denominador** antes de enseñarlo, y no colapses varias tareas en una fila.
+→ Formato exacto y por qué es fijo: **§6 de [`docs/planes/CLAUDE.md`](docs/planes/CLAUDE.md)**.
+
+**2 · Entregaste un cambio visual → van CUATRO cosas, aunque parezca trivial.**
+**(a)** la auditoría que lo motivó, **con cifras** —cuántos hay, cuántos no conformaban, cuántos
+quedan—; **(b)** el antes/después **MEDIDO y no descrito**: valores computados, diff del CSS
+construido o `scripts/css-huella.mjs`; **(c)** **la ruta exacta**: la URL **más profunda a la que el
+router llegue solo**, con protocolo y puerto de tu pila, **con qué usuario y contraseña**, y **solo**
+los clics que la URL no puede sustituir (abrir un modal, elegir una fila); **(d)** **lo que no
+pudiste verificar, y por qué**.
+
+⚠️ «Mira los campos», «revisa el admin» y **«la raíz más cuatro clics»** no son rutas: las pestañas
+de admin son segmentos de ruta, no estado interno. Si el cambio toca varias pantallas, se dan las
+rutas de **todas**.
+→ Ejemplos de lo que sí vale y trampas del instrumental: **§4 de [`frontend/CLAUDE.md`](frontend/CLAUDE.md)**.
+
 ### Pilas paralelas: A, B, C y D — `scripts/stack.sh`
 
 **Si hay varias sesiones trabajando a la vez, cada una necesita su pila.** Los montajes de código son
@@ -352,13 +386,6 @@ más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extr
    PostgreSQL quiere `UPDATE tabla alias SET col = ... FROM otra WHERE union AND filtros`, con las
    columnas del `SET` **sin cualificar**. Al escribir SQL nuevo: pruébalo con `PREPARE` en psql, y
    recuerda que **`grep "UPDATE.*JOIN"` no encuentra nada** porque el SQL ocupa varias líneas.
-
-### El avance de un plan se MUESTRA — norma en `docs/planes/CLAUDE.md`
-
-Si trabajas sobre algo de `docs/planes/`, **el estado se enseña en el mismo turno en que cierras la
-tarea**, con el formato de dos tablas que fija §6 de [`docs/planes/CLAUDE.md`](docs/planes/CLAUDE.md).
-Ahí está también por qué el formato es fijo y qué no se debe mezclar.
-
 
 ### Plan de calidad
 
