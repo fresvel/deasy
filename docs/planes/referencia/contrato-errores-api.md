@@ -34,6 +34,27 @@ que su endpoint le manda. El problema es que los endpoints no se parecen entre s
 **`message` ya está en el 71% de las respuestas (201/284).** No hay que inventar un contrato: hay que
 terminar el que ya ganó.
 
+### Remedición del 2026-08-14 — **306 respuestas, 16 formas**
+
+**La tabla de arriba NO se toca: es la línea base de julio**, y pisarla tira la serie histórica (mismo
+criterio que `sonar.projectVersion`). Lo que sigue es el estado de hoy, medido con el mismo método
+—emparejando paréntesis, así que coge también las respuestas multilínea— sobre `develop`:
+
+| | 16-07-2026 | 2026-08-14 |
+|---|---:|---:|
+| Respuestas de error | 284 | **306** |
+| Formas distintas | 13 | **16** |
+| Cuota de `{ message }` | 201 (71 %) | **219 (71,6 %)** |
+
+**Tres formas nuevas** en un mes, y ninguna hacía falta: `{ details, message }` (2, `chat_controller.js`),
+`{ message, ok }` (2, `bootstrap_controller.js`) y `{ …spread, message, success }` (1, el `fail` local de
+`dossier_controler.js:123`). Es exactamente lo que avisa el §7 —«no añadir una cuarta forma
+provisional»— ocurriendo tres veces mientras nadie miraba.
+
+> **Esta es la única cifra viva del contrato de errores, y no se replica** (regla 4 de
+> [`../CLAUDE.md`](../CLAUDE.md)). El plan maestro decía **309 / 15** y **no se reproduce con ningún
+> criterio de inclusión razonable**; desde el 2026-08-14 enlaza aquí en vez de repetirla.
+
 ## 3. Lo que hace peligrosa la divergencia
 
 `error` significa **dos cosas opuestas** según quién responda:
@@ -78,9 +99,45 @@ Reglas:
    cliente no ayuda a quien lo lee y expone interioridades.
 3. **`ok` y `success` sobran.** El código HTTP ya dice si falló. Dos fuentes de verdad para lo mismo es
    como acabaron `--deasy-*` y `--brand-*` en el CSS (ver `frontend.md` §3.4).
-4. **`code` sólo si un cliente necesita ramificar.** Hoy lo usa `login_user.js`; que siga.
+4. **`code` sólo si un cliente necesita ramificar** — y hoy **ninguno lo necesita**. Ver §4.1.
 5. **Nada de claves ad-hoc en la raíz.** `requires_document_selection`, `context`, `use`, `details`… si
    hacen falta datos, van bajo una clave `data`, no sueltas junto a `message`.
+
+### 4.1 · Qué es `code`, qué NO es, y por qué sigue aquí sin que lo lea nadie
+
+> Reescrito el **2026-08-14** al ejecutar el defecto 1.8. La versión anterior de la regla 4 decía
+> *«Hoy lo usa `login_user.js`; que siga»* — y **bendecía como ejemplo el peor de los diez emisores**.
+
+**Para qué sirve.** El status HTTP da la *familia* del fallo; `code` distingue **situaciones distintas
+dentro del mismo status**, para que el cliente ramifique **sin comparar texto en español** (frágil: cambia
+al reescribir el mensaje, y no se puede traducir). El caso existe en este repo: `FillRequestWorkflowService`
+responde **409 en tres guards distintos** —«sin responsable resoluble», «transición ilegal» y «falta el
+PDF» (defecto 1.2)— con remedios distintos y **hoy indistinguibles salvo por la cadena**.
+
+**Qué es, entonces:** un **string estable en `SCREAMING_SNAKE`**, propio del dominio, que sobrevive a
+cualquier reescritura del mensaje. El único bien puesto del backend es
+`"SIGN_BATCH_LEGACY_GONE"` (`controllers/sign/sign_controller.js:132`).
+
+**Qué NO es, y esto es lo que había que escribir:**
+
+- ❌ **No es el status HTTP repetido.** `code: 400` / `code: 401` es el mismo dato dos veces y no permite
+  ramificar nada. **8 de los 10 emisores hacen exactamente eso** (`login_user.js:15,30`, `refresh_token.js`
+  ×4, `logout_user.js:21`, `val_password.js` ×2). Son **deuda del frente 7**, no el ejemplo a seguir.
+- ❌ **No es el `.code` del error subyacente.** `middlewares/uploadError.js:43` hace
+  `error?.code || "UPLOAD_REJECTED"`: para multer da `LIMIT_FILE_SIZE`… (correcto), pero si el error
+  viniera de `fs` colaría un `ENOENT` y de `pg` un SQLSTATE. Es una fuga, no un catálogo.
+
+**No hay catálogo.** `grep -rniE "ERROR_CODES|errorCodes"` sobre `backend/` da **cero**. Y **`HttpError` no
+tiene campo `code`**, así que las excepciones de negocio **no pueden producirlo** sin tocar la clase.
+
+**Por qué no se retira del contrato, habiéndose medido que no lo lee nadie** (cero lectores en
+`frontend/src`, `signer/` y `scripts/`: la única coincidencia de `data?.code` es `edge.data?.code` de
+`UnitGraphView.vue:1206`, un tipo de relación del organigrama): porque **`middlewares/uploadError.js` es la
+única implementación conforme del backend** y emite `{ message, code }`, con **tres goldens que congelan
+`claves: ["code","message"]`** (`dossier.json:8`, `user_workspace.json:31`, `sign_batch.json:113`).
+Retirarlo dejaría **no conforme al único que lo hace bien** y movería tres goldens por un cambio
+documental. Sigue siendo **opcional**, y la regla práctica es: **no lo pongas** salvo que exista un
+cliente que ramifique por él.
 
 ## 5. Por qué se puede migrar sin romper nada (y por qué ahora)
 
@@ -130,6 +187,18 @@ export const fail = (res, status, message, { code, cause } = {}) => {
   return res.status(status).json({ message, ...(code ? { code } : {}) });
 };
 ```
+
+> **Ese helper es la puerta de entrada del frente 7, y ahí se queda** (anotado el 2026-08-14 al
+> ejecutar el defecto 1.8). Se evaluó crearlo entonces y **se descartó**: `backend/utils/httpError.js`
+> **no existe**, y crearlo sin migrar ni un controller añade **un decimoséptimo productor de forma sin
+> un solo consumidor** — justo el olor que este documento persigue. Nace **con** la fase C, no antes.
+>
+> Dato estructural que conviene tener delante antes de empezar esa fase, verificado el 2026-08-14
+> leyendo `backend/index.js` entero y los routers: **no hay error handler central**. Ni un
+> `app.use((err, req, res, next))` en toda la app. El único middleware de aridad 4 es
+> `handleUploadError`, y es **de ámbito de router** (montado en 4). No existe ningún punto donde
+> normalizar la forma de un golpe: o se tocan los sitios uno a uno, o primero hay que crear ese
+> handler.
 
 ## 7. Lo que NO hay que hacer
 

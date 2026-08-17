@@ -224,7 +224,7 @@ export default class TaskAssignmentService {
   // NUNCA se cumplía: el documento nace en la misma transacción que el entregable, así que este backfill
   // devolvía 0 siempre. `user_started_at` lo sella el `start` de un paso de entrega, que es de verdad el
   // momento en que alguien empieza.
-  async reconcileOpenTaskItemAssignments({ positionId = null } = {}, connection = this.pool) {
+  async reconcileOpenTaskItemAssignments({ positionId = null, performedByUserId = null } = {}, connection = this.pool) {
     const pid = normalizeNumericId(positionId);
     const params = [];
     let posFilter = "";
@@ -237,20 +237,42 @@ export default class TaskAssignmentService {
       // lo rechaza al ejecutarlo). Las condiciones del JOIN pasan al WHERE. No multiplica filas:
       // el indice unico `uq_position_current (position_id, current_flag)` garantiza como mucho una
       // asignacion vigente por puesto.
-      `UPDATE task_items ti
-          SET assigned_person_id = pa.person_id
-         FROM position_assignments pa
-        WHERE pa.position_id = ti.responsible_position_id
-          AND pa.is_current = 1
-          AND pa.person_id IS NOT NULL
-          AND ti.responsible_position_id IS NOT NULL
-          AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
-          AND ti.user_started_at IS NULL
-          AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> pa.person_id)
-          ${posFilter}`,
-      params
+      //
+      // El asiento de auditoria va DENTRO de la misma sentencia (defecto 1.10). El CTE evalua el
+      // predicado una sola vez y alimenta al INSERT y al UPDATE: repetirlo seria una cuarta copia
+      // de un predicado que ya vive en los tres triggers. Aqui `performed_by_user_id` SI se rellena
+      // —a diferencia de los relevos por trigger— porque este camino lo dispara alguien a proposito.
+      `WITH objetivo AS (
+         SELECT ti.id, ti.assigned_person_id AS antes, pa.person_id AS ahora
+           FROM task_items ti
+           INNER JOIN position_assignments pa ON pa.position_id = ti.responsible_position_id
+          WHERE pa.is_current = 1
+            AND pa.person_id IS NOT NULL
+            AND ti.responsible_position_id IS NOT NULL
+            AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+            AND ti.user_started_at IS NULL
+            AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> pa.person_id)
+            ${posFilter}
+       ), asiento AS (
+         INSERT INTO task_item_handovers
+           (task_item_id, from_person_id, to_person_id, reason, trigger_kind, performed_by_user_id)
+         SELECT o.id, o.antes, o.ahora, 'Reconciliacion de responsables', 'reconcile', ?
+           FROM objetivo o
+       )
+       UPDATE task_items ti
+          SET assigned_person_id = o.ahora
+         FROM objetivo o
+        WHERE ti.id = o.id
+      RETURNING ti.id`,
+      [...params, normalizeNumericId(performedByUserId) || null]
     );
-    return { reconciled: result?.affectedRows ?? 0 };
+    // El conteo sale del RETURNING y NO de `affectedRows`, y no es un capricho: el adaptador decide
+    // si una consulta es de escritura con `/^\s*(insert|update|delete|replace)\b/` sobre el texto
+    // (`config/postgres.js`), y esta sentencia **empieza por `WITH`**. Sin el RETURNING, `affectedRows`
+    // se queda en 0 aunque reasigne, y este endpoint devolvia `{reconciled: 0}` siempre — que es
+    // exactamente el fallo silencioso que el propio backfill vino a arreglar. Lo destapo el control
+    // positivo del defecto 1.10.
+    return { reconciled: Array.isArray(result) ? result.length : 0 };
   }
 
 
@@ -280,7 +302,12 @@ export default class TaskAssignmentService {
     await connection.query("UPDATE task_items SET assigned_person_id = ? WHERE id = ?", [toId, tiId]);
     // Si ya está iniciado (tiene documento), su dueño también se mueve al nuevo responsable.
     await connection.query("UPDATE documents SET owner_person_id = ? WHERE task_item_id = ?", [toId, tiId]);
-    const kind = ["occupancy_end", "position_deactivated", "manual"].includes(triggerKind) ? triggerKind : "manual";
+    // La causa de un traspaso por esta via es SIEMPRE `manual`, y no se acepta del cliente.
+    // Antes se tomaba de `triggerKind` (que viene del cuerpo de la peticion), asi que quien llamaba
+    // podia declarar su traspaso como `occupancy_end` y dejar en la bitacora una causa que no ocurrio.
+    // En una tabla de AUDITORIA eso es lo unico que no puede pasar: si el actor elige la causa, la
+    // bitacora deja de ser evidencia (defecto 1.10).
+    const kind = "manual";
     await connection.query(
       `INSERT INTO task_item_handovers (task_item_id, from_person_id, to_person_id, reason, trigger_kind, performed_by_user_id)
        VALUES (?, ?, ?, ?, ?, ?)`,
@@ -289,6 +316,37 @@ export default class TaskAssignmentService {
     return { task_item_id: tiId, from_person_id: fromId, to_person_id: toId };
   }
 
+
+  // El HISTORIAL de relevos de un entregable (defecto 1.10). Responde a «¿por qué esto, que era de
+  // Juan, ahora es de María?» — que es la pregunta para la que existe `task_item_handovers`.
+  //
+  // Resuelve los nombres aquí y no en el cliente: son dos LEFT JOIN y evita que la interfaz tenga que
+  // pedir una persona por fila. Los LEFT son necesarios, no defensivos: `from_person_id` es NULL en el
+  // primer relevo (nadie lo tenía antes) y `to_person_id` es NULL cuando alguien deja el puesto y el
+  // entregable se queda huérfano.
+  async listTaskItemHandovers(taskItemId, connection = this.pool) {
+    const tiId = normalizeNumericId(taskItemId);
+    if (!tiId) throw new Error("Entregable (task_item) inválido.");
+    const [rows] = await connection.query(
+      `SELECT h.id,
+              h.task_item_id,
+              h.from_person_id,
+              h.to_person_id,
+              h.reason,
+              h.trigger_kind,
+              h.performed_by_user_id,
+              h.created_at,
+              CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
+              CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
+         FROM task_item_handovers h
+         LEFT JOIN persons fp ON fp.id = h.from_person_id
+         LEFT JOIN persons tp ON tp.id = h.to_person_id
+        WHERE h.task_item_id = ?
+        ORDER BY h.id DESC`,
+      [tiId]
+    );
+    return rows;
+  }
 
   // F-C (lista de atascados): task_items ABIERTOS que requieren atención — por persona (los que tiene asignados),
   // por puesto, por unidad, o (sin filtros) los huérfanos (sin persona). Marca `started` (tiene documento).

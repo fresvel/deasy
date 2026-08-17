@@ -204,6 +204,17 @@ const setAvailableFormatEntry = (availableFormats, format, baseObjectPrefix) => 
   };
 };
 
+// `entry_object_key` es un PREFIJO —fíjate en la barra final de la línea de arriba: lo escribe así
+// SIEMPRE—, pero puede haber filas antiguas donde apunte a un fichero concreto. Por eso todo el que
+// lo consume tiene que preguntar de cuál de los dos se trata antes de usarlo.
+//
+// Esta pregunta vivía duplicada en dos sitios y FALTABA en un tercero, que es el defecto 1.18: la
+// rama de subida hacía `path.basename()` a pelo, y el basename de un prefijo terminado en `/` es su
+// último segmento — o sea `"pdf"`. Al editar, `referencia.pdf` se guardaba como `template/pdf/pdf`,
+// SIN EXTENSIÓN, y como el nombre del fichero entra en `hashDirectory`, el golden `editar_ok` lleva
+// congelado ese nombre roto desde entonces.
+export const esClaveDeFichero = (objectKey) => /\.[a-z0-9]+$/i.test(String(objectKey || ""));
+
 // EL PAQUETE YA NO LLEVA `meta.yaml` (sub-paso 8 del §0.8). Aqui se exigia su presencia y ademas
 // cuatro regex sobre su contenido (`workflows:`, `fill:`, `signatures:`, `dependencies:`). Retirado
 // el fichero entero, lo que queda es la ESTRUCTURA del paquete —schema.json, template/ y una salida
@@ -1197,7 +1208,7 @@ export default class TemplateLifecycleService {
       }
       const targetDir = buildArtifactFormatDir(draftDir, format);
       const existingObjectKey = String(existingEntry.entry_object_key);
-      if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+      if (esClaveDeFichero(existingObjectKey)) {
         const fileName = path.basename(existingObjectKey);
         await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
       } else {
@@ -1294,8 +1305,11 @@ export default class TemplateLifecycleService {
         const safeName = slugify(path.parse(file.originalname || format).name) || format;
         const extension = path.extname(file.originalname || "") || `.${format}`;
         const fallbackFileName = `${safeName}${extension.toLowerCase()}`;
-        const fileName = existingEntry?.entry_object_key
-          ? path.basename(existingEntry.entry_object_key)
+        // Conservar el nombre anterior solo tiene sentido si la clave APUNTA A UN FICHERO. Si es un
+        // prefijo —el caso normal— hay que quedarse con el nombre del fichero que acaba de subir el
+        // usuario, no con el último segmento de la ruta. Defecto 1.18.
+        const fileName = esClaveDeFichero(existingEntry?.entry_object_key)
+          ? path.basename(String(existingEntry.entry_object_key))
           : fallbackFileName;
         fs.mkdirSync(targetDir, { recursive: true });
         fs.writeFileSync(path.join(targetDir, fileName), file.buffer);
@@ -1305,7 +1319,7 @@ export default class TemplateLifecycleService {
 
       if (existingEntry?.entry_object_key) {
         const existingObjectKey = String(existingEntry.entry_object_key);
-        if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+        if (esClaveDeFichero(existingObjectKey)) {
           const fileName = path.basename(existingObjectKey);
           await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
         } else {

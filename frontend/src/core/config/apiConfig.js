@@ -35,6 +35,8 @@ export const API_ROUTES = {
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/observations`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATION_RESOLVE: (userId, definitionId, taskItemId, observationId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/observations/${observationId}/resolve`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_HANDOVERS: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/handovers`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_UPLOAD_FILE: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/upload-file`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_TEMPLATE_DOWNLOAD: (userId, definitionId, taskItemId) =>

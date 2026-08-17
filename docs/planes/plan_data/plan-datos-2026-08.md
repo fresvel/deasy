@@ -66,7 +66,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `D2` | — | Un vocabulario de estados, no cinco, + detector de *drift* | ⬜ | — | — |
 | `D3` | — | Migraciones versionadas: el esquema se puede alterar con datos dentro | ⬜ | — | — |
 | `D4` | — | Diez repositorios por agregado; cero SQL en `controllers/` | ⬜ | — | — |
-| `D5` | — | El traductor de dialecto, muerto (**D5-b ⛔** hasta el defecto 1.11) | ⬜ | — | — |
+| `D5` | — | El traductor de dialecto, muerto (**D5-b ⛔** hasta cerrar D5-a; el cerrojo del defecto 1.11 se retiró el 2026-08-14) | ⬜ | — | — |
 | `D6` | — | Validación por esquema en el borde de entrada | ⬜ | — | — |
 
 **D1–D6 llevan control por fase y no por tarea, a propósito:** ninguna está empezada, y descomponerlas
@@ -461,12 +461,21 @@ concentrado.
 
 ### D5-b · Placeholders `?` → `$n` — ⛔ **decisión pendiente, no empezar**
 
-`bindParams` (CC 59) existe porque ~493 llamadas usan `?` estilo mysql2. Eliminarlo obliga a tocarlas
-todas. Hay dos caminos y **ninguno se elige aquí**:
+`bindParams` existe porque **484 llamadas** usan `?` estilo mysql2 (contadas por
+`npm run check:params` el 2026-08-14; el «~493» de antes venía del barrido perdido del defecto 1.5).
+Eliminarlo obliga a tocarlas todas. Hay dos caminos y **ninguno se elige aquí**:
 
-- **A mano / por script**: 493 sitios, radio de impacto enorme, y el defecto **1.11** del maestro
-  avisa de que hay call sites que **reutilizan a propósito un array más largo que la consulta**. Ese
-  censo es prerrequisito.
+> ⚠️ **Aquí ponía «`bindParams` (CC 59)» y esa cifra está muerta.** La **Fase F la dejó en ~1**
+> (`../referencia/calidad-y-medicion.md:475`), y `translatePlaceholders` está borrada. Importa porque
+> era el argumento de peso para D5-b: **el manejo de parámetros ya no es lo que hace denso a este
+> fichero**. Los 241 de complejidad se reparten hoy sobre los reescritores de dialecto — o sea, sobre
+> **D5-a**. Al reabrir D5-b, remídelo antes de justificarlo.
+
+- **A mano / por script**: 484 sitios y radio de impacto enorme. Aquí había un segundo motivo —que el
+  defecto **1.11** avisaba de call sites que «reutilizan a propósito un array más largo que la
+  consulta»— y **ese motivo ya no existe: era falso**. Medido el 2026-08-14 sobre el árbol entero:
+  **cero** de las 423 llamadas decidibles pasa parámetros de más, y el patrón invocado no aparece ni
+  una vez. **Este cerrojo de D5-b queda retirado**; sigue puesto el otro (D5-a cerrada primero).
 - **Con un query builder** (Knex o Kysely): resuelve `$n`, paginación y el `ON CONFLICT` de una vez, y
   Knex trae migraciones —solaparía con D3, que entonces habría que decidir antes—. Pero **sin
   TypeScript, Kysely pierde su ventaja principal**, que es el tipado; y añadir una dependencia que

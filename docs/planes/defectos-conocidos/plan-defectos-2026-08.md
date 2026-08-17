@@ -1,9 +1,12 @@
 # Frente 1 · Defectos conocidos y sin arreglar
 
-> **Estado: 0 de 15 tareas · 0 de 5 defectos** — abierto el **2026-08-14**.
+> **Estado: 20 de 27 tareas · 8 de 10 defectos** — abierto el **2026-08-14**.
+>
+> ✅ **La suite de caracterización está VERDE** desde el 2026-08-14 (defecto 1.15 cerrado). Estuvo roja
+> 4 tests, y **no por un golden malo**: el golden era correcto y lo que mentía era el entorno.
 >
 > Este es el **ejecutable** del frente 1. El [plan maestro](../plan-maestro-2026-08.md) delega aquí y
-> no repite ninguna tarea. Lo ya cerrado —**nueve fichas**— vive en [`bitacora.md`](./bitacora.md),
+> no repite ninguna tarea. Lo ya cerrado —**diez fichas**— vive en [`bitacora.md`](./bitacora.md),
 > con su razonamiento entero, porque la mitad de ese razonamiento es *por qué no se hizo de la otra
 > forma*.
 >
@@ -32,15 +35,27 @@ plan.
 | `T1.7-a` | 1.7 | **Reproducción en navegador** del sello fantasma, con la decisión: ¿el preview debe existir o es código muerto? | ⬜ | — | — |
 | `T1.7-b` | 1.7 | El guard arreglado (o el código muerto borrado), verificado en navegador | ⬜ | — | — |
 | `T1.7-c` | 1.7 | `referencia/frontend.md` corregido — hoy afirma lo contrario de lo que hace el código | ⬜ | — | — |
-| `T1.8-a` | 1.8 | La cabecera de `errors/HttpError.js` deja de recomendar `{ error }` y remite al contrato `{ message, code }` | ⬜ | — | — |
-| `T1.8-b` | 1.8 | Frontera escrita en los dos documentos: qué es esto y qué es el frente 7 | ⬜ | — | — |
-| `T1.10-a` | 1.10 | **Censo cerrado** de los caminos que reasignan sin dejar asiento (hoy son **tres**, no uno) | ⬜ | — | — |
-| `T1.10-b` | 1.10 | **Decisión escrita**: dónde se escribe el asiento — en el trigger plpgsql o en la capa de servicio | ⬜ | — | — |
-| `T1.10-c` | 1.10 | El asiento se escribe en los tres caminos; `occupancy_end` y `position_deactivated` dejan de ser inalcanzables | ⬜ | — | — |
-| `T1.10-d` | 1.10 | **Decisión escrita**: quién LEE `task_item_handovers` (hoy: nadie, cero `SELECT` en el repo) | ⬜ | — | — |
-| `T1.11-a` | 1.11 | **Censo** de los call sites que pasan más parámetros que placeholders a propósito | ⬜ | — | — |
-| `T1.11-b` | 1.11 | **Decisión escrita**: endurecer, avisar, o dejarlo con la razón por escrito | ⬜ | — | — |
-| `T1.11-c` | 1.11 | La decisión implementada, con su unitario | ⬜ | — | — |
+| `T1.8-a` | 1.8 | La cabecera de `errors/HttpError.js` **deja de enseñar forma**: remite al contrato §4 y dice que la clase no lleva `code` | ✅ | `grep -n "res.status" backend/errors/HttpError.js` → 0 resultados | 2026-08-14 |
+| `T1.8-b` | 1.8 | Frontera escrita: el helper `fail()` es la puerta del frente 7, no de éste. Y la cifra del censo deja de estar en dos sitios | ✅ | Nota en contrato §6 + fila del frente 7 del maestro reescrita (decía 309/15, no reproducible) | 2026-08-14 |
+| `T1.8-c` | 1.8 | **Nueva.** El §4.1 del contrato define qué es `code` y qué no, y retira `login_user.js` como ejemplo bendecido | ✅ | Censo: 8 de 10 emisores repiten el status; 0 lectores en front/signer/scripts | 2026-08-14 |
+| `T1.8-d` | 1.8 | **Nueva.** La página publicada de Starlight remite al contrato y deja de leerse como norma | ✅ | `docs pnpm run build` verde; +1 router corregido (eran 4, no 3) | 2026-08-14 |
+| `T1.10-a` | 1.10 | **Censo cerrado**: son **cinco sentencias en cuatro sitios**, no tres — se había escapado el trigger `AFTER INSERT` | ✅ | 3 en el esquema + backfill + handover; los de `fill_requests` son otra tabla y quedan fuera | 2026-08-14 |
+| `T1.10-b` | 1.10 | **Decisión: EN EL TRIGGER.** Es el único sitio que no se puede puentear, y ser puenteado *es* el defecto | ✅ | `position_assignments` la escriben **4 sitios**, incluido el CRUD genérico | 2026-08-14 |
+| `T1.10-c` | 1.10 | El asiento se escribe en los **cuatro** caminos automáticos; el vocabulario de causas pasa de 3 a 5 | ✅ | Control positivo contra la base: `occupancy_end` → `occupancy_start` → `reconcile` con actor. 621 unitarios, char verde, 0 goldens movidos | 2026-08-14 |
+| `T1.10-d` | 1.10 | **Decisión: se ve en la app.** El entregable gana un historial de relevos legible | ✅ | Antes: 0 `SELECT` en todo el repo | 2026-08-14 |
+| `T1.10-e` | 1.10 | Endpoint de lectura en el espacio de USUARIO, con el guard canónico del IDOR reutilizado tal cual | ✅ | Control **positivo y negativo**: entregable propio 200, ajeno **404** (no confirma existencia, criterio del 1.4) | 2026-08-14 |
+| `T1.10-f` | 1.10 | Pestaña «Historial» en el entregable, **autocontenida** para no engordar `HomeView` | ✅ | lint, `lint:css` 0 errores, 316 tests y build verdes. **Falta la verificación en navegador** (ver §9) | 2026-08-14 |
+| `T1.11-a` | 1.11 | **Censo cerrado**: 423 decidibles por escáner + 61 leídos uno a uno + sonda sobre los 240 flujos | ✅ | **484/484 equilibradas · 0 de más**; sonda 0 disparos (arranque, fixture y flujos) | 2026-08-14 |
+| `T1.11-d` | 1.11 | **Nueva.** `npm run check:params` como gate permanente — el artefacto que al 1.5 le faltó | ✅ | `scripts/audit_bindparams.mjs`; probado con un desajuste inyectado (salta) y con `?` en comentario/cadena/`IN (?)` (no salta) | 2026-08-14 |
+| `T1.11-b` | 1.11 | **Decisión: ENDURECER.** Escrita encima de `bindParams` con su medición y con por qué no bastaba avisar | ✅ | El gate estático solo ve 423 de 484; lanzar cubre las 484 en runtime | 2026-08-14 |
+| `T1.11-c` | 1.11 | Guard simétrico `paramIndex !== provided`; los 3 tests que fijaban la tolerancia, resueltos | ✅ | **602 unitarios verdes**; char: los **mismos 9 fallos preexistentes**, 0 errores de `bindParams`, 0 goldens movidos | 2026-08-14 |
+| `T1.15-a` | 1.15 | **Diagnóstico**: el golden era CORRECTO y el hash determinista; lo viejo era MinIO | ✅ | Repo dice `data.json`, MinIO no; dos corridas dan el mismo hash | 2026-08-14 |
+| `T1.15-b` | 1.15 | El centinela `ya_existe` deja de gobernar el catálogo `Seeds/`; la suite vuelve a verde | ✅ | **4 fallos → 0**, 0 goldens movidos, `make.sh` publicado ya lleva `data.json`. 6 unitarios nuevos, con control positivo | 2026-08-14 |
+| `T1.16-a` | 1.16 | El orden de parámetros de `context_ancestor_type` arreglado, con su unitario | ✅ | `[unitId, cargoId, unitTypeId]`; **7 unitarios nuevos** con control positivo (solo falla el de posiciones al restaurar el bug); censo: 6 `unshift` en el backend, este era el único roto | 2026-08-14 |
+| `T1.17-a` | 1.17 | **Decisión: publicar en el ARRANQUE.** Los otros caminos se midieron y no existen: `/bootstrap/initialize` da **409 para siempre**, el despliegue solo hace `pull`+`up -d`, y `/template_seeds/sync` va en dirección contraria | ✅ | Mapa completo de caminos, con rutas y líneas | 2026-08-14 |
+| `T1.17-b` | 1.17 | **Nueva.** `publishSeedsOnBoot` en `index.js`: una semilla actualizada llega al reiniciar o desplegar, sin intervención | ✅ | Log del arranque: «Semilla base publicada en MinIO (artifact: respetado)». 48 PUT, ~92 KB, &lt;1 s | 2026-08-14 |
+| `T1.17-c` | 1.17 | **Nueva.** `test:char:fixture` resetea también `storage`: MinIO deja de ser una entrada oculta | ✅ | Suite verde **sin capturar** y 0 goldens movidos; el bucket baja de 435 a 332 objetos (fuera la basura acumulada) | 2026-08-14 |
+| `T1.18-a` | 1.18 | El PDF deja de renombrarse a `pdf` al editar; el golden `editar_ok` se mueve y **ese diff es la prueba** | ✅ | **Una línea en un golden**: `editar_ok` pasa a valer lo mismo que `crear_ok` — crear y editar producen ya el paquete idéntico. 4 unitarios del predicado | 2026-08-14 |
 
 **Resumen por defecto** (se deriva de la tabla de arriba; no es una segunda lista de tareas):
 
@@ -48,9 +63,13 @@ plan.
 |---|---|---|---|
 | **1.3** | Auto-apropiación de una solicitud manual | Backend · servicio | ⬜ |
 | **1.7** | El sello fantasma: un guard permanentemente verdadero | Frontend · Vue | ⬜ |
-| **1.8** | Dos documentos del repo mandan formas de error contrarias | Backend · documental | ⬜ |
-| **1.10** | La única bitácora de auditoría la puentea el camino automático | Base de datos · triggers | ⬜ |
-| **1.11** | Parámetros de MÁS se ignoran en silencio | Backend · `config/postgres.js` | ⬜ |
+| ~~**1.8**~~ | ~~Dos documentos del repo mandan formas de error contrarias~~ | Backend · documental | ✅ **2026-08-14** |
+| ~~**1.10**~~ | ~~La única bitácora de auditoría la puentea el camino automático~~ | BD · triggers · UI | ✅ **2026-08-14** · pendiente el visto bueno visual |
+| ~~**1.11**~~ | ~~Parámetros de MÁS se ignoran en silencio~~ | Backend · `config/postgres.js` | ✅ **2026-08-14** |
+| ~~**1.15**~~ | ~~El catálogo de semillas nunca llega a un entorno ya arrancado~~ | Bootstrap · MinIO | ✅ **2026-08-14** |
+| ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ | Backend · firma | ✅ **2026-08-14** |
+| ~~**1.17**~~ | ~~Nada re-publica la semilla en un entorno vivo~~ | Bootstrap · arnés | ✅ **2026-08-14** |
+| ~~**1.18**~~ | ~~Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf`~~ | Backend · plantillas | ✅ **2026-08-14** |
 
 ---
 
@@ -140,38 +159,15 @@ mover), y la referencia corregida.
 
 ---
 
-## §4 · Defecto 1.8 — dos documentos del repo mandan formas de error contrarias
+## ~~§4 · Defecto 1.8 — dos documentos del repo mandan formas de error contrarias~~
 
-**Dónde**: `backend/errors/HttpError.js:20`, en el bloque de comentario que documenta el uso:
+✅ **CERRADO el 2026-08-14.** La ficha entera, con lo que se descartó y por qué, está en
+[`bitacora.md` § 1.8](./bitacora.md#18--dos-documentos-del-repo-mandaban-formas-de-error-contrarias-y-eran-cinco).
 
-```js
-// En el controller:
-//   catch (error) { res.status(error.statusCode ?? 500).json({ error: error.message }); }
-```
-
-Mientras tanto el contrato objetivo —y `middlewares/uploadError.js`, que ya lo implementa— es
-`{ message, code }`. Los dos ficheros son de este repo, los dos se leen como norma, y **dicen cosas
-contrarias**. Consecuencia directa: cada controller nuevo elige mal la mitad de las veces, y la
-divergencia que el frente 7 tiene que pagar sigue creciendo mientras tanto.
-
-Y no es una preferencia estética: según
-[`referencia/contrato-errores-api.md`](../referencia/contrato-errores-api.md) §3, `error` significa
-**dos cosas opuestas** según quién responda — mensaje humano cuando no hay `message`, y **detalle
-técnico de la excepción** cuando sí lo hay. Un cliente que lea `.error` primero le enseña al usuario
-el `error.message` de la excepción.
-
-**El alcance de esta tarea es la contradicción, no la migración.** Migrar las respuestas es el
-**frente 7** (~114 lecturas en 33 ficheros del frontend, fases B–G del documento de contrato). Aquí se
-hace solo:
-
-- `T1.8-a` — reescribir la cabecera de `HttpError.js` para que recomiende el contrato ganador y
-  **explique por qué** la forma vieja era peligrosa (no basta con cambiar el ejemplo: el fichero se
-  lee como doctrina).
-- `T1.8-b` — dejar escrita la frontera en los dos sitios, para que nadie confunda «reconciliar el
-  documento» con «migrar los controllers».
-
-**Criterio de cierre**: los dos documentos dicen lo mismo, y ninguno de los dos promete la migración.
-Ningún golden se mueve — es documental, y eso es correcto.
+En una línea: **eran cinco documentos, no dos**, y uno de ellos es la documentación **publicada**. La
+cabecera de `HttpError.js` **no se corrigió, se le retiró el ejemplo** —un ejemplo duplicado vuelve a
+divergir; un puntero no—, y `code` **se quedó en el contrato pese a no leerlo nadie**, porque
+retirarlo dejaba no conforme a la única implementación correcta del backend.
 
 ---
 
@@ -237,53 +233,101 @@ aquí).
 
 ---
 
-## §6 · Defecto 1.11 — los parámetros de MÁS se ignoran en silencio
+## ~~§6 · Defecto 1.11 — los parámetros de MÁS se ignoran en silencio~~
 
-**Dónde**: `backend/config/postgres.js:142-162`.
+✅ **CERRADO el 2026-08-14.** La ficha entera está en
+[`bitacora.md` § 1.11](./bitacora.md#111--los-parametros-de-mas-se-ignoraban-en-silencio-y-la-premisa-era-falsa).
 
-Es el modo de fallo del 1.5 en la otra dirección, y se descubrió al arreglarlo. Hoy `bindParams`
-**falla ruidosamente si faltan** parámetros —lo hace el 1.5, ya cerrado— y **calla si sobran**:
-
-```js
-// Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran y hay
-// call sites que reutilizan un array de argumentos más largo que la consulta.
-```
-
-**Se dejó así a propósito**, y la razón sigue siendo válida: mysql2 se comportaba igual y hay llamadas
-que reutilizan a propósito un array más largo que la consulta. El radio de impacto es mucho mayor que
-el del 1.5, donde bastó con lanzar.
-
-**Por eso el orden importa**: `T1.11-a` es **censar** esos call sites, y hasta que ese censo exista no
-se toca nada. La fase **D5-b** del [`plan_data/`](../plan_data/) está `⛔ bloqueada` por este censo,
-así que la tarea rinde el doble.
-
-Cómo censar, sin invento: la vía que ya funcionó en el 1.5 fue **sonda + barrido** — instrumentar
-`bindParams` para registrar los desajustes, correr `test:char:run` (240 flujos), y barrer las llamadas
-del repo contando placeholders contra parámetros. En el 1.5 el barrido cubrió 493 llamadas y 429
-fueron decidibles estáticamente; el resto exige leer.
-
-Tres salidas posibles para `T1.11-b`, y las tres son aceptables si van con su razón:
-
-1. **Endurecer** (lanzar, como con los que faltan) — solo si el censo demuestra que nadie lo usa.
-2. **Avisar** (log con el sitio) — captura los casos nuevos sin romper los viejos.
-3. **Dejarlo y escribirlo** — con el censo enlazado, para que no se vuelva a proponer a ciegas.
-
-**Criterio de cierre**: el censo publicado, la decisión escrita **encima de la propia función**, y
-D5-b desbloqueada o bloqueada por otra cosa.
+En una línea: **la justificación de la tolerancia era falsa** —se midió y las 484 llamadas están
+equilibradas—, así que `bindParams` **lanza también cuando sobran**. Dejó dos cosas vivas: el gate
+`npm run check:params`, y dos defectos nuevos encontrados de rebote (**1.15** y **1.16**).
 
 ---
 
-## §7 · Orden sugerido
+## ~~§8 · Defecto 1.15 — la suite de caracterización está ROJA~~
 
-No es arbitrario: va de lo que se decide solo a lo que necesita una decisión de producto.
+✅ **CERRADO el 2026-08-14.** Y **no era lo que decía esta ficha**: afirmaba «un golden que congela un
+hash no determinista» y «9 casos», y **las dos cosas eran falsas**. La ficha corregida está en
+[`bitacora.md` § 1.15](./bitacora.md#115--el-catalogo-de-semillas-nunca-llegaba-a-un-entorno-ya-arrancado).
 
-1. **1.8** — es documental, no rompe nada y deja de sembrar deuda desde el minuto uno.
-2. **1.11 (`T1.11-a`)** — el censo, porque además desbloquea D5-b del plan de datos.
-3. **1.7** — pide navegador, pero el radio es un componente y seis líneas.
+En una línea: el hash **es** determinista, el golden **era** correcto, y lo que mentía era **MinIO** —
+servía una semilla anterior al arreglo del ZIP renderizable. Causa raíz: un centinela que protegía
+ediciones del admin sobre el artifact **y de paso bloqueaba el catálogo, que nadie edita**.
+
+---
+
+## ~~§9 · Defecto 1.16 — orden de parámetros cruzado en `context_ancestor_type`~~
+
+✅ **CERRADO el 2026-08-14.** Ficha completa en
+[`bitacora.md` § 1.16](./bitacora.md#116--orden-de-parametros-cruzado-en-context_ancestor_type).
+
+En una línea: dos `unshift` donde hacía falta **un `unshift` y un `push`**. El censo dice que es la
+**única rama del backend que antepone Y añade a la cola a la vez** — por eso rompió aquí y no en las
+otras cinco.
+
+---
+
+## ~~§10 · Defecto 1.17 — nada re-publica la semilla en un entorno ya arrancado~~
+
+✅ **CERRADO el 2026-08-14.** Ficha completa en
+[`bitacora.md` § 1.17](./bitacora.md#117--nada-re-publicaba-la-semilla-en-un-entorno-ya-arrancado).
+
+En una línea: la semilla ahora se publica **en cada arranque**, así que llega al reiniciar o
+desplegar; y `test:char:fixture` resetea también `storage`, con lo que MinIO deja de ser una entrada
+oculta al sistema bajo prueba.
+
+---
+
+## ~~§11 · Defecto 1.18 — al editar, el PDF se renombra a `pdf`~~
+
+✅ **CERRADO el 2026-08-14.** Ficha completa en
+[`bitacora.md` § 1.18](./bitacora.md#118--al-editar-el-pdf-se-renombraba-a-pdf).
+
+En una línea: `entry_object_key` **es un prefijo por diseño**, y la rama de subida le hacía
+`path.basename()` a pelo. El predicado correcto **ya existía duplicado en dos sitios** y faltaba justo
+en el tercero. **Es el primer defecto de este frente cuyo golden se mueve**, y el diff es de una línea.
+
+---
+
+## §7 · Orden sugerido — **reescrito el 2026-08-14**
+
+Los tres cerrados fueron **1.8 → 1.11 → 1.15**, en ese orden, y el orden funcionó por un motivo que
+conviene conservar: **cada uno destapó al siguiente**. El 1.11 obligó a correr la suite y ahí salió el
+1.15; el 1.15 obligó a leer el bootstrap y ahí salieron el 1.17 y el 1.18. Medir es lo que produce
+trabajo nuevo, no planificarlo.
+
+Para lo que queda, el criterio sigue siendo el mismo: **lo que se decide solo, antes de lo que necesita
+una decisión tuya**.
+
+1. **1.16** — el más barato del tablero, y ya está diagnosticado: dos líneas, `[unitId, unitTypeId,
+   cargoId]` pasa a `[unitId, cargoId, unitTypeId]`. La rama gemela `context_subtree` está bien y sirve
+   de prueba de contraste. Latente hoy (0 filas en el JSONB de la base), así que **ningún golden se
+   moverá** — su evidencia es un unitario, como en el 1.5 y el 1.13.
+2. **1.18** — también acotado, y su golden `editar_ok` **ya está congelado**, así que el diff *es* la
+   prueba. Cuidado con una cosa: `entry_object_key` guarda un prefijo, y hay que ver si eso es un dato
+   correcto mal usado o un dato mal escrito.
+3. ~~**1.17**~~ ✅ — cerrado el 2026-08-14. Era el que más rendía, y se confirmó: **cerró una clase de
+   fallo, no un caso**.
+
+**Lo que queda son los tres que estaban desde el principio**, y los tres piden una decisión tuya antes
+que trabajo:
+
 4. **1.10** — el más caro y el que más decisiones tiene; empieza por `T1.10-d`, que puede cambiar todo
    lo demás.
-5. **1.3** — el último a propósito: no se puede escribir el guard hasta que la regla esté decidida, y
+5. **1.7** — pide navegador, pero el radio es un componente y seis líneas.
+6. **1.3** — el último a propósito: no se puede escribir el guard hasta que la regla esté decidida, y
    la regla no es técnica.
+
+> **Lo que enseñó la tanda del 2026-08-14.** Se cerraron seis defectos y **aparecieron cuatro nuevos**
+> (1.15, 1.16, 1.17, 1.18), todos de *medir*, ninguno de planificar. Y **tres de los seis resultaron
+> ser otra cosa** de lo que decía su ficha. La moraleja para el que siga: **remide la ficha antes de
+> creértela**, y desconfía especialmente de los diagnósticos que suenan a explicación cómoda —
+> «el hash no es determinista» lo era, y costó una corrida entera descubrirlo.
+
+> **Y una advertencia sobre el argumento de este frente.** «Están congelados en pruebas, así que el
+> arreglo se verifica solo» resultó ser **condicional**: la suite estuvo roja 4 tests y nadie lo sabía.
+> Antes de apoyarte en un golden, comprueba que la suite esté verde **antes** de tu cambio. Es lo que
+> convirtió el 1.15 en un hallazgo en vez de en una confusión.
 
 ---
 

@@ -17,6 +17,7 @@ import {
   downloadDeliverableFile,
   resetDeliverableWorkflow,
   listDeliverableAttachments,
+  listDeliverableHandovers,
   uploadDeliverableAttachment,
   deleteDeliverableAttachment,
   downloadDeliverableAttachment,
@@ -233,6 +234,15 @@ router.get(
   loadAccessContext,
   requireRouteUserAccess({ resource: "documents", action: "read", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
   listDeliverableAttachments
+);
+// Historial de relevos del entregable (defecto 1.10). Mismos middlewares y mismo permiso que los
+// anexos de la línea de arriba: quien puede LEER el entregable puede leer por qué cambió de manos.
+router.get(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/handovers',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  listDeliverableHandovers
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/attachments',

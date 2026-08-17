@@ -137,8 +137,29 @@ function expandParam(value, pushScalar) {
 // con NULL. Los dos son silenciosos: ni excepción, ni log, ni fila de más o de menos que
 // delate el fallo. Es preferible un 500 en el sitio exacto que una corrupción muda.
 //
-// Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran y hay
-// call sites que reutilizan un array de argumentos más largo que la consulta.
+// Y FALLA IGUAL SI SOBRAN, desde el 2026-08-14 (defecto 1.11). Antes se toleraba, con esta
+// justificación escrita aquí mismo: «mysql2 hacía lo mismo, y hay call sites que reutilizan un
+// array de argumentos más largo que la consulta». La primera mitad era cierta; **la segunda era
+// falsa, y nadie la había comprobado en el año que llevaba escrita**.
+//
+// LA MEDICIÓN QUE LO CAMBIÓ, por tres vías que se cubren entre sí:
+//   - `npm run check:params` (escáner estático, `scripts/audit_bindparams.mjs`): de las 423
+//     llamadas decidibles sin ejecutar nada, CERO pasan parámetros de más.
+//   - Las 61 que el escáner no puede decidir —SQL con `${}`, parámetros en variable, arrays
+//     construidos con `.push()` condicional— leídas una a una: las 61 equilibradas.
+//   - Una sonda que registraba sin lanzar, sobre arranque + fixture + los 240 flujos de
+//     caracterización: cero disparos.
+// Total: **484 de 484 llamadas equilibradas**. El único reuso genuino del mismo array en dos
+// consultas (`processDefinitionVersion.js:227` y `:240`) está EQUILIBRADO, porque ambas comparten
+// el mismo fragmento `${excludeSql}`.
+//
+// POR QUÉ LANZAR Y NO SOLO AVISAR, que fue la alternativa real: el gate estático solo ve 423 de
+// las 484; las otras 61 quedaban protegidas por una lectura, y una lectura caduca en cuanto
+// alguien toca el código. Lanzar aquí es lo único que cubre las 484 en tiempo de ejecución.
+//
+// Y no es simetría por estética: sobrar parámetros es el MISMO fallo que faltar —el SQL y su lista
+// de argumentos se han desincronizado— solo que en la otra dirección. Que el mismo fallo se
+// comporte de dos maneras opuestas según hacia dónde se desvíe es lo que lo hacía invisible.
 export function bindParams(sql, params = []) {
   const values = [];
   let paramIndex = 0;
@@ -150,13 +171,20 @@ export function bindParams(sql, params = []) {
   // `paramIndex` acabó valiendo el número de `?` de CÓDIGO (los de literales y comentarios
   // no consumen). Un `params` que no sea array no aporta ninguno: cuenta como cero.
   const provided = Array.isArray(params) ? params.length : 0;
-  if (paramIndex > provided) {
+  if (paramIndex !== provided) {
     // El mensaje NO lleva el SQL: varios controllers responden `error.message` al cliente y
     // eso filtraría el esquema. El sitio exacto ya lo da el stack trace en el log.
+    const faltan = paramIndex > provided;
     throw new Error(
-      `bindParams: la consulta tiene ${paramIndex} placeholders "?" y solo se recibieron ` +
-      `${provided} parametros. Faltan ${paramIndex - provided}: sin este error se enviarian ` +
-      `como NULL y la consulta se ejecutaria con datos equivocados.`
+      `bindParams: la consulta tiene ${paramIndex} placeholders "?" y se recibieron ` +
+      `${provided} parametros. ` +
+      (faltan
+        ? `Faltan ${paramIndex - provided}: sin este error se enviarian como NULL y la ` +
+          `consulta se ejecutaria con datos equivocados.`
+        : `Sobran ${provided - paramIndex}: se ignorarian en silencio, y eso casi siempre ` +
+          `significa que el SQL y su lista de argumentos se han desincronizado. Si tu SQL ` +
+          `lleva un comentario o una comilla SIN CERRAR, el escaner se traga el resto y los ` +
+          `"?" que haya ahi dentro no cuentan.`)
     );
   }
   return { text, values };

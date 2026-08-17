@@ -1,7 +1,7 @@
-# Bitácora del frente 1 — los nueve cerrados
+# Bitácora del frente 1 — los quince cerrados
 
 > Esto **no es historia decorativa**. La mitad del valor de cada ficha es *por qué no se hizo de la
-> otra forma*: hay cuatro sitios de este repo donde la «corrección obvia» es la equivocada, y están
+> otra forma*: hay **nueve** sitios de este repo donde la «corrección obvia» es la equivocada, y están
 > aquí. Léela antes de proponer un arreglo que se le parezca.
 >
 > Lo pendiente está en [`plan-defectos-2026-08.md`](./plan-defectos-2026-08.md).
@@ -13,10 +13,16 @@
 | 1.4 | Se pueden enumerar los jobs de otros usuarios | 2026-08-09 | 2 movidos |
 | 1.5 | `bindParams` con parámetros de menos → NULL silencioso | `e0cdae9` | **ninguno, y es correcto** |
 | 1.6 | `translatePlaceholders` es código muerto | `d25034b` | — |
+| 1.8 | Dos documentos mandaban formas de error contrarias (**eran cinco**) | 2026-08-14 | **ninguno, y es correcto** |
 | **1.9** | «Una copia del IDOR se quedó atrás» | **NO ERA UN DEFECTO** | — |
+| 1.11 | Los parámetros de MÁS se ignoraban en silencio (**y la premisa era falsa**) | 2026-08-14 | **ninguno, y es correcto** |
 | 1.12 | Se activa una configuración con una plantilla sin publicar | 2026-08-10 · `e6d291d`+`73d2e82` | 1 nuevo |
 | 1.13 | `template_artifacts.lifecycle_state` nace `published` | 2026-08-10 · `673f1fb` | **ninguno, y es correcto** |
 | 1.14 | Clonar una configuración convertía en `single` todo lo `routed` | 2026-08-11 · `597cd43` | 1 línea |
+| 1.15 | El catálogo de semillas nunca llegaba a un entorno ya arrancado | 2026-08-14 | **ninguno — el golden ya era correcto** |
+| 1.16 | Orden de parámetros cruzado en `context_ancestor_type` | 2026-08-14 | **ninguno, y es correcto** |
+| 1.17 | Nada re-publicaba la semilla en un entorno ya arrancado | 2026-08-14 | **ninguno, y es correcto** |
+| 1.18 | Al editar, el PDF se renombraba a `pdf` | 2026-08-14 | **`editar_ok`, una línea — y ES la prueba** |
 
 ---
 
@@ -110,6 +116,97 @@ llamadas (0 desajustes en las 429 decidibles)—. **Ese es el método que hereda
 
 ---
 
+## 1.8 · Dos documentos del repo mandaban formas de error contrarias (y eran cinco)
+
+**Cerrado el 2026-08-14.** Ningún golden se movió, y **eso es lo correcto**: no hubo cambio de
+comportamiento. El único fichero del backend que se tocó fue **un comentario**.
+
+### Lo que la ficha decía mal
+
+Decía «dos documentos». **Son cinco**, y el tercero no estaba en ningún plan porque **es documentación
+publicada**:
+
+| Dónde | Qué mandaba |
+|---|---|
+| `referencia/contrato-errores-api.md` §4 | `{ message, code }` — la norma |
+| `backend/errors/HttpError.js:20` | `res.json({ error: error.message })` — **el defecto** |
+| `docs/src/content/docs/explicacion/backend-errores-e-integraciones.md:7-13` | `res.json({ message: error.message })` — **tercera forma, en el sitio público** |
+| `backend/middlewares/uploadError.js:10-12` | Citaba el contrato por su ruta y lo implementaba |
+| `frontend/src/shared/utils/apiError.js:4-20` | Describía dos formas vivas y su precedencia |
+
+Y decía que la cabecera debía recomendar `{ message, code }`. **No podía**: `HttpError` tiene `name`,
+`message` y `statusCode`, y **ningún campo `code`** — habría pedido algo que sus cuatro fábricas no
+saben rellenar.
+
+### El arreglo, y por qué NO fue «poner el ejemplo bueno»
+
+**A la cabecera se le retiró el ejemplo, no se le corrigió.** Dos textos solo pueden contradecirse si
+**ambos deciden sobre lo mismo**; mientras la cabecera enseñe una forma, vuelve a divergir en cuanto el
+contrato evolucione. Retirar la afirmación hace la contradicción **irrepetible**, no solo la corrige.
+Es la regla 4 de [`../CLAUDE.md`](../CLAUDE.md) —una cosa, un sitio— aplicada a una doctrina.
+
+A cambio la cabecera ganó lo que **sí es suyo** y no estaba escrito en ninguna parte: que aporta
+`statusCode` y **no puede aportar `code`**. Es un hecho de la clase, no del contrato, así que no puede
+derivar.
+
+> **Dato de contexto que hacía obvia la dirección:** `{ message }` ya había ganado de facto —**219 de
+> 306** respuestas (71,6 %), y **47 de los 57** sitios que reciben un `HttpError`—. La forma que su
+> propia cabecera recomendaba la usaban **4**.
+
+### `code` se queda, aunque no lo lea NADIE — y esta es la parte que se descartó dos veces
+
+Medido: **cero lectores** en `frontend/src`, `signer/` y `scripts/`. Ni un `data?.code` sobre una
+respuesta de error, ni una comparación contra `"SIGN_BATCH_LEGACY_GONE"` o `"UPLOAD_REJECTED"`. (La
+única coincidencia de `data?.code` es `edge.data?.code` en `UnitGraphView.vue:1206`: un tipo de
+relación del organigrama, nada que ver.)
+
+**Retirarlo del contrato se evaluó y se DESCARTÓ**, y la razón es concreta:
+`middlewares/uploadError.js:54` es **la única implementación conforme del backend** y emite
+`{ message, code }`, con **tres goldens que congelan `claves: ["code","message"]`** (`dossier.json:8`,
+`user_workspace.json:31`, `sign_batch.json:113`). Retirarlo **dejaría no conforme al único que lo hace
+bien** y movería tres goldens por un cambio documental. Eso es peor que el defecto.
+
+**Lo que sí había que arreglar era su semántica**, y es el hallazgo que más rendía: la regla 4 decía
+*«Hoy lo usa `login_user.js`; que siga»* — y `login_user.js:15,30` emite `code: 400` / `code: 401`,
+**un número que repite el status HTTP**, que no permite ramificar nada. **El contrato bendecía como
+ejemplo el peor de sus diez emisores**, y era el que se iba a copiar: 8 de los 10 ya lo hacen así. El
+§4.1 nuevo dice qué es (string estable en `SCREAMING_SNAKE`), qué no es (ni el status repetido, ni el
+`.code` del error subyacente — `uploadError.js` colaría un `ENOENT` de `fs` o un SQLSTATE de `pg`), y
+cuál es el único bien puesto: `"SIGN_BATCH_LEGACY_GONE"`.
+
+**Y la necesidad existe, aunque hoy no se use**: `FillRequestWorkflowService` responde **409 en tres
+guards distintos** —«sin responsable resoluble», «transición ilegal» y «falta el PDF» (el 1.2)— con
+remedios distintos e indistinguibles salvo por la cadena de texto.
+
+### La página publicada: se enlaza, no se reescribe
+
+Es *explicación* en el sentido de Diátaxis: su trabajo es **describir**, y lo que afirma es **cierto**
+—verificado leyendo `backend/index.js` entero y los routers: **no hay `app.use((err, req, res, next))`
+en ninguna parte**—. El defecto no era lo que decía, sino que **no mencionaba que existe una norma**, y
+por eso se leía como prescripción. Se le puso un aviso al principio y el enlace. De paso se corrigió un
+error de hecho: `handleUploadError` se monta en **cuatro** routers, no en tres (faltaba
+`sql_admin_router`).
+
+### Lo que NO entró, y a dónde se fue
+
+- **El helper `fail()`** que el contrato §6 propone (`backend/utils/httpError.js`, que **no existe**).
+  Crearlo sin migrar ni un controller añade **un decimoséptimo productor de forma sin un solo
+  consumidor** — el olor que el documento persigue. **Nace con la fase C del frente 7**, no antes.
+- **La migración de las respuestas.** Es el frente 7 entero. Aquí solo murió la desinformación.
+
+### Un hallazgo estructural que hay que tener delante antes de la fase C
+
+**No hay error handler central.** Ni en `index.js` ni en los routers; el único middleware de aridad 4
+es `handleUploadError`, y es de ámbito de router. **No existe un punto donde normalizar la forma de un
+golpe**: o se tocan los sitios uno a uno, o primero hay que crear ese handler. Quedó escrito en el §6
+del contrato, que es donde se leerá.
+
+Y el censo se remidió: **306 respuestas y 16 formas**, no las 309/15 que decía el maestro —que **no se
+reproducen con ningún criterio razonable**—. Han aparecido **tres formas nuevas en un mes**, que es
+exactamente lo que el §7 del contrato prohíbe, ocurriendo mientras nadie miraba.
+
+---
+
 ## 1.9 · NO ERA UN DEFECTO — no apliques el guard en `ChatAuthorizationService`
 
 **Dónde**: `backend/services/chat/ChatAuthorizationService.js`. Comprobado el **2026-08-09**.
@@ -132,6 +229,77 @@ Tres razones, la última **medida** contra la base de dev:
    les caería a ocho **en cuanto un compañero creara el primer entregable**.
 
 Queda escrito en el propio fichero, encima de la consulta, para que no se «arregle» otra vez.
+
+---
+
+## 1.11 · Los parámetros de MÁS se ignoraban en silencio (y la premisa era falsa)
+
+**Cerrado el 2026-08-14.** Ningún golden se movió, y **eso es lo correcto**: el guard nuevo solo
+cambia el comportamiento de un call site equivocado, y no había ninguno.
+
+### La premisa que sostenía la tolerancia, y que nadie había comprobado
+
+`bindParams` lanzaba si FALTABAN parámetros (defecto 1.5) y callaba si SOBRABAN, con esta
+justificación escrita en el propio fichero:
+
+> *«Sobrar parámetros SÍ se tolera (mysql2 hacía lo mismo): los de más se ignoran y hay call sites
+> que reutilizan un array de argumentos más largo que la consulta.»*
+
+La primera mitad era cierta. **La segunda era falsa.** Medido por tres vías que se cubren entre sí:
+
+| Vía | Alcance | Resultado |
+|---|---|---|
+| Escáner estático (`npm run check:params`) | 423 llamadas decidibles | **0 con parámetros de más** |
+| Lectura una a una | los 61 indecidibles (24 con `.push()` condicional) | **61 equilibrados** |
+| Sonda que registra sin lanzar | arranque + fixture + los 240 flujos | **0 disparos** |
+
+**484 de 484 equilibradas.** El único reuso genuino del mismo array en dos consultas
+—`processDefinitionVersion.js:227` y `:240`— **está equilibrado**: ambas comparten el fragmento
+`${excludeSql}`. El `COUNT(*)` + `LIMIT` compartiendo array **no existe**: los seis sitios con esa
+forma usan `[...params, limit, offset]`, que *añade* en vez de reutilizar.
+
+### Por qué se eligió LANZAR y no solo avisar
+
+Avisar (log permanente) era la opción sin riesgo, y se descartó por una razón concreta y medida:
+**el gate estático solo alcanza a 423 de las 484 llamadas.** Las otras 61 —SQL con `${}`, parámetros
+en variable— quedaban protegidas por una **lectura**, y una lectura caduca en cuanto alguien toca el
+código. Lanzar en `bindParams` es lo único que cubre las 484 en tiempo de ejecución.
+
+Y la simetría no es estética: sobrar es **el mismo fallo** que faltar —el SQL y su lista de
+argumentos se han desincronizado— solo que en la otra dirección. Que el mismo fallo se comportara de
+dos maneras opuestas según hacia dónde se desviara es lo que mantenía uno de los dos invisible.
+
+### La tolerancia era CONTRATO en tres sitios, y se resolvieron, no se borraron
+
+1. **El bucle de 32 casos del escáner** se alimentaba con un array de 32 escalares *a propósito*,
+   apoyándose en la tolerancia para medir solo la numeración. Se arregló **derivando la cuenta del
+   texto esperado** (`(expected.match(/\$\d+/g) || []).length`), sin tocar ninguno de los 32 casos.
+   Queda **mejor test que antes**: el número de placeholders pasa a ser parte de lo que el caso fija,
+   en vez de quedar tapado por un array de sobra.
+2. **Los dos tests que fijaban «sobran parámetros: se ignoran»** se **invirtieron**. Ese diff **es**
+   la prueba del arreglo.
+3. **El test `RAREZA` del bloque sin cerrar** pasaba `[1, 2]` y eso ahora lanza. **No es una
+   regresión**: con dos parámetros el SQL ya salía inválido (un `?` crudo que PostgreSQL rechaza), así
+   que se cambia un error confuso por uno localizado. Por eso el mensaje de «sobran» **nombra el tramo
+   sin cerrar**: en ese caso el desajuste lo produce el escáner, no quien llamó.
+
+### Lo que deja vivo
+
+- **`npm run check:params`** (`scripts/audit_bindparams.mjs`), con el idioma de `check:imports`. El
+  barrido del 1.5 **se hizo y se tiró** —solo quedó una frase en `postgres.test.js`— y por eso hubo
+  que rehacerlo entero. Este no se tira. Declara además sus indecidibles con su motivo: un auditor
+  que dice «0 problemas» sin decir cuántas no miró es el verde engañoso que el método prohíbe.
+- **Dos defectos nuevos encontrados de rebote**: el **1.15** (la suite de caracterización está roja
+  por un golden no determinista) y el **1.16** (orden de parámetros cruzado en la firma, que
+  `bindParams` no puede ver porque el número cuadra).
+- En `plan_data` §D5-b: **retirado el cerrojo del 1.11** —sigue el otro, cerrar D5-a— y corregida una
+  cifra muerta que era su argumento de peso: decía «`bindParams` (CC 59)» y **la Fase F la dejó en ~1**.
+
+### Cómo se verificó
+
+**602 unitarios verdes.** Y la suite de caracterización completa **antes y después**: los **mismos 9
+fallos preexistentes** (defecto 1.15), en el mismo fichero, **cero errores de `bindParams`** y **cero
+goldens movidos**. La predicción se escribió antes de correr, que es lo que la hace valer.
 
 ---
 
@@ -226,3 +394,272 @@ Golden movido: **una línea**, `single` → `routed`.
 - **`controllers/tareas/tareas_controler.js:79`** **no es otra copia del IDOR**: lista *tareas* vía
   `task_assignments` y solo expone un agregado (`task_item_count`, `task_item_names`), no entregables
   individuales. Si algún día se revisa, será por otro motivo.
+
+---
+
+## 1.15 · El catálogo de semillas nunca llegaba a un entorno ya arrancado
+
+**Cerrado el 2026-08-14.** La suite pasó de **4 fallos a 0** y **ningún golden se movió** — porque el
+golden ya era correcto.
+
+### La ficha original decía DOS cosas falsas, y las dos las escribí yo
+
+Decía «un golden que congela un hash SHA-256 **no determinista**» y «**9 casos**».
+
+- **El hash es determinista.** Dos corridas completas e independientes de `test:char:run`, cada una con
+  reset de base, bootstrap y seed, dan **el mismo** `709460…`. Lo di por volátil al ver el diff y no lo
+  comprobé.
+- **Son 4 tests, no 9.** Conté líneas `✖`, y cada test aparece dos veces (subtest + resumen). De los 4,
+  **solo 2 fallan por el hash**; los otros dos caen **en cascada**, porque `matchSnapshot` lanza antes
+  de `happy.id = res.body?.id` y los siguientes hacen `assert.ok(happy.id)`.
+
+> **Y la lección de método**: un diff de golden invita a concluir «el valor es inestable». La pregunta
+> barata que lo desmiente es **¿cambia entre dos corridas, o es estable y distinto del golden?**. Cuesta
+> un `grep` sobre dos salidas ya guardadas, y ahorra el arreglo equivocado — que aquí habría sido
+> **recapturar**, congelando el defecto que `49d41ce4` acababa de arreglar.
+
+### Lo que pasaba de verdad
+
+El paquete del borrador se arma leyendo `Seeds/latex/informe-general/src/**` **de MinIO**, y la pila
+servía un `make.sh` **anterior** a `49d41ce4` (2026-08-13, *«el ZIP de una plantilla creada por la web ya
+se puede renderizar»*). Comprobado leyendo el objeto: el repo dice `for candidate in data.json data.yaml
+…` y MinIO decía `for candidate in data.yaml …`. **El golden era correcto y el entorno el que mentía.**
+
+### El arreglo: un centinela que guardaba dos cosas y solo una lo justificaba
+
+`publishBaseSeedAssets` salía por un `return` temprano si existía `main.tex.j2`:
+
+| Destino | Quién lo edita | Qué se hace ahora |
+|---|---|---|
+| `Seeds/<tipo>/<nombre>/**` (catálogo) | **nadie** — es la copia publicada del repo | **se republica siempre** |
+| `System/<code>/v0001/**` (artifact) | **el admin**, desde la web | el centinela **se queda intacto** |
+
+El comentario decía «respeta ediciones del admin», y para el artifact es cierto. Aplicarlo al catálogo
+era el fallo, y su efecto no era «no reescribir»: era que **ningún cambio en
+`services/system/seeds/**` alcanzara un entorno ya arrancado**.
+
+### Lo que el arreglo NO cubre, y por eso nació el 1.17
+
+Verificando se descubrió que **`publishBaseSeedAssets` no corre en cada arranque**: cuelga de
+`ensureDefaultProcess`, que solo se ejecuta en el bootstrap. Así que reiniciar el backend **no** basta —
+lo comprobé y el catálogo seguía viejo. Lo que sí lo ejercita es `test:char:fixture`, que re-bootstrapea.
+
+**Partir el centinela era necesario pero no suficiente**: en producción sigue sin haber camino. Eso es
+el defecto **1.17**, abierto en el mismo commit.
+
+### Dos trampas de verificación que caí y conviene no repetir
+
+1. **Mi primer chequeo daba falso verde.** Hacía `grep data.json` sobre el fichero entero, y esa cadena
+   aparece en otro punto del `make.sh`. El chequeo correcto compara **la línea `for candidate in`**.
+2. **El test unitario se validó con control positivo**: se restauró temporalmente el `return` temprano y
+   se comprobó que los dos tests que cubren el defecto **fallan**. Un test que no se ha visto fallar no
+   prueba nada.
+
+### Cómo se probó sin MinIO
+
+`publishBaseSeedAssets` acepta sus ayudantes **por parámetro con valor por defecto**. No es API para
+nadie —ningún llamador pasa nada, el comportamiento en producción es idéntico— sino la costura mínima
+para observar **qué claves se suben**, ya que `mock.module` en este Node exige un flag experimental y
+cambiar el `test:unit` global por un test habría sido peor negocio. **6 unitarios nuevos.**
+
+---
+
+---
+
+## 1.16 · Orden de parámetros cruzado en `context_ancestor_type`
+
+**Cerrado el 2026-08-14.** Ningún golden se movió, y **eso es lo correcto**: la rama es inalcanzable
+con los datos de hoy. Su evidencia son **7 unitarios**, como en el 1.5 y el 1.13.
+
+### El defecto
+
+`resolvePersonsForCargoInScope` arma `params = [cargoId]` sobre una consulta cuyo único `?` es
+`up.cargo_id = ?`. La rama `context_ancestor_type` **antepone un CTE** (que añade un `?` DELANTE) **y
+añade una cláusula al final** (un `?` DETRÁS), pero pagaba los dos con `unshift`:
+
+```js
+params.unshift(scope.unitTypeId);
+params.unshift(scope.unitId);      // -> [unitId, unitTypeId, cargoId]
+```
+
+Los `?` salen en el orden (1) CTE `WHERE id = ?`, (2) `up.cargo_id = ?`, (3) `WHERE unit_type_id = ?`.
+Así que **`up.cargo_id` recibía el tipo de unidad y `unit_type_id` recibía el cargo**. Resolvía
+firmantes equivocados, o ninguno, **en silencio**.
+
+**`bindParams` no puede verlo**: la CANTIDAD cuadra (3 y 3). El defecto 1.11 endureció el conteo en las
+dos direcciones y aun así este pasa — el conteo no dice **cuál** va en cada sitio.
+
+### Por qué rompió aquí y en ningún otro sitio: el censo
+
+**Seis `unshift` en todo el backend, y los seis son el mismo patrón** (CTE recursivo antepuesto a una
+consulta que ya tenía placeholders):
+
+| Sitio | Rama | ¿Cuadra? |
+|---|---|---|
+| `admin/generation/assignees.js:70` | `unit_subtree` | ✅ |
+| `admin/generation/queries.js:342` | `unit_subtree` | ✅ |
+| `DocumentSignatureWorkflowService.js:380` | `unit_subtree` | ✅ |
+| `DocumentSignatureWorkflowService.js:412` | `context_subtree` | ✅ |
+| `DocumentSignatureWorkflowService.js:437-438` | `context_ancestor_type` | ❌ |
+
+> **No hay un segundo desajuste, y no es suerte.** Los cinco sanos comparten la misma forma —**un solo
+> `unshift` y ningún `?` a la cola**—; `context_ancestor_type` es **el único sitio del backend que
+> antepone Y añade a la vez**. Esa mezcla es la que rompe el `unshift`. La regla que queda escrita en
+> el código: **el `?` de cabeza se paga con `unshift`, el de cola con `push`.**
+
+El arreglo es exactamente eso, dos líneas.
+
+### Por qué NO se borró la rama, que era la otra opción obvia
+
+`context_ancestor_type` es un ámbito **retirado**: el `CHECK` de `signature_flow_steps.unit_scope_type`
+no lo admite. Tentador borrarlo, por el criterio del frente 0 («lo que la web no autora, no existe»).
+**Sería peor**: si ninguna rama casa, la consulta se queda **sin filtro de ámbito** y resolvería a
+todo el que tenga ese cargo **en cualquier unidad** — una sobre-resolución silenciosa, más grave que el
+cruce. Lo que cerraría el agujero de verdad ya está escrito en el propio fichero (`:146-148`): filtrar
+contra los catálogos **y** migrar el JSONB, en ese orden. Es otro trabajo, no éste.
+
+### Por qué el guardián solo puede ser un unitario
+
+La rama llega **por el JSONB `signers`**, que ningún `CHECK` cubre — no por la columna. La
+caracterización **no puede sembrarla por CRUD**, y se comprobó: **cero apariciones** de `unit_subtree`,
+`context_subtree` o `context_ancestor_type` en los 21 goldens. Por eso `resolvePersonsForCargoInScope`
+se exporta, con el mismo criterio que ya se aplicó a
+`getActiveSignatureFlowTemplateForDefinitionTemplate`.
+
+Los tests afirman **la POSICIÓN, no la cantidad** —`assert.deepEqual(params, [UNIDAD, CARGO, TIPO])` y
+las cláusulas en orden extraídas del SQL—, e incluyen **grupo de control**: las tres ramas sanas
+(`context_subtree`, `unit_subtree`, `unit_type`) se afirman también. Validados con **control positivo**:
+al restaurar los dos `unshift`, **falla exactamente uno** — el de las posiciones — y los otros doce
+pasan.
+
+---
+
+---
+
+## 1.18 · Al editar, el PDF se renombraba a `pdf`
+
+**Cerrado el 2026-08-14.** **El primer defecto de este frente cuyo golden se mueve** — los cuatro
+anteriores eran latentes o documentales. Y el diff es de **una línea**.
+
+### El defecto
+
+`setAvailableFormatEntry` (`templateLifecycle.js:201-205`) escribe **siempre** un prefijo:
+
+```js
+entry_object_key: `${baseObjectPrefix}template/${format}/`   // <- ojo a la barra final
+```
+
+La rama de subida le hacía `path.basename()` a pelo, y **el basename de un prefijo terminado en `/`
+es su último segmento**: `"pdf"`. Así que al editar, `referencia.pdf` se guardaba como
+`template/pdf/pdf`, **sin extensión**.
+
+**Lo que lo hacía algo más que un nombre feo**: el nombre del fichero entra en `hashDirectory`, así
+que el paquete resultante era distinto — y `crear_ok` y `editar_ok` tenían hashes diferentes **para
+el mismo contenido**. Ese era el síntoma que había que leer.
+
+### El diagnóstico se contestó solo, diez líneas más abajo
+
+La duda al abrir la ficha era: *¿`entry_object_key` es un dato correcto mal usado, o un dato mal
+escrito?* La respuesta estaba en el propio fichero — **la rama hermana ya preguntaba**:
+
+```js
+if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+  const fileName = path.basename(existingObjectKey);   // es un FICHERO
+  ...
+} else {
+  await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);   // es un PREFIJO
+}
+```
+
+Es decir: el código **sabía** que la clave puede ser un prefijo, y lo comprobaba. En **dos** sitios
+(`:1200` y `:1306`). **Faltaba justo en el tercero**, que es el que subía el fichero.
+
+> **Por eso el arreglo no fue añadir un `if`, sino extraer el predicado** (`esClaveDeFichero`) y
+> usarlo en los tres. Un predicado duplicado dos veces y ausente una es la forma exacta que tenía el
+> defecto: la pregunta existía, pero no estaba en un sitio donde se pudiera olvidar de aplicarla.
+
+### La prueba
+
+**Ningún otro golden se movió**, y eso se predijo por escrito **antes** de correr: debía fallar
+exactamente `editar_ok`, y solo por su `content_hash`. Falló exactamente eso.
+
+Y el valor nuevo lo dice todo:
+
+```diff
+-      "content_hash": "7dba45afa3b893a56716b2c406bd4f0025ea8881ff4b567bb29ebf7a6a6e81b9",
++      "content_hash": "c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1",
+```
+
+`c43d7b58…` **es el hash de `crear_ok`**. O sea: tras el arreglo, **crear y editar producen el paquete
+idéntico**, que es lo semánticamente correcto. Que difirieran ERA el defecto.
+
+Más **4 unitarios** sobre el predicado, incluido el caso que da la trampa: `main.tex.j2/` es un
+directorio aunque su nombre lleve puntos.
+
+---
+
+## 1.17 · Nada re-publicaba la semilla en un entorno ya arrancado
+
+**Cerrado el 2026-08-14.** Es **la mitad que el arreglo del 1.15 no cubría**, y por eso nació con él:
+partir el centinela arreglaba la lógica, pero **no había forma de ejecutarla en un entorno vivo**.
+
+### No era latente: era un productor activo de artefactos obsoletos
+
+Crear una plantilla desde una semilla **descarga de MinIO** (`templateLifecycle.js:1229`). Con el
+catálogo congelado, **cada plantilla que un admin creara en producción heredaba la semilla vieja**. El
+arreglo del ZIP renderizable de `49d41ce4` llevaba un día en el repo y estaba ausente de todas las
+pilas.
+
+### Los caminos que NO existen, medidos uno a uno
+
+Esto es lo que más costó averiguar, y lo que evita que alguien lo intente otra vez:
+
+| Camino | Por qué no vale |
+|---|---|
+| `POST /system/bootstrap/initialize` | **Responde 409 en cuanto la instalación deja de ser virgen** (`SystemBootstrapService.js:829-838`). En producción está cerrado para siempre |
+| Reiniciar el backend | `index.js` solo hacía `assertPostgresConnection` + `ensurePostgresSchema`. **Cero MinIO** |
+| Desplegar una imagen nueva | `apply-env.sh:190-193` hace `pull` + `up -d`. **Ni migraciones ni bootstrap**: el árbol viaja dentro de la imagen y se queda ahí |
+| `POST /template_seeds/sync` | **Va en dirección contraria**: lee de MinIO y escribe en Postgres. Con el catálogo viejo solo consolida lo viejo |
+
+### El arreglo: publicar en el arranque
+
+`publishSeedsOnBoot` en `index.js`, tras `ensurePostgresSchema`. **Es lo que el comentario del 1.15 ya
+afirmaba que pasaba** — decía «se republica SIEMPRE, en cada arranque» y era falso; ahora es cierto, y
+el comentario se corrigió para no volver a describir una intención como un hecho.
+
+Es seguro reescribir en cada arranque **porque el centinela sigue protegiendo lo que el admin edita**:
+solo se republica el catálogo `Seeds/`; el artifact `System/` se respeta si ya existe. Verificado en el
+log del arranque: `Semilla base publicada en MinIO (artifact: respetado)`.
+
+**Best-effort a propósito**: un MinIO caído no impide que el backend sirva. Coste medido: **48 PUT,
+~92 KB, menos de un segundo**.
+
+> **Se descartó comparar hashes** (`hashDirectory(BASE_SEED_DIR)` contra una huella publicada). Daría
+> un arranque más barato y un sensor explícito de «lo publicado está al día», que hoy no existe — pero
+> con 92 KB medidos la optimización es prematura, y habría que decidir dónde vive la huella y qué pasa
+> cuando falta, que es el caso de **todos** los entornos actuales. Queda como evolución natural.
+
+### El segundo frente: MinIO era una entrada oculta a las pruebas
+
+`test:char:fixture` reseteaba **solo `db`**, así que los buckets sobrevivían a todas las corridas. Eso
+es exactamente lo que causó el 1.15. Ahora resetea `db storage`.
+
+**Se censó antes de tocarlo**, porque `reset.mjs storage` es todo-o-nada sobre siete buckets:
+
+- **Ningún flow lee el bucket de certificados** — comprobado. Los casos de firma usan
+  `certificate_id: "999999"` y salen por 404 antes de tocar el almacenamiento.
+- **Ningún golden depende de un objeto que no cree la propia corrida.** Los seis casos de «ruta
+  fabricada» (`approve_ok` y cinco de descarga) dependen de la **ausencia** de objetos, que el reset
+  refuerza.
+- El único objeto que se asumía presente era el catálogo `Seeds/`, y el bootstrap lo republica.
+
+**La verificación fue correr la suite SIN capturar**: verde y **cero goldens movidos**. Eso convierte
+en demostrada la premisa que `lib/db.mjs:84` daba por supuesta —«ningún golden observa los objetos de
+MinIO»— en vez de dejarla escrita como suposición.
+
+**Efecto secundario medible**: el bucket pasó de **435 a 332 objetos**. Los 103 que sobraban eran
+paquetes huérfanos que `cleanupDraftArtifactByCode` dejaba a propósito y que se acumulaban corrida
+tras corrida. Además cierra un hueco real: la rama de edición hace `downloadMinioPrefixToDirectory`
+sobre el prefijo del artifact y `uploadDirectoryToMinio` **no purga antes de subir**, así que un
+residuo de una versión vieja del código habría entrado en el `content_hash`. Dependía de la suerte;
+ahora no.

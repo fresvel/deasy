@@ -4,7 +4,14 @@ description: "El contrato de errores de la API, y las cinco integraciones: Rabbi
 sidebar:
   order: 7
 ---
-Hay una decisión de diseno explícita: **no hay un middleware de error global**. Cada controller hace su propio `catch`:
+:::note[Esta página describe cómo funciona hoy, no cómo debe hacerse]
+La **norma** sobre qué forma tiene una respuesta de error vive en el plan de trabajo del repositorio
+(`docs/planes/referencia/contrato-errores-api.md`, §4), no aquí. Lo que sigue es el retrato del estado
+actual — y ese estado **no es uniforme**: conviven dieciséis formas distintas y unificarlas es trabajo
+pendiente. Si vas a escribir un endpoint nuevo, la forma la decide el contrato.
+:::
+
+Hay una decisión de diseno explícita: **no hay un middleware de error global**. Cada controller hace su propio `catch`, y el patrón mayoritario —siete de cada diez respuestas— es éste:
 
 ``` javascript
 catch (error) {
@@ -16,7 +23,7 @@ catch (error) {
 
 Aparte, `backend/errors/sqlErrors.js` traduce los códigos SQLSTATE de PostgreSQL a mensajes humanos: `23505` (violación de UNIQUE) da “ya existe una persona con esa cédula”. Y lo hace comparando por **nombre de constraint** (`error.constraint`), no buscando subcadenas en el mensaje, que es frágil y se rompe al cambiar de idioma o de versión.
 
-Un cuarto elemento: `backend/middlewares/uploadError.js` traduce los siete códigos de error de `multer` a mensajes en espanol y **oculta el mensaje si es un 5xx**. Se monta con `router.use(handleUploadError)` *después* de las rutas, en tres routers (`user_router`, `dossier_router`, `sign_router`). Existe porque sin el, Express devolvia HTML con el stack trace completo, incluidas las rutas absolutas dentro del contenedor.
+Un cuarto elemento: `backend/middlewares/uploadError.js` traduce los siete códigos de error de `multer` a mensajes en espanol y **oculta el mensaje si es un 5xx**. Se monta con `router.use(handleUploadError)` *después* de las rutas, en cuatro routers (`user_router`, `dossier_router`, `sign_router` y `sql_admin_router`). Es además **el único sitio del backend que implementa la forma objetivo del contrato** (`{ message, code }`). Existe porque sin el, Express devolvia HTML con el stack trace completo, incluidas las rutas absolutas dentro del contenedor.
 
 ## Integraciones externas
 

@@ -962,6 +962,64 @@ export const getMyProfile = async (req, res) => {
 
 const ATTACHMENT_ALLOWED_KINDS = new Set(["annex", "evidence", "source", "other"]);
 
+// El HISTORIAL DE RELEVOS de un entregable (defecto 1.10). Contesta «¿por qué esto, que era de Juan,
+// ahora es de María?» a quien se lo pregunta: el propio responsable, no solo un administrador.
+//
+// ⚠️ EL GUARD ES `getAccessibleTaskItemForUser` Y SE REUTILIZA TAL CUAL — no se escribe una versión
+// reducida aquí. Ese guard lleva dentro el arreglo del IDOR («comprobar solo la asignación a la TAREA
+// hacía que cada responsable viera los entregables de sus compañeros»), y ESE defecto se propagó en su
+// día precisamente por copiarse a mano de un sitio a otro. Por eso este endpoint exige `definitionId`
+// aunque para leer la bitácora no haga falta: es el precio de usar el guard bueno en vez de uno nuevo.
+//
+// Y por eso responde 404 —no 403— cuando el entregable no es tuyo: mismo criterio que el defecto 1.4,
+// el código que no confirma existencia.
+export const listDeliverableHandovers = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado para consultar el historial." });
+  }
+  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
+  }
+
+  const pool = getPostgresPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
+  }
+
+  try {
+    const target = await getAccessibleTaskItemForUser(pool, authenticatedUserId, definitionId, taskItemId);
+    if (!target?.task_item_id) {
+      return res.status(404).json({ message: "No se encontró el entregable." });
+    }
+    const [rows] = await pool.query(
+      `SELECT h.id,
+              h.from_person_id,
+              h.to_person_id,
+              h.reason,
+              h.trigger_kind,
+              h.created_at,
+              CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
+              CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
+         FROM task_item_handovers h
+         LEFT JOIN persons fp ON fp.id = h.from_person_id
+         LEFT JOIN persons tp ON tp.id = h.to_person_id
+        WHERE h.task_item_id = ?
+        ORDER BY h.id DESC`,
+      [Number(target.task_item_id)]
+    );
+    // `performed_by_user_id` NO se expone: a un responsable le importa el qué y el porqué, no qué
+    // administrador lo ejecutó. Sigue en la tabla para la consulta forense.
+    return res.json(rows);
+  } catch (error) {
+    console.error("[handovers] error al listar el historial:", error);
+    return res.status(500).json({ message: "No se pudo obtener el historial del entregable." });
+  }
+};
+
 export const listDeliverableAttachments = async (req, res) => {
   const authenticatedUserId = getAuthenticatedUserId(req);
   const routeUserId = getNumericUserId(req);

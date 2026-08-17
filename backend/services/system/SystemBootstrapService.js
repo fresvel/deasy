@@ -339,44 +339,82 @@ const putSeedFileObject = async (bucket, objectName, absPath) => {
 
 // Publica en MinIO el seed base: (1) el árbol completo al catálogo Seeds/ y (2) el artifact instanciado en
 // System/ (src jinja2 + schema.json + data.yaml desde defaults.yaml). SIN meta.yaml desde el sub-paso 7
-// del §0.8: el flujo se autora en la base, no en un YAML (ver el bloque de arriba). Idempotente: si el
-// main.tex.j2 del artifact ya existe no reescribe (respeta ediciones del admin). Best-effort: un fallo de
-// MinIO no debe abortar el bootstrap (las filas SQL ya quedan registradas y se puede re-publicar).
-export const publishBaseSeedAssets = async () => {
+// del §0.8: el flujo se autora en la base, no en un YAML (ver el bloque de arriba). Best-effort: un fallo
+// de MinIO no debe abortar el bootstrap (las filas SQL ya quedan registradas y se puede re-publicar).
+//
+// EL CENTINELA `ya_existe` VALE PARA UN DESTINO Y NO PARA EL OTRO, y confundirlos fue el defecto 1.15:
+//
+//   Seeds/<tipo>/<nombre>/**   el CATÁLOGO. Es la copia publicada de `services/system/seeds/` y NADIE
+//                              lo edita a mano -> se republica SIEMPRE que se llame a esta función.
+//   System/<code>/v0001/**     el ARTIFACT instanciado. El admin SÍ lo edita desde la web -> si su
+//                              `main.tex.j2` ya está, no se toca. Ahí el centinela es correcto.
+//
+// Antes un solo `return` temprano gobernaba los dos, y el efecto no era que "no se reescribiera": era
+// que **ningún cambio en `services/system/seeds/**` alcanzaba jamás a un entorno ya arrancado, producción
+// incluida**. Medido el 2026-08-14: el arreglo de `49d41ce4` (2026-08-13, «el ZIP de una plantilla creada
+// por la web ya se puede renderizar») llevaba un día en el repo y estaba ausente de todas las pilas —
+// MinIO servía un `make.sh` sin `data.json`. Lo destapó el `content_hash` de `zzz_artifact_draft`, que
+// es el único sensor que hay sobre el paquete publicado: el golden era correcto y el entorno el que
+// mentía. Agravante: `test:char:fixture` resetea solo `db`, así que los buckets sobreviven a cada
+// corrida (defecto 1.17, cerrado el 2026-08-14).
+//
+// ⚠️ QUIÉN LLAMA A ESTO, Y POR QUÉ IMPORTA. Hasta el 1.17 el único llamador era `ensureDefaultProcess`,
+// que cuelga de `POST /system/bootstrap/initialize` — y ese endpoint **responde 409 en cuanto la
+// instalación deja de ser virgen**. O sea: partir el centinela arreglaba la lógica, pero **no había
+// forma de ejecutarla en un entorno vivo**. Desde el 1.17 la llama también `index.js` en cada arranque
+// (`publishSeedsOnBoot`), que es lo que hace que una semilla actualizada llegue de verdad al
+// desplegar. Si algún día se quita esa llamada, este comentario vuelve a describir una intención en
+// vez de un hecho.
+//
+// Los tres ayudantes de MinIO entran por parámetro CON SU VALOR POR DEFECTO: es la única costura que
+// permite probar el reparto catálogo/artifact sin `mock.module` (que en este Node pide un flag
+// experimental, y cambiar el `test:unit` global por un test sería peor negocio). Ningún llamador pasa
+// nada, así que el comportamiento en producción es idéntico.
+export const publishBaseSeedAssets = async ({
+  ensure = ensureBucketExists,
+  stat = statMinioObject,
+  put = putSeedFileObject,
+  existeSeedDir = () => fs.existsSync(BASE_SEED_DIR),
+  listar = () => walkSeedFiles(BASE_SEED_DIR),
+} = {}) => {
   const bucket = DEFAULT_TEMPLATE_BUCKET;
   const mainKey = `${DEFAULT_TEMPLATE_SRC_PREFIX}main.tex.j2`;
   try {
-    await ensureBucketExists(bucket);
+    await ensure(bucket);
+    let artifactYaExiste = false;
     try {
-      await statMinioObject(bucket, mainKey);
-      return { published: false, reason: "ya_existe" };
+      await stat(bucket, mainKey);
+      artifactYaExiste = true;
     } catch {
-      // No existe: se publica.
+      // No existe: se publica también el artifact.
     }
-    if (!fs.existsSync(BASE_SEED_DIR)) {
+    if (!existeSeedDir()) {
       console.warn("publishBaseSeedAssets: no se encontró el seed base empaquetado en", BASE_SEED_DIR);
       return { published: false, reason: "seed_no_empaquetado" };
     }
 
-    const files = walkSeedFiles(BASE_SEED_DIR);
-    // 1. Catálogo Seeds/<tipo>/<nombre>/...
+    const files = listar();
+    // 1. Catálogo Seeds/<tipo>/<nombre>/... — SIEMPRE, mande lo que mande el centinela.
     for (const file of files) {
-      await putSeedFileObject(bucket, `${SEEDS_CATALOG_PREFIX}${file.rel}`, file.abs);
+      await put(bucket, `${SEEDS_CATALOG_PREFIX}${file.rel}`, file.abs);
+    }
+    if (artifactYaExiste) {
+      return { published: true, catalogo: true, artifact: false, reason: "artifact_ya_existe" };
     }
     // 2. Artifact instanciado System/<code>/v0001/...
     for (const file of files) {
       if (file.rel === "schema.json") {
-        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_PREFIX}schema.json`, file.abs);
+        await put(bucket, `${DEFAULT_TEMPLATE_PREFIX}schema.json`, file.abs);
       } else if (file.rel === "defaults.yaml") {
-        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_PREFIX}data.yaml`, file.abs);
-        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}data.yaml`, file.abs);
+        await put(bucket, `${DEFAULT_TEMPLATE_PREFIX}data.yaml`, file.abs);
+        await put(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}data.yaml`, file.abs);
       } else if (file.rel.startsWith("src/")) {
-        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}${file.rel.slice("src/".length)}`, file.abs);
+        await put(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}${file.rel.slice("src/".length)}`, file.abs);
       }
       // README.md sólo vive en el catálogo Seeds/ (de ahí lo lee `syncTemplateSeedsFromSource` para
       // describir la semilla). El artifact instanciado ya no lleva meta.yaml.
     }
-    return { published: true };
+    return { published: true, catalogo: true, artifact: true };
   } catch (error) {
     console.warn("publishBaseSeedAssets: no se pudieron publicar los objetos del seed base:", error?.message);
     return { published: false, reason: error?.message };
@@ -535,7 +573,8 @@ export const ensureDefaultProcess = async (connection) => {
   // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado.
   //       Idempotente; si la publicación falla (MinIO caído, seed no empaquetado) se PROPAGA el error para
   //       abortar/rollback el bootstrap: así no quedan filas SQL apuntando a objetos MinIO inexistentes.
-  //       'ya_existe' es éxito (re-ejecución idempotente).
+  //       Una re-ejecución es éxito: el catálogo `Seeds/` se republica siempre y el artifact se
+  //       respeta si ya está (`artifact_ya_existe`), pero las dos devuelven `published: true`.
   const publishResult = await publishBaseSeedAssets();
   if (!publishResult?.published && publishResult?.reason !== "ya_existe") {
     throw new Error(

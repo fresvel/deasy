@@ -24,6 +24,7 @@ import TemplateLifecycleService, {
   PACKAGE_DATA_FILE_NAME,
   buildPackageDataFileTargets,
   buildSchemaJsonFromFieldList,
+  esClaveDeFichero,
   normalizeSchemaFieldList,
 } from "./templateLifecycle.js";
 import { CONTRACT_FORMAT } from "../kernel/constants.js";
@@ -489,4 +490,40 @@ test("una entrada que no es lista da lista vacia (y el escritor deja `{}` en el 
   assert.deepEqual(normalizeSchemaFieldList(null), []);
   assert.deepEqual(normalizeSchemaFieldList("roto"), []);
   assert.deepEqual(normalizeSchemaFieldList([]), []);
+});
+
+
+// --- `entry_object_key`: prefijo o fichero (defecto 1.18) ------------------------------------
+//
+// `setAvailableFormatEntry` escribe SIEMPRE un prefijo terminado en `/`, pero pueden existir filas
+// antiguas que apunten a un fichero. Quien lo consume tiene que preguntar de cuál se trata, y esa
+// pregunta vivía DUPLICADA en dos sitios y FALTABA en un tercero: la rama de subida hacía
+// `path.basename()` a pelo. El basename de `".../template/pdf/"` es `"pdf"`, así que al editar el
+// PDF se guardaba como `template/pdf/pdf`, sin extensión.
+//
+// Lo que hace peligroso este fallo no es el nombre feo: **el nombre del fichero entra en
+// `hashDirectory`**, así que el golden `editar_ok` de `zzz_artifact_draft` llevaba congelado el
+// nombre roto — y ahí se ve el arreglo.
+
+test("una clave que apunta a un FICHERO se reconoce como tal", () => {
+  assert.equal(esClaveDeFichero("System/tpl/1.0.0/template/pdf/referencia.pdf"), true);
+  assert.equal(esClaveDeFichero("Seeds/latex/informe/src/main.tex.j2"), true);
+  assert.equal(esClaveDeFichero("a/b/documento.DOCX"), true, "la extensión puede venir en mayúsculas");
+});
+
+test("un PREFIJO no se confunde con un fichero", () => {
+  // El caso del defecto: `path.basename` de esto devuelve "pdf".
+  assert.equal(esClaveDeFichero("System/draft_x/1.0.0/template/pdf/"), false);
+  assert.equal(esClaveDeFichero("System/draft_x/1.0.0/template/jinja2/"), false);
+});
+
+test("una clave vacía o ausente tampoco es un fichero", () => {
+  for (const vacio of [undefined, null, "", "   "]) {
+    assert.equal(esClaveDeFichero(vacio), false, `${JSON.stringify(vacio)} no es un fichero`);
+  }
+});
+
+test("un segmento con punto pero sin extensión al final NO cuenta", () => {
+  // `main.tex.j2/` es un directorio aunque su nombre lleve puntos.
+  assert.equal(esClaveDeFichero("System/tpl/1.0.0/template/main.tex.j2/"), false);
 });

@@ -367,9 +367,20 @@ export const listResolvableCargos = async (req, res) => {
 export const reconcileTaskItemAssignments = async (req, res) => {
   try {
     const result = await service.reconcileOpenTaskItemAssignments({
-      positionId: req.body?.position_id || req.query?.position_id || null
+      positionId: req.body?.position_id || req.query?.position_id || null,
+      performedByUserId: req.user?.uid ?? null
     });
     res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+// El historial de relevos de un entregable (defecto 1.10). Hasta el 2026-08-14 la bitácora era de
+// solo escritura: cero SELECT en todo el repo. Éste es su primer lector.
+export const listTaskItemHandovers = async (req, res) => {
+  try {
+    res.json(await service.listTaskItemHandovers(req.params.id));
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
   }

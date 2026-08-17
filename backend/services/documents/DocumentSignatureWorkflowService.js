@@ -340,7 +340,11 @@ const resolveCurrentPersonsForPosition = async (connection, positionId) => {
   return rows.map((row) => Number(row.person_id)).filter(Boolean);
 };
 
-const resolvePersonsForCargoInScope = async (connection, step, context = null) => {
+// Se exporta solo para poder probar el ORDEN de los parámetros con un unitario, mismo criterio que
+// `getActiveSignatureFlowTemplateForDefinitionTemplate`; el consumidor real es de aquí. Y hace falta:
+// el `CHECK` de `signature_flow_steps.unit_scope_type` no admite `context_ancestor_type`, así que la
+// caracterización **no puede sembrar esa rama por CRUD** — un unitario es su único guardián posible.
+export const resolvePersonsForCargoInScope = async (connection, step, context = null) => {
   const scope = resolveScopeForStep(step, context);
   if (!scope.cargoId) {
     return [];
@@ -434,8 +438,18 @@ const resolvePersonsForCargoInScope = async (connection, step, context = null) =
           FROM ancestor_units
           WHERE unit_type_id = ?
         )`;
-    params.unshift(scope.unitTypeId);
+    // El orden importa y aquí estaba CRUZADO (defecto 1.16): los dos `unshift` dejaban
+    // `[unitId, unitTypeId, cargoId]`, así que `up.cargo_id` recibía el tipo de unidad y
+    // `unit_type_id` recibía el cargo. Resolvía firmantes equivocados, o ninguno, EN SILENCIO —
+    // `bindParams` no puede verlo porque la CANTIDAD cuadra (3 y 3), solo el orden está mal.
+    //
+    // Los `?` salen así: (1) el del CTE, que va DELANTE de la consulta base; (2) el `up.cargo_id`
+    // de la base; (3) el del `IN` final, que va DETRÁS. Por eso el de cabeza se paga con `unshift`
+    // y el de cola con `push`. Ésta es la única rama del backend que antepone Y añade a la vez
+    // (censo del 2026-08-14: 6 `unshift` en total, y los otros 5 solo anteponen), que es
+    // exactamente por lo que aquí se rompió y en los demás no.
     params.unshift(scope.unitId);
+    params.push(scope.unitTypeId);
   } else if (scope.unitScopeType === "context_exact") {
     if (!scope.unitId) {
       return [];

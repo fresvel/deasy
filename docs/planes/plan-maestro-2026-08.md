@@ -34,7 +34,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | Frente | Qué entrega | Estado | Control detallado | Evidencia · fecha |
 |---|---|---|---|---|
 | **0** · Modelo de dominio | El modelo deja de contradecirse: cero `document_owner`, la base manda y el YAML se fue | ✅ **9 de 9** | [archivado](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) | `30654db` · medido en base · **2026-08-13** |
-| **1** · Defectos conocidos | Cinco defectos que un usuario puede encontrarse, congelados en pruebas | ⬜ **5 abiertos** · 9 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **15 tareas** | remedidos contra el código · 2026-08-14 |
+| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **3 abiertos** · 15 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **15 de 25 tareas** | 1.17 cerrado · **2026-08-14** |
 | **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ 8 vulnerabilidades | aquí, §Frente 2 | Sonar `:9002` · 2026-08-09 |
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
 | **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 pasos 1-3 y 5 ✅ · 4 y 6 ⬜ | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
@@ -93,7 +93,7 @@ promovieron el día del cierre, porque vivían solo en su prosa.
 
 ---
 
-## Frente 1 · Defectos conocidos y sin arreglar — ⬜ · vive en [`defectos-conocidos/`](./defectos-conocidos/)
+## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **15 de 25** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
 
 **Lo más rentable que queda, y con diferencia**, porque no es deuda estética: son fallos que un
 usuario puede encontrarse. Y todos están **congelados en pruebas**, así que el arreglo se verifica
@@ -102,22 +102,29 @@ solo: cuando el defecto muere, su golden cambia, y ese diff **es** la prueba.
 **Segundo frente con carpeta propia** (el otro es el 9), desde el **2026-08-14**. El motivo: llevaba
 **catorce fichas en una sola tabla**, nueve de ellas cerradas con párrafos de trescientas palabras, y
 leerlo para saber *qué queda* costaba más que hacerlo. **Las tareas están allí**, con su control de
-ejecución —15 tareas con estado, evidencia y fecha— y no se repiten aquí.
+ejecución —25 tareas con estado, evidencia y fecha— y no se repiten aquí.
 
 | Defecto | Qué es | Superficie |
 |---|---|---|
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud al iniciarla. Congelado en `manual_autoasignacion_efecto` | Backend · servicio |
 | **1.7** | El **sello fantasma**: `previewBoxStyle` nace `{display:'none'}` y la asignación del `pointermove` no incluye `display`, así que el tercer término del `v-if` es siempre cierto | Frontend · `MultiSignerPanel.vue` |
-| **1.8** | Dos documentos del repo mandan **formas de error contrarias**: la cabecera de `HttpError.js` recomienda `{ error }`, el contrato objetivo es `{ message, code }`. Cada controller nuevo elige mal la mitad de las veces | Backend · documental |
 | **1.10** | La **única bitácora de auditoría** del sistema la puentea el camino automático. Remedido: son **tres** caminos que reasignan sin dejar asiento, no uno, y la tabla no la lee **nadie** (un `INSERT`, cero `SELECT`) | Base de datos · triggers |
-| **1.11** | Los **parámetros de más se ignoran en silencio** — el modo de fallo del 1.5 en la otra dirección. **Bloquea la fase D5-b** del frente 9 hasta que se censen sus call sites | `backend/config/postgres.js` |
+| ~~**1.11**~~ | ~~Los parámetros de más se ignoran en silencio~~ — ✅ **cerrado el 2026-08-14**: la premisa que lo justificaba era falsa (484/484 equilibradas) y ahora lanza en las dos direcciones | `backend/config/postgres.js` |
+| ~~**1.15**~~ | ~~La suite de caracterización está ROJA~~ — ✅ **cerrado el 2026-08-14**. No era un golden malo: **MinIO servía una semilla obsoleta** y el golden era correcto. Un centinela protegía las ediciones del admin y de paso bloqueaba el catálogo | Bootstrap · MinIO |
+| ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ — ✅ **cerrado el 2026-08-14**: eran dos `unshift` donde hacía falta un `unshift` y un `push`. Censo: 6 en el backend, **el único que antepone Y añade a la cola** | Backend · firma |
+| ~~**1.17**~~ | ~~Nada re-publica la semilla en un entorno ya arrancado~~ — ✅ **cerrado el 2026-08-14**. Se publica en **cada arranque**, así que llega al desplegar; y `test:char:fixture` resetea también `storage`, con lo que **MinIO deja de ser una entrada oculta** al sistema bajo prueba | Bootstrap · arnés |
+| ~~**1.18**~~ | ~~Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf`~~ — ✅ **cerrado el 2026-08-14**. El predicado correcto ya existía **duplicado en dos sitios** y faltaba en el tercero. **Primer defecto del frente cuyo golden se mueve**: una línea, y `editar_ok` pasa a valer lo mismo que `crear_ok` | Backend · plantillas |
 
-**Nueve cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
-razonamiento entero — que es donde está el valor: hay **cuatro sitios donde la corrección obvia es la
+**Quince cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
+razonamiento entero — que es donde está el valor: hay **nueve sitios donde la corrección obvia es la
 equivocada**. Entre ellos el **1.9**, que resultó **no ser un defecto**: aplicarle el guard del IDOR
 habría dejado sin chat a 8 de 10 asignados, medido contra la base antes de tocar nada.
 
-**Criterio de cierre:** las 15 tareas del control de ejecución cerradas con su evidencia, y la carpeta
+El último en caer es el **1.8** (2026-08-14): resultó que **no eran dos documentos en conflicto, sino
+cinco**, y uno de ellos era la documentación **publicada**. Su efecto sobre el frente 7 es que **la
+deuda del contrato de errores ha dejado de crecer por desinformación**; lo que queda allí es migrar.
+
+**Criterio de cierre:** las 17 tareas del control de ejecución cerradas con su evidencia, y la carpeta
 archivada.
 
 ---
@@ -479,7 +486,7 @@ Pequeña, pero es la que hace que lo demás no se degrade.
 | **Reconstruir las imágenes del backend** | El `unzip` explícito de los Dockerfiles **no está verificado por build** |
 | **`tmpfs: /tmp` del signer en prod** | Ya no cubre el workspace, que se movió a `/var/lib/deasy-signer`. Volverlo a RAM exige `--mount type=tmpfs,tmpfs-mode=0700` con uid: la sintaxis corta dejaría la raíz `root:root 1777`, que es el problema que se cerró |
 | **26 ficheros migrados a `httpClient` sin red unitaria** | Tres no se pudieron ejercitar ni en navegador: `FirmarPdf.vue`, `VerifyEmail.vue`, `SessionExpiryModal.vue` |
-| **El contrato de errores no se cumple** | El backend usa hoy **15 formas distintas** de responder un error en 309 respuestas, y **han aparecido dos nuevas** desde el censo. El plan está en [`referencia/contrato-errores-api.md`](./referencia/contrato-errores-api.md) §6, fases B–G, **ninguna empezada**: quedan ~114 lecturas manuales de `.data.error`/`.data.message` en 33 ficheros del frontend |
+| **El contrato de errores no se cumple** | El backend responde los errores de muchas formas a la vez, y **siguen apareciendo nuevas**. **La cifra vive en un solo sitio** (regla 4 del [CLAUDE.md](./CLAUDE.md)): el censo y su remedición están en [`referencia/contrato-errores-api.md`](./referencia/contrato-errores-api.md) §2 — la que decía aquí no se reproducía. El plan es su §6, fases B–G, **ninguna empezada**, y **empieza por el frontend** (fase B). El defecto 1.8 ya dejó **una sola doctrina escrita**, así que la deuda ha dejado de crecer por desinformación; lo que queda es migrar. Antes de la fase C, leer la nota del §6: **no hay error handler central** |
 | **El botón de sincronizar del admin llama a endpoints borrados** | Herencia del frente 0: su sub-paso 9 era el único de frontend y se quedó fuera. `apiConfig.js:101-102` declara `sync-status` y `resync`; `AdminTableManager.vue:796,804` y `AdminRecordViewerModal.vue:180-188,286-318` cablean el badge y el botón. El backend los borró en el sub-paso 8, así que **hoy dan 404 al pulsarlos** — un botón visible en el admin que no puede funcionar. Verificado el 2026-08-14. Son ~30 líneas en 3 ficheros, y **el criterio de cierre es el navegador**, no el lint |
 | **Duplicación de `createZipArchive`** | Copiado en `templateArchive.js` y `user_controler.storage.js`. Es el 40,5 % de duplicación de `templateArchive` |
 | **`deasy-analytics` es un contenedor vacío desplegado en QA y en producción** | `docker/analytics/Dockerfile` son 9 líneas que acaban en `CMD ["sleep","infinity"]`: sin `COPY`, sin `pip install`, y **no existe ningún directorio `analytics/` en el repo**. Aun así se construye en cada push, se publica en GHCR y corre con `restart: always` (`docker/compose.prod.yml:92`). **Decidir: construirlo o sacarlo del pipeline.** Mantener el sobre vacío cuesta build, superficie en prod y confusión documental |
@@ -694,7 +701,7 @@ problemas que ningún frente de aquí cubría. **Las tareas están allí**, no e
 | **D2** | Un vocabulario de estados, no cinco | `task_items.status` está definido en **5 sitios con 3 alfabetos**, y los dos grupos **no comparten ni un literal**. Efecto vivo: el panel cuenta `completada` como cerrado; el motor de relevos lo reasigna |
 | **D3** | Migraciones versionadas | El esquema se reaplica entero en cada arranque (`postgres_initializer.js:23-40`). Idempotente para crear, **incapaz de alterar**. Es el mayor riesgo operativo de la capa |
 | **D4** | Repositorios **por agregado** (10, no 67) | Cierra la fuga de capa del frente 8: `user_controler.queries.js` → `UserWorkspaceRepository` |
-| **D5** | Matar el traductor de dialecto | `config/postgres.js`: **241 cognitiva en 391 ncloc**, el más denso del repo, y los defectos 1.5/1.6/1.11 salieron todos de ahí. **D5-b está ⛔ hasta censar los call sites del 1.11** |
+| **D5** | Matar el traductor de dialecto | `config/postgres.js`: **241 cognitiva en 391 ncloc**, el más denso del repo, y los defectos 1.5/1.6/1.11 salieron todos de ahí. **D5-b está ⛔ hasta cerrar D5-a** — el cerrojo del 1.11 se retiró al cerrarse su censo (2026-08-14) |
 | **D6** | Validación por esquema en el borde | 0 dependencias de validación; tres capas artesanales desconectadas, y las rutas fuera del CRUD admin sin ninguna |
 
 **No contradice nada de lo de abajo.** Rechaza la clase por tabla y el ORM por el mismo criterio que

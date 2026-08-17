@@ -12,10 +12,11 @@
     "test:char": "node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs",
     "test:char:bootstrap": "node tests/characterization/setup/bootstrap_system.mjs",
     "test:char:seed": "node tests/characterization/setup/seed_execution.mjs",
-    "test:char:fixture": "node scripts/reset.mjs db --yes && npm run test:char:bootstrap && npm run test:char:seed",
+    "test:char:fixture": "node scripts/reset.mjs db storage --yes && npm run test:char:bootstrap && npm run test:char:seed",
     "test:char:run": "npm run test:char:fixture && npm run test:char",
     "test:char:capture": "npm run test:char:fixture && SNAPSHOT_MODE=update npm run test:char",
     "check:imports": "node scripts/check_missing_imports.mjs",
+    "check:params": "node scripts/audit_bindparams.mjs",
     "recover:admin": "node scripts/bootstrap_admin_recovery.mjs",
     "seed:dev": "node scripts/seed_dev_rich.mjs",
     "seed:certs": "node scripts/generate_demo_certificates.mjs"
