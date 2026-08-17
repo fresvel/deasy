@@ -191,7 +191,7 @@
     .deasy-dialog-root .deasy-dialog-header button {
       background: var(--color-white);
       color: var(--color-icon);
-      border: 1px solid var(--color-line-field);
+      border: 1px solid var(--color-line-strong);
     }
 
     .deasy-dialog-root .deasy-dialog-header button:hover {

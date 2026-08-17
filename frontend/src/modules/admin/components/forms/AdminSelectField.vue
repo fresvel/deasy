@@ -13,7 +13,7 @@
       <slot />
     </select>
     <span
-      class="pointer-events-none absolute inset-y-px right-px flex w-10 items-center justify-center rounded-r-lg border-l border-line-field bg-surface text-[#7a869a] transition-colors"
+      class="pointer-events-none absolute inset-y-px right-px flex w-10 items-center justify-center rounded-r-lg border-l border-line-strong bg-surface text-[#7a869a] transition-colors"
       aria-hidden="true"
     >
       <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none">

@@ -106,7 +106,6 @@ const META = {
   "icon":           ["#ffffff", 3.0, "icono"],
   "line":           ["#ffffff", 3.0, "separador (no es limite de control)"],
   "line-strong":    ["#ffffff", 3.0, "limite"],
-  "line-field":     ["#ffffff", 3.0, "limite de control (1.4.11)"],
   "surface":        ["#ffffff", 1.0, "fondo"],
   "success":        ["#ffffff", 4.5, "estado"],
   "danger":         ["#ffffff", 4.5, "estado"],
@@ -192,7 +191,7 @@ if (sinHex.length) {
    decision de diseno; lo unico que se automatiza es a que ESCALON de esa familia se ancla. */
 const FAMILIA = {
   primary: "brand", navy: "gray", strong: "gray", body: "gray", muted: "gray",
-  icon: "gray", line: "gray", "line-strong": "gray", "line-field": "gray", surface: "gray",
+  icon: "gray", line: "gray", "line-strong": "gray", surface: "gray",
   success: "success", danger: "error", warning: "warning", pending: "orange",
   "action-view": "blue-light", info: "blue-light",
   /* Sin familia en TailAdmin: `accent` (turquesa). Se queda con su hex propio. Los dos que le
@@ -221,7 +220,7 @@ const f = (n) => n.toFixed(2).padStart(5);
 const BASE = {
   "primary": 4.84, "info": 5.86, "accent": 2.64, "navy": 17.75, "strong": 14.70,
   "body": 10.46, "muted": 7.69, "icon": 7.69, "line": 1.24, "line-strong": 1.47,
-  "line-field": 1.47, "surface": 1.05, "success": 5.41, "danger": 6.57, "warning": 5.43,
+  "surface": 1.05, "success": 5.41, "danger": 6.57, "warning": 5.43,
   "pending": 5.52, /* `action-upload` estuvo aqui con 11.45. Murio en F4 (2026-08-16) con su variante. */
   "white": 1.00, "navy-deep": 17.84, "gold": 2.10,
 };

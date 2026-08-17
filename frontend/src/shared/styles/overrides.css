@@ -126,7 +126,7 @@ textarea:focus {
    colapsaron sobre la receta el 2026-08-15.) */
 .deasy-control,
 .admin-select-field {
-  border-color: var(--color-line-field);
+  border-color: var(--color-line-strong);
 }
 
 /* ⚠️ `.deasy-control` ENTRA AQUI EL 2026-08-15 (F4) y no antes, y el motivo es una trampa de capas

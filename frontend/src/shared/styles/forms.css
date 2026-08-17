@@ -488,7 +488,7 @@
     /* EL CONTROL DE TEXTO CANONICO — 2026-08-13.
        Sustituye a las CUATRO variantes del mismo campo que convivian en administracion, cada una
        con su propia idea de la forma: `AdminInputField` (`rounded-2xl` + `border-line-strong` +
-       `text-body`), `AdminSelectField` (`rounded-[10px]` + `border-line-field` + `text-strong` +
+       `text-body`), `AdminSelectField` (`rounded-[10px]` + `border-line-strong` + `text-strong` +
        `font-medium`), `AdminLookupField` (sobre una clase FANTASMA que ningun CSS declaraba) y las
        15 copias sueltas de `AdminDraftArtifactModal`. Eran el mismo control escrito de cuatro
        maneras, y las diferencias no eran decisiones: eran deriva.
@@ -528,7 +528,7 @@
            declaraban. Medido el 2026-08-15: gray-200 en la receta y gray-300 en las otras TRES
            familias que entonces existian. La receta era la unica desalineada — y hoy es la unica
            que queda, porque las tres se colapsaron sobre ella. */
-        border-color: var(--color-line-field);
+        border-color: var(--color-line-strong);
         /* DESHABILITADO — la receta completa, no media. Le faltaban las dos senales que hacen
            que un campo bloqueado se LEA como bloqueado en vez de solo resistirse: el borde baja
            un escalon (`gray-100`, mas claro que el `gray-300` normal) y el marcador de posicion

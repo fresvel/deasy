@@ -267,10 +267,11 @@
        ⚠️ Los tres bordes siguen POR DEBAJO de los 3:1 que pide WCAG 1.4.11, como antes.
        Subirlos repinta 228 controles y esta decidido que es un rediseno aparte. */
     --color-line: var(--color-gray-200);          /* 1.25 -> 1.24  separadores y marcos */
-    /* Mismo caso que `muted`/`icon`: igual valor, roles distintos. El borde de un CONTROL y el
-       borde fuerte de una superficie no tienen por que moverse juntos. Ver la nota de arriba. */
+    /* 📌 AQUI VIVIA `--color-line-field`, con el mismo valor que este. Se colapso el 2026-08-17,
+       y la asimetria con `muted`/`icon` es deliberada, no un descuido: aquel tiene 90 usos en 40
+       ficheros —separarlo despues costaria caro— y este tenia **7 en 6**. Cuando deshacer la
+       decision es barato, la decision se toma; cuando es caro, se conserva la opcion. */
     --color-line-strong: var(--color-gray-300);   /* 1.46 -> 1.47 */
-    --color-line-field: var(--color-gray-300);    /* 1.35 -> 1.47  bordes de control */
     --color-surface: var(--color-gray-50);        /* 1.05 -> 1.05 */
 
     /* UN color por estado, y es el OSCURO: el unico que cumple en los dos usos, icono (3:1)
