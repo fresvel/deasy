@@ -429,6 +429,23 @@ ruta en el DOM**, así que un cambio de orden da diferencias falsas.
    regla entera. Con `style` faltaba el `background` y parecía que el hover solo movía el borde.
    El navegador del dueño sí tiene ratón: lo que no se puede es *comprobarlo* desde aquí.
 
+#### 5.ª trampa: `getComputedStyle` devuelve un objeto VIVO, y medir estados en bucle miente
+
+Dos errores que costaron seis mediciones contradictorias el 2026-08-17, midiendo el foco y el error
+de los controles:
+
+1. **`getComputedStyle(e)` no es una foto: es una vista.** Si guardas el objeto y lo lees después,
+   te devuelve el estado **de cuando lo lees**, no el de cuando lo pediste. Guardar
+   `const antes = getComputedStyle(e)` y comparar con `después` al final del script da siempre
+   iguales, porque son el mismo objeto. **Hay que copiar el valor a `String()` en el momento.**
+
+2. **Medir `:focus` en un bucle contamina.** Enfocar el segundo elemento apaga el primero, y un
+   `blur()` no se refleja instantáneamente. La lectura del caso *n* acaba describiendo el estado del
+   caso *n+1*. Un caso por llamada, o inspeccionando la cascada en vez del computado.
+
+Y el corolario: cuando una medición contradice a la anterior sin que hayas tocado nada, **sospecha
+del instrumento antes que del CSS**. Aquí el CSS estaba bien las seis veces.
+
 ### Cómo se ENTREGA un cambio visual — obligatorio, no cortesía
 
 Verificar no basta: **el dueño tiene que poder ver lo mismo que tú viste, sin adivinar dónde.** Un

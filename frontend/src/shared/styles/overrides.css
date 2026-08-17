@@ -64,87 +64,17 @@
     }
 }
 
-/* ------------------------------------------------------------------------------------
-   LOS CONTROLES DE FORMULARIO. Las dos reglas de abajo van FUERA DE CAPA a proposito:
-   suprimen 83 radios, 44 bordes y 80 focos escritos a mano sobre los 228 controles del
-   proyecto. Si las capas, resucitan de golpe. Decidir borde y foco es §4.2; el radio, F5.
+/* ══ LOS CONTROLES DE FORMULARIO SE FUERON A `forms.css` — 2026-08-17, F6.L2 ═══════════════
+   Eran cinco reglas fuera de capa: el fondo y el radio de todo control, su color de borde, el
+   foco, y dos que subian el borde de `.deasy-auth-field` y `.deasy-control` a gray-300.
 
-   Estan partidas en tres —elemento como suelo, clases encima— porque agrupadas hacian que
-   `--color-line-field` y `--color-line-strong` no llegaran nunca al DOM.
-   ------------------------------------------------------------------------------------ */
-.deasy-auth-field,
-/* ⚠️ NO PARTAS ESTA REGLA POR DECLARACION. Se intento bajar el `background-color` a
-   `@layer components` («no tapa nada») y aparecieron 10 nodos: dos controles con
-   `bg-…/alfa` que salian blancos y ocho `input` ocultos que perdian el fondo. */
+   Las tres primeras son ahora el `@layer base` de `forms.css`. Las dos ultimas **se borraron sin
+   sustituto**: eran duplicados literales de `auth.css:29` y `forms.css:531`, y solo existian para
+   ganar por capa a la regla de elemento de aqui arriba. Muerta esa, sus ficheros valen solos.
 
-input,
-select,
-textarea {
-  background-color: var(--color-white);
-  border-radius: 0.5rem;
-}
-
-/* El suelo: cualquier control sin clase de componente. */
-input,
-select,
-textarea {
-  border-color: var(--color-line);
-}
-
-/* ══ EL FOCO, Y ES UNO SOLO ══════════════════════════════════════════════════════════
-   Decidido y ENCENDIDO el 2026-08-13. Hasta hoy habia dos problemas a la vez:
-
-   · **80 `focus:border-*` en las plantillas que no pintaban NADA.** La regla de elemento de
-     aqui arriba esta fuera de capa y les ganaba a todas, asi que el borde del campo enfocado
-     no cambiaba nunca. Estaban escritas, se leian bien, y eran mentira.
-   · **31 `focus:ring-*` de color que SI pintaban**, porque la utilidad de Tailwind vive en
-     `@layer utilities` y le gana al `--focus-ring` que pone el componente. Resultado: el
-     anillo era azul cielo en unos campos, azul rey en otros y de marca en el resto.
-
-   Las 111 se retiraron de las plantillas y el foco pasa a declararse UNA vez, aqui. El borde
-   usa `--color-brand-300`, que es la receta de TailAdmin para el campo enfocado; el anillo es
-   `--focus-ring`, que ya era el unico declarado. Va FUERA DE CAPA por lo mismo que su regla
-   hermana: mientras esa no baje, esta tampoco puede.
-   ═══════════════════════════════════════════════════════════════════════════════════ */
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--color-brand-300);
-  box-shadow: var(--focus-ring);
-  outline: none;
-}
-
-/* ⚠️ FUERA DE CAPA: si bajase, ganaria el `:focus` de `forms.css` y los campos cambiarian
-   de borde al recibir el teclado. El indicador no se pierde hoy — el `box-shadow:
-   var(--focus-ring)` de esa misma regla si aplica. Encenderlo es §4.2. */
-.deasy-auth-field {
-  border-color: var(--color-line-strong);
-}
-
-/* ⚠️ FUERA DE CAPA por lo mismo: el `:focus` capado de `.deasy-control` en `forms.css`. §4.2.
-   (Antes esta nota hablaba de `.deasy-filter-control` y `.deasy-filter-search-input`; las dos se
-   colapsaron sobre la receta el 2026-08-15.) */
-.deasy-control,
-.admin-select-field {
-  border-color: var(--color-line-strong);
-}
-
-/* ⚠️ `.deasy-control` ENTRA AQUI EL 2026-08-15 (F4) y no antes, y el motivo es una trampa de capas
-   que ya costo tres depuraciones en este fichero: la receta declara su borde en `forms.css`, dentro
-   de `@layer components`, y **no llegaba al DOM**. Le ganaba la regla de elemento de mas arriba
-   —`input { border-color: var(--color-line) }`, sin capa—, asi que la receta del sistema salia con
-   `gray-200` mientras las otras tres familias de control salian con `gray-300`. La unica
-   desalineada era la que manda. Medido en el DOM, no leido.
-
-   Cuando §4.2 baje de capa este bloque, las nueve entradas se van juntas y la declaracion de
-   `forms.css` empieza a valer sola. */
-
-/* `.admin-select-field` tenia aqui dos reglas propias, y las dos se colapsaron el 2026-08-13:
-   · `border-radius: 10px` — un numero magico que existia SOLO para diferenciarse del 0.5rem
-     de la regla de elemento. Los 20 selectores de administracion pasan a 8 px, que es el radio
-     de control del sistema (`rounded-lg`, el mismo que usa la receta adoptada).
-   · `.admin-select-field:focus` — ahora lo cubre el `select:focus` canonico de arriba. Su borde
-     iba a `--color-primary` y el canonico va a `--color-brand-300`: el foco es UNO. */
+   Lo que este bloque provocaba, y que L2 arregla: 223 utilidades de plantilla que no llegaban al
+   DOM (retiradas en L1), el estado de error del campo invisible, y los 40 campos de autenticacion
+   pintando 8 px de radio cuando su receta pide 16. */
 
 @layer components {
     /* LA CABECERA VA UN ESCALON POR ENCIMA DEL SEÑALADO DE FILA, y hasta hoy iban en el MISMO

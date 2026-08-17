@@ -1,3 +1,75 @@
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   EL SUELO DE TODO CONTROL — F6.L2, 2026-08-17
+   ══════════════════════════════════════════════════════════════════════════════════════════════
+
+   Lo que recibe un `<input>`, `<select>` o `<textarea>` que no lleva clase de componente. Vive en
+   `@layer base` a proposito: es un valor por defecto, y tiene que PERDER contra la receta de
+   cualquier componente y contra cualquier utilidad de la plantilla. Justo lo contrario de lo que
+   hacia hasta hoy.
+
+   ── DE DONDE VIENE, Y POR QUE IMPORTA ─────────────────────────────────────────────────────────
+
+   Estas tres reglas vivian en `overrides.css` **fuera de `@layer`**, y una regla sin capa gana
+   SIEMPRE a una capada por especifica que sea. Consecuencias medidas, ninguna querida:
+
+     · **223 utilidades escritas sobre controles no llegaban al DOM** — radios, bordes, fondos y
+       focos. Se retiraron en L1 tras comprobar que no pintaban.
+     · **El estado de error del campo no se veia.** `deasy-control--error` pide borde rojo y fondo
+       rosa; llegaba solo el color del texto. Lo usa el formulario de crear cuenta.
+     · **Los 40 campos de autenticacion** declaran 16 px de radio y pintaban 8.
+
+   Con el suelo aqui, las tres se arreglan solas: `components` va despues de `base`, asi que la
+   receta de cada componente vuelve a mandar sobre lo suyo.
+
+   ⚠️ `.deasy-auth-field` ESTABA en la lista de selectores de la primera regla, y era un accidente:
+   todos sus consumidores son `<input>` o `<select>`, asi que `input` ya los alcanza. Lo unico que
+   añadia era imponerles 8 px de radio por encima del `rounded-2xl` de su propia receta. Fuera.
+
+   ⚠️ NO PARTAS LA PRIMERA REGLA POR DECLARACION. Se intento bajar solo el `background-color` y
+   aparecieron 10 nodos: dos controles con `bg-…/alfa` que salian blancos y ocho `input` ocultos
+   que perdian el fondo. Fondo y radio viajan juntos.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+@layer base {
+    input,
+    select,
+    textarea {
+        background-color: var(--color-white);
+        border-radius: var(--radius-lg);
+        color: var(--color-body);
+    }
+
+    /* EL BORDE EN REPOSO SE DECLARA UNA SOLA VEZ, Y ES ESTE.
+       Era `--color-line` (gray-200) y sube a `--color-line-strong` (gray-300), que es lo que ya
+       declaraban por su cuenta la receta del sistema (`.deasy-control`, 228 usos) y la de
+       autenticacion, y lo que **42 plantillas escribian a mano** sobre controles sueltos antes de
+       que L1 lo retirara. El gray-200 era el suelo accidental, no el valor del sistema.
+
+       ⚠️ Y no es cosmetica: mientras cada receta declaraba SU borde en reposo con una clase,
+       ninguna regla de ELEMENTO podia ganarle — ni el `:focus` de aqui abajo ni el estado de
+       error, que es (0,1,0) igual que ellas y perdia por orden de import. Por eso el campo en
+       error no se veia. Declarandolo aqui una vez y quitandolo de las recetas, los ESTADOS pasan
+       a ser lo unico que reclama esa propiedad, y ganan sin trucos de especificidad. */
+    input,
+    select,
+    textarea {
+        border-color: var(--color-line-strong);
+    }
+
+    /* EL FOCO, Y ES UNO SOLO.
+       Hasta hoy habia DOS azules conviviendo: los controles del sistema se enfocaban con
+       `--color-primary` (#465fff) y los campos sin clase con `--color-brand-300` (#9cb9ff), que
+       era la receta de TailAdmin. Gana el primero, y no por gusto: **el palido da 1,9:1 contra
+       blanco y el minimo de WCAG 1.4.11 para un indicador de foco es 3:1**. El fuerte da 4,84.
+       El anillo (`--focus-ring`) nunca estuvo en disputa: es un `box-shadow` que nadie pisa. */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+}
+
 @layer components {
 /* El `mb-4` es la separacion con lo que viene DEBAJO, que casi siempre es una tabla. Sin el,
        el borde inferior de este contenedor y el borde superior de la tabla quedan pegados y se
@@ -141,10 +213,11 @@
        El anillo del proyecto es UNO y se llama `--focus-ring` (`tokens.css`). El dia que la
        fase 6 cape la regla suelta de `overrides.css`, hay que decidir ahi si el foco cambia de
        color por estado — que es la decision §4.2, no una linea de este fichero. */
-    .deasy-control:focus {
-        @apply bg-white;
-        border-color: color-mix(in srgb, var(--color-primary) 44%, transparent);
-    }
+    /* ══ AQUI HABIA UN SEGUNDO FOCO, Y PERDIA SIEMPRE — borrado el 2026-08-17 (F6.L2) ══════
+       Declaraba el borde como `color-mix(--color-primary 44%, transparent)`, o sea un azul
+       palido y semitransparente, y un `bg-white` que el suelo ya pone. Convivia con el foco
+       canonico de mas abajo —misma clase, misma especificidad, misma capa— que va despues y le
+       ganaba por orden. Nunca se vio. */
 
     /* ⚠️ EL PLACEHOLDER SE QUEDA EN `--color-muted`, el mismo que el del campo normal de
        arriba. Antes esta regla lo repintaba de `red-300`: **1.92:1**, y WCAG trata el
@@ -396,16 +469,19 @@
        elemento de `overrides.css` impone 8 px desde fuera de capa— asi que ya se veia a 8. */
 }
 
-/* ⚠️ SE QUEDA SIN CAPA — EL FOCO DE **TODOS** LOS CONTROLES. Era el de los 49 del dossier y
-   desde el colapso de las cuatro familias (2026-08-15, F4) lo es de los 228. Capada perderia POR
-   CAPA —fuera de capa vale mas que cualquier especificidad— frente al grupo de `overrides.css`
-   que fija el borde en reposo, y los controles se quedarian con `--color-line-field` tambien al
-   recibir el teclado. El `box-shadow: var(--focus-ring)` no se pierde; el borde si. §4.2. */
-
-.deasy-control:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: var(--focus-ring);
+/* EL FOCO DE LA RECETA — capado el 2026-08-17 (F6.L2).
+   Estuvo fuera de `@layer` porque el grupo de `overrides.css` que fijaba el borde en reposo
+   tambien lo estaba, y capar esta sola la habria hecho perder POR CAPA. Aquel grupo es ahora el
+   suelo de `@layer base` de este mismo fichero, asi que `components` le gana y esta regla vale
+   sin necesidad de saltarse el sistema.
+   Declara el mismo azul que el suelo, y eso es deliberado: el foco es UNO. Se conserva la regla
+   porque su especificidad la hace ganar tambien a los estados de la propia receta. */
+@layer components {
+    .deasy-control:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+    }
 }
 
 @layer components {
@@ -520,7 +596,12 @@
            ⚠️ El RADIO y el COLOR de borde siguen viniendo de la regla de elemento sin capa de
            `overrides.css`, que gana a esto. `rounded-lg` se escribe igual porque es el mismo
            valor (8 px) y porque el dia que esa regla baje de capa, esto ya dice la verdad. */
-        @apply h-11 w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-body shadow-theme-xs transition-colors duration-150;
+        /* ⚠️ NI `bg-white` NI `text-body`: son del SUELO, no de la receta — F6.L2, 2026-08-17.
+           Mientras esta clase los declaraba, el estado de error no podia pisarlos: `--error` es
+           (0,1,0) igual que ella, y el fondo rosa y el texto rojo se quedaban en el camino. Medido:
+           un campo con `deasy-control deasy-control--error` recibia el borde rojo y **nada mas**.
+           La regla que queda es geometria; el color de partida lo pone `@layer base`. */
+        @apply h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs transition-colors duration-150;
         @apply placeholder:text-muted;
         /* ⚠️ EL BORDE SE DECLARA AQUI, y hasta hoy no lo hacia. Su receta es `border-gray-300`; al
            no decirlo, caia al `--color-line` (gray-200) de la regla de elemento de `overrides.css`
@@ -528,7 +609,8 @@
            declaraban. Medido el 2026-08-15: gray-200 en la receta y gray-300 en las otras TRES
            familias que entonces existian. La receta era la unica desalineada — y hoy es la unica
            que queda, porque las tres se colapsaron sobre ella. */
-        border-color: var(--color-line-strong);
+        /* (El borde en reposo ya no se declara aqui: lo pone el suelo de `@layer base` de este
+           mismo fichero, para que los ESTADOS puedan ganarle. Ver la nota de arriba.) */
         /* DESHABILITADO — la receta completa, no media. Le faltaban las dos senales que hacen
            que un campo bloqueado se LEA como bloqueado en vez de solo resistirse: el borde baja
            un escalon (`gray-100`, mas claro que el `gray-300` normal) y el marcador de posicion

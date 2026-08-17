@@ -25,9 +25,12 @@
     }
 
     .deasy-auth-field {
-        @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-muted;
-        border-color: var(--color-line-strong);
-        color: var(--color-body);
+        @apply block w-full rounded-2xl border px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-muted;
+        /* El borde en reposo lo pone el suelo de `forms.css` (@layer base) desde F6.L2, y se
+           quita de aqui a proposito: mientras esta clase lo declaraba, le ganaba por orden de
+           import a `.deasy-control--error` —que este mismo formulario aplica— y **el campo en
+           error no se veia**. */
+
     }
 
     .deasy-auth-field:-webkit-autofill,
