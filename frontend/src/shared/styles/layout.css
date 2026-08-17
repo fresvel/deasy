@@ -58,6 +58,25 @@
         @apply flex shrink-0 items-center gap-1.5 sm:gap-2;
     }
 
+    /* ══ LA CELDA DE MARCA DEL HEADER — la columna de la barra, arriba ═════════════════════════
+       Mide lo que mide la `aside` (el `xl:w-…` lo pone la plantilla segun `menuOpen`) y centra el
+       logo dentro, que es exactamente el tratamiento que el avatar tiene abajo: centro 141 con la
+       barra abierta, 44 colapsada. Antes el logo iba en `absolute left-3` y su centro valia 32 en
+       LOS DOS estados —ni una cosa ni la otra—, y el boton de menu ocupaba 80..116 con el canto de
+       la barra colapsada en 88: partido por la linea. Eso es lo que el dueño vio como
+       «desordenados respecto del aside».
+
+       `shrink-0` no es adorno: sin el, el flex le roba ancho a la celda en cuanto el titulo de la
+       pagina aprieta, y la alineacion se perderia justo en las pantallas donde mas se nota.
+
+       El `pl-3` es solo para el tramo SIN barra: por debajo de `xl` la `aside` esta fuera de
+       pantalla y no hay columna que seguir, asi que la celda mide lo que mide el logo y este
+       necesita su margen contra el borde. En `xl` manda el ancho y el padding estorbaria —
+       descentraria el logo dentro de la columna, que es justo lo que se viene a arreglar. */
+    .deasy-header-marca {
+        @apply flex shrink-0 items-center justify-center pl-3 transition-all duration-300 xl:pl-0;
+    }
+
     .deasy-context-header {
         @apply flex min-w-0 items-center gap-3;
     }

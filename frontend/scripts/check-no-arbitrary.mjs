@@ -71,7 +71,17 @@ import { join, resolve } from "node:path";
  * decir un numero que ya decia otro sitio. Ojo con la sintaxis — `w-(--var)` es el atajo de v4
  * para `w-[var(--var)]` y NO cuenta como arbitrario, que es justo lo que se quiere: el valor pasa
  * a tener un nombre. */
-const TECHO = { total: 186, "text-": 17, "rounded-": 11, "shadow-": 16 };
+/* 2026-08-17 · 185 — muere el relleno izquierdo del header (68 px, y 80 a partir de `xl`). Existia
+ * para reservarle sitio a un logo posicionado en absoluto; al pasar el logo a una celda del flujo
+ * que mide lo que mide la barra lateral, el hueco lo da el ancho de la celda. Quinto arbitrario
+ * que cae por lo de siempre: era un numero a mano para imitar otro que ya existia.
+ *
+ * 🪤 Y ESTE CONTADOR LEE LOS COMENTARIOS. Al documentar ese cambio, citar en prosa las dos
+ * utilidades que se retiraban las dejo VIVAS en el censo, y el gate salio rojo (187 > 186) por un
+ * commit que solo restaba. Es la trampa que `tokens.css` corta para Tailwind con `@source not`,
+ * vista por el otro lado: alli la prosa CREA la utilidad, aqui la MANTIENE. En un comentario,
+ * describe el valor —«68 px»—, no escribas la clase. */
+const TECHO = { total: 185, "text-": 17, "rounded-": 11, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

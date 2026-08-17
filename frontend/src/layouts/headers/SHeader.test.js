@@ -59,3 +59,41 @@ describe("SHeader — el logo no es el boton", () => {
     expect(boton(wrapper).attributes("href")).toBeUndefined();
   });
 });
+
+/**
+ * LA CELDA DE MARCA sigue el ancho de la barra lateral. Si dejara de seguirlo, el header quedaria
+ * alineado en UNO de los dos estados y torcido en el otro, que es justo de donde venia la queja:
+ * con la barra colapsada el canto esta en x=88 y el boton ocupaba 80..116 — partido por la linea.
+ */
+describe("SHeader — la celda de marca sigue a la barra", () => {
+  const celda = (wrapper) => wrapper.find(".deasy-header-marca");
+
+  it("con la barra abierta mide lo que la barra", () => {
+    expect(celda(montar({ menuOpen: true })).classes()).toContain("xl:w-(--ancho-barra-lateral)");
+  });
+
+  it("con la barra colapsada mide lo que el rail", () => {
+    expect(celda(montar({ menuOpen: false })).classes()).toContain("xl:w-22");
+  });
+
+  it("los dos anchos son EXCLUYENTES: nunca los dos a la vez", () => {
+    for (const menuOpen of [true, false]) {
+      const anchos = celda(montar({ menuOpen })).classes().filter((c) => c.startsWith("xl:w-"));
+      expect(anchos).toHaveLength(1);
+    }
+  });
+
+  it("el logo vive DENTRO de la celda, no suelto en el header", () => {
+    expect(celda(montar({ menuOpen: true })).find('[aria-label="Ir al inicio"]').exists()).toBe(true);
+  });
+
+  /* El vinculo solo existe de `xl` para arriba: por debajo la `aside` esta fuera de pantalla y no
+     hay columna con la que alinearse. Si estas clases perdieran el prefijo, el header reservaria
+     282 px de barra en un movil de 375. */
+  it("el vinculo con la barra es SOLO de xl para arriba", () => {
+    for (const menuOpen of [true, false]) {
+      const anchos = celda(montar({ menuOpen })).classes().filter((c) => c.includes("w-"));
+      expect(anchos.every((c) => c.startsWith("xl:"))).toBe(true);
+    }
+  });
+});
