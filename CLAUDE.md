@@ -218,7 +218,7 @@ va detrás es literalmente el nombre de la utilidad (`--color-line` → `border-
 un color suelto en el CSS**: si necesitas uno, usa el token; si no existe, decláralo en `tokens.css`
 **con su familia**, no en el sitio donde lo gastas.
 
-Cuatro cosas que cuestan caro y no son evidentes:
+Seis cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba cinco):
 
 1. **`pnpm run lint:css` está en CERO errores y ahí se queda.** Si tu cambio lo sube, has metido un
    color suelto. Ojo: la regla `color-no-hex` **no ve** los hex dentro de `@apply` ni los
@@ -240,6 +240,14 @@ Cuatro cosas que cuestan caro y no son evidentes:
    son color explícito, no un tema. Importa porque las recetas de TailAdmin traen 1024 clases
    `dark:` y sin protección se activarían solas en un sistema en oscuro. Hay tres capas:
    `@custom-variant` en `tokens.css`, `vue/no-restricted-class` y `pnpm run check:no-dark`.
+
+6. **Quién tapa a quién tiene escala, y un modal NO lleva altura.** `z-index` se escribe siempre con
+   nombre (`z-(--z-…)`, nunca un número) y hay dos ejes: 1-2 cifras es dentro de un contenedor, 4
+   cifras es toda la página, con la banda 1000-1999 reservada a librerías. **Un modal no declara
+   nada**: `AppModalShell` se coloca solo al abrirse y se libera al cerrarse. Hubo cinco niveles
+   declarados y duraron dos días — `openProcessWizard()` se llama desde siete sitios a dos
+   profundidades, así que cualquier número fijo está mal en algún camino. Lo sostiene
+   `check:z-index` con tres señales a techo cero. Detalle en `frontend/CLAUDE.md` §5.5.
 
 **Las reglas completas están en `frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. El plan,
 la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. La primera vuelta

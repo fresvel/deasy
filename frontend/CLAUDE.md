@@ -524,7 +524,48 @@ nivel que ya existe.
 el velo del modal (`--overlay-backdrop`) **no es una sombra**: es un fondo. Estaba contado como
 sombra y por eso parecía que había once.
 
-### 5.5 Densidad: cuidado con las tablas
+### 5.5 La altura es OTRA escala, y no se confunde con la elevación
+
+La sombra dice *cuánto se levanta algo*; la altura (`z-index`) dice *quién tapa a quién*. Son cosas
+distintas y la escala es distinta. Está en `tokens.css`, y **tiene dos ejes**:
+
+| magnitud | eje | qué es |
+|---|---|---|
+| 1-2 cifras | **local** | compites sólo con tus hermanos dentro de un contenedor posicionado |
+| 4 cifras | **global** | compites en toda la página |
+
+**La magnitud te dice en cuál estás.** Un contenedor posicionado abre su propio eje: dentro del
+lienzo del grafo, de un modal o de la barra superior, los números empiezan de cero y no ven a los de
+fuera. Y como los locales nunca se cruzan entre contenedores, **las mismas siete capas valen para
+todos** (`--z-capa-fondo|base|elemento|activo|controles|emergente|velo`). Antes cada componente se
+inventaba las suyas: once números distintos para el mismo problema.
+
+En el eje global hay bandas de 1000 con decenas dentro, y **la banda 1000-1999 está reservada a
+librerías** — Leaflet declara hasta 1000 y Vue Flow 1001.
+
+Tres cosas que hay que saber y no son evidentes:
+
+1. **Un modal NO lleva altura. Ninguna.** No la declares, no la pases, no la elijas. `AppModalShell`
+   se coloca solo al abrirse, un escalón por encima del más alto visible, y la libera al cerrarse.
+   Hubo una versión con cinco niveles declarados y **duró dos días**: `openProcessWizard()` se llama
+   desde siete sitios a dos profundidades distintas, así que cualquier número fijo está mal en algún
+   camino — el asistente se abría por debajo del editor que lo había lanzado y parecía que el botón
+   no hacía nada. **La altura de un modal es consecuencia de cuándo se abre, no una propiedad suya.**
+2. **Un `z-index` sobre un elemento `static` no hace nada** — salvo que sea un hijo de flex o grid,
+   donde sí aplica. Si lo que quieres es aislar un contenedor (encerrar los números de una librería,
+   por ejemplo), usa `isolate`: abre contexto de apilamiento sin depender de la altura y dice lo que
+   hace. El contenedor del mapa lo llevaba como un `z-10` que **parecía un no-op** y era lo único
+   que impedía que Leaflet tapara la barra superior.
+3. **Si algo se despliega dentro de un contenedor y no se ve, casi nunca es la altura: es que el
+   contenedor RECORTA** (`overflow`). Un eje no visible fuerza el otro a `auto`, así que un
+   `overflow-x-auto` heredado basta. Los dos problemas se parecen y no tienen nada que ver; subir el
+   número no arregla el segundo.
+
+El gate `check:z-index` lo sostiene con tres señales a techo cero — utilidad numérica en plantilla,
+`z-index` literal en el CSS propio y `zIndex` literal en JavaScript — y una única excepción
+declarada, que es el fichero que reparte (ver §6.2).
+
+### 5.6 Densidad: cuidado con las tablas
 
 La tabla de administración pinta **172 botones a la vez**. Todo lo sutil desaparece ahí y todo lo
 pesado satura. Es el peor caso del sistema: **si un componente se ve bien ahí, se ve bien en todas
@@ -546,6 +587,15 @@ byte. El sistema estaba ahí y se ignoraba.
 
 `vue/no-static-inline-styles` está en **error**. Un `style="..."` estático es una clase disfrazada.
 `:style` con valor calculado sí es legítimo (posiciones de firma sobre el PDF, anchos de barra).
+
+⚠️ **Ojo con `:style`: `allowBinding: true` deja pasar cualquier binding, incluso con literal.** Así
+sobrevivieron siete `:style="{ zIndex: 1090 }"` que ningún gate podía ver. Un literal dentro de un
+binding es un estilo estático con disfraz de cálculo.
+
+**La única excepción viva es `modalController.js`**, que escribe la altura en línea a propósito
+—porque una altura en línea gana a cualquier clase, y así puede colocar un modal sobre lo que ya
+haya abierto—. Es EL mecanismo, no un parche: ver §5.5. `check:z-index` exime **ese fichero**, no ese
+patrón: si aparece un segundo repartidor, salta.
 
 ### 6.3 `<style scoped>`: no queda ninguno, y no vuelvas a meter uno
 
