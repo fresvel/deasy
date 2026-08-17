@@ -20,7 +20,7 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 7.  **`test:char:run` resetea la base de dev.**
 
-8.  **`rounded-lg` vale 16px** en este frontend, no lo que dice la documentación de Tailwind: `theme.css` pisa el espacio de nombres de radios de Tailwind. La escala esta efectivamente invertida.
+8.  **El radio es la escala de Tailwind y hoy son tres pasos.** Esto decia lo contrario —que `rounded-lg` valia 16px y la escala estaba invertida porque `theme.css` pisaba el espacio de nombres `--radius-*`— y **era cierto hasta que se arreglo**: ese fichero ya no existe y `--radius-lg` vale `.5rem`, o sea los 8px de Tailwind. Lo que sorprende ahora es otra cosa: de los 22 valores de radio que llego a haber, el 81% de los usos ya estaba en **tres** (16, 12 y la pastilla), y el resto era la misma pieza escrita de varias maneras. Queda **un** radio arbitrario en todo el frontend, y es relativo a proposito (`5%`, escala con su caja); lo sostiene `check:no-arbitrary` con techo.
 
 9.  **La contraseña del gestor no sigue el patrón de las otras dos.** Está en `CLAUDE.md`, que no se publica.
 

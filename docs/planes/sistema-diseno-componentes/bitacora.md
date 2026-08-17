@@ -6,6 +6,60 @@
 > [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md)
 > y **sigue valiendo**: es donde están las trampas ya pagadas.
 
+## 2026-08-17 · F5.2 — el radio: la cola no era ruido, era una pieza repetida
+
+### El enunciado decía «no se sostiene»; el problema era otro
+
+Prometía que «el sistema tiene dos radios» no se sostiene, y apuntaba a que `rounded-lg` era el
+menos usado. Al medir, la conclusión es la contraria de lo que sugiere el enunciado: **no hay que
+inventar una escala, ya existe y la usa casi todo el mundo**.
+
+    16 px  218 usos  ┐
+    12 px  167 usos  ├── 434 de 534 = el 81 %
+    pastilla 49      ┘
+    …y 17 valores más, usados entre 1 y 3 veces cada uno
+
+Lo que había era una **cola**. Y la cola tampoco era ruido: los cinco valores por encima de 16 px
+(1.35 / 1.5 / 1.75 / 1.8 / 2rem) eran **la misma pieza escrita de cinco maneras** — el panel grande
+de `/home`, con su borde y su degradado, repartido entre cuatro ficheros. El dueño eligió colapsarlos
+a **16 px**, sabiendo que el panel pierde identidad frente a una tarjeta: a cambio, la escala queda en
+tres pasos.
+
+### Los dos últimos tenían respuesta medida, no de gusto
+
+- **El chevron del select** llevaba un radio interior de 9 px. Un radio interior es *el exterior menos
+  el borde*, y el campo mide 8 con borde de 1: tocaba 7. El 9 es correcto **para un campo de 10 px**,
+  que es lo que era `AdminSelectField` antes del control canónico — está escrito en el comentario de
+  `forms.css`. Al bajar el campo a 8, nadie bajó el interior. **No era un radio de diseño: era un
+  resto.** El dueño eligió 8 en vez de 7: pierde el sub-píxel de exactitud geométrica y gana que sea
+  un paso de la escala en vez de un arbitrario más. Medido: la caja no se sale del campo.
+- **El marco del logo** valía 14 px y no casaba con nada de su pantalla — la tarjeta de al lado pinta
+  12 y el botón 8. Ahora 12.
+
+### La trampa latente que apareció al mirarlo
+
+`AppLogo` ponía el radio en **dos ramas**: una al enmarcar y otra al ser enlace. Hoy no chocan porque
+ninguna de las cuatro vistas de autenticación enmarca un logo enlazado — pero el día que alguien lo
+hiciera, **dos utilidades de la misma especificidad se pelean y gana el orden de la hoja, no la
+intención**. Se colapsaron en un solo cálculo con precedencia explícita: manda el marco, que es la
+caja que se ve.
+
+### Y una lección sobre el instrumento, que me tocó pagar dos veces
+
+1. **Corrección a mí mismo:** dije que el gate contaba los comentarios de los `.css`. **No los
+   cuenta** —`check-no-arbitrary.mjs:105` los quita—; quien los contaba era mi script de censo. Por
+   eso el «22 radios distintos» estaba inflado por prosa. Comprobado en el CSS **construido**: de los
+   literales que sólo viven en comentarios no existe ni una regla.
+2. **Pero en un `.vue` sí cuentan, y con razón**, porque Tailwind escanea el fichero entero y emitiría
+   la clase. Lo comprobé escribiendo un comentario que citaba la clase que acababa de retirar: la
+   mantuvo viva. Es la norma «documenta la clase, no la escribas», y la incumplí dos veces en la misma
+   sesión — una en `surfaces.css`, donde además **rompí una prosa que documentaba historia** al
+   sustituirle los nombres, dejándola diciendo «16 y 16» como si fueran distintos.
+
+**La regla que queda:** en un comentario, cita la **medida**, no la clase.
+
+---
+
 ## 2026-08-17 · F5.3 — la altura, y por qué los niveles fijos duraron dos días
 
 > ⚠️ **Hueco declarado:** entre esta entrada y la del 15-ago falta lo de F3.4, F4, F4.C y F5.1. Se

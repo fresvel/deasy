@@ -58,10 +58,26 @@ const rootAttrs = computed(() => {
   return { to: props.to, "aria-label": props.ariaLabel };
 });
 
+/* EL RADIO VA UNA SOLA VEZ, Y A PROPOSITO.
+   Antes lo ponian las DOS ramas —14 px al enmarcar y 16 al ser enlace, y sin nombrarlas aqui: en
+   un `.vue` Tailwind LEE los comentarios, asi que citar la clase que se retira la mantiene viva— y
+   nadie las habia visto juntas porque hoy ninguna vista enmarca un logo enlazado. El dia que
+   alguien lo hiciera, dos utilidades de radio de la misma especificidad se pelean y **gana el
+   orden de la hoja de estilos, no la intencion**. Aqui la precedencia es explicita: manda el
+   marco, que es la caja que se ve.
+   Y el 14 px que tenia el marco no era un paso de la escala ni casaba con nada de su pantalla:
+   medido en la vista de entrada, la tarjeta de debajo pinta 12 y el boton 8. Ahora 12, como la
+   tarjeta con la que convive. */
+const claseRadio = computed(() => {
+  if (props.framed) return "rounded-xl";
+  return props.to ? "rounded-2xl" : "";
+});
+
 const rootClasses = computed(() => [
   "inline-flex min-w-0 items-center",
-  props.framed ? "rounded-[14px] border border-[rgba(15,53,118,0.08)] bg-white px-3 py-2 shadow-[0_10px_24px_rgba(11,31,63,0.06)]" : "",
-  props.to ? "transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[rgba(18,63,136,0.18)] rounded-2xl" : "",
+  claseRadio.value,
+  props.framed ? "border border-[rgba(15,53,118,0.08)] bg-white px-3 py-2 shadow-[0_10px_24px_rgba(11,31,63,0.06)]" : "",
+  props.to ? "transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[rgba(18,63,136,0.18)]" : "",
   props.className
 ]);
 
