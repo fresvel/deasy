@@ -6,18 +6,18 @@
       aria-label="Abrir chat"
       title="Abrir chat"
       @click="openLauncher" icon-only>
-      <IconMessages class="relative z-10 h-7 w-7 sm:h-8 sm:w-8" />
+      <IconMessages class="relative z-(--z-capa-base) h-7 w-7 sm:h-8 sm:w-8" />
     </AppButton>
 
     <div
       v-if="showChat"
-      class="fixed inset-0 z-95 bg-navy/30 backdrop-blur-[2px]"
+      class="fixed inset-0 z-(--z-velo-chat) bg-navy/30 backdrop-blur-[2px]"
       @click="closePanel"
     />
 
     <aside
       v-if="showChat"
-      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+      class="fixed inset-x-3 bottom-3 z-(--z-panel-chat) flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
       <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">

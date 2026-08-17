@@ -21,7 +21,7 @@
     <span
       v-show="open"
       role="tooltip"
-      class="absolute z-[1100] w-64 max-w-xs rounded-2xl bg-strong px-3 py-2 text-xs font-medium leading-snug text-white shadow-lg"
+      class="absolute z-(--z-capa-emergente) w-64 max-w-xs rounded-2xl bg-strong px-3 py-2 text-xs font-medium leading-snug text-white shadow-lg"
       :class="placementClass"
     >
       <slot>{{ text }}</slot>

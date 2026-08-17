@@ -2,7 +2,7 @@
   <div class="deasy-auth-page flex justify-center">
     <div class="deasy-auth-card flex max-w-4xl flex-col">
       <div class="relative shrink-0 overflow-hidden border-b border-line bg-white p-8 text-navy sm:p-10">
-        <div class="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+        <div class="relative z-(--z-capa-base) flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
             <AppLogo size="lg" class-name="mb-5" />
             <h1 class="text-3xl font-semibold tracking-tight">Términos y Condiciones</h1>

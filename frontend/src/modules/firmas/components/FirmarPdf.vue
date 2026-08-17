@@ -290,7 +290,7 @@
             @mousemove="handleMouseMove"
             @mouseleave="handleMouseLeave"
           >
-            <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-10 w-full"></canvas>
+            <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-(--z-capa-base) w-full"></canvas>
             
             <SignatureBox
               v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && previewBoxStyle.display !== 'none' && !isHoveringField"
@@ -769,13 +769,13 @@
       <div class="flex items-center pb-0">Validar documento</div>
       <AppCloseButton
         data-modal-dismiss
-        class="absolute right-5 top-4 z-20"
+        class="absolute right-5 top-4 z-(--z-capa-elemento)"
       />
     </template>
     <div class="px-6 pt-6 pb-4">
       <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-blue-light-50 rounded-full blur-2xl opacity-60"></div>
-        <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
+        <div class="flex-1 flex flex-col gap-2 relative z-(--z-capa-base) w-full">
           <label :for="fieldId('validationcedula')" class="font-bold text-sm text-body flex items-center justify-start gap-2">
             <IconSearch class="w-4 h-4 text-info" /> Buscar cédula en las firmas
           </label>
@@ -789,7 +789,7 @@
             />
           </div>
         </div>
-        <div class="relative z-10 w-full md:w-auto">
+        <div class="relative z-(--z-capa-base) w-full md:w-auto">
           <AppButton
             variant="primary-outline"
             class-name="w-full md:w-auto"
@@ -810,37 +810,37 @@
 
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="deasy-card p-4 flex flex-col items-start gap-2 relative overflow-hidden">
-          <div class="flex items-center gap-2 text-muted mb-1 z-10">
+          <div class="flex items-center gap-2 text-muted mb-1 z-(--z-capa-base)">
             <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
             <div class="deasy-overline">Firmas Detectadas</div>
           </div>
-          <div class="text-3xl font-black text-strong z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
+          <div class="text-3xl font-black text-strong z-(--z-capa-base)">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
 
         <div class="deasy-alert deasy-alert--success flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
-          <div class="flex items-center gap-2 text-success mb-1 z-10">
+          <div class="flex items-center gap-2 text-success mb-1 z-(--z-capa-base)">
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
             <div class="deasy-overline">Firmas Válidas</div>
           </div>
-          <div class="text-3xl font-black text-success z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
+          <div class="text-3xl font-black text-success z-(--z-capa-base)">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
         </div>
 
         <div class="rounded-2xl border border-blue-light-200 bg-blue-light-50/50 p-4 flex flex-col items-start gap-2 relative overflow-hidden">
            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-light-100 rounded-full blur-xl opacity-50"></div>
-          <div class="flex items-center gap-2 text-info mb-1 z-10">
+          <div class="flex items-center gap-2 text-info mb-1 z-(--z-capa-base)">
             <div class="p-1.5 bg-blue-light-100 rounded-2xl"><IconSearch class="w-4 h-4" /></div>
             <div class="deasy-overline">Coincidencias</div>
           </div>
-          <div class="text-3xl font-black text-info z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
+          <div class="text-3xl font-black text-info z-(--z-capa-base)">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
         </div>
 
         <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 flex flex-col justify-center relative overflow-hidden">
-          <div class="flex items-center gap-2 text-primary mb-2 z-10">
+          <div class="flex items-center gap-2 text-primary mb-2 z-(--z-capa-base)">
             <div class="p-1.5 bg-brand-100 rounded-2xl"><IconFileCheck class="w-4 h-4" /></div>
             <div class="deasy-overline">Documento Activo</div>
           </div>
-          <div class="text-sm font-bold text-primary truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
+          <div class="text-sm font-bold text-primary truncate w-full z-(--z-capa-base)" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
         </div>
       </div>
 

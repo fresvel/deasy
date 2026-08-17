@@ -80,7 +80,7 @@
                   </button>
                   <div
                     v-if="showProcessMultiSelect && consolidatedCargoProcesses.length"
-                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-theme-lg shadow-line/60"
+                    class="absolute left-0 top-full z-(--z-capa-elemento) mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-theme-lg shadow-line/60"
                   >
                     <button
                       type="button"

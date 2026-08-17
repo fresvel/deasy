@@ -2,7 +2,7 @@
   <AppModalShell
       v-if="open"
       controlled
-      nested :open="open" :title="guided ? 'Actualizar plantilla de configuración activa' : 'Crear nueva versión'" content-class="max-w-md" @close="$emit('close')">
+      nivel="2" :open="open" :title="guided ? 'Actualizar plantilla de configuración activa' : 'Crear nueva versión'" content-class="max-w-md" @close="$emit('close')">
     <p v-if="guided" class="mb-3 mt-0 text-sm text-icon">
       Crea borradores de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>
       y de su configuración activa. Editarás el contenido y, al publicar, se <strong>publica la plantilla y se

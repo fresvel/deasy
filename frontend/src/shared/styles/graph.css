@@ -133,7 +133,7 @@
         display: inline-flex;
         flex-direction: column;
         gap: 4px;
-        z-index: 6;
+        z-index: var(--z-capa-controles); /* la barra de acciones del nodo */
     }
 
     .graph-node__toolbar--sm {

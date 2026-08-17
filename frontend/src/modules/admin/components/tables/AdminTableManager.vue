@@ -406,7 +406,7 @@
     <AdminDeleteConfirmModal ref="deleteModal" @confirm="confirmDelete" />
     <AdminDeleteConfirmModal
       ref="processConfigurationDeleteModal"
-      :style="{ zIndex: 1090 }"
+      nivel="2"
       @confirm="confirmDeleteProcessEditorConfiguration"
     />
 
@@ -414,7 +414,7 @@
       ref="retireDefinitionModal"
       labelled-by="retireDefinitionModalLabel"
       title="Retirar configuración"
-      :style="{ zIndex: 1090 }"
+      nivel="2"
     >
       <p class="mb-2">
         Vas a <strong>retirar</strong> la configuración
@@ -530,7 +530,7 @@
 
     <AdminProcessWizardModal
       :open="processWizardOpen"
-      :style="{ zIndex: 1080 }"
+      nivel="1"
       :current-step="processWizardStep"
       :steps="processWizardSteps"
       :step-status="processWizardStepStatus"
@@ -670,7 +670,7 @@
         <AppModalShell
       v-if="showWizardActivateConfirm"
       controlled
-      nested
+      nivel="2"
           :open="showWizardActivateConfirm"
           title="Confirmar activación"
           content-class="max-w-md"
@@ -694,7 +694,7 @@
 
     <AdminFkBrowserModal
       ref="fkModal"
-      :style="{ zIndex: 1090 }"
+      nivel="2"
       :fk-table="fkTable"
       :is-fk-units="isFkUnits"
       :is-fk-process-definitions="isFkProcessDefinitions"
@@ -778,7 +778,7 @@
 
     <AdminRecordViewerModal
       ref="recordViewerModal"
-      :style="{ zIndex: 1100 }"
+      nivel="3"
       :loading="recordViewerLoading"
       :error="recordViewerError"
       :record-viewer-table="recordViewerTable"
@@ -809,7 +809,7 @@
 
     <AdminFkFilterModal
       ref="fkFilterModal"
-      :style="{ zIndex: 1100 }"
+      nivel="3"
       :fk-table="fkTable"
       :fk-filter-fields="fkFilterFields"
       :fk-filters="fkFilters"
@@ -824,7 +824,7 @@
 
     <AdminFkCreateModal
       ref="fkCreateModal"
-      :style="{ zIndex: 1100 }"
+      nivel="3"
       :fk-table="fkTable"
       :fk-create-error="fkCreateError"
       :fk-create-fields="fkCreateFields"

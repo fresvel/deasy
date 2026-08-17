@@ -10,7 +10,7 @@
        muere con «Duplicate attribute», que no dice ni una palabra sobre comentarios. Segunda vez
        en el mismo dia. -->
   <aside
-    class="fixed left-0 top-[60px] z-40 flex h-[calc(100vh-60px)] w-[282px] shrink-0 flex-col overflow-y-auto border-r border-line bg-white transition-all duration-300 [scrollbar-width:none] xl:sticky xl:top-[60px] xl:h-[calc(100vh-60px)] xl:translate-x-0 xl:overflow-visible [&::-webkit-scrollbar]:hidden"
+    class="fixed left-0 top-[60px] z-(--z-menu-lateral) flex h-[calc(100vh-60px)] w-[282px] shrink-0 flex-col overflow-y-auto border-r border-line bg-white transition-all duration-300 [scrollbar-width:none] xl:sticky xl:top-[60px] xl:h-[calc(100vh-60px)] xl:translate-x-0 xl:overflow-visible [&::-webkit-scrollbar]:hidden"
     :class="show
       ? 'translate-x-0 shadow-[18px_0_36px_rgba(var(--elev-ink-rgb),0.24)] xl:shadow-none'
       : '-translate-x-[110%] xl:w-22 xl:translate-x-0'"
@@ -20,7 +20,7 @@
 
   <div
     v-if="show"
-    class="fixed inset-0 top-[60px] z-30 bg-navy/28 transition-opacity duration-300 xl:hidden"
+    class="fixed inset-0 top-[60px] z-(--z-velo-menu-lateral) bg-navy/28 transition-opacity duration-300 xl:hidden"
     @click="$emit('close-mobile')"
     aria-hidden="true"
   ></div>

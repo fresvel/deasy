@@ -104,7 +104,7 @@
         /* Un escalon POR DEBAJO del 1075 de `AppDialogOverlay.vue`, a proposito: si el
            cajon y el modal estan abiertos a la vez, el modal —que es el gesto que
            interrumpe— va encima. Empatados, lo decidia el orden del DOM. */
-        z-index: 1070;
+        z-index: var(--z-panel-lateral);
         display: flex;
         justify-content: flex-end;
         background: var(--overlay-backdrop);

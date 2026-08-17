@@ -36,7 +36,7 @@
     <AppModalShell
       v-if="showConfirm"
       controlled
-      nested
+      nivel="2"
       :open="showConfirm"
       title="Confirmar activación"
       content-class="max-w-md"

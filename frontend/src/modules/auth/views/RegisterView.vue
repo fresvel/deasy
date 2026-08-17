@@ -87,7 +87,7 @@
                       <option v-for="c in countriesData" :key="c.es_name" :value="c">{{ c.es_name }}</option>
                     </select>
                     <div class="relative">
-                      <span class="pointer-events-none absolute inset-y-0 left-3 z-10 flex items-center text-sm font-semibold text-muted">
+                      <span class="pointer-events-none absolute inset-y-0 left-3 z-(--z-capa-base) flex items-center text-sm font-semibold text-muted">
                         {{ phonePrefix }}
                       </span>
                       <input
@@ -184,7 +184,7 @@
                   Ubicación exacta
                   <span class="group relative inline-flex">
                     <IconHelp class="h-4 w-4 cursor-help text-info" />
-                    <span class="invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-2xl bg-navy p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-theme-lg transition-all group-hover:visible group-hover:opacity-100">
+                    <span class="invisible absolute bottom-full left-1/2 z-(--z-capa-elemento) mb-2 w-64 -translate-x-1/2 rounded-2xl bg-navy p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-theme-lg transition-all group-hover:visible group-hover:opacity-100">
                       Marca tu ubicación exacta para completar la información geográfica de tu registro.
                     </span>
                   </span>
@@ -216,7 +216,7 @@
                 </div>
 
                 <div v-show="showMap" class="mt-4">
-                  <div ref="mapElement" class="z-10 h-75 w-full rounded-xl border border-line shadow-inner"></div>
+                  <div ref="mapElement" class="isolate h-75 w-full rounded-xl border border-line shadow-inner"></div>
                 </div>
               </div>
             </section>

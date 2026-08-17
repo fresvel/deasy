@@ -65,7 +65,7 @@ import { join, resolve } from "node:path";
  * COLORES escritos con la sintaxis de tamaño — la ambiguedad de Tailwind v4 que el skill
  * advierte y que aqui costo 114 nodos con el borde en `currentColor`. Van a la fase de color,
  * no a esta. */
-const TECHO = { total: 189, "text-": 17, "rounded-": 11, "shadow-": 16 };
+const TECHO = { total: 187, "text-": 17, "rounded-": 11, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

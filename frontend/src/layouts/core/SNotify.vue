@@ -1,25 +1,22 @@
-<!-- [F1.4 2026-08-11] EL AVISO ESTABA DEBAJO DEL VELO DEL MODAL. Este panel vivia en
-     `z-[50]` y el velo del dialogo en 1075: un aviso que saltara con un dialogo abierto
-     —que es justo cuando saltan, porque el dialogo es lo que dispara la accion— quedaba
-     tapado. Y empataba con la cabecera (`SHeader`, z-50), asi que ahi quien ganaba lo
-     decidia el orden del DOM.
+<!-- [F1.4 2026-08-11 · reescrito en F5.3] EL AVISO ESTABA DEBAJO DEL VELO DEL MODAL. Este panel
+     vivia en `z-[50]` y el velo del dialogo en 1075: un aviso que saltara con un dialogo abierto
+     —que es justo cuando saltan, porque el dialogo es lo que dispara la accion— quedaba tapado. Y
+     empataba con la cabecera, asi que ahi quien ganaba lo decidia el orden del DOM.
 
-     1190/1200 lo pone por encima de todo lo que hay hoy (modal 1075, tip 1100, toast de
-     admin 1080). Son numeros PROVISIONALES elegidos para que la relacion sea correcta,
-     no una escala: la app tiene 11 valores en 14 grafias repartidos en tres bandas que no
-     se hablan (la de Tailwind, tres numeros a ojo y la herencia de Bootstrap). Declarar
-     las capas de apilamiento de verdad es F6.2 del plan. -->
+     Se arreglo con 1190/1200, numeros elegidos a ojo para que la relacion fuera correcta. Ahora es
+     la banda 5000 de la escala, que dice lo mismo pero con nombre y por el motivo declarado: **los
+     avisos van por encima de los dialogos**, no por debajo. La escala vive en `tokens.css`. -->
 <template>
   <div>
     <div
       v-show="show"
-      class="fixed inset-0 top-16 z-1190 bg-navy/20 backdrop-blur-[2px]"
+      class="fixed inset-0 top-16 z-(--z-velo-notificaciones) bg-navy/20 backdrop-blur-[2px]"
       @click="$emit('close')"
     ></div>
 
     <div
       v-show="show"
-      class="fixed right-4 top-[4.5rem] z-1200 flex w-[calc(100vw-2rem)] origin-top-right transform flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_18px_48px_rgba(var(--elev-ink-rgb),0.12)] transition-all duration-200 sm:right-6 sm:w-80 md:w-96 lg:right-8"
+      class="fixed right-4 top-[4.5rem] z-(--z-notificaciones) flex w-[calc(100vw-2rem)] origin-top-right transform flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_18px_48px_rgba(var(--elev-ink-rgb),0.12)] transition-all duration-200 sm:right-6 sm:w-80 md:w-96 lg:right-8"
       :class="show ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none -translate-y-2 scale-95 opacity-0'"
     >
       <header class="flex items-center justify-between border-b border-line bg-white px-5 py-4">

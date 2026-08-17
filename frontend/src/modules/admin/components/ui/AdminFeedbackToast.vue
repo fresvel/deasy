@@ -8,7 +8,7 @@
          se va el desenfoque, que solo estaba ahi para disimular ese problema. -->
   <div
     v-if="visible"
-    class="fixed right-6 top-6 z-1080 w-full max-w-md rounded-xl border bg-white p-4 shadow-theme-lg"
+    class="fixed right-6 top-6 z-(--z-aviso) w-full max-w-md rounded-xl border bg-white p-4 shadow-theme-lg"
     :class="`is-${kind}`"
     role="status"
     aria-live="polite"

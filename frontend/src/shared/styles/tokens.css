@@ -310,6 +310,95 @@
        3:1 contra la fila blanca (WCAG 1.4.11). Al 35 % ninguno cumple. */
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   LA ALTURA — quien tapa a quien.  F5.3, 2026-08-16
+   ══════════════════════════════════════════════════════════════════════════════════════════════
+
+   Antes de esto habia **19 pisos y ninguno tenia nombre**, escritos en CUATRO sintaxis: utilidades
+   `z-50`, `z-index:` en CSS crudo, una clase arbitraria `z-[1075]`, y SIETE numeros metidos en
+   JavaScript (`:style="{ zIndex: 1090 }"`) que ningun lint podia ver. Se coordinaban por
+   comentario: `dialogs.css` decia «un escalon por debajo del 1075 de AppDialogOverlay.vue», y ese
+   fichero llevaba dos dias borrado.
+
+   ── HAY DOS EJES, Y LA MAGNITUD TE DICE EN CUAL ESTAS ────────────────────────────────────────
+   Un contenedor posicionado abre su PROPIO eje: dentro de un modal, del lienzo del grafo o de la
+   barra superior, los numeros empiezan de cero y NO ven a los de fuera. Por eso:
+
+       1-2 cifras  ->  eje LOCAL   compites solo con tus hermanos
+       4 cifras    ->  eje GLOBAL  compites en toda la pagina
+
+   Y como los locales nunca se cruzan entre contenedores, las MISMAS siete capas valen para todos.
+   Antes cada componente se inventaba las suyas: once numeros distintos para el mismo problema.
+
+   ⚠️ Cuando algo se despliega dentro de un contenedor y NO SE VE, casi nunca es la altura: es que
+   el contenedor RECORTA (`overflow`). Paso el 2026-08-16 con el menu de perfil, que se montaba
+   entero y era invisible por un `overflow-x-auto` heredado. Los dos problemas se parecen y no
+   tienen nada que ver; esta escala no arregla el segundo ni lo pretende.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root {
+    /* ── EJE LOCAL · siete capas, reutilizables en CUALQUIER contenedor ───────────────────── */
+    --z-capa-fondo: 0;          /* el lienzo o la imagen de atras — el canvas del PDF          */
+    --z-capa-base: 10;          /* lo que se apoya en el fondo — la capa de campos             */
+    --z-capa-elemento: 20;      /* lo que se puede coger o pulsar — el cuadro de firma, el nodo */
+    --z-capa-activo: 30;        /* ese mismo elemento mientras lo usas                          */
+    --z-capa-controles: 40;     /* sus botones y asas — la ✕ y el asa de tamaño                */
+    --z-capa-emergente: 50;     /* lo que se abre encima — menu, lista de un campo, tooltip     */
+    --z-capa-velo: 60;          /* un velo que cubre SOLO este contenedor                       */
+
+    /* ── EJE GLOBAL · bandas de 1000, decenas dentro ──────────────────────────────────────────
+       ⛔ LA BANDA 1000-1999 ESTA RESERVADA A LIBRERIAS Y NO SE OCUPA NUNCA.
+
+       Las dos que hay declaran numeros de 3 y 4 cifras —Leaflet de 200 a 1000 entre paneles,
+       marcadores, popups y controles; Vue Flow hasta 1001—, y por eso los dialogos estaban en
+       1060 y no en 60: alguien tuvo que esquivar a Leaflet y no lo escribio en ninguna parte.
+
+       Pero al medirlo resulta que **hoy ninguna de las dos compite de verdad en este eje**, y por
+       motivos muy distintos:
+         · Vue Flow se aisla SOLO: su raiz declara `position:relative; z-index:0`, asi que sus
+           numeros son locales a su lienzo y no pueden tapar nada de fuera. Eso es solido.
+         · Leaflet no se aisla: lo aisla el contenedor del mapa (`RegisterView.vue`). Y hasta hoy
+           lo hacia POR ACCIDENTE, con un `z-10` que **parecia un no-op** —un `z-index` sobre un
+           elemento `static` no hace nada— y que cualquiera habria borrado por limpieza. No lo era:
+           Leaflet fuerza `position:relative` sobre el contenedor si lo encuentra `static`
+           (`leaflet-src.js:4228`), y ahi el `z-10` abre contexto y encierra sus 1000. Se cambio a
+           `isolate`, que hace lo mismo sin depender de la altura y dice lo que hace.
+
+       La banda se reserva igual: el aislamiento del segundo cuelga de una linea de una vista, y
+       la proxima libreria que entre no tiene por que traerlo.                                  */
+
+    /* 2000 · el armazon */
+    --z-velo-menu-lateral: 2010;   /* el velo del menu lateral, en movil */
+    --z-menu-lateral: 2020;
+    --z-barra-superior: 2030;
+
+    /* 3000 · lo que flota sobre la pagina */
+    --z-boton-chat: 3010;          /* el boton redondo de abajo a la derecha */
+    --z-velo-chat: 3020;
+    --z-panel-chat: 3030;          /* el panel del chat y el velo de «cargando» a pantalla completa */
+
+    /* 4000 · los dialogos — lo que INTERRUMPE.
+       Cinco niveles de modal por decision del dueño (2026-08-16), y la banda llega a 4090, asi
+       que quedan tres huecos. Hacian falta: la cadena mas profunda medida es de TRES —editor de
+       registro -> navegador de clave ajena -> crear/filtrar— pero se estaban usando CINCO alturas
+       distintas (1060, 1075, 1080, 1090, 1100) para expresarla, que es el sintoma de que nadie
+       sabia cual le tocaba. Prueba de ello: la confirmacion del asistente valia 1075 y el
+       asistente 1080, o sea que **el hijo quedaba por debajo del padre**. */
+    --z-panel-lateral: 4010;       /* el panel que entra por la derecha */
+    --z-modal: 4020;
+    --z-modal-2: 4030;             /* uno abierto DESDE otro */
+    --z-modal-3: 4040;
+    --z-modal-4: 4050;
+    --z-modal-5: 4060;
+
+    /* 5000 · los avisos — por encima de todo, incluidos los dialogos.
+       ⚠️ Antes NO era asi y era un fallo: el aviso valia 1080 y los modales apilados 1090 y 1100,
+       asi que un «guardado» disparado desde un modal de segundo o tercer nivel quedaba DETRAS y
+       no se veia. */
+    --z-aviso: 5010;
+    --z-velo-notificaciones: 5020;
+    --z-notificaciones: 5030;
+}
+
 /* Aqui habia un `@layer base` con `html`, `body` y `#app`. Se fue a `base.css` el 2026-08-13:
    entre los dos ficheros el fondo `--color-navy-deep` estaba declarado CINCO veces y el `color`
    del `body` TRES, y cual ganaba dependia del orden de los `@import` de `index.css` — que es

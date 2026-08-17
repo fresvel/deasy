@@ -158,7 +158,7 @@
               @mouseup="handlePointerUp"
               @mouseleave="handlePointerLeave"
             >
-              <canvas ref="pdfCanvas" class="z-0 block h-auto w-full bg-white"></canvas>
+              <canvas ref="pdfCanvas" class="z-(--z-capa-fondo) block h-auto w-full bg-white"></canvas>
 
               <SignatureBox
                 v-if="isMouseOverPdf && selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
@@ -230,7 +230,7 @@
 
               <div
                 v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
-                class="deasy-alert deasy-alert--danger pointer-events-none absolute z-20 border-2 border-dashed mix-blend-multiply"
+                class="deasy-alert deasy-alert--danger pointer-events-none absolute z-(--z-capa-elemento) border-2 border-dashed mix-blend-multiply"
                 :style="activeSelectionBox"
               >
                 <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-theme-xs font-bold text-white shadow-theme-lg">
@@ -242,7 +242,7 @@
 
             <div
               v-if="!currentDocument"
-              class="relative z-5 mx-auto flex h-full w-full max-w-sm flex-col items-center justify-center text-center opacity-70"
+              class="relative z-(--z-capa-base) mx-auto flex h-full w-full max-w-sm flex-col items-center justify-center text-center opacity-70"
             >
               <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-6 shadow-inner ring-8 ring-white/40">
                 <IconFiles class="ml-1 h-10 w-10 text-muted" />

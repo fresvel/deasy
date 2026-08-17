@@ -2,7 +2,7 @@
   <div
     ref="rootElement"
     class="deasy-dialog-root fixed inset-0 overflow-y-auto px-4 py-8"
-    :class="[controlled ? (open ? 'flex' : 'hidden') : 'hidden', nested ? 'z-[1075]' : 'z-1060']"
+    :class="[controlled ? (open ? 'flex' : 'hidden') : 'hidden', claseAltura]"
     data-dialog-root
     tabindex="-1"
     role="dialog"
@@ -60,13 +60,20 @@ const props = defineProps({
     type: String,
     default: ""
   },
-  /* ANIDADO — un modal que se abre DESDE otro modal, como el alta de alcance o de periodo dentro
-     del asistente. Sube una capa (1075) para quedar por encima del que lo abrio, y por debajo del
-     selector de clave ajena (1090). Era la unica razon de ser de `AppDialogOverlay`, junto con su
-     mecanica de `v-if`, que ahora la pone el consumidor. */
-  nested: {
-    type: Boolean,
-    default: false
+  /* NIVEL — a que profundidad de la cadena de modales esta este.
+       1  se abre desde la pagina        4  desde uno de tercer nivel
+       2  se abre DESDE otro modal       5  el limite; mas hondo es un problema de diseño
+       3  desde uno de segundo nivel
+     La cadena mas profunda medida en el repo es de TRES (editor de registro -> navegador de clave
+     ajena -> crear/filtrar), pero se escribia con CINCO alturas distintas (1060, 1075, 1080, 1090,
+     1100) porque nadie sabia cual le tocaba: la confirmacion del asistente valia 1075 y el
+     asistente 1080, o sea que **el hijo salia por debajo del padre**.
+     ⚠️ Esto es solo el suelo. `modalController.js` sube ademas +1 en linea al mostrar, asi que dos
+     modales del mismo nivel no empatan: gana el ultimo en abrirse, que es lo que quieres. */
+  nivel: {
+    type: [Number, String],
+    default: 1,
+    validator: (v) => [1, 2, 3, 4, 5].includes(Number(v))
   },
   size: {
     type: String,
@@ -122,6 +129,18 @@ const emit = defineEmits(["close"]);
 
 const attrs = useAttrs();
 const rootElement = ref(null);
+
+/* Las cinco alturas, escritas ENTERAS a proposito: Tailwind rastrea el codigo como TEXTO, y una
+   clase compuesta (`z-(--z-modal-${n})`) no la encuentra, asi que la utilidad no se generaria.
+   Es el mismo motivo por el que `AppButton` lleva su mapa de variantes literal. */
+const CLASE_POR_NIVEL = {
+  1: "z-(--z-modal)",
+  2: "z-(--z-modal-2)",
+  3: "z-(--z-modal-3)",
+  4: "z-(--z-modal-4)",
+  5: "z-(--z-modal-5)"
+};
+const claseAltura = computed(() => CLASE_POR_NIVEL[Number(props.nivel)] || CLASE_POR_NIVEL[1]);
 
 const shellClass = computed(() => {
   const classes = ["items-center"];

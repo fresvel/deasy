@@ -112,7 +112,7 @@
             class="rounded-2xl border border-brand-300 bg-white px-3 py-2 text-sm font-medium text-body outline-none"
             @input="searchRecipients"
           />
-          <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
+          <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-(--z-capa-base) mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
             <li v-for="person in recipientResults" :key="`fp-${person.id}`">
               <button type="button" class="deasy-option" @click="addFlowPerson(person)">
                 {{ person.full_name }}

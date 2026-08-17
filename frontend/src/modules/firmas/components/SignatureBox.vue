@@ -1,7 +1,7 @@
 <template>
   <div
-    class="absolute flex flex-col items-center justify-center p-1 border-2 rounded-lg backdrop-blur-[1px] transition-colors group z-20"
-    :class="[ isActive ? 'border-blue-light-500 bg-blue-light-500/20 ring-4 ring-blue-light-500 ring-opacity-30 border-solid' : 'border-dashed border-blue-light-400 bg-blue-light-400/10 hover:border-blue-light-500 hover:bg-blue-light-500/20', isPreview ? 'pointer-events-none opacity-60 z-30' : 'pointer-events-auto custom-drag-cursor', isDragging ? 'opacity-80 scale-105 ring-2 custom-dragging-cursor' : 'shadow-elev-1', customClass ]"
+    class="absolute flex flex-col items-center justify-center p-1 border-2 rounded-lg backdrop-blur-[1px] transition-colors group z-(--z-capa-elemento)"
+    :class="[ isActive ? 'border-blue-light-500 bg-blue-light-500/20 ring-4 ring-blue-light-500 ring-opacity-30 border-solid' : 'border-dashed border-blue-light-400 bg-blue-light-400/10 hover:border-blue-light-500 hover:bg-blue-light-500/20', isPreview ? 'pointer-events-none opacity-60 z-(--z-capa-activo)' : 'pointer-events-auto custom-drag-cursor', isDragging ? 'opacity-80 scale-105 ring-2 custom-dragging-cursor' : 'shadow-elev-1', customClass ]"
     :style="computedStyle"
     @mousedown.stop.prevent="startDrag"
     @click.stop="onClick"
@@ -18,7 +18,7 @@
     <!-- Botón eliminar rápido en hover o seleccionado -->
     <div 
       v-if="!isPreview"
-      class="absolute right-0 top-0 z-30 flex translate-x-[calc(100%+0.5rem)] flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      class="absolute right-0 top-0 z-(--z-capa-controles) flex translate-x-[calc(100%+0.5rem)] flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
       <button
@@ -33,7 +33,7 @@
 
     <div
       v-if="!isPreview && $slots.navigation"
-      class="absolute bottom-0 left-0 right-0 z-30 flex translate-y-[calc(100%+0.4rem)] flex-col items-stretch gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      class="absolute bottom-0 left-0 right-0 z-(--z-capa-controles) flex translate-y-[calc(100%+0.4rem)] flex-col items-stretch gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
       <slot name="navigation"></slot>
