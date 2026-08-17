@@ -1296,10 +1296,11 @@
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'history'"
             :tabindex="deliverableWorkspaceState.tab === 'history' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-widest transition-colors"
-            :class="getDeliverableWorkspaceTabClass('history')"
+            class="deasy-inline-tab"
+            :class="{ 'deasy-inline-tab--active': deliverableWorkspaceState.tab === 'history' }"
             @click="deliverableWorkspaceState.tab = 'history'"
           >
+            <IconHistory class="deasy-inline-tab__icon" />
             Historial
           </button>
         </div>
@@ -2201,6 +2202,7 @@ import {
   IconPlus,
   IconRefresh,
   IconSearch,
+  IconHistory,
   IconSend,
   IconSignature,
   IconSquareCheck,

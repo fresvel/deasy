@@ -52,7 +52,11 @@ import { join, resolve } from "node:path";
  * numero deja de escribirse dos veces (uno para movil, otro para escritorio) y deja de ser un
  * valor suelto. Es el tercer arbitrario del dia que cae por lo mismo: existia para NO ser el valor
  * de al lado. */
-const TECHO = { total: 291, "text-": 118, "rounded-": 11, "shadow-": 16 };
+/* 2026-08-16 · 290 — al reconciliar con `develop`, la pestaña «Historial» que llegaba de alli
+ * escrita con utilidades sueltas pasa al bloque `deasy-inline-tab`, y con ella se va su
+ * `min-w-[1.25rem]`. No es una poda buscada: es lo que pasa cuando un elemento vuelve a su
+ * bloque — los valores sueltos que necesitaba para imitarlo dejan de hacer falta. */
+const TECHO = { total: 290, "text-": 118, "rounded-": 11, "shadow-": 16 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

@@ -30,7 +30,10 @@
           :key="`relevo-${relevo.id}`"
           class="flex items-start gap-3 rounded-xl border border-line bg-white px-3 py-2.5"
         >
-          <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-surface text-muted">
+          <!-- La caja de icono es un bloque del sistema desde F3.1: `--md` son sus 36 px y `--neutral`
+               su gris. Escrita a mano llegaba con `text-muted` en vez de `text-icon` — el mismo papel con
+               dos tokens, que es justo lo que el bloque existe para evitar. -->
+          <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral shrink-0">
             <IconArrowsExchange class="h-4.5 w-4.5" />
           </span>
           <div class="min-w-0 flex-1">
