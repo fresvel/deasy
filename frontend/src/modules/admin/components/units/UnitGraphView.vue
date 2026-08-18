@@ -120,7 +120,7 @@
       <p class="m-0 mb-3 text-sm text-icon">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
       <label class="deasy-form-label">
         Tipo de relación
-        <select v-model="editingTypeCode" class="deasy-control deasy-control--select mt-1.5">
+        <select v-model="editingTypeCode" class="deasy-control deasy-control--select">
           <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
         </select>
       </label>
@@ -143,18 +143,18 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
-          <input v-model="createForm.name" type="text" class="deasy-control mt-1.5" placeholder="Nombre de la unidad" />
+          <input v-model="createForm.name" type="text" class="deasy-control" placeholder="Nombre de la unidad" />
         </label>
         <label class="deasy-form-label">
           Tipo de unidad
-          <select v-model="createForm.unit_type_id" class="deasy-control deasy-control--select mt-1.5">
+          <select v-model="createForm.unit_type_id" class="deasy-control deasy-control--select">
             <option value="">Selecciona…</option>
             <option v-for="ut in unitTypes" :key="ut.id" :value="ut.id">{{ ut.name }}</option>
           </select>
         </label>
         <label class="deasy-form-label">
           Slug <span class="font-normal text-muted">(opcional)</span>
-          <input v-model="createForm.slug" type="text" class="deasy-control mt-1.5" placeholder="se deriva del nombre" />
+          <input v-model="createForm.slug" type="text" class="deasy-control" placeholder="se deriva del nombre" />
         </label>
       </div>
       <template #footer>
@@ -395,18 +395,18 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Cargo
-          <select v-model="editPositionForm.cargo_id" class="deasy-control deasy-control--select mt-1.5">
+          <select v-model="editPositionForm.cargo_id" class="deasy-control deasy-control--select">
             <option value="">Selecciona…</option>
             <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </label>
         <label class="deasy-form-label">
           Título <span class="font-normal text-muted">(opcional)</span>
-          <input v-model="editPositionForm.title" type="text" class="deasy-control mt-1.5" placeholder="Título del puesto" />
+          <input v-model="editPositionForm.title" type="text" class="deasy-control" placeholder="Título del puesto" />
         </label>
         <label class="deasy-form-label">
           Tipo
-          <select v-model="editPositionForm.position_type" class="deasy-control deasy-control--select mt-1.5">
+          <select v-model="editPositionForm.position_type" class="deasy-control deasy-control--select">
             <option value="real">Real</option>
             <option value="promocion">Promoción</option>
             <option value="simbolico">Simbólico</option>
@@ -444,7 +444,7 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Proceso (configuración en borrador)
-          <select v-model="processForm.process_definition_id" :disabled="Boolean(processEditingRuleId)" class="deasy-control deasy-control--select mt-1.5">
+          <select v-model="processForm.process_definition_id" :disabled="Boolean(processEditingRuleId)" class="deasy-control deasy-control--select">
             <option value="">Selecciona…</option>
             <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
               {{ def.process_name }} · {{ def.variation_key }} · v{{ def.definition_version }}
@@ -457,7 +457,7 @@
 
         <label class="deasy-form-label">
           Alcance
-          <select v-model="processForm.unit_scope_type" class="deasy-control deasy-control--select mt-1.5">
+          <select v-model="processForm.unit_scope_type" class="deasy-control deasy-control--select">
             <option value="unit_exact">Solo esta unidad</option>
             <option value="unit_subtree">Esta unidad y sus dependientes</option>
           </select>
@@ -465,7 +465,7 @@
 
         <label class="deasy-form-label">
           Entrega (destinatario)
-          <select v-model="processForm.recipient_policy" class="deasy-control deasy-control--select mt-1.5">
+          <select v-model="processForm.recipient_policy" class="deasy-control deasy-control--select">
             <option value="all_matches">Todos los del cargo</option>
             <option value="one_per_unit">Jefatura de la unidad</option>
             <option value="exact_position">Puesto exacto</option>
@@ -479,7 +479,7 @@
           </div>
           <label v-else class="deasy-form-label">
             Cargo destinatario
-            <select v-model="processForm.cargo_id" class="deasy-control deasy-control--select mt-1.5">
+            <select v-model="processForm.cargo_id" class="deasy-control deasy-control--select">
               <option value="">Selecciona…</option>
               <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
@@ -489,7 +489,7 @@
         <!-- Puesto exacto: de los puestos de esta unidad -->
         <label v-else class="deasy-form-label">
           Puesto de la unidad
-          <select v-model="processForm.position_id" class="deasy-control deasy-control--select mt-1.5">
+          <select v-model="processForm.position_id" class="deasy-control deasy-control--select">
             <option value="">Selecciona…</option>
             <option v-for="pos in detailPositions" :key="pos.id" :value="pos.id">
               {{ pos.cargo_name || pos.title || 'Puesto' }} #{{ pos.slot_no }}

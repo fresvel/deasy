@@ -470,7 +470,17 @@
        da nombre. Y una etiqueta NO necesita componente Vue: no tiene estado ni markup propio,
        solo texto. El nivel correcto es la clase. */
     .deasy-form-label {
-        @apply mb-1.5 block text-sm font-semibold text-strong;
+        @apply block text-sm font-semibold text-strong;
+        margin-bottom: var(--label-gap);
+    }
+
+    /* LA OTRA FORMA DEL PAR: la etiqueta ENVUELVE su campo en vez de ir encima.
+       Se escribe asi en los dos grafos (17 casos) y en `/home`. Ahi el `margin-bottom` de arriba
+       no separa nada —el campo esta DENTRO—, y hasta hoy el hueco lo ponia un `mt-1.5` escrito en
+       cada plantilla. Con esto lo pone el sistema, y el token es el mismo: el hueco entre una
+       etiqueta y su campo es uno, se escriba el par como se escriba. */
+    .deasy-form-label > :is(input, select, textarea) {
+        margin-top: var(--label-gap);
     }
 
     /* La variante que lleva un icono al lado: deja de ser bloque para poder alinearlo.

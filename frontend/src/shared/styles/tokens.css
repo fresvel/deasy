@@ -493,6 +493,16 @@
      resulta usar la misma propiedad. */
   --focus-ring: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
 
+  /* EL HUECO ENTRE UNA ETIQUETA Y SU CAMPO — F2, 2026-08-18.
+     Existe como token porque el par se escribe de DOS formas en el arbol y cada una lo pide con
+     una propiedad distinta: si la etiqueta va ENCIMA de su campo es el `margin-bottom` de ella;
+     si lo ENVUELVE (17 casos, los dos grafos) es el `margin-top` del campo. Con dos reglas y un
+     numero suelto, cambiarlo eran dos sitios y en la practica ninguno: los 17 lo llevaban escrito
+     en la plantilla. Con el token, se cambia aqui y valen los 158.
+     NO se llama `--spacing-*`: eso es un namespace de Tailwind v4 y redefinirlo mueve la escala
+     entera de la aplicacion. */
+  --label-gap: 0.375rem;
+
   /* El velo del modal. No es una sombra aunque lo parezca: es un fondo. */
   --overlay-backdrop: rgba(var(--elev-ink-rgb), 0.48);
 
