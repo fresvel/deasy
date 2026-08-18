@@ -27,6 +27,10 @@
     }
 
     .deasy-dialog-body {
+        /* El fondo. Llego de `overrides.css` el 2026-08-17 (F6.L4): vivia alli para que un
+           `body-class` de plantilla no pudiera pisarlo, y esa condicion caduco cuando aquellas
+           diez reglas se caparon. Aqui no tiene adversario. */
+        background-color: var(--color-white);
         @apply px-5 py-5 text-strong sm:px-6;
     }
 

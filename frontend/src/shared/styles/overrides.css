@@ -37,14 +37,17 @@
        fichero. La huella lo cazo al instante: el marco de tabla salio blanco y con sombra. La
        leccion es la del plan: un duplicado solo es duplicado si el destino gana SIN el. */
 
-    .deasy-auth-page {
-        background:
-            linear-gradient(180deg, var(--color-white) 0%, var(--color-surface) 46%, var(--color-surface) 100%);
-    }
+    /* ══ AQUI VIVIA EL FONDO DE LAS PANTALLAS DE AUTENTICACION — muerto el 2026-08-17 ═══════
+       Y era un supresor encubierto. Declaraba UN degradado vertical con la propiedad ABREVIADA
+       `background`, que **resetea `background-image`** — asi que borraba los tres que declara
+       `auth.css:4-7`: el mismo degradado vertical mas dos halos radiales, uno azul marino arriba
+       a la izquierda y otro verde abajo a la derecha. Los dos radiales no se han visto nunca.
 
-    .deasy-dialog-body {
-        background-color: var(--color-white);
-    }
+       📌 El mecanismo es distinto al de las sombras y merece quedar escrito: aqui no ganaba por
+       capa ni por especificidad, sino porque **una propiedad abreviada borra las longhand que no
+       nombra**. Un `background` sin `-image` no es «lo mismo pero mas corto»: es una orden de
+       vaciar. Es la misma familia de trampa que el `margin: 0` del titulo de cabecera. */
+
 
     /* ══ Y AQUI MURIO LA ULTIMA SOMBRA IMPUESTA — 2026-08-17, F6.L4 ═══════════════════════
        Eran cuatro superficies con `--elev-1` forzado desde el final del CSS, y las cuatro
@@ -72,33 +75,6 @@
    pintando 8 px de radio cuando su receta pide 16. */
 
 @layer components {
-    /* LA CABECERA VA UN ESCALON POR ENCIMA DEL SEÑALADO DE FILA, y hasta hoy iban en el MISMO
-       gris: las dos en `--color-surface`. Al pasar el raton, la fila se volvia indistinguible de
-       la cabecera.
-
-       🪤 El primer intento de arreglarlo no arreglo nada: cambie el hover de `--color-surface` a
-       `--color-gray-50` **y son el mismo color** —`--color-surface` es un alias de `gray-50`—.
-       Solo se vio al medir los dos computados y encontrarlos identicos. Cambiar un alias por su
-       valor no es un cambio.
-
-       La jerarquia que queda: cabecera `gray-100`, señalado de fila `gray-50`, divisor `gray-100`.
-       El divisor comparte tono con la cabecera a proposito: uno es una linea y la otra un fondo,
-       y no compiten. */
-    .deasy-table thead tr {
-        background: var(--color-gray-100);
-    }
-
-    /* 📌 EL HOVER DE FILA SE QUEDA, aunque TailAdmin no lo tenga (comprobado: ni una regla ni una
-       clase `hover:` en las filas de su demo). No es un descuido suyo ni una deuda nuestra: en una
-       tabla ancha, seguir la fila con la vista es lo que evita leer el dato de la fila de al lado,
-       y aqui las tablas de admin tienen once columnas.
-
-       ⚠️ Lo que SI era defecto: el `thead` usaba ESTE MISMO gris, asi que la fila señalada se veia
-       igual que la cabecera. Lo que se movio fue la cabecera —a `gray-100`—, no el hover: el
-       señalado tiene que ser sutil, y `gray-50` sobre blanco ya se nota sin gritar. */
-    .deasy-table tbody tr:hover {
-        background-color: var(--color-gray-50);
-    }
 
 
     .deasy-nav-shell {

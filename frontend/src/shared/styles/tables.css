@@ -65,3 +65,36 @@
         color: var(--color-strong);
     }
 }
+
+@layer components {
+    /* LA CABECERA Y EL SEÑALADO DE FILA. Llegaron de `overrides.css` el 2026-08-17 (F6.L4).
+       Estaban alli sin motivo propio: no repintaban ninguna utilidad ni peleaban con nadie —
+       simplemente se escribieron en el fichero equivocado. */
+        /* LA CABECERA VA UN ESCALON POR ENCIMA DEL SEÑALADO DE FILA, y hasta hoy iban en el MISMO
+           gris: las dos en `--color-surface`. Al pasar el raton, la fila se volvia indistinguible de
+           la cabecera.
+
+           🪤 El primer intento de arreglarlo no arreglo nada: cambie el hover de `--color-surface` a
+           `--color-gray-50` **y son el mismo color** —`--color-surface` es un alias de `gray-50`—.
+           Solo se vio al medir los dos computados y encontrarlos identicos. Cambiar un alias por su
+           valor no es un cambio.
+
+           La jerarquia que queda: cabecera `gray-100`, señalado de fila `gray-50`, divisor `gray-100`.
+           El divisor comparte tono con la cabecera a proposito: uno es una linea y la otra un fondo,
+           y no compiten. */
+        .deasy-table thead tr {
+            background: var(--color-gray-100);
+        }
+
+        /* 📌 EL HOVER DE FILA SE QUEDA, aunque TailAdmin no lo tenga (comprobado: ni una regla ni una
+           clase `hover:` en las filas de su demo). No es un descuido suyo ni una deuda nuestra: en una
+           tabla ancha, seguir la fila con la vista es lo que evita leer el dato de la fila de al lado,
+           y aqui las tablas de admin tienen once columnas.
+
+           ⚠️ Lo que SI era defecto: el `thead` usaba ESTE MISMO gris, asi que la fila señalada se veia
+           igual que la cabecera. Lo que se movio fue la cabecera —a `gray-100`—, no el hover: el
+           señalado tiene que ser sutil, y `gray-50` sobre blanco ya se nota sin gritar. */
+        .deasy-table tbody tr:hover {
+            background-color: var(--color-gray-50);
+        }
+}
