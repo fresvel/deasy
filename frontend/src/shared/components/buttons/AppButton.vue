@@ -161,21 +161,21 @@ const variantClassMap = {
   plain: ""
 };
 
-/* DOS TAMAÑOS, NO TRES — F5.4, 2026-08-17.
-   `sm` se retiro porque **no era un tamaño**: medido con la misma etiqueta, `sm` y `md` daban
-   los dos 40 px de alto y 14 px de letra, porque el `min-h-10` de la base se come el `py-1.5`
-   de `sm`. Lo unico que las separaba eran 8 px de anchura total, que nadie percibe.
-   Y era la unica talla que la gente elegia a proposito —132 usos, frente a 2 que pedian `md`
-   explicitamente y 179 que se lo comian por defecto—, o sea que 132 sitios creian estar
-   pidiendo un boton pequeño y no lo recibian. */
 /* UN SOLO TAMAÑO DE BOTON CON TEXTO — F5.4, 2026-08-17.
    Cayeron los dos que sobraban, y por el mismo motivo: **no eran tamaños, eran nombres**.
-   · `sm` daba 40 px y 14 px de letra, exactamente igual que `md` — el `min-h-10` de la base
-     se comia su `py-1.5`, y solo quedaban 8 px de anchura que nadie percibe.
+   · `sm` daba 40 px y 14 px de letra, exactamente igual que `md` — el suelo de la base
+     se comia su `py-1.5`, y solo quedaban 8 px de anchura que nadie percibe. Era ademas la
+     unica talla que la gente elegia a proposito (132 usos, frente a 2 que pedian `md`): 132
+     sitios creian pedir un boton pequeño y no lo recibian.
    · `lg` si era distinto (46 px), pero de sus 4 usos por componente **3 estaban en un modal
      que no se puede abrir**; el resto de botones grandes se escribian a mano.
    Lo cuadrado (`--icon`, `--close`), lo alineado a un campo (`--field`) y el flotante
-   (`--fab`) no son tamaños de esta escala: son formas con su propio papel. */
+   (`--fab`) no son tamaños de esta escala: son formas con su propio papel.
+
+   ⚠️ EL SUELO YA NO ES 40 — F2, 2026-08-18. Era `min-h-10` cuando se escribio esto; hoy es
+   `min-h-11` (44 px), para que el boton y el campo midan lo mismo, que es lo que dice la
+   receta adoptada. Las cifras de arriba son de la medicion de F5.4 y se dejan como estaban:
+   describen por que cayeron `sm` y `lg`, y ese motivo no cambia con el suelo. */
 const sizeClassMap = {
   md: "deasy-btn--md"
 };

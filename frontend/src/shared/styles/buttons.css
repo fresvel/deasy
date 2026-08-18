@@ -34,10 +34,27 @@
    porque la anterior no le servia. Con una sola, las familias que solo existian para
    cambiar la forma se quedan sin motivo.
 
-   ⚠️ `min-h-10` se queda en 40 px y NO sube a los 44 de su receta. Su `md` es `px-4 py-3`,
-   pero aqui `--md` es `py-2` y subirlo cambia la altura de fila de cada tabla y cada barra
-   de filtros del proyecto. Es una decision de densidad, no de geometria de boton, y va con
-   el resto de la escala en F5. */
+   ⚠️ EL SUELO SUBIO A 44 — F2, 2026-08-18, y esta nota decia lo contrario hasta hoy.
+   Decia: «`min-h-10` se queda en 40 px y NO sube a los 44 de su receta […] subirlo cambia la
+   altura de fila de cada tabla y cada barra de filtros del proyecto […] va con el resto de la
+   escala en F5». **F5 cerro sin hacerlo**, y el motivo que lo aparcaba habia caducado sin que
+   nadie lo notara: cuando se escribio, el boton de fila heredaba este suelo; desde F3.2/G2 es
+   de SOLO ICONO y declara `h-9 w-9 min-h-9`, asi que es inmune. Medido en la tabla de personas
+   antes de tocar nada: de 188 botones, **172 son de fila a 36 px** y solo 2 con texto a 40.
+   La fila no se movia.
+
+   Lo que lo destapo fue propagar la receta del campo: al pasar los 79 controles sueltos a
+   `.deasy-control` (44 px), el campo y el boton quedaron **a 4 px de distancia en la misma
+   fila** —la barra del organigrama, `Buscar unidad…` junto a `Buscar`— y el escalon se veia.
+
+   El numero no es una preferencia: en TailAdmin, que es el sistema adoptado, el campo es
+   `h-11` y el boton `md` es `px-4 py-3 text-sm` = 12+20+12 = **44**. Los dos iguales. El 40
+   era el resto de lo que Deasy tenia antes. Y 44 es ademas el minimo de objetivo tactil, que
+   es exactamente el motivo con el que F6 subio el campo: dejar el boton —lo que se PULSA— por
+   debajo del umbral y el campo —lo que se escribe— por encima era justo al reves.
+
+   El padding no se toca: `--md` sigue en `px-4 py-2` y el suelo hace el trabajo, igual que
+   antes. No se mueven `--icon` (36), `--field` (52) ni el flotante: declaran su propia talla. */
 .deasy-btn {
         /* ⚠️ EL `text-sm` VA EN LA BASE, Y NO ES DECORATIVO — F5.4, 2026-08-17.
            Sin el, un boton sin clase de tamaño —los de solo icono— HEREDABA la letra de donde
@@ -46,7 +63,7 @@
            `em`**, asi que heredaban esa diferencia: en la MISMA fila de la MISMA tabla convivian
            90 iconos de 20 px con 86 de 17,5. Era el ultimo sitio donde el boton dependia de su
            contexto en vez de su clase. */
-        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border text-sm font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border text-sm font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
     /* ══ EL REPOSO DE TODO BOTON ES CONTORNO. EL HOVER LO RELLENA ══════════════════════════
@@ -423,9 +440,10 @@
          estrena aqui. El resto de los botones la reciben en la tarea 3.3; hasta entonces convive
          con el `rounded-2xl` heredado del bloque, y es a proposito: 35 nodos son suficientes para
          calibrar el aspecto y demasiado pocos para que una equivocacion cueste cara.
-       ⚠️ El `min-h-9` NO es redundante con el `h-9`: `.deasy-btn` declara `min-h-10`, y un
-         `min-height` mayor gana a la altura. Sin el, el boton sale de 36 de ancho por **40 de
-         alto** y deja de ser cuadrado. Antes lo tapaba de rebote la regla de densidad de tabla
+       ⚠️ El `min-h-9` NO es redundante con el `h-9`: `.deasy-btn` declara un suelo (hoy
+         `min-h-11`, 44 px; era `min-h-10` cuando se escribio esto), y un `min-height` mayor
+         gana a la altura. Sin el, el boton sale de 36 de ancho por el alto del suelo y deja de
+         ser cuadrado. Es lo que hace inmune a los 172 botones de fila cuando el suelo sube. Antes lo tapaba de rebote la regla de densidad de tabla
          (`min-height: 2rem`), que ya no le aplica — o sea que el fallo aparecio al arreglar
          otra cosa, y lo caza `getComputedStyle` en el navegador, no el CSS servido.
 
@@ -461,7 +479,8 @@
        botones a la vez—. Pero la densidad se pide, no se hereda: si un boton tiene que ser mas
        pequeño, eso es un tamaño con nombre que el llamante elige, no algo que le pase por estar
        dentro de un contenedor. Con `sm` retirado (medido: no era un tamaño) y esta regla fuera,
-       **un boton con texto mide 40 px y 14 px en toda la aplicacion, sin excepcion**.
+       **un boton con texto mide lo mismo en toda la aplicacion, sin excepcion** — 40 px cuando
+       se escribio esto, **44 desde F2 (2026-08-18)**, para que coincida con el campo.
 
        ⚠️ Su `:not(--icon)` no era un parche y conviene no perder el motivo: la regla era (0,2,0)
        y le ganaba a cualquier `.deasy-btn--*` (0,1,0), asi que los botones cuadrados de accion
@@ -608,7 +627,8 @@
    PLANTILLA no pise la altura de un control, y esto la pisaba desde el CSS y por contexto.
    Ninguna medicion del componente aislado lo encuentra — hay que mirar el boton EN SU SITIO.
 
-   Se retiran las dos. Un `md` mide 40 px y 14 px de letra en toda la aplicacion.
+   Se retiran las dos. Un `md` mide lo mismo en toda la aplicacion: 40 px al escribir esto,
+   **44 desde F2 (2026-08-18)**, y 14 px de letra.
    ═══════════════════════════════════════════════════════════════════════════════════════ */
 
 
@@ -755,8 +775,8 @@
 
     /* LA ACCION EN LINEA — «Quitar», «Desvincular»
      *
-     * No es un `deasy-btn` y no debe serlo: el bloque base pone caja, borde, alto minimo de 40 px
-     * y sombra, y esto vive DENTRO de una linea de lista, al lado del texto que retira. Si fuera
+     * No es un `deasy-btn` y no debe serlo: el bloque base pone caja, borde, alto minimo (44 px
+     * desde F2; 40 cuando se escribio esto) y sombra, y esto vive DENTRO de una linea de lista, al lado del texto que retira. Si fuera
      * un modificador de `deasy-btn` tendria que deshacer las cinco cosas que el bloque pone, que
      * es la senal de que no era una variante. Bloque propio, como `deasy-tab` (§2-bis).
      *
