@@ -1479,7 +1479,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="m-0 text-sm font-medium text-muted">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
           <label v-if="mySendsTypes.length > 1" class="flex items-center gap-2 text-sm">
-            <span class="deasy-overline">Tipo</span>
+            <span class="deasy-form-label">Tipo</span>
             <select v-model="mySendsTypeFilter" class="deasy-control deasy-control--select">
               <option value="all">Todos</option>
               <option v-for="t in mySendsTypes" :key="t.id" :value="t.id">{{ t.name }}</option>

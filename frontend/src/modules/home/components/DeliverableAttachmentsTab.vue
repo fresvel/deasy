@@ -8,7 +8,7 @@
 
     <div class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 p-4">
       <label class="flex flex-col gap-1">
-        <span class="deasy-overline">Tipo</span>
+        <span class="deasy-form-label">Tipo</span>
         <select v-model="attachmentUploadKind" class="deasy-control deasy-control--select">
           <option value="annex">Anexo</option>
           <option value="evidence">Evidencia</option>

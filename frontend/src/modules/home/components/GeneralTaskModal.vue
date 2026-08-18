@@ -32,11 +32,11 @@
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Documento</h6>
       </div>
       <label class="flex flex-col gap-1">
-        <span class="deasy-overline">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
+        <span class="deasy-form-label">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
         <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="deasy-control" />
       </label>
       <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
-        <span class="deasy-overline">Descripción</span>
+        <span class="deasy-form-label">Descripción</span>
         <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="deasy-control deasy-control--textarea"></textarea>
       </label>
     </section>
@@ -141,14 +141,14 @@
       <div class="grid grid-cols-1 gap-3" :class="showSenderUnitSelect ? 'sm:grid-cols-2' : ''">
         <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->
         <label v-if="showSenderUnitSelect" class="flex flex-col gap-1">
-          <span class="deasy-overline">Unidad emisora *</span>
+          <span class="deasy-form-label">Unidad emisora *</span>
           <select v-model="generalTaskForm.unitId" class="deasy-control deasy-control--select">
             <option :value="null" disabled>Selecciona una unidad</option>
             <option v-for="unit in senderUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
           </select>
         </label>
         <label class="flex flex-col gap-1">
-          <span class="deasy-overline">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
+          <span class="deasy-form-label">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
           <input v-model="generalTaskForm.endDate" type="date" class="deasy-control" />
         </label>
       </div>

@@ -22,7 +22,7 @@
 
         <template v-else>
           <div class="flex flex-col gap-2">
-            <label :for="fieldId('selectedtermid')" class="deasy-overline">Periodo</label>
+            <label :for="fieldId('selectedtermid')" class="deasy-form-label">Periodo</label>
             <select :id="fieldId('selectedtermid')" v-model="selectedTermId" class="deasy-control deasy-control--select">
               <option value="" disabled>Selecciona un periodo</option>
               <option v-for="t in terms" :key="t.id" :value="String(t.id)">
