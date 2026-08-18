@@ -24,7 +24,7 @@
         :sends-count="mySends.length"
         :workspace-icon-tone-class="workspaceIconToneClass"
         @open-section="openWorkspaceSection"
-      />
+ />
     </template>
 
         <!-- Vista consolidada: Mis procesos — nivel 1: unidades / nivel 2: procesos -->
@@ -218,7 +218,7 @@
                             @template="handleDeliverableFutureAction('download_template', $event)"
                             @preview="previewDeliverableFile"
                             @chat="handleDeliverableFutureAction('process_chat', $event)"
-                          />
+ />
                         </div>
                       </section>
                     </div>
@@ -688,7 +688,7 @@
                 :loading="routedInboxLoading"
                 @create="openNewSend"
                 @refresh="loadRoutedInbox"
-              />
+ />
 
               <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
@@ -838,7 +838,7 @@
                           @template="handleDeliverableFutureAction('download_template', $event)"
                           @preview="previewDeliverableFile"
                           @chat="handleDeliverableFutureAction('process_chat', $event)"
-                        />
+ />
                       </div>
                     </section>
                   </div>
@@ -941,18 +941,13 @@
 
           <label class="flex flex-col gap-2 md:col-span-2">
             <span class="font-bold text-body text-sm">Descripción</span>
-            <textarea
-              v-model="taskLaunchForm.description"
-              class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
-              rows="3"
-              placeholder="Describe brevemente la tarea manual que vas a lanzar."
-            />
+            <textarea v-model="taskLaunchForm.description" class="deasy-control deasy-control--textarea resize-none" rows="3" placeholder="Describe brevemente la tarea manual que vas a lanzar." />
           </label>
 
           <label class="flex flex-col gap-2">
             <span class="font-bold text-body text-sm">Periodo existente</span>
             <div class="relative">
-              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
+              <select v-model="taskLaunchForm.term_id" class="deasy-control deasy-control--select" :disabled="taskLaunchUseCustomTerm">
                 <option value="">Seleccionar</option>
                 <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
                   {{ term.name }} · {{ term.term_type_name }}
@@ -971,15 +966,15 @@
           <template v-if="taskLaunchUseCustomTerm">
             <label class="flex flex-col gap-2 md:col-span-2">
               <span class="font-bold text-body text-sm">Nombre del periodo custom</span>
-              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium placeholder-gray-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
+              <input v-model="taskLaunchForm.custom_name" class="deasy-control" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
             </label>
             <label class="flex flex-col gap-2">
               <span class="font-bold text-body text-sm">Fecha inicial</span>
-              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium" type="date" />
+              <input v-model="taskLaunchForm.custom_start_date" class="deasy-control" type="date" />
             </label>
             <label class="flex flex-col gap-2">
               <span class="font-bold text-body text-sm">Fecha final</span>
-              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium" type="date" />
+              <input v-model="taskLaunchForm.custom_end_date" class="deasy-control" type="date" />
             </label>
           </template>
         </section>
@@ -1132,7 +1127,7 @@
               type="text"
               placeholder="Buscar entregables, periodos o unidades"
               class="deasy-control py-3 pl-11 pr-4"
-            />
+ />
           </div>
         </label>
 
@@ -1395,7 +1390,7 @@
       :resolving-observation-id="resolvingObservationId"
       @add-observation="submitDeliverableObservation"
       @resolve-observation="resolveDeliverableObservation"
-          />
+ />
         </template>
 
         <template v-else-if="deliverableWorkspaceState.tab === 'signature'">
@@ -1411,7 +1406,7 @@
       :get-signature-step-assigned-summary="getSignatureStepAssignedSummary"
       @add-observation="submitDeliverableObservation"
       @resolve-observation="resolveDeliverableObservation"
-          />
+ />
         </template>
         <template v-else-if="deliverableWorkspaceState.tab === 'attachments'">
           <DeliverableAttachmentsTab
@@ -1421,7 +1416,7 @@
             :handle-attachment-upload="handleAttachmentUpload"
             :handle-attachment-download="handleAttachmentDownload"
             :handle-attachment-delete="handleAttachmentDelete"
-          />
+ />
         </template>
         <template v-else-if="deliverableWorkspaceState.tab === 'history'">
           <!-- Autocontenida: pide sus propios datos. No añade estado a este componente a propósito
@@ -1430,7 +1425,7 @@
             :user-id="deliverableHistoryContext.userId"
             :definition-id="deliverableHistoryContext.definitionId"
             :task-item-id="deliverableHistoryContext.taskItemId"
-          />
+ />
         </template>
         <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm font-semibold text-icon text-center">
           No hay una sección disponible para este entregable.
@@ -1470,7 +1465,7 @@
       v-model:recipient-query="recipientQuery"
       v-model:flow-picker-mode="flowPickerMode"
       @submit="submitGeneralTask"
-    />
+ />
 
     <AppModalShell
       ref="mySendsModal"
@@ -1485,7 +1480,7 @@
           <p class="m-0 text-sm font-medium text-muted">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
           <label v-if="mySendsTypes.length > 1" class="flex items-center gap-2 text-sm">
             <span class="deasy-overline">Tipo</span>
-            <select v-model="mySendsTypeFilter" class="deasy-card px-2 py-1 text-sm font-medium text-body outline-none">
+            <select v-model="mySendsTypeFilter" class="deasy-control deasy-control--select">
               <option value="all">Todos</option>
               <option v-for="t in mySendsTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>
@@ -1690,12 +1685,7 @@
 
           <label class="flex flex-col gap-2">
             <span class="text-sm font-bold text-body">Nota operativa</span>
-            <textarea
-              v-model="fillWorkflowState.note"
-              rows="3"
-              class="block w-full px-4 py-3 border text-navy transition-all outline-none text-sm font-medium placeholder-gray-400 resize-none"
-              placeholder="Agrega una nota para esta acción."
-            />
+            <textarea v-model="fillWorkflowState.note" rows="3" class="deasy-control deasy-control--textarea resize-none" placeholder="Agrega una nota para esta acción." />
           </label>
 
           <AppAlert v-if="fillWorkflowState.error">
@@ -1917,7 +1907,7 @@
           input-id="home-deliverable-upload"
           @files-selected="handleDeliverableFilesSelected"
           @clear="clearDeliverableUploadSelection"
-        />
+ />
       </div>
       <template #footer>
         <AppButton variant="danger-outline" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">

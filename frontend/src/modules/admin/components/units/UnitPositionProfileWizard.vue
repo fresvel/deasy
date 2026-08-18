@@ -25,13 +25,7 @@
     <div v-if="currentSection">
       <h4 :id="sectionTitleId" class="m-0 text-base font-bold text-strong">{{ currentSection.label }}</h4>
       <p class="m-0 mt-1 mb-3 text-sm text-muted">{{ currentSection.hint }}</p>
-      <textarea
-        v-model="form[currentSection.key]"
-        :aria-labelledby="sectionTitleId"
-        rows="5"
-        class="w-full border px-3 py-2 text-sm outline-none"
-        :placeholder="currentSection.placeholder"
-      ></textarea>
+      <textarea v-model="form[currentSection.key]" :aria-labelledby="sectionTitleId" rows="5" class="deasy-control deasy-control--textarea" :placeholder="currentSection.placeholder"></textarea>
     </div>
 
     <!-- Paso de revisión -->

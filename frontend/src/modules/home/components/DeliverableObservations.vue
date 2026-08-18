@@ -101,13 +101,7 @@ const onAdd = () => {
       </ul>
 
       <div v-if="canAdd" class="mt-4 flex flex-col gap-2">
-        <textarea
-          v-model="draft"
-          rows="2"
-          aria-label="Escribe una observación"
-          class="border px-3 py-2 text-sm"
-          placeholder="Escribe una observación para el hilo..."
-        ></textarea>
+        <textarea v-model="draft" rows="2" aria-label="Escribe una observación" class="deasy-control deasy-control--textarea" placeholder="Escribe una observación para el hilo..."></textarea>
         <div class="flex justify-end">
           <AppButton
             variant="primary-outline"

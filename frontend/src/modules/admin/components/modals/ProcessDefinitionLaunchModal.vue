@@ -23,10 +23,7 @@
         <template v-else>
           <div class="flex flex-col gap-2">
             <label :for="fieldId('selectedtermid')" class="deasy-overline">Periodo</label>
-            <select :id="fieldId('selectedtermid')"
-              v-model="selectedTermId"
-              class="h-10 border px-3 text-sm"
-            >
+            <select :id="fieldId('selectedtermid')" v-model="selectedTermId" class="deasy-control deasy-control--select">
               <option value="" disabled>Selecciona un periodo</option>
               <option v-for="t in terms" :key="t.id" :value="String(t.id)">
                 {{ t.name }}{{ t.launched ? " — ya lanzado" : "" }}
@@ -43,12 +40,7 @@
             </span>
             <div v-if="selectedTerm.launched" class="flex flex-col gap-2">
               <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-icon">Motivo del relanzamiento (opcional)</label>
-              <input :id="fieldId('relaunchreason')"
-                v-model="relaunchReason"
-                type="text"
-                class="h-10 border px-3 text-sm"
-                placeholder="Ej. se agregaron nuevos destinatarios"
-              />
+              <input :id="fieldId('relaunchreason')" v-model="relaunchReason" type="text" class="deasy-control" placeholder="Ej. se agregaron nuevos destinatarios" />
             </div>
             <div class="flex justify-end">
               <AppButton

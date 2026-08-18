@@ -18,7 +18,7 @@
               :icon="IconFileUpload"
               input-id="change-pdf-input"
               @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
-            />
+ />
           </div>
         </div>
       </div>
@@ -53,7 +53,7 @@
             @previous="prevPageBtn"
             @next="nextPageBtn"
             @submit="goToPage"
-          />
+ />
         </div>
 
         <div class="flex items-center justify-start xl:justify-end gap-3 flex-wrap">
@@ -97,7 +97,7 @@
         @download-batch="downloadMultiBatch"
         @header-update="emit('multi-header-update', $event)"
         @start-batch="prepareMultiBatchStart"
-      />
+ />
     </div>
 
     <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8">
@@ -125,7 +125,7 @@
               input-id="workflow-sign-pdf-input"
               @files-selected="onPdfDropFiles($event, 'sign')"
               class="h-full"
-            />
+ />
           </div>
           <div class="flex flex-col gap-3">
             <AdminButton
@@ -165,7 +165,7 @@
             input-id="sign-pdf-input"
             @files-selected="onPdfDropFiles($event, 'sign')"
             class="h-full deasy-dropzone--workspace"
-          />
+ />
         </div>
 
         <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
@@ -177,7 +177,7 @@
             input-id="request-pdf-input"
             @files-selected="onPdfDropFiles($event, 'request')"
             class="h-full deasy-dropzone--workspace"
-          />
+ />
         </div>
 
         <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
@@ -189,7 +189,7 @@
             input-id="validate-pdf-input"
             @files-selected="onPdfDropFiles($event, 'validate')"
             class="h-full deasy-dropzone--workspace"
-          />
+ />
         </div>
 
         <div
@@ -206,7 +206,7 @@
             multiple
             @files-selected="onPdfDropFiles($event, 'multi')"
             class="h-full deasy-dropzone--workspace"
-          />
+ />
         </div>
 
         <button
@@ -299,7 +299,7 @@
               :width="parseFloat(previewBoxStyle.width)"
               :height="parseFloat(previewBoxStyle.height)"
               :label="currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : 'Firma'"
-            />
+ />
 
             <SignatureBox
               v-for="field in currentPageFields"
@@ -408,7 +408,7 @@
             class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100 lg:opacity-100"
             label="Eliminar campo"
             @click.stop="requestDeleteField(field.id)"
-          />
+ />
         </div>
       </div>
     </AppModalShell>
@@ -425,7 +425,7 @@
     <div v-else class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 bg-surface p-2 rounded-xl border border-line">
         <label :for="fieldId('filterpage')" class="font-semibold text-sm text-body ml-2">Filtrar por pagina</label>
-        <select :id="fieldId('filterpage')" v-model="filterPage" class="border px-3 py-1.5 text-sm text-strong outline-none transition">
+        <select :id="fieldId('filterpage')" v-model="filterPage" class="deasy-control deasy-control--select">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
             Pagina {{ page }}
@@ -475,7 +475,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
           <label :for="fieldId('statusfilter')" class="font-semibold text-sm text-body mb-0">Estado</label>
-          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="border px-3 py-2 text-sm text-strong outline-none transition">
+          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="deasy-control deasy-control--select">
             <option value="all">Todos</option>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
@@ -485,16 +485,11 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerinput')" class="font-semibold text-sm text-body mb-0">Buscar</label>
-          <input :id="fieldId('signerinput')"
-            v-model="signerInput"
-            type="text"
-            class="block w-full border px-4 py-2 text-sm text-strong outline-none transition"
-            placeholder="Nombre, correo o cédula"
-          />
+          <input :id="fieldId('signerinput')" v-model="signerInput" type="text" class="deasy-control" placeholder="Nombre, correo o cédula" />
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunittypefilter')" class="font-semibold text-sm text-body mb-0">Tipo de unidad</label>
-          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="border px-3 py-2 text-sm text-strong outline-none transition">
+          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="deasy-control deasy-control--select">
             <option value="">Todos</option>
             <option v-for="option in signerUnitTypeOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -503,7 +498,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signerunitfilter')" class="font-semibold text-sm text-body mb-0">Unidad</label>
-          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="border px-3 py-2 text-sm text-strong outline-none transition" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
+          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="deasy-control deasy-control--select" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
             <option v-for="option in signerUnitOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -512,7 +507,7 @@
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('signercargofilter')" class="font-semibold text-sm text-body mb-0">Cargo</label>
-          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="border px-3 py-2 text-sm text-strong outline-none transition" :disabled="isLoadingSignerOptions">
+          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="deasy-control deasy-control--select" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
             <option v-for="option in signerCargoOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -670,22 +665,11 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
           <label :for="fieldId('certpassword')" class="font-semibold text-sm text-body">Contraseña del certificado</label>
-          <input :id="fieldId('certpassword')"
-            v-model="certPassword"
-            type="password"
-            class="block w-full border px-4 py-2 text-sm text-strong outline-none transition"
-            placeholder="Contraseña del .p12"
-            autocomplete="current-password"
-          />
+          <input :id="fieldId('certpassword')" v-model="certPassword" type="password" class="deasy-control" placeholder="Contraseña del .p12" autocomplete="current-password" />
         </div>
         <div class="flex flex-col gap-2">
           <label :for="fieldId('stamptext')" class="font-semibold text-sm text-body">Texto del sello</label>
-          <input :id="fieldId('stamptext')"
-            v-model="stampText"
-            type="text"
-            class="block w-full border px-4 py-2 text-sm text-strong outline-none transition"
-            placeholder="Ej: Dr. Juan Pérez"
-          />
+          <input :id="fieldId('stamptext')" v-model="stampText" type="text" class="deasy-control" placeholder="Ej: Dr. Juan Pérez" />
         </div>
       </div>
 
@@ -749,7 +733,7 @@
       :selected-id="selectedCertificateId"
       @select="handleCertificateSelected"
       @loaded="handleCertificatesLoaded"
-    />
+ />
     <template #footer>
       <AdminButton variant="neutral-outline" data-modal-dismiss>Cerrar</AdminButton>
     </template>
@@ -769,7 +753,7 @@
       <AppCloseButton
         data-modal-dismiss
         class="absolute right-5 top-4 z-(--z-capa-elemento)"
-      />
+ />
     </template>
     <div class="px-6 pt-6 pb-4">
       <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
@@ -779,13 +763,7 @@
             <IconSearch class="w-4 h-4 text-info" /> Buscar cédula en las firmas
           </label>
           <div class="relative max-w-full md:max-w-sm">
-            <input
-              :id="fieldId('validationcedula')"
-              v-model="validationCedula"
-              type="text"
-              class="block w-full border pl-4 py-2.5 text-sm text-strong outline-none transition"
-              placeholder="Ej. 0999999999 (Opcional)"
-            />
+            <input :id="fieldId('validationcedula')" v-model="validationCedula" type="text" class="deasy-control" placeholder="Ej. 0999999999 (Opcional)" />
           </div>
         </div>
         <div class="relative z-(--z-capa-base) w-full md:w-auto">
@@ -863,7 +841,7 @@
         text="Validando firmas..." 
         subText="Por favor espere, esto puede tardar unos segundos dependiendo del tamaño de su documento." 
         :overlay="true" 
-      />
+ />
       <AppDataTable
         :fields="validationTableFields"
         :rows="validationResult?.signatures || []"

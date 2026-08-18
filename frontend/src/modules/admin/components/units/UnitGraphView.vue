@@ -19,10 +19,7 @@
       <div class="flex flex-wrap items-center gap-3">
         <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
           Relación
-          <select
-            v-model="activeRelationType"
-            class="h-8 border px-2 text-xs font-semibold text-body outline-none"
-          >
+          <select v-model="activeRelationType" class="deasy-control deasy-control--select">
             <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
             <option value="all">Todos los tipos</option>
           </select>
@@ -39,14 +36,7 @@
     <!-- Controles: buscar/centrar, salud, exportar -->
     <div class="flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-1.5">
-        <input
-          v-model="searchTerm"
-          type="text"
-          aria-label="Buscar unidad"
-          placeholder="Buscar unidad…"
-          class="h-8 w-52 border px-3 text-xs outline-none"
-          @keyup.enter="searchAndCenter"
-        />
+        <input v-model="searchTerm" type="text" aria-label="Buscar unidad" placeholder="Buscar unidad…" class="deasy-control w-52" @keyup.enter="searchAndCenter" />
         <AppButton variant="neutral-outline" @click="searchAndCenter">Buscar</AppButton>
       </div>
       <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
@@ -130,7 +120,7 @@
       <p class="m-0 mb-3 text-sm text-icon">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
       <label class="deasy-form-label">
         Tipo de relación
-        <select v-model="editingTypeCode" class="mt-1 h-10 w-full border px-2 text-sm font-medium text-body outline-none">
+        <select v-model="editingTypeCode" class="deasy-control deasy-control--select mt-1">
           <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
         </select>
       </label>
@@ -153,18 +143,18 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
-          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full border px-3 text-sm outline-none" placeholder="Nombre de la unidad" />
+          <input v-model="createForm.name" type="text" class="deasy-control mt-1" placeholder="Nombre de la unidad" />
         </label>
         <label class="deasy-form-label">
           Tipo de unidad
-          <select v-model="createForm.unit_type_id" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
+          <select v-model="createForm.unit_type_id" class="deasy-control deasy-control--select mt-1">
             <option value="">Selecciona…</option>
             <option v-for="ut in unitTypes" :key="ut.id" :value="ut.id">{{ ut.name }}</option>
           </select>
         </label>
         <label class="deasy-form-label">
           Slug <span class="font-normal text-muted">(opcional)</span>
-          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full border px-3 text-sm outline-none" placeholder="se deriva del nombre" />
+          <input v-model="createForm.slug" type="text" class="deasy-control mt-1" placeholder="se deriva del nombre" />
         </label>
       </div>
       <template #footer>
@@ -201,13 +191,13 @@
           <!-- Formulario de nuevo puesto -->
           <div v-if="editable && addingPosition" class="mb-3 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
             <div class="flex flex-col gap-2">
-              <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="h-9 w-full border px-2 text-sm outline-none">
+              <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="deasy-control deasy-control--select">
                 <option value="">Cargo…</option>
                 <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
-              <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="h-9 w-full border px-3 text-sm outline-none" />
+              <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="deasy-control" />
               <div class="flex items-center gap-3">
-                <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="h-9 flex-1 border px-2 text-sm outline-none">
+                <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="deasy-control deasy-control--select flex-1">
                   <option value="real">Real</option>
                   <option value="promocion">Promoción</option>
                   <option value="simbolico">Simbólico</option>
@@ -316,14 +306,7 @@
 
               <!-- Buscador de persona para asignar -->
               <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-line bg-surface p-2">
-                <input
-                  v-model="personQuery"
-                  type="text"
-                  aria-label="Buscar persona por nombre o cédula"
-                  placeholder="Buscar persona (nombre o cédula)…"
-                  class="h-8 w-full border px-2 text-xs outline-none"
-                  @input="searchPersons"
-                />
+                <input v-model="personQuery" type="text" aria-label="Buscar persona por nombre o cédula" placeholder="Buscar persona (nombre o cédula)…" class="deasy-control" @input="searchPersons" />
                 <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
                 <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
                   <li v-for="per in personResults" :key="per.id">
@@ -412,18 +395,18 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Cargo
-          <select v-model="editPositionForm.cargo_id" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
+          <select v-model="editPositionForm.cargo_id" class="deasy-control deasy-control--select mt-1">
             <option value="">Selecciona…</option>
             <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </label>
         <label class="deasy-form-label">
           Título <span class="font-normal text-muted">(opcional)</span>
-          <input v-model="editPositionForm.title" type="text" class="mt-1 h-10 w-full border px-3 text-sm outline-none" placeholder="Título del puesto" />
+          <input v-model="editPositionForm.title" type="text" class="deasy-control mt-1" placeholder="Título del puesto" />
         </label>
         <label class="deasy-form-label">
           Tipo
-          <select v-model="editPositionForm.position_type" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
+          <select v-model="editPositionForm.position_type" class="deasy-control deasy-control--select mt-1">
             <option value="real">Real</option>
             <option value="promocion">Promoción</option>
             <option value="simbolico">Simbólico</option>
@@ -447,7 +430,7 @@
       :position="profileWizardPosition"
       @close="profileWizardPosition = null"
       @save="saveProfileWizard"
-    />
+ />
 
     <!-- Vincular / editar proceso de la unidad (regla de alcance) -->
     <AppModalShell
@@ -461,11 +444,7 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Proceso (configuración en borrador)
-          <select
-            v-model="processForm.process_definition_id"
-            :disabled="Boolean(processEditingRuleId)"
-            class="mt-1 h-10 w-full border px-2 text-sm outline-none"
-          >
+          <select v-model="processForm.process_definition_id" :disabled="Boolean(processEditingRuleId)" class="deasy-control deasy-control--select mt-1">
             <option value="">Selecciona…</option>
             <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
               {{ def.process_name }} · {{ def.variation_key }} · v{{ def.definition_version }}
@@ -478,7 +457,7 @@
 
         <label class="deasy-form-label">
           Alcance
-          <select v-model="processForm.unit_scope_type" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
+          <select v-model="processForm.unit_scope_type" class="deasy-control deasy-control--select mt-1">
             <option value="unit_exact">Solo esta unidad</option>
             <option value="unit_subtree">Esta unidad y sus dependientes</option>
           </select>
@@ -486,7 +465,7 @@
 
         <label class="deasy-form-label">
           Entrega (destinatario)
-          <select v-model="processForm.recipient_policy" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
+          <select v-model="processForm.recipient_policy" class="deasy-control deasy-control--select mt-1">
             <option value="all_matches">Todos los del cargo</option>
             <option value="one_per_unit">Jefatura de la unidad</option>
             <option value="exact_position">Puesto exacto</option>
@@ -500,7 +479,7 @@
           </div>
           <label v-else class="deasy-form-label">
             Cargo destinatario
-            <select v-model="processForm.cargo_id" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
+            <select v-model="processForm.cargo_id" class="deasy-control deasy-control--select mt-1">
               <option value="">Selecciona…</option>
               <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
@@ -510,7 +489,7 @@
         <!-- Puesto exacto: de los puestos de esta unidad -->
         <label v-else class="deasy-form-label">
           Puesto de la unidad
-          <select v-model="processForm.position_id" class="mt-1 h-10 w-full border px-2 text-sm outline-none">
+          <select v-model="processForm.position_id" class="deasy-control deasy-control--select mt-1">
             <option value="">Selecciona…</option>
             <option v-for="pos in detailPositions" :key="pos.id" :value="pos.id">
               {{ pos.cargo_name || pos.title || 'Puesto' }} #{{ pos.slot_no }}

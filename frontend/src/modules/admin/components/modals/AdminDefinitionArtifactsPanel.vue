@@ -45,13 +45,7 @@
           {{ formatCell(row.template_artifact_id, { name: 'template_artifact_id' }) }}
         </template>
         <template v-else-if="field.name === 'item_mode'">
-          <select
-            v-if="canManage"
-            aria-label="Modo de emisión de la plantilla"
-            :value="row.item_mode || 'single'"
-            class="deasy-card px-2 py-1 text-xs font-semibold text-body outline-none"
-            @change="$emit('set-item-mode', { row, itemMode: $event.target.value })"
-          >
+          <select v-if="canManage" aria-label="Modo de emisión de la plantilla" :value="row.item_mode || 'single'" class="deasy-control deasy-control--select" @change="$emit('set-item-mode', { row, itemMode: $event.target.value })">
             <option value="single">Simple (1 entregable)</option>
             <option value="replicated">Replicado (N con etiqueta)</option>
             <option value="routed">Ruteado (endosar a alguien)</option>
@@ -74,7 +68,7 @@
           @view="$emit('view-row', row)"
           @edit="$emit('edit-row', row)"
           @delete="$emit('delete-row', row)"
-        />
+ />
       </template>
     </AppDataTable>
   </div>

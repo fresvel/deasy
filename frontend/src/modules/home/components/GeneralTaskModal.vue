@@ -33,11 +33,11 @@
       </div>
       <label class="flex flex-col gap-1">
         <span class="deasy-overline">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
-        <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none" />
+        <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="deasy-control" />
       </label>
       <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
         <span class="deasy-overline">Descripción</span>
-        <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none"></textarea>
+        <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="deasy-control deasy-control--textarea"></textarea>
       </label>
     </section>
 
@@ -73,12 +73,12 @@
             <span class="text-theme-xs font-bold uppercase tracking-wide text-muted">Paso {{ si + 1 }}</span>
             <div class="flex items-center gap-1.5">
               <template v-if="step.signers.length > 1">
-                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="border px-2 py-1 text-theme-xs font-semibold text-icon outline-none">
+                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="deasy-control deasy-control--select">
                   <option value="and">Firman todas</option>
                   <option value="or">Cualquiera</option>
                   <option value="at_least">Mínimo</option>
                 </select>
-                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="w-14 border px-2 py-1 text-theme-xs text-body outline-none" />
+                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="deasy-control w-14" />
               </template>
               <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="removeFirmaStep(si)">Quitar</button>
             </div>
@@ -104,14 +104,7 @@
         </div>
 
         <div v-if="flowPickerMode === 'person'" class="relative flex flex-col gap-1">
-          <input
-            v-model="recipientQuery"
-            type="text"
-            aria-label="Buscar persona por nombre, cédula o correo"
-            placeholder="Busca por nombre, cédula o correo…"
-            class="border px-3 py-2 text-sm font-medium text-body outline-none"
-            @input="searchRecipients"
-          />
+          <input v-model="recipientQuery" type="text" aria-label="Buscar persona por nombre, cédula o correo" placeholder="Busca por nombre, cédula o correo…" class="deasy-control" @input="searchRecipients" />
           <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-(--z-capa-base) mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
             <li v-for="person in recipientResults" :key="`fp-${person.id}`">
               <button type="button" class="deasy-option" @click="addFlowPerson(person)">
@@ -125,11 +118,11 @@
 
         <div v-else class="flex flex-col gap-2">
           <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select v-model="flowCargoForm.cargoId" aria-label="Cargo" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
+            <select v-model="flowCargoForm.cargoId" aria-label="Cargo" class="deasy-control deasy-control--select">
               <option :value="null" disabled>Cargo…</option>
               <option v-for="c in flowCatalog.cargos" :key="`c-${c.id}`" :value="c.id">{{ c.name }}</option>
             </select>
-            <select v-model="flowCargoForm.unitId" aria-label="Unidad" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
+            <select v-model="flowCargoForm.unitId" aria-label="Unidad" class="deasy-control deasy-control--select">
               <option :value="null">Todas las unidades</option>
               <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
             </select>
@@ -149,14 +142,14 @@
         <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->
         <label v-if="showSenderUnitSelect" class="flex flex-col gap-1">
           <span class="deasy-overline">Unidad emisora *</span>
-          <select v-model="generalTaskForm.unitId" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none">
+          <select v-model="generalTaskForm.unitId" class="deasy-control deasy-control--select">
             <option :value="null" disabled>Selecciona una unidad</option>
             <option v-for="unit in senderUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
           </select>
         </label>
         <label class="flex flex-col gap-1">
           <span class="deasy-overline">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
-          <input v-model="generalTaskForm.endDate" type="date" class="deasy-card px-3 py-2 text-sm font-medium text-body outline-none" />
+          <input v-model="generalTaskForm.endDate" type="date" class="deasy-control" />
         </label>
       </div>
       <p class="m-0 text-theme-xs font-medium text-muted">
