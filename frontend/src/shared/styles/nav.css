@@ -112,7 +112,13 @@
     
 }
 @layer components {
-.deasy-nav-shell {
+/* EL CARRIL DE NAVEGACION. Hasta el 2026-08-17 esta declaracion no llegaba al DOM: la pisaba
+       `overrides.css` con un degradado de blanco al 12 % y un borde de blanco al 8 %, que eran
+       de cuando el armazon era oscuro — sobre navy daban un efecto de cristal. Con el chrome
+       claro quedaron blanco sobre blanco, o sea **un carril sin borde visible**.
+       Medido con el dueño: la diferencia entre las dos versiones no se aprecia, asi que se queda
+       la mas simple — esta, una sola regla en el fichero que le corresponde. */
+    .deasy-nav-shell {
         @apply flex flex-col gap-2 rounded-2xl border p-2.5 shadow-none;
         border-color: var(--color-line);
         background: transparent;

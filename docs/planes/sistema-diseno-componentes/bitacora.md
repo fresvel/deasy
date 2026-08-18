@@ -6,6 +6,84 @@
 > [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md)
 > y **sigue valiendo**: es donde están las trampas ya pagadas.
 
+## 2026-08-17 · F6 — muere `overrides.css`, y con el la deuda de capa
+
+El fichero que daba nombre a la fase ya no existe. Empezo con **34 selectores fuera de `@layer`**
+en el proyecto y termina con **9, de los que solo 4 son deuda** (3 cualifican Vue Flow y 2 son los
+`:root` estructurales de `tokens.css`).
+
+### Lo que enseñaron sus lapidas, y no debe perderse con el fichero
+
+Se rescatan aqui porque describen trampas que se van a reencontrar:
+
+```css
+/* Solo `.bg-white` a secas, y NO por el color: pinta blanco con blanco, exactamente igual
+   que la utilidad de Tailwind. Lo que aporta es PRIORIDAD — esta sin capa, asi que gana a
+   las reglas de componente en 172 nodos. Quitarla no seria un cambio de color: seria
+   soltar esos 172.
+
+   Aqui estaban ademas `/80 /85 /90 /92 /95`, y esas SI hacian algo: aplastaban a blanco
+   solido las cinco variantes con alfa. Cinco de los nodos afectados combinaban
+   `bg-white/80` con `backdrop-blur` — un cristal esmerilado convertido en losa opaca, que
+   es la prueba de que era un accidente y no una decision. Entonces existia ademas un token
+   `--brand-white` propio, y `bg-brand-white/80` —el mismo proposito escrito con el otro
+   nombre— SI salia translucido, porque la regla no nombraba ese selector: el aspecto
+   dependia de que token hubiera elegido quien lo escribio. Ese token ya no existe. */
+```
+
+```css
+/* ══ TRES REPINTADOS BORRADOS EL 2026-08-13, POR QUEDARSE SIN CONSUMIDORES ══════════════
+   Era su final declarado desde el principio: «deuda con fecha de caducidad, no arquitectura».
+
+   · `.shadow-xl` y `.shadow-sm` -> las plantillas escribian una utilidad de Tailwind CONTANDO
+     con que aqui se le cambiara el valor por `--elev-2` / `--elev-1`. Ahora la escala de
+     elevacion esta registrada en `@theme` (`--shadow-elev-1/2/3`), asi que la plantilla pide
+     `shadow-elev-1` —lo que de verdad quiere— y el rodeo sobra. Mismos valores: cambio cero.
+   · `.bg-slate-50` (+ `/70` y `/80`) -> `bg-surface`, que es el mismo `--color-surface` sin
+     necesidad de una regla que lo traduzca.
+
+   Quedaba tambien `.border-slate-200` con `!important`. Ver mas abajo. */
+```
+
+```css
+/* ======================================================================================
+   (A) REPINTADO DE UTILIDADES DE TAILWIND — y NADA MAS. Ni un selector de componente.
+   VA AL FINAL A PROPOSITO (ver cabecera del fichero).
+
+   ⚠️ Es DEUDA CON FECHA DE CADUCIDAD, no arquitectura: cada utilidad de aqui existe porque
+   una plantilla escribe `bg-slate-50` en vez de `bg-surface`. Su final es
+   quedarse sin consumidores y borrarse — NO ampliar la lista, que es lo que hacia que se
+   escaparan 120 apariciones.
+
+   ⚠️ **ESTOS SELECTORES NO SON USOS.** Un script de migracion los reescribio una vez y
+   rompio el repintado en silencio (el escape del `/` en `.bg-slate-50\\/70` burla el limite
+   por la derecha). Al migrar por script, excluye este fichero o revisalo a mano.
+   ====================================================================================== */
+```
+
+### Y lo que enseño ejecutarlo
+
+1. **Un duplicado solo es duplicado si el destino gana SIN el.** Del marco de trabajo se borraron
+   primero los dos «deshacedores» dando por hecho que `admin.css` ya lo decia — y deshacian a sus
+   hermanos del MISMO fichero. El marco de tabla salio blanco y con sombra. Lo cazo la huella.
+2. **En CSS se sustituye texto exacto, nunca rangos.** Tres recortes por indice salieron mal en una
+   sola sesion: uno destrozo la estructura del fichero, otro se llevo la apertura de un `@layer`
+   —el build murio con «Missing opening {»— y el tercero, al repararlo, se llevo por delante una
+   regla que no tenia nada que ver. La cazo `check:orphan-classes`.
+3. **Una propiedad abreviada BORRA las longhand que no nombra.** El fondo de autenticacion no
+   ganaba por capa ni por especificidad: escribia `background:` sin `-image` y eso vacia. Los dos
+   halos radiales que `auth.css` declara no se habian visto nunca.
+4. **Bajar de capa no basta si las RECETAS declaran lo que el estado necesita pisar.** El campo en
+   error siguio invisible tras capar, porque `.deasy-auth-field` y `.deasy-control` ponian su
+   propio borde, fondo y color. De ahi la regla que queda: el reposo se declara UNA vez en el
+   suelo, la receta declara geometria, y el estado gana porque es lo unico que reclama esa
+   propiedad.
+5. **A igual especificidad decide el ORDEN del fichero.** Al capar el foco lo deje al final y se
+   comio el borde rojo del error: un campo invalido se veia AZUL justo mientras lo corregias. No
+   lo vio ningun gate — ninguno mira quien gana.
+
+---
+
 ## 2026-08-17 · F5.4 — tres nombres para dos tamaños, y el que sobraba era el más elegido
 
 ### Las cifras del plan estaban mal, y no por poco
