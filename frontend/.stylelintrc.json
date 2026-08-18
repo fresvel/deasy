@@ -36,7 +36,7 @@
     "no-duplicate-selectors": null,
     "custom-property-pattern": null,
     "selector-class-pattern": [
-      "^((deasy|graph|btnsera|sera|profile|pdf-preview|custom|signature-workspace|theme|process-dialog)(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?|(router-link-active|vue-flow__[a-z-]+|leaflet-[a-z-]+|is-active)|(text-muted|font-bold))$",
+      "^((deasy|graph|btnsera|sera|profile|pdf-preview|custom|signature-workspace|theme|process-dialog)(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?|(router-link-active|vue-flow__[a-z-]+)|(text-muted|font-bold))$",
       {
         "message": "Una clase propia va en BEM con prefijo de familia: deasy-bloque__elemento--modificador. Las familias que no son `deasy-` son legado y no admiten nombres NUEVOS; los terceros y las dos utilidades que aun se cualifican (`text-muted`, `font-bold`) estan listados aparte en la regla. Si necesitas anadir una utilidad de Tailwind aqui, pregunta primero por que hay una regla que la nombra: esa es la deuda que `overrides.css` termino de pagar el 2026-08-13."
       }
