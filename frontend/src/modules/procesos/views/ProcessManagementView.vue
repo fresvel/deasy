@@ -171,8 +171,8 @@
       </div>
     </div>
 
-    <div v-else class="admin-workspace-frame admin-workspace-frame--table w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
-      <div class="admin-typography w-full h-full relative overflow-y-auto">
+    <div v-else class="w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
+      <div class="deasy-typography w-full h-full relative overflow-y-auto">
         <AdminTableManager
           ref="adminManager"
           :table="selectedTable"

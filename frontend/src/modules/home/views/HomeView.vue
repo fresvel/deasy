@@ -32,7 +32,7 @@
           <section class="flex flex-col gap-6">
 
             <!-- Nivel 1: tabs por unidad + botón volver en la misma fila -->
-            <div class="admin-related-tabs flex items-center justify-between gap-3">
+            <div class="pt-0.5 pb-1 flex items-center justify-between gap-3">
               <div class="deasy-inline-tabs" role="tablist" aria-label="Unidades">
                 <button
                   v-for="unit in unitsPanelData"
@@ -634,7 +634,7 @@
           <section class="flex flex-col gap-6">
 
             <!-- Tabs de unidades (arriba del header, como en admin) -->
-            <div v-if="!processPanelLoading && !processPanelError && processUnitTabs.length > 1" class="admin-related-tabs">
+            <div v-if="!processPanelLoading && !processPanelError && processUnitTabs.length > 1" class="pt-0.5 pb-1">
               <div class="deasy-inline-tabs" role="tablist" aria-label="Unidades del proceso">
                 <button
                   v-for="tab in processUnitTabs"

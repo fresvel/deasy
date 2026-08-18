@@ -2,21 +2,12 @@
    las dos reglas tienen que estar en la misma capa o una mata a la otra. Ver alli. */
 
 @layer components {
-    .admin-workspace-frame {
-        border: 1px solid var(--color-line);
-        border-radius: var(--radius-2xl);
-        background: var(--color-surface);
-        box-shadow: var(--elev-1);
-        padding: 0.5rem;
-    }
+    /* ══ `.admin-workspace-frame` Y SU `--table` MURIERON JUNTAS — 2026-08-17, F6.L5 ═══════
+       La base declaraba borde, radio, fondo, sombra y padding; el modificador los ponia los cinco
+       a cero. Y sus DOS unicos consumidores escribian siempre las dos, asi que el resultado neto
+       era **nada** — un `<div>` sin estilo, escrito con dos clases y diez declaraciones.
+       Las plantillas se quedan sin ninguna de las dos, que es lo que ya se veia. */
 
-    .admin-workspace-frame--table {
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
-        padding: 0;
-    }
 
     /* ══ `.admin-surface-frame` SE FUNDIO CON `.deasy-card` — 2026-08-17, F6.L4 ═══════════
        Medido con la sombra ya retirada: radio, borde, color de borde y fondo eran IDENTICOS a
@@ -28,9 +19,10 @@
        silencio — ni el build, ni el lint, ni los tests lo ven». */
 
 
-    .admin-related-tabs {
-        padding: 0.15rem 0 0.2rem;
-    }
+    /* `.admin-related-tabs` murio el 2026-08-17 (F6.L5): declaraba `padding: .15rem 0 .2rem`
+       —2,4 y 3,2 px, ninguno de la escala— y nada mas. Sus 5 usos lo escriben ahora con dos
+       utilidades de la escala; la diferencia es de menos de un pixel. */
+
 
     .admin-page-header {
         display: flex;

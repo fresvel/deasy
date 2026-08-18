@@ -160,11 +160,11 @@
         @apply justify-between;
     }
 
-    .admin-select-field.deasy-control {
-        padding-right: 2.75rem;
-    }
+    /* `.admin-select-field` murio el 2026-08-17 (F6.L5): declaraba `padding-right: 2.75rem` y
+       `.deasy-control--select`, que el mismo elemento ya lleva, declara `pr-11` — el MISMO valor.
+       Un duplicado exacto sostenido por un nombre de otra familia. */
 
-    .deasy-filter-search-row {
+        .deasy-filter-search-row {
         @apply flex items-center gap-2;
     }
 

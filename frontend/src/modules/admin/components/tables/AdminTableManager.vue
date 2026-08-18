@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-table-manager">
+  <div class="flex flex-col gap-3">
     <AdminFeedbackToast
       :visible="feedbackToast.visible"
       :kind="feedbackToast.kind"
@@ -30,7 +30,7 @@
       @close="closeTemplateVersionDialog"
     />
 
-    <div v-if="table && siblingTabs.length" class="admin-related-tabs">
+    <div v-if="table && siblingTabs.length" class="pt-0.5 pb-1">
       <ProfileSubsectionTabs
         :model-value="activeSiblingTab"
         :tabs="siblingTabs"
@@ -67,7 +67,7 @@
       </p>
     </div>
 
-    <div v-if="table && isPositionAssignmentsTable" class="admin-related-tabs">
+    <div v-if="table && isPositionAssignmentsTable" class="pt-0.5 pb-1">
       <ProfileSubsectionTabs
         :model-value="positionAssignmentsView"
         :tabs="positionAssignmentsTabs"
@@ -76,7 +76,7 @@
       />
     </div>
 
-    <div v-if="table && isProcessDefinitionTemplatesTable" class="admin-related-tabs">
+    <div v-if="table && isProcessDefinitionTemplatesTable" class="pt-0.5 pb-1">
       <ProfileSubsectionTabs
         :model-value="definitionTemplatesView"
         :tabs="definitionTemplatesTabs"

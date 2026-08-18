@@ -111,13 +111,6 @@
    silencio. Hoy el padding lo pone la plantilla con una utilidad, y no depende del orden. */
 
 @layer components {
-    .admin-table-manager {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 0;
-    }
-
     .theme-info-panel {
         background-color: var(--info-soft);
         border-radius: 12px;

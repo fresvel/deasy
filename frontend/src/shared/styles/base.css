@@ -69,7 +69,7 @@
     }
 
     /* La tipografia base del CONTENEDOR, no la de los encabezados. */
-    .admin-typography {
+    .deasy-typography {
         font-family: var(--typeface);
         font-size: var(--type-size);
         line-height: var(--type-leading);
@@ -80,12 +80,12 @@
        Aqui habia ademas los seis `.home-typography h1..h6`, y no hacian nada: esa clase no esta
        en una sola plantilla. El razonamiento que sostenia el comentario —«los del resto de la
        app se quedarian en 500»— hablaba de una mitad que nunca llego al DOM. */
-    .admin-typography h1,
-    .admin-typography h2,
-    .admin-typography h3,
-    .admin-typography h4,
-    .admin-typography h5,
-    .admin-typography h6 {
+    .deasy-typography h1,
+    .deasy-typography h2,
+    .deasy-typography h3,
+    .deasy-typography h4,
+    .deasy-typography h5,
+    .deasy-typography h6 {
       font-family: var(--typeface);
       font-weight: 500;
       line-height: var(--type-leading-heading);
