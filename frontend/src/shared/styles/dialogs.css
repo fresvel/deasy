@@ -81,9 +81,10 @@
        Venia de cuando `AppFormModalLayout` sí era una piel aparte; al colapsar esa piel sobre la
        del sistema, estos dos usos se quedaron con un nombre huerfano que describia un componente
        que ya no existe. */
-    .deasy-dialog-panel--plain {
-        background: transparent;
-    }
+    /* (Su declaracion se movio junto a la base el 2026-08-17 — ver mas abajo. Estaba AQUI, 137
+       lineas por delante, y a igual especificidad eso significa que **no ganaba nunca**: el panel
+       de `BtnSera` salia blanco en vez de transparente. Lo encontro `check:layer-debt` en su
+       primera corrida, y no lo habia visto ningun gate ni ningun ojo.) */
 
     /* ══ AQUI SE REPINTABA LA ✕ CUANDO VIVE EN UN PANEL — retirado el 2026-08-14 (G3) ═══════
        Era la tercera regla que le fijaba el radio: la base daba 8 px, `--close` lo subia a 16 y
@@ -223,6 +224,13 @@
       border: 1px solid var(--color-line);
       background: var(--color-white);
       box-shadow: var(--elev-3);
+    }
+
+    /* SIN PIEL — el panel que solo aporta posicion, para un modal que se pinta su propio fondo.
+       Va DETRAS de su base a proposito: las dos son (0,1,0) y en la misma capa, asi que decide el
+       orden. Estuvo 137 lineas por delante y por eso no aplicaba. */
+    .deasy-dialog-panel--plain {
+        background: transparent;
     }
 
     /* ── 5. EL TITULO ──────────────────────────────────────────────────────────────────────

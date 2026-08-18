@@ -61,6 +61,25 @@ Se rescatan aqui porque describen trampas que se van a reencontrar:
    ====================================================================================== */
 ```
 
+### El gate que nacio de aqui
+
+`check-layer-debt.mjs`, el veintidos, con dos señales:
+
+- **S1 · una regla fuera de `@layer`**, techo cero, con dos excepciones declaradas y su motivo.
+- **S2 · dos reglas de la misma especificidad disputandose una propiedad y LEJOS una de otra.**
+  No evalua la cascada —eso solo lo hace el navegador—: exige que se vean en la misma pantalla,
+  porque **la distancia es lo que convierte un conflicto deliberado en uno accidental**.
+
+Las dos, probadas en rojo con los fallos reales de la fase. Y S2 **encontro uno solo en su primera
+corrida, y era de verdad**: `.deasy-dialog-panel--plain` estaba declarada 137 lineas por delante de
+su base, o sea que su `background: transparent` no gano nunca — el panel del modal de `BtnSera`
+llevaba meses saliendo blanco. No lo habia visto ningun gate ni ningun ojo.
+
+📌 Su primera version acuso a OCHO parejas, y seis eran ruido: variantes mutuamente excluyentes de
+`.deasy-btn` que no coexisten en un elemento. La acotacion que lo arregla es precisa y vale la pena
+recordarla: **solo cuenta si una de las dos es la base desnuda**, porque en BEM un elemento lleva
+siempre su base y su modificador, pero no dos variantes.
+
 ### Y lo que enseño ejecutarlo
 
 1. **Un duplicado solo es duplicado si el destino gana SIN el.** Del marco de trabajo se borraron
