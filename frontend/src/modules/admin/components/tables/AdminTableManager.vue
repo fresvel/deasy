@@ -85,7 +85,7 @@
       />
     </div>
 
-    <div v-if="table && isCurrentTableTraceability" class="deasy-alert deasy-alert--warning mb-3">
+    <AppAlert variant="warning" class="mb-3" v-if="table && isCurrentTableTraceability">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <p class="m-0 flex items-start gap-2 text-sm text-warning">
           <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
@@ -102,7 +102,7 @@
       <p v-if="isAdminUser && advancedRuntimeMode" class="m-0 mt-2 text-xs font-bold text-danger">
         Edición directa habilitada: puede afectar la consistencia del flujo. No reemplaza las validaciones del backend.
       </p>
-    </div>
+    </AppAlert>
 
     <UnitGraphView
       v-if="table && isUnitsTable && unitGraphMode"
@@ -418,10 +418,10 @@
         Vas a <strong>retirar</strong> la configuración
         <strong>{{ retireDefinitionRow?.name || `#${retireDefinitionRow?.id}` }}</strong>.
       </p>
-      <div class="deasy-alert deasy-alert--warning">
+      <AppAlert variant="warning">
         Una configuración retirada deja de aplicarse a nuevos procesos y queda en <strong>solo lectura</strong>:
         no podrás reactivarla. Si más adelante necesitas estos ajustes, crea una nueva versión a partir de ella.
-      </div>
+      </AppAlert>
       <template #footer>
         <AdminButton variant="danger-outline" data-modal-dismiss>Cancelar</AdminButton>
         <AdminButton variant="danger-outline" @click="confirmRetireProcessDefinition">Retirar</AdminButton>
@@ -702,13 +702,13 @@
           content-class="max-w-md"
           @close="showWizardActivateConfirm = false"
         >
-          <div class="deasy-alert deasy-alert--warning flex items-start gap-3 leading-relaxed">
+          <AppAlert variant="warning" class="flex items-start gap-3 leading-relaxed">
             <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
             <span>
               Al activar, <strong>ya no podrás modificar</strong> reglas, periodos ni paquetes en esta versión.
               Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.
             </span>
-          </div>
+          </AppAlert>
           <AdminConfigActivationDiff v-if="showWizardActivateConfirm" :definition-id="processWizardDefinition?.id" class="mt-3" />
           <template #footer>
             <AdminButton variant="danger-outline" @click="showWizardActivateConfirm = false">Cancelar</AdminButton>
@@ -1154,6 +1154,7 @@ import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import { Modal } from "@/shared/utils/modalController";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
 // instancia, para que dos montajes simultaneos no compartan el mismo id.

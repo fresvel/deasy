@@ -19,9 +19,9 @@
       </span>
     </template>
     <AppAlert v-if="draftArtifactError">{{ draftArtifactError }}</AppAlert>
-    <div v-if="draftArtifactLoading" class="deasy-alert deasy-alert--warning">
+    <AppAlert variant="warning" v-if="draftArtifactLoading">
       Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
-    </div>
+    </AppAlert>
 
     <!-- Gobierno del ciclo de vida: estado (draft/published/retired) + publicar/retirar/versionar (solo al editar) -->
     <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-brand-300 bg-brand-50' : 'border-brand-200 bg-brand-50/50'">
@@ -72,10 +72,10 @@
     </AppModalShell>
 
     <!-- Aviso de solo lectura: versión publicada/retirada (inmutable). -->
-    <div v-if="isReadOnly" class="deasy-alert deasy-alert--warning mt-3">
+    <AppAlert variant="warning" class="mt-3" v-if="isReadOnly">
       Esta versión está <strong>{{ lifecycleLabel.toLowerCase() }}</strong> y es de <strong>solo lectura</strong>.
       Usa <strong>“Nueva versión”</strong> (arriba) para crear una versión editable.
-    </div>
+    </AppAlert>
 
     <!-- Pestañas con indicadores de avance -->
     <div class="mt-3">
@@ -177,9 +177,9 @@
 
     <!-- Pestaña: Formatos -->
     <div v-show="activeTab === 'formatos'" class="mt-4 grid gap-3 md:grid-cols-12">
-      <div v-if="!isFormatosComplete" class="deasy-alert deasy-alert--warning md:col-span-12">
+      <AppAlert variant="warning" class="md:col-span-12" v-if="!isFormatosComplete">
         Adjunta al menos un documento de referencia (PDF, Word, Excel o PowerPoint) para poder crear la plantilla.
-      </div>
+      </AppAlert>
       <div class="md:col-span-3">
         <label :for="fieldId('upload-pdf')" class="deasy-form-label deasy-form-label--inline">PDF</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" :filled="isDraftFileSelected('pdf')" accept=".pdf" :input-id="fieldId('upload-pdf')" @files-selected="emitDraftFiles('pdf', $event)" />
@@ -268,9 +268,9 @@
         </div>
         <AdminButton variant="primary-outline" @click="addFillStep">+ Añadir paso</AdminButton>
       </div>
-      <div v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading" class="deasy-alert deasy-alert--warning mt-3">
+      <AppAlert variant="warning" class="mt-3" v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading">
         El proceso vinculado aún no tiene <strong>reglas objetivo</strong>. Los ámbitos “Unidad del proceso” quedan deshabilitados (resolverían a nadie); define primero las reglas o usa una unidad específica.
-      </div>
+      </AppAlert>
       <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-muted">
         Sin pasos de entrega.
       </div>

@@ -323,11 +323,11 @@
               leave-from-class="translate-y-0 opacity-100"
               leave-to-class="-translate-y-2 opacity-0"
             >
-              <div v-if="errorMessage" class="deasy-alert deasy-alert--danger mt-5 flex">
+              <AppAlert class="mt-5 flex" v-if="errorMessage">
                 <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
                 <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
                 <AppCloseButton class="ml-3" label="Cerrar alerta" @click="errorMessage = ''" />
-              </div>
+              </AppAlert>
             </Transition>
 
             <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row">
@@ -383,6 +383,7 @@ import AppTag from "@/shared/components/data/AppTag.vue";
 import { countries, getPhoneCodeByCountry } from "@/core/constants/countries";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
 // instancia, para que dos montajes simultaneos no compartan el mismo id.

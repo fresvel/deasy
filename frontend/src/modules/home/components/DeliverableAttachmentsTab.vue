@@ -23,7 +23,7 @@
       </label>
     </div>
 
-    <div v-if="attachmentsState.error" class="deasy-alert deasy-alert--danger mt-3">{{ attachmentsState.error }}</div>
+    <AppAlert class="mt-3" v-if="attachmentsState.error">{{ attachmentsState.error }}</AppAlert>
 
     <div v-if="attachmentsState.loading" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center animate-pulse">Cargando anexos...</div>
     <div v-else-if="!attachmentsState.items.length" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center">
@@ -62,6 +62,7 @@
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import { IconUpload, IconDownload, IconFileDescription, IconX } from '@tabler/icons-vue';
 import { formatAttachmentSize } from '@/modules/home/views/homeView.helpers.js';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const attachmentUploadKind = defineModel('attachmentUploadKind', { type: String, default: 'annex' });
 

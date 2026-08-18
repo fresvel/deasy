@@ -16,15 +16,12 @@
   >
     <!-- Paso 1: Configuración -->
     <div v-show="currentStep === 'definition'" class="flex flex-col gap-4">
-      <div
-        v-if="duplicateDefinition?.id"
-        class="deasy-alert deasy-alert--warning flex flex-wrap items-center justify-between gap-3"
-      >
+      <AppAlert variant="warning" class="flex flex-wrap items-center justify-between gap-3" v-if="duplicateDefinition?.id">
         <span>Ya existe una configuración para esa variación y versión.</span>
         <AdminButton variant="primary-outline" @click="$emit('edit-existing-definition', duplicateDefinition)">
           Editar existente
         </AdminButton>
-      </div>
+      </AppAlert>
       <div class="grid gap-3 md:grid-cols-12">
         <AdminFieldGroup label="Proceso" group-class="md:col-span-6">
           <div class="flex gap-2">
@@ -172,6 +169,7 @@ import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vu
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminProcessWizardShell from "@/modules/admin/components/modals/AdminProcessWizardShell.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const props = defineProps({
   open: { type: Boolean, default: false },

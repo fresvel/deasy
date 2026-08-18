@@ -2,9 +2,9 @@
 <div v-if="signatureFlowState.loading" class="deasy-empty">
   Consultando la secuencia de firmas...
 </div>
-<div v-else-if="signatureFlowState.error" class="deasy-alert deasy-alert--danger">
+<AppAlert v-else-if="signatureFlowState.error">
   {{ signatureFlowState.error }}
-</div>
+</AppAlert>
 <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
   <section class="deasy-card p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
@@ -106,6 +106,7 @@
 // Extraída de HomeView.vue en la Fase C. Componente PRESENTACIONAL.
 import AppTag from '@/shared/components/data/AppTag.vue';
 import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   getSignatureStepStatusCode,
   getSignatureStepStatusLabel,

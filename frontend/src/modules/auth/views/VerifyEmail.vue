@@ -39,15 +39,15 @@
       </div>
     </div>
 
-    <div v-if="error" class="deasy-alert deasy-alert--danger mb-6 flex items-start gap-3">
+    <AppAlert class="mb-6 flex items-start gap-3" v-if="error">
       <IconAlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
       <p>{{ error }}</p>
-    </div>
+    </AppAlert>
 
-    <div v-if="success" class="deasy-alert deasy-alert--success mb-6 flex items-start gap-3">
+    <AppAlert variant="success" class="mb-6 flex items-start gap-3" v-if="success">
       <IconCheck class="w-5 h-5 shrink-0 mt-0.5" />
       <p>¡Correo verificado correctamente! Redirigiendo...</p>
-    </div>
+    </AppAlert>
 
     <button
       type="button"
@@ -66,6 +66,7 @@
 import { ref, computed, nextTick } from 'vue'
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import AuthLayout from '@/layouts/auth/AuthLayout.vue';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/core/services/httpClient'
 import { API_ROUTES } from '@/core/config/apiConfig'

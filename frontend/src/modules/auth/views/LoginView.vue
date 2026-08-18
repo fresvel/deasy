@@ -68,11 +68,11 @@
       leave-from-class="translate-y-0 opacity-100"
       leave-to-class="-translate-y-2 opacity-0"
     >
-      <div v-if="errorMessage" class="deasy-alert deasy-alert--danger mt-5 flex">
+      <AppAlert class="mt-5 flex" v-if="errorMessage">
         <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
         <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
         <AppCloseButton class="ml-3" label="Cerrar alerta" @click="clearToast" />
-      </div>
+      </AppAlert>
     </Transition>
 
     <div class="relative my-7">
@@ -96,6 +96,7 @@ import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import { getDefaultAuthenticatedRoute } from "@/core/utils/accessControl.js";
 import { resolveApiErrorMessage } from "@/shared/utils/apiError.js";
 import { IconUser, IconLock, IconEye, IconEyeOff, IconAlertCircle, IconArrowRight } from "@tabler/icons-vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 // El login escala el mensaje por codigo de estado, cosa que el resto de pantallas no hace: un 500 se
 // traduce a un texto propio ignorando lo que diga el backend (un fallo interno no es asunto del usuario),

@@ -1,8 +1,8 @@
 <template>
   <section id="signature-home" class="flex flex-col gap-6">
-    <section v-if="error" class="deasy-alert deasy-alert--danger">
+    <AppAlert v-if="error">
       {{ error }}
-    </section>
+    </AppAlert>
 
     <section id="signature-launchers" class="rounded-xl border border-line bg-white shadow-line/30">
       <FirmarPdf
@@ -281,9 +281,9 @@
         </div>
       </template>
       <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
-        <div v-if="multiSignerError" class="deasy-alert deasy-alert--danger mb-4">
+        <AppAlert class="mb-4" v-if="multiSignerError">
           {{ multiSignerError }}
-        </div>
+        </AppAlert>
         <div v-if="pendingPreparation" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">
           Preparando documentos del lote...
         </div>
@@ -347,6 +347,7 @@ import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import ProcessDefinitionPanelService from "@/core/services/ProcessDefinitionPanelService.js";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const emit = defineEmits(["refresh-home"]);
 const processPanelService = new ProcessDefinitionPanelService();

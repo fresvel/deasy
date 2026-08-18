@@ -46,10 +46,7 @@
       {{ wizardError }}
     </AppAlert>
 
-    <div
-      v-if="definitionContext?.id && showContextSummary"
-      class="deasy-alert deasy-alert--success mb-3 flex flex-wrap items-center gap-2"
-    >
+    <AppAlert variant="success" class="mb-3 flex flex-wrap items-center gap-2" v-if="definitionContext?.id && showContextSummary">
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
       <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
         {{ definitionContext.definition_version || "—" }}
@@ -57,7 +54,7 @@
       <AppTag :variant="tonoEstadoDefinicion" size="sm">
         {{ definitionStatusLabel }}
       </AppTag>
-    </div>
+    </AppAlert>
 
     <slot />
 

@@ -177,7 +177,7 @@
                  <span class="text-muted font-medium">Cargando catálogos...</span>
                </div>
             </div>
-            <div v-else-if="metaError" class="deasy-alert deasy-alert--danger text-center">{{ metaError }}</div>
+            <AppAlert class="text-center" v-else-if="metaError">{{ metaError }}</AppAlert>
             <template v-else>
                <AppPageHeader size="hero" shell-class="mb-8" :overline="adminHeroKicker" :title="adminHeroTitle" :description="adminHeroDescription">
                  <template #media><component :is="adminHeroIcon" class="h-10 w-10" /></template>
@@ -361,6 +361,7 @@ import {
   workspaceIconToneClass,
 } from "@/shared/utils/workspaceNavIcons.js";
 import { canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const { menuOpen: vmenu, showNotify: vnotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
   useWorkspaceChrome();

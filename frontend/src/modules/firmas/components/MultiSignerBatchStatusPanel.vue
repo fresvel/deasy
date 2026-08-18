@@ -43,18 +43,18 @@
         <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-muted">Documentos</div>
         <div class="text-2xl font-black leading-none text-strong">{{ documentsCount }}</div>
       </div>
-      <div class="deasy-alert deasy-alert--success flex flex-col items-center justify-center text-center">
+      <AppAlert variant="success" class="flex flex-col items-center justify-center text-center">
         <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-success">Éxitos</div>
         <div class="text-2xl font-black leading-none text-success">{{ successCount }}</div>
-      </div>
-      <div class="deasy-alert deasy-alert--warning flex flex-col items-center justify-center text-center">
+      </AppAlert>
+      <AppAlert variant="warning" class="flex flex-col items-center justify-center text-center">
         <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-warning">Pendientes</div>
         <div class="text-2xl font-black leading-none text-warning">{{ pendingCount }}</div>
-      </div>
-      <div class="deasy-alert deasy-alert--danger flex flex-col items-center justify-center text-center">
+      </AppAlert>
+      <AppAlert class="flex flex-col items-center justify-center text-center">
         <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-danger">Fallos</div>
         <div class="text-2xl font-black leading-none text-danger">{{ failedCount }}</div>
-      </div>
+      </AppAlert>
     </div>
 
     <div class="rounded-2xl border border-blue-light-100 bg-blue-light-50/50 p-4">
@@ -91,10 +91,10 @@
       </div>
     </div>
 
-    <div v-if="batchError" class="deasy-alert deasy-alert--danger mt-auto flex items-start gap-2">
+    <AppAlert class="mt-auto flex items-start gap-2" v-if="batchError">
       <IconAlertCircle class="mt-0.5 h-5 w-5 shrink-0" />
       <span class="font-medium">{{ batchError }}</span>
-    </div>
+    </AppAlert>
   </div>
 </template>
 
@@ -105,6 +105,7 @@ import { computed } from "vue";
 import { IconAlertCircle, IconCheck} from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const props = defineProps({
   batchJob: {

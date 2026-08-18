@@ -280,10 +280,7 @@
       </div>
     </div>
 
-    <div
-      v-else-if="mode === 'recovery_required'"
-      class="deasy-alert deasy-alert--warning"
-    >
+    <AppAlert variant="warning" v-else-if="mode === 'recovery_required'">
       <div class="flex items-start gap-3">
         <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
         <div class="space-y-2">
@@ -311,7 +308,7 @@
           </p>
         </div>
       </div>
-    </div>
+    </AppAlert>
     <div v-else class="rounded-2xl border border-line bg-surface p-5 text-center text-sm text-icon">
       Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
     </div>

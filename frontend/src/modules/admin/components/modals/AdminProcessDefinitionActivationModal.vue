@@ -41,13 +41,13 @@
       content-class="max-w-md"
       @close="showConfirm = false"
     >
-      <div class="deasy-alert deasy-alert--warning flex items-start gap-3 leading-relaxed">
+      <AppAlert variant="warning" class="flex items-start gap-3 leading-relaxed">
         <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
         <span>
           Al activar, <strong>ya no podrás modificar</strong> reglas, periodos ni paquetes en esta versión.
           Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.
         </span>
-      </div>
+      </AppAlert>
       <AdminConfigActivationDiff v-if="showConfirm" :definition-id="selectedRow?.id" class="mt-3" />
       <template #footer>
         <AdminButton variant="danger-outline" @click="showConfirm = false">Cancelar</AdminButton>
@@ -70,6 +70,7 @@ import AdminProcessWizardShell from "@/modules/admin/components/modals/AdminProc
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminConfigActivationDiff from "@/modules/admin/components/modals/AdminConfigActivationDiff.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const props = defineProps({
   checking: { type: Boolean, default: false },

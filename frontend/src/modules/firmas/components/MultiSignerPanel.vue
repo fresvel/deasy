@@ -227,16 +227,13 @@
                 </template>
               </SignatureBox>
 
-              <div
-                v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
-                class="deasy-alert deasy-alert--danger pointer-events-none absolute z-(--z-capa-elemento) border-2 border-dashed mix-blend-multiply"
-                :style="activeSelectionBox"
-              >
+              <AppAlert class="pointer-events-none absolute z-(--z-capa-elemento) border-2 border-dashed mix-blend-multiply" v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
+                :style="activeSelectionBox">
                 <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-theme-xs font-bold text-white shadow-theme-lg">
                   <IconDragDrop class="h-3 w-3" />
                   <span>Calculando Área...</span>
                 </div>
-              </div>
+              </AppAlert>
             </div>
 
             <div
@@ -372,6 +369,7 @@ import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import MultiSignerBatchStatusPanel from "@/modules/firmas/components/MultiSignerBatchStatusPanel.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 const props = defineProps({
   batchJob: {
     type: Object,

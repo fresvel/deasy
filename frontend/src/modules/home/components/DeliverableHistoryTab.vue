@@ -8,7 +8,7 @@
         </p>
       </div>
 
-      <div v-if="error" class="deasy-alert deasy-alert--danger mt-3">{{ error }}</div>
+      <AppAlert class="mt-3" v-if="error">{{ error }}</AppAlert>
 
       <div
         v-else-if="loading"
@@ -74,6 +74,7 @@ import { IconArrowsExchange } from '@tabler/icons-vue';
 import httpClient from '@/core/services/httpClient.js';
 import { API_ROUTES } from '@/core/config/apiConfig.js';
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const props = defineProps({
   userId: { type: [Number, String], default: null },

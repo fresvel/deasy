@@ -141,12 +141,12 @@
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex items-center gap-3 mt-6">
+      <AppAlert class="flex items-center gap-3 mt-6" v-if="uploadError">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
-      </div>
+      </AppAlert>
     </div>
 
     <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8">
@@ -272,12 +272,12 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="deasy-alert deasy-alert--danger flex items-center gap-3 mt-6">
+      <AppAlert class="flex items-center gap-3 mt-6" v-if="uploadError">
         <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
-      </div>
+      </AppAlert>
     </div>
 
     <div v-else-if="!multiOnly" class="mt-4">
@@ -689,7 +689,7 @@
         </div>
       </div>
 
-      <div class="deasy-alert deasy-alert--warning">
+      <AppAlert variant="warning">
         <SToggle v-model="allowUntrustedSigner" label-position="end">
           <span class="text-sm text-warning">
             Permitir certificados no validados
@@ -698,7 +698,7 @@
             </span>
           </span>
         </SToggle>
-      </div>
+      </AppAlert>
 
       <p v-if="signError" class="mb-0 text-sm font-medium text-danger">{{ signError }}</p>
     </div>
@@ -802,10 +802,10 @@
         </div>
       </div>
 
-      <div v-if="validationError" class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3">
+      <AppAlert class="mt-4 flex items-start gap-3" v-if="validationError">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
-      </div>
+      </AppAlert>
 
       <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="deasy-card p-4 flex flex-col items-start gap-2 relative overflow-hidden">
@@ -816,14 +816,14 @@
           <div class="text-3xl font-black text-strong z-(--z-capa-base)">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
 
-        <div class="deasy-alert deasy-alert--success flex flex-col items-start gap-2 relative overflow-hidden">
+        <AppAlert variant="success" class="flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
           <div class="flex items-center gap-2 text-success mb-1 z-(--z-capa-base)">
             <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
             <div class="deasy-overline">Firmas Válidas</div>
           </div>
           <div class="text-3xl font-black text-success z-(--z-capa-base)">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
-        </div>
+        </AppAlert>
 
         <div class="rounded-2xl border border-blue-light-200 bg-blue-light-50/50 p-4 flex flex-col items-start gap-2 relative overflow-hidden">
            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-light-100 rounded-full blur-xl opacity-50"></div>
@@ -843,23 +843,17 @@
         </div>
       </div>
 
-      <div
-        v-if="validationResult?.summary?.timestampCount"
-        class="deasy-alert deasy-alert--warning mt-4 flex items-start gap-3"
-      >
+      <AppAlert variant="warning" class="mt-4 flex items-start gap-3" v-if="validationResult?.summary?.timestampCount">
         <IconAlertTriangle class="w-5 h-5 shrink-0 text-warning mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
-      </div>
+      </AppAlert>
 
-      <div
-        v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="deasy-alert deasy-alert--danger mt-4 flex items-start gap-3"
-      >
+      <AppAlert class="mt-4 flex items-start gap-3" v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <div class="flex flex-col gap-1">
           <p v-for="(warning, idx) in validationResult.warnings" :key="idx" class="font-medium leading-relaxed m-0">{{ warning }}</p>
         </div>
-      </div>
+      </AppAlert>
     </div>
 
     <!-- TABLA -->

@@ -87,9 +87,9 @@
           <p class="m-0 text-sm font-semibold">Cargando chat...</p>
         </div>
 
-        <div v-else-if="error" class="deasy-alert deasy-alert--danger m-4">
+        <AppAlert class="m-4" v-else-if="error">
           {{ error }}
-        </div>
+        </AppAlert>
 
         <div v-else-if="view === 'conversation'" class="flex h-full min-h-0 flex-col">
           <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
@@ -284,6 +284,7 @@ import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppCloseButton from '@/shared/components/buttons/AppCloseButton.vue';
 import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
 import realtimeClient from '@/core/services/realtimeClient.js';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   IconArrowLeft,
   IconBuildingCommunity,

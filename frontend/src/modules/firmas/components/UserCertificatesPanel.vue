@@ -20,9 +20,9 @@
         <AppAlert v-if="errorMessage">
           {{ errorMessage }}
         </AppAlert>
-        <div v-if="successMessage" class="deasy-alert deasy-alert--success mb-3">
+        <AppAlert variant="success" class="mb-3" v-if="successMessage">
           {{ successMessage }}
-        </div>
+        </AppAlert>
 
         <div v-if="isLoading" class="py-8 text-center text-sm text-muted font-medium">
           Cargando certificados...

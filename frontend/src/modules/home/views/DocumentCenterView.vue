@@ -31,12 +31,9 @@
       <SupervisorStuckPanel />
 
       <!-- Fallos de descarga/vista previa. Mismo patrón que HomeView: aviso inline, no toast. -->
-      <section
-        v-if="actionError"
-        class="deasy-alert deasy-alert--danger"
-      >
+      <AppAlert v-if="actionError">
         {{ actionError }}
-      </section>
+      </AppAlert>
 
       <section class="bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
         <div class="deasy-filter-shell">
@@ -86,9 +83,9 @@
         <section v-if="loading" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">
           Cargando centro documental...
         </section>
-        <section v-else-if="error" class="deasy-alert deasy-alert--danger">
+        <AppAlert v-else-if="error">
           {{ error }}
-        </section>
+        </AppAlert>
         <AppDataTable
           v-else
           :fields="DOCUMENT_FIELDS"
@@ -169,6 +166,7 @@ import { buildDeliverableSubject } from "@/shared/utils/deliverableSubject.js";
 import { workspaceIconToneClass } from "@/shared/utils/workspaceNavIcons.js";
 import { getStoredUser } from "@/core/utils/accessControl.js";
 import ProcessDefinitionPanelService from "@/core/services/ProcessDefinitionPanelService";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const DOCUMENT_FIELDS = [
   { name: "document", label: "Documento" },

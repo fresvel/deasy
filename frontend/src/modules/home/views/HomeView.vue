@@ -153,9 +153,9 @@
             <section v-if="processPanelLoading" class="bg-blue-light-50 border border-blue-light-100 text-info rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando proceso...
             </section>
-            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger">
+            <AppAlert v-else-if="processPanelError">
               {{ processPanelError }}
-            </section>
+            </AppAlert>
             <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted text-center text-sm font-medium">
               Selecciona una unidad y proceso para ver sus entregables.
             </div>
@@ -394,10 +394,10 @@
           <div v-else class="flex flex-col gap-4">
 
             <!-- Error banner -->
-            <div v-if="homeErrorMessage" class="deasy-alert deasy-alert--danger flex items-center gap-3">
+            <AppAlert class="flex items-center gap-3" v-if="homeErrorMessage">
               <IconAlertTriangle class="h-5 w-5 shrink-0" />
               <span>{{ homeErrorMessage }}</span>
-            </div>
+            </AppAlert>
 
             <!-- Tabs -->
             <div class="deasy-inline-tabs" role="tablist">
@@ -669,9 +669,9 @@
               Cargando la configuración seleccionada...
             </section>
 
-            <section v-else-if="processPanelError" class="deasy-alert deasy-alert--danger">
+            <AppAlert v-else-if="processPanelError">
               {{ processPanelError }}
-            </section>
+            </AppAlert>
 
             <template v-else>
               <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
@@ -924,9 +924,9 @@
           </div>
         </div>
 
-        <div v-if="taskLaunchError" class="deasy-alert deasy-alert--danger">
+        <AppAlert v-if="taskLaunchError">
           {{ taskLaunchError }}
-        </div>
+        </AppAlert>
 
         <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
           <div class="md:col-span-2 rounded-xl border border-line bg-surface/60 p-5">
@@ -1043,12 +1043,12 @@
         </section>
 
         <section v-else class="flex flex-col gap-5">
-          <div class="deasy-alert deasy-alert--success">
+          <AppAlert variant="success">
             <h3 class="m-0 text-base font-bold text-success">Confirmación</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-success/80">
               Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
             </p>
-          </div>
+          </AppAlert>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
@@ -1698,9 +1698,9 @@
             />
           </label>
 
-          <div v-if="fillWorkflowState.error" class="deasy-alert deasy-alert--danger">
+          <AppAlert v-if="fillWorkflowState.error">
             {{ fillWorkflowState.error }}
-          </div>
+          </AppAlert>
         </div>
       </div>
       <template #footer>
@@ -1723,9 +1723,9 @@
         <div v-if="signatureFlowState.loading" class="deasy-empty">
           Consultando la secuencia de firmas...
         </div>
-        <div v-else-if="signatureFlowState.error" class="deasy-alert deasy-alert--danger">
+        <AppAlert v-else-if="signatureFlowState.error">
           {{ signatureFlowState.error }}
-        </div>
+        </AppAlert>
         <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-2">
@@ -1996,9 +1996,9 @@
       @close="closeDeliverableResetModal"
     >
       <div class="flex flex-col gap-4">
-        <div class="deasy-alert deasy-alert--warning">
+        <AppAlert variant="warning">
           Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
-        </div>
+        </AppAlert>
         <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
           <p class="m-0 font-semibold text-body">
             {{ deliverableResetState.target?.title || 'Entregable seleccionado' }}
@@ -2007,9 +2007,9 @@
             La versión actual quedará como histórico cancelado. La nueva versión empezará desde cero y el documento no conservará el archivo de trabajo previo.
           </p>
         </div>
-        <p v-if="deliverableResetState.error" class="deasy-alert deasy-alert--danger m-0">
+        <AppAlert class="m-0" v-if="deliverableResetState.error">
           {{ deliverableResetState.error }}
-        </p>
+        </AppAlert>
       </div>
       <template #footer>
         <AppButton variant="danger-outline" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
@@ -2145,6 +2145,7 @@ import DeliverableFillTab from '@/modules/home/components/DeliverableFillTab.vue
 import DeliverableSignatureTab from '@/modules/home/components/DeliverableSignatureTab.vue';
 import { useDeliverableView } from '@/modules/home/composables/useDeliverableView.js';
 import { useDeliverableFilePreview } from '@/modules/home/composables/useDeliverableFilePreview.js';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   formatDateTime,
   formatWorkflowDateTime,

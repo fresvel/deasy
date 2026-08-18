@@ -21,12 +21,12 @@
     <div v-if="loading" class="rounded-xl border border-line bg-surface px-4 py-4 text-sm font-medium text-muted">
       Cargando…
     </div>
-    <div v-else-if="error" class="deasy-alert deasy-alert--danger">
+    <AppAlert v-else-if="error">
       {{ error }}
-    </div>
-    <div v-else-if="!items.length" class="deasy-alert deasy-alert--success">
+    </AppAlert>
+    <AppAlert variant="success" v-else-if="!items.length">
       Sin entregables atascados. Todo asignado. ✓
-    </div>
+    </AppAlert>
 
     <div v-else class="flex flex-col gap-4">
       <div v-for="group in grouped" :key="group.unit_id ?? 'sin-unidad'" class="flex flex-col gap-2">
@@ -62,6 +62,7 @@ import { computed, onMounted, ref } from "vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const isSupervisor = ref(false);
 const items = ref([]);

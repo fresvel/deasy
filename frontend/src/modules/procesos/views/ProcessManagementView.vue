@@ -69,12 +69,9 @@
           </div>
         </div>
 
-        <div
-          v-else-if="metaError"
-          class="deasy-alert deasy-alert--danger text-center"
-        >
+        <AppAlert class="text-center" v-else-if="metaError">
           {{ metaError }}
-        </div>
+        </AppAlert>
 
         <template v-else>
           <AppPageHeader size="hero" shell-class="mb-8" :overline="heroKicker" :title="heroTitle" :description="heroDescription">
@@ -212,6 +209,7 @@ import AdminTableManager from "@/modules/admin/components/tables/AdminTableManag
 import AdminOperationSummary from "@/modules/admin/components/tables/AdminOperationSummary.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import { DEFAULT_USER_PHOTO, resolveUserPhotoUrl } from "@/core/services/userPhotoService.js";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   canCreateAdminTable,
   canReadAdminTable,

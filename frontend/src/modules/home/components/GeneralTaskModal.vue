@@ -23,7 +23,7 @@
       <AppTag variant="neutral">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
     </div>
 
-    <div v-if="generalTaskError" class="deasy-alert deasy-alert--danger">{{ generalTaskError }}</div>
+    <AppAlert v-if="generalTaskError">{{ generalTaskError }}</AppAlert>
 
     <!-- Documento -->
     <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
@@ -194,6 +194,7 @@ import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
 import { ref } from 'vue';
 import { IconFileDescription, IconBuildingMonument, IconSend } from '@tabler/icons-vue';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const recipientQuery = defineModel('recipientQuery', { type: String, default: '' });
 const flowPickerMode = defineModel('flowPickerMode', { type: String, default: 'person' });
