@@ -245,6 +245,22 @@
        `color`. No es deuda que entre este commit —ya era asi con los tintes de Tailwind—
        pero se escribe para que nadie lo mida y crea que la migracion lo rompio. Se
        encienden cuando §4.2 decida borde y foco de los 228 controles. */
+    /* EL FOCO DE LA RECETA — capado el 2026-08-17 (F6.L2), y **colocado aqui a proposito**.
+       Estuvo fuera de `@layer` porque el grupo de `overrides.css` que fijaba el borde en reposo
+       tambien lo estaba. Aquel grupo es ahora el suelo de `@layer base` de este fichero, asi que
+       `components` le gana y esta regla vale sin saltarse el sistema.
+
+       ⚠️ VA ANTES DE LOS ESTADOS, Y NO ES CAPRICHO. `.deasy-control:focus` y
+       `.deasy-control--error:focus` tienen **la misma especificidad** (0,2,0), asi que entre ellas
+       decide el ORDEN del fichero. Al capar esta regla la deje al final por comodidad y se comio
+       el borde rojo del campo en error: mientras escribias, el campo invalido se veia AZUL. Lo
+       vio el dueño en `/register`, no ningun gate — ninguno mira quien gana. */
+    .deasy-control:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+    }
+
     .deasy-control--error {
         border-color: color-mix(in srgb, var(--color-danger) 71%, var(--color-white));
         background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
@@ -482,20 +498,6 @@
        elemento de `overrides.css` impone 8 px desde fuera de capa— asi que ya se veia a 8. */
 }
 
-/* EL FOCO DE LA RECETA — capado el 2026-08-17 (F6.L2).
-   Estuvo fuera de `@layer` porque el grupo de `overrides.css` que fijaba el borde en reposo
-   tambien lo estaba, y capar esta sola la habria hecho perder POR CAPA. Aquel grupo es ahora el
-   suelo de `@layer base` de este mismo fichero, asi que `components` le gana y esta regla vale
-   sin necesidad de saltarse el sistema.
-   Declara el mismo azul que el suelo, y eso es deliberado: el foco es UNO. Se conserva la regla
-   porque su especificidad la hace ganar tambien a los estados de la propia receta. */
-@layer components {
-    .deasy-control:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: var(--focus-ring);
-    }
-}
 
 @layer components {
     .profile-inline-note {
