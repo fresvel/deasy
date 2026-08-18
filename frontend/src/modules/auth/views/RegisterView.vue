@@ -305,7 +305,7 @@
                   v-model="termsAccepted"
                   type="checkbox"
                   required
-                  class="mt-0.5 h-4 w-4 text-info"
+                  class="mt-0.5 text-info"
                 />
                 <span>
                   Acepto los

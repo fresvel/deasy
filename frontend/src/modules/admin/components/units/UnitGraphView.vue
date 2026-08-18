@@ -28,7 +28,7 @@
           </select>
         </label>
         <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
-          <input v-model="showInactive" type="checkbox" class="h-3.5 w-3.5 text-primary" />
+          <input v-model="showInactive" type="checkbox" class="text-primary" />
           Mostrar inactivas
         </label>
         <AppButton v-if="editable" variant="neutral-outline" :disabled="loading" @click="$emit('create-unit')">+ Unidad</AppButton>
@@ -50,7 +50,7 @@
         <AppButton variant="neutral-outline" @click="searchAndCenter">Buscar</AppButton>
       </div>
       <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
-        <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 text-warning" />
+        <input v-model="healthOnly" type="checkbox" class="text-warning" />
         Resaltar pendientes
         <AppTag v-if="pendingCount" variant="warning">{{ pendingCount }}</AppTag>
       </label>

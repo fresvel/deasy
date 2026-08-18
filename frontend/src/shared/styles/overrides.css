@@ -231,81 +231,11 @@
 /* ⚠️ `.shadow-sm` era el ultimo repintado de valor y se fue con los otros dos: sus 119
    consumidores piden ahora `shadow-elev-1`, que es el mismo valor pedido por su nombre. */
 
-/* ═══ CASILLA Y BOTON DE RADIO ═════════════════════════════════════════════════════════
- *
- * ⚠️ ESTE BLOQUE ESTA FUERA DE `@layer` A LA FUERZA, y es la razon por la que vive en
- * `overrides.css` y no en `forms.css`, que seria su sitio natural.
- *
- * Se escribio primero dentro de `@layer components` y **tres de sus declaraciones no llegaron al
- * DOM**: el radio salia a 8 px, el borde en `gray-200` y el marcado en blanco. No es un problema
- * de especificidad —`input[type="checkbox"]` es mas especifico que `input`— sino de CAPAS: la
- * regla de elemento de este mismo fichero (`input, select, textarea { border-radius; background }`)
- * esta fuera de capa, y **una regla sin capa gana SIEMPRE a una que este dentro**, por especifica
- * que sea. Es exactamente la trampa que F6 existe para desactivar.
- *
- * 📌 El dia que F6.1 baje esa regla de elemento a `@layer base`, este bloque puede volver a
- * `forms.css` sin tocar una linea de su contenido.
- *
- * Hasta el 2026-08-15 (F4) estos dos controles no tenian **ni una linea de CSS**: salian
- * nativos, 13x13 px, con el gris del sistema operativo. Doce usos en la aplicacion.
- *
- * 🪤 El plan decia que heredaban `border-radius: 0.5rem` de la regla de elemento de
- * `overrides.css` y salian «cuadrados de 8 px». Al medirlos, `getComputedStyle` daba **0 px**:
- * con `appearance: auto` el navegador pinta su propio control y el radio declarado no llega a
- * verse. El diagnostico era optimista — no estaban mal dimensionados, estaban SIN ESTILAR.
- *
- * ── POR QUE NO SE COPIA SU MARKUP ──────────────────────────────────────────────────────
- *
- * La receta de TailAdmin esconde el input real (`sr-only`) y pinta una caja al lado con Alpine.
- * Eso obligaria a reescribir los doce consumidores y a meterles estado. Se adopta su FORMA
- * —caja de 20 px, `rounded-md`, borde `gray-300` de 1.25 px, marcado en la marca con el check
- * en blanco— con `appearance: none` y CSS puro, que no toca ni un consumidor y ademas conserva
- * el control nativo: teclado, `:focus-visible` y lectores de pantalla siguen funcionando solos.
- * Su markup es de 2020 y el CSS ya no lo necesita.
- *
- * `--color-line-strong` no es una aproximacion: es alias de `--color-gray-300`, el mismo borde
- * que su receta. */
-input[type="checkbox"]:not(.deasy-toggle__input),
-input[type="radio"]:not(.deasy-toggle__input) {
-    @apply h-5 w-5 shrink-0 cursor-pointer appearance-none bg-white transition-colors;
-    border: 1.25px solid var(--color-line-strong);
-    border-radius: var(--radius-md);
-}
-
-/* La unica diferencia de forma entre los dos, y es la que los distingue de un vistazo: uno
-   admite varias respuestas y el otro una. Redondo = excluyente. */
-input[type="radio"]:not(.deasy-toggle__input) {
-    border-radius: 9999px;
-}
-
-input[type="checkbox"]:not(.deasy-toggle__input):checked,
-input[type="radio"]:not(.deasy-toggle__input):checked {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-}
-
-/* El check y el punto van como fondo y no como pseudo-elemento: un `input` es un elemento
-   reemplazado y no admite `::before` de forma fiable en todos los navegadores. */
-input[type="checkbox"]:not(.deasy-toggle__input):checked {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M11.6666 3.5L5.24992 9.91667L2.33325 7' stroke='white' stroke-width='1.94437' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-input[type="radio"]:not(.deasy-toggle__input):checked {
-    background-image: radial-gradient(circle, var(--color-white) 0 3.5px, transparent 3.5px);
-}
-
-@media (hover: hover) {
-    input[type="checkbox"]:not(.deasy-toggle__input, :disabled):hover,
-    input[type="radio"]:not(.deasy-toggle__input, :disabled):hover {
-        border-color: var(--color-primary);
-    }
-}
-
-input[type="checkbox"]:not(.deasy-toggle__input):disabled,
-input[type="radio"]:not(.deasy-toggle__input):disabled {
-    @apply cursor-not-allowed;
-    border-color: var(--color-line);
-    background-color: var(--color-surface);
-}
+/* ══ LA CASILLA Y EL RADIO SE FUERON A `forms.css` — 2026-08-17, F6.L3 ═════════════════════
+   Estaban aqui «a la fuerza», y su propio comentario lo decia: no podian vivir en `forms.css`
+   porque la regla de elemento de este fichero estaba fuera de capa y les ganaba. Esa regla es
+   desde L2 el suelo de `@layer base`, asi que la condicion desaparecio y el bloque vuelve a casa
+   sin cambiar una linea de su contenido — que es, literalmente, lo que aquel comentario prometia.
+   Lo que si hizo falta y no estaba previsto: borrar los 18 `h-4 w-4` / `h-3.5 w-3.5` que nueve
+   plantillas escribian encima. Dentro de una capa, esas utilidades pasan a ganar, y las casillas
+   habrian encogido de 20 a 16 y 14 px. Hoy hay UN tamaño de casilla y se declara una vez. */
