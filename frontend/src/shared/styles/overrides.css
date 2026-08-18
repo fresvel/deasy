@@ -12,18 +12,30 @@
    ====================================================================================== */
 
 @layer components {
-    .deasy-section-card,
-    .deasy-form-section,
-    .deasy-auth-card,
-    .admin-workspace-frame,
-    .admin-surface-frame,
-    .deasy-dialog-panel {
-        background-color: var(--color-white);
-    }
+    /* ══ SE FUERON OCHO REGLAS QUE NO DECIAN NADA NUEVO — 2026-08-17, F6.L4 ═══════════════════
+       Cada una declaraba EXACTAMENTE lo que su fichero destino ya declara, y solo servian para
+       ganarle por orden de import. Con `overrides.css` cargando el ultimo, una regla asi es
+       invisible mientras coincide… y una bomba el dia que el destino cambia de valor y esta no.
 
-    .admin-workspace-frame--table {
-        background-color: transparent;
-    }
+         · fondo blanco de 5 superficies   -> lo declaran `surfaces.css`, `forms.css`, `auth.css`
+                                              y `dialogs.css` por su cuenta
+         · `--table` transparente x2       -> `admin.css:14-18` ya pone borde 0, fondo y sombra
+         · borde `--color-line` de 4       -> `surfaces.css:16`, `dialogs.css:220`, `admin.css:6`
+                                              y `admin.css:22`
+         · pie de dialogo gris             -> `dialogs.css:272`
+
+       Queda solo lo que este fichero decia de VERDAD, y se muda a su casa en este mismo lote. */
+
+    /* ══ Y AQUI VIVIA EL FONDO BLANCO DEL MARCO DE TRABAJO — borrado el 2026-08-17 ═══════════
+       Pisaba el `--color-surface` que declara `admin.css:8`… y lo devolvia a transparente con una
+       SEGUNDA regla mas abajo para el modificador `--table`. Dos reglas de este fichero peleando
+       entre si para acabar donde `admin.css` ya estaba: ese fichero declara las dos mitades
+       completas y en el orden correcto, asi que gobierna solo.
+
+       🪤 Y aqui casi me la cuelo: borre primero los dos «deshacedores» dando por hecho que eran
+       duplicados de `admin.css`, y **no lo eran** — deshacian a sus hermanos de este mismo
+       fichero. La huella lo cazo al instante: el marco de tabla salio blanco y con sombra. La
+       leccion es la del plan: un duplicado solo es duplicado si el destino gana SIN el. */
 
     .deasy-auth-page {
         background:
@@ -34,33 +46,16 @@
         background-color: var(--color-white);
     }
 
-    .deasy-dialog-footer {
-        background-color: var(--color-surface);
-    }
-
-    .deasy-section-card,
-    .deasy-dialog-panel,
-    .admin-workspace-frame,
-    .admin-surface-frame {
-        border-color: var(--color-line);
-    }
-
+    /* ⚠️ ESTAS CUATRO SOMBRAS CONTRADICEN A SU PROPIO FICHERO, y por eso no se borran a ciegas:
+       `surfaces.css` retiro la sombra de `.deasy-section-card` A PROPOSITO —«la superficie se
+       dibuja con el BORDE, y la sombra queda para lo que flota»—, `admin.css` la pone en `none`
+       para `.admin-surface-frame`, y `auth.css` pide `--elev-3` para `.deasy-auth-card`. Las tres
+       llevan meses desmentidas desde aqui, desde el final del fichero y sin que nadie lo viera.
+       Mudarlas es encender lo que cada fichero ya decia. */
     .deasy-section-card,
     .deasy-auth-card,
-    .admin-workspace-frame,
     .admin-surface-frame {
         box-shadow: var(--elev-1);
-    }
-
-    .admin-workspace-frame--table {
-        /* Aqui hubo un `!important`, y su motivo escrito era «contra el `.border-slate-*` suelto
-           del bloque (A)». **El bloque (A) esta vacio desde el 2026-08-13**: de la cabecera de
-           (A) hasta el final del fichero solo quedan comentarios de defuncion, ni una regla. Sin
-           adversario fuera de capa, este `border-color` gana a su hermano de arriba por ORDEN DE
-           DOCUMENTO dentro de la misma capa, que es como el comentario decia que ya ganaba.
-           Retirado el 2026-08-14 (fase 0.1): el `!important` no suprimia nada. */
-        border-color: transparent;
-        box-shadow: none;
     }
 }
 
