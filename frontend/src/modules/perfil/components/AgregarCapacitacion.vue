@@ -9,7 +9,7 @@
     @cancel="onCancel"
   >
     <div class="w-full space-y-2">
-      <label :for="fieldId('tema')" class="profile-field-label">Tema</label>
+      <label :for="fieldId('tema')" class="deasy-form-label">Tema</label>
       <textarea
         :id="fieldId('tema')"
         class="deasy-control deasy-control--textarea"
@@ -20,7 +20,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('institucion')" class="profile-field-label">Institución</label>
+      <label :for="fieldId('institucion')" class="deasy-form-label">Institución</label>
       <s-select
         :id="fieldId('institucion')"
         :options="instituciones"
@@ -38,7 +38,7 @@
     </div>
 
     <div class="w-full">
-      <label :for="fieldId('tipo')" class="profile-field-label">Tipo</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Tipo</label>
       <s-select
         :id="fieldId('tipo')"
         :options="['Docente', 'Profesional']"
@@ -47,7 +47,7 @@
     </div>
 
     <div class="w-full">
-      <label :for="fieldId('rol')" class="profile-field-label">Rol</label>
+      <label :for="fieldId('rol')" class="deasy-form-label">Rol</label>
       <s-select
         :id="fieldId('rol')"
         :options="['Asistencia', 'Instructor', 'Aprobación']"
@@ -56,7 +56,7 @@
     </div>
 
     <div class="w-full">
-      <label :for="fieldId('pais')" class="profile-field-label">País</label>
+      <label :for="fieldId('pais')" class="deasy-form-label">País</label>
       <s-select
         :id="fieldId('pais')"
         :options="escountries"

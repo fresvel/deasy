@@ -9,7 +9,7 @@
     @cancel="onCancel"
   >
     <div class="w-full">
-      <label :for="fieldId('tipo')" class="profile-field-label">Tipo de referencia</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Tipo de referencia</label>
       <SSelect
         :id="fieldId('tipo')"
         :options="['laboral', 'personal', 'familiar']"
@@ -18,7 +18,7 @@
     </div>
 
     <div class="w-full space-y-2" v-if="form.tipo === 'laboral'">
-      <label :for="fieldId('institution')" class="profile-field-label">Institución</label>
+      <label :for="fieldId('institution')" class="deasy-form-label">Institución</label>
       <input :id="fieldId('institution')"
         type="text"
         class="deasy-control"
@@ -28,7 +28,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('nombre')" class="profile-field-label">Nombres</label>
+      <label :for="fieldId('nombre')" class="deasy-form-label">Nombres</label>
       <input :id="fieldId('nombre')"
         type="text"
         class="deasy-control"
@@ -38,7 +38,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('cargo-parentesco')" class="profile-field-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
+      <label :for="fieldId('cargo-parentesco')" class="deasy-form-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
       <input :id="fieldId('cargo-parentesco')"
         type="text"
         class="deasy-control"
@@ -48,7 +48,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('email')" class="profile-field-label">Correo electrónico</label>
+      <label :for="fieldId('email')" class="deasy-form-label">Correo electrónico</label>
       <input :id="fieldId('email')"
         type="email"
         class="deasy-control"
@@ -58,7 +58,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('telefono')" class="profile-field-label">Teléfono</label>
+      <label :for="fieldId('telefono')" class="deasy-form-label">Teléfono</label>
       <input :id="fieldId('telefono')"
         type="text"
         class="deasy-control"

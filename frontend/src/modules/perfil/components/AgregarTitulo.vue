@@ -9,7 +9,7 @@
     @cancel="onCancel"
   >
     <div class="w-full space-y-2">
-      <label :for="fieldId('titulo')" class="profile-field-label">Título</label>
+      <label :for="fieldId('titulo')" class="deasy-form-label">Título</label>
       <s-select
         :id="fieldId('titulo')"
         :options="carreras"
@@ -27,7 +27,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('ies')" class="profile-field-label">Institución</label>
+      <label :for="fieldId('ies')" class="deasy-form-label">Institución</label>
       <s-select
         :id="fieldId('ies')"
         :options="universidades"
@@ -45,7 +45,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('pais')" class="profile-field-label">País de emisión</label>
+      <label :for="fieldId('pais')" class="deasy-form-label">País de emisión</label>
       <s-select
         :id="fieldId('pais')"
         :options="escountries"
@@ -59,7 +59,7 @@
     </div>
 
     <div class="w-full">
-      <label :for="fieldId('tipo')" class="profile-field-label">Modalidad</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Modalidad</label>
       <s-select
         :id="fieldId('tipo')"
         :options="modalidades"
@@ -69,7 +69,7 @@
     </div>
 
     <div class="w-full">
-      <label :for="fieldId('nivel')" class="profile-field-label">Nivel</label>
+      <label :for="fieldId('nivel')" class="deasy-form-label">Nivel</label>
       <s-select
         :id="fieldId('nivel')"
         :options="niveles"
@@ -79,7 +79,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('campo-amplio')" class="profile-field-label">Campo de conocimiento</label>
+      <label :for="fieldId('campo-amplio')" class="deasy-form-label">Campo de conocimiento</label>
       <textarea
         :id="fieldId('campo-amplio')"
         v-model="form.campo_amplio"

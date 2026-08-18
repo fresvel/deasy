@@ -1,7 +1,7 @@
 <template>
   <div class="deasy-field-wrapper" :class="columnClass">
     <div>
-      <label :for="inputId" class="deasy-field-label">{{ label }}</label>
+      <label :for="inputId" class="deasy-form-label">{{ label }}</label>
       <input 
         :id="inputId"
         :type="type" 

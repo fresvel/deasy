@@ -9,7 +9,7 @@
     @cancel="onCancel"
   >
     <div class="w-full space-y-2">
-      <label :for="fieldId('tipoproduccion')" class="profile-field-label">Tipo de producción</label>
+      <label :for="fieldId('tipoproduccion')" class="deasy-form-label">Tipo de producción</label>
       <select :id="fieldId('tipoproduccion')" v-model="form.tipoProduccion" class="deasy-control deasy-control--select" :disabled="isEditing">
         <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
           {{ option.label }}
@@ -21,38 +21,38 @@
     <!-- Artículos -->
     <template v-if="form.tipoProduccion === 'articulos'">
       <div class="w-full">
-        <label :for="fieldId('titulo-1')" class="profile-field-label">Título</label>
+        <label :for="fieldId('titulo-1')" class="deasy-form-label">Título</label>
         <input :id="fieldId('titulo-1')" v-model="form.titulo" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('revista')" class="profile-field-label">Revista</label>
+        <label :for="fieldId('revista')" class="deasy-form-label">Revista</label>
         <input :id="fieldId('revista')" v-model="form.revista" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('base-indexada')" class="profile-field-label">Base indexada</label>
+        <label :for="fieldId('base-indexada')" class="deasy-form-label">Base indexada</label>
         <input :id="fieldId('base-indexada')" v-model="form.base_indexada" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('doi')" class="profile-field-label">DOI</label>
+        <label :for="fieldId('doi')" class="deasy-form-label">DOI</label>
         <input :id="fieldId('doi')" v-model="form.doi" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('issn')" class="profile-field-label">ISSN</label>
+        <label :for="fieldId('issn')" class="deasy-form-label">ISSN</label>
         <input :id="fieldId('issn')" v-model="form.issn" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('sjr')" class="profile-field-label">SJR</label>
+        <label :for="fieldId('sjr')" class="deasy-form-label">SJR</label>
         <input :id="fieldId('sjr')" v-model="form.sjr" type="number" step="0.01" min="0" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('estado')" class="profile-field-label">Estado</label>
+        <label :for="fieldId('estado')" class="deasy-form-label">Estado</label>
         <select :id="fieldId('estado')" v-model="form.estado" class="deasy-control deasy-control--select">
           <option value="Aceptado">Aceptado</option>
           <option value="Publicado">Publicado</option>
         </select>
       </div>
       <div class="w-full">
-        <label :for="fieldId('rolarticulo')" class="profile-field-label">Rol</label>
+        <label :for="fieldId('rolarticulo')" class="deasy-form-label">Rol</label>
         <select :id="fieldId('rolarticulo')" v-model="form.rolArticulo" class="deasy-control deasy-control--select">
           <option value="Autor">Autor</option>
           <option value="Coautor">Coautor</option>
@@ -60,7 +60,7 @@
         </select>
       </div>
       <div class="w-full">
-        <label :for="fieldId('fecha')" class="profile-field-label">Fecha</label>
+        <label :for="fieldId('fecha')" class="deasy-form-label">Fecha</label>
         <input :id="fieldId('fecha')" v-model="form.fecha" type="date" class="deasy-control" />
       </div>
     </template>
@@ -68,27 +68,27 @@
     <!-- Libros y Capítulos -->
     <template v-if="form.tipoProduccion === 'libros'">
       <div class="w-full">
-        <label :for="fieldId('titulo-2')" class="profile-field-label">Título</label>
+        <label :for="fieldId('titulo-2')" class="deasy-form-label">Título</label>
         <input :id="fieldId('titulo-2')" v-model="form.titulo" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('editorial')" class="profile-field-label">Editorial</label>
+        <label :for="fieldId('editorial')" class="deasy-form-label">Editorial</label>
         <input :id="fieldId('editorial')" v-model="form.editorial" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('isbn')" class="profile-field-label">ISBN</label>
+        <label :for="fieldId('isbn')" class="deasy-form-label">ISBN</label>
         <input :id="fieldId('isbn')" v-model="form.isbn" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('isnn')" class="profile-field-label">ISNN</label>
+        <label :for="fieldId('isnn')" class="deasy-form-label">ISNN</label>
         <input :id="fieldId('isnn')" v-model="form.isnn" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('anio-1')" class="profile-field-label">Año</label>
+        <label :for="fieldId('anio-1')" class="deasy-form-label">Año</label>
         <input :id="fieldId('anio-1')" v-model="form.anio" type="number" min="1900" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('tipolibro')" class="profile-field-label">Tipo</label>
+        <label :for="fieldId('tipolibro')" class="deasy-form-label">Tipo</label>
         <select :id="fieldId('tipolibro')" v-model="form.tipoLibro" class="deasy-control deasy-control--select">
           <option value="Libro">Libro</option>
           <option value="Capítulo">Capítulo</option>
@@ -99,15 +99,15 @@
     <!-- Ponencias -->
     <template v-if="form.tipoProduccion === 'ponencias'">
       <div class="w-full">
-        <label :for="fieldId('titulo-3')" class="profile-field-label">Título</label>
+        <label :for="fieldId('titulo-3')" class="deasy-form-label">Título</label>
         <input :id="fieldId('titulo-3')" v-model="form.titulo" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('evento')" class="profile-field-label">Evento</label>
+        <label :for="fieldId('evento')" class="deasy-form-label">Evento</label>
         <input :id="fieldId('evento')" v-model="form.evento" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('anio-2')" class="profile-field-label">Año</label>
+        <label :for="fieldId('anio-2')" class="deasy-form-label">Año</label>
         <input :id="fieldId('anio-2')" v-model="form.anio" type="number" min="1900" class="deasy-control" />
       </div>
     </template>
@@ -115,19 +115,19 @@
     <!-- Tesis -->
     <template v-if="form.tipoProduccion === 'tesis'">
       <div class="w-full">
-        <label :for="fieldId('ies')" class="profile-field-label">Institución (IES)</label>
+        <label :for="fieldId('ies')" class="deasy-form-label">Institución (IES)</label>
         <input :id="fieldId('ies')" v-model="form.ies" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('tema-1')" class="profile-field-label">Tema</label>
+        <label :for="fieldId('tema-1')" class="deasy-form-label">Tema</label>
         <input :id="fieldId('tema-1')" v-model="form.tema" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('programa')" class="profile-field-label">Programa</label>
+        <label :for="fieldId('programa')" class="deasy-form-label">Programa</label>
         <input :id="fieldId('programa')" v-model="form.programa" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('nivel')" class="profile-field-label">Nivel</label>
+        <label :for="fieldId('nivel')" class="deasy-form-label">Nivel</label>
         <select :id="fieldId('nivel')" v-model="form.nivel" class="deasy-control deasy-control--select">
           <option v-for="nivel in nivelOptions" :key="nivel" :value="nivel">
             {{ nivel }}
@@ -135,11 +135,11 @@
         </select>
       </div>
       <div class="w-full">
-        <label :for="fieldId('anio-3')" class="profile-field-label">Año</label>
+        <label :for="fieldId('anio-3')" class="deasy-form-label">Año</label>
         <input :id="fieldId('anio-3')" v-model="form.anio" type="number" min="1900" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('roltesis')" class="profile-field-label">Rol</label>
+        <label :for="fieldId('roltesis')" class="deasy-form-label">Rol</label>
         <select :id="fieldId('roltesis')" v-model="form.rolTesis" class="deasy-control deasy-control--select">
           <option value="Revisor">Revisor</option>
           <option value="Asesor">Asesor</option>
@@ -150,44 +150,44 @@
     <!-- Proyectos -->
     <template v-if="form.tipoProduccion === 'proyectos'">
       <div class="w-full">
-        <label :for="fieldId('tema-2')" class="profile-field-label">Tema</label>
+        <label :for="fieldId('tema-2')" class="deasy-form-label">Tema</label>
         <input :id="fieldId('tema-2')" v-model="form.tema" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('institucion')" class="profile-field-label">Institución</label>
+        <label :for="fieldId('institucion')" class="deasy-form-label">Institución</label>
         <input :id="fieldId('institucion')" v-model="form.institucion" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('tipoproyecto')" class="profile-field-label">Tipo</label>
+        <label :for="fieldId('tipoproyecto')" class="deasy-form-label">Tipo</label>
         <select :id="fieldId('tipoproyecto')" v-model="form.tipoProyecto" class="deasy-control deasy-control--select">
           <option value="Investigación">Investigación</option>
           <option value="Vinculación">Vinculación</option>
         </select>
       </div>
       <div class="w-full">
-        <label :for="fieldId('programa-group')" class="profile-field-label">Programa / grupo</label>
+        <label :for="fieldId('programa-group')" class="deasy-form-label">Programa / grupo</label>
         <input :id="fieldId('programa-group')" v-model="form.programa_group" type="text" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('avance')" class="profile-field-label">Avance (%)</label>
+        <label :for="fieldId('avance')" class="deasy-form-label">Avance (%)</label>
         <input :id="fieldId('avance')" v-model="form.avance" type="number" min="0" max="100" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('inicio')" class="profile-field-label">Inicio</label>
+        <label :for="fieldId('inicio')" class="deasy-form-label">Inicio</label>
         <input :id="fieldId('inicio')" v-model="form.inicio" type="date" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('fin')" class="profile-field-label">Fin</label>
+        <label :for="fieldId('fin')" class="deasy-form-label">Fin</label>
         <input :id="fieldId('fin')" v-model="form.fin" type="date" class="deasy-control" />
       </div>
       <div class="w-full">
-        <label :for="fieldId('presupuesto')" class="profile-field-label">Presupuesto</label>
+        <label :for="fieldId('presupuesto')" class="deasy-form-label">Presupuesto</label>
         <input :id="fieldId('presupuesto')" v-model="form.presupuesto" type="number" min="0" class="deasy-control" />
       </div>
     </template>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('pais')" class="profile-field-label">País</label>
+      <label :for="fieldId('pais')" class="deasy-form-label">País</label>
       <input :id="fieldId('pais')" v-model="form.pais" type="text" class="deasy-control" />
     </div>
 

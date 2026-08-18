@@ -9,7 +9,7 @@
     @cancel="onCancel"
   >
     <div class="w-full">
-      <label :for="fieldId('tipo')" class="profile-field-label">Tipo</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Tipo</label>
       <SSelect
         :id="fieldId('tipo')"
         :options="['Docencia', 'Profesional']"
@@ -18,7 +18,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('institucion')" class="profile-field-label">Institución</label>
+      <label :for="fieldId('institucion')" class="deasy-form-label">Institución</label>
       <SSelect
         :id="fieldId('institucion')"
         :options="instituciones"
@@ -36,7 +36,7 @@
     </div>
 
     <div class="w-full">
-      <label :for="fieldId('modalidad')" class="profile-field-label">Modalidad</label>
+      <label :for="fieldId('modalidad')" class="deasy-form-label">Modalidad</label>
       <SSelect
         :id="fieldId('modalidad')"
         :options="['Presencial', 'Semipresencial', 'Virtual', 'Híbrido']"
@@ -53,7 +53,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('actividades')" class="profile-field-label">Funciones, cátedras o actividades</label>
+      <label :for="fieldId('actividades')" class="deasy-form-label">Funciones, cátedras o actividades</label>
       <textarea :id="fieldId('actividades')"
         class="deasy-control deasy-control--textarea"
         rows="3"

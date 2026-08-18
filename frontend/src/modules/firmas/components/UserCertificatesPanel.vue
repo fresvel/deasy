@@ -83,7 +83,7 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('uploadlabel')" class="text-sm font-semibold text-body">Nombre visible</label>
+          <label :for="fieldId('uploadlabel')" class="deasy-form-label">Nombre visible</label>
           <input :id="fieldId('uploadlabel')" v-model="uploadLabel" type="text" class="deasy-control" placeholder="Ej: Token personal 2026" />
         </div>
 

@@ -9,7 +9,7 @@
     @cancel="onCancel"
   >
     <div class="w-full space-y-2">
-      <label :for="fieldId('titulo')" class="profile-field-label">Nombre de la certificación</label>
+      <label :for="fieldId('titulo')" class="deasy-form-label">Nombre de la certificación</label>
       <textarea
         :id="fieldId('titulo')"
         class="deasy-control deasy-control--textarea"
@@ -20,7 +20,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('institucion')" class="profile-field-label">Institución emisora</label>
+      <label :for="fieldId('institucion')" class="deasy-form-label">Institución emisora</label>
       <s-select
         :id="fieldId('institucion')"
         :options="instituciones"
@@ -38,7 +38,7 @@
     </div>
 
     <div class="w-full">
-      <label :for="fieldId('tipo')" class="profile-field-label">Ámbito</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Ámbito</label>
       <s-select
         :id="fieldId('tipo')"
         :options="['Nacional', 'Internacional']"
@@ -60,7 +60,7 @@
     </div>
 
     <div class="w-full space-y-2">
-      <label :for="fieldId('descripcion')" class="profile-field-label">Descripción (opcional)</label>
+      <label :for="fieldId('descripcion')" class="deasy-form-label">Descripción (opcional)</label>
       <textarea
         :id="fieldId('descripcion')"
         class="deasy-control deasy-control--textarea"

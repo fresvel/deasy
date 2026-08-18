@@ -202,9 +202,10 @@
     
 }
 @layer components {
-.deasy-field-label {
-        @apply mb-2 block text-sm font-semibold text-strong;
-    }
+/* 📌 AQUI VIVIO LA SEGUNDA FAMILIA DE ETIQUETA, `.deasy-field-label` (†2026-08-18, F2).
+       Decia `mb-2 block text-sm font-semibold text-strong`: la receta ENTERA, con **8 px de
+       margen inferior en vez de 6**. Eso era todo lo que la separaba de `.deasy-form-label`
+       en sus 3 usos. Una familia entera por 2 px. */
 
     /* TERCERA FAMILIA, COLAPSADA SOBRE LA RECETA (2026-08-15, F4). Media 38 px de alto y 12/8 de
        padding, frente a los 44 y 16/10 del sistema: una tercera altura de control en la misma
@@ -485,10 +486,13 @@
    abajo. */
 
 @layer components {
-    .profile-field-label {
-        font-weight: 600;
-        color: var(--color-strong);
-    }
+    /* 📌 Y AQUI LA TERCERA, `.profile-field-label` (†2026-08-18, F2), con **59 usos** — la
+       familia de etiqueta mas poblada del proyecto, y ni siquiera se llamaba `deasy-`.
+       Declaraba solo peso y color, sin tamaño ni bloque ni margen, asi que heredaba el resto
+       del contexto. Medido antes de colapsarla: **14 px, peso 600 y `--color-strong`, o sea
+       exactamente lo que ya dice la receta**; lo unico que cambia al pasarla es el hueco hasta
+       el campo, de **1 px a 6**, que es el del sistema. Un peine de 59 dientes que solo servia
+       para apretar la etiqueta contra su campo. */
 
     /* 📌 AQUI VIVIO LA CUARTA FAMILIA DE CONTROL, `profile-*` (†2026-08-15, F4). Era la mas
        alejada de las cuatro: 52 px de alto frente a 44, fuente de 15.2 frente a 14, y su propia

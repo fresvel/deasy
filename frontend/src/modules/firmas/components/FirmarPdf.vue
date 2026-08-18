@@ -424,7 +424,7 @@
     <div v-if="!fields.length" class="text-muted text-center font-medium py-8 bg-surface rounded-xl border border-line">No hay firmas para eliminar.</div>
     <div v-else class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 bg-surface p-2 rounded-xl border border-line">
-        <label :for="fieldId('filterpage')" class="font-semibold text-sm text-body ml-2">Filtrar por pagina</label>
+        <label :for="fieldId('filterpage')" class="deasy-form-label ml-2">Filtrar por pagina</label>
         <select :id="fieldId('filterpage')" v-model="filterPage" class="deasy-control deasy-control--select">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
@@ -474,7 +474,7 @@
     <div class="flex flex-col gap-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('statusfilter')" class="font-semibold text-sm text-body mb-0">Estado</label>
+          <label :for="fieldId('statusfilter')" class="deasy-form-label">Estado</label>
           <select :id="fieldId('statusfilter')" v-model="statusFilter" class="deasy-control deasy-control--select">
             <option value="all">Todos</option>
             <option value="Activo">Activo</option>
@@ -484,11 +484,11 @@
           </select>
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signerinput')" class="font-semibold text-sm text-body mb-0">Buscar</label>
+          <label :for="fieldId('signerinput')" class="deasy-form-label">Buscar</label>
           <input :id="fieldId('signerinput')" v-model="signerInput" type="text" class="deasy-control" placeholder="Nombre, correo o cédula" />
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signerunittypefilter')" class="font-semibold text-sm text-body mb-0">Tipo de unidad</label>
+          <label :for="fieldId('signerunittypefilter')" class="deasy-form-label">Tipo de unidad</label>
           <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="deasy-control deasy-control--select">
             <option value="">Todos</option>
             <option v-for="option in signerUnitTypeOptions" :key="option.id" :value="String(option.id)">
@@ -497,7 +497,7 @@
           </select>
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signerunitfilter')" class="font-semibold text-sm text-body mb-0">Unidad</label>
+          <label :for="fieldId('signerunitfilter')" class="deasy-form-label">Unidad</label>
           <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="deasy-control deasy-control--select" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
             <option v-for="option in signerUnitOptions" :key="option.id" :value="String(option.id)">
@@ -506,7 +506,7 @@
           </select>
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('signercargofilter')" class="font-semibold text-sm text-body mb-0">Cargo</label>
+          <label :for="fieldId('signercargofilter')" class="deasy-form-label">Cargo</label>
           <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="deasy-control deasy-control--select" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
             <option v-for="option in signerCargoOptions" :key="option.id" :value="String(option.id)">
@@ -664,11 +664,11 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('certpassword')" class="font-semibold text-sm text-body">Contraseña del certificado</label>
+          <label :for="fieldId('certpassword')" class="deasy-form-label">Contraseña del certificado</label>
           <input :id="fieldId('certpassword')" v-model="certPassword" type="password" class="deasy-control" placeholder="Contraseña del .p12" autocomplete="current-password" />
         </div>
         <div class="flex flex-col gap-2">
-          <label :for="fieldId('stamptext')" class="font-semibold text-sm text-body">Texto del sello</label>
+          <label :for="fieldId('stamptext')" class="deasy-form-label">Texto del sello</label>
           <input :id="fieldId('stamptext')" v-model="stampText" type="text" class="deasy-control" placeholder="Ej: Dr. Juan Pérez" />
         </div>
       </div>
