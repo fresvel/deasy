@@ -438,9 +438,16 @@
       @open-artifacts="confirmDefinitionArtifactsPrompt"
     />
 
-    <AdminDefinitionArtifactsModal
+    <AppModalShell
       v-if="!processWizardOpen"
       ref="definitionArtifactsModal"
+      labelled-by="definitionArtifactsModalLabel"
+      title="Documentos de la configuracion"
+      size="xl"
+      close-action
+      @close="handleDefinitionArtifactsManagerClose"
+    >
+      <AdminDefinitionArtifactsPanel
       :context="definitionArtifactsContext"
       :error="definitionArtifactsError"
       :can-manage="canManageDefinitionArtifacts"
@@ -461,13 +468,23 @@
       @edit-row="openDefinitionArtifactTemplateEditor"
       @delete-row="deleteDefinitionArtifact"
       @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
-      @close="handleDefinitionArtifactsManagerClose"
-      @accept="handleDefinitionArtifactsManagerAccept"
-    />
+      />
+      <template #footer>
+        <AdminButton variant="neutral-outline" @click="handleDefinitionArtifactsManagerClose">Cerrar</AdminButton>
+        <AdminButton variant="primary-outline" @click="handleDefinitionArtifactsManagerAccept">Aceptar</AdminButton>
+      </template>
+    </AppModalShell>
 
-    <AdminDefinitionTriggersModal
+    <AppModalShell
       v-if="!processWizardOpen"
       ref="definitionTriggersModal"
+      labelled-by="definitionTriggersModalLabel"
+      title="Periodos de la configuracion"
+      size="xl"
+      close-action
+      @close="closeDefinitionTriggersManager"
+    >
+      <AdminDefinitionTriggersPanel
       :context="definitionTriggersContext"
       :error="definitionTriggersError"
       :can-manage="canManageDefinitionTriggers"
@@ -491,13 +508,23 @@
       @view-row="openRecordViewer($event, allTablesMap.process_definition_period_types)"
       @edit-row="startDefinitionTriggerEdit"
       @delete-row="deleteDefinitionTrigger"
-      @close="closeDefinitionTriggersManager"
-      @accept="acceptDefinitionTriggersManager"
-    />
+      />
+      <template #footer>
+        <AdminButton variant="neutral-outline" @click="closeDefinitionTriggersManager">Cerrar</AdminButton>
+        <AdminButton variant="primary-outline" @click="acceptDefinitionTriggersManager">Aceptar</AdminButton>
+      </template>
+    </AppModalShell>
 
-    <AdminDefinitionRulesModal
+    <AppModalShell
       v-if="!processWizardOpen"
       ref="definitionRulesModal"
+      labelled-by="definitionRulesModalLabel"
+      title="Alcance de la configuracion"
+      size="xl"
+      close-action
+      @close="closeDefinitionRulesManager"
+    >
+      <AdminDefinitionRulesPanel
       :context="definitionRulesContext"
       :error="definitionRulesError"
       :can-manage="canManageDefinitionRules"
@@ -522,9 +549,12 @@
       @view-row="openRecordViewer($event, allTablesMap.process_target_rules)"
       @edit-row="startDefinitionRuleEdit"
       @delete-row="deleteDefinitionRule"
-      @close="closeDefinitionRulesManager"
-      @accept="acceptDefinitionRulesManager"
-    />
+      />
+      <template #footer>
+        <AdminButton variant="neutral-outline" @click="closeDefinitionRulesManager">Cerrar</AdminButton>
+        <AdminButton variant="primary-outline" @click="acceptDefinitionRulesManager">Aceptar</AdminButton>
+      </template>
+    </AppModalShell>
 
     <AdminProcessWizardModal
       :open="processWizardOpen"
@@ -1089,12 +1119,9 @@ import {
 } from "@/modules/admin/services/AdminTableManagerConfig";
 import AdminFeedbackToast from "@/modules/admin/components/ui/AdminFeedbackToast.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
-import AdminDefinitionArtifactsModal from "@/modules/admin/components/modals/AdminDefinitionArtifactsModal.vue";
 import AdminDefinitionArtifactsPanel from "@/modules/admin/components/modals/AdminDefinitionArtifactsPanel.vue";
 import AdminDefinitionCreatedPromptModal from "@/modules/admin/components/modals/AdminDefinitionCreatedPromptModal.vue";
-import AdminDefinitionRulesModal from "@/modules/admin/components/modals/AdminDefinitionRulesModal.vue";
 import AdminDefinitionRulesPanel from "@/modules/admin/components/modals/AdminDefinitionRulesPanel.vue";
-import AdminDefinitionTriggersModal from "@/modules/admin/components/modals/AdminDefinitionTriggersModal.vue";
 import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/AdminDefinitionTriggersPanel.vue";
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";

@@ -67,7 +67,24 @@
 /* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
    DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta. */
 @theme {
-    /* ══ CAPA 1 · PRIMITIVAS ═════════════════════════════════════════════════════════════
+/* 📌 DECISION DEL DUEÑO, 2026-08-17 — LAS PRIMITIVAS SON UN CATALOGO, NO DEUDA.
+       De los 119 registros de este bloque, **42 no los consume nadie hoy**. El plan los llevaba
+       como F1.3e, bloqueada, con la duda de si borrarlos.
+
+       Se quedan, y con dos motivos medidos:
+         · **pesan CERO bytes.** Tailwind hace tree-shaking de `@theme`: un registro sin consumidor
+           no llega al CSS construido. No es codigo muerto que se sirve, es un catalogo disponible.
+         · son **la paleta de TailAdmin adoptada entera**, de la que se derivan los 20 tokens
+           semanticos. Borrar los pasos que hoy no se gastan obligaria a re-derivarlos a mano cada
+           vez que haga falta uno.
+
+       ⚠️ Esto NO contradice la norma de «un registro sin consumidor es basura» que hay unas lineas
+       mas abajo, y conviene entender la diferencia: aquella mato siete `--color-chart-*` y un
+       `--color-state-info` que eran **conceptos inventados** sin paleta detras. Estos son pasos de
+       una escala completa y coherente. La regla fina es: **una FAMILIA se declara entera o no se
+       declara; un CONCEPTO se declara cuando tiene consumidor.** */
+
+        /* ══ CAPA 1 · PRIMITIVAS ═════════════════════════════════════════════════════════════
        La paleta de TailAdmin, adoptada el 2026-08-13. Procedencia: el `@theme` del repo
        HTML free, MIT (c) 2023 TailAdmin — ver `frontend/NOTICE`.
 
