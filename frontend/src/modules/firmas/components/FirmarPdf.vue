@@ -423,7 +423,7 @@
   >
     <div v-if="!fields.length" class="text-muted text-center font-medium py-8 bg-surface rounded-xl border border-line">No hay firmas para eliminar.</div>
     <div v-else class="flex flex-col gap-4">
-      <div class="flex items-center justify-between gap-3 bg-surface p-2 rounded-xl border border-line">
+      <div class="flex items-center justify-between bg-surface p-2 rounded-xl border border-line">
         <label :for="fieldId('filterpage')" class="deasy-form-label ml-2">Filtrar por pagina</label>
         <select :id="fieldId('filterpage')" v-model="filterPage" class="deasy-control deasy-control--select">
           <option value="all">Todas</option>
@@ -473,7 +473,7 @@
   >
     <div class="flex flex-col gap-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <label :for="fieldId('statusfilter')" class="deasy-form-label">Estado</label>
           <select :id="fieldId('statusfilter')" v-model="statusFilter" class="deasy-control deasy-control--select">
             <option value="all">Todos</option>
@@ -483,11 +483,11 @@
             <option value="Reportado">Reportado</option>
           </select>
         </div>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <label :for="fieldId('signerinput')" class="deasy-form-label">Buscar</label>
           <input :id="fieldId('signerinput')" v-model="signerInput" type="text" class="deasy-control" placeholder="Nombre, correo o cédula" />
         </div>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <label :for="fieldId('signerunittypefilter')" class="deasy-form-label">Tipo de unidad</label>
           <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="deasy-control deasy-control--select">
             <option value="">Todos</option>
@@ -496,7 +496,7 @@
             </option>
           </select>
         </div>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <label :for="fieldId('signerunitfilter')" class="deasy-form-label">Unidad</label>
           <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="deasy-control deasy-control--select" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
@@ -505,7 +505,7 @@
             </option>
           </select>
         </div>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <label :for="fieldId('signercargofilter')" class="deasy-form-label">Cargo</label>
           <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="deasy-control deasy-control--select" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
@@ -663,11 +663,11 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <label :for="fieldId('certpassword')" class="deasy-form-label">Contraseña del certificado</label>
           <input :id="fieldId('certpassword')" v-model="certPassword" type="password" class="deasy-control" placeholder="Contraseña del .p12" autocomplete="current-password" />
         </div>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <label :for="fieldId('stamptext')" class="deasy-form-label">Texto del sello</label>
           <input :id="fieldId('stamptext')" v-model="stampText" type="text" class="deasy-control" placeholder="Ej: Dr. Juan Pérez" />
         </div>
@@ -759,7 +759,7 @@
       <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-blue-light-50 rounded-full blur-2xl opacity-60"></div>
         <div class="flex-1 flex flex-col gap-2 relative z-(--z-capa-base) w-full">
-          <label :for="fieldId('validationcedula')" class="font-bold text-sm text-body flex items-center justify-start gap-2">
+          <label :for="fieldId('validationcedula')" class="deasy-form-label deasy-form-label--inline gap-2">
             <IconSearch class="w-4 h-4 text-info" /> Buscar cédula en las firmas
           </label>
           <div class="relative max-w-full md:max-w-sm">

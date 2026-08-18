@@ -453,7 +453,7 @@
               <input :id="fieldId(`sig-name-${index}`)" :value="step.name" placeholder="ej. Firma de dirección" class="deasy-control" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
             <div class="col-span-5">
-              <label :for="fieldId(`sig-approval-mode-${index}`)" class="mb-1 inline-flex items-center gap-1 text-theme-xs font-semibold uppercase tracking-wide text-muted">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
+              <label :for="fieldId(`sig-approval-mode-${index}`)" class="deasy-form-label deasy-form-label--inline">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
               <select :id="fieldId(`sig-approval-mode-${index}`)" :value="step.approval_mode || 'and'" class="deasy-control deasy-control--select" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
                 <option value="and">Todas</option>
                 <option value="or">Cualquiera</option>

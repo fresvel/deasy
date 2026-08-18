@@ -78,7 +78,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('campo-amplio')" class="deasy-form-label">Campo de conocimiento</label>
       <textarea
         :id="fieldId('campo-amplio')"

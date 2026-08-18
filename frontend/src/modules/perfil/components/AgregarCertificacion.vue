@@ -8,7 +8,7 @@
     @submit="onSubmit" 
     @cancel="onCancel"
   >
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('titulo')" class="deasy-form-label">Nombre de la certificación</label>
       <textarea
         :id="fieldId('titulo')"
@@ -59,7 +59,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('descripcion')" class="deasy-form-label">Descripción (opcional)</label>
       <textarea
         :id="fieldId('descripcion')"

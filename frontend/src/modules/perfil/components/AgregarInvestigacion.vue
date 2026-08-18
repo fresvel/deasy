@@ -186,7 +186,7 @@
       </div>
     </template>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('pais')" class="deasy-form-label">País</label>
       <input :id="fieldId('pais')" v-model="form.pais" type="text" class="deasy-control" />
     </div>

@@ -67,7 +67,7 @@
               </div>
 
               <div v-if="relaunchOpenId === def.definition_id" class="flex flex-col gap-2 rounded-xl bg-surface px-3 py-2">
-                <label :for="fieldId('relaunchreason')" class="text-xs font-semibold text-icon">Motivo del relanzamiento (opcional)</label>
+                <label :for="fieldId('relaunchreason')" class="deasy-form-label">Motivo del relanzamiento (opcional)</label>
                 <input :id="fieldId('relaunchreason')" v-model="relaunchReason" type="text" class="deasy-control" placeholder="Ej. se agregaron nuevos destinatarios" />
                 <div class="flex justify-end gap-2">
                   <AppButton variant="danger-outline" :disabled="busy" @click="relaunchOpenId = null">Cancelar</AppButton>

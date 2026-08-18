@@ -17,7 +17,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2" v-if="form.tipo === 'laboral'">
+    <div class="w-full" v-if="form.tipo === 'laboral'">
       <label :for="fieldId('institution')" class="deasy-form-label">Institución</label>
       <input :id="fieldId('institution')"
         type="text"
@@ -27,7 +27,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('nombre')" class="deasy-form-label">Nombres</label>
       <input :id="fieldId('nombre')"
         type="text"
@@ -37,7 +37,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('cargo-parentesco')" class="deasy-form-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
       <input :id="fieldId('cargo-parentesco')"
         type="text"
@@ -47,7 +47,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('email')" class="deasy-form-label">Correo electrónico</label>
       <input :id="fieldId('email')"
         type="email"
@@ -57,7 +57,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('telefono')" class="deasy-form-label">Teléfono</label>
       <input :id="fieldId('telefono')"
         type="text"

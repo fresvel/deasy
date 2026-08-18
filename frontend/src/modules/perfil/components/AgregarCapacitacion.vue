@@ -8,7 +8,7 @@
     @submit="onSubmit" 
     @cancel="onCancel"
   >
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('tema')" class="deasy-form-label">Tema</label>
       <textarea
         :id="fieldId('tema')"
