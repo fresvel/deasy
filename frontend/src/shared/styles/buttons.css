@@ -403,6 +403,14 @@
         @apply h-5 w-5;
     }
 
+    /* ANCHO MINIMO — para el boton de crear de una cabecera, cuyo rotulo cambia segun la tabla
+       («Agregar», «Configurar proceso»…) y sin un suelo saltaria de tamaño entre pantallas.
+       Venia de `admin-page-header__create`, que vivia en la familia de la CABECERA aunque no era
+       una cabecera: era esto. Se muda aqui con F6.L6 (2026-08-17). */
+    .deasy-btn--wide {
+        min-width: 8.75rem;
+    }
+
     .deasy-btn--md {
         @apply px-4 py-2;   /* la letra la pone la base, para todos por igual */
     }

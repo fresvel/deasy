@@ -24,64 +24,20 @@
        utilidades de la escala; la diferencia es de menos de un pixel. */
 
 
-    .admin-page-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.4rem 0 0.85rem;
-        border-bottom: 1px solid var(--color-surface);
-        margin-bottom: 0;
-    }
+    /* ══ LA FAMILIA `admin-page-header*` SE FUNDIO CON LA CABECERA — 2026-08-17, F6.L6 ══════
+       Sus seis clases describian lo mismo que `deasy-hero-*` con otro vocabulario, y hoy son una
+       sola familia `deasy-page-header*` en `misc.css`, con `--hero` y `--section` por unica
+       diferencia. Mandan los valores de la grande, por decision del dueño.
 
-    .admin-page-header__main {
-        min-width: 0;
-    }
+       `__create` NO se fue con ellas: no era una cabecera, era el **ancho minimo de un boton**
+       (8.75rem) y tenia dos consumidores que ni siquiera pasaban por `AppPageHeader`. Lo escriben
+       ahora con la utilidad `min-w-35`, que es el mismo valor.
 
-    /* 📌 AQUI ESTUVO `admin-page-header__eyebrow` UN DIA (2026-08-15 → 2026-08-15).
-       Lo escribi al crear `AppPageHeader` sin comprobar si ya existia, y existia: `deasy-overline`
-       hace exactamente lo mismo —`text-theme-xs font-bold uppercase text-muted`— y su modificador
-       `--spaced` es literalmente el `mb-1` que yo estaba anadiendo. Cincuenta usos llevaban ahi.
-       Es el error que este frente entero persigue, cometido dentro del frente: escribir de nuevo
-       algo que ya tenia nombre. El componente usa ahora las dos clases que ya estaban.
+       Y con la familia se va la ULTIMA regla fuera de capa de este fichero:
+       `.admin-page-header__title` estaba suelta porque su `margin: 0` (shorthand) tapaba un
+       `mt-1` de plantilla… que dejo de existir cuando todo paso por el componente. Llevaba
+       tiempo sin tapar nada. */
 
-       🪤 Y el `mb-1` sigue siendo necesario por el mismo motivo de antes: el `mt-1` del titulo NO
-       PINTA, porque `.admin-page-header__title` esta fuera de `@layer` y gana a las utilidades.
-       Quien da el hueco es el rotulo, no el titulo. */
-    .admin-page-header__description {
-        @apply m-0 mt-1 text-theme-sm text-icon;
-    }
-}
-
-/* ⚠️ SE QUEDA SIN CAPA — y la culpable es la primera declaracion: `margin: 0` es el
-   SHORTHAND, asi que fija las cuatro esquinas. `HomeView.vue` escribe
-   `class="admin-page-header__title mt-1"` y ese `mt-1` hoy no pinta, porque esta regla va
-   suelta y gana a `@layer utilities`. Capandola resucitan 4 px que desplazan el titulo.
-   Para bajarla: o se borra el `mt-1` de la plantilla, o el shorthand pasa a
-   `margin-block-end: 0`. A medias, no. */
-
-.admin-page-header__title {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--color-navy);
-}
-
-@layer components {
-    .admin-page-header__actions {
-        display: flex;
-        justify-content: flex-end;
-        align-items: flex-start;
-        flex: 0 0 auto;
-    }
-
-    .admin-page-header__create {
-        min-width: 8.75rem;
-    }
 
     /* LA BARRA DE ACCIONES — lo que `admin-page-header` era en sus DOS consumidores de admin y
        perfil, donde `__main` iba vacío y autocerrado para empujar los botones a la derecha.

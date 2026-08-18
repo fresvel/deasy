@@ -47,7 +47,10 @@ const ficheros = (dir, ext, acc = []) => {
  * Solo las clases PROPIAS. Una regla que cualifica una utilidad de Tailwind (`.text-muted` dentro
  * de un descendiente) no es una clase nuestra: no se declara, se repinta, y su consumidor es la
  * utilidad. Se distinguen por el patron de familia, que es el mismo que impone `.stylelintrc`. */
-const PROPIA = /^(deasy|admin|graph|hope-action|btnsera|sera|profile|pdf-preview|custom|signature-workspace|theme|process-dialog|person)-/;
+/* Las familias propias que existen HOY. `admin` sale el 2026-08-17 con la ultima clase
+   (F6.L6), y con el los cuatro prefijos que llevaban meses listados sin declarar ni una:
+   `hope-action` (murio en F1.3) y `person` (en F0.2). */
+const PROPIA = /^(deasy|graph|btnsera|sera|profile|pdf-preview|custom|signature-workspace|theme|process-dialog)-/;
 
 const declaradas = new Map();
 for (const ruta of ficheros(SRC, [".css"])) {

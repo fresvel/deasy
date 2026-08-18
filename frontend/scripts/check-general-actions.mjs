@@ -32,7 +32,7 @@ const PULSABLE = /^(button|AppButton|AdminButton)$/;
    crea, y cada bloque que muere se borra. El 2026-08-16 hubo de las dos: entra
    `deasy-chat-attachment` (el adjunto de la burbuja de chat) y sale `deasy-hero-back-button`, que
    dejo de existir ese mismo dia al colapsar sobre `AppButton`. */
-const BLOQUE = /^(deasy-btn|deasy-inline-tab|deasy-inline-action|deasy-inline-icon-button|deasy-chip-remove|deasy-pdf-action|deasy-fab|deasy-chat-attachment|deasy-nav-|deasy-stepper__|deasy-section-nav|deasy-counter-nav|deasy-option|deasy-tile|deasy-picker|deasy-alert|deasy-deliverable-action|graph-toggle|graph-|btnsera|admin-page-header__|signature-workspace-card|nodrag)/;
+const BLOQUE = /^(deasy-btn|deasy-inline-tab|deasy-inline-action|deasy-inline-icon-button|deasy-chip-remove|deasy-pdf-action|deasy-fab|deasy-chat-attachment|deasy-nav-|deasy-stepper__|deasy-section-nav|deasy-counter-nav|deasy-option|deasy-tile|deasy-picker|deasy-alert|deasy-deliverable-action|graph-toggle|graph-|btnsera|signature-workspace-card|nodrag)/;
 
 /* Las señales de los OTROS diez, para descartarlos. Cada una es la del gate que le toca. */
 const CIERRA = [/\$emit\(\s*['"](close|cancel|dismiss|closed)['"]/, /^\s*(close|dismiss|hide)[A-Z$_(]/, /=\s*(null|false)\s*$/, /=\s*['"]{2}\s*$/];

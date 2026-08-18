@@ -1,36 +1,28 @@
 <template>
-  <!-- HERO: la cabecera con caja propia, para la portada de una sección -->
-  <section v-if="size === 'hero'" class="deasy-hero-shell" :class="shellClass">
-    <div class="deasy-hero-layout">
-      <div class="deasy-hero-main" :class="[hasMedia ? 'deasy-hero-main--with-media' : '', centered ? 'text-center sm:text-left' : '']">
-        <div v-if="hasMedia" class="deasy-hero-media" :class="centered ? 'flex flex-col items-center gap-3 sm:items-start' : ''">
-          <div class="deasy-hero-media-card" :class="mediaClass">
-            <slot name="media" />
-          </div>
-        </div>
-        <div class="deasy-hero-copy sm:pt-0">
-          <p v-if="overline" class="deasy-overline deasy-overline--spaced">{{ overline }}</p>
-          <h2 class="deasy-hero-title">{{ title }}</h2>
-          <p v-if="description" class="deasy-hero-description">{{ description }}</p>
+  <component
+    :is="size === 'hero' ? 'section' : 'div'"
+    class="deasy-page-header"
+    :class="[size === 'hero' ? 'deasy-page-header--hero' : 'deasy-page-header--section', shellClass]"
+  >
+    <div
+      class="deasy-page-header__main"
+      :class="[hasMedia ? 'deasy-page-header__main--with-media' : '', centered ? 'text-center sm:text-start' : '']"
+    >
+      <div v-if="hasMedia" class="deasy-page-header__media" :class="centered ? 'flex flex-col items-center gap-3 sm:items-start' : ''">
+        <div class="deasy-page-header__media-card" :class="mediaClass">
+          <slot name="media" />
         </div>
       </div>
-      <div v-if="hasActions" class="deasy-hero-side" :class="compactActions ? 'deasy-hero-side--compact' : ''">
-        <slot name="actions" />
+      <div class="deasy-page-header__copy sm:pt-0">
+        <p v-if="overline" class="deasy-overline deasy-overline--spaced">{{ overline }}</p>
+        <component :is="size === 'hero' ? 'h2' : 'h1'" class="deasy-page-header__title">{{ title }}</component>
+        <p v-if="description" class="deasy-page-header__description">{{ description }}</p>
       </div>
     </div>
-  </section>
-
-  <!-- SECTION: la misma cabecera sin caja, dentro de un panel que ya la tiene -->
-  <div v-else class="admin-page-header">
-    <div class="admin-page-header__main">
-      <p v-if="overline" class="deasy-overline deasy-overline--spaced">{{ overline }}</p>
-      <h1 class="admin-page-header__title">{{ title }}</h1>
-      <p v-if="description" class="admin-page-header__description">{{ description }}</p>
-    </div>
-    <div v-if="hasActions" class="admin-page-header__actions">
+    <div v-if="hasActions" class="deasy-page-header__actions" :class="compactActions ? 'deasy-page-header__actions--compact' : ''">
       <slot name="actions" />
     </div>
-  </div>
+  </component>
 </template>
 
 <script setup>
@@ -86,5 +78,5 @@ const props = defineProps({
 const slots = useSlots();
 const hasMedia = computed(() => Boolean(slots.media));
 const hasActions = computed(() => Boolean(slots.actions));
-const mediaClass = computed(() => (props.avatarMedia ? "deasy-hero-media-card--avatar" : ""));
+const mediaClass = computed(() => (props.avatarMedia ? "deasy-page-header__media-card--avatar" : ""));
 </script>

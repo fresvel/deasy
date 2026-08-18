@@ -164,7 +164,7 @@ for (const ruta of ficheros(SRC, [".vue"])) {
  *     son infinitas y se generan bajo demanda, asi que compararlas contra el CSS no dice nada.
  * Y se quitan los comentarios antes de mirar, que es la trampa ya pagada tres veces en este repo.
  */
-const NUESTRA_CLASE = /^(?:deasy|admin)-[a-z0-9]+(?:-{1,2}[a-z0-9]+)*$/;
+const NUESTRA_CLASE = /^deasy-[a-z0-9]+(?:-{1,2}[a-z0-9]+)*$/;
 
 const sinComentarios = (fuente) => fuente
   .replace(/\/\*[\s\S]*?\*\//g, "")

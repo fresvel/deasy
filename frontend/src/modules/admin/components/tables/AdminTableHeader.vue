@@ -22,7 +22,7 @@
           v-if="canCreate"
           variant="primary-outline"
           size="md"
-          class-name="admin-page-header__create"
+          class-name="deasy-btn--wide"
           :disabled="!table"
           :title="isProcessDefinitionsTable ? 'Configurar proceso' : 'Agregar'"
           :aria-label="isProcessDefinitionsTable ? 'Configurar proceso' : 'Agregar'"
