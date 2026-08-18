@@ -36,7 +36,7 @@
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
-            class="deasy-auth-field deasy-auth-field--icon-left"
+            class="deasy-control deasy-control--icon-left"
             placeholder="correo@ejemplo.com"
             required
           />
@@ -71,7 +71,7 @@
           v-model="email"
           name="recover-reset-email"
           autocomplete="off"
-          class="deasy-auth-field"
+          class="deasy-control"
           readonly
         />
       </div>
@@ -86,7 +86,7 @@
           v-model="code"
           name="recover-reset-code"
           autocomplete="one-time-code"
-          class="deasy-auth-field"
+          class="deasy-control"
           placeholder="Ingresa el código recibido"
           required
         />
@@ -102,7 +102,7 @@
           v-model="password"
           name="recover-reset-new-password"
           autocomplete="new-password"
-          class="deasy-auth-field"
+          class="deasy-control"
           placeholder="Nueva contraseña"
           required
         />
@@ -118,7 +118,7 @@
           v-model="repassword"
           name="recover-reset-new-password-confirmation"
           autocomplete="new-password"
-          class="deasy-auth-field"
+          class="deasy-control"
           placeholder="Repite la nueva contraseña"
           required
         />

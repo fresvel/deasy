@@ -34,7 +34,7 @@
                     v-model="newuser.first_name"
                     type="text"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="Nombres completos"
                   />
                 </div>
@@ -45,7 +45,7 @@
                     v-model="newuser.last_name"
                     type="text"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="Apellidos completos"
                   />
                 </div>
@@ -57,7 +57,7 @@
                     type="text"
                     required
                     maxlength="10"
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     :class="{ 'deasy-control--error': cedulaError }"
                     placeholder="Número de identificación"
                   />
@@ -70,7 +70,7 @@
                     v-model="newuser.email"
                     type="email"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="correo@ejemplo.com"
                   />
                 </div>
@@ -81,7 +81,7 @@
                     <select
                       v-model="selectedCountryCode"
                       aria-label="País del número de teléfono"
-                      class="deasy-auth-field px-3"
+                      class="deasy-control px-3"
                       @change="updatePhonePrefix"
                     >
                       <option v-for="c in countriesData" :key="c.es_name" :value="c">{{ c.es_name }}</option>
@@ -95,7 +95,7 @@
                         v-model="phoneNumber"
                         type="tel"
                         maxlength="10"
-                        class="deasy-auth-field pl-14"
+                        class="deasy-control pl-14"
                         :class="{ 'deasy-control--error': whatsappError }"
                         placeholder="991234567"
                       />
@@ -117,7 +117,7 @@
               <div class="deasy-form-grid--three">
                 <div>
                   <label :for="fieldId('pais-residencia')" class="deasy-form-label">País</label>
-                  <select :id="fieldId('pais-residencia')" v-model="newuser.pais_residencia" required class="deasy-auth-field">
+                  <select :id="fieldId('pais-residencia')" v-model="newuser.pais_residencia" required class="deasy-control">
                     <option value="" disabled>Selecciona un país</option>
                     <option v-for="c in countriesData" :key="c.es_name" :value="c.es_name">{{ c.es_name }}</option>
                   </select>
@@ -129,7 +129,7 @@
                     v-model="newuser.provincia_residencia"
                     type="text"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="Ej. Pichincha"
                   />
                 </div>
@@ -140,7 +140,7 @@
                     v-model="newuser.ciudad_residencia"
                     type="text"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="Ej. Quito"
                   />
                 </div>
@@ -151,7 +151,7 @@
                     v-model="newuser.calle_primaria"
                     type="text"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="Av. Principal"
                   />
                 </div>
@@ -162,7 +162,7 @@
                     v-model="newuser.calle_secundaria"
                     type="text"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="Intersección"
                   />
                 </div>
@@ -173,7 +173,7 @@
                     v-model="newuser.codigo_postal"
                     type="text"
                     required
-                    class="deasy-auth-field"
+                    class="deasy-control"
                     placeholder="Ej. 080150"
                   />
                 </div>
@@ -238,7 +238,7 @@
                       v-model="newuser.password"
                       :type="showPassword ? 'text' : 'password'"
                       required
-                      class="deasy-auth-field pr-11"
+                      class="deasy-control pr-11"
                       placeholder="Ingresa tu contraseña"
                       @input="validatePassword(newuser.password)"
                     />
@@ -272,7 +272,7 @@
                       v-model="newuser.repassword"
                       :type="showConfirmPassword ? 'text' : 'password'"
                       required
-                      class="deasy-auth-field pr-11"
+                      class="deasy-control pr-11"
                       placeholder="Repite tu contraseña"
                       @input="validatePasswordMatch()"
                     />

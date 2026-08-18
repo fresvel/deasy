@@ -38,6 +38,19 @@
         color: var(--color-body);
     }
 
+    /* EL AUTORRELLENO DE WEBKIT. Venia de la receta de autenticacion y se generaliza al
+       suelo: el navegador pinta su amarillo sobre CUALQUIER campo recordado, no solo sobre los
+       de login. El `box-shadow` de 1000px es el truco estandar —no se puede sobrescribir su
+       `background-color`— y la transicion de 9999s impide que reaparezca al enfocar. */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--color-body);
+        -webkit-box-shadow: 0 0 0px 1000px var(--color-white) inset;
+        box-shadow: 0 0 0px 1000px var(--color-white) inset;
+        transition: background-color 9999s ease-in-out 0s;
+    }
+
     /* EL BORDE EN REPOSO SE DECLARA UNA SOLA VEZ, Y ES ESTE.
        Era `--color-line` (gray-200) y sube a `--color-line-strong` (gray-300), que es lo que ya
        declaraban por su cuenta la receta del sistema (`.deasy-control`, 228 usos) y la de

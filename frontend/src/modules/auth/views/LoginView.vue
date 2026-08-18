@@ -17,7 +17,7 @@
             id="identifier"
             v-model="identifier"
             type="text"
-            class="deasy-auth-field deasy-auth-field--icon-left"
+            class="deasy-control deasy-control--icon-left"
             placeholder="Cédula o correo electrónico"
             required
           />
@@ -34,7 +34,7 @@
             id="password"
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
-            class="deasy-auth-field deasy-auth-field--icon-left pr-12"
+            class="deasy-control deasy-control--icon-left pr-12"
             placeholder="Ingresa tu contraseña"
             required
           />

@@ -24,25 +24,18 @@
         @apply mt-2 text-sm font-medium leading-6 text-muted;
     }
 
-    .deasy-auth-field {
-        @apply block w-full rounded-2xl border px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-muted;
-        /* El borde en reposo lo pone el suelo de `forms.css` (@layer base) desde F6.L2, y se
-           quita de aqui a proposito: mientras esta clase lo declaraba, le ganaba por orden de
-           import a `.deasy-control--error` —que este mismo formulario aplica— y **el campo en
-           error no se veia**. */
+    /* ══ EL CAMPO DE AUTENTICACION SE FUNDIO CON EL DEL SISTEMA — 2026-08-17, F6.L2 ═════════
+       `.deasy-auth-field` era una SEGUNDA receta de campo para cuatro vistas, y se diferenciaba
+       del `.deasy-control` que usa el resto de la aplicacion en cinco cosas: radio 16 en vez de 8,
+       alto libre en vez de 44, `py-3` en vez de `py-2.5`, peso 500 en vez de 400 y sin sombra.
+       Ninguna de esas cinco estaba decidida: eran las de un componente que nacio aparte.
 
-    }
+       Sus 43 usos pasan a `deasy-control`. El autorrelleno de WebKit, que era lo unico suyo que
+       valia la pena, se generaliza a todos los controles y vive ahora en `forms.css`, junto al
+       suelo — porque el navegador pinta ese fondo sobre CUALQUIER campo, no solo sobre estos. */
 
-    .deasy-auth-field:-webkit-autofill,
-    .deasy-auth-field:-webkit-autofill:hover,
-    .deasy-auth-field:-webkit-autofill:focus {
-        -webkit-text-fill-color: var(--color-body);
-        -webkit-box-shadow: 0 0 0px 1000px var(--color-white) inset;
-        box-shadow: 0 0 0px 1000px var(--color-white) inset;
-        transition: background-color 9999s ease-in-out 0s;
-    }
 
-    .deasy-auth-field--icon-left {
+    .deasy-control--icon-left {
         @apply pl-11;
     }
 
