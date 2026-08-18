@@ -424,7 +424,7 @@
     <div v-if="!fields.length" class="text-muted text-center font-medium py-8 bg-surface rounded-xl border border-line">No hay firmas para eliminar.</div>
     <div v-else class="flex flex-col gap-4">
       <div class="flex items-center justify-between bg-surface p-2 rounded-xl border border-line">
-        <label :for="fieldId('filterpage')" class="deasy-form-label ml-2">Filtrar por pagina</label>
+        <label :for="fieldId('filterpage')" class="deasy-form-label ml-2 mb-0">Filtrar por pagina</label>
         <select :id="fieldId('filterpage')" v-model="filterPage" class="deasy-control deasy-control--select">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
@@ -758,7 +758,7 @@
     <div class="px-6 pt-6 pb-4">
       <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-blue-light-50 rounded-full blur-2xl opacity-60"></div>
-        <div class="flex-1 flex flex-col gap-2 relative z-(--z-capa-base) w-full">
+        <div class="flex-1 flex flex-col relative z-(--z-capa-base) w-full">
           <label :for="fieldId('validationcedula')" class="deasy-form-label deasy-form-label--inline gap-2">
             <IconSearch class="w-4 h-4 text-info" /> Buscar cédula en las firmas
           </label>

@@ -17,7 +17,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('institucion')" class="deasy-form-label">Institución</label>
       <SSelect
         :id="fieldId('institucion')"
@@ -52,7 +52,7 @@
       <SDate label="Fecha de fin" placeholder="Selecciona la fecha" v-model="form.fecha_fin" />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('actividades')" class="deasy-form-label">Funciones, cátedras o actividades</label>
       <textarea :id="fieldId('actividades')"
         class="deasy-control deasy-control--textarea"

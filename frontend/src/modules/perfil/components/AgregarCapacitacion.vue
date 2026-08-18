@@ -19,7 +19,7 @@
       ></textarea>
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('institucion')" class="deasy-form-label">Institución</label>
       <s-select
         :id="fieldId('institucion')"

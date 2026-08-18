@@ -8,7 +8,7 @@
     @submit="onSubmit" 
     @cancel="onCancel"
   >
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('titulo')" class="deasy-form-label">Título</label>
       <s-select
         :id="fieldId('titulo')"
@@ -26,7 +26,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('ies')" class="deasy-form-label">Institución</label>
       <s-select
         :id="fieldId('ies')"
@@ -44,7 +44,7 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('pais')" class="deasy-form-label">País de emisión</label>
       <s-select
         :id="fieldId('pais')"

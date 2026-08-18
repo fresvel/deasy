@@ -103,11 +103,11 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
-          <input v-model="createForm.name" type="text" class="deasy-control mt-1" placeholder="Nombre del proceso" />
+          <input v-model="createForm.name" type="text" class="deasy-control mt-1.5" placeholder="Nombre del proceso" />
         </label>
         <label class="deasy-form-label">
           Identificador (slug) <span class="font-normal text-muted">(opcional)</span>
-          <input v-model="createForm.slug" type="text" class="deasy-control mt-1" placeholder="se deriva del nombre" />
+          <input v-model="createForm.slug" type="text" class="deasy-control mt-1.5" placeholder="se deriva del nombre" />
         </label>
       </div>
       <template #footer>
@@ -124,15 +124,15 @@
       <div class="flex flex-col gap-3">
         <label class="deasy-form-label">
           Nombre
-          <input v-model="editForm.name" type="text" class="deasy-control mt-1" placeholder="Nombre del proceso" />
+          <input v-model="editForm.name" type="text" class="deasy-control mt-1.5" placeholder="Nombre del proceso" />
         </label>
         <label class="deasy-form-label">
           Identificador (slug)
-          <input v-model="editForm.slug" type="text" class="deasy-control mt-1" placeholder="identificador" />
+          <input v-model="editForm.slug" type="text" class="deasy-control mt-1.5" placeholder="identificador" />
         </label>
         <label class="deasy-form-label">
           Proceso padre
-          <select v-model="editForm.parent_id" class="deasy-control deasy-control--select mt-1">
+          <select v-model="editForm.parent_id" class="deasy-control deasy-control--select mt-1.5">
             <option value="">— Sin padre (raíz) —</option>
             <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
           </select>

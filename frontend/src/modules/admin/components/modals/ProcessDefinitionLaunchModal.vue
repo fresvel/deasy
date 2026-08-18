@@ -21,7 +21,7 @@
         </div>
 
         <template v-else>
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col">
             <label :for="fieldId('selectedtermid')" class="deasy-form-label">Periodo</label>
             <select :id="fieldId('selectedtermid')" v-model="selectedTermId" class="deasy-control deasy-control--select">
               <option value="" disabled>Selecciona un periodo</option>
@@ -29,7 +29,7 @@
                 {{ t.name }}{{ t.launched ? " — ya lanzado" : "" }}
               </option>
             </select>
-            <p v-if="!terms.length" class="text-xs text-muted italic">
+            <p v-if="!terms.length" class="mt-2 text-xs text-muted italic">
               No hay periodos activos de los tipos en que corre este proceso.
             </p>
           </div>

@@ -8,7 +8,7 @@
     @submit="onSubmit" 
     @cancel="onCancel"
   >
-    <div class="w-full space-y-2">
+    <div class="w-full">
       <label :for="fieldId('tipoproduccion')" class="deasy-form-label">Tipo de producción</label>
       <select :id="fieldId('tipoproduccion')" v-model="form.tipoProduccion" class="deasy-control deasy-control--select" :disabled="isEditing">
         <option v-for="option in tipoOptions" :key="option.value" :value="option.value">

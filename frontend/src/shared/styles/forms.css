@@ -473,7 +473,16 @@
         @apply mb-1.5 block text-sm font-semibold text-strong;
     }
 
-    /* La variante que lleva un icono al lado: deja de ser bloque para poder alinearlo. */
+    /* La variante que lleva un icono al lado: deja de ser bloque para poder alinearlo.
+
+       ⚠️ `--inline` NO QUIERE DECIR «al lado del campo», y probarlo costo una regresion.
+       El 2026-08-18 le añadi `mb-0` razonando que una etiqueta junto a su campo no tiene nada
+       debajo que separar. Medido acto seguido en `/admin/usuarios/personas/persons` -> Agregar:
+       **sus 13 etiquetas usan esta variante y van ENCIMA del campo** —el `inline-flex` esta ahi
+       para alinear el asterisco de obligatorio, no para ponerse al lado— y el hueco cayo de 8 px
+       a 2. De 26 consumidores, exactamente UNO va al lado. Revertido.
+       Lo que la variante dice es «el CONTENIDO de la etiqueta se dispone en linea»; donde va la
+       etiqueta respecto de su campo lo decide el contenedor, y eso no tiene modificador. */
     .deasy-form-label--inline {
         @apply inline-flex items-center gap-1;
     }
