@@ -104,18 +104,13 @@
 
     
 }
-/* ⚠️ EL `@media` DE ABAJO ESTA ACOPLADO A `admin.css`: pisa el `padding` que
-   `.admin-surface-frame` declara alli, y le gana solo porque `index.css` importa
-   `misc.css` DESPUES. Si una de las dos cambia de capa sin la otra, el padding responsive
-   de ≥640 px muere en silencio — ni el build, ni el lint, ni los tests lo ven. */
+/* ══ AQUI VIVIA EL PADDING RESPONSIVE DE `.admin-surface-frame` — muerto el 2026-08-17 ══════
+   La clase se fundio con `.deasy-card` (ver `admin.css`), y con ella se va el aviso que este
+   bloque llevaba escrito: ganaba a la declaracion de `admin.css` solo porque `index.css` importa
+   este fichero DESPUES, y un cambio de capa en cualquiera de las dos lo habria matado en
+   silencio. Hoy el padding lo pone la plantilla con una utilidad, y no depende del orden. */
 
 @layer components {
-    @media (min-width: 640px) {
-        .admin-surface-frame {
-            padding: 1rem 1.1rem 1.1rem;
-        }
-    }
-
     .admin-table-manager {
         display: flex;
         flex-direction: column;

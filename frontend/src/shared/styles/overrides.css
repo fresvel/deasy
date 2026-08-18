@@ -46,17 +46,17 @@
         background-color: var(--color-white);
     }
 
-    /* ⚠️ ESTAS CUATRO SOMBRAS CONTRADICEN A SU PROPIO FICHERO, y por eso no se borran a ciegas:
-       `surfaces.css` retiro la sombra de `.deasy-section-card` A PROPOSITO —«la superficie se
-       dibuja con el BORDE, y la sombra queda para lo que flota»—, `admin.css` la pone en `none`
-       para `.admin-surface-frame`, y `auth.css` pide `--elev-3` para `.deasy-auth-card`. Las tres
-       llevan meses desmentidas desde aqui, desde el final del fichero y sin que nadie lo viera.
-       Mudarlas es encender lo que cada fichero ya decia. */
-    .deasy-section-card,
-    .deasy-auth-card,
-    .admin-surface-frame {
-        box-shadow: var(--elev-1);
-    }
+    /* ══ Y AQUI MURIO LA ULTIMA SOMBRA IMPUESTA — 2026-08-17, F6.L4 ═══════════════════════
+       Eran cuatro superficies con `--elev-1` forzado desde el final del CSS, y las cuatro
+       contradecian a su propio fichero. Se resolvieron una a una:
+
+         `.deasy-section-card`   -> sin sombra. Su fichero lo pedia: «la superficie se dibuja con
+                                    el BORDE, y la sombra queda para lo que flota».
+         `.deasy-auth-card`      -> `--elev-3`. Aqui el desmentido iba al reves: se le RECORTABA
+                                    el halo de 64 px a una tarjeta que si flota.
+         `.admin-workspace-frame`-> lo gobierna `admin.css`, que declara sus dos mitades.
+         `.admin-surface-frame`  -> la clase ya no existe: se fundio con `.deasy-card`.
+       */
 }
 
 /* ══ LOS CONTROLES DE FORMULARIO SE FUERON A `forms.css` — 2026-08-17, F6.L2 ═══════════════

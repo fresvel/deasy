@@ -18,13 +18,15 @@
         padding: 0;
     }
 
-    .admin-surface-frame {
-        border: 1px solid var(--color-line);
-        border-radius: 1rem;
-        background: var(--color-white);
-        box-shadow: none;
-        padding: 0.95rem;
-    }
+    /* ══ `.admin-surface-frame` SE FUNDIO CON `.deasy-card` — 2026-08-17, F6.L4 ═══════════
+       Medido con la sombra ya retirada: radio, borde, color de borde y fondo eran IDENTICOS a
+       `.deasy-card`. Lo unico que las separaba era un padding de 0.95rem que subia a 1.1rem en
+       ancho — y ese `1.1rem` no es un paso de la escala. Sus tres consumidores escriben ahora
+       `deasy-card p-4`, con lo que ademas muere el tramo responsive que vivia en `misc.css` y
+       ganaba a este SOLO por orden de import, cosa que su propio comentario avisaba de que era
+       fragil: «si una de las dos cambia de capa sin la otra, el padding de ≥640 px muere en
+       silencio — ni el build, ni el lint, ni los tests lo ven». */
+
 
     .admin-related-tabs {
         padding: 0.15rem 0 0.2rem;
