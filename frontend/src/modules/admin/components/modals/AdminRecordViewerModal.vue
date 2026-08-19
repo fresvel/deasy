@@ -19,7 +19,7 @@
         </span>
         <div class="min-w-0">
           <p class="m-0 text-xs font-semibold text-muted">{{ recordViewerTable?.label || "Registro" }}</p>
-          <h5 id="recordViewerModalLabel" class="deasy-dialog-title truncate">
+          <h5 id="recordViewerModalLabel" class="deasy-title deasy-title--panel truncate">
             {{ primaryValue }}
           </h5>
         </div>
@@ -38,7 +38,7 @@
           <div class="mb-3 flex items-center justify-between gap-3 border-b border-line pb-3">
             <div>
               <p class="m-0 text-xs font-semibold text-muted">Detalle del registro</p>
-              <h6 id="recordViewerGeneralTitle" class="m-0 mt-1 text-base font-bold text-strong">
+              <h6 id="recordViewerGeneralTitle" class="deasy-title deasy-title--block mt-1">
                 Informacion general
               </h6>
             </div>
@@ -101,7 +101,7 @@
               </span>
               <div class="min-w-0">
                 <p class="m-0 text-xs font-semibold text-muted">{{ sectionEyebrow(section) }}</p>
-                <h6 class="m-0 mt-0.5 flex items-center gap-2 text-base font-bold text-strong">
+                <h6 class="deasy-title deasy-title--block mt-0.5 flex items-center gap-2">
                   <span>{{ sectionTitle(section) }}</span>
                   <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">
                     {{ section.rows.length }}

@@ -195,7 +195,7 @@
                     <div v-for="group in deliverableGroups" :key="group.id" class="flex flex-col gap-3">
                       <div v-if="showDeliverableGroupHeaders" class="flex items-center gap-2 px-1">
                         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconChecklist class="h-3.5 w-3.5" /></span>
-                        <h3 class="m-0 text-sm font-bold text-body">{{ group.name }}</h3>
+                        <h3 class="deasy-title deasy-title--section">{{ group.name }}</h3>
                         <span class="text-xs font-semibold text-muted">{{ group.items.length }}</span>
                       </div>
                       <section v-for="row in group.rows" :key="row.id" class="flex flex-col gap-3">
@@ -267,7 +267,7 @@
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <div v-if="unit.groupName" class="deasy-overline">{{ unit.groupName }}</div>
-                          <h3 class="text-lg font-semibold text-strong m-0 mt-1 leading-snug">{{ unit.name }}</h3>
+                          <h3 class="deasy-title deasy-title--panel mt-1 leading-snug">{{ unit.name }}</h3>
                         </div>
                       </div>
                       <div v-if="!unit.processes.length" class="text-sm font-medium text-muted italic">
@@ -345,7 +345,7 @@
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <div class="deasy-overline">{{ pos.groupName }}</div>
-                          <h3 class="text-lg font-semibold text-strong m-0 mt-1 leading-snug">{{ pos.unitName }}</h3>
+                          <h3 class="deasy-title deasy-title--panel mt-1 leading-snug">{{ pos.unitName }}</h3>
                         </div>
                         <span
                           v-if="pos.positionType"
@@ -436,7 +436,7 @@
                 class="deasy-tile"
                 @click="scrollToProcessNav"
               >
-                <h3 class="text-lg font-semibold text-strong mb-4">Mis procesos</h3>
+                <h3 class="deasy-title deasy-title--panel mb-4">Mis procesos</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconChecklist class="h-10 w-10 text-muted" />
@@ -452,7 +452,7 @@
                 :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
                 @click="navigateToGlobalSignaturePage"
               >
-                <h3 class="text-lg font-semibold text-strong mb-4">Centro de firmas</h3>
+                <h3 class="deasy-title deasy-title--panel mb-4">Centro de firmas</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8"
                   :class="homeSignatureCount ? 'border-amber-200/80' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
@@ -470,7 +470,7 @@
                 class="deasy-tile"
                 @click="openMySends"
               >
-                <h3 class="text-lg font-semibold text-strong mb-4">Mis envíos</h3>
+                <h3 class="deasy-title deasy-title--panel mb-4">Mis envíos</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSend class="h-10 w-10 text-primary" />
@@ -485,7 +485,7 @@
                 class="deasy-tile"
                 @click="navigateToDocumentCenterPage"
               >
-                <h3 class="text-lg font-semibold text-strong mb-4">Centro documental</h3>
+                <h3 class="deasy-title deasy-title--panel mb-4">Centro documental</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconFileDescription class="h-10 w-10 text-muted" />
@@ -500,7 +500,7 @@
                 class="deasy-tile"
                 @click="navigateTo('perfil')"
               >
-                <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>
+                <h3 class="deasy-title deasy-title--panel mb-4">Mi dossier</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconUserCheck class="h-10 w-10 text-muted" />
@@ -515,7 +515,7 @@
                 class="deasy-tile"
                 @click="openCargosPanel"
               >
-                <h3 class="text-lg font-semibold text-strong mb-4">Mis cargos</h3>
+                <h3 class="deasy-title deasy-title--panel mb-4">Mis cargos</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBriefcase class="h-10 w-10 text-muted" />
@@ -530,7 +530,7 @@
                 class="deasy-tile"
                 @click="openUnitsPanel"
               >
-                <h3 class="text-lg font-semibold text-strong mb-4">Mis unidades</h3>
+                <h3 class="deasy-title deasy-title--panel mb-4">Mis unidades</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBuildingMonument class="h-10 w-10 text-muted" />
@@ -548,7 +548,7 @@
               <!-- Columna izquierda: Acciones pendientes -->
               <section class="deasy-card p-6 flex flex-col gap-4">
                 <div class="flex items-center justify-between gap-3">
-                  <h3 class="text-lg font-semibold text-strong m-0">Acciones pendientes</h3>
+                  <h3 class="deasy-title deasy-title--panel">Acciones pendientes</h3>
                   <AppButton variant="neutral-soft" :disabled="homeLoading" @click="loadHomeData">
                     <IconRefresh class="h-4 w-4" />
                     Actualizar
@@ -597,7 +597,7 @@
 
               <!-- Columna derecha: Estadísticas -->
               <section class="deasy-card p-6 flex flex-col gap-4">
-                <h3 class="text-lg font-semibold text-strong m-0">Estadísticas de cuenta</h3>
+                <h3 class="deasy-title deasy-title--panel">Estadísticas de cuenta</h3>
                 <div class="flex flex-col gap-2">
                   <div
                     v-for="stat in homeStats"
@@ -758,7 +758,7 @@
                           <IconSend class="h-5 w-5" />
                         </span>
                         <div class="flex min-w-0 flex-col">
-                          <h3 class="m-0 text-sm font-bold text-strong">Mis envíos</h3>
+                          <h3 class="deasy-title deasy-title--section">Mis envíos</h3>
                           <p class="m-0 text-xs font-medium text-muted">Crea y endosa un documento a una persona. Lo que te envían llega a tu Centro de firmas.</p>
                         </div>
                       </div>
@@ -771,7 +771,7 @@
                   <section v-if="addableDeliverableEntries.length && !isRoutedProcess" class="px-2 md:px-3 xl:px-4">
                     <div class="rounded-2xl border border-blue-light-100 bg-blue-light-50/40 p-4 flex flex-col gap-3">
                       <div class="flex items-center gap-1.5">
-                        <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Agregar entregable</h3>
+                        <h3 class="deasy-title deasy-title--section">Agregar entregable</h3>
                         <IconInfoCircle class="h-4 w-4 text-muted" title="Crea réplicas con etiqueta o envíos a un destinatario, según el modo configurado en el proceso." />
                       </div>
                       <div class="flex flex-wrap gap-2">
@@ -847,12 +847,12 @@
                 <!-- Dependencies (Full width) -->
                 <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
-                    <h2 class="text-lg font-bold text-strong m-0 leading-tight">Dependencias de la configuración</h2>
+                    <h2 class="deasy-title deasy-title--panel leading-tight">Dependencias de la configuración</h2>
                     <p class="text-muted text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <section class="deasy-card p-5">
-                      <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-muted"/> Reglas</h3>
+                      <h3 class="deasy-title deasy-title--section mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-muted"/> Reglas</h3>
                       <div v-if="!selectedProcessPanel.dependencies.rules.length" class="text-sm text-muted font-medium italic">
                         Sin reglas activas para tu alcance.
                       </div>
@@ -863,7 +863,7 @@
                       </ul>
                     </section>
                     <section class="deasy-card p-5">
-                      <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-muted"/> Periodos del proceso</h3>
+                      <h3 class="deasy-title deasy-title--section mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-muted"/> Periodos del proceso</h3>
                       <div v-if="!selectedProcessPanel.dependencies.period_types.length" class="text-sm text-muted font-medium italic">
                         Sin tipos de periodo activos.
                       </div>
@@ -874,7 +874,7 @@
                       </ul>
                     </section>
                     <section class="deasy-card p-5">
-                      <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-muted"/> Paquetes</h3>
+                      <h3 class="deasy-title deasy-title--section mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-muted"/> Paquetes</h3>
                       <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-muted font-medium italic">
                         Sin artifacts vinculados.
                       </div>
@@ -981,7 +981,7 @@
 
         <section v-else-if="taskLaunchStep === 2" class="flex flex-col gap-5">
           <div class="rounded-xl border border-blue-light-200 bg-blue-light-50/70 p-5">
-            <h3 class="m-0 text-base font-bold text-info">Base documental de la tarea</h3>
+            <h3 class="deasy-title deasy-title--block text-info">Base documental de la tarea</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-info/80">
               Esta tarea se creará usando los templates activos de la configuración. En este corte, Home informa el alcance documental real antes de confirmar la creación.
             </p>
@@ -991,7 +991,7 @@
             <article class="deasy-card p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="m-0 text-base font-bold text-strong">Templates operativos</h3>
+                  <h3 class="deasy-title deasy-title--block">Templates operativos</h3>
                   <p class="mt-1 mb-0 text-sm font-medium text-muted">Se materializan al crear la tarea.</p>
                 </div>
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
@@ -1016,7 +1016,7 @@
             <article class="deasy-card p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="m-0 text-base font-bold text-strong">Artifacts generales</h3>
+                  <h3 class="deasy-title deasy-title--block">Artifacts generales</h3>
                   <p class="mt-1 mb-0 text-sm font-medium text-muted">Disponibles para iteraciones posteriores del flujo manual.</p>
                 </div>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
@@ -1039,7 +1039,7 @@
 
         <section v-else class="flex flex-col gap-5">
           <AppAlert variant="success">
-            <h3 class="m-0 text-base font-bold text-success">Confirmación</h3>
+            <h3 class="deasy-title deasy-title--block text-success">Confirmación</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-success/80">
               Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
             </p>
@@ -1047,7 +1047,7 @@
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <article class="deasy-card p-5 flex flex-col gap-4">
-              <h3 class="m-0 text-base font-bold text-strong">Resumen operativo</h3>
+              <h3 class="deasy-title deasy-title--block">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="deasy-card p-4">
                   <div class="deasy-overline">Configuración</div>
@@ -1065,7 +1065,7 @@
             </article>
 
             <article class="deasy-card p-5 flex flex-col gap-4">
-              <h3 class="m-0 text-base font-bold text-strong">Impacto documental</h3>
+              <h3 class="deasy-title deasy-title--block">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.period_types?.length || 0 }} tipos de periodo activos</AppTag>
@@ -1343,7 +1343,7 @@
 
             <section class="deasy-card p-4">
               <div class="flex items-center gap-1.5">
-                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Acciones</h3>
+                <h3 class="deasy-title deasy-title--section">Acciones</h3>
                 <IconInfoCircle class="h-4 w-4 text-muted" title="Todo lo que puedes hacer ahora con este entregable, en un solo lugar." />
               </div>
               <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
@@ -1540,7 +1540,7 @@
           </div>
 
           <div class="deasy-card p-4">
-            <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Secuencia del flujo</h3>
+            <h3 class="deasy-title deasy-title--section mb-3">Secuencia del flujo</h3>
             <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-muted">
               Este entregable todavía no tiene una secuencia de entrega visible.
             </div>
@@ -1591,7 +1591,7 @@
           </div>
 
           <div class="deasy-card p-4">
-            <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Historial de notas operativas</h3>
+            <h3 class="deasy-title deasy-title--section mb-3">Historial de notas operativas</h3>
             <div v-if="!fillWorkflowNotes.length" class="text-sm text-muted">
               Aún no existen notas operativas registradas en este flujo.
             </div>
@@ -1622,7 +1622,7 @@
           </div>
 
           <div class="deasy-card p-4">
-            <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-3">Acciones disponibles</h3>
+            <h3 class="deasy-title deasy-title--section mb-3">Acciones disponibles</h3>
             <p
               v-if="fillWorkflowState.request && !canOperateCurrentFillRequest"
               class="mb-3 text-sm font-medium text-icon"
@@ -1720,7 +1720,7 @@
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section class="deasy-card p-4 flex flex-col gap-2">
               <p class="deasy-overline">Documento</p>
-              <h3 class="text-lg font-bold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
+              <h3 class="deasy-title deasy-title--panel">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="neutral">
                   {{ signatureFlowState.subject?.documentId ? `Documento #${signatureFlowState.subject.documentId}` : 'Sin documento' }}
@@ -1767,7 +1767,7 @@
 
           <section class="deasy-card p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
+              <h3 class="deasy-title deasy-title--section">Pasos del flujo</h3>
               <AppTag variant="neutral">
                 {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
               </AppTag>
@@ -1822,7 +1822,7 @@
 
           <section class="deasy-card p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Historial y trazabilidad</h3>
+              <h3 class="deasy-title deasy-title--section">Historial y trazabilidad</h3>
               <AppTag variant="neutral">
                 {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
               </AppTag>
@@ -1856,7 +1856,7 @@
           <section class="deasy-card p-4 flex flex-col gap-4">
             <div class="flex items-center justify-between gap-2">
               <div>
-                <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Firmar documento</h3>
+                <h3 class="deasy-title deasy-title--section">Firmar documento</h3>
                 <p class="text-xs text-muted m-0">Utiliza el visor integrado para completar tu paso actual.</p>
               </div>
               <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'neutral'">
@@ -2025,7 +2025,7 @@
             v-if="hasDeliverablePreviewActions"
             class="deasy-card p-4"
           >
-            <h3 class="mb-3 text-sm font-bold uppercase tracking-wider text-body">
+            <h3 class="deasy-title deasy-title--section mb-3">
               Acciones disponibles
             </h3>
             <div class="flex flex-wrap gap-2">

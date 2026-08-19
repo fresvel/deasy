@@ -12,7 +12,7 @@
       <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--info mb-6">
         <IconKey class="h-7 w-7" />
       </div>
-      <h1 class="text-2xl font-bold text-strong tracking-tight">Recuperar contraseña</h1>
+      <h1 class="deasy-title deasy-title--page">Recuperar contraseña</h1>
       <p class="text-muted mt-2.5 font-medium text-sm">
         Solicita un código de recuperación y luego define una nueva contraseña para tu cuenta.
       </p>

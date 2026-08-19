@@ -36,7 +36,7 @@
           </div>
 
           <div v-if="personAssignmentSection === 'ocupaciones'">
-            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-strong">
+            <h6 class="deasy-title deasy-title--section mb-2 inline-flex items-center gap-2">
               <font-awesome-icon icon="id-card" />
               <span>Ocupaciones</span>
             </h6>
@@ -111,7 +111,7 @@
           </div>
 
           <div v-if="personAssignmentSection === 'roles'">
-            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-strong">
+            <h6 class="deasy-title deasy-title--section mb-2 inline-flex items-center gap-2">
               <font-awesome-icon icon="lock" />
               <span>Roles</span>
             </h6>
@@ -181,7 +181,7 @@
           </div>
 
           <div v-if="personAssignmentSection === 'contratos'">
-            <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-strong">
+            <h6 class="deasy-title deasy-title--section mb-2 inline-flex items-center gap-2">
               <font-awesome-icon icon="check-double" />
               <span>Contratos / Puestos</span>
             </h6>

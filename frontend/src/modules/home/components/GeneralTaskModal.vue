@@ -29,7 +29,7 @@
     <section class="deasy-card flex flex-col gap-3 p-4">
       <div class="flex items-center gap-2">
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconFileDescription class="h-4 w-4" /></span>
-        <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Documento</h6>
+        <h6 class="deasy-title deasy-title--section">Documento</h6>
       </div>
       <label class="flex flex-col gap-1">
         <span class="deasy-form-label">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
@@ -45,7 +45,7 @@
     <section v-if="isSendFlowModal" class="deasy-card flex flex-col gap-3 p-4">
       <div class="flex items-center gap-2">
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconSend class="h-4 w-4" /></span>
-        <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Flujo del envío</h6>
+        <h6 class="deasy-title deasy-title--section">Flujo del envío</h6>
       </div>
       <p class="m-0 -mt-1 text-xs font-medium text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
 
@@ -136,7 +136,7 @@
     <section v-if="generalTaskForm.mode === 'free'" class="deasy-card flex flex-col gap-3 p-4">
       <div class="flex items-center gap-2">
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconBuildingMonument class="h-4 w-4" /></span>
-        <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Destino y plazo</h6>
+        <h6 class="deasy-title deasy-title--section">Destino y plazo</h6>
       </div>
       <div class="grid grid-cols-1 gap-3" :class="showSenderUnitSelect ? 'sm:grid-cols-2' : ''">
         <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->

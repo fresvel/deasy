@@ -61,7 +61,7 @@ const onAdd = () => {
 <template>
   <section class="deasy-card p-4">
     <div class="flex items-center gap-1.5">
-      <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">{{ title }}</h3>
+      <h3 class="deasy-title deasy-title--section">{{ title }}</h3>
       <IconInfoCircle v-if="subtitle" class="h-4 w-4 text-muted" :title="subtitle" />
     </div>
 

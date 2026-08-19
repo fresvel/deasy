@@ -18,7 +18,7 @@
     </div>
 
     <div class="flex items-center justify-between gap-3">
-      <h6 class="m-0 text-sm font-bold text-strong">Plantillas del proceso</h6>
+      <h6 class="deasy-title deasy-title--section">Plantillas del proceso</h6>
       <AdminButton
         v-if="canManage"
         variant="primary-outline"

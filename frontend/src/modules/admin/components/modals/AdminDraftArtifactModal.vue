@@ -213,7 +213,7 @@
     <div v-show="activeTab === 'campos'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-1.5">
-          <h4 class="m-0 text-sm font-bold text-strong">Campos del formulario</h4>
+          <h4 class="deasy-title deasy-title--section">Campos del formulario</h4>
           <AppInfoTip>Definen los datos que el usuario llenará en el entregable (schema.json).</AppInfoTip>
         </div>
         <AdminButton variant="primary-outline" @click="addSchemaField">+ Añadir campo</AdminButton>
@@ -263,7 +263,7 @@
     <div v-show="activeTab === 'entrega'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-1.5">
-          <h4 class="m-0 text-sm font-bold text-strong">Flujo de entrega</h4>
+          <h4 class="deasy-title deasy-title--section">Flujo de entrega</h4>
           <AppInfoTip>Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</AppInfoTip>
         </div>
         <AdminButton variant="primary-outline" @click="addFillStep">+ Añadir paso</AdminButton>
@@ -397,7 +397,7 @@
     <div v-show="activeTab === 'firmas'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-1.5">
-          <h4 class="m-0 text-sm font-bold text-strong">Flujo de firmas</h4>
+          <h4 class="deasy-title deasy-title--section">Flujo de firmas</h4>
           <AppInfoTip>Quién firma cada paso (mismo modelo que entrega). Los pasos van en orden; dentro de un paso, la “Aprobación” define si firman todas, cualquiera o un mínimo.</AppInfoTip>
         </div>
         <AdminButton variant="primary-outline" @click="addSignatureStep">+ Añadir paso</AdminButton>

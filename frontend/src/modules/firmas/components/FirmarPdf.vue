@@ -3,7 +3,7 @@
     <div v-if="!multiOnly && workspaceMode !== 'multi' && showStartHeading" class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 class="text-2xl font-bold text-strong m-0 leading-tight">Firmas electrónicas</h2>
+          <h2 class="deasy-title deasy-title--page leading-tight">Firmas electrónicas</h2>
           <p class="text-muted text-sm m-0 font-medium leading-snug">
             Carga documentos y define las areas de estampado para la firma.
           </p>
@@ -103,7 +103,7 @@
     <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="deasy-card mt-4 p-6 lg:p-8">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
-          <h3 class="text-xl font-bold text-strong m-0">PDF del flujo de firma</h3>
+          <h3 class="deasy-title deasy-title--panel">PDF del flujo de firma</h3>
           <p class="text-sm font-medium leading-snug text-muted m-0">
             Esta sesión pertenece al documento
             <span class="font-semibold text-body">{{ workflowSignContext?.documentTitle || 'seleccionado' }}</span>.
@@ -216,7 +216,7 @@
           class="deasy-tile signature-workspace-card xl:col-start-1"
           @click="emit('open-home-pending')"
         >
-          <h3 class="text-lg font-semibold text-strong mb-4 text-left">Solicitudes recibidas</h3>
+          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Solicitudes recibidas</h3>
           <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
@@ -236,7 +236,7 @@
           :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
-          <h3 class="text-lg font-semibold text-strong mb-4 text-left">Buscar en BD</h3>
+          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Buscar en BD</h3>
           <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
@@ -259,7 +259,7 @@
           class="deasy-tile signature-workspace-card xl:col-start-3"
           @click="emit('open-home-pending')"
         >
-          <h3 class="text-lg font-semibold text-strong mb-4 text-left">Bandeja de pendientes</h3>
+          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Bandeja de pendientes</h3>
           <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />

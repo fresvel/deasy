@@ -27,7 +27,7 @@
               <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
             </span>
             <div class="min-w-0">
-              <h3 class="m-0 truncate text-base font-bold text-navy">{{ headerTitle }}</h3>
+              <h3 class="deasy-title deasy-title--block truncate">{{ headerTitle }}</h3>
               <p v-if="headerSubtitle" class="m-0 mt-0.5 truncate text-xs font-medium text-muted">
                 {{ headerSubtitle }}
               </p>

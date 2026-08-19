@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4">
     <div v-if="title" class="flex items-center justify-between gap-3">
       <div>
-        <h3 class="text-base font-bold text-strong m-0">{{ title }}</h3>
+        <h3 class="deasy-title deasy-title--block">{{ title }}</h3>
         <p v-if="description" class="text-sm text-muted m-0 mt-1">{{ description }}</p>
       </div>
       <AdminButton
@@ -76,7 +76,7 @@
 
       <div class="deasy-card p-4 flex flex-col gap-4">
         <div>
-          <h4 class="text-sm font-bold text-strong m-0">Subir certificado</h4>
+          <h4 class="deasy-title deasy-title--section">Subir certificado</h4>
           <p class="text-xs text-muted m-0 mt-1">
             El archivo `.p12` ya está protegido por contraseña. Solo los endpoints autenticados pueden descargarlo.
           </p>

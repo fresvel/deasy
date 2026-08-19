@@ -169,7 +169,7 @@
         <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div class="min-w-0">
             <p class="deasy-overline">Detalle de unidad</p>
-            <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailUnit.name }}</h3>
+            <h3 class="deasy-title deasy-title--block mt-0.5 truncate">{{ detailUnit.name }}</h3>
           </div>
           <AppCloseButton class="shrink-0" @click="closeDetail" />
         </header>

@@ -5,7 +5,7 @@
         <div class="relative z-(--z-capa-base) flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
             <AppLogo size="lg" class-name="mb-5" />
-            <h1 class="text-3xl font-semibold tracking-tight">Términos y Condiciones</h1>
+            <h1 class="deasy-title deasy-title--page">Términos y Condiciones</h1>
             <p class="mt-2 font-medium text-muted">Políticas de uso del sistema DEASY</p>
           </div>
 

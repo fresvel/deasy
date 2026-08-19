@@ -9,7 +9,7 @@
   <section class="deasy-card p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Resumen del flujo</h3>
+        <h3 class="deasy-title deasy-title--section">Resumen del flujo</h3>
         <p class="text-xs text-muted m-0">Documento y estado actual de firmas.</p>
       </div>
       <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
@@ -34,7 +34,7 @@
 
   <section class="deasy-card p-4 flex flex-col gap-3">
     <div class="flex items-center justify-between gap-2">
-      <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
+      <h3 class="deasy-title deasy-title--section">Pasos del flujo</h3>
       <AppTag variant="neutral">
         {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
       </AppTag>

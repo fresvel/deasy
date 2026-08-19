@@ -22,7 +22,7 @@
       <header class="flex items-center justify-between border-b border-line bg-white px-5 py-4">
         <div class="flex items-center gap-2 text-strong">
           <IconBellFilled class="h-5 w-5 text-info" />
-          <h3 class="m-0 text-sm font-semibold leading-tight">Notificaciones</h3>
+          <h3 class="deasy-title deasy-title--section leading-tight">Notificaciones</h3>
         </div>
         <AppCloseButton class="sm:hidden" label="Cerrar notificaciones" @click="$emit('close')" />
       </header>

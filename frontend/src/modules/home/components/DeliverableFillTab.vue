@@ -2,7 +2,7 @@
 <div v-if="fillWorkflowState.subject" class="flex flex-col gap-5">
   <div class="deasy-card p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-      <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Secuencia del flujo</h3>
+      <h3 class="deasy-title deasy-title--section">Secuencia del flujo</h3>
       <AppTag variant="neutral">Vista operativa</AppTag>
     </div>
     <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-muted">

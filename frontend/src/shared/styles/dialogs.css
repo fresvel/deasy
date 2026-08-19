@@ -22,9 +22,9 @@
         @apply border-b border-line bg-white px-5 py-4 sm:px-6;
     }
 
-    .deasy-dialog-title {
-        @apply text-base font-semibold tracking-tight text-navy sm:text-lg;
-    }
+    /* 📌 Y AQUI `.deasy-dialog-title` (†2026-08-19, F2). Era `text-base ... sm:text-lg`, o sea el
+       nivel `--panel` con un escalon responsive propio que ninguna otra pieza del sistema tiene.
+       Sus 3 usos pasan a `deasy-title--panel`, que es 18 px en todas las anchuras. */
 
     .deasy-dialog-body {
         /* El fondo. Llego de `overrides.css` el 2026-08-17 (F6.L4): vivia alli para que un
@@ -53,10 +53,9 @@
         box-shadow: none;
     }
 
-    .deasy-dialog-root .deasy-dialog-header .deasy-dialog-title,
-    .deasy-dialog-root .deasy-dialog-title {
-        color: var(--color-navy);
-    }
+    /* 📌 Aqui reponia el color del titulo por contexto. Sobra desde que `.deasy-title` lo
+       declara en la base de la familia: el color de un titular sale del token `--color-navy`,
+       no de estar dentro de un dialogo. */
 
     .deasy-dialog-shell {
         padding-block: 0.5rem;
@@ -252,14 +251,15 @@
          `.deasy-dialog-header`, donde manda la regla (0,3,0) que repone el 600.
        · `@layer utilities`: ninguna de las tres plantillas con `deasy-dialog-title` escribe una
          utilidad de peso (`AppModalShell`, `AppDialogOverlay`, `AdminRecordViewerModal`).
-       Retirado el 2026-08-14 (fase 0.1). */
-    .deasy-dialog-title {
-      margin: 0;
-      color: var(--color-navy);
-      font-size: 1rem;
-      font-weight: 600;
-      line-height: 1.35;
-    }
+       Retirado el 2026-08-14 (fase 0.1).
+
+    ⚠️ Y AL RETIRARLA SALIO ALGO PEOR, que ninguna de las dos revisiones anteriores vio:
+       **`.deasy-dialog-title` estaba declarada TRES veces en este mismo fichero**, con valores
+       distintos — esta en CSS crudo (`1rem`/`600`), otra con `@apply text-base … sm:text-lg`, y
+       una tercera contextual que solo reponia el color. Ganaba la ultima de las tres por orden,
+       asi que las otras dos eran letra muerta que se leia perfecta. El gate 22 no lo caza porque
+       vigila una BASE contra su MODIFICADOR, y esto eran tres reglas de la misma clase.
+       Las tres retiradas: el nivel es `deasy-title--panel`. (F2, 2026-08-19.) */
 
     /* ── 6. EL CUERPO ──────────────────────────────────────────────────────────────────────
        Lo que esta regla tapa es el `padding`: `body-class` trae 33 utilidades de padding en 24
@@ -298,16 +298,14 @@
     .process-dialog-content,
     .process-dialog-content .deasy-dialog-header,
     .process-dialog-content .deasy-dialog-body,
-    .process-dialog-content .deasy-dialog-footer,
-    .process-dialog-content .deasy-dialog-title {
+    .process-dialog-content .deasy-dialog-footer {
       font-family: var(--typeface);
       font-size: var(--type-size);
       font-weight: 400;
       color: var(--color-strong);
     }
 
-    .process-dialog-content .deasy-dialog-header,
-    .process-dialog-content .deasy-dialog-header .deasy-dialog-title {
+    .process-dialog-content .deasy-dialog-header {
       font-weight: 600;
       color: var(--color-strong);
     }

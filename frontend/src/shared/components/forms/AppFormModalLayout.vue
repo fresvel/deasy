@@ -3,7 +3,7 @@
     <!-- LA CABECERA DEL SISTEMA, la misma que `AppModalShell` y `AppDialogOverlay`: titulo a la
          izquierda, cerrar a la derecha, franja gris con borde inferior. -->
     <div class="deasy-dialog-header flex items-center justify-between gap-4">
-      <h5 class="deasy-dialog-title">{{ title }}</h5>
+      <h5 class="deasy-title deasy-title--panel">{{ title }}</h5>
       <AppCloseButton data-modal-dismiss @click="$emit('close')" />
     </div>
 

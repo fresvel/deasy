@@ -450,9 +450,9 @@
         color: var(--color-primary);
     }
 
-    .deasy-form-section__title {
-        @apply m-0 text-base font-semibold tracking-tight text-navy;
-    }
+    /* 📌 AQUI VIVIO `.deasy-form-section__title` (†2026-08-19, F2). Era `text-base font-semibold
+       tracking-tight text-navy`: el nivel `--block` de la escala de titulares con otro nombre y un
+       peso menos. Sus 3 usos —los apartados de «Crear cuenta»— pasan a `deasy-title--block`. */
 
     .deasy-form-grid {
         @apply grid grid-cols-1 gap-4 md:grid-cols-2;

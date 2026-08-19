@@ -8,7 +8,7 @@
             <IconSend class="h-6 w-6" />
           </span>
           <div class="flex min-w-0 flex-col">
-            <h3 class="m-0 text-sm font-black uppercase tracking-wider text-primary">Mis documentos</h3>
+            <h3 class="deasy-title deasy-title--section text-primary">Mis documentos</h3>
             <p class="m-0 mt-1 max-w-xl text-sm font-medium text-muted">{{ purpose }}</p>
           </div>
         </div>

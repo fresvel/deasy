@@ -151,7 +151,7 @@
         <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div class="min-w-0">
             <p class="deasy-overline">Detalle de proceso</p>
-            <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ detailProcess.name }}</h3>
+            <h3 class="deasy-title deasy-title--block mt-0.5 truncate">{{ detailProcess.name }}</h3>
           </div>
           <div class="flex shrink-0 items-center gap-1">
             <AppButton
@@ -298,7 +298,7 @@
         <div class="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
           <div class="min-w-0">
             <p class="deasy-overline text-primary">Entregable · versiones</p>
-            <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
+            <h3 class="deasy-title deasy-title--block mt-0.5 truncate">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
             <p class="m-0 mt-0.5 truncate text-xs text-muted">
               {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
             </p>

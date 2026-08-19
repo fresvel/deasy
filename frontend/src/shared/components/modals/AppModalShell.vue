@@ -19,7 +19,7 @@
           class="deasy-dialog-header flex items-center justify-between gap-4"
         >
           <slot name="header">
-            <h5 class="deasy-dialog-title" :id="labelledBy">
+            <h5 class="deasy-title deasy-title--panel" :id="labelledBy">
               <slot name="title">{{ title }}</slot>
             </h5>
           </slot>

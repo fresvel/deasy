@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4">
     <section class="deasy-card p-4">
       <div class="flex flex-col gap-1">
-        <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-body">Historial de responsables</h3>
+        <h3 class="deasy-title deasy-title--section">Historial de responsables</h3>
         <p class="m-0 text-xs font-medium text-muted">
           Por qué este entregable cambió de manos. Los relevos por ocupación de puesto ocurren solos.
         </p>

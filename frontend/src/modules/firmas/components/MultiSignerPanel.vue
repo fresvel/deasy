@@ -243,7 +243,7 @@
               <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-6 shadow-inner ring-8 ring-white/40">
                 <IconFiles class="ml-1 h-10 w-10 text-muted" />
               </div>
-              <h3 class="mb-2 text-xl font-bold text-body">No hay ningún PDF para visualizar</h3>
+              <h3 class="deasy-title deasy-title--panel mb-2">No hay ningún PDF para visualizar</h3>
               <p class="text-sm font-medium text-muted">
                 Añade uno o más documentos PDF a la cola desde el panel lateral izquierdo para comenzar a configurar el lote de firmas.
               </p>

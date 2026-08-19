@@ -62,7 +62,7 @@
         </div>
 
         <div class="min-w-0 flex-1">
-          <h3 class="m-0 truncate text-sm font-semibold leading-tight text-strong">
+          <h3 class="deasy-title deasy-title--section truncate leading-tight">
             {{ username }}
           </h3>
           <p class="deasy-overline mt-1">

@@ -24,7 +24,7 @@
                 <span class="deasy-form-section__icon">
                   <IconUser class="h-5 w-5" />
                 </span>
-                <h2 class="deasy-form-section__title">Datos personales</h2>
+                <h2 class="deasy-title deasy-title--block">Datos personales</h2>
               </div>
 
               <div class="deasy-form-grid">
@@ -111,7 +111,7 @@
                 <span class="deasy-form-section__icon">
                   <IconMapPin class="h-5 w-5" />
                 </span>
-                <h2 class="deasy-form-section__title">Dirección de residencia</h2>
+                <h2 class="deasy-title deasy-title--block">Dirección de residencia</h2>
               </div>
 
               <div class="deasy-form-grid--three">
@@ -226,7 +226,7 @@
                 <span class="deasy-form-section__icon">
                   <IconLock class="h-5 w-5" />
                 </span>
-                <h2 class="deasy-form-section__title">Seguridad</h2>
+                <h2 class="deasy-title deasy-title--block">Seguridad</h2>
               </div>
 
               <div class="deasy-form-grid">

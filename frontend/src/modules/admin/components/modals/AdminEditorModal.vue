@@ -105,7 +105,7 @@
       <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
           <p class="deasy-overline">Configuraciones</p>
-          <h6 class="m-0 mt-1 flex items-center gap-2 text-base font-extrabold text-strong">
+          <h6 class="deasy-title deasy-title--block mt-1 flex items-center gap-2">
             <span>Configuraciones del proceso</span>
             <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">
               {{ processConfigurationRows.length }}

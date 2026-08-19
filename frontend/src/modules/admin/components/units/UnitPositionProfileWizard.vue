@@ -23,14 +23,14 @@
 
     <!-- Paso de sección -->
     <div v-if="currentSection">
-      <h4 :id="sectionTitleId" class="m-0 text-base font-bold text-strong">{{ currentSection.label }}</h4>
+      <h4 :id="sectionTitleId" class="deasy-title deasy-title--block">{{ currentSection.label }}</h4>
       <p class="m-0 mt-1 mb-3 text-sm text-muted">{{ currentSection.hint }}</p>
       <textarea v-model="form[currentSection.key]" :aria-labelledby="sectionTitleId" rows="5" class="deasy-control deasy-control--textarea" :placeholder="currentSection.placeholder"></textarea>
     </div>
 
     <!-- Paso de revisión -->
     <div v-else>
-      <h4 class="m-0 mb-3 text-base font-bold text-strong">Revisión</h4>
+      <h4 class="deasy-title deasy-title--block mb-3">Revisión</h4>
       <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
         <li v-for="section in SECTIONS" :key="section.key" class="rounded-2xl border border-line px-3 py-2">
           <span class="deasy-overline block">{{ section.label }}</span>

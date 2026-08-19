@@ -6,7 +6,7 @@
   >
     <div class="flex items-start justify-between gap-3">
       <div>
-        <h2 class="m-0 text-base font-bold text-strong">Supervisión — entregables atascados</h2>
+        <h2 class="deasy-title deasy-title--block">Supervisión — entregables atascados</h2>
         <p class="m-0 mt-0.5 text-xs font-medium text-muted">
           Entregables abiertos en tus unidades (y sus dependencias) que no tienen responsable o cuyo titular ya no ocupa el puesto.
         </p>
