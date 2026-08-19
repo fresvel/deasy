@@ -62,7 +62,7 @@
     <div ref="graphCanvas" class="deasy-card graph-canvas">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando organigrama…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-danger">{{ error }}</div>
-      <div v-else-if="!nodes.length" class="deasy-empty flex h-full items-center justify-center">No hay unidades para mostrar.</div>
+      <AppEmpty class="h-full" v-else-if="!nodes.length">No hay unidades para mostrar.</AppEmpty>
       <VueFlow
         v-else
         v-model:nodes="nodes"
@@ -212,9 +212,9 @@
           </div>
 
           <div v-if="detailLoading" class="text-sm text-muted">Cargando…</div>
-          <div v-else-if="!detailPositions.length" class="deasy-empty">
+          <AppEmpty v-else-if="!detailPositions.length">
             Esta unidad no tiene puestos registrados.
-          </div>
+          </AppEmpty>
           <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
             <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-line px-3 py-2.5">
               <div class="flex items-center gap-2">
@@ -316,7 +316,7 @@
                     </button>
                   </li>
                 </ul>
-                <div v-else-if="personQuery.trim().length >= 2" class="deasy-empty">Sin resultados.</div>
+                <AppEmpty v-else-if="personQuery.trim().length >= 2" :icon="false">Sin resultados.</AppEmpty>
               </div>
             </li>
           </ul>
@@ -332,9 +332,9 @@
               </div>
             </div>
             <div v-if="detailProcessesLoading" class="text-sm text-muted">Cargando…</div>
-            <div v-else-if="!detailProcesses.length" class="deasy-empty">
+            <AppEmpty v-else-if="!detailProcesses.length">
               Ningún proceso aplica a esta unidad.
-            </div>
+            </AppEmpty>
             <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
               <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-line px-3 py-2.5">
                 <div class="flex items-center gap-2">
@@ -514,6 +514,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoCicloVida, tonoOrigen, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";

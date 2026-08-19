@@ -10,9 +10,9 @@
     <AppAlert v-if="fkCreateError">
       {{ fkCreateError }}
     </AppAlert>
-    <div v-if="!fkCreateFields.length" class="deasy-empty">
+    <AppEmpty v-if="!fkCreateFields.length">
       No hay campos editables disponibles para crear esta referencia.
-    </div>
+    </AppEmpty>
     <form v-else class="grid gap-3 md:grid-cols-12">
       <AdminFieldGroup
         v-for="field in fkCreateFields"
@@ -79,6 +79,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { ref } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";

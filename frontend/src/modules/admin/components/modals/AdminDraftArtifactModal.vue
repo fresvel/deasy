@@ -218,9 +218,9 @@
         </div>
         <AdminButton variant="primary-outline" @click="addSchemaField">+ Añadir campo</AdminButton>
       </div>
-      <div v-if="!schemaFields.length" class="deasy-empty mt-3">
+      <AppEmpty class="mt-3" v-if="!schemaFields.length">
         Aún no hay campos. Añade al menos uno para generar el formulario del entregable.
-      </div>
+      </AppEmpty>
       <div v-else class="mt-3 flex flex-col gap-2">
         <div v-for="(field, index) in schemaFields" :key="index" class="deasy-card grid grid-cols-12 items-end gap-2 px-3 py-2.5">
           <div class="col-span-3">
@@ -564,6 +564,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoAmbito } from "@/shared/utils/estadoTono.js";

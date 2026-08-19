@@ -170,15 +170,15 @@
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
 
-                  <div v-if="!consolidatedCargoProcesses.length" class="deasy-empty deasy-empty--lg">
+                  <AppEmpty v-if="!consolidatedCargoProcesses.length">
                     No hay procesos asignados para este cargo.
-                  </div>
-                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="deasy-empty deasy-empty--lg">
+                  </AppEmpty>
+                  <AppEmpty v-else-if="!selectedConsolidatedProcessIds.length">
                     Selecciona al menos un proceso para ver sus entregables.
-                  </div>
-                  <div v-else-if="!filteredProcessDeliverables.length" class="deasy-empty deasy-empty--lg">
+                  </AppEmpty>
+                  <AppEmpty v-else-if="!filteredProcessDeliverables.length">
                     No hay entregables que coincidan con los filtros actuales.
-                  </div>
+                  </AppEmpty>
                   <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
@@ -241,9 +241,9 @@
         </AppButton>
               </template>
             </AppPageHeader>
-            <div v-if="!unitsPanelData.length" class="deasy-empty">
+            <AppEmpty v-if="!unitsPanelData.length">
               No hay unidades con procesos asignados.
-            </div>
+            </AppEmpty>
             <template v-else>
               <div class="deasy-inline-tabs" role="tablist">
                 <button
@@ -310,9 +310,9 @@
         </AppButton>
             </AppActionBar>
 
-            <div v-if="!cargosPanelData.length" class="deasy-empty">
+            <AppEmpty v-if="!cargosPanelData.length">
               No hay cargos asignados para mostrar.
-            </div>
+            </AppEmpty>
             <template v-else>
               <!-- Tabs: uno por cargo -->
               <div class="deasy-inline-tabs" role="tablist">
@@ -790,15 +790,15 @@
                     </div>
                   </section>
 
-                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="deasy-empty deasy-empty--lg">
+                  <AppEmpty class="deasy-empty--lg" v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess">
                     No tienes tareas activas o históricas para esta configuración.
-                  </div>
+                  </AppEmpty>
 
-                  <div v-else-if="!filteredProcessDeliverables.length" class="deasy-empty deasy-empty--lg">
+                  <AppEmpty class="deasy-empty--lg" v-else-if="!filteredProcessDeliverables.length">
                     {{ isRoutedProcess
                       ? 'Aún no has enviado ningún documento. Usa "Nuevo envío" para crear el primero.'
                       : 'No hay entregables que coincidan con los filtros actuales.' }}
-                  </div>
+                  </AppEmpty>
 
                   <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
                     <div class="flex items-center gap-3 px-1">
@@ -996,9 +996,9 @@
                 </div>
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
               </header>
-              <div v-if="!taskLaunchSystemTemplates.length" class="deasy-empty">
+              <AppEmpty v-if="!taskLaunchSystemTemplates.length">
                 Esta configuración no tiene templates de proceso que generen tarea.
-              </div>
+              </AppEmpty>
               <div v-else class="flex flex-col gap-3">
                 <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="deasy-card p-4 flex flex-col gap-2">
                   <div class="flex flex-wrap items-center gap-2">
@@ -1021,9 +1021,9 @@
                 </div>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
               </header>
-              <div v-if="!selectedProcessPanel?.user_packages?.length" class="deasy-empty">
+              <AppEmpty v-if="!selectedProcessPanel?.user_packages?.length">
                 No tienes artifacts generales registrados en esta cuenta.
-              </div>
+              </AppEmpty>
               <div v-else class="flex flex-col gap-3">
                 <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="deasy-card p-4 flex items-center justify-between gap-3">
                   <div class="min-w-0">
@@ -1427,9 +1427,9 @@
             :task-item-id="deliverableHistoryContext.taskItemId"
  />
         </template>
-        <div v-else class="deasy-empty">
+        <AppEmpty v-else>
           No hay una sección disponible para este entregable.
-        </div>
+        </AppEmpty>
       </div>
       <template #footer>
         <AppButton variant="neutral-outline" data-modal-dismiss>
@@ -1488,9 +1488,9 @@
         </div>
 
         <div v-if="mySendsLoading" class="text-sm text-muted">Cargando envíos…</div>
-        <div v-else-if="!filteredMySends.length" class="deasy-empty">
+        <AppEmpty v-else-if="!filteredMySends.length">
           Aún no has enviado ningún documento.
-        </div>
+        </AppEmpty>
         <ul v-else class="m-0 flex flex-col gap-2 p-0 list-none">
           <li v-for="s in filteredMySends" :key="`send-${s.id}`" class="flex flex-wrap items-center justify-between gap-2 deasy-card px-4 py-3">
             <div class="flex min-w-0 flex-col gap-0.5">
@@ -1710,9 +1710,9 @@
       @close="closeSignatureFlowModal"
     >
       <div class="flex flex-col gap-5">
-        <div v-if="signatureFlowState.loading" class="deasy-empty">
+        <AppEmpty v-if="signatureFlowState.loading">
           Consultando la secuencia de firmas...
-        </div>
+        </AppEmpty>
         <AppAlert v-else-if="signatureFlowState.error">
           {{ signatureFlowState.error }}
         </AppAlert>
@@ -1772,9 +1772,9 @@
                 {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
               </AppTag>
             </div>
-            <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="deasy-empty">
+            <AppEmpty v-if="!signatureFlowState.snapshot.signatureSteps?.length">
               Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
-            </div>
+            </AppEmpty>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
                 v-for="step in signatureFlowState.snapshot.signatureSteps"
@@ -1827,9 +1827,9 @@
                 {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
               </AppTag>
             </div>
-            <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="deasy-empty">
+            <AppEmpty v-if="!signatureFlowState.snapshot.signatureRequests?.length">
               Aún no se ha registrado actividad sobre este flujo.
-            </div>
+            </AppEmpty>
             <div v-else class="flex flex-col gap-3">
               <div
                 v-for="request in signatureFlowState.snapshot.signatureRequests"
@@ -1866,9 +1866,9 @@
             <div v-if="signatureFlowState.snapshot?.canOperate">
               <FirmarPdf ref="signatureFlowSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
             </div>
-            <div v-else class="deasy-empty">
+            <AppEmpty v-else>
               No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
-            </div>
+            </AppEmpty>
           </section>
         </div>
         <div v-else class="deasy-card p-6 text-sm font-semibold text-icon text-center">
@@ -2098,6 +2098,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
 import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import AppPageHeader from "@/shared/components/layout/AppPageHeader.vue";

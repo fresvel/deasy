@@ -89,15 +89,15 @@
               <AppDeleteButton v-if="documents.length" label="Limpiar cola completa" @click="clearQueue" />
             </div>
 
-            <div v-if="!documents.length" class="deasy-empty deasy-empty--lg flex flex-col items-center justify-center gap-3">
+            <AppEmpty class="deasy-empty--lg" v-if="!documents.length">
               <IconFiles class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
-            </div>
+            </AppEmpty>
 
-            <div v-else-if="!filteredDocuments.length" class="deasy-empty deasy-empty--lg flex flex-col items-center justify-center gap-3">
+            <AppEmpty class="deasy-empty--lg" v-else-if="!filteredDocuments.length">
               <IconInfoCircle class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
-            </div>
+            </AppEmpty>
 
             <div v-else class="max-h-72 space-y-2.5 overflow-y-auto pr-1 custom-scrollbar">
               <div
@@ -350,6 +350,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";

@@ -253,15 +253,7 @@
             </div>
           </div>
 
-          <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
-              <IconBuildingCommunity class="h-6 w-6" />
-            </div>
-            <p class="m-0 text-sm font-bold text-body">Sin unidades</p>
-            <p class="m-0 max-w-xs text-sm font-medium text-muted">
-              No perteneces a ninguna unidad con miembros para conversar.
-            </p>
-          </div>
+          <AppEmpty v-else :icon="IconBuildingCommunity" title="Sin unidades" class="h-full">No perteneces a ninguna unidad con miembros para conversar.</AppEmpty>
         </div>
 
         <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
@@ -279,6 +271,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppCloseButton from '@/shared/components/buttons/AppCloseButton.vue';

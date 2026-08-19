@@ -153,7 +153,7 @@
               />
             </template>
           </AppDataTable>
-          <div v-else class="deasy-empty">Sin plantillas vinculadas.</div>
+          <AppEmpty v-else>Sin plantillas vinculadas.</AppEmpty>
         </div>
       </div>
     </template>
@@ -161,6 +161,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";

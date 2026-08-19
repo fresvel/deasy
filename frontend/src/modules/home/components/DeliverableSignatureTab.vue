@@ -1,7 +1,7 @@
 <template>
-<div v-if="signatureFlowState.loading" class="deasy-empty">
+<AppEmpty v-if="signatureFlowState.loading">
   Consultando la secuencia de firmas...
-</div>
+</AppEmpty>
 <AppAlert v-else-if="signatureFlowState.error">
   {{ signatureFlowState.error }}
 </AppAlert>
@@ -39,9 +39,9 @@
         {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
       </AppTag>
     </div>
-    <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="deasy-empty">
+    <AppEmpty v-if="!signatureFlowState.snapshot.signatureSteps?.length">
       Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
-    </div>
+    </AppEmpty>
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div
         v-for="step in signatureFlowState.snapshot.signatureSteps"
@@ -95,12 +95,13 @@
     @resolve="$emit('resolve-observation', $event)"
   />
 </div>
-<div v-else class="deasy-empty">
+<AppEmpty v-else>
   No hay datos de firmas disponibles para este entregable.
-</div>
+</AppEmpty>
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 // Pestaña FIRMAS del modal de detalle: resumen del flujo, pasos de firma con sus firmantes
 // y el hilo de observaciones de firma.
 // Extraída de HomeView.vue en la Fase C. Componente PRESENTACIONAL.

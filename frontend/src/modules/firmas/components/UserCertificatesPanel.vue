@@ -28,9 +28,9 @@
           Cargando certificados...
         </div>
 
-        <div v-else-if="!certificates.length" class="deasy-empty">
+        <AppEmpty v-else-if="!certificates.length">
           No hay certificados cargados.
-        </div>
+        </AppEmpty>
 
         <div v-else class="flex flex-col gap-3">
           <button
@@ -114,6 +114,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, onMounted, ref, watch, useId } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { IconCertificate } from "@tabler/icons-vue";

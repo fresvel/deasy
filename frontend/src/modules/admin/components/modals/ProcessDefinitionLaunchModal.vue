@@ -29,9 +29,9 @@
                 {{ t.name }}{{ t.launched ? " — ya lanzado" : "" }}
               </option>
             </select>
-            <p v-if="!terms.length" class="deasy-empty">
+            <AppEmpty v-if="!terms.length">
               No hay periodos activos de los tipos en que corre este proceso.
-            </p>
+            </AppEmpty>
           </div>
 
           <div v-if="selectedTerm" class="flex flex-col gap-2 deasy-card px-4 py-3">
@@ -90,6 +90,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, ref, useId } from "vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";

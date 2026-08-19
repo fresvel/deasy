@@ -46,7 +46,7 @@
     <div ref="graphCanvas" class="deasy-card graph-canvas">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando mapa de procesos…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-danger">{{ error }}</div>
-      <div v-else-if="!nodes.length" class="deasy-empty flex h-full items-center justify-center">No hay procesos para mostrar.</div>
+      <AppEmpty class="h-full" v-else-if="!nodes.length">No hay procesos para mostrar.</AppEmpty>
       <VueFlow
         v-else
         v-model:nodes="nodes"
@@ -183,9 +183,9 @@
                 <p class="deasy-overline">Configuraciones</p>
                 <AppButton v-if="editable" variant="primary-outline" @click="createConfiguration">+ Nueva configuración</AppButton>
               </div>
-              <div v-if="!detailConfigurations.length" class="deasy-empty">
+              <AppEmpty v-if="!detailConfigurations.length">
                 Este proceso no tiene configuraciones.
-              </div>
+              </AppEmpty>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
                 <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
@@ -225,9 +225,9 @@
                 <p class="deasy-overline">Sub-procesos</p>
                 <AppButton v-if="editable" variant="neutral-outline" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
               </div>
-              <div v-if="!detailChildren.length" class="deasy-empty">
+              <AppEmpty v-if="!detailChildren.length">
                 Este proceso no tiene sub-procesos.
-              </div>
+              </AppEmpty>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
                 <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
@@ -269,9 +269,9 @@
             <!-- Pestaña: Lanzamientos / corridas -->
             <div v-show="detailTab === 'corridas'">
               <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-muted">Lanzamientos / corridas</p>
-              <div v-if="!detailRuns.length" class="deasy-empty">
+              <AppEmpty v-if="!detailRuns.length">
                 Este proceso no tiene corridas registradas.
-              </div>
+              </AppEmpty>
               <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
                 <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
@@ -360,6 +360,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { tonoCicloVida, tonoCorrida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";

@@ -47,9 +47,9 @@
                 {{ formatInlineFkOption(field, option) }}
               </AdminButton>
             </template>
-            <div v-else class="deasy-empty">
+            <AppEmpty v-else :icon="false">
               Sin coincidencias. Usa Buscar.
-            </div>
+            </AppEmpty>
           </div>
         </div>
         <AdminInputField
@@ -234,6 +234,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, ref, useId } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";

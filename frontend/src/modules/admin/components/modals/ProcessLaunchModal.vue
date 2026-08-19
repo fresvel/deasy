@@ -16,9 +16,9 @@
       <div v-if="loading" class="text-sm text-muted">Cargando estado de lanzamiento...</div>
 
       <template v-else>
-        <div v-if="!definitions.length" class="deasy-empty">
+        <AppEmpty v-if="!definitions.length">
           No hay configuraciones de proceso activas vinculadas al tipo de periodo de este periodo.
-        </div>
+        </AppEmpty>
 
         <div v-else class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
@@ -87,6 +87,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, ref, useId } from "vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";

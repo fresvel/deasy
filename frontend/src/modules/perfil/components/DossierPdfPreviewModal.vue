@@ -12,14 +12,15 @@
       <div v-if="pdfUrl" class="pdf-preview-frame">
         <iframe :src="pdfUrl" title="Vista previa del PDF" class="pdf-preview-iframe"></iframe>
       </div>
-      <div v-else class="deasy-empty flex min-h-72 items-center justify-center">
+      <AppEmpty class="min-h-72" v-else>
         No hay PDF disponible para visualizar.
-      </div>
+      </AppEmpty>
     </div>
   </AppModalShell>
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { onBeforeUnmount, ref } from "vue";
 import { Modal } from "@/shared/utils/modalController";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";

@@ -7,9 +7,9 @@
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="!fkFilterFields.length" class="deasy-empty">
+    <AppEmpty v-if="!fkFilterFields.length">
       No hay campos disponibles para aplicar filtros.
-    </div>
+    </AppEmpty>
     <form v-else class="grid gap-3 md:grid-cols-12">
       <AdminFieldGroup
         v-for="field in fkFilterFields"
@@ -73,6 +73,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";

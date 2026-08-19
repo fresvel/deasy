@@ -347,15 +347,7 @@
       title="Campos de firma"
       size="lg"
     >
-      <div v-if="!visibleFields.length" class="text-center py-10 px-4">
-        <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-4">
-          <IconSignature class="w-8 h-8" />
-        </div>
-        <h3 class="text-xl font-semibold text-strong mb-2">No hay firmas</h3>
-        <p class="text-muted max-w-sm mx-auto leading-relaxed">
-          Aún no has agregado ningún campo de firma al documento. Haz clic sobre el documento PDF para insertar una.
-        </p>
-      </div>
+      <AppEmpty v-if="!visibleFields.length" :icon="IconSignature" title="No hay firmas">Aún no has agregado ningún campo de firma al documento. Haz clic sobre el documento PDF para insertar una.</AppEmpty>
 
       <div v-else class="flex flex-col gap-3 py-2">
         <div
@@ -421,7 +413,7 @@
     size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-    <div v-if="!fields.length" class="deasy-empty">No hay firmas para eliminar.</div>
+    <AppEmpty v-if="!fields.length">No hay firmas para eliminar.</AppEmpty>
     <div v-else class="flex flex-col gap-4">
       <div class="deasy-card flex items-center justify-between p-2">
         <label :for="fieldId('filterpage')" class="deasy-form-label ml-2 mb-0">Filtrar por pagina</label>
@@ -641,9 +633,9 @@
         <div v-if="isLoadingCertificates" class="text-sm text-muted font-medium py-3">
           Cargando certificados...
         </div>
-        <div v-else-if="!availableCertificates.length" class="deasy-empty">
+        <AppEmpty v-else-if="!availableCertificates.length">
           No tienes certificados cargados.
-        </div>
+        </AppEmpty>
         <div v-else class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
           <button
             v-for="certificate in availableCertificates"
@@ -896,13 +888,7 @@
           </template>
         </template>
         <template #empty>
-          <div class="flex flex-col items-center justify-center py-12 px-4">
-            <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-4">
-              <IconShieldCheck class="w-8 h-8" />
-            </div>
-            <h4 class="text-lg font-bold text-body mb-1">Sin firmas detectadas</h4>
-            <p class="text-sm text-muted text-center max-w-md">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</p>
-          </div>
+          <AppEmpty :icon="IconShieldCheck" title="Sin firmas detectadas">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</AppEmpty>
         </template>
       </AppDataTable>
     </div>
@@ -945,6 +931,7 @@
   </AppModalShell>
 </template>
   <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";

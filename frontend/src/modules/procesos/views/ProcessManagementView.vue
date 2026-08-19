@@ -112,9 +112,9 @@
                 title-class="text-info group-hover:text-info"
                 @click="openTemplateArtifactDraftFromHome"
               />
-              <div v-if="!processCrudTables.length" class="deasy-empty col-span-full">
+              <AppEmpty class="col-span-full" v-if="!processCrudTables.length">
                 No hay tablas disponibles para este subgrupo.
-              </div>
+              </AppEmpty>
             </template>
 
             <template v-else>
@@ -159,9 +159,9 @@
                   />
                 </div>
               </div>
-              <div v-if="!processMenuItems.length && !traceabilityTables.length" class="deasy-empty col-span-full">
+              <AppEmpty class="col-span-full" v-if="!processMenuItems.length && !traceabilityTables.length">
                 No tienes permisos para gestionar procesos.
-              </div>
+              </AppEmpty>
             </template>
           </div>
         </template>
@@ -188,6 +188,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, nextTick, onMounted, ref } from "vue";
 import AppPageHeader from "@/shared/components/layout/AppPageHeader.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";

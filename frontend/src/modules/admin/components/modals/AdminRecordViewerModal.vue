@@ -159,9 +159,9 @@
           </AppDataTable>
         </section>
       </div>
-      <div v-else class="deasy-empty flex min-h-40 items-center justify-center">
+      <AppEmpty class="min-h-40" v-else>
         No hay informacion para visualizar.
-      </div>
+      </AppEmpty>
     </div>
 
     <template #footer>
@@ -217,6 +217,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, ref } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
