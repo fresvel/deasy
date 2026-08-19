@@ -61,7 +61,16 @@ const CSS = "src/shared/styles/tags.css";
  *
  *   S3 = 0, y aqui si se exige cero: escribir `deasy-tag--*` a mano es saltarse la validacion de
  *        `AppTag`, y eso no tiene excusa ni caso legitimo. */
-const TECHO = { s1: 13, s2: 4, s3: 0 };
+/* ⚠️ S1 BAJA DE 13 A 9 el 2026-08-19, y el motivo estaba escrito ARRIBA desde F3.3: los banners
+   con el trio `border-blue-light-200 + bg-blue-light-50 + text-info` eran «`AppAlert` sin migrar,
+   o sea trabajo de F2». **F2 se cerro sin llevarselos**, porque su migracion busco la clase
+   `deasy-alert` y estos estaban escritos con utilidades crudas — la misma frase de esta cabecera
+   los daba por pendientes y nadie la releyo al cerrar F2.
+   Los cuatro que quedaban son `<AppAlert variant="info">` desde hoy. De los nueve que restan,
+   NINGUNO es un estado: 2 son fila seleccionada, 2 son firmante/campo elegido, 1 es paso de
+   asistente, 1 una caja de icono con hover, y 3 son «Cargando…» — que no son estado sino ESPERA,
+   y tienen su propio hallazgo abierto (`Loading.vue`, 1 consumidor frente a 35 a mano). */
+const TECHO = { s1: 9, s2: 4, s3: 0 };
 
 /* ── vocabulario ─────────────────────────────────────────────────────────────────────────────
  *

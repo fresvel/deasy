@@ -1,9 +1,9 @@
 <template>
   <AppModalShell ref="modalRef" labelled-by="personAssignmentsModalLabel" title="Asignaciones del usuario" size="xl">
     <div>
-      <div v-if="!personEditorId" class="mb-0 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info">
+      <AppAlert v-if="!personEditorId" variant="info">
         Usa el boton de asignaciones en la fila de una persona para empezar.
-      </div>
+      </AppAlert>
       <template v-else>
         <div class="mb-3">
           <strong>{{ personAssignmentName }}</strong>

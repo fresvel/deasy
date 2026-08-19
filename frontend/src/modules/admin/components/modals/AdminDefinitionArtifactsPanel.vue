@@ -13,9 +13,9 @@
     </AppAlert>
 
     <AppAlert v-if="error">{{ error }}</AppAlert>
-    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info">
+    <AppAlert v-if="context && !canManage" variant="info">
       Esta configuracion no esta en draft. Solo puedes gestionar plantillas cuando la configuracion este en draft.
-    </div>
+    </AppAlert>
 
     <div class="flex items-center justify-between gap-3">
       <h6 class="deasy-title deasy-title--section">Plantillas del proceso</h6>

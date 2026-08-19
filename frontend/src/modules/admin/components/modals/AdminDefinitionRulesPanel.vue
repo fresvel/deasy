@@ -8,9 +8,9 @@
     </div>
 
     <AppAlert v-if="error">{{ error }}</AppAlert>
-    <div v-if="context && !canManage" class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info">
+    <AppAlert v-if="context && !canManage" variant="info">
       Esta configuracion no esta en draft. Solo puedes gestionar reglas cuando la configuracion este en draft.
-    </div>
+    </AppAlert>
     <!-- Por defecto solo se ve la lista; el formulario se abre con este botón -->
     <div v-if="canManage && !formOpen" class="flex justify-end">
       <AdminButton variant="primary-outline" @click="openForm">
