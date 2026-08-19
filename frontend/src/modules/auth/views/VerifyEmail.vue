@@ -12,7 +12,7 @@
       <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--info mb-6">
         <IconMailCheck class="h-7 w-7" />
       </div>
-      <h1 class="deasy-auth-title text-2xl">Verificar correo</h1>
+      <h1 class="deasy-title deasy-title--page">Verificar correo</h1>
       <p class="deasy-auth-copy">
         Hemos enviado un código a <br class="hidden sm:block" />
         <strong class="text-strong">{{ email || 'tu correo' }}</strong>

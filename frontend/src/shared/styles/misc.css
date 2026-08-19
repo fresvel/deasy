@@ -182,6 +182,24 @@
         @apply m-0 text-theme-xs font-semibold uppercase tracking-wide text-muted;
     }
 
+    /* ⚠️ NO LLEVA TONOS DE ESTADO, Y ES DELIBERADO — F2, 2026-08-19.
+       Seis usos escriben el color suelto (`deasy-overline text-success`, `… text-info`), y nueve
+       familias del sistema —`btn`, `tag`, `icon-box`, `alert`, `dot`, `flow-step`,
+       `inline-action`, `nav-feedback`, `pdf-action`— si declaran sus tonos. La tentacion es
+       copiarlas. No se hace, y el motivo es lo que un modificador ES:
+
+       `deasy-btn--danger` existe porque una variante cambia **fondo, borde Y texto**: eso es una
+       receta, y una receta necesita nombre. Un overline en `text-success` cambia **una sola
+       propiedad**. Ponerle nombre a eso es ceremonia — y ademas dejaria cuatro modificadores con
+       UN consumidor cada uno, que es justo lo que la regla de F1.3e evita.
+
+       Componer una utilidad de color sobre una receta tipografica no es sobreescribir: es como
+       funciona el sistema, igual que `deasy-card p-4` o `deasy-empty col-span-full`. La receta
+       declara la FORMA; el color es del llamante.
+
+       Y de los seis, solo cuatro son estado: los otros dos son un `<summary>` en color de enlace
+       y un enfasis en `text-primary`. Meterlos en un tono de estado habria sido nombrar mal. */
+
     /* Cuando va sobre un titulo y necesita separarse de el. */
     .deasy-overline--spaced {
         @apply mb-1 block;

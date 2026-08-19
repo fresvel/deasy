@@ -6,7 +6,7 @@
           <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div class="min-w-0">
               <AppLogo size="lg" :framed="true" class-name="mb-6" />
-              <h1 class="deasy-auth-title">Crear cuenta</h1>
+              <h1 class="deasy-title deasy-title--page">Crear cuenta</h1>
               <p class="deasy-auth-copy max-w-2xl">
                 Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
               </p>

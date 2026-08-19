@@ -16,9 +16,16 @@
         border-color: var(--color-line);
     }
 
-    .deasy-auth-title {
-        @apply text-3xl font-semibold tracking-tight text-strong;
-    }
+    /* 📌 AQUI VIVIO `.deasy-auth-title` (†2026-08-19, F2.T). Era `text-3xl font-semibold` — 30 px,
+       un tamaño que no existe en ningun otro sitio del sistema — con `text-strong` en vez del
+       `--color-navy` que `tokens.css` reserva para titulares.
+
+       Lo que la condeno no fue el censo: **uno de sus cuatro consumidores ya se corregia solo**.
+       `VerifyEmail` escribia `class="deasy-auth-title text-2xl"`, o sea que se bajaba a 24 px —el
+       nivel `--page` de la escala— pisando su propia clase. La misma señal que dio la vuelta a la
+       versalita: cuando un consumidor arregla la receta por su cuenta, la receta esta mal.
+
+       Sus 4 usos pasan a `deasy-title--page`: 24 px, peso 700, `--color-navy`. */
 
     .deasy-auth-copy {
         @apply mt-2 text-sm font-medium leading-6 text-muted;

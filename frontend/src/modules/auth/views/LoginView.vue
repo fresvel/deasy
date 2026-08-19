@@ -2,7 +2,7 @@
   <AuthLayout size="md">
     <div class="mb-8 flex flex-col items-center text-center">
       <AppLogo size="lg" :framed="true" class-name="mb-4" />
-      <h1 class="deasy-auth-title">Iniciar sesión</h1>
+      <h1 class="deasy-title deasy-title--page">Iniciar sesión</h1>
       <p class="deasy-auth-copy">Ingresa tus credenciales para acceder a tu espacio de trabajo.</p>
     </div>
 
