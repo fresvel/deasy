@@ -84,7 +84,10 @@ import { join, resolve } from "node:path";
 /* Bajado el 2026-08-19 al unificar la tarjeta y el estado vacio: total 159 -> 154 y
    `shadow-` 16 -> 11, porque cinco sombras arbitrarias vivian en superficies QUIETAS y la
    receta no lleva sombra. El trinquete solo baja. */
-const TECHO = { total: 154, "text-": 2, "rounded-": 1, "shadow-": 11 };
+/* Bajado otra vez el 2026-08-19 al corregir la versalita: 154 -> 139. Los 15 que caen son
+   TODOS de interletra (`tracking-[0.12em]`, `[0.14em]` x5, `[0.16em]` x9) — existian porque la
+   receta no declaraba ninguna y cada autor invento la suya. Al declararla, sobran. */
+const TECHO = { total: 139, "text-": 2, "rounded-": 1, "shadow-": 11 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

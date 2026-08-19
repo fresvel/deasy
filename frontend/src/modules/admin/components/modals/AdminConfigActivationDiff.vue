@@ -1,6 +1,6 @@
 <template>
   <div class="deasy-card px-3 py-2.5 text-sm">
-    <p class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Qué cambia al activar</p>
+    <p class="deasy-overline mb-2">Qué cambia al activar</p>
 
     <div v-if="loading" class="text-xs text-muted">Calculando cambios…</div>
     <div v-else-if="error" class="text-xs text-danger">{{ error }}</div>

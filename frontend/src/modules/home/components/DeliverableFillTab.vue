@@ -23,7 +23,7 @@
             </span>
             <div class="flex flex-col gap-1">
               <strong class="text-sm font-bold text-strong">Paso {{ step.step_order }}</strong>
-              <span class="text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted">Entrega</span>
+              <span class="deasy-overline">Entrega</span>
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end">

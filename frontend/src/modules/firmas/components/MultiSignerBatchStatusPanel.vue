@@ -40,19 +40,19 @@
 
     <div class="grid grid-cols-2 gap-3">
       <div class="deasy-card flex flex-col items-center justify-center p-3.5 text-center">
-        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-muted">Documentos</div>
+        <div class="deasy-overline mb-1">Documentos</div>
         <div class="text-2xl font-black leading-none text-strong">{{ documentsCount }}</div>
       </div>
       <AppAlert variant="success" class="flex flex-col items-center justify-center text-center">
-        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-success">Éxitos</div>
+        <div class="deasy-overline mb-1 text-success">Éxitos</div>
         <div class="text-2xl font-black leading-none text-success">{{ successCount }}</div>
       </AppAlert>
       <AppAlert variant="warning" class="flex flex-col items-center justify-center text-center">
-        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-warning">Pendientes</div>
+        <div class="deasy-overline mb-1 text-warning">Pendientes</div>
         <div class="text-2xl font-black leading-none text-warning">{{ pendingCount }}</div>
       </AppAlert>
       <AppAlert class="flex flex-col items-center justify-center text-center">
-        <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-danger">Fallos</div>
+        <div class="deasy-overline mb-1 text-danger">Fallos</div>
         <div class="text-2xl font-black leading-none text-danger">{{ failedCount }}</div>
       </AppAlert>
     </div>

@@ -18,15 +18,15 @@
     </div>
     <div class="grid gap-3 md:grid-cols-3">
       <div class="deasy-card p-4">
-        <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Documento</p>
+        <p class="deasy-overline mb-1">Documento</p>
         <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</p>
       </div>
       <div class="deasy-card p-4">
-        <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Paso actual</p>
+        <p class="deasy-overline mb-1">Paso actual</p>
         <p class="text-sm font-semibold text-strong m-0">{{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}</p>
       </div>
       <div class="deasy-card p-4">
-        <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Solicitudes</p>
+        <p class="deasy-overline mb-1">Solicitudes</p>
         <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.snapshot.signatureRequests?.length || 0 }}</p>
       </div>
     </div>
@@ -57,7 +57,7 @@
             </span>
             <div class="flex flex-col gap-1">
               <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
-              <p class="text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
+              <p class="deasy-overline">Firma</p>
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end">

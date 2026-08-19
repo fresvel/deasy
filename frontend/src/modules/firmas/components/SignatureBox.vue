@@ -10,7 +10,7 @@
   >
     <div class="h-full w-full border border-blue-light-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
       <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-info drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
-      <span class="text-theme-xs sm:text-theme-xs font-bold text-info bg-white/90 px-1.5 py-0.5 rounded border border-blue-light-200 uppercase tracking-widest text-center truncate max-w-full">
+      <span class="deasy-overline sm:text-theme-xs text-info bg-white/90 px-1.5 py-0.5 rounded border border-blue-light-200 text-center truncate max-w-full">
         {{ label || 'Firma' }}
       </span>
     </div>

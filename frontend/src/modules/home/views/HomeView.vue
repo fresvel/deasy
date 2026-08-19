@@ -349,7 +349,7 @@
                         </div>
                         <span
                           v-if="pos.positionType"
-                          class="shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1 text-theme-xs font-bold uppercase tracking-wider"
+                          class="deasy-overline shrink-0 inline-flex items-center rounded-2xl px-2.5 py-1"
                           :class="{
                             'deasy-icon-box--success': pos.positionType === 'real',
                             'deasy-icon-box--info': pos.positionType === 'simbolico',
@@ -1317,7 +1317,7 @@
                     :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-success' : 'border-blue-light-300'"
                   >
                     <dt
-                      class="text-theme-xs font-bold uppercase tracking-[0.16em]"
+                      class="deasy-overline"
                       :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-success' : 'text-info'"
                     >
                       Responsable actual
@@ -1325,15 +1325,15 @@
                     <dd class="m-0 text-sm font-semibold text-strong">{{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
-                    <dt class="text-theme-xs font-bold uppercase tracking-[0.16em] text-muted">Proceso</dt>
+                    <dt class="deasy-overline">Proceso</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
-                    <dt class="text-theme-xs font-bold uppercase tracking-[0.16em] text-muted">Unidad</dt>
+                    <dt class="deasy-overline">Unidad</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableUnitLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
                   <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
-                    <dt class="text-theme-xs font-bold uppercase tracking-[0.16em] text-muted">Periodo</dt>
+                    <dt class="deasy-overline">Periodo</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</dd>
                     <dd class="m-0 text-xs font-medium text-muted">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
@@ -1559,7 +1559,7 @@
                     </span>
                     <div class="flex flex-col gap-1">
                       <strong class="text-sm font-bold text-strong">Paso {{ step.step_order }}</strong>
-                      <span class="text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted">Entrega</span>
+                      <span class="deasy-overline">Entrega</span>
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
@@ -1575,7 +1575,7 @@
                   </div>
                 </div>
                 <div class="deasy-card mt-4 px-4 py-3">
-                  <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Responsable</p>
+                  <p class="deasy-overline">Responsable</p>
                   <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">{{ step.display_label }}</p>
                 </div>
                 <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
@@ -1719,7 +1719,7 @@
         <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section class="deasy-card p-4 flex flex-col gap-2">
-              <p class="text-xs uppercase tracking-wider font-semibold text-muted">Documento</p>
+              <p class="deasy-overline">Documento</p>
               <h3 class="text-lg font-bold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="neutral">
@@ -1740,7 +1740,7 @@
               </p>
             </section>
             <section class="deasy-card p-4 flex flex-col gap-2">
-              <p class="text-xs uppercase tracking-wider font-semibold text-muted">Responsable actual</p>
+              <p class="deasy-overline">Responsable actual</p>
               <p class="text-sm font-semibold text-strong mb-0">
                 {{ signatureFlowState.snapshot?.responsableActual
                   ? `${signatureFlowState.snapshot.responsableActual.firstName || ''} ${signatureFlowState.snapshot.responsableActual.lastName || ''}`.trim()
@@ -1754,7 +1754,7 @@
               </p>
             </section>
             <section class="deasy-card p-4 flex flex-col gap-2">
-              <p class="text-xs uppercase tracking-wider font-semibold text-muted">Secuencia</p>
+              <p class="deasy-overline">Secuencia</p>
               <p class="text-sm font-semibold text-strong mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
               <p class="text-xs text-muted">
                 {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} solicitudes registradas
@@ -1790,7 +1790,7 @@
                     </span>
                     <div class="flex flex-col gap-1">
                       <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
-                      <p class="text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted m-0">Firma</p>
+                      <p class="deasy-overline">Firma</p>
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
@@ -1805,7 +1805,7 @@
                   </div>
                 </div>
                 <div class="deasy-card mt-4 px-4 py-3">
-                  <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Firmante</p>
+                  <p class="deasy-overline">Firmante</p>
                   <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">
                     {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
                   </p>

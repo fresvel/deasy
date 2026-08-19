@@ -249,7 +249,7 @@
             <input :id="fieldId(`field-group-${index}`)" :value="field.group" placeholder="general" class="deasy-control" @input="updateSchemaField(index, 'group', $event.target.value)" />
           </div>
           <div class="col-span-1 flex flex-col items-center justify-center gap-1 pb-1.5">
-            <span class="text-theme-xs font-semibold uppercase tracking-wide text-muted">Req.</span>
+            <span class="deasy-overline">Req.</span>
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
           <div class="col-span-1 flex items-center justify-end pb-1">
@@ -472,7 +472,7 @@
           <!-- Firmantes del paso: cada uno con su propio resolutor; el cupo entre ellos lo define "Aprobación". -->
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
-              <span class="inline-flex items-center gap-1 text-theme-xs font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
+              <span class="deasy-overline inline-flex items-center gap-1">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
               <AppButton variant="primary-outline" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
             </div>
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="deasy-card mt-2 px-2.5 py-2">

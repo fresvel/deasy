@@ -383,7 +383,7 @@
 
             <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-line sm:pl-5">
               <div class="deasy-card px-3 py-1.5 text-center">
-                <span class="block text-theme-xs font-bold uppercase tracking-wider text-muted">Pág</span>
+                <span class="deasy-overline block">Pág</span>
                 <span class="block text-lg font-bold text-strong leading-none mt-0.5">{{ field.page }}</span>
               </div>
               
@@ -862,7 +862,7 @@
               >
                 <IconCertificate class="w-4 h-4" />
            </AppButton>
-              <span v-else class="text-muted text-xs font-semibold uppercase">N/A</span>
+              <span v-else class="deasy-overline">N/A</span>
             </div>
           </template>
           <template v-else-if="field.name === 'signerCedula'">
@@ -875,7 +875,7 @@
           </template>
           <template v-else-if="field.name === 'details'">
             <details class="min-w-[16rem] group">
-              <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-info hover:text-info transition flex items-center gap-1 list-none">
+              <summary class="deasy-overline cursor-pointer text-info hover:text-info transition flex items-center gap-1 list-none">
                 <IconInfoCircle class="w-4 h-4" />
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>

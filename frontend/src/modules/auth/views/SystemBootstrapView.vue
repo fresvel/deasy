@@ -2,7 +2,7 @@
   <AuthLayout size="2xl">
     <div class="mb-7 flex flex-col items-center text-center">
       <AppLogo size="lg" :framed="true" class-name="mb-4" />
-      <span class="rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+      <span class="deasy-overline rounded-full border border-line bg-surface px-3 py-1">
         Primera instalación · {{ environmentLabel }}
       </span>
       <h1 class="deasy-auth-title mt-4">Bootstrap del sistema</h1>

@@ -164,8 +164,22 @@
        Esto contesta media F6.1 en la practica: la escala por debajo de 14px tiene DOS
        escalones y este es el de abajo, `text-theme-xs` (12/18), que es el de la paleta
        adoptada. Se lleva de paso 38 de los `text-[…]` arbitrarios. */
+    /* ⚠️ EL PESO Y EL AIRE SE CORRIGIERON EL 2026-08-19 (F2), y la correccion la decidio MEDIR
+       quien la usa. Esta regla nacio copiando la forma del `menu-group-title` de TailAdmin
+       —12 px, peso bajo, SIN interletra—, y ahi estaba el error: eso es el rotulo de grupo de una
+       BARRA LATERAL, no un ante-titulo. Al auditar F2 salio el veredicto:
+
+           peso        de 46 versalitas escritas a mano, **CERO** usaron `font-medium`
+                       (25 `bold`, 21 `semibold`)
+           interletra  **45 de 46** pusieron alguna; la receta no ponia ninguna
+                       (`wide` 14 · `wider` 13 · `widest` 3 · y 15 ARBITRARIAS: 0.12/0.14/0.16em)
+
+       Cuarenta y seis autores independientes votaron contra la receta y ninguno a favor. Eso no es
+       deriva: es que la receta perdio la discusion. Se adopta el punto medio de lo que escribieron
+       —peso 600 y `tracking-wide`—, que ademas deja sitio por encima para el titulo de seccion de
+       14 px, que es OTRO objeto y pesa mas. */
     .deasy-overline {
-        @apply m-0 text-theme-xs font-medium uppercase text-muted;
+        @apply m-0 text-theme-xs font-semibold uppercase tracking-wide text-muted;
     }
 
     /* Cuando va sobre un titulo y necesita separarse de el. */

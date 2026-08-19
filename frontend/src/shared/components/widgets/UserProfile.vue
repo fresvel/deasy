@@ -65,11 +65,11 @@
           <h3 class="m-0 truncate text-sm font-semibold leading-tight text-strong">
             {{ username }}
           </h3>
-          <p class="mt-1 text-theme-xs font-semibold uppercase tracking-[0.14em] text-muted">
+          <p class="deasy-overline mt-1">
             {{ subtitle }}
           </p>
           <div v-if="showSignatureDetails && signatureMarker" class="deasy-card mt-2 px-2.5 py-1.5">
-            <p class="m-0 text-theme-xs font-bold uppercase tracking-[0.12em] text-muted">Token firma</p>
+            <p class="deasy-overline">Token firma</p>
             <p class="mt-1 truncate font-mono text-xs text-body">
               {{ signatureMarker }}
             </p>

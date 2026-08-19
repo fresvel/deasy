@@ -200,7 +200,7 @@
                     <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
                   </div>
                   <div class="shrink-0 text-right">
-                    <span class="block text-theme-xs font-bold uppercase tracking-wide text-muted">
+                    <span class="deasy-overline block">
                       {{ item.lastMessageAtLabel }}
                     </span>
                     <span
@@ -235,7 +235,7 @@
                     <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
                   </div>
                   <div class="shrink-0 text-right">
-                    <span class="block text-theme-xs font-bold uppercase tracking-wide text-muted">
+                    <span class="deasy-overline block">
                       {{ item.lastMessageAtLabel }}
                     </span>
                     <span

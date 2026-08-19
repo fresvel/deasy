@@ -77,7 +77,7 @@ const onCardClick = (event) => {
               <span class="deasy-icon-box deasy-icon-box--sm deasy-deliverable-card__chip">
                 <component :is="h.getDeliverableStateIcon(deliverable.item)" class="h-3.5 w-3.5" />
               </span>
-              <span class="deasy-deliverable-card__label truncate text-theme-xs font-semibold uppercase tracking-[0.14em]">
+              <span class="deasy-overline deasy-deliverable-card__label truncate">
                 {{ h.getDeliverableUnitLabel(deliverable.item) || 'Unidad' }}
               </span>
               <span
@@ -116,7 +116,7 @@ const onCardClick = (event) => {
       <div v-show="!h.isDeliverableCollapsed(deliverable.item)" class="mt-3 flex flex-col gap-3">
         <div v-if="h.getDeliverableProgress(deliverable.item)" class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-3">
-            <p class="m-0 text-theme-xs font-semibold uppercase tracking-[0.16em] text-muted">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
+            <p class="deasy-overline">{{ h.getDeliverableProgress(deliverable.item).label }}</p>
             <AppTag :variant="h.getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ h.getDeliverableDueState(deliverable.item).value }}</AppTag>
           </div>
           <p class="m-0 line-clamp-1 text-sm font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>

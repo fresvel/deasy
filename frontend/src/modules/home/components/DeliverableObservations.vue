@@ -82,7 +82,7 @@ const onAdd = () => {
           <span class="absolute -left-[1.42rem] top-1" :class="dotClass(observation)"></span>
           <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span class="text-xs font-bold text-body">{{ observation.author_name || 'Sistema' }}</span>
-            <span class="text-theme-xs font-semibold uppercase tracking-wide" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>
+            <span class="deasy-overline" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>
             <span class="text-theme-xs text-muted">{{ formatObsDate(observation.created_at) }}</span>
             <span v-if="observation.resolved_at" class="text-theme-xs font-semibold text-success">· Resuelta</span>
           </div>

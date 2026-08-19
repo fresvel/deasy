@@ -16,7 +16,7 @@
     <template v-else>
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold uppercase tracking-wide text-muted">Requisitos para activar</span>
+          <span class="deasy-overline">Requisitos para activar</span>
           <AppTag :variant="tonoCobertura(coberturaEstado(completedRequirements, 3))" size="sm" outlined>
             {{ completedRequirements }}/3
           </AppTag>

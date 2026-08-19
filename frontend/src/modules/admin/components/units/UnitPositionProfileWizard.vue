@@ -33,7 +33,7 @@
       <h4 class="m-0 mb-3 text-base font-bold text-strong">Revisión</h4>
       <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
         <li v-for="section in SECTIONS" :key="section.key" class="rounded-2xl border border-line px-3 py-2">
-          <span class="block text-xs font-bold uppercase tracking-wide text-muted">{{ section.label }}</span>
+          <span class="deasy-overline block">{{ section.label }}</span>
           <p class="m-0 mt-0.5 whitespace-pre-line text-sm" :class="form[section.key] ? 'text-body' : 'italic text-muted'">
             {{ form[section.key] || 'Sin especificar' }}
           </p>

@@ -70,7 +70,7 @@
         </div>
         <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-theme-xs font-bold uppercase tracking-wide text-muted">Paso {{ si + 1 }}</span>
+            <span class="deasy-overline">Paso {{ si + 1 }}</span>
             <div class="flex items-center gap-1.5">
               <template v-if="step.signers.length > 1">
                 <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="deasy-control deasy-control--select">

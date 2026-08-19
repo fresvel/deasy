@@ -268,7 +268,7 @@
 
             <!-- Pestaña: Lanzamientos / corridas -->
             <div v-show="detailTab === 'corridas'">
-              <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-muted">Lanzamientos / corridas</p>
+              <p class="deasy-overline mb-3">Lanzamientos / corridas</p>
               <AppEmpty v-if="!detailRuns.length">
                 Este proceso no tiene corridas registradas.
               </AppEmpty>
@@ -297,7 +297,7 @@
       <aside class="deasy-drawer">
         <div class="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
           <div class="min-w-0">
-            <p class="m-0 text-theme-xs font-semibold uppercase tracking-wide text-primary">Entregable · versiones</p>
+            <p class="deasy-overline text-primary">Entregable · versiones</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-strong">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
             <p class="m-0 mt-0.5 truncate text-xs text-muted">
               {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
