@@ -35,7 +35,7 @@
         {{ actionError }}
       </AppAlert>
 
-      <section class="bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+      <section class="deasy-card p-5 md:p-6 flex flex-col gap-5">
         <div class="deasy-filter-shell">
           <div class="deasy-filter-grid">
             <label class="deasy-filter-field deasy-filter-search-span">
@@ -80,7 +80,7 @@
           </div>
         </div>
 
-        <section v-if="loading" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">
+        <section v-if="loading" class="deasy-card p-5 text-sm font-bold text-icon">
           Cargando centro documental...
         </section>
         <AppAlert v-else-if="error">

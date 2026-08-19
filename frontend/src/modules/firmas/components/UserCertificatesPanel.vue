@@ -16,7 +16,7 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_20rem] gap-4">
-      <div class="bg-white rounded-2xl border border-line p-4">
+      <div class="deasy-card p-4">
         <AppAlert v-if="errorMessage">
           {{ errorMessage }}
         </AppAlert>
@@ -74,7 +74,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-line p-4 flex flex-col gap-4">
+      <div class="deasy-card p-4 flex flex-col gap-4">
         <div>
           <h4 class="text-sm font-bold text-strong m-0">Subir certificado</h4>
           <p class="text-xs text-muted m-0 mt-1">

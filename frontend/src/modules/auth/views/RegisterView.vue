@@ -179,7 +179,7 @@
                 </div>
               </div>
 
-              <div class="mt-5 rounded-xl border border-line bg-surface/70 p-4">
+              <div class="deasy-card mt-5 p-4">
                 <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-body">
                   Ubicación exacta
                   <span class="group relative inline-flex">
@@ -299,7 +299,7 @@
               </div>
             </section>
 
-            <div class="mt-5 rounded-xl border border-line bg-white p-4">
+            <div class="deasy-card mt-5 p-4">
               <label class="flex items-start gap-3 text-sm font-medium text-icon">
                 <input
                   v-model="termsAccepted"

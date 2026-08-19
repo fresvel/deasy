@@ -28,7 +28,7 @@
         <li
           v-for="relevo in items"
           :key="`relevo-${relevo.id}`"
-          class="flex items-start gap-3 rounded-xl border border-line bg-white px-3 py-2.5"
+          class="deasy-card flex items-start gap-3 px-3 py-2.5"
         >
           <!-- La caja de icono es un bloque del sistema desde F3.1: `--md` son sus 36 px y `--neutral`
                su gris. Escrita a mano llegaba con `text-muted` en vez de `text-icon` — el mismo papel con

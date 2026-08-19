@@ -59,7 +59,7 @@
       {{ feedback.message }}
     </AppAlert>
 
-    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
+    <div ref="graphCanvas" class="deasy-card graph-canvas">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando organigrama…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-danger">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-muted">No hay unidades para mostrar.</div>
@@ -305,7 +305,7 @@
               </AppButton>
 
               <!-- Buscador de persona para asignar -->
-              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-2xl border border-line bg-surface p-2">
+              <div v-if="editable && assignForId === pos.id" class="deasy-card mt-2 p-2">
                 <input v-model="personQuery" type="text" aria-label="Buscar persona por nombre o cédula" placeholder="Buscar persona (nombre o cédula)…" class="deasy-control" @input="searchPersons" />
                 <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
                 <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">

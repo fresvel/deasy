@@ -4,7 +4,7 @@
       {{ error }}
     </AppAlert>
 
-    <section id="signature-launchers" class="rounded-xl border border-line bg-white shadow-line/30">
+    <section id="signature-launchers" class="deasy-card">
       <FirmarPdf
         :show-start-heading="false"
         :enable-home-shortcuts="true"
@@ -284,7 +284,7 @@
         <AppAlert class="mb-4" v-if="multiSignerError">
           {{ multiSignerError }}
         </AppAlert>
-        <div v-if="pendingPreparation" class="rounded-2xl border border-line bg-surface p-5 text-sm font-bold text-icon">
+        <div v-if="pendingPreparation" class="deasy-card p-5 text-sm font-bold text-icon">
           Preparando documentos del lote...
         </div>
         <div v-else class="flex min-h-0 flex-1 flex-col">

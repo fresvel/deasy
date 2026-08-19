@@ -309,7 +309,7 @@
         </div>
       </div>
     </AppAlert>
-    <div v-else class="rounded-2xl border border-line bg-surface p-5 text-center text-sm text-icon">
+    <div v-else class="deasy-card p-5 text-center text-sm text-icon">
       Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
     </div>
 

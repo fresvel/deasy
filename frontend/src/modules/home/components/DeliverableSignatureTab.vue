@@ -17,22 +17,22 @@
       </AppTag>
     </div>
     <div class="grid gap-3 md:grid-cols-3">
-      <div class="rounded-2xl border border-line bg-surface/70 p-4">
+      <div class="deasy-card p-4">
         <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Documento</p>
         <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</p>
       </div>
-      <div class="rounded-2xl border border-line bg-surface/70 p-4">
+      <div class="deasy-card p-4">
         <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Paso actual</p>
         <p class="text-sm font-semibold text-strong m-0">{{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}</p>
       </div>
-      <div class="rounded-2xl border border-line bg-surface/70 p-4">
+      <div class="deasy-card p-4">
         <p class="text-xs uppercase tracking-wider font-semibold text-muted mb-1">Solicitudes</p>
         <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.snapshot.signatureRequests?.length || 0 }}</p>
       </div>
     </div>
   </section>
 
-  <section class="rounded-2xl border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
+  <section class="deasy-card p-4 flex flex-col gap-3">
     <div class="flex items-center justify-between gap-2">
       <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
       <AppTag variant="neutral">
@@ -95,7 +95,7 @@
     @resolve="$emit('resolve-observation', $event)"
   />
 </div>
-<div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm font-semibold text-icon text-center">
+<div v-else class="deasy-card p-6 text-sm font-semibold text-icon text-center">
   No hay datos de firmas disponibles para este entregable.
 </div>
 </template>

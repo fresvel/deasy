@@ -199,10 +199,10 @@
       <div v-if="draftArtifactPreviewStatus !== 'idle'" class="md:col-span-12">
         <!-- Rotulo del preview: no es un <label> porque no hay control que etiquetar (es un iframe). -->
         <span class="deasy-form-label deasy-form-label--inline">Preview del seed</span>
-        <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
+        <div v-if="draftArtifactPreviewStatus === 'loading'" class="deasy-card px-4 py-5 text-center text-sm font-medium text-muted">
           Cargando preview…
         </div>
-        <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-line bg-white" title="Preview del seed"></iframe>
+        <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="deasy-card min-h-105 w-full" title="Preview del seed"></iframe>
         <div v-else class="rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
           Este seed no tiene un PDF de preview publicado.
         </div>
@@ -222,7 +222,7 @@
         Aún no hay campos. Añade al menos uno para generar el formulario del entregable.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
-        <div v-for="(field, index) in schemaFields" :key="index" class="grid grid-cols-12 items-end gap-2 rounded-xl border border-line bg-white px-3 py-2.5">
+        <div v-for="(field, index) in schemaFields" :key="index" class="deasy-card grid grid-cols-12 items-end gap-2 px-3 py-2.5">
           <div class="col-span-3">
             <label :for="fieldId(`field-key-${index}`)" class="deasy-form-label">Clave</label>
             <input :id="fieldId(`field-key-${index}`)" :value="field.key" placeholder="ej. semestre" class="deasy-control" @input="updateSchemaField(index, 'key', $event.target.value)" />
@@ -475,7 +475,7 @@
               <span class="inline-flex items-center gap-1 text-theme-xs font-semibold uppercase tracking-wide text-muted">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
               <AppButton variant="primary-outline" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
             </div>
-            <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-2xl border border-line bg-surface/60 px-2.5 py-2">
+            <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="deasy-card mt-2 px-2.5 py-2">
               <div class="grid grid-cols-12 items-end gap-2">
                 <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
                   <label :for="fieldId(`signer-who-mode-${index}-${si}`)" class="deasy-form-label">Quién firma</label>

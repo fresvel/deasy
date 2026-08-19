@@ -17,7 +17,7 @@
 
     <aside
       v-if="showChat"
-      class="fixed inset-x-3 bottom-3 z-(--z-panel-chat) flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+      class="deasy-card fixed inset-x-3 bottom-3 z-(--z-panel-chat) flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
       <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">
@@ -69,7 +69,7 @@
         <label
           v-if="view !== 'conversation'"
           aria-label="Buscar conversación"
-          class="mt-3 flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2.5 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
+          class="deasy-card mt-3 flex items-center gap-2 px-3 py-2.5 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
         >
           <IconSearch class="h-4 w-4 text-muted" />
           <input

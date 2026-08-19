@@ -26,7 +26,7 @@
     <AppAlert v-if="generalTaskError">{{ generalTaskError }}</AppAlert>
 
     <!-- Documento -->
-    <section class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
+    <section class="deasy-card flex flex-col gap-3 p-4">
       <div class="flex items-center gap-2">
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconFileDescription class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Documento</h6>
@@ -42,14 +42,14 @@
     </section>
 
     <!-- Flujo del envío -->
-    <section v-if="isSendFlowModal" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
+    <section v-if="isSendFlowModal" class="deasy-card flex flex-col gap-3 p-4">
       <div class="flex items-center gap-2">
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconSend class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Flujo del envío</h6>
       </div>
       <p class="m-0 -mt-1 text-xs font-medium text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
 
-      <div class="rounded-xl border border-line bg-surface/60 p-3">
+      <div class="deasy-card p-3">
         <div class="flex items-center justify-between">
           <span class="deasy-overline">Elabora (entrega) *</span>
           <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('entrega')">+ Agregar</button>
@@ -63,7 +63,7 @@
         </ul>
       </div>
 
-      <div class="rounded-xl border border-line bg-surface/60 p-3">
+      <div class="deasy-card p-3">
         <div class="flex items-center justify-between">
           <span class="deasy-overline">Firma (pasos en orden)</span>
           <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
@@ -133,7 +133,7 @@
     </section>
 
     <!-- Destino y plazo -->
-    <section v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-3 rounded-2xl border border-line/80 bg-white p-4">
+    <section v-if="generalTaskForm.mode === 'free'" class="deasy-card flex flex-col gap-3 p-4">
       <div class="flex items-center gap-2">
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconBuildingMonument class="h-4 w-4" /></span>
         <h6 class="m-0 text-sm font-black uppercase tracking-wider text-body">Destino y plazo</h6>

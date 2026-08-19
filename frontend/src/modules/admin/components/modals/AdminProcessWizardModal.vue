@@ -49,7 +49,7 @@
           </div>
         </AdminFieldGroup>
         <AdminFieldGroup label="Nombre generado" group-class="md:col-span-6">
-          <div class="flex min-h-10 items-center break-all rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-body">
+          <div class="deasy-card flex min-h-10 items-center break-all px-3.5 py-2.5 text-sm font-semibold text-body">
             {{ definitionNameLabel }}
           </div>
         </AdminFieldGroup>
@@ -72,7 +72,7 @@
           label="Slug"
           group-class="md:col-span-6"
         >
-          <div class="flex min-h-10 items-center break-all rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-body">
+          <div class="deasy-card flex min-h-10 items-center break-all px-3.5 py-2.5 text-sm font-semibold text-body">
             {{ processSlugPreview || "Pendiente" }}
           </div>
         </AdminFieldGroup>
@@ -86,7 +86,7 @@
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup label="Código de variación" group-class="md:col-span-4">
-          <div class="flex min-h-10 items-center break-all rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-body">
+          <div class="deasy-card flex min-h-10 items-center break-all px-3.5 py-2.5 text-sm font-semibold text-body">
             {{ seriesCodePreview || "Pendiente" }}
           </div>
         </AdminFieldGroup>

@@ -33,7 +33,7 @@
       <li
         v-for="attachment in attachmentsState.items"
         :key="`attachment-${attachment.id}`"
-        class="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2.5"
+        class="deasy-card flex items-center gap-3 px-3 py-2.5"
       >
         <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral"><IconFileDescription class="h-4.5 w-4.5" /></span>
         <div class="min-w-0 flex-1">

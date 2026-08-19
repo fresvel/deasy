@@ -30,7 +30,7 @@
           />
           <div
             v-if="shouldShowInlineFkSuggestions(field.name)"
-            class="overflow-hidden rounded-xl border border-line bg-white shadow-lg"
+            class="deasy-card overflow-hidden"
             @mousedown.prevent
           >
             <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-muted">
@@ -128,7 +128,7 @@
         v-if="processConfigurationError">
         {{ processConfigurationError }}
       </AppAlert>
-      <div v-if="processConfigurationLoading" class="rounded-2xl border border-line bg-surface px-4 py-6 text-center text-sm font-medium text-muted">
+      <div v-if="processConfigurationLoading" class="deasy-card px-4 py-6 text-center text-sm font-medium text-muted">
         Cargando configuraciones vinculadas...
       </div>
       <AppDataTable

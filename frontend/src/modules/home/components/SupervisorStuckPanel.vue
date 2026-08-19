@@ -2,7 +2,7 @@
   <!-- Solo se muestra a quien encabeza alguna unidad (is_supervisor). Si no, no renderiza nada. -->
   <section
     v-if="isSupervisor"
-    class="bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-4"
+    class="deasy-card p-5 md:p-6 flex flex-col gap-4"
   >
     <div class="flex items-start justify-between gap-3">
       <div>
@@ -18,7 +18,7 @@
       >↻ Actualizar</AppButton>
     </div>
 
-    <div v-if="loading" class="rounded-xl border border-line bg-surface px-4 py-4 text-sm font-medium text-muted">
+    <div v-if="loading" class="deasy-card px-4 py-4 text-sm font-medium text-muted">
       Cargando…
     </div>
     <AppAlert v-else-if="error">
@@ -34,7 +34,7 @@
         <div
           v-for="item in group.items"
           :key="item.id"
-          class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface/60 px-3 py-2.5"
+          class="deasy-card flex flex-wrap items-center justify-between gap-2 px-3 py-2.5"
         >
           <div class="flex flex-col">
             <span class="text-sm font-semibold text-body">

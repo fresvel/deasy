@@ -14,7 +14,7 @@
         class="w-full min-h-[70vh] deasy-card"
         title="Vista previa del archivo"
       />
-      <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm text-icon">
+      <div v-else class="deasy-card p-6 text-sm text-icon">
         El archivo no se puede previsualizar en línea. Usa la opción de descarga.
       </div>
     </div>

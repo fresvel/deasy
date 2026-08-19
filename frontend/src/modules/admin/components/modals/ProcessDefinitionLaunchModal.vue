@@ -8,7 +8,7 @@
     @close="close"
   >
     <div class="flex flex-col gap-4">
-      <div v-if="definition" class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
+      <div v-if="definition" class="deasy-card px-4 py-3 text-sm">
         <span class="font-semibold text-body">Configuración:</span>
         <span class="ml-1 text-icon">{{ definition.name || `#${definition.id}` }}</span>
       </div>
@@ -70,7 +70,7 @@
             <li
               v-for="run in runs"
               :key="run.id"
-              class="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm"
+              class="deasy-card flex items-center justify-between gap-3 px-3 py-2 text-sm"
             >
               <span class="text-icon">
                 #{{ run.id }} · {{ run.term_name || "sin periodo" }}

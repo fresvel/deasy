@@ -22,7 +22,7 @@
       </div>
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="inline-flex items-center gap-0.5 rounded-2xl border border-line bg-surface p-0.5">
+        <div class="deasy-card inline-flex items-center gap-0.5 p-0.5">
           <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
           <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
           <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
@@ -43,7 +43,7 @@
       {{ feedback.message }}
     </AppAlert>
 
-    <div ref="graphCanvas" class="graph-canvas rounded-2xl border border-line bg-surface">
+    <div ref="graphCanvas" class="deasy-card graph-canvas">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando mapa de procesos…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-danger">{{ error }}</div>
       <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-muted">No hay procesos para mostrar.</div>

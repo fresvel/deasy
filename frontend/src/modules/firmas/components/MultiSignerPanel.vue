@@ -1,9 +1,9 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white">
+      <aside class="deasy-card flex h-full min-h-[70vh] flex-col overflow-hidden">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-line bg-surface/60 p-4">
+          <div v-if="allowManualUpload" class="deasy-card flex flex-col gap-3 p-4">
             <PdfDropField
               title=""
               action-text="Seleccionar PDFs"
@@ -137,7 +137,7 @@
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white">
+      <section class="deasy-card flex min-h-[70vh] flex-col overflow-hidden">
         <div
           class="relative grow overflow-hidden bg-gray-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
@@ -278,7 +278,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-line bg-white">
+      <aside class="deasy-card flex h-full min-h-[70vh] flex-col overflow-hidden">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"

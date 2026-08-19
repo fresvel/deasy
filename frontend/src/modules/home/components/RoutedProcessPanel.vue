@@ -71,7 +71,7 @@
       <li
         v-for="item in activeItems"
         :key="item.id"
-        class="group flex items-center gap-3.5 rounded-2xl border border-line/80 bg-white px-4 py-3.5 shadow-[0_6px_16px_rgba(var(--elev-ink-rgb),0.04)] transition hover:border-brand-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
+        class="deasy-card group flex items-center gap-3.5 px-4 py-3.5 transition hover:border-brand-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
       >
         <span
           class="deasy-icon-box deasy-icon-box--lg"

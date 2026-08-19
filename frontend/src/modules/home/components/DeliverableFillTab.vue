@@ -1,6 +1,6 @@
 <template>
 <div v-if="fillWorkflowState.subject" class="flex flex-col gap-5">
-  <div class="rounded-2xl border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
+  <div class="deasy-card p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
       <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Secuencia del flujo</h3>
       <AppTag variant="neutral">Vista operativa</AppTag>
@@ -42,7 +42,7 @@
           <p class="deasy-overline">Responsable</p>
           <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">{{ step.display_label }}</p>
         </div>
-        <div v-if="step.response_note" class="mt-2 rounded-xl border border-line bg-surface/70 px-3 py-2">
+        <div v-if="step.response_note" class="deasy-card mt-2 px-3 py-2">
           <p class="deasy-overline">Nota</p>
           <p class="mt-0.5 mb-0 text-xs font-medium text-icon">{{ step.response_note }}</p>
         </div>

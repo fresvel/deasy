@@ -2,13 +2,13 @@
   <div>
     <div v-if="checking" class="text-sm text-muted">Validando la configuración…</div>
     <template v-else-if="status === 'active'">
-      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface/70 px-4 py-2.5 text-sm text-body">
+      <div class="deasy-card flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm text-body">
         <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-muted" />
         <span>Configuración <strong>activa</strong> y de solo lectura. Para cambios, crea una nueva versión o retírala.</span>
       </div>
     </template>
     <template v-else-if="status === 'retired'">
-      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface/70 px-4 py-2.5 text-sm text-body">
+      <div class="deasy-card flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm text-body">
         <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-muted" />
         <span>Configuración <strong>retirada</strong> y de solo lectura. Para reutilizarla, crea una nueva versión a partir de ella.</span>
       </div>

@@ -13,7 +13,7 @@
     close-action
     @close="$emit('close')"
   >
-    <div class="mb-4 flex items-stretch gap-1 overflow-x-auto rounded-2xl border border-line bg-surface p-2">
+    <div class="deasy-card mb-4 flex items-stretch gap-1 overflow-x-auto p-2">
       <button
         v-for="(step, index) in steps"
         :key="step.key"

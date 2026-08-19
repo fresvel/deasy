@@ -79,7 +79,7 @@
                   </button>
                   <div
                     v-if="showProcessMultiSelect && consolidatedCargoProcesses.length"
-                    class="absolute left-0 top-full z-(--z-capa-elemento) mt-1 w-full min-w-[16rem] rounded-xl border border-line bg-white p-1.5 shadow-theme-lg shadow-line/60"
+                    class="deasy-card absolute left-0 top-full z-(--z-capa-elemento) mt-1 w-full min-w-[16rem] p-1.5 shadow-theme-lg shadow-line/60"
                   >
                     <button
                       type="button"
@@ -168,7 +168,7 @@
 
               <!-- Tarjetas de entregables -->
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
 
                   <div v-if="!consolidatedCargoProcesses.length" class="deasy-empty deasy-empty--lg">
                     No hay procesos asignados para este cargo.
@@ -263,7 +263,7 @@
               <template v-for="unit in unitsPanelData" :key="unit.id">
                 <div v-if="activeUnitPanelTab === unit.id" class="flex flex-col gap-5">
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <section class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4">
+                    <section class="deasy-card p-6 flex flex-col gap-4">
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <div v-if="unit.groupName" class="deasy-overline">{{ unit.groupName }}</div>
@@ -340,7 +340,7 @@
                     <section
                       v-for="pos in cargo.positions"
                       :key="pos.unitId"
-                      class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4"
+                      class="deasy-card p-6 flex flex-col gap-4"
                     >
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
@@ -437,7 +437,7 @@
                 @click="scrollToProcessNav"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis procesos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
+                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconChecklist class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeProcesses.length }} proceso(s) disponible(s)</span>
@@ -453,7 +453,7 @@
                 @click="navigateToGlobalSignaturePage"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Centro de firmas</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8"
+                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8"
                   :class="homeSignatureCount ? 'border-amber-200/80' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-warning' : 'text-muted'" />
@@ -471,7 +471,7 @@
                 @click="openMySends"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis envíos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
+                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSend class="h-10 w-10 text-primary" />
                     <span class="mt-4 text-sm font-semibold text-body">Documentos que has enviado</span>
@@ -486,7 +486,7 @@
                 @click="navigateToDocumentCenterPage"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Centro documental</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
+                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconFileDescription class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeDocumentCount }} documento(s) accesibles</span>
@@ -501,7 +501,7 @@
                 @click="navigateTo('perfil')"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mi dossier</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
+                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconUserCheck class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeDossierCompletion }}% completado · {{ homeDossierTotal }} registro(s)</span>
@@ -516,7 +516,7 @@
                 @click="openCargosPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis cargos</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
+                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBriefcase class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeCargoCount }} cargo(s) asignado(s)</span>
@@ -531,7 +531,7 @@
                 @click="openUnitsPanel"
               >
                 <h3 class="text-lg font-semibold text-strong mb-4">Mis unidades</h3>
-                <div class="flex flex-1 items-center justify-center rounded-xl border border-line/80 bg-white px-6 py-8">
+                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBuildingMonument class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ unitsPanelData.length }} unidad(es) activa(s)</span>
@@ -546,7 +546,7 @@
             <div v-else-if="homeDashTab === 'resumen'" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
               <!-- Columna izquierda: Acciones pendientes -->
-              <section class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4">
+              <section class="deasy-card p-6 flex flex-col gap-4">
                 <div class="flex items-center justify-between gap-3">
                   <h3 class="text-lg font-semibold text-strong m-0">Acciones pendientes</h3>
                   <AppButton variant="neutral-soft" :disabled="homeLoading" @click="loadHomeData">
@@ -596,13 +596,13 @@
               </section>
 
               <!-- Columna derecha: Estadísticas -->
-              <section class="bg-surface/50 rounded-2xl border border-line p-6 flex flex-col gap-4">
+              <section class="deasy-card p-6 flex flex-col gap-4">
                 <h3 class="text-lg font-semibold text-strong m-0">Estadísticas de cuenta</h3>
                 <div class="flex flex-col gap-2">
                   <div
                     v-for="stat in homeStats"
                     :key="stat.label"
-                    class="flex items-center gap-4 rounded-xl border border-line/80 bg-white px-4 py-3"
+                    class="deasy-card flex items-center gap-4 px-4 py-3"
                   >
                     <span
                       class="deasy-icon-box deasy-icon-box--md"
@@ -692,7 +692,7 @@
 
               <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
                   <section class="overflow-hidden rounded-2xl border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -729,7 +729,7 @@
                           </span>
                         </button>
                       </div>
-                      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line/80 bg-white/80 px-4 py-3">
+                      <div class="deasy-card flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                         <div class="text-sm font-medium text-muted">
                           Tareas visibles:
                           <span class="font-bold text-body">{{ filteredProcessDeliverables.length }}</span>
@@ -845,13 +845,13 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="lg:col-span-12 bg-white rounded-xl shadow-line/40 p-5 md:p-6 border border-line flex flex-col gap-5">
+                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
                     <h2 class="text-lg font-bold text-strong m-0 leading-tight">Dependencias de la configuración</h2>
                     <p class="text-muted text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <section class="p-5 rounded-2xl bg-surface/70 border border-line">
+                    <section class="deasy-card p-5">
                       <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-muted"/> Reglas</h3>
                       <div v-if="!selectedProcessPanel.dependencies.rules.length" class="text-sm text-muted font-medium italic">
                         Sin reglas activas para tu alcance.
@@ -862,7 +862,7 @@
                         </li>
                       </ul>
                     </section>
-                    <section class="p-5 rounded-2xl bg-surface/70 border border-line">
+                    <section class="deasy-card p-5">
                       <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-muted"/> Periodos del proceso</h3>
                       <div v-if="!selectedProcessPanel.dependencies.period_types.length" class="text-sm text-muted font-medium italic">
                         Sin tipos de periodo activos.
@@ -873,13 +873,13 @@
                         </li>
                       </ul>
                     </section>
-                    <section class="p-5 rounded-2xl bg-surface/70 border border-line">
+                    <section class="deasy-card p-5">
                       <h3 class="text-sm font-bold text-body uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-muted"/> Paquetes</h3>
                       <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-muted font-medium italic">
                         Sin artifacts vinculados.
                       </div>
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
-                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-body flex flex-col gap-1 bg-white p-3 rounded-xl border border-line">
+                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="deasy-card text-sm font-bold text-body flex flex-col gap-1 p-3">
                           <span>{{ template.template_artifact_name }}</span>
                         </li>
                       </ul>
@@ -929,7 +929,7 @@
         </AppAlert>
 
         <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
-          <div class="md:col-span-2 rounded-xl border border-line bg-surface/60 p-5">
+          <div class="deasy-card md:col-span-2 p-5">
             <div class="flex flex-wrap gap-2">
               <AppTag variant="info">Tarea ligada a proceso</AppTag>
               <AppTag variant="neutral">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
@@ -959,7 +959,7 @@
             </div>
           </label>
 
-          <div v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="mt-1 md:mt-7 p-3 rounded-2xl border border-line bg-surface/50">
+          <div v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="deasy-card mt-1 md:mt-7 p-3">
             <SToggle v-model="taskLaunchUseCustomTerm" label="Crear periodo custom" />
           </div>
 
@@ -988,7 +988,7 @@
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
+            <article class="deasy-card p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-strong">Templates operativos</h3>
@@ -1000,7 +1000,7 @@
                 Esta configuración no tiene templates de proceso que generen tarea.
               </div>
               <div v-else class="flex flex-col gap-3">
-                <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="rounded-2xl border border-line bg-surface/60 p-4 flex flex-col gap-2">
+                <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="deasy-card p-4 flex flex-col gap-2">
                   <div class="flex flex-wrap items-center gap-2">
                     <strong class="text-sm font-bold text-strong">{{ template.template_artifact_name }}</strong>
                     <AppTag variant="success">Proceso</AppTag>
@@ -1013,7 +1013,7 @@
               </div>
             </article>
 
-            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
+            <article class="deasy-card p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-strong">Artifacts generales</h3>
@@ -1025,7 +1025,7 @@
                 No tienes artifacts generales registrados en esta cuenta.
               </div>
               <div v-else class="flex flex-col gap-3">
-                <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="rounded-2xl border border-line bg-surface/60 p-4 flex items-center justify-between gap-3">
+                <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="deasy-card p-4 flex items-center justify-between gap-3">
                   <div class="min-w-0">
                     <strong class="block truncate text-sm font-bold text-strong">{{ item.display_name }}</strong>
                     <p class="mt-1 mb-0 text-xs font-medium text-muted">{{ item.description || 'Plantilla de documento registrada por el usuario.' }}</p>
@@ -1046,25 +1046,25 @@
           </AppAlert>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
+            <article class="deasy-card p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-strong">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="rounded-2xl bg-surface border border-line p-4">
+                <div class="deasy-card p-4">
                   <div class="deasy-overline">Configuración</div>
                   <div class="mt-2 text-sm font-bold text-strong">{{ selectedProcessPanel?.definition?.name || '—' }}</div>
                 </div>
-                <div class="rounded-2xl bg-surface border border-line p-4">
+                <div class="deasy-card p-4">
                   <div class="deasy-overline">Periodo</div>
                   <div class="mt-2 text-sm font-bold text-strong">{{ taskLaunchSelectedTermLabel }}</div>
                 </div>
-                <div class="rounded-2xl bg-surface border border-line p-4 sm:col-span-2">
+                <div class="deasy-card p-4 sm:col-span-2">
                   <div class="deasy-overline">Descripción</div>
                   <div class="mt-2 text-sm font-medium text-body">{{ taskLaunchForm.description || 'Sin descripción adicional.' }}</div>
                 </div>
               </div>
             </article>
 
-            <article class="rounded-xl border border-line bg-white p-5 flex flex-col gap-4">
+            <article class="deasy-card p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-strong">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
@@ -1427,7 +1427,7 @@
             :task-item-id="deliverableHistoryContext.taskItemId"
  />
         </template>
-        <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm font-semibold text-icon text-center">
+        <div v-else class="deasy-card p-6 text-sm font-semibold text-icon text-center">
           No hay una sección disponible para este entregable.
         </div>
       </div>
@@ -1522,7 +1522,7 @@
     >
       <div class="flex flex-col gap-5">
         <div v-if="fillWorkflowState.subject" class="flex flex-col gap-3">
-          <div class="rounded-2xl border border-line bg-surface/60 p-4">
+          <div class="deasy-card p-4">
             <div class="flex flex-col gap-2">
               <strong class="text-base font-bold text-strong">{{ fillWorkflowState.subject.title }}</strong>
               <div class="flex flex-wrap gap-2">
@@ -1574,7 +1574,7 @@
                     </AppTag>
                   </div>
                 </div>
-                <div class="mt-4 rounded-2xl border border-line bg-surface/70 px-4 py-3">
+                <div class="deasy-card mt-4 px-4 py-3">
                   <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Responsable</p>
                   <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">{{ step.display_label }}</p>
                 </div>
@@ -1599,7 +1599,7 @@
               <div
                 v-for="noteEntry in fillWorkflowNotes"
                 :key="`fill-note-${noteEntry.stepId}-${noteEntry.requestId || noteEntry.stepOrder}`"
-                class="rounded-2xl border border-line bg-surface/50 p-4"
+                class="deasy-card p-4"
               >
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div class="flex flex-col gap-1">
@@ -1718,7 +1718,7 @@
         </AppAlert>
         <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-2">
+            <section class="deasy-card p-4 flex flex-col gap-2">
               <p class="text-xs uppercase tracking-wider font-semibold text-muted">Documento</p>
               <h3 class="text-lg font-bold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
               <div class="flex flex-wrap gap-2">
@@ -1753,7 +1753,7 @@
                 Paso actual: {{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}
               </p>
             </section>
-            <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-2">
+            <section class="deasy-card p-4 flex flex-col gap-2">
               <p class="text-xs uppercase tracking-wider font-semibold text-muted">Secuencia</p>
               <p class="text-sm font-semibold text-strong mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
               <p class="text-xs text-muted">
@@ -1765,7 +1765,7 @@
             </section>
           </div>
 
-          <section class="rounded-2xl border border-line bg-linear-to-br from-surface via-white to-gray-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(var(--elev-ink-rgb),0.06)]">
+          <section class="deasy-card p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Pasos del flujo</h3>
               <AppTag variant="neutral">
@@ -1804,7 +1804,7 @@
                     </AppTag>
                   </div>
                 </div>
-                <div class="mt-4 rounded-2xl border border-line bg-surface/70 px-4 py-3">
+                <div class="deasy-card mt-4 px-4 py-3">
                   <p class="text-xs font-bold uppercase tracking-[0.14em] text-muted m-0">Firmante</p>
                   <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">
                     {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
@@ -1820,7 +1820,7 @@
             </div>
           </section>
 
-          <section class="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-3">
+          <section class="deasy-card p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-body uppercase tracking-wider m-0">Historial y trazabilidad</h3>
               <AppTag variant="neutral">
@@ -1866,12 +1866,12 @@
             <div v-if="signatureFlowState.snapshot?.canOperate">
               <FirmarPdf ref="signatureFlowSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
             </div>
-            <div v-else class="rounded-2xl border border-line bg-surface p-4 text-sm text-muted">
+            <div v-else class="deasy-card p-4 text-sm text-muted">
               No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
             </div>
           </section>
         </div>
-        <div v-else class="rounded-2xl border border-line bg-surface p-6 text-sm font-semibold text-icon text-center">
+        <div v-else class="deasy-card p-6 text-sm font-semibold text-icon text-center">
           Selecciona una solicitud de firma para revisar su flujo.
         </div>
       </div>
@@ -1891,7 +1891,7 @@
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
-        <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
+        <div class="deasy-card px-4 py-3 text-sm text-icon">
           {{ deliverableUploadModalHelp }}
         </div>
 
@@ -1989,7 +1989,7 @@
         <AppAlert variant="warning">
           Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
         </AppAlert>
-        <div class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-icon">
+        <div class="deasy-card px-4 py-3 text-sm text-icon">
           <p class="m-0 font-semibold text-body">
             {{ deliverableResetState.target?.title || 'Entregable seleccionado' }}
           </p>

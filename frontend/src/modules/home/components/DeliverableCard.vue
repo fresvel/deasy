@@ -57,7 +57,7 @@ const onCardClick = (event) => {
 
 <template>
   <article
-    class="group/card relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_8px_24px_-12px_rgba(var(--elev-ink-rgb),0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(var(--elev-ink-rgb),0.06),0_16px_32px_-16px_rgba(var(--elev-ink-rgb),0.18)]"
+    class="deasy-card group/card relative flex cursor-pointer flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(var(--elev-ink-rgb),0.06),0_16px_32px_-16px_rgba(var(--elev-ink-rgb),0.18)]"
     :class="`deasy-deliverable-card--${estado} deasy-deliverable-card__shell`"
     @click="onCardClick"
   >

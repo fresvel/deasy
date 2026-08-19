@@ -39,7 +39,7 @@
     <div class="text-sm font-bold text-strong">Resultados</div>
 
     <div class="grid grid-cols-2 gap-3">
-      <div class="flex flex-col items-center justify-center rounded-xl border border-line bg-surface p-3.5 text-center">
+      <div class="deasy-card flex flex-col items-center justify-center p-3.5 text-center">
         <div class="mb-1 text-theme-xs font-bold uppercase tracking-wider text-muted">Documentos</div>
         <div class="text-2xl font-black leading-none text-strong">{{ documentsCount }}</div>
       </div>
@@ -73,7 +73,7 @@
         <div class="deasy-progress__bar bg-blue-light-500" :style="{ width: `${progressPercent}%` }" />
       </div>
 
-      <div v-if="batchJob" class="mt-4 rounded-xl border border-line bg-white p-3.5">
+      <div v-if="batchJob" class="deasy-card mt-4 p-3.5">
         <div class="flex items-center justify-between gap-3">
           <div class="flex flex-col">
             <span class="deasy-overline">Estado</span>

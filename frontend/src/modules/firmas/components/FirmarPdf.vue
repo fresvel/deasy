@@ -100,7 +100,7 @@
  />
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="deasy-card mt-4 p-6 lg:p-8">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
           <h3 class="text-xl font-bold text-strong m-0">PDF del flujo de firma</h3>
@@ -116,7 +116,7 @@
         </AppAlert>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div class="rounded-2xl border border-line bg-surface/70 p-5">
+          <div class="deasy-card p-5">
             <PdfDropField
               title="Cargar PDF del entregable"
               action-text="Seleccionar documento"
@@ -149,14 +149,14 @@
       </AppAlert>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-line bg-white rounded-xl p-6 lg:p-8">
+    <div v-else-if="!multiOnly && !pdfReady" class="deasy-card mt-4 p-6 lg:p-8">
       <div
         id="signature-launchers-grid"
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
         :class="enableHomeShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
-        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -168,7 +168,7 @@
  />
         </div>
 
-        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -180,7 +180,7 @@
  />
         </div>
 
-        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -195,7 +195,7 @@
         <div
           id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-surface/50 rounded-2xl border border-line p-6 text-center"
+          class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center"
         >
           <PdfDropField
             title="Multifirmador"
@@ -281,7 +281,7 @@
     </div>
 
     <div v-else-if="!multiOnly" class="mt-4">
-      <div class="bg-white rounded-2xl border border-line p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="deasy-card p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div 
             class="relative border border-line" 
@@ -361,7 +361,7 @@
         <div
           v-for="field in visibleFields"
           :key="field.id"
-          class="bg-white border border-line rounded-xl p-4 hover:border-blue-light-300 hover:transition-all relative overflow-hidden group"
+          class="deasy-card p-4 hover:border-blue-light-300 hover:transition-all relative overflow-hidden group"
           :class="{ 'ring-2 ring-blue-light-500 border-transparent': field.id === lastFieldId }"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
@@ -390,7 +390,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-line sm:pl-5">
-              <div class="bg-surface border border-line rounded-2xl px-3 py-1.5 text-center">
+              <div class="deasy-card px-3 py-1.5 text-center">
                 <span class="block text-theme-xs font-bold uppercase tracking-wider text-muted">Pág</span>
                 <span class="block text-lg font-bold text-strong leading-none mt-0.5">{{ field.page }}</span>
               </div>
@@ -421,9 +421,9 @@
     size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-    <div v-if="!fields.length" class="text-muted text-center font-medium py-8 bg-surface rounded-xl border border-line">No hay firmas para eliminar.</div>
+    <div v-if="!fields.length" class="deasy-card text-muted text-center font-medium py-8">No hay firmas para eliminar.</div>
     <div v-else class="flex flex-col gap-4">
-      <div class="flex items-center justify-between bg-surface p-2 rounded-xl border border-line">
+      <div class="deasy-card flex items-center justify-between p-2">
         <label :for="fieldId('filterpage')" class="deasy-form-label ml-2 mb-0">Filtrar por pagina</label>
         <select :id="fieldId('filterpage')" v-model="filterPage" class="deasy-control deasy-control--select">
           <option value="all">Todas</option>
@@ -521,7 +521,7 @@
         </div>
       </div>
 
-      <div class="mt-2 min-h-65 max-h-90 overflow-y-auto bg-surface border border-line rounded-xl p-2 custom-scrollbar">
+      <div class="deasy-card mt-2 min-h-65 max-h-90 overflow-y-auto p-2 custom-scrollbar">
         <div v-if="isSearchingUsers" class="text-muted text-sm text-center py-10 font-medium">Buscando usuarios...</div>
         <div v-else-if="userResults.length === 0" class="text-muted text-sm text-center py-10 font-medium">
           No se han encontrado resultados.
@@ -544,9 +544,9 @@
               <span>{{ user.email }}</span>
             </div>
             <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-icon mt-2 flex flex-wrap gap-2">
-              <span v-if="user.unit_type_name" class="bg-white border border-line rounded-xl px-2 py-1">{{ user.unit_type_name }}</span>
-              <span v-if="user.unit_name" class="bg-white border border-line rounded-xl px-2 py-1">{{ user.unit_name }}</span>
-              <span v-if="user.cargo_name" class="bg-white border border-line rounded-xl px-2 py-1">{{ user.cargo_name }}</span>
+              <span v-if="user.unit_type_name" class="deasy-card px-2 py-1">{{ user.unit_type_name }}</span>
+              <span v-if="user.unit_name" class="deasy-card px-2 py-1">{{ user.unit_name }}</span>
+              <span v-if="user.cargo_name" class="deasy-card px-2 py-1">{{ user.cargo_name }}</span>
             </div>
           </button>
         </div>
@@ -627,7 +627,7 @@
         </div>
       </div>
 
-      <div class="rounded-2xl border border-line bg-surface p-4">
+      <div class="deasy-card p-4">
         <div class="flex items-center justify-between gap-3 mb-3">
           <div>
             <div class="text-sm font-bold text-strong">Certificados disponibles</div>
@@ -756,7 +756,7 @@
  />
     </template>
     <div class="px-6 pt-6 pb-4">
-      <div class="bg-white rounded-2xl p-5 border border-line flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+      <div class="deasy-card p-5 flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-blue-light-50 rounded-full blur-2xl opacity-60"></div>
         <div class="flex-1 flex flex-col relative z-(--z-capa-base) w-full">
           <label :for="fieldId('validationcedula')" class="deasy-form-label deasy-form-label--inline gap-2">
@@ -888,7 +888,7 @@
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>
               </summary>
-              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-theme-xs text-icon bg-surface p-3 rounded-xl border border-line shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+              <pre class="deasy-card mt-2 overflow-auto whitespace-pre-wrap text-theme-xs text-icon p-3 max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
             </details>
           </template>
           <template v-else>
@@ -917,7 +917,7 @@
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
-      <div class="rounded-2xl border border-line bg-surface px-4 py-3">
+      <div class="deasy-card px-4 py-3">
         <div class="deasy-overline">Entidad</div>
         <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-strong">
           {{ selectedCertificateAuthority?.certificateAuthority || 'No disponible' }}

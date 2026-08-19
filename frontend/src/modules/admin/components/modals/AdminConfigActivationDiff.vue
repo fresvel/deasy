@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-xl border border-line bg-surface/60 px-3 py-2.5 text-sm">
+  <div class="deasy-card px-3 py-2.5 text-sm">
     <p class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Qué cambia al activar</p>
 
     <div v-if="loading" class="text-xs text-muted">Calculando cambios…</div>

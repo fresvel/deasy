@@ -8,7 +8,7 @@
     @close="close"
   >
     <div class="flex flex-col gap-4">
-      <div v-if="term" class="rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
+      <div v-if="term" class="deasy-card px-4 py-3 text-sm">
         <span class="font-semibold text-body">Periodo:</span>
         <span class="ml-1 text-icon">{{ term.name || `#${term.id}` }}</span>
       </div>
