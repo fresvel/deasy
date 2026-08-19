@@ -218,7 +218,7 @@
         </div>
         <AdminButton variant="primary-outline" @click="addSchemaField">+ Añadir campo</AdminButton>
       </div>
-      <div v-if="!schemaFields.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
+      <div v-if="!schemaFields.length" class="deasy-empty mt-3">
         Aún no hay campos. Añade al menos uno para generar el formulario del entregable.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">

@@ -47,7 +47,7 @@
                 {{ formatInlineFkOption(field, option) }}
               </AdminButton>
             </template>
-            <div v-else class="px-4 py-3 text-sm text-muted">
+            <div v-else class="deasy-empty">
               Sin coincidencias. Usa Buscar.
             </div>
           </div>

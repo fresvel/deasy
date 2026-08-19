@@ -241,7 +241,7 @@
         </AppButton>
               </template>
             </AppPageHeader>
-            <div v-if="!unitsPanelData.length" class="text-sm font-medium text-muted py-4">
+            <div v-if="!unitsPanelData.length" class="deasy-empty">
               No hay unidades con procesos asignados.
             </div>
             <template v-else>
@@ -310,7 +310,7 @@
         </AppButton>
             </AppActionBar>
 
-            <div v-if="!cargosPanelData.length" class="text-sm font-medium text-muted py-4">
+            <div v-if="!cargosPanelData.length" class="deasy-empty">
               No hay cargos asignados para mostrar.
             </div>
             <template v-else>
@@ -1427,7 +1427,7 @@
             :task-item-id="deliverableHistoryContext.taskItemId"
  />
         </template>
-        <div v-else class="deasy-card p-6 text-sm font-semibold text-icon text-center">
+        <div v-else class="deasy-empty">
           No hay una sección disponible para este entregable.
         </div>
       </div>
@@ -1488,7 +1488,7 @@
         </div>
 
         <div v-if="mySendsLoading" class="text-sm text-muted">Cargando envíos…</div>
-        <div v-else-if="!filteredMySends.length" class="rounded-2xl border border-dashed border-line bg-surface/70 p-6 text-center text-sm font-medium text-muted">
+        <div v-else-if="!filteredMySends.length" class="deasy-empty">
           Aún no has enviado ningún documento.
         </div>
         <ul v-else class="m-0 flex flex-col gap-2 p-0 list-none">
@@ -1772,7 +1772,7 @@
                 {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
               </AppTag>
             </div>
-            <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-muted">
+            <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="deasy-empty">
               Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1827,7 +1827,7 @@
                 {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
               </AppTag>
             </div>
-            <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="text-sm text-muted">
+            <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="deasy-empty">
               Aún no se ha registrado actividad sobre este flujo.
             </div>
             <div v-else class="flex flex-col gap-3">
@@ -1866,7 +1866,7 @@
             <div v-if="signatureFlowState.snapshot?.canOperate">
               <FirmarPdf ref="signatureFlowSignerRef" embedded @workflow-signed="handleEmbeddedWorkflowSigned" />
             </div>
-            <div v-else class="deasy-card p-4 text-sm text-muted">
+            <div v-else class="deasy-empty">
               No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
             </div>
           </section>

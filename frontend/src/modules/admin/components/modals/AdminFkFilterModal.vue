@@ -7,7 +7,7 @@
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="!fkFilterFields.length" class="text-sm text-muted">
+    <div v-if="!fkFilterFields.length" class="deasy-empty">
       No hay campos disponibles para aplicar filtros.
     </div>
     <form v-else class="grid gap-3 md:grid-cols-12">

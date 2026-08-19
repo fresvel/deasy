@@ -81,7 +81,10 @@ import { join, resolve } from "node:path";
  * commit que solo restaba. Es la trampa que `tokens.css` corta para Tailwind con `@source not`,
  * vista por el otro lado: alli la prosa CREA la utilidad, aqui la MANTIENE. En un comentario,
  * describe el valor —«68 px»—, no escribas la clase. */
-const TECHO = { total: 159, "text-": 2, "rounded-": 1, "shadow-": 16 };
+/* Bajado el 2026-08-19 al unificar la tarjeta y el estado vacio: total 159 -> 154 y
+   `shadow-` 16 -> 11, porque cinco sombras arbitrarias vivian en superficies QUIETAS y la
+   receta no lleva sombra. El trinquete solo baja. */
+const TECHO = { total: 154, "text-": 2, "rounded-": 1, "shadow-": 11 };
 
 const SRC = resolve(process.argv[2] ?? "src");
 const RE = /\b([a-z][a-z-]*-)\[[^\]]+\]/g;

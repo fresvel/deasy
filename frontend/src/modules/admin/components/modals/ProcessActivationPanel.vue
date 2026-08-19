@@ -153,7 +153,7 @@
               />
             </template>
           </AppDataTable>
-          <div v-else class="text-sm text-muted">Sin plantillas vinculadas.</div>
+          <div v-else class="deasy-empty">Sin plantillas vinculadas.</div>
         </div>
       </div>
     </template>

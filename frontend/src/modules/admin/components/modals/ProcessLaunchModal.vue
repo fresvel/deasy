@@ -16,7 +16,7 @@
       <div v-if="loading" class="text-sm text-muted">Cargando estado de lanzamiento...</div>
 
       <template v-else>
-        <div v-if="!definitions.length" class="text-sm text-muted italic">
+        <div v-if="!definitions.length" class="deasy-empty">
           No hay configuraciones de proceso activas vinculadas al tipo de periodo de este periodo.
         </div>
 

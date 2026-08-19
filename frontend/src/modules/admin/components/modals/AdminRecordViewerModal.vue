@@ -159,7 +159,7 @@
           </AppDataTable>
         </section>
       </div>
-      <div v-else class="flex min-h-40 items-center justify-center text-sm font-medium text-muted">
+      <div v-else class="deasy-empty flex min-h-40 items-center justify-center">
         No hay informacion para visualizar.
       </div>
     </div>

@@ -29,7 +29,7 @@
                 {{ t.name }}{{ t.launched ? " — ya lanzado" : "" }}
               </option>
             </select>
-            <p v-if="!terms.length" class="mt-2 text-xs text-muted italic">
+            <p v-if="!terms.length" class="deasy-empty">
               No hay periodos activos de los tipos en que corre este proceso.
             </p>
           </div>

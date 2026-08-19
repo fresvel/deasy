@@ -10,7 +10,7 @@
     <AppAlert v-if="fkCreateError">
       {{ fkCreateError }}
     </AppAlert>
-    <div v-if="!fkCreateFields.length" class="text-sm text-muted">
+    <div v-if="!fkCreateFields.length" class="deasy-empty">
       No hay campos editables disponibles para crear esta referencia.
     </div>
     <form v-else class="grid gap-3 md:grid-cols-12">

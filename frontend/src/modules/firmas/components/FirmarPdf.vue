@@ -421,7 +421,7 @@
     size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-    <div v-if="!fields.length" class="deasy-card text-muted text-center font-medium py-8">No hay firmas para eliminar.</div>
+    <div v-if="!fields.length" class="deasy-empty">No hay firmas para eliminar.</div>
     <div v-else class="flex flex-col gap-4">
       <div class="deasy-card flex items-center justify-between p-2">
         <label :for="fieldId('filterpage')" class="deasy-form-label ml-2 mb-0">Filtrar por pagina</label>
@@ -641,7 +641,7 @@
         <div v-if="isLoadingCertificates" class="text-sm text-muted font-medium py-3">
           Cargando certificados...
         </div>
-        <div v-else-if="!availableCertificates.length" class="text-sm text-muted font-medium py-3">
+        <div v-else-if="!availableCertificates.length" class="deasy-empty">
           No tienes certificados cargados.
         </div>
         <div v-else class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">

@@ -112,7 +112,7 @@
                 title-class="text-info group-hover:text-info"
                 @click="openTemplateArtifactDraftFromHome"
               />
-              <div v-if="!processCrudTables.length" class="col-span-full py-10 text-center text-muted font-medium">
+              <div v-if="!processCrudTables.length" class="deasy-empty col-span-full">
                 No hay tablas disponibles para este subgrupo.
               </div>
             </template>
@@ -159,7 +159,7 @@
                   />
                 </div>
               </div>
-              <div v-if="!processMenuItems.length && !traceabilityTables.length" class="col-span-full py-10 text-center text-muted font-medium">
+              <div v-if="!processMenuItems.length && !traceabilityTables.length" class="deasy-empty col-span-full">
                 No tienes permisos para gestionar procesos.
               </div>
             </template>

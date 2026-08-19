@@ -39,7 +39,7 @@
         {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
       </AppTag>
     </div>
-    <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-muted">
+    <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="deasy-empty">
       Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
     </div>
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -95,7 +95,7 @@
     @resolve="$emit('resolve-observation', $event)"
   />
 </div>
-<div v-else class="deasy-card p-6 text-sm font-semibold text-icon text-center">
+<div v-else class="deasy-empty">
   No hay datos de firmas disponibles para este entregable.
 </div>
 </template>

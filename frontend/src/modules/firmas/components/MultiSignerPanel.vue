@@ -89,12 +89,12 @@
               <AppDeleteButton v-if="documents.length" label="Limpiar cola completa" @click="clearQueue" />
             </div>
 
-            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface/50 p-8 text-center text-muted">
+            <div v-if="!documents.length" class="deasy-empty deasy-empty--lg flex flex-col items-center justify-center gap-3">
               <IconFiles class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
             </div>
 
-            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface/50 p-8 text-center text-muted">
+            <div v-else-if="!filteredDocuments.length" class="deasy-empty deasy-empty--lg flex flex-col items-center justify-center gap-3">
               <IconInfoCircle class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
             </div>

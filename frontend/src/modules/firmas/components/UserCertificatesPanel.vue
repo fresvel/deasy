@@ -28,7 +28,7 @@
           Cargando certificados...
         </div>
 
-        <div v-else-if="!certificates.length" class="py-8 text-center text-sm text-muted font-medium">
+        <div v-else-if="!certificates.length" class="deasy-empty">
           No hay certificados cargados.
         </div>
 

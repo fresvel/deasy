@@ -157,14 +157,12 @@
         background: var(--color-white);
     }
 
-    .pdf-preview-empty {
-        min-height: 18rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-muted);
-        font-size: 0.95rem;
-    }
+    /* 📌 AQUI VIVIO `.pdf-preview-empty` (†2026-08-19, F2). Era el estado vacio del visor de
+       PDF del dossier, con un solo consumidor y **letra de 0,95rem = 15,2 px, fuera de la
+       escala** —justo el tipo de valor que F5.1 barrio del resto del proyecto y que aqui
+       sobrevivio por vivir en una familia que no se llama `deasy-`—. El color y el tamaño los
+       da ahora `.deasy-empty`; lo unico suyo era el alto y el centrado, que son dos utilidades
+       en su sitio. */
 }
 
 /* ======================================================================================

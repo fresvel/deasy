@@ -46,7 +46,7 @@
     <div ref="graphCanvas" class="deasy-card graph-canvas">
       <div v-if="loading" class="flex h-full items-center justify-center text-sm text-muted">Cargando mapa de procesos…</div>
       <div v-else-if="error" class="flex h-full items-center justify-center px-6 text-center text-sm text-danger">{{ error }}</div>
-      <div v-else-if="!nodes.length" class="flex h-full items-center justify-center text-sm text-muted">No hay procesos para mostrar.</div>
+      <div v-else-if="!nodes.length" class="deasy-empty flex h-full items-center justify-center">No hay procesos para mostrar.</div>
       <VueFlow
         v-else
         v-model:nodes="nodes"
