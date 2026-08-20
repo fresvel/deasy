@@ -299,3 +299,33 @@
         }
     }
 }
+
+
+@layer components {
+    /* EL LOGO ENMARCADO — F8, 2026-08-20.
+     *
+     * `AppLogo` componia su caja con TRES valores arbitrarios en un `computed`:
+     *
+     *     border-[rgba(15,53,118,0.08)]
+     *     shadow-[0_10px_24px_rgba(11,31,63,0.06)]
+     *     focus:ring-[rgba(18,63,136,0.18)]
+     *
+     * Los tres eran color con alfa decidido en JavaScript, y ninguno salia de la paleta. El
+     * tercero ademas contradecia una regla escrita: `forms.css` dice que **«el anillo del proyecto
+     * es UNO y se llama `--focus-ring`»**, y aqui habia un segundo anillo, de otro azul y de otro
+     * grosor, en el logo de la pantalla de entrada.
+     *
+     * La sombra se sustituye por `--elev-2`, que es practicamente la misma —el arbitrario era
+     * `0 10px 24px / 0.06` y el token es `0 1px 2px / 0.04, 0 12px 32px / 0.06`— y ya la usan las
+     * tarjetas con las que el logo convive. */
+    .deasy-logo--framed {
+        @apply border bg-white px-3 py-2;
+        border-color: var(--color-line);
+        box-shadow: var(--elev-2);
+    }
+
+    .deasy-logo--link:focus {
+        outline: none;
+        box-shadow: var(--focus-ring);
+    }
+}

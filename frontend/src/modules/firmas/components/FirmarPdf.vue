@@ -304,6 +304,7 @@
             <SignatureBox
               v-for="field in currentPageFields"
               :key="field.id"
+              :data-field-id="field.id"
               :field="field"
               :is-active="field.id === lastFieldId"
               :pdf-scale="pdfScale"
@@ -2041,14 +2042,13 @@ const fieldId = (name) => `${uid}-${name}`;
       nextTick(() => {
         setTimeout(() => {
           const boxEl = document.querySelector(`[data-field-id="${fieldId}"]`);
-          if (boxEl) {
-            boxEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // optionally highlight the box temporarily by adding a temporary class
-            boxEl.classList.add('ring-4', 'ring-blue-light-500', 'ring-offset-2', 'transition-shadow');
-            setTimeout(() => {
-              boxEl.classList.remove('ring-4', 'ring-blue-light-500', 'ring-offset-2', 'transition-shadow');
-            }, 1500);
-          }
+          /* EL RESALTADO SALE DEL ESTADO, NO DEL DOM (2026-08-20, F8).
+             Antes se anadian cuatro utilidades con `classList.add` —dos de ellas de color— y se
+             quitaban a los 1500 ms. Eso es color viviendo en JavaScript en su peor forma: ni
+             `check-orphan-classes` puede verlo, porque no hay ningun atributo que leer.
+             `SignatureBox` YA tiene `isActive`, atado a `lastFieldId`, y pinta el mismo anillo. */
+          selectField(fieldId);
+          boxEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
       });
     };
