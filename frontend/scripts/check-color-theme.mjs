@@ -40,7 +40,15 @@ import { join, resolve } from "node:path";
  * OCHO ficheros son «activo / borrador / retirado», o sea **un componente de estado que falta**
  * (fase 3.3). Y `homeView.helpers.js` y `useDeliverableView.js` los generan desde mapas en
  * JavaScript, que es la fase 8. Bajar este contador es ese trabajo, no una sustitucion. */
-const TECHO = { total: 42, familia: 35, hex: 5, rgb: 2 };
+/* [2026-08-20 · F8] BAJA DE 42/35 A 37/30. Lo pidio el propio gate al ejecutarse: la rampa de
+   fuerza de contraseña de `RegisterView` gastaba `bg-orange-500`, `bg-amber-400`, `bg-lime-500`,
+   `bg-green-500` y `text-lime-600` — y `lime` y `amber` **ni siquiera son familias de la paleta
+   adoptada**, que son `blue-light`, `brand`, `error`, `gray`, `orange`, `success` y `warning`.
+   Ahora el tono lo decide `tonoFuerza` y el color lo pone `deasy-progress__bar--<tono>`. */
+const TECHO = { total: 34, familia: 27, hex: 5, rgb: 2 };
+/* …y de 37/30 a 34/27 el mismo dia, al colapsar la paleta ciclica de pasos de
+   `AdminDraftArtifactModal`: sus `border-emerald-200`, `border-amber-200` y `border-rose-200`
+   tampoco eran de la paleta. Ahora el color lo pone `deasy-flow-step-card--<tono>`. */
 
 const SRC = resolve(process.argv[2] ?? "src");
 const TOKENS_CSS = join(SRC, "shared/styles/tokens.css");

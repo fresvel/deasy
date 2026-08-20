@@ -913,18 +913,17 @@ const toggleSignatureStep = (index) => { expandedSignatureStep.value = expandedS
    ⚠️ NO ENTRA en `estadoTono.js`, y la razon es el criterio de F3.3: esto NO es estado. El color
    no significa nada —no dice si el paso esta bien o mal—, solo separa un paso del siguiente, igual
    que los `…AccentClass` de `homeView.helpers.js`. Un diccionario valor→tono no tiene aqui ningun
-   valor que traducir. El `badge` ya pide un NOMBRE de tono, que es lo correcto; el `card` sigue
-   devolviendo un color y eso si es deuda, pero de F8 (color en JavaScript), no de esta fase. */
-const STEP_TONES = [
-  { card: "border-brand-200", badge: "deasy-icon-box--primary" },
-  { card: "border-emerald-200", badge: "deasy-icon-box--success" },
-  { card: "border-amber-200", badge: "deasy-icon-box--warning" },
-  { card: "border-blue-light-200", badge: "deasy-icon-box--info" },
-  { card: "border-rose-200", badge: "deasy-icon-box--danger" },
-  { card: "border-brand-200", badge: "deasy-icon-box--primary" }
-];
-const stepToneClass = (index) => STEP_TONES[index % STEP_TONES.length].card;
-const stepBadgeClass = (index) => STEP_TONES[index % STEP_TONES.length].badge;
+   valor que traducir.
+
+   ✅ CERRADO EN F8 (2026-08-20). Este mapa tenia DOS columnas y solo una estaba bien: el `badge`
+   pedia un NOMBRE de tono y el `card` devolvia un COLOR —`border-emerald-200`, `border-amber-200`,
+   `border-rose-200`—, tres de ellos de familias que **ni siquiera son de la paleta adoptada**. Su
+   propio comentario lo aparcaba en esta fase. Ahora la lista son SEIS NOMBRES DE TONO y las dos
+   clases se derivan; el color de la tarjeta lo pone `deasy-flow-step-card--<tono>`. */
+const TONOS_PASO = ["primary", "success", "warning", "info", "danger", "primary"];
+const tonoPaso = (index) => TONOS_PASO[index % TONOS_PASO.length];
+const stepToneClass = (index) => `deasy-flow-step-card--${tonoPaso(index)}`;
+const stepBadgeClass = (index) => `deasy-icon-box--${tonoPaso(index)}`;
 
 // Etiquetas legibles desde los catálogos cargados.
 const cargoName = (id) => cargoOptions.value.find((c) => Number(c.id) === Number(id))?.name || "";

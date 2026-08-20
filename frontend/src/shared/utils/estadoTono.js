@@ -610,3 +610,26 @@ export const tonoClasificacion = (tabla, columna, valor) =>
   CLASIFICACION[`${tabla}.${columna}`]?.[clave(valor)] ?? TONOS.NEUTRAL;
 
 export const COLUMNAS_DE_CLASIFICACION = Object.freeze(Object.keys(CLASIFICACION));
+
+/* ── FUERZA DE UNA CONTRASEÑA (0-5) ───────────────────────────────────────────────────────
+ *
+ * F8, 2026-08-20. Venia de `RegisterView` como DOS mapas de color en JavaScript —uno para la
+ * barra y otro para el texto— con seis pasos cada uno: `bg-gray-200`, `bg-red-500`,
+ * `bg-orange-500`, `bg-amber-400`, `bg-lime-500`, `bg-green-500`. El comentario de aquel fichero
+ * ya lo aparcaba aqui: «colapsar un degradado de cinco pasos sobre los tonos del sistema es una
+ * decision de diseño, no una limpieza: va con la fase 8».
+ *
+ * ⚠️ Y dos de esos seis NI SIQUIERA ESTABAN EN LA PALETA: las familias adoptadas son `blue-light`,
+ * `brand`, `error`, `gray`, `orange`, `success` y `warning`. `lime` y `amber` no son ninguna.
+ *
+ * Es una RAZON SOBRE UN CONTINUO, no un enum — el mismo caso que `coberturaEstado`—, asi que los
+ * seis pasos se colapsan sobre cuatro tonos. **No se pierde informacion**: el grado ya lo dice el
+ * ANCHO de la barra (score/5), y el color solo tiene que decir si eso vale o no. Los dos ambares
+ * distintos (`orange-500` y `amber-400`) decian lo mismo con dos pinceles. */
+export const tonoFuerza = (puntuacion) => {
+  const n = Number(puntuacion) || 0;
+  if (n <= 0) return TONOS.NEUTRAL;
+  if (n === 1) return TONOS.DANGER;
+  if (n <= 3) return TONOS.WARNING;
+  return TONOS.SUCCESS;
+};

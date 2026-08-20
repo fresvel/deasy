@@ -33,9 +33,9 @@
                     <div v-for="section in getAvailableFormatSections(row.available_formats)" :key="section.mode" :class="{ 'is-inline': section.mode === 'reference' }">
                       <span>{{ section.label }}</span>
                       <div>
-                        <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                        <AppTag v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" variant="neutral" outlined>
                           {{ entry.formatLabel }}
-                        </span>
+                        </AppTag>
                       </div>
                     </div>
                   </template>
@@ -66,6 +66,7 @@
 
 <script setup>
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
@@ -79,7 +80,6 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true },
   canLink: { type: Boolean, default: true }
 });
 

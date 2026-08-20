@@ -373,4 +373,20 @@
     .deasy-progress__bar {
         @apply h-full rounded-full transition-all duration-300;
     }
+
+    /* EL RELLENO POR TONO — F8, 2026-08-20.
+     *
+     * El bloque de arriba dice que el relleno «no se declara aqui a proposito» porque las tres
+     * barras lo tienen distinto. Sigue siendo cierto para dos de ellas: el lote de firma y la
+     * tarjeta de entregable lo derivan de su propio acento. La TERCERA —la fuerza de la
+     * contraseña— no: derivaba de un mapa de SEIS COLORES escrito en JavaScript, dos de ellos
+     * (`lime`, `amber`) de familias que ni existen en la paleta adoptada.
+     *
+     * Ahora el nombre del tono sale de `tonoFuerza` y el color de aqui, que es el contrato de
+     * todo el sistema. Se usa el paso `-500`: una barra es un GRAFICO y WCAG 1.4.11 le pide 3:1,
+     * no los 4.5 de un texto. */
+    .deasy-progress__bar--neutral { background-color: var(--color-gray-300); }
+    .deasy-progress__bar--danger  { background-color: var(--color-error-500); }
+    .deasy-progress__bar--warning { background-color: var(--color-warning-500); }
+    .deasy-progress__bar--success { background-color: var(--color-success-500); }
 }

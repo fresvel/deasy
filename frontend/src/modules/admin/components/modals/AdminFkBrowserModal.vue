@@ -231,13 +231,14 @@
               >
                 <span>{{ section.label }}</span>
                 <div>
-                  <span
+                  <AppTag
                     v-for="entry in section.entries"
                     :key="`${section.mode}-${entry.format}`"
-                    :style="getAvailableFormatBadgeStyle(section.mode, entry)"
+                    variant="neutral"
+                    outlined
                   >
                     {{ entry.formatLabel }}
-                  </span>
+                  </AppTag>
                 </div>
               </div>
             </template>
@@ -304,6 +305,7 @@
 <script setup>
 import { IconListSearch, IconPlus } from "@tabler/icons-vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
@@ -348,7 +350,6 @@ const props = defineProps({
   formatFkPrimaryCell: { type: Function, required: true },
   formatFkListCell: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true }
 });
 
 const emit = defineEmits([

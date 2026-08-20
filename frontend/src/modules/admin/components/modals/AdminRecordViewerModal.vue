@@ -69,9 +69,9 @@
                         :key="`${section.mode}-${entry.format}`"
                         class="flex min-w-0 flex-wrap items-center gap-2"
                       >
-                        <span :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                        <AppTag variant="neutral" outlined>
                           {{ entry.formatLabel }}
-                        </span>
+                        </AppTag>
                         <code class="min-w-0 break-all text-xs font-medium text-muted">{{ entry.entryObjectKey }}</code>
                       </div>
                     </div>
@@ -283,7 +283,6 @@ const props = defineProps({
   syncBusy: { type: Boolean, default: false },
   formatRecordViewerValue: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true },
   rowKeyForTable: { type: Function, required: true },
   formatValueForTable: { type: Function, required: true }
 });

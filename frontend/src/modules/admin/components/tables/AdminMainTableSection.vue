@@ -162,9 +162,9 @@
                     <div v-for="section in getAvailableFormatSections(row[field.name])" :key="section.mode" :class="{ 'is-inline': section.mode === 'reference' }">
                       <span>{{ section.label }}</span>
                       <div>
-                        <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                        <AppTag v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" variant="neutral" outlined>
                           {{ entry.formatLabel }}
-                        </span>
+                        </AppTag>
                       </div>
                     </div>
                   </template>
@@ -347,7 +347,6 @@ const props = defineProps({
   formatFkOptionLabel: { type: Function, required: true },
   formatCell: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true },
   canUpdate: { type: Boolean, default: true },
   canDelete: { type: Boolean, default: true }
 });

@@ -186,16 +186,28 @@ class AdminPresentationService {
       }));
   }
 
-  getAvailableFormatBadgeStyle(mode, entry) {
-    const color = this.getDefaultAvailableFormatColor(mode, entry?.format);
-    const backgroundColor = this.toRgbaFromHex(color, 0.2);
-    const borderColor = this.toRgbaFromHex(color, 0.44);
-    return {
-      color,
-      backgroundColor: backgroundColor || undefined,
-      borderColor: borderColor || undefined
-    };
-  }
+  /* [2026-08-20 · F8] AQUI ESTABA `getAvailableFormatBadgeStyle`, Y CON EL DOS AYUDANTES:
+   * `getDefaultAvailableFormatColor` —un mapa de SEIS HEX CRUDOS, `jinja2 #18b7a3`,
+   * `latex #8b5cf6`, `docx #2563eb`, `pdf #ef4444`, `xlsx #16a34a`— y `toRgbaFromHex`, que los
+   * convertia a `rgba()` con alfa 0.2 y 0.44 para aplicarlos como **`:style` en linea**.
+   *
+   * Tres cosas mal a la vez, y ninguna la veia ningun gate:
+   *   1. un color decidido en JavaScript (es F8 en una linea);
+   *   2. con ALFA, o sea que el resultado depende del fondo — lo mismo que `deasy-progress`
+   *      documenta haber quitado;
+   *   3. como estilo EN LINEA, que no es una clase y por tanto es invisible incluso a
+   *      `check-orphan-classes`, que mide contra el CSS construido.
+   *
+   * 🪤 Y no era solo deuda: **los SEIS fallaban el contraste AA**, entre 2.10:1 y 3.89:1, porque
+   * el texto iba del color puro sobre su propio tinte al 20 %. `contraste.mjs` no podia verlo: lee
+   * los tokens de `tokens.css`, y esto eran hex en un `.js`. La pastilla neutral del sistema da
+   * 4.51:1.
+   *
+   * Ahora son `<AppTag variant="neutral" outlined>`. Y el color NO se sustituye por otro: los
+   * formatos son valores PARES entre si —`docx` no es mejor que `pdf`— y la doctrina de F9.D dice
+   * que una clasificacion no toma tonos de juicio. Ademas dos de aquellos colores mentian: `pdf`
+   * en ROJO y `xlsx` en VERDE gastaban los dos colores que en este sistema significan error y
+   * exito. Lo que distingue un formato de otro es su ETIQUETA, que ya la lleva escrita. */
 
   formatAvailableFormatsSummary(value) {
     const parts = this.getAvailableFormatSections(value).map(
@@ -261,32 +273,7 @@ class AdminPresentationService {
     return normalized;
   }
 
-  toRgbaFromHex(hex, alpha) {
-    const expanded = this.expandHexColor(hex);
-    if (!expanded || expanded.length !== 6) {
-      return "";
-    }
-    const red = Number.parseInt(expanded.slice(0, 2), 16);
-    const green = Number.parseInt(expanded.slice(2, 4), 16);
-    const blue = Number.parseInt(expanded.slice(4, 6), 16);
-    if ([red, green, blue].some((value) => Number.isNaN(value))) {
-      return "";
-    }
-    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-  }
-
-  getDefaultAvailableFormatColor(mode, format) {
-    // El color se determina por formato (el formato es único; el rol/"mode" ya no discrimina).
-    return {
-      jinja2: "#18b7a3",
-      latex: "#8b5cf6",
-      docx: "#2563eb",
-      pdf: "#ef4444",
-      xlsx: "#16a34a"
-    }[String(format || "").toLowerCase()] || "#8a94a6";
-  }
-
-  getFirstDefinedValue(...values) {
+getFirstDefinedValue(...values) {
     const match = values.find((value) => value !== null && value !== undefined && value !== "");
     return match !== undefined ? String(match) : "—";
   }

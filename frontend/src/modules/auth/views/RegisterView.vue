@@ -256,11 +256,11 @@
                     <div class="deasy-progress mb-1">
                       <div
                         class="deasy-progress__bar"
-                        :class="passwordStrengthColors[passwordStrengthScore]"
+                        :class="`deasy-progress__bar--${tonoFuerzaActual}`"
                         :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
                       ></div>
                     </div>
-                    <p class="text-theme-xs font-medium" :class="passwordTextColors[passwordStrengthScore]">{{ passwordStrengthText }}</p>
+                    <p class="text-theme-xs font-medium" :class="CLASE_TEXTO_FUERZA[tonoFuerzaActual]">{{ passwordStrengthText }}</p>
                   </div>
                 </div>
 
@@ -372,7 +372,8 @@
 
 <script setup>
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
-import { ref, watch, onMounted, onUnmounted, useId } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, useId } from "vue";
+import { tonoFuerza } from "@/shared/utils/estadoTono.js";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
@@ -459,22 +460,17 @@ const passwordStrengthText = ref("No segura");
    barra y su leyenda se pintan con dos vocabularios distintos. Colapsar un degradado de
    cinco pasos sobre los tonos del sistema es una decision de diseño, no una limpieza: va
    con el resto de los colores que viven en JavaScript, en la fase 8. */
-const passwordStrengthColors = {
-  0: "bg-gray-200",
-  1: "bg-red-500",
-  2: "bg-orange-500",
-  3: "bg-amber-400",
-  4: "bg-lime-500",
-  5: "bg-green-500"
+/* Los dos mapas de color murieron el 2026-08-20 (F8): seis pasos de barra y seis de texto,
+   con `lime` y `amber` que ni son familias de la paleta. El tono lo decide `tonoFuerza` y el
+   color lo pone el CSS. Este mapa SI se queda —nombra CLASES, no colores—, que es lo que hace
+   `workspaceNavIcons.js` y lo que el contrato de `estadoTono.js` permite. */
+const CLASE_TEXTO_FUERZA = {
+  neutral: "text-muted",
+  danger: "text-danger",
+  warning: "text-warning",
+  success: "text-success"
 };
-const passwordTextColors = {
-  0: "text-muted",
-  1: "text-danger",
-  2: "text-warning",
-  3: "text-warning",
-  4: "text-lime-600",
-  5: "text-success"
-};
+const tonoFuerzaActual = computed(() => tonoFuerza(passwordStrengthScore.value));
 
 const showMap = ref(false);
 const mapElement = ref(null);

@@ -177,7 +177,6 @@
       :format-fk-option-label="formatFkOptionLabel"
       :format-cell="formatCell"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
       :can-update="canUpdateCurrentTable"
       :can-delete="canDeleteCurrentTable"
       @update:search-term="searchTerm = $event"
@@ -249,7 +248,6 @@
       :rows="unassignedTemplateArtifactRows"
       :table-fields="unassignedTemplateArtifactTableFields"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
       :can-link="canCreateCurrentTable || canUpdateCurrentTable"
       @update:search-term="unassignedTemplateArtifactSearch = $event"
       @update:filters="unassignedTemplateArtifactFilters = $event"
@@ -751,7 +749,6 @@
       :format-fk-primary-cell="formatFkPrimaryCell"
       :format-fk-list-cell="formatFkListCell"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
       @update:fk-search="fkSearch = $event"
       @update:fk-filters="fkFilters = $event"
       @update:fk-position-filters="fkPositionFilters = $event"
@@ -812,7 +809,6 @@
       :related-sections="recordViewerRelatedSections"
       :format-record-viewer-value="formatRecordViewerValue"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
       :row-key-for-table="rowKeyForTable"
       :format-value-for-table="formatValueForTable"
       :downloading="recordArchiveDownloading"
@@ -2082,7 +2078,6 @@ const prettifyFormatName = (value) => adminPresentationService.prettifyFormatNam
 const getFileNameFromObjectKey = (value) => adminPresentationService.getFileNameFromObjectKey(value);
 const normalizeAvailableFormats = (value) => adminPresentationService.normalizeAvailableFormats(value);
 const getAvailableFormatSections = (value) => adminPresentationService.getAvailableFormatSections(value);
-const getAvailableFormatBadgeStyle = (mode, entry) => adminPresentationService.getAvailableFormatBadgeStyle(mode, entry);
 const formatAvailableFormatsSummary = (value) => adminPresentationService.formatAvailableFormatsSummary(value);
 const {
   getViewerFieldsForTable,

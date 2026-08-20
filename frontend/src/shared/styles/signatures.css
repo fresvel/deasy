@@ -130,3 +130,26 @@
       cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='lightgray' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grabbing;
     }
 }
+
+
+@layer components {
+    /* EL BORDE DE UNA TARJETA DE PASO, POR TONO — F8, 2026-08-20.
+     *
+     * Venia de `AdminDraftArtifactModal` como la mitad `card` de un mapa que ya nombraba bien la
+     * otra: `{ card: "border-emerald-200", badge: "deasy-icon-box--success" }`. El icono pedia un
+     * NOMBRE de tono y la tarjeta escribia el COLOR, en la misma linea. El propio comentario de
+     * aquel fichero lo aparcaba aqui: «eso si es deuda, pero de F8».
+     *
+     * ⚠️ Y tres de sus cinco colores no eran de la paleta: `emerald`, `amber` y `rose` no son
+     * familias adoptadas —lo son `blue-light`, `brand`, `error`, `gray`, `orange`, `success` y
+     * `warning`—. Al pasar al token se corrigen solos.
+     *
+     * Es una PALETA CICLICA, no un estado: el color no dice si el paso esta bien, solo lo separa
+     * del siguiente. Por eso no entra en `estadoTono.js` —criterio de F3.3— y por eso vive aqui,
+     * con el resto de los pasos de flujo. */
+    .deasy-flow-step-card--primary { border-color: var(--color-brand-200); }
+    .deasy-flow-step-card--success { border-color: var(--color-success-200); }
+    .deasy-flow-step-card--warning { border-color: var(--color-warning-200); }
+    .deasy-flow-step-card--info    { border-color: var(--color-blue-light-200); }
+    .deasy-flow-step-card--danger  { border-color: var(--color-error-200); }
+}
