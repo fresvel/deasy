@@ -433,26 +433,43 @@
     }
 
     /* EL BOTON CUADRADO DE ICONO. Absorbe `hope-action-btn`, que era su copia con otro nombre:
-       misma caja (2.25rem = h-9/w-9), mismo `padding: 0`.
+       misma caja (era 2.25rem = h-9/w-9; hoy 2.75rem), mismo `padding: 0`.
 
        · `--tone-fill: 10%` — encima va un icono, no texto. Ver la receta suave mas arriba.
        · `rounded-lg` (8 px) y `shadow-theme-xs` son la geometria ADOPTADA de TailAdmin, que
          estrena aqui. El resto de los botones la reciben en la tarea 3.3; hasta entonces convive
          con el `rounded-2xl` heredado del bloque, y es a proposito: 35 nodos son suficientes para
          calibrar el aspecto y demasiado pocos para que una equivocacion cueste cara.
-       ⚠️ El `min-h-9` NO es redundante con el `h-9`: `.deasy-btn` declara un suelo (hoy
-         `min-h-11`, 44 px; era `min-h-10` cuando se escribio esto), y un `min-height` mayor
-         gana a la altura. Sin el, el boton sale de 36 de ancho por el alto del suelo y deja de
-         ser cuadrado. Es lo que hace inmune a los 172 botones de fila cuando el suelo sube. Antes lo tapaba de rebote la regla de densidad de tabla
-         (`min-height: 2rem`), que ya no le aplica — o sea que el fallo aparecio al arreglar
-         otra cosa, y lo caza `getComputedStyle` en el navegador, no el CSS servido.
+       ⚠️ El `min-h-11` NO es redundante con el `h-11`: `.deasy-btn` declara un suelo, y un
+         `min-height` mayor gana a la altura. Sin el, el boton saldria del ancho del icono por el
+         alto del suelo y dejaria de ser cuadrado. Hoy los dos valen 44 y el par parece
+         redundante; se conserva porque **es lo que mantiene la caja cuadrada el dia que el suelo
+         vuelva a subir**, que es exactamente lo que paso en agosto. Antes lo tapaba de rebote la
+         regla de densidad de tabla (`min-height: 2rem`), que ya no le aplica — o sea que el fallo
+         aparecio al arreglar otra cosa, y lo caza `getComputedStyle` en el navegador, no el CSS
+         servido.
 
        · Lo que NO se hereda de `hope-action-btn`: su `margin: 0 0.15rem` —el espacio entre
          botones lo pone el contenedor con `gap`, no el boton— y su `transform: translateY(-1px)`
          al pasar el raton, que ningun otro boton del sistema tiene. Homogeneizar es que el mismo
          boton se comporte igual en todas partes. */
+    /* ⚠️ 44 PX DESDE EL 2026-08-20, Y ANTES ERAN 36. Lo pidio el dueño al ver que «Regresar»,
+       «Buscar» y «Actualizar» se habian quedado pequeños al lado de «Agregar».
+       No fue una regresion de un cambio suyo: **fue quedarse quieto mientras el resto subia**. El
+       boton con texto paso de 40 a 44 el 18-08 (F5.4, para dejar de ir a 4 px del campo), y este
+       se quedo en 36 — el escalon paso de 4 px a 8 y ahi si se ve.
+
+       Un boton mide 44, tenga texto o no: el de solo icono es el MISMO objeto con la huella
+       cuadrada, que es lo que dice F5.4 —«un boton con texto mide lo mismo en TODA la
+       aplicacion»— aplicado al que no lo tiene.
+
+       🪤 EL MIEDO ERA EL ALTO DE FILA, Y SE MIDIO ANTES DE TOCAR NADA. `--icon` lo comparten los
+       4 botones de barra y las **172 acciones de fila** de la tabla de personas, y el propio
+       comentario de `min-h-9` presumia de hacerlas «inmunes cuando el suelo sube». Simulado a 44
+       en los 172: **la fila sigue midiendo 85 px y la tabla 3715 — delta CERO**. El alto de fila
+       lo gobierna el texto de las celdas, no el boton, que iba sobrado de sitio. */
     .deasy-btn--icon {
-        @apply h-9 w-9 min-h-9 rounded-lg p-0 shadow-theme-xs;
+        @apply h-11 w-11 min-h-11 rounded-lg p-0 shadow-theme-xs;
         --tone-fill: 10%;
     }
 
