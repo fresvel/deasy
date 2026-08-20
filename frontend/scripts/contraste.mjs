@@ -123,6 +123,27 @@ const META = {
      asi que llevan minimo 1.0 y estan aqui para que el gate no los de por sin clasificar. Lo que
      de verdad hay que medir en ellos es el TEXTO que se les pone encima, y eso no lo hace esta
      tabla: `navy-deep` es la barra lateral, que escribe su texto con alfa (`text-white/55`). */
+  /* ── LAS ARISTAS DE GRAFO ── F8, 2026-08-20 ─────────────────────────────────────────────
+   * Llegan aqui porque hasta hoy eran HEX DENTRO DE `UnitGraphView.vue` y `ProcessGraphView.vue`,
+   * o sea invisibles a este gate. Sacarlas a `tokens.css` es lo que las hace medibles.
+   *
+   * Se juzgan a 3.0 y no a 4.5: son GRAFICOS, no texto, y eso es lo que pide WCAG 1.4.11. Y no
+   * se les baja a 1.0 «por decorativas»: una arista de un organigrama **es necesaria para
+   * entender el contenido** —dice quien depende de quien—, asi que el minimo aplica de verdad.
+   *
+   * ⚠️ TRES DE ELLAS NO LO CUMPLEN, y no es una regresion de hoy: median lo mismo cuando eran
+   * hex en el JavaScript. Lo que cambia es que ahora se ven. */
+  "serie-uno":      ["#ffffff", 3.0, "rueda de series · 1"],
+  "serie-dos":      ["#ffffff", 3.0, "rueda de series · 2"],
+  "serie-tres":     ["#ffffff", 3.0, "rueda de series · 3"],
+  "serie-cuatro":   ["#ffffff", 3.0, "rueda de series · 4"],
+  "serie-cinco":    ["#ffffff", 3.0, "rueda de series · 5"],
+  "serie-seis":     ["#ffffff", 3.0, "rueda de series · 6"],
+  "serie-siete":    ["#ffffff", 3.0, "rueda de series · 7"],
+  "serie-none":     ["#ffffff", 3.0, "arista sin tipo de relacion resuelto"],
+  "edge-proceso":   ["#ffffff", 3.0, "arista proceso → unidad (mapa de procesos)"],
+  "edge-config":    ["#ffffff", 3.0, "arista de configuracion (mapa de procesos)"],
+  "edge-plantilla": ["#ffffff", 3.0, "arista de plantilla (mapa de procesos)"],
   "white":          ["#ffffff", 1.0, "el fondo del sistema"],
   "navy-deep":      ["#ffffff", 1.0, "fondo oscuro de la barra lateral"],
   "gold":           ["#ffffff", 1.0, "acento decorativo"],
@@ -223,6 +244,13 @@ const BASE = {
   "surface": 1.05, "success": 5.41, "danger": 6.57, "warning": 5.43,
   "pending": 5.52, /* `action-upload` estuvo aqui con 11.45. Murio en F4 (2026-08-16) con su variante. */
   "white": 1.00, "navy-deep": 17.84, "gold": 2.10,
+  /* [2026-08-20 · F8] Las once aristas de grafo. **SIETE NO LLEGAN A 3:1**, y no es una regresion
+     de hoy: median exactamente esto cuando eran hex dentro de `UnitGraphView.vue` y
+     `ProcessGraphView.vue`. Lo que cambia es que ahora se ven y el trinquete las sujeta. Repintar
+     la rueda para que cumpla es una decision de diseño y va aparte. */
+  "serie-uno": 4.47, "serie-dos": 2.77, "serie-tres": 2.54, "serie-cuatro": 2.15,
+  "serie-cinco": 3.53, "serie-seis": 4.23, "serie-siete": 2.49, "serie-none": 2.56,
+  "edge-proceso": 4.47, "edge-config": 2.56, "edge-plantilla": 2.72,
 };
 
 if (process.argv.includes("--gate")) {

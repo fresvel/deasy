@@ -545,7 +545,13 @@ const props = defineProps({
 });
 const emit = defineEmits(["edit-unit", "create-unit", "create-process"]);
 
-const EDGE_PALETTE = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6"];
+/* LA RUEDA DE SERIES vive en `tokens.css` desde F8 (2026-08-20). Aqui solo queda el NOMBRE del
+   token, que es lo mismo que hace `estadoTono.js` con los tonos: JavaScript nombra, el CSS pinta.
+   Vue Flow recibe `style: { stroke }`, y un `var()` resuelve igual en un `<path>` de SVG. */
+const EDGE_PALETTE = [
+  "var(--color-serie-uno)", "var(--color-serie-dos)", "var(--color-serie-tres)", "var(--color-serie-cuatro)",
+  "var(--color-serie-cinco)", "var(--color-serie-seis)", "var(--color-serie-siete)"
+];
 
 const nodes = ref([]);
 const edges = ref([]);
@@ -598,7 +604,7 @@ const relationColorMap = computed(() => {
   relationTypes.value.forEach((rt, idx) => map.set(rt.code, EDGE_PALETTE[idx % EDGE_PALETTE.length]));
   return map;
 });
-const colorForCode = (code) => relationColorMap.value.get(code) || "#94a3b8";
+const colorForCode = (code) => relationColorMap.value.get(code) || "var(--color-serie-none)";
 
 const nodeNameById = computed(() => {
   const map = new Map();
@@ -697,7 +703,12 @@ const exportPng = async () => {
   exporting.value = true;
   try {
     // toBlob + reintento sin fuentes: la incrustación de webfonts es la causa más común de fallo (CORS/caché).
-    const opts = { backgroundColor: "#ffffff", pixelRatio: 2, cacheBust: true };
+          /* ⚠️ ESTE BLANCO NO PUEDE SER UN TOKEN, Y NO ES UN OLVIDO DE F8 (2026-08-20).
+         `html-to-image` pinta el PNG sobre un lienzo y necesita un COLOR RESUELTO: un
+         `var(--color-white)` aqui llegaria como cadena sin resolver y el fondo saldria
+         transparente. Es el mismo motivo por el que un color de canvas nunca es CSS.
+         Los otros once colores de este grafo si salieron a `tokens.css`. */
+      const opts = { backgroundColor: "#ffffff", pixelRatio: 2, cacheBust: true };
     let blob = null;
     try {
       blob = await toBlob(target, opts);

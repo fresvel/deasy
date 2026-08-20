@@ -402,9 +402,9 @@ const CONFIG_W = 190;
 const CONFIG_H = 64;
 const TEMPLATE_W = 170;
 const TEMPLATE_H = 52;
-const EDGE_COLOR = "#6366f1";
-const CONFIG_EDGE_COLOR = "#94a3b8";
-const TEMPLATE_EDGE_COLOR = "#a78bfa";
+const EDGE_COLOR = "var(--color-edge-proceso)";
+const CONFIG_EDGE_COLOR = "var(--color-edge-config)";
+const TEMPLATE_EDGE_COLOR = "var(--color-edge-plantilla)";
 
 const nodes = ref([]);
 const edges = ref([]);
@@ -1133,7 +1133,12 @@ const exportPng = async () => {
   try {
     // toBlob es más robusto que un data-URL grande. Reintento sin incrustar fuentes: la incrustación de
     // webfonts (fetch) es la causa más común de fallo de html-to-image (CORS/caché), normalmente en la 1ª vez.
-    const opts = { backgroundColor: "#ffffff", pixelRatio: 2, cacheBust: true };
+          /* ⚠️ ESTE BLANCO NO PUEDE SER UN TOKEN, Y NO ES UN OLVIDO DE F8 (2026-08-20).
+         `html-to-image` pinta el PNG sobre un lienzo y necesita un COLOR RESUELTO: un
+         `var(--color-white)` aqui llegaria como cadena sin resolver y el fondo saldria
+         transparente. Es el mismo motivo por el que un color de canvas nunca es CSS.
+         Los otros once colores de este grafo si salieron a `tokens.css`. */
+      const opts = { backgroundColor: "#ffffff", pixelRatio: 2, cacheBust: true };
     let blob = null;
     try {
       blob = await toBlob(target, opts);

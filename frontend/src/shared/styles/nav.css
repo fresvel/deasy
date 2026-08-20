@@ -349,3 +349,51 @@
         @apply relative flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-surface p-1.5 text-body transition-all hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 }
+
+
+@layer components {
+    /* LA TARJETA DE NAVEGACION — F8, 2026-08-20.
+     *
+     * `AppNavCard` componia su caja y la de su icono con CUATRO cadenas largas en dos `computed`,
+     * y las cuatro llevaban color dentro. El gate `check:state-tone` ya las tenia censadas como
+     * S2 legitimas —«no traducen ningun VALOR a color: eligen una forma»— y eso sigue siendo
+     * cierto: no son un diccionario. Pero seguian siendo **una receta viviendo en JavaScript**, y
+     * eso si es F8.
+     *
+     * ⚠️ Lo que destapo mirarlas: las dos cadenas de cada par eran **identicas salvo el TAMAÑO**
+     * —`h-11 w-11 shrink-0` frente a `h-12 w-12`, y `items-start gap-4` frente a `flex-col
+     * justify-between`—. Todo lo demas, colores incluidos, estaba escrito dos veces. El `layout`
+     * no cambiaba el objeto: cambiaba una medida. */
+    /* ⚠️ `group` NO va aqui: no es una utilidad, es una clase MARCADORA, y `@apply group` rompe
+       el build con «Cannot apply unknown utility class». Se queda en la plantilla, donde ademas
+       la necesitan otros hijos que si usan `group-hover:` (el punto del meta y la flecha). */
+    .deasy-nav-card {
+        @apply flex rounded-xl border border-line bg-white p-5 text-left transition-all;
+    }
+
+    .deasy-nav-card:hover {
+        border-color: var(--color-line-strong);
+        background-color: var(--color-surface);
+    }
+
+    .deasy-nav-card:focus {
+        @apply outline-none ring-2;
+    }
+
+    .deasy-nav-card--inline { @apply items-start gap-4; }
+    .deasy-nav-card--stacked { @apply flex-col justify-between; }
+
+    .deasy-nav-card__icon {
+        @apply flex items-center justify-center rounded-2xl border border-line bg-surface text-muted transition-colors;
+    }
+
+    .deasy-nav-card__icon--inline { @apply h-11 w-11 shrink-0; }
+    .deasy-nav-card__icon--stacked { @apply h-12 w-12; }
+
+    /* Por descendencia y no por `group-hover:`: el color deja de estar en la cadena de JS. */
+    .deasy-nav-card:hover .deasy-nav-card__icon {
+        border-color: var(--color-blue-light-200);
+        background-color: var(--color-blue-light-50);
+        color: var(--color-info);
+    }
+}

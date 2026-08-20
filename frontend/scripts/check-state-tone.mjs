@@ -67,9 +67,14 @@ const CSS = "src/shared/styles/tags.css";
  *        las seis extracciones: 14 -> 74 alertas»), no de esta fase. Meterlos aqui habria sido
  *        hacer F2 dentro de L7.
  *
- *   S2 = 4. Las cuatro son variantes de caja de `AppNavCard` (tarjeta de navegacion en dos
- *        formatos). No traducen ningun VALOR a color: eligen una forma. No hay diccionario que
- *        aplicarles; son material de F4/F8 si algun dia se colapsan.
+ *   S2 = 0 desde el 2026-08-20, y **eran las cuatro de `AppNavCard`**. Este comentario decia
+ *        que «son material de F4/F8 si algun dia se colapsan», y ese dia fue F8: sus dos pares de
+ *        cadenas resultaron ser **identicas salvo el TAMAÑO** —`h-11 w-11 shrink-0` frente a
+ *        `h-12 w-12`—, con los colores escritos dos veces. La receta vive ahora en
+ *        `deasy-nav-card` y `deasy-nav-card__icon`, y el `computed` solo nombra el modificador.
+ *
+ *        **Aqui se exige CERO a partir de hoy**, y no es aspiracion: es lo medido. S2 es la señal
+ *        que define F8 —color viviendo en JavaScript— y la fase se cierra con ella vacia.
  *
  *   S3 = 0, y aqui si se exige cero: escribir `deasy-tag--*` a mano es saltarse la validacion de
  *        `AppTag`, y eso no tiene excusa ni caso legitimo. */
@@ -91,7 +96,7 @@ const CSS = "src/shared/styles/tags.css";
      · `useDeliverableView` (vencimiento)        — dias al vencimiento, un continuo como
                                                    `coberturaEstado`, no un enum
    Si tu caso es uno de esos, deja el techo. Si traduce un `status` de la base, no. */
-const TECHO = { s1: 9, s2: 4, s3: 0, s4: 4 };
+const TECHO = { s1: 9, s2: 0, s3: 0, s4: 4 };
 
 /* ── vocabulario ─────────────────────────────────────────────────────────────────────────────
  *

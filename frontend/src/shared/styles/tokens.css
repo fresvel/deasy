@@ -333,6 +333,47 @@
 
        ⚠️ El 71 % del borde no es arbitrario: es el porcentaje al que estos tonos llegan a
        3:1 contra la fila blanca (WCAG 1.4.11). Al 35 % ninguno cumple. */
+
+    /* ── LA RUEDA DE SERIES ────────────────────────────────────────────────────────────────
+     *
+     * F8, 2026-08-20. Vivia como `EDGE_PALETTE` —siete hex— dentro de `UnitGraphView.vue`, mas
+     * un gris de reserva y tres colores fijos en `ProcessGraphView.vue`. Once colores decididos
+     * en JavaScript, invisibles a `check-color-theme` y a `contraste.mjs`.
+     *
+     * ⚠️ NO ES UNA FAMILIA SEMANTICA, Y POR ESO NO SE ANCLA A LOS TONOS DEL SISTEMA. Su trabajo
+     * es separar N series entre si: el color no dice si una arista esta bien o mal, igual que la
+     * paleta ciclica de pasos de `AdminDraftArtifactModal`. Anclarla a la paleta habria gastado
+     * el ROJO y el VERDE —que aqui significan error y exito— en decir «tipo de relacion 5», que
+     * es exactamente el fallo por el que `pdf` dejo de ser rojo este mismo dia.
+     *
+     * Se declara ENTERA aunque hoy solo se pinte la primera: **hay UN tipo de relacion activo**
+     * (`org`), y las otras seis existen para cuando un admin cree mas. Es la regla que este
+     * fichero ya tiene escrita —«una FAMILIA se declara entera; un CONCEPTO, cuando tiene
+     * consumidor»— y el motivo por el que F1.3e dejo 42 registros como catalogo: Tailwind hace
+     * *tree-shaking* de `@theme`, asi que los que no se usan **pesan cero bytes**.
+     *
+     * Decision del dueño (2026-08-20) entre cuatro opciones medidas.
+     *
+     * ⚠️ SE LLAMAN `-uno`…`-siete` Y NO `-1`…`-7`, Y NO ES ESTILO. `contraste.mjs` decide que un
+     * token es una PRIMITIVA —y por tanto no lo mide— cuando su nombre acaba en `-<numero>`, que
+     * es como se llaman `gray-200` o `brand-500`. Con `serie-1` los siete se habrian colado por
+     * ese hueco: declarados, en la paleta, y **fuera del gate de contraste por un accidente de
+     * nombre**. Con ordinales entran los once. */
+    --color-serie-uno: #6366f1;
+    --color-serie-dos: #0ea5e9;
+    --color-serie-tres: #10b981;
+    --color-serie-cuatro: #f59e0b;
+    --color-serie-cinco: #ec4899;
+    --color-serie-seis: #8b5cf6;
+    --color-serie-siete: #14b8a6;
+    /* Una arista sin tipo de relacion resuelto. */
+    --color-serie-none: #94a3b8;
+
+    /* Los tres del MAPA DE PROCESOS, que no son ciclicos sino fijos por lo que UNEN:
+       proceso->unidad, configuracion y plantilla. */
+    --color-edge-proceso: #6366f1;
+    --color-edge-config: #94a3b8;
+    --color-edge-plantilla: #a78bfa;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════

@@ -111,17 +111,17 @@ const props = defineProps({
 
 defineEmits(["click"]);
 
+/* Las cuatro cadenas murieron en F8 (2026-08-20): eran identicas salvo el TAMAÑO, y llevaban
+   color dentro. La receta vive en `nav.css` y aqui solo queda el nombre del modificador. */
 const rootClasses = computed(() => [
-  props.layout === "inline"
-    ? "group flex items-start gap-4 rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-line-strong hover:bg-surface focus:outline-none focus:ring-2"
-    : "group flex flex-col justify-between rounded-xl border border-line bg-white p-5 text-left transition-all hover:border-line-strong hover:bg-surface focus:outline-none focus:ring-2",
+  "group deasy-nav-card",
+  props.layout === "inline" ? "deasy-nav-card--inline" : "deasy-nav-card--stacked",
   props.className
 ]);
 
 const iconWrapperClasses = computed(() => [
-  props.layout === "inline"
-    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-muted transition-colors group-hover:border-blue-light-200 group-hover:bg-blue-light-50 group-hover:text-info"
-    : "flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface text-muted transition-colors group-hover:border-blue-light-200 group-hover:bg-blue-light-50 group-hover:text-info",
+  "deasy-nav-card__icon",
+  props.layout === "inline" ? "deasy-nav-card__icon--inline" : "deasy-nav-card__icon--stacked",
   props.iconWrapperClass
 ]);
 
