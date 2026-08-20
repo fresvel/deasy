@@ -2,6 +2,7 @@ import {
   PROCESS_DEFINITION_HIDDEN_FIELDS,
   formatTemplateArtifactFieldLabel
 } from "@/modules/admin/services/AdminTableManagerConfig";
+import { etiquetaBooleano } from "@/shared/utils/estadoTono.js";
 
 export function useAdminPresentationAdapters({
   props,
@@ -17,6 +18,7 @@ export function useAdminPresentationAdapters({
   formatDateTimeHour,
   formatPositionType,
   formatSelectOptionLabel,
+  hasSelectOptionLabels,
   formatAvailableFormatsSummary
 }) {
   const getViewerFieldsForTable = (tableMeta, { includeVirtual = true } = {}) => {
@@ -160,14 +162,17 @@ export function useAdminPresentationAdapters({
         return formatDateOnly(value);
       }
     }
-    if (["scope", "source_type", "unit_scope_type", "recipient_policy"].includes(fieldName)) {
+    /* Era una LISTA DE CUATRO NOMBRES escrita a mano, y por eso los otros 16 campos de
+       clasificacion salian en `snake_case` ingles. Ahora se pregunta al vocabulario: si conoce
+       el campo, traduce. Añadir una clasificacion nueva ya no exige acordarse de esta linea. */
+    if (hasSelectOptionLabels(fieldName)) {
       return formatSelectOptionLabel(field, value);
     }
     if (fieldName === "available_formats") {
       return formatAvailableFormatsSummary(value);
     }
     if (field.type === "boolean") {
-      return Number(value) === 1 ? "Si" : "No";
+      return etiquetaBooleano(value);   /* «Si» llevaba cuatro meses sin tilde */
     }
     if (isForeignKeyField(field)) {
       const tableName = resolveFkTable(field.name);

@@ -171,9 +171,27 @@
                   <span v-else>—</span>
                 </div>
               </template>
+              <!-- Las TRES familias de celda con vocabulario cerrado. El orden importa: una
+                   columna de estado que ademas fuera `select` caeria en la tercera rama. -->
               <template v-else-if="esColumnaDeEstado(table?.table, field.name) && row[field.name]">
                 <AppTag :variant="tonoDeColumna(table?.table, field.name, row[field.name])" size="sm">
                   {{ etiquetaDeColumna(table?.table, field.name, row[field.name]) }}
+                </AppTag>
+              </template>
+              <!-- El booleano NO se filtra por valor: `false` es un dato, no una celda vacia.
+                   Filtrarlo (como hacen las otras dos ramas) habria dejado en blanco todas las
+                   filas inactivas, que son justo las que hay que ver. -->
+              <template v-else-if="field.type === 'boolean' && row[field.name] !== null && row[field.name] !== undefined">
+                <AppTag :variant="tonoDeBooleano(table?.table, field.name, row[field.name])" size="sm">
+                  {{ etiquetaBooleano(row[field.name]) }}
+                </AppTag>
+              </template>
+              <!-- La clasificacion va CON CONTORNO: no tiene eje bueno/malo, y el contorno es
+                   lo que la distingue de un estado cuando las dos caen en la misma fila. La
+                   etiqueta sale de `formatCell`, que ya pasa por el vocabulario unico. -->
+              <template v-else-if="esColumnaClasificacion(table?.table, field.name) && row[field.name]">
+                <AppTag :variant="tonoClasificacion(table?.table, field.name, row[field.name])" size="sm" outlined>
+                  {{ formatCell(row[field.name], field, row) }}
                 </AppTag>
               </template>
               <template v-else>
@@ -290,7 +308,11 @@ import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import { esColumnaDeEstado, tonoDeColumna, etiquetaDeColumna } from "@/shared/utils/estadoTono.js";
+import {
+  esColumnaDeEstado, tonoDeColumna, etiquetaDeColumna,
+  tonoDeBooleano, etiquetaBooleano,
+  esColumnaClasificacion, tonoClasificacion
+} from "@/shared/utils/estadoTono.js";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";

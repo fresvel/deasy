@@ -2077,6 +2077,7 @@ const formatDateOnly = (value) => adminPresentationService.formatDateOnly(value)
 const formatDateTimeHour = (value) => adminPresentationService.formatDateTimeHour(value);
 const formatPositionType = (value) => adminPresentationService.formatPositionType(value);
 const formatSelectOptionLabel = (field, value) => adminPresentationService.formatSelectOptionLabel(field, value);
+const hasSelectOptionLabels = (fieldName) => adminPresentationService.hasSelectOptionLabels(fieldName);
 const prettifyFormatName = (value) => adminPresentationService.prettifyFormatName(value);
 const getFileNameFromObjectKey = (value) => adminPresentationService.getFileNameFromObjectKey(value);
 const normalizeAvailableFormats = (value) => adminPresentationService.normalizeAvailableFormats(value);
@@ -2110,6 +2111,7 @@ const {
   formatDateTimeHour,
   formatPositionType,
   formatSelectOptionLabel,
+  hasSelectOptionLabels,
   formatAvailableFormatsSummary
 });
 

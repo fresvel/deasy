@@ -10,7 +10,9 @@ import {
   tonoDocumento, tonoPersona, tonoVacante, tonoContrato,
   tonoAcceso, tonoObservacion,
   tonoFlujo, etiquetaFlujo,
-  esColumnaDeEstado, tonoDeColumna, etiquetaDeColumna, COLUMNAS_DE_ESTADO
+  esColumnaDeEstado, tonoDeColumna, etiquetaDeColumna, COLUMNAS_DE_ESTADO,
+  tonoRasgo, etiquetaBooleano, tonoDeBooleano,
+  esColumnaClasificacion, tonoClasificacion, COLUMNAS_DE_CLASIFICACION
 } from "./estadoTono.js";
 
 /* Lo que se prueba aquí NO es «qué color sale» —eso lo decide el CSS y cambiaría con un
@@ -336,5 +338,128 @@ describe("el registro de columnas de admin — qué celda es una pastilla", () =
     expect(etiquetaDeColumna("documents", "status", "Firmado completo")).toBe("Firmado completo");
     expect(etiquetaDeColumna("tasks", "status", "en_proceso")).toBe("En proceso");
     expect(etiquetaDeColumna("process_runs", "status", "completed")).toBe("Completada");
+  });
+});
+
+describe("el booleano — dos ejes, porque no todo booleano es una habilitación", () => {
+  it("«Sí» lleva tilde, y lo verdadero se reconoce en las cuatro formas que llegan", () => {
+    /* PostgreSQL devuelve `t`/`f`, el adaptador venía comparando `Number(value) === 1`, y el
+       formulario manda `true`. Las tres tienen que dar lo mismo. */
+    for (const v of [true, 1, "1", "t", "true"]) expect(etiquetaBooleano(v)).toBe("Sí");
+    for (const v of [false, 0, "0", "f", null, undefined, ""]) expect(etiquetaBooleano(v)).toBe("No");
+  });
+
+  it("una HABILITACIÓN apagada reclama atención: `Activo` no es warning", () => {
+    expect(tonoDeBooleano("persons", "is_active", 1)).toBe(TONOS.SUCCESS);
+    expect(tonoDeBooleano("persons", "is_active", 0)).toBe(TONOS.WARNING);
+    expect(tonoDeBooleano("role_assignments", "is_current", 0)).toBe(TONOS.WARNING);
+  });
+
+  it("un RASGO apagado no reclama nada: un paso no obligatorio es OPCIONAL, no un aviso", () => {
+    expect(tonoDeBooleano("signature_flow_steps", "is_required", 0)).toBe(TONOS.NEUTRAL);
+    expect(tonoDeBooleano("signature_flow_steps", "is_required", 1)).toBe(TONOS.INFO);
+    expect(tonoDeBooleano("relation_unit_types", "is_inheritance_allowed", 0)).toBe(TONOS.NEUTRAL);
+    expect(tonoDeBooleano("signature_requests", "is_manual", 0)).toBe(TONOS.NEUTRAL);
+    expect(tonoRasgo(1)).toBe(TONOS.INFO);
+  });
+});
+
+describe("la clasificación — no tiene eje bueno/malo, y su paleta lo respeta", () => {
+  it("las 20 columnas del registro están, y ninguna toma un tono de juicio", () => {
+    expect(COLUMNAS_DE_CLASIFICACION).toHaveLength(20);
+    const PROHIBIDOS = [TONOS.SUCCESS, TONOS.WARNING, TONOS.DANGER, TONOS.SALMON];
+    for (const ruta of COLUMNAS_DE_CLASIFICACION) {
+      const corte = ruta.lastIndexOf(".");
+      const [tabla, columna] = [ruta.slice(0, corte), ruta.slice(corte + 1)];
+      expect(esColumnaClasificacion(tabla, columna)).toBe(true);
+      /* Se prueba con los valores reales de esa columna Y con uno inventado: ninguno puede
+         salir verde ni rojo. Pintar `TC`/`MT`/`TP` de verde y rojo inventaría significado. */
+      for (const v of ["automatic", "manual", "official", "single", "routed", "TC", "at_least",
+                       "task_assignee", "auto_one", "real", "unit_exact", "valor-inventado"]) {
+        expect(PROHIBIDOS).not.toContain(tonoClasificacion(tabla, columna, v));
+      }
+    }
+  });
+
+  it("cuando uno lo pone el SISTEMA y otro una PERSONA, se distinguen — y sólo entonces", () => {
+    expect(tonoClasificacion("process_runs", "run_mode", "automatic")).toBe(TONOS.PRIMARY);
+    expect(tonoClasificacion("process_runs", "run_mode", "manual")).toBe(TONOS.INFO);
+    expect(tonoClasificacion("task_items", "origin_kind", "process_defined")).toBe(TONOS.PRIMARY);
+    expect(tonoClasificacion("role_assignments", "source", "derived")).toBe(TONOS.PRIMARY);
+    expect(tonoClasificacion("template_artifacts", "template_scope", "official")).toBe(TONOS.PRIMARY);
+  });
+
+  it("un vocabulario de valores PARES sale entero en neutral: la pastilla agrupa, no puntúa", () => {
+    for (const v of ["single", "replicated", "routed"]) {
+      expect(tonoClasificacion("process_definition_templates", "item_mode", v)).toBe(TONOS.NEUTRAL);
+    }
+    for (const v of ["TC", "MT", "TP"]) {
+      expect(tonoClasificacion("vacancies", "dedication", v)).toBe(TONOS.NEUTRAL);
+    }
+  });
+
+  it("un estado NO es una clasificación, y una clasificación NO es un estado", () => {
+    /* El orden de las ramas de la tabla depende de que estos dos conjuntos sean disjuntos. */
+    for (const ruta of COLUMNAS_DE_ESTADO) expect(COLUMNAS_DE_CLASIFICACION).not.toContain(ruta);
+    expect(esColumnaDeEstado("process_runs", "run_mode")).toBe(false);
+    expect(esColumnaClasificacion("process_runs", "status")).toBe(false);
+  });
+});
+
+/* EL TRINQUETE DE LOS BOOLEANOS.
+ *
+ * La lista de excepciones se escribió con un censo por regex que exigía el orden
+ * `name, label, type` dentro del literal de campo — y `sqlTables.js` no lo respeta siempre.
+ * Resultado: 11 de 32 columnas invisibles, y dos gemelas («Obligatorio» de llenado y de firma)
+ * pintadas de distinto color en producción. Aquí quedan las 32 con su eje, sacadas del esquema
+ * con un barrido tolerante, para que la próxima ausencia se vea en rojo y no en pantalla. */
+describe("los 32 booleanos del esquema, cada uno con su eje", () => {
+  const HABILITACION = [
+    "unit_types.is_active", "relation_unit_types.is_active", "units.is_active",
+    "processes.is_active", "process_definition_series.is_active", "process_target_rules.is_active",
+    "term_types.is_active", "terms.is_active", "process_definition_period_types.is_active",
+    "template_seeds.is_active", "template_artifacts.is_active", "persons.is_active",
+    "roles.is_active", "cargos.is_active", "unit_positions.is_active",
+    "fill_flow_templates.is_active", "signature_statuses.is_active",
+    "signature_request_statuses.is_active", "signature_flow_templates.is_active",
+    "role_assignments.is_current", "role_assignments.current_flag",
+    "position_assignments.is_current", "position_assignments.current_flag"
+  ];
+  const RASGO = [
+    "relation_unit_types.is_inheritance_allowed", "unit_positions.is_unit_head",
+    "fill_flow_steps.is_required", "fill_flow_steps.can_reject", "fill_requests.is_manual",
+    "signature_flow_steps.is_required", "signature_requests.is_manual",
+    "persons.verify_email", "persons.verify_whatsapp"
+  ];
+
+  it("son 32 y ni una más: 23 de habilitación y 9 de rasgo", () => {
+    expect(HABILITACION).toHaveLength(23);
+    expect(RASGO).toHaveLength(9);
+    expect(new Set([...HABILITACION, ...RASGO]).size).toBe(32);
+  });
+
+  const parte = (ruta) => [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
+
+  it("las 23 de habilitación avisan cuando están apagadas", () => {
+    for (const ruta of HABILITACION) {
+      const [t, c] = parte(ruta);
+      expect(tonoDeBooleano(t, c, 1)).toBe(TONOS.SUCCESS);
+      expect(tonoDeBooleano(t, c, 0)).toBe(TONOS.WARNING);
+    }
+  });
+
+  it("las 9 de rasgo NO avisan cuando están apagadas", () => {
+    for (const ruta of RASGO) {
+      const [t, c] = parte(ruta);
+      expect(tonoDeBooleano(t, c, 1)).toBe(TONOS.INFO);
+      expect(tonoDeBooleano(t, c, 0)).toBe(TONOS.NEUTRAL);
+    }
+  });
+
+  it("las dos «Obligatorio» gemelas coinciden — el fallo que destapó el censo corto", () => {
+    expect(tonoDeBooleano("fill_flow_steps", "is_required", 0))
+      .toBe(tonoDeBooleano("signature_flow_steps", "is_required", 0));
+    expect(tonoDeBooleano("fill_requests", "is_manual", 1))
+      .toBe(tonoDeBooleano("signature_requests", "is_manual", 1));
   });
 });

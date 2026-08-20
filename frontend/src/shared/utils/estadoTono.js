@@ -500,3 +500,113 @@ export const etiquetaDeColumna = (tabla, columna, valor) =>
 
 /* El censo, para que la prueba pueda recorrerlo sin repetir la lista. */
 export const COLUMNAS_DE_ESTADO = Object.freeze(Object.keys(COLUMNA_ESTADO));
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   LAS OTRAS DOS FAMILIAS DE CELDA: EL BOOLEANO Y LA CLASIFICACION
+   ══════════════════════════════════════════════════════════════════════════════════════════
+
+   Decision del dueño (2026-08-20, ampliando la anterior): tambien son pastilla. El censo sobre
+   `sqlTables.js` da **21 columnas booleanas y 20 de clasificacion**, y no son lo mismo que un
+   estado ni entre si, asi que **no comparten paleta**:
+
+     ESTADO         pastilla RELLENA con tono semantico completo. Tiene eje bueno/malo.
+     BOOLEANO       pastilla RELLENA. Tiene eje si/no, que a veces es bueno/malo y a veces no.
+     CLASIFICACION  pastilla `outlined` y paleta RESTRINGIDA. **No tiene eje bueno/malo**, asi
+                    que no toma SUCCESS, WARNING ni DANGER: pintar `TC`/`MT`/`TP` de verde y
+                    rojo inventaria un significado que el dato no tiene.
+
+   El contorno no es decoracion: es lo que deja distinguir de un vistazo «esto es un estado» de
+   «esto es una categoria» cuando las dos caen en la misma fila. */
+
+const esVerdadero = (valor) =>
+  valor === true || Number(valor) === 1 || ["true", "t", "si", "sí", "y"].includes(clave(valor));
+
+export const etiquetaBooleano = (valor) => (esVerdadero(valor) ? "Sí" : "No");
+
+/* ── EL BOOLEANO: DOS EJES, NO UNO ────────────────────────────────────────────────────────
+ *
+ * `tonoActividad` (si -> SUCCESS, no -> WARNING) lo decidio el dueño el 2026-08-15 para la
+ * HABILITACION: algo que estuvo vivo y dejo de estarlo reclama atencion, que es lo mismo que
+ * dice `retired` en CICLO_VIDA.
+ *
+ * ⚠️ PERO NO TODO BOOLEANO ES UNA HABILITACION, y aplicarle ese eje a los tres que no lo son
+ * habria sido un error de lectura: un paso de firma que NO es obligatorio no es un aviso, es
+ * OPCIONAL; una relacion sin herencia no esta rota; una solicitud no manual es automatica. Para
+ * esos va `tonoRasgo`, que es la misma doctrina de `changed` en DIFF: ni bueno ni malo,
+ * informativo. */
+export const tonoRasgo = (valor) => (esVerdadero(valor) ? TONOS.INFO : TONOS.NEUTRAL);
+
+/* Las NUEVE excepciones, nombradas una a una. Las otras 23 —«Activo» ×16, «Actual» ×2, «Marca
+   actual» ×2 y «Almacenamiento listo»— son habilitacion y van con `tonoActividad`.
+ *
+ * ⚠️ ESTA LISTA DECIA TRES Y SON NUEVE, y el motivo esta escrito porque vuelve a pasar: el censo
+ * que la produjo exigia el orden `name, label, type` dentro del literal de campo, y
+ * `sqlTables.js` **no lo respeta siempre**. Se dejo 11 de las 32 columnas booleanas — el 34 %.
+ * No lo cazo el codigo ni un gate: lo cazo la PANTALLA, al ver las dos columnas «Obligatorio»
+ * gemelas —la de llenado y la de firma— saliendo una en VERDE y otra en AZUL en el mismo barrido.
+ * Un censo por regex sobre un fichero escrito a mano necesita una segunda pasada tolerante. */
+const BOOLEANO_DE_RASGO = new Set([
+  "relation_unit_types.is_inheritance_allowed",   /* «Herencia»            */
+  "unit_positions.is_unit_head",                  /* «Jefe de la unidad»   */
+  "fill_flow_steps.is_required",                  /* «Obligatorio»         */
+  "fill_flow_steps.can_reject",                   /* «Puede rechazar»      */
+  "fill_requests.is_manual",                      /* «Manual»              */
+  "signature_flow_steps.is_required",             /* «Obligatorio»         */
+  "signature_requests.is_manual",                 /* «Manual»              */
+  /* Los dos verificados: un email SIN verificar es una AUSENCIA, no un fallo. Que
+     `tonoPersona("Verificado")` sea PRIMARY no contradice esto — alli es uno de cuatro estados
+     de una persona; aqui es un si/no sobre un dato de contacto. */
+  "persons.verify_email",                         /* «Email verificado»    */
+  "persons.verify_whatsapp"                       /* «Whatsapp verificado» */
+]);
+
+export const tonoDeBooleano = (tabla, columna, valor) =>
+  (BOOLEANO_DE_RASGO.has(`${tabla}.${columna}`)
+    ? tonoRasgo(valor)
+    : tonoActividad(esVerdadero(valor)));
+
+/* ── LA CLASIFICACION ─────────────────────────────────────────────────────────────────────
+ *
+ * La regla, y es la que evita inventar significado:
+ *
+ *   · Cuando los valores son PARES entre si —tres alcances, tres dedicaciones, tres modos de
+ *     emision— **todos toman NEUTRAL**, y lo que aporta la pastilla es AGRUPACION, no color.
+ *   · Cuando uno lo pone el SISTEMA y otro lo pone una PERSONA, el del sistema toma PRIMARY y
+ *     el de la persona INFO. No es una escala de valor: es procedencia, y es exactamente la
+ *     distincion que `tonoAmbito` (official/ad_hoc) y `tonoOrigen` ya hacian.
+ *
+ * `null` significa «vocabulario par»: todos sus valores a NEUTRAL. */
+const PROCEDENCIA_SISTEMA = Object.freeze({ automatic: TONOS.PRIMARY, manual: TONOS.INFO });
+
+const CLASIFICACION = Object.freeze({
+  "process_runs.run_mode": PROCEDENCIA_SISTEMA,
+  "task_items.origin_kind": { process_defined: TONOS.PRIMARY, user_added: TONOS.INFO },
+  "role_assignments.source": { derived: TONOS.PRIMARY, manual: TONOS.INFO },
+  "template_artifacts.template_scope": { official: TONOS.PRIMARY, ad_hoc: TONOS.INFO },
+  "fill_flow_steps.selection_mode": { auto_one: TONOS.PRIMARY, auto_all: TONOS.PRIMARY, manual: TONOS.INFO },
+  "signature_flow_steps.selection_mode": { auto_one: TONOS.PRIMARY, auto_all: TONOS.PRIMARY, manual: TONOS.INFO },
+
+  /* Pares entre si: sin tono propio, todos NEUTRAL. */
+  "process_definition_series.source_type": null,
+  "process_target_rules.unit_scope_type": null,
+  "process_target_rules.recipient_policy": null,
+  "process_definition_templates.item_mode": null,
+  "unit_positions.position_type": null,
+  "fill_flow_steps.resolver_type": null,
+  "fill_flow_steps.unit_scope_type": null,
+  "signature_flow_steps.resolver_type": null,
+  "signature_flow_steps.unit_scope_type": null,
+  "signature_flow_steps.approval_mode": null,
+  "vacancies.dedication": null,
+  "vacancies.relation_type": null,
+  "contracts.dedication": null,
+  "contracts.relation_type": null
+});
+
+export const esColumnaClasificacion = (tabla, columna) =>
+  Object.hasOwn(CLASIFICACION, `${tabla}.${columna}`);
+
+export const tonoClasificacion = (tabla, columna, valor) =>
+  CLASIFICACION[`${tabla}.${columna}`]?.[clave(valor)] ?? TONOS.NEUTRAL;
+
+export const COLUMNAS_DE_CLASIFICACION = Object.freeze(Object.keys(CLASIFICACION));

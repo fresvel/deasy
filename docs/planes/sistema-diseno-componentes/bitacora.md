@@ -84,6 +84,74 @@ Dos cosas quedaron sin verificar en pantalla, y las dos por datos, no por códig
 **→ Un tono nuevo devuelto por una función es una clase CSS nueva que nadie declaró. Compruébala
 antes de darla por buena.**
 
+## 2026-08-20 (tarde) · F9.D — el booleano y la clasificación, y un censo que mentía
+
+Ampliación de la decisión de la mañana: también son pastilla. Cuatro cosas que costaron y no eran
+evidentes.
+
+### 6 · Tres familias de celda, tres paletas — o el color inventa significado
+
+Un **estado** tiene eje bueno/malo. Un **booleano** tiene eje sí/no. Una **clasificación** no tiene
+ninguno: `TC`, `MT` y `TP` son pares entre sí, y pintarlas de verde, ámbar y rojo habría inventado
+una jerarquía que el dato no tiene. Por eso la clasificación va con **contorno** y paleta
+restringida —nunca `success`, `warning`, `danger` ni `salmon`—, y sólo se distinguen sus valores
+cuando uno lo pone el SISTEMA y otro una PERSONA, que es procedencia y no valor. Hay un test que
+recorre las 20 columnas y prohíbe los cuatro tonos de juicio.
+
+**→ Antes de dar color a un vocabulario, pregunta si sus valores están ORDENADOS. Si no lo están,
+el color miente.**
+
+### 7 · No todo booleano es una habilitación
+
+`tonoActividad` (sí→verde, no→ámbar) se decidió el 15-08 para «Activo», y aplicarlo a los 32 sin
+mirar habría sido un error de lectura: un paso de firma que **no** es obligatorio es *opcional*;
+una relación sin herencia no está rota; un WhatsApp sin verificar es una **ausencia**, no un fallo.
+Nueve de las 32 van con `tonoRasgo` (sí→info, no→neutral).
+
+### 8 · UN CENSO POR REGEX SOBRE UN FICHERO ESCRITO A MANO MIENTE, Y ÉSTE MINTIÓ UN 34 %
+
+El censo de booleanos exigía el orden `name, label, type` dentro del literal de campo. `sqlTables.js`
+**no lo respeta siempre**, así que el barrido devolvió **21 columnas de 32**. Con ellas se escribió
+la lista de excepciones: dijo 3 rasgos donde había 9.
+
+**No lo cazó `node --check`, ni el lint, ni los 23 gates, ni los tests.** Lo cazó **la pantalla**:
+en el barrido de verificación aparecieron las dos columnas «Obligatorio» gemelas —la de llenado y
+la de firma— una en VERDE y otra en AZUL. El fallo era invisible en el código porque la lista de
+excepciones *parecía* completa.
+
+**→ Un censo se hace dos veces con dos regex distintos, o se comprueba contra un total conocido. Y
+cuando dos columnas gemelas salen de distinto color, el bug no está en la que te choca: está en el
+censo.** El trinquete ahora fija las 32 con su eje.
+
+### 9 · Poner una pastilla DESTAPA lo que el texto plano escondía
+
+El traductor de etiquetas conocía **4 de los 20** campos de clasificación —era una lista de cuatro
+nombres escrita a mano dentro de un `if`—, así que 14 valores salían en `snake_case` inglés:
+`task_assignee`, `auto_one`, `and`, `routed`, `official`, `derived`, `simbolico`, `context_exact`…
+Llevaban meses ahí y nadie los vio **porque como texto plano parecen un dato**; dentro de una
+pastilla se leen como una etiqueta rota.
+
+Ninguna de las 20 palabras nuevas está inventada: todas salen de los `<option>` del asistente, de
+`itemModeLabel` y de `APPROVAL_LABEL`, porque inventar un segundo nombre para el mismo código es la
+enfermedad que este frente lleva cuatro fases matando. Quedan anotadas —sin tocar— **cinco
+divergencias conocidas** entre diccionarios de etiqueta de distinto contexto (`UnitGraphView` dice
+«Esta unidad» donde la tabla dice «Unidad exacta»).
+
+**→ Una pastilla es un detector de etiquetas sin traducir. Si vas a poner una, mira primero quién
+traduce ese vocabulario y cuántos conoce.**
+
+### 10 · Y de propina, la base de la pila B está vieja
+
+`fill_flow_steps` tiene **3 filas con `document_owner`**, un resolver que `CLAUDE.md` da por
+imposible («el `CHECK` admite sólo esos tres valores»). El `postgres_schema.sql` del repo **es
+correcto**; lo que está viejo es la base de la pila B: su restricción es la *legacy* de seis valores
+—se llama `fill_flow_steps_resolver_type_check` y no `chk_…`—, o sea que se creó antes de esa
+migración y nunca se re-bootstrapeó. **No se le dio etiqueta a los tres valores retirados a
+propósito**: que salgan con su código crudo es la señal correcta.
+
+**→ Medir contra una pila cuya base no se ha re-bootstrapeado puede enseñarte datos que el esquema
+actual prohíbe. Comprueba el NOMBRE de la restricción, no sólo su contenido.**
+
 ## 2026-08-17 · F6 — muere `overrides.css`, y con el la deuda de capa
 
 El fichero que daba nombre a la fase ya no existe. Empezo con **34 selectores fuera de `@layer`**

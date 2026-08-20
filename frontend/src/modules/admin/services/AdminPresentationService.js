@@ -33,47 +33,82 @@ class AdminPresentationService {
     return `${date.getFullYear()}-${this.pad2(date.getMonth() + 1)}-${this.pad2(date.getDate())} ${this.pad2(date.getHours())}`;
   }
 
+  /* Escribia «Promocion» y «Simbolico» SIN TILDE mientras `UnitGraphView` y `HomeView` escribian
+     las mismas tres palabras CON tilde. Ahora las tres salen del vocabulario unico, acentuadas. */
   formatPositionType(value) {
     if (value === null || value === undefined || value === "") {
       return "—";
     }
-    return {
-      real: "Real",
-      promocion: "Promocion",
-      simbolico: "Simbolico"
-    }[value] || value;
+    return this.formatSelectOptionLabel({ name: "position_type" }, value);
+  }
+
+  /* EL VOCABULARIO DE LAS CLASIFICACIONES, EN UN SOLO SITIO.
+   *
+   * Hasta el 2026-08-20 esto era una cadena de cuatro `if` y conocia **4 de los 20 campos de
+   * clasificacion** que declara `sqlTables.js`: los otros 16 salian en `snake_case` INGLES en
+   * la tabla de admin (`routed`, `auto_one`, `task_assignee`, `process_defined`, `at_least`…).
+   * No se noto mientras eran texto plano; al pasar a pastilla se ve, que es justo lo que una
+   * pastilla hace bien.
+   *
+   * ⚠️ NINGUNA DE ESTAS PALABRAS ES INVENTADA: todas salen de donde la aplicacion YA las decia
+   * —los `<option>` del asistente de plantilla, `itemModeLabel` del panel de artefactos y
+   * `APPROVAL_LABEL` del modal de borrador—, porque inventar un segundo nombre para el mismo
+   * codigo es la enfermedad que este frente lleva cuatro fases matando.
+   *
+   * ⚠️ Y hay divergencias CONOCIDAS que NO se tocan aqui porque son de otro contexto:
+   * `UnitGraphView` llama `unit_exact` «Esta unidad» y `one_per_unit` «Jefatura de la unidad»
+   * donde esta tabla dice «Unidad exacta» y «Un puesto por unidad». Son cinco diccionarios de
+   * etiqueta repartidos por el frontend; unificarlos es trabajo aparte y esta anotado. */
+  static SELECT_OPTION_LABELS = {
+    scope: { owner: "Propietario", collaborator: "Operativo" },
+    source_type: { unit_type: "Tipo de unidad", cargo: "Cargo", default: "Predeterminada" },
+    unit_scope_type: {
+      unit_exact: "Unidad exacta",
+      unit_subtree: "Unidad y descendientes",
+      unit_type: "Tipo de unidad",
+      all_units: "Todas las unidades",
+      context_exact: "Unidad del contexto"
+    },
+    recipient_policy: {
+      all_matches: "Todos los puestos coincidentes",
+      one_per_unit: "Un puesto por unidad",
+      exact_position: "Puesto exacto"
+    },
+    run_mode: { automatic: "Automatica", manual: "Manual" },
+    origin_kind: { process_defined: "Definido por el proceso", user_added: "Añadido por el usuario" },
+    template_scope: { official: "Oficial", ad_hoc: "Ad hoc" },
+    item_mode: { single: "Simple", replicated: "Replicado", routed: "Ruteado" },
+    source: { manual: "Manual", derived: "Derivado" },
+    position_type: { real: "Real", promocion: "Promoción", simbolico: "Simbólico" },
+    /* ⚠️ SOLO LOS TRES VIVOS, Y ES DELIBERADO. `document_owner`, `position` y `manual_pick`
+       estan RETIRADOS: `postgres_schema.sql` los excluye del CHECK. Si alguno aparece en la
+       tabla saldra con su codigo crudo, y eso es la señal correcta — una base sin re-bootstrap.
+       Medido el 2026-08-20 en la pila B: su CHECK es el LEGACY de seis valores (se llama
+       `fill_flow_steps_resolver_type_check`, no `chk_…`) y tiene 3 filas con `document_owner`.
+       Darles etiqueta bonita habria disfrazado de normal un dato que no deberia existir. */
+    resolver_type: {
+      task_assignee: "Responsable del entregable",
+      cargo_in_scope: "Por cargo",
+      specific_person: "Persona concreta"
+    },
+    selection_mode: { auto_one: "Uno cualquiera", auto_all: "Todas", manual: "Manual" },
+    approval_mode: { and: "Todas", or: "Cualquiera", at_least: "Al menos N" },
+    dedication: { TC: "Tiempo completo", MT: "Medio tiempo", TP: "Tiempo parcial" },
+    relation_type: { dependencia: "Dependencia", servicios: "Servicios", promocion: "Promoción" }
+  };
+
+  hasSelectOptionLabels(fieldName) {
+    return Object.hasOwn(AdminPresentationService.SELECT_OPTION_LABELS, String(fieldName || ""));
   }
 
   formatSelectOptionLabel(field, value) {
-    if (field?.name === "source_type") {
-      return {
-        unit_type: "Tipo de unidad",
-        cargo: "Cargo",
-        default: "Predeterminada"
-      }[value] || value;
+    const mapa = AdminPresentationService.SELECT_OPTION_LABELS[field?.name];
+    if (!mapa) {
+      return value;
     }
-    if (field?.name === "unit_scope_type") {
-      return {
-        unit_exact: "Unidad exacta",
-        unit_subtree: "Unidad y descendientes",
-        unit_type: "Tipo de unidad",
-        all_units: "Todas las unidades"
-      }[value] || value;
-    }
-    if (field?.name === "recipient_policy") {
-      return {
-        all_matches: "Todos los puestos coincidentes",
-        one_per_unit: "Un puesto por unidad",
-        exact_position: "Puesto exacto"
-      }[value] || value;
-    }
-    if (field?.name === "scope") {
-      return {
-        owner: "Propietario",
-        collaborator: "Operativo"
-      }[value] || value;
-    }
-    return value;
+    /* `dedication` son siglas en MAYUSCULA (`TC`); el resto son codigos en minuscula. Se prueba
+       el valor tal cual antes de normalizar para no perder las siglas. */
+    return mapa[value] ?? mapa[String(value ?? "").trim().toLowerCase()] ?? value;
   }
 
   prettifyFormatName(value) {
