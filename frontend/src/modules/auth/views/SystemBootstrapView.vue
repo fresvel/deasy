@@ -63,7 +63,7 @@
 
       <!-- Paso 2: Gestor por defecto (opcional) -->
       <div v-show="step === 2" class="space-y-4">
-        <div class="rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'">
+        <div class="rounded-xl border p-3.5 transition-colors deasy-elegible" :class="[gestorEnabled ? 'deasy-elegible--activa' : '']">
           <SToggle v-model="gestorEnabled">
             <span>
               <span class="deasy-form-label">Crear un gestor por defecto</span>
@@ -105,7 +105,7 @@
         </div>
 
         <!-- Usuario de prueba (opcional): rol base "Usuario" para validar el flujo operativo -->
-        <div class="rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'">
+        <div class="rounded-xl border p-3.5 transition-colors deasy-elegible" :class="[usuarioEnabled ? 'deasy-elegible--activa' : '']">
           <SToggle v-model="usuarioEnabled">
             <span>
               <span class="deasy-form-label">Crear un usuario de prueba</span>
@@ -177,8 +177,8 @@
             <label
               v-for="option in group.options"
               :key="option.id"
-              class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors"
-              :class="preconfig[group.key].includes(option.id) ? 'border-blue-light-300 bg-blue-light-50' : 'border-line bg-white'"
+              class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors deasy-elegible"
+              :class="[preconfig[group.key].includes(option.id) ? 'deasy-elegible--activa' : '']"
             >
               <input
                 v-model="preconfig[group.key]"
@@ -194,8 +194,8 @@
           </div>
         </fieldset>
         <div
-          class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.relation_unit_types ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
+          class="rounded-2xl border p-3.5 transition-colors deasy-elegible"
+          :class="[preconfig.relation_unit_types ? 'deasy-elegible--activa' : '']"
         >
           <SToggle v-model="preconfig.relation_unit_types">
             <span>
@@ -205,8 +205,8 @@
           </SToggle>
         </div>
         <div
-          class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_units ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
+          class="rounded-2xl border p-3.5 transition-colors deasy-elegible"
+          :class="[preconfig.example_units ? 'deasy-elegible--activa' : '']"
         >
           <SToggle v-model="preconfig.example_units">
             <span>
@@ -216,8 +216,8 @@
           </SToggle>
         </div>
         <div
-          class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_positions ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
+          class="rounded-2xl border p-3.5 transition-colors deasy-elegible"
+          :class="[preconfig.example_positions ? 'deasy-elegible--activa' : '']"
         >
           <SToggle v-model="preconfig.example_positions">
             <span>
@@ -227,8 +227,8 @@
           </SToggle>
         </div>
         <div
-          class="rounded-2xl border p-3.5 transition-colors"
-          :class="preconfig.example_users ? 'border-blue-light-300 bg-blue-light-50' : 'border-line'"
+          class="rounded-2xl border p-3.5 transition-colors deasy-elegible"
+          :class="[preconfig.example_users ? 'deasy-elegible--activa' : '']"
         >
           <SToggle v-model="preconfig.example_users">
             <span>

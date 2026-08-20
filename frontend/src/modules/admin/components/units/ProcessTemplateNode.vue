@@ -1,7 +1,7 @@
 <template>
   <div
     class="graph-node graph-node--template relative rounded-xl border border-brand-200 border-l-4 border-l-brand-400 bg-brand-50/50 px-2.5 py-1.5 transition-all"
-    :class="data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : ''"
+    :class="data.highlighted ? 'graph-node--resaltado' : ''"
     :title="data.display_name"
     @mouseenter="hover = true"
     @mouseleave="hover = false"

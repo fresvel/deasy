@@ -103,8 +103,8 @@
               <div
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
-                class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
-                :class="index === currentDocumentIndex ? 'border-blue-light-400 bg-blue-light-50' : 'border-line bg-white hover:border-line-strong hover:bg-surface'"
+                class="deasy-elegible group flex w-full flex-col items-start gap-1 rounded-xl p-3 text-left"
+                :class="[index === currentDocumentIndex ? 'deasy-elegible--activa' : '']"
               >
                 <div class="flex w-full items-start justify-between gap-3">
                   <button

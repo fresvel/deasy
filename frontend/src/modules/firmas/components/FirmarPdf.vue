@@ -430,8 +430,8 @@
         <div
           v-for="field in filteredFields"
           :key="field.id"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-line rounded-xl hover:border-blue-light-300 hover:bg-blue-light-50/30 transition gap-3"
-          :class="field.id === lastFieldId ? 'border-blue-light-500 bg-blue-light-50/50' : 'bg-white'"
+          class="deasy-elegible flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl gap-3"
+          :class="[field.id === lastFieldId ? 'deasy-elegible--activa' : '']"
         >
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
@@ -525,7 +525,7 @@
             :key="user.id || user._id"
             type="button"
             class="deasy-picker deasy-picker--flat flex-col items-start"
-            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
+            :class="[(selectedSigner?.id === user.id || selectedSigner?._id === user._id) ? 'deasy-elegible--activa' : '']"
             @click="selectSigner(user)"
           >
             <div class="font-semibold text-strong text-sm flex items-center justify-between w-full gap-3">
@@ -643,7 +643,7 @@
             :key="certificate.id"
             type="button"
             class="deasy-picker deasy-picker--flat"
-            :class="selectedCertificateId === certificate.id ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
+            :class="[selectedCertificateId === certificate.id ? 'deasy-elegible--activa' : '']"
             @click="selectedCertificateId = certificate.id"
           >
             <div class="flex items-center gap-2 flex-wrap">

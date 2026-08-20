@@ -327,8 +327,8 @@
             <li
               v-for="v in templateDetail.versions"
               :key="v.id"
-              class="cursor-pointer rounded-xl border px-3 py-2.5 transition-colors hover:border-brand-300 hover:bg-brand-50/30"
-              :class="String(v.id) === String(templateDetail.pinnedArtifactId) ? 'border-brand-300 bg-brand-50/40' : 'border-line'"
+              class="deasy-elegible cursor-pointer rounded-xl px-3 py-2.5"
+              :class="[String(v.id) === String(templateDetail.pinnedArtifactId) ? 'deasy-elegible--activa' : '']"
               role="button"
               tabindex="0"
               :title="v.lifecycle_state === 'draft' ? 'Abrir para editar' : 'Abrir (solo lectura)'"

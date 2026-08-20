@@ -2,9 +2,9 @@
   <div
     class="graph-node relative rounded-xl border px-3 py-2 transition-all"
     :class="[
-      data.is_active ? 'border-line-strong bg-white' : 'border-line bg-white opacity-80',
-      data.highlighted ? 'ring-2 ring-brand-400 ring-offset-1' : '',
-      data.dimmed ? 'opacity-35' : ''
+      data.is_active ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
+      data.highlighted ? 'graph-node--resaltado' : '',
+      data.dimmed ? 'graph-node--apagado' : ''
     ]"
     @mouseenter="hover = true"
     @mouseleave="hover = false"

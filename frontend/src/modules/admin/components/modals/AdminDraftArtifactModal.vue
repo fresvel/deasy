@@ -55,8 +55,8 @@
         <label
           v-for="opt in versionBumpOptions"
           :key="opt.value"
-          class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
-          :class="versionBumpLevel === opt.value ? 'border-brand-400 bg-brand-50/60' : 'border-line hover:border-line-strong'"
+          class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors deasy-elegible"
+          :class="[versionBumpLevel === opt.value ? 'deasy-elegible--activa' : '']"
         >
           <input v-model="versionBumpLevel" type="radio" name="bump-level" :value="opt.value" class="mt-1" />
           <span class="min-w-0">

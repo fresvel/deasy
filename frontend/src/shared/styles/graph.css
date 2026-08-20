@@ -324,3 +324,34 @@
     opacity: 0;
     pointer-events: none;
 }
+
+
+@layer components {
+    /* EL NODO RESALTADO Y EL NODO APAGADO — F12, 2026-08-20.
+     *
+     * `ring-2 ring-brand-400 ring-offset-1` estaba escrito **cuatro veces, byte a byte**, en los
+     * cuatro componentes de nodo (`ProcessNode`, `UnitNode`, `ProcessConfigNode`,
+     * `ProcessTemplateNode`). Y el par activo/inactivo —`border-line-strong bg-white` frente a
+     * `border-line bg-white opacity-80`— otras dos, tambien identicas.
+     *
+     * Cuatro copias exactas de una misma idea es la definicion de lo que este frente persigue: no
+     * hacia falta medir nada, solo ponerlas una al lado de otra. */
+    .graph-node--resaltado {
+        box-shadow: 0 0 0 1px var(--color-white), 0 0 0 3px var(--color-brand-400);
+    }
+
+    .graph-node--apagado { opacity: 0.35; }
+
+    /* ⚠️ EL BORDE VA AQUI Y NO EN LA PLANTILLA, y lo pidio el gate. Al migrar, la rama falsa del
+       ternario quedo como `'border-line … graph-node--inactivo'` y `check:overrides` marco
+       `graph-node--activo · border-color ← .border-line`. **Es un falso positivo de verdad** —las
+       dos ramas de un ternario nunca coexisten— pero el remedio que sugiere es el correcto: si un
+       estado necesita un borde, ese borde tiene nombre. Con las dos ramas nombradas el analisis
+       estatico deja de tener que adivinar. */
+    .graph-node--inactivo {
+        opacity: 0.8;
+        border-color: var(--color-line);
+    }
+
+    .graph-node--activo { border-color: var(--color-line-strong); }
+}

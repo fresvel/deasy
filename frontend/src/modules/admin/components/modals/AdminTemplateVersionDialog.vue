@@ -16,8 +16,8 @@
       <label
         v-for="opt in options"
         :key="opt.value"
-        class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
-        :class="level === opt.value ? 'border-brand-400 bg-brand-50/60' : 'border-line hover:border-line-strong'"
+        class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors deasy-elegible"
+        :class="[level === opt.value ? 'deasy-elegible--activa' : '']"
       >
         <input v-model="level" type="radio" name="tpl-version-bump" :value="opt.value" class="mt-1" />
         <span class="min-w-0">

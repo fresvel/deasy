@@ -38,7 +38,7 @@
             :key="certificate.id"
             type="button"
             class="deasy-picker deasy-picker--flat"
-            :class="isSelected(certificate.id) ? 'border-blue-light-500 bg-blue-light-50' : 'border-line bg-white hover:bg-surface'"
+            :class="[isSelected(certificate.id) ? 'deasy-elegible--activa' : '']"
             @click="selectCertificate(certificate)"
           >
             <div class="flex items-start justify-between gap-3">

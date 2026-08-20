@@ -334,3 +334,54 @@
         }
     }
 }
+
+
+@layer components {
+    /* «ESTO ESTA ELEGIDO» — F12, 2026-08-20.
+     *
+     * Una opcion, tarjeta o fila que el usuario puede escoger. Estaba escrito **catorce veces**
+     * como un ternario en la plantilla, y las catorce decian lo mismo con CINCO tintes distintos:
+     *
+     *     border-blue-light-300 bg-blue-light-50     7 veces (SystemBootstrapView)
+     *     border-blue-light-500 bg-blue-light-50     4 veces (FirmarPdf x3, UserCertificatesPanel)
+     *     border-blue-light-400 bg-blue-light-50     1 vez   (MultiSignerPanel)
+     *     border-brand-400      bg-brand-50/60       2 veces (los dos dialogos de version)
+     *     border-brand-300      bg-brand-50/40       1 vez   (ProcessGraphView)
+     *
+     * Nadie eligio eso: es deriva. Dos ademas con ALFA, que es lo que este repo evita porque el
+     * resultado depende del fondo.
+     *
+     * ⚠️ ESTE BLOQUE DECLARA SOLO EL ESTADO, NO LA GEOMETRIA. El radio, el padding y el `flex` los
+     * pone quien lo usa, porque las catorce tienen forma distinta —una casilla, una tarjeta de
+     * opcion, una fila de certificado— y unificarlas seria otro trabajo. Lo que se unifica es lo
+     * unico que estaba duplicado: **el borde y el fondo que dicen «elegido»**.
+     *
+     * El tinte es `blue-light`, que es el que usaban 12 de los 14. Cambiarlo a marca es una linea
+     * aqui — que es justamente el motivo de que exista este bloque.
+     *
+     * ⚠️ ESTO NO SUSTITUYE A `deasy-picker`, Y LA DISTINCION IMPORTA. `deasy-picker` es el OBJETO
+     * —una fila escogible, con su flex, su padding, su radio y su hover—; esto es el ESTADO. Un
+     * `deasy-picker` que ademas esta elegido lleva **solo el modificador**, no la base: si llevara
+     * las dos, dos reglas de la misma capa se disputarian el borde y el fondo, y ganaria la que
+     * este mas abajo en el fichero. Que es exactamente lo que `check:overrides` vigila.
+     *
+     * La base es para los ONCE sitios que no tienen componente debajo — una casilla de opcion del
+     * asistente de arranque, una tarjeta de nivel de version—, donde el ternario ponia `border-line`
+     * a mano. */
+    .deasy-elegible {
+        @apply border bg-white transition-colors;
+        border-color: var(--color-line);
+    }
+
+    .deasy-elegible:hover {
+        border-color: var(--color-line-strong);
+        background-color: var(--color-surface);
+    }
+
+    /* El `:hover` va tambien en la elegida para que pasar el raton no la «apague». */
+    .deasy-elegible--activa,
+    .deasy-elegible--activa:hover {
+        border-color: var(--color-blue-light-400);
+        background-color: var(--color-blue-light-50);
+    }
+}

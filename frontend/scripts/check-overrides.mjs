@@ -81,7 +81,10 @@ const CAPA = { theme: 0, base: 1, components: 2, utilities: 3, "(sin capa)": 4 }
  * llamante; las 21 restantes son deuda con nombre.** El defecto que motivo este gate —el `ring-1`
  * que mataba el borde tintado del badge de nodo— ya esta en cero.
  */
-const TECHO = 37;
+/* [2026-08-20 · F12] BAJA DE 37 A 34 al nacer `deasy-elegible`: los sitios que pintaban
+   «elegido» con `bg-*`/`border-*` crudos sobre `deasy-picker` y `deasy-card` dejan de disputarles
+   el borde y el fondo. El grupo C baja de 15 a 12. */
+const TECHO = 34;
 
 const ficheros = (dir, ext, acc = []) => {
   for (const n of readdirSync(dir)) {
