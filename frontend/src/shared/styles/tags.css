@@ -9,7 +9,7 @@
            2026-08-20. El motivo no es estetico: `rounded-full` **no es un radio, es la mitad de la
            altura**, asi que la forma cambiaba sola con el tamaño y no se podia gobernar. Con un
            paso fijo, alto y radio son dos decisiones separadas. 8 px no es un valor nuevo en el
-           sistema: es lo que `.graph-node__badge` ya usaba.
+           sistema: es lo que `.graph-node__toggle` (antes `__badge`) ya usaba.
 
            Antes esto era la forma propia de Deasy (`rounded-xl`, `py-1.5`, `text-xs`,
            `font-semibold` y BORDE), y ademas habia ~40 pastillas escritas a mano con formas
@@ -150,7 +150,7 @@
 
        Va por `box-shadow: inset`, NO por `ring-*`: F1.3b midio que los `--tw-ring-color` propios
        no llegan al DOM porque el anillo lo pone `overrides.css` desde fuera de capa. Es la misma
-       tecnica que `graph-node__badge--brand` ya usa con exito. */
+       tecnica que `graph-node__toggle--brand` ya usa con exito. */
     .deasy-tag--outlined {
         box-shadow: inset 0 0 0 1px var(--tone-line);
     }

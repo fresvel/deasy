@@ -46,7 +46,7 @@
       <button
         v-if="data.definitions_count"
         type="button"
-        class="nodrag graph-node__badge"
+        class="nodrag graph-node__toggle"
         :class="configBadgeClass"
         :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
         @click.stop="data.onToggleConfigs?.(data.id)"
@@ -79,8 +79,8 @@ const configBadgeClass = computed(() => {
   /* ⚠️ La cobertura de configuraciones NO usa `coberturaEstado`: aqui «cero activas» y «ninguna
      configuracion» no son dos grados de lo mismo, asi que solo hay tres escalones y falta el
      `danger`. Un proceso sin configuraciones esta pendiente de definir, no roto. */
-  if (total === 0) return "graph-node__badge--neutral";
-  return activas >= 1 ? "graph-node__badge--success" : "graph-node__badge--warning";
+  if (total === 0) return "graph-node__toggle--neutral";
+  return activas >= 1 ? "graph-node__toggle--success" : "graph-node__toggle--warning";
 });
 </script>
 

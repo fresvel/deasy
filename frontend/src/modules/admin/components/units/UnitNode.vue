@@ -48,15 +48,13 @@
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
-      <span class="inline-flex items-center rounded-xl bg-surface px-1.5 py-0.5 text-theme-xs font-semibold text-icon ring-1 ring-line">
-        {{ data.unit_type_name || 'Sin tipo' }}
-      </span>
-      <span
+      <AppTag variant="neutral" outlined>{{ data.unit_type_name || 'Sin tipo' }}</AppTag>
+      <AppTag
         v-if="data.positions_count"
-        class="inline-flex items-center rounded-xl px-1.5 py-0.5 text-theme-xs font-semibold ring-1"
-        :class="positionsBadgeClass"
+        :variant="tonoPuestos"
+        outlined
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
-      >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</span>
+      >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</AppTag>
       <AppTag v-if="!data.is_active" variant="warning" outlined>Inactiva</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
@@ -78,11 +76,14 @@ const props = defineProps({
 });
 
 const hover = ref(false);
-const positionsBadgeClass = computed(() => {
+/* Devuelve el NOMBRE DEL TONO, no una clase. Hasta el 2026-08-20 devolvia
+   `graph-node__badge--${tono}` —clase ya retirada— y la plantilla escribia la geometria a mano; ahora es
+   `AppTag` y esto vuelve a ser lo que el contrato de `estadoTono.js` pide: un nombre de tono. */
+const tonoPuestos = computed(() => {
   /* Aqui SI aplica la rampa entera: una unidad con puestos y nadie dentro es la alarma, y por eso
      `vacio` conserva el rojo. `coberturaEstado` decide el grado; el diccionario, el tono. */
   const estado = coberturaEstado(Number(props.data.occupied_count) || 0, Number(props.data.positions_count) || 0);
-  return `graph-node__badge--${tonoCobertura(estado)}`;
+  return tonoCobertura(estado);
 });
 </script>
 

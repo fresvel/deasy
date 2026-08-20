@@ -233,10 +233,11 @@
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong">{{ ch.name }}</span>
                     <span v-if="!ch.is_active" class="text-theme-xs font-semibold text-danger">Inactivo</span>
-                    <span
-                      class="ml-auto inline-flex items-center rounded-xl px-1.5 py-0.5 text-theme-xs font-semibold ring-1"
-                      :class="`graph-node__badge--${ch.active_count ? 'success' : (ch.definitions_count ? 'warning' : 'neutral')}`"
-                    >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</span>
+                    <AppTag
+                      class-name="ml-auto"
+                      outlined
+                      :variant="ch.active_count ? 'success' : (ch.definitions_count ? 'warning' : 'neutral')"
+                    >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</AppTag>
                   </div>
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
                     <span class="truncate text-muted">{{ ch.slug }}</span>

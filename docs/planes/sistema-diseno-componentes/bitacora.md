@@ -197,6 +197,78 @@ larga (el código de plantilla) ya pedía `--truncate`, que implica `nowrap` y p
 Barrido posterior sobre organigrama, mapa de procesos, cuatro tablas y el modal de entregable:
 **cero desbordes, y todas las alturas uniformes**.
 
+## 2026-08-20 (auditoría) · Lo declarado contra lo renderizado
+
+Encargo del dueño: *«identifica si aún lo que se declara es diferente de lo que se renderiza»*.
+
+### 14 · El método: el detector tiene que vivir en el navegador
+
+Se escribió un detector que, **por elemento**, compara lo que declara su regla de
+`@layer components` contra lo que declara cualquier regla de capa superior que también le casa.
+5 rutas, 428 reglas de `components`, ~1 100 nodos por ruta. Resultado: **17 propiedades pisadas**.
+
+Y el hallazgo de método es más valioso que la lista: de las **8 parejas** clase-componente/utilidad
+encontradas, **sólo 2 están escritas en un `class` literal**. Las otras 6 se componen en `:class`
+con expresión.
+
+**→ Ningún gate estático puede verlas.** Es la misma ceguera que `check-variants.mjs` documenta
+para las variantes dinámicas, y por eso el detector tiene que correr sobre el DOM.
+
+### 15 · Un `ring-1` mataba el color de los cuatro tonos, y no lo veía nadie
+
+El único defecto real de los 17. `UnitNode` y `ProcessGraphView` pintaban el badge del nodo con
+utilidades crudas y sólo tomaban el `--<tono>`; ese `ring-1` —capa `utilities`— **pisaba el
+`box-shadow` que el modificador declara** en `components`:
+
+    declarado    inset 0 0 0 1px var(--color-line)      (hilo suave, del tono)
+    renderizado  rgb(71,84,103) 0 0 0 1px               (anillo por defecto de Tailwind)
+
+Ni `inset`, ni del tono. **Los cuatro tonos pintaban el mismo gris oscuro**: el diccionario
+decidía el color y el último paso lo tiraba. De regalo, radio 12 donde la clase declara 8 y letra
+12 donde declara 11.
+
+**→ Una clase de componente sólo pinta lo que ninguna utilidad del mismo elemento le dispute. Si
+la plantilla escribe geometría a mano junto a un modificador, el modificador es lo único vivo.**
+
+### 16 · El comentario que descartaba el colapso tenía razón en la MITAD
+
+`graph.css` decía desde el 15-08 que el badge de nodo **no** es un `deasy-tag` porque «trae su
+propio contenido y tiene un estado que una pastilla no tiene». Auditado: cierto para **dos** de
+los cuatro usos —los `<button>` con chevron y estado expandido/colapsado— y falso para los otros
+dos, que son `<span>` sin clic ni estado y ni siquiera aplicaban la clase base.
+
+Un solo nombre, `graph-node__badge`, cubría **dos objetos distintos**. Los dos `<span>` pasan a
+`AppTag`; los dos botones se quedan y se renombran a **`graph-node__toggle`**, porque «badge» era
+justo lo que invitaba a confundirlos — y de esa confusión salieron las dos copias.
+
+**→ Cuando un comentario justifica no colapsar algo, comprueba si su argumento vale para TODOS sus
+consumidores. Un nombre que cubre dos objetos hace que la razón de uno proteja al otro.**
+
+### 17 · Lo que se midió y NO es un hallazgo
+
+- **287 de 428 reglas de `components` no alcanzaron ningún nodo.** No concluyente: cinco rutas no
+  renderizan el sistema entero. Sólo valdría con un barrido completo, y decirlo como hallazgo
+  sería inventar deuda.
+- **199 reglas sin capa** en el navegador, que ganan a todo lo que esté en `@layer`: 121 de
+  Leaflet, ~73 de Vue Flow, 2 `:root` de tokens y 3 nuestras (`graph-node__handle`), las
+  excepciones que F6 declaró. **Ninguna selecciona un `deasy-*`**, así que el riesgo está
+  contenido — pero existe: una regla de librería sin capa gana a cualquier regla de componente.
+
+### 18 · La trampa del CSS rancio, pagada en esta misma sesión
+
+Tras editar `tags.css`, el servidor de desarrollo siguió sirviendo el CSS **anterior**: traía el
+`white-space: nowrap` del cambio previo pero no el radio nuevo, y `.deasy-tag--sm` seguía
+declarada. **La primera medición dijo «el radio no cambió» y era falso.** Lo resolvió `touch` a
+`index.css` más recarga sin caché.
+
+Lo peligroso es que no se parecía a un CSS rancio: la página **sí** reflejaba los cambios de
+plantilla —el alto y la letra habían cambiado al retirar `size="sm"`—, así que todo indicaba que
+estaba viva.
+
+**→ Antes de concluir «el CSS no aplicó», comprueba que el CSS SERVIDO es el que escribiste. Leer
+la regla desde el DOM (`document.styleSheets`) cuesta una línea y evita un diagnóstico entero
+equivocado.**
+
 ## 2026-08-17 · F6 — muere `overrides.css`, y con el la deuda de capa
 
 El fichero que daba nombre a la fase ya no existe. Empezo con **34 selectores fuera de `@layer`**

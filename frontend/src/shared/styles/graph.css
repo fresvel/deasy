@@ -220,19 +220,38 @@
        botones, asi que es otro componente. La pastilla dice un valor de un enum; esto dice una
        razon sobre un continuo.
 
+       ✅ ESE ARGUMENTO SE SOSTUVO AL AUDITARLO (2026-08-20) — PERO SOLO PARA LA MITAD.
+       `graph-node__badge` cubria DOS objetos distintos con el mismo nombre:
+
+         · dos `<button>` con `@click`, `title` que cambia y chevron que rota (`ProcessNode`,
+           `ProcessConfigNode`) — que es lo que este comentario describe, y por eso siguen aqui;
+         · dos `<span>` sin clic, sin estado y sin chevron (`UnitNode`, `ProcessGraphView`), que
+           SI eran pastillas y **no aplicaban esta clase base**: escribian la geometria con
+           utilidades crudas y solo tomaban el `--<tono>`.
+
+       Los dos `<span>` son `AppTag` desde hoy. Y con ellos muere un defecto que ningun gate veia:
+       su `ring-1` —una utilidad, capa `utilities`— **pisaba el `box-shadow` que el modificador
+       declara** en `components`. Medido: declarado `inset 0 0 0 1px var(--color-line)`,
+       renderizado `rgb(71,84,103) 0 0 0 1px`, o sea el anillo por defecto de Tailwind. **Los
+       cuatro tonos pintaban el mismo gris oscuro**: la señal de color moria en el ultimo paso.
+       De regalo, radio 12 donde la clase declara 8 y letra 12 donde declara 11.
+
+       El nombre pasa de `__badge` a `__toggle` porque «badge» era justo lo que invitaba a
+       confundirlo con una pastilla, y de ahi salieron las dos copias.
+
        🪤 ESTE BLOQUE ESTUVO ROTO DEL 2026-08-15 AL 16, Y NO PINTO NADA.
        Se anadio con un script que quito la ultima `}` del fichero dando por hecho que cerraba
        `@layer components`. Cerraba `.vue-flow__handle.graph-node__handle--hidden`, que va
        **fuera** de la capa a proposito (ver el comentario de los conectores, abajo), asi que
        las tres reglas quedaron anidadas dentro de ella y compilaron a
-       `.vue-flow__handle.graph-node__handle--hidden .graph-node__badge` — un selector que no
+       `.vue-flow__handle.graph-node__handle--hidden .graph-node__toggle` — un selector que no
        puede casar nunca. Sus dos consumidores salieron sin caja, sin radio y sin tono.
 
        Y no lo vio NINGUN gate: `css-prune` da verde porque la clase tiene consumidor, y
        `check-orphan-classes` porque la cadena esta en el CSS construido. **Ninguno de los
        dieciseis comprobaba que el selector pudiera casar con algun nodo**, que es lo que
        `check-selector-reach.mjs` mira desde entonces. */
-    .graph-node__badge {
+    .graph-node__toggle {
         display: inline-flex;
         align-items: center;
         gap: 0.125rem;
@@ -243,7 +262,7 @@
         transition: filter 0.15s ease;
     }
 
-    .graph-node__badge:hover {
+    .graph-node__toggle:hover {
         filter: brightness(0.95);
     }
 
@@ -254,31 +273,31 @@
 
        El borde va por `box-shadow: inset`, no por `ring-*`: F1.3b midio que los
        `--tw-ring-color` propios no pintan porque `overrides.css` los gana desde fuera de capa. */
-    .graph-node__badge--brand {
+    .graph-node__toggle--brand {
         background: var(--color-brand-50);
         color: var(--color-primary);
         box-shadow: inset 0 0 0 1px var(--color-brand-200);
     }
 
-    .graph-node__badge--success {
+    .graph-node__toggle--success {
         background: var(--color-success-50);
         color: var(--color-success);
         box-shadow: inset 0 0 0 1px var(--color-success-200);
     }
 
-    .graph-node__badge--warning {
+    .graph-node__toggle--warning {
         background: var(--color-warning-50);
         color: var(--color-warning);
         box-shadow: inset 0 0 0 1px var(--color-warning-200);
     }
 
-    .graph-node__badge--danger {
+    .graph-node__toggle--danger {
         background: var(--color-error-50);
         color: var(--color-danger);
         box-shadow: inset 0 0 0 1px var(--color-error-200);
     }
 
-    .graph-node__badge--neutral {
+    .graph-node__toggle--neutral {
         background: var(--color-surface);
         color: var(--color-muted);
         box-shadow: inset 0 0 0 1px var(--color-line);
