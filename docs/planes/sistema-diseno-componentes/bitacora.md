@@ -269,6 +269,47 @@ estaba viva.
 la regla desde el DOM (`document.styleSheets`) cuesta una línea y evita un diagnóstico entero
 equivocado.**
 
+## 2026-08-20 (noche) · Cuando la pila impide verificar, la pila es el trabajo
+
+### 19 · «No se puede verificar con el seed» no es una excusa: es una tarea
+
+La primera tanda de F12 se cerró con los 14 sitios **sin comprobar en pantalla**, y el motivo era
+real: `/setup` redirige a `/admin` cuando el sistema ya está arrancado, y ahí viven 7 de los 14.
+
+La salida no era rebajar la exigencia sino **reconstruir la pila**: `reset.mjs db storage`,
+bootstrap por la UI —que de paso ejercita el asistente entero—, `seed:dev` y `seed:certs`.
+Resultado: **23 instancias** de `deasy-elegible` medidas en los pasos 2 y 3, con **exactamente dos
+firmas geométricas**. Cero deriva, y con captura.
+
+**→ Si una pantalla no es alcanzable, el estado de los datos es parte del cambio. Rehacer la base
+cuesta cinco minutos y convierte «no verificado» en medido.**
+
+### 20 · El re-bootstrap mató una deuda que llevaba meses invisible
+
+`fill_flow_steps` tenía **3 filas con `document_owner`**, un resolver que `CLAUDE.md` da por
+imposible. La auditoría del día había demostrado que **el `postgres_schema.sql` era correcto** y lo
+viejo era la base: su restricción se llamaba `fill_flow_steps_resolver_type_check` —el nombre
+*legacy* de seis valores— y no `chk_…`.
+
+Tras el reset: `chk_fill_flow_steps_resolver_type` con tres valores, y **`document_owner` a cero**.
+
+**→ El nombre de una restricción dice de qué migración viene. Comprobarlo cuesta una consulta y
+distingue «el código está mal» de «esta base es vieja».**
+
+### 21 · Un relleno masivo de contraseñas dejó al admin fuera
+
+Al automatizar el asistente rellené **todos** los `input[type=password]` de una vez, sin mirar que
+dos estaban OCULTOS —los del paso 1, ya recorrido—. El admin quedó con la contraseña del gestor y
+`seed:dev` murió con un 401.
+
+Lo arregló `bootstrap_admin_recovery.mjs`, que existe justo para esto. Pero la lección es anterior:
+**en un asistente por pasos, los campos de los pasos anteriores siguen en el DOM**. Rellenar por
+tipo de campo, y no por lo que se ve, escribe donde no toca.
+
+**→ Al automatizar un formulario, filtra por VISIBILIDAD (`getBoundingClientRect().height > 0`)
+antes que por selector.** Y comprueba que lo que parece un valor no sea un `placeholder`: los
+campos del paso 2 parecían rellenos y estaban vacíos.
+
 ## 2026-08-17 · F6 — muere `overrides.css`, y con el la deuda de capa
 
 El fichero que daba nombre a la fase ya no existe. Empezo con **34 selectores fuera de `@layer`**
