@@ -14,19 +14,15 @@ import {
   formatWorkflowDateTime,
   getSignatureStepStatusCode,
   getSignatureStepStatusLabel,
-  getSignatureStepStatusVariant,
   formatTriggerLabel,
-  getFillStepStatusLabel,
-  getFillStepStatusTagVariant,
   getFillStepTono,
-  getWorkflowStateTagVariant,
-  getDeliverableAccessTagVariant,
   getFillRequestStatusCode,
   isCompletedSignatureRequestStatus,
   mapSigner,
   getFillStepResolverLabel,
   getSignatureStepResolverLabel,
 } from './homeView.helpers.js';
+import { tonoPasoFirma } from '@/shared/utils/estadoTono.js';
 
 describe('formatAttachmentSize', () => {
   test('cadena vacia para 0 o falsy', () => {
@@ -110,14 +106,8 @@ describe('getSignatureStepStatusLabel / Variant', () => {
     expect(getSignatureStepStatusLabel('unresolved')).toBe('Sin responsables');
     expect(getSignatureStepStatusLabel('loquesea')).toBe('Pendiente'); // default
   });
-  test('mapa de variantes', () => {
-    expect(getSignatureStepStatusVariant('completed')).toBe('success');
-    expect(getSignatureStepStatusVariant('current')).toBe('info');
-    expect(getSignatureStepStatusVariant('rejected')).toBe('danger');
-    expect(getSignatureStepStatusVariant('pending')).toBe('salmon');
-    expect(getSignatureStepStatusVariant('unresolved')).toBe('salmon');
-    expect(getSignatureStepStatusVariant('otro')).toBe('neutral');
-  });
+  /* `mapa de variantes` se mudo a `estadoTono.test.js` el 2026-08-20 (F9-bis) con la
+     funcion que lo cumple: `tonoPasoFirma`. */
 });
 
 /* Antes probaba `getSignatureStepCardClass`/`AccentClass`, que murieron en L6: eran una segunda
@@ -144,7 +134,7 @@ describe('getSignatureStepStatusCode (el estado y el turno mandan)', () => {
        ningun gate podia verlo porque `:variant` se compone en tiempo de ejecucion. */
     const vivas = ['success', 'warning', 'danger', 'info', 'salmon', 'accent', 'primary', 'neutral'];
     for (const code of ['completed', 'current', 'rejected', 'pending', 'unresolved', 'loquesea']) {
-      expect(vivas).toContain(getSignatureStepStatusVariant(code));
+      expect(vivas).toContain(tonoPasoFirma(code));
     }
   });
 });
@@ -190,43 +180,9 @@ describe('isCompletedSignatureRequestStatus', () => {
   });
 });
 
-describe('getWorkflowStateTagVariant', () => {
-  test('agrupa estados por familia de color', () => {
-    expect(getWorkflowStateTagVariant('firmado')).toBe('success');
-    expect(getWorkflowStateTagVariant('listo para firma')).toBe('info');
-    expect(getWorkflowStateTagVariant('devuelto')).toBe('warning');
-    expect(getWorkflowStateTagVariant('rechazado')).toBe('danger');
-  });
-  test('usa el fallback ante vacio o desconocido', () => {
-    expect(getWorkflowStateTagVariant('')).toBe('neutral');
-    expect(getWorkflowStateTagVariant('loquesea')).toBe('neutral');
-    expect(getWorkflowStateTagVariant('', 'accent')).toBe('accent');
-  });
-});
-
-describe('getDeliverableAccessTagVariant', () => {
-  test('directo/derivado/otro', () => {
-    expect(getDeliverableAccessTagVariant('Directo')).toBe('success');
-    expect(getDeliverableAccessTagVariant('derivado')).toBe('accent');
-    expect(getDeliverableAccessTagVariant('otro')).toBe('neutral');
-  });
-});
-
-describe('getFillStepStatusLabel / TagVariant', () => {
-  test('etiquetas del paso de llenado', () => {
-    expect(getFillStepStatusLabel('approved')).toBe('Aprobado');
-    expect(getFillStepStatusLabel('in_progress')).toBe('En progreso');
-    expect(getFillStepStatusLabel('returned')).toBe('Devuelto');
-    expect(getFillStepStatusLabel('cualquiera')).toBe('Pendiente');
-  });
-  test('variantes del paso de llenado', () => {
-    expect(getFillStepStatusTagVariant('approved')).toBe('success');
-    expect(getFillStepStatusTagVariant('in_progress')).toBe('info');
-    expect(getFillStepStatusTagVariant('returned')).toBe('warning');
-    expect(getFillStepStatusTagVariant('rejected')).toBe('danger');
-    expect(getFillStepStatusTagVariant('otro')).toBe('neutral');
-  });
-});
+/* `getWorkflowStateTagVariant`, `getDeliverableAccessTagVariant`, `getFillStepStatusLabel` y
+   `getFillStepStatusTagVariant` murieron el 2026-08-20 (F9-bis): son `tonoFlujo`, `tonoAcceso`,
+   `etiquetaLlenado` y `tonoLlenado` en `estadoTono.js`, y sus pruebas se fueron con ellas. */
 
 /* Estas pruebas afirmaban sobre el NOMBRE DE LA PALETA (`toContain('slate')`), asi que una
    migracion de color las rompio aunque el comportamiento fuera identico. Un test acoplado al valor

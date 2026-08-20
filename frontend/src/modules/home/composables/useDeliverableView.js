@@ -11,11 +11,10 @@ import { canPreviewInline, getFileExtension, getFileNameFromPath } from '@/share
 import { buildDeliverableSubject } from '@/shared/utils/deliverableSubject.js';
 import {
   formatDate,
-  getDeliverableAccessTagVariant,
   getFillRequestStatusCode,
-  getWorkflowStateTagVariant,
   isCompletedSignatureRequestStatus,
 } from '@/modules/home/views/homeView.helpers.js';
+import { tonoFlujo, tonoAcceso } from '@/shared/utils/estadoTono.js';
 
 // VISTA del entregable: todo lo que DERIVA de un entregable para pintarlo y decidir qué se
 // puede hacer con él — su "subject" normalizado, etiquetas, tono, progreso, banderas de
@@ -463,7 +462,7 @@ export function useDeliverableView({
     if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) return 'sign';
     if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) return 'upload';
     const subject = getDeliverableSubject(payload);
-    if (getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral') === 'success') return 'done';
+    if (tonoFlujo(subject.status || subject.documentStatus, 'neutral') === 'success') return 'done';
     return 'idle';
   };
 
@@ -608,7 +607,7 @@ export function useDeliverableView({
 
   const getDeliverableDocumentTagVariant = (subject) => {
     if (!subject?.documentId) return 'warning';
-    return getWorkflowStateTagVariant(subject.documentStatus, 'info');
+    return tonoFlujo(subject.documentStatus, 'info');
   };
 
   const getDeliverableTagGroups = (payload) => {
@@ -617,12 +616,12 @@ export function useDeliverableView({
     return [
       {
         key: 'access-source',
-        variant: getDeliverableAccessTagVariant(accessSource),
+        variant: tonoAcceso(accessSource),
         label: `Acceso: ${accessSource}`
       },
       {
         key: 'deliverable-status',
-        variant: getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral'),
+        variant: tonoFlujo(subject.status || subject.documentStatus, 'neutral'),
         label: `Entregable: ${capitalize(subject.status || subject.documentStatus || 'pendiente')}`
       },
       {

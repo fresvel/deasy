@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { IconInfoCircle } from '@tabler/icons-vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
+import { tonoObservacion } from '@/shared/utils/estadoTono.js';
 
 const props = defineProps({
   // Observaciones YA filtradas por fase (entrega o firma) desde el padre.
@@ -28,19 +29,12 @@ const kindLabel = (kind) => ({
   internal_note: 'Nota interna',
 }[kind] || 'Observación');
 
-/* Que CLASE de observacion es —eso es dato— y su tono. El color lo pone `deasy-dot--{tono}`:
-   antes esta funcion devolvia la utilidad de fondo, o sea color viviendo en JavaScript. */
-const dotClass = (observation) => {
-  const tono = observation.resolved_at
-    ? 'success'
-    : ({
-        return_reason: 'warning',
-        rejection_reason: 'danger',
-        internal_note: 'neutral',
-        observation: 'info',
-      }[observation.kind] || 'info');
-  return `deasy-dot deasy-dot--${tono}`;
-};
+/* El color lo pone `deasy-dot--{tono}` y el NOMBRE del tono lo pone `estadoTono.js`: antes
+   esta funcion devolvia la utilidad de fondo —color viviendo en JavaScript— y desde el
+   2026-08-20 (F9-bis) tampoco decide el tono, que era el ultimo mapa suelto del modulo. */
+const dotClass = (observation) =>
+  `deasy-dot deasy-dot--${tonoObservacion(observation.kind, Boolean(observation.resolved_at))}`;
+
 const kindTextClass = (kind) => ({
   return_reason: 'text-warning',
   rejection_reason: 'text-danger',

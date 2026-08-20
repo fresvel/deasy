@@ -47,7 +47,7 @@
         v-for="step in signatureFlowState.snapshot.signatureSteps"
         :key="`combined-signature-step-${step.id || step.step_order}`"
         class="deasy-flow-step"
-        :class="`deasy-flow-step--${getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
+        :class="`deasy-flow-step--${tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
       >
         <div class="deasy-flow-step__accent"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
@@ -62,7 +62,7 @@
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
             <AppTag
-              :variant="getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
+              :variant="tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
             >
               {{ getSignatureStepStatusLabel(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))) }}
             </AppTag>
@@ -111,8 +111,8 @@ import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   getSignatureStepStatusCode,
   getSignatureStepStatusLabel,
-  getSignatureStepStatusVariant,
 } from '@/modules/home/views/homeView.helpers.js';
+import { tonoPasoFirma } from '@/shared/utils/estadoTono.js';
 
 defineProps({
   signatureFlowState: { type: Object, required: true },

@@ -104,6 +104,7 @@ import { computed, ref } from 'vue';
 import { IconSend, IconInbox, IconPlus, IconRefresh, IconUser } from '@tabler/icons-vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
+import { tonoFlujo, etiquetaFlujo } from '@/shared/utils/estadoTono.js';
 
 const props = defineProps({
   purpose: { type: String, default: 'Crea y endosa un documento a una persona. Lo recibido aparece en Recibidos y en tu Centro de firmas.' },
@@ -141,19 +142,16 @@ const receivedRole = (item) => {
   return null;
 };
 
-// Estado del documento/ítem → chip. Mapeo tolerante: éxito (firmado/completo), en curso, y neutro por defecto.
+/* Estado del documento/item -> chip. Antes hacia su propio mapeo TOLERANTE con `includes()`
+   sobre tres listas escritas a mano, que era la cuarta traduccion del mismo estado del repo y
+   la unica que pintaba `activo` en ambar («En curso») cuando el resto del sistema lo da en
+   verde. Ahora el tono sale de `tonoFlujo` y la etiqueta de `etiquetaFlujo`; el `includes()`
+   sobraba porque los tres vocabularios reales estan declarados en `sqlTables.js` y los tres
+   estan en el diccionario. */
 const statusMeta = (item) => {
-  const raw = String(item.document_status || item.status || '').toLowerCase();
-  if (['signed', 'firmado', 'completed', 'completado', 'done', 'closed', 'finalizado'].some((s) => raw.includes(s))) {
-    return { tone: 'success', label: 'Completado' };
-  }
-  if (['pending', 'pendiente', 'in_progress', 'en_proceso', 'en curso', 'sent', 'enviado', 'active', 'activo'].some((s) => raw.includes(s))) {
-    return { tone: 'warning', label: 'En curso' };
-  }
-  if (['draft', 'borrador'].some((s) => raw.includes(s))) {
-    return { tone: 'neutral', label: 'Borrador' };
-  }
-  return { tone: 'neutral', label: raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Sin estado' };
+  const raw = String(item.document_status || item.status || '').trim();
+  if (!raw) return { tone: 'neutral', label: 'Sin estado' };
+  return { tone: tonoFlujo(raw), label: etiquetaFlujo(raw) };
 };
 
 const formatDate = (value) => {

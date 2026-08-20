@@ -27,8 +27,8 @@
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
-            <AppTag :variant="getFillStepStatusTagVariant(step.request_status)">
-              {{ getFillStepStatusLabel(step.request_status) }}
+            <AppTag :variant="tonoLlenado(step.request_status)">
+              {{ etiquetaLlenado(step.request_status) }}
             </AppTag>
             <AppTag
               v-if="fillWorkflowState.subject.workflow.fill_flow?.current_step_order === step.step_order"
@@ -74,9 +74,8 @@ import AppTag from '@/shared/components/data/AppTag.vue';
 import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
 import {
   getFillStepTono,
-  getFillStepStatusLabel,
-  getFillStepStatusTagVariant,
 } from '@/modules/home/views/homeView.helpers.js';
+import { tonoLlenado, etiquetaLlenado } from '@/shared/utils/estadoTono.js';
 
 defineProps({
   fillWorkflowState: { type: Object, required: true },

@@ -33,6 +33,18 @@
  *      saltarse su validacion. `AdminEditorModal` lo hacia con el esquema correcto, asi que ni
  *      siquiera se veia mal — pero una variante inexistente ahi sale invisible y sin fallar.
  *
+ * S4 · EL DICCIONARIO DE TONO FUERA DE SU SITIO (añadida el 2026-08-20, F9-bis). Dos o mas
+ *      NOMBRES DE TONO distintos —`success`, `warning`, `salmon`…— apareciendo como valor de una
+ *      entrada de objeto o de un `return`, dentro de un bloque de <=8 lineas de JavaScript. Esa
+ *      forma es literalmente un diccionario valor -> tono, y su sitio es `estadoTono.js`.
+ *
+ *      ⚠️ ES LA SEÑAL QUE FALTABA, Y SU AUSENCIA COSTO CUATRO MESES. S2 caza el COLOR en
+ *      JavaScript (dos utilidades de Tailwind en una cadena) y por eso no veia esto: un mapa que
+ *      devuelve el NOMBRE del tono es exactamente lo que F3.3 pedia, solo que escrito en el
+ *      fichero equivocado. Asi sobrevivieron NUEVE traductores en `modules/home/` mientras el
+ *      gate daba verde — y no eran copias: se contradecian en `pendiente`, `en proceso`,
+ *      `cancelado` y `activo`.
+ *
  * ── LO QUE NO INTENTA ──────────────────────────────────────────────────────────────────────
  *
  * No evalua expresiones dinamicas. `check-variants.mjs` ya documenta por que adivinar expresiones
@@ -70,7 +82,16 @@ const CSS = "src/shared/styles/tags.css";
    NINGUNO es un estado: 2 son fila seleccionada, 2 son firmante/campo elegido, 1 es paso de
    asistente, 1 una caja de icono con hover, y 3 son «Cargando…» — que no son estado sino ESPERA,
    y tienen su propio hallazgo abierto (`Loading.vue`, 1 consumidor frente a 35 a mano). */
-const TECHO = { s1: 9, s2: 4, s3: 0 };
+/* S4 = 4, medido el 2026-08-20 tras mudar los nueve traductores. Los cuatro que quedan NO
+   traducen un vocabulario: deciden por PREDICADO, que es justo lo que la doctrina de
+   `estadoTono.js` deja en el componente («si la funcion pregunta por los DATOS, se queda»).
+     · `AdminProcessWizardShell.tonoPaso`        — paso completo / paso actual
+     · `RoutedProcessPanel.receivedRole`         — que te toca hacer con lo recibido
+     · `useDeliverableView` (responsabilidad)    — en que fase esta el entregable
+     · `useDeliverableView` (vencimiento)        — dias al vencimiento, un continuo como
+                                                   `coberturaEstado`, no un enum
+   Si tu caso es uno de esos, deja el techo. Si traduce un `status` de la base, no. */
+const TECHO = { s1: 9, s2: 4, s3: 0, s4: 4 };
 
 /* ── vocabulario ─────────────────────────────────────────────────────────────────────────────
  *
@@ -113,7 +134,22 @@ const variantesVivas = new Set(
   [...readFileSync(CSS, "utf8").matchAll(/\.deasy-tag--([a-z]+)\b/g)].map((m) => m[1])
 );
 
-const s1 = [], s2 = [], s3 = [];
+const s1 = [], s2 = [], s3 = [], s4 = [];
+
+/* Los ocho nombres del vocabulario, que declara `TONOS` en `estadoTono.js`. */
+const TONO = "success|warning|danger|info|salmon|accent|primary|neutral";
+/* Un valor de entrada de objeto (`clave: "success"`) o un `return "success"`. NO una cadena
+   suelta: `mostrarToast(msg, "success")` es una severidad, no un diccionario, y contarla era
+   el 90 % del ruido de la primera calibracion. */
+/* ⚠️ CON `g`, Y NO ES UN DETALLE: la primera version usaba `exec` sin bandera global y por eso
+   solo veia UNA entrada por linea. Un diccionario de tres tonos escrito en una sola linea
+   —`{ pendiente: "warning", hecho: "success", roto: "danger" }`, que es la forma mas comun—
+   quedaba con un unico tono distinto y no llegaba al minimo de dos. Lo destapo probar el gate
+   en rojo; sin esa prueba habria nacido ciego y dando verde, que es peor que no tenerlo. */
+const DICCIONARIO = new RegExp(
+  `(?:[{,]\\s*|^\\s*)["']?[\\w .]+["']?\\s*:\\s*["'](${TONO})["']|return\\s+["'](${TONO})["']`,
+  "g"
+);
 
 for (const f of listar(RAIZ)) {
   if (EXENTOS.some((e) => f.endsWith(e))) continue;
@@ -136,6 +172,31 @@ for (const f of listar(RAIZ)) {
     for (const m of txt.matchAll(/(['"`])((?:[^'"`\\\n]|\\.)*)\1/g)) {
       const u = m[2].match(PORTA);
       if (u && u.length >= 2) s2.push({ f: rel, n: linea(src, off + m.index), t: m[2].slice(0, 66), c: u.length });
+    }
+  }
+
+  /* ── S4: dos o mas NOMBRES de tono juntos = un diccionario fuera de `estadoTono.js` ────── */
+  if (!rel.startsWith("shared/utils/estadoTono")) {
+    for (const { txt, off } of guion) {
+      const filas = txt.split("\n");
+      const marcas = [];
+      filas.forEach((l, i) => {
+        for (const m of l.matchAll(DICCIONARIO)) marcas.push({ n: linea(src, off) + i, t: m[1] ?? m[2] });
+      });
+      /* Agrupar por cercania: un diccionario ocupa lineas contiguas. */
+      let grupo = [];
+      const cerrar = () => {
+        const tonos = new Set(grupo.map((x) => x.t));
+        if (tonos.size >= 2) {
+          s4.push({ f: rel, n: grupo[0].n, hasta: grupo.at(-1).n, tonos: [...tonos].sort().join(" ") });
+        }
+        grupo = [];
+      };
+      for (const m of marcas) {
+        if (grupo.length && m.n - grupo.at(-1).n > 8) cerrar();
+        grupo.push(m);
+      }
+      if (grupo.length) cerrar();
     }
   }
 
@@ -162,11 +223,13 @@ falla = informe("S2 · color viviendo en JavaScript", s2, TECHO.s2,
   (x) => `${x.f}:${x.n}  [${x.c}] ${x.t}`) || falla;
 falla = informe("S3 · `deasy-tag--*` escrito a mano, saltandose AppTag", s3, TECHO.s3,
   (x) => `${x.f}:${x.n}  deasy-tag--${x.v}${x.existe ? "" : "   ⚠️ ESA VARIANTE NO EXISTE"}`) || falla;
+falla = informe("S4 · un diccionario valor -> tono fuera de `estadoTono.js`", s4, TECHO.s4,
+  (x) => `${x.f}:${x.n}${x.hasta > x.n ? `-${x.hasta}` : ""}  ${x.tonos}`) || falla;
 
 /* El resumen se imprime SIEMPRE, tambien al fallar. Un gate que al ponerse rojo esconde los
    otros contadores obliga a bajar techos a ciegas: la primera version de este callaba S2 y S3
    mientras S1 estuviera por encima, y hubo que tocarlo para poder calibrarlo. */
-console.error(`\n   [resumen] S1 ${s1.length}/${TECHO.s1} · S2 ${s2.length}/${TECHO.s2} · S3 ${s3.length}/${TECHO.s3}`);
+console.error(`\n   [resumen] S1 ${s1.length}/${TECHO.s1} · S2 ${s2.length}/${TECHO.s2} · S3 ${s3.length}/${TECHO.s3} · S4 ${s4.length}/${TECHO.s4}`);
 
 if (falla) {
   console.error("\nEl estado se nombra, no se pinta:");
@@ -178,4 +241,4 @@ if (falla) {
   process.exit(1);
 }
 
-console.log(`check:state-tone OK — S1 ${s1.length}/${TECHO.s1} · S2 ${s2.length}/${TECHO.s2} · S3 ${s3.length}/${TECHO.s3}.`);
+console.log(`check:state-tone OK — S1 ${s1.length}/${TECHO.s1} · S2 ${s2.length}/${TECHO.s2} · S3 ${s3.length}/${TECHO.s3} · S4 ${s4.length}/${TECHO.s4}.`);

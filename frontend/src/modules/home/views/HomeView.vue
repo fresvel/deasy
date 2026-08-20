@@ -1563,8 +1563,8 @@
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
-                    <AppTag :variant="getFillStepStatusTagVariant(step.request_status)">
-                      {{ getFillStepStatusLabel(step.request_status) }}
+                    <AppTag :variant="tonoLlenado(step.request_status)">
+                      {{ etiquetaLlenado(step.request_status) }}
                     </AppTag>
                     <AppTag
                       v-if="fillWorkflowState.subject.workflow.fill_flow?.current_step_order === step.step_order"
@@ -1780,7 +1780,7 @@
                 v-for="step in signatureFlowState.snapshot.signatureSteps"
                 :key="`signature-step-${step.id || step.step_order}`"
                 class="deasy-flow-step"
-                :class="`deasy-flow-step--${getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
+                :class="`deasy-flow-step--${tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
               >
                 <div class="deasy-flow-step__accent"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
@@ -1795,7 +1795,7 @@
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
                     <AppTag
-                      :variant="getSignatureStepStatusVariant(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
+                      :variant="tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
                     >
                       {{ getSignatureStepStatusLabel(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))) }}
                     </AppTag>
@@ -1838,7 +1838,7 @@
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <p class="text-sm font-semibold text-strong m-0">Paso {{ request.stepOrder }}</p>
-                  <AppTag :variant="signatureRequestTagVariant(request.requestStatusCode)">
+                  <AppTag :variant="tonoSolicitudFirma(request.requestStatusCode)">
                     {{ signatureRequestStatusLabel(request.requestStatusCode) }}
                   </AppTag>
                 </div>
@@ -2142,15 +2142,13 @@ import {
   formatWorkflowDateTime,
   getSignatureStepStatusCode,
   getSignatureStepStatusLabel,
-  getSignatureStepStatusVariant,
   formatTriggerLabel,
-  getFillStepStatusLabel,
-  getFillStepStatusTagVariant,
   getFillStepTono,
   getFillRequestStatusCode,
   getFillStepResolverLabel,
   getSignatureStepResolverLabel,
 } from '@/modules/home/views/homeView.helpers.js';
+import { tonoLlenado, etiquetaLlenado, tonoPasoFirma, tonoSolicitudFirma } from '@/shared/utils/estadoTono.js';
 import {
   resolveWorkspaceProcessIcon,
   workspaceIconToneClass,
@@ -3515,19 +3513,10 @@ const signatureRequestStatusLabel = (statusCode) => {
   }
 };
 
-const signatureRequestTagVariant = (statusCode) => {
-  const normalized = String(statusCode || '').trim().toLowerCase();
-  if (['completado'].includes(normalized)) {
-    return 'success';
-  }
-  if (['rechazado', 'cancelado'].includes(normalized)) {
-    return 'danger';
-  }
-  if (['en_progreso', 'pendiente'].includes(normalized)) {
-    return 'warning';
-  }
-  return 'neutral';
-};
+/* `signatureRequestTagVariant` murio el 2026-08-20 (F9-bis). Era la TERCERA traduccion del
+   mismo estado de solicitud de firma —y la que mas discrepaba: `en_progreso` en ambar donde el
+   resto lo daba en azul, `cancelado` en rojo donde la doctrina lo da en gris—. Es
+   `tonoSolicitudFirma` de `estadoTono.js`. */
 
 const loadDocumentCenterPage = async () => {
   const userId = currentUserId.value;
@@ -4292,7 +4281,7 @@ const fillWorkflowNotes = computed(() => {
       stepOrder: Number(step.step_order || 0),
       label: step.display_label || 'Responsable no resuelto',
       note: String(step.response_note || '').trim(),
-      statusLabel: getFillStepStatusLabel(step.request_status),
+      statusLabel: etiquetaLlenado(step.request_status),
       respondedAt: step.responded_at || null,
       respondedAtLabel: formatWorkflowDateTime(step.responded_at)
     }))

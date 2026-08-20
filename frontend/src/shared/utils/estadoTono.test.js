@@ -3,7 +3,13 @@ import {
   TONOS,
   tonoCicloVida, etiquetaCicloVida,
   tonoCorrida, tonoDiff, tonoActividad, tonoSincronizacion,
-  coberturaEstado, tonoCobertura, tonoOrigen, tonoAmbito
+  coberturaEstado, tonoCobertura, tonoOrigen, tonoAmbito,
+  tonoTarea, etiquetaTarea,
+  tonoLlenado, etiquetaLlenado, tonoPasoLlenado,
+  tonoPasoFirma, tonoSolicitudFirma,
+  tonoDocumento, tonoPersona, tonoVacante, tonoContrato,
+  tonoAcceso, tonoObservacion,
+  tonoFlujo, etiquetaFlujo
 } from "./estadoTono.js";
 
 /* Lo que se prueba aquí NO es «qué color sale» —eso lo decide el CSS y cambiaría con un
@@ -134,5 +140,161 @@ describe("etiquetas — un solo sitio, y estaban en cinco", () => {
   it("un valor desconocido no devuelve `undefined` en pantalla", () => {
     expect(etiquetaCicloVida("zzz")).toBe("Sin estado");
     expect(etiquetaCicloVida(undefined)).toBe("Sin estado");
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   LOS EJES AÑADIDOS EL 2026-08-20 (F9-bis)
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+describe("los ejes nuevos tampoco dejan una pastilla sin tono", () => {
+  const todos = Object.values(TONOS);
+  const funciones = [tonoTarea, tonoLlenado, tonoPasoFirma, tonoSolicitudFirma,
+                     tonoDocumento, tonoPersona, tonoVacante, tonoContrato, tonoAcceso];
+
+  it("un valor desconocido cae a `neutral`, nunca a undefined", () => {
+    for (const fn of funciones) {
+      expect(fn("valor-que-no-existe")).toBe(TONOS.NEUTRAL);
+      expect(fn(undefined)).toBe(TONOS.NEUTRAL);
+      expect(fn(null)).toBe(TONOS.NEUTRAL);
+      expect(todos).toContain(fn("pendiente"));
+    }
+  });
+});
+
+/* EL TRINQUETE DE VERDAD DE ESTA FASE.
+   Los vocabularios están declarados en `backend/config/sqlTables.js` y son cerrados; si el
+   diccionario no cubre uno, esa celda sale gris en la tabla de admin y nadie se entera. Esta
+   prueba es la que impide que añadir un `status` nuevo a una tabla pase desapercibido. */
+describe("las columnas `Estado` de admin están cubiertas ENTERAS", () => {
+  const VOCABULARIOS = {
+    "process_definition_versions.status": [tonoCicloVida, ["draft", "active", "retired"]],
+    "template_artifacts.lifecycle_state": [tonoCicloVida, ["draft", "published", "retired"]],
+    "process_runs.status": [tonoCorrida, ["pending", "active", "completed", "cancelled"]],
+    "tasks.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
+    "task_items.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
+    "task_assignments.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
+    "document_fill_flows.status": [tonoLlenado, ["pending", "in_progress", "approved", "rejected", "cancelled"]],
+    "fill_requests.status": [tonoLlenado, ["pending", "in_progress", "approved", "rejected", "returned", "cancelled"]],
+    "persons.status": [tonoPersona, ["Inactivo", "Activo", "Verificado", "Reportado"]],
+    "vacancies.status": [tonoVacante, ["abierta", "cubierta", "cerrada", "cancelada"]],
+    "contracts.status": [tonoContrato, ["activo", "finalizado", "cancelado"]],
+    "documents.status": [tonoDocumento, ["Inicial", "Pendiente de llenado", "En proceso", "Observado",
+      "Listo para firma", "Pendiente de firma", "Firmado parcial", "Firmado completo", "Final",
+      "Archivado", "Cancelado"]],
+    "document_versions.status": [tonoDocumento, ["Borrador", "Pendiente de llenado", "En llenado",
+      "En revisión de llenado", "Observado", "Listo para firma", "Pendiente de firma",
+      "Firmado parcial", "Firmado completo", "Final", "Archivado", "Cancelado"]]
+  };
+
+  for (const [columna, [fn, valores]] of Object.entries(VOCABULARIOS)) {
+    it(`${columna} — sus ${valores.length} valores tienen tono propio, ninguno cae al fallback`, () => {
+      for (const valor of valores) {
+        /* `Cancelado`/`cancelled` SÍ es neutral por doctrina, así que no vale con mirar el tono:
+           lo que se comprueba es que la clave esté DECLARADA, no que no sea gris. */
+        expect(fn(valor)).toBe(fn(String(valor).trim().toLowerCase()));
+        expect(Object.values(TONOS)).toContain(fn(valor));
+      }
+    });
+  }
+});
+
+describe("las cuatro contradicciones que resolvió F9-bis", () => {
+  /* Cada una salía con DOS colores según qué función la tradujera. La prueba fija el resultado
+     para que un refactor no reabra la discusión sin darse cuenta. */
+
+  it("`pendiente` es SALMON en todos los ejes — el ámbar ya significa «retirado»", () => {
+    expect(tonoTarea("pendiente")).toBe(TONOS.SALMON);
+    expect(tonoLlenado("pending")).toBe(TONOS.SALMON);
+    expect(tonoPasoFirma("pending")).toBe(TONOS.SALMON);
+    expect(tonoSolicitudFirma("pendiente")).toBe(TONOS.SALMON);
+    expect(tonoCorrida("pending")).toBe(TONOS.SALMON);
+  });
+
+  it("`en proceso` es INFO — ni bueno ni malo, como `changed`", () => {
+    expect(tonoTarea("en_proceso")).toBe(TONOS.INFO);
+    expect(tonoLlenado("in_progress")).toBe(TONOS.INFO);
+    expect(tonoSolicitudFirma("en_progreso")).toBe(TONOS.INFO);
+    expect(tonoDocumento("En proceso")).toBe(TONOS.INFO);
+  });
+
+  it("`cancelado` es NEUTRAL — el rojo es para el error y la destrucción", () => {
+    expect(tonoTarea("cancelada")).toBe(TONOS.NEUTRAL);
+    expect(tonoLlenado("cancelled")).toBe(TONOS.NEUTRAL);
+    expect(tonoSolicitudFirma("cancelado")).toBe(TONOS.NEUTRAL);
+    expect(tonoCorrida("cancelled")).toBe(TONOS.NEUTRAL);
+    expect(tonoContrato("cancelado")).toBe(TONOS.NEUTRAL);
+  });
+
+  it("`activo` es SUCCESS — nunca ámbar, que era «En curso» en RoutedProcessPanel", () => {
+    expect(tonoCicloVida("active")).toBe(TONOS.SUCCESS);
+    expect(tonoCorrida("active")).toBe(TONOS.SUCCESS);
+    expect(tonoContrato("activo")).toBe(TONOS.SUCCESS);
+    expect(tonoFlujo("activo")).toBe(TONOS.SUCCESS);
+  });
+});
+
+describe("el eje tolerante `tonoFlujo` — lo que heredó de las tres funciones que sustituye", () => {
+  it("conserva lo que `getWorkflowStateTagVariant` acertaba", () => {
+    expect(tonoFlujo("firmado")).toBe(TONOS.SUCCESS);
+    expect(tonoFlujo("listo para firma")).toBe(TONOS.INFO);
+    expect(tonoFlujo("devuelto")).toBe(TONOS.WARNING);
+    expect(tonoFlujo("rechazado")).toBe(TONOS.DANGER);
+  });
+
+  it("respeta el fallback ante vacío o desconocido, que sus llamantes usan para distinguirlos", () => {
+    expect(tonoFlujo("")).toBe(TONOS.NEUTRAL);
+    expect(tonoFlujo("loquesea")).toBe(TONOS.NEUTRAL);
+    expect(tonoFlujo("", "accent")).toBe(TONOS.ACCENT);
+  });
+
+  it("resuelve los tres vocabularios reales, que era lo que `includes()` hacía a ojo", () => {
+    expect(tonoFlujo("Firmado completo")).toBe(TONOS.SUCCESS);   // documents.status
+    expect(tonoFlujo("approved")).toBe(TONOS.SUCCESS);           // fill_requests.status
+    expect(tonoFlujo("completada")).toBe(TONOS.SUCCESS);         // tasks.status
+    expect(tonoFlujo("retired")).toBe(TONOS.WARNING);            // ciclo de vida
+  });
+
+  it("`etiquetaFlujo` traduce lo que viene en inglés y respeta lo que ya viene en español", () => {
+    expect(etiquetaFlujo("approved")).toBe("Aprobado");
+    expect(etiquetaFlujo("retired")).toBe("Retirada");
+    expect(etiquetaFlujo("Firmado completo")).toBe("Firmado completo");
+    expect(etiquetaFlujo("")).toBe("Sin estado");
+  });
+});
+
+describe("los dos ejes de PASO: el turno manda sobre el estado", () => {
+  it("el paso que toca es INFO aunque su estado diga otra cosa", () => {
+    expect(tonoPasoLlenado("approved", true)).toBe(TONOS.INFO);
+    expect(tonoPasoFirma("current")).toBe(TONOS.INFO);
+  });
+
+  it("un paso que no es el actual conserva su estado", () => {
+    expect(tonoPasoLlenado("approved", false)).toBe(TONOS.SUCCESS);
+    expect(tonoPasoLlenado("returned", false)).toBe(TONOS.WARNING);
+  });
+
+  it("las dos listas de pasos ya no discrepan en `pending`, que comparten bloque de CSS", () => {
+    expect(tonoPasoLlenado("pending", false)).toBe(tonoPasoFirma("pending"));
+  });
+});
+
+describe("etiquetas y observaciones", () => {
+  it("`etiquetaTarea` y `etiquetaLlenado` cubren su vocabulario y tienen defecto", () => {
+    expect(etiquetaTarea("en_proceso")).toBe("En proceso");
+    expect(etiquetaTarea("loquesea")).toBe("Sin estado");
+    expect(etiquetaLlenado("approved")).toBe("Aprobado");
+    expect(etiquetaLlenado("loquesea")).toBe("Pendiente");
+  });
+
+  it("una observación resuelta gana SUCCESS por encima de su clase", () => {
+    expect(tonoObservacion("rejection_reason", false)).toBe(TONOS.DANGER);
+    expect(tonoObservacion("rejection_reason", true)).toBe(TONOS.SUCCESS);
+    expect(tonoObservacion("loquesea")).toBe(TONOS.INFO);
+  });
+
+  it("`Verificado` es PRIMARY y no SUCCESS: es una marca, no un logro", () => {
+    expect(tonoPersona("Verificado")).toBe(TONOS.PRIMARY);
+    expect(tonoPersona("Reportado")).toBe(TONOS.DANGER);
   });
 });

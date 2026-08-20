@@ -4,6 +4,8 @@
 // entrega y firma. Al no tocar refs ni el DOM, son testeables con Vitest en aislamiento.
 // Ver docs/planes/referencia/linea-base-homeview.md
 
+import { tonoPasoLlenado } from "@/shared/utils/estadoTono.js";
+
 export const formatAttachmentSize = (bytes) => {
   const value = Number(bytes || 0);
   if (!value) return '';
@@ -81,25 +83,9 @@ export const getSignatureStepStatusLabel = (statusCode) => {
   }
 };
 
-export const getSignatureStepStatusVariant = (statusCode) => {
-  switch (String(statusCode || '').trim().toLowerCase()) {
-    case 'completed':
-      return 'success';
-    case 'current':
-      return 'info';
-    case 'rejected':
-      return 'danger';
-    case 'pending':
-    case 'unresolved':
-      return 'salmon';
-    default:
-      /* `muted` murio en L1 el 2026-08-15 —declaraba el mismo cuerpo que `neutral`— y estos dos
-         productores se quedaron atras: ningun gate podia verlos porque `:variant` es dinamico y
-         `check-variants` solo lee atributos literales. Lo que hacian era caer al fallback de
-         `AppTag` (que es `neutral`, o sea el mismo pixel) avisando por consola en desarrollo. */
-      return 'neutral';
-  }
-};
+/* `getSignatureStepStatusVariant` murio el 2026-08-20 (F9-bis). Traducia
+   completed/current/rejected/pending/unresolved a un tono con un `switch` propio: es
+   `tonoPasoFirma` de `estadoTono.js`, con el mismo mapa y en el sitio del contrato. */
 
 /* `getSignatureStepCardClass` y `getSignatureStepAccentClass` murieron el 2026-08-15 (F3.3 · L6).
    Devolvian cadenas de Tailwind —incluidos 9 hex sueltos— para lo mismo que `…StatusVariant` ya
@@ -125,42 +111,15 @@ export const getFillRequestStatusCode = (request) =>
 export const isCompletedSignatureRequestStatus = (value) =>
   ['completado', 'completed'].includes(String(value || '').trim().toLowerCase());
 
-export const getWorkflowStateTagVariant = (value, fallback = 'neutral') => {
-  const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return fallback;
-  if (['completado', 'completed', 'aprobado', 'approved', 'firmado', 'signed'].includes(normalized)) return 'success';
-  if (['en proceso', 'in_progress', 'in progress', 'procesando', 'listo para firma', 'pendiente de firma'].includes(normalized)) return 'info';
-  if (['pendiente', 'pending', 'devuelto', 'returned'].includes(normalized)) return 'warning';
-  if (['rechazado', 'rejected', 'cancelado', 'cancelled', 'error'].includes(normalized)) return 'danger';
-  return fallback;
-};
+/* `getWorkflowStateTagVariant` murio el 2026-08-20 (F9-bis). Era una lista bilingue escrita a
+   mano que se contradecia con las otras tres del repo en `pendiente`, `en proceso` y
+   `cancelado`. Es `tonoFlujo`, que mira en los ejes reales por orden. */
 
-export const getDeliverableAccessTagVariant = (accessSource) => {
-  const normalized = String(accessSource || '').trim().toLowerCase();
-  if (normalized === 'directo') return 'success';
-  if (normalized === 'derivado') return 'accent';
-  return 'neutral';
-};
+/* `getDeliverableAccessTagVariant` murio el 2026-08-20 (F9-bis): es `tonoAcceso`. */
 
-export const getFillStepStatusLabel = (status) => {
-  const code = String(status || '').trim().toLowerCase();
-  if (code === 'approved') return 'Aprobado';
-  if (code === 'in_progress') return 'En progreso';
-  if (code === 'returned') return 'Devuelto';
-  if (code === 'rejected') return 'Rechazado';
-  if (code === 'cancelled') return 'Cancelado';
-  return 'Pendiente';
-};
-
-export const getFillStepStatusTagVariant = (status) => {
-  const code = String(status || '').trim().toLowerCase();
-  if (code === 'approved') return 'success';
-  if (code === 'in_progress') return 'info';
-  if (code === 'returned') return 'warning';
-  if (code === 'rejected') return 'danger';
-  if (code === 'cancelled') return 'neutral';
-  return 'neutral';
-};
+/* `getFillStepStatusLabel` y `getFillStepStatusTagVariant` murieron el 2026-08-20 (F9-bis):
+   son `etiquetaLlenado` y `tonoLlenado`, el eje de `fill_requests.status`. El segundo dejaba
+   `pending` sin caso y caia a NEUTRAL; el eje lo pinta SALMON, como el resto del sistema. */
 
 export const formatWorkflowDateTime = (value) => {
   if (!value) return '';
@@ -185,14 +144,10 @@ export const formatWorkflowDateTime = (value) => {
 
    `returned` -> `warning` es el unico tono que el flujo de firma no gasta: un paso de llenado
    puede estar DEVUELTO, y eso no existe firmando. */
-export const getFillStepTono = (step, currentStepOrder) => {
-  if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) return 'info';
-  return ({
-    approved: 'success',
-    rejected: 'danger',
-    returned: 'warning'
-  }[String(step?.request_status || '').trim().toLowerCase()] || 'neutral');
-};
+export const getFillStepTono = (step, currentStepOrder) => tonoPasoLlenado(
+  step?.request_status,
+  Number(currentStepOrder || 0) === Number(step?.step_order || 0)
+);
 
 export const getFillStepResolverLabel = (step) => {
   const bits = [];
