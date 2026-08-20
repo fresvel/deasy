@@ -9,8 +9,41 @@
            `font-semibold` y BORDE), y ademas habia ~40 pastillas escritas a mano con formas
            distintas. Consolidar hacia una forma y luego cambiarla es una sola linea aqui;
            por eso el componente existe. */
-        @apply inline-flex w-fit items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium;
+        @apply inline-flex w-fit items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium;
     }
+
+    /* ⚠️ `whitespace-nowrap` NO ES UN AJUSTE: ES LA DEFINICION DE UNA PASTILLA.
+     *
+     * Una pastilla es un objeto de UNA LINEA, y `rounded-full` es lo que lo obliga: ese radio no
+     * es un valor fijo, es **la mitad de la altura**. Mientras la caja mide 20 px el radio es 10
+     * y el texto cabe; en cuanto el texto se parte en dos lineas la caja pasa a 40 px, el radio a
+     * 20, y la curva **entra en la zona del texto** — el padding horizontal de `--sm` son 6 px y
+     * no da para tanto. Deja de ser una pastilla y pasa a ser un ovalo con las palabras saliendose
+     * por los lados.
+     *
+     * Medido el 2026-08-20 en `/admin/gestiones/firmas/signature_flow_steps`, que es donde el
+     * dueño lo vio:
+     *
+     *     «Todas»               46,8 x 20    1 linea   correcto
+     *     «Por cargo»           62,7 x 40    2 lineas  el ovalo se come el texto
+     *     «Persona concreta»    62,7 x 40    2 lineas
+     *     «Unidad exacta»       62,3 x 40    2 lineas
+     *     «Unidad del contexto» 62,3 x 60    3 lineas
+     *
+     * Y explica lo de «demasiado cortos»: la base es `w-fit`, o sea `fit-content`, que en una
+     * celda estrecha **se queda en el ancho DISPONIBLE** (62 px de los 94 de la celda) en vez de
+     * en el ancho de su texto. Sin envolver, `fit-content` vuelve a ser el ancho del contenido,
+     * que es lo que se queria.
+     *
+     * No aparecio con la pastilla de ESTADO —sus etiquetas son de una palabra: «Activa»,
+     * «Retirada»— sino con la de CLASIFICACION, cuyo vocabulario son frases: «Responsable del
+     * entregable», «Todos los puestos coincidentes». Al llegar palabras largas, la deuda que la
+     * base ya tenia se hizo visible.
+     *
+     * Es seguro en una tabla porque `.deasy-table-responsive` es `overflow-x: auto` y la tabla ya
+     * desborda de por si (1929 px sobre un contenedor de 1502): la columna crece y el contenedor
+     * desplaza, que es lo que esa tabla ya hacia. Donde el contenedor NO puede crecer —los nodos
+     * del grafo, de ancho fijo— la pastilla debe pedir `--truncate`, que existe justo para eso. */
 
     .deasy-tag__icon {
         @apply h-4 w-4 shrink-0;

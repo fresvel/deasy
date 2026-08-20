@@ -152,6 +152,51 @@ propósito**: que salgan con su código crudo es la señal correcta.
 **→ Medir contra una pila cuya base no se ha re-bootstrapeado puede enseñarte datos que el esquema
 actual prohíbe. Comprueba el NOMBRE de la restricción, no sólo su contenido.**
 
+## 2026-08-20 (cierre) · La pastilla era un objeto de una línea y no lo decía
+
+### 11 · `rounded-full` no es un radio: es la mitad de la altura
+
+El dueño vio que las pastillas de varias palabras «perdieron simetría de ancho y alto, y muestran
+el texto fuera». Medido en `/admin/gestiones/firmas/signature_flow_steps`:
+
+    «Todas»                46,8 × 20    1 línea    correcto
+    «Por cargo»            62,7 × 40    2 líneas   el óvalo se come el texto
+    «Persona concreta»     62,7 × 40    2 líneas
+    «Unidad del contexto»  62,3 × 60    3 líneas
+
+`.deasy-tag` nunca declaró `white-space: nowrap`. Mientras la caja mide 20 px el radio es 10 y el
+texto cabe; al partirse en dos líneas la caja pasa a 40, **el radio pasa a 20**, y la curva entra
+en la zona del texto — el padding horizontal de `--sm` son 6 px y no da para tanto. Deja de ser una
+pastilla y pasa a ser un óvalo con las palabras saliéndose.
+
+Y lo de «demasiado cortos» era la otra mitad: la base es `w-fit`, o sea `fit-content`, que en una
+celda estrecha **se queda en el ancho DISPONIBLE** (62 px de los 94 de la celda) en vez del ancho de
+su texto. Sin envolver, `fit-content` vuelve a ser el ancho del contenido.
+
+**→ Una geometría relativa (`rounded-full`, `fit-content`) es correcta sólo dentro del rango de
+tamaños para el que se pensó. Al declararla, escribe cuál es ese rango — o ponle el límite que lo
+garantice.**
+
+### 12 · La deuda estaba desde siempre; lo que cambió fue el VOCABULARIO
+
+No apareció con la pastilla de estado, cuyas etiquetas son de una palabra —«Activa», «Retirada»,
+«Pendiente»—, sino con la de clasificación, cuyo vocabulario son frases: «Responsable del
+entregable», «Todos los puestos coincidentes», «Unidad del contexto». La base llevaba meses sin
+`nowrap` y nadie lo notó porque nunca se le dio texto largo.
+
+**→ Cuando un componente estable empieza a fallar, mira primero qué DATO nuevo está recibiendo. La
+regresión puede no estar en el código que cambió.**
+
+### 13 · El arreglo es seguro porque el contenedor ya desbordaba
+
+`nowrap` hace que la columna crezca. Se comprobó antes de aplicarlo: la tabla vive en
+`.deasy-table-responsive`, que es `overflow-x: auto`, y **ya desbordaba de por sí** (1929 px sobre
+un contenedor de 1502). Donde el contenedor NO puede crecer —los nodos del grafo, de ancho fijo—
+se verificó una a una: las cuatro pastillas de nodo llevan etiqueta de una palabra, y la única
+larga (el código de plantilla) ya pedía `--truncate`, que implica `nowrap` y por tanto no cambia.
+Barrido posterior sobre organigrama, mapa de procesos, cuatro tablas y el modal de entregable:
+**cero desbordes, y todas las alturas uniformes**.
+
 ## 2026-08-17 · F6 — muere `overrides.css`, y con el la deuda de capa
 
 El fichero que daba nombre a la fase ya no existe. Empezo con **34 selectores fuera de `@layer`**
