@@ -37,7 +37,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **3 abiertos** · 15 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **15 de 25 tareas** | 1.17 cerrado · **2026-08-14** |
 | **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ 8 vulnerabilidades | aquí, §Frente 2 | Sonar `:9002` · 2026-08-09 |
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
-| **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 pasos 1-3 y 5 ✅ · 4 y 6 ⬜ | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
+| **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 · **el estado está en el sub-plan** (esta columna citaba los «pasos 1-6», numeración muerta que el propio §Frente 4 declara obsoleta) | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
 | **5** · Cobertura | El gate no pide 80 % global: pide 80 % **de lo nuevo** | 🟡 F0 ✅ · F1 y F2 ⬜ | [`referencia/cobertura.md`](./referencia/cobertura.md) | — |
 | **6** · Signer | Cerrar los riesgos de la auditoría del microservicio de firma | 🟡 **8 de 12 abiertos** | [`referencia/signer.md`](./referencia/signer.md) | — |
 | **7** · Método e infraestructura | Lo que evita que el resto se degrade: Sonar en CI, barreras de lint, contenedores vacíos | ⬜ | aquí, §Frente 7 | — |
@@ -179,7 +179,12 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 
 ---
 
-## Frente 4 · Sistema de diseño — 🟡 · **13 de 25 tareas** (3.ª vuelta)
+## Frente 4 · Sistema de diseño — 🟡 (3.ª vuelta)
+
+> ⚠️ **AQUÍ NO VA EL CONTADOR, Y ESTE TÍTULO LO LLEVABA.** Decía «13 de 25 tareas» el 2026-08-20,
+> cuando iban **33 de 37**: se quedó atrás doce tareas sin que nadie lo notara, que es exactamente
+> lo que anuncia la regla 2 del [README de planes](./README.md) —un contador replicado en dos
+> sitios acaba contradiciéndose—. El número vive en la tabla del sub-plan y en ningún otro sitio.
 
 > ### ⛔ El estado de este frente vive en [`sistema-diseno-componentes/plan-2026-08-13.md`](./sistema-diseno-componentes/plan-2026-08-13.md#0--control-de-ejecución), NO aquí.
 >
