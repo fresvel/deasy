@@ -759,3 +759,46 @@
         background-color: var(--color-surface);
     }
 }
+
+
+@layer components {
+    /* LA MARCA DE UNA CASILLA — F12, 2026-08-20.
+     *
+     * El cuadradito de 16 px con el tick dentro, cuando la casilla NO es un `<input>` nativo sino
+     * un `<button>` que la simula. `HomeView` lo escribia **dos veces, identico**:
+     * `border-brand-500 bg-brand-500 text-white` frente a `border-line-strong`.
+     *
+     * ⚠️ No es `deasy-control--checkbox`, y por eso no se colapsa: aquella estila el `<input>`
+     * NATIVO y hereda su `:checked`. Aqui no hay input — el estado lo lleva el componente— asi que
+     * hace falta un modificador. Misma pinta, dos mecanismos. */
+    .deasy-check {
+        @apply flex h-4 w-4 shrink-0 items-center justify-center rounded border;
+        border-color: var(--color-line-strong);
+    }
+
+    .deasy-check--marcada {
+        border-color: var(--color-primary);
+        background-color: var(--color-primary);
+        color: var(--color-white);
+    }
+}
+
+
+@layer components {
+    /* LA OPCION DE UN DESPLEGABLE DE BUSQUEDA — F12, 2026-08-20.
+     *
+     * `AdminLookupField` pintaba la opcion bajo el cursor con `bg-blue-light-50 text-info` en un
+     * ternario. No es `deasy-elegible`: aquella dice «esto lo has escogido» y esto dice «aqui esta
+     * el cursor» — el estado dura lo que dura la navegacion con las flechas. */
+    .deasy-lookup__option {
+        @apply flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm transition-colors duration-100;
+        color: var(--color-body);
+    }
+
+    .deasy-lookup__option:hover { background-color: var(--color-surface); }
+
+    .deasy-lookup__option--activa {
+        background-color: var(--color-blue-light-50);
+        color: var(--color-info);
+    }
+}

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="absolute flex flex-col items-center justify-center p-1 border-2 rounded-lg backdrop-blur-[1px] transition-colors group z-(--z-capa-elemento)"
-    :class="[ isActive ? 'border-blue-light-500 bg-blue-light-500/20 ring-4 ring-blue-light-500 ring-opacity-30 border-solid' : 'border-dashed border-blue-light-400 bg-blue-light-400/10 hover:border-blue-light-500 hover:bg-blue-light-500/20', isPreview ? 'pointer-events-none opacity-60 z-(--z-capa-activo)' : 'pointer-events-auto custom-drag-cursor', isDragging ? 'opacity-80 scale-105 ring-2 custom-dragging-cursor' : 'shadow-elev-1' ]"
+    class="deasy-firma-caja absolute flex flex-col items-center justify-center p-1 rounded-lg backdrop-blur-[1px] transition-colors group z-(--z-capa-elemento)"
+    :class="[ isActive ? 'deasy-firma-caja--activa' : '', isPreview ? 'pointer-events-none opacity-60 z-(--z-capa-activo)' : 'pointer-events-auto custom-drag-cursor', isDragging ? 'deasy-firma-caja--arrastrando opacity-80 scale-105 custom-dragging-cursor' : 'shadow-elev-1' ]"
     :style="computedStyle"
     @mousedown.stop.prevent="startDrag"
     @click.stop="onClick"

@@ -397,3 +397,34 @@
         color: var(--color-info);
     }
 }
+
+
+@layer components {
+    /* UN HITO DE PROGRESO — F12, 2026-08-20.
+     *
+     * El paso ya recorrido de un asistente, cuando se pinta como una PASTILLA con su numero al
+     * lado. Habia TRES steppers en el proyecto y cada uno se pintaba a mano:
+     *
+     *     AdminProcessWizardShell   ya usaba `deasy-stepper__step` + `deasy-icon-box--<tono>`
+     *     SystemBootstrapView       `bg-blue-light-600 text-white` : `bg-surface text-muted`
+     *     HomeView (lanzar tarea)   `border-blue-light-200 bg-blue-light-50 text-info` : `border-line…`
+     *
+     * ⚠️ NO SE COLAPSA CON `deasy-stepper__step`, Y ES DELIBERADO: aquel es un BOTON de una barra
+     * de navegacion —`flex-1`, `min-w-30`, con `:disabled` y `:hover`— y esto es una etiqueta que
+     * no se pulsa. Misma idea, dos objetos. Lo que si se unifica es el NUMERO, que en los tres
+     * sale ya de `deasy-icon-box` con su tono.
+     *
+     * Declara solo el ESTADO —borde, fondo y tinta—; la geometria la pone quien lo usa, igual que
+     * en `deasy-elegible`. */
+    .deasy-hito {
+        border-color: var(--color-line);
+        background-color: var(--color-white);
+        color: var(--color-muted);
+    }
+
+    .deasy-hito--hecho {
+        border-color: var(--color-blue-light-200);
+        background-color: var(--color-blue-light-50);
+        color: var(--color-info);
+    }
+}

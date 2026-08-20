@@ -355,7 +355,7 @@
           v-for="field in visibleFields"
           :key="field.id"
           class="deasy-card p-4 hover:border-blue-light-300 hover:transition-all relative overflow-hidden group"
-          :class="{ 'ring-2 ring-blue-light-500 border-transparent': field.id === lastFieldId }"
+          :class="{ 'deasy-firma-fila--activa': field.id === lastFieldId }"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
             

@@ -405,3 +405,23 @@
         background-color: var(--color-blue-light-50);
     }
 }
+
+
+@layer components {
+    /* UNA SUPERFICIE QUE AVISA — F12, 2026-08-20.
+     *
+     * Una tarjeta o baldosa que reclama atencion porque tiene algo pendiente. `HomeView` lo
+     * pintaba con `border-amber-200 bg-amber-50/30` en la baldosa y `border-amber-200/80` en la
+     * tarjeta de dentro: **dos alfas distintos del mismo color**, y `amber` **no es una familia de
+     * la paleta adoptada** — la que dice «atencion» es `warning`.
+     *
+     * `check:overrides` las tenia las tres (`deasy-tile` x2, `deasy-card` x1) en su grupo C. */
+    .deasy-tile--avisa,
+    .deasy-card--avisa {
+        border-color: var(--color-warning-200);
+    }
+
+    .deasy-tile--avisa {
+        background-color: var(--color-warning-50);
+    }
+}

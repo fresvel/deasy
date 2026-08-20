@@ -96,7 +96,12 @@ const CSS = "src/shared/styles/tags.css";
      · `useDeliverableView` (vencimiento)        — dias al vencimiento, un continuo como
                                                    `coberturaEstado`, no un enum
    Si tu caso es uno de esos, deja el techo. Si traduce un `status` de la base, no. */
-const TECHO = { s1: 9, s2: 0, s3: 0, s4: 4 };
+const TECHO = { s1: 7, s2: 0, s3: 0, s4: 4 };
+/* [2026-08-20 · F12] S1 BAJA DE 9 A 7. Los dos que se van son el aviso de requisitos de
+   `AdminDefinitionRulesPanel` —que era `AppAlert` escrito a mano con `amber`— y la caja de
+   «Todo al dia» de `HomeView`. La cabecera de arriba ya los daba por \«`AppAlert` sin migrar\»
+   desde F3.3; F2 no se los llevo porque buscaba la clase `deasy-alert` y estos estaban escritos
+   con utilidades crudas. Es la SEGUNDA vez que ese mismo hueco cuesta una tanda. */
 
 /* ── vocabulario ─────────────────────────────────────────────────────────────────────────────
  *

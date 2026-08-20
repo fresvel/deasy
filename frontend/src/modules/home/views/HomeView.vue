@@ -86,7 +86,7 @@
                       class="deasy-option deasy-option--strong"
                       @click="toggleAllConsolidatedProcesses"
                     >
-                      <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">
+                      <span class="deasy-check" :class="allConsolidatedProcessesSelected ? 'deasy-check--marcada' : ''">
                         <IconCheck v-if="allConsolidatedProcessesSelected" class="h-3 w-3" />
                       </span>
                       Todos los procesos
@@ -99,7 +99,7 @@
                       class="deasy-option"
                       @click="toggleConsolidatedProcess(process.process_definition_id || process.id)"
                     >
-                      <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-brand-500 bg-brand-500 text-white' : 'border-line-strong'">
+                      <span class="deasy-check" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'deasy-check--marcada' : ''">
                         <IconCheck v-if="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id))" class="h-3 w-3" />
                       </span>
                       <span class="truncate">{{ routedMenuLabel(process) }}</span>
@@ -449,12 +449,12 @@
               <button
                 type="button"
                 class="deasy-tile"
-                :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
+                :class="homeSignatureCount ? 'deasy-tile--avisa' : ''"
                 @click="navigateToGlobalSignaturePage"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Centro de firmas</h3>
                 <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8"
-                  :class="homeSignatureCount ? 'border-amber-200/80' : ''">
+                  :class="homeSignatureCount ? 'deasy-card--avisa' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-warning' : 'text-muted'" />
                     <span class="mt-4 text-sm font-semibold text-body">
@@ -910,10 +910,13 @@
           <div
             v-for="step in taskLaunchSteps"
             :key="step.id"
-            class="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition-colors"
-            :class="taskLaunchStep >= step.id ? 'border-blue-light-200 bg-blue-light-50 text-info' : 'border-line bg-white text-muted'"
+            class="deasy-hito inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition-colors"
+            :class="taskLaunchStep >= step.id ? 'deasy-hito--hecho' : ''"
           >
-            <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round" :class="taskLaunchStep >= step.id ? 'bg-blue-light-600 text-white' : 'bg-gray-200 text-muted'">
+            <span
+              class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round"
+              :class="taskLaunchStep >= step.id ? 'deasy-icon-box--info deasy-icon-box--solid' : 'deasy-icon-box--neutral'"
+            >
               {{ step.id }}
             </span>
             <span>{{ step.label }}</span>
@@ -1315,7 +1318,7 @@
                 <dl class="grid gap-x-6 gap-y-2.5 m-0 sm:grid-cols-2 lg:grid-cols-4">
                   <div
                     class="flex flex-col gap-0.5 border-l-2 pl-3"
-                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-success' : 'border-blue-light-300'"
+                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-success' : 'border-info'"
                   >
                     <dt
                       class="deasy-overline"

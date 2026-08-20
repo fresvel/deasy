@@ -15,7 +15,7 @@
         <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
           <span
             class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round transition-colors"
-            :class="step >= i + 1 ? 'bg-blue-light-600 text-white' : 'bg-surface text-muted'"
+            :class="step >= i + 1 ? 'deasy-icon-box--info deasy-icon-box--solid' : 'deasy-icon-box--neutral'"
           >{{ i + 1 }}</span>
           <span class="hidden sm:inline" :class="step === i + 1 ? 'text-strong' : 'text-muted'">{{ s.label }}</span>
           <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-gray-200"></span>

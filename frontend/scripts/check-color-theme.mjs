@@ -45,7 +45,10 @@ import { join, resolve } from "node:path";
    `bg-green-500` y `text-lime-600` — y `lime` y `amber` **ni siquiera son familias de la paleta
    adoptada**, que son `blue-light`, `brand`, `error`, `gray`, `orange`, `success` y `warning`.
    Ahora el tono lo decide `tonoFuerza` y el color lo pone `deasy-progress__bar--<tono>`. */
-const TECHO = { total: 18, familia: 14, hex: 4, rgb: 0 };
+const TECHO = { total: 13, familia: 9, hex: 4, rgb: 0 };
+/* …y de 18 a **13** al cerrar F12: se van los ultimos `amber` (la baldosa que avisa y el aviso de
+   requisitos, que era `AppAlert` escrito a mano) y el `blue-light-300` del borde por fase, que
+   ahora usa el token `info` como su hermano usaba `success`. */
 /* …y de 32 a **18** en la segunda tanda de F12 (2026-08-20), la caida mas grande de la serie.
    No salio de perseguir colores sino de dar NOMBRE a tres estados: «elegido» (`deasy-elegible`),
    el tono de hover de un picker y la variante de un boton en rojo. Cada uno se llevo por delante

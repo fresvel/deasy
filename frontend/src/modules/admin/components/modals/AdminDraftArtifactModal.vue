@@ -24,7 +24,7 @@
     </AppAlert>
 
     <!-- Gobierno del ciclo de vida: estado (draft/published/retired) + publicar/retirar/versionar (solo al editar) -->
-    <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-brand-300 bg-brand-50' : 'border-brand-200 bg-brand-50/50'">
+    <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-brand-300 bg-brand-50' : 'border-brand-200 bg-brand-50'">
       <div class="flex items-center gap-3">
         <span class="deasy-overline">Estado</span>
         <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>

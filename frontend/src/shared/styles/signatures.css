@@ -153,3 +153,54 @@
     .deasy-flow-step-card--info    { border-color: var(--color-blue-light-200); }
     .deasy-flow-step-card--danger  { border-color: var(--color-error-200); }
 }
+
+
+@layer components {
+    /* LA CAJA DE FIRMA SOBRE EL PDF — F12, 2026-08-20.
+     *
+     * El rectangulo que el usuario arrastra sobre el documento para decir «la firma va aqui».
+     * `SignatureBox` lo pintaba con una cadena de NUEVE utilidades en un ternario, con **tres
+     * alfas distintos del mismo azul** (`/20`, `/10`, `/50`) — que es lo que este repo evita,
+     * porque el color resultante depende de lo que haya debajo, y aqui debajo hay un PDF: el
+     * mismo recuadro se ve distinto sobre un parrafo que sobre un margen blanco.
+     *
+     * Los tintes pasan a `color-mix` sobre BLANCO, que da un color estable. */
+    /* ⚠️ EL ANCHO VA AQUI, Y LO PIDIO EL GATE. Al migrar deje `border-2` en la clase estatica de
+       la plantilla, y esa utilidad declara `border-style` ademas del ancho: como vive en `layer
+       utilities`, **le ganaba a este `dashed` y el recuadro habria salido continuo**. Un defecto
+       que renderiza perfectamente y que solo se ve comparando con lo que estaba antes.
+       Con el ancho aqui, la plantilla ya no necesita `border-2` y nadie disputa el estilo. */
+    .deasy-firma-caja {
+        border-width: 2px;
+        border-style: dashed;
+        border-color: var(--color-blue-light-400);
+        background-color: color-mix(in srgb, var(--color-blue-light-400) 10%, var(--color-white));
+    }
+
+    .deasy-firma-caja:hover {
+        border-color: var(--color-blue-light-500);
+        background-color: color-mix(in srgb, var(--color-blue-light-500) 20%, var(--color-white));
+    }
+
+    .deasy-firma-caja--activa,
+    .deasy-firma-caja--activa:hover {
+        border-style: solid;
+        border-color: var(--color-blue-light-500);
+        background-color: color-mix(in srgb, var(--color-blue-light-500) 20%, var(--color-white));
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-blue-light-500) 30%, transparent);
+    }
+
+    /* ARRASTRANDO. Era `ring-2` suelto en la plantilla, y como `--activa` declara su propio
+       `box-shadow` los dos se disputaban el mismo pixel al arrastrar una caja ya activa —que es
+       el caso normal, porque arrastras la que acabas de tocar—. Con nombre, gana el ultimo
+       declarado y eso es una decision, no un accidente de orden. */
+    .deasy-firma-caja--arrastrando {
+        box-shadow: 0 0 0 2px var(--color-blue-light-500);
+    }
+
+    /* LA FILA DE UN CAMPO EN LA LISTA — el mismo campo, visto en el panel lateral. */
+    .deasy-firma-fila--activa {
+        border-color: transparent;
+        box-shadow: 0 0 0 2px var(--color-blue-light-500);
+    }
+}

@@ -28,15 +28,12 @@
       @close="cancelForm"
     >
       <div class="flex flex-col gap-5">
-      <div
-        class="flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm"
-        :class="canSubmit
-          ? 'border-line bg-white text-icon'
-          : 'border-amber-200 bg-amber-50 text-warning'"
-      >
+      <!-- Era un aviso escrito a mano con `border-amber-200 bg-amber-50` —y `amber` no es una
+           familia de la paleta—. Es `AppAlert` en su variante de fila, que existe desde F4. -->
+      <AppAlert :variant="canSubmit ? 'info' : 'warning'" class="deasy-alert--row items-start">
         <font-awesome-icon :icon="canSubmit ? 'info-circle' : 'triangle-exclamation'" class="mt-0.5 shrink-0" />
         <span>{{ canSubmit ? ruleContextHint : (requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar.") }}</span>
-      </div>
+      </AppAlert>
 
       <!-- Lo que ya fija la serie se muestra como contexto, no como campos editables. -->
       <div v-if="seriesFixedChips.length" class="flex flex-wrap items-center gap-2 text-xs">
