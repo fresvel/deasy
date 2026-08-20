@@ -171,9 +171,9 @@
                   <span v-else>—</span>
                 </div>
               </template>
-              <template v-else-if="isDefinitionStatusField(field) && row[field.name]">
-                <AppTag :variant="tonoCicloVida(row[field.name])" size="sm">
-                  {{ etiquetaCicloVida(row[field.name]) }}
+              <template v-else-if="esColumnaDeEstado(table?.table, field.name) && row[field.name]">
+                <AppTag :variant="tonoDeColumna(table?.table, field.name, row[field.name])" size="sm">
+                  {{ etiquetaDeColumna(table?.table, field.name, row[field.name]) }}
                 </AppTag>
               </template>
               <template v-else>
@@ -290,7 +290,7 @@ import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
+import { esColumnaDeEstado, tonoDeColumna, etiquetaDeColumna } from "@/shared/utils/estadoTono.js";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
@@ -402,15 +402,15 @@ const resetGenericSearch = () => {
   emit("fetch-rows");
 };
 
-// Badge de estado de la configuración: aplica al status de process_definition_versions y al estado de la
-// definición activa en la tabla de procesos. El resto de columnas 'status' siguen como texto plano.
-/* `DEFINITION_STATUS_BADGES` murio el 2026-08-15 (F3.3 · L5). Era la COPIA byte a byte del
-   `DEFINITION_STATUS_META` de `AdminProcessWizardShell` —el mismo estado pintado dos veces desde
-   dos ficheros—, y las dos son ahora el mismo diccionario, `estadoTono.js`.
+/* `isDefinitionStatusField` murio el 2026-08-20. Habilitaba la pastilla en DOS columnas y su
+   comentario daba el resto por deliberado: «el resto de columnas status siguen como texto
+   plano». Lo que eso producia, medido en pantalla, es que `process_definition_versions` pintaba
+   «Retirada» en pastilla y en español mientras `template_artifacts` pintaba el MISMO ciclo de
+   vida en texto plano y en INGLES CRUDO.
 
-   Lo que decide QUE columna lleva pastilla sigue aqui, porque es negocio y no color. */
-const isDefinitionStatusField = (field) =>
-  field?.name === "active_definition_status"
-  || (field?.name === "status" && props.table?.table === "process_definition_versions");
+   Que columna es un estado, y con que eje, lo dice ahora `COLUMNA_ESTADO` en `estadoTono.js`:
+   sigue siendo negocio y no color, pero es la misma clase de conocimiento que los vocabularios
+   y estaba partida en dos ficheros. La tabla solo pregunta. */
+
 defineExpose({ searchInputRef });
 </script>

@@ -932,7 +932,12 @@
           <div class="deasy-card md:col-span-2 p-5">
             <div class="flex flex-wrap gap-2">
               <AppTag variant="info">Tarea ligada a proceso</AppTag>
-              <AppTag variant="neutral">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
+              <!-- El QUINTO sitio que decidia el tono de «acceso», y el unico que lo fijaba a
+                   mano: la tarjeta de entregable ya daba directo -> success y derivado -> accent
+                   desde `tonoAcceso`. Mismo concepto, dos aspectos. -->
+              <AppTag :variant="tonoAcceso(selectedProcessPanel?.definition?.access_source === 'flow' ? 'derivado' : 'directo')">
+                {{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}
+              </AppTag>
             </div>
             <p class="mt-3 mb-0 text-sm font-medium text-icon">
               Define el contexto operativo de la tarea. El backend la materializará usando los templates activos de esta configuración.
@@ -1529,8 +1534,10 @@
                 <AppTag variant="neutral">
                   Paso {{ fillWorkflowState.request?.step_order || 1 }}
                 </AppTag>
-                <AppTag variant="info">
-                  Estado: {{ fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending' }}
+                <!-- Llevaba `variant="info"` FIJO y el texto en INGLES CRUDO (`pending`): el
+                     mismo defecto que `template_artifacts`, y en la pantalla mas usada. -->
+                <AppTag :variant="tonoLlenado(fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending')">
+                  Estado: {{ etiquetaLlenado(fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending') }}
                 </AppTag>
                 <AppTag :variant="fillWorkflowState.subject.preloadFilePath ? 'success' : 'warning'">
                   {{ fillWorkflowState.subject.preloadFilePath ? `Archivo: ${getFileNameFromPath(fillWorkflowState.subject.preloadFilePath)}` : 'Sin archivo de trabajo' }}
@@ -1728,8 +1735,13 @@
                 <AppTag variant="neutral">
                   {{ signatureFlowState.subject?.documentVersion ? `Versión v${signatureFlowState.subject.documentVersion}` : `v${signatureFlowState.subject?.documentVersionId || '—'}` }}
                 </AppTag>
-                <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
-                  {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
+                <!-- El texto decia el ESTADO y el color decia si PUEDES OPERAR: dos cosas
+                     distintas en el mismo objeto. Un documento «En llenado» salia en ambar, que
+                     en este sistema significa «retirado». Y la capacidad ya la anuncia la
+                     pastilla «Listo para operar» / «Acceso en modo lectura» de mas abajo, asi
+                     que el color aqui solo podia confundir. -->
+                <AppTag :variant="tonoFlujo(signatureFlowState.snapshot?.signatureFlow?.statusCode || signatureFlowState.snapshot?.currentStatus)">
+                  {{ etiquetaFlujo(signatureFlowState.snapshot?.signatureFlow?.statusCode || signatureFlowState.snapshot?.currentStatus) }}
                 </AppTag>
               </div>
               <p class="text-xs text-muted">
@@ -2148,7 +2160,7 @@ import {
   getFillStepResolverLabel,
   getSignatureStepResolverLabel,
 } from '@/modules/home/views/homeView.helpers.js';
-import { tonoLlenado, etiquetaLlenado, tonoPasoFirma, tonoSolicitudFirma } from '@/shared/utils/estadoTono.js';
+import { tonoLlenado, etiquetaLlenado, tonoPasoFirma, tonoSolicitudFirma, tonoAcceso, tonoFlujo, etiquetaFlujo } from '@/shared/utils/estadoTono.js';
 import {
   resolveWorkspaceProcessIcon,
   workspaceIconToneClass,

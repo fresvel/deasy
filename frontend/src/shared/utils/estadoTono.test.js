@@ -9,7 +9,8 @@ import {
   tonoPasoFirma, tonoSolicitudFirma,
   tonoDocumento, tonoPersona, tonoVacante, tonoContrato,
   tonoAcceso, tonoObservacion,
-  tonoFlujo, etiquetaFlujo
+  tonoFlujo, etiquetaFlujo,
+  esColumnaDeEstado, tonoDeColumna, etiquetaDeColumna, COLUMNAS_DE_ESTADO
 } from "./estadoTono.js";
 
 /* Lo que se prueba aquí NO es «qué color sale» —eso lo decide el CSS y cambiaría con un
@@ -296,5 +297,44 @@ describe("etiquetas y observaciones", () => {
   it("`Verificado` es PRIMARY y no SUCCESS: es una marca, no un logro", () => {
     expect(tonoPersona("Verificado")).toBe(TONOS.PRIMARY);
     expect(tonoPersona("Reportado")).toBe(TONOS.DANGER);
+  });
+});
+
+describe("el registro de columnas de admin — qué celda es una pastilla", () => {
+  it("las 14 columnas del registro resuelven tono Y etiqueta", () => {
+    expect(COLUMNAS_DE_ESTADO).toHaveLength(14);
+    for (const ruta of COLUMNAS_DE_ESTADO) {
+      const [tabla, columna] = [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
+      expect(esColumnaDeEstado(tabla, columna)).toBe(true);
+      expect(Object.values(TONOS)).toContain(tonoDeColumna(tabla, columna, "draft"));
+      expect(typeof etiquetaDeColumna(tabla, columna, "draft")).toBe("string");
+    }
+  });
+
+  it("una columna que no es estado no lleva pastilla", () => {
+    /* El criterio es SER un estado, no llamarse `status`: `is_active` es un booleano de
+       habilitación y `item_mode` es un tipo, no un ciclo. */
+    expect(esColumnaDeEstado("persons", "is_active")).toBe(false);
+    expect(esColumnaDeEstado("process_definition_templates", "item_mode")).toBe(false);
+    expect(esColumnaDeEstado("process_runs", "run_mode")).toBe(false);
+    expect(esColumnaDeEstado("signature_requests", "status_id")).toBe(false);
+    expect(esColumnaDeEstado("units", "name")).toBe(false);
+  });
+
+  it("EL DEFECTO QUE ABRIÓ ESTO: las dos tablas del ciclo de vida ya dicen lo mismo", () => {
+    /* `process_definition_versions` pintaba «Retirada» en pastilla y en español;
+       `template_artifacts` pintaba `retired` en texto plano y en inglés crudo. */
+    expect(etiquetaDeColumna("template_artifacts", "lifecycle_state", "retired")).toBe("Retirada");
+    expect(etiquetaDeColumna("process_definition_versions", "status", "retired")).toBe("Retirada");
+    expect(tonoDeColumna("template_artifacts", "lifecycle_state", "retired"))
+      .toBe(tonoDeColumna("process_definition_versions", "status", "retired"));
+    expect(etiquetaDeColumna("template_artifacts", "lifecycle_state", "published")).toBe("Publicada");
+  });
+
+  it("las columnas en español se presentan, no se traducen dos veces", () => {
+    expect(etiquetaDeColumna("persons", "status", "Verificado")).toBe("Verificado");
+    expect(etiquetaDeColumna("documents", "status", "Firmado completo")).toBe("Firmado completo");
+    expect(etiquetaDeColumna("tasks", "status", "en_proceso")).toBe("En proceso");
+    expect(etiquetaDeColumna("process_runs", "status", "completed")).toBe("Completada");
   });
 });

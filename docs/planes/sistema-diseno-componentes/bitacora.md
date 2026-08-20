@@ -6,6 +6,84 @@
 > [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md`](../../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/bitacora.md)
 > y **sigue valiendo**: es donde están las trampas ya pagadas.
 
+## 2026-08-20 · F9.B y F9.C — las pastillas, y las cinco trampas que dejaron
+
+Arrancó con una pregunta del dueño: *«toda columna estado debe ser pastilla, y conviene que toda
+pastilla se administre desde una misma clase CSS con variantes, `deasy-pastilla-xxx-yyy`»*.
+
+**La mitad buena ya existía y la otra mitad iba al sitio equivocado.** El color de las pastillas
+vive desde F3.3 en un solo lugar: ocho clases `deasy-tag--<tono>`. Lo disperso era el paso
+anterior —*qué valor merece qué tono*—, y eso es negocio, no color: llevarlo al CSS habría metido
+las tablas en la hoja de estilos, multiplicado 8 clases por ~20 ejes con el cuerpo idéntico, y
+roto `check-variants.mjs`, que valida contra un mapa cerrado.
+
+### 1 · «Migrado» significaba «migrado en admin»
+
+F3.3 se cerró como *«un solo diccionario de color para todo el repo»*. Medido hoy: **los 12
+consumidores de `estadoTono.js` eran los doce de `modules/admin/`**, y `modules/home/` mantenía
+nueve traductores propios. El enunciado decía «todo el repo» y el trabajo cubrió un módulo.
+
+**→ Al cerrar una fase de alcance «todo el repo», el criterio de cierre es un CENSO de
+consumidores, no la lista de ficheros tocados.**
+
+### 2 · No eran copias: se contradecían, y en cuatro valores
+
+Lo caro no era la duplicación sino que **el mismo valor salía con dos colores** según qué función
+lo tradujera: `pendiente` (warning vs salmon), `en proceso` (info vs warning, en dos sitios),
+`cancelado` (danger vs neutral) y `activo` (warning «En curso» vs success).
+
+Las cuatro las resolvió **la doctrina que el propio fichero ya tenía escrita desde el 15-08**, no
+un criterio nuevo. Y la excepción se conserva a propósito: `completed` es INFO en una corrida
+—agotó su ciclo— y SUCCESS en un documento. Ejes distintos, tonos distintos; ése es justo el
+motivo de nombrar por eje y no por tabla.
+
+**→ Cuando dos definiciones de lo mismo discrepan, la que gana no se elige: se busca si ya hay una
+decisión escrita.**
+
+### 3 · El gate probado en rojo nació ciego, y la prueba lo salvó
+
+S2 caza el COLOR en JavaScript (dos utilidades de Tailwind en una cadena) y por eso no podía ver
+esto: un mapa que devuelve el NOMBRE del tono es exactamente lo que F3.3 pedía, sólo que en el
+fichero equivocado. Nace **S4**.
+
+La primera versión usaba `exec` **sin bandera global**, así que sólo veía UNA entrada por línea:
+un diccionario de tres tonos escrito en una sola línea —la forma más común— quedaba con un único
+tono distinto y no llegaba al mínimo de dos. **Daba verde contra el fallo que existía para
+cazar.** Lo destapó probarlo en rojo con un diccionario falso.
+
+**→ «Probado en rojo» no es un trámite. Un gate que no se prueba con el fallo real es peor que no
+tenerlo, porque además certifica.**
+
+### 4 · Tres defectos que sólo aparecen MIRANDO LA PANTALLA
+
+Ninguno lo habría encontrado leyendo código, porque los tres renderizan perfectamente:
+
+- Un `variant="info"` **fijo** con el texto «Estado: **pending**» en inglés crudo, en la pantalla
+  más usada de la aplicación — el mismo defecto que la auditoría de F9 había encontrado en
+  `template_artifacts`, y nadie lo buscó en home.
+- Una pastilla cuyo **texto decía el estado** y cuyo **color decía si puedes operar**: un
+  documento «En llenado» salía en ámbar, que en este sistema significa «retirado». La capacidad
+  ya la anunciaba otra pastilla tres líneas más abajo.
+- Un **quinto** sitio decidiendo el tono de «acceso», y el único que lo fijaba a mano.
+
+Y un cabo del propio arreglo: al sustituir el texto por `etiquetaLlenado(...)` se perdió el
+defecto `'pending'` que el literal antiguo sí tenía, y la pastilla salió gris. **Restaurar un
+defecto hay que hacerlo en los DOS lados, tono y etiqueta, no sólo en el que se ve.**
+
+### 5 · El seed no puede probarlo todo, y hay que decir cuál
+
+Dos cosas quedaron sin verificar en pantalla, y las dos por datos, no por código:
+
+- `vacancies` y `contracts` están **vacías** en el seed de dev.
+- **Ningún flujo de llenado del seed tiene más de un paso** (18 `pending` + 2 `in_progress`, uno
+  por flujo), así que el cambio de un paso pendiente NO actual de neutral a salmón no se ve: todos
+  los visibles son el paso actual. Se comprobó en su lugar lo que sí era riesgo real —que
+  `.deasy-flow-step--salmon` existe en `signatures.css`—, porque un tono nuevo sin regla habría
+  dejado el paso sin pintar y ningún gate lo ve: la clase se compone en una plantilla de cadena.
+
+**→ Un tono nuevo devuelto por una función es una clase CSS nueva que nadie declaró. Compruébala
+antes de darla por buena.**
+
 ## 2026-08-17 · F6 — muere `overrides.css`, y con el la deuda de capa
 
 El fichero que daba nombre a la fase ya no existe. Empezo con **34 selectores fuera de `@layer`**

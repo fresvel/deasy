@@ -427,3 +427,76 @@ export const etiquetaFlujo = (valor) => {
   const bruto = String(valor).trim();
   return bruto.charAt(0).toUpperCase() + bruto.slice(1);
 };
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   QUE COLUMNA DE ADMIN LLEVA PASTILLA, Y CON QUE EJE
+   ══════════════════════════════════════════════════════════════════════════════════════════
+
+   Hasta el 2026-08-20 esto vivia en `AdminMainTableSection` como un predicado de dos ramas
+   —`active_definition_status` y el `status` de `process_definition_versions`— con un comentario
+   que lo daba por deliberado: «el resto de columnas status siguen como texto plano».
+
+   Medido en pantalla, eso significaba que **`process_definition_versions` pintaba «Retirada» y
+   «Borrador» en pastilla y en español, mientras `template_artifacts` pintaba EL MISMO ciclo de
+   vida como texto plano y EN INGLES CRUDO** (`retired`, `published`) — con `tonoCicloVida` y
+   `etiquetaCicloVida` ya escritas y sabiendo traducirlo.
+
+   **Decision del dueño (2026-08-20): toda columna de estado es una pastilla.** El registro esta
+   aqui y no en el componente porque es la misma clase de conocimiento que los vocabularios de
+   arriba: que EJE gobierna cada columna. La tabla solo pregunta.
+
+   ⚠️ EL CRITERIO DE ENTRADA ES «SER UN ESTADO», NO «LLAMARSE status». Quedan fuera a proposito:
+     · las 16 columnas `is_active` «Activo», que son un booleano de habilitacion;
+     · las clasificaciones (`Origen de corrida`, `Modo de emision`, `Seleccion`, `Resolucion`,
+       `Origen`), que no son un ciclo sino un tipo;
+     · `signature_flow_instances.status_id`, `signature_requests.status_id` y
+       `document_signatures.signature_status_id`, que son CLAVES AJENAS a una tabla de estados
+       y llegan como numero: la celda no tiene el nombre que traducir.
+   Las tres exclusiones son decisiones, no olvidos, y por eso estan escritas. */
+
+const ETIQUETA_CORRIDA = Object.freeze({
+  pending: "Pendiente",
+  active: "Activa",
+  completed: "Completada",
+  cancelled: "Cancelada"
+});
+
+export const etiquetaCorrida = (valor) => ETIQUETA_CORRIDA[clave(valor)] ?? "Sin estado";
+
+/* Los vocabularios que la base ya declara en español legible (`persons.status`,
+   `vacancies.status`, `contracts.status`, `documents.status`) no necesitan traduccion: solo
+   presentacion. Inventarles una segunda forma seria volver a tener dos nombres para lo mismo. */
+const presenta = (valor) => {
+  const bruto = String(valor ?? "").trim().replace(/_/g, " ");
+  return bruto ? bruto.charAt(0).toUpperCase() + bruto.slice(1) : "";
+};
+
+const COLUMNA_ESTADO = Object.freeze({
+  "processes.active_definition_status": [tonoCicloVida, etiquetaCicloVida],
+  "process_definition_versions.status": [tonoCicloVida, etiquetaCicloVida],
+  "template_artifacts.lifecycle_state": [tonoCicloVida, etiquetaCicloVida],
+  "process_runs.status": [tonoCorrida, etiquetaCorrida],
+  "tasks.status": [tonoTarea, etiquetaTarea],
+  "task_items.status": [tonoTarea, etiquetaTarea],
+  "task_assignments.status": [tonoTarea, etiquetaTarea],
+  "document_fill_flows.status": [tonoLlenado, etiquetaLlenado],
+  "fill_requests.status": [tonoLlenado, etiquetaLlenado],
+  "persons.status": [tonoPersona, presenta],
+  "vacancies.status": [tonoVacante, presenta],
+  "contracts.status": [tonoContrato, presenta],
+  "documents.status": [tonoDocumento, presenta],
+  "document_versions.status": [tonoDocumento, presenta]
+});
+
+const ejeDeColumna = (tabla, columna) => COLUMNA_ESTADO[`${tabla}.${columna}`] ?? null;
+
+export const esColumnaDeEstado = (tabla, columna) => Boolean(ejeDeColumna(tabla, columna));
+
+export const tonoDeColumna = (tabla, columna, valor) =>
+  (ejeDeColumna(tabla, columna)?.[0] ?? (() => TONOS.NEUTRAL))(valor);
+
+export const etiquetaDeColumna = (tabla, columna, valor) =>
+  (ejeDeColumna(tabla, columna)?.[1] ?? presenta)(valor);
+
+/* El censo, para que la prueba pueda recorrerlo sin repetir la lista. */
+export const COLUMNAS_DE_ESTADO = Object.freeze(Object.keys(COLUMNA_ESTADO));
