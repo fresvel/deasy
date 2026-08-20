@@ -162,9 +162,9 @@
 
             <template v-else>
 
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <AppAlert v-if="processActionMessage" :variant="processActionMessage.type === 'error' ? 'danger' : 'success'">
                 {{ processActionMessage.text }}
-              </section>
+              </AppAlert>
 
               <!-- Tarjetas de entregables -->
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -558,21 +558,17 @@
                   <div v-if="homeLoading" class="text-sm font-medium text-muted py-2">
                     Actualizando...
                   </div>
-                  <div v-else-if="!homeActions.length" class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-success">
+                  <AppAlert v-else-if="!homeActions.length" variant="success" class="deasy-alert--row">
                     <IconCircleCheck class="h-5 w-5 shrink-0" />
                     Todo al día. No hay acciones pendientes.
-                  </div>
+                  </AppAlert>
                   <button
                     v-else
                     v-for="action in homeActions"
                     :key="action.key"
                     type="button"
                     class="deasy-picker"
-                    :class="{
-                      'hover:border-amber-200': action.tone === 'warning',
-                      'hover:border-blue-light-200': action.tone === 'info',
-                      'hover:border-emerald-200': action.tone === 'success',
-                    }"
+                    :class="`deasy-picker--${action.tone}`"
                     @click="runHomeAction(action)"
                   >
                     <span
@@ -674,9 +670,9 @@
             </AppAlert>
 
             <template v-else>
-              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-danger' : 'bg-emerald-50 border border-emerald-200 text-success'">
+              <AppAlert v-if="processActionMessage" :variant="processActionMessage.type === 'error' ? 'danger' : 'success'">
                 {{ processActionMessage.text }}
-              </section>
+              </AppAlert>
 
               <!-- Rediseño routed: página enfocada de envíos/recibidos (reemplaza la vista genérica de tareas). -->
               <RoutedProcessPanel

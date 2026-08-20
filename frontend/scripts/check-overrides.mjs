@@ -84,7 +84,14 @@ const CAPA = { theme: 0, base: 1, components: 2, utilities: 3, "(sin capa)": 4 }
 /* [2026-08-20 · F12] BAJA DE 37 A 34 al nacer `deasy-elegible`: los sitios que pintaban
    «elegido» con `bg-*`/`border-*` crudos sobre `deasy-picker` y `deasy-card` dejan de disputarles
    el borde y el fondo. El grupo C baja de 15 a 12. */
-const TECHO = 34;
+const TECHO = 29;
+/* …y de 34 a 29 en la segunda tanda de F12, con tres grupos del inventario tocados:
+     · **C** baja de 12 a 9 — los tres `hover:border-*` que `HomeView` estampaba sobre
+       `deasy-picker` segun el tono son ahora `deasy-picker--<tono>`;
+     · **E** desaparece — el boton del mapa de `RegisterView` ELIGE `danger-outline` en vez de
+       pintar `border-red-300 text-danger` sobre el neutro. Era el «boton destructivo
+       reinventado» que este techo nombraba;
+   y de paso mueren los ultimos `rose`/`emerald` de `HomeView`, que no son familias de la paleta. */
 
 const ficheros = (dir, ext, acc = []) => {
   for (const n of readdirSync(dir)) {

@@ -191,15 +191,20 @@
                 </div>
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button
+                  <!-- ⚠️ La variante se ELIGE, no se pinta encima. Antes era `--neutral-outline`
+                       con `border-red-300 text-danger hover:bg-red-50` estampado por ternario
+                       cuando faltaba la direccion: un boton en rojo reinventado sobre el neutro,
+                       que es lo que `check:overrides` tenia como grupo E. `danger-outline` ya
+                       existe y trae ademas su `:hover` y su foco. -->
+                  <AppButton
                     type="button"
-                    class="deasy-btn deasy-btn--neutral-outline deasy-btn--md w-full sm:w-auto"
-                    :class="!newuser.direccion ? 'border-red-300 text-danger hover:bg-red-50' : ''"
+                    :variant="newuser.direccion ? 'neutral-outline' : 'danger-outline'"
+                    class-name="w-full sm:w-auto"
                     @click="toggleMap"
                   >
-                    <IconMap class="h-4 w-4" :class="!newuser.direccion ? 'text-danger' : 'text-info'" />
+                    <IconMap class="h-4 w-4" />
                     {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
-                  </button>
+                  </AppButton>
 
                   <AppTag v-if="newuser.direccion" variant="success">
                     <template #icon>

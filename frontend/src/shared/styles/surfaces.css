@@ -337,6 +337,26 @@
 
 
 @layer components {
+    /* EL TONO DE UN PICKER — F12, 2026-08-20.
+     *
+     * `deasy-picker` declara su borde y su `:hover`, y `HomeView` los pisaba con tres utilidades
+     * crudas —`hover:border-amber-200`, `hover:border-blue-light-200`, `hover:border-emerald-200`—
+     * segun el tono de la accion. `check:overrides` las tenia las TRES en su grupo C.
+     *
+     * `emerald` y `amber` no son ademas familias de la paleta adoptada: `success` y `warning` si. */
+    .deasy-picker--warning:hover { border-color: var(--color-warning-200); }
+    .deasy-picker--info:hover { border-color: var(--color-blue-light-200); }
+    .deasy-picker--success:hover { border-color: var(--color-success-200); }
+
+    /* ⚠️ `--neutral` NO ES REDUNDANTE AUNQUE NO CAMBIE NADA, y lo destapo medir en el navegador.
+       `homeActions` emite CUATRO tonos —`info`, `neutral`, `success`, `warning`— y la clase se
+       compone en runtime (`deasy-picker--${action.tone}`). Sin esta regla, uno de cada cuatro
+       pickers llevaba en el DOM una clase **que no existe en el CSS**: no rompia nada —el hover
+       por defecto ya es este— pero es exactamente la clase de fallo que `check-orphan-classes`
+       persigue, y ese gate **no puede verlo** porque solo lee atributos estaticos.
+       Declararla cierra el vocabulario: los cuatro tonos que el codigo puede emitir existen. */
+    .deasy-picker--neutral:hover { border-color: var(--color-line-strong); }
+
     /* «ESTO ESTA ELEGIDO» — F12, 2026-08-20.
      *
      * Una opcion, tarjeta o fila que el usuario puede escoger. Estaba escrito **catorce veces**

@@ -45,7 +45,13 @@ import { join, resolve } from "node:path";
    `bg-green-500` y `text-lime-600` — y `lime` y `amber` **ni siquiera son familias de la paleta
    adoptada**, que son `blue-light`, `brand`, `error`, `gray`, `orange`, `success` y `warning`.
    Ahora el tono lo decide `tonoFuerza` y el color lo pone `deasy-progress__bar--<tono>`. */
-const TECHO = { total: 32, familia: 27, hex: 5, rgb: 0 };
+const TECHO = { total: 18, familia: 14, hex: 4, rgb: 0 };
+/* …y de 32 a **18** en la segunda tanda de F12 (2026-08-20), la caida mas grande de la serie.
+   No salio de perseguir colores sino de dar NOMBRE a tres estados: «elegido» (`deasy-elegible`),
+   el tono de hover de un picker y la variante de un boton en rojo. Cada uno se llevo por delante
+   sus `rose`, `emerald` y `amber` — familias que ni siquiera son de la paleta adoptada.
+   La leccion, y esta escrita porque se repite: **un color fuera de paleta casi nunca es un color
+   mal elegido; es un ESTADO sin receta**. */
 /* …y de 34 a 32 con `rgb` A CERO el mismo dia (F8): `AppLogo` era el ultimo sitio del frontend
    con un `rgba()` de triplete numerico escrito a mano, y eran DOS —el borde del marco y un
    SEGUNDO anillo de foco, cuando `forms.css` dice que «el anillo del proyecto es UNO»—. Aqui si
