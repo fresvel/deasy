@@ -299,8 +299,9 @@
         @apply m-0 text-lg font-semibold text-strong;
     }
 
+    /* Solo el `m-0`: la tipografia la trae `deasy-rotulo`. */
     .deasy-dropzone__label {
-        @apply m-0 text-sm font-semibold text-strong;
+        @apply m-0;
     }
 
     /* ── LA ZONA DE SUBIDA ───────────────────────────────────────────────────────────
@@ -407,9 +408,10 @@
         @apply items-start text-left;
     }
 
-    .deasy-dropzone__action {
-        @apply text-sm font-semibold text-strong;
-    }
+    /* [2026-08-20 · F11] `.deasy-dropzone__action` era el gemelo exacto de
+       `deasy-deliverable-action__text`. Su cuerpo lo pone ahora `deasy-rotulo` en la plantilla; lo
+       unico suyo era el color en contexto `--filled`, que sigue mas arriba. */
+
 
     .deasy-dropzone__help {
         @apply text-xs leading-[1.35] text-muted;
@@ -469,8 +471,27 @@
        Es la regla de tres de §6.1: si el mismo punado de utilidades aparece tres veces, se le
        da nombre. Y una etiqueta NO necesita componente Vue: no tiene estado ni markup propio,
        solo texto. El nivel correcto es la clase. */
+    /* EL ROTULO — F11, 2026-08-20.
+     *
+     * `clases-gemelas.mjs` encontro TRES clases con este mismo cuerpo repartidas por dos ficheros:
+     * `deasy-deliverable-action__text` (3 usos, `deliverables.css`), `deasy-dropzone__action` (1)
+     * y `deasy-dropzone__label` (1, con un `m-0` de mas). El detector las dio al 100 % y al 75 %.
+     *
+     * ⚠️ Y AL PONERLAS AL LADO SALIO UNA CUARTA, que no era gemela sino LA MADRE:
+     * **`deasy-form-label` declara exactamente esto** mas `block` y su margen. O sea que las tres
+     * eran «la etiqueta del sistema, sin la parte de disposicion» — y `deasy-form-label` es la
+     * receta mas poblada del proyecto (141 usos tras F2).
+     *
+     * Por eso NO se colapsan sobre ella —heredarian el `block` y los 6 px de hueco, que romperian
+     * sus cinco sitios— sino que las DOS salen de la misma declaracion. Una regla, dos selectores,
+     * cero duplicado. */
+    .deasy-rotulo,
     .deasy-form-label {
-        @apply block text-sm font-semibold text-strong;
+        @apply text-sm font-semibold text-strong;
+    }
+
+    .deasy-form-label {
+        @apply block;
         margin-bottom: var(--label-gap);
     }
 
@@ -582,9 +603,14 @@
         gap: 0.25rem;
     }
 
-    .deasy-dropzone--rail .deasy-dropzone__action {
-        font-size: 0.95rem;
-    }
+    /* [2026-08-20 · F11] AQUI HABIA `font-size: 0.95rem` — 15,2 px, que NO ES UN PASO DE LA
+       ESCALA (12 · 14 · 16 · 18 · 24). Sobrevivio a F5.1, que barrio los tamaños sueltos, porque
+       aquella cazaba utilidades `text-[…]` y esto era una declaracion de CSS CRUDO dentro de una
+       regla CONTEXTUAL — el mismo hueco que F5.2 documenta para los 7 `border-radius` que ningun
+       gate mira.
+       Y ademas era «el contexto cambiando el objeto», que es lo que F5.4 mato en el boton: el
+       texto de subir un fichero no mide distinto por estar en un carril. Un solo consumidor
+       (`MultiSignerPanel:13`), que ahora lee 14 px como el resto. */
 
     .deasy-dropzone--rail .deasy-dropzone__help {
         font-size: 0.75rem;

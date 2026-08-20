@@ -206,7 +206,14 @@ const classes = computed(() => [
      segun donde estuviera —cabecera de pagina y barra de accion—, y murieron con F5.4. Retirada
      el 2026-08-17. Sobrevivio a `check:orphan-classes` porque **se componia en JavaScript**, que
      es el agujero que `frontend/CLAUDE.md` §6.4 ya tenia fichado y que este mismo commit tapa. */
-  props.variant === "plain" ? "" : "deasy-btn",
+  /* ⚠️ LA CONDICION ES `plain Y NO solo-icono`, y no `plain` a secas. Hasta el 2026-08-20 esta
+     linea decia `variant === "plain" ? "" : "deasy-btn"` y la rama de abajo volvia a emitir
+     `deasy-btn` junto a `--icon`: en los ~104 botones de solo icono la clase salia **DOS VECES**.
+     No pintaba distinto —una clase repetida es la misma clase— pero escondia una dependencia:
+     `DeliverableCard:151` es `variant="plain"` + `icon-only` y **sacaba su caja de esa segunda
+     emision**, asi que limpiar la de abajo sin mirar lo habria dejado sin ella.
+     Entrada de F11, cerrada aqui: la condicion se escribe entera y la clase se emite UNA vez. */
+  props.variant === "plain" && !props.iconOnly ? "" : "deasy-btn",
   resolveClass(variantClassMap, props.variant, "variant"),
   /* [G3 2026-08-14] AQUI HABIA UNA EXCEPCION PARA `close`, y su historia vale como norma:
      `variant="close"` no admitia tamaño —la ✕ es un cuadrado fijo— pero eso no estaba escrito en
@@ -220,7 +227,7 @@ const classes = computed(() => [
   props.variant === "plain" || props.iconOnly
     ? ""
     : resolveClass(sizeClassMap, props.size, "size"),
-  props.iconOnly ? "deasy-btn deasy-btn--icon" : "",
+  props.iconOnly ? "deasy-btn--icon" : "",
   props.className
 ]);
 

@@ -33,9 +33,10 @@
         @apply flex min-w-0 flex-col;
     }
 
-    .deasy-deliverable-action__text {
-        @apply text-sm font-semibold text-strong;
-    }
+    /* [2026-08-20 · F11] `.deasy-deliverable-action__text` se retiro: era el gemelo EXACTO de
+       `deasy-dropzone__action` —el detector lo dio al 100 %— y los dos son `deasy-rotulo`, que
+       sale de la misma declaracion que `deasy-form-label` en `forms.css`. Tres nombres en dos
+       ficheros para `text-sm font-semibold text-strong`. */
 
     /* ── Tono: «aun no has empezado» ───────────────────────────────────────────────── */
 

@@ -36,6 +36,14 @@
  *     como se inventan los falsos positivos que acaban con un gate apagado. La auditoria
  *     encontro un caso —el icono del boton flotante de chat— y era DELIBERADO.
  *   · Clases que solo existen en tiempo de ejecucion (`classList.add`).
+ *   · **LAS QUE UN COMPONENTE EMITE POR SU CUENTA**, y esta es la que mas duele. En la plantilla
+ *     se lee `<AppButton icon-only class-name="… h-9 w-9 …">`; la clase con la que `h-9` pelea
+ *     —`deasy-btn--icon`— la compone el `computed` del componente y **no aparece en el atributo**.
+ *     Asi se colo un defecto real el 2026-08-20: al subir el boton de icono de 36 a 44, ese
+ *     `h-9 w-9` dejo «Abrir detalle del entregable» en **36 de ancho por 44 de alto**, o sea
+ *     rectangular. Lo caza `getComputedStyle` en el navegador, no este script.
+ *     Cerrarlo exigiria que el gate supiera que `icon-only` implica `deasy-btn--icon`, o sea un
+ *     mapa prop->clase por componente. Es viable y esta sin hacer.
  *   · Que la propiedad pisada IMPORTE. Pisar es a veces la respuesta correcta; por eso hay techo
  *     y no cero, y por eso cada resto va nombrado abajo.
  */

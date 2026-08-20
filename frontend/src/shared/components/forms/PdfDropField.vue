@@ -2,7 +2,7 @@
   <div :class="wrapperClasses">
     <div v-if="title" class="deasy-dropzone__header">
       <h3 v-if="variant === 'card'" class="deasy-dropzone__title">{{ title }}</h3>
-      <label v-else :for="resolvedInputId" class="deasy-dropzone__label">{{ title }}</label>
+      <label v-else :for="resolvedInputId" class="deasy-dropzone__label deasy-rotulo">{{ title }}</label>
     </div>
 
     <div
@@ -27,7 +27,7 @@
         @drop.prevent.stop="handleDrop"
       />
       <label :for="resolvedInputId" :class="triggerClasses">
-        <span class="deasy-dropzone__action">{{ actionText }}</span>
+        <span class="deasy-dropzone__action deasy-rotulo">{{ actionText }}</span>
         <span v-if="helpText" class="deasy-dropzone__help">{{ helpText }}</span>
       </label>
     </div>
