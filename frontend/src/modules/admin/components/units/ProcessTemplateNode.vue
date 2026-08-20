@@ -27,11 +27,10 @@
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.display_name }}</span>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1">
-      <AppTag variant="primary" size="sm" outlined class-name="deasy-tag--truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</AppTag>
+      <AppTag variant="primary" outlined class-name="deasy-tag--truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</AppTag>
       <AppTag
         v-if="data.storage_version"
         :variant="tonoEstado"
-        size="sm"
         outlined
         dot
         :title="`Versión vinculada: ${data.storage_version} (${stateLabel})${Number(data.version_count) > 1 ? ` · ${data.version_count} versiones` : ''}`"

@@ -529,7 +529,7 @@
           >
             <div class="font-semibold text-strong text-sm flex items-center justify-between w-full gap-3">
               <span>{{ user.first_name }} {{ user.last_name }}</span>
-              <AppTag v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" variant="info" size="sm">Seleccionado</AppTag>
+              <AppTag v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" variant="info">Seleccionado</AppTag>
             </div>
             <div class="text-xs text-muted mt-1 flex flex-wrap items-center gap-2">
               <span class="bg-surface px-1.5 py-0.5 rounded border border-line">{{ user.cedula }}</span>
@@ -868,7 +868,7 @@
           <template v-else-if="field.name === 'signerCedula'">
             <div class="flex flex-col gap-1.5 items-start">
               <span class="font-semibold text-strong">{{ row.signerCedula }}</span>
-              <AppTag v-if="row.matchesCedula" variant="info" size="sm">
+              <AppTag v-if="row.matchesCedula" variant="info">
                 <IconCheck class="w-3 h-3" /> Coincide
               </AppTag>
             </div>

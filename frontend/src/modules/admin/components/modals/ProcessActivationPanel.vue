@@ -17,7 +17,7 @@
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between gap-2">
           <span class="deasy-overline">Requisitos para activar</span>
-          <AppTag :variant="tonoCobertura(coberturaEstado(completedRequirements, 3))" size="sm" outlined>
+          <AppTag :variant="tonoCobertura(coberturaEstado(completedRequirements, 3))" outlined>
             {{ completedRequirements }}/3
           </AppTag>
         </div>

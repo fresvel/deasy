@@ -54,8 +54,8 @@
         <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
         {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
-      <AppTag v-else variant="neutral" size="sm" outlined>Sin config.</AppTag>
-      <AppTag v-if="!data.is_active" variant="warning" size="sm" outlined>Inactivo</AppTag>
+      <AppTag v-else variant="neutral" outlined>Sin config.</AppTag>
+      <AppTag v-if="!data.is_active" variant="warning" outlined>Inactivo</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>

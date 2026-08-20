@@ -21,7 +21,7 @@
     </div>
     <p class="m-0 flex items-center gap-1.5">
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.definition_name }}</span>
-      <AppTag :variant="tonoEstado" size="sm" outlined>{{ statusLabel }}</AppTag>
+      <AppTag :variant="tonoEstado" outlined>{{ statusLabel }}</AppTag>
     </p>
     <p class="m-0 mt-0.5 flex items-center gap-1 text-theme-xs text-muted">
       <span class="truncate">{{ seriesLabel }}</span>

@@ -190,7 +190,7 @@
                 <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
-                    <AppTag :variant="tonoCicloVida(cfg.status)" size="sm" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
+                    <AppTag :variant="tonoCicloVida(cfg.status)" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ seriesLabel(cfg) }}</span>
@@ -276,7 +276,7 @@
                 <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong">{{ run.term_name || "Sin periodo" }}</span>
-                    <AppTag :variant="tonoCorrida(run.status)" size="sm" outlined class-name="ml-auto capitalize">{{ run.status }}</AppTag>
+                    <AppTag :variant="tonoCorrida(run.status)" outlined class-name="ml-auto capitalize">{{ run.status }}</AppTag>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                     <span class="truncate">{{ run.definition_name }} · v{{ run.definition_version }}</span>
@@ -337,7 +337,7 @@
             >
               <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-strong">v{{ v.storage_version }}</span>
-                <AppTag :variant="tonoCicloVida(v.lifecycle_state)" size="sm" outlined>{{ versionStateLabel(v.lifecycle_state) }}</AppTag>
+                <AppTag :variant="tonoCicloVida(v.lifecycle_state)" outlined>{{ versionStateLabel(v.lifecycle_state) }}</AppTag>
                 <AppTag v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" variant="accent" title="Versión vinculada a esta configuración">Vinculada aquí</AppTag>
                 <span class="ml-auto text-theme-xs font-semibold text-primary">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
               </div>

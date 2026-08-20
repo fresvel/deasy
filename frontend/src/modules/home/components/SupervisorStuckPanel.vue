@@ -43,10 +43,10 @@
             <span class="text-xs font-medium text-muted">Estado: {{ item.status }}</span>
           </div>
           <div class="flex items-center gap-1.5">
-            <AppTag :variant="item.reason === 'sin_responsable' ? 'warning' : 'danger'" size="sm">
+            <AppTag :variant="item.reason === 'sin_responsable' ? 'warning' : 'danger'">
               {{ item.reason === 'sin_responsable' ? 'Sin responsable' : 'Titular se fue' }}
             </AppTag>
-            <AppTag v-if="item.started" variant="primary" size="sm">Iniciado</AppTag>
+            <AppTag v-if="item.started" variant="primary">Iniciado</AppTag>
           </div>
         </div>
       </div>

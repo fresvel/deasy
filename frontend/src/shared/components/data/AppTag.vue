@@ -26,8 +26,16 @@ export const variantClassMap = {
   neutral: "deasy-tag--neutral"
 };
 
+/* [2026-08-20] `sizeClassMap` SE QUEDA CON UNA SOLA ENTRADA, y no es un resto: es el contrato.
+ *
+ * La pastilla tiene UNA talla desde que murio `deasy-tag--sm` (mismo argumento que el `sm` del
+ * boton en F5.4: no era una variante, era el contexto cambiando el objeto). El mapa sobrevive
+ * porque `check-variants.mjs` lo LEE para validar los `size="…"` de las plantillas: si se borrara,
+ * un `size="sm"` olvidado dejaria de fallar y volveria a producir una clase inexistente —que es
+ * justo el defecto que F3.3 cerro en este componente.
+ *
+ * O sea: el mapa no esta aqui para elegir, esta aqui para NEGAR. */
 export const sizeClassMap = {
-  sm: "deasy-tag--sm",
   md: ""
 };
 </script>

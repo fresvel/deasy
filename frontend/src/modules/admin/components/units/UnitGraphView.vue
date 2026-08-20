@@ -339,8 +339,8 @@
               <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-line px-3 py-2.5">
                 <div class="flex items-center gap-2">
                   <span class="truncate text-sm font-semibold text-strong">{{ proc.process_name }}</span>
-                  <AppTag :variant="tonoOrigen(proc.origin)" size="sm" outlined class-name="ml-auto">{{ processOriginMeta(proc.origin).label }}</AppTag>
-                  <AppTag :variant="tonoCicloVida(proc.status)" size="sm" outlined>{{ etiquetaCicloVida(proc.status) }}</AppTag>
+                  <AppTag :variant="tonoOrigen(proc.origin)" outlined class-name="ml-auto">{{ processOriginMeta(proc.origin).label }}</AppTag>
+                  <AppTag :variant="tonoCicloVida(proc.status)" outlined>{{ etiquetaCicloVida(proc.status) }}</AppTag>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                   <span class="truncate">{{ proc.definition_name }} · v{{ proc.definition_version }}</span>

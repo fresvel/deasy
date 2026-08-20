@@ -1,15 +1,21 @@
 @layer components {
 .deasy-tag {
-        /* LA FORMA ES LA DE TAILADMIN — adoptada el 2026-08-13, y se declara UNA vez.
+        /* LA FORMA VIENE DE TAILADMIN —adoptada el 2026-08-13— CON UNA DESVIACION DECIDIDA.
            Su badge es una PILDORA sin borde con relleno tintado:
              inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5
              text-sm font-medium  +  bg-{fam}-50  +  text-{fam}-500
 
+           ⚠️ EL RADIO YA NO ES `rounded-full`, ES `rounded-lg` (8 px), por decision del dueño el
+           2026-08-20. El motivo no es estetico: `rounded-full` **no es un radio, es la mitad de la
+           altura**, asi que la forma cambiaba sola con el tamaño y no se podia gobernar. Con un
+           paso fijo, alto y radio son dos decisiones separadas. 8 px no es un valor nuevo en el
+           sistema: es lo que `.graph-node__badge` ya usaba.
+
            Antes esto era la forma propia de Deasy (`rounded-xl`, `py-1.5`, `text-xs`,
            `font-semibold` y BORDE), y ademas habia ~40 pastillas escritas a mano con formas
            distintas. Consolidar hacia una forma y luego cambiarla es una sola linea aqui;
-           por eso el componente existe. */
-        @apply inline-flex w-fit items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium;
+           por eso el componente existe — y esta linea es la prueba. */
+        @apply inline-flex w-fit shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-0.5 text-sm font-medium;
     }
 
     /* ⚠️ `whitespace-nowrap` NO ES UN AJUSTE: ES LA DEFINICION DE UNA PASTILLA.
@@ -149,26 +155,18 @@
         box-shadow: inset 0 0 0 1px var(--tone-line);
     }
 
-    /* PEQUEÑA — para los nodos del grafo, que miden 170-190 px de ancho FIJO.
+    /* [2026-08-20] AQUI ESTABA `--sm`, Y MURIO POR EL MISMO ARGUMENTO QUE MATO AL `sm` DEL
+       BOTON EN F5.4: no era una variante, era **el contexto cambiando el objeto**.
      *
-     * ⚠️ NO BASTA CON BAJAR LA FUENTE, y la primera version de este modificador lo hacia asi:
-     * solo `px-2 text-theme-xs`. Medido en el nodo, una pastilla con el codigo de plantilla salia
-     * a **362 px dentro de un nodo de 340** —mas ancha que el nodo entero— y la de version se
-     * partia en dos lineas. El dueno lo vio antes de que ningun gate dijera nada, porque ninguno
-     * mide cajas.
+     * Nacio para los nodos del grafo, de ancho fijo (170-190 px), y cambiaba TRES cosas a la vez
+     * —letra 14→12, padding-x 10→6, padding-y 2→0, o sea alto 24→20—. Pero al censar el
+     * 2026-08-20 salio que su papel ya no era ese: **3 declaraciones en `AdminMainTableSection`
+     * producian 189 de las 190 pastillas renderizadas en admin** (172 solo en `persons`), o sea
+     * que de hecho era «la pastilla de las tablas», donde la celda SI puede crecer.
      *
-     * Hacen falta las tres cosas, no una:
-     *   · la fuente (`text-theme-xs`, 12 px — lo que F5.1 decidio para los 127 sub-12);
-     *   · el padding, que en la base es `px-2.5 py-0.5` porque alli la pastilla va suelta en una
-     *     fila; dentro de un nodo eso es un tercio del ancho disponible;
-     *   · y el LIMITE: `max-w-full` + `truncate`, que es lo que impide que un nombre largo
-     *     desborde. La base es `w-fit` a proposito —una pastilla suelta se ajusta a su texto— y
-     *     eso es justo lo que aqui no vale.
-     *
-     * El radio no cambia: sigue `rounded-full`, una geometria. */
-    .deasy-tag--sm {
-        @apply shrink-0 px-1.5 py-0 text-theme-xs leading-5;
-    }
+     * Decision del dueño: **una sola talla, 24 px, en todo el sistema**. Lo que `--sm` aportaba de
+     * verdad era `shrink-0`, que no tiene nada que ver con el tamaño y ha subido a la base; y el
+     * limite de ancho para un contenedor estrecho, que es `--truncate` y sigue existiendo. */
 
     /* RECORTABLE — la excepcion, y por eso es un modificador aparte y no parte de `--sm`.
      *

@@ -57,7 +57,7 @@
         :class="positionsBadgeClass"
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</span>
-      <AppTag v-if="!data.is_active" variant="warning" size="sm" outlined>Inactiva</AppTag>
+      <AppTag v-if="!data.is_active" variant="warning" outlined>Inactiva</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>

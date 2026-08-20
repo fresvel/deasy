@@ -51,7 +51,7 @@
       <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
         {{ definitionContext.definition_version || "—" }}
       </span>
-      <AppTag :variant="tonoEstadoDefinicion" size="sm">
+      <AppTag :variant="tonoEstadoDefinicion">
         {{ definitionStatusLabel }}
       </AppTag>
     </AppAlert>
