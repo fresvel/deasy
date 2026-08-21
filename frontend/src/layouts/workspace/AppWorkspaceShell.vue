@@ -77,7 +77,8 @@
         </div>
       </AppWorkspaceSidebar>
 
-      <SBody class="deasy-workspace-content" :showmenu="menuOpen" :shownotify="showNotify">
+      <!-- La clase y el marco los declara `SBody` desde F13: el componente es dueño de su caja. -->
+      <SBody>
         <slot />
       </SBody>
 
