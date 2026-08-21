@@ -1,4 +1,65 @@
 @layer components {
+    /* ══ LA BARRA DE UNA PAGINA CON TABLA — F13.4, 2026-08-21 ═════════════════════════════════
+     * Nace de una observacion del dueño: «el boton agregar y atras podrian estar al costado de los
+     * de buscar y refrescar». Medido antes de tocar nada, habia **CUATRO bloques en TRES ordenes
+     * distintos** y ningun par de paginas coincidia:
+     *
+     *     bloque              /admin/…            /perfil/…           /home/documentos
+     *     barra de accion     Regresar+Agregar    SOLO Agregar        —
+     *     pestañas            —                   si, y=120           —
+     *     filtro              si, y=149           —                   si, y=101
+     *     tabla               y=210               y=197               y=277
+     *
+     * En perfil el «Agregar» flotaba SOBRE las pestañas y no habia buscador; en admin habia
+     * buscador pero no pestañas.
+     *
+     * ⚠️ Y habia un desajuste de 17 px que se veia y no se explicaba: la barra de accion media
+     * **1500 px y el filtro 1466**, porque el filtro vivia dentro de un `deasy-card p-4` y la barra
+     * no. Asi que «Agregar» caia 17 px mas a la derecha que «Buscar».
+     *
+     * ══ LA FORMA, elegida por el dueño ══════════════════════════════════════════════════════
+     * DOS filas, y **la primera existe siempre**:
+     *
+     *     ┌─────────────────────────────────────────────────┐
+     *     │ [Cuarto Nivel][Grado][Tecnicos]   ← o el NOMBRE  │  __head
+     *     ├─────────────────────────────────────────────────┤
+     *     │ ⌕ buscar…                    ↺ ← + Agregar      │  __bar
+     *     └─────────────────────────────────────────────────┘
+     *
+     * La regla de la primera fila no es «reservar una franja» sino **decir siempre DONDE estas**:
+     * pestañas cuando la pagina tiene variantes, y el nombre de la tabla cuando no. Asi todas las
+     * paginas con tabla arrancan a la misma altura —no hay salto al ir de perfil a admin— y no
+     * queda ninguna banda en blanco, que era la pega de reservarla.
+     *
+     * 🪤 Y el nombre salio GRATIS: `AdminTableHeader` ya recibia `tableHeaderTitle`, `-Icon` y
+     * `-Subtitle`, y **su plantilla no leia ninguna de las tres**. Tres props declaradas que nadie
+     * usaba, el mismo hallazgo que F13.1b hizo con `SBody` y F1.3c con los `AdminDefinition*`.
+     *
+     * ⚠️ Los huecos son de la escala de F13.2: 12 entre filas (FILA) y 8 entre botones (JUNTO). */
+    .deasy-table-toolbar {
+        @apply flex flex-col gap-3;
+    }
+
+    /* La fila que dice donde estas. `min-h-11` es la altura del control del sistema (44 px), asi
+       que la fila mide lo mismo lleve pestañas o lleve un titulo: es lo que impide el salto. */
+    .deasy-table-toolbar__head {
+        @apply flex min-h-11 flex-wrap items-center gap-3;
+    }
+
+    .deasy-table-toolbar__bar {
+        @apply flex flex-wrap items-center justify-between gap-3;
+    }
+
+    /* El buscador crece; las acciones no. `min-w-0` porque sin el un hijo con texto largo se
+       niega a encoger y rompe la fila — el mismo motivo por el que lo lleva `deasy-workspace-content`. */
+    .deasy-table-toolbar__search {
+        @apply min-w-0 flex-1;
+    }
+
+    .deasy-table-toolbar__actions {
+        @apply flex shrink-0 flex-wrap items-center gap-2;
+    }
+
     /* EL MARCO — `rounded-xl` (12 px) y no `rounded-2xl` (16), medido en su demo de `data-tables`
        el 2026-08-15. La medicion anterior dio 16 porque cogio el ancestro equivocado: la caja de
        la tabla es la que lleva `border`, no la seccion que la envuelve. */

@@ -61,7 +61,14 @@ const montar = (over = {}, slots = {}) => {
     },
     global: {
       stubs: {
-        ProfileSectionShell: { template: '<div><button class="add" @click="$emit(\'add\')" />><slot /></div>' },
+        /* ⚠️ EL STUB PINTA LOS DOS SLOTS, Y EL DE `tabs` NO ES OPCIONAL DESDE F13.4 (2026-08-21).
+           Las subpestañas dejaron de ser un hijo suelto del slot por defecto y pasaron al slot
+           `#tabs` de la barra —antes el boton «Agregar» flotaba SOBRE ellas—. Un stub que solo
+           pinta `<slot />` se las come, y los dos tests de subpestañas caen con «expected [] to
+           deeply equal [...]»: el fallo no estaba en el componente sino aqui. */
+        ProfileSectionShell: {
+          template: '<div><button class="add" @click="$emit(\'add\')" /><slot name="tabs" /><slot /></div>'
+        },
         ProfileSubsectionTabs: {
           name: "ProfileSubsectionTabs",
           props: ["modelValue", "tabs"],

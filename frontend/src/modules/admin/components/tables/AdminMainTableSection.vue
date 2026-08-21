@@ -1,6 +1,6 @@
 <template>
   <section class="space-y-4">
-    <div class="deasy-card p-4">
+    <div>
       <div class="deasy-filter-shell deasy-filter-shell--embedded">
       <div class="deasy-filter-grid deasy-filter-grid--admin">
             <div :class="searchColumnClass">

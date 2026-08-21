@@ -1,6 +1,13 @@
 <template>
-  <AppActionBar>
-    <div class="flex flex-wrap items-center gap-2">
+  <!-- ⚠️ ANTES ESTO ERA UNA `AppActionBar` Y LAS TRES PROPS DE CABECERA NO SE LEIAN.
+       `AdminTableManager` calculaba y pasaba `tableHeaderTitle`, `tableHeaderIcon` y
+       `tableHeaderSubtitle`, y esta plantilla **no mencionaba ninguna de las tres**: el nombre de
+       la tabla se tiraba, y en `/admin` solo se sabia que tabla estabas viendo mirando el menu
+       lateral. Mismo hallazgo que F13.1b con `SBody` y F1.3c con los `AdminDefinition*`.
+       Ahora la fila de arriba lo dice, que es la regla de `AppTableToolbar`: **esa fila dice
+       siempre DONDE estas** —pestañas si la pagina tiene variantes, el nombre si no—. -->
+  <AppTableToolbar :title="tableHeaderTitle">
+    <template #actions>
         <AdminButton
           variant="neutral-outline"
           :disabled="!table"
@@ -31,13 +38,13 @@
           <font-awesome-icon :icon="isProcessDefinitionsTable ? 'list-check' : 'plus'" class="mr-2" />
           {{ isProcessDefinitionsTable ? "Configurar proceso" : "Agregar" }}
         </AdminButton>
-    </div>
-  </AppActionBar>
+    </template>
+  </AppTableToolbar>
 </template>
 
 <script setup>
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AppActionBar from "@/shared/components/layout/AppActionBar.vue";
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 
 defineProps({
   tableHeaderIcon: {

@@ -1,6 +1,6 @@
 <template>
   <section class="mt-4 space-y-4">
-      <div class="deasy-card p-4">
+      <div>
           <div class="deasy-filter-shell deasy-filter-shell--embedded">
           <div class="deasy-filter-grid deasy-filter-grid--admin">
             <div class="md:col-span-4 lg:col-span-2">

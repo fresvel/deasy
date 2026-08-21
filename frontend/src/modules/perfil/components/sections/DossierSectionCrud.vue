@@ -1,16 +1,18 @@
 <template>
   <div class="w-full">
     <ProfileSectionShell
+      :title="tabsLabel"
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
-      <ProfileSubsectionTabs
-        v-if="subsectionTabs.length"
-        v-model="activeTab"
-        :aria-label="tabsLabel"
-        :tabs="subsectionTabs"
-      />
+      <template v-if="subsectionTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          v-model="activeTab"
+          :aria-label="tabsLabel"
+          :tabs="subsectionTabs"
+        />
+      </template>
 
       <AppDataTable
         :fields="fields"
