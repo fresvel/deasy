@@ -7,7 +7,11 @@
        abajo, igual que en admin. -->
   <AppTableToolbar :title="title">
     <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
-    <template #search><slot name="search" /></template>
+    <!-- ⚠️ `v-if` TAMBIEN AQUI, y no basta con el del componente. Reenviar el slot SIEMPRE hace
+         que `$slots.search` este definido en la barra aunque no llegue contenido, asi que su
+         propio `v-if` daba verdadero y seguia pintando la caja vacia. Un slot reenviado existe
+         aunque su origen este vacio. -->
+    <template v-if="$slots.search" #search><slot name="search" /></template>
     <template #actions>
       <AppButton
         v-if="showAdd"
@@ -24,7 +28,14 @@
       </AppButton>
     </template>
   </AppTableToolbar>
-  <slot />
+  <!-- ⚠️ EL HUECO ENTRE LA BARRA Y LA TABLA ERA CERO Y HAY QUE DECLARARLO. La barra y el
+       contenido eran hermanos sueltos sin contenedor que repartiera espacio, asi que en
+       `/perfil/formacion` el boton «Agregar» quedaba **pegado a la tabla** —medido: 0 px—
+       mientras en admin la seccion los separaba con 16. Ahora lo pone esta pila: 16 px es el paso
+       SEPARADO de la escala de F13.2, el mismo que usa admin. -->
+  <div class="mt-4">
+    <slot />
+  </div>
 </template>
 
 <script setup>

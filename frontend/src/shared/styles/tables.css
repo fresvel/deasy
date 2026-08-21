@@ -46,8 +46,12 @@
         @apply flex min-h-11 flex-wrap items-center gap-3;
     }
 
+    /* ⚠️ `justify-end` Y NO `justify-between`, y esto costo una regresion. Con `between`, una
+       pagina SIN buscador —el organigrama, todo `/perfil`— deja las acciones pegadas a la
+       IZQUIERDA, porque pasan a ser el unico hijo. Con `end` van siempre a la derecha, y cuando
+       hay buscador es el `flex-1` de `__search` el que las empuja, no el reparto. */
     .deasy-table-toolbar__bar {
-        @apply flex flex-wrap items-center justify-between gap-3;
+        @apply flex flex-wrap items-center justify-end gap-3;
     }
 
     /* El buscador crece; las acciones no. `min-w-0` porque sin el un hijo con texto largo se

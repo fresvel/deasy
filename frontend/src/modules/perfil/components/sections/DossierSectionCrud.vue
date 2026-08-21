@@ -1,7 +1,7 @@
 <template>
   <div class="w-full">
     <ProfileSectionShell
-      :title="tabsLabel"
+      :title="sectionTitle"
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
@@ -97,6 +97,8 @@
  * Investigacion NO usa esto: su modelo es de cinco sub-listas con columnas por pestana, otra bestia.
  */
 import { computed } from "vue";
+import { useRoute } from "vue-router";
+import { PROFILE_SECTIONS } from "@/modules/perfil/profileSections.js";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
@@ -117,6 +119,23 @@ const props = defineProps({
   fields: { type: [Array, Function], required: true },
   tabsLabel: { type: String, default: "Subsecciones" }
 });
+
+/* EL NOMBRE DE LA SECCION PARA LA FILA SUPERIOR DE LA BARRA.
+ *
+ * ⚠️ NO se pasa como texto ni se usa `tabsLabel`, que es OTRA cosa: la etiqueta accesible de la
+ * lista de pestañas («Tipos de capacitación», «Subsecciones»). Ponerla de titulo daba nombres que
+ * no son el de la seccion. El nombre bueno ya existe en `PROFILE_SECTIONS`, que es la fuente unica
+ * del dossier —de ahi salen el menu lateral, las tarjetas y la ruta—, y el acuerdo con la ruta es
+ * su `name`, que vue-router valida: equivocarse deja de ser silencioso. */
+/* ⚠️ `ruta?.name` Y NO `ruta.name`: fuera de un router `useRoute()` devuelve `undefined`, y los
+   tests unitarios de este componente lo montan sin router a proposito —lo que prueban es el
+   filtrado por subpestaña, no la navegacion—. Sin la guarda, seis casos caian con
+   "Cannot read properties of undefined". El titulo simplemente no se pinta, que es lo correcto:
+   sin ruta no se sabe en que seccion estas. */
+const ruta = useRoute();
+const sectionTitle = computed(
+  () => PROFILE_SECTIONS.find((x) => x.name === ruta?.name)?.label || ""
+);
 
 const s = useDossierSection(props.descriptor);
 const {

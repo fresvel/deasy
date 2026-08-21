@@ -47,19 +47,31 @@
          «Regresar», sobre todo— tienen que seguir estando, asi que aqui queda la version suelta
          con la condicion inversa. Sin esto, entrar al grafo de unidades dejaba la pantalla sin
          forma de volver. -->
-    <AdminTableHeader
+    <!-- ⚠️ ESTA COPIA TAMBIEN VA DENTRO DE `AppTableToolbar`, Y OLVIDARLO FUE UN DEFECTO REAL.
+         `AdminTableHeader` paso a ser **solo sus botones** (F13.4), asi que sin barra sus hijos
+         caen sueltos en la columna flex del gestor y **cada uno ocupa el ancho entero**: en
+         `/admin/academia/unidades/organigrama` «Agregar» salia como una barra de lado a lado y
+         «Regresar» encima, en su propia linea. Lo vio el dueño. La barra es lo que los pone en
+         fila; un componente que solo emite botones necesita SIEMPRE quien los coloque. -->
+    <AppTableToolbar
       v-if="!(isProcessesTable && processGraphMode)
             && (isPositionAssignmentsTable || (isUnitsTable && unitGraphMode))"
-      :table="table"
-      :loading="loading"
-      :is-template-seeds-table="isTemplateSeedsTable"
-      :is-process-definitions-table="isProcessDefinitionFilterTable"
-      :can-create="canCreateCurrentTable"
-      :can-update="canUpdateCurrentTable"
-      @go-back="handleGoBack"
-      @sync-template-seeds="syncTemplateSeedsFromSource"
-      @create="handlePrimaryCreateAction"
-    />
+      :title="tableHeaderTitle"
+    >
+      <template #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AppTableToolbar>
 
     <div v-if="table && isTemplateArtifactsTable" class="mb-3 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3">
       <p class="m-0 flex items-start gap-2 text-sm text-info">
@@ -1164,6 +1176,7 @@ import AdminProcessWizardModal from "@/modules/admin/components/modals/AdminProc
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
 import AdminRecordViewerModal from "@/modules/admin/components/modals/AdminRecordViewerModal.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 import AdminTableHeader from "@/modules/admin/components/tables/AdminTableHeader.vue";
 import AdminUnassignedArtifactsSection from "@/modules/admin/components/tables/AdminUnassignedArtifactsSection.vue";
 import AdminVacantPositionsSection from "@/modules/admin/components/tables/AdminVacantPositionsSection.vue";

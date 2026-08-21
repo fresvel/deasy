@@ -16,7 +16,14 @@
           <option value="other">Otro</option>
         </select>
       </label>
-      <label class="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-brand-300 bg-white px-4 py-2 text-sm font-semibold text-primary transition hover:bg-brand-50" :class="attachmentsState.uploading ? 'pointer-events-none opacity-60' : ''">
+      <!-- ⚠️ ES UN `<label>` CON LA RECETA DEL BOTON, Y ESA MEZCLA ES LO QUE LO ESCONDIO.
+           Un `<label>` que envuelve un `<input type="file">` oculto es la unica forma de abrir
+           el selector de ficheros sin JavaScript, asi que no puede ser un `<button>`… y por eso
+           **ningun gate del frente lo vio**: los once de botones miran `<button>` y `AppButton`.
+           Se pinto a mano con `rounded-2xl` (16 px, cuando el sistema usa 8) y `px-4 py-2` sin
+           altura, que daba ~40 px contra los 44 del sistema. Lo vio el dueño. Ahora lleva las
+           clases de la receta: la forma la decide `buttons.css` para este igual que para todos. -->
+      <label class="deasy-btn deasy-btn--primary-outline deasy-btn--md cursor-pointer" :class="attachmentsState.uploading ? 'pointer-events-none opacity-60' : ''">
         <IconUpload class="h-4 w-4" />
         <span>{{ attachmentsState.uploading ? 'Subiendo...' : 'Agregar anexo' }}</span>
         <input type="file" class="hidden" :disabled="attachmentsState.uploading" @change="handleAttachmentUpload" />

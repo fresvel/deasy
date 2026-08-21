@@ -1,16 +1,21 @@
 <template>
   <div class="deasy-table-toolbar">
-    <!-- LA FILA QUE DICE DONDE ESTAS. Existe SIEMPRE: si la pagina tiene variantes se llena con
-         sus pestañas y si no, con el nombre de la tabla. Asi todas las paginas con tabla arrancan
-         a la misma altura y no hay salto al navegar entre perfil y admin. -->
+    <!-- LA FILA QUE DICE DONDE ESTAS. Existe SIEMPRE y lleva las DOS cosas cuando las hay: el
+         **titulo dice QUE estas viendo** y las **pestañas, QUE PORCION**. No son alternativas.
+         ⚠️ Al principio el titulo era el contenido POR DEFECTO del slot `tabs`, o sea que en cuanto
+         una pagina traia pestañas el nombre desaparecia: en `/perfil/formacion` no se sabia que
+         tabla era. Lo vio el dueño. Ahora se pintan los dos, y por eso todas las paginas con tabla
+         arrancan igual: nombre a la izquierda, pestañas a continuacion. -->
     <div class="deasy-table-toolbar__head">
-      <slot name="tabs">
-        <h2 v-if="title" class="deasy-title deasy-title--panel m-0">{{ title }}</h2>
-      </slot>
+      <h2 v-if="title" class="deasy-title deasy-title--panel m-0">{{ title }}</h2>
+      <slot name="tabs" />
     </div>
 
     <div class="deasy-table-toolbar__bar">
-      <div class="deasy-table-toolbar__search">
+      <!-- ⚠️ `v-if` Y NO SIEMPRE: sin el, una pagina sin buscador —todo `/perfil`— pintaba una
+           caja VACIA de 1348 px de ancho y altura 0 dentro de la fila. No rompia nada, pero es un
+           contenedor sin contenido, que es justo lo que este frente lleva doce fases quitando. -->
+      <div v-if="$slots.search" class="deasy-table-toolbar__search">
         <slot name="search" />
       </div>
       <div class="deasy-table-toolbar__actions">
