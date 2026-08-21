@@ -367,31 +367,33 @@
     /* ⚠️ `group` NO va aqui: no es una utilidad, es una clase MARCADORA, y `@apply group` rompe
        el build con «Cannot apply unknown utility class». Se queda en la plantilla, donde ademas
        la necesitan otros hijos que si usan `group-hover:` (el punto del meta y la flecha). */
-    .deasy-nav-card {
-        @apply flex rounded-xl border border-line bg-white p-5 text-left transition-all;
-    }
+    /* ⚠️ AQUI VIVIA LA FAMILIA `.deasy-nav-card` ENTERA, Y SE RETIRO EN F13.6 (2026-08-21).
+       La baldosa de rejilla paso a `.deasy-tile` —la receta que `/home` y `/home/firmas` ya
+       usaban—, asi que `deasy-nav-card`, `--inline` y `--stacked` se quedaron sin consumidor.
 
-    .deasy-nav-card:hover {
-        border-color: var(--color-line-strong);
-        background-color: var(--color-surface);
-    }
+       Por que existia: compartia receta la FILA (`inline`) y la BALDOSA (`stacked`), y por eso la
+       baldosa heredaba **radio 12 y padding 20** cuando el resto del sistema la dibujaba a 16 y
+       24. Era la causa de que `/admin` y `/perfil` no se parecieran a `/home`.
 
-    .deasy-nav-card:focus {
+       🪤 Y al retirarla salio que **`layout="inline"` tenia CERO usos** contra 12 de `stacked`:
+       media plantilla de `AppNavCard`, una prop publica y cuatro reglas de aqui existian para un
+       caso que no ocurria.
+
+       Lo unico que sobrevive es la CAJA DE ICONO, que sigue siendo util y pasa a nombrarse por su
+       dueño: `.deasy-tile__icon`. Con `--inline` muerto ya no hay dos tamaños, asi que el
+       modificador tambien sobra. El foco viaja con ella a `.deasy-tile`, donde ademas beneficia a
+       las 14 baldosas de `/home` y firmas, que no lo tenian. */
+    .deasy-tile:focus {
         @apply outline-none ring-2;
     }
 
-    .deasy-nav-card--inline { @apply items-start gap-4; }
-    .deasy-nav-card--stacked { @apply flex-col justify-between; }
-
-    .deasy-nav-card__icon {
-        @apply flex items-center justify-center rounded-2xl border border-line bg-surface text-muted transition-colors;
+    .deasy-tile__icon {
+        @apply flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface text-muted transition-colors;
     }
 
-    .deasy-nav-card__icon--inline { @apply h-11 w-11 shrink-0; }
-    .deasy-nav-card__icon--stacked { @apply h-12 w-12; }
 
     /* Por descendencia y no por `group-hover:`: el color deja de estar en la cadena de JS. */
-    .deasy-nav-card:hover .deasy-nav-card__icon {
+    .deasy-tile:hover .deasy-tile__icon {
         border-color: var(--color-blue-light-200);
         background-color: var(--color-blue-light-50);
         color: var(--color-info);

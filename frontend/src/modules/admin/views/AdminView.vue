@@ -189,17 +189,15 @@
                  </template>
                </AppPageHeader>
                
-               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
+               <div class="deasy-tile-grid">
                  <template v-if="showAcademiaIndex">
                     <AppNavCard
                       v-for="item in academyMenuItems"
                       :key="item.key"
-                      layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
                       :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
-                      class-name="min-h-[140px]"
                       @click="openAcademyItem(item)"
                     />
                  </template>
@@ -208,12 +206,10 @@
                     <AppNavCard
                       v-for="item in gestionMenuItems"
                       :key="item.key"
-                      layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
                       :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
-                      class-name="min-h-[140px]"
                       @click="openGestionItem(item)"
                     />
                     <div v-if="traceabilityTables.length" class="col-span-full mt-2">
@@ -232,13 +228,11 @@
                         <AppNavCard
                           v-for="table in traceabilityTables"
                           :key="table.table"
-                          layout="stacked"
                           :title="table.label"
                           meta="Consultar"
                           :description="table.description || 'Registro técnico generado por el sistema durante la ejecución.'"
                           :icon="tableIconMeta(table.table).icon"
                           show-arrow
-                          class-name="min-h-[140px]"
                           @click="selectTable(table)"
                         />
                       </div>
@@ -249,12 +243,10 @@
                     <AppNavCard
                       v-for="item in usersMenuItems"
                       :key="item.key"
-                      layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
                       :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
-                      class-name="min-h-[140px]"
                       @click="openUsersItem(item)"
                     />
                  </template>
@@ -263,12 +255,10 @@
                     <AppNavCard
                       v-for="item in contractsMenuItems"
                       :key="item.key"
-                      layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
                       :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
-                      class-name="min-h-[140px]"
                       @click="openContractsItem(item)"
                     />
                  </template>
@@ -277,12 +267,10 @@
                     <AppNavCard
                       v-for="item in securityMenuItems"
                       :key="item.key"
-                      layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
                       :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
-                      class-name="min-h-[140px]"
                       @click="openSecurityItem(item)"
                     />
                  </template>
@@ -291,12 +279,10 @@
                     <AppNavCard
                       v-for="group in homeGroups"
                       :key="group.key"
-                      layout="stacked"
                       :title="group.label"
                       :description="descriptionForGroup(group)"
                       :icon="groupIconMeta(group).icon"
                       show-arrow
-                      class-name="min-h-[140px]"
                       @click="openGroupFromHome(group)"
                     />
                  </template>

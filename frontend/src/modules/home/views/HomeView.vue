@@ -429,7 +429,7 @@
             </div>
 
             <!-- Tab: Inicio — launcher cards -->
-            <div v-if="homeDashTab === 'inicio'" class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div v-if="homeDashTab === 'inicio'" class="deasy-tile-grid">
 
               <button
                 type="button"
@@ -437,7 +437,7 @@
                 @click="scrollToProcessNav"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Mis procesos</h3>
-                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
+                <div class="deasy-tile__slot">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconChecklist class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeProcesses.length }} proceso(s) disponible(s)</span>
@@ -453,7 +453,7 @@
                 @click="navigateToGlobalSignaturePage"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Centro de firmas</h3>
-                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8"
+                <div class="deasy-tile__slot"
                   :class="homeSignatureCount ? 'deasy-card--avisa' : ''">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-warning' : 'text-muted'" />
@@ -471,7 +471,7 @@
                 @click="openMySends"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Mis envíos</h3>
-                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
+                <div class="deasy-tile__slot">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconSend class="h-10 w-10 text-primary" />
                     <span class="mt-4 text-sm font-semibold text-body">Documentos que has enviado</span>
@@ -486,7 +486,7 @@
                 @click="navigateToDocumentCenterPage"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Centro documental</h3>
-                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
+                <div class="deasy-tile__slot">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconFileDescription class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeDocumentCount }} documento(s) accesibles</span>
@@ -501,7 +501,7 @@
                 @click="navigateTo('perfil')"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Mi dossier</h3>
-                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
+                <div class="deasy-tile__slot">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconUserCheck class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeDossierCompletion }}% completado · {{ homeDossierTotal }} registro(s)</span>
@@ -516,7 +516,7 @@
                 @click="openCargosPanel"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Mis cargos</h3>
-                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
+                <div class="deasy-tile__slot">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBriefcase class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ homeCargoCount }} cargo(s) asignado(s)</span>
@@ -531,7 +531,7 @@
                 @click="openUnitsPanel"
               >
                 <h3 class="deasy-title deasy-title--panel mb-4">Mis unidades</h3>
-                <div class="deasy-card flex flex-1 items-center justify-center px-6 py-8">
+                <div class="deasy-tile__slot">
                   <div class="flex flex-col items-center justify-center text-center">
                     <IconBuildingMonument class="h-10 w-10 text-muted" />
                     <span class="mt-4 text-sm font-semibold text-body">{{ unitsPanelData.length }} unidad(es) activa(s)</span>

@@ -159,10 +159,10 @@
     <div v-else-if="!multiOnly && !pdfReady">
       <div
         id="signature-launchers-grid"
-        class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4"
+        class="deasy-tile-grid"
       >
 
-        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="deasy-tile signature-workspace-card">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -174,7 +174,7 @@
  />
         </div>
 
-        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="deasy-tile signature-workspace-card">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -186,7 +186,7 @@
  />
         </div>
 
-        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="deasy-tile signature-workspace-card">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -201,7 +201,7 @@
         <div
           id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
-          class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center"
+          class="deasy-tile signature-workspace-card"
         >
           <PdfDropField
             title="Multifirmador"

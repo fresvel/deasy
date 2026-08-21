@@ -21,19 +21,17 @@
     </AppPageHeader>
 
     <!-- Sections Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="deasy-tile-grid">
       <!-- Cada tarjeta navega a la ruta de su seccion. Antes emitia la ETIQUETA al padre, que la
            comparaba contra su propio menu: si las dos listas divergian, el clic se tragaba en silencio. -->
       <AppNavCard
         v-for="section in sectionCards"
         :key="section.slug"
-        layout="stacked"
         :title="section.label"
         :description="section.meta"
         :icon="getIcon(section.cardIcon)"
         icon-class="w-6 h-6 stroke-[1.5]"
         show-arrow
-        class-name="min-h-[140px]"
         @click="router.push({ name: section.name })"
       />
     </div>

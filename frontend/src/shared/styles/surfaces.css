@@ -252,6 +252,40 @@
         @apply flex h-full min-h-76 flex-col rounded-2xl border border-line bg-surface/50 p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md;
     }
 
+    /* ══ LA REJILLA DE BALDOSAS — F13.6, 2026-08-21 ═══════════════════════════════════════════
+       Habia CINCO rejillas distintas para el mismo menu: `xl:grid-cols-3` en `/home`,
+       `xl:grid-cols-4` en firmas, `lg:grid-cols-3` en `/admin` y `/perfil`, con huecos de 16 y de
+       24 segun la pantalla. **Cuatro por fila en pantalla grande, decision del dueño.** El hueco
+       es el paso SECCION de F13.2 (24), no un numero nuevo. */
+    .deasy-tile-grid {
+        @apply grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4;
+    }
+
+    /* ══ LA CAJA INTERIOR DE LA BALDOSA ══════════════════════════════════════════════════════
+       La anatomia que el dueño eligio (2026-08-21): **el titulo va FUERA, sobre el fondo de la
+       baldosa, y debajo una caja que sostiene el icono, el dato y la descripcion**. Es la forma
+       que `/home` y `/home/firmas` ya tenian; `/admin` y `/perfil` la ganan.
+
+       Los fondos tambien los eligio, y son TRES niveles: la pagina en gris, la baldosa en blanco
+       al 50 % (`bg-surface/50`, arriba) y esta caja en blanco SOLIDO. Asi la caja destaca sobre la
+       baldosa y la baldosa sobre la pagina. Antes convivian las dos combinaciones **en la misma
+       rejilla de firmas**: 4 tarjetas blancas con caja sin fondo y 3 al 50 % con caja blanca.
+
+       ⚠️ EL RADIO ES MENOR QUE EL DE LA BALDOSA (12 contra 16) A PROPOSITO. Dos cajas
+       concentricas con el MISMO radio se ven mal: la interior parece sobresalir en las esquinas.
+       Es el mismo motivo por el que `deasy-dropzone__surface` bajo a `rounded-xl` en F4.C.
+
+       ⚠️ Y NO HAY VARIANTE `--punteada`, aunque el dueño la aprobo: **el caso que la necesitaba ya
+       tiene receta**. Las 4 cajas punteadas de firmas son `deasy-dropzone__surface`, que ademas
+       trae su borde de 2 px y su azul por una decision de contraste escrita en `forms.css` (uno
+       discontinuo de 1 px se ve la mitad). Declararla aqui seria una clase sin consumidor —lo que
+       `css-prune` prohibe— y ademas duplicaria esa decision. Si algun dia una baldosa necesita
+       parecer que acepta algo sin serlo, se declara entonces. */
+    .deasy-tile__slot {
+        @apply flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-line
+               bg-white px-6 py-8 text-center;
+    }
+
     /* LA FILA ELEGIBLE — un elemento de una lista que se pulsa para escogerlo.
        ⚠️ Estaba escrita **doce veces con CUATRO radios distintos** —12, 16, 16 y 19.2 px— para el
        mismo objeto y a veces en la misma pantalla. Dos de los cuatro eran valores **arbitrarios que

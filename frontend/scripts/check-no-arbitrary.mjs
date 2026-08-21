@@ -87,7 +87,7 @@ import { join, resolve } from "node:path";
 /* Bajado otra vez el 2026-08-19 al corregir la versalita: 154 -> 139. Los 15 que caen son
    TODOS de interletra (`tracking-[0.12em]`, `[0.14em]` x5, `[0.16em]` x9) — existian porque la
    receta no declaraba ninguna y cada autor invento la suya. Al declararla, sobran. */
-const TECHO = { total: 136, "text-": 2, "rounded-": 1, "shadow-": 10 };
+const TECHO = { total: 122, "text-": 2, "rounded-": 1, "shadow-": 10 };
 /* [2026-08-20 · F8] 139 -> 136 y sombra 11 -> 10: `AppLogo` dejo de componer su marco con
    `border-[rgba(...)]`, `shadow-[0_10px_24px_rgba(...)]` y `focus:ring-[rgba(...)]`. Ahora es
    `deasy-logo--framed`, con `--color-line`, `--elev-2` y el `--focus-ring` del sistema. */
