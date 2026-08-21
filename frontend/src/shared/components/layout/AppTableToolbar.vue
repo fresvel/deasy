@@ -13,6 +13,17 @@
       <h2 v-if="title" class="deasy-title deasy-title--panel m-0">{{ title }}</h2>
     </div>
 
+    <!-- FILA 2 · LAS PESTAÑAS, en su propia linea y debajo del titulo.
+         ⚠️ No van dentro de `__head` —quedaban pegadas al titulo— ni dentro de `__filtro`, que es
+         para lo que filtra FILAS. Una pestaña elige QUE TABLA o QUE PORCION ves, que es navegacion,
+         no filtrado: en `/admin` son las tablas hermanas y en `/perfil` las subsecciones.
+         Antes de esto, las de admin las pintaba `AdminTableManager` con marcado en linea **antes**
+         de la seccion, asi que el titulo salia DEBAJO de ellas en admin y ENCIMA en perfil. Lo vio
+         el dueño; era el tercer sintoma del mismo problema. -->
+    <div v-if="$slots.tabs" class="deasy-table-toolbar__tabs">
+      <slot name="tabs" />
+    </div>
+
     <div class="deasy-table-toolbar__bar">
       <!-- FILA 2 · A la izquierda lo que FILTRA —el buscador en admin, las pestañas en perfil—; a
            la derecha las acciones.

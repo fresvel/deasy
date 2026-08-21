@@ -50,6 +50,13 @@
        pagina SIN buscador —el organigrama, todo `/perfil`— deja las acciones pegadas a la
        IZQUIERDA, porque pasan a ser el unico hijo. Con `end` van siempre a la derecha, y cuando
        hay buscador es el `flex-1` de `__search` el que las empuja, no el reparto. */
+    /* LA FILA DE PESTAÑAS. No lleva alto minimo: lo pone la pestaña, que mide 44 como todo
+       control del sistema. Y no lleva margen: el hueco entre filas lo reparte `.deasy-table-toolbar`
+       con su `gap-3`, que es el paso FILA de la escala. */
+    .deasy-table-toolbar__tabs {
+        @apply flex min-w-0;
+    }
+
     .deasy-table-toolbar__bar {
         @apply flex flex-wrap items-center justify-end gap-3;
     }

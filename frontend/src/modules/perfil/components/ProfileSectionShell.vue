@@ -6,13 +6,10 @@
        barra: `AppTableToolbar` pone las pestañas arriba y las acciones a la derecha de la fila de
        abajo, igual que en admin. -->
   <AppTableToolbar :title="title">
-    <!-- ⚠️ LAS PESTAÑAS VAN AL SLOT `filtro`, EL MISMO QUE OCUPA EL BUSCADOR EN ADMIN, y no a una
-         fila propia. Hacen lo mismo: elegir que porcion de la tabla ves. Asi las dos familias
-         quedan con la MISMA estructura —titulo arriba, filtro a la izquierda, acciones a la
-         derecha— en vez de parecerse solo de lejos.
-         ⚠️ El `v-if` no basta ponerlo en la barra: reenviar un slot hace que `$slots.filtro` este
-         definido aunque no llegue contenido, asi que el `v-if` de alla daba verdadero igual. -->
-    <template v-if="$slots.tabs" #filtro><slot name="tabs" /></template>
+    <!-- ⚠️ El `v-if` no basta ponerlo en la barra: reenviar un slot hace que `$slots.tabs` este
+         definido aunque no llegue contenido, asi que el `v-if` de alla daria verdadero igual y
+         pintaria una fila vacia. -->
+    <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
     <template #actions>
       <!-- ⚠️ «Refrescar» NO existia en perfil y en admin si, que es parte de lo que hacia que no se
            parecieran. Se puede porque `useDossierSection` YA expone `loadDossier`: no hay

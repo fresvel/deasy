@@ -12,6 +12,11 @@
       <!-- El buscador comparte fila con los botones: la barra lo pone a la izquierda
            (`__filtro` crece) y ellos a la derecha (`__actions` no encoge). En `/perfil` ese mismo
            sitio lo ocupan las pestañas, porque hacen lo mismo: elegir que porcion de la tabla ves. -->
+      <!-- Las pestañas de tablas hermanas entran por aqui desde `AdminTableManager`, para que
+           caigan DEBAJO del titulo igual que las de `/perfil`. Antes las pintaba el gestor con
+           marcado en linea ANTES de esta seccion, y el titulo quedaba debajo de ellas. -->
+      <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
+
       <template #filtro>
         <AdminInputField
         ref="searchInputRef"

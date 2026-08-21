@@ -30,14 +30,11 @@
       @close="closeTemplateVersionDialog"
     />
 
-    <div v-if="table && siblingTabs.length" class="pt-0.5 pb-1">
-      <ProfileSubsectionTabs
-        :model-value="activeSiblingTab"
-        :tabs="siblingTabs"
-        aria-label="Tablas hermanas"
-        @update:model-value="$emit('select-sibling-tab', $event)"
-      />
-    </div>
+    <!-- ⚠️ AQUI VIVIAN LAS PESTAÑAS DE TABLAS HERMANAS, SUELTAS Y ENCIMA DE TODO (F13.4,
+         2026-08-21). Al estar fuera de la barra, el titulo salia **debajo** de ellas en `/admin` y
+         **encima** en `/perfil`: el tercer sintoma del mismo problema de fondo —la barra se
+         comparte, pero el armazon que la rodea no—. Ahora entran por el slot `tabs`, que las pone
+         en su propia fila bajo el titulo, igual que en perfil. -->
 
     <!-- ⚠️ LA CABECERA SE PINTA EN DOS SITIOS Y SON MUTUAMENTE EXCLUYENTES (F13.4, 2026-08-21).
          Lo normal es que entre por el slot `actions` de `AdminMainTableSection`, para que sus
@@ -58,6 +55,14 @@
             && (isPositionAssignmentsTable || (isUnitsTable && unitGraphMode))"
       :title="tableHeaderTitle"
     >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
       <template #actions>
         <AdminTableHeader
           :table="table"
@@ -223,8 +228,21 @@
       @launch-term="openProcessLaunch"
       @launch-definition="openProcessDefinitionLaunch"
     >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
       <!-- Los botones de la tabla entran en la MISMA fila que los del filtro: la barra los
-           coloca uno detras de otro en `deasy-table-toolbar__actions`. -->
+           coloca uno detras de otro en `deasy-table-toolbar__actions`.
+           ⚠️ ESTAS SEIS LINEAS DE PESTAÑAS ESTAN ESCRITAS DOS VECES en este fichero, y es
+           deliberado mientras dure: la seccion NO se renderiza en las tablas de asignacion de
+           puestos ni en los modos grafo, y en el organigrama las pestañas son justo como se llega
+           a el. Las dos copias llevan condiciones mutuamente excluyentes. **F7 las funde**, cuando
+           saque de aqui el armazon a un `AppTablePage` que ambas familias monten. -->
       <template #actions>
         <AdminTableHeader
           :table="table"
