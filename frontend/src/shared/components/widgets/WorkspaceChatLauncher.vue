@@ -1,273 +1,277 @@
 <template>
-  <div>
-    <AppButton
-      variant="plain"
-      class-name="deasy-fab"
-      aria-label="Abrir chat"
-      title="Abrir chat"
-      @click="openLauncher" icon-only>
-      <IconMessages class="relative z-(--z-capa-base) h-7 w-7 sm:h-8 sm:w-8" />
-    </AppButton>
+  <!-- ⚠️ SIN ENVOLTORIO A PROPOSITO (F13.3, 2026-08-21). Aqui habia un `<div>` que solo
+       existia para dar raiz unica, costumbre de Vue 2. Sus TRES hijos son `fixed` —el FAB
+       por `.deasy-fab`, el velo y el panel por su clase—, asi que el envoltorio era una caja
+       EN FLUJO de altura cero. No se notaba... hasta que `.deasy-page` paso a ser una pila:
+       como item flex de altura 0 cobraba los 24 px de hueco igual, y `/procesos` se comia
+       24 px muertos al final. Vue 3 admite fragmentos; la raiz sobra. -->
+  <AppButton
+    variant="plain"
+    class-name="deasy-fab"
+    aria-label="Abrir chat"
+    title="Abrir chat"
+    @click="openLauncher" icon-only>
+    <IconMessages class="relative z-(--z-capa-base) h-7 w-7 sm:h-8 sm:w-8" />
+  </AppButton>
 
-    <div
-      v-if="showChat"
-      class="fixed inset-0 z-(--z-velo-chat) bg-navy/30 backdrop-blur-[2px]"
-      @click="closePanel"
-    />
+  <div
+    v-if="showChat"
+    class="fixed inset-0 z-(--z-velo-chat) bg-navy/30 backdrop-blur-[2px]"
+    @click="closePanel"
+  />
 
-    <aside
-      v-if="showChat"
-      class="deasy-card fixed inset-x-3 bottom-3 z-(--z-panel-chat) flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
-      aria-label="Panel global de chat"
-    >
-      <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex min-w-0 items-center gap-3">
-            <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--solid shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
-              <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
-            </span>
-            <div class="min-w-0">
-              <h3 class="deasy-title deasy-title--block truncate">{{ headerTitle }}</h3>
-              <p v-if="headerSubtitle" class="m-0 mt-0.5 truncate text-xs font-medium text-muted">
-                {{ headerSubtitle }}
-              </p>
-            </div>
-          </div>
-
-          <AppCloseButton class="shrink-0" label="Cerrar chat" @click="closePanel" />
-        </div>
-
-        <div class="mt-4">
-          <AppButton
-            v-if="view === 'conversation'"
-            variant="neutral-outline"
-            @click="view = 'inbox'"
-          >
-            <IconArrowLeft class="h-4 w-4" />
-            Volver
-          </AppButton>
-
-          <nav v-else class="deasy-inline-tabs deasy-inline-tabs--stacked" role="tablist" aria-label="Modo del chat">
-            <button
-              v-for="mode in modeOptions"
-              :key="mode"
-              type="button"
-              :title="modeLabels[mode]"
-              :aria-label="modeLabels[mode]"
-              :aria-pressed="activeMode === mode"
-              role="tab"
-              class="deasy-inline-tab deasy-inline-tab--stacked"
-              :class="{ 'deasy-inline-tab--active': activeMode === mode }"
-              @click="switchMode(mode)"
-            >
-              <component :is="modeIcons[mode]" class="deasy-inline-tab__icon" :stroke="1.8" />
-              <span>{{ modeLabels[mode] }}</span>
-            </button>
-          </nav>
-        </div>
-
-        <label
-          v-if="view !== 'conversation'"
-          aria-label="Buscar conversación"
-          class="deasy-card mt-3 flex items-center gap-2 px-3 py-2.5 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
-        >
-          <IconSearch class="h-4 w-4 text-muted" />
-          <input
-            v-model="searchQuery"
-            type="search"
-            class="w-full border-0 p-0 text-sm font-medium text-body outline-none placeholder:text-muted"
-            placeholder="Buscar conversación"
-          >
-        </label>
-      </header>
-
-      <div class="min-h-0 flex-1 bg-surface/70">
-        <div v-if="loading" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-          <div class="h-12 w-12 animate-pulse rounded-full border border-blue-light-100 bg-blue-light-50" />
-          <p class="m-0 text-sm font-semibold">Cargando chat...</p>
-        </div>
-
-        <AppAlert class="m-4" v-else-if="error">
-          {{ error }}
-        </AppAlert>
-
-        <div v-else-if="view === 'conversation'" class="flex h-full min-h-0 flex-col">
-          <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-            <div v-if="messages.length" class="flex flex-col gap-3">
-              <article
-                v-for="message in messages"
-                :key="message.id"
-                class="deasy-chat-bubble"
-                :class="Number(message.sender_person_id) === Number(currentPersonId)
-                  ? 'deasy-chat-bubble--sent'
-                  : 'deasy-chat-bubble--received'"
-              >
-                <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
-                  {{ message.content || 'Adjunto sin texto' }}
-                </p>
-                <div v-if="message.attachments?.length" class="mt-3 flex flex-col gap-2">
-                  <button
-                    v-for="(attachment, attachmentIndex) in message.attachments"
-                    :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
-                    type="button"
-                    class="deasy-picker deasy-picker--flat deasy-chat-attachment justify-between"
-                    @click="downloadAttachment(message, attachmentIndex)"
-                  >
-                    <span class="truncate">{{ attachment.filename }}</span>
-                    <IconDownload class="h-4 w-4 shrink-0" />
-                  </button>
-                </div>
-                <div
-                  class="mt-2 flex items-center gap-2 text-theme-xs font-bold"
-                  :class="Number(message.sender_person_id) === Number(currentPersonId) ? 'text-white/80' : 'text-muted'"
-                >
-                  <span>{{ Number(message.sender_person_id) === Number(currentPersonId) ? 'Tú' : `Persona #${message.sender_person_id}` }}</span>
-                  <span>·</span>
-                  <span>{{ formatDateTime(message.created_at) }}</span>
-                </div>
-              </article>
-            </div>
-          </div>
-
-          <footer class="border-t border-line bg-white px-4 py-4 sm:px-5">
-            <div v-if="pendingAttachments.length" class="mb-3 flex flex-wrap gap-2">
-              <span
-                v-for="(file, index) in pendingAttachments"
-                :key="`${file.name}-${index}`"
-                class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-icon"
-              >
-                <span class="max-w-40 truncate">{{ file.name }}</span>
-                <button type="button" class="deasy-chip-remove" @click="removePendingAttachment(index)">
-                  <IconX class="h-3.5 w-3.5" />
-                </button>
-              </span>
-            </div>
-            <div class="flex items-end gap-3">
-              <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
-              <AppButton
-                variant="plain"
-                class-name="deasy-btn--field shrink-0"
-                aria-label="Adjuntar archivos"
-                title="Adjuntar archivos"
-                @click="attachmentInputRef?.click?.()" icon-only>
-                <IconPaperclip class="h-5 w-5" />
-              </AppButton>
-              <textarea
-                ref="composerRef"
-                v-model="draft"
-                rows="1"
-                aria-label="Mensaje del chat"
-                class="max-h-40 min-h-13 flex-1 resize-none border px-4 py-3 text-sm font-medium text-strong outline-none transition placeholder:text-muted"
-                placeholder="Escribe un mensaje"
-                @input="resizeComposer"
-                @keydown.enter.exact.prevent="sendMessage"
-              />
-              <AppButton
-                variant="primary-outline"
-                class-name="deasy-btn--field shrink-0"
-                :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
-                @click="sendMessage"
-              >
-                {{ submitting ? 'Enviando...' : 'Enviar' }}
-              </AppButton>
-            </div>
-          </footer>
-        </div>
-
-        <template v-else-if="activeMode === 'processes'">
-          <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-            <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
-              <IconInbox class="h-6 w-6" />
-            </div>
-            <p class="m-0 text-sm font-bold text-body">Sin contexto de proceso</p>
-            <p class="m-0 max-w-xs text-sm font-medium text-muted">
-              Abre primero un proceso desde Home para dejar disponible su thread en el launcher global.
+  <aside
+    v-if="showChat"
+    class="deasy-card fixed inset-x-3 bottom-3 z-(--z-panel-chat) flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+    aria-label="Panel global de chat"
+  >
+    <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--solid shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
+            <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
+          </span>
+          <div class="min-w-0">
+            <h3 class="deasy-title deasy-title--block truncate">{{ headerTitle }}</h3>
+            <p v-if="headerSubtitle" class="m-0 mt-0.5 truncate text-xs font-medium text-muted">
+              {{ headerSubtitle }}
             </p>
           </div>
-
-          <div v-else class="px-4 pb-4 pt-4 sm:px-5">
-            <div v-if="filteredThreadItems.length" class="flex flex-col gap-3">
-              <button
-                v-for="item in filteredThreadItems"
-                :key="item.id"
-                type="button"
-                class="deasy-picker deasy-picker--flat"
-                @click="openThreadItem(item)"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
-                    <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
-                  </div>
-                  <div class="shrink-0 text-right">
-                    <span class="deasy-overline block">
-                      {{ item.lastMessageAtLabel }}
-                    </span>
-                    <span
-                      v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
-                    >
-                      {{ item.unreadCount }}
-                    </span>
-                  </div>
-                </div>
-                <p class="m-0 mt-3 text-sm font-medium text-icon">
-                  {{ item.summary || 'Sin mensajes todavía. Usa este espacio para dar seguimiento al proceso.' }}
-                </p>
-              </button>
-            </div>
-          </div>
-        </template>
-
-        <div v-else-if="activeMode === 'units'" class="flex h-full flex-col">
-          <div v-if="filteredUnitItems.length" class="px-4 pb-4 pt-4 sm:px-5">
-            <div class="flex flex-col gap-3">
-              <button
-                v-for="item in filteredUnitItems"
-                :key="item.unitId"
-                type="button"
-                class="deasy-picker deasy-picker--flat"
-                @click="openUnitItem(item)"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
-                    <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
-                  </div>
-                  <div class="shrink-0 text-right">
-                    <span class="deasy-overline block">
-                      {{ item.lastMessageAtLabel }}
-                    </span>
-                    <span
-                      v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
-                    >
-                      {{ item.unreadCount }}
-                    </span>
-                  </div>
-                </div>
-                <p class="m-0 mt-3 text-sm font-medium text-icon">
-                  {{ item.summary || 'Sin mensajes todavía. Saluda a los miembros de tu unidad.' }}
-                </p>
-              </button>
-            </div>
-          </div>
-
-          <AppEmpty v-else :icon="IconBuildingCommunity" title="Sin unidades" class="h-full">No perteneces a ninguna unidad con miembros para conversar.</AppEmpty>
         </div>
 
-        <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
-            <IconMessages class="h-6 w-6" />
+        <AppCloseButton class="shrink-0" label="Cerrar chat" @click="closePanel" />
+      </div>
+
+      <div class="mt-4">
+        <AppButton
+          v-if="view === 'conversation'"
+          variant="neutral-outline"
+          @click="view = 'inbox'"
+        >
+          <IconArrowLeft class="h-4 w-4" />
+          Volver
+        </AppButton>
+
+        <nav v-else class="deasy-inline-tabs deasy-inline-tabs--stacked" role="tablist" aria-label="Modo del chat">
+          <button
+            v-for="mode in modeOptions"
+            :key="mode"
+            type="button"
+            :title="modeLabels[mode]"
+            :aria-label="modeLabels[mode]"
+            :aria-pressed="activeMode === mode"
+            role="tab"
+            class="deasy-inline-tab deasy-inline-tab--stacked"
+            :class="{ 'deasy-inline-tab--active': activeMode === mode }"
+            @click="switchMode(mode)"
+          >
+            <component :is="modeIcons[mode]" class="deasy-inline-tab__icon" :stroke="1.8" />
+            <span>{{ modeLabels[mode] }}</span>
+          </button>
+        </nav>
+      </div>
+
+      <label
+        v-if="view !== 'conversation'"
+        aria-label="Buscar conversación"
+        class="deasy-card mt-3 flex items-center gap-2 px-3 py-2.5 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
+      >
+        <IconSearch class="h-4 w-4 text-muted" />
+        <input
+          v-model="searchQuery"
+          type="search"
+          class="w-full border-0 p-0 text-sm font-medium text-body outline-none placeholder:text-muted"
+          placeholder="Buscar conversación"
+        >
+      </label>
+    </header>
+
+    <div class="min-h-0 flex-1 bg-surface/70">
+      <div v-if="loading" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+        <div class="h-12 w-12 animate-pulse rounded-full border border-blue-light-100 bg-blue-light-50" />
+        <p class="m-0 text-sm font-semibold">Cargando chat...</p>
+      </div>
+
+      <AppAlert class="m-4" v-else-if="error">
+        {{ error }}
+      </AppAlert>
+
+      <div v-else-if="view === 'conversation'" class="flex h-full min-h-0 flex-col">
+        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+          <div v-if="messages.length" class="flex flex-col gap-3">
+            <article
+              v-for="message in messages"
+              :key="message.id"
+              class="deasy-chat-bubble"
+              :class="Number(message.sender_person_id) === Number(currentPersonId)
+                ? 'deasy-chat-bubble--sent'
+                : 'deasy-chat-bubble--received'"
+            >
+              <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
+                {{ message.content || 'Adjunto sin texto' }}
+              </p>
+              <div v-if="message.attachments?.length" class="mt-3 flex flex-col gap-2">
+                <button
+                  v-for="(attachment, attachmentIndex) in message.attachments"
+                  :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
+                  type="button"
+                  class="deasy-picker deasy-picker--flat deasy-chat-attachment justify-between"
+                  @click="downloadAttachment(message, attachmentIndex)"
+                >
+                  <span class="truncate">{{ attachment.filename }}</span>
+                  <IconDownload class="h-4 w-4 shrink-0" />
+                </button>
+              </div>
+              <div
+                class="mt-2 flex items-center gap-2 text-theme-xs font-bold"
+                :class="Number(message.sender_person_id) === Number(currentPersonId) ? 'text-white/80' : 'text-muted'"
+              >
+                <span>{{ Number(message.sender_person_id) === Number(currentPersonId) ? 'Tú' : `Persona #${message.sender_person_id}` }}</span>
+                <span>·</span>
+                <span>{{ formatDateTime(message.created_at) }}</span>
+              </div>
+            </article>
           </div>
-          <p class="m-0 text-sm font-bold text-body">Modo en preparación</p>
+        </div>
+
+        <footer class="border-t border-line bg-white px-4 py-4 sm:px-5">
+          <div v-if="pendingAttachments.length" class="mb-3 flex flex-wrap gap-2">
+            <span
+              v-for="(file, index) in pendingAttachments"
+              :key="`${file.name}-${index}`"
+              class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-icon"
+            >
+              <span class="max-w-40 truncate">{{ file.name }}</span>
+              <button type="button" class="deasy-chip-remove" @click="removePendingAttachment(index)">
+                <IconX class="h-3.5 w-3.5" />
+              </button>
+            </span>
+          </div>
+          <div class="flex items-end gap-3">
+            <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
+            <AppButton
+              variant="plain"
+              class-name="deasy-btn--field shrink-0"
+              aria-label="Adjuntar archivos"
+              title="Adjuntar archivos"
+              @click="attachmentInputRef?.click?.()" icon-only>
+              <IconPaperclip class="h-5 w-5" />
+            </AppButton>
+            <textarea
+              ref="composerRef"
+              v-model="draft"
+              rows="1"
+              aria-label="Mensaje del chat"
+              class="max-h-40 min-h-13 flex-1 resize-none border px-4 py-3 text-sm font-medium text-strong outline-none transition placeholder:text-muted"
+              placeholder="Escribe un mensaje"
+              @input="resizeComposer"
+              @keydown.enter.exact.prevent="sendMessage"
+            />
+            <AppButton
+              variant="primary-outline"
+              class-name="deasy-btn--field shrink-0"
+              :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
+              @click="sendMessage"
+            >
+              {{ submitting ? 'Enviando...' : 'Enviar' }}
+            </AppButton>
+          </div>
+        </footer>
+      </div>
+
+      <template v-else-if="activeMode === 'processes'">
+        <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
+            <IconInbox class="h-6 w-6" />
+          </div>
+          <p class="m-0 text-sm font-bold text-body">Sin contexto de proceso</p>
           <p class="m-0 max-w-xs text-sm font-medium text-muted">
-            {{ activeMode === 'groups' ? 'Los chats grupales se integrarán en este mismo panel.' : 'Los chats individuales se integrarán en este mismo panel.' }}
+            Abre primero un proceso desde Home para dejar disponible su thread en el launcher global.
           </p>
         </div>
+
+        <div v-else class="px-4 pb-4 pt-4 sm:px-5">
+          <div v-if="filteredThreadItems.length" class="flex flex-col gap-3">
+            <button
+              v-for="item in filteredThreadItems"
+              :key="item.id"
+              type="button"
+              class="deasy-picker deasy-picker--flat"
+              @click="openThreadItem(item)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
+                  <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <span class="deasy-overline block">
+                    {{ item.lastMessageAtLabel }}
+                  </span>
+                  <span
+                    v-if="Number(item.unreadCount || 0) > 0"
+                    class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
+                  >
+                    {{ item.unreadCount }}
+                  </span>
+                </div>
+              </div>
+              <p class="m-0 mt-3 text-sm font-medium text-icon">
+                {{ item.summary || 'Sin mensajes todavía. Usa este espacio para dar seguimiento al proceso.' }}
+              </p>
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <div v-else-if="activeMode === 'units'" class="flex h-full flex-col">
+        <div v-if="filteredUnitItems.length" class="px-4 pb-4 pt-4 sm:px-5">
+          <div class="flex flex-col gap-3">
+            <button
+              v-for="item in filteredUnitItems"
+              :key="item.unitId"
+              type="button"
+              class="deasy-picker deasy-picker--flat"
+              @click="openUnitItem(item)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
+                  <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <span class="deasy-overline block">
+                    {{ item.lastMessageAtLabel }}
+                  </span>
+                  <span
+                    v-if="Number(item.unreadCount || 0) > 0"
+                    class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
+                  >
+                    {{ item.unreadCount }}
+                  </span>
+                </div>
+              </div>
+              <p class="m-0 mt-3 text-sm font-medium text-icon">
+                {{ item.summary || 'Sin mensajes todavía. Saluda a los miembros de tu unidad.' }}
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <AppEmpty v-else :icon="IconBuildingCommunity" title="Sin unidades" class="h-full">No perteneces a ninguna unidad con miembros para conversar.</AppEmpty>
       </div>
-    </aside>
-  </div>
+
+      <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+        <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
+          <IconMessages class="h-6 w-6" />
+        </div>
+        <p class="m-0 text-sm font-bold text-body">Modo en preparación</p>
+        <p class="m-0 max-w-xs text-sm font-medium text-muted">
+          {{ activeMode === 'groups' ? 'Los chats grupales se integrarán en este mismo panel.' : 'Los chats individuales se integrarán en este mismo panel.' }}
+        </p>
+      </div>
+    </div>
+  </aside>
 </template>
 
 <script setup>

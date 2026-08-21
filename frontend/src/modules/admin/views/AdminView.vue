@@ -169,7 +169,7 @@
           <FirmarPdf />
         </template>
         <template v-else>
-        <div v-if="!selectedTable" class="w-full max-w-6xl mx-auto space-y-6">
+        <div v-if="!selectedTable">
           <div class="deasy-section-card flex flex-col min-h-100">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
                <div class="inline-flex items-center gap-3">

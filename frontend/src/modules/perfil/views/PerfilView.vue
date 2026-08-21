@@ -75,7 +75,7 @@
 
         <!-- Aqui habia una cadena de 8 v-else-if sobre `process`, un string en espanol con tilde. Cada
              seccion tiene ya su ruta: el router decide, y una URL que no casa falla ruidosamente. -->
-        <div id="validar" class="w-full">
+        <div id="validar">
             <router-view />
         </div>
   </AppWorkspaceShell>

@@ -1,5 +1,5 @@
 <template>
-  <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8 w-full flex flex-col font-sans">
+  <div class="flex flex-col font-sans">
     
     <AppPageHeader
       size="hero"

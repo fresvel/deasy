@@ -70,13 +70,30 @@
      * asi que el contenido se estiraba de borde a borde. En una ventana de 2560 el area util pasaba
      * de 2000 px y las lineas de texto se volvian ilegibles de largas.
      *
-     * ⚠️ NO SE NOTA por debajo de ~1960 px de ventana (1536 de tope + 424 de barra lateral), asi que
+     * ⚠️ NO SE NOTA por debajo de ~1924 px de ventana (1500 de tope + 424 de barra lateral), asi que
      * en un portatil el cambio es CERO. Se comprueba en un monitor ancho, no a simple vista.
      *
      * Vivia como `mx-auto h-full w-full max-w-(--breakpoint-2xl) pb-6` en la plantilla de `SBody`;
-     * F13 le da nombre para que el tope se pueda cambiar desde el CSS y no desde una plantilla. */
+     * F13.1 le dio nombre para que el tope se pueda cambiar desde el CSS y no desde una plantilla.
+     *
+     * ══ F13.3 (2026-08-21): EL TOPE ES 1500 Y LA PAGINA ES LA PILA ══════════════════════════
+     * Dos cambios, y los dos vienen de medir que el marco exterior ya era homogeneo pero **el
+     * contenido no**:
+     *
+     *   (1) **UN SOLO ANCHO, 1500 px** (`max-w-page`, registrado en `tokens.css`). Convivian TRES:
+     *       1536 aqui, 1280 en `ProfileHomePanel` y **1152 en el indice de tarjetas de `/admin` y
+     *       `/procesos`** — este ultimo atado a `!selectedTable`, asi que **pulsar una tarjeta
+     *       ensanchaba el contenido 384 px** dentro de la misma vista y sin anunciarlo.
+     *
+     *   (2) **LA PAGINA ES LA PILA**: `flex flex-col gap-6`. Antes cada vista declaraba la suya
+     *       —`flex flex-col gap-4`, `flex flex-col gap-6`, `space-y-6`, o ninguna— asi que el
+     *       hueco entre secciones dependia de en que pantalla estuvieras. El 24 es el paso
+     *       SECCION de la escala de F13.2, no un numero nuevo.
+     *
+     * ⚠️ Un hijo `fixed` o `absolute` NO es item flex, asi que los modales teleportados no reciben
+     * hueco. Comprobado en `/home/documentos`, que renderiza uno. */
     .deasy-page {
-        @apply mx-auto h-full w-full max-w-(--breakpoint-2xl) pb-6;
+        @apply mx-auto flex h-full w-full max-w-page flex-col gap-6 pb-6;
     }
 
     .deasy-workspace-header {

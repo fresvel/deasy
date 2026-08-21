@@ -67,6 +67,19 @@
 /* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
    DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta. */
 @theme {
+    /* ══ EL ANCHO DE UNA PAGINA ══════════════════════════════════════════════════════════════
+     * `--container-*` es el NAMESPACE de Tailwind v4 para la escala de contenedores: lo que va
+     * detras es literalmente el nombre de la utilidad, asi que esto genera `max-w-page`. Se
+     * declara aqui, y no como `max-width: 1500px` en la regla, por el mismo motivo que la paleta:
+     * **el ancho de una pagina es una decision del sistema, no de un fichero de disposicion**.
+     *
+     * 1500 px lo eligio el dueño en F13.3 (2026-08-21) al cerrar los TRES anchos que convivian:
+     * 1536 del marco (`--breakpoint-2xl`, heredado de TailAdmin), 1280 de `ProfileHomePanel`
+     * (`max-w-7xl`) y **1152 del indice de tarjetas de `/admin` y `/procesos`** (`max-w-6xl`).
+     * Ese ultimo era el peor: se aplicaba solo con `!selectedTable`, asi que **pulsar una tarjeta
+     * ensanchaba el contenido 384 px de golpe** dentro de la misma vista. Ahora hay UNO. */
+    --container-page: 1500px;
+
 /* 📌 DECISION DEL DUEÑO, 2026-08-17 — LAS PRIMITIVAS SON UN CATALOGO, NO DEUDA.
        De los 119 registros de este bloque, **42 no los consume nadie hoy**. El plan los llevaba
        como F1.3e, bloqueada, con la duda de si borrarlos.

@@ -391,7 +391,7 @@
           </div>
 
           <!-- Dashboard normal -->
-          <div v-else class="flex flex-col gap-4">
+          <div v-else class="flex flex-col gap-6">
 
             <!-- Error banner -->
             <AppAlert class="flex items-center gap-3" v-if="homeErrorMessage">
