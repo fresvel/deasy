@@ -9,8 +9,14 @@
        «un contenedor con border-b»: era una lectura, no una medicion, y estaba equivocada.)
 
        El `gap-2` es suyo tambien —`space-x-2`—: sin el, dos pestañas contiguas se tocan. */
+    /* ⚠️ AQUI HABIA UN `mb-5`, UN MARGEN EXTERIOR DENTRO DEL PROPIO COMPONENTE (retirado en
+       F13.4, 2026-08-21). Una tira de pestañas no decide cuanto se separa de lo que venga debajo:
+       eso lo decide quien la coloca. Con el margen dentro, la fila de la barra medía **76 px en
+       `/perfil` y 44 en `/admin`** —56 de las pestañas mas 20 de este margen— y la tabla arrancaba
+       16 px mas abajo en una familia que en la otra, sin que nada lo explicara desde fuera.
+       El hueco lo pone ahora el contenedor, que en la barra es `gap-3`. */
     .deasy-inline-tabs {
-        @apply mb-5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+        @apply flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
     }
 
     /* LA PESTAÑA — receta «Underline + icon» de TailAdmin, con dos ajustes pedidos por el dueño
@@ -28,8 +34,11 @@
      * El fondo suave al pasar el raton viene del selector de modos del chat, que es el que al
      * dueño le gustaba: TailAdmin solo oscurece el texto, y sobre 56 px de alto eso casi no se
      * nota. */
+    /* ⚠️ `min-h-11 py-2` Y NO `py-4`: la pestaña pasa a medir **44 px, la altura de control del
+       sistema** que F4 fijo para todo. Con `py-4` medía 56 —16 arriba, 16 abajo, 20 de linea y 2 de
+       borde— y era el unico elemento de una barra que no cabia en la fila de 44. */
     .deasy-inline-tab {
-        @apply inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 border-line px-4 py-4 text-sm font-medium text-body transition-colors hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
+        @apply inline-flex min-h-11 shrink-0 items-center gap-2 rounded-t-lg border-b-2 border-line px-4 py-2 text-sm font-medium text-body transition-colors hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
     }
 
     /* ── LA PESTAÑA ACTIVA LLEVA EL MISMO FONDO QUE EL ITEM ACTIVO DE LA BARRA ────────────────

@@ -5,6 +5,7 @@
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
+      @refresh="loadDossier"
     >
       <template v-if="subsectionTabs.length" #tabs>
         <ProfileSubsectionTabs

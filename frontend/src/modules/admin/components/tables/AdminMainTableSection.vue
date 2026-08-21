@@ -10,8 +10,9 @@
          `actions`, que `AdminTableManager` llena con `AdminTableHeader`. -->
     <AppTableToolbar :title="tableHeaderTitle">
       <!-- El buscador comparte fila con los botones: la barra lo pone a la izquierda
-           (`__search` crece) y ellos a la derecha (`__actions` no encoge). -->
-      <template #search>
+           (`__filtro` crece) y ellos a la derecha (`__actions` no encoge). En `/perfil` ese mismo
+           sitio lo ocupan las pestañas, porque hacen lo mismo: elegir que porcion de la tabla ves. -->
+      <template #filtro>
         <AdminInputField
         ref="searchInputRef"
         :model-value="searchTerm"
@@ -84,7 +85,13 @@
     </AppTableToolbar>
 
     <div>
-      <div class="deasy-filter-shell deasy-filter-shell--embedded">
+      <!-- ⚠️ `v-if` Y NO SIEMPRE. Desde que el buscador y los botones subieron a la barra, esta
+           caja solo aloja los filtros AVANZADOS, que existen para cuatro tablas y solo cuando estan
+           desplegados. En las demas quedaba **vacia: altura 0, cero hijos visibles… y su
+           `margin-bottom` de 16 px intacto**, empujando la tabla hacia abajo. Medido: `/admin` daba
+           la tabla en y=208 y `/perfil` en 192, con la misma barra encima. Un contenedor sin
+           contenido no es inofensivo cuando trae margen. -->
+      <div v-if="showAdvancedFilters && hasExpandableFilters" class="deasy-filter-shell deasy-filter-shell--embedded">
       <div class="deasy-filter-grid deasy-filter-grid--admin">
 
             <template v-if="showAdvancedFilters && isPositionFilterTable">

@@ -1,22 +1,25 @@
 <template>
   <div class="deasy-table-toolbar">
-    <!-- LA FILA QUE DICE DONDE ESTAS. Existe SIEMPRE y lleva las DOS cosas cuando las hay: el
-         **titulo dice QUE estas viendo** y las **pestañas, QUE PORCION**. No son alternativas.
-         ⚠️ Al principio el titulo era el contenido POR DEFECTO del slot `tabs`, o sea que en cuanto
-         una pagina traia pestañas el nombre desaparecia: en `/perfil/formacion` no se sabia que
-         tabla era. Lo vio el dueño. Ahora se pintan los dos, y por eso todas las paginas con tabla
-         arrancan igual: nombre a la izquierda, pestañas a continuacion. -->
+    <!-- FILA 1 · SOLO EL TITULO: dice QUE estas viendo, y nada mas.
+         ⚠️ Aqui hubo DOS intentos fallidos, los dos vistos por el dueño y no por un gate.
+         (1) El titulo era el contenido POR DEFECTO del slot `tabs`, asi que en cuanto una pagina
+             traia pestañas **el nombre desaparecia**: en `/perfil/formacion` no se sabia que tabla
+             era.
+         (2) Se pintaron los dos en esta misma fila, y quedaba el titulo pegado a las pestañas.
+         Lo correcto es lo que admin ya hacia: **el titulo tiene su linea** y lo que FILTRA baja a
+         la fila de abajo. Y las pestañas son un filtro, igual que el buscador: eligen que porcion
+         de la tabla ves. Por eso comparten sitio y por eso las dos familias quedan identicas. -->
     <div class="deasy-table-toolbar__head">
       <h2 v-if="title" class="deasy-title deasy-title--panel m-0">{{ title }}</h2>
-      <slot name="tabs" />
     </div>
 
     <div class="deasy-table-toolbar__bar">
-      <!-- ⚠️ `v-if` Y NO SIEMPRE: sin el, una pagina sin buscador —todo `/perfil`— pintaba una
-           caja VACIA de 1348 px de ancho y altura 0 dentro de la fila. No rompia nada, pero es un
-           contenedor sin contenido, que es justo lo que este frente lleva doce fases quitando. -->
-      <div v-if="$slots.search" class="deasy-table-toolbar__search">
-        <slot name="search" />
+      <!-- FILA 2 · A la izquierda lo que FILTRA —el buscador en admin, las pestañas en perfil—; a
+           la derecha las acciones.
+           ⚠️ El `v-if` no es opcional: sin el, una pagina que no filtra pintaba una caja VACIA de
+           1348 px de ancho y altura 0 dentro de la fila. -->
+      <div v-if="$slots.filtro" class="deasy-table-toolbar__filtro">
+        <slot name="filtro" />
       </div>
       <div class="deasy-table-toolbar__actions">
         <slot name="actions" />

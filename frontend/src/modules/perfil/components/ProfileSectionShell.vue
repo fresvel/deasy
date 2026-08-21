@@ -6,13 +6,31 @@
        barra: `AppTableToolbar` pone las pestañas arriba y las acciones a la derecha de la fila de
        abajo, igual que en admin. -->
   <AppTableToolbar :title="title">
-    <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
-    <!-- ⚠️ `v-if` TAMBIEN AQUI, y no basta con el del componente. Reenviar el slot SIEMPRE hace
-         que `$slots.search` este definido en la barra aunque no llegue contenido, asi que su
-         propio `v-if` daba verdadero y seguia pintando la caja vacia. Un slot reenviado existe
-         aunque su origen este vacio. -->
-    <template v-if="$slots.search" #search><slot name="search" /></template>
+    <!-- ⚠️ LAS PESTAÑAS VAN AL SLOT `filtro`, EL MISMO QUE OCUPA EL BUSCADOR EN ADMIN, y no a una
+         fila propia. Hacen lo mismo: elegir que porcion de la tabla ves. Asi las dos familias
+         quedan con la MISMA estructura —titulo arriba, filtro a la izquierda, acciones a la
+         derecha— en vez de parecerse solo de lejos.
+         ⚠️ El `v-if` no basta ponerlo en la barra: reenviar un slot hace que `$slots.filtro` este
+         definido aunque no llegue contenido, asi que el `v-if` de alla daba verdadero igual. -->
+    <template v-if="$slots.tabs" #filtro><slot name="tabs" /></template>
     <template #actions>
+      <!-- ⚠️ «Refrescar» NO existia en perfil y en admin si, que es parte de lo que hacia que no se
+           parecieran. Se puede porque `useDossierSection` YA expone `loadDossier`: no hay
+           funcionalidad nueva, solo un boton que llama a lo que ya estaba.
+           Los otros dos de admin siguen sin estar, y por motivos distintos: «Buscar» pide estado de
+           filtrado que el dossier NO tiene —sus filas solo se filtran por subpestaña—, y «Volver»
+           no tiene a donde ir, porque aqui la seccion se elige en el menu lateral y no hay indice
+           previo al que regresar. -->
+      <AppButton
+        v-if="showRefresh"
+        variant="primary-outline"
+        icon-only
+        title="Actualizar"
+        aria-label="Actualizar"
+        @click="$emit('refresh')"
+      >
+        <IconRefresh class="h-4 w-4" />
+      </AppButton>
       <AppButton
         v-if="showAdd"
         variant="primary-outline"
@@ -39,7 +57,7 @@
 </template>
 
 <script setup>
-import { IconPlus } from '@tabler/icons-vue';
+import { IconPlus, IconRefresh } from '@tabler/icons-vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import AppTableToolbar from '@/shared/components/layout/AppTableToolbar.vue';
 
@@ -47,9 +65,10 @@ defineProps({
   /* El nombre de la seccion, para la fila superior cuando no hay pestañas. */
   title: { type: String, default: '' },
   addLabel: { type: String, default: 'Agregar' },
+  showRefresh: { type: Boolean, default: true },
   showAdd: { type: Boolean, default: true },
   addDisabled: { type: Boolean, default: false },
   addDisabledTitle: { type: String, default: 'No tienes permiso para agregar registros.' }
 });
-defineEmits(['add']);
+defineEmits(['add', 'refresh']);
 </script>

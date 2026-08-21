@@ -54,9 +54,11 @@
         @apply flex flex-wrap items-center justify-end gap-3;
     }
 
-    /* El buscador crece; las acciones no. `min-w-0` porque sin el un hijo con texto largo se
-       niega a encoger y rompe la fila — el mismo motivo por el que lo lleva `deasy-workspace-content`. */
-    .deasy-table-toolbar__search {
+    /* LO QUE FILTRA: el buscador en admin, las pestañas en perfil. Crece; las acciones no.
+       `min-w-0` porque sin el un hijo con texto largo se niega a encoger y rompe la fila — el mismo
+       motivo por el que lo lleva `deasy-workspace-content`.
+       ⚠️ Se llamaba `__search` y el nombre mentia: lo que va aqui no siempre busca, elige. */
+    .deasy-table-toolbar__filtro {
         @apply min-w-0 flex-1;
     }
 
