@@ -11,7 +11,7 @@
     @close="$emit('close')"
   >
     <template #title>
-      <span class="inline-flex items-center gap-1.5">
+      <span class="inline-flex items-center gap-2">
         {{ draftArtifactEditId ? 'Editar plantilla de documento' : 'Crear plantilla de documento' }}
         <AppInfoTip placement="bottom">
           Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} la plantilla de documento y la sube directamente a MinIO. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
@@ -212,7 +212,7 @@
     <!-- Pestaña: Campos del formulario (schema.json) -->
     <div v-show="activeTab === 'campos'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
-        <div class="inline-flex items-center gap-1.5">
+        <div class="inline-flex items-center gap-2">
           <h4 class="deasy-title deasy-title--section">Campos del formulario</h4>
           <AppInfoTip>Definen los datos que el usuario llenará en el entregable (schema.json).</AppInfoTip>
         </div>
@@ -248,7 +248,7 @@
             <label :for="fieldId(`field-group-${index}`)" class="deasy-form-label">Grupo</label>
             <input :id="fieldId(`field-group-${index}`)" :value="field.group" placeholder="general" class="deasy-control" @input="updateSchemaField(index, 'group', $event.target.value)" />
           </div>
-          <div class="col-span-1 flex flex-col items-center justify-center gap-1 pb-1.5">
+          <div class="col-span-1 flex flex-col items-center justify-center gap-2 pb-1.5">
             <span class="deasy-overline">Req.</span>
             <SToggle :model-value="!!field.required" @change="(value) => updateSchemaField(index, 'required', value)" />
           </div>
@@ -262,7 +262,7 @@
     <!-- Pestaña: Flujo de ENTREGA -->
     <div v-show="activeTab === 'entrega'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
-        <div class="inline-flex items-center gap-1.5">
+        <div class="inline-flex items-center gap-2">
           <h4 class="deasy-title deasy-title--section">Flujo de entrega</h4>
           <AppInfoTip>Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</AppInfoTip>
         </div>
@@ -396,7 +396,7 @@
          hoy se firma por coordenadas vía el firmador. Sin anclas manuales: el slot de token se deriva del paso. -->
     <div v-show="activeTab === 'firmas'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
-        <div class="inline-flex items-center gap-1.5">
+        <div class="inline-flex items-center gap-2">
           <h4 class="deasy-title deasy-title--section">Flujo de firmas</h4>
           <AppInfoTip>Quién firma cada paso (mismo modelo que entrega). Los pasos van en orden; dentro de un paso, la “Aprobación” define si firman todas, cualquiera o un mínimo.</AppInfoTip>
         </div>
@@ -472,7 +472,7 @@
           <!-- Firmantes del paso: cada uno con su propio resolutor; el cupo entre ellos lo define "Aprobación". -->
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
-              <span class="deasy-overline inline-flex items-center gap-1">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
+              <span class="deasy-overline inline-flex items-center gap-2">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
               <AppButton variant="primary-outline" @click="addSignatureSigner(index)">+ Añadir firmante</AppButton>
             </div>
             <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="deasy-card mt-2 px-2.5 py-2">

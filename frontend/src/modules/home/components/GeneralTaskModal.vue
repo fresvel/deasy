@@ -7,7 +7,7 @@
   content-class="shadow border-0"
   body-class="pt-4"
 >
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col gap-6">
     <p class="m-0 text-sm font-medium text-muted">
       {{ generalTaskForm.itemMode === 'routed'
         ? 'Crea un envío de este entregable y elige a la persona que lo recibe y firma.'
@@ -31,11 +31,11 @@
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconFileDescription class="h-4 w-4" /></span>
         <h6 class="deasy-title deasy-title--section">Documento</h6>
       </div>
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-2">
         <span class="deasy-form-label">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
         <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="deasy-control" />
       </label>
-      <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
+      <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-2">
         <span class="deasy-form-label">Descripción</span>
         <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="deasy-control deasy-control--textarea"></textarea>
       </label>
@@ -55,7 +55,7 @@
           <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('entrega')">+ Agregar</button>
         </div>
         <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
-          <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
+          <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
             <span class="text-theme-xs font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
             <button type="button" class="deasy-chip-remove" @click="removeFromEntrega(i)">×</button>
           </li>
@@ -71,7 +71,7 @@
         <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
           <div class="flex items-center justify-between gap-2">
             <span class="deasy-overline">Paso {{ si + 1 }}</span>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-2">
               <template v-if="step.signers.length > 1">
                 <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="deasy-control deasy-control--select">
                   <option value="and">Firman todas</option>
@@ -84,7 +84,7 @@
             </div>
           </div>
           <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">
-            <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-body">
+            <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-body">
               {{ sg.label }}
               <button type="button" class="deasy-chip-remove" @click="removeSignerFromStep(si, gi)">×</button>
             </li>
@@ -103,7 +103,7 @@
           <button type="button" class="deasy-section-nav" :class="{ 'deasy-section-nav--active': flowPickerMode === 'cargo' }" @click="flowPickerMode = 'cargo'">Por cargo</button>
         </div>
 
-        <div v-if="flowPickerMode === 'person'" class="relative flex flex-col gap-1">
+        <div v-if="flowPickerMode === 'person'" class="relative flex flex-col gap-2">
           <input v-model="recipientQuery" type="text" aria-label="Buscar persona por nombre, cédula o correo" placeholder="Busca por nombre, cédula o correo…" class="deasy-control" @input="searchRecipients" />
           <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-(--z-capa-base) mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
             <li v-for="person in recipientResults" :key="`fp-${person.id}`">
@@ -140,14 +140,14 @@
       </div>
       <div class="grid grid-cols-1 gap-3" :class="showSenderUnitSelect ? 'sm:grid-cols-2' : ''">
         <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->
-        <label v-if="showSenderUnitSelect" class="flex flex-col gap-1">
+        <label v-if="showSenderUnitSelect" class="flex flex-col gap-2">
           <span class="deasy-form-label">Unidad emisora *</span>
           <select v-model="generalTaskForm.unitId" class="deasy-control deasy-control--select">
             <option :value="null" disabled>Selecciona una unidad</option>
             <option v-for="unit in senderUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
           </select>
         </label>
-        <label class="flex flex-col gap-1">
+        <label class="flex flex-col gap-2">
           <span class="deasy-form-label">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
           <input v-model="generalTaskForm.endDate" type="date" class="deasy-control" />
         </label>

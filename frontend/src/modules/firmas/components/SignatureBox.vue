@@ -18,7 +18,7 @@
     <!-- Botón eliminar rápido en hover o seleccionado -->
     <div 
       v-if="!isPreview"
-      class="absolute right-0 top-0 z-(--z-capa-controles) flex translate-x-[calc(100%+0.5rem)] flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      class="absolute right-0 top-0 z-(--z-capa-controles) flex translate-x-[calc(100%+0.5rem)] flex-col gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
       <button
@@ -33,7 +33,7 @@
 
     <div
       v-if="!isPreview && $slots.navigation"
-      class="absolute bottom-0 left-0 right-0 z-(--z-capa-controles) flex translate-y-[calc(100%+0.4rem)] flex-col items-stretch gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      class="absolute bottom-0 left-0 right-0 z-(--z-capa-controles) flex translate-y-[calc(100%+0.4rem)] flex-col items-stretch gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
       <slot name="navigation"></slot>

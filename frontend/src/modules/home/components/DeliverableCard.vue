@@ -72,8 +72,8 @@ const onCardClick = (event) => {
           @keydown.enter.prevent="emit('open', deliverable)"
           @keydown.space.prevent="emit('open', deliverable)"
         >
-          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-            <div class="flex items-center gap-1.5">
+          <div class="flex min-w-0 flex-1 flex-col gap-2">
+            <div class="flex items-center gap-2">
               <span class="deasy-icon-box deasy-icon-box--sm deasy-deliverable-card__chip">
                 <component :is="h.getDeliverableStateIcon(deliverable.item)" class="h-3.5 w-3.5" />
               </span>
@@ -82,7 +82,7 @@ const onCardClick = (event) => {
               </span>
               <span
                 v-if="deliverable.item.attachment_count"
-                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 text-theme-xs font-bold text-muted"
+                class="inline-flex shrink-0 items-center gap-2 rounded-full bg-surface px-1.5 py-0.5 text-theme-xs font-bold text-muted"
                 :title="`${deliverable.item.attachment_count} anexo(s)`"
               >
                 <IconPaperclip class="h-3 w-3" />{{ deliverable.item.attachment_count }}
@@ -120,7 +120,7 @@ const onCardClick = (event) => {
             <AppTag :variant="h.getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ h.getDeliverableDueState(deliverable.item).value }}</AppTag>
           </div>
           <p class="m-0 line-clamp-1 text-sm font-semibold leading-snug text-body">{{ h.getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-3">
             <div class="deasy-progress flex-1">
               <div class="deasy-progress__bar deasy-deliverable-card__accent" :style="{ width: `${h.getDeliverableProgress(deliverable.item).percent}%` }"></div>
             </div>
@@ -128,7 +128,7 @@ const onCardClick = (event) => {
           </div>
         </div>
 
-        <div class="mt-auto grid grid-cols-[minmax(0,1fr)_auto] gap-2.5 border-t border-line pt-3">
+        <div class="mt-auto grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-t border-line pt-3">
           <button v-if="h.shouldShowStartDeliverable(deliverable.item)" type="button" class="group deasy-deliverable-action deasy-deliverable-action--start" :disabled="processingFillItemId === deliverable.item.id || !h.canStartDeliverableAction(deliverable.item)" @click="emit('start', deliverable.item)">
             <div class="deasy-icon-box deasy-icon-box--md deasy-deliverable-action__chip"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
             <div class="deasy-deliverable-action__label"><span class="deasy-rotulo">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
@@ -143,7 +143,7 @@ const onCardClick = (event) => {
             <div class="deasy-deliverable-action__label"><span class="deasy-rotulo">Abrir</span></div>
           </button>
 
-          <div class="flex h-full items-center justify-end gap-1.5">
+          <div class="flex h-full items-center justify-end gap-2">
             <AppButton v-if="!h.shouldShowStartDeliverable(deliverable.item) && h.canApproveFillRequestForPayload(deliverable.item)" variant="success-soft" :disabled="fillWorkflowSubmitting" :aria-label="h.getFillApproveActionLabelForPayload(deliverable.item)" @click="emit('approve', deliverable.item)" icon-only><IconCircleCheck class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.getDeliverableSubject(deliverable.item).preloadFilePath" variant="info-soft" aria-label="Descargar PDF" @click="emit('download', deliverable.item)" icon-only><IconDownload class="h-[1.15rem] w-[1.15rem]" /></AppButton>
             <AppButton v-else-if="!h.shouldShowStartDeliverable(deliverable.item) && h.shouldShowTemplateDownload(deliverable.item)" variant="info-soft" aria-label="Descargar plantilla" @click="emit('template', deliverable.item)" icon-only><IconFileDescription class="h-[1.15rem] w-[1.15rem]" /></AppButton>

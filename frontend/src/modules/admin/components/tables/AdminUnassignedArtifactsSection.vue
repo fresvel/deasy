@@ -50,7 +50,7 @@
               </template>
             </template>
             <template #actions="{ row }">
-              <div class="inline-flex items-center gap-1">
+              <div class="inline-flex items-center gap-2">
                 <AdminButton variant="info-soft" icon-only title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
                   <font-awesome-icon icon="eye" />
                 </AdminButton>

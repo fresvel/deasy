@@ -250,7 +250,7 @@
         </template>
       </template>
       <template #actions="{ row }">
-        <div class="inline-flex items-center gap-1">
+        <div class="inline-flex items-center gap-2">
           <AdminButton
             variant="info-soft"
             icon-only

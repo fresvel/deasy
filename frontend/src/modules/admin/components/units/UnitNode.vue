@@ -37,7 +37,7 @@
       </template>
     </div>
 
-    <p class="m-0 flex items-center gap-1.5">
+    <p class="m-0 flex items-center gap-2">
       <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <IconCrown v-if="data.head_count" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
       <IconAlertTriangle
@@ -47,7 +47,7 @@
       />
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
-    <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
+    <p class="m-0 mt-1 flex flex-wrap items-center gap-2">
       <AppTag variant="neutral" outlined>{{ data.unit_type_name || 'Sin tipo' }}</AppTag>
       <AppTag
         v-if="data.positions_count"

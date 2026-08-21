@@ -11,8 +11,8 @@
 
     <div v-if="mode === 'bootstrap'" class="space-y-6" autocomplete="off">
       <!-- Indicador de pasos -->
-      <ol class="flex items-center justify-center gap-1.5 text-xs font-semibold">
-        <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
+      <ol class="flex items-center justify-center gap-2 text-xs font-semibold">
+        <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-2">
           <span
             class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round transition-colors"
             :class="step >= i + 1 ? 'deasy-icon-box--info deasy-icon-box--solid' : 'deasy-icon-box--neutral'"
@@ -24,7 +24,7 @@
 
       <!-- Paso 1: Administrador -->
       <div v-show="step === 1" class="space-y-4">
-        <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
+        <label class="flex items-center gap-3 text-sm font-medium text-icon">
           <input v-model="useExampleAdmin" type="checkbox" class="text-info" @change="toggleExampleAdmin" />
           Usar datos de ejemplo (rellena el formulario para crear rápido)
         </label>
@@ -72,7 +72,7 @@
           </SToggle>
         </div>
         <div v-if="gestorEnabled" class="space-y-4">
-          <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
+          <label class="flex items-center gap-3 text-sm font-medium text-icon">
             <input v-model="useExampleGestor" type="checkbox" class="text-info" @change="toggleExampleGestor" />
             Usar datos de ejemplo
           </label>
@@ -114,7 +114,7 @@
           </SToggle>
         </div>
         <div v-if="usuarioEnabled" class="space-y-4">
-          <label class="flex items-center gap-2.5 text-sm font-medium text-icon">
+          <label class="flex items-center gap-3 text-sm font-medium text-icon">
             <input v-model="useExampleUsuario" type="checkbox" class="text-info" @change="toggleExampleUsuario" />
             Usar datos de ejemplo
           </label>
@@ -177,7 +177,7 @@
             <label
               v-for="option in group.options"
               :key="option.id"
-              class="flex min-h-11 items-start gap-2.5 rounded-2xl border px-3 py-2.5 transition-colors deasy-elegible"
+              class="flex min-h-11 items-start gap-3 rounded-2xl border px-3 py-2.5 transition-colors deasy-elegible"
               :class="[preconfig[group.key].includes(option.id) ? 'deasy-elegible--activa' : '']"
             >
               <input
@@ -240,7 +240,7 @@
       </div>
 
       <!-- Paso 4: Resumen -->
-      <div v-show="step === 4" class="space-y-2.5 text-sm">
+      <div v-show="step === 4" class="space-y-3 text-sm">
         <div class="rounded-xl border border-line p-4">
           <p class="deasy-overline">Administrador</p>
           <p class="m-0 mt-1 font-semibold text-body">{{ form.first_name }} {{ form.last_name }}</p>

@@ -101,7 +101,7 @@
     </div>
 
     <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="deasy-card mt-4 p-6 lg:p-8">
-      <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-6">
         <div class="flex flex-col gap-2">
           <h3 class="deasy-title deasy-title--panel">PDF del flujo de firma</h3>
           <p class="text-sm font-medium leading-snug text-muted m-0">
@@ -371,11 +371,11 @@
                   Firmante no asignado
                 </div>
                 
-                <div v-if="field.signer" class="text-sm text-muted flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                  <span v-if="field.signer.email" class="inline-flex items-center gap-1">
+                <div v-if="field.signer" class="text-sm text-muted flex flex-wrap items-center gap-x-3 gap-y-2 mt-1">
+                  <span v-if="field.signer.email" class="inline-flex items-center gap-2">
                     <span class="font-medium text-muted">Email:</span> {{ field.signer.email }}
                   </span>
-                  <span v-if="field.signer.cedula" class="inline-flex items-center gap-1">
+                  <span v-if="field.signer.cedula" class="inline-flex items-center gap-2">
                     <span class="font-medium text-muted">CI:</span> {{ field.signer.cedula }}
                   </span>
                 </div>
@@ -388,7 +388,7 @@
                 <span class="block text-lg font-bold text-strong leading-none mt-0.5">{{ field.page }}</span>
               </div>
               
-              <div class="text-xs text-muted grid grid-cols-2 gap-x-4 gap-y-1">
+              <div class="text-xs text-muted grid grid-cols-2 gap-x-4 gap-y-2">
                 <div>x/y: <span class="font-medium text-body">{{ formatCoord(field.x1) }}, {{ formatCoord(field.y1) }}</span></div>
                 <div>w/h: <span class="font-medium text-body">{{ formatCoord(field.x2 - field.x1) }}, {{ formatCoord(field.y2 - field.y1) }}</span></div>
               </div>
@@ -433,7 +433,7 @@
           class="deasy-elegible flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl gap-3"
           :class="[field.id === lastFieldId ? 'deasy-elegible--activa' : '']"
         >
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-2">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-strong">{{ field.name }}</span>
               <span class="px-2 py-0.5 bg-surface text-muted rounded-xl text-theme-xs font-bold tracking-wide">Pág {{ field.page }}</span>
@@ -821,7 +821,7 @@
 
       <AppAlert class="mt-4 flex items-start gap-3" v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length">
         <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-2">
           <p v-for="(warning, idx) in validationResult.warnings" :key="idx" class="font-medium leading-relaxed m-0">{{ warning }}</p>
         </div>
       </AppAlert>
@@ -867,7 +867,7 @@
             </div>
           </template>
           <template v-else-if="field.name === 'signerCedula'">
-            <div class="flex flex-col gap-1.5 items-start">
+            <div class="flex flex-col gap-2 items-start">
               <span class="font-semibold text-strong">{{ row.signerCedula }}</span>
               <AppTag v-if="row.matchesCedula" variant="info">
                 <IconCheck class="w-3 h-3" /> Coincide
@@ -876,7 +876,7 @@
           </template>
           <template v-else-if="field.name === 'details'">
             <details class="min-w-[16rem] group">
-              <summary class="deasy-overline cursor-pointer text-info hover:text-info transition flex items-center gap-1 list-none">
+              <summary class="deasy-overline cursor-pointer text-info hover:text-info transition flex items-center gap-2 list-none">
                 <IconInfoCircle class="w-4 h-4" />
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>

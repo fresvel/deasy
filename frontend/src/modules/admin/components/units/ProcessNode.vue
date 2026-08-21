@@ -35,11 +35,11 @@
       </template>
     </div>
 
-    <p class="m-0 flex items-center gap-1.5">
+    <p class="m-0 flex items-center gap-2">
       <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
-    <p class="m-0 mt-1 flex flex-wrap items-center gap-1.5">
+    <p class="m-0 mt-1 flex flex-wrap items-center gap-2">
       <span class="inline-flex max-w-[10.5rem] items-center truncate rounded-xl bg-surface px-1.5 py-0.5 text-theme-xs font-semibold text-muted ring-1 ring-line" :title="data.slug">
         {{ data.slug }}
       </span>

@@ -8,9 +8,9 @@
     @close="$emit('close')"
   >
     <!-- Indicador de pasos -->
-    <div class="mb-5 flex items-center gap-1.5">
+    <div class="mb-5 flex items-center gap-2">
       <template v-for="(step, idx) in stepLabels" :key="idx">
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-2">
           <span class="profile-step-dot" :class="dotClass(idx)">
             <IconCheck v-if="idx < current" class="h-3.5 w-3.5" />
             <span v-else>{{ idx + 1 }}</span>
@@ -31,7 +31,7 @@
     <!-- Paso de revisión -->
     <div v-else>
       <h4 class="deasy-title deasy-title--block mb-3">Revisión</h4>
-      <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
+      <ul class="m-0 flex list-none flex-col gap-3 p-0">
         <li v-for="section in SECTIONS" :key="section.key" class="rounded-2xl border border-line px-3 py-2">
           <span class="deasy-overline block">{{ section.label }}</span>
           <p class="m-0 mt-0.5 whitespace-pre-line text-sm" :class="form[section.key] ? 'text-body' : 'italic text-muted'">

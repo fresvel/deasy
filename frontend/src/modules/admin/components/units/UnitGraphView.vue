@@ -17,14 +17,14 @@
         </AppInfoTip>
       </div>
       <div class="flex flex-wrap items-center gap-3">
-        <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
+        <label class="flex items-center gap-2 text-xs font-medium text-icon">
           Relación
           <select v-model="activeRelationType" class="deasy-control deasy-control--select">
             <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
             <option value="all">Todos los tipos</option>
           </select>
         </label>
-        <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
+        <label class="flex items-center gap-2 text-xs font-medium text-icon">
           <input v-model="showInactive" type="checkbox" class="text-primary" />
           Mostrar inactivas
         </label>
@@ -35,11 +35,11 @@
 
     <!-- Controles: buscar/centrar, salud, exportar -->
     <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-2">
         <input v-model="searchTerm" type="text" aria-label="Buscar unidad" placeholder="Buscar unidad…" class="deasy-control w-52" @keyup.enter="searchAndCenter" />
         <AppButton variant="neutral-outline" @click="searchAndCenter">Buscar</AppButton>
       </div>
-      <label class="flex items-center gap-1.5 text-xs font-medium text-icon">
+      <label class="flex items-center gap-2 text-xs font-medium text-icon">
         <input v-model="healthOnly" type="checkbox" class="text-warning" />
         Resaltar pendientes
         <AppTag v-if="pendingCount" variant="warning">{{ pendingCount }}</AppTag>
@@ -49,7 +49,7 @@
 
     <!-- Leyenda de tipos de relación presentes -->
     <div v-if="legend.length > 1" class="flex flex-wrap items-center gap-3">
-      <span v-for="item in legend" :key="item.code" class="inline-flex items-center gap-1.5 text-xs font-medium text-icon">
+      <span v-for="item in legend" :key="item.code" class="inline-flex items-center gap-2 text-xs font-medium text-icon">
         <span class="inline-block h-2.5 w-4 rounded-full" :style="{ backgroundColor: item.color }"></span>
         {{ item.name }}
       </span>
@@ -222,7 +222,7 @@
                 <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
                 <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
                 <span v-if="!pos.is_active" class="ml-auto text-theme-xs font-semibold text-danger">Inactivo</span>
-                <div v-if="editable" class="ml-auto flex items-center gap-1">
+                <div v-if="editable" class="ml-auto flex items-center gap-2">
                   <AppButton
                     :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
                     icon-only
@@ -256,7 +256,7 @@
                 <template v-if="pos.person_id">
                   <AppTag variant="success">Ocupado</AppTag>
                   <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
-                  <div v-if="editable" class="ml-auto flex items-center gap-1">
+                  <div v-if="editable" class="ml-auto flex items-center gap-2">
                     <AppButton
                       variant="success-soft"
                       icon-only
@@ -308,7 +308,7 @@
               <div v-if="editable && assignForId === pos.id" class="deasy-card mt-2 p-2">
                 <input v-model="personQuery" type="text" aria-label="Buscar persona por nombre o cédula" placeholder="Buscar persona (nombre o cédula)…" class="deasy-control" @input="searchPersons" />
                 <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
-                <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
+                <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-2 overflow-y-auto p-0">
                   <li v-for="per in personResults" :key="per.id">
                     <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
                       <span class="truncate text-body">{{ per.first_name }} {{ per.last_name }}</span>
@@ -348,7 +348,7 @@
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
-                  <div v-if="editable && proc.origin === 'direct' && proc.status === 'draft'" class="ml-auto flex items-center gap-1">
+                  <div v-if="editable && proc.origin === 'direct' && proc.status === 'draft'" class="ml-auto flex items-center gap-2">
                     <AppButton
                       variant="success-soft"
                       icon-only

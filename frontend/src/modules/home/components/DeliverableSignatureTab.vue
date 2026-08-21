@@ -5,7 +5,7 @@
 <AppAlert v-else-if="signatureFlowState.error">
   {{ signatureFlowState.error }}
 </AppAlert>
-<div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
+<div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-6">
   <section class="deasy-card p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
@@ -55,7 +55,7 @@
             <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
               {{ step.step_order || '—' }}
             </span>
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col gap-2">
               <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
               <p class="deasy-overline">Firma</p>
             </div>
@@ -71,7 +71,7 @@
             </AppTag>
           </div>
         </div>
-        <div class="mt-3 flex flex-col gap-0.5">
+        <div class="mt-3 flex flex-col gap-2">
           <p class="deasy-overline">Firmante</p>
           <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">
             {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}

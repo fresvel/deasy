@@ -54,7 +54,7 @@ const onAdd = () => {
 
 <template>
   <section class="deasy-card p-4">
-    <div class="flex items-center gap-1.5">
+    <div class="flex items-center gap-2">
       <h3 class="deasy-title deasy-title--section">{{ title }}</h3>
       <IconInfoCircle v-if="subtitle" class="h-4 w-4 text-muted" :title="subtitle" />
     </div>
@@ -74,7 +74,7 @@ const onAdd = () => {
           class="relative"
         >
           <span class="absolute -left-[1.42rem] top-1" :class="dotClass(observation)"></span>
-          <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-2">
             <span class="text-xs font-bold text-body">{{ observation.author_name || 'Sistema' }}</span>
             <span class="deasy-overline" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>
             <span class="text-theme-xs text-muted">{{ formatObsDate(observation.created_at) }}</span>

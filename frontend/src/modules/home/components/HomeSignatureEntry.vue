@@ -164,7 +164,7 @@
       body-class="px-0 py-0"
       @close="closePendingModal"
     >
-      <div class="flex flex-col gap-5 p-6">
+      <div class="flex flex-col gap-6 p-6">
         <div class="deasy-filter-shell">
           <div class="deasy-filter-grid xl:grid-cols-5">
             <label class="deasy-filter-field xl:col-span-2">
@@ -229,7 +229,7 @@
               />
             </template>
             <template v-else-if="field.name === 'document'">
-              <div class="flex flex-col gap-1">
+              <div class="flex flex-col gap-2">
                 <strong class="text-sm font-bold text-strong">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
                 <span class="text-xs font-medium text-muted">{{ row.document_version ? `v${row.document_version}` : "Sin versión" }}</span>
               </div>

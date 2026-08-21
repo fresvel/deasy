@@ -103,7 +103,7 @@
                         <IconCheck v-if="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id))" class="h-3 w-3" />
                       </span>
                       <span class="truncate">{{ routedMenuLabel(process) }}</span>
-                      <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                      <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                     </button>
                   </div>
                 </div>
@@ -168,7 +168,7 @@
 
               <!-- Tarjetas de entregables -->
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
+                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-6">
 
                   <AppEmpty v-if="!consolidatedCargoProcesses.length">
                     No hay procesos asignados para este cargo.
@@ -179,7 +179,7 @@
                   <AppEmpty v-else-if="!filteredProcessDeliverables.length">
                     No hay entregables que coincidan con los filtros actuales.
                   </AppEmpty>
-                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
+                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-6">
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
@@ -199,7 +199,7 @@
                         <span class="text-xs font-semibold text-muted">{{ group.items.length }}</span>
                       </div>
                       <section v-for="row in group.rows" :key="row.id" class="flex flex-col gap-3">
-                        <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
+                        <div class="grid grid-cols-1 gap-x-6 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
                           <DeliverableCard
                             v-for="deliverable in row.items"
                             :key="deliverable.key"
@@ -232,7 +232,7 @@
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
 
           <!-- Panel: Mis unidades -->
-          <div v-if="showUnitsPanel" class="flex flex-col gap-5">
+          <div v-if="showUnitsPanel" class="flex flex-col gap-6">
             <AppPageHeader title="Mis unidades">
               <template #actions>
                 <AppButton variant="neutral-outline" @click="showUnitsPanel = false">
@@ -261,7 +261,7 @@
                 </button>
               </div>
               <template v-for="unit in unitsPanelData" :key="unit.id">
-                <div v-if="activeUnitPanelTab === unit.id" class="flex flex-col gap-5">
+                <div v-if="activeUnitPanelTab === unit.id" class="flex flex-col gap-6">
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     <section class="deasy-card p-6 flex flex-col gap-4">
                       <div class="flex items-start justify-between gap-3">
@@ -285,10 +285,10 @@
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
                             <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                           </span>
-                          <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span class="flex min-w-0 flex-1 flex-col gap-2">
                             <strong class="text-sm font-semibold text-strong leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
-                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
@@ -300,7 +300,7 @@
           </div>
 
           <!-- Panel: Mis cargos -->
-          <div v-else-if="showCargosPanel" class="flex flex-col gap-5">
+          <div v-else-if="showCargosPanel" class="flex flex-col gap-6">
 
             <!-- Cabecera con botón volver -->
             <AppActionBar>
@@ -333,7 +333,7 @@
 
               <!-- Contenido del tab activo -->
               <template v-for="cargo in cargosPanelData" :key="cargo.id">
-                <div v-if="activeCargoPanelTab === cargo.id" class="flex flex-col gap-5">
+                <div v-if="activeCargoPanelTab === cargo.id" class="flex flex-col gap-6">
 
                   <!-- Unidades donde está activo este cargo -->
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -375,10 +375,10 @@
                           <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
                             <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                           </span>
-                          <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span class="flex min-w-0 flex-1 flex-col gap-2">
                             <strong class="text-sm font-semibold text-strong leading-tight">{{ routedMenuLabel(process) }}</strong>
                           </span>
-                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-100 px-1.5 py-0.5 text-theme-xs font-bold text-primary"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-muted" />
                         </button>
                       </div>
@@ -543,7 +543,7 @@
             </div>
 
             <!-- Tab: Resumen — layout 2 columnas -->
-            <div v-else-if="homeDashTab === 'resumen'" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div v-else-if="homeDashTab === 'resumen'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               <!-- Columna izquierda: Acciones pendientes -->
               <section class="deasy-card p-6 flex flex-col gap-4">
@@ -582,7 +582,7 @@
                     >
                       <component :is="action.icon" class="h-5 w-5" />
                     </span>
-                    <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span class="flex min-w-0 flex-1 flex-col gap-2">
                       <strong class="text-sm font-bold text-strong leading-tight">{{ action.title }}</strong>
                       <span class="text-xs font-medium text-muted leading-snug">{{ action.description }}</span>
                     </span>
@@ -612,7 +612,7 @@
                     >
                       <component :is="stat.icon" class="h-4.5 w-4.5" />
                     </span>
-                    <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <div class="flex min-w-0 flex-1 flex-col gap-2">
                       <span class="deasy-overline">{{ stat.label }}</span>
                       <span class="text-xs font-medium text-muted truncate">{{ stat.detail }}</span>
                     </div>
@@ -688,9 +688,9 @@
 
               <section v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
+                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-6">
                   <section class="overflow-hidden rounded-2xl border border-blue-light-100 bg-linear-to-br from-blue-light-50 via-white to-surface shadow-inner shadow-blue-light-100/40">
-                    <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
+                    <div class="flex flex-col gap-6 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <button type="button" class="deasy-picker group" @click="openTaskFiltersModal">
                           <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--outlined">
@@ -759,14 +759,14 @@
                         </div>
                       </div>
                       <AppButton variant="primary-outline" @click="openNewSend">
-                        <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> Nuevo envío</span>
+                        <span class="inline-flex items-center gap-2"><IconPlus class="h-4 w-4" /> Nuevo envío</span>
                       </AppButton>
                     </div>
                   </section>
 
                   <section v-if="addableDeliverableEntries.length && !isRoutedProcess" class="px-2 md:px-3 xl:px-4">
                     <div class="rounded-2xl border border-blue-light-100 bg-blue-light-50/40 p-4 flex flex-col gap-3">
-                      <div class="flex items-center gap-1.5">
+                      <div class="flex items-center gap-2">
                         <h3 class="deasy-title deasy-title--section">Agregar entregable</h3>
                         <IconInfoCircle class="h-4 w-4 text-muted" title="Crea réplicas con etiqueta o envíos a un destinatario, según el modo configurado en el proceso." />
                       </div>
@@ -777,7 +777,7 @@
                           variant="primary-soft"
                           @click="openAddDeliverableModal(entry.task, entry.template)"
                         >
-                          <span class="inline-flex items-center gap-1.5">
+                          <span class="inline-flex items-center gap-2">
                             <IconPlus class="h-4 w-4" />
                             {{ entry.template.item_mode === 'routed' ? 'Enviar' : 'Agregar' }}: {{ entry.template.name || 'Entregable' }}
                           </span>
@@ -796,7 +796,7 @@
                       : 'No hay entregables que coincidan con los filtros actuales.' }}
                   </AppEmpty>
 
-                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
+                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-6">
                     <div class="flex items-center gap-3 px-1">
                       <div class="h-px flex-1 bg-gray-200/90"></div>
                       <AppButton
@@ -815,7 +815,7 @@
                       :key="row.id"
                       class="flex flex-col gap-3"
                     >
-                      <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
+                      <div class="grid grid-cols-1 gap-x-6 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
                         <DeliverableCard
                           v-for="deliverable in row.items"
                           :key="deliverable.key"
@@ -841,18 +841,18 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-5">
+                <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-6">
                   <header class="flex flex-col gap-2">
                     <h2 class="deasy-title deasy-title--panel leading-tight">Dependencias de la configuración</h2>
                     <p class="text-muted text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
                   </header>
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <section class="deasy-card p-5">
                       <h3 class="deasy-title deasy-title--section mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-muted"/> Reglas</h3>
                       <div v-if="!selectedProcessPanel.dependencies.rules.length" class="text-sm text-muted font-medium italic">
                         Sin reglas activas para tu alcance.
                       </div>
-                      <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
+                      <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
                         <li v-for="rule in selectedProcessPanel.dependencies.rules" :key="rule.id" class="text-sm font-medium text-icon flex items-start gap-2">
                           <span class="w-1.5 h-1.5 rounded-full bg-blue-light-400 mt-1.5 shrink-0"></span> {{ rule.display_label }}
                         </li>
@@ -863,7 +863,7 @@
                       <div v-if="!selectedProcessPanel.dependencies.period_types.length" class="text-sm text-muted font-medium italic">
                         Sin tipos de periodo activos.
                       </div>
-                      <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
+                      <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
                         <li v-for="periodType in selectedProcessPanel.dependencies.period_types" :key="periodType.id" class="text-sm font-medium text-icon flex items-start gap-2">
                           <span class="w-1.5 h-1.5 rounded-full bg-blue-light-400 mt-1.5 shrink-0"></span> {{ formatTriggerLabel(periodType) }}
                         </li>
@@ -875,7 +875,7 @@
                         Sin artifacts vinculados.
                       </div>
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
-                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="deasy-card text-sm font-bold text-body flex flex-col gap-1 p-3">
+                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="deasy-card text-sm font-bold text-body flex flex-col gap-2 p-3">
                           <span>{{ template.template_artifact_name }}</span>
                         </li>
                       </ul>
@@ -927,7 +927,7 @@
           {{ taskLaunchError }}
         </AppAlert>
 
-        <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
+        <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-6">
           <div class="deasy-card md:col-span-2 p-5">
             <div class="flex flex-wrap gap-2">
               <AppTag variant="info">Tarea ligada a proceso</AppTag>
@@ -983,7 +983,7 @@
           </template>
         </section>
 
-        <section v-else-if="taskLaunchStep === 2" class="flex flex-col gap-5">
+        <section v-else-if="taskLaunchStep === 2" class="flex flex-col gap-6">
           <div class="rounded-xl border border-blue-light-200 bg-blue-light-50/70 p-5">
             <h3 class="deasy-title deasy-title--block text-info">Base documental de la tarea</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-info/80">
@@ -1041,7 +1041,7 @@
           </div>
         </section>
 
-        <section v-else class="flex flex-col gap-5">
+        <section v-else class="flex flex-col gap-6">
           <AppAlert variant="success">
             <h3 class="deasy-title deasy-title--block text-success">Confirmación</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-success/80">
@@ -1121,7 +1121,7 @@
       content-class="shadow border-0"
       body-class="pt-4"
     >
-      <div class="deasy-filter-shell flex flex-col gap-5">
+      <div class="deasy-filter-shell flex flex-col gap-6">
         <label class="deasy-filter-field">
           <span class="sr-only">Buscar</span>
           <div class="relative">
@@ -1224,7 +1224,7 @@
       content-class="shadow border-0"
       body-class="pt-4"
     >
-      <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-6">
         <div
           v-if="fillWorkflowState.subject || signatureFlowState.subject"
           class="deasy-inline-tabs"
@@ -1300,7 +1300,7 @@
         </div>
 
         <template v-if="deliverableWorkspaceState.tab === 'summary'">
-          <div v-if="deliverableWorkspaceSubject" class="flex flex-col gap-5">
+          <div v-if="deliverableWorkspaceSubject" class="flex flex-col gap-6">
             <section class="deasy-card p-4">
               <div class="flex flex-col gap-3">
                 <!-- Estado del entregable -->
@@ -1315,9 +1315,9 @@
                 </div>
 
                 <!-- Datos del entregable (homogéneo) -->
-                <dl class="grid gap-x-6 gap-y-2.5 m-0 sm:grid-cols-2 lg:grid-cols-4">
+                <dl class="grid gap-x-6 gap-y-3 m-0 sm:grid-cols-2 lg:grid-cols-4">
                   <div
-                    class="flex flex-col gap-0.5 border-l-2 pl-3"
+                    class="flex flex-col gap-2 border-l-2 pl-3"
                     :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-success' : 'border-info'"
                   >
                     <dt
@@ -1328,15 +1328,15 @@
                     </dt>
                     <dd class="m-0 text-sm font-semibold text-strong">{{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}</dd>
                   </div>
-                  <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
+                  <div class="flex flex-col gap-2 border-l-2 border-line pl-3">
                     <dt class="deasy-overline">Proceso</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
                   </div>
-                  <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
+                  <div class="flex flex-col gap-2 border-l-2 border-line pl-3">
                     <dt class="deasy-overline">Unidad</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverableUnitLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
-                  <div class="flex flex-col gap-0.5 border-l-2 border-line pl-3">
+                  <div class="flex flex-col gap-2 border-l-2 border-line pl-3">
                     <dt class="deasy-overline">Periodo</dt>
                     <dd class="m-0 text-sm font-semibold text-body">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</dd>
                     <dd class="m-0 text-xs font-medium text-muted">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
@@ -1346,39 +1346,39 @@
             </section>
 
             <section class="deasy-card p-4">
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-2">
                 <h3 class="deasy-title deasy-title--section">Acciones</h3>
                 <IconInfoCircle class="h-4 w-4 text-muted" title="Todo lo que puedes hacer ahora con este entregable, en un solo lugar." />
               </div>
               <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
                 <!-- Acción principal (destacada) -->
                 <AppButton v-if="shouldShowStartDeliverable(deliverableWorkspaceSubject)" variant="primary-outline" :disabled="processingFillItemId === deliverableWorkspaceSubject.itemId || !canStartDeliverableAction(deliverableWorkspaceSubject)" @click="startDeliverableFlow(deliverableWorkspaceSubject)">
-                  <span class="inline-flex items-center gap-1.5"><IconPlayerPlayFilled class="h-4 w-4" /> {{ processingFillItemId === deliverableWorkspaceSubject.itemId ? 'Iniciando...' : 'Iniciar' }}</span>
+                  <span class="inline-flex items-center gap-2"><IconPlayerPlayFilled class="h-4 w-4" /> {{ processingFillItemId === deliverableWorkspaceSubject.itemId ? 'Iniciando...' : 'Iniciar' }}</span>
                 </AppButton>
                 <AppButton v-else-if="shouldShowUploadDeliverable(deliverableWorkspaceSubject)" variant="primary-outline" :disabled="!deliverableWorkspaceSubject.actions?.can_upload_deliverable || isUploadingDeliverable" @click="openDeliverableUploadModal(deliverableWorkspaceSubject)">
-                  <span class="inline-flex items-center gap-1.5"><IconUpload class="h-4 w-4" /> {{ getUploadActionLabel(deliverableWorkspaceSubject) }}</span>
+                  <span class="inline-flex items-center gap-2"><IconUpload class="h-4 w-4" /> {{ getUploadActionLabel(deliverableWorkspaceSubject) }}</span>
                 </AppButton>
                 <AppButton v-else-if="shouldShowSign(deliverableWorkspaceSubject)" variant="primary-outline" :disabled="!deliverableWorkspaceSubject.actions?.implemented?.sign" @click="openDocumentSignFlow(deliverableWorkspaceSubject)">
-                  <span class="inline-flex items-center gap-1.5"><IconSignature class="h-4 w-4" /> Firmar</span>
+                  <span class="inline-flex items-center gap-2"><IconSignature class="h-4 w-4" /> Firmar</span>
                 </AppButton>
                 <AppButton v-else-if="shouldShowOpenWorkspacePrimary(deliverableWorkspaceSubject)" variant="primary-outline" @click="deliverableWorkspaceState.tab = shouldShowManageFill(deliverableWorkspaceSubject) ? 'fill' : 'signature'">
-                  <span class="inline-flex items-center gap-1.5"><IconChecklist class="h-4 w-4" /> Ir al detalle</span>
+                  <span class="inline-flex items-center gap-2"><IconChecklist class="h-4 w-4" /> Ir al detalle</span>
                 </AppButton>
 
                 <!-- Revisión -->
-                <AppButton v-if="canApproveFillRequest" variant="success-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('approve')"><span class="inline-flex items-center gap-1.5"><IconCircleCheck class="h-4 w-4" /> {{ fillApproveActionLabel }}</span></AppButton>
-                <AppButton v-if="canReturnFillRequest" variant="warning-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('return')"><span class="inline-flex items-center gap-1.5"><IconArrowBackUp class="h-4 w-4" /> Devolver</span></AppButton>
-                <AppButton v-if="canRejectFillRequest" variant="danger-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('reject')"><span class="inline-flex items-center gap-1.5"><IconX class="h-4 w-4" /> Rechazar</span></AppButton>
+                <AppButton v-if="canApproveFillRequest" variant="success-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('approve')"><span class="inline-flex items-center gap-2"><IconCircleCheck class="h-4 w-4" /> {{ fillApproveActionLabel }}</span></AppButton>
+                <AppButton v-if="canReturnFillRequest" variant="warning-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('return')"><span class="inline-flex items-center gap-2"><IconArrowBackUp class="h-4 w-4" /> Devolver</span></AppButton>
+                <AppButton v-if="canRejectFillRequest" variant="danger-soft" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('reject')"><span class="inline-flex items-center gap-2"><IconX class="h-4 w-4" /> Rechazar</span></AppButton>
 
                 <!-- Utilidades -->
-                <AppButton variant="neutral-soft" :disabled="!deliverableWorkspaceSubject.actions?.can_open_process_chat" @click="handleDeliverableFutureAction('process_chat', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMessages class="h-4 w-4" /> Chat</span></AppButton>
-                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" @click="previewDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconEye class="h-4 w-4" /> Ver PDF</span></AppButton>
-                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" @click="downloadDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconDownload class="h-4 w-4" /> Descargar</span></AppButton>
-                <AppButton v-if="shouldShowTemplateDownload(deliverableWorkspaceSubject)" variant="neutral-soft" :disabled="!deliverableWorkspaceSubject.actions?.can_download_template" @click="handleDeliverableFutureAction('download_template', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconFileDescription class="h-4 w-4" /> Plantilla</span></AppButton>
-                <AppButton v-if="deliverableWorkspaceSubject" variant="neutral-soft" @click="openDerivedTaskFromWorkspace"><span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> Agregar entregable</span></AppButton>
+                <AppButton variant="neutral-soft" :disabled="!deliverableWorkspaceSubject.actions?.can_open_process_chat" @click="handleDeliverableFutureAction('process_chat', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-2"><IconMessages class="h-4 w-4" /> Chat</span></AppButton>
+                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" @click="previewDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-2"><IconEye class="h-4 w-4" /> Ver PDF</span></AppButton>
+                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="neutral-soft" @click="downloadDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-2"><IconDownload class="h-4 w-4" /> Descargar</span></AppButton>
+                <AppButton v-if="shouldShowTemplateDownload(deliverableWorkspaceSubject)" variant="neutral-soft" :disabled="!deliverableWorkspaceSubject.actions?.can_download_template" @click="handleDeliverableFutureAction('download_template', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-2"><IconFileDescription class="h-4 w-4" /> Plantilla</span></AppButton>
+                <AppButton v-if="deliverableWorkspaceSubject" variant="neutral-soft" @click="openDerivedTaskFromWorkspace"><span class="inline-flex items-center gap-2"><IconPlus class="h-4 w-4" /> Agregar entregable</span></AppButton>
 
                 <!-- Destructiva -->
-                <AppButton v-if="shouldShowResetWorkflow(deliverableWorkspaceSubject)" variant="danger-soft" :disabled="deliverableResetState.submitting" @click="openDeliverableResetModal(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMinus class="h-4 w-4" /> Reiniciar</span></AppButton>
+                <AppButton v-if="shouldShowResetWorkflow(deliverableWorkspaceSubject)" variant="danger-soft" :disabled="deliverableResetState.submitting" @click="openDeliverableResetModal(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-2"><IconMinus class="h-4 w-4" /> Reiniciar</span></AppButton>
               </div>
             </section>
           </div>
@@ -1497,7 +1497,7 @@
         </AppEmpty>
         <ul v-else class="m-0 flex flex-col gap-2 p-0 list-none">
           <li v-for="s in filteredMySends" :key="`send-${s.id}`" class="flex flex-wrap items-center justify-between gap-2 deasy-card px-4 py-3">
-            <div class="flex min-w-0 flex-col gap-0.5">
+            <div class="flex min-w-0 flex-col gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <AppTag variant="info">{{ s.process_name }}</AppTag>
                 <span class="text-sm font-semibold text-strong">{{ s.label || `Envío #${s.id}` }}</span>
@@ -1524,7 +1524,7 @@
       content-class="shadow border-0"
       body-class="pt-4"
     >
-      <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-6">
         <div v-if="fillWorkflowState.subject" class="flex flex-col gap-3">
           <div class="deasy-card p-4">
             <div class="flex flex-col gap-2">
@@ -1563,7 +1563,7 @@
                     <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                       {{ step.step_order }}
                     </span>
-                    <div class="flex flex-col gap-1">
+                    <div class="flex flex-col gap-2">
                       <strong class="text-sm font-bold text-strong">Paso {{ step.step_order }}</strong>
                       <span class="deasy-overline">Entrega</span>
                     </div>
@@ -1608,7 +1608,7 @@
                 class="deasy-card p-4"
               >
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                  <div class="flex flex-col gap-1">
+                  <div class="flex flex-col gap-2">
                     <strong class="text-sm font-bold text-strong">
                       Paso {{ noteEntry.stepOrder }} · {{ noteEntry.label }}
                     </strong>
@@ -1715,14 +1715,14 @@
       body-class="pt-4"
       @close="closeSignatureFlowModal"
     >
-      <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-6">
         <AppEmpty v-if="signatureFlowState.loading">
           Consultando la secuencia de firmas...
         </AppEmpty>
         <AppAlert v-else-if="signatureFlowState.error">
           {{ signatureFlowState.error }}
         </AppAlert>
-        <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
+        <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-6">
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section class="deasy-card p-4 flex flex-col gap-2">
               <p class="deasy-overline">Documento</p>
@@ -1799,7 +1799,7 @@
                     <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
                       {{ step.step_order || '—' }}
                     </span>
-                    <div class="flex flex-col gap-1">
+                    <div class="flex flex-col gap-2">
                       <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
                       <p class="deasy-overline">Firma</p>
                     </div>
@@ -1845,7 +1845,7 @@
               <div
                 v-for="request in signatureFlowState.snapshot.signatureRequests"
                 :key="`flow-request-${request.id}`"
-                class="deasy-card p-3 flex flex-col gap-1"
+                class="deasy-card p-3 flex flex-col gap-2"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <p class="text-sm font-semibold text-strong m-0">Paso {{ request.stepOrder }}</p>

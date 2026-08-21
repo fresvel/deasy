@@ -35,7 +35,7 @@
         {{ actionError }}
       </AppAlert>
 
-      <section class="deasy-card p-5 md:p-6 flex flex-col gap-5">
+      <section class="deasy-card p-5 md:p-6 flex flex-col gap-6">
         <div class="deasy-filter-shell">
           <div class="deasy-filter-grid">
             <label class="deasy-filter-field deasy-filter-search-span">
@@ -96,7 +96,7 @@
         >
           <template #cell="{ row, field }">
             <template v-if="field.name === 'document'">
-              <div class="flex flex-col gap-1">
+              <div class="flex flex-col gap-2">
                 <strong class="text-sm font-bold text-strong">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
                 <span class="text-xs font-medium text-muted">{{ row.document_version ? `v${row.document_version}` : 'Sin versión' }}</span>
               </div>

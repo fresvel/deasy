@@ -1,5 +1,5 @@
 <template>
-<div v-if="fillWorkflowState.subject" class="flex flex-col gap-5">
+<div v-if="fillWorkflowState.subject" class="flex flex-col gap-6">
   <div class="deasy-card p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
       <h3 class="deasy-title deasy-title--section">Secuencia del flujo</h3>
@@ -21,7 +21,7 @@
             <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
               {{ step.step_order }}
             </span>
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col gap-2">
               <strong class="text-sm font-bold text-strong">Paso {{ step.step_order }}</strong>
               <span class="deasy-overline">Entrega</span>
             </div>
@@ -38,7 +38,7 @@
             </AppTag>
           </div>
         </div>
-        <div class="mt-3 flex flex-col gap-0.5">
+        <div class="mt-3 flex flex-col gap-2">
           <p class="deasy-overline">Responsable</p>
           <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">{{ step.display_label }}</p>
         </div>

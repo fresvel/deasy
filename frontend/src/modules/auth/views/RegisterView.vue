@@ -293,7 +293,7 @@
                   </div>
                   <div
                     v-if="newuser.repassword"
-                    class="mt-1 flex items-center gap-1 text-theme-xs font-medium"
+                    class="mt-1 flex items-center gap-2 text-theme-xs font-medium"
                     :class="passwordsMatch ? 'text-success' : 'text-danger'"
                   >
                     <IconCheck v-if="passwordsMatch" class="h-3.5 w-3.5" />

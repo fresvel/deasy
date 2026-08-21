@@ -27,7 +27,7 @@
       :title="editId ? 'Editar regla de alcance' : 'Nueva regla de alcance'"
       @close="cancelForm"
     >
-      <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-6">
       <!-- Era un aviso escrito a mano con `border-amber-200 bg-amber-50` —y `amber` no es una
            familia de la paleta—. Es `AppAlert` en su variante de fila, que existe desde F4. -->
       <AppAlert :variant="canSubmit ? 'info' : 'warning'" class="deasy-alert--row items-start">
@@ -41,14 +41,14 @@
         <span
           v-for="chip in seriesFixedChips"
           :key="chip.label"
-          class="inline-flex items-center gap-1 rounded-xl bg-surface px-2 py-0.5 font-medium text-icon ring-1 ring-line"
+          class="inline-flex items-center gap-2 rounded-xl bg-surface px-2 py-0.5 font-medium text-icon ring-1 ring-line"
         >
           {{ chip.label }}: <strong class="font-bold text-body">{{ chip.value }}</strong>
         </span>
       </div>
 
       <!-- Bloque 1: a quién va dirigida la regla -->
-      <fieldset class="flex flex-col gap-2.5">
+      <fieldset class="flex flex-col gap-3">
         <p class="deasy-overline">Alcance y destinatarios</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup v-if="showScopeField" label="Alcance" group-class="md:col-span-4">
@@ -125,7 +125,7 @@
       </fieldset>
 
       <!-- Bloque 2: prioridad, estado y vigencia -->
-      <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-line pt-4">
+      <fieldset class="flex flex-col gap-3 border-t border-dashed border-line pt-4">
         <p class="deasy-overline">Prioridad y vigencia</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">

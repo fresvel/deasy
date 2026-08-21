@@ -22,11 +22,11 @@
         <IconPlus class="h-4 w-4" />
       </button>
     </div>
-    <p class="m-0 flex items-center gap-1">
+    <p class="m-0 flex items-center gap-2">
       <IconFileText class="h-3.5 w-3.5 shrink-0 text-primary" />
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.display_name }}</span>
     </p>
-    <p class="m-0 mt-0.5 flex items-center gap-1">
+    <p class="m-0 mt-0.5 flex items-center gap-2">
       <AppTag variant="primary" outlined class-name="deasy-tag--truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</AppTag>
       <AppTag
         v-if="data.storage_version"

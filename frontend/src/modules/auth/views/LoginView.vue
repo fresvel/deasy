@@ -6,7 +6,7 @@
       <p class="deasy-auth-copy">Ingresa tus credenciales para acceder a tu espacio de trabajo.</p>
     </div>
 
-    <form @submit.prevent="loginFunction" class="space-y-5">
+    <form @submit.prevent="loginFunction" class="space-y-6">
       <div>
         <label for="identifier" class="deasy-form-label">Usuario</label>
         <div class="relative">

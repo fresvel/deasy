@@ -66,7 +66,7 @@
         <div class="flex flex-col gap-2">
           <span class="deasy-overline">Historial de corridas</span>
           <div v-if="!runs.length" class="text-sm text-muted italic">Sin corridas registradas.</div>
-          <ul v-else class="flex flex-col gap-1.5 m-0 p-0 list-none">
+          <ul v-else class="flex flex-col gap-2 m-0 p-0 list-none">
             <li
               v-for="run in runs"
               :key="run.id"

@@ -22,7 +22,7 @@
       </div>
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="deasy-card inline-flex items-center gap-0.5 p-0.5">
+        <div class="deasy-card inline-flex items-center gap-2 p-0.5">
           <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
           <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
           <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
@@ -153,7 +153,7 @@
             <p class="deasy-overline">Detalle de proceso</p>
             <h3 class="deasy-title deasy-title--block mt-0.5 truncate">{{ detailProcess.name }}</h3>
           </div>
-          <div class="flex shrink-0 items-center gap-1">
+          <div class="flex shrink-0 items-center gap-2">
             <AppButton
               v-if="editable"
               variant="success-soft"
@@ -192,12 +192,12 @@
                     <span class="truncate text-sm font-semibold text-strong" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
                     <AppTag :variant="tonoCicloVida(cfg.status)" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
                   </div>
-                  <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                  <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ seriesLabel(cfg) }}</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.variation_key }}</span>
                     <span>v{{ cfg.definition_version }}</span>
                   </div>
-                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-theme-xs text-muted">
+                  <div class="mt-1.5 flex flex-wrap items-center gap-2 text-theme-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.rules_count }} reglas</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.templates_count }} plantillas</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.runs_count }} corridas</span>
@@ -241,7 +241,7 @@
                   </div>
                   <div class="mt-1.5 flex items-center gap-2 text-xs">
                     <span class="truncate text-muted">{{ ch.slug }}</span>
-                    <div class="ml-auto flex items-center gap-1">
+                    <div class="ml-auto flex items-center gap-2">
                       <AppButton
                         variant="info-soft"
                         icon-only
@@ -279,7 +279,7 @@
                     <span class="truncate text-sm font-semibold text-strong">{{ run.term_name || "Sin periodo" }}</span>
                     <AppTag :variant="tonoCorrida(run.status)" outlined class-name="ml-auto capitalize">{{ run.status }}</AppTag>
                   </div>
-                  <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                  <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                     <span class="truncate">{{ run.definition_name }} · v{{ run.definition_version }}</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
                     <span v-if="run.source_run_id" class="italic text-muted">relanzamiento</span>

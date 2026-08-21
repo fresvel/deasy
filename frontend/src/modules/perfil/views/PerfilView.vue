@@ -31,7 +31,7 @@
                   type="button"
                   @click="showDossierMenu = !showDossierMenu"
                 >
-                    <span class="flex items-center gap-3.5 text-base font-semibold">
+                    <span class="flex items-center gap-4 text-base font-semibold">
                       <span class="deasy-nav-glyph" :class="workspaceIconToneClass(dossierIconMeta.tone, 'deasy-nav-glyph')">
                         <component :is="dossierIconMeta.icon" class="h-5 w-5 shrink-0" />
                       </span>

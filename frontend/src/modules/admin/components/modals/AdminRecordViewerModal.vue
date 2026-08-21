@@ -33,7 +33,7 @@
       <AppAlert v-else-if="error">
         {{ error }}
       </AppAlert>
-      <div v-else-if="recordViewerTable && recordViewerRow" class="space-y-7">
+      <div v-else-if="recordViewerTable && recordViewerRow" class="space-y-6">
         <section aria-labelledby="recordViewerGeneralTitle">
           <div class="mb-3 flex items-center justify-between gap-3 border-b border-line pb-3">
             <div>

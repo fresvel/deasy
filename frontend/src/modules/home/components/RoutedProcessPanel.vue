@@ -1,9 +1,9 @@
 <template>
-  <section class="flex flex-col gap-5">
+  <section class="flex flex-col gap-6">
     <!-- Barra de acción: propósito + botón principal. El título del proceso lo pone la cabecera de la página. -->
     <div class="overflow-hidden rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50/70 via-white to-blue-light-50/50">
       <div class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
-        <div class="flex items-start gap-3.5">
+        <div class="flex items-start gap-4">
           <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--outlined">
             <IconSend class="h-6 w-6" />
           </span>
@@ -23,7 +23,7 @@
             <IconRefresh class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
           </AppButton>
           <AppButton variant="primary-outline" @click="$emit('create')">
-            <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4.5 w-4.5" /> {{ createLabel }}</span>
+            <span class="inline-flex items-center gap-2"><IconPlus class="h-4.5 w-4.5" /> {{ createLabel }}</span>
           </AppButton>
         </div>
       </div>
@@ -63,15 +63,15 @@
       <p class="m-0 text-sm font-bold text-icon">{{ emptyTitle }}</p>
       <p class="m-0 max-w-sm text-xs font-medium text-muted">{{ emptyHint }}</p>
       <AppButton v-if="activeTab === 'sends'" variant="primary-soft" class="mt-1" @click="$emit('create')">
-        <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> {{ createLabel }}</span>
+        <span class="inline-flex items-center gap-2"><IconPlus class="h-4 w-4" /> {{ createLabel }}</span>
       </AppButton>
     </div>
 
-    <ul v-else class="m-0 flex list-none flex-col gap-2.5 p-0">
+    <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
       <li
         v-for="item in activeItems"
         :key="item.id"
-        class="deasy-card group flex items-center gap-3.5 px-4 py-3.5 transition hover:border-brand-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
+        class="deasy-card group flex items-center gap-4 px-4 py-3.5 transition hover:border-brand-200 hover:shadow-[0_10px_24px_rgba(79,70,229,0.08)]"
       >
         <span
           class="deasy-icon-box deasy-icon-box--lg"
@@ -81,8 +81,8 @@
         </span>
         <div class="flex min-w-0 flex-1 flex-col">
           <p class="m-0 truncate text-sm font-bold text-strong">{{ item.label || 'Documento sin título' }}</p>
-          <p class="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-medium text-muted">
-            <span class="inline-flex items-center gap-1">
+          <p class="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-xs font-medium text-muted">
+            <span class="inline-flex items-center gap-2">
               <IconUser class="h-3.5 w-3.5 text-muted" />
               {{ activeTab === 'sends' ? 'Para' : 'De' }}: <strong class="font-semibold text-icon">{{ personName(item) }}</strong>
             </span>
@@ -90,7 +90,7 @@
             <span>{{ formatDate(item.created_at) }}</span>
           </p>
         </div>
-        <div class="flex shrink-0 items-center gap-1.5">
+        <div class="flex shrink-0 items-center gap-2">
           <AppTag v-if="activeTab === 'received' && receivedRole(item)" :variant="receivedRole(item).tone">{{ receivedRole(item).label }}</AppTag>
           <AppTag :variant="statusMeta(item).tone">{{ statusMeta(item).label }}</AppTag>
         </div>

@@ -2,7 +2,7 @@
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
       <aside class="deasy-card flex h-full min-h-[70vh] flex-col overflow-hidden">
-        <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
+        <div class="flex h-full flex-col gap-6 overflow-y-auto p-5 custom-scrollbar">
           <div v-if="allowManualUpload" class="deasy-card flex flex-col gap-3 p-4">
             <PdfDropField
               title=""
@@ -99,11 +99,11 @@
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
             </AppEmpty>
 
-            <div v-else class="max-h-72 space-y-2.5 overflow-y-auto pr-1 custom-scrollbar">
+            <div v-else class="max-h-72 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
               <div
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
-                class="deasy-elegible group flex w-full flex-col items-start gap-1 rounded-xl p-3 text-left"
+                class="deasy-elegible group flex w-full flex-col items-start gap-2 rounded-xl p-3 text-left"
                 :class="[index === currentDocumentIndex ? 'deasy-elegible--activa' : '']"
               >
                 <div class="flex w-full items-start justify-between gap-3">
@@ -199,7 +199,7 @@
                 </template>
 
                 <template #navigation>
-                  <div class="grid w-full grid-cols-2 gap-1.5">
+                  <div class="grid w-full grid-cols-2 gap-2">
                     <AppCounterNavigator
                       size="sm"
                       tone="floating"
@@ -229,7 +229,7 @@
 
               <AppAlert class="pointer-events-none absolute z-(--z-capa-elemento) border-2 border-dashed mix-blend-multiply" v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
                 :style="activeSelectionBox">
-                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-theme-xs font-bold text-white shadow-theme-lg">
+                <div class="absolute -top-6 left-0 flex items-center gap-2 rounded bg-rose-500 px-2 py-1 text-theme-xs font-bold text-white shadow-theme-lg">
                   <IconDragDrop class="h-3 w-3" />
                   <span>Calculando Área...</span>
                 </div>

@@ -72,7 +72,7 @@
               </template>
             </template>
             <template v-if="canUpdate" #actions="{ row }">
-              <div class="inline-flex items-center gap-1">
+              <div class="inline-flex items-center gap-2">
                 <AdminButton variant="danger-soft" icon-only title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
                   <font-awesome-icon icon="times-circle" />
                 </AdminButton>

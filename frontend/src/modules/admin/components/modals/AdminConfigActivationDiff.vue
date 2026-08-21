@@ -15,7 +15,7 @@
         </p>
 
         <p class="m-0 mb-1 text-theme-xs font-semibold text-muted">Entregables</p>
-        <ul class="m-0 mb-2 flex list-none flex-col gap-1 p-0">
+        <ul class="m-0 mb-2 flex list-none flex-col gap-2 p-0">
           <li v-for="t in diff.templates" :key="t.template_code" class="flex items-center gap-2 text-xs">
             <AppTag :variant="tonoDiff(t.change)" outlined>{{ changeLabel(t.change) }}</AppTag>
             <span class="font-medium text-body">{{ t.display_name || t.template_code }}</span>

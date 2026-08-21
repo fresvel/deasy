@@ -42,7 +42,7 @@
             </span>
             <span class="text-xs font-medium text-muted">Estado: {{ item.status }}</span>
           </div>
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-2">
             <AppTag :variant="item.reason === 'sin_responsable' ? 'warning' : 'danger'">
               {{ item.reason === 'sin_responsable' ? 'Sin responsable' : 'Titular se fue' }}
             </AppTag>

@@ -8,7 +8,7 @@
         class="deasy-card p-4"
       >
         <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0">
+          <div class="flex items-center gap-3 min-w-0">
             <span class="deasy-icon-box deasy-icon-box--md" :class="card.iconWrap">
               <font-awesome-icon :icon="card.icon" />
             </span>

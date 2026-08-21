@@ -43,7 +43,7 @@
                 type="button"
                 @click="onGroupTitleClick(group)"
               >
-                <div class="flex items-center gap-3.5">
+                <div class="flex items-center gap-4">
                   <span class="deasy-nav-glyph" :class="workspaceIconToneClass(groupIconMeta(group).tone, 'deasy-nav-glyph')">
                     <component :is="groupIconMeta(group).icon" class="h-5 w-5 shrink-0" />
                   </span>

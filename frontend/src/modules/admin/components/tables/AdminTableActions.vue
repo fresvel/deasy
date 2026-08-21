@@ -1,5 +1,5 @@
 <template>
-  <!-- `gap-2` (8 px) reemplaza al `gap-1` mas el `margin: 0 0.15rem` que cada boton llevaba
+  <!-- `gap-2` (8 px) reemplaza al `gap-2` mas el `margin: 0 0.15rem` que cada boton llevaba
        dentro de si: 8.8 px repartidos en dos sitios pasan a 8 en uno solo. El espacio entre
        botones es del contenedor, no del boton. -->
   <div class="inline-flex items-center gap-2">

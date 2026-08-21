@@ -13,7 +13,7 @@
       </span>
       <span class="flex flex-col flex-1 min-w-0 pt-0.5">
         <strong :class="titleClasses">{{ title }}</strong>
-        <span v-if="meta" class="text-muted text-sm font-medium mt-1 inline-flex items-center gap-1.5 opacity-80">
+        <span v-if="meta" class="text-muted text-sm font-medium mt-1 inline-flex items-center gap-2 opacity-80">
           <span v-if="showMetaDot" class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-blue-light-400 transition-colors"></span>
           {{ meta }}
         </span>

@@ -1,13 +1,13 @@
 <template>
 <div class="flex flex-col gap-4">
   <section class="deasy-card p-4">
-    <div class="flex flex-col gap-1">
+    <div class="flex flex-col gap-2">
       <h3 class="deasy-title deasy-title--section">Anexos del entregable</h3>
       <p class="m-0 text-xs font-medium text-muted">Archivos auxiliares (evidencias, soportes) adicionales al documento principal.</p>
     </div>
 
     <div class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 p-4">
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-2">
         <span class="deasy-form-label">Tipo</span>
         <select v-model="attachmentUploadKind" class="deasy-control deasy-control--select">
           <option value="annex">Anexo</option>
