@@ -140,7 +140,7 @@
                   </span>
                   <IconChevronDown class="h-4 w-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': traceabilityOpen }" />
                 </button>
-                <div v-show="traceabilityOpen" class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+                <div v-show="traceabilityOpen" class="deasy-tile-grid mt-3">
                   <AppNavCard
                     v-for="table in traceabilityTables"
                     :key="table.table"
