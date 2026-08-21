@@ -4,7 +4,7 @@
       {{ error }}
     </AppAlert>
 
-    <section id="signature-launchers" class="deasy-card">
+    <section id="signature-launchers">
       <FirmarPdf
         :show-start-heading="false"
         :enable-home-shortcuts="true"

@@ -61,7 +61,7 @@
     </template>
 
     <div v-if="!selectedTable">
-      <div class="deasy-section-card flex flex-col min-h-100">
+      <div class="flex flex-col min-h-100">
         <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
           <div class="inline-flex items-center gap-3">
             <div class="deasy-spinner deasy-spinner--lg text-info"></div>

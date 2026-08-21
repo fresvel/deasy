@@ -1,5 +1,12 @@
 <template>
-  <div :class="rootClasses">
+  <!-- ⚠️ LA RAIZ NO PONE PADDING DE PAGINA (F13.5, 2026-08-21). Aqui habia un `rootClasses`
+       computado que elegia entre `p-0` (dentro de un modal) y `p-4 sm:p-6 lg:p-8` (en pagina).
+       Ese segundo caso metia **32 px invisibles** —sin borde ni fondo— encima de los que ya pone
+       `main`, y por eso la rejilla de firmas medía **1370 px cuando el resto de páginas tiene
+       1500**: sus tarjetas salian mas estrechas que las de todas partes sin motivo visible.
+       Con el padding fuera, las dos ramas del computado eran la misma cadena, asi que el
+       computado sobra: la clase es estatica. -->
+  <div class="flex h-full w-full flex-col gap-6">
     <div v-if="!multiOnly && workspaceMode !== 'multi' && showStartHeading" class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -149,11 +156,10 @@
       </AppAlert>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="deasy-card mt-4 p-6 lg:p-8">
+    <div v-else-if="!multiOnly && !pdfReady">
       <div
         id="signature-launchers-grid"
-        class="grid grid-cols-1 gap-6 lg:grid-cols-2"
-        :class="enableHomeShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
+        class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4"
       >
 
         <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="deasy-card signature-workspace-card flex flex-col h-full min-h-[19rem] p-6 text-center">
@@ -1208,11 +1214,6 @@ const fieldId = (name) => `${uid}-${name}`;
   const isEmbeddedWorkflowMode = computed(() =>
     props.embedded
       && Boolean(workflowSignContext.value?.documentVersionId || workflowSignContext.value?.signatureRequestId)
-  );
-  const rootClasses = computed(() =>
-    props.embedded
-      ? 'w-full h-full max-w-none mx-auto p-0 flex flex-col gap-6'
-      : 'w-full h-full max-w-none mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
   );
 
   const handleDatabaseEntry = () => {
