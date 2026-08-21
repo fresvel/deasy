@@ -1,13 +1,15 @@
 <template>
-  <!-- ⚠️ ANTES ESTO ERA UNA `AppActionBar` Y LAS TRES PROPS DE CABECERA NO SE LEIAN.
-       `AdminTableManager` calculaba y pasaba `tableHeaderTitle`, `tableHeaderIcon` y
-       `tableHeaderSubtitle`, y esta plantilla **no mencionaba ninguna de las tres**: el nombre de
-       la tabla se tiraba, y en `/admin` solo se sabia que tabla estabas viendo mirando el menu
-       lateral. Mismo hallazgo que F13.1b con `SBody` y F1.3c con los `AdminDefinition*`.
-       Ahora la fila de arriba lo dice, que es la regla de `AppTableToolbar`: **esa fila dice
-       siempre DONDE estas** —pestañas si la pagina tiene variantes, el nombre si no—. -->
-  <AppTableToolbar :title="tableHeaderTitle">
-    <template #actions>
+  <!-- ⚠️ ESTE COMPONENTE SON SOLO SUS BOTONES: no pinta caja, ni barra, ni titulo.
+       La barra (`AppTableToolbar`) la monta `AdminMainTableSection`, porque el dueño pidio **todos
+       los botones de accion en UNA fila** y los del filtro —Limpiar, Buscar, Mostrar filtros y
+       Actualizar— viven alli con estado local. Estos entran por su slot `actions`. Si esto
+       volviera a envolver, habria DOS barras anidadas.
+
+       ⚠️ Y LAS TRES PROPS DE CABECERA SIGUEN DECLARADAS PERO YA NO SE LEEN AQUI. `tableHeaderTitle`
+       lo consume ahora la barra —`AdminTableManager` se lo pasa a la seccion—; `tableHeaderIcon` y
+       `-Subtitle` **no las lee nadie desde que existe este fichero**, y eso es deuda anotada, no un
+       descuido de hoy: es el mismo hallazgo que F13.1b hizo con `SBody`. Se retiran cuando se
+       decida si el icono y el subtitulo entran en la barra. -->
         <AdminButton
           variant="neutral-outline"
           :disabled="!table"
@@ -38,13 +40,10 @@
           <font-awesome-icon :icon="isProcessDefinitionsTable ? 'list-check' : 'plus'" class="mr-2" />
           {{ isProcessDefinitionsTable ? "Configurar proceso" : "Agregar" }}
         </AdminButton>
-    </template>
-  </AppTableToolbar>
 </template>
 
 <script setup>
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 
 defineProps({
   tableHeaderIcon: {

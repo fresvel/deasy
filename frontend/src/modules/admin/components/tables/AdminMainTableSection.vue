@@ -1,18 +1,91 @@
 <template>
   <section class="space-y-4">
+    <!-- ⚠️ LA BARRA VIVE AQUI Y NO EN `AdminTableHeader`, y el motivo no es estetico.
+         El dueño pidio **todos los botones de accion en UNA fila**. Los de la tabla —Regresar y
+         Agregar— los pinta `AdminTableHeader`, pero los del filtro —Limpiar, Buscar, Mostrar
+         filtros y Actualizar— viven aqui y **dos de ellos usan estado LOCAL** (`resetGenericSearch`
+         y `showAdvancedFilters`, que abre el panel de filtros avanzados de este mismo fichero).
+         Subirlos a la cabecera obligaria a sacar ese estado de su dueño; bajar la barra aqui, no.
+         Asi que la barra la pinta esta seccion y los botones de la tabla entran por el slot
+         `actions`, que `AdminTableManager` llena con `AdminTableHeader`. -->
+    <AppTableToolbar :title="tableHeaderTitle">
+      <!-- El buscador comparte fila con los botones: la barra lo pone a la izquierda
+           (`__search` crece) y ellos a la derecha (`__actions` no encoge). -->
+      <template #search>
+        <AdminInputField
+        ref="searchInputRef"
+        :model-value="searchTerm"
+        placeholder="Buscar en la tabla"
+        input-class="deasy-control"
+        @update:model-value="$emit('update:search-term', $event)"
+        @input="$emit('debounced-search')"
+        />
+      </template>
+
+      <template #actions>
+        <slot name="actions" />
+                  <AdminButton
+                    v-if="!isPositionFilterTable && !isProcessDefinitionFilterTable && !isProcessTargetRuleFilterTable && !isTemplateArtifactsTable"
+                    variant="neutral-outline" icon-only
+                    title="Limpiar búsqueda"
+                    aria-label="Limpiar búsqueda"
+                    :disabled="!searchTerm"
+                    @click="resetGenericSearch"
+                  ><font-awesome-icon icon="times" /></AdminButton>
+                  <AdminButton
+                    v-if="isPositionFilterTable"
+                    variant="neutral-outline" icon-only
+                    title="Limpiar filtros"
+                    aria-label="Limpiar filtros"
+                    :disabled="!hasUnitPositionFilters"
+                    @click="$emit('clear-unit-position-inline-filters')"
+                  ><font-awesome-icon icon="times" /></AdminButton>
+                  <AdminButton
+                    v-else-if="isProcessDefinitionFilterTable"
+                    variant="neutral-outline" icon-only
+                    title="Limpiar filtros"
+                    aria-label="Limpiar filtros"
+                    :disabled="!hasProcessDefinitionInlineFilters"
+                    @click="$emit('clear-process-definition-inline-filters')"
+                  ><font-awesome-icon icon="times" /></AdminButton>
+                  <AdminButton
+                    v-else-if="isProcessTargetRuleFilterTable"
+                    variant="neutral-outline" icon-only
+                    title="Limpiar filtros"
+                    aria-label="Limpiar filtros"
+                    :disabled="!hasProcessTargetRuleInlineFilters"
+                    @click="$emit('clear-process-target-rule-inline-filters')"
+                  ><font-awesome-icon icon="times" /></AdminButton>
+                  <AdminButton
+                    v-else-if="isTemplateArtifactsTable"
+                    variant="neutral-outline" icon-only
+                    title="Limpiar filtros"
+                    aria-label="Limpiar filtros"
+                    :disabled="!hasTemplateArtifactInlineFilters"
+                    @click="$emit('clear-template-artifact-inline-filters')"
+                  ><font-awesome-icon icon="times" /></AdminButton>
+                  <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
+                  <AdminButton
+                    v-if="hasExpandableFilters"
+                    variant="neutral-outline"
+                    icon-only
+                    :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                    :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                    @click="showAdvancedFilters = !showAdvancedFilters"
+                  >
+                    <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
+                  </AdminButton>
+                  <!-- «Actualizar» vivia en una SEGUNDA fila (`deasy-filter-toolbar`), acompañado
+                       de un `deasy-filter-summary` VACIO que era lo unico que justificaba esa
+                       fila. Por eso caia debajo en vez de al lado. Sube aqui con sus hermanos:
+                       los tres actuan sobre la misma tabla. -->
+                  <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('fetch-rows')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+      </template>
+    </AppTableToolbar>
+
     <div>
       <div class="deasy-filter-shell deasy-filter-shell--embedded">
       <div class="deasy-filter-grid deasy-filter-grid--admin">
-            <div :class="searchColumnClass">
-              <AdminInputField
-                ref="searchInputRef"
-                :model-value="searchTerm"
-                placeholder="Buscar en la tabla"
-                input-class="deasy-control"
-                @update:model-value="$emit('update:search-term', $event)"
-                @input="$emit('debounced-search')"
-              />
-            </div>
 
             <template v-if="showAdvancedFilters && isPositionFilterTable">
               <div class="md:col-span-4 lg:col-span-2">
@@ -89,66 +162,6 @@
               </div>
             </template>
 
-            <div :class="actionColumnClass">
-              <div class="deasy-filter-actions">
-                <AdminButton
-                  v-if="!isPositionFilterTable && !isProcessDefinitionFilterTable && !isProcessTargetRuleFilterTable && !isTemplateArtifactsTable"
-                  variant="neutral-outline" icon-only
-                  title="Limpiar búsqueda"
-                  aria-label="Limpiar búsqueda"
-                  :disabled="!searchTerm"
-                  @click="resetGenericSearch"
-                ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton
-                  v-if="isPositionFilterTable"
-                  variant="neutral-outline" icon-only
-                  title="Limpiar filtros"
-                  aria-label="Limpiar filtros"
-                  :disabled="!hasUnitPositionFilters"
-                  @click="$emit('clear-unit-position-inline-filters')"
-                ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton
-                  v-else-if="isProcessDefinitionFilterTable"
-                  variant="neutral-outline" icon-only
-                  title="Limpiar filtros"
-                  aria-label="Limpiar filtros"
-                  :disabled="!hasProcessDefinitionInlineFilters"
-                  @click="$emit('clear-process-definition-inline-filters')"
-                ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton
-                  v-else-if="isProcessTargetRuleFilterTable"
-                  variant="neutral-outline" icon-only
-                  title="Limpiar filtros"
-                  aria-label="Limpiar filtros"
-                  :disabled="!hasProcessTargetRuleInlineFilters"
-                  @click="$emit('clear-process-target-rule-inline-filters')"
-                ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton
-                  v-else-if="isTemplateArtifactsTable"
-                  variant="neutral-outline" icon-only
-                  title="Limpiar filtros"
-                  aria-label="Limpiar filtros"
-                  :disabled="!hasTemplateArtifactInlineFilters"
-                  @click="$emit('clear-template-artifact-inline-filters')"
-                ><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')"><font-awesome-icon icon="search" /></AdminButton>
-                <AdminButton
-                  v-if="hasExpandableFilters"
-                  variant="neutral-outline"
-                  icon-only
-                  :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
-                  :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
-                  @click="showAdvancedFilters = !showAdvancedFilters"
-                >
-                  <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
-                </AdminButton>
-                <!-- «Actualizar» vivia en una SEGUNDA fila (`deasy-filter-toolbar`), acompañado
-                     de un `deasy-filter-summary` VACIO que era lo unico que justificaba esa
-                     fila. Por eso caia debajo en vez de al lado. Sube aqui con sus hermanos:
-                     los tres actuan sobre la misma tabla. -->
-                <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('fetch-rows')"><font-awesome-icon icon="rotate-right" /></AdminButton>
-              </div>
-            </div>
           </div>
           </div>
 
@@ -304,6 +317,7 @@
 </template>
 
 <script setup>
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
@@ -318,6 +332,8 @@ import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const props = defineProps({
+  /* El nombre de la tabla, para la fila superior de la barra. */
+  tableHeaderTitle: { type: String, default: "" },
   table: { type: Object, default: null },
   loading: { type: Boolean, default: false },
   error: { type: String, default: "" },

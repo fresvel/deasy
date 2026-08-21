@@ -39,11 +39,17 @@
       />
     </div>
 
+    <!-- ⚠️ LA CABECERA SE PINTA EN DOS SITIOS Y SON MUTUAMENTE EXCLUYENTES (F13.4, 2026-08-21).
+         Lo normal es que entre por el slot `actions` de `AdminMainTableSection`, para que sus
+         botones caigan en la MISMA fila que los del filtro. Pero la seccion **no siempre se
+         renderiza**: tiene un `v-if` que la cambia por otra rama en las tablas de asignacion de
+         puestos, y un `v-show` que la oculta en los modos grafo. En esos casos los botones —el de
+         «Regresar», sobre todo— tienen que seguir estando, asi que aqui queda la version suelta
+         con la condicion inversa. Sin esto, entrar al grafo de unidades dejaba la pantalla sin
+         forma de volver. -->
     <AdminTableHeader
-      v-if="!(isProcessesTable && processGraphMode)"
-      :table-header-icon="tableHeaderIcon"
-      :table-header-title="tableHeaderTitle"
-      :table-header-subtitle="tableHeaderSubtitle"
+      v-if="!(isProcessesTable && processGraphMode)
+            && (isPositionAssignmentsTable || (isUnitsTable && unitGraphMode))"
       :table="table"
       :loading="loading"
       :is-template-seeds-table="isTemplateSeedsTable"
@@ -146,6 +152,7 @@
 
     <AdminMainTableSection
       v-else
+      :table-header-title="tableHeaderTitle"
       v-show="!(isUnitsTable && unitGraphMode) && !(isProcessesTable && processGraphMode) && (!isPositionAssignmentsTable || positionAssignmentsView === 'ocupaciones') && (!isProcessDefinitionTemplatesTable || definitionTemplatesView === 'plantillas')"
       ref="mainTableSection"
       :table="table"
@@ -203,7 +210,23 @@
       @open-person-assignments="openPersonAssignments"
       @launch-term="openProcessLaunch"
       @launch-definition="openProcessDefinitionLaunch"
-    />
+    >
+      <!-- Los botones de la tabla entran en la MISMA fila que los del filtro: la barra los
+           coloca uno detras de otro en `deasy-table-toolbar__actions`. -->
+      <template #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AdminMainTableSection>
 
     <AdminVacantPositionsSection
       v-if="isPositionAssignmentsTable"
