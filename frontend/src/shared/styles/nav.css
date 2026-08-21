@@ -144,7 +144,7 @@
     }
 
     .deasy-nav-item {
-        @apply flex w-full items-start gap-2.5 rounded-2xl px-3 py-2 text-left text-sm font-medium text-body transition-all duration-200 hover:bg-surface hover:text-navy;
+        @apply flex w-full items-start gap-2 rounded-2xl px-3 py-2 text-left text-sm font-medium text-body transition-all duration-200 hover:bg-surface hover:text-navy;
     }
 
     .deasy-nav-item__label {

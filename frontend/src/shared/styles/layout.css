@@ -90,7 +90,7 @@
     }
 
     .deasy-workspace-header__actions {
-        @apply flex shrink-0 items-center gap-1.5 sm:gap-2;
+        @apply flex shrink-0 items-center gap-1 sm:gap-2;
     }
 
     /* ══ LA CELDA DE MARCA DEL HEADER — la columna de la barra, arriba ═════════════════════════

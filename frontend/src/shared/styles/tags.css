@@ -270,7 +270,7 @@
        que los tintes `-200` como borde miden 1.21-1.49:1 y no cumplen WCAG 1.4.11. Al pasar por
        `deasy-alert` el borde se deriva al 71 %, que es donde llega a 3:1. */
     .deasy-alert--row {
-        @apply flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors;
+        @apply flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors;
     }
 
     /* LA ✕ DE UNA PASTILLA — quitar ese elemento de una seleccion.

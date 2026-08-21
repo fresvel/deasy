@@ -77,10 +77,19 @@
         </div>
       </AppWorkspaceSidebar>
 
-      <!-- La clase y el marco los declara `SBody` desde F13: el componente es dueño de su caja. -->
-      <SBody>
-        <slot />
-      </SBody>
+      <!-- ⚠️ AQUI HABIA UN COMPONENTE, `SBody`, Y SE DISOLVIO EN F13 (2026-08-21).
+           Su plantilla entera eran estos dos elementos, no tenia ni una expresion, y tras quitarle
+           en F13.1 las tres props que nadie leia (`showmenu`, `shownotify`, `shownavmenu`) se quedo
+           en once lineas con UN SOLO consumidor: este. Un componente que envuelve a un unico
+           llamador no encapsula nada — solo parte el marco en dos ficheros y obliga a abrir el
+           segundo para saber donde vive el padding. Es el mismo hallazgo que F1.3c hizo con los
+           tres `AdminDefinition*`.
+           El marco sigue centralizado, pero donde toca: `layout.css`. -->
+      <main class="deasy-workspace-content">
+        <div class="deasy-page">
+          <slot />
+        </div>
+      </main>
 
       <SMessage :show="showNotify" @close="emit('notify-close')" />
     </div>
@@ -99,7 +108,6 @@ import {
   IconSitemap,
 } from "@tabler/icons-vue";
 import SHeader from "@/layouts/headers/SHeader.vue";
-import SBody from "@/layouts/core/SBody.vue";
 import SMessage from "@/layouts/core/SNotify.vue";
 import AppWorkspaceSidebar from "@/layouts/menus/AppWorkspaceSidebar.vue";
 import AppUserMenu from "@/shared/components/widgets/AppUserMenu.vue";
