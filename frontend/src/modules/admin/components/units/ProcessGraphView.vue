@@ -353,7 +353,7 @@
               </div>
             </li>
           </ul>
-          <p v-else class="m-0 rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">Sin versiones.</p>
+          <AppEmpty v-else :icon="false">Sin versiones.</AppEmpty>
         </div>
       </aside>
     </div>

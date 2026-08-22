@@ -10,19 +10,13 @@
 
       <AppAlert class="mt-3" v-if="error">{{ error }}</AppAlert>
 
-      <div
-        v-else-if="loading"
-        class="mt-4 animate-pulse rounded-2xl border border-dashed border-line bg-surface p-5 text-center text-sm font-medium text-muted"
-      >
+      <AppEmpty v-else-if="loading" :icon="false" class="mt-4 animate-pulse">
         Cargando historial...
-      </div>
+      </AppEmpty>
 
-      <div
-        v-else-if="!items.length"
-        class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-center text-sm font-medium text-muted"
-      >
+      <AppEmpty v-else-if="!items.length" :icon="false" class="mt-4">
         Este entregable no ha cambiado de responsable.
-      </div>
+      </AppEmpty>
 
       <ol v-else class="mt-4 flex flex-col gap-2">
         <li
@@ -56,6 +50,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 // Pestaña HISTORIAL del modal de detalle del entregable: contesta «¿por qué esto, que era de Juan,
 // ahora es de María?» (defecto 1.10). Hasta el 2026-08-14 la bitácora `task_item_handovers` era de
 // SOLO ESCRITURA — cero `SELECT` en todo el repositorio— y además solo registraba el traspaso manual;

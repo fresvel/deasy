@@ -122,18 +122,18 @@
           <AppAlert v-if="section.error">
             {{ section.error }}
           </AppAlert>
-          <div
+          <!-- ⚠️ ES `AppEmpty` Y NO UNA CAJA A MANO. Escribia su propio borde discontinuo, su
+               `IconInbox` y su titulo — los tres los pone la receta, y el icono ademas lo eligio el
+               dueño en F2 precisamente para que dejara de ser una moneda al aire. Lo unico propio
+               es la frase larga de ayuda, que va en el slot. -->
+          <AppEmpty
             v-else-if="section.rows.length === 0"
-            class="flex min-h-32 flex-col items-center justify-center border-y border-dashed border-line bg-surface/70 px-4 py-6 text-center"
+            :title="isProcessConfigurationSection(section) ? 'Este proceso aun no tiene configuraciones.' : 'Sin registros relacionados.'"
           >
-            <IconInbox class="mb-2 h-6 w-6 text-muted" />
-            <p class="m-0 text-sm font-semibold text-icon">
-              {{ isProcessConfigurationSection(section) ? "Este proceso aun no tiene configuraciones." : "Sin registros relacionados." }}
-            </p>
-            <p v-if="isProcessConfigurationSection(section)" class="m-0 mt-1 max-w-lg text-xs leading-5 text-muted">
+            <p v-if="isProcessConfigurationSection(section)" class="m-0 max-w-lg text-xs leading-5 text-muted">
               {{ processConfigurationEmptyText }}
             </p>
-          </div>
+          </AppEmpty>
           <AppDataTable
             v-else
             :fields="relatedSectionFields(section)"

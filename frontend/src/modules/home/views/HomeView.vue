@@ -156,9 +156,9 @@
             <AppAlert v-else-if="processPanelError">
               {{ processPanelError }}
             </AppAlert>
-            <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-line rounded-xl p-8 text-muted text-center text-sm font-medium">
+            <AppEmpty v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" :icon="false">
               Selecciona una unidad y proceso para ver sus entregables.
-            </div>
+            </AppEmpty>
 
             <template v-else>
 

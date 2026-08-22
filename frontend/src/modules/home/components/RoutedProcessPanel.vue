@@ -53,19 +53,20 @@
       Cargando…
     </div>
 
-    <div
+    <!-- ⚠️ ES UN VACIO Y AHORA LO DICE: llevaba su propio borde discontinuo, su circulo de icono
+         hecho con un `deasy-card` de 56 px y su titulo, los tres a mano. `AppEmpty` pone los tres,
+         y el icono deja de depender de que cada autor elija uno. Lo propio —la pista y el boton de
+         crear— va en el slot. -->
+    <AppEmpty
       v-else-if="!activeItems.length"
-      class="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-surface/50 px-6 py-12 text-center"
+      :icon="activeTab === 'sends' ? IconSend : IconInbox"
+      :title="emptyTitle"
     >
-      <span class="inline-flex h-14 w-14 items-center justify-center deasy-card text-gray-300">
-        <component :is="activeTab === 'sends' ? IconSend : IconInbox" class="h-7 w-7" />
-      </span>
-      <p class="m-0 text-sm font-bold text-icon">{{ emptyTitle }}</p>
       <p class="m-0 max-w-sm text-xs font-medium text-muted">{{ emptyHint }}</p>
-      <AppButton v-if="activeTab === 'sends'" variant="primary-soft" class="mt-1" @click="$emit('create')">
+      <AppButton v-if="activeTab === 'sends'" variant="primary-soft" class="mt-3" @click="$emit('create')">
         <span class="inline-flex items-center gap-2"><IconPlus class="h-4 w-4" /> {{ createLabel }}</span>
       </AppButton>
-    </div>
+    </AppEmpty>
 
     <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
       <li
@@ -100,6 +101,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, ref } from 'vue';
 import { IconSend, IconInbox, IconPlus, IconRefresh, IconUser } from '@tabler/icons-vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';

@@ -203,9 +203,9 @@
           Cargando preview…
         </div>
         <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="deasy-card min-h-105 w-full" title="Preview del seed"></iframe>
-        <div v-else class="rounded-xl border border-dashed border-line bg-surface px-4 py-5 text-center text-sm font-medium text-muted">
+        <AppEmpty v-else :icon="false">
           Este seed no tiene un PDF de preview publicado.
-        </div>
+        </AppEmpty>
       </div>
     </div>
 
@@ -271,9 +271,9 @@
       <AppAlert variant="warning" class="mt-3" v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading">
         El proceso vinculado aún no tiene <strong>reglas objetivo</strong>. Los ámbitos “Unidad del proceso” quedan deshabilitados (resolverían a nadie); define primero las reglas o usa una unidad específica.
       </AppAlert>
-      <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-muted">
+      <AppEmpty v-if="!fillSteps.length" :icon="false" class="mt-3">
         Sin pasos de entrega.
-      </div>
+      </AppEmpty>
       <div v-else class="mt-3 flex flex-col gap-2">
         <div
           v-for="(step, index) in fillSteps"
@@ -403,9 +403,9 @@
         <AdminButton variant="primary-outline" @click="addSignatureStep">+ Añadir paso</AdminButton>
       </div>
 
-      <div v-if="!signatureSteps.length" class="mt-3 rounded-xl border border-dashed border-line bg-surface px-4 py-4 text-center text-sm font-medium text-muted">
+      <AppEmpty v-if="!signatureSteps.length" :icon="false" class="mt-3">
         Sin pasos de firma.
-      </div>
+      </AppEmpty>
       <div v-else class="mt-3 flex flex-col gap-2">
         <div
           v-for="(step, index) in signatureSteps"

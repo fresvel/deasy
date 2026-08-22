@@ -32,10 +32,10 @@
 
     <AppAlert class="mt-3" v-if="attachmentsState.error">{{ attachmentsState.error }}</AppAlert>
 
-    <div v-if="attachmentsState.loading" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center animate-pulse">Cargando anexos...</div>
-    <div v-else-if="!attachmentsState.items.length" class="mt-4 rounded-2xl border border-dashed border-line bg-surface p-5 text-sm font-medium text-muted text-center">
+    <AppEmpty v-if="attachmentsState.loading" :icon="false" class="mt-4 animate-pulse">Cargando anexos...</AppEmpty>
+    <AppEmpty v-else-if="!attachmentsState.items.length" class="mt-4">
       Este entregable todavía no tiene anexos.
-    </div>
+    </AppEmpty>
     <ul v-else class="mt-4 flex flex-col gap-2">
       <li
         v-for="attachment in attachmentsState.items"
@@ -60,6 +60,7 @@
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 // Pestaña ANEXOS del modal de detalle del entregable: subir, listar, descargar y borrar
 // archivos auxiliares (evidencias, soportes) del documento principal.
 // Extraída de HomeView.vue en la Fase C. Componente PRESENTACIONAL: la lógica sigue en HomeView.

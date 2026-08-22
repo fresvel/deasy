@@ -1,4 +1,5 @@
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { ref } from 'vue';
 import { IconInfoCircle } from '@tabler/icons-vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
@@ -61,12 +62,9 @@ const onAdd = () => {
 
     <div v-if="loading" class="mt-4 text-sm text-muted">Cargando observaciones...</div>
     <template v-else>
-      <div
-        v-if="!observations.length"
-        class="mt-4 rounded-2xl border border-dashed border-line bg-surface/70 p-5 text-sm font-medium text-muted"
-      >
+      <AppEmpty v-if="!observations.length" :icon="false" class="mt-4">
         {{ emptyText }}
-      </div>
+      </AppEmpty>
       <ul v-else class="relative mt-4 m-0 flex flex-col gap-4 list-none border-l border-line pl-4">
         <li
           v-for="observation in observations"
