@@ -1,34 +1,30 @@
 <template>
   <div class="deasy-table-toolbar">
-    <!-- FILA 1 · SOLO EL TITULO: dice QUE estas viendo, y nada mas.
-         ⚠️ Aqui hubo DOS intentos fallidos, los dos vistos por el dueño y no por un gate.
-         (1) El titulo era el contenido POR DEFECTO del slot `tabs`, asi que en cuanto una pagina
-             traia pestañas **el nombre desaparecia**: en `/perfil/formacion` no se sabia que tabla
-             era.
-         (2) Se pintaron los dos en esta misma fila, y quedaba el titulo pegado a las pestañas.
-         Lo correcto es lo que admin ya hacia: **el titulo tiene su linea** y lo que FILTRA baja a
-         la fila de abajo. Y las pestañas son un filtro, igual que el buscador: eligen que porcion
-         de la tabla ves. Por eso comparten sitio y por eso las dos familias quedan identicas. -->
-    <div class="deasy-table-toolbar__head">
-      <h2 v-if="title" class="deasy-title deasy-title--panel m-0">{{ title }}</h2>
+    <!-- FILA 1 · LAS PESTAÑAS, Y EXISTE SIEMPRE.
+         ⚠️ AQUI HABIA UNA FILA DE TITULO Y SE RETIRO (2026-08-22, idea del dueño). Medido en 7
+         rutas: **el titulo repetia lo que la cabecera de la aplicacion ya dice en las 7**, y en
+         `/admin/gestiones/firmas/signature_flow_steps` repetia ademas la pestaña activa. Era la
+         tercera vez que la pantalla decia lo mismo, contando el menu lateral.
+
+         Y al quitarla se resuelve el salto que quedaba: la fila de pestañas **solo existia si
+         habia pestañas**, asi que `/perfil/certificacion` —la unica seccion sin subsecciones—
+         arrancaba la tabla 56 px mas arriba que sus cinco hermanas. Ahora la fila esta siempre: si
+         la pagina no tiene pestañas se pinta UNA, con el nombre y con foco.
+
+         ⚠️ Esa unica pestaña es un `<span>` y no un `<button>`, y el bloque no lleva `role="tablist"`:
+         no hay a donde ir. Fingir un tablist de un elemento le diria a un lector de pantalla que
+         hay algo que elegir. Lleva `aria-current="page"`, que es lo que de verdad significa. -->
+    <div class="deasy-table-toolbar__tabs">
+      <slot name="tabs">
+        <div v-if="title" class="deasy-inline-tabs">
+          <span class="deasy-inline-tab deasy-inline-tab--active" aria-current="page">{{ title }}</span>
+        </div>
+      </slot>
     </div>
 
-    <!-- FILA 2 · LAS PESTAÑAS, en su propia linea y debajo del titulo.
-         ⚠️ No van dentro de `__head` —quedaban pegadas al titulo— ni dentro de `__filtro`, que es
-         para lo que filtra FILAS. Una pestaña elige QUE TABLA o QUE PORCION ves, que es navegacion,
-         no filtrado: en `/admin` son las tablas hermanas y en `/perfil` las subsecciones.
-         Antes de esto, las de admin las pintaba `AdminTableManager` con marcado en linea **antes**
-         de la seccion, asi que el titulo salia DEBAJO de ellas en admin y ENCIMA en perfil. Lo vio
-         el dueño; era el tercer sintoma del mismo problema. -->
-    <div v-if="$slots.tabs" class="deasy-table-toolbar__tabs">
-      <slot name="tabs" />
-    </div>
-
-    <!-- FILA 3 · LAS PESTAÑAS ANIDADAS, cuando la pestaña activa del nivel 1 las tiene.
+    <!-- FILA 2 · LAS PESTAÑAS ANIDADAS, cuando la pestaña activa del nivel 1 las tiene.
          ⚠️ Van DEBAJO de las de nivel 1 y no las sustituyen: el dueño lo pidio explicito —«se debe
-         mantener las pestañas originales en su lugar y mostrar las anidadas abajo»—. Antes las
-         pintaba `AdminTableManager` sueltas y **ENCIMA de todo**, asi que el nivel 2 salia por
-         encima del 1 y del titulo. -->
+         mantener las pestañas originales en su lugar y mostrar las anidadas abajo»—. -->
     <div v-if="$slots.subtabs" class="deasy-table-toolbar__subtabs">
       <slot name="subtabs" />
     </div>

@@ -40,11 +40,13 @@
         @apply flex flex-col gap-3;
     }
 
-    /* La fila que dice donde estas. `min-h-11` es la altura del control del sistema (44 px), asi
-       que la fila mide lo mismo lleve pestañas o lleve un titulo: es lo que impide el salto. */
-    .deasy-table-toolbar__head {
-        @apply flex min-h-11 flex-wrap items-center gap-3;
-    }
+    /* ⚠️ AQUI VIVIA `.deasy-table-toolbar__head`, LA FILA DEL TITULO. Retirada el 2026-08-22 por
+       idea del dueño, y verificada antes de aplicarla: medido en 7 rutas, **el titulo repetia lo que
+       la cabecera de la aplicacion ya dice en las 7**, y en una repetia ademas la pestaña activa.
+       Era la tercera vez que la pantalla decia lo mismo, contando el menu lateral.
+       Su retirada resuelve ademas el ultimo salto de F13: la fila de pestañas pasa a existir
+       SIEMPRE —con una sola pestaña con foco cuando la pagina no tiene mas— y todas las paginas con
+       tabla arrancan a la misma altura. */
 
     /* ⚠️ `justify-end` Y NO `justify-between`, y esto costo una regresion. Con `between`, una
        pagina SIN buscador —el organigrama, todo `/perfil`— deja las acciones pegadas a la
