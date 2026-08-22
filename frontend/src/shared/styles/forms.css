@@ -110,9 +110,10 @@
         @apply lg:grid-cols-12;
     }
 
-    .deasy-filter-search-span {
-        @apply xl:col-span-2;
-    }
+    /* ⚠️ AQUI VIVIA `.deasy-filter-search-span`, el tramo ancho que el buscador ocupaba en la
+       rejilla de filtros. Retirada el 2026-08-21: desde que el buscador vive en la barra
+       (`deasy-table-toolbar__filtro`, que ya crece con `flex-1`), no hay rejilla que abarcar y la
+       clase se quedo sin consumidor. La caza `css-prune`, no yo. */
 
     .deasy-filter-field {
         @apply flex flex-col gap-2;

@@ -35,50 +35,68 @@
         {{ actionError }}
       </AppAlert>
 
-      <section class="deasy-card p-5 md:p-6 flex flex-col gap-6">
-        <div class="deasy-filter-shell">
+      <!-- ⚠️ AQUI HABIA UN `deasy-card p-5 md:p-6` ENVOLVIENDO FILTRO Y TABLA: la misma caja
+           doble que F13.5 retiro de admin, en la ultima vista donde quedaba. La pagina no lleva
+           caja y la tabla ya trae la suya. -->
+      <section class="flex flex-col gap-4">
+        <!-- ⚠️ MISMO MECANISMO QUE ADMIN Y NO UN MODAL, por decision del dueño (2026-08-21).
+             Su primera idea fue abrir los filtros en un modal; admin ya resuelve lo mismo con un
+             panel desplegable (`showAdvancedFilters`), y elegir modal aqui daria **DOS patrones
+             para el mismo trabajo** — justo lo que este frente lleva trece fases quitando.
+             El buscador se queda en la fila; los CUATRO desplegables bajan al panel. -->
+        <AppTableToolbar title="Centro documental">
+          <template #filtro>
+            <input aria-label="Buscar" v-model="filters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-control" />
+          </template>
+          <template #actions>
+            <AppButton variant="neutral-outline" icon-only @click="resetFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
+            <AppButton
+              variant="neutral-outline"
+              icon-only
+              :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+              :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+              @click="showAdvancedFilters = !showAdvancedFilters"
+            >
+              <IconChevronDown class="h-4 w-4 transition-transform" :class="showAdvancedFilters ? 'rotate-180' : ''" />
+            </AppButton>
+            <AppButton variant="primary-outline" icon-only @click="load" title="Actualizar" aria-label="Actualizar"><font-awesome-icon icon="rotate-right" /></AppButton>
+          </template>
+        </AppTableToolbar>
+
+        <div v-if="showAdvancedFilters" class="deasy-filter-shell">
           <div class="deasy-filter-grid">
-            <label class="deasy-filter-field deasy-filter-search-span">
-              <span class="sr-only">Buscar</span>
-              <input v-model="filters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-control" />
+            <label class="deasy-filter-field">
+            <span class="sr-only">Año</span>
+            <select v-model="filters.year" class="deasy-control">
+            <option value="all">Año</option>
+            <option v-for="option in filterYears" :key="option" :value="option">{{ option }}</option>
+            </select>
             </label>
             <label class="deasy-filter-field">
-              <span class="sr-only">Año</span>
-              <select v-model="filters.year" class="deasy-control">
-                <option value="all">Año</option>
-                <option v-for="option in filterYears" :key="option" :value="option">{{ option }}</option>
-              </select>
+            <span class="sr-only">Tipo de periodo</span>
+            <select v-model="filters.termType" class="deasy-control">
+            <option value="all">Tipo de periodo</option>
+            <option v-for="option in filterTermTypes" :key="option" :value="option">{{ option }}</option>
+            </select>
             </label>
             <label class="deasy-filter-field">
-              <span class="sr-only">Tipo de periodo</span>
-              <select v-model="filters.termType" class="deasy-control">
-                <option value="all">Tipo de periodo</option>
-                <option v-for="option in filterTermTypes" :key="option" :value="option">{{ option }}</option>
-              </select>
+            <span class="sr-only">Unidad</span>
+            <select v-model="filters.unit" class="deasy-control">
+            <option value="all">Unidad</option>
+            <option v-for="option in filterUnits" :key="option" :value="option">{{ option }}</option>
+            </select>
             </label>
             <label class="deasy-filter-field">
-              <span class="sr-only">Unidad</span>
-              <select v-model="filters.unit" class="deasy-control">
-                <option value="all">Unidad</option>
-                <option v-for="option in filterUnits" :key="option" :value="option">{{ option }}</option>
-              </select>
+            <span class="sr-only">Proceso</span>
+            <select v-model="filters.process" class="deasy-control">
+            <option value="all">Proceso</option>
+            <option v-for="option in filterProcesses" :key="option" :value="option">{{ option }}</option>
+            </select>
             </label>
-            <label class="deasy-filter-field">
-              <span class="sr-only">Proceso</span>
-              <select v-model="filters.process" class="deasy-control">
-                <option value="all">Proceso</option>
-                <option v-for="option in filterProcesses" :key="option" :value="option">{{ option }}</option>
-              </select>
-            </label>
-          </div>
-          <div class="deasy-filter-toolbar">
-            <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-body">{{ filteredItems.length }}</span></div>
-            <div class="deasy-filter-actions">
-              <AppButton variant="neutral-outline" icon-only @click="resetFilters" title="Limpiar filtros" aria-label="Limpiar filtros"><font-awesome-icon icon="times" /></AppButton>
-              <AppButton variant="primary-outline" icon-only @click="load" title="Actualizar" aria-label="Actualizar"><font-awesome-icon icon="rotate-right" /></AppButton>
-            </div>
           </div>
         </div>
+
+        <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-body">{{ filteredItems.length }}</span></div>
 
         <section v-if="loading" class="deasy-card p-5 text-sm font-bold text-icon">
           Cargando centro documental...
@@ -139,6 +157,12 @@
 </template>
 
 <script setup>
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
+import { IconChevronDown } from "@tabler/icons-vue";
+
+/* El panel de filtros avanzados, igual que en admin: el buscador se queda en la barra y los
+   desplegables se muestran bajo demanda. */
+const showAdvancedFilters = ref(false);
 /**
  * Centro documental: /home/documentos.
  *
