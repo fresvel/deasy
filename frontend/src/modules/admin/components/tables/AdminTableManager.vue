@@ -51,8 +51,7 @@
          «Regresar» encima, en su propia linea. Lo vio el dueño. La barra es lo que los pone en
          fila; un componente que solo emite botones necesita SIEMPRE quien los coloque. -->
     <AppTableToolbar
-      v-if="!(isProcessesTable && processGraphMode)
-            && (isPositionAssignmentsTable || (isUnitsTable && unitGraphMode))"
+      v-if="table && !mainSectionVisible && !(isProcessesTable && processGraphMode)"
       :title="tableHeaderTitle"
     >
       <template v-if="table && siblingTabs.length" #tabs>
@@ -170,7 +169,7 @@
     <AdminMainTableSection
       v-else
       :table-header-title="tableHeaderTitle"
-      v-show="!(isUnitsTable && unitGraphMode) && !(isProcessesTable && processGraphMode) && (!isPositionAssignmentsTable || positionAssignmentsView === 'ocupaciones') && (!isProcessDefinitionTemplatesTable || definitionTemplatesView === 'plantillas')"
+      v-show="mainSectionVisible"
       ref="mainTableSection"
       :table="table"
       :loading="loading"
@@ -2031,6 +2030,25 @@ const processEditorConfigurationTableFields = [
   { name: "status", label: "Estado" },
   { name: "effective_from", label: "Vigencia desde" }
 ];
+/* ⚠️ CUANDO SE VE LA SECCION PRINCIPAL — y esto vive en UN sitio a proposito.
+ *
+ * La condicion es larga y tiene cuatro terminos, y **estaba escrita dos veces**: en el `v-show` de
+ * la seccion y, negada a ojo, en el `v-if` de la barra suelta que F13.4 dejo para los casos donde
+ * la seccion no se renderiza. La negue mal: di por hecho que en `position_assignments` la seccion
+ * no salia, y **si sale** —su `v-show` solo la oculta cuando la vista interna no es «ocupaciones»—,
+ * asi que `/admin/usuarios/personas/position_assignments` mostraba **DOS barras**, una en y=76 y
+ * otra en y=306, con el mismo titulo.
+ *
+ * Con el computado, la barra suelta es literalmente «cuando la seccion NO se ve», y no puede
+ * volver a desincronizarse. El termino del modo grafo de procesos se queda aparte porque ahi no
+ * debe haber barra en absoluto, ni suelta ni de seccion. */
+const mainSectionVisible = computed(() =>
+  !(isUnitsTable.value && unitGraphMode.value)
+  && !(isProcessesTable.value && processGraphMode.value)
+  && (!isPositionAssignmentsTable.value || positionAssignmentsView.value === "ocupaciones")
+  && (!isProcessDefinitionTemplatesTable.value || definitionTemplatesView.value === "plantillas")
+);
+
 const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
 const tableHeaderSubtitle = computed(() => {
   if (!props.table) {
