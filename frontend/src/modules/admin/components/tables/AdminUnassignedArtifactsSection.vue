@@ -1,12 +1,26 @@
 <template>
   <section class="mt-4 space-y-4">
+    <!-- ⚠️ MISMA BARRA QUE LAS DEMAS (2026-08-21) — gemela de `AdminVacantPositionsSection`.
+         Antes armaba su cabecera a mano y, con la barra suelta del gestor pintando «Regresar» y
+         «Agregar» arriba, **las acciones salian en DOS lineas**. -->
+    <AppTableToolbar :title="title">
+      <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
+      <template v-if="$slots.subtabs" #subtabs><slot name="subtabs" /></template>
+      <template #filtro>
+        <AdminInputField :model-value="searchTerm" input-class="deasy-control" placeholder="Buscar plantillas sin configuracion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+      </template>
+      <template #actions>
+        <slot name="actions" />
+        <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+        <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+        <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+      </template>
+    </AppTableToolbar>
+
       <div>
           <div class="deasy-filter-shell deasy-filter-shell--embedded">
             <div class="deasy-filter-grid deasy-filter-grid--admin">
               <div class="md:col-span-4 lg:col-span-3">
-                <AdminInputField :model-value="searchTerm" input-class="deasy-control" placeholder="Buscar plantillas sin configuracion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
-              </div>
-              <div class="md:col-span-4 lg:col-span-2">
                 <AdminSelectField :model-value="filters.is_active" select-class="deasy-control" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
                   <option value="">Activo</option>
                   <option value="1">Si</option>
@@ -14,11 +28,6 @@
                 </AdminSelectField>
               </div>
               <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
-                <div class="deasy-filter-actions">
-                  <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
-                  <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
-                  <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
-                </div>
               </div>
             </div>
           </div>
@@ -65,6 +74,7 @@
 </template>
 
 <script setup>
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
@@ -72,6 +82,8 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
+  /* El nombre de la tabla, para la fila superior de la barra. */
+  title: { type: String, default: "" },
   searchTerm: { type: String, default: "" },
   filters: { type: Object, default: () => ({}) },
   hasFilters: { type: Boolean, default: false },

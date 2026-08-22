@@ -51,7 +51,7 @@
          «Regresar» encima, en su propia linea. Lo vio el dueño. La barra es lo que los pone en
          fila; un componente que solo emite botones necesita SIEMPRE quien los coloque. -->
     <AppTableToolbar
-      v-if="table && !mainSectionVisible && !(isProcessesTable && processGraphMode)"
+      v-if="table && !mainSectionVisible && !subviewSectionVisible && !(isProcessesTable && processGraphMode)"
       :title="tableHeaderTitle"
     >
       <template v-if="table && siblingTabs.length" #tabs>
@@ -283,7 +283,33 @@
       @load="loadVacantPositions"
       @deactivate="deactivateVacantPosition"
       @assign="assignVacantPosition"
-    />
+      :title="tableHeaderTitle"
+    >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
+      </template>
+      <template #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AdminVacantPositionsSection>
 
     <AdminUnassignedArtifactsSection
       v-if="isProcessDefinitionTemplatesTable"
@@ -304,7 +330,33 @@
       @load="loadUnassignedTemplateArtifacts"
       @view="openRecordViewer($event, allTablesMap.template_artifacts)"
       @link="startProcessDefinitionTemplateFromArtifact"
-    />
+      :title="tableHeaderTitle"
+    >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
+      </template>
+      <template #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AdminUnassignedArtifactsSection>
 
     <AdminPersonAssignmentsModal
       ref="personAssignmentsModal"
@@ -2043,6 +2095,14 @@ const processEditorConfigurationTableFields = [
  * Solo algunas tablas tienen segundo nivel, y las dos que lo tienen son excluyentes entre si. En
  * vez de repetir el bloque en cada barra —que es como nacieron los cuatro defectos de F13.4—, aqui
  * se decide QUE pestañas van y quien recibe el cambio, y cada montaje es un `v-bind`. */
+/* Cuando se ve una de las secciones de SUB-VISTA. Como ellas montan su propia barra desde el
+ * 2026-08-21, la barra suelta no debe pintarse a la vez: serian dos. Mismo motivo por el que existe
+ * `mainSectionVisible` — una condicion de visibilidad escrita dos veces se desincroniza. */
+const subviewSectionVisible = computed(() =>
+  (isPositionAssignmentsTable.value && positionAssignmentsView.value === "vacantes")
+  || (isProcessDefinitionTemplatesTable.value && definitionTemplatesView.value === "sin-vincular")
+);
+
 const subtabs = computed(() => {
   if (isPositionAssignmentsTable.value) {
     return { modelValue: positionAssignmentsView.value, tabs: positionAssignmentsTabs.value,

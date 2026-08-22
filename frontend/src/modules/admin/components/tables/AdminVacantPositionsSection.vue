@@ -1,12 +1,37 @@
 <template>
   <section class="mt-4 space-y-4">
+    <!-- ⚠️ ESTA SECCION USA LA MISMA BARRA QUE LAS DEMAS (2026-08-21). Antes armaba su cabecera a
+         mano: el buscador y sus botones vivian dentro del `deasy-filter-shell` y, como la barra
+         suelta del gestor ya pintaba «Regresar» y «Agregar» arriba, **las acciones salian en DOS
+         lineas**. Lo vio el dueño. Ahora los botones de tabla entran por el slot `actions` y los
+         del filtro se ponen a continuacion, en la MISMA fila. -->
+    <AppTableToolbar :title="title">
+      <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
+      <template v-if="$slots.subtabs" #subtabs><slot name="subtabs" /></template>
+      <template #filtro>
+        <AdminInputField :model-value="searchTerm" input-class="deasy-control" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+      </template>
+      <template #actions>
+        <slot name="actions" />
+                    <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+                    <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+                    <AdminButton
+                      variant="neutral-outline"
+                      icon-only
+                      :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                      :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                      @click="showAdvancedFilters = !showAdvancedFilters"
+                    >
+                      <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
+                    </AdminButton>
+                    <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+      </template>
+    </AppTableToolbar>
+
       <div>
           <div class="deasy-filter-shell deasy-filter-shell--embedded">
           <div class="deasy-filter-grid deasy-filter-grid--admin">
             <div class="md:col-span-4 lg:col-span-2">
-              <AdminInputField :model-value="searchTerm" input-class="deasy-control" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
-            </div>
-            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.unit_type_id" select-class="deasy-control" :disabled="filterLoading" @update:model-value="updateFilter('unit_type_id', $event)" @change="$emit('handle-type-change')">
                 <option value="">Tipo de unidad</option>
                 <option v-for="row in unitTypeOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("unit_types", row) }}</option>
@@ -33,20 +58,6 @@
                 </AdminSelectField>
               </div>
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
-              <div class="deasy-filter-actions">
-                <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
-                <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
-                <AdminButton
-                  variant="neutral-outline"
-                  icon-only
-                  :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
-                  :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
-                  @click="showAdvancedFilters = !showAdvancedFilters"
-                >
-                  <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
-                </AdminButton>
-                <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
-              </div>
             </div>
           </div>
           </div>
@@ -87,6 +98,7 @@
 </template>
 
 <script setup>
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
@@ -94,6 +106,8 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
+  /* El nombre de la tabla, para la fila superior de la barra. */
+  title: { type: String, default: "" },
   searchTerm: { type: String, default: "" },
   filters: { type: Object, default: () => ({}) },
   filterLoading: { type: Boolean, default: false },
