@@ -94,8 +94,11 @@
      *
      * Todas las demas —con icono, sin icono y con contador— miden 54 exactas. Verificado en el
      * DOM en tres vistas. */
+    /* ⚠️ El `mb-0` de esta variante se retiro el 2026-08-21: existia para ANULAR el `mb-5` que
+       la base llevaba dentro, y la base ya no lo lleva. Un modificador que solo apaga algo que ya
+       no existe es ruido. */
     .deasy-inline-tabs--stacked {
-        @apply mb-0 w-full;
+        @apply w-full;
     }
 
     /* ══ EL NIVEL ANIDADO ══════════════════════════════════════════════════════════════════
