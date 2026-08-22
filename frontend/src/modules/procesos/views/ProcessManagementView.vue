@@ -277,7 +277,7 @@ const router = useRouter();
 // Procesos es la unica vista cuyo menu arranca siempre cerrado; las otras tres lo abren en
 // escritorio. Se conserva tal cual: unificarlo es decision de producto, no de este refactor.
 const { menuOpen, showNotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
-  useWorkspaceChrome({ menuOpenByDefault: false });
+  useWorkspaceChrome();
 const loadingMeta = ref(false);
 const metaError = ref("");
 const tables = ref([]);

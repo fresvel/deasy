@@ -22,10 +22,14 @@ describe("useWorkspaceChrome", () => {
       expect(useWorkspaceChrome().menuOpen.value).toBe(false);
     });
 
-    it("menuOpenByDefault gana sobre el ancho de pantalla", () => {
-      // Lo usa procesos, la unica vista que arranca siempre cerrada. Preservado a proposito.
+    it("TODAS las vistas arrancan igual: no hay excepcion por pantalla", () => {
+      // ⚠️ AQUI SE PROBABA `menuOpenByDefault`, el parametro con el que procesos arrancaba siempre
+      // cerrado. El dueño unifico el arranque el 2026-08-22 y el parametro se retiro: sin el, la regla
+      // es una sola y este test la fija. Si vuelve una excepcion, este caso cae.
       setViewportWidth(1440);
-      expect(useWorkspaceChrome({ menuOpenByDefault: false }).menuOpen.value).toBe(false);
+      expect(useWorkspaceChrome().menuOpen.value).toBe(true);
+      setViewportWidth(800);
+      expect(useWorkspaceChrome().menuOpen.value).toBe(false);
     });
 
     it("las notificaciones siempre arrancan cerradas", () => {
@@ -34,8 +38,9 @@ describe("useWorkspaceChrome", () => {
 
     it("cada vista recibe su propio estado, no uno compartido", () => {
       // Es una factory, no un singleton: dos pantallas no deben pisarse el menu.
-      const a = useWorkspaceChrome({ menuOpenByDefault: false });
-      const b = useWorkspaceChrome({ menuOpenByDefault: false });
+      setViewportWidth(800);   // en movil arrancan cerradas, que es lo que este caso necesita
+      const a = useWorkspaceChrome();
+      const b = useWorkspaceChrome();
       a.toggleMenu();
       expect(a.menuOpen.value).toBe(true);
       expect(b.menuOpen.value).toBe(false);
@@ -44,7 +49,10 @@ describe("useWorkspaceChrome", () => {
 
   describe("menu y notificaciones", () => {
     it("toggleMenu alterna; closeMenu cierra siempre", () => {
-      const { menuOpen, toggleMenu, closeMenu } = useWorkspaceChrome({ menuOpenByDefault: false });
+      // ⚠️ Se cierra a mano en vez de pedirlo por parametro: `menuOpenByDefault` se retiro al
+      // unificar el arranque (2026-08-22). Lo que este caso prueba es el ALTERNAR, no el arranque.
+      const { menuOpen, toggleMenu, closeMenu } = useWorkspaceChrome();
+      closeMenu();
       toggleMenu();
       expect(menuOpen.value).toBe(true);
       toggleMenu();
@@ -65,7 +73,8 @@ describe("useWorkspaceChrome", () => {
     });
 
     it("el menu y las notificaciones son independientes", () => {
-      const { menuOpen, showNotify, toggleMenu } = useWorkspaceChrome({ menuOpenByDefault: false });
+      const { menuOpen, showNotify, toggleMenu, closeMenu } = useWorkspaceChrome();
+      closeMenu();
       toggleMenu();
       expect(showNotify.value).toBe(false);
       expect(menuOpen.value).toBe(true);
@@ -75,7 +84,8 @@ describe("useWorkspaceChrome", () => {
   describe("revealSidebarForNav: el numero magico 1280, ahora en un solo sitio", () => {
     it("en escritorio, pulsar la seccion ACTIVA alterna la barra", () => {
       setViewportWidth(1280); // justo en el umbral: cuenta como escritorio
-      const { menuOpen, revealSidebarForNav } = useWorkspaceChrome({ menuOpenByDefault: false });
+      const { menuOpen, revealSidebarForNav, closeMenu } = useWorkspaceChrome();
+      closeMenu();
       revealSidebarForNav({ active: true });
       expect(menuOpen.value).toBe(true);
       revealSidebarForNav({ active: true });
@@ -83,7 +93,8 @@ describe("useWorkspaceChrome", () => {
     });
 
     it("en escritorio, ir a OTRA seccion siempre abre la barra (nunca la cierra)", () => {
-      const { menuOpen, revealSidebarForNav } = useWorkspaceChrome({ menuOpenByDefault: false });
+      const { menuOpen, revealSidebarForNav, closeMenu } = useWorkspaceChrome();
+      closeMenu();
       revealSidebarForNav({ active: false });
       expect(menuOpen.value).toBe(true);
       revealSidebarForNav({ active: false });
@@ -93,7 +104,8 @@ describe("useWorkspaceChrome", () => {
     it("en movil siempre abre, aunque sea la seccion activa", () => {
       // Debajo del umbral el rail es el unico modo de sacar la barra: alternarla la dejaria inalcanzable.
       setViewportWidth(1279);
-      const { menuOpen, revealSidebarForNav } = useWorkspaceChrome({ menuOpenByDefault: false });
+      const { menuOpen, revealSidebarForNav, closeMenu } = useWorkspaceChrome();
+      closeMenu();
       revealSidebarForNav({ active: true });
       expect(menuOpen.value).toBe(true);
       revealSidebarForNav({ active: true });
@@ -101,7 +113,8 @@ describe("useWorkspaceChrome", () => {
     });
 
     it("sin argumentos no revienta y se comporta como 'otra seccion'", () => {
-      const { menuOpen, revealSidebarForNav } = useWorkspaceChrome({ menuOpenByDefault: false });
+      const { menuOpen, revealSidebarForNav, closeMenu } = useWorkspaceChrome();
+      closeMenu();
       expect(() => revealSidebarForNav()).not.toThrow();
       expect(menuOpen.value).toBe(true);
     });

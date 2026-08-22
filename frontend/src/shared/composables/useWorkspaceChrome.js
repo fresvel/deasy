@@ -6,9 +6,10 @@ const DESKTOP_BREAKPOINT = 1280;
 /**
  * Estado del chrome del workspace: el menu lateral y el panel de notificaciones.
  *
- * Las cuatro vistas que montan AppWorkspaceShell (admin, perfil, procesos, home) repetian este estado y
- * sus handlers a mano, con tres nombres distintos para lo mismo (`vmenu` / `menuOpen` / `showMenu`) y el
- * numero magico 1280 escrito diez veces en tres ficheros. El shell ya resuelve solo su navegacion y sus
+ * Las vistas que montan AppWorkspaceShell (admin, perfil, procesos, home, documentos, firmas) repetian
+ * este estado y sus handlers a mano, con tres nombres distintos para lo mismo (`vmenu` / `menuOpen` /
+ * `showMenu`) y el numero magico 1280 escrito diez veces en tres ficheros. Desde el 2026-08-22 comparten
+ * ademas el mismo valor inicial: la excepcion de procesos se retiro. El shell ya resuelve solo su navegacion y sus
  * permisos (AppWorkspaceShell.vue:162-267), pero exige a cada vista que le lleve este estado.
  *
  * Lo que NO entra aqui, y es a proposito:
@@ -26,13 +27,21 @@ const DESKTOP_BREAKPOINT = 1280;
  * subira al layout y las paginas dejaran de verlo. Este composable es el paso intermedio que quita la
  * duplicacion sin tocar el router todavia.
  */
-export function useWorkspaceChrome({ menuOpenByDefault } = {}) {
+export function useWorkspaceChrome() {
   const isClient = typeof window !== "undefined";
-  // Por defecto la barra viene abierta en escritorio y cerrada en movil, que es lo que hacen admin, perfil
-  // y home. Procesos es el unico que arranca siempre cerrado; pasa `false` para conservarlo tal cual.
-  // La discrepancia es 3 contra 1 y probablemente sea un descuido, pero unificarla es una decision de
-  // producto, no de este refactor: se preserva y se deja anotada.
-  const menuOpen = ref(menuOpenByDefault ?? (isClient ? window.innerWidth >= DESKTOP_BREAKPOINT : true));
+  // La barra viene abierta en escritorio y cerrada en movil. UNA regla para las seis vistas.
+  //
+  // ⚠️ AQUI HABIA UN PARAMETRO `menuOpenByDefault`, Y CON EL LA EXCEPCION DE PROCESOS.
+  // Este mismo comentario decia: «procesos es el unico que arranca siempre cerrado… la discrepancia es
+  // 3 contra 1 y probablemente sea un descuido, pero unificarla es una decision de producto». El dueño
+  // la tomo el 2026-08-22: **se unifica**. Con `/procesos` sin la excepcion, el parametro se queda sin
+  // consumidor, y un parametro sin consumidor no es una API sino una puerta abierta a que la
+  // discrepancia vuelva. Se retira con ella.
+  //
+  // 🪤 De donde salio la confusion: la barra plegada mide 88 px (`xl:w-22`) y la abierta 282
+  // (`--ancho-barra-lateral`), asi que medir el ancho hacia pensar que habia DOS asides. Es uno solo,
+  // en `SMenu.vue`, montado por `AppWorkspaceShell` en un unico sitio; lo que cambiaba era su ESTADO.
+  const menuOpen = ref(isClient ? window.innerWidth >= DESKTOP_BREAKPOINT : true);
   const showNotify = ref(false);
 
   const toggleMenu = () => {
