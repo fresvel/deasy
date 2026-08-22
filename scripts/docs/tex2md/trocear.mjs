@@ -30,6 +30,10 @@
 // la fuente y hay que mantener al dia) y **replica el cambio a mano en el `.md`**. No
 // regeneres. Regenerar solo compensa si vas a rehacer los 15 diagramas.
 // Aprendido a golpes el 2026-08-11, revirtiendo 17 ficheros.
+//
+// Lo que SI esta protegido desde el 2026-08-22: una pagina escrita a mano en esa carpeta y
+// que no salga del `.tex` (o sea, que no este en `paginas.tsv`) ya no se borra. El borrado
+// de abajo solo alcanza a los ficheros que este script genera.
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -77,8 +81,18 @@ for (let i = 0; i < porLinea.length; i++) {
 }
 
 // ── Escribir ───────────────────────────────────────────────────────────────────────────
+// Solo se borra LO QUE ESTE SCRIPT GENERA, es decir lo que figura en `paginas.tsv`.
+// Antes borraba todos los `.md` del destino, y eso convertia cualquier pagina escrita a
+// mano en esa carpeta en un dano colateral silencioso de la siguiente regeneracion.
+// Las paginas ajenas se listan al final para que se vea que no se han tocado.
+const MIAS = new Set(paginas.map(p => `${p.fichero}.md`));
+const ajenas = [];
 if (existsSync(DESTINO)) {
-  for (const f of readdirSync(DESTINO)) if (f.endsWith('.md')) rmSync(join(DESTINO, f));
+  for (const f of readdirSync(DESTINO)) {
+    if (!f.endsWith('.md')) continue;
+    if (MIAS.has(f)) rmSync(join(DESTINO, f));
+    else ajenas.push(f);
+  }
 }
 mkdirSync(DESTINO, { recursive: true });
 
@@ -136,3 +150,6 @@ for (const r of resumen) {
               (r.diagramas ? `  · ${r.diagramas} diagrama(s)` : ''));
 }
 console.log(`\n  ${resumen.length} paginas · ${resumen.reduce((s, r) => s + r.diagramas, 0)} diagramas por convertir`);
+if (ajenas.length) {
+  console.log(`  ${ajenas.length} pagina(s) escritas a mano, CONSERVADAS: ${ajenas.join(', ')}`);
+}
