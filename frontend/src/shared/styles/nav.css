@@ -98,6 +98,37 @@
         @apply mb-0 w-full;
     }
 
+    /* ══ EL NIVEL ANIDADO ══════════════════════════════════════════════════════════════════
+       Una pagina de tabla puede tener DOS niveles de pestaña: las hermanas —que cambian de tabla—
+       y, para algunas de ellas, las de sub-vista. En `/admin/usuarios/personas/position_assignments`
+       el nivel 1 es «Cargos · Puestos · Ocupaciones» y el 2, dentro de «Ocupaciones», es
+       «Ocupaciones · Puestos sin ocupar».
+
+       ⚠️ **Mismo componente, variante distinta**, y la decision tiene motivo por los dos lados:
+       el COMPORTAMIENTO es identico —lista de pestañas con estado, contador y accesibilidad—, asi
+       que duplicar el componente seria duplicar el `role="tablist"`; pero el ASPECTO no puede
+       serlo, porque dos tiras identicas apiladas no dicen cual manda. El nivel 1 se dibuja con
+       subrayado —es navegacion— y el 2 como grupo segmentado dentro de una caja: se lee como un
+       filtro de lo que ya elegiste.
+
+       ⚠️ El grupo entero mide **44 px, la altura del sistema**: 36 de la pestaña mas los 4+4 del
+       relleno de su caja. Asi la fila anidada ocupa lo mismo que cualquier otra fila de la barra. */
+    .deasy-inline-tabs--anidadas {
+        @apply w-fit max-w-full gap-1 rounded-lg border border-line bg-surface p-1;
+    }
+
+    .deasy-inline-tab--anidada {
+        /* ⚠️ `h-9` FIJO Y NO `min-h-9`: con el minimo, el contador estiraba el boton a 40 y el
+           grupo entero salia a 48 en vez de a 44. Con la altura fija, 36 + 4 + 4 de relleno de la
+           caja dan los 44 del sistema y la fila anidada ocupa lo mismo que cualquier otra. */
+        @apply h-9 min-h-0 rounded-md border-b-0 px-3 text-theme-xs;
+    }
+
+    .deasy-inline-tab--anidada.deasy-inline-tab--active {
+        @apply bg-white text-navy;
+        box-shadow: 0 1px 2px rgba(var(--elev-ink-rgb), 0.06);
+    }
+
     .deasy-inline-tab--stacked {
         @apply flex-1 flex-col justify-center gap-1 px-1 py-2.5 text-theme-xs font-semibold;
     }

@@ -62,6 +62,9 @@
           @update:model-value="$emit('select-sibling-tab', $event)"
         />
       </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
+      </template>
       <template #actions>
         <AdminTableHeader
           :table="table"
@@ -89,23 +92,13 @@
       </p>
     </div>
 
-    <div v-if="table && isPositionAssignmentsTable" class="pt-0.5 pb-1">
-      <ProfileSubsectionTabs
-        :model-value="positionAssignmentsView"
-        :tabs="positionAssignmentsTabs"
-        aria-label="Vistas de ocupaciones"
-        @update:model-value="positionAssignmentsView = $event"
-      />
-    </div>
-
-    <div v-if="table && isProcessDefinitionTemplatesTable" class="pt-0.5 pb-1">
-      <ProfileSubsectionTabs
-        :model-value="definitionTemplatesView"
-        :tabs="definitionTemplatesTabs"
-        aria-label="Vistas de plantillas"
-        @update:model-value="definitionTemplatesView = $event"
-      />
-    </div>
+    <!-- ⚠️ AQUI VIVIAN LOS DOS CONMUTADORES DE SUB-VISTA, SUELTOS Y ENCIMA DE TODO (retirados el
+         2026-08-21). Al estar fuera de la barra, el **nivel 2 salia por encima del nivel 1 y del
+         titulo**: en `/admin/usuarios/personas/position_assignments` «Ocupaciones · Puestos sin
+         ocupar» aparecia en y=78 y «Cargos · Puestos · Ocupaciones» en y=194. El dueño lo pidio al
+         reves y con razon: las principales se quedan en su sitio y las anidadas van DEBAJO.
+         Ahora entran por el slot `subtabs` de la barra, con `nested` para que se lean como lo que
+         son: un filtro de lo que ya elegiste, no otra navegacion. -->
 
     <AppAlert variant="warning" class="mb-3" v-if="table && isCurrentTableTraceability">
       <div class="flex flex-wrap items-start justify-between gap-3">
@@ -234,6 +227,9 @@
           aria-label="Tablas hermanas"
           @update:model-value="$emit('select-sibling-tab', $event)"
         />
+      </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
       </template>
       <!-- Los botones de la tabla entran en la MISMA fila que los del filtro: la barra los
            coloca uno detras de otro en `deasy-table-toolbar__actions`.
@@ -2042,6 +2038,28 @@ const processEditorConfigurationTableFields = [
  * Con el computado, la barra suelta es literalmente «cuando la seccion NO se ve», y no puede
  * volver a desincronizarse. El termino del modo grafo de procesos se queda aparte porque ahi no
  * debe haber barra en absoluto, ni suelta ni de seccion. */
+/* LAS PESTAÑAS ANIDADAS, definidas UNA vez y montadas en las dos barras.
+ *
+ * Solo algunas tablas tienen segundo nivel, y las dos que lo tienen son excluyentes entre si. En
+ * vez de repetir el bloque en cada barra —que es como nacieron los cuatro defectos de F13.4—, aqui
+ * se decide QUE pestañas van y quien recibe el cambio, y cada montaje es un `v-bind`. */
+const subtabs = computed(() => {
+  if (isPositionAssignmentsTable.value) {
+    return { modelValue: positionAssignmentsView.value, tabs: positionAssignmentsTabs.value,
+             ariaLabel: "Vistas de ocupaciones" };
+  }
+  if (isProcessDefinitionTemplatesTable.value) {
+    return { modelValue: definitionTemplatesView.value, tabs: definitionTemplatesTabs.value,
+             ariaLabel: "Vistas de plantillas" };
+  }
+  return null;
+});
+
+const setSubtab = (valor) => {
+  if (isPositionAssignmentsTable.value) positionAssignmentsView.value = valor;
+  else if (isProcessDefinitionTemplatesTable.value) definitionTemplatesView.value = valor;
+};
+
 const mainSectionVisible = computed(() =>
   !(isUnitsTable.value && unitGraphMode.value)
   && !(isProcessesTable.value && processGraphMode.value)

@@ -16,6 +16,9 @@
            caigan DEBAJO del titulo igual que las de `/perfil`. Antes las pintaba el gestor con
            marcado en linea ANTES de esta seccion, y el titulo quedaba debajo de ellas. -->
       <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
+      <!-- El segundo nivel de pestañas, cuando la tabla lo tiene. Reenviarlo hace falta aunque la
+           barra ya lo declare: un slot que no se reenvia no llega. -->
+      <template v-if="$slots.subtabs" #subtabs><slot name="subtabs" /></template>
 
       <template #filtro>
         <AdminInputField

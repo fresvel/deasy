@@ -24,6 +24,15 @@
       <slot name="tabs" />
     </div>
 
+    <!-- FILA 3 · LAS PESTAÑAS ANIDADAS, cuando la pestaña activa del nivel 1 las tiene.
+         ⚠️ Van DEBAJO de las de nivel 1 y no las sustituyen: el dueño lo pidio explicito —«se debe
+         mantener las pestañas originales en su lugar y mostrar las anidadas abajo»—. Antes las
+         pintaba `AdminTableManager` sueltas y **ENCIMA de todo**, asi que el nivel 2 salia por
+         encima del 1 y del titulo. -->
+    <div v-if="$slots.subtabs" class="deasy-table-toolbar__subtabs">
+      <slot name="subtabs" />
+    </div>
+
     <div class="deasy-table-toolbar__bar">
       <!-- FILA 2 · A la izquierda lo que FILTRA —el buscador en admin, las pestañas en perfil—; a
            la derecha las acciones.

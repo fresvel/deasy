@@ -57,6 +57,12 @@
         @apply flex min-w-0;
     }
 
+    /* La fila del segundo nivel. Misma disposicion que la del primero: el aspecto lo pone la
+       variante `--anidadas` de la tira, no esta clase. */
+    .deasy-table-toolbar__subtabs {
+        @apply flex min-w-0;
+    }
+
     .deasy-table-toolbar__bar {
         @apply flex flex-wrap items-center justify-end gap-3;
     }
