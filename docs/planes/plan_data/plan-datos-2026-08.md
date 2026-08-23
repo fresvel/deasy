@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 0 de 5 tareas de D7.**
+**Estado: 0 de 7 fases · 0 de 12 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
@@ -62,6 +62,13 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `TD7-c` | D7 | **Censo de columnas `*_id` sin FK**, clasificadas en las tres categorías: decisión explícita · ciclo evitado · **descuido** | ⬜ | — | — |
 | `TD7-d` | D7 | Los dos `BIGINT` contra `persons.id INT` corregidos, con su FK. **Necesita D3 si hay datos que preservar** | ⬜ | — | — |
 | `TD7-e` | D7 | **Decisión escrita**: cuáles de las 8 columnas de estado sin `CHECK` bajan su dominio a la base. **Va detrás de D2** | ⬜ | — | — |
+| `TD7-f` | D7 | **El diseño del acceso al entregable**, con las dos decisiones del dueño escritas y su evidencia | ✅ | [`acceso-al-entregable.md`](./acceso-al-entregable.md) · 2 decisiones · 4 defectos nuevos | 2026-08-22 |
+| `TD7-g` | D7 | **P1** · La función única de participantes, con las 8 fuentes que ya existen. Ningún guard cambia todavía | ⬜ | — | — |
+| `TD7-h` | D7 | **P2** · Los dos guards la usan. El del documento gana las fuentes que sólo tenía el chat | ⬜ | — | — |
+| `TD7-i` | D7 | **P3** · Las fuentes que faltan: ocupante actual, ocupantes durante la vida del entregable, y relevos | ⬜ | — | — |
+| `TD7-j` | D7 | **P4** · El custodio: recorrido orgánico hasta el primer jefe, reserva a `AdminSistema` | ⬜ | — | — |
+| `TD7-k` | D7 | **P5** · Eliminar un puesto deja de borrar su historia; desactivarlo emite `position_deactivated` | ⬜ | — | — |
+| `TD7-l` | D7 | **P6** · La fusión: `documents` se absorbe en `task_items`; mueren `owner_person_id` y `task_items.status` | ⬜ | — | — |
 | `D1` | — | Un solo `withTransaction`; los 20 ciclos manuales, fuera | ⬜ | — | — |
 | `D2` | — | Un vocabulario de estados, no cinco, + detector de *drift* | ⬜ | — | — |
 | `D3` | — | Migraciones versionadas: el esquema se puede alterar con datos dentro | ⬜ | — | — |
@@ -215,6 +222,23 @@ quién hizo el relevo.
 
 Su dominio **solo existe en JavaScript**, y una (`signature_flow_steps.selection_mode`) tiene un gemelo
 que **sí** lo lleva: la asimetría es el olor. **Va detrás de D2**, y la razón está arriba.
+
+### `TD7-f` a `TD7-l` · El acceso al entregable
+
+**Salieron de contestar «¿fusionamos `task_items` y `documents`?»**, el 2026-08-22, y son el grueso de
+la fase. Al medirla se vio que la pregunta que el sistema resuelve está mal planteada: contesta *«¿de
+quién es?»* cuando debería contestar *«¿quién tiene derecho a verlo?»*, y eso no es una persona sino
+un conjunto que crece.
+
+**Diseño completo, con las dos decisiones del dueño y los cuatro defectos que destapó:**
+[`acceso-al-entregable.md`](./acceso-al-entregable.md). No se repite aquí.
+
+Lo que conviene saber sin abrirlo:
+
+- **El modelo ya está construido a medias, dos veces** —el guard del documento y el del chat— con
+  conjuntos distintos. El trabajo es unificar, no inventar.
+- **`P1` y `P2` valen aunque la fusión se aplace**: cierran una asimetría de permisos viva hoy.
+- **`P6` (la fusión) va la última** y es el único paso que toca el frontend.
 
 ### Criterio de cierre
 
