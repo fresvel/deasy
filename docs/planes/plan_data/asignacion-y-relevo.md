@@ -289,3 +289,91 @@ Y dos de sus cinco columnas ya están duplicadas contra el entregable:
 Así que la pregunta razonable **no** es «¿fundimos `documents` en `document_versions`?» sino
 **«¿fundimos `documents` en `task_items`?»** — y entonces las versiones colgarían directamente del
 entregable. Queda planteada, no decidida.
+
+## 10 · «El propietario no es uno, es el conjunto» — sí y no
+
+Aportación del dueño (2026-08-23): *«habíamos quedado en que no existe un solo propietario; el
+propietario son quienes están en el flujo de entrega y de firmas, además de otro factor»*.
+
+**El recuerdo es correcto, y el factor que faltaba es «quien lo encargó»** — la fuente
+`entregable_creador`. El conjunto completo son las **siete fuentes** de `DeliverableAccessService`:
+quien lo tiene asignado, los dos del puesto responsable (asignado y **ocupante**, que es el relevo),
+el asignado de la tarea (sólo conversación), **quien lo encargó**, el flujo de entrega y el de firma.
+
+**Pero ese acuerdo era sobre el ACCESO, y hay dos preguntas distintas:**
+
+| Pregunta | Forma de la respuesta | Dónde vive |
+|---|---|---|
+| ¿Quién puede **ver** esto? | **Conjunto** | `DeliverableAccessService`, 7 fuentes · ✅ resuelto |
+| ¿Quién **responde** de que esto se haga? | **Una persona a la vez** | La tenencia · ⬜ por hacer |
+
+La segunda no puede ser un conjunto, y no es un detalle técnico: **una obligación compartida es una
+obligación de nadie**. Es justo lo que da sentido al relevo — se traspasa **una** responsabilidad, y
+el historial guarda la sucesión. Un conjunto no se traspasa.
+
+### Y `documents.owner_person_id` hoy intenta responder a las DOS
+
+Medidos sus usos reales, hace **tres** trabajos distintos:
+
+| Uso | Qué pregunta responde | Veredicto |
+|---|---|---|
+| Moderar observaciones (`user_controler.js:433` y el guard de `:523`) | ¿quién puede resolver una observación ajena? | **Singular.** Es de la responsabilidad, no del acceso |
+| Filtrar «mis documentos» (`queries.js:359`) y el guard de firma (`PdfSigningService.js:437`) | ¿quién puede verlo/firmarlo? | **Conjunto.** Aquí la columna es demasiado estrecha |
+| Resolver el paso `document_owner` (`DocumentSignatureWorkflowService.js:508`) | ¿quién ejecuta este paso? | **Rama muerta**: el resolver se retiró y el `CHECK` lo rechaza |
+
+O sea: **una sola columna intentando ser dos cosas, y una tercera que ya no existe.** Ése es
+exactamente el «owner» que el dueño recuerda haber eliminado: se retiró el **resolver**
+`document_owner` («lo que la web no autora, no existe»), pero la **columna** que lo alimentaba
+sobrevivió sin su consumidor principal.
+
+### Cómo queda en el modelo limpio
+
+`documents.owner_person_id` **desaparece**, y sus tres trabajos se reparten donde ya tienen dueño:
+
+- lo de **moderar** → la tenencia vigente (una persona, la que responde);
+- lo de **ver y firmar** → el conjunto, que ya está construido;
+- lo del **resolver** → nada: está muerto.
+
+Con eso se acaba también la tercera copia podrida: hoy la mueve **1 de los 4** caminos de relevo.
+
+## 11 · Fundir `documents` en `task_items`, con esto encima
+
+### El coste estructural es sorprendentemente bajo
+
+**Sólo UNA foránea apunta a `documents(id)`**: `document_versions.document_id`. Todo lo demás
+—flujos de llenado, instancias de firma, observaciones, firmas— cuelga de **`document_version_id`**,
+no del documento. Fundir significa repuntar **una** foránea.
+
+### Y la tabla se queda casi sin contenido propio
+
+Sus cinco columnas, una por una:
+
+| Columna | Qué le pasa |
+|---|---|
+| `owner_person_id` | **Desaparece** (§10) |
+| `title` | **Ya está duplicada**: `task_items.title` existe (`:770` y `:842`) |
+| `origin_unit_id` | **Derivable**: `resolveOriginUnitIdForTaskItem` la saca del `target_unit_id` del entregable, de la unidad de su puesto responsable o del `scope_unit_id` de la tarea. Es una caché de tres cosas que ya están |
+| `status` | **Propia.** Es el estado real del documento, y sí tiene escritores |
+| `comments_thread_ref` | **Propia.** El hilo de conversación |
+
+Quedan **dos hechos propios**. Una tabla con una foránea entrante, dos columnas suyas y una relación
+1:1 estricta —un solo `INSERT` en todo el backend, y siempre con `task_item_id`— es una cáscara.
+
+### El argumento en contra, que es real
+
+**Un entregable que no produzca documento.** Hoy no existe: `task_items.template_artifact_id` es
+`NOT NULL` y `ensureDocumentForTaskItem` corre para todos. Pero si mañana un entregable es «entregar
+la llave del laboratorio», fundir obliga a arrastrar columnas de documento en una fila que no lo es.
+
+Es la única razón de peso para no fundir, y es **hipotética**: hoy el modelo dice que todo
+entregable produce documento, porque su plantilla es obligatoria.
+
+### Veredicto
+
+**Fundir mejora**, pero la mejora grande —matar `owner_person_id`— **se consigue sin fundir**, sólo
+derivándolo de la tenencia. Fundir añade encima: un JOIN menos en muchos sitios, el fin del `title`
+duplicado y el 1:1 dejando de ser una convención sobre una columna `NULL`able.
+
+**Recomendación: hacerlo en dos tiempos.** Primero la tenencia, que es lo que arregla el daño
+medido. Fundir `documents` después, como paso propio, cuando ya no haya que decidir a la vez qué
+pasa con el propietario.
