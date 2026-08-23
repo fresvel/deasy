@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 1 de 12 tareas de D7.**
+**Estado: 0 de 7 fases · 2 de 12 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
