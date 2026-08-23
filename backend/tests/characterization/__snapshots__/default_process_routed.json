@@ -334,6 +334,12 @@
       "unit_id": 8
     }
   },
+  "free_sin_flujo_rechazado": {
+    "status": 400,
+    "body": {
+      "message": "Un envío necesita su flujo: indica al menos quién elabora el entregable y quién lo firma."
+    }
+  },
   "vinculo_competidor": [],
   "vinculo_routed": {
     "status": 200,

@@ -189,7 +189,11 @@ test("una plantilla de otro proceso se rechaza antes de mirar su modo", async ()
   );
 });
 
-test("routed sin destinatario y sin flujo de runtime exige elegir destinatario", async () => {
+test("routed SIN FLUJO se rechaza, y ya no vale traer solo el destinatario", async () => {
+  // Este test fijaba el camino que se ELIMINO el 2026-08-23: se admitia el envio sin flujo si
+  // traia destinatario, y entonces no se materializaba ninguna firma — el unico rastro de a quien
+  // iba dirigido era `target_person_id`, que es la columna que esto viene a poder retirar.
+  // Decision del dueño: ese caso no existe en la institucion.
   const connection = makeConnection((sql) => {
     if (sql.includes("WHERE p.slug = ?")) return [[{ id: 42 }]];
     if (sql.includes("FROM tasks t")) return [[{ id: 3, process_definition_id: 42, scope_unit_id: 100 }]];
@@ -210,7 +214,7 @@ test("routed sin destinatario y sin flujo de runtime exige elegir destinatario",
         process_definition_template_id: 44,
       }),
     }),
-    /Debes elegir el destinatario del envío/
+    /necesita su flujo/
   );
 });
 

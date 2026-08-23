@@ -316,7 +316,7 @@ regla— retira la columna **sin perder nada de lo que se ve en pantalla**.
 
 | | Paso | Por qué en ese sitio |
 |---|---|---|
-| 1 | **Cerrar el camino legacy**: `routed` exige flujo | Sin esto, hay envíos sin flujo del que derivar el «Para:» |
+| ~~1~~ | ✅ **HECHO (2026-08-23).** `routed` y `free` exigen flujo. **Decisión del dueño: ese caso no existe en la institución**, así que se elimina, no se deprecia. Eran **DOS** caminos, no uno — y el segundo lo destapó la prueba nueva con un 200 donde esperaba rechazo | — |
 | 2 | **Derivar el «Para:» en el servidor**, con la regla del cliente | Es lo que sustituye a la columna |
 | 3 | **Retirar `target_person_id` y `target_position_id`** | `target_position_id` no necesita nada: en `routed` el código ya lo pone a `NULL` y en `replicated` es copia de `responsible_position_id` |
 | 4 | **`responsible_position_id` pasa a NOT NULL** | Es el ancla del relevo y quien dice el productor. Hay que comprobar que los tres caminos de creación lo rellenan |

@@ -411,6 +411,56 @@ test("free · POST /users/:id/general-tasks crea la tarea ad-hoc con su flujo de
   matchSnapshot(SUITE, "free_respuesta", snapshotShape(res, MASK_OPTS));
 });
 
+// ─── El camino LEGACY, cerrado el 2026-08-23 ───────────────────────────────────────────────
+// Antes se admitia un envio SIN flujo si traia destinatario, y entonces NO se materializaba ningun
+// flujo de firma: el unico rastro del destinatario era la columna `target_person_id`. Esa rama era
+// lo que impedia retirarla.
+//
+// La interfaz no la podia producir —`useGeneralTask.js:110` manda flujo siempre que el modo sea
+// routed o free— asi que cerrarla no rompio ninguna prueba... y por eso mismo NADIE la vigilaba.
+// Este caso existe para que reabrirla se note.
+test("free · un envio SIN flujo se rechaza: el destinatario vive en el flujo, no en una columna", async () => {
+  const token = await tokenFor("usuario");
+  const res = await post(`/users/${USUARIO}/general-tasks`, {
+    token,
+    body: {
+      mode: "free",
+      title: `${FREE_TITLE} (sin flujo)`,
+      unit_id: UNIT_ID,
+      recipient_person_id: GESTOR,   // traer destinatario ya NO basta
+    },
+  });
+  assert.ok(res.status >= 400, `esperaba un rechazo y vino ${res.status}`);
+  assert.notEqual(res.status, 500, "un guard de entrada no debe salir por 500");
+  matchSnapshot(SUITE, "free_sin_flujo_rechazado", snapshotShape(res, MASK_OPTS));
+});
+
+// ─── El camino sin flujo, ELIMINADO el 2026-08-23 ─────────────────────────────────────────
+// Antes se admitia un envio SIN flujo si traia destinatario, y entonces NO se materializaba ningun
+// flujo de firma: el unico rastro de a quien iba dirigido el documento era la columna
+// `target_person_id`. Esa rama era lo que impedia retirarla.
+//
+// Decision del dueño (2026-08-23): ese caso NO EXISTE en la institucion. Solo hay una forma de
+// enviar — diciendo quien elabora y quien firma— y de ese flujo se deriva el destinatario.
+//
+// La interfaz ya lo hacia asi, asi que cerrarlo no rompio ninguna prueba... y por eso mismo NADIE
+// lo vigilaba. Este caso existe para que reabrirlo se note.
+test("free · un envio SIN flujo se rechaza: el destinatario vive en el flujo, no en una columna", async () => {
+  const token = await tokenFor("usuario");
+  const res = await post(`/users/${USUARIO}/general-tasks`, {
+    token,
+    body: {
+      mode: "free",
+      title: `${FREE_TITLE} (sin flujo)`,
+      unit_id: UNIT_ID,
+      recipient_person_id: GESTOR,   // traer destinatario ya NO basta
+    },
+  });
+  assert.ok(res.status >= 400, `esperaba un rechazo y vino ${res.status}`);
+  assert.notEqual(res.status, 500, "un guard de entrada no debe salir por 500");
+  matchSnapshot(SUITE, "free_sin_flujo_rechazado", snapshotShape(res, MASK_OPTS));
+});
+
 test("free · el flujo de ENTREGA cuelga del ENTREGABLE y es el que definió el usuario", async () => {
   assert.ok(estado.freeItemId, "depende del paso anterior");
   const flow = await readRuntimeFillFlow(estado.freeItemId);

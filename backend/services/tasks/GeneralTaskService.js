@@ -228,13 +228,29 @@ const resolveDerivedTarget = async (
     };
   }
 
-  // Con flujo runtime el flujo define los actores → el destinatario es opcional (metadato
-  // "Para:"). Sin flujo (compat legacy) sigue siendo obligatorio 1 destinatario firmante.
-  if (!recipientPersonId && !runtimeFlow) {
-    throw new Error("Debes elegir el destinatario del envío.");
-  }
   if (recipientPersonId) {
     await assertRecipientExists(connection, recipientPersonId);
+  }
+
+  // ── UN ENVIO ROUTED EXIGE SU FLUJO. Cerrado el 2026-08-23 ──────────────────────────────
+  // Antes se admitia el envio SIN flujo si traia un destinatario, y entonces no se materializaba
+  // ningun flujo de firma: el unico rastro de a quien iba dirigido era la columna
+  // `target_person_id`. Esa rama era el motivo por el que esa columna no se podia retirar.
+  //
+  // Decision del dueño (2026-08-23): ese caso NO EXISTE en la institucion. Solo hay una forma de
+  // enviar —diciendo quien elabora y quien firma— y de ese flujo se deriva el destinatario.
+  // Medido: la interfaz ya lo hacia asi (`useGeneralTask.js:110`), asi que esto formaliza lo que
+  // ya ocurre.
+  //
+  // VA EL ULTIMO de los guards a proposito (regla 6 del metodo: el orden es contrato). Un
+  // destinatario invalido sigue dando su propio error, como antes; el flujo que falta es lo que
+  // se comprueba cuando lo demas ya esta bien.
+  if (!runtimeFlow) {
+    const error = new Error(
+      "Un envío necesita su flujo: indica al menos quién elabora el entregable y quién lo firma."
+    );
+    error.statusCode = 400;
+    throw error;
   }
   return {
     targetPersonId: recipientPersonId || null, // "Para:" (puede ser null si la firma es por cargo)
@@ -485,6 +501,17 @@ const createFreeTask = async (connection, { authenticatedUserId, input, definiti
     title: input.title,
     customTerm: input.customTerm,
   });
+
+  // Una tarea libre EXIGE su flujo, por el mismo motivo que el envio routed (ver el comentario de
+  // `resolveDerivedTarget`). Y tambien el ULTIMO: sin unidad o sin el periodo Custom, esos errores
+  // siguen saliendo primero, que es lo que sus pruebas fijan.
+  if (!input.runtimeFlow) {
+    const error = new Error(
+      "Un envío necesita su flujo: indica al menos quién elabora el entregable y quién lo firma."
+    );
+    error.statusCode = 400;
+    throw error;
+  }
 
   const composedTitle = input.description ? `${input.title}\n\n${input.description}` : input.title;
 
