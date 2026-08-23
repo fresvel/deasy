@@ -851,6 +851,12 @@ export default class SqlAdminService {
   reconcileOpenTaskItemAssignments(...args) { return this.taskAssignment.reconcileOpenTaskItemAssignments(...args); }
   handoverTaskItem(...args) { return this.taskAssignment.handoverTaskItem(...args); }
   listStuckTaskItems(...args) { return this.taskAssignment.listStuckTaskItems(...args); }
+  // Estos DOS delegadores faltaban desde la extraccion del cluster, y sus dos endpoints estaban
+  // muertos: `service.<x> is not a function` -> 400. Ninguna prueba los tocaba. Es el mismo agujero
+  // que el guard del relevo manual, en el escalon de arriba: al partir una clase God, lo que no
+  // tiene contrato HTTP no se entera de que se quedo fuera.
+  listTaskItemHandovers(...args) { return this.taskAssignment.listTaskItemHandovers(...args); }
+  listSupervisorStuckTaskItems(...args) { return this.taskAssignment.listSupervisorStuckTaskItems(...args); }
   resolveImmediateBoss(...args) { return this.taskAssignment.resolveImmediateBoss(...args); }
 
   async remove(tableName, keys) {

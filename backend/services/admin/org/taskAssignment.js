@@ -5,6 +5,7 @@
 // inyectados. SqlAdminService mantiene delegadores; el controller, saveTemplateArtifactDraft y el
 // WorkflowSyncService (que llaman getCargoCodeMap/getProcessTargetScope/... via this.) no se tocan.
 import { normalizeNumericId, slugify } from "../kernel/primitives.js";
+import { isDocumentPending } from "../../documents/DocumentStateService.js";
 
 export default class TaskAssignmentService {
   constructor(pool) {
@@ -283,13 +284,27 @@ export default class TaskAssignmentService {
     const toId = normalizeNumericId(toPersonId);
     if (!tiId) throw new Error("Entregable (task_item) inválido.");
     if (!toId) throw new Error("Debes indicar la persona destino del traspaso.");
+    // ⚠️ ESTE GUARD ESTUVO ROTO, y de las dos maneras seguidas.
+    //
+    // Primero leia `task_items.status` contra una lista de SIETE literales —'completed',
+    // 'completado', 'cancelled'...— que la columna NUNCA tomo: no tenia escritores y se quedaba en
+    // 'pendiente' para siempre, asi que el guard **no bloqueaba nada** y un entregable firmado se
+    // podia traspasar. Al retirar la columna (2026-08-23) el SELECT paso a fallar en ejecucion
+    // —`column "status" does not exist`— y el relevo manual entero devolvia 500. Ninguna prueba lo
+    // vio: la caracterizacion no toca este endpoint. Es la regla del SQL que no valida nadie.
+    //
+    // Ahora se pregunta a quien de verdad avanza: el DOCUMENTO. Hay como mucho uno por entregable
+    // (`uq_documents_task_item`), y sin documento todavia el entregable sigue abierto — que es lo
+    // que `isDocumentPending` responde ante un `NULL`.
     const [rows] = await connection.query(
-      "SELECT id, assigned_person_id, status FROM task_items WHERE id = ? LIMIT 1",
+      `SELECT ti.id, ti.assigned_person_id, d.status AS document_status
+       FROM task_items ti
+       LEFT JOIN documents d ON d.task_item_id = ti.id
+       WHERE ti.id = ? LIMIT 1`,
       [tiId]
     );
     if (!rows.length) throw new Error("El entregable no existe.");
-    const TERMINAL = ["completed", "completado", "cancelled", "cancelado", "finalizado", "entregado", "rechazado"];
-    if (TERMINAL.includes(String(rows[0].status))) {
+    if (!isDocumentPending(rows[0].document_status)) {
       throw new Error("El entregable ya está cerrado; no se puede traspasar.");
     }
     const fromId = rows[0].assigned_person_id ? Number(rows[0].assigned_person_id) : null;

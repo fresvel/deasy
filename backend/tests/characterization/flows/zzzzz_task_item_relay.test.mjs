@@ -101,3 +101,42 @@ test("un entregable YA INICIADO no lo toca el backfill, aunque su responsable no
     body: { keys: { id: antes.id }, data: { assigned_person_id: original } },
   });
 });
+
+// ── El RELEVO MANUAL (`POST /admin/sql/task-items/:id/handover`) ────────────────────────────────
+//
+// No tenía contrato HTTP, y costó caro: su guard leía `task_items.status` contra siete literales
+// que la columna nunca tomó, así que no bloqueaba nada; y al retirarse la columna el SELECT pasó a
+// fallar en ejecución, dejando el endpoint entero en 500 con la suite en verde.
+//
+// Este caso fija lo mínimo que no puede volver a romperse: que RESPONDE, que MUEVE al responsable
+// y que deja ASIENTO. Es autolimpiante — devuelve el entregable a su responsable original.
+test("relevo manual · traspasa el entregable, mueve al dueño del documento y deja asiento", async () => {
+  const token = await tokenFor("admin");
+  const filas = await listTaskItems(token);
+  const item = filas.find((r) => r.assigned_person_id) || filas[0];
+  const original = item.assigned_person_id ? Number(item.assigned_person_id) : null;
+  const destino = original === 1 ? 2 : 1;
+
+  const res = await post(`/admin/sql/task-items/${item.id}/handover`, {
+    token,
+    body: { to_person_id: destino, reason: "prueba de contrato" },
+  });
+  assert.equal(res.status, 200, `el relevo manual debe responder 200 y vino ${res.status}: ${JSON.stringify(res.body)}`);
+  assert.equal(Number(res.body?.to_person_id ?? res.body?.data?.to_person_id), destino, "traspasa a quien se pidió");
+
+  const historial = await get(`/admin/sql/task-items/${item.id}/handovers`, { token });
+  assert.equal(historial.status, 200, "el historial de relevos debe responder 200");
+  const asientos = Array.isArray(historial.body) ? historial.body : (historial.body?.data ?? []);
+  assert.ok(
+    asientos.some((h) => Number(h.to_person_id) === destino && h.trigger_kind === "manual"),
+    "el traspaso deja asiento con causa `manual`",
+  );
+
+  // Round-trip autolimpiante.
+  if (original) {
+    await post(`/admin/sql/task-items/${item.id}/handover`, {
+      token,
+      body: { to_person_id: original, reason: "restauracion de la prueba" },
+    });
+  }
+});
