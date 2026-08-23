@@ -41,6 +41,31 @@ const DOCUMENT_STATUS_TRANSITIONS = Object.freeze({
   Cancelado: [],
 });
 
+// Estados en los que ya NO queda trabajo por hacer.
+//
+// ⚠️ NO se deriva de la matriz de transiciones, y se intentó: «estado del que no sale ninguna
+// transición» da `Archivado` y `Cancelado` pero deja fuera `Final`, que sí tiene salida hacia
+// `Archivado` aunque el documento esté terminado. Con esa derivación, TODO documento acabado
+// habría seguido contando como pendiente.
+//
+// «Sin salidas» es una propiedad del grafo; «ya no hay trabajo» es una propiedad del negocio, y
+// no coinciden. Así que la lista es explícita — y el `assert` de abajo impide que un nombre mal
+// escrito se quede callado.
+//
+// Nace el 2026-08-23 al retirar `task_items.status`, que tenía CERO escritores y se quedaba en
+// 'pendiente' para siempre. Lo pendiente pasa a leerse del documento, que es quien de verdad avanza.
+export const DOCUMENT_TERMINAL_STATUSES = Object.freeze(["Final", "Archivado", "Cancelado"]);
+
+for (const estado of DOCUMENT_TERMINAL_STATUSES) {
+  if (!DOCUMENT_STATUSES.includes(estado)) {
+    throw new Error(`Estado terminal desconocido en el catálogo de documentos: ${estado}`);
+  }
+}
+
+/** ¿Este documento sigue pendiente? Sin documento todavía, también: aún hay trabajo por hacer. */
+export const isDocumentPending = (status) =>
+  !DOCUMENT_TERMINAL_STATUSES.includes(String(status || "").trim());
+
 const DOCUMENT_VERSION_STATUS_TRANSITIONS = Object.freeze({
   Borrador: ["Pendiente de llenado", "Listo para firma", "Cancelado", "Archivado"],
   "Pendiente de llenado": ["En llenado", "En revisión de llenado", "Observado", "Listo para firma", "Cancelado", "Archivado"],

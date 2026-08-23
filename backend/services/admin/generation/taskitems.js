@@ -44,17 +44,15 @@ export const ensureTaskItemsForTask = async (connection, taskId, processDefiniti
         origin_kind,
         sort_order,
         start_date,
-        end_date,
-        status
-      ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?)`,
+        end_date
+      ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?)`,
       [
         taskId,
         template.id,
         template.template_artifact_id,
         template.sort_order ?? 1,
         resolvedStart,
-        resolvedEnd ?? null,
-        "pendiente"
+        resolvedEnd ?? null
       ]
     );
     inserted += 1;
@@ -139,9 +137,8 @@ export const ensureTaskItemsForTaskTargets = async (
            responsible_position_id,
            assigned_person_id,
            start_date,
-           end_date,
-           status
-         ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           end_date
+         ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           taskId,
           template.id,
@@ -153,8 +150,7 @@ export const ensureTaskItemsForTaskTargets = async (
           target.position_id,
           target.person_id,
           resolvedStart,
-          resolvedEnd ?? null,
-          "pendiente"
+          resolvedEnd ?? null
         ]
       );
       existingTargetKeys.add(key);

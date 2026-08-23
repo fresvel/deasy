@@ -243,7 +243,6 @@
           "process_id": "<normalized>",
           "process_name": "Proceso por defecto",
           "recipient_name": "Usuario Prueba",
-          "status": "pendiente",
           "target_person_id": "<normalized>"
         }
       ]
@@ -812,7 +811,6 @@
               "responsible_position_title": "Docente",
               "sort_order": 1,
               "start_date": "<normalized>",
-              "status": "pendiente",
               "target_person_id": "<normalized>",
               "target_position_id": "<normalized>",
               "target_position_title": null,

@@ -774,7 +774,12 @@ CREATE TABLE IF NOT EXISTS task_items (
   start_date DATE NOT NULL,
   end_date DATE NULL,
   user_started_at TIMESTAMP NULL,
-  status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
+  -- `status` VIVIO AQUI hasta el 2026-08-23. Tenia CERO escritores —los cinco `UPDATE task_items`
+  -- del repo escriben `assigned_person_id` o `user_started_at`— asi que se quedaba en 'pendiente'
+  -- para siempre. Y lo leian siete sitios, con DOS vocabularios que no comparten ni un literal:
+  -- el panel filtraba 'completada'/'cancelada' y el relevo 'completed'/'completado'/... — ninguno
+  -- de los cuales es 'pendiente', asi que el filtro del relevo NO EXCLUIA NADA y todo entregable
+  -- era reasignable para siempre, firmado incluido. Lo pendiente se lee ahora del DOCUMENTO.
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_task_items_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
   CONSTRAINT fk_task_items_process_definition_template FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id),
@@ -1406,7 +1411,11 @@ CREATE TABLE IF NOT EXISTS document_workflow_observations (
   kind TEXT CHECK (kind IN ('observation','return_reason','rejection_reason','internal_note')) NOT NULL DEFAULT 'observation',
   message TEXT NOT NULL,
   author_person_id INT NOT NULL,
-  target_person_id INT NULL,
+  -- `target_person_id` VIVIO AQUI hasta el 2026-08-23. Era el «a quien va dirigida» de un modelo
+  -- de auditoria origen→destino que quedo obsoleto: hoy eso lo cuentan los flujos, y quien firma
+  -- al final ES el destinatario. Medido antes de borrarlo: 2 observaciones, CERO con destinatario,
+  -- el frontend no lo pintaba en ningun sitio, y salia del cuerpo de la peticion SIN VALIDAR — asi
+  -- que como fuente de acceso habria sido una via de escalada: dar permiso nombrando a alguien.
   resolved_by_person_id INT NULL,
   resolved_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1415,7 +1424,6 @@ CREATE TABLE IF NOT EXISTS document_workflow_observations (
   CONSTRAINT fk_document_workflow_observations_fill_request FOREIGN KEY (fill_request_id) REFERENCES fill_requests(id),
   CONSTRAINT fk_document_workflow_observations_signature_request FOREIGN KEY (signature_request_id) REFERENCES signature_requests(id),
   CONSTRAINT fk_document_workflow_observations_author FOREIGN KEY (author_person_id) REFERENCES persons(id),
-  CONSTRAINT fk_document_workflow_observations_target FOREIGN KEY (target_person_id) REFERENCES persons(id),
   CONSTRAINT fk_document_workflow_observations_resolver FOREIGN KEY (resolved_by_person_id) REFERENCES persons(id)
 );
 CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_item ON document_workflow_observations (task_item_id, created_at);
@@ -1423,7 +1431,6 @@ CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_version ON documen
 CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_fill_request ON document_workflow_observations (fill_request_id);
 CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_signature_request ON document_workflow_observations (signature_request_id);
 CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_author ON document_workflow_observations (author_person_id);
-CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_target ON document_workflow_observations (target_person_id);
 
 
 CREATE TABLE IF NOT EXISTS document_signatures (
@@ -1714,7 +1721,6 @@ BEGIN
       SELECT ti.id, ti.assigned_person_id AS antes
       FROM task_items ti
       WHERE ti.responsible_position_id = NEW.position_id
-        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
         AND ti.user_started_at IS NULL
         AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id)
     ), asiento AS (
@@ -1750,7 +1756,6 @@ BEGIN
       FROM task_items ti
       WHERE ti.responsible_position_id = NEW.position_id
         AND ti.assigned_person_id = OLD.person_id
-        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
         AND ti.user_started_at IS NULL
     ), asiento AS (
       INSERT INTO task_item_handovers (task_item_id, from_person_id, to_person_id, reason, trigger_kind)
@@ -1766,7 +1771,6 @@ BEGIN
       SELECT ti.id, ti.assigned_person_id AS antes
       FROM task_items ti
       WHERE ti.responsible_position_id = NEW.position_id
-        AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
         AND ti.user_started_at IS NULL
         AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id)
     ), asiento AS (

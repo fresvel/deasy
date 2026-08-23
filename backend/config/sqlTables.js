@@ -306,16 +306,9 @@ export const SQL_TABLES = [
       { name: "start_date", label: "Inicio entregable", type: "date", required: true },
       { name: "end_date", label: "Vencimiento entregable", type: "date" },
       { name: "user_started_at", label: "Inicio usuario", type: "datetime", readOnly: true },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: ["pendiente", "en_proceso", "completada", "cancelada"],
-        defaultValue: "pendiente"
-      },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["status"]
+    searchFields: ["title"]
   },
   {
     table: "task_assignments",

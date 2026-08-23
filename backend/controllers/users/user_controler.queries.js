@@ -496,7 +496,6 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        ti.start_date,
        ti.end_date,
        ti.user_started_at,
-       ti.status,
        COALESCE(NULLIF(ti.title, ''), tar_dl.display_name) AS template_artifact_name,
        rp.title AS responsible_position_title,
        pdt.item_mode AS item_mode,

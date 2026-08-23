@@ -274,9 +274,8 @@ const insertDerivedTaskItem = async (connection, {
        responsible_position_id,
        assigned_person_id,
        start_date,
-       end_date,
-       status
-     ) VALUES (?, ?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+       end_date
+     ) VALUES (?, ?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       sourceTaskId,
       definitionTemplateId,
@@ -442,8 +441,8 @@ const insertFreeTaskItem = async (connection, {
     `INSERT INTO task_items (
        task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
        sort_order, created_by_person_id, target_unit_id, target_position_id, target_person_id,
-       responsible_position_id, assigned_person_id, start_date, end_date, status
-     ) VALUES (?, ?, ?, 'user_added', ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+       responsible_position_id, assigned_person_id, start_date, end_date
+     ) VALUES (?, ?, ?, 'user_added', ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       taskId,
       freeTpl.id,

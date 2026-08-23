@@ -28,7 +28,6 @@ export const addDocumentObservation = async (connection, {
   kind = "observation",
   message,
   authorPersonId,
-  targetPersonId = null
 }) => {
   const normalizedMessage = String(message || "").trim();
   if (!authorPersonId || !normalizedMessage) {
@@ -64,8 +63,8 @@ export const addDocumentObservation = async (connection, {
   const [result] = await connection.query(
     `INSERT INTO document_workflow_observations
        (task_item_id, document_version_id, fill_request_id, signature_request_id,
-        phase, kind, message, author_person_id, target_person_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        phase, kind, message, author_person_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       resolvedTaskItemId,
       versionId,
@@ -75,7 +74,6 @@ export const addDocumentObservation = async (connection, {
       normalizedKind,
       normalizedMessage,
       Number(authorPersonId),
-      targetPersonId ? Number(targetPersonId) : null
     ]
   );
   return Number(result.insertId);
@@ -106,15 +104,12 @@ export const listDocumentObservations = async (taskItemId, connection = null) =>
        o.message,
        o.author_person_id,
        CONCAT_WS(' ', author.first_name, author.last_name) AS author_name,
-       o.target_person_id,
-       CONCAT_WS(' ', target.first_name, target.last_name) AS target_name,
        o.resolved_by_person_id,
        CONCAT_WS(' ', resolver.first_name, resolver.last_name) AS resolved_by_name,
        o.resolved_at,
        o.created_at
      FROM document_workflow_observations o
      LEFT JOIN persons author ON author.id = o.author_person_id
-     LEFT JOIN persons target ON target.id = o.target_person_id
      LEFT JOIN persons resolver ON resolver.id = o.resolved_by_person_id
      WHERE o.task_item_id = ?
      ORDER BY o.created_at ASC, o.id ASC`,

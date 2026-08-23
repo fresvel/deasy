@@ -232,24 +232,15 @@ export const ACCESS_SOURCES = Object.freeze([
           INNER JOIN alcance a ON a.task_item_id = d.task_item_id
           WHERE sr.assigned_person_id IS NOT NULL`,
   },
-  {
-    key: "observacion_autor",
-    grants: ACCESS_LEVELS.ENTREGABLE,
-    reason: "Escribió una observación sobre el entregable",
-    sql: `SELECT o.author_person_id AS person_id
-          FROM document_workflow_observations o
-          INNER JOIN alcance a ON a.task_item_id = o.task_item_id
-          WHERE o.author_person_id IS NOT NULL`,
-  },
-  {
-    key: "observacion_destinatario",
-    grants: ACCESS_LEVELS.ENTREGABLE,
-    reason: "Una observación del entregable va dirigida a esta persona",
-    sql: `SELECT o.target_person_id AS person_id
-          FROM document_workflow_observations o
-          INNER JOIN alcance a ON a.task_item_id = o.task_item_id
-          WHERE o.target_person_id IS NOT NULL`,
-  },
+  // ── LAS DOS FUENTES DE OBSERVACION SE RETIRARON el 2026-08-23 ─────────────────────────
+  // `observacion_autor` era REDUNDANTE: para escribir una observacion hay que haber pasado el
+  // guard, asi que nunca anadia a nadie que no estuviera ya dentro.
+  //
+  // `observacion_destinatario` era peor que redundante. La columna salia del cuerpo de la
+  // peticion SIN VALIDAR, asi que cualquiera con acceso podia nombrar a CUALQUIERA: usarla como
+  // fuente de acceso habria sido una via de escalada de privilegios —te doy permiso poniendote
+  // de destinatario de un comentario—. La columna se borro entera: 2 observaciones, cero con
+  // destinatario, y el frontend no la pintaba en ningun sitio.
 ]);
 
 // ── El motor ────────────────────────────────────────────────────────────────────────────

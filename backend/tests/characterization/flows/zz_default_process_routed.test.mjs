@@ -204,7 +204,7 @@ async function readEntregable(taskItemId) {
     `SELECT id, task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
             sort_order, created_by_person_id, source_task_item_id, target_unit_id, target_position_id,
             target_person_id, responsible_position_id, assigned_person_id, start_date, end_date,
-            user_started_at, status
+            user_started_at
        FROM task_items WHERE id = $1`,
     [taskItemId],
   );

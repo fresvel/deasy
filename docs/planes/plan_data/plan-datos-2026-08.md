@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 7 de 20 tareas de D7.**
+**Estado: 0 de 7 fases · 9 de 20 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
@@ -70,9 +70,11 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | ~~TD7-i~~ | D7 | **P3** · Las fuentes que faltaban | ❌ **RETIRADA (2026-08-23).** El caso que las justificaba —«alguien preparó el documento y se fue»— **no existe**: si lo preparó dentro del sistema entró en un flujo; si lo preparó fuera, el sistema no lo sabe. Y medido: los relevos registrados no aportan **ni una persona** que no esté ya en `assigned_person_id` | — | 2026-08-23 |
 | `TD7-m` | D7 | **El modelo del entregable**, con las tres decisiones del dueño y lo que hay que implementar | ✅ | [`modelo-del-entregable.md`](./modelo-del-entregable.md) · 3 decisiones · 1 riesgo concreto | 2026-08-23 |
 | `TD7-n` | D7 | **Decisión**: cuál sobrevive entre `target_position_id` y `responsible_position_id`, que con la decisión de «uno por persona» dicen lo mismo | ⬜ | — | — |
-| `TD7-o` | D7 | Arreglar la **idempotencia del relanzamiento** (`getExistingTaskItemTemplateIds` asume la forma vieja). **Va ANTES del cambio de forma** | ⬜ | — | — |
-| `TD7-p` | D7 | El lanzamiento crea **un entregable por destinatario**, con `recipient_policy` decidiendo cuántos | ⬜ | — | — |
-| `TD7-q` | D7 | Se retiran `tasks.responsible_position_id`, `tasks.created_by_user_id` y `document_workflow_observations.target_person_id` | ⬜ | — | — |
+| ~~`TD7-o`~~ | D7 | Arreglar la idempotencia del relanzamiento | ❌ **RETIRADA (2026-08-23): no estaba rota.** La consulta sirve a la rama «sin destinatarios»; la rama con destinatarios tiene su propia idempotencia. El riesgo lo inventé leyendo la función equivocada | — | 2026-08-23 |
+| ~~`TD7-p`~~ | D7 | El lanzamiento crea un entregable por destinatario | ❌ **RETIRADA (2026-08-23): ya estaba implementado.** `ensureTaskItemsForTaskTargets` lo hace; leí `ensureTaskItemsForTask`, que es otra función | — | 2026-08-23 |
+| `TD7-q` | D7 | Se retiran `tasks.responsible_position_id` y `tasks.created_by_user_id` | ⬜ | — | — |
+| `TD7-t` | D7 | **`document_workflow_observations.target_person_id` borrado**, y con él las dos fuentes de acceso por observación | ✅ | 641/641 unit · 294/294 char · el chat lo destapó con un 500 antes de que llegara a producción | 2026-08-23 |
+| `TD7-u` | D7 | **`task_items.status` borrado**: 5 filtros muertos y 3 proyecciones | ✅ | 641/641 unit · 294/294 char · goldens: **6 líneas, todas `status: pendiente`, cero adiciones** · `isDocumentPending` derivado del catálogo con guardia | 2026-08-23 |
 | `TD7-r` | D7 | **`one_per_unit` → `unit_head`**: el valor hace lo que su etiqueta promete | ✅ | `is_unit_head` en la consulta · 641/641 unit · 294/294 char · `CHECK` verificado en base recreada · **3** diccionarios de etiqueta unificados | 2026-08-23 |
 | `TD7-s` | D7 | Colapsar las **25 piezas de código de migración** del esquema dentro de su tabla | ⬜ | — | — |
 | `TD7-j` | D7 | **P4** · El custodio: recorrido orgánico hasta el primer jefe, reserva a `AdminSistema` | ⬜ | — | — |

@@ -98,14 +98,27 @@ sin necesidad de campo.
 
 ## 3 · Qué implica la decisión
 
-### Lo que hay que implementar
+### ⚠️ CORRECCIÓN (2026-08-23): ya estaba implementado
 
-**El lanzamiento tiene que rellenar los destinos.** Hoy `ensureTaskItemsForTaskTargets`
-(`taskitems.js:35`) recorre **las plantillas** y crea un entregable por cada una, sin destino. Debe
-recorrer **plantillas × destinatarios**.
+**Este apartado decía que el lanzamiento hay que cambiarlo. Es falso, y el error fue mío**: leí
+`ensureTaskItemsForTask` (`taskitems.js:12`) —que sí crea uno por plantilla y sin destino— y
+generalicé. **El lanzamiento no llama a ésa: llama a `ensureTaskItemsForTaskTargets`**
+(`taskitems.js:67`), que recibe las posiciones objetivo y **crea un entregable por
+(plantilla × destinatario)** con `target_position_id`, `target_person_id` y
+`responsible_position_id` **rellenos**.
 
-Y el interruptor ya existe: **`recipient_policy` pasa a decidir también cuántos entregables**, no
-sólo cuántas personas quedan asignadas.
+Sólo cae a la forma «uno por plantilla» **cuando no hay destinatarios** — y ésa es la rama que la
+consulta de idempotencia cubre con su `target_position_id IS NULL`. Las dos formas conviven a
+propósito, cada una con su idempotencia.
+
+**Así que la decisión «un entregable por persona» ya está implementada.** Lo que faltaba era
+entenderlo. Lo que sí queda por comprobar es que `recipient_policy` alimente bien esos
+destinatarios — y `unit_head` ya corrige la mitad de eso.
+
+> **Y de aquí sale una regla de método, porque he tropezado dos veces igual:** dos funciones cuyo
+> nombre se diferencia en un sufijo (`…ForTask` y `…ForTaskTargets`) y de las que **la usada es la
+> larga**. Antes de afirmar «esto no se rellena», hay que mirar **quién llama**, no sólo qué hace la
+> función que sale primero en el `grep`.
 
 ### ⚠️ El riesgo concreto: la idempotencia del relanzamiento se rompe
 
@@ -118,12 +131,13 @@ WHERE task_id = ? AND origin_kind = 'process_defined'
   AND target_person_id IS NULL
 ```
 
-**Asume la forma «por plantilla».** En cuanto el lanzamiento rellene los destinos, esa consulta deja
-de encontrar los entregables existentes y **cada relanzamiento crearía duplicados**. El índice único
-los rechazaría —lo cual es la red que salva el día— pero el lanzamiento reventaría en vez de ser
-idempotente.
+**Y eso es CORRECTO**, no un riesgo: esa consulta sirve a la rama «sin destinatarios»
+(`ensureTaskItemsForTask`), que es la que crea entregables con los destinos vacíos. La rama con
+destinatarios tiene su propia idempotencia, por `existingTargetKeys`.
 
-**Es el primer sitio que hay que tocar, y va antes que el cambio de forma.**
+⚠️ **El aviso de riesgo que este apartado tenía escrito era mío y estaba equivocado**, y venía del
+mismo error de leer la función que no es. Se conserva tachado para que no se vuelva a «arreglar» lo
+que no está roto.
 
 ### Lo que la decisión valida
 
@@ -193,10 +207,10 @@ Aceptados por el dueño para empezar a caminar en el código. Cada uno con lo qu
 | `task_items.target_position_id` | **Se retira** | Nada. En `routed` el código ya lo pone a `NULL`; en `replicated` es copia de `responsible_position_id` |
 | `task_items.responsible_position_id` | **Se queda, y pasa a ser OBLIGATORIO** | Que el lanzamiento automático lo rellene. Es el ancla de los tres relevos y, con la decisión de «uno por productor», es quien dice el productor |
 | `task_items.assigned_person_id` | Se queda | Es el estado; lo mueve el relevo |
-| `task_items.status` | **Se borra** | Cero escritores. Su filtro en los tres relevos no excluye nada, así que quitarlo **no cambia comportamiento** — pero hay que sustituirlo por el estado real del documento |
+| `task_items.status` | ✅ **HECHO (2026-08-23)** | Retirados **cinco filtros muertos** (3 triggers + 2 del backfill) y **tres proyecciones**. Lo pendiente se lee ahora del documento con `isDocumentPending`. Los goldens se movieron: **6 líneas, todas borradas, todas `status: \"pendiente\"`** |
 | `tasks.responsible_position_id` | **Se retira** | Comprobar el ámbito del chat, que lo usa para calcular `scope_unit_id` |
 | `tasks.created_by_user_id` | **Se retira** | El caso ad-hoc se resuelve con `task_items.created_by_person_id`; quien lanzó la corrida ya está en `process_runs` |
-| `document_workflow_observations.target_person_id` | **Se borra** | Nada: 0 filas lo usan y el frontend no lo pinta |
+| `document_workflow_observations.target_person_id` | ✅ **HECHO (2026-08-23)** | Cayeron con él **las dos fuentes de acceso por observación**: la del autor por redundante, la del destinatario por ser una vía de escalada |
 | `recipient_policy.one_per_unit` | ✅ **HECHO (2026-08-23).** Desaparece; nace `unit_head` (opción 3) | Medido antes: **cero reglas** lo usaban. Y aparecieron **TRES** diccionarios de etiqueta, no dos — el tercero en `AdminPresentationService`, con un comentario que ya reconocía la divergencia |
 | Índice único | Pasa a **`(tarea, plantilla, productor)`** | La idempotencia del relanzamiento se reescribe con él |
 

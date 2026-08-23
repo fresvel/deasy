@@ -9,6 +9,7 @@
 // La alimenta el endpoint GET /users/:id/process-definitions/:definitionId/panel, que
 // estuvo devolviendo 500 hasta el commit a199a28 y hoy tiene golden-master
 // (flows/user_workspace.test.mjs). No la toques sin correr test:char:run.
+import { isDocumentPending } from "../../services/documents/DocumentStateService.js";
 import {
   createUnitSubtreeResolver,
   doesPositionMatchRule,
@@ -292,6 +293,16 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
         }
       };
     });
+  // El estado del documento por entregable: es lo que decide si algo sigue pendiente desde que
+  // `task_items.status` se retiro (2026-08-23).
+  const documentStatusByTaskItemId = new Map();
+  documents.forEach((document) => {
+    const key = Number(document.task_item_id || 0);
+    if (key && !documentStatusByTaskItemId.has(key)) {
+      documentStatusByTaskItemId.set(key, document.status);
+    }
+  });
+
   // Agrupa los documentos ya enriquecidos (incluyen attachments) por task_item.
   const documentsByTaskItemId = new Map();
   documents.forEach((document) => {
@@ -377,7 +388,10 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
         documents: relatedDocuments
       };
     });
-    const pendingItems = items.filter((item) => item.status !== "completada" && item.status !== "cancelada").length;
+    // Lo pendiente se lee del DOCUMENTO, no del entregable: `task_items.status` se retiró el
+    // 2026-08-23 porque no lo escribía nadie y se quedaba en 'pendiente' para siempre — así que
+    // este contador daba SIEMPRE el total, y lo parecía correcto por accidente.
+    const pendingItems = items.filter((item) => isDocumentPending(item.document?.status)).length;
     return {
       ...task,
       is_current_user_creator: Number(task.created_by_user_id) === Number(userId),
@@ -413,7 +427,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
     summary: {
       tasks_total: enrichedTasks.length,
       tasks_pending: enrichedTasks.filter((task) => task.status !== "completada" && task.status !== "cancelada").length,
-      task_items_pending: taskItems.filter((item) => item.status !== "completada" && item.status !== "cancelada").length,
+      task_items_pending: taskItems.filter((item) => isDocumentPending(documentStatusByTaskItemId.get(Number(item.id)))).length,
       documents_total: documents.length,
       fill_requests_pending: fillRequests.filter((request) => !request.responded_at).length,
       signatures_pending: signatures.filter((signature) => !signature.responded_at).length,

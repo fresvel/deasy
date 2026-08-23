@@ -43,10 +43,14 @@ test("el guard de 'ya iniciado' es user_started_at, no la existencia del documen
   );
 });
 
-test("solo reconcilia entregables abiertos y con puesto responsable", async () => {
+test("solo reconcilia entregables con puesto responsable, y YA NO filtra por un estado muerto", async () => {
   const { sql } = await reconciliar();
   assert.ok(sql.includes("ti.responsible_position_id IS NOT NULL"));
-  assert.ok(sql.includes("ti.status NOT IN"));
+  // `task_items.status` se retiro el 2026-08-23: tenia CERO escritores, se quedaba en 'pendiente'
+  // para siempre, y este filtro excluia siete literales entre los que 'pendiente' NO estaba. O sea
+  // que NO EXCLUIA NADA. Quitarlo no cambia a quien alcanza el backfill; dejarlo era prometer un
+  // recorte que no ocurria.
+  assert.ok(!sql.includes("ti.status"), "el filtro por un estado que nadie escribe ha vuelto");
   assert.ok(sql.includes("pa.is_current = 1"), "el destino es el ocupante VIGENTE del puesto");
   assert.ok(
     sql.includes("ti.assigned_person_id <> pa.person_id"),

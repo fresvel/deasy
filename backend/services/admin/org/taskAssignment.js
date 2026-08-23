@@ -249,7 +249,6 @@ export default class TaskAssignmentService {
           WHERE pa.is_current = 1
             AND pa.person_id IS NOT NULL
             AND ti.responsible_position_id IS NOT NULL
-            AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
             AND ti.user_started_at IS NULL
             AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> pa.person_id)
             ${posFilter}
@@ -351,7 +350,7 @@ export default class TaskAssignmentService {
   // F-C (lista de atascados): task_items ABIERTOS que requieren atención — por persona (los que tiene asignados),
   // por puesto, por unidad, o (sin filtros) los huérfanos (sin persona). Marca `started` (tiene documento).
   async listStuckTaskItems({ personId = null, positionId = null, unitId = null } = {}, connection = this.pool) {
-    const filters = ["ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')"];
+    const filters = [];
     const params = [];
     const pid = normalizeNumericId(personId);
     const posId = normalizeNumericId(positionId);
@@ -361,7 +360,7 @@ export default class TaskAssignmentService {
     if (uId) { filters.push("up.unit_id = ?"); params.push(uId); }
     if (!pid && !posId && !uId) { filters.push("ti.assigned_person_id IS NULL AND ti.responsible_position_id IS NOT NULL"); }
     const [rows] = await connection.query(
-      `SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id, ti.status,
+      `SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id,
               up.unit_id, c.name AS cargo_name, u.name AS unit_name,
               EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id) AS started
          FROM task_items ti
@@ -464,15 +463,17 @@ export default class TaskAssignmentService {
            INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
            INNER JOIN scope s ON s.unit_id = ur.parent_unit_id
        )
-       SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id, ti.status,
+       SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id,
+              -- El estado que se enseña es el del DOCUMENTO: task_items.status se retiro.
+              d.status AS status,
               up.unit_id, u.name AS unit_name, c.name AS cargo_name,
               EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id) AS started
          FROM task_items ti
+         LEFT JOIN documents d ON d.task_item_id = ti.id
          INNER JOIN unit_positions up ON up.id = ti.responsible_position_id
          INNER JOIN units u ON u.id = up.unit_id
          LEFT JOIN cargos c ON c.id = up.cargo_id
         WHERE up.unit_id IN (SELECT unit_id FROM scope)
-          AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
           AND (
             ti.assigned_person_id IS NULL
             OR NOT EXISTS (

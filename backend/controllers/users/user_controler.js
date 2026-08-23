@@ -456,7 +456,6 @@ export const addTaskItemObservation = async (req, res) => {
   }
   const phase = String(req.body?.phase || "review").trim();
   const kind = String(req.body?.kind || "observation").trim();
-  const targetPersonId = req.body?.target_person_id ? Number(req.body.target_person_id) : null;
 
   const pool = getPostgresPool();
   if (!pool) {
@@ -479,7 +478,6 @@ export const addTaskItemObservation = async (req, res) => {
       kind,
       message,
       authorPersonId: userId,
-      targetPersonId
     });
     await connection.commit();
     if (!observationId) {
@@ -1412,7 +1410,6 @@ export const listMySends = async (req, res) => {
       `SELECT
          ti.id,
          ti.title AS label,
-         ti.status,
          ti.created_at,
          ti.target_person_id,
          NULLIF(TRIM(CONCAT(COALESCE(recip.first_name, ''), ' ', COALESCE(recip.last_name, ''))), '') AS recipient_name,
@@ -1476,7 +1473,6 @@ export const listMyReceived = async (req, res) => {
       `SELECT
          ti.id,
          ti.title AS label,
-         ti.status,
          ti.created_at,
          ti.created_by_person_id,
          NULLIF(TRIM(CONCAT(COALESCE(sender.first_name, ''), ' ', COALESCE(sender.last_name, ''))), '') AS sender_name,
