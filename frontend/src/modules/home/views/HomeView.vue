@@ -1502,7 +1502,12 @@
                 <AppTag variant="info">{{ s.process_name }}</AppTag>
                 <span class="text-sm font-semibold text-strong">{{ s.label || `Envío #${s.id}` }}</span>
               </div>
-              <span class="text-xs font-medium text-primary">Para: {{ s.recipient_name || '—' }}</span>
+              <!-- EL «Para:» YA NO EXISTE (2026-08-23). Se leia de `task_items.target_person_id`, una
+                 columna que decia a quien iba dirigido el documento SIN que nadie la validara. Se retiro:
+                 el destinatario se deriva del FLUJO DE FIRMA —quien firma el recibido es quien recibe—.
+                 La vista de los routed se rediseña para enseñar ese flujo; hasta entonces, la pastilla
+                 marca el hueco en vez de dejar un dato en blanco. -->
+              <AppTag variant="neutral" dot class="self-start">Flujo · futura implementación</AppTag>
             </div>
             <div class="flex items-center gap-3 text-xs text-muted">
               <span>{{ String(s.created_at || '').slice(0, 10) }}</span>

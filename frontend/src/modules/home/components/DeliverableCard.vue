@@ -97,8 +97,13 @@ const onCardClick = (event) => {
             <p class="m-0 min-w-0 truncate text-theme-xs font-medium leading-snug text-muted">
               {{ h.getDeliverablePeriodLabel(deliverable.task) }}
             </p>
-            <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-theme-xs font-semibold leading-snug text-primary">
-              Para: {{ deliverable.item.recipient_name }}
+            <!-- EL «Para:» YA NO EXISTE (2026-08-23). Se leia de `task_items.target_person_id`, una
+                 columna que decia a quien iba dirigido el documento SIN que nadie la validara. Se retiro:
+                 el destinatario se deriva del FLUJO DE FIRMA —quien firma el recibido es quien recibe—.
+                 La vista de los routed se rediseña para enseñar ese flujo; hasta entonces, la pastilla
+                 marca el hueco en vez de dejar un dato en blanco. -->
+            <p v-if="deliverable.item.item_mode === 'routed'" class="m-0 mt-0.5">
+              <AppTag variant="neutral" dot>Flujo · futura implementación</AppTag>
             </p>
           </div>
           <AppButton

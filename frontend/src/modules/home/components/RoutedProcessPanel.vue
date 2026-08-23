@@ -85,7 +85,13 @@
           <p class="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-xs font-medium text-muted">
             <span class="inline-flex items-center gap-2">
               <IconUser class="h-3.5 w-3.5 text-muted" />
-              {{ activeTab === 'sends' ? 'Para' : 'De' }}: <strong class="font-semibold text-icon">{{ personName(item) }}</strong>
+              <!-- EL «Para:» YA NO EXISTE (2026-08-23). Se leia de `task_items.target_person_id`, una
+                 columna que decia a quien iba dirigido el documento SIN que nadie la validara. Se retiro:
+                 el destinatario se deriva del FLUJO DE FIRMA —quien firma el recibido es quien recibe—.
+                 La vista de los routed se rediseña para enseñar ese flujo; hasta entonces, la pastilla
+                 marca el hueco en vez de dejar un dato en blanco. -->
+              <AppTag v-if="activeTab === 'sends'" variant="neutral" dot>Flujo · futura implementación</AppTag>
+              <template v-else>De: <strong class="font-semibold text-icon">{{ personName(item) }}</strong></template>
             </span>
             <span class="text-gray-300">·</span>
             <span>{{ formatDate(item.created_at) }}</span>
@@ -134,13 +140,15 @@ const emptyHint = computed(() => (activeTab.value === 'sends'
   ? `Usa “${props.createLabel}” para crear y endosar tu primer documento.`
   : 'Cuando alguien te endose un documento de este tipo, aparecerá aquí.'));
 
-const personName = (item) => item.recipient_name || item.sender_name || 'Sin destinatario';
+// Solo se usa ya en la pestaña de RECIBIDOS: el remitente. El termino `recipient_name` que abria
+// esta cascada murio con la columna del «Para:» (2026-08-23) y la API ya no lo emite.
+const personName = (item) => item.sender_name || 'Sin remitente';
 
-// Qué debe hacer el usuario con un recibido: elaborarlo, firmarlo, o solo lo recibió como destinatario.
+// Qué debe hacer el usuario con un recibido: elaborarlo o firmarlo. Habia una tercera rama —«Para
+// ti», que leia `is_recipient`— y murio con la columna del «Para:» (2026-08-23): la API ya no la emite.
 const receivedRole = (item) => {
   if (item.needs_fill) return { tone: 'info', label: 'Elaborar' };
   if (item.needs_sign) return { tone: 'warning', label: 'Firmar' };
-  if (item.is_recipient) return { tone: 'neutral', label: 'Para ti' };
   return null;
 };
 
