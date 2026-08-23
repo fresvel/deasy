@@ -81,11 +81,29 @@ test("applyRecipientPolicy: un exactPositionId fuerza una sola fila aunque la po
   assert.deepEqual(applyRecipientPolicy(rows, "all", 7), [rows[0]]);
 });
 
-test("applyRecipientPolicy: one_per_unit deja una fila por unidad (la primera)", () => {
-  assert.deepEqual(applyRecipientPolicy(rows, "one_per_unit"), [rows[0], rows[2]]);
+test("applyRecipientPolicy: unit_head deja SOLO las jefaturas, no la primera fila", () => {
+  // La prueba vieja fijaba `one_per_unit` con `[rows[0], rows[2]]` — o sea, la PRIMERA de cada
+  // unidad. Eso era el defecto: el orden lo daba `slot_no` y ninguna etiqueta prometia eso.
+  assert.deepEqual(
+    applyRecipientPolicy(rows.map((r, i) => ({ ...r, is_unit_head: i === 1 ? 1 : 0 })), "unit_head"),
+    [{ ...rows[1], is_unit_head: 1 }]
+  );
 });
 
 test("applyRecipientPolicy: cualquier otra política devuelve TODAS las filas", () => {
   assert.deepEqual(applyRecipientPolicy(rows, "all"), rows);
   assert.deepEqual(applyRecipientPolicy(rows, undefined), rows);
+});
+
+
+test("applyRecipientPolicy: una unidad SIN jefatura se queda fuera, no se inventa un sustituto", () => {
+  // Hoy pasa en 2 de 13 unidades. Elegir «el primero» era exactamente el fallo que se cerro.
+  assert.deepEqual(applyRecipientPolicy(rows.map((r) => ({ ...r, is_unit_head: 0 })), "unit_head"), []);
+});
+
+test("applyRecipientPolicy: `one_per_unit` ya no significa nada y cae al comportamiento de `todas`", () => {
+  // No se le da un trato especial a proposito: el valor desaparecio del CHECK, asi que una regla
+  // que lo llevara ya no puede existir. Si apareciera, es mejor que devuelva de mas y se vea, a
+  // que devuelva «la primera» y nadie lo note.
+  assert.deepEqual(applyRecipientPolicy(rows, "one_per_unit"), rows);
 });

@@ -461,7 +461,7 @@ CREATE TABLE IF NOT EXISTS process_target_rules (
   unit_type_id INT NULL,
   cargo_id INT NULL,
   position_id INT NULL,
-  recipient_policy TEXT CHECK (recipient_policy IN ('all_matches', 'one_per_unit', 'exact_position')) NOT NULL DEFAULT 'all_matches',
+  recipient_policy TEXT CHECK (recipient_policy IN ('all_matches', 'unit_head', 'exact_position')) NOT NULL DEFAULT 'all_matches',
   priority INT NOT NULL DEFAULT 1,
   is_active SMALLINT NOT NULL DEFAULT 1,
   effective_from DATE NULL,

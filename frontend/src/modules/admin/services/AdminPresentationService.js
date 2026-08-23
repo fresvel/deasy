@@ -56,9 +56,14 @@ class AdminPresentationService {
    * codigo es la enfermedad que este frente lleva cuatro fases matando.
    *
    * ⚠️ Y hay divergencias CONOCIDAS que NO se tocan aqui porque son de otro contexto:
-   * `UnitGraphView` llama `unit_exact` «Esta unidad» y `one_per_unit` «Jefatura de la unidad»
-   * donde esta tabla dice «Unidad exacta» y «Un puesto por unidad». Son cinco diccionarios de
-   * etiqueta repartidos por el frontend; unificarlos es trabajo aparte y esta anotado. */
+   * `UnitGraphView` llama `unit_exact` «Esta unidad» donde esta tabla dice «Unidad exacta».
+   * Son cinco diccionarios de etiqueta repartidos por el frontend; unificarlos es trabajo
+   * aparte y esta anotado.
+   *
+   * ✅ Una de esas divergencias SE CERRO el 2026-08-23, y no cambiando la etiqueta: el codigo
+   * que la sostenia no existia. `one_per_unit` se llamaba «Un puesto por unidad» aqui y
+   * «Jefatura de la unidad» en el organigrama, y no hacia ninguna de las dos —cogia el puesto
+   * de menor `slot_no`—. Ahora es `unit_head`, hace lo que dice, y tiene UN solo nombre. */
   static SELECT_OPTION_LABELS = {
     scope: { owner: "Propietario", collaborator: "Operativo" },
     source_type: { unit_type: "Tipo de unidad", cargo: "Cargo", default: "Predeterminada" },
@@ -71,7 +76,7 @@ class AdminPresentationService {
     },
     recipient_policy: {
       all_matches: "Todos los puestos coincidentes",
-      one_per_unit: "Un puesto por unidad",
+      unit_head: "Jefatura de la unidad",
       exact_position: "Puesto exacto"
     },
     run_mode: { automatic: "Automatica", manual: "Manual" },

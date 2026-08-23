@@ -29,8 +29,21 @@ export const resolveScopeForStep = (step, context) => {
   };
 };
 
-// Recorta la lista de posiciones candidatas según la política de destinatarios de la
-// regla: una sola persona (posición exacta), una por unidad, o todas.
+// Recorta la lista de posiciones candidatas según la política de destinatarios de la regla:
+// todas, sólo la jefatura de cada unidad, o un puesto nombrado.
+//
+// ── Por qué `one_per_unit` ya no existe (2026-08-23) ──────────────────────────────────────
+// Prometía dos cosas distintas según la pantalla —«Un puesto por unidad» en el panel de reglas
+// y «Jefatura de la unidad» en el organigrama— y no cumplía ninguna: se quedaba con la PRIMERA
+// fila de cada unidad, y las filas vienen ordenadas por `slot_no`. O sea, «el puesto de menor
+// número de ranura», que no es una regla de negocio: es la misma arbitrariedad que se retiró de
+// `tasks.responsible_position_id`.
+//
+// De las dos etiquetas, una sí nombraba un concepto real —la jefatura— y la base ya sabe
+// expresarlo (`unit_positions.is_unit_head`). Así que el valor se sustituye por `unit_head`, con
+// nombre nuevo A PROPÓSITO: una regla que dijera `one_per_unit` deja de ser válida y hay que
+// migrarla a mano, mirando cuál de las dos promesas quería. Cambiarle el significado al valor
+// viejo habría movido el comportamiento de las reglas existentes en silencio.
 export const applyRecipientPolicy = (rows, recipientPolicy, exactPositionId = null) => {
   if (!rows.length) {
     return [];
@@ -38,15 +51,11 @@ export const applyRecipientPolicy = (rows, recipientPolicy, exactPositionId = nu
   if (recipientPolicy === "exact_position" || exactPositionId) {
     return rows.slice(0, 1);
   }
-  if (recipientPolicy === "one_per_unit") {
-    const seen = new Set();
-    return rows.filter((row) => {
-      if (seen.has(row.unit_id)) {
-        return false;
-      }
-      seen.add(row.unit_id);
-      return true;
-    });
+  if (recipientPolicy === "unit_head") {
+    // Una unidad puede no tener jefatura —hoy pasa en 2 de 13—, y entonces NO se inventa un
+    // sustituto: la unidad se queda fuera del alcance de la regla. Elegir «el primero» es
+    // exactamente el fallo que este cambio viene a cerrar.
+    return rows.filter((row) => Number(row.is_unit_head) === 1);
   }
   return rows;
 };

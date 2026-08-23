@@ -467,7 +467,7 @@
           Entrega (destinatario)
           <select v-model="processForm.recipient_policy" class="deasy-control deasy-control--select">
             <option value="all_matches">Todos los del cargo</option>
-            <option value="one_per_unit">Jefatura de la unidad</option>
+            <option value="unit_head">Jefatura de la unidad</option>
             <option value="exact_position">Puesto exacto</option>
           </select>
         </label>
@@ -899,7 +899,7 @@ const processScopeLabel = (code) => PROCESS_SCOPE_LABELS[code] || code || "—";
 // --- Administración de procesos de la unidad (vía reglas de alcance) ---
 const RECIPIENT_POLICY_LABELS = {
   all_matches: "Todos los del cargo",
-  one_per_unit: "Jefatura de la unidad",
+  unit_head: "Jefatura de la unidad",
   exact_position: "Puesto exacto"
 };
 /* El ORIGEN de la regla ya no lleva su clase: solo la etiqueta. El tono lo pone `tonoOrigen`. */

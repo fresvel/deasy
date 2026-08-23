@@ -178,3 +178,82 @@ unidad, subiendo por la rama orgánica).
 > **Para lo que sí sirve el registro de relevos es para EXPLICAR**, no para conceder: *«¿por qué esto
 > que era de Juan ahora es de María?»*. Eso no lo contesta el historial de flujos, y es el defecto
 > 1.10 — otro trabajo.
+
+
+---
+
+## 5 · Veredictos (2026-08-23)
+
+Aceptados por el dueño para empezar a caminar en el código. Cada uno con lo que hay que hacer
+**antes** de tocarlo, que es donde están las trampas.
+
+| Elemento | Veredicto | Lo que hay que hacer antes |
+|---|---|---|
+| `task_items.target_person_id` | **Se retira** | Cerrar el camino *legacy sin flujo* y derivar el «Para:» del **último paso de firma**. En `replicated` no hace falta: es copia de `created_by_person_id` |
+| `task_items.target_position_id` | **Se retira** | Nada. En `routed` el código ya lo pone a `NULL`; en `replicated` es copia de `responsible_position_id` |
+| `task_items.responsible_position_id` | **Se queda, y pasa a ser OBLIGATORIO** | Que el lanzamiento automático lo rellene. Es el ancla de los tres relevos y, con la decisión de «uno por productor», es quien dice el productor |
+| `task_items.assigned_person_id` | Se queda | Es el estado; lo mueve el relevo |
+| `task_items.status` | **Se borra** | Cero escritores. Su filtro en los tres relevos no excluye nada, así que quitarlo **no cambia comportamiento** — pero hay que sustituirlo por el estado real del documento |
+| `tasks.responsible_position_id` | **Se retira** | Comprobar el ámbito del chat, que lo usa para calcular `scope_unit_id` |
+| `tasks.created_by_user_id` | **Se retira** | El caso ad-hoc se resuelve con `task_items.created_by_person_id`; quien lanzó la corrida ya está en `process_runs` |
+| `document_workflow_observations.target_person_id` | **Se borra** | Nada: 0 filas lo usan y el frontend no lo pinta |
+| `recipient_policy.one_per_unit` | ✅ **HECHO (2026-08-23).** Desaparece; nace `unit_head` (opción 3) | Medido antes: **cero reglas** lo usaban. Y aparecieron **TRES** diccionarios de etiqueta, no dos — el tercero en `AdminPresentationService`, con un comentario que ya reconocía la divergencia |
+| Índice único | Pasa a **`(tarea, plantilla, productor)`** | La idempotencia del relanzamiento se reescribe con él |
+
+### `replicated` no se ve afectado — verificado
+
+Sus réplicas nacen con `origin_kind = 'user_added'`, y las tres columnas generadas del índice único
+valen `NULL` fuera de `process_defined`. PostgreSQL admite múltiples `NULL` en un índice único, así
+que **N réplicas del mismo creador, plantilla y tarea no colisionan**. El cambio de identidad sólo
+alcanza al camino automático.
+
+### El hueco que ninguna de las dos propuestas cubre
+
+**¿Qué pasa con un entregable YA EMPEZADO cuando su persona deja el puesto?** Hoy: **nada**. Los tres
+relevos filtran por `ti.user_started_at IS NULL`, así que en cuanto alguien lo abre queda congelado
+con él. Puede ser correcto —lo estaba trabajando— o puede dejar documentos abandonados que nadie
+reclama. **Sin decidir.**
+
+> Y por eso se descartó modelar el relevo creando un entregable hijo con su padre y su motivo: **el
+> congelado ya existe**, y lo hace una columna (`user_started_at`) en vez de una tabla. La columna de
+> padre que la idea proponía **también existe ya** (`task_items.source_task_item_id`, con su FK y su
+> índice), y hoy la usa el camino ad-hoc para derivar un entregable de otro.
+
+
+---
+
+## 6 · Dos aclaraciones del 2026-08-23
+
+### `replicated` no se toca, y no puede ser automático
+
+Está escrito como decisión en `taskitems.js:13`: *«solo las plantillas en modo `single` auto-generan
+su entregable; `replicated`/`routed` no siembran ítem»*. Y a nivel de modelo **no puede serlo
+mientras el número de réplicas lo decida una persona**: el sistema no sabe cuántas actas de reunión
+vas a tener este mes.
+
+La decisión de «uno por productor» **no lo solapa**, porque multiplican por ejes distintos:
+
+| Modo | Multiplica por | ¿Lo sabe el sistema? |
+|---|---|---|
+| `single` (modelo nuevo) | **personas** — un entregable por productor | **Sí**, salen de las reglas de alcance |
+| `replicated` | **ocurrencias** — N actas, N informes de evento | **No**, lo decide la persona |
+
+Podría ser automático el día que exista una fuente que enumere las ocurrencias — y entonces dejaría
+de ser `replicated`: sería `single` con una ocurrencia por destinatario.
+
+### Sin código de migración
+
+**Decisión del dueño (2026-08-23): el esquema declara el modelo objetivo y la semilla se
+reescribe. No se escriben `ALTER` para llevar bases existentes de una forma a otra** — no hay datos
+en producción, y ese código nace muerto.
+
+Se aplicó de inmediato: el `CHECK` de `recipient_policy` se había escrito con su bloque de migración
+—siguiendo el precedente del fichero— y **se retiró**. Verificado reconstruyendo la base con
+`test:char:run`: la definición limpia basta, el `CHECK` nuevo aparece, y char sigue en **294/294**.
+
+> **Y eso destapa una limpieza que antes no era posible:** el esquema arrastra **25 piezas de código
+> de migración** —`ALTER TABLE`, bloques `DO $$`, `ADD COLUMN IF NOT EXISTS`, `DROP COLUMN IF
+> EXISTS`, `DROP CONSTRAINT IF EXISTS`—. Con esta regla, todas pueden colapsar dentro de la
+> definición de su tabla, y el fichero pasaría a decir **qué es** el esquema en vez de **cómo llegó
+> a serlo**. Es trabajo aparte y tiene un riesgo concreto: cada `ALTER` que se colapse mal **pierde
+> una columna**, así que se hace tabla a tabla y con la base recreada como prueba.

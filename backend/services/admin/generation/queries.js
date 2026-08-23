@@ -299,6 +299,7 @@ export const getPositionsForRule = async (connection, rule) => {
     SELECT DISTINCT
       up.id AS position_id,
       up.unit_id,
+      up.is_unit_head,
       pa.person_id,
       up.slot_no
     FROM unit_positions up

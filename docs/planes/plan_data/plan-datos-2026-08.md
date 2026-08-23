@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 6 de 19 tareas de D7.**
+**Estado: 0 de 7 fases · 7 de 20 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
@@ -73,6 +73,8 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `TD7-o` | D7 | Arreglar la **idempotencia del relanzamiento** (`getExistingTaskItemTemplateIds` asume la forma vieja). **Va ANTES del cambio de forma** | ⬜ | — | — |
 | `TD7-p` | D7 | El lanzamiento crea **un entregable por destinatario**, con `recipient_policy` decidiendo cuántos | ⬜ | — | — |
 | `TD7-q` | D7 | Se retiran `tasks.responsible_position_id`, `tasks.created_by_user_id` y `document_workflow_observations.target_person_id` | ⬜ | — | — |
+| `TD7-r` | D7 | **`one_per_unit` → `unit_head`**: el valor hace lo que su etiqueta promete | ✅ | `is_unit_head` en la consulta · 641/641 unit · 294/294 char · `CHECK` verificado en base recreada · **3** diccionarios de etiqueta unificados | 2026-08-23 |
+| `TD7-s` | D7 | Colapsar las **25 piezas de código de migración** del esquema dentro de su tabla | ⬜ | — | — |
 | `TD7-j` | D7 | **P4** · El custodio: recorrido orgánico hasta el primer jefe, reserva a `AdminSistema` | ⬜ | — | — |
 | `TD7-k` | D7 | **P5** · Eliminar un puesto deja de borrar su historia; desactivarlo emite `position_deactivated` | ⬜ | — | — |
 | `TD7-l` | D7 | **P6** · La fusión: `documents` se absorbe en `task_items`; mueren `owner_person_id` y `task_items.status` | ⬜ | — | — |

@@ -252,7 +252,7 @@ const scopeOptions = [
 
 const recipientPolicyOptions = [
   { value: "all_matches", label: "Todos los puestos coincidentes" },
-  { value: "one_per_unit", label: "Un puesto por unidad" },
+  { value: "unit_head", label: "Jefatura de la unidad" },
   { value: "exact_position", label: "Puesto exacto" }
 ];
 
