@@ -117,9 +117,9 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
   return documentFillFlowId;
 };
 export const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
-  if (taskItem?.target_person_id) {
-    return Number(taskItem.target_person_id);
-  }
+  // El «Para:» era el PRIMER escalon de esta cascada y no debia serlo: quien RECIBE un documento
+  // no es quien responde por el. La columna se retiro el 2026-08-23 y la responsabilidad empieza
+  // donde tiene que empezar — en quien lo tiene asignado.
 
   if (taskItem?.assigned_person_id) {
     return Number(taskItem.assigned_person_id);

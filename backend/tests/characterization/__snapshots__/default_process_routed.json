@@ -3,7 +3,7 @@
     "document": {
       "id": "<normalized>",
       "origin_unit_id": 8,
-      "owner_person_id": 1,
+      "owner_person_id": 3,
       "status": "Pendiente de llenado",
       "task_item_id": "<normalized>",
       "title": "zz char routed derivado"
@@ -39,8 +39,6 @@
       "sort_order": 999,
       "source_task_item_id": "<normalized>",
       "start_date": "<normalized>",
-      "target_person_id": 1,
-      "target_position_id": "<normalized>",
       "target_unit_id": null,
       "task_id": "<normalized>",
       "template_artifact_id": "<normalized>",
@@ -172,7 +170,7 @@
     "document": {
       "id": "<normalized>",
       "origin_unit_id": 8,
-      "owner_person_id": 2,
+      "owner_person_id": 3,
       "status": "Pendiente de llenado",
       "task_item_id": "<normalized>",
       "title": "Documento <normalized>"
@@ -217,8 +215,6 @@
       "sort_order": 1,
       "source_task_item_id": "<normalized>",
       "start_date": "<normalized>",
-      "target_person_id": 2,
-      "target_position_id": "<normalized>",
       "target_unit_id": 8,
       "task_id": "<normalized>",
       "template_artifact_id": "<normalized>",

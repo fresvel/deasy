@@ -128,10 +128,92 @@
     }
   },
   "menu_usuario": {
-    "status": 500,
+    "status": 200,
     "body": {
-      "error": "missing FROM-clause entry for table \"task_position\"",
-      "message": "Error al obtener el menú del usuario"
+      "consolidated": [
+        {
+          "id": "<normalized>",
+          "name": "Docente",
+          "position_type": "real",
+          "processes": [
+            {
+              "access_source": "process",
+              "definition_version": "1.0.0",
+              "id": "<normalized>",
+              "is_routed": true,
+              "name": "Proceso por defecto",
+              "process_definition_id": "<normalized>",
+              "slug": "default",
+              "unit_id": "<normalized>",
+              "variation_key": "general"
+            }
+          ]
+        }
+      ],
+      "unit_groups": [
+        {
+          "id": "<normalized>",
+          "label": "Coordinación de Aprendizaje y Enseñanza",
+          "name": "Coordinación de Aprendizaje y Enseñanza",
+          "units": [
+            {
+              "cargos": [
+                {
+                  "id": "<normalized>",
+                  "name": "Docente",
+                  "position_type": "real",
+                  "processes": [
+                    {
+                      "access_source": "process",
+                      "definition_version": "1.0.0",
+                      "id": "<normalized>",
+                      "is_routed": true,
+                      "name": "Proceso por defecto",
+                      "process_definition_id": "<normalized>",
+                      "slug": "default",
+                      "unit_id": "<normalized>",
+                      "variation_key": "general"
+                    }
+                  ]
+                }
+              ],
+              "group_id": "<normalized>",
+              "id": "<normalized>",
+              "label": "Carrera de Tecnologías de la Información",
+              "name": "Tecnologías de la Información"
+            }
+          ]
+        }
+      ],
+      "units": [
+        {
+          "cargos": [
+            {
+              "id": "<normalized>",
+              "name": "Docente",
+              "position_type": "real",
+              "processes": [
+                {
+                  "access_source": "process",
+                  "definition_version": "1.0.0",
+                  "id": "<normalized>",
+                  "is_routed": true,
+                  "name": "Proceso por defecto",
+                  "process_definition_id": "<normalized>",
+                  "slug": "default",
+                  "unit_id": "<normalized>",
+                  "variation_key": "general"
+                }
+              ]
+            }
+          ],
+          "group_id": "<normalized>",
+          "id": "<normalized>",
+          "label": "Carrera de Tecnologías de la Información",
+          "name": "Tecnologías de la Información"
+        }
+      ],
+      "user_id": "<normalized>"
     }
   },
   "my_received_usuario": {
@@ -159,9 +241,7 @@
           "id": "<normalized>",
           "label": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
           "process_id": "<normalized>",
-          "process_name": "Proceso por defecto",
-          "recipient_name": "Usuario Prueba",
-          "target_person_id": "<normalized>"
+          "process_name": "Proceso por defecto"
         }
       ]
     }
@@ -287,7 +367,7 @@
           "owner_person_id": "<normalized>",
           "pending_fill_count": 1,
           "pending_signature_count": "0",
-          "recipient_name": "Usuario Prueba",
+          "recipient_name": null,
           "start_date": "<normalized>",
           "task_id": "<normalized>",
           "task_item_id": "<normalized>",
@@ -477,7 +557,7 @@
                 "owner_person_id": "<normalized>",
                 "pending_fill_count": 1,
                 "pending_signature_count": "0",
-                "recipient_name": "Usuario Prueba",
+                "recipient_name": null,
                 "start_date": "<normalized>",
                 "task_id": "<normalized>",
                 "task_item_id": "<normalized>",
@@ -610,7 +690,7 @@
                   "owner_person_id": "<normalized>",
                   "pending_fill_count": 1,
                   "pending_signature_count": "0",
-                  "recipient_name": "Usuario Prueba",
+                  "recipient_name": null,
                   "start_date": "<normalized>",
                   "task_id": "<normalized>",
                   "task_item_id": "<normalized>",
@@ -721,15 +801,11 @@
               },
               "pending_fill_count": 1,
               "process_definition_template_id": "<normalized>",
-              "recipient_name": "Usuario Prueba",
               "resolved_owner_person_id": "<normalized>",
               "responsible_position_id": "<normalized>",
               "responsible_position_title": "Docente",
               "sort_order": 1,
               "start_date": "<normalized>",
-              "target_person_id": "<normalized>",
-              "target_position_id": "<normalized>",
-              "target_position_title": null,
               "target_unit_id": "<normalized>",
               "target_unit_label": "Carrera de Tecnologías de la Información",
               "task_id": "<normalized>",

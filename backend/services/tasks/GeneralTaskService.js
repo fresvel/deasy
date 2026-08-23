@@ -221,11 +221,10 @@ const resolveDerivedTarget = async (
   { itemMode, recipientPersonId, runtimeFlow, authenticatedUserId, responsiblePositionId, sourceUnitId }
 ) => {
   if (itemMode !== "routed") {
-    return {
-      targetPersonId: authenticatedUserId,
-      targetPositionId: responsiblePositionId,
-      targetUnitId: sourceUnitId,
-    };
+    // `replicated`: el entregable es del creador. Antes esto devolvia ademas un «destino» que era
+    // copia de `created_by_person_id` y de `responsible_position_id` — tres columnas para el mismo
+    // dato. Con los destinos retirados (2026-08-23) solo queda la unidad, que si es propia.
+    return { targetUnitId: sourceUnitId };
   }
 
   if (recipientPersonId) {
@@ -252,11 +251,9 @@ const resolveDerivedTarget = async (
     error.statusCode = 400;
     throw error;
   }
-  return {
-    targetPersonId: recipientPersonId || null, // "Para:" (puede ser null si la firma es por cargo)
-    targetPositionId: null,                    // se rutea por el flujo, no por puesto
-    targetUnitId: null,
-  };
+  // El destinatario NO se guarda: es el flujo. Se comprueba que exista si viene —el cliente lo
+  // sigue mandando como cortesia— pero no se persiste en ninguna columna.
+  return { targetUnitId: null };
 };
 
 const insertDerivedTaskItem = async (connection, {
@@ -267,8 +264,6 @@ const insertDerivedTaskItem = async (connection, {
   authenticatedUserId,
   sourceTaskItemId,
   targetUnitId,
-  targetPositionId,
-  targetPersonId,
   responsiblePositionId,
   sourceTask,
 }) => {
@@ -283,13 +278,11 @@ const insertDerivedTaskItem = async (connection, {
        created_by_person_id,
        source_task_item_id,
        target_unit_id,
-       target_position_id,
-       target_person_id,
        responsible_position_id,
        assigned_person_id,
        start_date,
        end_date
-     ) VALUES (?, ?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?)`,
     [
       sourceTaskId,
       definitionTemplateId,
@@ -298,8 +291,6 @@ const insertDerivedTaskItem = async (connection, {
       authenticatedUserId,
       sourceTaskItemId || null,
       targetUnitId,
-      targetPositionId,
-      targetPersonId,
       responsiblePositionId,
       authenticatedUserId,
       sourceTask.start_date,
@@ -322,7 +313,6 @@ const loadDerivedTaskItemRow = async (connection, taskItemId) => {
        ti.template_artifact_id,
        ti.assigned_person_id,
        ti.target_unit_id,
-       ti.target_person_id,
        ti.responsible_position_id,
        COALESCE(ti.title, tar_dl.display_name) AS template_artifact_name
      FROM task_items ti
@@ -350,7 +340,7 @@ const createDerivedDeliverable = async (connection, { authenticatedUserId, input
     definitionId,
   });
 
-  const { targetPersonId, targetPositionId, targetUnitId } = await resolveDerivedTarget(connection, {
+  const { targetUnitId } = await resolveDerivedTarget(connection, {
     itemMode,
     recipientPersonId: input.recipientPersonId,
     runtimeFlow: input.runtimeFlow,
@@ -371,8 +361,6 @@ const createDerivedDeliverable = async (connection, { authenticatedUserId, input
     authenticatedUserId,
     sourceTaskItemId: input.sourceTaskItemId,
     targetUnitId,
-    targetPositionId,
-    targetPersonId,
     responsiblePositionId,
     sourceTask,
   });
@@ -393,7 +381,9 @@ const createDerivedDeliverable = async (connection, { authenticatedUserId, input
     result: "ok",
     mode: input.mode,
     item_mode: itemMode,
-    recipient_person_id: itemMode === "routed" ? targetPersonId : null,
+    // El destinatario ya no se guarda: vive en el flujo. Se devuelve lo que mando el cliente para
+    // que su pantalla no cambie de forma mientras se rediseña la vista de los routed.
+    recipient_person_id: itemMode === "routed" ? (input.recipientPersonId || null) : null,
     task_id: input.sourceTaskId,
     task_item_id: taskItemId,
     definition_id: sourceTask.process_definition_id,
@@ -446,7 +436,6 @@ const insertFreeTaskItem = async (connection, {
   itemTitle,
   authenticatedUserId,
   unitId,
-  freeTargetPersonId,
   responsiblePositionId,
   startDate,
   endDate,
@@ -454,9 +443,9 @@ const insertFreeTaskItem = async (connection, {
   const [freeItemResult] = await connection.query(
     `INSERT INTO task_items (
        task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
-       sort_order, created_by_person_id, target_unit_id, target_position_id, target_person_id,
+       sort_order, created_by_person_id, target_unit_id,
        responsible_position_id, assigned_person_id, start_date, end_date
-     ) VALUES (?, ?, ?, 'user_added', ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, 'user_added', ?, 1, ?, ?, ?, ?, ?, ?)`,
     [
       taskId,
       freeTpl.id,
@@ -464,8 +453,6 @@ const insertFreeTaskItem = async (connection, {
       itemTitle,
       authenticatedUserId,
       unitId,
-      null,
-      freeTargetPersonId,
       responsiblePositionId,
       authenticatedUserId,
       startDate,
@@ -478,7 +465,7 @@ const insertFreeTaskItem = async (connection, {
 const loadFreeTaskItemRow = async (connection, freeItemId) => {
   const [freeItemRows] = await connection.query(
     `SELECT id, task_id, template_artifact_id, assigned_person_id, target_unit_id,
-            target_person_id, responsible_position_id
+            responsible_position_id
      FROM task_items WHERE id = ? LIMIT 1`,
     [freeItemId]
   );
@@ -532,7 +519,7 @@ const createFreeTask = async (connection, { authenticatedUserId, input, definiti
   const taskId = Number(taskResult.insertId);
 
   // Proceso por defecto = routed comodín: se crea UN entregable endosado a la persona
-  // elegida (target_person_id = destinatario, que puede ser uno mismo). El dueño del
+  // elegida. El destinatario ya no se guarda —vive en el flujo—; el dueño del
   // documento resuelve al destinatario, que es quien realiza/atiende la tarea (paso de
   // llenado `document_owner`); el creador queda como autor/delegador.
   const freeTpl = await getFirstProcessTemplate(connection, definitionId);
@@ -548,7 +535,6 @@ const createFreeTask = async (connection, { authenticatedUserId, input, definiti
     itemTitle: composedTitle,
     authenticatedUserId,
     unitId,
-    freeTargetPersonId,
     responsiblePositionId,
     startDate,
     endDate,

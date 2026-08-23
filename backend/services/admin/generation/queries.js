@@ -362,8 +362,7 @@ export const getExistingTaskItemTemplateIds = async (connection, taskId) => {
      FROM task_items
      WHERE task_id = ?
        AND origin_kind = 'process_defined'
-       AND target_position_id IS NULL
-       AND target_person_id IS NULL`,
+       AND responsible_position_id IS NULL`,
     [taskId]
   );
   return new Set(rows.map((row) => Number(row.process_definition_template_id)));
@@ -371,10 +370,12 @@ export const getExistingTaskItemTemplateIds = async (connection, taskId) => {
 
 export const getExistingTaskItemTargetKeys = async (connection, taskId) => {
   const [rows] = await connection.query(
+    // La clave de idempotencia es la MISMA que la identidad del entregable: tarea, plantilla y
+    // QUIEN LO PRODUCE. Antes iba por los dos destinos —el receptor—, que es el eje equivocado
+    // desde que el dueño decidio «un entregable por persona que lo entrega» (2026-08-23).
     `SELECT
        process_definition_template_id,
-       COALESCE(target_position_id, 0) AS target_position_id,
-       COALESCE(target_person_id, 0) AS target_person_id
+       COALESCE(responsible_position_id, 0) AS responsible_position_id
      FROM task_items
      WHERE task_id = ?
        AND origin_kind = 'process_defined'`,
@@ -382,8 +383,7 @@ export const getExistingTaskItemTargetKeys = async (connection, taskId) => {
   );
   return new Set(rows.map((row) => [
     Number(row.process_definition_template_id || 0),
-    Number(row.target_position_id || 0),
-    Number(row.target_person_id || 0)
+    Number(row.responsible_position_id || 0)
   ].join(":")));
 };
 
@@ -404,8 +404,6 @@ export const getTaskItemsForDocumentMaterialization = async (connection, taskId)
        ti.template_artifact_id,
        ti.assigned_person_id,
        ti.target_unit_id,
-       ti.target_position_id,
-       ti.target_person_id,
        ti.responsible_position_id,
        tar_dl.display_name AS template_artifact_name
      FROM task_items ti

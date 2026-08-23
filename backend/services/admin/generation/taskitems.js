@@ -115,10 +115,10 @@ export const ensureTaskItemsForTaskTargets = async (
 
   for (const template of templates) {
     for (const target of normalizedTargets) {
+      // Misma clave que la identidad del entregable y que el indice unico: plantilla + productor.
       const key = [
         Number(template.id || 0),
-        Number(target.position_id || 0),
-        Number(target.person_id || 0)
+        Number(target.position_id || 0)
       ].join(":");
       if (existingTargetKeys.has(key)) {
         continue;
@@ -132,21 +132,18 @@ export const ensureTaskItemsForTaskTargets = async (
            origin_kind,
            sort_order,
            target_unit_id,
-           target_position_id,
-           target_person_id,
            responsible_position_id,
            assigned_person_id,
            start_date,
            end_date
-         ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?, ?, ?)`,
         [
           taskId,
           template.id,
           template.template_artifact_id,
           template.sort_order ?? 1,
           target.unit_id,
-          target.position_id,
-          target.person_id,
+          // El destinatario ya no se guarda: lo que identifica al entregable es QUIEN LO PRODUCE.
           target.position_id,
           target.person_id,
           resolvedStart,

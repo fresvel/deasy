@@ -513,8 +513,6 @@
       "sort_order",
       "source_task_item_id",
       "start_date",
-      "target_person_id",
-      "target_position_id",
       "target_unit_id",
       "task_id",
       "template_artifact_id",

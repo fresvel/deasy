@@ -143,14 +143,30 @@ test("sin puesto en el entregable, el dueño lo pone el respaldo por tarea del p
   assert.equal(conPuesto.length, 0, "sin puesto en el entregable no se consulta por puesto");
 });
 
-test("un destinatario explícito manda sobre cualquier puesto", async () => {
+test("quien lo tiene ASIGNADO manda sobre cualquier puesto", async () => {
   const connection = conexionDeMaterializacion({
     itemPositionId: PUESTO_DEL_ITEM,
     taskPositionId: PUESTO_DE_LA_TAREA,
   });
   const dueño = await resolveOwnerPersonIdForTaskItem(connection, {
-    id: 1, task_id: 10, target_person_id: 31, responsible_position_id: PUESTO_DEL_ITEM,
+    id: 1, task_id: 10, assigned_person_id: 31, responsible_position_id: PUESTO_DEL_ITEM,
   });
   assert.equal(dueño, 31);
-  assert.equal(connection.queries.length, 0, "no debe consultar nada si el destinatario es explícito");
+  assert.equal(connection.queries.length, 0, "no debe consultar nada si el entregable ya tiene asignado");
+});
+
+// Red contra la reapertura del «Para:». Antes esta cascada EMPEZABA en `target_person_id`, y eso
+// decía que responde del documento quien lo RECIBE. La columna se retiró el 2026-08-23 (el
+// destinatario se lee del flujo de firma), así que un campo con ese nombre en la fila es ruido y
+// tiene que ignorarse. Si alguien lo vuelve a consultar, este caso se pone rojo.
+test("un «Para:» en la fila NO decide el dueño: la columna está retirada", async () => {
+  const connection = conexionDeMaterializacion({
+    itemPositionId: PUESTO_DEL_ITEM,
+    taskPositionId: PUESTO_DE_LA_TAREA,
+  });
+  const dueño = await resolveOwnerPersonIdForTaskItem(connection, {
+    id: 1, task_id: 10, target_person_id: 31, assigned_person_id: 77,
+    responsible_position_id: PUESTO_DEL_ITEM,
+  });
+  assert.equal(dueño, 77, "gana quien lo elabora, no quien lo recibiría");
 });

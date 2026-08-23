@@ -398,7 +398,6 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
            WHERE ti_owner.task_id = t.id
              AND (
                ti_owner.assigned_person_id = ?
-               OR ti_owner.target_person_id = ?
                -- Quien encargo el entregable. Absorbe al t.created_by_user_id que habia aqui,
                -- retirado el 2026-08-23: en la tarea ad-hoc los dos valian lo mismo, y en la
                -- automatica el de la tarea estaba NULL.
@@ -440,7 +439,9 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
          )
        )
      ORDER BY t.start_date DESC, t.id DESC`,
-    [definitionId, userId, userId, userId, userId, userId, userId, userId, userId]
+    // Siete `userId`: uno por cada rama de participacion. Eran ocho hasta que el «Para:» dejo de
+    // ser una de ellas (2026-08-23).
+    [definitionId, userId, userId, userId, userId, userId, userId, userId]
   );
   return rows;
 };
@@ -463,10 +464,10 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        ti.responsible_position_id,
        ti.assigned_person_id,
        ti.target_unit_id,
-       ti.target_position_id,
-       ti.target_person_id,
        COALESCE(
-         ti.target_person_id,
+         -- El «Para:» era el PRIMER escalon de esta cascada, y no debia serlo: quien RECIBE un
+         -- documento no es quien responde por el. Con la columna retirada (2026-08-23), la
+         -- responsabilidad empieza donde tiene que empezar — en quien lo tiene asignado.
          ti.assigned_person_id,
          (
            SELECT ta.assigned_person_id
@@ -493,18 +494,14 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        COALESCE(NULLIF(ti.title, ''), tar_dl.display_name) AS template_artifact_name,
        rp.title AS responsible_position_title,
        pdt.item_mode AS item_mode,
-       NULLIF(TRIM(CONCAT(COALESCE(recip.first_name, ''), ' ', COALESCE(recip.last_name, ''))), '') AS recipient_name,
-       COALESCE(target_unit.label, target_unit.name) AS target_unit_label,
-       target_pos.title AS target_position_title
+       COALESCE(target_unit.label, target_unit.name) AS target_unit_label
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN unit_positions rp ON rp.id = ti.responsible_position_id
-     LEFT JOIN persons recip ON recip.id = ti.target_person_id
      LEFT JOIN units target_unit ON target_unit.id = ti.target_unit_id
-     LEFT JOIN unit_positions target_pos ON target_pos.id = ti.target_position_id
      WHERE ti.task_id IN (${placeholders})
        -- El panel devolvía TODOS los task_items de la tarea. Como un proceso dirigido a un
        -- cargo crea UN task_item por persona dentro de la MISMA tarea, cada responsable
@@ -633,8 +630,6 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
        ti.template_artifact_id,
        ti.origin_kind,
        ti.target_unit_id,
-       ti.target_position_id,
-       ti.target_person_id,
        ti.start_date,
        ti.end_date,
        ti.user_started_at,
@@ -644,7 +639,7 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
        COALESCE(
-         ti.target_person_id,
+         -- El «Para:» ya no encabeza esta cascada: quien RECIBE no es quien responde.
          ti.assigned_person_id,
          (
            SELECT ta.assigned_person_id

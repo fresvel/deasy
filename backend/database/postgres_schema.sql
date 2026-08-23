@@ -772,12 +772,20 @@ CREATE TABLE IF NOT EXISTS task_items (
   created_by_person_id INT NULL,
   source_task_item_id INT NULL,
   target_unit_id INT NULL,
-  target_position_id INT NULL,
-  target_person_id INT NULL,
+  -- `target_position_id` y `target_person_id` VIVIERON AQUI hasta el 2026-08-23. Eran el «Para:»
+  -- del documento —a quien iba DIRIGIDO— y no hay que confundirlos con quien lo PRODUCE, que es
+  -- `responsible_position_id`: son receptor y emisor, no dos nombres del mismo dato.
+  --
+  -- Se retiran porque el destinatario es DERIVABLE: quien firma al final es a quien va dirigido, y
+  -- desde el 2026-08-23 un envio EXIGE su flujo, asi que ese dato siempre esta. Guardarlo aparte
+  -- era mantener a mano un resumen del flujo que ademas podia mentir — el cliente lo calculaba
+  -- como «el PRIMER firmante», asi que con dos pasos nombraba al aprobador intermedio.
   process_definition_template_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN process_definition_template_id ELSE NULL END) STORED,
-  target_position_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN COALESCE(target_position_id, 0) ELSE NULL END) STORED,
-  target_person_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN COALESCE(target_person_id, 0) ELSE NULL END) STORED,
   responsible_position_id INT NULL,
+  -- La identidad de un entregable definido por proceso: su tarea, su plantilla y QUIEN LO PRODUCE.
+  -- Antes la formaban los dos destinos, o sea el receptor — que es el eje equivocado para decir
+  -- «un entregable por persona que lo entrega», que es lo que el dueño decidio el 2026-08-23.
+  responsible_position_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN COALESCE(responsible_position_id, 0) ELSE NULL END) STORED,
   assigned_person_id INT NULL,
   start_date DATE NOT NULL,
   end_date DATE NULL,
@@ -795,12 +803,10 @@ CREATE TABLE IF NOT EXISTS task_items (
   CONSTRAINT fk_task_items_created_by FOREIGN KEY (created_by_person_id) REFERENCES persons(id),
   CONSTRAINT fk_task_items_source FOREIGN KEY (source_task_item_id) REFERENCES task_items(id),
   CONSTRAINT fk_task_items_target_unit FOREIGN KEY (target_unit_id) REFERENCES units(id),
-  CONSTRAINT fk_task_items_target_position FOREIGN KEY (target_position_id) REFERENCES unit_positions(id),
-  CONSTRAINT fk_task_items_target_person FOREIGN KEY (target_person_id) REFERENCES persons(id),
   CONSTRAINT fk_task_items_responsible_position FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id),
   CONSTRAINT fk_task_items_assigned_person FOREIGN KEY (assigned_person_id) REFERENCES persons(id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS uq_task_items_defined_target ON task_items (task_id, process_definition_template_key, target_position_key, target_person_key);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_task_items_defined_target ON task_items (task_id, process_definition_template_key, responsible_position_key);
 CREATE INDEX IF NOT EXISTS idx_task_items_task ON task_items (task_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_task_items_origin ON task_items (origin_kind);
 CREATE INDEX IF NOT EXISTS idx_task_items_definition_template ON task_items (process_definition_template_id);
@@ -808,8 +814,6 @@ CREATE INDEX IF NOT EXISTS idx_task_items_artifact ON task_items (template_artif
 CREATE INDEX IF NOT EXISTS idx_task_items_created_by ON task_items (created_by_person_id);
 CREATE INDEX IF NOT EXISTS idx_task_items_source ON task_items (source_task_item_id);
 CREATE INDEX IF NOT EXISTS idx_task_items_target_unit ON task_items (target_unit_id);
-CREATE INDEX IF NOT EXISTS idx_task_items_target_position ON task_items (target_position_id);
-CREATE INDEX IF NOT EXISTS idx_task_items_target_person ON task_items (target_person_id);
 CREATE INDEX IF NOT EXISTS idx_task_items_dates ON task_items (start_date, end_date);
 CREATE INDEX IF NOT EXISTS idx_task_items_user_started ON task_items (user_started_at);
 

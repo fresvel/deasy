@@ -297,8 +297,6 @@ export const SQL_TABLES = [
       { name: "created_by_person_id", label: "Creado por", type: "number" },
       { name: "source_task_item_id", label: "Entregable origen", type: "number" },
       { name: "target_unit_id", label: "Unidad destino", type: "number" },
-      { name: "target_position_id", label: "Cargo/puesto destino", type: "number" },
-      { name: "target_person_id", label: "Persona destino", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "assigned_person_id", label: "Responsable", type: "number" },
       { name: "start_date", label: "Inicio entregable", type: "date", required: true },

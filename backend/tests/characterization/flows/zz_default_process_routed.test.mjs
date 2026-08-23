@@ -99,7 +99,7 @@
 //
 // SOBRE EL ENMASCARADO. Se enmascaran los ids ESTRUCTURALES (los de fila y los que cuelgan una fila
 // de otra), porque su valor depende de qué secuencias movieron los flows anteriores. Los ids con
-// significado de NEGOCIO no: `assigned_person_id`, `owner_person_id`, `target_person_id`,
+// significado de NEGOCIO no: `assigned_person_id`, `owner_person_id`,
 // `created_by_person_id`, `responsible_position_id`, `origin_unit_id`, `unit_id`, `cargo_id` y los
 // del JSONB `signers` **son el «quién»**, y el «quién» es justo lo que este camino promete respetar.
 // `start_date`/`end_date` SÍ se enmascaran: la tarea libre los pone a la fecha de hoy
@@ -135,7 +135,6 @@ const MASK_OPTS = {
     "definition_id",
     "assigned_person_id",
     "owner_person_id",
-    "target_person_id",
     "created_by_person_id",
     "recipient_person_id",
     "responsible_position_id",
@@ -202,8 +201,8 @@ async function readRuntimeSignatureFlow(taskItemId) {
 async function readEntregable(taskItemId) {
   const [item] = await query(
     `SELECT id, task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
-            sort_order, created_by_person_id, source_task_item_id, target_unit_id, target_position_id,
-            target_person_id, responsible_position_id, assigned_person_id, start_date, end_date,
+            sort_order, created_by_person_id, source_task_item_id, target_unit_id,
+            responsible_position_id, assigned_person_id, start_date, end_date,
             user_started_at
        FROM task_items WHERE id = $1`,
     [taskItemId],
@@ -419,22 +418,6 @@ test("free · POST /users/:id/general-tasks crea la tarea ad-hoc con su flujo de
 // La interfaz no la podia producir —`useGeneralTask.js:110` manda flujo siempre que el modo sea
 // routed o free— asi que cerrarla no rompio ninguna prueba... y por eso mismo NADIE la vigilaba.
 // Este caso existe para que reabrirla se note.
-test("free · un envio SIN flujo se rechaza: el destinatario vive en el flujo, no en una columna", async () => {
-  const token = await tokenFor("usuario");
-  const res = await post(`/users/${USUARIO}/general-tasks`, {
-    token,
-    body: {
-      mode: "free",
-      title: `${FREE_TITLE} (sin flujo)`,
-      unit_id: UNIT_ID,
-      recipient_person_id: GESTOR,   // traer destinatario ya NO basta
-    },
-  });
-  assert.ok(res.status >= 400, `esperaba un rechazo y vino ${res.status}`);
-  assert.notEqual(res.status, 500, "un guard de entrada no debe salir por 500");
-  matchSnapshot(SUITE, "free_sin_flujo_rechazado", snapshotShape(res, MASK_OPTS));
-});
-
 // ─── El camino sin flujo, ELIMINADO el 2026-08-23 ─────────────────────────────────────────
 // Antes se admitia un envio SIN flujo si traia destinatario, y entonces NO se materializaba ningun
 // flujo de firma: el unico rastro de a quien iba dirigido el documento era la columna
@@ -458,7 +441,7 @@ test("free · un envio SIN flujo se rechaza: el destinatario vive en el flujo, n
   });
   assert.ok(res.status >= 400, `esperaba un rechazo y vino ${res.status}`);
   assert.notEqual(res.status, 500, "un guard de entrada no debe salir por 500");
-  matchSnapshot(SUITE, "free_sin_flujo_rechazado", snapshotShape(res, MASK_OPTS));
+  await matchSnapshot(SUITE, "free_sin_flujo_rechazado", snapshotShape(res, MASK_OPTS));
 });
 
 test("free · el flujo de ENTREGA cuelga del ENTREGABLE y es el que definió el usuario", async () => {
@@ -482,7 +465,12 @@ test("free · el entregable resultante: documento, versión y solicitudes de lle
   assert.ok(estado.freeItemId, "depende del paso anterior");
   const resultado = await readEntregable(estado.freeItemId);
   assert.equal(Number(resultado.task_item.template_artifact_id), estado.artifactId, "instancia la plantilla del vínculo");
-  assert.equal(Number(resultado.document.owner_person_id), GESTOR, "el dueño del documento es el destinatario");
+  // EL DUEÑO YA NO ES EL DESTINATARIO (2026-08-23). La cascada de
+  // `resolveOwnerPersonIdForTaskItem` empezaba en `target_person_id` —el «Para:»—, y eso decia que
+  // responde del documento QUIEN LO RECIBE. Retirada la columna, la cascada empieza donde tiene que
+  // empezar: en `assigned_person_id`, quien lo ELABORA. El destinatario, si importa, se lee del
+  // flujo de firma; no hay ninguna columna que lo guarde.
+  assert.equal(Number(resultado.document.owner_person_id), USUARIO, "el dueño del documento es quien lo ELABORA, no quien lo recibe");
   assert.equal(resultado.versions.length, 1, "se crea UNA versión");
   assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");
@@ -513,8 +501,8 @@ test("free · el documento lo gobierna el flujo de RUNTIME, no el predefinido de
 // --- 2) Modo DERIVED: un entregable añadido a una tarea que ya existe ------------------------------
 //
 // La otra rama del mismo endpoint (`createDerivedDeliverable`). No es una variante del `free`: no
-// crea periodo ni tarea, elige el vínculo por id, resuelve la unidad desde la TAREA ORIGEN y deja el
-// destinatario como dueño con el creador de autor. Se cuelga de la tarea que creó el caso anterior,
+// crea periodo ni tarea, elige el vínculo por id, resuelve la unidad desde la TAREA ORIGEN y deja a
+// quien lo elabora como dueño del documento. Se cuelga de la tarea que creó el caso anterior,
 // así que la dependencia de orden es real.
 
 const DERIVED_ENTREGA = [ADMIN];
@@ -579,7 +567,12 @@ test("derived · el entregable resultante: documento, versión y solicitudes de 
   const resultado = await readEntregable(estado.derivedItemId);
   assert.equal(resultado.task_item.origin_kind, "user_added", "el entregable es añadido por el usuario");
   assert.equal(Number(resultado.task_item.created_by_person_id), USUARIO, "el creador queda como autor");
-  assert.equal(Number(resultado.document.owner_person_id), ADMIN, "el dueño del documento es el destinatario");
+  // EL DUEÑO YA NO ES EL DESTINATARIO (2026-08-23). La cascada de
+  // `resolveOwnerPersonIdForTaskItem` empezaba en `target_person_id` —el «Para:»—, y eso decia que
+  // responde del documento QUIEN LO RECIBE. Retirada la columna, la cascada empieza donde tiene que
+  // empezar: en `assigned_person_id`, quien lo ELABORA. El destinatario, si importa, se lee del
+  // flujo de firma; no hay ninguna columna que lo guarde.
+  assert.equal(Number(resultado.document.owner_person_id), USUARIO, "el dueño del documento es quien lo ELABORA, no quien lo recibe");
   assert.equal(resultado.versions.length, 1, "se crea UNA versión");
   assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");

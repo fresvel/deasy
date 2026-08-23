@@ -117,15 +117,10 @@ export const ACCESS_LEVELS = Object.freeze({
 });
 
 export const ACCESS_SOURCES = Object.freeze([
-  {
-    key: "entregable_destinatario",
-    grants: ACCESS_LEVELS.ENTREGABLE,
-    reason: "El entregable nombra a esta persona",
-    sql: `SELECT ti_src.target_person_id AS person_id
-          FROM task_items ti_src
-          INNER JOIN alcance a ON a.task_item_id = ti_src.id
-          WHERE ti_src.target_person_id IS NOT NULL`,
-  },
+  // ── `entregable_destinatario` SE RETIRO el 2026-08-23 ─────────────────────────────────
+  // Leia `task_items.target_person_id`, el «Para:» del documento. Esa columna desaparecio: el
+  // destinatario ES el flujo —quien firma al final— y desde el mismo dia un envio EXIGE su flujo,
+  // asi que quien recibe el documento entra por `flujo_firma`. No hay a quien perder.
   {
     key: "entregable_asignado",
     grants: ACCESS_LEVELS.ENTREGABLE,

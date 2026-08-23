@@ -145,7 +145,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          pdv.variation_key,
          pdv.definition_version,
          COALESCE(ffs.position_id, fill_assignee_position.id) AS source_position_id,
-         COALESCE(fill_position.cargo_id, ffs.cargo_id, fill_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(fill_position.cargo_id, ffs.cargo_id, fill_assignee_position.cargo_id, item_position.cargo_id) AS source_cargo_id,
          COALESCE(fill_position.unit_id, ffs.unit_id, fill_assignee_position.unit_id, item_position.unit_id, t.scope_unit_id) AS source_unit_id,
          COALESCE(fill_unit.unit_type_id, ffs.unit_type_id, fill_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
        FROM fill_requests fr
@@ -205,7 +205,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          pdv.variation_key,
          pdv.definition_version,
          COALESCE(sfs.position_id, signature_assignee_position.id) AS source_position_id,
-         COALESCE(signature_position.cargo_id, sfs.required_cargo_id, signature_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(signature_position.cargo_id, sfs.required_cargo_id, signature_assignee_position.cargo_id, item_position.cargo_id) AS source_cargo_id,
          COALESCE(signature_position.unit_id, sfs.unit_id, signature_assignee_position.unit_id, item_position.unit_id, t.scope_unit_id) AS source_unit_id,
          COALESCE(signature_unit.unit_type_id, sfs.unit_type_id, signature_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
        FROM signature_requests sr

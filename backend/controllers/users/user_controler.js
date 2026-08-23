@@ -1411,8 +1411,6 @@ export const listMySends = async (req, res) => {
          ti.id,
          ti.title AS label,
          ti.created_at,
-         ti.target_person_id,
-         NULLIF(TRIM(CONCAT(COALESCE(recip.first_name, ''), ' ', COALESCE(recip.last_name, ''))), '') AS recipient_name,
          p.id AS process_id,
          p.name AS process_name,
          pdv.id AS definition_id,
@@ -1423,7 +1421,6 @@ export const listMySends = async (req, res) => {
        JOIN tasks t ON t.id = ti.task_id
        JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        JOIN processes p ON p.id = pdv.process_id
-       LEFT JOIN persons recip ON recip.id = ti.target_person_id
        LEFT JOIN documents d ON d.task_item_id = ti.id
        WHERE ti.created_by_person_id = ?
        ORDER BY ti.created_at DESC, ti.id DESC
@@ -1441,7 +1438,8 @@ export const listMySends = async (req, res) => {
 
 // "Recibidos" — items routed que le LLEGARON al usuario para ACTUAR: es el destinatario ("Para:"),
 // o el flujo lo asignó a ELABORAR (fill_request) o FIRMAR (signature_request). Simétrico a listMySends.
-// Nota: el asignado suele resolverse por CARGO (cargo_in_scope), por eso no basta con target_person_id.
+// Nota: el asignado suele resolverse por CARGO (cargo_in_scope), asi que la pertenencia se mira
+// por participacion en los flujos, no por un campo de destinatario — que se retiro el 2026-08-23.
 export const listMyReceived = async (req, res) => {
   const authenticatedUserId = getAuthenticatedUserId(req);
   const routeUserId = getNumericUserId(req);
@@ -1481,8 +1479,7 @@ export const listMyReceived = async (req, res) => {
          pdv.id AS definition_id,
          d.status AS document_status,
          ${FILL_EXISTS} AS needs_fill,
-         ${SIGN_EXISTS} AS needs_sign,
-         (ti.target_person_id = ?) AS is_recipient
+         ${SIGN_EXISTS} AS needs_sign
        FROM task_items ti
        JOIN process_definition_templates pdt
          ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
@@ -1492,15 +1489,16 @@ export const listMyReceived = async (req, res) => {
        LEFT JOIN persons sender ON sender.id = ti.created_by_person_id
        LEFT JOIN documents d ON d.task_item_id = ti.id
        WHERE (ti.created_by_person_id IS NULL OR ti.created_by_person_id <> ?)
-         AND ( ti.target_person_id = ? OR ${FILL_EXISTS} OR ${SIGN_EXISTS} )
+         -- Un documento es «recibido» si participas en su ENTREGA o en su FIRMA. El tercer
+         -- termino era ti.target_person_id = ? —el «Para:»—, retirado el 2026-08-23: quien
+         -- recibe el documento firma su recibido, asi que ya entra por SIGN_EXISTS.
+         AND ( ${FILL_EXISTS} OR ${SIGN_EXISTS} )
        ORDER BY ti.created_at DESC, ti.id DESC
        LIMIT 200`,
       [
         authenticatedUserId, // FILL_EXISTS (select)
         authenticatedUserId, // SIGN_EXISTS (select)
-        authenticatedUserId, // is_recipient (select)
         authenticatedUserId, // created_by <> (where)
-        authenticatedUserId, // target = (where)
         authenticatedUserId, // FILL_EXISTS (where)
         authenticatedUserId, // SIGN_EXISTS (where)
       ]
