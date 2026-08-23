@@ -249,10 +249,9 @@ export const launchDefinitionInTerm = async (connection, {
       const [result] = await connection.query(
         `INSERT INTO tasks
          (process_definition_id, process_run_id, term_id, scope_unit_id,
-          responsible_position_id, start_date, end_date, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
-        [definition.id, processRunId, term.id, unitId, responsiblePositionId,
-         term.start_date, term.end_date]
+          start_date, end_date, status)
+         VALUES (?, ?, ?, ?, ?, ?, 'pendiente')`,
+        [definition.id, processRunId, term.id, unitId, term.start_date, term.end_date]
       );
       task = { id: result.insertId, process_run_id: processRunId };
       existing.set(unitId, task);

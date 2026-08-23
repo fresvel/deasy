@@ -535,7 +535,6 @@
       "id",
       "process_definition_id",
       "process_run_id",
-      "responsible_position_id",
       "scope_unit_id",
       "start_date",
       "status",

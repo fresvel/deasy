@@ -175,10 +175,9 @@ export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, owner
   // 2. Posición del task padre (contexto de la unidad que generó el task)
   if (taskItem?.task_id) {
     const [rows] = await connection.query(
-      `SELECT COALESCE(t.scope_unit_id, up.unit_id) AS unit_id
+      `SELECT t.scope_unit_id AS unit_id
        FROM tasks t
-       LEFT JOIN unit_positions up ON up.id = t.responsible_position_id
-       WHERE t.id = ? AND COALESCE(t.scope_unit_id, up.unit_id) IS NOT NULL
+       WHERE t.id = ? AND t.scope_unit_id IS NOT NULL
        LIMIT 1`,
       [taskItem.task_id]
     );

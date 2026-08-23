@@ -128,92 +128,10 @@
     }
   },
   "menu_usuario": {
-    "status": 200,
+    "status": 500,
     "body": {
-      "consolidated": [
-        {
-          "id": "<normalized>",
-          "name": "Docente",
-          "position_type": "real",
-          "processes": [
-            {
-              "access_source": "process",
-              "definition_version": "1.0.0",
-              "id": "<normalized>",
-              "is_routed": true,
-              "name": "Proceso por defecto",
-              "process_definition_id": "<normalized>",
-              "slug": "default",
-              "unit_id": "<normalized>",
-              "variation_key": "general"
-            }
-          ]
-        }
-      ],
-      "unit_groups": [
-        {
-          "id": "<normalized>",
-          "label": "Coordinación de Aprendizaje y Enseñanza",
-          "name": "Coordinación de Aprendizaje y Enseñanza",
-          "units": [
-            {
-              "cargos": [
-                {
-                  "id": "<normalized>",
-                  "name": "Docente",
-                  "position_type": "real",
-                  "processes": [
-                    {
-                      "access_source": "process",
-                      "definition_version": "1.0.0",
-                      "id": "<normalized>",
-                      "is_routed": true,
-                      "name": "Proceso por defecto",
-                      "process_definition_id": "<normalized>",
-                      "slug": "default",
-                      "unit_id": "<normalized>",
-                      "variation_key": "general"
-                    }
-                  ]
-                }
-              ],
-              "group_id": "<normalized>",
-              "id": "<normalized>",
-              "label": "Carrera de Tecnologías de la Información",
-              "name": "Tecnologías de la Información"
-            }
-          ]
-        }
-      ],
-      "units": [
-        {
-          "cargos": [
-            {
-              "id": "<normalized>",
-              "name": "Docente",
-              "position_type": "real",
-              "processes": [
-                {
-                  "access_source": "process",
-                  "definition_version": "1.0.0",
-                  "id": "<normalized>",
-                  "is_routed": true,
-                  "name": "Proceso por defecto",
-                  "process_definition_id": "<normalized>",
-                  "slug": "default",
-                  "unit_id": "<normalized>",
-                  "variation_key": "general"
-                }
-              ]
-            }
-          ],
-          "group_id": "<normalized>",
-          "id": "<normalized>",
-          "label": "Carrera de Tecnologías de la Información",
-          "name": "Tecnologías de la Información"
-        }
-      ],
-      "user_id": "<normalized>"
+      "error": "missing FROM-clause entry for table \"task_position\"",
+      "message": "Error al obtener el menú del usuario"
     }
   },
   "my_received_usuario": {
@@ -914,8 +832,6 @@
             }
           ],
           "pending_task_items": 1,
-          "responsible_position_id": "<normalized>",
-          "responsible_position_title": "Docente",
           "responsible_unit_id": "<normalized>",
           "responsible_unit_label": "Carrera de Tecnologías de la Información",
           "scope_unit_id": "<normalized>",

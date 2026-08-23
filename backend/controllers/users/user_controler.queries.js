@@ -95,7 +95,7 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
-     LEFT JOIN unit_positions scope_position ON scope_position.id = COALESCE(ti.responsible_position_id, t.responsible_position_id)
+     LEFT JOIN unit_positions scope_position ON scope_position.id = ti.responsible_position_id
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
      LEFT JOIN (
        SELECT
@@ -178,7 +178,7 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
-     LEFT JOIN unit_positions scope_position ON scope_position.id = COALESCE(ti.responsible_position_id, t.responsible_position_id)
+     LEFT JOIN unit_positions scope_position ON scope_position.id = ti.responsible_position_id
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
@@ -367,12 +367,7 @@ export const getUserOwnedTemplateArtifacts = async (pool, userId) => {
 
 export const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, scopeUnitId = null) => {
   const unitFilter = scopeUnitId
-    ? `AND COALESCE(t.scope_unit_id, (
-         SELECT up_scope.unit_id
-         FROM unit_positions up_scope
-         WHERE up_scope.id = t.responsible_position_id
-         LIMIT 1
-       )) = ${Number(scopeUnitId)}`
+    ? `AND t.scope_unit_id = ${Number(scopeUnitId)}`
     : "";
 
   const [rows] = await pool.query(
@@ -381,7 +376,6 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
        t.term_id,
        t.created_by_user_id,
        t.scope_unit_id,
-       t.responsible_position_id,
        t.description,
        t.start_date,
        t.end_date,
@@ -390,14 +384,12 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
        trm.name AS term_name,
        tt.code AS term_type_code,
        tt.name AS term_type_name,
-       rp.title AS responsible_position_title,
-       COALESCE(t.scope_unit_id, rp.unit_id) AS responsible_unit_id,
+       t.scope_unit_id AS responsible_unit_id,
        COALESCE(ru.label, ru.name) AS responsible_unit_label
      FROM tasks t
      INNER JOIN terms trm ON trm.id = t.term_id
      INNER JOIN term_types tt ON tt.id = trm.term_type_id
-     LEFT JOIN unit_positions rp ON rp.id = t.responsible_position_id
-     LEFT JOIN units ru ON ru.id = rp.unit_id
+     LEFT JOIN units ru ON ru.id = t.scope_unit_id
      WHERE t.process_definition_id = ?
        ${unitFilter}
        AND (
@@ -671,7 +663,7 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
            LIMIT 1
          )
        ) AS resolved_owner_person_id,
-       COALESCE(ti.target_unit_id, t.scope_unit_id, task_pos.unit_id, responsible_pos.unit_id) AS scope_unit_id
+       COALESCE(ti.target_unit_id, t.scope_unit_id, responsible_pos.unit_id) AS scope_unit_id
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
@@ -679,7 +671,6 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
      LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
-     LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
      LEFT JOIN unit_positions responsible_pos ON responsible_pos.id = ti.responsible_position_id
      WHERE ti.id = ?
        AND t.process_definition_id = ?

@@ -257,7 +257,6 @@ export const SQL_TABLES = [
       { name: "term_id", label: "Periodo", type: "number", required: true },
       { name: "scope_unit_id", label: "Unidad de alcance", type: "number" },
       { name: "created_by_user_id", label: "Creada por", type: "number" },
-      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "comments_thread_ref", label: "Comentarios (legacy)", type: "text", readOnly: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },

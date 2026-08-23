@@ -211,15 +211,10 @@ export const ensureTaskAssignmentsForDefinition = async (connection, taskId, pro
     flatValues
   );
 
+  // El `UPDATE tasks SET responsible_position_id` que habia aqui se retiro el 2026-08-23 con la
+  // columna: escribia `scopedPositions[0]`, el puesto de menor slot_no, y ni era un responsable ni
+  // lo leia nadie para otra cosa que sacar la unidad — que la tarea ya tiene en `scope_unit_id`.
   const responsiblePositionId = scopedPositions[0]?.position_id || null;
-  if (responsiblePositionId) {
-    await connection.query(
-      `UPDATE tasks
-       SET responsible_position_id = COALESCE(responsible_position_id, ?)
-       WHERE id = ?`,
-      [responsiblePositionId, taskId]
-    );
-  }
 
   return {
     created: insertResult?.affectedRows || 0,
@@ -237,11 +232,5 @@ export const ensureUnitTaskAssignments = async (connection, taskId, positions, r
     `INSERT IGNORE INTO task_assignments (task_id, position_id, assigned_person_id) VALUES ${placeholders}`,
     values.flat()
   );
-  if (responsiblePositionId) {
-    await connection.query(
-      `UPDATE tasks SET responsible_position_id = COALESCE(responsible_position_id, ?) WHERE id = ?`,
-      [responsiblePositionId, taskId]
-    );
-  }
   return result?.affectedRows || 0;
 };

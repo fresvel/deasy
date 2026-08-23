@@ -100,9 +100,8 @@ export const getExecutableTemplatesMap = async (connection) => {
 export const getExistingAutomaticTasksMap = async (connection, termId) => {
   const [rows] = await connection.query(
     `SELECT t.id, t.process_definition_id, t.process_run_id,
-            COALESCE(t.scope_unit_id, up.unit_id) AS responsible_unit_id
+            t.scope_unit_id AS responsible_unit_id
      FROM tasks t
-     LEFT JOIN unit_positions up ON up.id = t.responsible_position_id
      WHERE t.term_id = ?`,
     [termId]
   );
@@ -128,9 +127,8 @@ export const getExistingAutomaticTasksMap = async (connection, termId) => {
 export const getExistingTasksByUnitForDefinition = async (connection, definitionId, termId) => {
   const [rows] = await connection.query(
     `SELECT t.id, t.process_run_id,
-            COALESCE(t.scope_unit_id, up.unit_id) AS responsible_unit_id
+            t.scope_unit_id AS responsible_unit_id
      FROM tasks t
-     LEFT JOIN unit_positions up ON up.id = t.responsible_position_id
      WHERE t.process_definition_id = ? AND t.term_id = ?`,
     [definitionId, termId]
   );
@@ -169,9 +167,8 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
        ti.assigned_person_id AS task_item_assigned_person_id,
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.created_by_user_id AS task_created_by_user_id,
-       t.responsible_position_id AS task_responsible_position_id,
-       COALESCE(ti.target_unit_id, up_item.unit_id, t.scope_unit_id, up_task.unit_id) AS scope_unit_id,
-       COALESCE(u_target.unit_type_id, u_item.unit_type_id, u_task_scope.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
+       COALESCE(ti.target_unit_id, up_item.unit_id, t.scope_unit_id) AS scope_unit_id,
+       COALESCE(u_target.unit_type_id, u_item.unit_type_id, u_task_scope.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
      INNER JOIN documents d ON d.id = dv.document_id
      LEFT JOIN task_items ti ON ti.id = d.task_item_id
@@ -180,8 +177,6 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
      LEFT JOIN units u_item ON u_item.id = up_item.unit_id
      LEFT JOIN units u_target ON u_target.id = ti.target_unit_id
      LEFT JOIN units u_task_scope ON u_task_scope.id = t.scope_unit_id
-     LEFT JOIN unit_positions up_task ON up_task.id = t.responsible_position_id
-     LEFT JOIN units u_task ON u_task.id = up_task.unit_id
      WHERE dv.id = ?
      LIMIT 1`,
     [documentVersionId]

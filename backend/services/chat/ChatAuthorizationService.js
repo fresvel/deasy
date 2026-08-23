@@ -45,8 +45,8 @@ export default class ChatAuthorizationService {
     //
     // 1. Aquel guard responde «¿es TUYO este entregable?» y protege consultas cuya FILA es un
     //    entregable. Esta no lo es: el thread es del PROCESO en una unidad. El `LEFT JOIN
-    //    task_items` solo abanica filas, y lo único que se proyecta —`scope_unit_id`, que sale de
-    //    `t.responsible_position_id` vía `task_pos`— es IDÉNTICO en todas las filas de una tarea.
+    //    task_items` solo abanica filas, y lo único que se proyecta —`scope_unit_id`— es IDÉNTICO
+    //    en todas las filas de una tarea: hoy sale directo de `tasks.scope_unit_id`.
     // 2. La lista de participantes de más abajo mete a TODOS los `task_assignments` de la unidad
     //    sin filtrar por responsable de entregable. Añadir el guard SOLO aquí dejaría gente dentro
     //    del hilo (recibe los mensajes) y con 403 al abrirlo.
@@ -61,8 +61,11 @@ export default class ChatAuthorizationService {
          t.id AS task_id,
          t.process_definition_id,
          pdv.process_id,
-         COALESCE(task_pos.unit_id, item_pos.unit_id, owner_pos.unit_id) AS scope_unit_id,
-         t.responsible_position_id AS task_responsible_position_id,
+         -- La unidad la tiene la tarea directamente. Antes salia de un COALESCE de TRES joins
+         -- —el puesto de la tarea, el del entregable, y el del dueño del documento— para acabar
+         -- en el mismo valor: medido, coincide en las 13 tareas. El primero de los tres colgaba
+         -- de tasks.responsible_position_id, que se retiro el 2026-08-23.
+         t.scope_unit_id,
          ti.responsible_position_id AS task_item_responsible_position_id,
          t.created_by_user_id,
          d.owner_person_id
@@ -70,12 +73,6 @@ export default class ChatAuthorizationService {
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        LEFT JOIN task_items ti ON ti.task_id = t.id
        LEFT JOIN documents d ON d.task_item_id = ti.id
-       LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
-       LEFT JOIN unit_positions item_pos ON item_pos.id = ti.responsible_position_id
-       LEFT JOIN position_assignments owner_pa
-         ON owner_pa.person_id = d.owner_person_id
-        AND owner_pa.is_current = 1
-       LEFT JOIN unit_positions owner_pos ON owner_pos.id = owner_pa.position_id
        WHERE pdv.process_id = ?
          -- El conjunto de participantes lo declara DeliverableAccessService, al nivel ANCHO
          -- (conversacion): un hilo de proceso incluye a todos los asignados de la tarea, no
@@ -135,22 +132,28 @@ export default class ChatAuthorizationService {
     const [adminRows] = await this.pool.query(
       `SELECT DISTINCT person_id
        FROM (
+         -- Quien MODERA el hilo. Colgaba del puesto responsable de la TAREA, que el lanzamiento
+         -- ponia como el puesto de menor slot_no de la unidad: o sea, moderaba quien ocupara un
+         -- puesto cualquiera. Con esa columna retirada (2026-08-23) pasa a ser la JEFATURA de la
+         -- unidad, que es el mismo criterio ya decidido para el custodio y para unit_head.
          SELECT pa.person_id
          FROM tasks t
          INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-         INNER JOIN unit_positions up ON up.id = t.responsible_position_id
+         INNER JOIN unit_positions up
+           ON up.unit_id = t.scope_unit_id
+          AND up.is_unit_head = 1
+          AND up.is_active = 1
          INNER JOIN position_assignments pa
            ON pa.position_id = up.id
           AND pa.is_current = 1
          WHERE pdv.process_id = ?
-           AND up.unit_id = ?
+           AND t.scope_unit_id = ?
          UNION
          SELECT t.created_by_user_id AS person_id
          FROM tasks t
          INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-         INNER JOIN unit_positions up ON up.id = t.responsible_position_id
          WHERE pdv.process_id = ?
-           AND up.unit_id = ?
+           AND t.scope_unit_id = ?
            AND t.created_by_user_id IS NOT NULL
        ) admins
        WHERE person_id IS NOT NULL`,
@@ -193,8 +196,7 @@ export default class ChatAuthorizationService {
        FROM process_definition_versions pdv
        INNER JOIN processes p ON p.id = pdv.process_id
        INNER JOIN tasks t ON t.process_definition_id = pdv.id
-       INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-       INNER JOIN units u ON u.id = up.unit_id
+       INNER JOIN units u ON u.id = t.scope_unit_id
        WHERE pdv.process_id = ?
          AND u.id = ?
        LIMIT 1`,

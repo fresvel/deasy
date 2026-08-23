@@ -146,7 +146,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          pdv.definition_version,
          COALESCE(ffs.position_id, fill_assignee_position.id) AS source_position_id,
          COALESCE(fill_position.cargo_id, ffs.cargo_id, fill_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
-         COALESCE(fill_position.unit_id, ffs.unit_id, fill_assignee_position.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(fill_position.unit_id, ffs.unit_id, fill_assignee_position.unit_id, item_position.unit_id, t.scope_unit_id) AS source_unit_id,
          COALESCE(fill_unit.unit_type_id, ffs.unit_type_id, fill_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
        FROM fill_requests fr
        INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
@@ -179,8 +179,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        LEFT JOIN units fill_assignee_unit ON fill_assignee_unit.id = fill_assignee_position.unit_id
        LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
        LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
-       LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
-       LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
+        LEFT JOIN units task_unit ON task_unit.id = t.scope_unit_id
        WHERE fr.assigned_person_id = ?
          AND pdv.status = 'active'
          AND pdv.effective_from <= CURDATE()
@@ -207,7 +206,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          pdv.definition_version,
          COALESCE(sfs.position_id, signature_assignee_position.id) AS source_position_id,
          COALESCE(signature_position.cargo_id, sfs.required_cargo_id, signature_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
-         COALESCE(signature_position.unit_id, sfs.unit_id, signature_assignee_position.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(signature_position.unit_id, sfs.unit_id, signature_assignee_position.unit_id, item_position.unit_id, t.scope_unit_id) AS source_unit_id,
          COALESCE(signature_unit.unit_type_id, sfs.unit_type_id, signature_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
        FROM signature_requests sr
        INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
@@ -241,8 +240,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        LEFT JOIN units signature_assignee_unit ON signature_assignee_unit.id = signature_assignee_position.unit_id
        LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
        LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
-       LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
-       LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
+        LEFT JOIN units task_unit ON task_unit.id = t.scope_unit_id
        WHERE sr.assigned_person_id = ?
          AND pdv.status = 'active'
          AND pdv.effective_from <= CURDATE()

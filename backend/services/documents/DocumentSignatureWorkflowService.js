@@ -32,10 +32,9 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.process_definition_template_id,
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
-       t.responsible_position_id,
        t.created_by_user_id AS task_created_by_user_id,
-       COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
-       COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
+       COALESCE(up_item.unit_id, t.scope_unit_id) AS scope_unit_id,
+       COALESCE(u_item.unit_type_id, u_task_scope.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
      INNER JOIN documents d ON d.id = dv.document_id
      LEFT JOIN task_items ti ON ti.id = d.task_item_id
@@ -44,8 +43,7 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
      LEFT JOIN template_artifacts tar ON tar.id = dv.template_artifact_id
      LEFT JOIN unit_positions up_item ON up_item.id = ti.responsible_position_id
      LEFT JOIN units u_item ON u_item.id = up_item.unit_id
-     LEFT JOIN unit_positions up_task ON up_task.id = t.responsible_position_id
-     LEFT JOIN units u_task ON u_task.id = up_task.unit_id
+     LEFT JOIN units u_task_scope ON u_task_scope.id = t.scope_unit_id
      WHERE dv.id = ?
      LIMIT 1`,
     [documentVersionId]
@@ -523,7 +521,9 @@ const resolveTaskAssignee = (context) => {
 const resolvePositionAssignees = async (connection, step, context) => {
   return resolveCurrentPersonsForPosition(
     connection,
-    Number(step?.positionId || context?.task_item_responsible_position_id || context?.task_responsible_position_id)
+    // El puesto responsable de la TAREA se retiro el 2026-08-23 (era un puesto arbitrario de la
+    // unidad, no un responsable). Queda el del ENTREGABLE, que es el que responde por el.
+    Number(step?.positionId || context?.task_item_responsible_position_id)
   );
 };
 

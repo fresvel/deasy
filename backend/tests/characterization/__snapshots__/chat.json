@@ -239,6 +239,12 @@
             "left_at": "<normalized>",
             "person_id": 3,
             "role": "admin"
+          },
+          {
+            "joined_at": "<normalized>",
+            "left_at": "<normalized>",
+            "person_id": 24,
+            "role": "admin"
           }
         ],
         "process_id": "<normalized>",

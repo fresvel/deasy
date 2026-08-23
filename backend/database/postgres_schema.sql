@@ -730,10 +730,16 @@ CREATE TABLE IF NOT EXISTS tasks (
   process_definition_id INT NOT NULL,
   process_run_id INT NULL,
   term_id INT NOT NULL,
-  scope_unit_id INT NULL,
+  -- La unidad de la tarea. Pasa a NOT NULL el 2026-08-23: los dos escritores (el lanzamiento y la
+  -- tarea ad-hoc) la rellenan siempre, y era lo unico que sostenia el COALESCE de mas abajo.
+  scope_unit_id INT NOT NULL,
   normalized_scope_unit_id INT GENERATED ALWAYS AS (COALESCE(scope_unit_id, 0)) STORED,
   created_by_user_id INT NULL,
-  responsible_position_id INT NULL,
+  -- `responsible_position_id` VIVIO AQUI hasta el 2026-08-23. No era un responsable: el lanzamiento
+  -- lo ponia como `unitPositions[0]`, o sea el puesto de menor `slot_no` de la unidad — determinista
+  -- pero arbitrario. Y sus 27 lecturas hacian todas lo mismo: unir con `unit_positions` PARA SACAR
+  -- LA UNIDAD, que ya esta aqui al lado en `scope_unit_id`. Medido: coinciden en las 13 tareas.
+  -- El responsable de verdad vive en `task_items.responsible_position_id`, uno por entregable.
   description TEXT NULL,
   comments_thread_ref VARCHAR(64) NULL,
   start_date DATE NOT NULL,
@@ -744,8 +750,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   CONSTRAINT fk_tasks_process_run FOREIGN KEY (process_run_id) REFERENCES process_runs(id),
   CONSTRAINT fk_tasks_term FOREIGN KEY (term_id) REFERENCES terms(id),
   CONSTRAINT fk_tasks_created_by_user FOREIGN KEY (created_by_user_id) REFERENCES persons(id),
-  CONSTRAINT fk_tasks_scope_unit FOREIGN KEY (scope_unit_id) REFERENCES units(id),
-  CONSTRAINT fk_tasks_responsible_position FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id)
+  CONSTRAINT fk_tasks_scope_unit FOREIGN KEY (scope_unit_id) REFERENCES units(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_tasks_definition_term_scope ON tasks (process_definition_id, term_id, normalized_scope_unit_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_definition_term ON tasks (process_definition_id, term_id);

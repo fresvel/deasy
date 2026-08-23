@@ -147,12 +147,10 @@ const loadSourceTask = async (connection, sourceTaskId) => {
        t.id,
        t.process_definition_id,
        t.term_id,
-       COALESCE(t.scope_unit_id, rp.unit_id) AS scope_unit_id,
-       t.responsible_position_id,
+       t.scope_unit_id,
        t.start_date,
        t.end_date
      FROM tasks t
-     LEFT JOIN unit_positions rp ON rp.id = t.responsible_position_id
      WHERE t.id = ?
      LIMIT 1`,
     [sourceTaskId]
@@ -493,14 +491,13 @@ const createFreeTask = async (connection, { authenticatedUserId, input, definiti
   const [taskResult] = await connection.query(
     `INSERT INTO tasks (
        process_definition_id, term_id, scope_unit_id, created_by_user_id,
-       responsible_position_id, description, start_date, end_date, status
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+       description, start_date, end_date, status
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
     [
       definitionId,
       termId,
       unitId,
       authenticatedUserId,
-      responsiblePositionId,
       composedTitle,
       startDate,
       endDate,

@@ -72,9 +72,8 @@ const SCOPE_BY_PROCESS_UNIT = {
         FROM task_items ti
         INNER JOIN tasks t ON t.id = ti.task_id
         INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-        INNER JOIN unit_positions up ON up.id = t.responsible_position_id
         WHERE pdv.process_id = ?
-          AND up.unit_id = ?`,
+          AND t.scope_unit_id = ?`,
   params: ({ processId, scopeUnitId }) => [Number(processId), Number(scopeUnitId)],
 };
 
