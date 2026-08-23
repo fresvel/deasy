@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 5 de 14 tareas de D7.**
+**Estado: 0 de 7 fases · 6 de 19 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
@@ -67,7 +67,12 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `TD7-h` | D7 | **P2a** · El guard del entregable y los de observación usan la función; `isUserInTaskItemChain` desaparece | ✅ | 646/646 unit · 294/294 char · golden nuevo `deliverable_access` · mutación del IDOR: **52 en rojo** | 2026-08-22 |
 | `TD7-h2` | D7 | **P2b** · Las tres copias restantes del guard: descarga de plantilla, panel y Centro Documental | ✅ | 650/650 unit · 294/294 char · alcance correlacionado nuevo · mutación limpia: **2 en rojo, los dos del IDOR** | 2026-08-22 |
 | `TD7-h3` | D7 | **P2c** · El chat usa la función al nivel ancho; se podan las funciones sin llamador | ✅ | 639/639 unit · 294/294 char · `ChatAuthorizationService` de **332 a 223 líneas** · ningún golden movido | 2026-08-22 |
-| `TD7-i` | D7 | **P3** · Las fuentes que faltan: ocupante actual, ocupantes durante la vida del entregable, y relevos | ⬜ | — | — |
+| ~~TD7-i~~ | D7 | **P3** · Las fuentes que faltaban | ❌ **RETIRADA (2026-08-23).** El caso que las justificaba —«alguien preparó el documento y se fue»— **no existe**: si lo preparó dentro del sistema entró en un flujo; si lo preparó fuera, el sistema no lo sabe. Y medido: los relevos registrados no aportan **ni una persona** que no esté ya en `assigned_person_id` | — | 2026-08-23 |
+| `TD7-m` | D7 | **El modelo del entregable**, con las tres decisiones del dueño y lo que hay que implementar | ✅ | [`modelo-del-entregable.md`](./modelo-del-entregable.md) · 3 decisiones · 1 riesgo concreto | 2026-08-23 |
+| `TD7-n` | D7 | **Decisión**: cuál sobrevive entre `target_position_id` y `responsible_position_id`, que con la decisión de «uno por persona» dicen lo mismo | ⬜ | — | — |
+| `TD7-o` | D7 | Arreglar la **idempotencia del relanzamiento** (`getExistingTaskItemTemplateIds` asume la forma vieja). **Va ANTES del cambio de forma** | ⬜ | — | — |
+| `TD7-p` | D7 | El lanzamiento crea **un entregable por destinatario**, con `recipient_policy` decidiendo cuántos | ⬜ | — | — |
+| `TD7-q` | D7 | Se retiran `tasks.responsible_position_id`, `tasks.created_by_user_id` y `document_workflow_observations.target_person_id` | ⬜ | — | — |
 | `TD7-j` | D7 | **P4** · El custodio: recorrido orgánico hasta el primer jefe, reserva a `AdminSistema` | ⬜ | — | — |
 | `TD7-k` | D7 | **P5** · Eliminar un puesto deja de borrar su historia; desactivarlo emite `position_deactivated` | ⬜ | — | — |
 | `TD7-l` | D7 | **P6** · La fusión: `documents` se absorbe en `task_items`; mueren `owner_person_id` y `task_items.status` | ⬜ | — | — |

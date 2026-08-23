@@ -1,0 +1,180 @@
+# El modelo del entregable — qué es, de quién es, y qué sobra
+
+> **Fase D7 del frente 9.** Escrito el **2026-08-23**, midiendo el **código de generación** y no los
+> datos: el camino automático apenas ha producido entregables en dev, así que los datos no prueban
+> intención. Lo que sigue sale de leer quién escribe qué.
+>
+> Complementa a [`acceso-al-entregable.md`](./acceso-al-entregable.md), que resuelve *quién puede
+> verlo*. Éste resuelve *qué es* y *cuántos hay*.
+
+---
+
+## 1 · La decisión: un entregable por PERSONA
+
+**Decisión del dueño, 2026-08-23.** Un proceso dirigido a «todos los coordinadores de carrera», en
+una carrera con tres coordinadores, produce **tres informes** — uno por coordinador, y cada uno ve
+el suyo.
+
+**Hoy el sistema no hace eso.** El lanzamiento automático produce **un entregable por plantilla y
+por unidad**, compartido por todas las personas asignadas a la tarea.
+
+### Por qué las tres versiones que circulaban tenían razón a la vez
+
+| Fuente | Qué decía | Veredicto |
+|---|---|---|
+| El **código** de lanzamiento | Un entregable por plantilla | **Cierto** — es lo que hace |
+| La **documentación** (comentario del IDOR) | Un entregable por persona | **Cierto como intención**, falso como descripción |
+| El **test** del IDOR | Construye el caso por persona a mano | **Cierto** — con el editor genérico de tablas |
+
+No se contradicen: **el esquema admite las dos formas**, y sólo una está implementada. Lo decide el
+índice único, a través de sus columnas generadas:
+
+```sql
+target_position_key = CASE WHEN origin_kind='process_defined'
+                           THEN COALESCE(target_position_id, 0) ELSE NULL END
+uq_task_items_defined_target ON (task_id, process_definition_template_key,
+                                 target_position_key, target_person_key)
+```
+
+- Con los destinos **vacíos** → la clave es `(tarea, plantilla, 0, 0)` → **uno por plantilla**.
+- Con los destinos **rellenos** → **uno por destinatario**.
+
+---
+
+## 2 · Lo que se midió
+
+### Tres de los cuatro campos de persona/puesto del entregable NO los escribe nadie
+
+| Campo | Quién lo escribe |
+|---|---|
+| `task_items.target_person_id` | **nadie** — sólo el editor genérico de tablas del admin |
+| `task_items.target_position_id` | **nadie** — ídem |
+| `task_items.responsible_position_id` | **nadie** — ídem |
+| `task_items.assigned_person_id` | los relevos y el `reconcile` |
+
+Los `UPDATE … responsible_position_id` del generador (`taskitems.js:222`, `:246`) son sobre
+**`tasks`**, no sobre `task_items`.
+
+### `recipient_policy` ya existe, y hoy hace la mitad de su trabajo
+
+`process_target_rules.recipient_policy` admite `all_matches` · `one_per_unit` · `exact_position`, y
+`applyRecipientPolicy` (`generation/primitives.js:34`) la aplica **recortando las POSICIONES
+candidatas, no los entregables**.
+
+Consecuencia hoy: con `all_matches`, las N personas de una unidad quedan asignadas **a la misma
+tarea, que tiene un solo entregable**. Es el interruptor que la decisión necesita — pero conectado a
+la mitad equivocada.
+
+### `tasks.responsible_position_id` es ruido — confirmado por el dueño
+
+Lo pone el lanzamiento como `unitPositions[0].position_id`: **el primer puesto de la lista**. La
+lista sí está ordenada (`ORDER BY up.unit_id, up.slot_no, up.id`), así que es determinista — pero
+«el puesto de menor `slot_no` de la unidad» **no es un responsable**, es un puesto cualquiera. Y el
+ámbito real ya vive en `tasks.scope_unit_id`.
+
+**Decisión del dueño (2026-08-23): se retira.**
+
+### `tasks.created_by_user_id` está duplicado
+
+**12 de 13 tareas lo tienen NULL** — el camino automático no lo rellena. Quien lanzó la corrida ya
+está en `process_runs.created_by_user_id`, con su `run_mode`, su `reason` y su `status`.
+
+Sólo tiene valor en tareas **ad-hoc**, donde sí significa algo: **quien encargó el trabajo**. Ése es
+un tercer caso legítimo de acceso, pequeño y acotado.
+
+### `document_workflow_observations.target_person_id` es ruido puro
+
+- **2 observaciones, 0 con destinatario.**
+- El backend lo lee y compone un `target_name`…
+- …y el **frontend no lo pinta en ningún sitio** (cero apariciones).
+- Sale del cuerpo de la petición **sin validar**, así que como fuente de acceso sería una **vía de
+  escalada de privilegios**: dar acceso a cualquiera nombrándolo destinatario.
+
+**Decisión del dueño (2026-08-23): se borra.** El modelo de auditoría «de dónde a dónde va el
+documento» quedó obsoleto; eso lo cuentan los flujos, y **quien firma al final es el destinatario**
+sin necesidad de campo.
+
+---
+
+## 3 · Qué implica la decisión
+
+### Lo que hay que implementar
+
+**El lanzamiento tiene que rellenar los destinos.** Hoy `ensureTaskItemsForTaskTargets`
+(`taskitems.js:35`) recorre **las plantillas** y crea un entregable por cada una, sin destino. Debe
+recorrer **plantillas × destinatarios**.
+
+Y el interruptor ya existe: **`recipient_policy` pasa a decidir también cuántos entregables**, no
+sólo cuántas personas quedan asignadas.
+
+### ⚠️ El riesgo concreto: la idempotencia del relanzamiento se rompe
+
+`getExistingTaskItemTemplateIds` (`generation/queries.js:363`) —la consulta que evita duplicar
+entregables al relanzar— busca así:
+
+```sql
+WHERE task_id = ? AND origin_kind = 'process_defined'
+  AND target_position_id IS NULL
+  AND target_person_id IS NULL
+```
+
+**Asume la forma «por plantilla».** En cuanto el lanzamiento rellene los destinos, esa consulta deja
+de encontrar los entregables existentes y **cada relanzamiento crearía duplicados**. El índice único
+los rechazaría —lo cual es la red que salva el día— pero el lanzamiento reventaría en vez de ser
+idempotente.
+
+**Es el primer sitio que hay que tocar, y va antes que el cambio de forma.**
+
+### Lo que la decisión valida
+
+**El arreglo del IDOR pasa a proteger un escenario real.** Hoy protege uno que sólo su propio test
+produce: si un entregable es de la unidad y N personas están asignadas a la tarea, todas lo comparten
+legítimamente y no hay nada que filtrar. Con un entregable por persona, el guard defiende lo que dice
+defender.
+
+### La redundancia que queda
+
+Con la decisión tomada, **`target_position_id` y `responsible_position_id` dicen lo mismo**: si el
+entregable va dirigido al puesto X, quien responde por él es el puesto X. El test del IDOR ya los
+rellena **con el mismo valor**.
+
+Se diferencian sólo por su uso hoy:
+
+| Campo | Quién lo lee |
+|---|---|
+| `target_position_id` | El índice único (identidad) y la idempotencia del relanzamiento |
+| `responsible_position_id` | La cascada del responsable, el guard, los relevos, el chat, el flujo de firma |
+
+**Queda por decidir cuál sobrevive.** Y `assigned_person_id` es el ocupante actual de ese puesto,
+materializado — el mismo patrón que ya se retiró en `documents.owner_person_id`.
+
+---
+
+## 4 · El modelo de acceso, reducido
+
+De las once fuentes del diseño inicial quedan **tres**, y las tres tienen justificación medida:
+
+| | Fuente | Por qué no se puede quitar |
+|---|---|---|
+| 1 | **Debe entregarlo** | Al crearse, el entregable **no tiene ningún flujo**. Sin esta fuente nadie podría abrir lo suyo el primer día |
+| 2 | **Intervino** — entrega o firma | El criterio del dueño. Y cubre al firmante, que interviene sin ser el dueño |
+| 3 | **Encargó la tarea ad-hoc** | Sólo se dispara en tareas ad-hoc, donde significa «quien pidió el trabajo» |
+
+Más el **custodio** cuando el puesto se queda sin nadie (decidido el 2026-08-22: el jefe de la
+unidad, subiendo por la rama orgánica).
+
+**Y se caen, con su razón:**
+
+- **Quien comentó** — para comentar hay que haber pasado el guard: nunca añade a nadie.
+- **El destinatario de una observación** — ruido, y agujero.
+- **El dueño materializado** (`documents.owner_person_id`) — retirado en P2a: su valor puede estar
+  rancio.
+- **Los asignados de la tarea, sin acotar** — es el IDOR. Sólo alcanza al hilo del proceso.
+- **Ocupante pasado del puesto y relevos** — el caso que justificaba estas dos fuentes era «alguien
+  preparó el documento y se fue», y al mirarlo de cerca **no existe**: si lo preparó dentro del
+  sistema entró en un flujo, y si lo preparó fuera el sistema no sabe que existe. Medido además: los
+  relevos registrados **no aportan ni una persona** que no esté ya en `assigned_person_id`.
+
+> **Para lo que sí sirve el registro de relevos es para EXPLICAR**, no para conceder: *«¿por qué esto
+> que era de Juan ahora es de María?»*. Eso no lo contesta el historial de flujos, y es el defecto
+> 1.10 — otro trabajo.
