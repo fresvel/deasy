@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 0 de 12 tareas de D7.**
+**Estado: 0 de 7 fases · 1 de 12 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
@@ -63,7 +63,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `TD7-d` | D7 | Los dos `BIGINT` contra `persons.id INT` corregidos, con su FK. **Necesita D3 si hay datos que preservar** | ⬜ | — | — |
 | `TD7-e` | D7 | **Decisión escrita**: cuáles de las 8 columnas de estado sin `CHECK` bajan su dominio a la base. **Va detrás de D2** | ⬜ | — | — |
 | `TD7-f` | D7 | **El diseño del acceso al entregable**, con las dos decisiones del dueño escritas y su evidencia | ✅ | [`acceso-al-entregable.md`](./acceso-al-entregable.md) · 2 decisiones · 4 defectos nuevos | 2026-08-22 |
-| `TD7-g` | D7 | **P1** · La función única de participantes, con las 8 fuentes que ya existen. Ningún guard cambia todavía | ⬜ | — | — |
+| `TD7-g` | D7 | **P1** · La función única de participantes, con las fuentes que ya existen. Ningún guard cambia todavía | ✅ | `DeliverableAccessService.js` · 642/642 unit · 291/291 char sin mover goldens · 2 mutaciones en rojo | 2026-08-22 |
 | `TD7-h` | D7 | **P2** · Los dos guards la usan. El del documento gana las fuentes que sólo tenía el chat | ⬜ | — | — |
 | `TD7-i` | D7 | **P3** · Las fuentes que faltan: ocupante actual, ocupantes durante la vida del entregable, y relevos | ⬜ | — | — |
 | `TD7-j` | D7 | **P4** · El custodio: recorrido orgánico hasta el primer jefe, reserva a `AdminSistema` | ⬜ | — | — |

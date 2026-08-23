@@ -135,8 +135,31 @@ consultan los dos guards.
 | 10 | **Entró o salió por relevo** | `task_item_handovers` (`from_` y `to_person_id`) | **falta (H2)** |
 | 11 | **Custodio** | la regla D-2 | **falta** |
 
-**Ocho de las once ya están escritas en algún sitio.** El trabajo no es inventar un resolver: es
+**Siete de las once ya están escritas en algún sitio.** El trabajo no es inventar un resolver: es
 unificarlas y añadir las que faltan.
+
+### ⚠️ No todas las fuentes conceden lo mismo — medido el 2026-08-22
+
+**Esto salió al ejecutar la consulta contra datos reales, y habría sido una regresión de
+seguridad.** El entregable 4 tiene **once personas** en `task_assignments` de su tarea. Conceder
+acceso al **documento** por «estar asignado a algún puesto de la tarea» es **reabrir el IDOR que ya
+se cerró** — *el guard miraba la TAREA y no el ENTREGABLE, y un docente descargaba el documento de
+otro*.
+
+Que el chat sí incluya esas fuentes **no es un descuido suyo**: una *conversación de proceso* es más
+ancha que un *documento*, a propósito. Así que cada fuente declara **qué concede**:
+
+| Nivel | Qué permite | Fuentes |
+|---|---|---|
+| **`documento`** | Ver y descargar **ese** entregable | 1, 2, 5, 6, 7 (+ 8, 9, 10, 11 al añadirse) |
+| **`conversacion`** | Participar en el hilo del proceso. **Incluye entero al anterior** | las de arriba **+ 3 (asignados de la tarea) y 4 (creador)** |
+
+**El nivel por defecto es el estrecho**: pedir el ancho tiene que ser explícito. Al revés, un
+llamador despistado repartiría el documento entre todos los asignados de la tarea.
+
+> **Y es la lección de método del paso:** las pruebas unitarias con conexión falsa **no habrían
+> visto esto nunca** —el conjunto de fuentes era coherente consigo mismo—. Lo destapó ejecutar la
+> consulta contra la base sembrada y mirar cuántas filas devolvía cada fuente.
 
 ### Lo que desaparece, y por qué
 
@@ -196,7 +219,7 @@ antes de cada cambio de comportamiento**.
 
 | # | Paso | ¿Reversible? | Qué lo verifica |
 |---|---|---|---|
-| **P1** | **La función única de participantes**, con las 8 fuentes que ya existen. Sin cambiar ningún guard todavía | Sí | Unitarios de la función; ningún golden se mueve |
+| ~~P1~~ | ✅ **HECHO.** `DeliverableAccessService.js` con las **9 fuentes** que ya existían (las 7 del modelo, con las observaciones partidas en autor y destinatario) y **los dos niveles**, que no estaban en el diseño y salieron de medir. Ningún guard la usa todavía | Sí | `test:unit` **642/642** (21 nuevos) · `test:char:run` **291/291**, ningún golden movido · `check:imports` 129 · SQL probado con `PREPARE` en las dos anclas y **ejecutado contra la base sembrada** · **probado por mutación**: quitar el filtro de nivel → 4 en rojo; reclasificar `tarea_asignado` → 3 en rojo |
 | **P2** | Los **dos guards** pasan a llamarla. Aquí el comportamiento **sí cambia**: el guard del documento gana las fuentes que sólo tenía el chat | **No** | Goldens del contrato HTTP; **el diff ES la prueba** |
 | **P3** | Añadir las fuentes **8, 9 y 10** (ocupante actual, ocupantes durante la vida, relevos) | **No** | Unitarios por fuente + golden |
 | **P4** | **El custodio** (D-2), con su recorrido orgánico y su reserva a `AdminSistema` | **No** | Unitarios del recorrido, incluido el caso «sin jefe» que hoy dan 2 de 13 unidades |
