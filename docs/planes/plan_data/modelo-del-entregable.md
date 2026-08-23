@@ -271,3 +271,56 @@ Se aplicó de inmediato: el `CHECK` de `recipient_policy` se había escrito con 
 > definición de su tabla, y el fichero pasaría a decir **qué es** el esquema en vez de **cómo llegó
 > a serlo**. Es trabajo aparte y tiene un riesgo concreto: cada `ALTER` que se colapse mal **pierde
 > una columna**, así que se hace tabla a tabla y con la base recreada como prueba.
+
+
+---
+
+## 7 · Las tres que faltan: medido el 2026-08-23
+
+### El camino legacy ya está muerto, sólo hay que cerrarlo
+
+El veredicto de `target_person_id` decía *«se retira, pero cerrando antes el camino legacy sin
+flujo»*. Medido: **ese camino no lo puede producir la interfaz**.
+
+```js
+// useGeneralTask.js:110
+const usesRuntimeFlow = form.itemMode === 'routed' || form.mode === 'free';
+```
+
+Un envío `routed` **siempre** manda flujo. El `if (!recipientPersonId && !runtimeFlow) throw` del
+backend (`GeneralTaskService.js:233`) es una rama que sólo alcanzaría un cliente distinto del que
+existe. Cerrarla es formalizar lo que ya ocurre.
+
+### El «Para:» YA se deriva del flujo — pero en el cliente
+
+Y está escrito en el propio frontend:
+
+```js
+// Destinatario principal (owner / "Para:") derivado del flujo; el flujo completo va en `flow`.
+recipient_person_id: primaryRecipient,
+```
+
+La regla es `primaryRecipientFromFlow()` (`useFlowBuilder.js:80`), y son dos escalones:
+
+1. **La primera persona concreta de un paso de FIRMA.**
+2. Si no hay, **la primera persona del paso de ENTREGA que no seas tú** — el delegado.
+
+Es decir: el destinatario **no es un dato**, es una **proyección del flujo** que hoy se calcula en
+el navegador y se guarda en una columna. Moverla al servidor —derivarla al leer, con la misma
+regla— retira la columna **sin perder nada de lo que se ve en pantalla**.
+
+> **Y explica por qué la columna divergía tanto:** en `replicated` vale el creador, en `routed` el
+> destinatario del flujo, y en el automático nada. Tres significados para un nombre.
+
+### Lo que queda por hacer, en orden
+
+| | Paso | Por qué en ese sitio |
+|---|---|---|
+| 1 | **Cerrar el camino legacy**: `routed` exige flujo | Sin esto, hay envíos sin flujo del que derivar el «Para:» |
+| 2 | **Derivar el «Para:» en el servidor**, con la regla del cliente | Es lo que sustituye a la columna |
+| 3 | **Retirar `target_person_id` y `target_position_id`** | `target_position_id` no necesita nada: en `routed` el código ya lo pone a `NULL` y en `replicated` es copia de `responsible_position_id` |
+| 4 | **`responsible_position_id` pasa a NOT NULL** | Es el ancla del relevo y quien dice el productor. Hay que comprobar que los tres caminos de creación lo rellenan |
+
+⚠️ **Y el índice único se queda sin dos de sus cuatro columnas.** Pasa a
+`(task_id, plantilla, responsible_position_id)` — que es exactamente la identidad que el dueño
+decidió: **un entregable por productor**.
