@@ -1,3 +1,8 @@
+import {
+  ACCESS_LEVELS,
+  accessSubqueryCorrelated,
+  listProcessParticipants,
+} from "../documents/DeliverableAccessService.js";
 import { getPostgresPool } from "../../config/postgres.js";
 
 const normalizeNumericId = (value) => {
@@ -72,67 +77,19 @@ export default class ChatAuthorizationService {
         AND owner_pa.is_current = 1
        LEFT JOIN unit_positions owner_pos ON owner_pos.id = owner_pa.position_id
        WHERE pdv.process_id = ?
-         AND (
-           t.created_by_user_id = ?
-           OR d.owner_person_id = ?
-           OR ti.assigned_person_id = ?
-           OR EXISTS (
-             -- Alcance de TAREA a propósito, no de entregable: ver el comentario sobre el guard
-             -- del IDOR justo encima de esta consulta.
-             SELECT 1
-             FROM task_assignments ta
-             LEFT JOIN position_assignments pa
-               ON pa.position_id = ta.position_id
-              AND pa.is_current = 1
-              AND pa.person_id = ?
-             WHERE ta.task_id = t.id
-               AND (
-                 ta.assigned_person_id = ?
-                 OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
-               )
-           )
-           OR EXISTS (
-             SELECT 1
-             FROM document_versions dv
-             INNER JOIN (
-               SELECT document_id, MAX(version) AS max_version
-               FROM document_versions
-               GROUP BY document_id
-             ) latest_dv
-               ON latest_dv.document_id = dv.document_id
-              AND latest_dv.max_version = dv.version
-             INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-             INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-             WHERE dv.document_id = d.id
-               AND fr.assigned_person_id = ?
-           )
-           OR EXISTS (
-             SELECT 1
-             FROM document_versions dv
-             INNER JOIN (
-               SELECT document_id, MAX(version) AS max_version
-               FROM document_versions
-               GROUP BY document_id
-             ) latest_dv
-               ON latest_dv.document_id = dv.document_id
-              AND latest_dv.max_version = dv.version
-             INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-             INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-             WHERE dv.document_id = d.id
-               AND sr.assigned_person_id = ?
-           )
+         -- El conjunto de participantes lo declara DeliverableAccessService, al nivel ANCHO
+         -- (conversacion): un hilo de proceso incluye a todos los asignados de la tarea, no
+         -- solo al responsable del entregable. Eso NO es el IDOR relajado, es la decision del
+         -- defecto 1.9, medida y escrita justo arriba.
+         --
+         -- El alcance es correlacionado con ti, que el LEFT JOIN de esta consulta ya trae.
+         AND EXISTS (
+           SELECT 1
+           FROM (${accessSubqueryCorrelated("ti", ACCESS_LEVELS.CONVERSACION)}) participantes
+           WHERE participantes.person_id = ?
          )`,
-      [
-        normalizedProcessId,
-        normalizedPersonId,
-        normalizedPersonId,
-        normalizedPersonId,
-        normalizedPersonId,
-        normalizedPersonId,
-        normalizedPersonId,
-        normalizedPersonId,
-        normalizedPersonId
-      ]
+      // Ocho `normalizedPersonId` en uno: el resto los absorbio la subconsulta.
+      [normalizedProcessId, normalizedPersonId]
     );
 
     const scopedRows = accessRows
@@ -200,85 +157,19 @@ export default class ChatAuthorizationService {
       [normalizedProcessId, selectedScopeUnitId, normalizedProcessId, selectedScopeUnitId]
     );
 
-    const [participantRows] = await this.pool.query(
-      `SELECT DISTINCT person_id, source_type
-       FROM (
-         SELECT ta.assigned_person_id AS person_id, 'task_assignment' AS source_type
-         FROM task_assignments ta
-         INNER JOIN tasks t ON t.id = ta.task_id
-         INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-         INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-         WHERE pdv.process_id = ?
-           AND up.unit_id = ?
-           AND ta.assigned_person_id IS NOT NULL
-
-         UNION
-
-         SELECT ti.assigned_person_id AS person_id, 'task_item_assignee' AS source_type
-         FROM task_items ti
-         INNER JOIN tasks t ON t.id = ti.task_id
-         INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-         INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-         WHERE pdv.process_id = ?
-           AND up.unit_id = ?
-           AND ti.assigned_person_id IS NOT NULL
-
-         UNION
-
-         SELECT d.owner_person_id AS person_id, 'document_owner' AS source_type
-         FROM documents d
-         INNER JOIN task_items ti ON ti.id = d.task_item_id
-         INNER JOIN tasks t ON t.id = ti.task_id
-         INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-         INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-         WHERE pdv.process_id = ?
-           AND up.unit_id = ?
-           AND d.owner_person_id IS NOT NULL
-
-         UNION
-
-         SELECT fr.assigned_person_id AS person_id, 'fill_request' AS source_type
-         FROM fill_requests fr
-         INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-         INNER JOIN document_versions dv ON dv.id = dff.document_version_id
-         INNER JOIN documents d ON d.id = dv.document_id
-         INNER JOIN task_items ti ON ti.id = d.task_item_id
-         INNER JOIN tasks t ON t.id = ti.task_id
-         INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-         INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-         WHERE pdv.process_id = ?
-           AND up.unit_id = ?
-           AND fr.assigned_person_id IS NOT NULL
-
-         UNION
-
-         SELECT sr.assigned_person_id AS person_id, 'signature_request' AS source_type
-         FROM signature_requests sr
-         INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-         INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
-         INNER JOIN documents d ON d.id = dv.document_id
-         INNER JOIN task_items ti ON ti.id = d.task_item_id
-         INNER JOIN tasks t ON t.id = ti.task_id
-         INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-         INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-         WHERE pdv.process_id = ?
-           AND up.unit_id = ?
-           AND sr.assigned_person_id IS NOT NULL
-       ) participants
-       WHERE person_id IS NOT NULL`,
-      [
-        normalizedProcessId,
-        selectedScopeUnitId,
-        normalizedProcessId,
-        selectedScopeUnitId,
-        normalizedProcessId,
-        selectedScopeUnitId,
-        normalizedProcessId,
-        selectedScopeUnitId,
-        normalizedProcessId,
-        selectedScopeUnitId
-      ]
-    );
+    // La lista de participantes del hilo. Era la sexta reimplementacion del conjunto —cinco
+    // ramas UNION escritas a mano— y ahora es la misma tabla de fuentes que usa todo lo demas,
+    // pedida al nivel ANCHO porque un hilo de proceso es mas ancho que un documento.
+    //
+    // ⚠️ Cambio latente, y se deja escrito: las ramas viejas de entrega y firma miraban SOLO la
+    // ULTIMA version del documento. Las fuentes miran todas, asi que quien participo en la v1
+    // conserva el hilo cuando aparece la v2. Es lo que dice el modelo -quien participo, participa-
+    // y hoy es inerte: cero documentos con mas de una version en la base. El dia que los haya,
+    // este parrafo explica por que.
+    const participantRows = await listProcessParticipants(this.pool, {
+      processId: normalizedProcessId,
+      scopeUnitId: selectedScopeUnitId,
+    });
 
     const participantIds = new Set([normalizedPersonId]);
     participantRows.forEach((row) => {

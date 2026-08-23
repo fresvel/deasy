@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 4 de 14 tareas de D7.**
+**Estado: 0 de 7 fases · 5 de 14 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
@@ -66,7 +66,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `TD7-g` | D7 | **P1** · La función única de participantes, con las fuentes que ya existen. Ningún guard cambia todavía | ✅ | `DeliverableAccessService.js` · 642/642 unit · 291/291 char sin mover goldens · 2 mutaciones en rojo | 2026-08-22 |
 | `TD7-h` | D7 | **P2a** · El guard del entregable y los de observación usan la función; `isUserInTaskItemChain` desaparece | ✅ | 646/646 unit · 294/294 char · golden nuevo `deliverable_access` · mutación del IDOR: **52 en rojo** | 2026-08-22 |
 | `TD7-h2` | D7 | **P2b** · Las tres copias restantes del guard: descarga de plantilla, panel y Centro Documental | ✅ | 650/650 unit · 294/294 char · alcance correlacionado nuevo · mutación limpia: **2 en rojo, los dos del IDOR** | 2026-08-22 |
-| `TD7-h3` | D7 | **P2c** · El chat cambia sus subconsultas por la función, al nivel ancho | ⬜ | — | — |
+| `TD7-h3` | D7 | **P2c** · El chat usa la función al nivel ancho; se podan las funciones sin llamador | ✅ | 639/639 unit · 294/294 char · `ChatAuthorizationService` de **332 a 223 líneas** · ningún golden movido | 2026-08-22 |
 | `TD7-i` | D7 | **P3** · Las fuentes que faltan: ocupante actual, ocupantes durante la vida del entregable, y relevos | ⬜ | — | — |
 | `TD7-j` | D7 | **P4** · El custodio: recorrido orgánico hasta el primer jefe, reserva a `AdminSistema` | ⬜ | — | — |
 | `TD7-k` | D7 | **P5** · Eliminar un puesto deja de borrar su historia; desactivarlo emite `position_deactivated` | ⬜ | — | — |

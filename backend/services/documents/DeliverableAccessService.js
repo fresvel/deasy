@@ -320,25 +320,6 @@ const groupBySource = (rows) => {
 };
 
 /**
- * Quiénes participan en UN entregable, y por qué.
- *
- * **Por defecto responde el nivel `documento`**, que es el estrecho — pedir el ancho tiene que
- * ser explícito. Al revés, un llamador despistado repartiría acceso al documento entre todos los
- * asignados de la tarea, que es el IDOR ya cerrado.
- *
- * Devuelve `[{ person_id, sources: ["flujo_firma", …] }]`, ordenado por id.
- */
-export const listDeliverableParticipants = async (
-  connection,
-  taskItemId,
-  level = ACCESS_LEVELS.ENTREGABLE
-) => {
-  const conn = connection || getPostgresPool();
-  const rows = await runAccessQuery(conn, SCOPE_BY_TASK_ITEM, { taskItemId }, level);
-  return groupBySource(rows);
-};
-
-/**
  * Quiénes participan en los entregables de un PROCESO dentro de una UNIDAD de alcance.
  * Es la forma que necesita el chat, con el mismo juego de fuentes que la de arriba.
  */
@@ -348,32 +329,6 @@ export const listProcessParticipants = async (connection, { processId, scopeUnit
     conn, SCOPE_BY_PROCESS_UNIT, { processId, scopeUnitId }, ACCESS_LEVELS.CONVERSACION
   );
   return groupBySource(rows);
-};
-
-/**
- * ¿Tiene esta persona derecho a ver este entregable?
- *
- * Se resuelve en la base y no filtrando en memoria la lista completa: un entregable con muchos
- * pasos de firma puede traer decenas de filas para contestar un sí/no.
- */
-export const isDeliverableParticipant = async (
-  connection,
-  taskItemId,
-  personId,
-  level = ACCESS_LEVELS.ENTREGABLE
-) => {
-  const person = Number(personId);
-  if (!person) return false;
-
-  const conn = connection || getPostgresPool();
-  const [rows] = await conn.query(
-    `SELECT 1 AS ok
-     FROM (${buildAccessQuery(SCOPE_BY_TASK_ITEM, sourcesForLevel(level))}) participantes
-     WHERE participantes.person_id = ?
-     LIMIT 1`,
-    [...SCOPE_BY_TASK_ITEM.params({ taskItemId }), person]
-  );
-  return Boolean(rows?.length);
 };
 
 /**
@@ -396,6 +351,14 @@ export const accessSubqueryForTaskItem = (level = ACCESS_LEVELS.ENTREGABLE) =>
  */
 export const accessSubqueryCorrelated = (outerAlias, level = ACCESS_LEVELS.ENTREGABLE) =>
   buildAccessQuery(scopeByCorrelatedItem(outerAlias), sourcesForLevel(level));
+
+// ⚠️ Aquí vivieron `listDeliverableParticipants` y `isDeliverableParticipant`, y se retiraron
+// el mismo día que nacieron (2026-08-22). No sobraban por error de diseño: sobran porque al
+// cablear los guards la comprobación subió al ÚNICO sitio por el que pasan todos —el gate que
+// devuelve 404— y abajo dejó de haber nada que preguntar. Un booleano por entregable no tiene
+// hoy ningún llamador, y este repositorio borra lo que no se ve.
+//
+// Si vuelve a hacer falta, son cuatro líneas sobre `accessSubqueryForTaskItem`.
 
 /** Sólo para pruebas y para depurar: la consulta que se va a ejecutar. */
 export const __buildAccessQuery = buildAccessQuery;
