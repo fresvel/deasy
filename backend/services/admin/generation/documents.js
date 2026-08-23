@@ -125,37 +125,18 @@ export const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
     return Number(taskItem.assigned_person_id);
   }
 
-  if (taskItem?.task_id && taskItem?.responsible_position_id) {
-    const [rows] = await connection.query(
-      `SELECT assigned_person_id
-       FROM task_assignments
-       WHERE task_id = ?
-         AND position_id = ?
-         AND assigned_person_id IS NOT NULL
-       ORDER BY id ASC
-       LIMIT 1`,
-      [taskItem.task_id, taskItem.responsible_position_id]
-    );
-    if (rows?.[0]?.assigned_person_id) {
-      return Number(rows[0].assigned_person_id);
-    }
-  }
-
-  if (taskItem?.task_id) {
-    const [rows] = await connection.query(
-      `SELECT assigned_person_id
-       FROM task_assignments
-       WHERE task_id = ?
-         AND assigned_person_id IS NOT NULL
-       ORDER BY id ASC
-       LIMIT 1`,
-      [taskItem.task_id]
-    );
-    if (rows?.[0]?.assigned_person_id) {
-      return Number(rows[0].assigned_person_id);
-    }
-  }
-
+  // Los DOS escalones que habia aqui leian `task_assignments` y se retiraron con ella (2026-08-23):
+  //
+  //   · El primero buscaba «el asignado del puesto responsable en esta tarea». Eso es literalmente
+  //     lo que dice el escalon de arriba —`assigned_person_id` es la cache de la tenencia vigente de
+  //     ese puesto—, asi que era la misma respuesta leida de una copia que nadie refrescaba.
+  //   · El segundo cogia «el primer asignado de la tarea, por id». Ese no era un respaldo, era una
+  //     LOTERIA: un entregable sin responsable acababa a nombre de quien resultara tener el id mas
+  //     bajo en la tarea, que puede no tener nada que ver con el.
+  //
+  // Sin responsable, el documento nace SIN DUEÑO — y eso es correcto y visible: el entregable esta
+  // abandonado, su tenencia abierta lo dice, y quien ocupe el puesto entra por
+  // `puesto_responsable_ocupante`. Antes esa situacion se tapaba con un nombre cualquiera.
   return null;
 };
 export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, ownerPersonId = null) => {

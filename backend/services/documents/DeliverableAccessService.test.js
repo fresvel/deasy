@@ -51,23 +51,34 @@ test("cada fuente declara QUÉ concede, y sólo hay dos niveles", () => {
   }
 });
 
-test("el acceso al ENTREGABLE no incluye a los asignados de la TAREA: ése era el IDOR", () => {
-  // Medido el 2026-08-22: el entregable 4 tiene ONCE personas en `task_assignments` de su tarea.
-  // Si la fuente ancha concediera nivel de entregable, esas once podrían descargarlo.
+test("el acceso al ENTREGABLE no incluye a los participantes de la TAREA: ése era el IDOR", () => {
+  // Medido el 2026-08-22: el entregable 4 tiene ONCE personas repartidas por su tarea. Si la fuente
+  // ancha concediera nivel de entregable, esas once podrían descargarlo.
   const claves = sourcesForLevel(ACCESS_LEVELS.ENTREGABLE).map((source) => source.key);
-  assert.ok(!claves.includes("tarea_asignado"), "el IDOR ha vuelto");
+  assert.ok(!claves.includes("tarea_participante"), "el IDOR ha vuelto");
 });
 
-test("la fuente del puesto responsable SÍ está, pero ACOTADA a este entregable", () => {
+test("la fuente ancha es de CONVERSACIÓN y no lleva la acotación al entregable", () => {
+  const ancha = ACCESS_SOURCES.find((s) => s.key === "tarea_participante");
+  assert.equal(ancha.grants, ACCESS_LEVELS.CONVERSACION);
+  assert.ok(!/responsible_position_id/.test(ancha.sql), "la ancha no debe llevar la acotación");
+});
+
+test("el entregable ABANDONADO lo abre quien ocupa hoy su puesto, y sólo entonces", () => {
+  // `puesto_responsable_asignado` desapareció el 2026-08-23 con `task_assignments`: decía «el
+  // asignado del puesto responsable de este entregable», que es exactamente lo que dice
+  // `entregable_asignado` leyendo la caché de la tenencia. Dos fuentes con la misma respuesta, y
+  // una la leía de una foto que ningún relevo refrescaba.
   const claves = sourcesForLevel(ACCESS_LEVELS.ENTREGABLE).map((source) => source.key);
-  assert.ok(claves.includes("puesto_responsable_asignado"));
+  assert.ok(!claves.includes("puesto_responsable_asignado"), "ha vuelto la fuente de la foto vieja");
+  assert.ok(claves.includes("entregable_asignado"));
   assert.ok(claves.includes("puesto_responsable_ocupante"));
 
-  // La acotación ES el arreglo del IDOR: sin ella, la fuente sería la ancha.
-  const acotada = ACCESS_SOURCES.find((s) => s.key === "puesto_responsable_asignado");
-  assert.match(acotada.sql, /ta\.position_id = ti_src\.responsible_position_id/);
-  const ancha = ACCESS_SOURCES.find((s) => s.key === "tarea_asignado");
-  assert.ok(!/responsible_position_id/.test(ancha.sql), "la ancha no debe llevar la acotación");
+  // El `IS NULL` ES el arreglo: sin él, quien ocupa el puesto entraría en TODOS los entregables de
+  // ese puesto, tengan responsable o no — que es la forma ancha del mismo IDOR.
+  const ocupante = ACCESS_SOURCES.find((s) => s.key === "puesto_responsable_ocupante");
+  assert.match(ocupante.sql, /ti_src\.assigned_person_id IS NULL/);
+  assert.match(ocupante.sql, /pa\.position_id = ti_src\.responsible_position_id/);
 });
 
 test("el dueño materializado NO es fuente: su valor puede estar rancio", () => {
@@ -89,10 +100,12 @@ test("quien ENCARGO el entregable llega a el, y el dato sale del entregable, no 
   assert.ok(!/created_by_user_id/.test(fuente.sql), "sigue leyendo la columna retirada");
 });
 
-test("el ocupante actual del puesto entra sólo cuando la asignación está vacía", () => {
+test("el ocupante actual del puesto entra sólo cuando el entregable está SIN responsable", () => {
+  // La condición se leía de `task_assignments` («la asignación está vacía») y ahora se lee del
+  // propio entregable, que es la caché de su tenencia vigente: sin persona = abandonado.
   const ocupante = ACCESS_SOURCES.find((s) => s.key === "puesto_responsable_ocupante");
   assert.match(ocupante.sql, /pa\.is_current = 1/);
-  assert.match(ocupante.sql, /ta\.assigned_person_id IS NULL/);
+  assert.match(ocupante.sql, /ti_src\.assigned_person_id IS NULL/);
 });
 
 test("el acceso a la CONVERSACIÓN es más ancho, e incluye entero al del documento", () => {
@@ -113,7 +126,7 @@ test("un nivel inventado falla en vez de conceder de más", () => {
 test("el chat pide el nivel ancho: es una conversación de proceso, no un documento", async () => {
   const conn = fakeConnection([]);
   await listProcessParticipants(conn, { processId: 3, scopeUnitId: 8 });
-  assert.ok(conn.queries[0].sql.includes("'tarea_asignado'"));
+  assert.ok(conn.queries[0].sql.includes("'tarea_participante'"));
   assert.ok(conn.queries[0].sql.includes("'entregable_creador'"));
 });
 
@@ -124,7 +137,7 @@ test("las dos mitades que hoy están divididas entre los dos guards están las d
   assert.ok(keys.includes("flujo_firma"));
   // Las que sólo tenía el chat
   assert.ok(keys.includes("entregable_creador"));
-  assert.ok(keys.includes("tarea_asignado"));
+  assert.ok(keys.includes("tarea_participante"));
   assert.ok(keys.includes("entregable_asignado"));
 });
 
@@ -195,6 +208,6 @@ test("un alias externo inventado falla en vez de construir SQL raro", () => {
 });
 
 test("el correlacionado respeta el nivel: por defecto, el estrecho", () => {
-  assert.ok(!accessSubqueryCorrelated("ti").includes("'tarea_asignado'"));
-  assert.ok(accessSubqueryCorrelated("ti", ACCESS_LEVELS.CONVERSACION).includes("'tarea_asignado'"));
+  assert.ok(!accessSubqueryCorrelated("ti").includes("'tarea_participante'"));
+  assert.ok(accessSubqueryCorrelated("ti", ACCESS_LEVELS.CONVERSACION).includes("'tarea_participante'"));
 });

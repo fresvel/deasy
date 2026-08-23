@@ -16,14 +16,12 @@ import {
   getExistingAutomaticTasksMap,
   getExistingTasksByUnitForDefinition,
   getActiveRunForDefinitionTerm,
-  getPositionsForRule,
-  getTaskAssignmentTargets
+  getPositionsForRule
 } from "./queries.js";
 import {
   ensureTaskItemsForTask,
   ensureTaskItemsForTaskTargets,
-  ensureTaskAssignmentsForDefinition,
-  ensureUnitTaskAssignments
+  resolveTaskTargetsForDefinition
 } from "./taskitems.js";
 // Dependencia unidireccional: el lanzamiento materializa los documentos de la tarea.
 import { ensureDocumentsForTask } from "./documents.js";
@@ -104,54 +102,32 @@ export const hydrateTaskFromDefinition = async ({
   const templatesMap = executableTemplatesMap || await getExecutableTemplatesMap(connection);
   const rulesMap = targetRulesMap || await getTargetRulesMap(connection, term.start_date, term.end_date);
 
-  const assignments = await ensureTaskAssignmentsForDefinition(connection, taskId, processDefinitionId, rulesMap);
-  const targets = await getTaskAssignmentTargets(connection, taskId);
+  // Los puestos se resuelven y se usan. Hasta el 2026-08-23 esto escribia `task_assignments`, la
+  // volvia a LEER en la linea siguiente, y alimentaba con eso la creacion de los entregables: una
+  // ida y vuelta a la base para recuperar lo que ya estaba en memoria. Lo que quedaba escrito no lo
+  // refrescaba ningun relevo, asi que envejecia desde el primer cambio de ocupante.
+  const reparto = await resolveTaskTargetsForDefinition(connection, taskId, processDefinitionId, rulesMap);
   const taskItems = await ensureTaskItemsForTaskTargets(
     connection,
     taskId,
     processDefinitionId,
     templatesMap,
-    targets
+    reparto.targets
   );
   await ensureDocumentsForTask(connection, taskId);
 
   return {
     task_items_inserted: taskItems.inserted,
     task_items_total: taskItems.total,
-    assignments_created: assignments.created,
-    has_rules: assignments.hasRules,
-    has_assignees: assignments.hasAssignees,
-    responsible_position_id: assignments.responsiblePositionId
+    has_rules: reparto.hasRules,
+    has_assignees: reparto.hasAssignees
   };
 };
-export const hydrateGeneralTask = async ({
-  connection,
-  taskId,
-  processDefinitionId,
-  responsiblePositionId,
-  startDate = null,
-  endDate = null,
-}) => {
-  const templatesMap = await getExecutableTemplatesMap(connection);
-  const taskItems = await ensureTaskItemsForTask(
-    connection, taskId, processDefinitionId, templatesMap, startDate, endDate
-  );
-  let assignmentsCreated = 0;
-  if (responsiblePositionId) {
-    assignmentsCreated = await ensureUnitTaskAssignments(
-      connection,
-      taskId,
-      [{ position_id: responsiblePositionId, person_id: null }],
-      responsiblePositionId
-    );
-  }
-  await ensureDocumentsForTask(connection, taskId);
-  return {
-    task_items_inserted: taskItems.inserted,
-    task_items_total: taskItems.total,
-    assignments_created: assignmentsCreated,
-  };
-};
+// `hydrateGeneralTask` VIVIO AQUI hasta el 2026-08-23. Se exportaba, se re-exportaba en
+// `TaskGenerationService` y NO LO LLAMABA NADIE: cero invocaciones en todo el repo. Lo unico que
+// hacia de propio era escribir `task_assignments` para la tarea ad-hoc, y esa tabla se retiro —el
+// resto ya lo hace `GeneralTaskService`, que es quien crea esas tareas de verdad—. Mismo criterio
+// que con los resolvers: lo que nadie llama, no existe.
 export const launchDefinitionInTerm = async (connection, {
   definition,
   term,
@@ -166,7 +142,6 @@ export const launchDefinitionInTerm = async (connection, {
   const empty = {
     tasks_created: 0,
     task_items_created: 0,
-    assignments_created: 0,
     process_run_id: null,
     relaunched: false
   };
@@ -239,11 +214,8 @@ export const launchDefinitionInTerm = async (connection, {
 
   let tasksCreated = 0;
   let taskItemsCreated = 0;
-  let assignmentsCreated = 0;
 
   for (const [unitId, unitPositions] of byUnit) {
-    const responsiblePositionId = unitPositions[0].position_id;
-
     let task = existing.get(unitId) || null;
     if (!task) {
       const [result] = await connection.query(
@@ -271,11 +243,6 @@ export const launchDefinitionInTerm = async (connection, {
       term.end_date
     );
     taskItemsCreated += items.inserted;
-
-    assignmentsCreated += await ensureUnitTaskAssignments(
-      connection, task.id, unitPositions, responsiblePositionId
-    );
-
     await ensureDocumentsForTask(connection, task.id);
   }
 
@@ -284,8 +251,7 @@ export const launchDefinitionInTerm = async (connection, {
     relaunched,
     process_run_id: processRunId,
     tasks_created: tasksCreated,
-    task_items_created: taskItemsCreated,
-    assignments_created: assignmentsCreated
+    task_items_created: taskItemsCreated
   };
 };
 export const generateTasksForTerm = async (termId) => {
@@ -308,7 +274,6 @@ export const generateTasksForTerm = async (termId) => {
 
     let tasksCreated = 0;
     let taskItemsCreated = 0;
-    let assignmentsCreated = 0;
     const definitionsWithoutTaskItems = [];
     const definitionsWithoutTargetRules = [];
     const definitionsWithoutAssignees = [];
@@ -325,7 +290,6 @@ export const generateTasksForTerm = async (termId) => {
       });
       tasksCreated += result.tasks_created;
       taskItemsCreated += result.task_items_created;
-      assignmentsCreated += result.assignments_created;
       if (result.status === "no_task_items") definitionsWithoutTaskItems.push(definition.id);
       else if (result.status === "no_target_rules") definitionsWithoutTargetRules.push(definition.id);
       else if (result.status === "no_assignees") definitionsWithoutAssignees.push(definition.id);
@@ -337,7 +301,6 @@ export const generateTasksForTerm = async (termId) => {
       term_id: term.id,
       tasks_created: tasksCreated,
       task_items_created: taskItemsCreated,
-      assignments_created: assignmentsCreated,
       definitions_without_task_items: definitionsWithoutTaskItems,
       definitions_without_target_rules: definitionsWithoutTargetRules,
       definitions_without_assignees: definitionsWithoutAssignees

@@ -191,7 +191,7 @@ export const tonoAmbito = (valor) => AMBITO[valor] ?? TONOS.NEUTRAL;
 
 const clave = (valor) => String(valor ?? "").trim().toLowerCase();
 
-/* ── TAREA (`tasks.status`, `task_items.status`, `task_assignments.status`) ────────────────
+/* ── TAREA (`tasks.status`) ───────────────────────────────────────────────────────────────
    El mismo vocabulario en las tres tablas, en español y con `_`. */
 const TAREA = Object.freeze({
   pendiente: TONOS.SALMON,
@@ -478,7 +478,6 @@ const COLUMNA_ESTADO = Object.freeze({
   "process_runs.status": [tonoCorrida, etiquetaCorrida],
   "tasks.status": [tonoTarea, etiquetaTarea],
   "task_items.status": [tonoTarea, etiquetaTarea],
-  "task_assignments.status": [tonoTarea, etiquetaTarea],
   "document_fill_flows.status": [tonoLlenado, etiquetaLlenado],
   "fill_requests.status": [tonoLlenado, etiquetaLlenado],
   "persons.status": [tonoPersona, presenta],

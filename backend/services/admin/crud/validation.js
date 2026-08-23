@@ -248,12 +248,6 @@ const TABLE_RULES = {
   signature_flow_templates: [
     requires(["process_definition_template_id", "Selecciona la plantilla de proceso configurado."]),
   ],
-  task_assignments: [
-    requires(
-      ["task_id", "Selecciona una tarea para asignar."],
-      ["position_id", "Selecciona un puesto para la asignacion."],
-    ),
-  ],
   vacancies: [],
   contracts: [
     datesInOrder("contratos"),

@@ -2174,7 +2174,7 @@ const tableHeaderIcon = computed(() => {
       "process_definition_versions",
       "process_target_rules",
       "tasks",
-      "task_assignments",
+      "task_item_tenures",
       "template_artifacts",
       "process_definition_templates"
     ].includes(tableName)

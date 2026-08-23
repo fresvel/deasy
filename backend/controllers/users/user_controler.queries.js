@@ -404,17 +404,23 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
                OR ti_owner.created_by_person_id = ?
              )
          )
+         -- Antes esto miraba task_assignments, la foto del reparto que ningun relevo refrescaba:
+         -- por ella, quien dejaba un puesto seguia viendo las tareas para siempre. Ahora mira las
+         -- TENENCIAS —incluidas las cerradas, que es lo correcto en un listado: quien respondio de
+         -- un entregable puede seguir consultando su tarea— y, para lo abandonado, a quien ocupa
+         -- hoy el puesto responsable.
          OR EXISTS (
            SELECT 1
-           FROM task_assignments ta
+           FROM task_item_tenures te
+           INNER JOIN task_items ti_te ON ti_te.id = te.task_item_id
            LEFT JOIN position_assignments pa
-             ON pa.position_id = ta.position_id
+             ON pa.position_id = ti_te.responsible_position_id
             AND pa.is_current = 1
             AND pa.person_id = ?
-           WHERE ta.task_id = t.id
+           WHERE ti_te.task_id = t.id
              AND (
-               ta.assigned_person_id = ?
-               OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
+               te.person_id = ?
+               OR (te.person_id IS NULL AND te.ended_at IS NULL AND pa.person_id = ?)
              )
          )
          OR EXISTS (
@@ -464,30 +470,12 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        ti.responsible_position_id,
        ti.assigned_person_id,
        ti.target_unit_id,
-       COALESCE(
-         -- El «Para:» era el PRIMER escalon de esta cascada, y no debia serlo: quien RECIBE un
-         -- documento no es quien responde por el. Con la columna retirada (2026-08-23), la
-         -- responsabilidad empieza donde tiene que empezar — en quien lo tiene asignado.
-         ti.assigned_person_id,
-         (
-           SELECT ta.assigned_person_id
-           FROM task_assignments ta
-           WHERE ta.task_id = ti.task_id
-             AND ti.responsible_position_id IS NOT NULL
-             AND ta.position_id = ti.responsible_position_id
-             AND ta.assigned_person_id IS NOT NULL
-           ORDER BY ta.id ASC
-           LIMIT 1
-         ),
-         (
-           SELECT ta.assigned_person_id
-           FROM task_assignments ta
-           WHERE ta.task_id = ti.task_id
-             AND ta.assigned_person_id IS NOT NULL
-           ORDER BY ta.id ASC
-           LIMIT 1
-         )
-       ) AS resolved_owner_person_id,
+       -- Esto era un COALESCE de TRES escalones y hoy es una columna. El primero era el «Para:»
+       -- (retirado el 2026-08-23: quien RECIBE un documento no responde por el); los otros dos
+       -- leian task_assignments, y el ultimo cogia «el primer asignado de la tarea por id», que
+       -- no era un respaldo sino una loteria. Lo que queda es la cache de la tenencia vigente, que
+       -- es la respuesta que los tres intentaban dar.
+       ti.assigned_person_id AS resolved_owner_person_id,
        ti.start_date,
        ti.end_date,
        ti.user_started_at,
@@ -638,28 +626,12 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
        trm.term_type_id,
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
-       COALESCE(
-         -- El «Para:» ya no encabeza esta cascada: quien RECIBE no es quien responde.
-         ti.assigned_person_id,
-         (
-           SELECT ta.assigned_person_id
-           FROM task_assignments ta
-           WHERE ta.task_id = ti.task_id
-             AND ti.responsible_position_id IS NOT NULL
-             AND ta.position_id = ti.responsible_position_id
-             AND ta.assigned_person_id IS NOT NULL
-           ORDER BY ta.id ASC
-           LIMIT 1
-         ),
-         (
-           SELECT ta.assigned_person_id
-           FROM task_assignments ta
-           WHERE ta.task_id = ti.task_id
-             AND ta.assigned_person_id IS NOT NULL
-           ORDER BY ta.id ASC
-           LIMIT 1
-         )
-       ) AS resolved_owner_person_id,
+       -- Esto era un COALESCE de TRES escalones y hoy es una columna. El primero era el «Para:»
+       -- (retirado el 2026-08-23: quien RECIBE un documento no responde por el); los otros dos
+       -- leian task_assignments, y el ultimo cogia «el primer asignado de la tarea por id», que
+       -- no era un respaldo sino una loteria. Lo que queda es la cache de la tenencia vigente, que
+       -- es la respuesta que los tres intentaban dar.
+       ti.assigned_person_id AS resolved_owner_person_id,
        COALESCE(ti.target_unit_id, t.scope_unit_id, responsible_pos.unit_id) AS scope_unit_id
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id

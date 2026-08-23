@@ -23,7 +23,7 @@ const PUESTO_DE_LA_TAREA = 42;
 const PERSONA_DEL_PUESTO_DEL_ITEM = 900;
 const PERSONA_DEL_PUESTO_DE_LA_TAREA = 500;
 
-// Ocupantes por puesto, tal y como los vería `task_assignments`. El primer registro de la tarea
+// Ocupantes por puesto. El primer registro de la tarea
 // (el que usa el respaldo sin puesto) es el de la tarea, que es como los inserta el motor.
 const OCUPANTES = new Map([
   [PUESTO_DE_LA_TAREA, PERSONA_DEL_PUESTO_DE_LA_TAREA],
@@ -65,15 +65,6 @@ const conexionDeMaterializacion = ({ itemPositionId, taskPositionId }) => {
         }]];
       }
 
-      if (sql.includes("FROM task_assignments")) {
-        // Rama con puesto (`AND position_id = ?`) frente al respaldo por tarea.
-        if (sql.includes("position_id = ?")) {
-          const persona = OCUPANTES.get(Number(params[1])) ?? null;
-          return [persona ? [{ assigned_person_id: persona }] : []];
-        }
-        return [[{ assigned_person_id: PERSONA_DEL_PUESTO_DE_LA_TAREA }]];
-      }
-
       if (sql.includes("FROM unit_positions")) {
         const unidad = UNIDADES.get(Number(params[0])) ?? null;
         return [unidad ? [{ unit_id: unidad }] : []];
@@ -105,15 +96,21 @@ test("la consulta de materialización NO proyecta el puesto de la tarea", async 
   assert.ok(!sql.includes("t.responsible_position_id"), "no debe proyectar la columna de la tarea");
 });
 
-test("el dueño del documento sale del puesto del ENTREGABLE aunque el de la tarea sea otro", async () => {
+test("el PUESTO ya no resuelve el dueño: sólo lo dice quien tiene el entregable", async () => {
+  // Hasta el 2026-08-23 el dueño se resolvía bajando por los puestos —el del entregable primero, el
+  // de la tarea como respaldo— contra una tabla de asignaciones. Eso preguntaba «¿quién ocupaba este
+  // puesto CUANDO SE LANZÓ?», y la respuesta envejecía con el primer relevo. Ahora la pregunta es
+  // «¿quién responde de este entregable?», que es su tenencia vigente, y el puesto sólo sigue
+  // sirviendo para la UNIDAD de origen (el test de abajo).
   const connection = conexionDeMaterializacion({
     itemPositionId: PUESTO_DEL_ITEM,
     taskPositionId: PUESTO_DE_LA_TAREA,
   });
   const [fila] = await getTaskItemsForDocumentMaterialization(connection, 10);
+  assert.equal(fila.assigned_person_id, null, "la fixture trae el entregable sin responsable");
   const dueño = await resolveOwnerPersonIdForTaskItem(connection, fila);
-  assert.equal(dueño, PERSONA_DEL_PUESTO_DEL_ITEM);
-  assert.notEqual(dueño, PERSONA_DEL_PUESTO_DE_LA_TAREA);
+  assert.equal(dueño, null, "con puesto pero sin responsable, no hay dueño que inventar");
+  assert.notEqual(dueño, PERSONA_DEL_PUESTO_DEL_ITEM, "el puesto ya no resuelve el dueño");
 });
 
 test("la unidad de origen sale del puesto del ENTREGABLE, no del de la tarea", async () => {
@@ -126,21 +123,28 @@ test("la unidad de origen sale del puesto del ENTREGABLE, no del de la tarea", a
   assert.equal(unidad, UNIDADES.get(PUESTO_DEL_ITEM));
 });
 
-// --- el respaldo a nivel de tarea, que es lo que hace innecesario un COALESCE ------------------
+// --- lo que pasa cuando el entregable NO tiene responsable ------------------------------------
 
-test("sin puesto en el entregable, el dueño lo pone el respaldo por tarea del propio resolver", async () => {
-  // `ensureTaskItemsForTask` inserta el entregable SIN puesto responsable: ese es el camino real
-  // en el que la columna del ítem queda NULL, y el resolver ya tiene su propio respaldo (rama 4).
+test("sin responsable, el documento nace SIN DUEÑO — y eso es lo correcto", async () => {
+  // Aquí había DOS respaldos que leían `task_assignments`, y los dos se retiraron con ella
+  // (2026-08-23). El primero buscaba «el asignado del puesto responsable en esta tarea», que es
+  // literalmente lo que ya dice `assigned_person_id`. El segundo cogía «el primer asignado de la
+  // tarea, por id»: no era un respaldo, era una lotería — el documento acababa a nombre de quien
+  // tuviera el id más bajo, que puede no tener nada que ver con él.
+  //
+  // Sin dueño, la situación queda VISIBLE: el entregable está abandonado, su tenencia abierta lo
+  // dice, y quien ocupe el puesto entra por la fuente de acceso `puesto_responsable_ocupante`.
+  // Antes se tapaba con un nombre cualquiera.
   const connection = conexionDeMaterializacion({
     itemPositionId: null,
     taskPositionId: PUESTO_DE_LA_TAREA,
   });
   const [fila] = await getTaskItemsForDocumentMaterialization(connection, 10);
   assert.equal(fila.responsible_position_id, null);
+  const antes = connection.queries.length;   // la consulta de materializacion ya gastó una
   const dueño = await resolveOwnerPersonIdForTaskItem(connection, fila);
-  assert.equal(dueño, PERSONA_DEL_PUESTO_DE_LA_TAREA);
-  const conPuesto = connection.queries.filter((q) => q.sql.includes("position_id = ?"));
-  assert.equal(conPuesto.length, 0, "sin puesto en el entregable no se consulta por puesto");
+  assert.equal(dueño, null, "no debe inventarse un dueño");
+  assert.equal(connection.queries.length - antes, 0, "y no debe consultar nada para averiguarlo");
 });
 
 test("quien lo tiene ASIGNADO manda sobre cualquier puesto", async () => {

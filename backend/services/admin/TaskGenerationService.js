@@ -27,7 +27,6 @@ export {
 export {
   ensureProcessRun,
   hydrateTaskFromDefinition,
-  hydrateGeneralTask,
   launchDefinitionInTerm,
   generateTasksForTerm,
   launchProcessDefinitionInTerm,

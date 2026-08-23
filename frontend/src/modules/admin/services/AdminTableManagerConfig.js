@@ -179,11 +179,14 @@ export const RELATED_RECORD_CONFIG = {
     { table: "fill_flow_steps", label: "Pasos de entrega", foreignKey: "fill_flow_template_id", orderBy: "step_order", order: "asc" }
   ],
   tasks: [
-    { table: "task_items", label: "Items", foreignKey: "task_id", orderBy: "sort_order", order: "asc" },
-    { table: "task_assignments", label: "Asignaciones", foreignKey: "task_id", orderBy: "assigned_at", order: "desc" }
+    { table: "task_items", label: "Items", foreignKey: "task_id", orderBy: "sort_order", order: "asc" }
   ],
   task_items: [
-    { table: "documents", label: "Documentos", foreignKey: "task_item_id", orderBy: "created_at", order: "desc" }
+    { table: "documents", label: "Documentos", foreignKey: "task_item_id", orderBy: "created_at", order: "desc" },
+    // Sustituye a las «Asignaciones» (`task_assignments`), que colgaban de la TAREA. La tenencia
+    // cuelga del ENTREGABLE, que es el grano al que de verdad se responde: una tarea reparte varios
+    // entregables y cada uno tiene su propio responsable y su propia sucesión.
+    { table: "task_item_tenures", label: "Tenencias", foreignKey: "task_item_id", orderBy: "started_at", order: "desc" }
   ],
   documents: [
     { table: "document_versions", label: "Versiones del documento", foreignKey: "document_id", orderBy: "created_at", order: "desc" }

@@ -122,14 +122,10 @@ test("validateTableRules exige instancia y paso en una solicitud de entrega", ()
   );
 });
 
-test("validateTableRules exige tarea y puesto en una asignacion", () => {
-  throwsWith(() => validateTableRules("task_assignments", {}), "Selecciona una tarea para asignar.");
-  throwsWith(
-    () => validateTableRules("task_assignments", { task_id: 1 }),
-    "Selecciona un puesto para la asignacion.",
-  );
-  assert.doesNotThrow(() => validateTableRules("task_assignments", { task_id: 1, position_id: 6 }));
-});
+// El caso de `task_assignments` vivio aqui hasta el 2026-08-23: exigia tarea y puesto al crear una
+// asignacion desde el editor generico. La tabla se retiro —era una foto del reparto que ningun
+// relevo refrescaba— y con ella su regla: la tenencia no se crea a mano, la abren los triggers y el
+// traspaso, y en el editor es de solo lectura.
 
 test("validateTableRules valida las fechas de periodos y contratos con su propia etiqueta", () => {
   throwsWith(

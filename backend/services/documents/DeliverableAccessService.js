@@ -32,7 +32,7 @@
 //
 // ── ⚠️ NO TODAS LAS FUENTES DAN EL MISMO ACCESO ─────────────────────────────────────────
 // Medido contra la base el 2026-08-22, y es la razón de que este módulo tenga dos niveles:
-// el entregable 4 tiene ONCE personas en `task_assignments` de su tarea. Dar acceso al
+// el entregable 4 tiene ONCE personas repartidas por su tarea. Dar acceso al
 // DOCUMENTO por «estar asignado a algún puesto de la tarea» es **reabrir el IDOR que ya se
 // cerró** —el guard miraba la TAREA y no el ENTREGABLE, y un docente descargaba el documento
 // de otro—.
@@ -130,57 +130,48 @@ export const ACCESS_SOURCES = Object.freeze([
           INNER JOIN alcance a ON a.task_item_id = ti_src.id
           WHERE ti_src.assigned_person_id IS NOT NULL`,
   },
-  {
-    // ── EL ARREGLO DEL IDOR, y por eso esta fuente está ACOTADA ────────────────────────
-    // No es «los asignados de la tarea»: es «el asignado del puesto responsable DE ESTE
-    // entregable». La diferencia se midió y es enorme: el entregable 4 tiene once personas
-    // asignadas a su tarea. Un proceso dirigido a un cargo crea UNA tarea por unidad con UN
-    // entregable por persona, y todos sus responsables cuelgan de esa MISMA tarea; sin la
-    // acotación, cualquiera de ellos pasaba el guard del entregable ajeno y descargaba su PDF
-    // (verificado en su día: HTTP 200 con el documento de otro).
+   {
+    // ── EL ARREGLO DEL IDOR VIVE AHORA EN LA TENENCIA ────────────────────────────────────
+    // Aqui habia DOS fuentes que leian `task_assignments`, y la primera se llamaba
+    // `puesto_responsable_asignado`: «el asignado del puesto responsable DE ESTE entregable».
+    // Estaba acotada al puesto a proposito —sin la acotacion, las once personas asignadas a la
+    // tarea del entregable 4 pasaban el guard y descargaban el PDF ajeno—, pero leia una FOTO del
+    // reparto que no refrescaba ningun relevo: quien dejaba el puesto seguia entrando para siempre.
     //
-    // La excepción del `IS NULL` es la de `getAccessibleTaskItemForUser` y se copia tal cual:
-    // si el entregable no tiene responsable propio, la tarea es de responsable único y el
-    // alcance de tarea SÍ vale.
-    key: "puesto_responsable_asignado",
-    grants: ACCESS_LEVELS.ENTREGABLE,
-    reason: "Tiene asignado el puesto responsable de este entregable",
-    sql: `SELECT ta.assigned_person_id AS person_id
-          FROM task_assignments ta
-          INNER JOIN alcance a ON a.task_id = ta.task_id
-          INNER JOIN task_items ti_src ON ti_src.id = a.task_item_id
-          WHERE ta.assigned_person_id IS NOT NULL
-            AND (ti_src.responsible_position_id IS NULL
-                 OR ta.position_id = ti_src.responsible_position_id)`,
-  },
-  {
-    // La otra mitad del guard real: cuando la asignación de la tarea está VACÍA, cuenta quien
-    // OCUPA hoy ese puesto. Es la fuente 8 del diseño — y resulta que ya existía aquí, cosa que
-    // el diagnóstico inicial daba por ausente en los dos guards.
+    // Esa fuente ya no hace falta. «Quien tiene asignado el puesto responsable de este entregable»
+    // es exactamente «quien tiene el entregable», y eso es `entregable_asignado`, que lee la cache
+    // de la tenencia vigente. Dos fuentes que decian lo mismo, y una mentia.
+    //
+    // Lo que SI sobrevive es la otra mitad: cuando el entregable esta ABANDONADO —tenencia abierta
+    // sin persona— cuenta quien OCUPA hoy el puesto. Sin esto, un entregable cuyo responsable se
+    // fue no lo podria abrir nadie hasta que corriera el backfill.
     key: "puesto_responsable_ocupante",
     grants: ACCESS_LEVELS.ENTREGABLE,
-    reason: "Ocupa hoy el puesto responsable, y su asignación está vacía",
+    reason: "Ocupa hoy el puesto responsable, y el entregable está sin responsable",
     sql: `SELECT pa.person_id AS person_id
-          FROM task_assignments ta
-          INNER JOIN alcance a ON a.task_id = ta.task_id
-          INNER JOIN task_items ti_src ON ti_src.id = a.task_item_id
+          FROM task_items ti_src
+          INNER JOIN alcance a ON a.task_item_id = ti_src.id
           INNER JOIN position_assignments pa
-            ON pa.position_id = ta.position_id
+            ON pa.position_id = ti_src.responsible_position_id
            AND pa.is_current = 1
-          WHERE ta.assigned_person_id IS NULL
-            AND (ti_src.responsible_position_id IS NULL
-                 OR ta.position_id = ti_src.responsible_position_id)`,
+          WHERE ti_src.assigned_person_id IS NULL`,
   },
   {
-    // La ANCHA, y sólo para la conversación del proceso: un hilo de proceso es más ancho que un
-    // documento a propósito. Al nivel de entregable esto ES el IDOR.
-    key: "tarea_asignado",
+    // La ANCHA, y solo para la conversacion del proceso: un hilo de proceso es mas ancho que un
+    // documento a proposito. Al nivel de entregable esto ES el IDOR.
+    //
+    // Antes se leia de `task_assignments` («quedo asignada a algun puesto de la tarea»). Ahora sale
+    // de las TENENCIAS de los entregables de esa tarea, que es la misma gente sin la foto vieja —y
+    // ademas incluye a quien tuvo el entregable en el pasado, que es justo lo que se quiere en una
+    // conversacion: quien participo puede seguir leyendo el hilo.
+    key: "tarea_participante",
     grants: ACCESS_LEVELS.CONVERSACION,
-    reason: "Quedó asignada a algún puesto de la tarea (sólo alcanza al hilo del proceso)",
-    sql: `SELECT ta.assigned_person_id AS person_id
-          FROM task_assignments ta
-          INNER JOIN alcance a ON a.task_id = ta.task_id
-          WHERE ta.assigned_person_id IS NOT NULL`,
+    reason: "Respondió de algún entregable de la tarea (sólo alcanza al hilo del proceso)",
+    sql: `SELECT t.person_id AS person_id
+          FROM task_item_tenures t
+          INNER JOIN task_items ti_src ON ti_src.id = t.task_item_id
+          INNER JOIN alcance a ON a.task_id = ti_src.task_id
+          WHERE t.person_id IS NOT NULL`,
   },
   {
     // Quien ENCARGO el entregable. Colgaba de `tasks.created_by_user_id`, que se retiro el

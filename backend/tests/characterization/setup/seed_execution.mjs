@@ -140,7 +140,7 @@ async function main() {
 
   // 3) Comprobación de poblado.
   for (const t of [
-    "tasks", "task_items", "task_assignments", "documents", "document_versions",
+    "tasks", "task_items", "task_item_tenures", "documents", "document_versions",
     "fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests",
     "signature_flow_templates", "signature_flow_steps",
     "signature_flow_instances", "signature_requests",

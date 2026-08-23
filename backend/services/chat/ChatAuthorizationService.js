@@ -47,9 +47,9 @@ export default class ChatAuthorizationService {
     //    entregable. Esta no lo es: el thread es del PROCESO en una unidad. El `LEFT JOIN
     //    task_items` solo abanica filas, y lo único que se proyecta —`scope_unit_id`— es IDÉNTICO
     //    en todas las filas de una tarea: hoy sale directo de `tasks.scope_unit_id`.
-    // 2. La lista de participantes de más abajo mete a TODOS los `task_assignments` de la unidad
-    //    sin filtrar por responsable de entregable. Añadir el guard SOLO aquí dejaría gente dentro
-    //    del hilo (recibe los mensajes) y con 403 al abrirlo.
+    // 2. La lista de participantes de más abajo mete a TODOS los que responden de algún entregable
+    //    de la unidad, sin filtrar por cuál. Añadir el guard SOLO aquí dejaría gente dentro del
+    //    hilo (recibe los mensajes) y con 403 al abrirlo.
     // 3. Medido contra la base de dev: no recorta el conjunto de unidades de nadie, lo VACÍA. Ocho
     //    de las diez personas asignadas a la tarea 8 (proceso 1, unidad 8) pasaban de `{8}` a
     //    ninguna unidad accesible. Y el corte dependería de datos ajenos: en la tarea 9 (misma

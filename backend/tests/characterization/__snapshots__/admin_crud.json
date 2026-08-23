@@ -491,11 +491,22 @@
       "name"
     ]
   },
-  "list_task_assignments": {
+  "list_task_item_tenures": {
     "status": 200,
     "isArray": true,
-    "count": 0,
-    "itemKeys": []
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "ended_at",
+      "id",
+      "opened_by",
+      "performed_by_user_id",
+      "person_id",
+      "position_id",
+      "reason",
+      "started_at",
+      "task_item_id"
+    ]
   },
   "list_task_items": {
     "status": 200,

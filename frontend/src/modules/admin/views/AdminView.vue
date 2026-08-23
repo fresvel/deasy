@@ -398,7 +398,7 @@ const GROUP_DEFS = [
       "process_runs",
       "tasks",
       "task_items",
-      "task_assignments",
+      "task_item_tenures",
       "template_seeds",
       "template_artifacts",
       "process_definition_templates",

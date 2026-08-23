@@ -243,7 +243,7 @@ const RELATED_FIELD_PRIORITY = {
   process_runs: ["status", "term_id", "started_at", "completed_at"],
   tasks: ["title", "name", "status", "due_at", "created_at"],
   task_items: ["process_definition_template_id", "status", "sort_order", "created_at"],
-  task_assignments: ["responsible_position_id", "status", "assigned_at"],
+  task_item_tenures: ["person_id", "position_id", "opened_by", "started_at", "ended_at"],
   documents: ["title", "name", "status", "current_version_id", "created_at"],
   document_versions: ["version_number", "status", "created_at"],
   document_fill_flows: ["status", "created_at"],

@@ -416,17 +416,6 @@ export const getTaskItemsForDocumentMaterialization = async (connection, taskId)
   return rows;
 };
 
-export const getTaskAssignmentTargets = async (connection, taskId) => {
-  const [rows] = await connection.query(
-    `SELECT
-       ta.position_id,
-       ta.assigned_person_id AS person_id,
-       up.unit_id
-     FROM task_assignments ta
-     INNER JOIN unit_positions up ON up.id = ta.position_id
-     WHERE ta.task_id = ?
-     ORDER BY up.unit_id ASC, ta.position_id ASC, ta.assigned_person_id ASC`,
-    [taskId]
-  );
-  return rows;
-};
+// `getTaskAssignmentTargets` VIVIO AQUI hasta el 2026-08-23. Leia `task_assignments` para devolver
+// los puestos que `launch.js` acababa de escribir en ella dos lineas antes. Con la tabla retirada,
+// `resolveTaskTargetsForDefinition` devuelve esos mismos puestos sin pasar por la base.

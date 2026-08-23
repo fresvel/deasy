@@ -206,7 +206,7 @@ const LIST_TABLES = [
   "processes", "process_definition_series", "process_definition_versions",
   "process_target_rules", "process_definition_templates",
   "template_seeds", "template_artifacts",
-  "tasks", "task_items", "task_assignments", "documents", "document_versions",
+  "tasks", "task_items", "task_item_tenures", "documents", "document_versions",
   "roles", "permissions", "role_permissions", "cargo_role_map",
 ];
 

@@ -43,8 +43,11 @@ export const getuserTarea = async (req, res) => {
               t.start_date,
               t.end_date,
               t.term_id,
-              ta.id AS assignment_id,
-              ta.status AS assignment_status,
+              -- assignment_id/assignment_status salian de task_assignments, retirada el
+              -- 2026-08-23. El id pasa a ser el de la TENENCIA, que es lo que de verdad relaciona a
+              -- esta persona con esta tarea; el estado NO tiene sucesor y desaparece: era una
+              -- columna sin escritores, se quedaba en 'pendiente' para siempre.
+              te.id AS assignment_id,
               pdv.id AS process_definition_id,
               pdv.variation_key,
               pdv.definition_version,
@@ -56,8 +59,9 @@ export const getuserTarea = async (req, res) => {
               p.slug AS process_slug,
               u.id AS unit_id,
               u.name AS unit_name
-       FROM task_assignments ta
-       INNER JOIN tasks t ON t.id = ta.task_id
+       FROM task_item_tenures te
+       INNER JOIN task_items ti_te ON ti_te.id = te.task_item_id
+       INNER JOIN tasks t ON t.id = ti_te.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        LEFT JOIN (
          SELECT
@@ -72,11 +76,15 @@ export const getuserTarea = async (req, res) => {
        ) tis
          ON tis.task_id = t.id
        INNER JOIN processes p ON p.id = pdv.process_id
-       INNER JOIN unit_positions up ON up.id = ta.position_id
+       INNER JOIN unit_positions up ON up.id = ti_te.responsible_position_id
        INNER JOIN units u ON u.id = up.unit_id
        LEFT JOIN position_assignments pa
-         ON pa.position_id = ta.position_id AND pa.is_current = 1
-       WHERE (ta.assigned_person_id = ? OR (ta.assigned_person_id IS NULL AND pa.person_id = ?))
+         ON pa.position_id = ti_te.responsible_position_id AND pa.is_current = 1
+       -- El segundo termino cubre lo ABANDONADO: tenencia abierta sin persona, y quien ocupa hoy el
+       -- puesto responsable la ve. te.ended_at IS NULL es nuevo y hace falta: sin el, una tenencia
+       -- CERRADA sin persona (las hay: son el rastro de cada abandono) le daria la tarea al ocupante
+       -- actual por cada abandono historico.
+       WHERE (te.person_id = ? OR (te.person_id IS NULL AND te.ended_at IS NULL AND pa.person_id = ?))
        ${whereExtra}
        ORDER BY t.start_date DESC`,
       params

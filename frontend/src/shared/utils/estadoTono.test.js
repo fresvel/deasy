@@ -176,7 +176,6 @@ describe("las columnas `Estado` de admin están cubiertas ENTERAS", () => {
     "process_runs.status": [tonoCorrida, ["pending", "active", "completed", "cancelled"]],
     "tasks.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
     "task_items.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
-    "task_assignments.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
     "document_fill_flows.status": [tonoLlenado, ["pending", "in_progress", "approved", "rejected", "cancelled"]],
     "fill_requests.status": [tonoLlenado, ["pending", "in_progress", "approved", "rejected", "returned", "cancelled"]],
     "persons.status": [tonoPersona, ["Inactivo", "Activo", "Verificado", "Reportado"]],
@@ -303,8 +302,11 @@ describe("etiquetas y observaciones", () => {
 });
 
 describe("el registro de columnas de admin — qué celda es una pastilla", () => {
-  it("las 14 columnas del registro resuelven tono Y etiqueta", () => {
-    expect(COLUMNAS_DE_ESTADO).toHaveLength(14);
+  // Eran 14 hasta el 2026-08-23: `task_assignments.status` cayó con su tabla, que era una foto del
+  // reparto que ningún relevo refrescaba. La columna nunca tuvo escritores fuera del editor
+  // genérico, así que su pastilla pintaba siempre el mismo 'pendiente'.
+  it("las 13 columnas del registro resuelven tono Y etiqueta", () => {
+    expect(COLUMNAS_DE_ESTADO).toHaveLength(13);
     for (const ruta of COLUMNAS_DE_ESTADO) {
       const [tabla, columna] = [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
       expect(esColumnaDeEstado(tabla, columna)).toBe(true);

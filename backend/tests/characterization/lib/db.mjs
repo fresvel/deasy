@@ -237,7 +237,6 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
   const termRows = await query("SELECT DISTINCT term_id AS id FROM tasks WHERE id = ANY($1::int[])", [taskIds]);
   const termIds = termRows.map((row) => Number(row.id)).filter(Boolean);
 
-  await query("DELETE FROM task_assignments WHERE task_id = ANY($1::int[])", [taskIds]);
   await query("DELETE FROM tasks WHERE id = ANY($1::int[])", [taskIds]);
 
   // El periodo Custom lo crea la tarea libre y es suyo (`terms.name` es UNIQUE global y lleva un

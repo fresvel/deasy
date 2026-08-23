@@ -161,15 +161,21 @@ export const ensureTaskItemsForTaskTargets = async (
   };
 };
 
-export const ensureTaskAssignmentsForDefinition = async (connection, taskId, processDefinitionId, targetRulesMap) => {
+// Resuelve QUE PUESTOS produce esta definicion en esta tarea, aplicando sus reglas de reparto.
+//
+// ⚠️ ANTES ESTO ESCRIBIA `task_assignments` Y LUEGO SE RELEIA. La secuencia en `launch.js` era:
+// escribir la tabla, volver a consultarla con `getTaskAssignmentTargets`, y alimentar con ESO la
+// creacion de los entregables — o sea, una ida y vuelta a la base para recuperar lo que ya estaba
+// en memoria. Y la copia que quedaba escrita no la refrescaba **ningun** camino de relevo, asi que
+// desde el primer cambio de ocupante mentia: por ella, quien dejaba un puesto conservaba acceso al
+// entregable para siempre (fuente `puesto_responsable_asignado` del motor de acceso).
+//
+// Ahora devuelve los puestos y ya esta. Quien responde de cada entregable vive en su tenencia
+// (`task_item_tenures`), que si tiene un solo escritor y si sabe guardar una sucesion.
+export const resolveTaskTargetsForDefinition = async (connection, taskId, processDefinitionId, targetRulesMap) => {
   const rules = targetRulesMap.get(processDefinitionId) || [];
   if (!rules.length) {
-    return {
-      created: 0,
-      hasRules: false,
-      hasAssignees: false,
-      responsiblePositionId: null
-    };
+    return { targets: [], hasRules: false, hasAssignees: false };
   }
 
   const positions = [];
@@ -190,44 +196,9 @@ export const ensureTaskAssignmentsForDefinition = async (connection, taskId, pro
     ? positions.filter((position) => Number(position.unit_id || 0) === scopeUnitId)
     : positions;
 
-  if (!scopedPositions.length) {
-    return {
-      created: 0,
-      hasRules: true,
-      hasAssignees: false,
-      responsiblePositionId: null
-    };
-  }
-
-  const values = scopedPositions.map((row) => [taskId, row.position_id, row.person_id ?? null]);
-  const placeholders = values.map(() => "(?, ?, ?)").join(", ");
-  const flatValues = values.flat();
-  const [insertResult] = await connection.query(
-    `INSERT IGNORE INTO task_assignments (task_id, position_id, assigned_person_id)
-     VALUES ${placeholders}`,
-    flatValues
-  );
-
-  // El `UPDATE tasks SET responsible_position_id` que habia aqui se retiro el 2026-08-23 con la
-  // columna: escribia `scopedPositions[0]`, el puesto de menor slot_no, y ni era un responsable ni
-  // lo leia nadie para otra cosa que sacar la unidad — que la tarea ya tiene en `scope_unit_id`.
-  const responsiblePositionId = scopedPositions[0]?.position_id || null;
-
   return {
-    created: insertResult?.affectedRows || 0,
+    targets: scopedPositions,
     hasRules: true,
-    hasAssignees: true,
-    responsiblePositionId
+    hasAssignees: scopedPositions.length > 0,
   };
-};
-
-export const ensureUnitTaskAssignments = async (connection, taskId, positions, responsiblePositionId) => {
-  if (!positions.length) return 0;
-  const values = positions.map((pos) => [taskId, pos.position_id, pos.person_id ?? null]);
-  const placeholders = values.map(() => "(?, ?, ?)").join(", ");
-  const [result] = await connection.query(
-    `INSERT IGNORE INTO task_assignments (task_id, position_id, assigned_person_id) VALUES ${placeholders}`,
-    values.flat()
-  );
-  return result?.affectedRows || 0;
 };

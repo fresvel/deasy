@@ -335,28 +335,6 @@ export const SQL_TABLES = [
     searchFields: ["reason"]
   },
   {
-    table: "task_assignments",
-    label: "Asignaciones de tareas",
-    category: "Procesos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "task_id", label: "Tarea", type: "number", required: true },
-      { name: "position_id", label: "Puesto", type: "number", required: true },
-      { name: "assigned_person_id", label: "Responsable (snapshot)", type: "number" },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: ["pendiente", "en_proceso", "completada", "cancelada"],
-        defaultValue: "pendiente"
-      },
-      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true },
-      { name: "unassigned_at", label: "Desasignado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["status"]
-  },
-  {
     table: "template_seeds",
     label: "Semillas",
     category: "Plantillas",

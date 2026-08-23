@@ -2,7 +2,6 @@
   "generate_tasks_ok": {
     "status": 200,
     "body": {
-      "assignments_created": 0,
       "definitions_without_assignees": [],
       "definitions_without_target_rules": [],
       "definitions_without_task_items": [],
@@ -63,7 +62,6 @@
   "launch_ok": {
     "status": 200,
     "body": {
-      "assignments_created": 40,
       "definition_id": "<normalized>",
       "process_run_id": "<normalized>",
       "relaunched": false,
