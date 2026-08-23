@@ -24,6 +24,11 @@
    `UPDATE tabla alias SET col = … FROM otra WHERE unión AND filtros`, con las columnas del `SET`
    **sin cualificar**. Pruébalo con `PREPARE` en psql — y recuerda que **`grep "UPDATE.*JOIN"` no
    encuentra nada**, porque el SQL ocupa varias líneas.
+   > **Y no escribas backticks dentro de un comentario `--` de SQL: cierran la plantilla de
+   > JavaScript.** Mordió **seis veces en una sola tanda** (2026-08-23) porque citar una columna al
+   > documentarla es lo natural. Con suerte lo caza `node --check`, y su mensaje apunta a la primera
+   > línea de la plantilla, no a la del backtick; sin suerte el fichero compila y el SQL sale
+   > truncado en ejecución. Lo vigila `npm run check:sql-comments`, a techo **cero**.
 4. **char verde ANTES y DESPUÉS, con goldens IDÉNTICOS.** Si un golden se mueve durante un refactor
    puro, o rompiste algo o el test estaba mal. En un *fix* sí cambian, y entonces **el diff del golden
    ES la prueba del arreglo**.
@@ -89,6 +94,7 @@ contra otra pila, y usar la A desde otro worktree **recrea los contenedores apun
 
 ```bash
 bash scripts/docker-env.sh dev exec -T backend  npm run check:imports      # OBLIGATORIO tras mover código
+bash scripts/docker-env.sh dev exec -T backend  npm run check:sql-comments # OBLIGATORIO tras tocar SQL
 bash scripts/docker-env.sh dev exec -T backend  npm run test:unit
 bash scripts/docker-env.sh dev exec -T backend  npm run test:char:run      # contrato HTTP contra goldens
 bash scripts/docker-env.sh dev exec -T backend  npm run test:char:capture  # SOLO para fijar un fix

@@ -358,9 +358,16 @@ puertos). Efecto secundario que vale tanto como los diagramas: **aplica el esque
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # unitarios, junto a su módulo
 bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # contrato HTTP contra goldens
 bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLIGATORIO tras mover código
+bash scripts/docker-env.sh dev exec -T backend npm run check:sql-comments # OBLIGATORIO tras tocar SQL
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
 ```
 El backend **no tiene lint**, pero **sí tiene tests** — ejecútalos, no valides "a mano".
+
+⚠️ **Nunca escribas un backtick dentro de un comentario `--` de SQL**: el SQL vive en plantillas de
+JavaScript y el backtick las **cierra**. Citar la columna que estás documentando es lo natural y por
+eso muerde — seis veces en una sola tanda. Con suerte lo caza `node --check`, apuntando a la primera
+línea de la plantilla en vez de a la del backtick; sin suerte el fichero compila y el SQL sale
+truncado en ejecución. Lo vigila **`npm run check:sql-comments`**, a techo cero.
 `npm run start` (`node index.js`) sirve la API en `/deasy/v1`, Swagger en `/deasy/docs`.
 
 ⚠️ **`test:char:run` RESETEA la base de dev** (reset + bootstrap + seed). Es lo normal para char, pero
