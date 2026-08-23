@@ -146,11 +146,24 @@ produce: si un entregable es de la unidad y N personas están asignadas a la tar
 legítimamente y no hay nada que filtrar. Con un entregable por persona, el guard defiende lo que dice
 defender.
 
-### La redundancia que queda
+### ⚠️ La «redundancia» que yo veía aquí NO existe — corregido el 2026-08-23
 
-Con la decisión tomada, **`target_position_id` y `responsible_position_id` dicen lo mismo**: si el
-entregable va dirigido al puesto X, quien responde por él es el puesto X. El test del IDOR ya los
-rellena **con el mismo valor**.
+**Este apartado decía que `target_position_id` y `responsible_position_id` dicen lo mismo. Es
+falso.** Lo desmiente el camino ad-hoc, que es el único que los escribe:
+
+- **`target_*` es a quién va DIRIGIDO** el documento — el «Para:». El código lo comenta así y el
+  frontend lo pinta como `recipient_name`.
+- **`responsible_position_id` es quien lo PRODUCE.** En ad-hoc se resuelve como el puesto de quien
+  crea el envío.
+
+Emisor y receptor. Fusionarlos habría sido un error grave.
+
+**Y `target_*` se retira igualmente, pero por otro motivo:** no porque duplique a nadie, sino
+porque es **derivable del flujo de firma** — quien firma al final es el destinatario. La pregunta
+«¿cuál de los dos sobrevive?» estaba mal planteada: no hay dos copias entre las que elegir.
+
+*(Lo que sigue debajo se conserva porque explica de dónde salió el error: se leyó el índice único y
+el test del IDOR, que rellena los dos con el mismo valor, y se generalizó desde ahí.)*
 
 Se diferencian sólo por su uso hoy:
 
