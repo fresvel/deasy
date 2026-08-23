@@ -78,6 +78,22 @@ const SCOPE_BY_PROCESS_UNIT = {
   params: ({ processId, scopeUnitId }) => [Number(processId), Number(scopeUnitId)],
 };
 
+// El tercero: **correlacionado**. No lleva parámetro — el entregable lo pone la consulta de
+// fuera, que ya lo tiene a mano. Es lo que necesitan las consultas de LISTA (el panel, el centro
+// de documentos), que filtran muchos entregables de una vez y no pueden pasar un id por cada uno.
+const scopeByCorrelatedItem = (outerAlias) => {
+  if (!/^[a-z_][a-z0-9_]*$/.test(String(outerAlias))) {
+    throw new Error(`Alias externo inválido: ${outerAlias}`);
+  }
+  return {
+    key: "correlated_item",
+    cte: `SELECT ti_acc.id AS task_item_id, ti_acc.task_id
+          FROM task_items ti_acc
+          WHERE ti_acc.id = ${outerAlias}.id`,
+    params: () => [],
+  };
+};
+
 // ── Las fuentes ─────────────────────────────────────────────────────────────────────────
 // Cada fila: de dónde sale la persona y con qué etiqueta entra. Ninguna lleva parámetros
 // propios a propósito — todas cuelgan de `alcance`, así que el conteo de parámetros de la
@@ -106,19 +122,19 @@ export const ACCESS_SOURCES = Object.freeze([
     key: "entregable_destinatario",
     grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "El entregable nombra a esta persona",
-    sql: `SELECT ti.target_person_id AS person_id
-          FROM task_items ti
-          INNER JOIN alcance a ON a.task_item_id = ti.id
-          WHERE ti.target_person_id IS NOT NULL`,
+    sql: `SELECT ti_src.target_person_id AS person_id
+          FROM task_items ti_src
+          INNER JOIN alcance a ON a.task_item_id = ti_src.id
+          WHERE ti_src.target_person_id IS NOT NULL`,
   },
   {
     key: "entregable_asignado",
     grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Es quien tiene asignado el entregable",
-    sql: `SELECT ti.assigned_person_id AS person_id
-          FROM task_items ti
-          INNER JOIN alcance a ON a.task_item_id = ti.id
-          WHERE ti.assigned_person_id IS NOT NULL`,
+    sql: `SELECT ti_src.assigned_person_id AS person_id
+          FROM task_items ti_src
+          INNER JOIN alcance a ON a.task_item_id = ti_src.id
+          WHERE ti_src.assigned_person_id IS NOT NULL`,
   },
   {
     // ── EL ARREGLO DEL IDOR, y por eso esta fuente está ACOTADA ────────────────────────
@@ -138,10 +154,10 @@ export const ACCESS_SOURCES = Object.freeze([
     sql: `SELECT ta.assigned_person_id AS person_id
           FROM task_assignments ta
           INNER JOIN alcance a ON a.task_id = ta.task_id
-          INNER JOIN task_items ti ON ti.id = a.task_item_id
+          INNER JOIN task_items ti_src ON ti_src.id = a.task_item_id
           WHERE ta.assigned_person_id IS NOT NULL
-            AND (ti.responsible_position_id IS NULL
-                 OR ta.position_id = ti.responsible_position_id)`,
+            AND (ti_src.responsible_position_id IS NULL
+                 OR ta.position_id = ti_src.responsible_position_id)`,
   },
   {
     // La otra mitad del guard real: cuando la asignación de la tarea está VACÍA, cuenta quien
@@ -153,13 +169,13 @@ export const ACCESS_SOURCES = Object.freeze([
     sql: `SELECT pa.person_id AS person_id
           FROM task_assignments ta
           INNER JOIN alcance a ON a.task_id = ta.task_id
-          INNER JOIN task_items ti ON ti.id = a.task_item_id
+          INNER JOIN task_items ti_src ON ti_src.id = a.task_item_id
           INNER JOIN position_assignments pa
             ON pa.position_id = ta.position_id
            AND pa.is_current = 1
           WHERE ta.assigned_person_id IS NULL
-            AND (ti.responsible_position_id IS NULL
-                 OR ta.position_id = ti.responsible_position_id)`,
+            AND (ti_src.responsible_position_id IS NULL
+                 OR ta.position_id = ti_src.responsible_position_id)`,
   },
   {
     // La ANCHA, y sólo para la conversación del proceso: un hilo de proceso es más ancho que un
@@ -370,6 +386,16 @@ export const isDeliverableParticipant = async (
  */
 export const accessSubqueryForTaskItem = (level = ACCESS_LEVELS.ENTREGABLE) =>
   buildAccessQuery(SCOPE_BY_TASK_ITEM, sourcesForLevel(level));
+
+/**
+ * El SQL del conjunto de participantes **correlacionado** con el entregable de la consulta de
+ * fuera. **No lleva ningún placeholder**: el ancla es el alias que se le pasa.
+ *
+ * Para las consultas de lista, donde cada fila es un entregable distinto y pasar un parámetro por
+ * fila no es posible.
+ */
+export const accessSubqueryCorrelated = (outerAlias, level = ACCESS_LEVELS.ENTREGABLE) =>
+  buildAccessQuery(scopeByCorrelatedItem(outerAlias), sourcesForLevel(level));
 
 /** Sólo para pruebas y para depurar: la consulta que se va a ejecutar. */
 export const __buildAccessQuery = buildAccessQuery;

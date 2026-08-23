@@ -60,6 +60,7 @@ import {
   createGeneralTaskForUser
 } from "../../services/tasks/GeneralTaskService.js";
 import { isUniqueViolation } from "../../errors/sqlErrors.js";
+import { accessSubqueryForTaskItem } from "../../services/documents/DeliverableAccessService.js";
 
 
 const userRepository = new UserRepository();
@@ -657,40 +658,19 @@ export const downloadDeliverableTemplate = async (req, res) => {
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
        WHERE ti.id = ?
          AND t.process_definition_id = ?
-         AND (
-           t.created_by_user_id = ?
-           OR ti.target_person_id = ?
-           OR ti.assigned_person_id = ?
-           OR EXISTS (
-             SELECT 1
-             FROM task_assignments ta
-             LEFT JOIN position_assignments pa
-               ON pa.position_id = ta.position_id
-              AND pa.is_current = 1
-              AND pa.person_id = ?
-             WHERE ta.task_id = t.id
-               -- Mismo guard que getAccessibleTaskItemForUser (ver el IDOR arreglado allí).
-               -- Aquí no hay fuga de datos (la plantilla es la misma para todos los entregables
-               -- de la configuración), pero se alinea el predicado para que no quede una copia
-               -- laxa que alguien reutilice como referencia.
-               AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
-               AND (
-                 ta.assigned_person_id = ?
-                 OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
-               )
-           )
+         -- La CUARTA copia del predicado de participacion vivio aqui hasta el 2026-08-22, con
+         -- un comentario que ya admitia ser un duplicado «para que no quede una copia laxa que
+         -- alguien reutilice como referencia». La forma correcta de que no quede una copia laxa
+         -- es que no quede ninguna copia: ahora es la misma subconsulta que usa el guard.
+         AND EXISTS (
+           SELECT 1
+           FROM (${accessSubqueryForTaskItem()}) participantes
+           WHERE participantes.person_id = ?
          )
        LIMIT 1`,
-      [
-        taskItemId,
-        definitionId,
-        authenticatedUserId,
-        authenticatedUserId,
-        authenticatedUserId,
-        authenticatedUserId,
-        authenticatedUserId,
-        authenticatedUserId
-      ]
+      // Tres parametros donde habia ocho: el id del entregable viaja dos veces (el WHERE y el
+      // ancla de la subconsulta) y la persona una sola vez.
+      [taskItemId, definitionId, taskItemId, authenticatedUserId]
     );
     const target = rows?.[0];
     if (!target) {

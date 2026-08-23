@@ -13,6 +13,7 @@ import {
   isDeliverableParticipant,
   listDeliverableParticipants,
   listProcessParticipants,
+  accessSubqueryCorrelated,
   sourcesForLevel,
   __buildAccessQuery,
   __SCOPES,
@@ -66,7 +67,7 @@ test("la fuente del puesto responsable SÍ está, pero ACOTADA a este entregable
 
   // La acotación ES el arreglo del IDOR: sin ella, la fuente sería la ancha.
   const acotada = ACCESS_SOURCES.find((s) => s.key === "puesto_responsable_asignado");
-  assert.match(acotada.sql, /ta\.position_id = ti\.responsible_position_id/);
+  assert.match(acotada.sql, /ta\.position_id = ti_src\.responsible_position_id/);
   const ancha = ACCESS_SOURCES.find((s) => s.key === "tarea_asignado");
   assert.ok(!/responsible_position_id/.test(ancha.sql), "la ancha no debe llevar la acotación");
 });
@@ -250,4 +251,29 @@ test("una clave de fuente mal escrita falla al construir, no produce SQL roto", 
     () => __buildAccessQuery(__SCOPES.SCOPE_BY_TASK_ITEM, [{ key: "mala'; DROP", sql: "SELECT 1" }]),
     /Clave de fuente de acceso inválida/
   );
+});
+
+// --- El alcance correlacionado: para las consultas de LISTA -------------------------------
+
+test("el alcance correlacionado NO lleva placeholders: el ancla es el alias de fuera", () => {
+  const sql = accessSubqueryCorrelated("ti");
+  assert.equal((sql.match(/\?/g) || []).length, 0, "un placeholder aquí rompería el conteo de fuera");
+  assert.match(sql, /ti_acc\.id = ti\.id/);
+});
+
+test("el alias interno no puede ensombrecer al de fuera", () => {
+  // Las fuentes usan `ti_src`; el correlacionado usa `ti_acc`. Si alguna volviera a llamarse
+  // `ti`, una consulta de lista con alias `ti` empezaría a comparar contra sí misma.
+  for (const source of ACCESS_SOURCES) {
+    assert.ok(!/\bti\b(?!_)/.test(source.sql), `la fuente ${source.key} usa el alias suelto ti`);
+  }
+});
+
+test("un alias externo inventado falla en vez de construir SQL raro", () => {
+  assert.throws(() => accessSubqueryCorrelated("ti; DROP TABLE"), /Alias externo inválido/);
+});
+
+test("el correlacionado respeta el nivel: por defecto, el estrecho", () => {
+  assert.ok(!accessSubqueryCorrelated("ti").includes("'tarea_asignado'"));
+  assert.ok(accessSubqueryCorrelated("ti", ACCESS_LEVELS.CONVERSACION).includes("'tarea_asignado'"));
 });

@@ -11,7 +11,10 @@
 // TODA columna del ORDER BY esté proyectada. MySQL no. Si añades un ORDER BY aquí,
 // proyecta la columna o tendrás un 500.
 
-import { accessSubqueryForTaskItem } from "../../services/documents/DeliverableAccessService.js";
+import {
+  accessSubqueryCorrelated,
+  accessSubqueryForTaskItem,
+} from "../../services/documents/DeliverableAccessService.js";
 
 export const getActiveUserPositions = async (pool, userId) => {
   const [rows] = await pool.query(
@@ -110,44 +113,16 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
        LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
        GROUP BY sfi.document_version_id
      ) signature_stats ON signature_stats.document_version_id = dv.id
-     WHERE (
-       t.created_by_user_id = ?
-       OR EXISTS (
-         SELECT 1
-         FROM task_assignments ta
-         LEFT JOIN position_assignments pa
-           ON pa.position_id = ta.position_id
-          AND pa.is_current = 1
-          AND pa.person_id = ?
-         WHERE ta.task_id = t.id
-           -- Mismo IDOR que en getAccessibleTaskItemForUser: comprobar solo la asignación a la
-           -- TAREA hacía que cada responsable viera en su Centro Documental los documentos de
-           -- todos sus compañeros de la misma tarea (verificado: 15 de 18 eran ajenos).
-           AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
-           AND (
-             ta.assigned_person_id = ?
-             OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
-           )
-       )
-       OR EXISTS (
-         SELECT 1
-         FROM document_versions dv_access
-         INNER JOIN document_fill_flows dff_access ON dff_access.document_version_id = dv_access.id
-         INNER JOIN fill_requests fr_access ON fr_access.document_fill_flow_id = dff_access.id
-         WHERE dv_access.document_id = d.id
-           AND fr_access.assigned_person_id = ?
-       )
-       OR EXISTS (
-         SELECT 1
-         FROM document_versions dv_access
-         INNER JOIN signature_flow_instances sfi_access ON sfi_access.document_version_id = dv_access.id
-         INNER JOIN signature_requests sr_access ON sr_access.instance_id = sfi_access.id
-         WHERE dv_access.document_id = d.id
-           AND sr_access.assigned_person_id = ?
-       )
+     WHERE EXISTS (
+       -- Sexta y ultima copia del predicado de participacion. El IDOR que llevaba dentro se
+       -- midio en su dia aqui: 15 de 18 documentos del Centro Documental eran ajenos.
+       SELECT 1
+       FROM (${accessSubqueryCorrelated("ti")}) participantes
+       WHERE participantes.person_id = ?
      )
      ORDER BY sort_date DESC, p.name ASC, d.id DESC`,
-    [userId, userId, userId, userId, userId, userId]
+    // Seis `userId` en uno.
+    [userId]
   );
   return rows;
 };
@@ -543,45 +518,17 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        -- recibía en el cliente los entregables de sus compañeros (nombre, estado, fechas).
        -- El bloqueo era solo visual: la API los servía igual. Se filtra por participación,
        -- con el mismo criterio que getAccessibleTaskItemForUser.
-       AND (
-         t.created_by_user_id = ?
-         OR ti.target_person_id = ?
-         OR ti.assigned_person_id = ?
-         OR EXISTS (
-           SELECT 1
-           FROM task_assignments ta
-           LEFT JOIN position_assignments pa
-             ON pa.position_id = ta.position_id
-            AND pa.is_current = 1
-            AND pa.person_id = ?
-           WHERE ta.task_id = ti.task_id
-             AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
-             AND (
-               ta.assigned_person_id = ?
-               OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
-             )
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM documents d
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-           WHERE d.task_item_id = ti.id
-             AND fr.assigned_person_id = ?
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM documents d
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-           WHERE d.task_item_id = ti.id
-             AND sr.assigned_person_id = ?
-         )
+       AND EXISTS (
+         -- El guard del panel era la QUINTA copia del predicado de participación. Ahora es la
+         -- misma subconsulta que el resto, correlacionada con el alias ti porque esto lista
+         -- muchos entregables y no puede pasar un parametro por cada uno.
+         SELECT 1
+         FROM (${accessSubqueryCorrelated("ti")}) participantes
+         WHERE participantes.person_id = ?
        )
      ORDER BY ti.task_id ASC, ti.sort_order ASC, ti.id ASC`,
-    [...taskIds, userId, userId, userId, userId, userId, userId, userId, userId]
+    // Ocho `userId` quedaron en uno: el resto los absorbió la subconsulta correlacionada.
+    [...taskIds, userId]
   );
   return rows;
 };

@@ -39,12 +39,14 @@ la verdadera deuda: no falta el diseño, falta unificarlo.
 
 Dos listas distintas para la misma pregunta. Y a las dos les faltan las mismas tres cosas.
 
-> ⚠️ **CORREGIDO el 2026-08-22 al ejecutar P2: no son dos implementaciones, son CUATRO**, y la que
+> ⚠️ **CORREGIDO el 2026-08-22 al ejecutar P2: no son dos implementaciones, son SEIS**, y la que
 > manda no estaba en esta tabla.
 >
 > | # | Dónde | Qué decide |
 > |---|---|---|
 > | **A** | `getAccessibleTaskItemForUser` (`queries.js:735`) | **Ver el entregable.** Corre primero; si falla, **404**. Lleva el arreglo del IDOR dentro |
+> | **A2** | Copia en `getTaskItemsForTaskIds` (el **panel**) | Qué entregables lista el panel |
+> | **A3** | Copia en `getUserDocumentCenterRows` | Qué documentos lista el Centro Documental |
 > | **B** | `isUserInTaskItemChain` | Comentar |
 > | **C** | Copia **en línea** en `user_controler.js:676` | El fichero del entregable. Su propio comentario admite que es un duplicado |
 > | **D** | `ChatAuthorizationService` | El hilo del proceso |
@@ -249,7 +251,7 @@ antes de cada cambio de comportamiento**.
 |---|---|---|---|
 | ~~P1~~ | ✅ **HECHO.** `DeliverableAccessService.js` con las **9 fuentes** que ya existían (las 7 del modelo, con las observaciones partidas en autor y destinatario) y **los dos niveles**, que no estaban en el diseño y salieron de medir. Ningún guard la usa todavía | Sí | `test:unit` **642/642** (21 nuevos) · `test:char:run` **291/291**, ningún golden movido · `check:imports` 129 · SQL probado con `PREPARE` en las dos anclas y **ejecutado contra la base sembrada** · **probado por mutación**: quitar el filtro de nivel → 4 en rojo; reclasificar `tarea_asignado` → 3 en rojo |
 | ~~P2a~~ | ✅ **HECHO.** **A** incrusta la subconsulta única (sus ocho placeholders de `userId` quedan en uno) · **B desaparece** · los guards de observación pierden su `isOwner`/`inChain`. **`documento_dueno` retirado de las fuentes**: en el entregable 4 vale 24 mientras la cascada resuelve 3 | **No** | `test:unit` **646/646** · `test:char:run` **294/294** · **ningún golden existente movido**, y el conjunto medido es **idéntico** al de hoy (1→{1,3} · 4→{3} · 5→{24}) |
-| **P2b** | La copia en línea de `user_controler.js:676` y la consulta del panel | **No** | El golden del IDOR de `zz_task_generation` ya las cubre |
+| ~~P2b~~ | ✅ **HECHO.** Caían **tres** copias más, no una: la de la descarga de plantilla (`user_controler.js:676`), la del **panel** (`getTaskItemsForTaskIds`) y la del **Centro Documental** (`getUserDocumentCenterRows`). Las dos últimas son consultas de LISTA, así que nace un tercer alcance, **correlacionado**, sin ningún placeholder. Los `userId` repetidos caen de 8+8+6 a **uno cada una** | **No** | `test:unit` **650/650** · `test:char:run` **294/294** · ningún golden movido · **mutación con estado limpio: exactamente 2 en rojo, y son los dos del IDOR** (el del panel y el de observaciones) |
 | **P2c** | **D** · el chat cambia sus subconsultas por la función, al nivel ancho | **No** | Goldens de `chat` |
 | **P3** | Añadir las fuentes **8, 9 y 10** (ocupante actual, ocupantes durante la vida, relevos) | **No** | Unitarios por fuente + golden |
 | **P4** | **El custodio** (D-2), con su recorrido orgánico y su reserva a `AdminSistema` | **No** | Unitarios del recorrido, incluido el caso «sin jefe» que hoy dan 2 de 13 unidades |
