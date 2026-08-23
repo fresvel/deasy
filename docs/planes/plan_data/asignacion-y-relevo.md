@@ -181,3 +181,111 @@ corregidos en `69552c18`:
 3. `SqlAdminService` se quedó **sin dos delegadores** desde la extracción del cluster
    (`listTaskItemHandovers`, `listSupervisorStuckTaskItems`): sus endpoints respondían 400. Ése
    venía de antes de esta tanda.
+
+---
+
+# Segunda vuelta (2026-08-23) — la tenencia como tabla propia
+
+Elegida la tercera forma. Aquí van las tres cosas que el dueño pidió aclarar.
+
+## 7 · Qué quiere decir «`task_item_handovers` se pliega dentro»
+
+No que se borre la información: que **cambia de forma**, de *eventos* a *periodos*.
+
+Hoy guarda **transiciones**:
+
+| task_item | de | a | causa | cuándo |
+|---|---|---|---|---|
+| 12 | — | Juan | occupancy_start | 1 mar |
+| 12 | Juan | — | occupancy_end | 1 jun |
+| 12 | — | María | occupancy_start | 3 jun |
+
+La tabla de tenencias guarda **estancias**, exactamente los mismos hechos:
+
+| task_item | quién | puesto | desde | hasta | causa de entrada | motivo |
+|---|---|---|---|---|---|---|
+| 12 | Juan | 7 | 1 mar | 1 jun | original | — |
+| 12 | — | 7 | 1 jun | 3 jun | occupancy_end | dejó el puesto |
+| 12 | María | 7 | 3 jun | *(abierta)* | occupancy_start | tomó el puesto |
+
+Son **isomorfas**: de dos eventos consecutivos sale una estancia, y de una estancia salen sus dos
+eventos. No se pierde nada al pasar de una a otra. Lo que cambia es **a qué preguntas responden
+directamente**:
+
+| Pregunta | Con eventos | Con estancias |
+|---|---|---|
+| ¿Quién lo tiene ahora? | reproducir el log | `WHERE ended_at IS NULL` |
+| ¿Quién lo tenía en marzo? | reproducir el log hasta esa fecha | `WHERE ? BETWEEN assigned_at AND ended_at` |
+| ¿Qué entregables están abandonados? | imposible sin reproducir todos | entregables **sin** estancia abierta |
+| ¿Puede haber dos responsables a la vez? | nada lo impide | **la base lo impide**: único parcial `(task_item_id) WHERE ended_at IS NULL` |
+
+Esa última fila es la que decide. Con eventos, «un solo responsable vigente» es una **convención que
+se cumple si el código no se equivoca**. Con estancias es un **índice**.
+
+Así que «plegarse dentro» = `task_item_handovers` **deja de existir como tabla aparte** y sus datos
+pasan a ser columnas de la tenencia (`handover_kind` es su `trigger_kind`, `reason` es su `reason`,
+`performed_by_user_id` el mismo). Gana además el `position_id`, que hoy no tiene.
+
+## 8 · Auditoría: las tres piezas YA existen — y dos están mal puestas
+
+El dueño lo planteó y es correcto. Éste es el mapa:
+
+| Lo que hace falta | Qué hay hoy | Diagnóstico |
+|---|---|---|
+| **Qué se debe** (identidad) | `task_items` | ✅ **Bien.** Su índice único ya es la identidad correcta desde el 2026-08-23 |
+| **Quién lo debe, y desde cuándo** | **TRES sitios distintos** | ❌ Repartida y sin dueño |
+| **Qué se produjo** | `documents` + `document_versions` | ⚠️ Existe, pero **sin autor** |
+
+### Los tres sitios donde vive «quién lo lleva» — y cuál sobrevive a un relevo
+
+| Copia | Grano | Se actualiza en un relevo |
+|---|---|---|
+| `task_items.assigned_person_id` | entregable | ✅ en los **4** caminos |
+| `documents.owner_person_id` | documento (1:1 con el entregable) | ⚠️ **sólo en 1 de 4** — sólo el traspaso manual (`taskAssignment.js:318`). Los dos triggers y el backfill **no lo tocan** |
+| `task_assignments.assigned_person_id` | tarea × puesto | ❌ **en ninguno** |
+
+**Tres copias del mismo hecho y dos se pudren.** Y la de `documents` es peor de lo que parece: es
+la que decide de quién es el documento en 41 lecturas del backend, así que después de un relevo
+automático el documento sigue figurando a nombre de quien se fue.
+
+Con la tenencia, «quién lo lleva» tiene **un solo sitio** y las otras dos dejan de ser copias:
+`documents.owner_person_id` pasa a ser derivable, y `task_assignments` se retira entera.
+
+### Lo que falta de verdad: el autor de la versión
+
+`document_versions` guarda `version`, `status`, `payload_hash`, las rutas de fichero, el formato y
+`created_at` — **y ninguna columna de persona**. Así que «¿quién escribió esta versión?» hoy **no
+tiene respuesta en la base**, con ninguno de los tres diseños.
+
+Es lo que completa el modelo: la tenencia dice *quién respondía* y el autor de la versión dice
+*quién hizo*. Cruzados, sale la historia entera sin duplicar un solo entregable.
+
+## 9 · Sobre colapsar `documents`
+
+**No hay ninguna decisión escrita de colapsarla.** Lo que existe es el *catálogo* de las cuatro
+relaciones 1:1 por índice (`referencia-esquema.md:252`); nadie acordó actuar sobre ellas. Lo que sí
+se colapsó en su día fue otra cosa: las columnas duplicadas de `template_artifacts` sobre
+`deliverables`.
+
+### ¿Basta con `document_versions`?
+
+**No.** `documents` no es una tabla vacía: lleva cinco hechos que son **del documento entero**, no
+de cada versión — `title`, `status`, `comments_thread_ref`, `owner_person_id`, `origin_unit_id`.
+Fundirla en `document_versions` los repetiría en cada versión, que es el problema contrario.
+
+### Pero sí es una cáscara 1:1 sobre `task_items`
+
+Medido: hay **un solo `INSERT INTO documents`** en todo el backend
+(`generation/documents.js:325`) y **siempre** rellena `task_item_id`. La columna es `NULL`able y el
+índice es único, así que la base *permitiría* un documento sin entregable — pero **ningún camino lo
+crea**. En la práctica: 1:1 estricto.
+
+Y dos de sus cinco columnas ya están duplicadas contra el entregable:
+
+- **`documents.title` y `task_items.title`** existen las dos (`postgres_schema.sql:842` y `:770`).
+- **`documents.owner_person_id` y `task_items.assigned_person_id`** son casi el mismo hecho, y
+  divergen en 3 de los 4 relevos.
+
+Así que la pregunta razonable **no** es «¿fundimos `documents` en `document_versions`?» sino
+**«¿fundimos `documents` en `task_items`?»** — y entonces las versiones colgarían directamente del
+entregable. Queda planteada, no decidida.
