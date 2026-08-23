@@ -216,8 +216,8 @@ Aceptados por el dueño para empezar a caminar en el código. Cada uno con lo qu
 
 | Elemento | Veredicto | Lo que hay que hacer antes |
 |---|---|---|
-| `task_items.target_person_id` | **Se retira** | Cerrar el camino *legacy sin flujo* y derivar el «Para:» del **último paso de firma**. En `replicated` no hace falta: es copia de `created_by_person_id` |
-| `task_items.target_position_id` | **Se retira** | Nada. En `routed` el código ya lo pone a `NULL`; en `replicated` es copia de `responsible_position_id` |
+| `task_items.target_person_id` | ✅ **HECHO (2026-08-23)** | Cerrado el camino *legacy sin flujo* (eran **dos**). El «Para:» **no se deriva en el servidor**: decisión del dueño —«un algoritmo se adapta al problema, no el problema al algoritmo»— es que **desaparece de la vista** y lo que se verá es el flujo. Arrastró consigo la cascada del dueño del documento, que **empezaba** en esta columna: quien responde de un documento pasa a ser quien lo **elabora**, no quien lo recibe |
+| `task_items.target_position_id` | ✅ **HECHO (2026-08-23)** | Nada, como estaba previsto. Cayeron con las dos: `recipient_name` e `is_recipient` de la API, y **tres sitios del frontend** que los pintaban — uno de ellos habría empezado a mentir, enseñándote a ti mismo bajo la etiqueta «Para» |
 | `task_items.responsible_position_id` | **Se queda, y pasa a ser OBLIGATORIO** | Que el lanzamiento automático lo rellene. Es el ancla de los tres relevos y, con la decisión de «uno por productor», es quien dice el productor |
 | `task_items.assigned_person_id` | Se queda | Es el estado; lo mueve el relevo |
 | `task_items.status` | ✅ **HECHO (2026-08-23)** | Retirados **cinco filtros muertos** (3 triggers + 2 del backfill) y **tres proyecciones**. Lo pendiente se lee ahora del documento con `isDocumentPending`. Los goldens se movieron: **6 líneas, todas borradas, todas `status: \"pendiente\"`** |
@@ -325,13 +325,35 @@ regla— retira la columna **sin perder nada de lo que se ve en pantalla**.
 > **Y explica por qué la columna divergía tanto:** en `replicated` vale el creador, en `routed` el
 > destinatario del flujo, y en el automático nada. Tres significados para un nombre.
 
+### ⚠️ Un golden puede congelar un 500 — pasó aquí, en `daf7abc2`
+
+Al retirar `tasks.responsible_position_id` quedó un alias huérfano `task_position` en
+`UserMenuService`. `node --check` no lo ve —es una cadena de texto—, `check:imports` tampoco, y el
+backend arranca igual. El endpoint del menú devolvía **500**.
+
+Lo grave no es el fallo, es lo que vino después: **`test:char:capture` lo grabó como valor
+esperado**. El golden de `menu_usuario` quedó commiteado así:
+
+```json
+"menu_usuario": { "status": 500, "body": { "error": "missing FROM-clause entry for table \"task_position\"" } }
+```
+
+Y a partir de ahí la suite salía **verde protegiendo un endpoint roto**. Estuvo así tres commits.
+
+**Regla que se saca de esto:** `capture` no valida, **fotografía**. Antes de commitear una captura
+hay que **leer el diff del golden**, y cualquier `"status": 5xx` que aparezca en él es un fallo, no
+un contrato. Es hermana de la regla 15 —verde no es seguro— con un agravante: aquí el verde lo
+fabricamos nosotros.
+
+Corregido en `f92b6256`: `menu_usuario` vuelve a 200.
+
 ### Lo que queda por hacer, en orden
 
 | | Paso | Por qué en ese sitio |
 |---|---|---|
 | ~~1~~ | ✅ **HECHO (2026-08-23).** `routed` y `free` exigen flujo. **Decisión del dueño: ese caso no existe en la institución**, así que se elimina, no se deprecia. Eran **DOS** caminos, no uno — y el segundo lo destapó la prueba nueva con un 200 donde esperaba rechazo | — |
-| 2 | **Derivar el «Para:» en el servidor**, con la regla del cliente | Es lo que sustituye a la columna |
-| 3 | **Retirar `target_person_id` y `target_position_id`** | `target_position_id` no necesita nada: en `routed` el código ya lo pone a `NULL` y en `replicated` es copia de `responsible_position_id` |
+| ~~2~~ | ❌ **DESCARTADO (2026-08-23) por decisión del dueño.** No se deriva nada: «lo mejor es que el para desaparezca de la vista y lo que se verá es el flujo». La visualización de los `routed` se rediseña; hasta entonces los tres sitios llevan una pastilla que **marca el hueco** en vez de dejar el dato en blanco | Derivar habría sido reconstruir en el servidor un dato que la pantalla va a dejar de enseñar |
+| ~~3~~ | ✅ **HECHO (2026-08-23)**, commits `f92b6256` (modelo) y `2a75eb3e` (vista). Medido en la pila C: **char 295/295 · unit 642/642 · check:imports 129 · check:sql-comments 193**; frontend **403/403** + lint + build | — |
 | 4 | **`responsible_position_id` pasa a NOT NULL** | Es el ancla del relevo y quien dice el productor. Hay que comprobar que los tres caminos de creación lo rellenan |
 
 ⚠️ **Y el índice único se queda sin dos de sus cuatro columnas.** Pasa a
