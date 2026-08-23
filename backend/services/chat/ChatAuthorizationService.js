@@ -67,12 +67,14 @@ export default class ChatAuthorizationService {
          -- de tasks.responsible_position_id, que se retiro el 2026-08-23.
          t.scope_unit_id,
          ti.responsible_position_id AS task_item_responsible_position_id,
-         ti.created_by_person_id,
-         d.owner_person_id
+         ti.created_by_person_id
+       -- El LEFT JOIN documents que habia aqui solo servia para proyectar owner_person_id, que
+       -- ni se filtraba ni se leia aguas abajo: quien decide la pertenencia al hilo es
+       -- accessSubqueryCorrelated, mas abajo. La columna se retiro el 2026-08-23 y el join con
+       -- ella.
        FROM tasks t
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        LEFT JOIN task_items ti ON ti.task_id = t.id
-       LEFT JOIN documents d ON d.task_item_id = ti.id
        WHERE pdv.process_id = ?
          -- El conjunto de participantes lo declara DeliverableAccessService, al nivel ANCHO
          -- (conversacion): un hilo de proceso incluye a todos los asignados de la tarea, no

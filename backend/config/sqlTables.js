@@ -598,7 +598,6 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "task_item_id", label: "Item de tarea", type: "number" },
-      { name: "owner_person_id", label: "Propietario", type: "number" },
       { name: "title", label: "Titulo", type: "text" },
       {
         name: "status",

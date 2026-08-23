@@ -368,8 +368,10 @@ export default class TaskAssignmentService {
         WHERE ti.id = ?`,
       [toId, toId, reason || null, normalizeNumericId(performedByUserId) || null, tiId]
     );
-    // Si ya está iniciado (tiene documento), su dueño también se mueve al nuevo responsable.
-    await connection.query("UPDATE documents SET owner_person_id = ? WHERE task_item_id = ?", [toId, tiId]);
+    // El `UPDATE documents SET owner_person_id` que habia aqui se retiro con la columna. Era el
+    // UNICO de los cuatro caminos de relevo que la movia — los dos triggers y el backfill no la
+    // tocaban—, asi que servia justo para lo contrario de lo que parecia: hacia creer que el dueño
+    // del documento seguia al responsable, cuando en tres de cada cuatro relevos no lo hacia.
     // El `INSERT INTO task_item_handovers` que habia aqui se retiro con la tabla: la tenencia que
     // se acaba de abrir ES el asiento. Y la causa sigue siendo SIEMPRE `manual` y no se acepta del
     // cliente — antes se tomaba de `triggerKind`, que viene del cuerpo de la peticion, asi que quien

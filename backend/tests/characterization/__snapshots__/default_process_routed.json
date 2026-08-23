@@ -3,7 +3,6 @@
     "document": {
       "id": "<normalized>",
       "origin_unit_id": 8,
-      "owner_person_id": 3,
       "status": "Pendiente de llenado",
       "task_item_id": "<normalized>",
       "title": "zz char routed derivado"
@@ -170,7 +169,6 @@
     "document": {
       "id": "<normalized>",
       "origin_unit_id": 8,
-      "owner_person_id": 3,
       "status": "Pendiente de llenado",
       "task_item_id": "<normalized>",
       "title": "Documento <normalized>"

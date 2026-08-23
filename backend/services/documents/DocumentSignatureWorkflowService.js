@@ -25,7 +25,6 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        dv.id AS document_version_id,
        dv.status AS document_version_status,
        dv.working_file_path,
-       d.owner_person_id,
        d.task_item_id,
        ti.task_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
@@ -505,7 +504,6 @@ const resolveSpecificPersonAssignees = (step) => {
   return [Number(step.assignedPersonId)];
 };
 
-const resolveDocumentOwnerAssignee = (context) => (context?.owner_person_id ? [Number(context.owner_person_id)] : []);
 
 const resolveTaskAssignee = (context) => {
   const assignees = [];
@@ -519,6 +517,17 @@ const resolveTaskAssignee = (context) => {
   }
   return assignees;
 };
+
+// `document_owner` y `task_assignee` resuelven LO MISMO desde el 2026-08-23, y no es un descuido:
+// `documents.owner_person_id` era una copia de `task_items.assigned_person_id` tomada al crear el
+// documento, refrescada por UNO de los cuatro caminos de relevo. Retirada la copia, «el dueño del
+// documento» y «quien responde del entregable» son la misma persona — que es lo que siempre
+// quisieron decir los dos nombres.
+//
+// El `case` se conserva (ver el comentario de `resolveSingleSignerAssignees`): un paso legado puede
+// traer este resolutor por el JSONB `signers`, y quitarlo lo dejaria cayendo al `default` sin cargo,
+// o sea SIN FIRMANTE y en silencio. Ahora al menos resuelve a alguien correcto.
+const resolveDocumentOwnerAssignee = (context) => resolveTaskAssignee(context);
 
 const resolvePositionAssignees = async (connection, step, context) => {
   return resolveCurrentPersonsForPosition(

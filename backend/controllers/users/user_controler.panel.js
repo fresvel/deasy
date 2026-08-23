@@ -238,7 +238,6 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
         document_id: item.document_id,
         task_id: taskItem?.task_id || null,
         task_item_id: item.task_item_id,
-        owner_person_id: item.owner_person_id || null,
         origin_unit_id: item.origin_unit_id,
         unit_label: item.origin_unit_label || null,
         template_artifact_id: taskItem?.template_artifact_id || null,

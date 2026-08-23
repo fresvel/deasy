@@ -17,7 +17,6 @@
 export {
   ensureSignatureFlowForDocumentVersion,
   ensureFillFlowForDocumentVersion,
-  resolveOwnerPersonIdForTaskItem,
   resolveOriginUnitIdForTaskItem,
   materializeRuntimeFlowForTaskItem,
   ensureDocumentForTaskItem,

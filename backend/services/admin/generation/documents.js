@@ -116,30 +116,19 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
 
   return documentFillFlowId;
 };
-export const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
-  // El «Para:» era el PRIMER escalon de esta cascada y no debia serlo: quien RECIBE un documento
-  // no es quien responde por el. La columna se retiro el 2026-08-23 y la responsabilidad empieza
-  // donde tiene que empezar — en quien lo tiene asignado.
-
-  if (taskItem?.assigned_person_id) {
-    return Number(taskItem.assigned_person_id);
-  }
-
-  // Los DOS escalones que habia aqui leian `task_assignments` y se retiraron con ella (2026-08-23):
-  //
-  //   · El primero buscaba «el asignado del puesto responsable en esta tarea». Eso es literalmente
-  //     lo que dice el escalon de arriba —`assigned_person_id` es la cache de la tenencia vigente de
-  //     ese puesto—, asi que era la misma respuesta leida de una copia que nadie refrescaba.
-  //   · El segundo cogia «el primer asignado de la tarea, por id». Ese no era un respaldo, era una
-  //     LOTERIA: un entregable sin responsable acababa a nombre de quien resultara tener el id mas
-  //     bajo en la tarea, que puede no tener nada que ver con el.
-  //
-  // Sin responsable, el documento nace SIN DUEÑO — y eso es correcto y visible: el entregable esta
-  // abandonado, su tenencia abierta lo dice, y quien ocupe el puesto entra por
-  // `puesto_responsable_ocupante`. Antes esa situacion se tapaba con un nombre cualquiera.
-  return null;
-};
-export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, ownerPersonId = null) => {
+// `resolveOwnerPersonIdForTaskItem` VIVIO AQUI hasta el 2026-08-23, y su historia entera cabe en un
+// parrafo: empezo siendo una cascada de CUATRO escalones —el «Para:», el puesto del entregable, el
+// puesto de la tarea y «el primer asignado de la tarea por id»—, se le fueron cayendo tres al
+// medirlos (uno era el destinatario, dos leian una foto que nadie refrescaba y el ultimo era una
+// loteria) y lo que quedaba era `return taskItem.assigned_person_id`.
+//
+// Una funcion que devuelve un campo no es una funcion, es un campo. Y `documents.owner_person_id`
+// tampoco era un hecho: era una copia de ese mismo campo, tomada al crear el documento y
+// refrescada por UNO de los cuatro caminos de relevo, asi que a partir del primer relevo automatico
+// el documento seguia figurando a nombre de quien se fue.
+//
+// Quien responde de un documento es quien responde de su entregable, y eso vive en su tenencia.
+export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, responsiblePersonId = null) => {
   if (taskItem?.target_unit_id) {
     return Number(taskItem.target_unit_id);
   }
@@ -165,9 +154,10 @@ export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, owner
     if (rows?.[0]?.unit_id) return Number(rows[0].unit_id);
   }
 
-  // 3. Última opción: primera posición activa del owner (solo cuando no hay contexto de task)
-  const normalizedOwnerPersonId = Number(ownerPersonId || 0) || null;
-  if (normalizedOwnerPersonId) {
+  // 3. Última opción: primera posición activa de QUIEN RESPONDE (sólo cuando no hay contexto de
+  // task). Antes se le pasaba el «dueño» del documento; es la misma persona, leída del sitio bueno.
+  const normalizedResponsibleId = Number(responsiblePersonId || 0) || null;
+  if (normalizedResponsibleId) {
     const [ownerRows] = await connection.query(
       `SELECT up.unit_id
        FROM position_assignments pa
@@ -177,7 +167,7 @@ export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, owner
          AND up.unit_id IS NOT NULL
        ORDER BY pa.id ASC, up.id ASC
        LIMIT 1`,
-      [normalizedOwnerPersonId]
+      [normalizedResponsibleId]
     );
     if (ownerRows?.[0]?.unit_id) return Number(ownerRows[0].unit_id);
   }
@@ -289,8 +279,7 @@ export const materializeRuntimeFlowForTaskItem = async (
   return { fillSteps, signatureSteps };
 };
 export const ensureDocumentForTaskItem = async (connection, taskItem) => {
-  const ownerPersonId = await resolveOwnerPersonIdForTaskItem(connection, taskItem);
-  const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, ownerPersonId);
+  const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, taskItem?.assigned_person_id ?? null);
 
   const [existingRows] = await connection.query(
     `SELECT id
@@ -305,28 +294,18 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
     const [insertResult] = await connection.query(
       `INSERT INTO documents (
          task_item_id,
-         owner_person_id,
          origin_unit_id,
          title,
          status
-      ) VALUES (?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?)`,
       [
         taskItem.id,
-        ownerPersonId,
         originUnitId,
         taskItem.template_artifact_name || `Documento ${taskItem.id}`,
         "Inicial"
       ]
     );
     documentId = Number(insertResult.insertId);
-  } else if (ownerPersonId) {
-    await connection.query(
-      `UPDATE documents
-       SET owner_person_id = COALESCE(owner_person_id, ?),
-           origin_unit_id = COALESCE(origin_unit_id, ?)
-       WHERE id = ?`,
-      [ownerPersonId, originUnitId, documentId]
-    );
   } else if (originUnitId) {
     await connection.query(
       `UPDATE documents

@@ -48,7 +48,6 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
     `SELECT DISTINCT
        d.id AS document_id,
        d.task_item_id,
-       d.owner_person_id,
        d.status AS document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
@@ -470,12 +469,6 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        ti.responsible_position_id,
        ti.assigned_person_id,
        ti.target_unit_id,
-       -- Esto era un COALESCE de TRES escalones y hoy es una columna. El primero era el «Para:»
-       -- (retirado el 2026-08-23: quien RECIBE un documento no responde por el); los otros dos
-       -- leian task_assignments, y el ultimo cogia «el primer asignado de la tarea por id», que
-       -- no era un respaldo sino una loteria. Lo que queda es la cache de la tenencia vigente, que
-       -- es la respuesta que los tres intentaban dar.
-       ti.assigned_person_id AS resolved_owner_person_id,
        ti.start_date,
        ti.end_date,
        ti.user_started_at,
@@ -520,7 +513,6 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
     `SELECT
        d.id AS document_id,
        d.task_item_id,
-       d.owner_person_id,
        d.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
        d.status AS document_status,
@@ -626,12 +618,11 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
        trm.term_type_id,
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
-       -- Esto era un COALESCE de TRES escalones y hoy es una columna. El primero era el «Para:»
-       -- (retirado el 2026-08-23: quien RECIBE un documento no responde por el); los otros dos
-       -- leian task_assignments, y el ultimo cogia «el primer asignado de la tarea por id», que
-       -- no era un respaldo sino una loteria. Lo que queda es la cache de la tenencia vigente, que
-       -- es la respuesta que los tres intentaban dar.
-       ti.assigned_person_id AS resolved_owner_person_id,
+       -- Era resolved_owner_person_id, un COALESCE de TRES escalones: el «Para:», y dos que leian
+       -- task_assignments —el ultimo de ellos cogiendo «el primer asignado de la tarea por id», que
+       -- no era un respaldo sino una loteria—. Los tres intentaban responder «¿quien responde de
+       -- esto?», y esa respuesta es una columna: la cache de la tenencia vigente.
+       ti.assigned_person_id,
        COALESCE(ti.target_unit_id, t.scope_unit_id, responsible_pos.unit_id) AS scope_unit_id
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
@@ -685,7 +676,6 @@ export const getAccessibleTaskItemDocumentForUser = async (
     `SELECT
        d.id AS document_id,
        d.task_item_id,
-       d.owner_person_id,
        d.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
        d.status AS document_status,
@@ -722,7 +712,6 @@ export const getAccessibleTaskItemDocumentForUser = async (
     ...taskItem,
     document_count: documentRows.length,
     document_id: selectedDocument?.document_id || null,
-    owner_person_id: selectedDocument?.owner_person_id || null,
     origin_unit_id: selectedDocument?.origin_unit_id || null,
     origin_unit_label: selectedDocument?.origin_unit_label || null,
     document_status: selectedDocument?.document_status || null,

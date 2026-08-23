@@ -99,7 +99,7 @@
 //
 // SOBRE EL ENMASCARADO. Se enmascaran los ids ESTRUCTURALES (los de fila y los que cuelgan una fila
 // de otra), porque su valor depende de qué secuencias movieron los flows anteriores. Los ids con
-// significado de NEGOCIO no: `assigned_person_id`, `owner_person_id`,
+// significado de NEGOCIO no: `assigned_person_id`,
 // `created_by_person_id`, `responsible_position_id`, `origin_unit_id`, `unit_id`, `cargo_id` y los
 // del JSONB `signers` **son el «quién»**, y el «quién» es justo lo que este camino promete respetar.
 // `start_date`/`end_date` SÍ se enmascaran: la tarea libre los pone a la fecha de hoy
@@ -134,7 +134,6 @@ const MASK_OPTS = {
     "process_definition_id",
     "definition_id",
     "assigned_person_id",
-    "owner_person_id",
     "created_by_person_id",
     "recipient_person_id",
     "responsible_position_id",
@@ -208,7 +207,7 @@ async function readEntregable(taskItemId) {
     [taskItemId],
   );
   const [document] = await query(
-    `SELECT id, task_item_id, owner_person_id, origin_unit_id, title, status
+    `SELECT id, task_item_id, origin_unit_id, title, status
        FROM documents WHERE task_item_id = $1`,
     [taskItemId],
   );
@@ -465,12 +464,17 @@ test("free · el entregable resultante: documento, versión y solicitudes de lle
   assert.ok(estado.freeItemId, "depende del paso anterior");
   const resultado = await readEntregable(estado.freeItemId);
   assert.equal(Number(resultado.task_item.template_artifact_id), estado.artifactId, "instancia la plantilla del vínculo");
-  // EL DUEÑO YA NO ES EL DESTINATARIO (2026-08-23). La cascada de
-  // `resolveOwnerPersonIdForTaskItem` empezaba en `target_person_id` —el «Para:»—, y eso decia que
-  // responde del documento QUIEN LO RECIBE. Retirada la columna, la cascada empieza donde tiene que
-  // empezar: en `assigned_person_id`, quien lo ELABORA. El destinatario, si importa, se lee del
-  // flujo de firma; no hay ninguna columna que lo guarde.
-  assert.equal(Number(resultado.document.owner_person_id), USUARIO, "el dueño del documento es quien lo ELABORA, no quien lo recibe");
+  // EL DOCUMENTO YA NO TIENE PROPIETARIO PROPIO, y la historia de esa columna cabe en dos pasos.
+  // Primero dejó de ser el destinatario: su cascada empezaba en el «Para:», o sea que respondía del
+  // documento QUIEN LO RECIBE. Y después desapareció entera (2026-08-23), porque una vez que
+  // empezaba en `assigned_person_id` no era un hecho del documento sino una COPIA del entregable —y
+  // sólo la refrescaba uno de los cuatro caminos de relevo. Quien responde se pregunta al
+  // entregable, que es donde está su tenencia.
+  assert.equal(
+    Number(resultado.task_item.assigned_person_id),
+    USUARIO,
+    "quien responde del entregable es quien lo ELABORA, no quien lo recibe",
+  );
   assert.equal(resultado.versions.length, 1, "se crea UNA versión");
   assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");
@@ -567,12 +571,17 @@ test("derived · el entregable resultante: documento, versión y solicitudes de 
   const resultado = await readEntregable(estado.derivedItemId);
   assert.equal(resultado.task_item.origin_kind, "user_added", "el entregable es añadido por el usuario");
   assert.equal(Number(resultado.task_item.created_by_person_id), USUARIO, "el creador queda como autor");
-  // EL DUEÑO YA NO ES EL DESTINATARIO (2026-08-23). La cascada de
-  // `resolveOwnerPersonIdForTaskItem` empezaba en `target_person_id` —el «Para:»—, y eso decia que
-  // responde del documento QUIEN LO RECIBE. Retirada la columna, la cascada empieza donde tiene que
-  // empezar: en `assigned_person_id`, quien lo ELABORA. El destinatario, si importa, se lee del
-  // flujo de firma; no hay ninguna columna que lo guarde.
-  assert.equal(Number(resultado.document.owner_person_id), USUARIO, "el dueño del documento es quien lo ELABORA, no quien lo recibe");
+  // EL DOCUMENTO YA NO TIENE PROPIETARIO PROPIO, y la historia de esa columna cabe en dos pasos.
+  // Primero dejó de ser el destinatario: su cascada empezaba en el «Para:», o sea que respondía del
+  // documento QUIEN LO RECIBE. Y después desapareció entera (2026-08-23), porque una vez que
+  // empezaba en `assigned_person_id` no era un hecho del documento sino una COPIA del entregable —y
+  // sólo la refrescaba uno de los cuatro caminos de relevo. Quien responde se pregunta al
+  // entregable, que es donde está su tenencia.
+  assert.equal(
+    Number(resultado.task_item.assigned_person_id),
+    USUARIO,
+    "quien responde del entregable es quien lo ELABORA, no quien lo recibe",
+  );
   assert.equal(resultado.versions.length, 1, "se crea UNA versión");
   assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");

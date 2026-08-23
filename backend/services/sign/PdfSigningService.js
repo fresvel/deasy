@@ -415,8 +415,14 @@ export const persistSignatureWorkflowResult = async ({ context, result }) => {
 };
 
 // ¿Puede esta persona leer un documento firmado que NO está en su espacio personal? Lo autoriza
-// cualquiera de los cuatro papeles del entregable: dueño del documento, responsable de la tarea,
-// creador de la tarea o firmante asignado. La consulta vivía en el controller.
+// cualquiera de los TRES papeles del entregable: quien responde de él, quien lo encargó o quien
+// tiene que firmarlo. Eran cuatro hasta el 2026-08-23, y el que sobraba era «dueño del documento»:
+// una copia del primero que sólo refrescaba uno de los cuatro caminos de relevo. La consulta vivía
+// en el controller.
+//
+// `documents d` se conserva en el JOIN aunque ya no se lea ninguna de sus columnas: es el eslabón
+// que une la versión con su entregable (`dv.document_id` -> `d.task_item_id`), y sin él no hay
+// forma de llegar a `task_items`.
 export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => {
   if (!pool) {
     throw new Error("La conexión a PostgreSQL no está disponible.");
@@ -434,8 +440,11 @@ export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => 
        OR dv.final_file_path = ?
      )
        AND (
-         d.owner_person_id = ?
-         OR ti.assigned_person_id = ?
+         -- El d.owner_person_id = ? que abria este OR se retiro el 2026-08-23: era una COPIA de
+         -- ti.assigned_person_id, el termino de al lado, tomada al crear el documento y
+         -- refrescada por uno solo de los cuatro relevos. O sea que aportaba exactamente cero
+         -- casos nuevos y podia dar acceso a quien ya no responde del entregable.
+         ti.assigned_person_id = ?
          -- Quien ENCARGO el entregable. Antes era el creador de la TAREA, retirado el 2026-08-23:
          -- estaba NULL en el camino automatico, asi que como predicado de propiedad casi nunca
          -- respondia. El dato equivalente vive en la misma fila del entregable.
@@ -443,7 +452,7 @@ export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => 
          OR sr.assigned_person_id = ?
        )
      LIMIT 1`,
-    [requestedPath, requestedPath, Number(userId), Number(userId), Number(userId), Number(userId)]
+    [requestedPath, requestedPath, Number(userId), Number(userId), Number(userId)]
   );
   return Boolean(rows?.length);
 };

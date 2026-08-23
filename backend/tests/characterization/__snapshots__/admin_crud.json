@@ -321,7 +321,6 @@
       "comments_thread_ref",
       "created_at",
       "id",
-      "owner_person_id",
       "status",
       "task_item_id",
       "title",

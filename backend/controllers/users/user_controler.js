@@ -419,7 +419,10 @@ export const listTaskItemObservations = async (req, res) => {
     if (!taskItem) {
       return res.status(404).json({ message: "No se encontró el entregable solicitado." });
     }
-    const isOwner = Number(taskItem.resolved_owner_person_id || 0) === Number(userId);
+    // Antes esto se llamaba «ser el dueño» y salia de un alias `resolved_owner_person_id`. Con
+    // `documents.owner_person_id` retirada (2026-08-23), la pregunta se dice como es: ¿respondes tu
+    // de este entregable? Es lo que da la potestad de resolver una observacion ajena.
+    const esResponsable = Number(taskItem.assigned_person_id || 0) === Number(userId);
     // Decisión del dueño (2026-08-22): participar da las DOS cosas, ver y comentar. Y como el
     // guard de arriba ya filtra por participación, quien llega aquí puede comentar por
     // definición. Se conserva el campo porque el frontend lo lee; deja de ser una pregunta.
@@ -430,7 +433,7 @@ export const listTaskItemObservations = async (req, res) => {
       observations: observations.map((observation) => ({
         ...observation,
         can_resolve: !observation.resolved_at
-          && (Number(observation.author_person_id) === Number(userId) || isOwner)
+          && (Number(observation.author_person_id) === Number(userId) || esResponsable)
       }))
     });
   } catch (error) {
@@ -518,9 +521,12 @@ export const resolveTaskItemObservation = async (req, res) => {
     if (!observation || Number(observation.task_item_id) !== Number(taskItem.task_item_id)) {
       return res.status(404).json({ message: "Observación no encontrada." });
     }
-    const isOwner = Number(taskItem.resolved_owner_person_id || 0) === Number(userId);
+    // Antes esto se llamaba «ser el dueño» y salia de un alias `resolved_owner_person_id`. Con
+    // `documents.owner_person_id` retirada (2026-08-23), la pregunta se dice como es: ¿respondes tu
+    // de este entregable? Es lo que da la potestad de resolver una observacion ajena.
+    const esResponsable = Number(taskItem.assigned_person_id || 0) === Number(userId);
     const isAuthor = Number(observation.author_person_id) === Number(userId);
-    if (!isOwner && !isAuthor) {
+    if (!esResponsable && !isAuthor) {
       return res.status(403).json({ message: "Solo el autor o el dueño del entregable pueden resolver la observación." });
     }
     await resolveDocumentObservation(observationId, userId, pool);
