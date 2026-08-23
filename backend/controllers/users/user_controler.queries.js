@@ -11,6 +11,8 @@
 // TODA columna del ORDER BY esté proyectada. MySQL no. Si añades un ORDER BY aquí,
 // proyecta la columna o tendrás un 500.
 
+import { accessSubqueryForTaskItem } from "../../services/documents/DeliverableAccessService.js";
+
 export const getActiveUserPositions = async (pool, userId) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT
@@ -735,52 +737,22 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
      LEFT JOIN unit_positions responsible_pos ON responsible_pos.id = ti.responsible_position_id
      WHERE ti.id = ?
        AND t.process_definition_id = ?
-       AND (
-         t.created_by_user_id = ?
-         OR ti.target_person_id = ?
-         OR ti.assigned_person_id = ?
-         OR EXISTS (
-           SELECT 1
-           FROM task_assignments ta
-           LEFT JOIN position_assignments pa
-             ON pa.position_id = ta.position_id
-            AND pa.is_current = 1
-            AND pa.person_id = ?
-           WHERE ta.task_id = t.id
-             -- IDOR (arreglado): esta rama comprobaba SOLO la asignación a la TAREA. Pero un
-             -- proceso dirigido a un cargo crea UNA tarea por unidad con UN task_item por
-             -- persona, y TODOS sus responsables están asignados a esa MISMA tarea. Sin esta
-             -- línea, cualquier responsable pasaba el guard para el entregable de los demás y
-             -- podía descargar su documento (verificado: HTTP 200 con el PDF ajeno).
-             -- Si el entregable tiene responsable propio, la asignación debe ser LA SUYA.
-             -- Si no lo tiene (tarea de responsable único), se mantiene el alcance de tarea.
-             AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)
-             AND (
-               ta.assigned_person_id = ?
-               OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
-             )
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM documents d
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-           WHERE d.task_item_id = ti.id
-             AND fr.assigned_person_id = ?
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM documents d
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-           WHERE d.task_item_id = ti.id
-             AND sr.assigned_person_id = ?
-         )
-     )
+       -- ── EL GUARD YA NO VIVE AQUI ──────────────────────────────────────────────────────
+       -- Hasta el 2026-08-22 este WHERE era una TERCERA implementacion del conjunto de
+       -- participantes, con el arreglo del IDOR escrito dentro y ocho placeholders que eran el
+       -- mismo userId. Las otras dos -isUserInTaskItemChain y ChatAuthorizationService- habian
+       -- divergido de esta y entre si.
+       --
+       -- Ahora la pregunta la contesta DeliverableAccessService, que es el unico sitio donde se
+       -- declara quien participa y por que. La acotacion del IDOR viaja con ella, en la fuente
+       -- puesto_responsable_asignado.
+       AND EXISTS (
+         SELECT 1
+         FROM (${accessSubqueryForTaskItem()}) participantes
+         WHERE participantes.person_id = ?
+       )
      LIMIT 1`,
-    [taskItemId, definitionId, userId, userId, userId, userId, userId, userId, userId, userId]
+    [taskItemId, definitionId, taskItemId, userId]
   );
   return rows?.[0] || null;
 };

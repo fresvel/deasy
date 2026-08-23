@@ -87,16 +87,24 @@ const SCOPE_BY_PROCESS_UNIT = {
 // El orden es el de la vida del entregable: a quién se dirigió → quién lo tiene → quién lo
 // trabajó → quién habló de él.
 
-// Los dos niveles, del más estrecho al más ancho. `conversacion` INCLUYE a `documento`.
+// Los dos niveles, del más estrecho al más ancho. `conversacion` INCLUYE a `entregable`.
+//
+// **Decisión del dueño (2026-08-22): participar en un entregable da las DOS cosas, verlo y
+// comentarlo.** Antes eran umbrales distintos —quien lanzaba la tarea veía el entregable y no
+// podía comentarlo— y la distinción se retira a propósito: si alguien pinta en el conjunto de
+// participantes, participa.
+//
+// Lo que NO entra aquí: resolver una observación. Eso depende de la observación concreta (su
+// autor), no de la relación con el entregable, así que sigue decidiéndose en su sitio.
 export const ACCESS_LEVELS = Object.freeze({
-  DOCUMENTO: "documento",
+  ENTREGABLE: "entregable",
   CONVERSACION: "conversacion",
 });
 
 export const ACCESS_SOURCES = Object.freeze([
   {
     key: "entregable_destinatario",
-    grants: ACCESS_LEVELS.DOCUMENTO,
+    grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "El entregable nombra a esta persona",
     sql: `SELECT ti.target_person_id AS person_id
           FROM task_items ti
@@ -105,7 +113,7 @@ export const ACCESS_SOURCES = Object.freeze([
   },
   {
     key: "entregable_asignado",
-    grants: ACCESS_LEVELS.DOCUMENTO,
+    grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Es quien tiene asignado el entregable",
     sql: `SELECT ti.assigned_person_id AS person_id
           FROM task_items ti
@@ -113,37 +121,80 @@ export const ACCESS_SOURCES = Object.freeze([
           WHERE ti.assigned_person_id IS NOT NULL`,
   },
   {
+    // ── EL ARREGLO DEL IDOR, y por eso esta fuente está ACOTADA ────────────────────────
+    // No es «los asignados de la tarea»: es «el asignado del puesto responsable DE ESTE
+    // entregable». La diferencia se midió y es enorme: el entregable 4 tiene once personas
+    // asignadas a su tarea. Un proceso dirigido a un cargo crea UNA tarea por unidad con UN
+    // entregable por persona, y todos sus responsables cuelgan de esa MISMA tarea; sin la
+    // acotación, cualquiera de ellos pasaba el guard del entregable ajeno y descargaba su PDF
+    // (verificado en su día: HTTP 200 con el documento de otro).
+    //
+    // La excepción del `IS NULL` es la de `getAccessibleTaskItemForUser` y se copia tal cual:
+    // si el entregable no tiene responsable propio, la tarea es de responsable único y el
+    // alcance de tarea SÍ vale.
+    key: "puesto_responsable_asignado",
+    grants: ACCESS_LEVELS.ENTREGABLE,
+    reason: "Tiene asignado el puesto responsable de este entregable",
+    sql: `SELECT ta.assigned_person_id AS person_id
+          FROM task_assignments ta
+          INNER JOIN alcance a ON a.task_id = ta.task_id
+          INNER JOIN task_items ti ON ti.id = a.task_item_id
+          WHERE ta.assigned_person_id IS NOT NULL
+            AND (ti.responsible_position_id IS NULL
+                 OR ta.position_id = ti.responsible_position_id)`,
+  },
+  {
+    // La otra mitad del guard real: cuando la asignación de la tarea está VACÍA, cuenta quien
+    // OCUPA hoy ese puesto. Es la fuente 8 del diseño — y resulta que ya existía aquí, cosa que
+    // el diagnóstico inicial daba por ausente en los dos guards.
+    key: "puesto_responsable_ocupante",
+    grants: ACCESS_LEVELS.ENTREGABLE,
+    reason: "Ocupa hoy el puesto responsable, y su asignación está vacía",
+    sql: `SELECT pa.person_id AS person_id
+          FROM task_assignments ta
+          INNER JOIN alcance a ON a.task_id = ta.task_id
+          INNER JOIN task_items ti ON ti.id = a.task_item_id
+          INNER JOIN position_assignments pa
+            ON pa.position_id = ta.position_id
+           AND pa.is_current = 1
+          WHERE ta.assigned_person_id IS NULL
+            AND (ti.responsible_position_id IS NULL
+                 OR ta.position_id = ti.responsible_position_id)`,
+  },
+  {
+    // La ANCHA, y sólo para la conversación del proceso: un hilo de proceso es más ancho que un
+    // documento a propósito. Al nivel de entregable esto ES el IDOR.
     key: "tarea_asignado",
     grants: ACCESS_LEVELS.CONVERSACION,
-    reason: "Quedó asignada a un puesto de la tarea",
+    reason: "Quedó asignada a algún puesto de la tarea (sólo alcanza al hilo del proceso)",
     sql: `SELECT ta.assigned_person_id AS person_id
           FROM task_assignments ta
           INNER JOIN alcance a ON a.task_id = ta.task_id
           WHERE ta.assigned_person_id IS NOT NULL`,
   },
   {
+    // ⚠️ Nivel de ENTREGABLE, y no es una ampliación: `getAccessibleTaskItemForUser` ya lo
+    // incluye en su WHERE, así que dejarlo fuera le quitaría al creador de la tarea una
+    // visibilidad que hoy tiene — un 404 donde hoy hay un 200.
     key: "tarea_creador",
-    grants: ACCESS_LEVELS.CONVERSACION,
+    grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Lanzó la tarea que produjo el entregable",
     sql: `SELECT t.created_by_user_id AS person_id
           FROM tasks t
           INNER JOIN alcance a ON a.task_id = t.id
           WHERE t.created_by_user_id IS NOT NULL`,
   },
-  {
-    // Muere en el paso P6 con la fusión: hoy es la cascada del dueño materializada al crear el
-    // documento. Se conserva mientras la columna exista para que P1 no cambie comportamiento.
-    key: "documento_dueno",
-    grants: ACCESS_LEVELS.DOCUMENTO,
-    reason: "Consta como propietario del documento",
-    sql: `SELECT d.owner_person_id AS person_id
-          FROM documents d
-          INNER JOIN alcance a ON a.task_item_id = d.task_item_id
-          WHERE d.owner_person_id IS NOT NULL`,
-  },
+  // ── `documento_dueno` NO es una fuente, y esto se midió ───────────────────────────────
+  // Estuvo en la lista durante P1 y se retiró al comparar contra la base: en el entregable 4,
+  // `documents.owner_person_id` vale 24 mientras la cascada resuelve 3 — el valor está RANCIO,
+  // que es exactamente el modo de fallo por el que esa columna se muere en P6. Concederle
+  // acceso sería repartir un permiso por un dato desincronizado.
+  //
+  // Y no se pierde nada: la cascada que esa columna materializa ya está cubierta entera por
+  // `entregable_destinatario`, `entregable_asignado` y las dos del puesto responsable.
   {
     key: "flujo_entrega",
-    grants: ACCESS_LEVELS.DOCUMENTO,
+    grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Participó en el flujo de entrega",
     sql: `SELECT fr.assigned_person_id AS person_id
           FROM fill_requests fr
@@ -155,7 +206,7 @@ export const ACCESS_SOURCES = Object.freeze([
   },
   {
     key: "flujo_firma",
-    grants: ACCESS_LEVELS.DOCUMENTO,
+    grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Participó en el flujo de firma",
     sql: `SELECT sr.assigned_person_id AS person_id
           FROM signature_requests sr
@@ -167,7 +218,7 @@ export const ACCESS_SOURCES = Object.freeze([
   },
   {
     key: "observacion_autor",
-    grants: ACCESS_LEVELS.DOCUMENTO,
+    grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Escribió una observación sobre el entregable",
     sql: `SELECT o.author_person_id AS person_id
           FROM document_workflow_observations o
@@ -176,7 +227,7 @@ export const ACCESS_SOURCES = Object.freeze([
   },
   {
     key: "observacion_destinatario",
-    grants: ACCESS_LEVELS.DOCUMENTO,
+    grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Una observación del entregable va dirigida a esta persona",
     sql: `SELECT o.target_person_id AS person_id
           FROM document_workflow_observations o
@@ -216,8 +267,8 @@ const escapeSourceKey = (key) => {
 // Se escribe como inclusión explícita y no como «orden de la lista» porque un nivel nuevo entre
 // medias rompería el orden en silencio, y esto decide permisos.
 export const sourcesForLevel = (level) => {
-  if (level === ACCESS_LEVELS.DOCUMENTO) {
-    return ACCESS_SOURCES.filter((source) => source.grants === ACCESS_LEVELS.DOCUMENTO);
+  if (level === ACCESS_LEVELS.ENTREGABLE) {
+    return ACCESS_SOURCES.filter((source) => source.grants === ACCESS_LEVELS.ENTREGABLE);
   }
   if (level === ACCESS_LEVELS.CONVERSACION) {
     return [...ACCESS_SOURCES];
@@ -264,7 +315,7 @@ const groupBySource = (rows) => {
 export const listDeliverableParticipants = async (
   connection,
   taskItemId,
-  level = ACCESS_LEVELS.DOCUMENTO
+  level = ACCESS_LEVELS.ENTREGABLE
 ) => {
   const conn = connection || getPostgresPool();
   const rows = await runAccessQuery(conn, SCOPE_BY_TASK_ITEM, { taskItemId }, level);
@@ -293,7 +344,7 @@ export const isDeliverableParticipant = async (
   connection,
   taskItemId,
   personId,
-  level = ACCESS_LEVELS.DOCUMENTO
+  level = ACCESS_LEVELS.ENTREGABLE
 ) => {
   const person = Number(personId);
   if (!person) return false;
@@ -308,6 +359,17 @@ export const isDeliverableParticipant = async (
   );
   return Boolean(rows?.length);
 };
+
+/**
+ * El SQL del conjunto de participantes de UN entregable, para incrustarlo en una consulta mayor
+ * que ya tiene el entregable a mano. Lleva **un** placeholder (el id del entregable) y hay que
+ * pasarlo en su posición.
+ *
+ * Existe porque `getAccessibleTaskItemForUser` filtra Y proyecta treinta columnas en la misma
+ * consulta: partirla en dos viajes por un guard de una fila no compensa.
+ */
+export const accessSubqueryForTaskItem = (level = ACCESS_LEVELS.ENTREGABLE) =>
+  buildAccessQuery(SCOPE_BY_TASK_ITEM, sourcesForLevel(level));
 
 /** Sólo para pruebas y para depurar: la consulta que se va a ejecutar. */
 export const __buildAccessQuery = buildAccessQuery;

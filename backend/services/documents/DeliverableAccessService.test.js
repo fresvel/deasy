@@ -31,7 +31,7 @@ const fakeConnection = (rows) => {
 
 // --- Las fuentes son una tabla, y eso es contrato -----------------------------------------
 
-test("las nueve fuentes de hoy tienen clave única y razón escrita", () => {
+test("las diez fuentes de hoy tienen clave única y razón escrita", () => {
   const keys = ACCESS_SOURCES.map((source) => source.key);
   assert.equal(new Set(keys).size, keys.length, "hay claves repetidas");
   for (const source of ACCESS_SOURCES) {
@@ -52,16 +52,46 @@ test("cada fuente declara QUÉ concede, y sólo hay dos niveles", () => {
   }
 });
 
-test("el acceso al DOCUMENTO no incluye a los asignados de la TAREA: ése era el IDOR", () => {
+test("el acceso al ENTREGABLE no incluye a los asignados de la TAREA: ése era el IDOR", () => {
   // Medido el 2026-08-22: el entregable 4 tiene ONCE personas en `task_assignments` de su tarea.
-  // Si `tarea_asignado` concediera nivel de documento, esas once podrían descargarlo.
-  const claves = sourcesForLevel(ACCESS_LEVELS.DOCUMENTO).map((source) => source.key);
+  // Si la fuente ancha concediera nivel de entregable, esas once podrían descargarlo.
+  const claves = sourcesForLevel(ACCESS_LEVELS.ENTREGABLE).map((source) => source.key);
   assert.ok(!claves.includes("tarea_asignado"), "el IDOR ha vuelto");
-  assert.ok(!claves.includes("tarea_creador"), "quien lanza la tarea no descarga sus documentos");
+});
+
+test("la fuente del puesto responsable SÍ está, pero ACOTADA a este entregable", () => {
+  const claves = sourcesForLevel(ACCESS_LEVELS.ENTREGABLE).map((source) => source.key);
+  assert.ok(claves.includes("puesto_responsable_asignado"));
+  assert.ok(claves.includes("puesto_responsable_ocupante"));
+
+  // La acotación ES el arreglo del IDOR: sin ella, la fuente sería la ancha.
+  const acotada = ACCESS_SOURCES.find((s) => s.key === "puesto_responsable_asignado");
+  assert.match(acotada.sql, /ta\.position_id = ti\.responsible_position_id/);
+  const ancha = ACCESS_SOURCES.find((s) => s.key === "tarea_asignado");
+  assert.ok(!/responsible_position_id/.test(ancha.sql), "la ancha no debe llevar la acotación");
+});
+
+test("el dueño materializado NO es fuente: su valor puede estar rancio", () => {
+  // Medido: en el entregable 4 vale 24 mientras la cascada resuelve 3. Dar acceso por ahí es
+  // repartir permisos con un dato desincronizado, que es por lo que la columna se muere en P6.
+  const claves = ACCESS_SOURCES.map((source) => source.key);
+  assert.ok(!claves.includes("documento_dueno"));
+});
+
+test("el creador de la tarea llega al ENTREGABLE: el guard real ya lo incluía", () => {
+  // Quitarlo del nivel estrecho sería un 404 donde hoy hay un 200.
+  const claves = sourcesForLevel(ACCESS_LEVELS.ENTREGABLE).map((source) => source.key);
+  assert.ok(claves.includes("tarea_creador"));
+});
+
+test("el ocupante actual del puesto entra sólo cuando la asignación está vacía", () => {
+  const ocupante = ACCESS_SOURCES.find((s) => s.key === "puesto_responsable_ocupante");
+  assert.match(ocupante.sql, /pa\.is_current = 1/);
+  assert.match(ocupante.sql, /ta\.assigned_person_id IS NULL/);
 });
 
 test("el acceso a la CONVERSACIÓN es más ancho, e incluye entero al del documento", () => {
-  const documento = sourcesForLevel(ACCESS_LEVELS.DOCUMENTO).map((s) => s.key);
+  const documento = sourcesForLevel(ACCESS_LEVELS.ENTREGABLE).map((s) => s.key);
   const conversacion = sourcesForLevel(ACCESS_LEVELS.CONVERSACION).map((s) => s.key);
   for (const clave of documento) {
     assert.ok(conversacion.includes(clave), `la conversación pierde ${clave}`);

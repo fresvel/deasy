@@ -39,6 +39,34 @@ la verdadera deuda: no falta el diseño, falta unificarlo.
 
 Dos listas distintas para la misma pregunta. Y a las dos les faltan las mismas tres cosas.
 
+> ⚠️ **CORREGIDO el 2026-08-22 al ejecutar P2: no son dos implementaciones, son CUATRO**, y la que
+> manda no estaba en esta tabla.
+>
+> | # | Dónde | Qué decide |
+> |---|---|---|
+> | **A** | `getAccessibleTaskItemForUser` (`queries.js:735`) | **Ver el entregable.** Corre primero; si falla, **404**. Lleva el arreglo del IDOR dentro |
+> | **B** | `isUserInTaskItemChain` | Comentar |
+> | **C** | Copia **en línea** en `user_controler.js:676` | El fichero del entregable. Su propio comentario admite que es un duplicado |
+> | **D** | `ChatAuthorizationService` | El hilo del proceso |
+>
+> Y **A ya consultaba `position_assignments`** (`pa.is_current = 1`), así que el hueco **H1 era
+> falso a medias**: la fuente «ocupante actual del puesto» existía, aquí.
+
+### La caracterización estaba CIEGA a este guard — y ahora no
+
+Medido al ejecutar P2: **cero menciones de `observations` y cero de `can_add` en toda la suite**.
+Los cuatro endpoints que usan el guard más sensible del sistema no tenían contrato HTTP.
+
+Y se comprobó por mutación, que es la única forma de saberlo: **relajar el predicado del IDOR
+dejaba la suite en 291/291 verde**. El golden del IDOR que ya existía protege el **panel** y el
+**fichero**, que van por otras dos copias del predicado — no por ésta. Con
+`zzzzzz_deliverable_access.test.mjs` la misma mutación pone **52 en rojo**.
+
+> **Y un aviso de instrumental que no estaba escrito:** `check:imports` **no ve un símbolo usado
+> dentro de una interpolación de plantilla**. Un `${ACCESS_SUBQUERY}` sin importar dio
+> `check:imports OK` con 129 ficheros, `node --check` en verde, y **500 en tiempo de llamada** —
+> el modo de fallo de la regla 2 del método, en un sitio que la regla no cubría.
+
 ### Los tres huecos, medidos el 2026-08-22
 
 **H1 · El ocupante del puesto no es fuente de acceso en ningún guard.** Ninguno de los dos consulta
@@ -220,7 +248,9 @@ antes de cada cambio de comportamiento**.
 | # | Paso | ¿Reversible? | Qué lo verifica |
 |---|---|---|---|
 | ~~P1~~ | ✅ **HECHO.** `DeliverableAccessService.js` con las **9 fuentes** que ya existían (las 7 del modelo, con las observaciones partidas en autor y destinatario) y **los dos niveles**, que no estaban en el diseño y salieron de medir. Ningún guard la usa todavía | Sí | `test:unit` **642/642** (21 nuevos) · `test:char:run` **291/291**, ningún golden movido · `check:imports` 129 · SQL probado con `PREPARE` en las dos anclas y **ejecutado contra la base sembrada** · **probado por mutación**: quitar el filtro de nivel → 4 en rojo; reclasificar `tarea_asignado` → 3 en rojo |
-| **P2** | Los **dos guards** pasan a llamarla. Aquí el comportamiento **sí cambia**: el guard del documento gana las fuentes que sólo tenía el chat | **No** | Goldens del contrato HTTP; **el diff ES la prueba** |
+| ~~P2a~~ | ✅ **HECHO.** **A** incrusta la subconsulta única (sus ocho placeholders de `userId` quedan en uno) · **B desaparece** · los guards de observación pierden su `isOwner`/`inChain`. **`documento_dueno` retirado de las fuentes**: en el entregable 4 vale 24 mientras la cascada resuelve 3 | **No** | `test:unit` **646/646** · `test:char:run` **294/294** · **ningún golden existente movido**, y el conjunto medido es **idéntico** al de hoy (1→{1,3} · 4→{3} · 5→{24}) |
+| **P2b** | La copia en línea de `user_controler.js:676` y la consulta del panel | **No** | El golden del IDOR de `zz_task_generation` ya las cubre |
+| **P2c** | **D** · el chat cambia sus subconsultas por la función, al nivel ancho | **No** | Goldens de `chat` |
 | **P3** | Añadir las fuentes **8, 9 y 10** (ocupante actual, ocupantes durante la vida, relevos) | **No** | Unitarios por fuente + golden |
 | **P4** | **El custodio** (D-2), con su recorrido orgánico y su reserva a `AdminSistema` | **No** | Unitarios del recorrido, incluido el caso «sin jefe» que hoy dan 2 de 13 unidades |
 | **P5** | `removeUnitPosition` deja de borrar historia; desactivar emite `position_deactivated` | **No** | Prueba del camino roto (F-2) y del asiento (F-4) |

@@ -14,7 +14,6 @@ import {
   listDocumentObservations,
   getObservationById,
   resolveDocumentObservation,
-  isUserInTaskItemChain
 } from "../../services/documents/DocumentObservationService.js";
 import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
 import { generateUniqueToken } from "../../utils/tokenGenerator.js";
@@ -420,11 +419,13 @@ export const listTaskItemObservations = async (req, res) => {
       return res.status(404).json({ message: "No se encontró el entregable solicitado." });
     }
     const isOwner = Number(taskItem.resolved_owner_person_id || 0) === Number(userId);
-    const inChain = await isUserInTaskItemChain(pool, userId, taskItem.task_item_id);
+    // Decisión del dueño (2026-08-22): participar da las DOS cosas, ver y comentar. Y como el
+    // guard de arriba ya filtra por participación, quien llega aquí puede comentar por
+    // definición. Se conserva el campo porque el frontend lo lee; deja de ser una pregunta.
     const observations = await listDocumentObservations(taskItem.task_item_id, pool);
     return res.json({
       task_item_id: taskItem.task_item_id,
-      can_add: isOwner || inChain,
+      can_add: true,
       observations: observations.map((observation) => ({
         ...observation,
         can_resolve: !observation.resolved_at
@@ -466,11 +467,10 @@ export const addTaskItemObservation = async (req, res) => {
     if (!taskItem) {
       return res.status(404).json({ message: "No se encontró el entregable solicitado." });
     }
-    const isOwner = Number(taskItem.resolved_owner_person_id || 0) === Number(userId);
-    const inChain = await isUserInTaskItemChain(connection, userId, taskItem.task_item_id);
-    if (!isOwner && !inChain) {
-      return res.status(403).json({ message: "Solo el dueño o los responsables de la cadena pueden agregar observaciones." });
-    }
+    // Sin guard propio: `getAccessibleTaskItemForUser` ya filtró por participación, y participar
+    // da ver Y comentar. El 403 que había aquí sólo podía dispararse para alguien que SÍ ve el
+    // entregable pero no está en la cadena — el caso del creador de la tarea—, y esa distinción
+    // se retiró a propósito.
     await connection.beginTransaction();
     const observationId = await addDocumentObservation(connection, {
       taskItemId: taskItem.task_item_id,

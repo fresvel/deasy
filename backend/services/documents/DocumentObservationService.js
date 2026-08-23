@@ -82,29 +82,14 @@ export const addDocumentObservation = async (connection, {
 };
 
 // ¿El usuario está en la cadena de revisión/firma del entregable (tiene/tuvo una solicitud asignada)?
-export const isUserInTaskItemChain = async (connection, userId, taskItemId) => {
-  const [rows] = await connection.query(
-    `SELECT
-       EXISTS(
-         SELECT 1
-         FROM fill_requests fr
-         INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-         INNER JOIN document_versions dv ON dv.id = dff.document_version_id
-         INNER JOIN documents d ON d.id = dv.document_id
-         WHERE d.task_item_id = ? AND fr.assigned_person_id = ?
-       )
-       OR EXISTS(
-         SELECT 1
-         FROM signature_requests sr
-         INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-         INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
-         INNER JOIN documents d ON d.id = dv.document_id
-         WHERE d.task_item_id = ? AND sr.assigned_person_id = ?
-       ) AS in_chain`,
-    [Number(taskItemId), Number(userId), Number(taskItemId), Number(userId)]
-  );
-  return Boolean(Number(rows?.[0]?.in_chain || 0));
-};
+// ⚠️ `isUserInTaskItemChain` VIVIÓ AQUÍ Y SE RETIRÓ el 2026-08-22.
+//
+// Era la segunda de tres implementaciones del conjunto de participantes —miraba sólo entrega y
+// firma, un subconjunto estricto de lo que ya filtraba `getAccessibleTaskItemForUser`—. Sus dos
+// llamadores la usaban como `isOwner || inChain` para decidir si alguien podía comentar.
+//
+// Hoy la pregunta la contesta `services/documents/DeliverableAccessService.js`, que es el único
+// sitio donde se declara quién participa en un entregable y por qué.
 
 // Hilo de observaciones de un entregable (con nombres de autor/destino/resolutor).
 export const listDocumentObservations = async (taskItemId, connection = null) => {
