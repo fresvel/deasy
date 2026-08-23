@@ -39,6 +39,7 @@ const ADMIN_TABLE_RESOURCE_MAP = {
   signature_requests: "signature_flows",
   signature_statuses: "signature_flows",
   task_assignments: "process_execution",
+  task_item_tenures: "process_execution",
   task_items: "process_execution",
   tasks: "process_execution",
   template_artifacts: "templates",
@@ -134,6 +135,7 @@ export const canWriteResource = (resource, user = getStoredUser()) =>
 export const TRACEABILITY_TABLES = new Set([
   "task_items",
   "task_assignments",
+  "task_item_tenures",
   "document_versions",
   "document_fill_flows",
   "fill_requests",

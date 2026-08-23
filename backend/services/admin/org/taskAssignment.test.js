@@ -20,19 +20,43 @@ const conexionFalsa = () => {
     queries,
     async query(sql, params = []) {
       queries.push({ sql, params });
-      // El backfill cuenta por RETURNING, no por `affectedRows`: su sentencia empieza por `WITH` y
-      // el adaptador solo calcula `affectedRows` cuando el texto empieza por INSERT/UPDATE/DELETE.
-      return [[{ id: 11 }, { id: 22 }, { id: 33 }]];
+      // La CABECERA de escritura del adaptador (`config/postgres.js:463`), que es lo que devuelve
+      // para un texto que empieza por INSERT/UPDATE/DELETE. Devolver aqui un array de filas —como
+      // hacia esta doble hasta el 2026-08-23— ocultaba justo el defecto que el conteo tenia.
+      return [{ affectedRows: 3, changedRows: 3, insertId: undefined }];
     },
   };
 };
 
+// Desde el 2026-08-23 el backfill emite DOS sentencias, no una: CIERRA las tenencias que ya no
+// corresponden y ABRE las nuevas. Van separadas porque `uq_task_item_tenure_current` no admite dos
+// tenencias abiertas del mismo entregable, y en un CTE que modifica datos el orden en que se
+// aplican los efectos al indice no esta garantizado.
 const reconciliar = async (opciones = {}) => {
   const connection = conexionFalsa();
   const service = new TaskAssignmentService(null);
   const resultado = await service.reconcileOpenTaskItemAssignments(opciones, connection);
-  return { resultado, sql: connection.queries[0].sql, params: connection.queries[0].params };
+  const [cierre, apertura] = connection.queries;
+  return {
+    resultado,
+    cierre,
+    apertura,
+    // `sql` es la union de las dos: los guards del predicado tienen que estar en AMBAS, porque si
+    // solo estuvieran en una el backfill cerraria mas de lo que abre (o al reves) y dejaria
+    // entregables sin tenencia vigente — que es la invariante que sostiene todo esto.
+    sql: `${cierre.sql}\n${apertura.sql}`,
+    params: apertura.params,
+  };
 };
+
+test("el predicado va en las DOS sentencias: se cierra exactamente lo que se vuelve a abrir", async () => {
+  const { cierre, apertura } = await reconciliar();
+  for (const [nombre, q] of [["cierre", cierre], ["apertura", apertura]]) {
+    assert.ok(q.sql.includes("ti.user_started_at IS NULL"), `${nombre}: falta el guard de iniciado`);
+    assert.ok(q.sql.includes("pa.is_current = 1"), `${nombre}: falta el ocupante vigente`);
+    assert.ok(q.sql.includes("ti.responsible_position_id"), `${nombre}: falta el ancla del puesto`);
+  }
+});
 
 test("el guard de 'ya iniciado' es user_started_at, no la existencia del documento", async () => {
   const { sql } = await reconciliar();
@@ -52,41 +76,76 @@ test("solo reconcilia entregables con puesto responsable, y YA NO filtra por un 
   // recorte que no ocurria.
   assert.ok(!sql.includes("ti.status"), "el filtro por un estado que nadie escribe ha vuelto");
   assert.ok(sql.includes("pa.is_current = 1"), "el destino es el ocupante VIGENTE del puesto");
+  // La comparacion es contra la TENENCIA vigente (`t.person_id`), no contra la cache
+  // `ti.assigned_person_id`: desde el 2026-08-23 la cache la escribe un trigger y preguntarle a
+  // ella seria preguntarle al reflejo en vez de al original.
   assert.ok(
-    sql.includes("ti.assigned_person_id <> pa.person_id"),
-    "no debe reescribir filas que ya apuntan al ocupante",
+    sql.includes("t.person_id <> pa.person_id"),
+    "no debe cerrar tenencias que ya apuntan al ocupante",
+  );
+  assert.ok(
+    !sql.includes("ti.assigned_person_id <>"),
+    "ha vuelto a preguntarle a la cache en vez de a la tenencia",
   );
 });
 
 test("es PostgreSQL: UPDATE ... FROM, nunca UPDATE ... INNER JOIN ... SET", async () => {
-  const { sql } = await reconciliar();
-  assert.ok(/UPDATE task_items ti\s+SET/.test(sql));
-  assert.ok(/UPDATE task_items ti[\s\S]*FROM objetivo o/.test(sql), "el UPDATE se alimenta del CTE");
-  // El `INNER JOIN` que hay ahora vive DENTRO del SELECT del CTE, que es legítimo. Lo que no vale
-  // es la sintaxis multi-tabla de MySQL: un JOIN entre el UPDATE y su SET.
-  assert.ok(!/UPDATE task_items ti\s+SET[\s\S]*INNER JOIN/.test(sql), "nada de UPDATE ... JOIN ... SET");
+  const { cierre } = await reconciliar();
+  assert.ok(/UPDATE task_item_tenures t\s+SET ended_at/.test(cierre.sql), "el cierre sella ended_at");
+  assert.ok(/SET ended_at[\s\S]*FROM task_items ti/.test(cierre.sql), "y se alimenta con FROM");
+  // El `INNER JOIN` vive DESPUES del FROM, que es legitimo en PostgreSQL. Lo que no vale es la
+  // sintaxis multi-tabla de MySQL: un JOIN entre el UPDATE y su SET.
+  assert.ok(
+    !/UPDATE task_item_tenures t\s+INNER JOIN/.test(cierre.sql),
+    "nada de UPDATE ... JOIN ... SET",
+  );
 });
 
-test("el asiento de auditoría va en la MISMA sentencia que la reasignación", async () => {
-  // Defecto 1.10: si el asiento fuera una sentencia aparte podría quedarse sin escribir, y el
-  // predicado tendría que repetirse por cuarta vez. El CTE lo evalúa una sola vez.
+test("el responsable NO se escribe a mano: lo pone el trigger", async () => {
+  // Es el arreglo de fondo. Antes habia CUATRO escritores de `task_items.assigned_person_id` y uno
+  // se olvido de dos copias mas, que acabaron podridas. Ahora solo lo escribe
+  // `trg_task_item_tenures_sync`, asi que ningun servicio debe volver a tocarlo.
   const { sql } = await reconciliar();
-  assert.ok(/WITH objetivo AS/.test(sql), "el predicado se evalúa una vez, en un CTE");
-  assert.ok(/INSERT INTO task_item_handovers/.test(sql), "y alimenta al asiento");
-  assert.ok(sql.includes("'reconcile'"), "con su causa propia, distinta de `manual`");
+  assert.ok(
+    !/UPDATE task_items[\s\S]*SET[\s\S]*assigned_person_id/.test(sql),
+    "ha vuelto un escritor a mano del responsable",
+  );
+});
+
+test("el asiento YA NO es una sentencia aparte: la tenencia que se abre ES el asiento", async () => {
+  // Defecto 1.10: antes el asiento de auditoria y la reasignacion tenian que ir en un CTE comun,
+  // porque si el asiento fuera una sentencia aparte podria quedarse sin escribir. Con tenencias esa
+  // razon desaparece — abrir la tenencia es a la vez reasignar y dejar constancia—, asi que ya no
+  // hay dos cosas que puedan desincronizarse.
+  const { apertura } = await reconciliar();
+  assert.ok(/INSERT INTO task_item_tenures/.test(apertura.sql), "la apertura es un INSERT de tenencia");
+  assert.ok(apertura.sql.includes("'reconcile'"), "con su causa propia, distinta de `manual`");
+  assert.ok(apertura.sql.includes("RETURNING id"), "y cuenta por RETURNING, no por affectedRows");
+});
+
+test("no abre una segunda tenencia a quien ya tiene una vigente", async () => {
+  // Es lo que hace el backfill idempotente y lo que impide chocar contra
+  // `uq_task_item_tenure_current`. Sin este NOT EXISTS, la segunda pasada revienta.
+  const { apertura } = await reconciliar();
+  assert.ok(
+    /NOT EXISTS[\s\S]*task_item_tenures[\s\S]*ended_at IS NULL/.test(apertura.sql),
+    "falta el guard de tenencia ya abierta",
+  );
 });
 
 test("sin positionId no hay filtro de puesto; el único parámetro es el actor", async () => {
   const { sql, params } = await reconciliar();
-  assert.deepEqual(params, [null], "sin actor conocido, el asiento lo deja en NULL");
+  assert.deepEqual(params, [null], "sin actor conocido, la tenencia lo deja en NULL");
   assert.ok(!sql.includes("AND ti.responsible_position_id = ?"));
 });
 
-test("positionId acota el backfill a un puesto y viaja ANTES que el actor", async () => {
-  // El orden importa: el `?` del filtro está en el CTE, y el del actor en el INSERT que va después.
-  const { sql, params } = await reconciliar({ positionId: 25, performedByUserId: 7 });
-  assert.ok(sql.includes("AND ti.responsible_position_id = ?"));
-  assert.deepEqual(params, [25, 7]);
+test("positionId acota el backfill, y en la apertura viaja DESPUES del actor", async () => {
+  // El orden importa y cambio el 2026-08-23: en la apertura el `?` del actor esta en el SELECT y el
+  // del filtro en su WHERE, asi que va detras. En el cierre no hay actor y viaja solo.
+  const { cierre, apertura } = await reconciliar({ positionId: 25, performedByUserId: 7 });
+  assert.ok(apertura.sql.includes("AND ti.responsible_position_id = ?"));
+  assert.deepEqual(apertura.params, [7, 25], "actor primero, filtro despues");
+  assert.deepEqual(cierre.params, [25], "el cierre solo lleva el filtro");
 });
 
 test("el backfill SÍ registra quién lo lanzó, a diferencia de los relevos por trigger", async () => {
@@ -97,7 +156,9 @@ test("el backfill SÍ registra quién lo lanzó, a diferencia de los relevos por
 });
 
 test("devuelve cuántas filas movió, contadas por RETURNING", async () => {
-  const { sql, resultado } = await reconciliar();
-  assert.ok(/RETURNING ti\.id/.test(sql), "sin RETURNING el conteo sería 0 siempre");
+  // El conteo sale de la APERTURA, que es la sentencia que dice cuantos entregables tienen
+  // responsable nuevo. El cierre no sirve: cierra tambien las tenencias que quedan abandonadas.
+  const { apertura, resultado } = await reconciliar();
+  assert.ok(/RETURNING id/.test(apertura.sql), "sin RETURNING el conteo sería 0 siempre");
   assert.deepEqual(resultado, { reconciled: 3 });
 });

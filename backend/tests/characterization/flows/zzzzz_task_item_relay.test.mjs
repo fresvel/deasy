@@ -78,10 +78,16 @@ test("un entregable YA INICIADO no lo toca el backfill, aunque su responsable no
 
   // Se le pone un responsable que NO es el ocupante vigente de su puesto: sin el guard, el
   // backfill lo devolvería al ocupante. Cualquier otra persona de la fixture vale.
+  //
+  // El caso se prepara por TRASPASO y no editando la tabla, y ése es el cambio del 2026-08-23:
+  // `task_items.assigned_person_id` es una CACHE de la tenencia vigente y ahora es de solo lectura
+  // en el editor genérico. Escribirla a mano producía un estado que el modelo dice que no existe
+  // —la caché diciendo una cosa y `task_item_tenures` otra—, y esta misma prueba lo estaba
+  // fabricando para montar su escenario.
   const intruso = Number(original) === 1 ? 2 : 1;
-  const cambio = await put("/admin/sql/task_items", {
+  const cambio = await post(`/admin/sql/task-items/${antes.id}/handover`, {
     token,
-    body: { keys: { id: antes.id }, data: { assigned_person_id: intruso } },
+    body: { to_person_id: intruso, reason: "preparación del caso: responsable ajeno al puesto" },
   });
   assert.equal(cambio.status, 200, `no se pudo preparar el caso: ${JSON.stringify(cambio.body)}`);
 
@@ -95,11 +101,28 @@ test("un entregable YA INICIADO no lo toca el backfill, aunque su responsable no
     "el entregable iniciado debe conservar su responsable: el relevo automático no le aplica",
   );
 
-  // Round-trip autolimpiante.
-  await put("/admin/sql/task_items", {
+  // Round-trip autolimpiante, por el mismo camino.
+  if (original) {
+    await post(`/admin/sql/task-items/${antes.id}/handover`, {
+      token,
+      body: { to_person_id: Number(original), reason: "restauración de la prueba" },
+    });
+  }
+});
+
+// La caché no se escribe a mano. Es la red de la invariante: si alguien vuelve a abrir
+// `assigned_person_id` en el editor genérico, se puede dejar la caché y la tenencia diciendo cosas
+// distintas sin que nada se queje — que es exactamente el defecto que `task_assignments` tenía.
+test("la caché del responsable es de SOLO LECTURA: se mueve por traspaso, no editando la tabla", async () => {
+  const token = await tokenFor("admin");
+  const filas = await listTaskItems(token);
+  const item = filas[0];
+  const res = await put("/admin/sql/task_items", {
     token,
-    body: { keys: { id: antes.id }, data: { assigned_person_id: original } },
+    body: { keys: { id: item.id }, data: { assigned_person_id: 1 } },
   });
+  assert.notEqual(res.status, 200, "el editor genérico NO debe poder escribir la caché");
+  assert.notEqual(res.status, 500, "y debe rechazarlo como entrada inválida, no reventar");
 });
 
 // ── El RELEVO MANUAL (`POST /admin/sql/task-items/:id/handover`) ────────────────────────────────

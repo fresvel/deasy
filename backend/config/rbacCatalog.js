@@ -212,6 +212,7 @@ export const TABLE_RESOURCE_MAP = {
   signature_requests: "signature_flows",
   signature_statuses: "signature_flows",
   task_assignments: "process_execution",
+  task_item_tenures: "process_execution",
   task_items: "process_execution",
   tasks: "process_execution",
   template_artifacts: "templates",

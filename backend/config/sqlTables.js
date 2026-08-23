@@ -298,13 +298,41 @@ export const SQL_TABLES = [
       { name: "source_task_item_id", label: "Entregable origen", type: "number" },
       { name: "target_unit_id", label: "Unidad destino", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
-      { name: "assigned_person_id", label: "Responsable", type: "number" },
+      // SOLO LECTURA desde el 2026-08-23: es una CACHE de la tenencia vigente, y su unico escritor
+      // es el trigger `trg_task_item_tenures_sync`. Escribirla desde aqui producia un estado que el
+      // modelo dice que no existe —la cache diciendo una cosa y `task_item_tenures` otra— sin que
+      // nada lo detectara. Para mover el responsable esta el traspaso:
+      // `POST /admin/sql/task-items/:id/handover`.
+      { name: "assigned_person_id", label: "Responsable (cache de la tenencia)", type: "number", readOnly: true },
       { name: "start_date", label: "Inicio entregable", type: "date", required: true },
       { name: "end_date", label: "Vencimiento entregable", type: "date" },
       { name: "user_started_at", label: "Inicio usuario", type: "datetime", readOnly: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["title"]
+  },
+  {
+    // La TENENCIA de un entregable. Toda de solo lectura salvo el motivo: es una bitacora, y una
+    // bitacora que se puede editar a mano deja de ser evidencia (misma leccion del defecto 1.10,
+    // donde la causa del traspaso venia del cuerpo de la peticion). Se abre y se cierra por los
+    // triggers y por el traspaso, nunca a mano.
+    table: "task_item_tenures",
+    label: "Tenencias de entregables",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "task_item_id", label: "Entregable", type: "number", readOnly: true },
+      { name: "person_id", label: "Responsable (vacio = abandonado)", type: "number", readOnly: true },
+      { name: "position_id", label: "En calidad de", type: "number", readOnly: true },
+      { name: "started_at", label: "Desde", type: "datetime", readOnly: true },
+      { name: "ended_at", label: "Hasta (vacio = vigente)", type: "datetime", readOnly: true },
+      { name: "opened_by", label: "Causa", type: "text", readOnly: true },
+      { name: "reason", label: "Motivo", type: "text" },
+      { name: "performed_by_user_id", label: "Ejecutado por", type: "number", readOnly: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["reason"]
   },
   {
     table: "task_assignments",

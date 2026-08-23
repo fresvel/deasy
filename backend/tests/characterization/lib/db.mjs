@@ -230,7 +230,7 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
     );
     await query("DELETE FROM fill_flow_templates WHERE task_item_id = ANY($1::int[])", [itemIds]);
     await query("DELETE FROM signature_flow_templates WHERE task_item_id = ANY($1::int[])", [itemIds]);
-    await query("DELETE FROM task_item_handovers WHERE task_item_id = ANY($1::int[])", [itemIds]);
+    await query("DELETE FROM task_item_tenures WHERE task_item_id = ANY($1::int[])", [itemIds]);
     await query("DELETE FROM task_items WHERE id = ANY($1::int[])", [itemIds]);
   }
 

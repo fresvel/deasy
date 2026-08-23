@@ -233,38 +233,67 @@ export default class TaskAssignmentService {
       posFilter = "AND ti.responsible_position_id = ?";
       params.push(pid);
     }
+    // CERRAR y ABRIR, en dos sentencias. Antes esto era un solo `WITH ... UPDATE` porque el asiento
+    // de auditoria y la reasignacion tenian que ir juntos; con tenencias el asiento ES la
+    // reasignacion, asi que la razon desaparecio. Y separarlas es obligatorio: el indice
+    // `uq_task_item_tenure_current` no admite dos tenencias abiertas del mismo entregable, y en un
+    // CTE que modifica datos el orden en que se aplican los efectos al indice no esta garantizado.
+    //
+    // `UPDATE ... SET ... FROM`, no `UPDATE ... INNER JOIN ... SET` (eso es MySQL y PostgreSQL lo
+    // rechaza al ejecutarlo). No multiplica filas: `uq_position_current` garantiza como mucho una
+    // asignacion vigente por puesto.
+    await connection.query(
+      `UPDATE task_item_tenures t
+          SET ended_at = now()
+         FROM task_items ti
+        INNER JOIN position_assignments pa
+           ON pa.position_id = ti.responsible_position_id
+          AND pa.is_current = 1
+          AND pa.person_id IS NOT NULL
+        WHERE ti.id = t.task_item_id
+          AND t.ended_at IS NULL
+          AND ti.responsible_position_id IS NOT NULL
+          AND ti.user_started_at IS NULL
+          AND (t.person_id IS NULL OR t.person_id <> pa.person_id)
+          ${posFilter}`,
+      params
+    );
+
+    // ⚠️ EL CONTEO ES POR `affectedRows`, Y ES EL CONTRARIO DE LO QUE ERA. Esta misma linea ya dio
+    // un `{reconciled: 0}` silencioso una vez, y al cambiar la sentencia volvio a darlo por el
+    // motivo OPUESTO — asi que conviene entender el mecanismo y no copiar la solucion anterior.
+    //
+    // El adaptador (`config/postgres.js:493`) decide por el PRIMER VERBO del texto: si empieza por
+    // INSERT/UPDATE/DELETE devuelve una CABECERA `{affectedRows}`; si empieza por otra cosa
+    // —SELECT, y tambien `WITH`— devuelve FILAS.
+    //   · Antes esto era un `WITH ... UPDATE ... RETURNING`: empezaba por `WITH`, o sea filas, y
+    //     contar por `affectedRows` daba 0 siempre. De ahi el defecto 1.10.
+    //   · Ahora es un `INSERT ... SELECT ... RETURNING`: empieza por INSERT, o sea cabecera, y
+    //     contar por la longitud del array daba 0 otra vez.
+    // El `RETURNING id` se conserva a proposito aunque no se lea: sin el, el adaptador le añade uno
+    // suyo dentro de un SAVEPOINT para adivinar el `insertId`.
+    //
+    // Aqui `performed_by_user_id` SI se rellena —a diferencia de los relevos por trigger— porque
+    // este camino lo dispara alguien a proposito.
     const [result] = await connection.query(
-      // `UPDATE ... SET ... FROM`, no `UPDATE ... INNER JOIN ... SET` (eso es MySQL y PostgreSQL
-      // lo rechaza al ejecutarlo). Las condiciones del JOIN pasan al WHERE. No multiplica filas:
-      // el indice unico `uq_position_current (position_id, current_flag)` garantiza como mucho una
-      // asignacion vigente por puesto.
-      //
-      // El asiento de auditoria va DENTRO de la misma sentencia (defecto 1.10). El CTE evalua el
-      // predicado una sola vez y alimenta al INSERT y al UPDATE: repetirlo seria una cuarta copia
-      // de un predicado que ya vive en los tres triggers. Aqui `performed_by_user_id` SI se rellena
-      // —a diferencia de los relevos por trigger— porque este camino lo dispara alguien a proposito.
-      `WITH objetivo AS (
-         SELECT ti.id, ti.assigned_person_id AS antes, pa.person_id AS ahora
-           FROM task_items ti
-           INNER JOIN position_assignments pa ON pa.position_id = ti.responsible_position_id
-          WHERE pa.is_current = 1
-            AND pa.person_id IS NOT NULL
-            AND ti.responsible_position_id IS NOT NULL
-            AND ti.user_started_at IS NULL
-            AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> pa.person_id)
-            ${posFilter}
-       ), asiento AS (
-         INSERT INTO task_item_handovers
-           (task_item_id, from_person_id, to_person_id, reason, trigger_kind, performed_by_user_id)
-         SELECT o.id, o.antes, o.ahora, 'Reconciliacion de responsables', 'reconcile', ?
-           FROM objetivo o
-       )
-       UPDATE task_items ti
-          SET assigned_person_id = o.ahora
-         FROM objetivo o
-        WHERE ti.id = o.id
-      RETURNING ti.id`,
-      [...params, normalizeNumericId(performedByUserId) || null]
+      `INSERT INTO task_item_tenures
+         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id)
+       SELECT ti.id, pa.person_id, ti.responsible_position_id,
+              'reconcile', 'Reconciliacion de responsables', ?
+         FROM task_items ti
+        INNER JOIN position_assignments pa
+           ON pa.position_id = ti.responsible_position_id
+          AND pa.is_current = 1
+          AND pa.person_id IS NOT NULL
+        WHERE ti.responsible_position_id IS NOT NULL
+          AND ti.user_started_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM task_item_tenures t
+             WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
+          )
+          ${posFilter}
+       RETURNING id`,
+      [normalizeNumericId(performedByUserId) || null, ...params]
     );
     // El conteo sale del RETURNING y NO de `affectedRows`, y no es un capricho: el adaptador decide
     // si una consulta es de escritura con `/^\s*(insert|update|delete|replace)\b/` sobre el texto
@@ -272,7 +301,7 @@ export default class TaskAssignmentService {
     // se queda en 0 aunque reasigne, y este endpoint devolvia `{reconciled: 0}` siempre — que es
     // exactamente el fallo silencioso que el propio backfill vino a arreglar. Lo destapo el control
     // positivo del defecto 1.10.
-    return { reconciled: Array.isArray(result) ? result.length : 0 };
+    return { reconciled: Number(result?.affectedRows || 0) };
   }
 
 
@@ -313,26 +342,57 @@ export default class TaskAssignmentService {
     }
     const [personRows] = await connection.query("SELECT id FROM persons WHERE id = ? LIMIT 1", [toId]);
     if (!personRows.length) throw new Error("La persona destino no existe.");
-    await connection.query("UPDATE task_items SET assigned_person_id = ? WHERE id = ?", [toId, tiId]);
+    // CERRAR la tenencia vigente y ABRIR la nueva. `task_items.assigned_person_id` NO se escribe
+    // aqui: la mantiene el trigger `trg_task_item_tenures_sync`, que es su unico escritor desde el
+    // 2026-08-23. Antes este metodo la escribia a mano, y era uno de los cuatro sitios que podian
+    // hacerlo — de donde salio que dos copias del responsable se pudrieran.
+    await connection.query(
+      "UPDATE task_item_tenures SET ended_at = now() WHERE task_item_id = ? AND ended_at IS NULL",
+      [tiId]
+    );
+    // `position_id` se DERIVA, y ese matiz es el que distingue una suplencia de un relevo normal:
+    // si la persona destino ocupa hoy el puesto responsable, responde POR EL PUESTO y se guarda;
+    // si no, responde solo por el traspaso y queda `NULL`. Es el dato que el asiento viejo no tenia.
+    await connection.query(
+      `INSERT INTO task_item_tenures
+         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id)
+       SELECT ti.id, ?,
+              (SELECT pa.position_id
+                 FROM position_assignments pa
+                WHERE pa.position_id = ti.responsible_position_id
+                  AND pa.person_id = ?
+                  AND pa.is_current = 1
+                LIMIT 1),
+              'manual', ?, ?
+         FROM task_items ti
+        WHERE ti.id = ?`,
+      [toId, toId, reason || null, normalizeNumericId(performedByUserId) || null, tiId]
+    );
     // Si ya está iniciado (tiene documento), su dueño también se mueve al nuevo responsable.
     await connection.query("UPDATE documents SET owner_person_id = ? WHERE task_item_id = ?", [toId, tiId]);
-    // La causa de un traspaso por esta via es SIEMPRE `manual`, y no se acepta del cliente.
-    // Antes se tomaba de `triggerKind` (que viene del cuerpo de la peticion), asi que quien llamaba
-    // podia declarar su traspaso como `occupancy_end` y dejar en la bitacora una causa que no ocurrio.
-    // En una tabla de AUDITORIA eso es lo unico que no puede pasar: si el actor elige la causa, la
-    // bitacora deja de ser evidencia (defecto 1.10).
-    const kind = "manual";
-    await connection.query(
-      `INSERT INTO task_item_handovers (task_item_id, from_person_id, to_person_id, reason, trigger_kind, performed_by_user_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [tiId, fromId, toId, reason || null, kind, normalizeNumericId(performedByUserId) || null]
-    );
+    // El `INSERT INTO task_item_handovers` que habia aqui se retiro con la tabla: la tenencia que
+    // se acaba de abrir ES el asiento. Y la causa sigue siendo SIEMPRE `manual` y no se acepta del
+    // cliente — antes se tomaba de `triggerKind`, que viene del cuerpo de la peticion, asi que quien
+    // llamaba podia declarar su traspaso como `occupancy_end` y dejar en la bitacora una causa que
+    // no ocurrio. En una tabla de AUDITORIA eso es lo unico que no puede pasar (defecto 1.10).
     return { task_item_id: tiId, from_person_id: fromId, to_person_id: toId };
   }
 
 
   // El HISTORIAL de relevos de un entregable (defecto 1.10). Responde a «¿por qué esto, que era de
-  // Juan, ahora es de María?» — que es la pregunta para la que existe `task_item_handovers`.
+  // Juan, ahora es de María?».
+  //
+  // Sale de `task_item_tenures`, que guarda PERIODOS, pero se devuelve con la forma de EVENTOS
+  // (`from`/`to`) a proposito: es la que el frontend ya pinta, y son isomorfos — el `de quien` es
+  // simplemente el ocupante de la tenencia ANTERIOR, o sea un `LAG`.
+  //
+  // Diferencia visible: ahora aparece tambien la tenencia `original`, la del reparto inicial. El
+  // asiento viejo no la tenia porque solo escribia al TRASPASAR, asi que el historial empezaba en
+  // el segundo responsable y el primero no constaba en ninguna parte.
+  //
+  // Empieza por `SELECT` y no por `WITH` a proposito: el adaptador decide si una consulta es de
+  // escritura mirando el principio del texto (`config/postgres.js`), y un `WITH` ya costo un
+  // `{reconciled: 0}` silencioso.
   //
   // Resuelve los nombres aquí y no en el cliente: son dos LEFT JOIN y evita que la interfaz tenga que
   // pedir una persona por fila. Los LEFT son necesarios, no defensivos: `from_person_id` es NULL en el
@@ -342,21 +402,27 @@ export default class TaskAssignmentService {
     const tiId = normalizeNumericId(taskItemId);
     if (!tiId) throw new Error("Entregable (task_item) inválido.");
     const [rows] = await connection.query(
-      `SELECT h.id,
-              h.task_item_id,
-              h.from_person_id,
-              h.to_person_id,
-              h.reason,
-              h.trigger_kind,
-              h.performed_by_user_id,
-              h.created_at,
+      `SELECT te.id,
+              te.task_item_id,
+              te.from_person_id,
+              te.person_id AS to_person_id,
+              te.reason,
+              te.opened_by AS trigger_kind,
+              te.performed_by_user_id,
+              te.started_at AS created_at,
               CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
               CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
-         FROM task_item_handovers h
-         LEFT JOIN persons fp ON fp.id = h.from_person_id
-         LEFT JOIN persons tp ON tp.id = h.to_person_id
-        WHERE h.task_item_id = ?
-        ORDER BY h.id DESC`,
+         FROM (
+           SELECT t.id, t.task_item_id, t.person_id, t.reason, t.opened_by,
+                  t.performed_by_user_id, t.started_at,
+                  LAG(t.person_id) OVER (PARTITION BY t.task_item_id ORDER BY t.started_at, t.id)
+                    AS from_person_id
+             FROM task_item_tenures t
+            WHERE t.task_item_id = ?
+         ) te
+         LEFT JOIN persons fp ON fp.id = te.from_person_id
+         LEFT JOIN persons tp ON tp.id = te.person_id
+        ORDER BY te.id DESC`,
       [tiId]
     );
     return rows;

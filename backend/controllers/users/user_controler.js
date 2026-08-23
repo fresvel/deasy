@@ -974,19 +974,28 @@ export const listDeliverableHandovers = async (req, res) => {
       return res.status(404).json({ message: "No se encontró el entregable." });
     }
     const [rows] = await pool.query(
-      `SELECT h.id,
-              h.from_person_id,
-              h.to_person_id,
-              h.reason,
-              h.trigger_kind,
-              h.created_at,
+      // Sale de `task_item_tenures` (periodos) con forma de EVENTOS (`from`/`to`), que es la que el
+      // frontend pinta: el «de quien» es el ocupante de la tenencia anterior, o sea un `LAG`.
+      // Ahora incluye tambien la tenencia `original` del reparto inicial, que el asiento viejo no
+      // registraba — el historial empezaba en el segundo responsable.
+      `SELECT te.id,
+              te.from_person_id,
+              te.person_id AS to_person_id,
+              te.reason,
+              te.opened_by AS trigger_kind,
+              te.started_at AS created_at,
               CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
               CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
-         FROM task_item_handovers h
-         LEFT JOIN persons fp ON fp.id = h.from_person_id
-         LEFT JOIN persons tp ON tp.id = h.to_person_id
-        WHERE h.task_item_id = ?
-        ORDER BY h.id DESC`,
+         FROM (
+           SELECT t.id, t.task_item_id, t.person_id, t.reason, t.opened_by, t.started_at,
+                  LAG(t.person_id) OVER (PARTITION BY t.task_item_id ORDER BY t.started_at, t.id)
+                    AS from_person_id
+             FROM task_item_tenures t
+            WHERE t.task_item_id = ?
+         ) te
+         LEFT JOIN persons fp ON fp.id = te.from_person_id
+         LEFT JOIN persons tp ON tp.id = te.person_id
+        ORDER BY te.id DESC`,
       [Number(target.task_item_id)]
     );
     // `performed_by_user_id` NO se expone: a un responsable le importa el qué y el porqué, no qué
