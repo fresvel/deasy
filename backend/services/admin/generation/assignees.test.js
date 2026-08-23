@@ -18,7 +18,7 @@ import { resolveFillStepAssignees } from "./assignees.js";
 const CONTEXTO = {
   owner_person_id: 11,              // cebo de `document_owner`
   task_item_assigned_person_id: 22,
-  task_created_by_user_id: 33,
+  item_created_by_person_id: 33,   // la reserva: quien ENCARGO el entregable
   scope_unit_id: 44
 };
 
@@ -27,7 +27,9 @@ test("resolveFillStepAssignees: `task_assignee` prefiere el responsable del entr
   assert.deepEqual(personas, [22]);
 });
 
-test("resolveFillStepAssignees: `task_assignee` cae al creador de la tarea si no hay responsable", async () => {
+test("resolveFillStepAssignees: `task_assignee` cae a quien ENCARGO el entregable si no hay responsable", async () => {
+  // La reserva era `tasks.created_by_user_id`, retirado el 2026-08-23: estaba NULL en 12 de 13
+  // tareas, asi que como reserva casi nunca respondia. Ahora sale del propio entregable.
   const personas = await resolveFillStepAssignees(
     null,
     { resolver_type: "task_assignee" },

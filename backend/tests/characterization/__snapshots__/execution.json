@@ -54,12 +54,12 @@
         "context": {
           "document_version_id": "<normalized>",
           "document_version_status": "Pendiente de llenado",
+          "item_created_by_person_id": "<normalized>",
           "owner_person_id": "<normalized>",
           "process_definition_id": "<normalized>",
           "process_definition_template_id": "<normalized>",
           "scope_unit_id": "<normalized>",
           "scope_unit_type_id": "<normalized>",
-          "task_created_by_user_id": "<normalized>",
           "task_id": "<normalized>",
           "task_item_assigned_person_id": "<normalized>",
           "task_item_id": "<normalized>",
@@ -182,7 +182,6 @@
     "itemKeys": [
       "comments_thread_ref",
       "created_at",
-      "created_by_user_id",
       "description",
       "end_date",
       "id",

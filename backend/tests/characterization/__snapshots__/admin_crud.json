@@ -529,7 +529,6 @@
     "itemKeys": [
       "comments_thread_ref",
       "created_at",
-      "created_by_user_id",
       "description",
       "end_date",
       "id",

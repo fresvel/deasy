@@ -166,7 +166,7 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
        ti.process_definition_template_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
        ti.responsible_position_id AS task_item_responsible_position_id,
-       t.created_by_user_id AS task_created_by_user_id,
+       ti.created_by_person_id AS item_created_by_person_id,
        COALESCE(ti.target_unit_id, up_item.unit_id, t.scope_unit_id) AS scope_unit_id,
        COALESCE(u_target.unit_type_id, u_item.unit_type_id, u_task_scope.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv

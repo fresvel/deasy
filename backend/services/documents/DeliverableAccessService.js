@@ -188,16 +188,17 @@ export const ACCESS_SOURCES = Object.freeze([
           WHERE ta.assigned_person_id IS NOT NULL`,
   },
   {
-    // ⚠️ Nivel de ENTREGABLE, y no es una ampliación: `getAccessibleTaskItemForUser` ya lo
-    // incluye en su WHERE, así que dejarlo fuera le quitaría al creador de la tarea una
-    // visibilidad que hoy tiene — un 404 donde hoy hay un 200.
-    key: "tarea_creador",
+    // Quien ENCARGO el entregable. Colgaba de `tasks.created_by_user_id`, que se retiro el
+    // 2026-08-23: estaba NULL en 12 de 13 tareas —el lanzamiento automatico no lo rellena— y
+    // quien lanza una CORRIDA ya consta en `process_runs`. El unico caso donde significaba algo
+    // era la tarea ad-hoc, y ahi el dato vive mas cerca y mas fino: en el propio entregable.
+    key: "entregable_creador",
     grants: ACCESS_LEVELS.ENTREGABLE,
-    reason: "Lanzó la tarea que produjo el entregable",
-    sql: `SELECT t.created_by_user_id AS person_id
-          FROM tasks t
-          INNER JOIN alcance a ON a.task_id = t.id
-          WHERE t.created_by_user_id IS NOT NULL`,
+    reason: "Encargó este entregable",
+    sql: `SELECT ti_src.created_by_person_id AS person_id
+          FROM task_items ti_src
+          INNER JOIN alcance a ON a.task_item_id = ti_src.id
+          WHERE ti_src.created_by_person_id IS NOT NULL`,
   },
   // ── `documento_dueno` NO es una fuente, y esto se midió ───────────────────────────────
   // Estuvo en la lista durante P1 y se retiró al comparar contra la base: en el entregable 4,

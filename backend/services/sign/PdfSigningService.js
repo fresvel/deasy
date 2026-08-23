@@ -436,7 +436,10 @@ export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => 
        AND (
          d.owner_person_id = ?
          OR ti.assigned_person_id = ?
-         OR t.created_by_user_id = ?
+         -- Quien ENCARGO el entregable. Antes era el creador de la TAREA, retirado el 2026-08-23:
+         -- estaba NULL en el camino automatico, asi que como predicado de propiedad casi nunca
+         -- respondia. El dato equivalente vive en la misma fila del entregable.
+         OR ti.created_by_person_id = ?
          OR sr.assigned_person_id = ?
        )
      LIMIT 1`,

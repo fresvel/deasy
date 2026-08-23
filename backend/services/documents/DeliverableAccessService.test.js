@@ -77,10 +77,16 @@ test("el dueño materializado NO es fuente: su valor puede estar rancio", () => 
   assert.ok(!claves.includes("documento_dueno"));
 });
 
-test("el creador de la tarea llega al ENTREGABLE: el guard real ya lo incluía", () => {
-  // Quitarlo del nivel estrecho sería un 404 donde hoy hay un 200.
+test("quien ENCARGO el entregable llega a el, y el dato sale del entregable, no de la tarea", () => {
+  // `tasks.created_by_user_id` se retiro el 2026-08-23: estaba NULL en 12 de 13 tareas. El unico
+  // caso con significado era la ad-hoc, y ahi el creador vive en el propio entregable.
   const claves = sourcesForLevel(ACCESS_LEVELS.ENTREGABLE).map((source) => source.key);
-  assert.ok(claves.includes("tarea_creador"));
+  assert.ok(claves.includes("entregable_creador"));
+  assert.ok(!claves.includes("tarea_creador"), "la fuente vieja ha vuelto");
+
+  const fuente = ACCESS_SOURCES.find((s) => s.key === "entregable_creador");
+  assert.match(fuente.sql, /ti_src\.created_by_person_id/);
+  assert.ok(!/created_by_user_id/.test(fuente.sql), "sigue leyendo la columna retirada");
 });
 
 test("el ocupante actual del puesto entra sólo cuando la asignación está vacía", () => {
@@ -108,7 +114,7 @@ test("el chat pide el nivel ancho: es una conversación de proceso, no un docume
   const conn = fakeConnection([]);
   await listProcessParticipants(conn, { processId: 3, scopeUnitId: 8 });
   assert.ok(conn.queries[0].sql.includes("'tarea_asignado'"));
-  assert.ok(conn.queries[0].sql.includes("'tarea_creador'"));
+  assert.ok(conn.queries[0].sql.includes("'entregable_creador'"));
 });
 
 test("las dos mitades que hoy están divididas entre los dos guards están las dos", () => {
@@ -117,7 +123,7 @@ test("las dos mitades que hoy están divididas entre los dos guards están las d
   assert.ok(keys.includes("flujo_entrega"));
   assert.ok(keys.includes("flujo_firma"));
   // Las que sólo tenía el chat
-  assert.ok(keys.includes("tarea_creador"));
+  assert.ok(keys.includes("entregable_creador"));
   assert.ok(keys.includes("tarea_asignado"));
   assert.ok(keys.includes("entregable_asignado"));
 });

@@ -394,7 +394,6 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
     const pendingItems = items.filter((item) => isDocumentPending(item.document?.status)).length;
     return {
       ...task,
-      is_current_user_creator: Number(task.created_by_user_id) === Number(userId),
       task_item_count: items.length,
       pending_task_items: pendingItems,
       items

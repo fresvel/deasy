@@ -107,7 +107,10 @@ export const resolveFillStepAssignees = async (connection, step, context) => {
     case "specific_person":
       return step.assigned_person_id ? [Number(step.assigned_person_id)] : [];
     case "task_assignee": {
-      const assignee = context.task_item_assigned_person_id || context.task_created_by_user_id;
+      // La reserva era el creador de la TAREA (`tasks.created_by_user_id`), retirado el
+      // 2026-08-23: estaba NULL en 12 de 13 tareas, asi que como reserva casi nunca respondia.
+      // Ahora es quien ENCARGO el entregable, que es el dato equivalente y vive en la misma fila.
+      const assignee = context.task_item_assigned_person_id || context.item_created_by_person_id;
       return assignee ? [Number(assignee)] : [];
     }
     case "cargo_in_scope":

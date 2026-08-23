@@ -829,12 +829,9 @@ export const TABLE_HOOKS = {
       if (Object.hasOwn(updates, "launch_mode")) {
         delete updates.launch_mode;
       }
-      if (Object.hasOwn(updates, "created_by_user_id")) {
-        if (Number(updates.created_by_user_id || 0) !== Number(existing.created_by_user_id || 0)) {
-          throw new Error("No se puede cambiar el usuario creador de una tarea existente.");
-        }
-        delete updates.created_by_user_id;
-      }
+      // El guard de "no se puede cambiar el creador de una tarea" murio con la columna el
+      // 2026-08-23: quien encarga vive ahora en el ENTREGABLE (`created_by_person_id`), y quien
+      // lanza una corrida en `process_runs`.
       if (Object.hasOwn(updates, "process_run_id")) {
         if (Number(updates.process_run_id || 0) !== Number(existing.process_run_id || 0)) {
           throw new Error("No se puede cambiar la corrida de proceso de una tarea existente.");

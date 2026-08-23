@@ -32,7 +32,7 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.process_definition_template_id,
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
-       t.created_by_user_id AS task_created_by_user_id,
+       ti.created_by_person_id AS item_created_by_person_id,
        COALESCE(up_item.unit_id, t.scope_unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task_scope.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
@@ -512,8 +512,10 @@ const resolveTaskAssignee = (context) => {
   if (context?.task_item_assigned_person_id) {
     assignees.push(Number(context.task_item_assigned_person_id));
   }
-  if (context?.task_created_by_user_id) {
-    assignees.push(Number(context.task_created_by_user_id));
+  // Misma reserva que en el flujo de entrega, y por el mismo motivo: `tasks.created_by_user_id`
+  // se retiro el 2026-08-23 y su equivalente vive en el entregable.
+  if (context?.item_created_by_person_id) {
+    assignees.push(Number(context.item_created_by_person_id));
   }
   return assignees;
 };

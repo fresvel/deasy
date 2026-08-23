@@ -374,7 +374,6 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
     `SELECT
        t.id,
        t.term_id,
-       t.created_by_user_id,
        t.scope_unit_id,
        t.description,
        t.start_date,
@@ -393,14 +392,17 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
      WHERE t.process_definition_id = ?
        ${unitFilter}
        AND (
-         t.created_by_user_id = ?
-         OR EXISTS (
+         EXISTS (
            SELECT 1
            FROM task_items ti_owner
            WHERE ti_owner.task_id = t.id
              AND (
                ti_owner.assigned_person_id = ?
                OR ti_owner.target_person_id = ?
+               -- Quien encargo el entregable. Absorbe al t.created_by_user_id que habia aqui,
+               -- retirado el 2026-08-23: en la tarea ad-hoc los dos valian lo mismo, y en la
+               -- automatica el de la tarea estaba NULL.
+               OR ti_owner.created_by_person_id = ?
              )
          )
          OR EXISTS (

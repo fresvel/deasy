@@ -53,7 +53,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 10 de 21 tareas de D7.**
+**Estado: 0 de 7 fases · 11 de 21 tareas de D7.**
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|
@@ -73,7 +73,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | ~~`TD7-o`~~ | D7 | Arreglar la idempotencia del relanzamiento | ❌ **RETIRADA (2026-08-23): no estaba rota.** La consulta sirve a la rama «sin destinatarios»; la rama con destinatarios tiene su propia idempotencia. El riesgo lo inventé leyendo la función equivocada | — | 2026-08-23 |
 | ~~`TD7-p`~~ | D7 | El lanzamiento crea un entregable por destinatario | ❌ **RETIRADA (2026-08-23): ya estaba implementado.** `ensureTaskItemsForTaskTargets` lo hace; leí `ensureTaskItemsForTask`, que es otra función | — | 2026-08-23 |
 | `TD7-q` | D7 | **`tasks.responsible_position_id` retirado**; `scope_unit_id` pasa a NOT NULL | ✅ | 27 lecturas repuntadas · 641/641 unit · 294/294 char · el golden del chat gana **al Coordinador de Carrera como moderador**, que es `is_unit_head` de su unidad | 2026-08-23 |
-| `TD7-q2` | D7 | Retirar `tasks.created_by_user_id` (duplica `process_runs`) | ⬜ | — | — |
+| `TD7-q2` | D7 | **`tasks.created_by_user_id` retirado** (duplicaba `process_runs`) | ✅ | 641/641 unit · 294/294 char · 403/403 front · la fuente de acceso pasa a `entregable_creador` | 2026-08-23 |
 | `TD7-t` | D7 | **`document_workflow_observations.target_person_id` borrado**, y con él las dos fuentes de acceso por observación | ✅ | 641/641 unit · 294/294 char · el chat lo destapó con un 500 antes de que llegara a producción | 2026-08-23 |
 | `TD7-u` | D7 | **`task_items.status` borrado**: 5 filtros muertos y 3 proyecciones | ✅ | 641/641 unit · 294/294 char · goldens: **6 líneas, todas `status: pendiente`, cero adiciones** · `isDocumentPending` derivado del catálogo con guardia | 2026-08-23 |
 | `TD7-r` | D7 | **`one_per_unit` → `unit_head`**: el valor hace lo que su etiqueta promete | ✅ | `is_unit_head` en la consulta · 641/641 unit · 294/294 char · `CHECK` verificado en base recreada · **3** diccionarios de etiqueta unificados | 2026-08-23 |

@@ -419,11 +419,9 @@
       "tasks": [
         {
           "created_at": "<normalized>",
-          "created_by_user_id": "<normalized>",
           "description": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
           "end_date": "<normalized>",
           "id": "<normalized>",
-          "is_current_user_creator": true,
           "items": [
             {
               "actions": {

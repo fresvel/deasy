@@ -490,14 +490,13 @@ const createFreeTask = async (connection, { authenticatedUserId, input, definiti
 
   const [taskResult] = await connection.query(
     `INSERT INTO tasks (
-       process_definition_id, term_id, scope_unit_id, created_by_user_id,
+       process_definition_id, term_id, scope_unit_id,
        description, start_date, end_date, status
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+     ) VALUES (?, ?, ?, ?, ?, ?, 'pendiente')`,
     [
       definitionId,
       termId,
       unitId,
-      authenticatedUserId,
       composedTitle,
       startDate,
       endDate,

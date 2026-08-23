@@ -67,7 +67,7 @@ export default class ChatAuthorizationService {
          -- de tasks.responsible_position_id, que se retiro el 2026-08-23.
          t.scope_unit_id,
          ti.responsible_position_id AS task_item_responsible_position_id,
-         t.created_by_user_id,
+         ti.created_by_person_id,
          d.owner_person_id
        FROM tasks t
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
@@ -149,12 +149,15 @@ export default class ChatAuthorizationService {
          WHERE pdv.process_id = ?
            AND t.scope_unit_id = ?
          UNION
-         SELECT t.created_by_user_id AS person_id
-         FROM tasks t
+         -- Quien ENCARGO un entregable de esta unidad. Antes salia del creador de la TAREA,
+         -- retirado el 2026-08-23 por estar NULL en el camino automatico.
+         SELECT ti.created_by_person_id AS person_id
+         FROM task_items ti
+         INNER JOIN tasks t ON t.id = ti.task_id
          INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
          WHERE pdv.process_id = ?
            AND t.scope_unit_id = ?
-           AND t.created_by_user_id IS NOT NULL
+           AND ti.created_by_person_id IS NOT NULL
        ) admins
        WHERE person_id IS NOT NULL`,
       [normalizedProcessId, selectedScopeUnitId, normalizedProcessId, selectedScopeUnitId]
