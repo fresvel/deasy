@@ -71,9 +71,26 @@ test("el backfill es idempotente: la segunda pasada no mueve nada", async () => 
   matchSnapshot(SUITE, "reconcile_second_pass", { status: res.status, body: res.body });
 });
 
-test("un entregable YA INICIADO no lo toca el backfill, aunque su responsable no ocupe el puesto", async () => {
+// ⚠️ ESTE CASO CAMBIO DE SIGNIFICADO el 2026-08-23 (decision D1 del dueño), y conviene leer por que.
+//
+// Se llamaba «un entregable YA INICIADO no lo toca el backfill». Esa regla congelaba a nombre de
+// quien se fuera CUALQUIER entregable que alguien hubiera abierto, aunque no llevara nada dentro:
+// bastaba pulsar «iniciar» para que ningun relevo volviera a moverlo nunca.
+//
+// Ahora el corte esta al ENTRAR EN LA FASE DE FIRMA, que es cuando hay gente convocada con
+// solicitudes a su nombre. Lo empezado sin convocar a nadie SI se releva — y eso lo fija el caso
+// siguiente, que es la otra mitad de esta frontera.
+//
+// La prueba seguia en verde con la regla nueva, pero POR OTRO MOTIVO: el entregable que usa acaba la
+// suite en «Pendiente de firma». Pasaba por la razon correcta con el nombre equivocado, que es
+// exactamente como una prueba deja de proteger sin que nadie se entere.
+test("un entregable EN FASE DE FIRMA no lo toca el backfill, aunque su responsable no ocupe el puesto", async () => {
   const token = await tokenFor("admin");
   const antes = started(await listTaskItems(token));
+  assert.ok(
+    !["Inicial", "Pendiente de llenado", "En proceso", "Observado", "Listo para firma"].includes(antes.document_status),
+    `el caso exige un entregable ya en firma, y vino "${antes.document_status}"`,
+  );
   const original = antes.assigned_person_id;
 
   // Se le pone un responsable que NO es el ocupante vigente de su puesto: sin el guard, el
@@ -98,7 +115,7 @@ test("un entregable YA INICIADO no lo toca el backfill, aunque su responsable no
   assert.equal(
     Number(despues.assigned_person_id),
     intruso,
-    "el entregable iniciado debe conservar su responsable: el relevo automático no le aplica",
+    "un entregable en fase de firma debe conservar su responsable: el relevo automático no le aplica",
   );
 
   // Round-trip autolimpiante, por el mismo camino.
@@ -162,4 +179,40 @@ test("relevo manual · traspasa el entregable, mueve al dueño del documento y d
       body: { to_person_id: original, reason: "restauracion de la prueba" },
     });
   }
+});
+
+// La OTRA MITAD de la frontera de D1, y la que el cambio del 2026-08-23 abre: un entregable cuyo
+// documento ha avanzado pero AÚN NO ha entrado en la fase de firma sí se releva solo.
+//
+// Se usa el último estado relevable —«Listo para firma»— a propósito: es el borde exacto. El
+// llenado terminó, pero todavía no se ha convocado a nadie a firmar. Un estado más y no se movería.
+test("un entregable avanzado pero ANTES de la firma SÍ vuelve a su ocupante", async () => {
+  const token = await tokenFor("admin");
+  const candidato = (await listTaskItems(token)).find(
+    (r) => r.document_status === "Listo para firma" && r.assigned_person_id,
+  );
+  assert.ok(candidato, "la fixture debe dejar un entregable en el borde («Listo para firma»)");
+
+  const original = Number(candidato.assigned_person_id);
+  const intruso = original === 1 ? 2 : 1;
+  const cambio = await post(`/admin/sql/task-items/${candidato.id}/handover`, {
+    token,
+    body: { to_person_id: intruso, reason: "preparación del caso: responsable ajeno al puesto" },
+  });
+  assert.equal(cambio.status, 200, `no se pudo preparar el caso: ${JSON.stringify(cambio.body)}`);
+
+  const res = await post(RECONCILE, { token, body: {} });
+  assert.equal(res.status, 200);
+
+  const despues = (await listTaskItems(token)).find((r) => Number(r.id) === Number(candidato.id));
+  assert.notEqual(
+    Number(despues.assigned_person_id),
+    intruso,
+    "🔴 el relevo dejó de alcanzar a lo avanzado-pero-sin-firmar: ha vuelto el guard de «ya iniciado»",
+  );
+  assert.equal(
+    Number(despues.assigned_person_id),
+    original,
+    "y vuelve al ocupante vigente de su puesto, que es el original",
+  );
 });

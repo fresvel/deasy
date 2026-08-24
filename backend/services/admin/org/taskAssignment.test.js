@@ -52,18 +52,49 @@ const reconciliar = async (opciones = {}) => {
 test("el predicado va en las DOS sentencias: se cierra exactamente lo que se vuelve a abrir", async () => {
   const { cierre, apertura } = await reconciliar();
   for (const [nombre, q] of [["cierre", cierre], ["apertura", apertura]]) {
-    assert.ok(q.sql.includes("ti.user_started_at IS NULL"), `${nombre}: falta el guard de iniciado`);
+    // El guard dejo de ser «no iniciado» el 2026-08-23 (decision D1): ahora el relevo alcanza hasta
+    // ANTES de la fase de firma, y eso se lee del estado del documento. Lo empezado sin convocar a
+    // nadie SI se releva; lo que ya esta en firma y lo cerrado, no.
+    assert.ok(
+      q.sql.includes("ti.document_status IN"),
+      `${nombre}: falta el guard de la fase de firma`,
+    );
+    // Ojo con la forma: `user_started_at` SIGUE apareciendo en la apertura, pero dentro del `CASE`
+    // que sella `work_started`. Lo que no puede volver es como FILTRO.
+    assert.ok(
+      !/AND\s+ti\.user_started_at IS NULL/.test(q.sql),
+      `${nombre}: ha vuelto el guard viejo como filtro, y congelaba todo lo empezado`,
+    );
     assert.ok(q.sql.includes("pa.is_current = 1"), `${nombre}: falta el ocupante vigente`);
     assert.ok(q.sql.includes("ti.responsible_position_id"), `${nombre}: falta el ancla del puesto`);
   }
 });
 
-test("el guard de 'ya iniciado' es user_started_at, no la existencia del documento", async () => {
+test("el guard NO es la existencia del documento, y ya tampoco es 'ya iniciado'", async () => {
+  // Este caso ha cambiado DOS veces, y las dos por el mismo motivo: la señal de «hasta dónde llega
+  // el relevo» no estaba donde parecía.
+  //   · Hasta 2026-08 preguntaba por la ausencia de documento, que NUNCA se cumplía —el documento
+  //     nace con el entregable—, así que el backfill devolvía 0 siempre.
+  //   · Hasta el 2026-08-23 preguntaba por `user_started_at`, y eso congelaba a nombre de quien se
+  //     fuera cualquier entregable que alguien hubiera abierto, aunque no llevara nada dentro.
+  // Ahora pregunta por el ESTADO DEL DOCUMENTO: el corte está al entrar en la fase de firma (D1).
   const { sql } = await reconciliar();
-  assert.ok(sql.includes("ti.user_started_at IS NULL"), "debe filtrar por user_started_at");
+  assert.ok(sql.includes("ti.document_status IN"), "debe filtrar por el estado del documento");
+  assert.ok(!/AND\s+ti\.user_started_at IS NULL/.test(sql), "el guard de 'ya iniciado' ha vuelto");
   assert.ok(
     !sql.includes("documents"),
-    "no debe volver a preguntar por el documento: nace con el entregable y la rama era código muerto",
+    "no debe volver a preguntar por el documento: la tabla ya ni existe",
+  );
+});
+
+test("la tenencia nueva sella si el entregable YA LLEVABA TRABAJO dentro", async () => {
+  // `work_started` distingue «relevé algo que nadie había tocado» de «relevé algo a medias», que es
+  // la pregunta que hace una auditoría y que el asiento viejo no sabía responder.
+  const { apertura } = await reconciliar();
+  assert.ok(apertura.sql.includes("work_started"), "la apertura debe sellar work_started");
+  assert.ok(
+    /CASE WHEN ti\.user_started_at IS NULL THEN 0 ELSE 1 END/.test(apertura.sql),
+    "y debe sellarlo mirando si alguien había empezado",
   );
 });
 

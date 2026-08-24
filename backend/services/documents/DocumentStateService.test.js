@@ -14,6 +14,11 @@ import {
   canTransitionDocumentStatus,
   canTransitionDocumentVersionStatus,
   deriveDocumentStatusFromVersionStatus,
+  DOCUMENT_STATUSES,
+  DOCUMENT_TERMINAL_STATUSES,
+  DOCUMENT_RELAYABLE_STATUSES,
+  isDocumentRelayable,
+  isDocumentPending,
 } from "./DocumentStateService.js";
 
 // --- Normalización -----------------------------------------------------------
@@ -107,4 +112,67 @@ test("assertDocumentStatusValue COERCE en vez de lanzar ante un estado inválido
   // "Inicial" en silencio en vez de recibir un error.
   assert.equal(assertDocumentStatusValue("Firmadoo"), "Inicial");
   assert.doesNotThrow(() => assertDocumentStatusValue("estado inventado"));
+});
+
+
+// ── LA LISTA QUE ESTÁ DUPLICADA (D1, 2026-08-23) ──────────────────────────────────────────
+// `DOCUMENT_RELAYABLE_STATUSES` decide hasta dónde llega el relevo automático de un entregable, y
+// vive en DOS sitios porque no hay forma de que uno lea al otro:
+//
+//   · aquí, en JavaScript, para el backfill y el traspaso manual;
+//   · en `postgres_schema.sql`, dentro de los tres triggers de relevo.
+//
+// Una duplicación así no se vigila sola. Si se separan, el trigger y el backfill relevarían cosas
+// distintas —y el síntoma sería un entregable que a veces se mueve y a veces no, según qué camino
+// lo tocara—: de los peores de diagnosticar. Por eso lo que sigue LEE EL ESQUEMA y compara.
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const AQUI = path.dirname(fileURLToPath(import.meta.url));
+const ESQUEMA = path.resolve(AQUI, "../../database/postgres_schema.sql");
+
+test("la lista del esquema y la de JavaScript son la MISMA", () => {
+  const sql = fs.readFileSync(ESQUEMA, "utf8");
+  const apariciones = [...sql.matchAll(/ti\.document_status IN \(([^)]*)\)/g)];
+  assert.ok(apariciones.length >= 3, `el predicado debe estar en los tres triggers de relevo, y hay ${apariciones.length}`);
+
+  for (const [, lista] of apariciones) {
+    const enSql = lista.split(",").map((x) => x.trim().replace(/^'|'$/g, ""));
+    assert.deepEqual(
+      enSql,
+      [...DOCUMENT_RELAYABLE_STATUSES],
+      "el esquema y `DOCUMENT_RELAYABLE_STATUSES` han derivado: el trigger y el backfill relevarían cosas distintas",
+    );
+  }
+});
+
+test("lo relevable y lo cerrado no se solapan, y ninguno inventa estados", () => {
+  for (const estado of DOCUMENT_RELAYABLE_STATUSES) {
+    assert.ok(DOCUMENT_STATUSES.includes(estado), `${estado} no está en el catálogo`);
+    assert.ok(!DOCUMENT_TERMINAL_STATUSES.includes(estado), `${estado} no puede ser relevable Y cerrado`);
+  }
+});
+
+test("el corte está al ENTRAR en la fase de firma, no al estamparse la primera firma", () => {
+  // Es la decisión D1, y lo que la hace verificable: «Listo para firma» todavía se releva —el
+  // llenado acabó pero no se ha convocado a nadie— y «Pendiente de firma» ya no.
+  assert.ok(isDocumentRelayable("Listo para firma"), "el llenado acabado todavía se releva");
+  assert.ok(!isDocumentRelayable("Pendiente de firma"), "convocada la firma, ya no");
+  assert.ok(!isDocumentRelayable("Firmado parcial"));
+});
+
+test("un documento CERRADO no se releva, y eso ya no depende de que estuviera empezado", () => {
+  // Antes esto se protegía de rebote: los cerrados no se relevaban porque tenían `user_started_at`
+  // sellado, no porque estuvieran cerrados. Al abrir el relevo de lo empezado esa protección
+  // desapareció, así que ahora es explícita. Sin este caso, un documento «Final» volvería a moverse.
+  for (const estado of DOCUMENT_TERMINAL_STATUSES) {
+    assert.ok(!isDocumentRelayable(estado), `un documento ${estado} no se releva`);
+    assert.ok(!isDocumentPending(estado));
+  }
+});
+
+test("sin estado todavía se releva: aún no ha empezado nada", () => {
+  assert.ok(isDocumentRelayable(null));
+  assert.ok(isDocumentRelayable(""));
 });

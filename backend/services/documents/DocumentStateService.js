@@ -62,6 +62,40 @@ for (const estado of DOCUMENT_TERMINAL_STATUSES) {
   }
 }
 
+// Estados en los que un entregable TODAVÍA SE PUEDE RELEVAR SOLO.
+//
+// Decisión del dueño (2026-08-23, D1). El corte está **al entrar en la fase de firma**, no al
+// estamparse la primera firma: a partir de «Pendiente de firma» hay gente convocada con solicitudes
+// abiertas a su nombre, y cambiarles el responsable del documento por debajo es confuso. «Listo para
+// firma» todavía entra: significa que el llenado terminó, no que se haya convocado a nadie.
+//
+// ⚠️ ES UNA LISTA EXPLÍCITA, Y NO SE DERIVA. Se podría escribir como «ni en fase de firma ni
+// terminal», pero eso son dos propiedades del grafo y esto es una regla de NEGOCIO: el día que
+// alguien añada un estado nuevo, tiene que decidir a mano de qué lado cae. El `assert` de abajo
+// impide que un nombre mal escrito se quede callado — misma lección que `DOCUMENT_TERMINAL_STATUSES`,
+// donde derivar de la matriz dejó fuera a `Final` y habría contado todo lo acabado como pendiente.
+//
+// ⚠️ Y ESTÁ DUPLICADA EN `postgres_schema.sql`, dentro de los triggers de relevo, porque el SQL no
+// puede leer esta constante. La duplicación NO se vigila sola: la vigila `DocumentStateService.test.js`,
+// que lee el fichero del esquema y compara las dos listas.
+export const DOCUMENT_RELAYABLE_STATUSES = Object.freeze([
+  "Inicial",
+  "Pendiente de llenado",
+  "En proceso",
+  "Observado",
+  "Listo para firma",
+]);
+
+for (const estado of DOCUMENT_RELAYABLE_STATUSES) {
+  if (!DOCUMENT_STATUSES.includes(estado)) {
+    throw new Error(`Estado relevable desconocido en el catálogo de documentos: ${estado}`);
+  }
+}
+
+/** ¿Se puede relevar solo este entregable? Sin estado todavía, sí: aún no ha empezado nada. */
+export const isDocumentRelayable = (status) =>
+  DOCUMENT_RELAYABLE_STATUSES.includes(String(status || "Inicial").trim());
+
 /** ¿Este documento sigue pendiente? Sin documento todavía, también: aún hay trabajo por hacer. */
 export const isDocumentPending = (status) =>
   !DOCUMENT_TERMINAL_STATUSES.includes(String(status || "").trim());

@@ -253,7 +253,7 @@ export default class TaskAssignmentService {
         WHERE ti.id = t.task_item_id
           AND t.ended_at IS NULL
           AND ti.responsible_position_id IS NOT NULL
-          AND ti.user_started_at IS NULL
+          AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
           AND (t.person_id IS NULL OR t.person_id <> pa.person_id)
           ${posFilter}`,
       params
@@ -277,16 +277,17 @@ export default class TaskAssignmentService {
     // este camino lo dispara alguien a proposito.
     const [result] = await connection.query(
       `INSERT INTO task_item_tenures
-         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id)
+         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id, work_started)
        SELECT ti.id, pa.person_id, ti.responsible_position_id,
-              'reconcile', 'Reconciliacion de responsables', ?
+              'reconcile', 'Reconciliacion de responsables', ?,
+              CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
          FROM task_items ti
         INNER JOIN position_assignments pa
            ON pa.position_id = ti.responsible_position_id
           AND pa.is_current = 1
           AND pa.person_id IS NOT NULL
         WHERE ti.responsible_position_id IS NOT NULL
-          AND ti.user_started_at IS NULL
+          AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
           AND NOT EXISTS (
             SELECT 1 FROM task_item_tenures t
              WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
@@ -354,7 +355,7 @@ export default class TaskAssignmentService {
     // si no, responde solo por el traspaso y queda `NULL`. Es el dato que el asiento viejo no tenia.
     await connection.query(
       `INSERT INTO task_item_tenures
-         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id)
+         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id, work_started)
        SELECT ti.id, ?,
               (SELECT pa.position_id
                  FROM position_assignments pa
@@ -362,7 +363,8 @@ export default class TaskAssignmentService {
                   AND pa.person_id = ?
                   AND pa.is_current = 1
                 LIMIT 1),
-              'manual', ?, ?
+              'manual', ?, ?,
+              CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
          FROM task_items ti
         WHERE ti.id = ?`,
       [toId, toId, reason || null, normalizeNumericId(performedByUserId) || null, tiId]

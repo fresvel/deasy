@@ -898,6 +898,12 @@ CREATE TABLE IF NOT EXISTS task_item_tenures (
     'position_deactivated', 'reconcile', 'manual'
   )) NOT NULL DEFAULT 'original',
 
+  -- ¿El entregable YA LLEVABA TRABAJO DENTRO cuando se abrio esta tenencia? Instantanea, como
+  -- `position_id`: se sella al abrir y no se recalcula. Distingue «releve algo que nadie habia
+  -- tocado» de «releve algo a medias», que es la pregunta que hace una auditoria y que el asiento
+  -- viejo no sabia responder (D1, 2026-08-23).
+  work_started SMALLINT NOT NULL DEFAULT 0,
+
   reason VARCHAR(255) NULL,
   -- Solo lo rellena el traspaso a proposito. En un relevo automatico no lo hizo nadie, y
   -- `opened_by` ya dice la causa.
@@ -1783,8 +1789,8 @@ FOR EACH ROW EXECUTE FUNCTION trg_pdv_before_update_fn();
 -- perdio antes: uno se olvida. Aqui no puede olvidarse ninguno.
 CREATE OR REPLACE FUNCTION trg_task_items_after_insert_fn() RETURNS trigger AS $$
 BEGIN
-  INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason)
-  VALUES (NEW.id, NEW.assigned_person_id, NEW.responsible_position_id, 'original', 'Reparto inicial');
+  INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+  VALUES (NEW.id, NEW.assigned_person_id, NEW.responsible_position_id, 'original', 'Reparto inicial', 0);
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
@@ -1847,16 +1853,17 @@ BEGIN
      WHERE ti.id = t.task_item_id
        AND t.ended_at IS NULL
        AND ti.responsible_position_id = NEW.position_id
-       AND ti.user_started_at IS NULL
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
        AND (t.person_id IS NULL OR t.person_id <> NEW.person_id);
 
     -- Recoge tanto a los que acaban de cerrarse como a los ABANDONADOS que esperaban ocupante.
     -- Si la tenencia abierta ya era de NEW.person_id no se cerro nada y aqui no entra: idempotente.
-    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason)
-    SELECT ti.id, NEW.person_id, NEW.position_id, 'occupancy_start', 'Alta de ocupacion del puesto'
+    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+    SELECT ti.id, NEW.person_id, NEW.position_id, 'occupancy_start', 'Alta de ocupacion del puesto',
+           CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
       FROM task_items ti
      WHERE ti.responsible_position_id = NEW.position_id
-       AND ti.user_started_at IS NULL
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
        AND NOT EXISTS (
          SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
        );
@@ -1890,13 +1897,14 @@ BEGIN
        AND t.ended_at IS NULL
        AND t.person_id = OLD.person_id
        AND ti.responsible_position_id = NEW.position_id
-       AND ti.user_started_at IS NULL;
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma');
 
-    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason)
-    SELECT ti.id, NULL, NEW.position_id, 'occupancy_end', 'Fin de ocupacion del puesto'
+    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+    SELECT ti.id, NULL, NEW.position_id, 'occupancy_end', 'Fin de ocupacion del puesto',
+           CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
       FROM task_items ti
      WHERE ti.responsible_position_id = NEW.position_id
-       AND ti.user_started_at IS NULL
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
        AND NOT EXISTS (
          SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
        );
@@ -1909,14 +1917,15 @@ BEGIN
      WHERE ti.id = t.task_item_id
        AND t.ended_at IS NULL
        AND ti.responsible_position_id = NEW.position_id
-       AND ti.user_started_at IS NULL
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
        AND (t.person_id IS NULL OR t.person_id <> NEW.person_id);
 
-    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason)
-    SELECT ti.id, NEW.person_id, NEW.position_id, 'occupancy_start', 'Alta de ocupacion del puesto'
+    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+    SELECT ti.id, NEW.person_id, NEW.position_id, 'occupancy_start', 'Alta de ocupacion del puesto',
+           CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
       FROM task_items ti
      WHERE ti.responsible_position_id = NEW.position_id
-       AND ti.user_started_at IS NULL
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
        AND NOT EXISTS (
          SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
        );
