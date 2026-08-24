@@ -781,11 +781,20 @@ CREATE TABLE IF NOT EXISTS task_items (
   -- era mantener a mano un resumen del flujo que ademas podia mentir — el cliente lo calculaba
   -- como «el PRIMER firmante», asi que con dos pasos nombraba al aprobador intermedio.
   process_definition_template_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN process_definition_template_id ELSE NULL END) STORED,
-  responsible_position_id INT NULL,
+  -- OBLIGATORIO desde el 2026-08-23. Es el ANCLA del entregable: el PUESTO que responde de el, que
+  -- es lo durable —un puesto sobrevive a quien lo ocupa— y el punto por el que enganchan los cuatro
+  -- caminos de relevo y su tenencia. Sin el, un entregable no se lo debe nadie.
+  --
+  -- Podia quedar vacia por UN solo camino de los cinco: `ensureTaskItemsForTask`, el respaldo del
+  -- lanzamiento para cuando la regla de alcance no encontraba a nadie. Sembraba trabajo huerfano
+  -- mientras la misma respuesta declaraba `has_assignees: false`. Ese respaldo se retiro.
+  responsible_position_id INT NOT NULL,
   -- La identidad de un entregable definido por proceso: su tarea, su plantilla y QUIEN LO PRODUCE.
   -- Antes la formaban los dos destinos, o sea el receptor — que es el eje equivocado para decir
   -- «un entregable por persona que lo entrega», que es lo que el dueño decidio el 2026-08-23.
-  responsible_position_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN COALESCE(responsible_position_id, 0) ELSE NULL END) STORED,
+  -- El `COALESCE(responsible_position_id, 0)` que llevaba dentro sobra desde que la columna es
+  -- NOT NULL: estaba para que un entregable sin puesto no rompiera la unicidad colandose como NULL.
+  responsible_position_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN responsible_position_id ELSE NULL END) STORED,
   assigned_person_id INT NULL,
   start_date DATE NOT NULL,
   end_date DATE NULL,

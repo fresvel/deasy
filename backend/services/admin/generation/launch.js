@@ -19,7 +19,6 @@ import {
   getPositionsForRule
 } from "./queries.js";
 import {
-  ensureTaskItemsForTask,
   ensureTaskItemsForTaskTargets,
   resolveTaskTargetsForDefinition
 } from "./taskitems.js";

@@ -297,7 +297,8 @@ export const SQL_TABLES = [
       { name: "created_by_person_id", label: "Creado por", type: "number" },
       { name: "source_task_item_id", label: "Entregable origen", type: "number" },
       { name: "target_unit_id", label: "Unidad destino", type: "number" },
-      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
+      // Obligatorio: es el ancla del entregable. Sin puesto no hay quien responda.
+      { name: "responsible_position_id", label: "Puesto responsable", type: "number", required: true },
       // SOLO LECTURA desde el 2026-08-23: es una CACHE de la tenencia vigente, y su unico escritor
       // es el trigger `trg_task_item_tenures_sync`. Escribirla desde aqui producia un estado que el
       // modelo dice que no existe —la cache diciendo una cosa y `task_item_tenures` otra— sin que

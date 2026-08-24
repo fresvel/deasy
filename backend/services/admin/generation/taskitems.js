@@ -9,61 +9,10 @@ import {
   getExistingTaskItemTargetKeys
 } from "./queries.js";
 
-export const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, executableTemplatesMap, startDate = null, endDate = null) => {
-  // Solo las plantillas en modo `single` auto-generan su entregable de proceso.
-  // `replicated`/`routed` no siembran ítem: el usuario crea réplicas/instancias on-demand.
-  const templates = (executableTemplatesMap.get(processDefinitionId) || [])
-    .filter((template) => String(template.item_mode || "single") === "single");
-  if (!templates.length) {
-    return { inserted: 0, total: 0 };
-  }
-
-  // Resolve dates from the task if not provided
-  let resolvedStart = startDate;
-  let resolvedEnd = endDate;
-  if (resolvedStart === null && resolvedEnd === null) {
-    const [taskRows] = await connection.query(
-      `SELECT start_date, end_date FROM tasks WHERE id = ? LIMIT 1`,
-      [taskId]
-    );
-    resolvedStart = taskRows?.[0]?.start_date ?? null;
-    resolvedEnd = taskRows?.[0]?.end_date ?? null;
-  }
-
-  const existingTemplateIds = await getExistingTaskItemTemplateIds(connection, taskId);
-  let inserted = 0;
-  for (const template of templates) {
-    if (existingTemplateIds.has(Number(template.id))) {
-      continue;
-    }
-    await connection.query(
-      `INSERT INTO task_items (
-        task_id,
-        process_definition_template_id,
-        template_artifact_id,
-        origin_kind,
-        sort_order,
-        start_date,
-        end_date
-      ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?)`,
-      [
-        taskId,
-        template.id,
-        template.template_artifact_id,
-        template.sort_order ?? 1,
-        resolvedStart,
-        resolvedEnd ?? null
-      ]
-    );
-    inserted += 1;
-  }
-
-  return {
-    inserted,
-    total: templates.length
-  };
-};
-
+// `ensureTaskItemsForTask` VIVIO AQUI hasta el 2026-08-23. Creaba un entregable por plantilla SIN
+// puesto responsable, y era el UNICO camino de los cinco que dejaba esa columna vacia. Su ultimo
+// llamador era el respaldo de aqui abajo —el caso «no hay nadie a quien dirigirse»—, y ese caso
+// dejo de sembrar trabajo huerfano. Con el, `responsible_position_id` pasa a ser NOT NULL.
 export const ensureTaskItemsForTaskTargets = async (
   connection,
   taskId,
@@ -88,15 +37,19 @@ export const ensureTaskItemsForTaskTargets = async (
     }))
     .filter((position) => position.position_id || position.person_id);
 
+  // SIN PUESTOS NO HAY ENTREGABLE, y esto es un cambio de comportamiento del 2026-08-23.
+  //
+  // Antes se caia a `ensureTaskItemsForTask`, que creaba el entregable IGUAL pero sin puesto
+  // responsable: nacia sin nadie que respondiera de el. No aparecia en la lista de nadie, nadie lo
+  // reclamaba, y ahi se quedaba. Y contradecia al propio lanzamiento, que en la misma respuesta ya
+  // declaraba `has_assignees: false` y metia la definicion en `definitions_without_assignees`:
+  // decia «aqui no hay nadie» y a la vez sembraba trabajo para ese nadie.
+  //
+  // Ahora no se crea. El aviso sigue saliendo igual, y es el que hay que atender: si un proceso no
+  // encuentra a quien dirigirse, lo que falta es una REGLA DE ALCANCE o un puesto ocupado, no un
+  // entregable huerfano.
   if (!normalizedTargets.length) {
-    return await ensureTaskItemsForTask(
-      connection,
-      taskId,
-      processDefinitionId,
-      executableTemplatesMap,
-      startDate,
-      endDate
-    );
+    return { inserted: 0, total: 0 };
   }
 
   let resolvedStart = startDate;
