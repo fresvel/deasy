@@ -23,6 +23,7 @@ import { get, post, put } from "../lib/http.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
 import { tokenFor } from "../lib/auth.mjs";
+import { query } from "../lib/db.mjs";
 
 const SUITE = "task_item_relay";
 
@@ -215,4 +216,84 @@ test("un entregable avanzado pero ANTES de la firma SÍ vuelve a su ocupante", a
     original,
     "y vuelve al ocupante vigente de su puesto, que es el original",
   );
+});
+
+// ── D3: LAS SOLICITUDES SIGUEN AL RESPONSABLE (2026-08-23) ─────────────────────────────────
+//
+// Sin esto el entregable cambiaba de manos pero el trabajo no: el guard de la solicitud responde
+// «No puedes operar una solicitud de entrega asignada a otro usuario», así que quien llegaba
+// recibía un 403 sobre su propio entregable y quien se fue era el único que técnicamente podía
+// actuar. Se midió, no se supuso.
+//
+// El caso monta sus dos mitades a mano —un paso `task_assignee` y otro `specific_person`— porque la
+// frontera ES la decisión, y una prueba que sólo mira el lado que la fixture le regala no protege
+// el otro. La lección viene del caso del puesto desactivado, donde eso mismo dejó la mitad
+// importante sin cubrir.
+test("relevo · la solicitud de `task_assignee` sigue al nuevo responsable; la de persona concreta NO", async () => {
+  const token = await tokenFor("admin");
+
+  // ⚠️ SE BUSCA EL ENTREGABLE POR LO QUE HACE FALTA —una solicitud abierta—, no por su estado. La
+  // primera version elegia «el primero en Listo para firma» y ese NO tiene solicitudes abiertas:
+  // la prueba salia por un `return` temprano y pasaba en verde con el trigger roto. Se probo por
+  // mutacion, dos veces, y las dos quedaron sin detectar. Un `return` que se traga el caso es peor
+  // que no tener la prueba, porque ademas la cuenta como aprobada.
+  const solicitudes = await query(
+    `SELECT fr.id, fr.fill_flow_step_id, fr.assigned_person_id, dv.task_item_id
+       FROM fill_requests fr
+       JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+       JOIN document_versions dv ON dv.id = dff.document_version_id
+      WHERE fr.responded_at IS NULL
+      LIMIT 1`,
+  );
+  assert.ok(solicitudes.length, "la fixture debe dejar alguna solicitud de entrega abierta");
+
+  const filas = await listTaskItems(token);
+  const item = filas.find((r) => Number(r.id) === Number(solicitudes[0].task_item_id));
+  assert.ok(item, "el entregable de esa solicitud debe estar en la lista");
+
+  const original = Number(item.assigned_person_id);
+  const otro = original === 1 ? 2 : 1;
+
+  // Mitad A: el paso se resuelve por el RESPONSABLE del entregable.
+  await query("UPDATE fill_flow_steps SET resolver_type = 'task_assignee' WHERE id = $1", [
+    solicitudes[0].fill_flow_step_id,
+  ]);
+  const cambio = await post(`/admin/sql/task-items/${item.id}/handover`, {
+    token,
+    body: { to_person_id: otro, reason: "D3: la solicitud debe seguir al responsable" },
+  });
+  assert.equal(cambio.status, 200, `no se pudo preparar: ${JSON.stringify(cambio.body)}`);
+
+  const [tras] = await query("SELECT assigned_person_id FROM fill_requests WHERE id = $1", [solicitudes[0].id]);
+  assert.equal(
+    Number(tras.assigned_person_id),
+    otro,
+    "🔴 el entregable cambió de manos y la solicitud no: quien llega recibirá un 403 sobre su propio trabajo",
+  );
+
+  // Mitad B: el paso nombra a una PERSONA CONCRETA. Heredarlo sería falsearlo.
+  await query("UPDATE fill_flow_steps SET resolver_type = 'specific_person' WHERE id = $1", [
+    solicitudes[0].fill_flow_step_id,
+  ]);
+  await query("UPDATE fill_requests SET assigned_person_id = $1 WHERE id = $2", [otro, solicitudes[0].id]);
+  const vuelta = await post(`/admin/sql/task-items/${item.id}/handover`, {
+    token,
+    body: { to_person_id: original, reason: "D3: la de persona concreta NO debe moverse" },
+  });
+  assert.equal(vuelta.status, 200);
+
+  const [trasB] = await query("SELECT assigned_person_id FROM fill_requests WHERE id = $1", [solicitudes[0].id]);
+  assert.equal(
+    Number(trasB.assigned_person_id),
+    otro,
+    "🔴 una solicitud dirigida a una persona CONCRETA se movió con el relevo: eso la falsea",
+  );
+
+  // Autolimpieza: se devuelve el paso y la solicitud a su estado original.
+  await query("UPDATE fill_flow_steps SET resolver_type = $1 WHERE id = $2", [
+    "specific_person", solicitudes[0].fill_flow_step_id,
+  ]);
+  await query("UPDATE fill_requests SET assigned_person_id = $1 WHERE id = $2", [
+    solicitudes[0].assigned_person_id, solicitudes[0].id,
+  ]);
 });

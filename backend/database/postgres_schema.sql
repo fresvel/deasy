@@ -1811,9 +1811,54 @@ FOR EACH ROW EXECUTE FUNCTION trg_task_items_after_insert_fn();
 -- abajo, no una invencion.
 CREATE OR REPLACE FUNCTION trg_task_item_tenures_sync_fn() RETURNS trigger AS $$
 BEGIN
-  -- Solo manda la tenencia ABIERTA. Al cerrar una no se toca la cache: la pone la siguiente, y
-  -- entre las dos no hay hueco porque van en la misma transaccion.
+  -- Solo manda la tenencia ABIERTA. Al cerrar una no se toca nada: lo pone la siguiente, y entre
+  -- las dos no hay hueco porque van en la misma transaccion.
   IF NEW.ended_at IS NULL THEN
+
+    -- ── LAS SOLICITUDES SIGUEN AL RESPONSABLE (decision D3, 2026-08-23) ────────────────────
+    --
+    -- Sin esto el entregable cambiaba de manos pero el TRABAJO no: el guard de la solicitud dice
+    -- literalmente «No puedes operar una solicitud de entrega asignada a otro usuario», asi que
+    -- quien llegaba recibia un 403 sobre su propio entregable y quien se fue era el unico que
+    -- tecnicamente podia actuar.
+    --
+    -- ⚠️ LA REGLA ES «ALINEAR AL VIGENTE», NO «MOVER DE X A Y», y la diferencia importa: un relevo
+    -- pasa por un estado INTERMEDIO SIN PERSONA (se cierra la tenencia del que se va, se abre una
+    -- abandonada, y luego la del que llega). Con «mover de X a Y» la solicitud llegaba a NULL en el
+    -- primer paso y en el segundo ya no coincidia con nadie — medido, se quedaba huerfana. Alinear
+    -- es ademas idempotente, que es lo que quieres en un trigger que corre en cinco caminos.
+    --
+    -- SOLO ALCANZA A `task_assignee`, o sea a lo que esta a nombre de alguien POR SER EL
+    -- RESPONSABLE del entregable. Un paso por CARGO nombra a quien ocupe ese cargo —otra persona,
+    -- otro puesto— y no tiene que ver con este relevo; uno de `specific_person` nombra a alguien a
+    -- proposito y heredarlo seria falsearlo. Y no se hereda una firma YA DADA: solo viajan las
+    -- solicitudes SIN RESPONDER.
+    UPDATE fill_requests fr
+       SET assigned_person_id = NEW.person_id
+      FROM fill_flow_steps ffs, document_fill_flows dff, document_versions dv
+     WHERE ffs.id = fr.fill_flow_step_id
+       AND dff.id = fr.document_fill_flow_id
+       AND dv.id = dff.document_version_id
+       AND dv.task_item_id = NEW.task_item_id
+       AND fr.responded_at IS NULL
+       AND ffs.resolver_type = 'task_assignee'
+       AND fr.assigned_person_id IS DISTINCT FROM NEW.person_id;
+
+    -- En firma, ademas del `resolver_type` hay que mirar el JSONB `signers`: puede traer resolutores
+    -- por firmante que la columna no refleja (es el agujero conocido de `parseStepSigners`). Ante la
+    -- duda NO se mueve — mover mal una firma es peor que no moverla.
+    UPDATE signature_requests sr
+       SET assigned_person_id = NEW.person_id
+      FROM signature_flow_steps sfs, signature_flow_instances sfi, document_versions dv
+     WHERE sfs.id = sr.step_id
+       AND sfi.id = sr.instance_id
+       AND dv.id = sfi.document_version_id
+       AND dv.task_item_id = NEW.task_item_id
+       AND sr.responded_at IS NULL
+       AND sfs.resolver_type = 'task_assignee'
+       AND (sfs.signers IS NULL OR sfs.signers::text NOT LIKE '%specific_person%')
+       AND sr.assigned_person_id IS DISTINCT FROM NEW.person_id;
+
     UPDATE task_items ti
        SET assigned_person_id = NEW.person_id
      WHERE ti.id = NEW.task_item_id
