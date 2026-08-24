@@ -78,7 +78,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `TD7-o` | D7 | **`task_assignments` retirada**: era una foto del reparto que ningún relevo refrescaba | ✅ | `4cbfdd5e` · 12 lecturas repuntadas · el lanzamiento deja de escribirla-y-releerla · caen 3 fósiles (`hydrateGeneralTask` con **cero llamadores**) | 2026-08-23 |
 | `TD7-p` | D7 | **`documents.owner_person_id` retirada**: la tercera copia del responsable | ✅ | `80fcf960` · goldens: **9 líneas y las 9 son esa columna** · el resolver legado `document_owner` delega en `task_assignee` | 2026-08-23 |
 | `TD7-z` | D7 | **D1** · el relevo llega hasta ANTES de la firma; el cierre gana guard explícito; la tenencia sella `work_started` | ✅ | `a81a8547` · char 294/294 sin mover golden · lista duplicada JS/SQL vigilada por una prueba que **lee el esquema** · 2 mutaciones en rojo | 2026-08-23 |
-| `TD7-z2` | D7 | **D1.b y D2** · el jefe de unidad puede reasignar y reiniciar desde su panel | ✅ | `1dcc0b66` · el botón que el panel prometía desde su nacimiento · 3 defectos hallados en el navegador (`AppButton` sin importar, `DISTINCT`+`ORDER BY`, `ANY(?)`) | 2026-08-23 |
+| `TD7-z2` | D7 | **DR1.b y DR2** · el jefe de unidad puede reasignar y reiniciar desde su panel | ✅ | `1dcc0b66` · el botón que el panel prometía desde su nacimiento · 3 defectos hallados en el navegador (`AppButton` sin importar, `DISTINCT`+`ORDER BY`, `ANY(?)`) | 2026-08-23 |
 | `TD7-z3` | D7 | **D2** · desactivar un puesto emite `position_deactivated` y lo hace visible al jefe | ✅ | `78fd13c0` · estrena una causa que llevaba años **sin un solo emisor** · el término `is_active = 0` del panel, probado por mutación | 2026-08-23 |
 | `TD7-z4` | D7 | **D3** · las solicitudes pendientes siguen al responsable | ✅ | `044c9a68` · en UN solo sitio (el trigger de sincronía), no en los cinco caminos · regla «alinear al vigente», no «mover de X a Y» · 2 mutaciones en rojo | 2026-08-23 |
 | `TD7-z5` | D7 | **La versión mayor/menor y la bitácora de subidas**: ya consta quién elaboró un documento | ✅ | `a6d2d7b2` · `document_version_uploads` · numeración propuesta por el dueño · se descartó el JSON por el precedente del **defecto 1.19** | 2026-08-23 |
@@ -90,7 +90,7 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 | `TD7-u` | D7 | **`task_items.status` borrado**: 5 filtros muertos y 3 proyecciones | ✅ | 641/641 unit · 294/294 char · goldens: **6 líneas, todas `status: pendiente`, cero adiciones** · `isDocumentPending` derivado del catálogo con guardia | 2026-08-23 |
 | `TD7-r` | D7 | **`one_per_unit` → `unit_head`**: el valor hace lo que su etiqueta promete | ✅ | `is_unit_head` en la consulta · 641/641 unit · 294/294 char · `CHECK` verificado en base recreada · **3** diccionarios de etiqueta unificados | 2026-08-23 |
 | `TD7-s` | D7 | Colapsar las piezas de código de migración del esquema dentro de su tabla | ⬜ | **Remedido 2026-08-23: son 18, no 25** — la reordenación del entregable se llevó varias por delante | — |
-| `TD7-j` | D7 | ~~**P4** · El custodio: recorrido orgánico hasta el primer jefe~~ — **SUPERSEDIDA por D2** (2026-08-23) | ✅ | El dueño decidió que **no se adivina sucesor**: el modelo no dice qué sustituye a un puesto desactivado. Lo decide una persona, desde el panel de supervisión (`TD7-z2` + `TD7-z3`). El custodio automático dejó de tener sitio | 2026-08-23 |
+| `TD7-j` | D7 | ~~**P4** · El custodio: recorrido orgánico hasta el primer jefe~~ — **SUPERSEDIDA por `DR2`** (2026-08-23), la decisión del dueño sobre el puesto desactivado — **no por la fase D2**, que es otra cosa | ✅ | El dueño decidió que **no se adivina sucesor**: el modelo no dice qué sustituye a un puesto desactivado. Lo decide una persona, desde el panel de supervisión (`TD7-z2` + `TD7-z3`). El custodio automático dejó de tener sitio | 2026-08-23 |
 | `TD7-k` | D7 | **P5** · Eliminar un puesto deja de borrar su historia; desactivarlo emite `position_deactivated` | 🟡 | **Desactivar** hecho en `TD7-z3`. Queda **eliminar**, y al medirlo el 2026-08-23 salió que **está ROTO, no sólo mal diseñado**: su primer `DELETE` es sintaxis multi-tabla de MySQL (`DELETE rart FROM … INNER JOIN …`) que **PostgreSQL rechaza** — verificado ejecutándolo. Es la regla 5 del método otra vez. Además borra `position_assignments`, o sea la historia. Y desactivar **NO cierra la ocupación**: la persona sigue como titular vigente de un puesto que ya no existe | 2026-08-23 |
 | `TD7-l` | D7 | **P6** · La fusión: `documents` se absorbe en `task_items`; mueren `owner_person_id` y `task_items.status` | ✅ | `ae29e12e` (6a: las columnas) + `cdf66b39` (6b: la tabla) · `documents` no tenía **ni una columna propia** · las versiones cuelgan ya del entregable · gate nuevo `check:sql-aliases` nacido de este cambio | 2026-08-23 |
 | `D1` | — | Un solo `withTransaction`; los 20 ciclos manuales, fuera | ⬜ | — | — |
@@ -333,7 +333,25 @@ verde, incluido el caso de doble fallo.
 
 ## Fase D2 · Un vocabulario de estados, no cinco — ⬜
 
-**El defecto, verificado el 2026-08-09.** El conjunto de estados terminales de `task_items` está
+> ⚠️ **REMEDIDA EL 2026-08-23, y ha encogido mucho.** Lo que sigue describe el estado del
+> **2026-08-09** y ya no es cierto: `task_items.status` **se retiró** (tenía cero escritores) y con
+> ella los dos vocabularios en conflicto. Lo medido hoy:
+>
+> | Entonces | Ahora |
+> |---|---|
+> | 5 sitios, **3 vocabularios** que no comparten un literal | **1 vocabulario** (`tasks.status`) repetido en **3 sitios** |
+> | «un entregable completado puede cambiar de dueño» | **cerrado**: el relevo ya no mira ese estado, mira `document_status` y tiene guard explícito del cierre |
+> | 8 columnas de estado sin `CHECK` | **4** |
+>
+> Los tres sitios que quedan son `config/sqlTables.js:266`, `services/admin/SqlAdminService.js:212` y
+> `controllers/users/user_controler.panel.js:427`, los tres con
+> `pendiente · en_proceso · completada · cancelada` — **el mismo vocabulario**, no tres. Lo que falta
+> ya no es unificar alfabetos: es **bajar ese dominio a la base** con su `CHECK`, que es exactamente
+> lo que pide `TD7-e`. Las dos tareas se han convertido en una.
+>
+> **Lo peligroso de esta fase ya está cerrado.** Lo que queda es higiene.
+
+**El defecto, verificado el 2026-08-09** (y superado; ver el aviso de arriba)**.** El conjunto de estados terminales de `task_items` está
 escrito en **cinco sitios con tres vocabularios que no coinciden**:
 
 | Dónde | Vocabulario |

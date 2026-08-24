@@ -528,7 +528,15 @@ tenía. No hay que migrar nada: **no hay datos en producción** y la semilla se 
 
 # Decisiones del dueño (2026-08-23)
 
-## D1 · Qué pasa con lo EMPEZADO cuando su persona deja el puesto
+> ⚠️ **SE LLAMAN `DR1`, `DR2`, `DR3` — «Decisión del Relevo» — y NO `D1`, `D2`, `D3`.**
+>
+> Se renombraron el 2026-08-23, el mismo día, porque **`D1`…`D7` ya son las FASES del frente 9** y la
+> colisión hacía ilegible el plan: en la misma tabla de control convivían un «supersedida por D2»
+> que hablaba de esta decisión y un «va detrás de D2» que hablaba de la fase. El dueño lo leyó y
+> dijo, con razón, que no encontraba la lógica. **No tenía lógica: eran dos cosas distintas con el
+> mismo nombre.**
+
+## DR1 · Qué pasa con lo EMPEZADO cuando su persona deja el puesto
 
 ### Los cuatro estados, y son los que ya existen
 
@@ -552,13 +560,13 @@ Dos precisiones que salieron al medir:
    protección desaparece para los otros dos** y hay que ponerles su guard explícito. Es la mitad del
    trabajo, y no se ve leyendo el diseño.
 
-### Decisión 1.a — dónde corta
+### Decisión DR1.a — dónde corta
 
 **Al ENTRAR en fase de firma**, no al estamparse la primera firma. A partir de «Pendiente de firma»
 hay gente convocada con solicitudes abiertas a su nombre, y cambiarles el responsable del documento
 por debajo es confuso. Además se lee de `task_items.document_status`, que el entregable ya tiene.
 
-### Decisión 1.b — quién desatasca
+### Decisión DR1.b — quién desatasca
 
 **El jefe de la unidad**, desde el panel que ya existe.
 
@@ -580,15 +588,15 @@ Nunca se construyó el botón.
 | 3 | El jefe de unidad puede traspasar y reiniciar los atascados de su unidad — el botón que falta en el panel |
 | 4 | Asiento propio para el relevo de algo empezado, distinto del de lo no empezado |
 
-### ⚠️ D1 y D3 están acopladas
+### ⚠️ DR1 y DR3 están acopladas
 
-El hueco de 1.b existe **porque la solicitud sigue a nombre de quien se fue**, que es justo lo que
-decide D3. Si las solicitudes siguieran al relevo, el sucesor sería el titular del paso y podría
+El hueco de DR1.b existe **porque la solicitud sigue a nombre de quien se fue**, que es justo lo que
+decide DR3. Si las solicitudes siguieran al relevo, el sucesor sería el titular del paso y podría
 desatascar solo. Se resuelve por la vía del jefe **a propósito**: una solicitud de FIRMA no debería
 heredarse —le pediría al sucesor que dé conformidad a algo que él no elaboró—, así que el acoplamiento
 no se rompe automatizando, se rompe con una decisión humana.
 
-## D2 · Qué pasa cuando se DESACTIVA un puesto
+## DR2 · Qué pasa cuando se DESACTIVA un puesto
 
 ### Lo que pasa hoy: nada
 
@@ -621,15 +629,15 @@ funciones pasan a»—, asi que reasignar solo seria adivinar.
 **Se permite desactivar, y se avisa al jefe de la unidad.** Ni se bloquea la reorganizacion ni se
 adivina un sucesor.
 
-Y una consecuencia que se deriva de D1: **el marcado no alcanza a todo**.
+Y una consecuencia que se deriva de DR1: **el marcado no alcanza a todo**.
 
 | Estado del entregable | Que le pasa al desactivar su puesto |
 |---|---|
 | Antes de la fase de firma | queda huerfano con causa `position_deactivated` — el nombre que llevaba años sin emisor |
-| En fase de firma | **no se toca la tenencia** (contradiria D1); solo se LISTA para el jefe |
+| En fase de firma | **no se toca la tenencia** (contradiria DR1); solo se LISTA para el jefe |
 | Cerrado | nada: no queda trabajo |
 
-## D3 · Que pasa con las SOLICITUDES pendientes en un relevo
+## DR3 · Que pasa con las SOLICITUDES pendientes en un relevo
 
 ### Lo que pasa hoy: el sucesor no puede trabajar
 
@@ -637,7 +645,7 @@ El guard es literal: *«No puedes operar una solicitud de entrega asignada a otr
 (`assertFillActionAllowed`). Asi que tras un relevo el entregable es de Maria, la solicitud sigue a
 nombre de Juan, y **Maria recibe un 403**. El entregable cambia de manos pero el trabajo no.
 
-### ⚠️ Correccion de lo que se dijo en D1
+### ⚠️ Correccion de lo que se dijo en DR1
 
 Se afirmo que «una solicitud de FIRMA no deberia heredarse porque le pediria al sucesor que de
 conformidad a algo que el no elaboro». **Es falso en el caso general.** Una plantilla *official* solo

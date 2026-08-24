@@ -15,7 +15,7 @@ export const getMySupervisedStuckTasks = async (req, res) => {
   }
 };
 
-// ── LAS DOS ACCIONES DEL JEFE (D1.b y D2, 2026-08-23) ─────────────────────────────────────
+// ── LAS DOS ACCIONES DEL JEFE (DR1.b y DR2, 2026-08-23) ─────────────────────────────────────
 //
 // El panel llevaba desde su nacimiento diciendo «la reasignación se habilitará desde aquí en el
 // siguiente paso». Éste es ese paso, y lo motiva un hueco medido: si la persona que se fue es quien

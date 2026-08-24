@@ -901,7 +901,7 @@ CREATE TABLE IF NOT EXISTS task_item_tenures (
   -- ¿El entregable YA LLEVABA TRABAJO DENTRO cuando se abrio esta tenencia? Instantanea, como
   -- `position_id`: se sella al abrir y no se recalcula. Distingue «releve algo que nadie habia
   -- tocado» de «releve algo a medias», que es la pregunta que hace una auditoria y que el asiento
-  -- viejo no sabia responder (D1, 2026-08-23).
+  -- viejo no sabia responder (DR1, 2026-08-23).
   work_started SMALLINT NOT NULL DEFAULT 0,
 
   reason VARCHAR(255) NULL,
@@ -1869,7 +1869,7 @@ BEGIN
   -- las dos no hay hueco porque van en la misma transaccion.
   IF NEW.ended_at IS NULL THEN
 
-    -- ── LAS SOLICITUDES SIGUEN AL RESPONSABLE (decision D3, 2026-08-23) ────────────────────
+    -- ── LAS SOLICITUDES SIGUEN AL RESPONSABLE (decision DR3, 2026-08-23) ────────────────────
     --
     -- Sin esto el entregable cambiaba de manos pero el TRABAJO no: el guard de la solicitud dice
     -- literalmente «No puedes operar una solicitud de entrega asignada a otro usuario», asi que
@@ -1927,7 +1927,7 @@ AFTER INSERT OR UPDATE ON task_item_tenures
 FOR EACH ROW EXECUTE FUNCTION trg_task_item_tenures_sync_fn();
 
 
--- SE DESACTIVA UN PUESTO: sus entregables dejan de tener a quien esperar (decision D2 del dueño,
+-- SE DESACTIVA UN PUESTO: sus entregables dejan de tener a quien esperar (decision DR2 del dueño,
 -- 2026-08-23).
 --
 -- POR QUE HACE FALTA. Desactivar un puesto NO es quedarse sin ocupante, y la diferencia hace daño:
@@ -1940,7 +1940,7 @@ FOR EACH ROW EXECUTE FUNCTION trg_task_item_tenures_sync_fn();
 -- Estrena `position_deactivated`, que llevaba en el vocabulario de causas desde su creacion SIN UN
 -- SOLO EMISOR: un nombre reservado para un camino que no existia.
 --
--- ⚠️ NO ALCANZA A TODO, y es por coherencia con D1: un entregable ya EN FASE DE FIRMA no puede
+-- ⚠️ NO ALCANZA A TODO, y es por coherencia con DR1: un entregable ya EN FASE DE FIRMA no puede
 -- quedarse sin responsable —hay gente convocada con solicitudes a su nombre—, asi que solo se
 -- LISTA para el jefe de la unidad, que decide. Los cerrados no se tocan: no queda trabajo.
 --

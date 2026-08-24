@@ -115,7 +115,7 @@ test("assertDocumentStatusValue COERCE en vez de lanzar ante un estado inválido
 });
 
 
-// ── LA LISTA QUE ESTÁ DUPLICADA (D1, 2026-08-23) ──────────────────────────────────────────
+// ── LA LISTA QUE ESTÁ DUPLICADA (DR1, 2026-08-23) ──────────────────────────────────────────
 // `DOCUMENT_RELAYABLE_STATUSES` decide hasta dónde llega el relevo automático de un entregable, y
 // vive en DOS sitios porque no hay forma de que uno lea al otro:
 //
@@ -155,7 +155,7 @@ test("lo relevable y lo cerrado no se solapan, y ninguno inventa estados", () =>
 });
 
 test("el corte está al ENTRAR en la fase de firma, no al estamparse la primera firma", () => {
-  // Es la decisión D1, y lo que la hace verificable: «Listo para firma» todavía se releva —el
+  // Es la decisión DR1, y lo que la hace verificable: «Listo para firma» todavía se releva —el
   // llenado acabó pero no se ha convocado a nadie— y «Pendiente de firma» ya no.
   assert.ok(isDocumentRelayable("Listo para firma"), "el llenado acabado todavía se releva");
   assert.ok(!isDocumentRelayable("Pendiente de firma"), "convocada la firma, ya no");

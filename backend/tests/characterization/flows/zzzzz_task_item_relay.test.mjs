@@ -72,7 +72,7 @@ test("el backfill es idempotente: la segunda pasada no mueve nada", async () => 
   matchSnapshot(SUITE, "reconcile_second_pass", { status: res.status, body: res.body });
 });
 
-// ⚠️ ESTE CASO CAMBIO DE SIGNIFICADO el 2026-08-23 (decision D1 del dueño), y conviene leer por que.
+// ⚠️ ESTE CASO CAMBIO DE SIGNIFICADO el 2026-08-23 (decision DR1 del dueño), y conviene leer por que.
 //
 // Se llamaba «un entregable YA INICIADO no lo toca el backfill». Esa regla congelaba a nombre de
 // quien se fuera CUALQUIER entregable que alguien hubiera abierto, aunque no llevara nada dentro:

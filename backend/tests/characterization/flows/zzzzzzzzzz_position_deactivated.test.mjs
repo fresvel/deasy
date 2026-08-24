@@ -1,4 +1,4 @@
-// Contrato del PUESTO DESACTIVADO (decisión D2 del dueño, 2026-08-23).
+// Contrato del PUESTO DESACTIVADO (decisión DR2 del dueño, 2026-08-23).
 //
 // ── Qué pasaba antes ──────────────────────────────────────────────────────────────────────
 // Nada. Ningún trigger tocaba `unit_positions`, y desactivar un puesto NI SIQUIERA cierra su

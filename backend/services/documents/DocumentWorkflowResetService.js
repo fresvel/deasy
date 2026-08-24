@@ -235,7 +235,7 @@ export const resetDocumentWorkflowForTaskItem = async ({
 
   const documentVersionId = Number(currentVersion.document_version_id);
   // ⚠️ `bypassStepOwnership` LO USA UNA SOLA COSA: el panel de supervision del jefe de unidad, y
-  // existe porque este guard tiene un punto ciego que se midio (D1, 2026-08-23).
+  // existe porque este guard tiene un punto ciego que se midio (DR1, 2026-08-23).
   //
   // El guard exige ser EL TITULAR DEL PASO ACTUAL, y lo comprueba contra QUIEN LLAMA. Asi que si la
   // persona que se fue es justo quien tenia el paso, no puede reiniciar NADIE: ni el relevo lo mueve
