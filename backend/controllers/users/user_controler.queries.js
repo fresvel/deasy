@@ -50,7 +50,7 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
        ti.id AS task_item_id,
        ti.document_status,
        dv.id AS document_version_id,
-       dv.version AS document_version,
+       dv.version_label AS document_version,
        dv.status AS document_version_status,
        dv.working_file_path,
        dv.final_file_path,
@@ -138,7 +138,7 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        ti.id AS task_item_id,
        ti.document_status,
        dv.id AS document_version_id,
-       dv.version AS document_version,
+       dv.version_label AS document_version,
        dv.status AS document_version_status,
        dv.working_file_path,
        dv.final_file_path,
@@ -513,7 +513,7 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
        ti.document_status,
        dv.id AS document_version_id,
-       dv.version AS document_version,
+       dv.version_label AS document_version,
        dv.working_file_path,
        dv.final_file_path,
        COALESCE(sig.total_signature_count, 0) AS total_signature_count,
@@ -679,7 +679,7 @@ export const getAccessibleTaskItemDocumentForUser = async (
        ti.document_status,
        dv.id AS document_version_id,
        dv.status AS document_version_status,
-       dv.version AS document_version,
+       dv.version_label AS document_version,
        dv.working_file_path,
        dv.final_file_path,
        (
@@ -731,7 +731,7 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
        sfs.step_order,       tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
        dv.id AS document_version_id,
-       dv.version AS document_version
+       dv.version_label AS document_version
      FROM signature_requests sr
      INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
@@ -775,7 +775,7 @@ export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, docu
        tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
        dv.id AS document_version_id,
-       dv.version AS document_version,
+       dv.version_label AS document_version,
        TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name
      FROM signature_flow_instances sfi
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
@@ -858,7 +858,7 @@ export const getUserPendingFillRequestsForDefinition = async (pool, userId, defi
        tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
        dv.id AS document_version_id,
-       dv.version AS document_version
+       dv.version_label AS document_version
      FROM fill_requests fr
      INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
      INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id

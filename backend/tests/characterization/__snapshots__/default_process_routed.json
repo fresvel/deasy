@@ -52,7 +52,9 @@
         "status": "Pendiente de llenado",
         "task_item_id": "<normalized>",
         "template_artifact_id": "<normalized>",
-        "version": "0.1",
+        "version": 1,
+        "version_label": "1.0",
+        "version_minor": 0,
         "working_file_path": null
       }
     ]
@@ -226,7 +228,9 @@
         "status": "Pendiente de llenado",
         "task_item_id": "<normalized>",
         "template_artifact_id": "<normalized>",
-        "version": "0.1",
+        "version": 1,
+        "version_label": "1.0",
+        "version_minor": 0,
         "working_file_path": null
       }
     ]

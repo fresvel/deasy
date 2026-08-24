@@ -23,7 +23,7 @@ const getLatestDocumentVersionForTaskItem = async (connection, definitionId, tas
        YEAR(trm.start_date) AS term_year,
        ti.id AS document_id,
        dv.id AS document_version_id,
-       dv.version AS document_version,
+       dv.version_label AS document_version,
        dv.status AS document_version_status,
        dv.template_artifact_id,
        dv.payload_hash,
@@ -181,7 +181,9 @@ const createResetDocumentVersion = async (connection, currentVersion) => {
      WHERE task_item_id = ?`,
     [currentVersion.task_item_id]
   );
-  const nextVersion = Number((Number(maxRows?.[0]?.max_version || 0) + 0.1).toFixed(1));
+  // La RONDA siguiente, entera. Reiniciar no es corregir: se cancela el intento anterior con todo lo
+  // que llevaba dentro y se abre otro. El segundo digito arranca en 0 y lo mueve la primera subida.
+  const nextVersion = Number(maxRows?.[0]?.max_version || 0) + 1;
 
   const [insertResult] = await connection.query(
     `INSERT INTO document_versions (

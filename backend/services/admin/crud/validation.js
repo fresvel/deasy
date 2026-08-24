@@ -178,10 +178,13 @@ const documentStatusValue = (candidate) => {
 };
 
 const documentVersionNumberAndStatus = (candidate) => {
+  // La version es la RONDA, y es un entero desde el 2026-08-23: la 1 es el primer intento del flujo
+  // y cada reinicio abre la siguiente. Las CORRECCIONES son el segundo digito y no se escriben aqui
+  // — las lleva `document_version_uploads`, una fila por subida.
   if (candidate.version !== undefined) {
     const versionValue = Number(candidate.version);
-    if (Number.isNaN(versionValue) || versionValue < 0.1) {
-      throw new Error("La version debe ser mayor o igual a 0.1.");
+    if (!Number.isInteger(versionValue) || versionValue < 1) {
+      throw new Error("La version (ronda) debe ser un entero mayor o igual a 1.");
     }
   }
 

@@ -7,7 +7,7 @@
           "definition_name": "Proceso por defecto",
           "document_id": "<normalized>",
           "document_status": "Pendiente de llenado",
-          "document_version": "0.1",
+          "document_version": "1.0",
           "document_version_id": "<normalized>",
           "document_version_status": "Pendiente de llenado",
           "final_file_path": "<normalized>",
@@ -91,6 +91,8 @@
       "task_item_id",
       "template_artifact_id",
       "version",
+      "version_label",
+      "version_minor",
       "working_file_path"
     ]
   },

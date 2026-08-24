@@ -279,10 +279,15 @@ test("validateTableRules exige el item de tarea del documento", () => {
   assert.doesNotThrow(() => validateTableRules("documents", { task_item_id: 1 }));
 });
 
-test("validateTableRules rechaza una versión documental menor que 0.1", () => {
-  throwsWith(() => validateTableRules("document_versions", { version: 0 }), "mayor o igual a 0.1");
-  throwsWith(() => validateTableRules("document_versions", { version: "abc" }), "mayor o igual a 0.1");
-  assert.doesNotThrow(() => validateTableRules("document_versions", { version: 0.1 }));
+test("la versión documental es la RONDA: un entero mayor o igual a 1", () => {
+  // Era `>= 0.1` con decimales. El número mentía: la 0.1 y la 0.2 parecían dos correcciones del
+  // mismo documento y son DOS RONDAS completas —la primera cancelada entera—. Las correcciones son
+  // ahora el segundo dígito y no se escriben aquí: son filas de `document_version_uploads`.
+  throwsWith(() => validateTableRules("document_versions", { version: 0 }), "entero mayor o igual a 1");
+  throwsWith(() => validateTableRules("document_versions", { version: "abc" }), "entero mayor o igual a 1");
+  throwsWith(() => validateTableRules("document_versions", { version: 1.5 }), "entero mayor o igual a 1");
+  assert.doesNotThrow(() => validateTableRules("document_versions", { version: 1 }));
+  assert.doesNotThrow(() => validateTableRules("document_versions", { version: 12 }));
 });
 
 // --- template_artifacts -------------------------------------------------------

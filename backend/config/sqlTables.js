@@ -603,6 +603,27 @@ export const SQL_TABLES = [
   // `title` y `comments_thread_ref` se retiraron por ser copia, letra muerta y fosil. Las versiones
   // cuelgan ahora del entregable.
   {
+    // La BITACORA de subidas: una fila por correccion del archivo. Toda de solo lectura salvo la
+    // nota — es evidencia de quien elaboro que, y una evidencia editable a mano deja de serlo.
+    table: "document_version_uploads",
+    label: "Subidas del entregable",
+    category: "Documentos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "document_version_id", label: "Version (ronda)", type: "number", readOnly: true },
+      { name: "minor", label: "Correccion", type: "number", readOnly: true },
+      { name: "file_name", label: "Archivo", type: "text", readOnly: true },
+      { name: "file_path", label: "Ruta", type: "text", readOnly: true },
+      { name: "mime_type", label: "Tipo", type: "text", readOnly: true },
+      { name: "size_bytes", label: "Tamano", type: "number", readOnly: true },
+      { name: "uploaded_by_person_id", label: "Subido por", type: "number", readOnly: true },
+      { name: "note", label: "Nota", type: "text" },
+      { name: "created_at", label: "Subido", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["file_name"]
+  },
+  {
     table: "document_versions",
     label: "Versiones de documento",
     category: "Documentos",
@@ -610,7 +631,10 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "task_item_id", label: "Entregable", type: "number", required: true },
-      { name: "version", label: "Version", type: "number", defaultValue: "0.1", required: true },
+      // La RONDA. Las correcciones no se editan aqui: son filas de `document_version_uploads`.
+      { name: "version", label: "Version (ronda)", type: "number", defaultValue: "1", required: true },
+      { name: "version_minor", label: "Correccion vigente", type: "number", readOnly: true },
+      { name: "version_label", label: "Version", type: "text", readOnly: true },
       { name: "template_artifact_id", label: "Artifact", type: "number" },
       { name: "payload_hash", label: "Hash payload", type: "text", readOnly: true },
       { name: "payload_object_path", label: "Ruta payload", type: "text", readOnly: true },

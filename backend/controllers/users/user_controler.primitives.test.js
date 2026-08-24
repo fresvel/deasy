@@ -73,15 +73,27 @@ test("buildCanonicalDocumentVersionBasePath usa term_start_date cuando falta ter
   assert.ok(path.includes("/ANIOS/2021/"), "el año sale de los 4 primeros chars de la fecha");
 });
 
-test("buildWorkingObjectPathForUpload sanea nombre y extensión y ubica bajo working/", () => {
+test("buildWorkingObjectPathForUpload sanea nombre y extensión y ubica bajo la CORRECCIÓN", () => {
+  // La carpeta `m0003` es del 2026-08-23: el almacenamiento pasa a explicarse solo, `v0001/m0003`
+  // se lee «ronda 1, corrección 3» sin consultar nada.
   const objectPath = buildWorkingObjectPathForUpload({
     basePath: "5/Documentos/21/v0001",
     originalName: "Mi Archivo Final.PDF",
-    extension: "PDF"
+    extension: "PDF",
+    minor: 3
   });
-  assert.ok(objectPath.startsWith("5/Documentos/21/v0001/working/pdf/"), "extensión en minúscula");
+  assert.ok(objectPath.startsWith("5/Documentos/21/v0001/m0003/working/pdf/"), "ronda, corrección y extensión en minúscula");
   assert.ok(objectPath.endsWith("-Mi_Archivo_Final.PDF"), "nombre saneado al final");
   assert.match(objectPath, /working\/pdf\/\d+-[0-9a-f-]{36}-/, "prefijo timestamp-uuid");
+});
+
+test("sin corrección indicada cae en la primera, y nunca en cero", () => {
+  // El `m0000` no debe existir: la primera subida ES la corrección 1. Un cero ahí seria una carpeta
+  // que no corresponde a ninguna fila de la bitácora.
+  for (const minor of [undefined, 0, -4, null]) {
+    const p = buildWorkingObjectPathForUpload({ basePath: "b", originalName: "a.pdf", extension: "pdf", minor });
+    assert.ok(p.startsWith("b/m0001/working/"), `minor=${minor} debe caer en m0001 y vino ${p}`);
+  }
 });
 
 test("getNumericUserId lee params/query/body en orden y descarta no numéricos", () => {

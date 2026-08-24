@@ -358,7 +358,7 @@
           "attachments": [],
           "document_id": "<normalized>",
           "document_status": "Pendiente de llenado",
-          "document_version": "0.1",
+          "document_version": "1.0",
           "document_version_id": "<normalized>",
           "end_date": "<normalized>",
           "final_file_path": "<normalized>",
@@ -409,7 +409,7 @@
             "fill_requests": [
               {
                 "document_id": "<normalized>",
-                "document_version": "0.1",
+                "document_version": "1.0",
                 "document_version_id": "<normalized>",
                 "id": "<normalized>",
                 "requested_at": "<normalized>",
@@ -469,7 +469,7 @@
       "fill_requests": [
         {
           "document_id": "<normalized>",
-          "document_version": "0.1",
+          "document_version": "1.0",
           "document_version_id": "<normalized>",
           "id": "<normalized>",
           "requested_at": "<normalized>",
@@ -547,7 +547,7 @@
                 "attachments": [],
                 "document_id": "<normalized>",
                 "document_status": "Pendiente de llenado",
-                "document_version": "0.1",
+                "document_version": "1.0",
                 "document_version_id": "<normalized>",
                 "end_date": "<normalized>",
                 "final_file_path": "<normalized>",
@@ -598,7 +598,7 @@
                   "fill_requests": [
                     {
                       "document_id": "<normalized>",
-                      "document_version": "0.1",
+                      "document_version": "1.0",
                       "document_version_id": "<normalized>",
                       "id": "<normalized>",
                       "requested_at": "<normalized>",
@@ -679,7 +679,7 @@
                   "attachments": [],
                   "document_id": "<normalized>",
                   "document_status": "Pendiente de llenado",
-                  "document_version": "0.1",
+                  "document_version": "1.0",
                   "document_version_id": "<normalized>",
                   "end_date": "<normalized>",
                   "final_file_path": "<normalized>",
@@ -730,7 +730,7 @@
                     "fill_requests": [
                       {
                         "document_id": "<normalized>",
-                        "document_version": "0.1",
+                        "document_version": "1.0",
                         "document_version_id": "<normalized>",
                         "id": "<normalized>",
                         "requested_at": "<normalized>",
@@ -845,7 +845,7 @@
                 "fill_requests": [
                   {
                     "document_id": "<normalized>",
-                    "document_version": "0.1",
+                    "document_version": "1.0",
                     "document_version_id": "<normalized>",
                     "id": "<normalized>",
                     "requested_at": "<normalized>",

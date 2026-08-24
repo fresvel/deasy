@@ -582,10 +582,23 @@ export const uploadDeliverablePdf = async (req, res) => {
 
     const originalName = String(uploadedFile.originalname || "entregable.pdf");
     const extension = path.extname(originalName).replace(/^\./, "").toLowerCase() || "pdf";
+
+    // CADA SUBIDA ES UNA CORRECCION, y tiene su numero (2026-08-23). El siguiente menor se calcula
+    // ANTES de subir porque forma parte de la ruta del objeto: `…/v0001/m0003/working/pdf/…`, que
+    // se lee «ronda 1, correccion 3» sin consultar nada.
+    const [minorRows] = await connection.query(
+      `SELECT COALESCE(MAX(minor), 0) + 1 AS siguiente
+         FROM document_version_uploads
+        WHERE document_version_id = ?`,
+      [Number(target.document_version_id)]
+    );
+    const minor = Number(minorRows?.[0]?.siguiente || 1);
+
     const relativeObjectPath = buildWorkingObjectPathForUpload({
       basePath: buildCanonicalDocumentVersionBasePath(target),
       originalName,
-      extension
+      extension,
+      minor
     });
     const minioObjectName = `${MINIO_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
 
@@ -596,11 +609,33 @@ export const uploadDeliverablePdf = async (req, res) => {
     });
 
     await connection.beginTransaction();
+
+    // La BITACORA. Es lo que hasta hoy no existia: quien elaboro el documento no constaba en
+    // ninguna parte, mientras que un ANEXO —material de apoyo— si guardaba quien lo subio.
+    await connection.query(
+      `INSERT INTO document_version_uploads
+         (document_version_id, minor, file_path, file_name, mime_type, size_bytes, uploaded_by_person_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        Number(target.document_version_id),
+        minor,
+        relativeObjectPath,
+        originalName,
+        uploadedFile.mimetype || null,
+        uploadedFile.size ?? null,
+        authenticatedUserId,
+      ]
+    );
+
+    // `working_file_path` sigue siendo EL ARCHIVO VIGENTE y no se mueve de sitio: son 74 lecturas en
+    // el backend, y ninguna necesita saber de la bitacora. Lo que se sobrescribia y se perdia era el
+    // puntero al anterior; ahora ese puntero vive en la bitacora, con su autor y su fecha.
     await connection.query(
       `UPDATE document_versions
-       SET working_file_path = ?
+       SET working_file_path = ?,
+           version_minor = ?
        WHERE id = ?`,
-      [relativeObjectPath, Number(target.document_version_id)]
+      [relativeObjectPath, minor, Number(target.document_version_id)]
     );
 
     const currentStatus = String(target.document_version_status || "").trim();

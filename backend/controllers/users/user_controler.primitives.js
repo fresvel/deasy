@@ -40,11 +40,22 @@ export const buildCanonicalDocumentVersionBasePath = (target) => {
   ].join("/");
 };
 
-export const buildWorkingObjectPathForUpload = ({ basePath, originalName, extension }) => {
+// La carpeta de la CORRECCION dentro de la ronda (2026-08-23). El almacenamiento pasa a explicarse
+// solo: `…/v0001/m0003/working/pdf/…` se lee «ronda 1, correccion 3» sin consultar nada.
+//
+// Ojo con lo que esto NO arregla, porque es facil creer lo contrario: en MinIO nunca se perdio un
+// fichero. El nombre lleva sello de tiempo y UUID, asi que cada subida escribe un objeto NUEVO. Lo
+// que se perdia era el PUNTERO —`working_file_path` se sobrescribe— y los objetos anteriores
+// quedaban huerfanos, no borrados. Eso lo arregla `document_version_uploads`; esto solo hace que
+// un humano pueda navegar el bucket y entender lo que ve.
+export const buildDocumentMinorFolder = (minor) => `m${String(Math.max(1, Number(minor || 1))).padStart(4, "0")}`;
+
+export const buildWorkingObjectPathForUpload = ({ basePath, originalName, extension, minor = 1 }) => {
   const safeOriginalName = sanitizeStorageSegment(originalName, `archivo.${extension || "bin"}`);
   const safeExtension = sanitizeStorageSegment(extension || "bin", "bin").toLowerCase();
   return [
     basePath,
+    buildDocumentMinorFolder(minor),
     "working",
     safeExtension,
     `${Date.now()}-${randomUUID()}-${safeOriginalName}`

@@ -213,7 +213,7 @@ async function readEntregable(taskItemId) {
   const document = item ? { id: item.id, task_item_id: item.id } : null;
   const versions = document
     ? await query(
-        `SELECT id, task_item_id, version, template_artifact_id, payload_object_path, working_file_path,
+        `SELECT id, task_item_id, version, version_minor, version_label, template_artifact_id, payload_object_path, working_file_path,
                 final_file_path, format, status
            FROM document_versions WHERE task_item_id = $1 ORDER BY version, id`,
         [document.id],
@@ -470,7 +470,11 @@ test("free · el entregable resultante: documento, versión y solicitudes de lle
     "quien responde del entregable es quien lo ELABORA, no quien lo recibe",
   );
   assert.equal(resultado.versions.length, 1, "se crea UNA versión");
-  assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
+  // La RONDA 1, entera (2026-08-23). Era «0.1», y ese número mentía: sugería «primera corrección»
+  // cuando es el primer intento completo del flujo. Las correcciones son el segundo dígito y las
+  // lleva `document_version_uploads`, una fila por subida del archivo.
+  assert.equal(Number(resultado.versions[0].version), 1, "la ronda inicial es la 1");
+  assert.equal(Number(resultado.versions[0].version_minor), 0, "y aún sin correcciones");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");
   // LA ASIMETRÍA DE TÍTULOS MURIÓ CON LA COLUMNA (2026-08-23), y este caso guarda su lápida.
   //
@@ -581,7 +585,11 @@ test("derived · el entregable resultante: documento, versión y solicitudes de 
     "quien responde del entregable es quien lo ELABORA, no quien lo recibe",
   );
   assert.equal(resultado.versions.length, 1, "se crea UNA versión");
-  assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
+  // La RONDA 1, entera (2026-08-23). Era «0.1», y ese número mentía: sugería «primera corrección»
+  // cuando es el primer intento completo del flujo. Las correcciones son el segundo dígito y las
+  // lleva `document_version_uploads`, una fila por subida del archivo.
+  assert.equal(Number(resultado.versions[0].version), 1, "la ronda inicial es la 1");
+  assert.equal(Number(resultado.versions[0].version_minor), 0, "y aún sin correcciones");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");
   // La otra mitad de la asimetría: aquí SÍ se hereda el título del entregable (ver el caso `free`).
   // Mismo cambio que en el caso `free`: ya no hay título del documento, hay título del entregable.

@@ -292,6 +292,8 @@
       "task_item_id",
       "template_artifact_id",
       "version",
+      "version_label",
+      "version_minor",
       "working_file_path"
     ]
   },

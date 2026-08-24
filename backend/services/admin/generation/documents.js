@@ -318,7 +318,10 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
        ) VALUES (?, ?, ?, ?)`,
       [
         taskItem.id,
-        0.1,
+        // La RONDA 1. Era `0.1`, y ese numero mentia: sugeria «primera correccion» cuando es la
+        // primera ronda completa del flujo. El segundo digito nace en 0 y lo mueve la primera
+        // subida del archivo.
+        1,
         taskItem.template_artifact_id ?? null,
         "Borrador"
       ]
