@@ -17,6 +17,7 @@
     "test:char:capture": "npm run test:char:fixture && SNAPSHOT_MODE=update npm run test:char",
     "check:imports": "node scripts/check_missing_imports.mjs",
     "check:sql-comments": "node scripts/check_sql_comment_backticks.mjs",
+    "check:sql-aliases": "node scripts/check_sql_aliases.mjs",
     "check:params": "node scripts/audit_bindparams.mjs",
     "recover:admin": "node scripts/bootstrap_admin_recovery.mjs",
     "seed:dev": "node scripts/seed_dev_rich.mjs",

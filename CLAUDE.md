@@ -359,6 +359,7 @@ bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # unit
 bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # contrato HTTP contra goldens
 bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLIGATORIO tras mover código
 bash scripts/docker-env.sh dev exec -T backend npm run check:sql-comments # OBLIGATORIO tras tocar SQL
+bash scripts/docker-env.sh dev exec -T backend npm run check:sql-aliases  # OBLIGATORIO tras tocar SQL
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
 ```
 El backend **no tiene lint**, pero **sí tiene tests** — ejecútalos, no valides "a mano".
@@ -368,6 +369,16 @@ JavaScript y el backtick las **cierra**. Citar la columna que estás documentand
 eso muerde — seis veces en una sola tanda. Con suerte lo caza `node --check`, apuntando a la primera
 línea de la plantilla en vez de a la del backtick; sin suerte el fichero compila y el SQL sale
 truncado en ejecución. Lo vigila **`npm run check:sql-comments`**, a techo cero.
+
+⚠️ **Y nunca dejes un alias de SQL sin su tabla.** Es el mismo tipo de fallo por el otro lado: un
+`ti.id` cuyo `JOIN` ya no está es sintaxis perfecta para todo el mundo menos para PostgreSQL, que
+responde `missing FROM-clause entry for table "ti"` **en tiempo de llamada**. No lo ve `node
+--check`, no lo ve `check:imports`, y el backend arranca igual. Muerde sobre todo al reemplazar en
+bloque: retirando la tabla `documents` (2026-08-23) un reemplazo global de una línea de `JOIN` se
+llevó **tres joins legítimos** a `task_items` en consultas que no tenían nada que ver, y el diff era
+de 91 sitios — leerlo no servía. Lo vigila **`npm run check:sql-aliases`**, a techo cero (428
+consultas). Sólo mira sentencias completas y, en las que se componen con `${…}`, sólo los usos
+anteriores al primer hueco: lo de después puede apoyarse en tablas que trae el fragmento.
 `npm run start` (`node index.js`) sirve la API en `/deasy/v1`, Swagger en `/deasy/docs`.
 
 ⚠️ **`test:char:run` RESETEA la base de dev** (reset + bootstrap + seed). Es lo normal para char, pero
