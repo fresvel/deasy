@@ -14,7 +14,7 @@
 | **B** | **Ciclo evitado** — decisión correcta y ya documentada | 1 | No |
 | **C** | **Decisión explícita**: «FK lógica, para no acoplar» | 10 | **Revisarla: tiene coste medido** |
 | **D** | **Descuido de tipo** — no pueden llevar FK porque el tipo no casa | 2 | Sí → `TD7-d` |
-| **E** | **Descuido dentro del propio dominio** | 2 | Sí |
+| **E** | **Descuido dentro del propio dominio** | 2 | ✅ Hecho (`TD7-c2`, 2026-08-24) |
 
 ---
 
@@ -96,5 +96,12 @@ que se decidiera no ponerla, es que no se podía. Se arreglan en `TD7-d`.
 hermanas sí llevan FK — `chat_conversation_participants`, `chat_messages`, `chat_message_attachments`
 y `chat_message_reads` las tienen todas. `chat_notifications` es la única del chat **sin ninguna**.
 
-Es una omisión, no una postura. Pero **arreglarla toca la tabla de notificaciones**, que no es de esta
-fase: queda anotada como tarea propia.
+Es una omisión, no una postura — y así quedó **cerrada el 2026-08-24** (`TD7-c2`): las dos FKs viven
+ya dentro del `CREATE TABLE`, con `ON DELETE CASCADE`. La política no es libre: la eligen sus
+hermanas. `chat_messages.reply_to_message_id` usa `SET NULL` porque una respuesta **es contenido** y
+sobrevive a que borren su padre; `participants`, `attachments` y `reads` usan CASCADE porque son
+accesorios de su mensaje. Una notificación es lo segundo: **es un puntero**, y sin destino queda un
+enlace muerto que el usuario puede pulsar.
+
+Y la cabecera del bloque de chat lo dice ahora explícitamente: **el criterio de «no acoplar» mira
+hacia afuera, y solo hacia afuera**. Dentro del dominio las referencias llevan constraint.

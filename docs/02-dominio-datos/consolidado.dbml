@@ -1093,6 +1093,8 @@ Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachme
 Ref "fk_chat_reads_message":"chat_messages"."id" <? "chat_message_reads"."message_id" [delete: cascade]
 Ref "fk_chat_messages_conversation":"chat_conversations"."id" <? "chat_messages"."conversation_id" [delete: cascade]
 Ref "fk_chat_messages_reply":"chat_messages"."id" ?<? "chat_messages"."reply_to_message_id" [delete: set null]
+Ref "fk_chat_notif_conversation":"chat_conversations"."id" ?<? "chat_notifications"."conversation_id" [delete: cascade]
+Ref "fk_chat_notif_message":"chat_messages"."id" ?<? "chat_notifications"."message_id" [delete: cascade]
 Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
 Ref "fk_contract_origin_recruitment_offer":"offers"."id" <? "contract_origin_recruitment"."offer_id"
 Ref "fk_contract_origin_recruitment_vacancy":"vacancies"."id" <? "contract_origin_recruitment"."vacancy_id"
