@@ -519,6 +519,83 @@ export default class TaskAssignmentService {
   // ocupación vigente) + sus descendientes orgánicos, y devuelve los task_items ABIERTOS ATASCADOS ahí: sin
   // persona (huérfanos) o cuyo asignado ya NO ocupa el puesto responsable (titular que se fue). `is_supervisor`
   // indica si encabeza alguna unidad (para mostrar/ocultar el panel aunque no haya atascados).
+  // El ALCANCE de un jefe: las unidades que encabeza mas sus descendientes por relacion `org`.
+  // Se extrajo el 2026-08-23 porque ahora lo usan DOS cosas: el listado de atascados y el GUARD de
+  // las acciones que el jefe puede ejecutar sobre ellos. Escribirlo dos veces era garantizar que
+  // acabaran divergiendo — y una divergencia aqui significa que el panel te enseña algo que luego
+  // no te deja tocar, o peor, al reves.
+  static SCOPE_CTE = `WITH RECURSIVE headed AS (
+         SELECT up.unit_id AS unit_id
+           FROM unit_positions up
+           INNER JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1 AND pa.person_id = ?
+          WHERE up.is_unit_head = 1 AND up.is_active = 1
+       ),
+       scope AS (
+         SELECT unit_id FROM headed
+         UNION
+         SELECT ur.child_unit_id
+           FROM unit_relations ur
+           INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
+           INNER JOIN scope s ON s.unit_id = ur.parent_unit_id
+       )`;
+
+  // ¿Este entregable cae dentro de las unidades que encabeza esta persona? Es el guard de las dos
+  // acciones del panel de supervision. Lanza en vez de devolver false: quien llama no tiene nada
+  // sensato que hacer con un `no`, y asi el mensaje sale una sola vez y bien escrito.
+  async assertSupervisesTaskItem(personId, taskItemId, connection = this.pool) {
+    const pid = normalizeNumericId(personId);
+    const tiId = normalizeNumericId(taskItemId);
+    if (!pid || !tiId) throw new Error("Falta la persona o el entregable.");
+    const [rows] = await connection.query(
+      `${TaskAssignmentService.SCOPE_CTE}
+       SELECT 1
+         FROM task_items ti
+         INNER JOIN unit_positions up ON up.id = ti.responsible_position_id
+        WHERE ti.id = ?
+          AND up.unit_id IN (SELECT unit_id FROM scope)
+        LIMIT 1`,
+      [pid, tiId]
+    );
+    if (!rows.length) {
+      throw new Error("Ese entregable no pertenece a ninguna unidad que encabeces.");
+    }
+    return true;
+  }
+
+  // Quien puede recibir un entregable de una unidad: los ocupantes VIGENTES de sus puestos. Acota
+  // la reasignacion a la propia unidad a proposito — un jefe reparte dentro de lo suyo — y evita
+  // tener que montar un buscador de personas para algo que es una lista corta y cerrada.
+  async listUnitStaff(unitIds = [], connection = this.pool) {
+    const ids = unitIds.map(normalizeNumericId).filter(Boolean);
+    if (!ids.length) return [];
+    // `IN (?, ?, ...)` y no `= ANY(?)`: el adaptador no traduce un array de JavaScript al array de
+    // PostgreSQL, y el sintoma es un «malformed array literal» en ejecucion. El idiom del repo son
+    // los placeholders construidos.
+    const placeholders = ids.map(() => "?").join(", ");
+    const [rows] = await connection.query(
+      `SELECT DISTINCT up.unit_id, pa.person_id,
+              NULLIF(TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))), '') AS person_name,
+              c.name AS cargo_name
+         FROM unit_positions up
+         INNER JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1
+         INNER JOIN persons p ON p.id = pa.person_id
+         LEFT JOIN cargos c ON c.id = up.cargo_id
+        WHERE up.unit_id IN (${placeholders})
+          AND up.is_active = 1
+        -- El ORDER BY va por las columnas PROYECTADAS: con SELECT DISTINCT, PostgreSQL exige que
+        -- lo que ordena aparezca en la lista. Ordenar por p.first_name con un DISTINCT que no lo
+        -- proyecta es un error de ejecucion, no de sintaxis: otra que solo se ve al llamar.
+        ORDER BY up.unit_id, person_name`,
+      ids
+    );
+    return rows.map((r) => ({
+      unit_id: Number(r.unit_id),
+      person_id: Number(r.person_id),
+      person_name: r.person_name || `Persona ${r.person_id}`,
+      cargo_name: r.cargo_name || null,
+    }));
+  }
+
   async listSupervisorStuckTaskItems(personId, connection = this.pool) {
     const pid = normalizeNumericId(personId);
     if (!pid) return { is_supervisor: false, items: [] };
@@ -533,21 +610,15 @@ export default class TaskAssignmentService {
       return { is_supervisor: false, items: [] };
     }
     const [rows] = await connection.query(
-      `WITH RECURSIVE headed AS (
-         SELECT up.unit_id AS unit_id
-           FROM unit_positions up
-           INNER JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1 AND pa.person_id = ?
-          WHERE up.is_unit_head = 1 AND up.is_active = 1
-       ),
-       scope AS (
-         SELECT unit_id FROM headed
-         UNION
-         SELECT ur.child_unit_id
-           FROM unit_relations ur
-           INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
-           INNER JOIN scope s ON s.unit_id = ur.parent_unit_id
-       )
+      `${TaskAssignmentService.SCOPE_CTE}
        SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id,
+              -- El OCUPANTE VIGENTE del puesto responsable, que es a quien el jefe devolvera el
+              -- entregable de un clic en el caso normal («el titular se fue»). Vacio cuando la
+              -- silla esta vacante, y entonces hay que elegir a alguien de la unidad.
+              (SELECT pa3.person_id
+                 FROM position_assignments pa3
+                WHERE pa3.position_id = ti.responsible_position_id AND pa3.is_current = 1
+                LIMIT 1) AS occupant_person_id,
               -- El estado del DOCUMENTO, que desde el 2026-08-23 vive en el propio entregable.
               ti.document_status AS status,
               up.unit_id, u.name AS unit_name, c.name AS cargo_name,
@@ -570,20 +641,24 @@ export default class TaskAssignmentService {
         LIMIT 500`,
       [pid]
     );
-    return {
-      is_supervisor: true,
-      items: rows.map((r) => ({
-        id: Number(r.id),
-        task_id: Number(r.task_id),
-        assigned_person_id: r.assigned_person_id ? Number(r.assigned_person_id) : null,
-        responsible_position_id: r.responsible_position_id ? Number(r.responsible_position_id) : null,
-        status: r.status,
-        unit_id: r.unit_id ? Number(r.unit_id) : null,
-        unit_name: r.unit_name || null,
-        cargo_name: r.cargo_name || null,
-        started: Number(r.started) > 0,
-        reason: r.assigned_person_id ? "titular_se_fue" : "sin_responsable"
-      }))
-    };
+    const items = rows.map((r) => ({
+      id: Number(r.id),
+      task_id: Number(r.task_id),
+      assigned_person_id: r.assigned_person_id ? Number(r.assigned_person_id) : null,
+      responsible_position_id: r.responsible_position_id ? Number(r.responsible_position_id) : null,
+      occupant_person_id: r.occupant_person_id ? Number(r.occupant_person_id) : null,
+      status: r.status,
+      unit_id: r.unit_id ? Number(r.unit_id) : null,
+      unit_name: r.unit_name || null,
+      cargo_name: r.cargo_name || null,
+      started: Number(r.started) > 0,
+      reason: r.assigned_person_id ? "titular_se_fue" : "sin_responsable"
+    }));
+
+    // La plantilla de las unidades implicadas viaja CON el listado: el panel necesita ofrecer a
+    // quien reasignar y esa lista es corta y cerrada. Una consulta mas, no una por fila.
+    const staff = await this.listUnitStaff([...new Set(items.map((i) => i.unit_id).filter(Boolean))], connection);
+
+    return { is_supervisor: true, items, staff };
   }
 }

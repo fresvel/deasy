@@ -14,6 +14,10 @@ export const API_ROUTES = {
   PREFIX: API_PREFIX,
   UNITS: `${API_PREFIX}/units`,
   TAREA_SUPERVISED_STUCK: `${API_PREFIX}/tarea/supervised-stuck`,
+  // Las dos acciones del jefe sobre un entregable atascado de su unidad (D1.b y D2). No piden rol de
+  // admin: la legitimidad la da encabezar la unidad, y la comprueba el backend antes que nada.
+  TAREA_SUPERVISED_HANDOVER: (taskItemId) => `${API_PREFIX}/tarea/supervised-stuck/${taskItemId}/handover`,
+  TAREA_SUPERVISED_RESET: (taskItemId) => `${API_PREFIX}/tarea/supervised-stuck/${taskItemId}/reset`,
   USERS: `${API_PREFIX}/users`,
   VERIFY_EMAIL: `${API_PREFIX}/email/verify`,
   USERS_RECOVER_PASSWORD: `${API_PREFIX}/reset-password/request`,

@@ -222,6 +222,7 @@ export const resetDocumentWorkflowForTaskItem = async ({
   definitionId,
   taskItemId,
   documentId = null,
+  bypassStepOwnership = false,
 }) => {
   const currentVersion = await getLatestDocumentVersionForTaskItem(connection, definitionId, taskItemId, documentId);
   if (!currentVersion?.document_version_id) {
@@ -231,9 +232,24 @@ export const resetDocumentWorkflowForTaskItem = async ({
   }
 
   const documentVersionId = Number(currentVersion.document_version_id);
-  const fillOwnership = await getCurrentFillOwnership(connection, documentVersionId, userId);
-  const signatureOwnership = await getCurrentSignatureOwnership(connection, documentVersionId, userId);
-  if (!fillOwnership && !signatureOwnership) {
+  // ⚠️ `bypassStepOwnership` LO USA UNA SOLA COSA: el panel de supervision del jefe de unidad, y
+  // existe porque este guard tiene un punto ciego que se midio (D1, 2026-08-23).
+  //
+  // El guard exige ser EL TITULAR DEL PASO ACTUAL, y lo comprueba contra QUIEN LLAMA. Asi que si la
+  // persona que se fue es justo quien tenia el paso, no puede reiniciar NADIE: ni el relevo lo mueve
+  // (esta en fase de firma) ni el reset lo abre. Ni un administrador, porque la ruta admite roles
+  // elevados pero el servicio sigue mirando al que llama. El entregable queda parado para siempre.
+  //
+  // Quien lo desatasca es el jefe de la unidad, y su legitimidad NO es este guard sino el alcance:
+  // `assertSupervisesTaskItem` ya comprobo que el entregable cae en una unidad que encabeza. Por eso
+  // se salta este y no se relaja: son dos permisos distintos, no uno mas laxo.
+  const fillOwnership = bypassStepOwnership
+    ? null
+    : await getCurrentFillOwnership(connection, documentVersionId, userId);
+  const signatureOwnership = bypassStepOwnership
+    ? null
+    : await getCurrentSignatureOwnership(connection, documentVersionId, userId);
+  if (!bypassStepOwnership && !fillOwnership && !signatureOwnership) {
     const error = new Error(
       "Solo el responsable del paso actual de entrega o firma puede resetear este flujo."
     );

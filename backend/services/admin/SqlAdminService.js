@@ -857,6 +857,7 @@ export default class SqlAdminService {
   // tiene contrato HTTP no se entera de que se quedo fuera.
   listTaskItemHandovers(...args) { return this.taskAssignment.listTaskItemHandovers(...args); }
   listSupervisorStuckTaskItems(...args) { return this.taskAssignment.listSupervisorStuckTaskItems(...args); }
+  assertSupervisesTaskItem(...args) { return this.taskAssignment.assertSupervisesTaskItem(...args); }
   resolveImmediateBoss(...args) { return this.taskAssignment.resolveImmediateBoss(...args); }
 
   async remove(tableName, keys) {
