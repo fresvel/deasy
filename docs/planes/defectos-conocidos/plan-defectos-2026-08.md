@@ -56,6 +56,11 @@ plan.
 | `T1.17-b` | 1.17 | **Nueva.** `publishSeedsOnBoot` en `index.js`: una semilla actualizada llega al reiniciar o desplegar, sin intervención | ✅ | Log del arranque: «Semilla base publicada en MinIO (artifact: respetado)». 48 PUT, ~92 KB, &lt;1 s | 2026-08-14 |
 | `T1.17-c` | 1.17 | **Nueva.** `test:char:fixture` resetea también `storage`: MinIO deja de ser una entrada oculta | ✅ | Suite verde **sin capturar** y 0 goldens movidos; el bucket baja de 435 a 332 objetos (fuera la basura acumulada) | 2026-08-14 |
 | `T1.18-a` | 1.18 | El PDF deja de renombrarse a `pdf` al editar; el golden `editar_ok` se mueve y **ese diff es la prueba** | ✅ | **Una línea en un golden**: `editar_ok` pasa a valer lo mismo que `crear_ok` — crear y editar producen ya el paquete idéntico. 4 unitarios del predicado | 2026-08-14 |
+| `T1.19-a` | 1.19 | **Censo cerrado**: quién escribe `signers`, qué valores puede traer y qué ramas de código dependen de ellos | ✅ | 3 escritores vivos —los tres filtran—; lo que queda es legado y la copia de versionado lo propaga verbatim. 1 fila en la base con `{"type": …}`, clave distinta de la columna | 2026-08-23 |
+| `T1.19-b` | 1.19 | **Decisión escrita** de qué se hace con los tres valores retirados que el JSONB puede traer | ⬜ | — | — |
+| `T1.19-c` | 1.19 | El filtro contra catálogo en `parseStepSigners`, con sus unitarios y control positivo | ⛔ | **Bloqueada por `T1.19-d`**: sólo el filtro dejaría pasos legítimos SIN FIRMANTE. Las dos cosas, y en ese orden | — |
+| `T1.19-d` | 1.19 | Reescritura del JSONB de las filas ya desplegadas, para que el filtro no deje a nadie fuera | ⬜ | — | — |
+| `T1.19-e` | 1.19 | Retirar los dos `case` legados (`document_owner`, `position`) una vez cerrado el agujero | ⛔ | **Bloqueada por `T1.19-c` y `-d`**: hoy borrarlos deja el paso resolviéndose por el `default` sin cargo, o sea SIN FIRMANTE y en silencio | — |
 
 **Resumen por defecto** (se deriva de la tabla de arriba; no es una segunda lista de tareas):
 
@@ -63,6 +68,7 @@ plan.
 |---|---|---|---|
 | **1.3** | Auto-apropiación de una solicitud manual | Backend · servicio | ⬜ |
 | **1.7** | El sello fantasma: un guard permanentemente verdadero | Frontend · Vue | ⬜ |
+| **1.19** | El JSONB `signers` no lo valida nadie, y propaga valores retirados al versionar | BD · firma | ⬜ |
 | ~~**1.8**~~ | ~~Dos documentos del repo mandan formas de error contrarias~~ | Backend · documental | ✅ **2026-08-14** |
 | ~~**1.10**~~ | ~~La única bitácora de auditoría la puentea el camino automático~~ | BD · triggers · UI | ✅ **2026-08-14** · pendiente el visto bueno visual |
 | ~~**1.11**~~ | ~~Parámetros de MÁS se ignoran en silencio~~ | Backend · `config/postgres.js` | ✅ **2026-08-14** |
@@ -340,3 +346,77 @@ Escrito aquí para que no vuelva a proponerse. El detalle completo, en [`bitacor
 | `services/chat/ChatAuthorizationService.js` — «una copia del IDOR se quedó atrás» | ❌ **No era un defecto** (2026-08-09, medido). Aplicar el guard **rompía el chat** a 8 de 10 asignados. La razón está escrita encima de la propia consulta |
 | `generation/launch.js:224` — `UPDATE tasks SET process_run_id` | ❌ No es pérdida de trazabilidad: es la «Opción X» **deliberada**, y el modelo de `process_runs` se diseñó así |
 | `controllers/tareas/tareas_controler.js:79` — «otra copia del IDOR» | ❌ Lista *tareas* vía `task_assignments` y solo expone un agregado (`task_item_count`, `task_item_names`), no entregables individuales |
+
+---
+
+## Defecto 1.19 · El JSONB `signers` no lo valida nadie, y propaga valores retirados al versionar
+
+**Detectado el 2026-08-23**, al evaluar si la autoría de los documentos debía guardarse como JSON.
+No se buscó: apareció como el precedente que hizo descartar esa idea, y merece ficha propia.
+
+### Qué es
+
+Un paso de firma declara **quién firma de dos maneras a la vez**:
+
+| Dónde | Quién lo valida |
+|---|---|
+| `signature_flow_steps.resolver_type` | la base, con un `CHECK` de tres valores |
+| `signature_flow_steps.signers` (JSONB) | **nadie** |
+
+Y cuando hay JSONB, **manda el JSONB**. Medido contra la base:
+
+```
+resolver_type = 'specific_person'
+signers       = [{"type": "specific_person", "person_id": 1}]
+```
+
+Fíjese en que la columna dice `resolver_type` y el JSON dice `type`. **Son dos vocabularios para lo
+mismo**, y `parseStepSigners` acepta los dos por si acaso —igual que acepta `person_id` o
+`assignedPersonId`, `unit_scope_type` o `unitScopeType`—.
+
+### Por qué duele: tres valores retirados siguen vivos ahí dentro
+
+`document_owner`, `position` y los ámbitos `context_subtree` / `context_ancestor_type` salieron del
+catálogo. La base los rechaza **en la columna** —el `ALTER` valida las filas existentes al arrancar—
+pero **en el JSONB no los rechaza nadie**, y la copia de versionado **lo propaga verbatim**: un valor
+retirado que ya viviera en una base desplegada se reproduce solo en cada versión nueva, para siempre.
+
+Consecuencia viva hoy: **dos `case` de `resolveSingleSignerAssignees` no se pueden borrar** aunque el
+catálogo diga que no existen. Y lo que pasaría si se borraran está medido y escrito en el propio
+fichero: el paso caería al `default` —cargo en ámbito— con `requiredCargoId` a `null`, y entonces
+**no firmaría NADIE, en silencio**. Un documento esperando una firma que nunca se pedirá.
+
+### El coste que ya se ha pagado
+
+Al implementar D3 (2026-08-23) hubo que escribir esto para no mover una firma que no debía moverse:
+
+```sql
+AND (sfs.signers IS NULL OR sfs.signers::text NOT LIKE '%specific_person%')
+```
+
+**Buscar una cadena de texto dentro de un JSON**, porque no hay forma fiable de preguntarle nada.
+
+### Lo que NO es
+
+No es un defecto que esté creciendo. Los **tres escritores vivos** filtran: `normalizeSignatureSteps`
+contra `SIGNATURE_RESOLVER_TYPES`, `materializeRuntimeFlowForTaskItem` sólo emite `cargo_in_scope` y
+`specific_person`, y el tercero es la copia de versionado. **Ningún camino vivo puede meter un valor
+malo**: el daño está congelado en lo que ya existiera. Por eso no urge.
+
+### Cómo se cierra, y el orden importa
+
+**Dos cosas, y en este orden** —está escrito en `DocumentSignatureWorkflowService.js:142-144`—:
+
+1. **Filtrar** lo que entra en `parseStepSigners` contra los dos catálogos de `templates/workflows.js`.
+2. **Reescribir** el JSONB de las filas ya desplegadas.
+
+**Sólo el filtro sería PEOR que no hacer nada**: dejaría pasos legítimos sin firmante. Y sólo cuando
+las dos estén hechas se pueden retirar los dos `case` legados.
+
+### La lección, que ya está aplicada
+
+Este defecto es la razón por la que la autoría de los documentos **no** se guardó como JSON dentro de
+`document_versions`, que era la propuesta inicial del dueño. Un JSON validado sólo por el backend no
+evita lo que aquí costó caro: que la base no garantice nada, que no haya claves foráneas, y que
+consultar sea buscar cadenas. Se hizo con tabla y columnas (`document_version_uploads`, commit
+`a6d2d7b2`).

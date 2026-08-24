@@ -93,7 +93,7 @@ promovieron el día del cierre, porque vivían solo en su prosa.
 
 ---
 
-## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **15 de 25** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
+## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **15 de 30** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
 
 **Lo más rentable que queda, y con diferencia**, porque no es deuda estética: son fallos que un
 usuario puede encontrarse. Y todos están **congelados en pruebas**, así que el arreglo se verifica
@@ -109,6 +109,7 @@ ejecución —25 tareas con estado, evidencia y fecha— y no se repiten aquí.
 | **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud al iniciarla. Congelado en `manual_autoasignacion_efecto` | Backend · servicio |
 | **1.7** | El **sello fantasma**: `previewBoxStyle` nace `{display:'none'}` y la asignación del `pointermove` no incluye `display`, así que el tercer término del `v-if` es siempre cierto | Frontend · `MultiSignerPanel.vue` |
 | **1.10** | La **única bitácora de auditoría** del sistema la puentea el camino automático. Remedido: son **tres** caminos que reasignan sin dejar asiento, no uno, y la tabla no la lee **nadie** (un `INSERT`, cero `SELECT`) | Base de datos · triggers |
+| **1.19** | El JSONB `signers` **no lo valida nadie** y manda sobre la columna que sí. Propaga **tres valores retirados** al versionar, y por eso hay dos `case` que no se pueden borrar: hacerlo dejaría el documento **sin firmante y en silencio**. Detectado el 2026-08-23 | Base de datos · firma |
 | ~~**1.11**~~ | ~~Los parámetros de más se ignoran en silencio~~ — ✅ **cerrado el 2026-08-14**: la premisa que lo justificaba era falsa (484/484 equilibradas) y ahora lanza en las dos direcciones | `backend/config/postgres.js` |
 | ~~**1.15**~~ | ~~La suite de caracterización está ROJA~~ — ✅ **cerrado el 2026-08-14**. No era un golden malo: **MinIO servía una semilla obsoleta** y el golden era correcto. Un centinela protegía las ediciones del admin y de paso bloqueaba el catálogo | Bootstrap · MinIO |
 | ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ — ✅ **cerrado el 2026-08-14**: eran dos `unshift` donde hacía falta un `unshift` y un `push`. Censo: 6 en el backend, **el único que antepone Y añade a la cola** | Backend · firma |
@@ -124,7 +125,7 @@ El último en caer es el **1.8** (2026-08-14): resultó que **no eran dos docume
 cinco**, y uno de ellos era la documentación **publicada**. Su efecto sobre el frente 7 es que **la
 deuda del contrato de errores ha dejado de crecer por desinformación**; lo que queda allí es migrar.
 
-**Criterio de cierre:** las 17 tareas del control de ejecución cerradas con su evidencia, y la carpeta
+**Criterio de cierre:** las 22 tareas del control de ejecución cerradas con su evidencia, y la carpeta
 archivada.
 
 ---
@@ -691,7 +692,7 @@ antes del frente 10**: sin compilador, la pieza que da el valor no existe.
 
 ---
 
-## Frente 9 · La capa de datos — ⬜ · vive en [`plan_data/`](./plan_data/)
+## Frente 9 · La capa de datos — 🟡 · **D7 a 24 de 32** · vive en [`plan_data/`](./plan_data/)
 
 **Tiene carpeta propia** —como el 1 y el 4— porque trae su propia referencia medida del esquema, y desde
 el 2026-08-14 **también su `§0 · Control de ejecución`**. Nació el
@@ -701,7 +702,7 @@ problemas que ningún frente de aquí cubría. **Las tareas están allí**, no e
 
 | | Fase | Por qué |
 |---|---|---|
-| **D7** | **Auditoría funcional del modelo** | Lo que el **frente 0 inventarió y no llegó a validar**, recogido aquí el 2026-08-14 al archivarlo: la edición `retired` que sigue enlazada, la invariante de `published` que descansa en un razonamiento —`launch.js` **no mira `lifecycle_state`**—, y las columnas `*_id` sin FK, dos de ellas por **descuido de tipo** (`BIGINT` contra `persons.id INT`). **Va la primera pese al número**: es la única fase que no es refactor, y sus dos primeras tareas son decisiones del dueño |
+| **D7** 🟡 | **Auditoría funcional del modelo** — **24 de 32** (2026-08-23) | Lo que el **frente 0 inventarió y no llegó a validar**, recogido aquí el 2026-08-14 al archivarlo: la edición `retired` que sigue enlazada, la invariante de `published` que descansa en un razonamiento —`launch.js` **no mira `lifecycle_state`**—, y las columnas `*_id` sin FK, dos de ellas por **descuido de tipo** (`BIGINT` contra `persons.id INT`). **Va la primera pese al número**: es la única fase que no es refactor, y sus dos primeras tareas son decisiones del dueño |
 | **D1** | Un solo `withTransaction` | **20 `beginTransaction` a mano en 11 ficheros**, cada uno con su ciclo. El helper correcto ya existe (`crud/tableHooks.js:65-92`) y solo lo usa el CRUD admin |
 | **D2** | Un vocabulario de estados, no cinco | `task_items.status` está definido en **5 sitios con 3 alfabetos**, y los dos grupos **no comparten ni un literal**. Efecto vivo: el panel cuenta `completada` como cerrado; el motor de relevos lo reasigna |
 | **D3** | Migraciones versionadas | El esquema se reaplica entero en cada arranque (`postgres_initializer.js:23-40`). Idempotente para crear, **incapaz de alterar**. Es el mayor riesgo operativo de la capa |
@@ -714,6 +715,13 @@ cierra la pregunta arquitectónica: tablas y extracción, no jerarquías. Y resp
 —el núcleo CRUD de `SqlAdminService` y `sqlTables.js` como datos—: D2 y D4 trabajan **alrededor**.
 
 **Criterio de cierre:** las **siete** fases cerradas con sus criterios, y la carpeta archivada.
+
+**Estado del 2026-08-23.** D7 avanzó de 12 a **24 de 32** en una sesión, y el modelo del entregable
+quedó en tres piezas sin copias: **qué se debe** (`task_items`), **quién lo debe**
+(`task_item_tenures`) y **qué se produjo** (`document_versions` + su bitácora de subidas). Murieron
+tres tablas (`task_assignments`, `task_item_handovers`, `documents`) y seis columnas. Nacieron dos
+gates —`check:sql-comments` y `check:sql-aliases`— porque el SQL de este backend **no lo valida nadie
+hasta que se ejecuta esa rama**, y los dos cazaron defectos reales durante la propia sesión.
 
 ---
 
