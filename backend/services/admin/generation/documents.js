@@ -289,30 +289,30 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
     [taskItem.id]
   );
 
+  // La UNIDAD DE ORIGEN se escribe en el entregable, no en el documento: se mudo alli el
+  // 2026-08-23 (`documents` es una cascara 1:1). Se conserva el `COALESCE` —una vez resuelta no se
+  // recalcula— porque materializar es idempotente y se llama en cada lanzamiento.
+  if (originUnitId) {
+    await connection.query(
+      `UPDATE task_items
+       SET origin_unit_id = COALESCE(origin_unit_id, ?)
+       WHERE id = ?`,
+      [originUnitId, taskItem.id]
+    );
+  }
+
+  // El `title` del documento se retiro con la mudanza: se escribia aqui —`template_artifact_name`
+  // o «Documento <id>» de relleno— y NO lo leia nadie. El titulo que se enseña es el del
+  // entregable. De paso muere la asimetria que la caracterizacion tenia congelada: la tarea LIBRE
+  // titulaba «Documento <id>» y la derivada usaba el nombre de la plantilla, porque una de las dos
+  // consultas no traia `template_artifact_name`.
   let documentId = Number(existingRows?.[0]?.id || 0);
   if (!documentId) {
     const [insertResult] = await connection.query(
-      `INSERT INTO documents (
-         task_item_id,
-         origin_unit_id,
-         title,
-         status
-      ) VALUES (?, ?, ?, ?)`,
-      [
-        taskItem.id,
-        originUnitId,
-        taskItem.template_artifact_name || `Documento ${taskItem.id}`,
-        "Inicial"
-      ]
+      `INSERT INTO documents (task_item_id) VALUES (?)`,
+      [taskItem.id]
     );
     documentId = Number(insertResult.insertId);
-  } else if (originUnitId) {
-    await connection.query(
-      `UPDATE documents
-       SET origin_unit_id = COALESCE(origin_unit_id, ?)
-       WHERE id = ?`,
-      [originUnitId, documentId]
-    );
   }
 
   const [versionRows] = await connection.query(

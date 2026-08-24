@@ -206,10 +206,14 @@ export const transitionDocumentState = async (
   { allowDirect = false } = {},
 ) => {
   const targetStatus = assertDocumentStatusValue(nextStatus);
+  // El estado del documento vive en su ENTREGABLE desde el 2026-08-23: `documents` era una cascara
+  // 1:1 y esta columna era la unica suya con escritores. El parametro se sigue llamando
+  // `documentId` porque la relacion es 1:1 y el paso 6b los va a colapsar del todo.
   const [rows] = await connection.query(
-    `SELECT id, status
-     FROM documents
-     WHERE id = ?
+    `SELECT ti.id, ti.document_status AS status
+     FROM documents d
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     WHERE d.id = ?
      LIMIT 1`,
     [documentId]
   );
@@ -223,9 +227,10 @@ export const transitionDocumentState = async (
   }
 
   await connection.query(
-    `UPDATE documents
-     SET status = ?
-     WHERE id = ?`,
+    `UPDATE task_items ti
+     SET document_status = ?
+     FROM documents d
+     WHERE d.id = ? AND ti.id = d.task_item_id`,
     [targetStatus, documentId]
   );
 

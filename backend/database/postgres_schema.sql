@@ -745,7 +745,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   -- LA UNIDAD, que ya esta aqui al lado en `scope_unit_id`. Medido: coinciden en las 13 tareas.
   -- El responsable de verdad vive en `task_items.responsible_position_id`, uno por entregable.
   description TEXT NULL,
-  comments_thread_ref VARCHAR(64) NULL,
+  -- `comments_thread_ref` VIVIO AQUI hasta el 2026-08-23. Fosil con CERO lecturas y CERO
+  -- escrituras: los comentarios viven en `document_workflow_observations`.
   start_date DATE NOT NULL,
   end_date DATE NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
@@ -796,6 +797,20 @@ CREATE TABLE IF NOT EXISTS task_items (
   -- NOT NULL: estaba para que un entregable sin puesto no rompiera la unicidad colandose como NULL.
   responsible_position_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN responsible_position_id ELSE NULL END) STORED,
   assigned_person_id INT NULL,
+  -- LAS DOS COLUMNAS QUE ERAN DE `documents`, mudadas el 2026-08-23 (paso 6a de la fusion).
+  --
+  -- `documents` es una cascara 1:1 sobre este entregable: un solo INSERT en todo el backend y
+  -- siempre con `task_item_id`. De sus cinco columnas, `owner_person_id` ya se retiro (era una
+  -- copia del responsable), y `title` y `comments_thread_ref` eran letra muerta —la primera se
+  -- escribia y NADIE la leia; la segunda es un fosil de cuando los comentarios vivian fuera de
+  -- PostgreSQL, y estaba tambien en `tasks`—. Estas dos son las unicas con uso real.
+  --
+  -- `document_status` se llama asi y no `status` A PROPOSITO: `task_items.status` vivio aqui hasta
+  -- el 2026-08-23 y se retiro por no tener escritores. Reutilizar el nombre invitaria a confundir
+  -- la que no los tenia con esta, que si: la escribe `transitionDocumentState` derivandola del
+  -- estado de la VERSION.
+  document_status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
+  origin_unit_id INT NULL,
   start_date DATE NOT NULL,
   end_date DATE NULL,
   user_started_at TIMESTAMP NULL,
@@ -813,7 +828,8 @@ CREATE TABLE IF NOT EXISTS task_items (
   CONSTRAINT fk_task_items_source FOREIGN KEY (source_task_item_id) REFERENCES task_items(id),
   CONSTRAINT fk_task_items_target_unit FOREIGN KEY (target_unit_id) REFERENCES units(id),
   CONSTRAINT fk_task_items_responsible_position FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id),
-  CONSTRAINT fk_task_items_assigned_person FOREIGN KEY (assigned_person_id) REFERENCES persons(id)
+  CONSTRAINT fk_task_items_assigned_person FOREIGN KEY (assigned_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_task_items_origin_unit FOREIGN KEY (origin_unit_id) REFERENCES units(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_task_items_defined_target ON task_items (task_id, process_definition_template_key, responsible_position_key);
 CREATE INDEX IF NOT EXISTS idx_task_items_task ON task_items (task_id, sort_order);
@@ -916,17 +932,19 @@ CREATE TABLE IF NOT EXISTS documents (
   -- singular, y es la tenencia vigente— y a la vez se usaba como predicado de «quien puede ver o
   -- firmar» —eso es un CONJUNTO, y lo resuelve DeliverableAccessService—. Una columna intentando
   -- ser dos cosas. Su tercer consumidor, el resolver de flujo `document_owner`, ya estaba retirado.
-  origin_unit_id INT NULL,
-  title VARCHAR(180) NULL,
-  status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
-  comments_thread_ref VARCHAR(64) NULL,
+  -- `origin_unit_id` y `status` se MUDARON a `task_items` el 2026-08-23; `title` y
+  -- `comments_thread_ref` se retiraron sin sucesor. La primera se escribia y no la leia nadie; la
+  -- segunda es un fosil con CERO codigo, etiquetada «Comentarios (legacy)» en el editor generico
+  -- desde que los comentarios pasaron a `document_workflow_observations` —que ademas ya unifica
+  -- las dos fases, entrega y firma, en la misma tabla—.
+  --
+  -- Lo que queda es una fila de union 1:1 con el entregable. El paso 6b la retira entera,
+  -- repuntando `document_versions` directamente al entregable.
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
-  CONSTRAINT fk_documents_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
-  CONSTRAINT fk_documents_origin_unit FOREIGN KEY (origin_unit_id) REFERENCES units(id)
+  CONSTRAINT fk_documents_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_documents_task_item ON documents (task_item_id);
-CREATE INDEX IF NOT EXISTS idx_documents_origin_unit ON documents (origin_unit_id);
 
 
 -- FOSILES QUE SE CONSERVAN, con su motivo (§0.6, cierre del censo de fosiles):

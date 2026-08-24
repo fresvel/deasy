@@ -322,13 +322,12 @@ export default class TaskAssignmentService {
     // —`column "status" does not exist`— y el relevo manual entero devolvia 500. Ninguna prueba lo
     // vio: la caracterizacion no toca este endpoint. Es la regla del SQL que no valida nadie.
     //
-    // Ahora se pregunta a quien de verdad avanza: el DOCUMENTO. Hay como mucho uno por entregable
-    // (`uq_documents_task_item`), y sin documento todavia el entregable sigue abierto — que es lo
-    // que `isDocumentPending` responde ante un `NULL`.
+    // Ahora se pregunta a quien de verdad avanza: el DOCUMENTO. Su estado vive en el propio
+    // entregable desde el 2026-08-23 (`documents` era una cascara 1:1), y arranca en 'Inicial', que
+    // `isDocumentPending` considera abierto.
     const [rows] = await connection.query(
-      `SELECT ti.id, ti.assigned_person_id, d.status AS document_status
+      `SELECT ti.id, ti.assigned_person_id, ti.document_status
        FROM task_items ti
-       LEFT JOIN documents d ON d.task_item_id = ti.id
        WHERE ti.id = ? LIMIT 1`,
       [tiId]
     );
@@ -547,12 +546,11 @@ export default class TaskAssignmentService {
            INNER JOIN scope s ON s.unit_id = ur.parent_unit_id
        )
        SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id,
-              -- El estado que se enseña es el del DOCUMENTO: task_items.status se retiro.
-              d.status AS status,
+              -- El estado del DOCUMENTO, que desde el 2026-08-23 vive en el propio entregable.
+              ti.document_status AS status,
               up.unit_id, u.name AS unit_name, c.name AS cargo_name,
               EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id) AS started
          FROM task_items ti
-         LEFT JOIN documents d ON d.task_item_id = ti.id
          INNER JOIN unit_positions up ON up.id = ti.responsible_position_id
          INNER JOIN units u ON u.id = up.unit_id
          LEFT JOIN cargos c ON c.id = up.cargo_id

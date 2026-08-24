@@ -201,13 +201,16 @@ async function readEntregable(taskItemId) {
   const [item] = await query(
     `SELECT id, task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
             sort_order, created_by_person_id, source_task_item_id, target_unit_id,
-            responsible_position_id, assigned_person_id, start_date, end_date,
-            user_started_at
+            responsible_position_id, assigned_person_id, document_status, origin_unit_id,
+            start_date, end_date, user_started_at
        FROM task_items WHERE id = $1`,
     [taskItemId],
   );
+  // `documents` se quedo en una fila de union 1:1 (2026-08-23): `status` y `origin_unit_id` se
+  // mudaron al entregable, y `title` se retiro sin sucesor —se escribia y no la leia nadie—. Se
+  // sigue consultando porque las versiones todavia cuelgan de ella; el paso 6b la retira.
   const [document] = await query(
-    `SELECT id, task_item_id, origin_unit_id, title, status
+    `SELECT id, task_item_id
        FROM documents WHERE task_item_id = $1`,
     [taskItemId],
   );
@@ -478,17 +481,21 @@ test("free · el entregable resultante: documento, versión y solicitudes de lle
   assert.equal(resultado.versions.length, 1, "se crea UNA versión");
   assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");
-  // ASIMETRÍA REAL DEL CÓDIGO, no un descuido de la prueba: la tarea LIBRE titula su documento
-  // `Documento <id>` mientras que la derivada usa el título del entregable. La causa está en el
-  // servicio: `loadFreeTaskItemRow` (`GeneralTaskService.js:465`) no selecciona
-  // `template_artifact_name` y `loadDerivedTaskItemRow` (`:304`) sí, así que
-  // `ensureDocumentForTaskItem` cae al nombre de relleno (`generation/documents.js:337`). El comentario
-  // del propio servicio avisa de la asimetría; congelarla aquí es lo que hará ruido el día que alguien
-  // "unifique" las dos consultas sin mirar qué hace el nombre aguas abajo.
-  assert.match(
-    String(resultado.document.title),
-    TITULO_GENERICO,
-    "free: el documento nace con título genérico porque su consulta no trae el nombre de la plantilla",
+  // LA ASIMETRÍA DE TÍTULOS MURIÓ CON LA COLUMNA (2026-08-23), y este caso guarda su lápida.
+  //
+  // Aquí se congelaba un defecto real: la tarea LIBRE titulaba su documento «Documento <id>» y la
+  // derivada usaba el nombre de la plantilla, porque `loadFreeTaskItemRow` no seleccionaba
+  // `template_artifact_name` y `loadDerivedTaskItemRow` sí, así que la materialización caía al
+  // nombre de relleno. Dos caminos, dos títulos, para lo mismo.
+  //
+  // `documents.title` se retiró sin sucesor: se escribía y NO la leía nadie. El título que se
+  // enseña es el del ENTREGABLE, que es uno solo — así que el defecto no se arregló, se disolvió.
+  // Ojo con la forma: la tarea libre guarda «titulo\n\ndescripcion» en la misma columna, asi que se
+  // comprueba el ARRANQUE. Que las dos cosas compartan campo es otra deuda, pero es la de siempre y
+  // no la toca este cambio.
+  assert.ok(
+    String(resultado.task_item.title).startsWith(FREE_TITLE),
+    `free: el título que vale es el del entregable, y es el que se pidió (vino "${resultado.task_item.title}")`,
   );
   matchSnapshot(SUITE, "free_entregable", normalize(sinAutoincrementalEnElTitulo(resultado), MASK_OPTS));
 });
@@ -586,7 +593,11 @@ test("derived · el entregable resultante: documento, versión y solicitudes de 
   assert.equal(String(resultado.versions[0].version), "0.1", "la versión inicial es 0.1");
   assert.equal(resultado.versions[0].status, "Pendiente de llenado", "y queda esperando a que la llenen");
   // La otra mitad de la asimetría: aquí SÍ se hereda el título del entregable (ver el caso `free`).
-  assert.equal(resultado.document.title, DERIVED_TITLE, "derived: el documento hereda el título del entregable");
+  // Mismo cambio que en el caso `free`: ya no hay título del documento, hay título del entregable.
+  assert.ok(
+    String(resultado.task_item.title).startsWith(DERIVED_TITLE),
+    `derived: el título es el del entregable (vino "${resultado.task_item.title}")`,
+  );
   matchSnapshot(SUITE, "derived_entregable", normalize(sinAutoincrementalEnElTitulo(resultado), MASK_OPTS));
 });
 

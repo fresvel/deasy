@@ -1429,7 +1429,7 @@ export const listMySends = async (req, res) => {
          p.id AS process_id,
          p.name AS process_name,
          pdv.id AS definition_id,
-         d.status AS document_status
+         ti.document_status
        FROM task_items ti
        JOIN process_definition_templates pdt
          ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
@@ -1492,7 +1492,7 @@ export const listMyReceived = async (req, res) => {
          p.id AS process_id,
          p.name AS process_name,
          pdv.id AS definition_id,
-         d.status AS document_status,
+         ti.document_status,
          ${FILL_EXISTS} AS needs_fill,
          ${SIGN_EXISTS} AS needs_sign
        FROM task_items ti

@@ -318,12 +318,9 @@
     "isArray": true,
     "count": 1,
     "itemKeys": [
-      "comments_thread_ref",
       "created_at",
       "id",
-      "status",
       "task_item_id",
-      "title",
       "updated_at"
     ]
   },
@@ -515,9 +512,11 @@
       "assigned_person_id",
       "created_at",
       "created_by_person_id",
+      "document_status",
       "end_date",
       "id",
       "origin_kind",
+      "origin_unit_id",
       "process_definition_template_id",
       "responsible_position_id",
       "sort_order",
@@ -535,7 +534,6 @@
     "isArray": true,
     "count": 1,
     "itemKeys": [
-      "comments_thread_ref",
       "created_at",
       "description",
       "end_date",

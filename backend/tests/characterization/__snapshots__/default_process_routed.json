@@ -2,10 +2,7 @@
   "derived_entregable": {
     "document": {
       "id": "<normalized>",
-      "origin_unit_id": 8,
-      "status": "Pendiente de llenado",
-      "task_item_id": "<normalized>",
-      "title": "zz char routed derivado"
+      "task_item_id": "<normalized>"
     },
     "fill_flows": [
       {
@@ -30,9 +27,11 @@
     "task_item": {
       "assigned_person_id": 3,
       "created_by_person_id": 3,
+      "document_status": "Pendiente de llenado",
       "end_date": "<normalized>",
       "id": "<normalized>",
       "origin_kind": "user_added",
+      "origin_unit_id": 8,
       "process_definition_template_id": "<normalized>",
       "responsible_position_id": 25,
       "sort_order": 999,
@@ -168,10 +167,7 @@
   "free_entregable": {
     "document": {
       "id": "<normalized>",
-      "origin_unit_id": 8,
-      "status": "Pendiente de llenado",
-      "task_item_id": "<normalized>",
-      "title": "Documento <normalized>"
+      "task_item_id": "<normalized>"
     },
     "fill_flows": [
       {
@@ -205,9 +201,11 @@
     "task_item": {
       "assigned_person_id": 3,
       "created_by_person_id": 3,
+      "document_status": "Pendiente de llenado",
       "end_date": "<normalized>",
       "id": "<normalized>",
       "origin_kind": "user_added",
+      "origin_unit_id": 8,
       "process_definition_template_id": "<normalized>",
       "responsible_position_id": 25,
       "sort_order": 1,

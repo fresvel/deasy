@@ -257,7 +257,6 @@ export const SQL_TABLES = [
       { name: "term_id", label: "Periodo", type: "number", required: true },
       { name: "scope_unit_id", label: "Unidad de alcance", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "comments_thread_ref", label: "Comentarios (legacy)", type: "text", readOnly: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       {
@@ -305,6 +304,14 @@ export const SQL_TABLES = [
       // nada lo detectara. Para mover el responsable esta el traspaso:
       // `POST /admin/sql/task-items/:id/handover`.
       { name: "assigned_person_id", label: "Responsable (cache de la tenencia)", type: "number", readOnly: true },
+      {
+        name: "document_status",
+        label: "Estado del documento",
+        type: "select",
+        options: [...DOCUMENT_STATUSES],
+        defaultValue: "Inicial"
+      },
+      { name: "origin_unit_id", label: "Unidad origen", type: "number" },
       { name: "start_date", label: "Inicio entregable", type: "date", required: true },
       { name: "end_date", label: "Vencimiento entregable", type: "date" },
       { name: "user_started_at", label: "Inicio usuario", type: "datetime", readOnly: true },
@@ -598,16 +605,10 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      // `title`, `status`, `origin_unit_id` y `comments_thread_ref` salieron de aqui el 2026-08-23:
+      // las dos primeras se mudaron al entregable y las otras dos eran letra muerta. Lo que queda es
+      // una fila de union 1:1, y el paso 6b la retira.
       { name: "task_item_id", label: "Item de tarea", type: "number" },
-      { name: "title", label: "Titulo", type: "text" },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: [...DOCUMENT_STATUSES],
-        defaultValue: "Inicial"
-      },
-      { name: "comments_thread_ref", label: "Comentarios (legacy)", type: "text", readOnly: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],

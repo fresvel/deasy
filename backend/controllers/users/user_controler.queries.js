@@ -48,7 +48,7 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
     `SELECT DISTINCT
        d.id AS document_id,
        d.task_item_id,
-       d.status AS document_status,
+       ti.document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
        dv.status AS document_version_status,
@@ -93,7 +93,7 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
-     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
      LEFT JOIN unit_positions scope_position ON scope_position.id = ti.responsible_position_id
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
      LEFT JOIN (
@@ -137,7 +137,7 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        sfs.name AS step_name,
        d.id AS document_id,
        d.task_item_id,
-       d.status AS document_status,
+       ti.document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
        dv.status AS document_version_status,
@@ -176,7 +176,7 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
-     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
      LEFT JOIN unit_positions scope_position ON scope_position.id = ti.responsible_position_id
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
@@ -513,9 +513,9 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
     `SELECT
        d.id AS document_id,
        d.task_item_id,
-       d.origin_unit_id,
+       ti.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
-       d.status AS document_status,
+       ti.document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
        dv.working_file_path,
@@ -523,7 +523,11 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
        COALESCE(sig.total_signature_count, 0) AS total_signature_count,
        COALESCE(sig.pending_signature_count, 0) AS pending_signature_count
      FROM documents d
-     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     -- El JOIN con el entregable es nuevo (2026-08-23): origin_unit_id y document_status se
+     -- mudaron alli desde documents, que es una cascara 1:1. En el paso 6b desaparece la vuelta:
+     -- estas consultas arrancaran directamente del entregable.
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
      LEFT JOIN (
        SELECT dv1.*
        FROM document_versions dv1
@@ -676,9 +680,9 @@ export const getAccessibleTaskItemDocumentForUser = async (
     `SELECT
        d.id AS document_id,
        d.task_item_id,
-       d.origin_unit_id,
+       ti.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
-       d.status AS document_status,
+       ti.document_status,
        dv.id AS document_version_id,
        dv.status AS document_version_status,
        dv.version AS document_version,
@@ -691,7 +695,11 @@ export const getAccessibleTaskItemDocumentForUser = async (
            AND dv_seq.id <= dv.id
        ) AS document_version_sequence
      FROM documents d
-     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     -- El JOIN con el entregable es nuevo (2026-08-23): origin_unit_id y document_status se
+     -- mudaron alli desde documents, que es una cascara 1:1. En el paso 6b desaparece la vuelta:
+     -- estas consultas arrancaran directamente del entregable.
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
      INNER JOIN document_versions dv ON dv.document_id = d.id
      INNER JOIN (
        SELECT document_id, MAX(version) AS max_version

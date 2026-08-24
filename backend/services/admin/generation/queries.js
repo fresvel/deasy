@@ -160,7 +160,7 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
        dv.id AS document_version_id,
        dv.document_id,
        dv.status AS document_version_status,
-       d.status AS document_status,
+       ti.document_status,
        d.task_item_id,
        ti.process_definition_template_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
