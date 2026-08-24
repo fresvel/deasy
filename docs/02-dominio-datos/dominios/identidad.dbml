@@ -62,13 +62,8 @@ Table "dossier_items" {
 Table "dossiers" {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [unique, not null]
-  "cedula" varchar(20)
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    cedula [type: btree, name: "idx_dossiers_cedula"]
-  }
 
   Note: '''El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.'''
 }

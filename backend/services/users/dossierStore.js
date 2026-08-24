@@ -65,15 +65,27 @@ export async function resolvePersonId(cedula) {
 export async function getOrCreateDossier(cedula) {
   const personId = await resolvePersonId(cedula);
   if (!personId) return null;
-  await pool().query(`INSERT IGNORE INTO dossiers (person_id, cedula) VALUES (?, ?)`, [personId, String(cedula)]);
-  const [rows] = await pool().query(`SELECT * FROM dossiers WHERE person_id = ? LIMIT 1`, [personId]);
-  return rows[0] || null;
+  await pool().query(`INSERT IGNORE INTO dossiers (person_id) VALUES (?)`, [personId]);
+  return findDossierByPersonId(personId);
 }
 
 export async function findDossierByCedula(cedula) {
   const personId = await resolvePersonId(cedula);
   if (!personId) return null;
-  const [rows] = await pool().query(`SELECT * FROM dossiers WHERE person_id = ? LIMIT 1`, [personId]);
+  return findDossierByPersonId(personId);
+}
+
+// La cedula viaja EN EL MISMO SELECT, traida de la ficha de la persona (`TD7-c5`). El expediente ya
+// no guarda su copia: se escribia una vez y no se refrescaba nunca, asi que un cambio de cedula la
+// dejaba mintiendo. El `INNER JOIN` es seguro desde `TD7-c3`, que ato el expediente a su persona.
+async function findDossierByPersonId(personId) {
+  const [rows] = await pool().query(
+    `SELECT d.*, p.cedula
+       FROM dossiers d
+       INNER JOIN persons p ON p.id = d.person_id
+      WHERE d.person_id = ? LIMIT 1`,
+    [personId]
+  );
   return rows[0] || null;
 }
 
