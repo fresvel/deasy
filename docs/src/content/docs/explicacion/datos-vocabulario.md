@@ -4,11 +4,13 @@ description: "Los términos del dominio que hay que tener claros antes de mirar 
 sidebar:
   order: 9
 ---
-**67 tablas** y una vista, en un único fichero: `backend/database/postgres_schema.sql` (1.642 líneas).
+**67 tablas** y una vista, en un único fichero: `backend/database/postgres_schema.sql` (1998 líneas).
 
-:::caution[Consecuencia de no tener migraciones]
+:::caution[El esquema describe la forma; no migra]
 
-El esquema entero se reaplica en cada arranque. Es simple y funciona bien sin datos de producción, pero significa que **no puedes hacer un `ALTER TABLE` evolutivo** de forma comoda: cualquier cambio de columna hay que pensarlo como idempotente o pasa por un reset.
+El fichero declara **cada columna una sola vez**, dentro de su `CREATE TABLE`. El arranque lo reaplica entero, pero `CREATE TABLE IF NOT EXISTS` no toca una tabla que ya existe: **una base con forma vieja no se pone al día sola, se recrea** (`node scripts/reset.mjs db`).
+
+No hay `ALTER TABLE` evolutivo, y es deliberado desde el 2026-08-24. Antes los había —20 operaciones idempotentes repartidas entre las tablas— y el precio fue que la misma columna acabara declarada **dos veces y en contradicción**. Mientras no exista una base declarada como validada, recrear sale más barato que mantener dos versiones de la verdad.
 
 :::
 

@@ -206,6 +206,12 @@ Las cuatro cascadas de 2 aristas, que confirman los cortes: `tasks`→`task_item
 `task_items.source_task_item_id`:683, `chat_messages.reply_to_message_id`:1185). Un ciclo potencial se
 evitó a propósito: `chat_conversations.last_message_id` **se dejó sin FK** (comentario `:1137`).
 
+**El fichero DESCRIBE la forma; no converge una base anterior** (`TD7-s`, 2026-08-24, decisión del
+dueño). Cada columna se declara **una sola vez**, en su `CREATE TABLE`; una base con forma vieja se
+**recrea** (`node scripts/reset.mjs db`). Hasta esa fecha convivían 20 operaciones de migración
+idempotentes, todas no-op sobre una base nueva, y el precio fue `persons.token` declarada dos veces
+y en contradicción. Lo vigila `postgres_schema.test.js` con seis patrones a techo cero.
+
 **FKs lógicas sin constraint, por decisión explícita** (`:1134-1137` y `:1229-1232`): en `chat_*` y
 `dossiers`, los `person_id` / `process_id` / `unit_id` no llevan constraint para no acoplar los
 módulos ex-documentales al núcleo relacional. **El censo completo, clasificado, está en

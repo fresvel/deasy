@@ -1,7 +1,8 @@
 // Tests unitarios del ESQUEMA. Vigilan lo que `node --check`, `check:imports` y el arranque no ven:
 // el SQL es una cadena de texto hasta que alguien la ejecuta.
 //
-// Tres bloques:
+// Cuatro bloques:
+//   0. EL CONTRATO DEL FICHERO: describe la forma, NO converge bases anteriores (`TD7-s`).
 //   1. `template_artifacts.lifecycle_state` nace SIN PUBLICAR (defecto 1.13).
 //   2. El portador `template_artifact_id` de las dos cabeceras de flujo (frente 0.8, sub-paso 1).
 //   3. `code` y `name` en los PASOS de entrega, la simetria que le faltaba a `fill_flow_steps`
@@ -34,6 +35,52 @@ const SCHEMA = fs.readFileSync(
   "utf8"
 );
 
+// --- BLOQUE 0 -------------------------------------------------------------------------------------
+//
+// EL CONTRATO DEL FICHERO (`TD7-s`, 2026-08-24, decision del dueno). `postgres_schema.sql` DESCRIBE
+// la forma y nada mas: cada columna, cada CHECK y cada clave se declara UNA sola vez, dentro de su
+// `CREATE TABLE`. Una base con forma vieja no se pone al dia sola — se recrea.
+//
+// POR QUE ES UN TEST Y NO UNA NOTA. Antes el fichero hacia los dos trabajos, y el precio fue que la
+// MISMA columna quedo declarada dos veces y en CONTRADICCION: `persons.token` decia
+// `VARCHAR(10) NOT NULL UNIQUE` en su tabla y `VARCHAR(10) NULL` en su ALTER. Nadie lo vio porque
+// sobre una base recien creada el ALTER es un no-op y todo sale verde. Esta puerta lo caza.
+//
+// Los `CREATE INDEX` / `CREATE UNIQUE INDEX` NO cuentan: un indice es siempre una sentencia aparte,
+// no una segunda declaracion de la columna.
+const SENTENCIAS_DE_MIGRACION = [
+  [/^\s*ALTER TABLE /m, "ALTER TABLE"],
+  [/ADD COLUMN IF NOT EXISTS/, "ADD COLUMN IF NOT EXISTS"],
+  [/^\s*ALTER COLUMN /m, "ALTER COLUMN"],
+  [/^\s*DROP COLUMN IF EXISTS/m, "DROP COLUMN IF EXISTS"],
+  [/^UPDATE /m, "UPDATE de relleno"],
+  [/^DO \$\$/m, "bloque DO $$"],
+];
+
+// Los comentarios se juzgan aparte: un `-- ALTER TABLE ...` dentro de una nota no ejecuta nada, pero
+// tampoco puede quedarse describiendo un mecanismo que ya no existe.
+const SIN_COMENTARIOS = SCHEMA.split("\n")
+  .filter((linea) => !linea.trim().startsWith("--"))
+  .join("\n");
+
+for (const [patron, nombre] of SENTENCIAS_DE_MIGRACION) {
+  test(`el esquema no contiene ${nombre}: describe la forma, no converge una base anterior`, () => {
+    assert.doesNotMatch(
+      SIN_COMENTARIOS,
+      patron,
+      "una columna se declara UNA vez, en su CREATE TABLE. Si hace falta cambiarla, se recrea la base"
+    );
+  });
+}
+
+test("persons.token se declara una sola vez", () => {
+  const declaraciones = SIN_COMENTARIOS.split("\n").filter((linea) =>
+    /^\s*token VARCHAR\(10\)/.test(linea)
+  );
+  assert.equal(declaraciones.length, 1, "estuvo declarada dos veces y en contradiccion (TD7-s)");
+  assert.match(declaraciones[0], /NOT NULL UNIQUE/);
+});
+
 // Solo el bloque `CREATE TABLE ... template_artifacts (...)`, para no confundirlo con otras tablas.
 const createTemplateArtifacts = SCHEMA.slice(
   SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifacts")
@@ -55,14 +102,6 @@ test("el DEFAULT inseguro no vuelve por la puerta de atras", () => {
   );
 });
 
-test("un ALTER idempotente lleva el DEFAULT nuevo a las bases que YA existen", () => {
-  assert.match(
-    SCHEMA,
-    /ALTER TABLE template_artifacts\s+ALTER COLUMN lifecycle_state SET DEFAULT 'draft';/,
-    "CREATE TABLE IF NOT EXISTS no cambia un DEFAULT en una base ya creada"
-  );
-});
-
 // El CHECK sigue admitiendo los tres estados: bajar el default no estrecha el dominio.
 test("lifecycle_state sigue admitiendo draft, published y retired", () => {
   assert.match(
@@ -75,15 +114,11 @@ test("lifecycle_state sigue admitiendo draft, published y retired", () => {
 //
 // El sitio donde vivira el flujo autorado de una plantilla (frente 0.8, sub-paso 1). Hoy es un CAJON
 // VACIO: nadie escribe la columna y nadie la lee, asi que NINGUN golden puede vigilarla y ninguna ruta
-// HTTP la ejercita. Lo unico que se puede romper en silencio es el esquema mismo, y son tres piezas
-// que hacen falta LAS TRES:
+// HTTP la ejercita. Lo unico que se puede romper en silencio es el esquema mismo, y son dos piezas:
 //
-//   1. la definicion de la tabla, para bases nuevas (el reset de `test:char:run` pasa por aqui);
-//   2. el `ALTER` idempotente, para las bases que YA existen — `CREATE TABLE IF NOT EXISTS` es un
-//      no-op sobre una tabla creada y no anade una columna ni relaja un NOT NULL; y
-//   3. el ORDEN: el ALTER va ANTES del `CREATE INDEX` de la columna nueva. Al reves el arranque
-//      muere con «column "template_artifact_id" does not exist» en toda base ya desplegada — medido,
-//      y es un fallo que no se ve en una base recien creada, que es justo la que usan las pruebas.
+//   1. la definicion de la tabla —columna, nulabilidad y FK—, que desde `TD7-s` es la UNICA; y
+//   2. el ORDEN: el `CREATE INDEX` va DESPUES de la tabla. Al reves el arranque muere con
+//      «relation does not exist» (precedentes 673f1fb, 8f9f1ad, 99fc7c7, 38c2b56).
 //
 // Lo que aqui NO hay, a proposito, es un CHECK de "exactamente un portador": las filas de runtime
 // llevan HOY `process_definition_template_id` y `task_item_id` a la vez (`generation/documents.js:248`
@@ -123,39 +158,16 @@ for (const tabla of ["fill_flow_templates", "signature_flow_templates"]) {
     );
   });
 
-  test(`${tabla}: un ALTER idempotente lleva la columna y el NULL a las bases que YA existen`, () => {
-    assert.match(
-      SCHEMA,
-      new RegExp(
-        `ALTER TABLE ${tabla}\\s+ADD COLUMN IF NOT EXISTS template_artifact_id INT NULL,\\s+ALTER COLUMN process_definition_template_id DROP NOT NULL;`
-      ),
-      "sin el ALTER el cambio solo valdria para bases recien creadas"
-    );
-  });
-
-  test(`${tabla}: la FK del portador va guardada, porque no hay ADD CONSTRAINT IF NOT EXISTS`, () => {
-    const desde = SCHEMA.indexOf(`WHERE conrelid = '${tabla}'::regclass`);
-    assert.ok(desde > 0, "debe existir el DO $$ que anade la FK solo si falta");
-    const guarda = SCHEMA.slice(desde);
-    // El filtro por conrelid no es adorno: `conname` es unico por TABLA, no por esquema.
-    assert.match(
-      guarda.split("END $$;")[0],
-      new RegExp(
-        `conname = 'fk_${tabla}_artifact'[\\s\\S]*ADD CONSTRAINT fk_${tabla}_artifact`
-      )
-    );
-  });
-
-  test(`${tabla}: el indice del portador se crea DESPUES del ALTER que crea la columna`, () => {
-    const alter = SCHEMA.indexOf(`ALTER TABLE ${tabla}\n  ADD COLUMN IF NOT EXISTS template_artifact_id`);
+  test(`${tabla}: el indice del portador se crea DESPUES de la tabla que lo sostiene`, () => {
+    const tablaPos = SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`);
     const indice = SCHEMA.indexOf(
       `CREATE INDEX IF NOT EXISTS idx_${tabla}_artifact ON ${tabla} (template_artifact_id);`
     );
-    assert.ok(alter > 0, "debe existir el ALTER que anade la columna");
+    assert.ok(tablaPos > 0, "debe existir la definicion de la tabla");
     assert.ok(indice > 0, "debe existir el indice del portador");
     assert.ok(
-      indice > alter,
-      "en una base ya creada el CREATE TABLE es un no-op: indexar antes del ALTER tumba el arranque"
+      indice > tablaPos,
+      "un indice es una sentencia aparte: colocarlo antes de su tabla tumba el arranque"
     );
   });
 }
@@ -173,9 +185,8 @@ for (const tabla of ["fill_flow_templates", "signature_flow_templates"]) {
 //
 // Igual que el bloque 2, aqui es un CAJON VACIO: nadie las escribe y nadie las lee todavia, asi que
 // ningun golden puede vigilarlas y ninguna ruta HTTP las ejercita. Lo unico que se puede romper en
-// silencio es el esquema, y son dos piezas que hacen falta LAS DOS: la definicion (para bases nuevas,
-// que es por donde pasa el reset de `test:char:run`) y el `ALTER` idempotente (para las que YA
-// existen, donde `CREATE TABLE IF NOT EXISTS` es un no-op).
+// silencio es el esquema, y desde `TD7-s` la pieza es UNA: la definicion de la tabla. La base se
+// recrea (`test:char:run` ya lo hace en cada corrida), asi que no hay una segunda forma que mantener.
 //
 // El tipo NO es libre: se copia el de la gemela de firma (`code VARCHAR(120)`, `name VARCHAR(180)`).
 // Si alguien las declara mas cortas, el mismo paso cabria en un lado y no en el otro.
@@ -199,79 +210,23 @@ for (const columna of ["code", "name"]) {
 
   test(`fill_flow_steps: ${columna} nace NULL, sin DEFAULT`, () => {
     const entrega = declaracion(createFillSteps, columna);
-    // Nulable a proposito: los pasos que ya existen no pueden inventarse un nombre, y en este
-    // sub-paso nadie escribe la columna. Un NOT NULL aqui tumbaria el ALTER en cualquier base con
-    // filas — que son todas.
+    // Nulable a proposito: en este sub-paso nadie escribe la columna todavia, y su gemela de firma
+    // tambien la declara NULL. Mismo concepto, misma nulabilidad.
     assert.match(entrega, new RegExp(`^${columna} VARCHAR\\(\\d+\\) NULL,$`));
     assert.doesNotMatch(entrega, /DEFAULT/);
   });
 }
 
-test("fill_flow_steps: un ALTER idempotente lleva code y name a las bases que YA existen", () => {
-  assert.match(
-    SCHEMA,
-    /ALTER TABLE fill_flow_steps\s+ADD COLUMN IF NOT EXISTS code VARCHAR\(120\) NULL,\s+ADD COLUMN IF NOT EXISTS name VARCHAR\(180\) NULL;/,
-    "sin el ALTER las columnas solo existirian en bases recien creadas"
-  );
-});
-
 test("fill_flow_steps: no se indexa code ni name — son descriptivas, no de busqueda", () => {
   // La decision, escrita para que no se cuele un indice por inercia: un paso se localiza por
   // (fill_flow_template_id, step_order), que ya tiene su indice unico, y nadie filtra por el nombre de
-  // un paso. La gemela de firma tampoco los indexa: sus cinco indices son de clave ajena. Y si algun
-  // dia hiciera falta uno, tendria que ir DESPUES del ALTER (la trampa del sub-paso 1); mientras no
-  // exista, no hay orden que invertir.
+  // un paso. La gemela de firma tampoco los indexa: sus cinco indices son de clave ajena.
   const indices = SCHEMA.split("\n").filter(
     (linea) => linea.startsWith("CREATE") && linea.includes("INDEX") && linea.includes("ON fill_flow_steps (")
   );
   assert.deepEqual(indices, [
     "CREATE UNIQUE INDEX IF NOT EXISTS uq_fill_flow_steps ON fill_flow_steps (fill_flow_template_id, step_order);",
   ]);
-});
-
-// --- BLOQUE 4 -------------------------------------------------------------------------------------
-//
-// EL RETIRO DE LOS FLUJOS QUE SEMBRO EL SYNC (frente 0.8, sub-paso 8). Es la unica DML de este
-// fichero que borra alcance en vez de sembrarlo, y por eso lleva test: si alguien afloja su WHERE,
-// el arranque desactiva flujos que un administrador escribio a mano, y no hay golden que lo vea
-// —en una base recien creada no existe ninguna fila con marcador, asi que la sentencia es un no-op
-// y la caracterizacion no la ejercita nunca—.
-//
-// Las cuatro condiciones del WHERE son la definicion de "lo que sembro el sync", y las cuatro hacen
-// falta:
-//   · `description LIKE 'artifact_sync_*:%'` — la huella del sync. Ningun otro escritor la pone.
-//   · `process_definition_template_id IS NOT NULL` — cuelga del VINCULO. Es lo que tapa al flujo de
-//     la plantilla en el resolvedor de runtime.
-//   · `task_item_id IS NULL` — NUNCA el flujo de runtime, que lleva vinculo Y entregable.
-//   · `is_active = 1` — hace la sentencia idempotente: la segunda pasada afecta a 0 filas.
-
-const retiroDelSync = (tabla, marcador) =>
-  new RegExp(
-    `UPDATE ${tabla}\\s+SET is_active = 0\\s+WHERE is_active = 1\\s+`
-    + `AND task_item_id IS NULL\\s+`
-    + `AND process_definition_template_id IS NOT NULL\\s+`
-    + `AND description LIKE '${marcador}:%';`
-  );
-
-for (const [tabla, marcador] of [
-  ["fill_flow_templates", "artifact_sync_fill"],
-  ["signature_flow_templates", "artifact_sync_signature"],
-]) {
-  test(`${tabla}: el retiro del sync desactiva SOLO lo que lleva el marcador ${marcador}`, () => {
-    assert.match(SCHEMA, retiroDelSync(tabla, marcador));
-  });
-}
-
-test("el retiro del sync DESACTIVA, no borra: una instancia en curso conserva su flujo", () => {
-  // La razon esta medida y es doble: `document_fill_flows.fill_flow_template_id` y
-  // `signature_flow_instances.template_id` referencian estas cabeceras SIN CASCADE, asi que un
-  // DELETE fallaria con una entrega en curso; y borrarles los pasos le cambiaria el flujo bajo los
-  // pies a esa entrega. Desactivar basta: los tres escalones del resolvedor exigen `is_active = 1`.
-  const bloque = SCHEMA.slice(SCHEMA.indexOf("RETIRO DE LOS FLUJOS QUE SEMBRO EL SYNC"));
-  assert.doesNotMatch(bloque, /DELETE FROM fill_flow_templates/);
-  assert.doesNotMatch(bloque, /DELETE FROM fill_flow_steps/);
-  assert.doesNotMatch(bloque, /DELETE FROM signature_flow_templates/);
-  assert.doesNotMatch(bloque, /DELETE FROM signature_flow_steps/);
 });
 
 // --- BLOQUE 4: `template_artifact_fields`, los campos del formulario (frente 0.4, sub-paso S6) ----
