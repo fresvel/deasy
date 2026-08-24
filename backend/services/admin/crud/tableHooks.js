@@ -904,47 +904,23 @@ export const TABLE_HOOKS = {
     }
   },
 
-  documents: {
-    // Un documento es el CONTENEDOR de un entregable: sin item de tarea no existe. El "documento
-    // suelto" (`origin_type = standalone`, documento con dueño y sin entregable) se retiró: lo que
-    // no pertenece a ningún proceso cuelga del Proceso por defecto, que crea su entregable como
-    // cualquier otro. Aquí solo se comprueba que el item EXISTA; que venga es requisito de
-    // `TABLE_RULES` (crud/validation.js), donde viven los campos obligatorios del resto de tablas.
+  // El injerto de `documents` VIVIO AQUI hasta el 2026-08-23. Comprobaba que el entregable
+  // existiera al crear un documento, y que no cambiara al editarlo. La tabla se retiro —era una
+  // cascara 1:1 sin ni una columna propia— y con ella la regla: no puede haber documento sin
+  // entregable porque el documento ES el entregable.
+  document_versions: {
+    // El artifact se hereda del ENTREGABLE cuando no viene explícito. Antes daba un rodeo por
+    // `documents` para llegar hasta él; desde el 2026-08-23 la versión cuelga del entregable.
     async beforeCreate(ctx) {
       if (!ctx.payload.task_item_id) {
         return;
       }
       const taskItem = await ctx.service.getTaskItem(ctx.payload.task_item_id);
       if (!taskItem) {
-        throw new Error("El item de tarea seleccionado no existe.");
+        throw new Error("El entregable seleccionado no existe.");
       }
-    },
-
-    beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "task_item_id")) {
-        if (Number(ctx.updates.task_item_id) !== Number(ctx.existing.task_item_id)) {
-          throw new Error("No se puede cambiar el item de tarea asociado de un documento.");
-        }
-        delete ctx.updates.task_item_id;
-      }
-    }
-  },
-
-  document_versions: {
-    // El artifact se hereda del item de tarea del documento cuando no viene explícito.
-    async beforeCreate(ctx) {
-      if (!ctx.payload.document_id) {
-        return;
-      }
-      const document = await ctx.service.getByKeys("documents", { id: ctx.payload.document_id });
-      if (!document) {
-        throw new Error("El documento seleccionado no existe.");
-      }
-      if (!ctx.payload.template_artifact_id && document.task_item_id) {
-        const taskItem = await ctx.service.getTaskItem(document.task_item_id);
-        if (taskItem?.template_artifact_id) {
-          ctx.payload.template_artifact_id = taskItem.template_artifact_id;
-        }
+      if (!ctx.payload.template_artifact_id && taskItem.template_artifact_id) {
+        ctx.payload.template_artifact_id = taskItem.template_artifact_id;
       }
     },
 

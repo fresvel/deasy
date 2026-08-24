@@ -178,14 +178,14 @@ const createResetDocumentVersion = async (connection, currentVersion) => {
   const [maxRows] = await connection.query(
     `SELECT MAX(version) AS max_version
      FROM document_versions
-     WHERE document_id = ?`,
-    [currentVersion.document_id]
+     WHERE task_item_id = ?`,
+    [currentVersion.task_item_id]
   );
   const nextVersion = Number((Number(maxRows?.[0]?.max_version || 0) + 0.1).toFixed(1));
 
   const [insertResult] = await connection.query(
     `INSERT INTO document_versions (
-       document_id,
+       task_item_id,
        version,
        template_artifact_id,
        payload_hash,
