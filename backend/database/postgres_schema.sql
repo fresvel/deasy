@@ -1561,7 +1561,23 @@ CREATE TABLE IF NOT EXISTS chat_conversations (
   archived_at TIMESTAMP,
   mobile_summary TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  -- Politica por defecto, la de las otras 18 claves a `persons`: NO SE BORRA una fila que alguien
+  -- referencia. La base responde con el nombre de la restriccion y el borrado no ocurre.
+  --
+  -- Las cinco de ambito son las que mas duelen sin comprobar, y no por integridad abstracta:
+  -- `ChatAuthorizationService` resuelve el permiso con `INNER JOIN` contra `units`, `processes` y
+  -- `process_definition_versions`. Si el destino desaparece, la fila se cae del join y LA
+  -- CONVERSACION SE VUELVE INVISIBLE PARA TODOS, sin error y sin que nadie sepa por que.
+  CONSTRAINT fk_chat_conv_process FOREIGN KEY (process_id) REFERENCES processes(id),
+  CONSTRAINT fk_chat_conv_scope_process FOREIGN KEY (scope_process_id) REFERENCES processes(id),
+  CONSTRAINT fk_chat_conv_scope_unit FOREIGN KEY (scope_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_chat_conv_scope_current_definition FOREIGN KEY (scope_current_definition_id) REFERENCES process_definition_versions(id),
+  CONSTRAINT fk_chat_conv_scope_origin_definition FOREIGN KEY (scope_origin_definition_id) REFERENCES process_definition_versions(id),
+  -- `created_by` es una persona, y el censo de `TD7-c` NO LA VIO porque buscaba columnas acabadas
+  -- en `_id`. La convencion de nombres escondia una referencia.
+  CONSTRAINT fk_chat_conv_created_by FOREIGN KEY (created_by) REFERENCES persons(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_conversations_stable_key ON chat_conversations (stable_key) WHERE stable_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_chat_conversations_process ON chat_conversations (type, process_id);
@@ -1574,7 +1590,8 @@ CREATE TABLE IF NOT EXISTS chat_conversation_participants (
   role VARCHAR(20) NOT NULL DEFAULT 'member',
   joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   left_at TIMESTAMP,
-  CONSTRAINT fk_chat_participants_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
+  CONSTRAINT fk_chat_participants_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_participants_person FOREIGN KEY (person_id) REFERENCES persons(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_participant ON chat_conversation_participants (conversation_id, person_id);
 CREATE INDEX IF NOT EXISTS idx_chat_participant_person ON chat_conversation_participants (person_id, conversation_id);
@@ -1591,7 +1608,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   delivery_state VARCHAR(20),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_chat_messages_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE,
-  CONSTRAINT fk_chat_messages_reply FOREIGN KEY (reply_to_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL
+  CONSTRAINT fk_chat_messages_reply FOREIGN KEY (reply_to_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL,
+  -- NO lleva CASCADE a proposito: borrar a una persona no puede llevarse la conversacion de los
+  -- demas. El mensaje es de quien lo escribio, pero el hilo es de todos los que participaron.
+  CONSTRAINT fk_chat_messages_sender FOREIGN KEY (sender_person_id) REFERENCES persons(id)
 );
 CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages (conversation_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_sender ON chat_messages (sender_person_id, created_at);
@@ -1613,7 +1633,8 @@ CREATE TABLE IF NOT EXISTS chat_message_reads (
   person_id INT NOT NULL,
   read_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (message_id, person_id),
-  CONSTRAINT fk_chat_reads_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+  CONSTRAINT fk_chat_reads_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_reads_person FOREIGN KEY (person_id) REFERENCES persons(id)
 );
 
 CREATE TABLE IF NOT EXISTS chat_notifications (
@@ -1651,6 +1672,7 @@ CREATE TABLE IF NOT EXISTS chat_notifications (
   -- sobrevive a que borren su padre, pero una notificacion es un PUNTERO —su razon de existir es
   -- «pincha aqui y vas al mensaje»—. Sin destino queda un enlace muerto. Misma politica que sus
   -- hermanas accesorias (`participants`, `attachments`, `reads`).
+  CONSTRAINT fk_chat_notif_recipient FOREIGN KEY (recipient_person_id) REFERENCES persons(id),
   CONSTRAINT fk_chat_notif_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE,
   CONSTRAINT fk_chat_notif_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
 );
@@ -1660,16 +1682,29 @@ CREATE INDEX IF NOT EXISTS idx_chat_notif_recipient_read ON chat_notifications (
 
 -- ============================================================================
 -- Dossier / expediente personal (núcleo relacional — Fase 6). Documento
--- heterogéneo (CV con secciones) accedido siempre como árbol completo por
--- cédula → 2 tablas con `data` JSONB (el ítem tal cual). person_id es FK lógica
--- a persons; `sera`/funcion_catedra/campos del ítem viven en `data`.
+-- heterogéneo (CV con secciones) leído siempre como árbol completo → 2 tablas
+-- con `data` JSONB (el ítem tal cual); `sera`/funcion_catedra/campos del ítem
+-- viven ahí dentro.
+--
+-- Decía «accedido por cédula» y era del diseño VIEJO de Mongo: `dossierStore.js`
+-- lee por `person_id`, que además tiene índice único. Corregido en `TD7-c3`.
+--
+-- `person_id` ERA una «FK lógica» sin comprobar; desde `TD7-c3` (2026-08-24) la
+-- base la comprueba. Y con CASCADE, a diferencia del chat: un expediente es el
+-- CV de ESA persona y no significa nada sin ella — mismo criterio que
+-- `person_certificates`. Un mensaje de chat no: ése pertenece a un hilo de
+-- varios, y por eso allí la política es no dejar borrar.
+--
+-- ⚠️ `cedula` guarda aquí lo mismo que `persons.cedula`. Es el mismo hecho dos
+-- veces, como el par polimórfico que murió en `TD7-c4`. Anotado como `TD7-c5`.
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS dossiers (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   cedula VARCHAR(20),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_dossiers_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_dossiers_person ON dossiers (person_id);
 CREATE INDEX IF NOT EXISTS idx_dossiers_cedula ON dossiers (cedula);

@@ -120,3 +120,15 @@ Ref "fk_chat_messages_conversation":"chat_conversations"."id" <? "chat_messages"
 Ref "fk_chat_messages_reply":"chat_messages"."id" ?<? "chat_messages"."reply_to_message_id" [delete: set null]
 Ref "fk_chat_notif_conversation":"chat_conversations"."id" ?<? "chat_notifications"."conversation_id" [delete: cascade]
 Ref "fk_chat_notif_message":"chat_messages"."id" ?<? "chat_notifications"."message_id" [delete: cascade]
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> chat_conversations   [identidad]
+//   processes -> chat_conversations   [procesos]
+//   process_definition_versions -> chat_conversations   [procesos]
+//   process_definition_versions -> chat_conversations   [procesos]
+//   processes -> chat_conversations   [procesos]
+//   units -> chat_conversations   [organizacion]
+//   persons -> chat_messages   [identidad]
+//   persons -> chat_notifications   [identidad]
+//   persons -> chat_conversation_participants   [identidad]
+//   persons -> chat_message_reads   [identidad]

@@ -223,6 +223,7 @@ Table "roles" {
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]
+Ref "fk_dossiers_person":"persons"."id" <? "dossiers"."person_id" [delete: cascade]
 Ref "fk_email_verification_person":"persons"."id" <? "email_verification_codes"."person_id" [delete: cascade]
 Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
@@ -236,6 +237,11 @@ Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> aplications   [empleo]
+//   persons -> chat_conversations   [chat]
+//   persons -> chat_messages   [chat]
+//   persons -> chat_notifications   [chat]
+//   persons -> chat_conversation_participants   [chat]
+//   persons -> chat_message_reads   [chat]
 //   persons -> contracts   [empleo]
 //   persons -> deliverables   [plantillas]
 //   persons -> document_attachments   [tareas]

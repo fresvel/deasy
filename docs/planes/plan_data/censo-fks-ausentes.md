@@ -12,7 +12,7 @@
 |---|---|---:|---|
 | **A** | **No son referencias** — el censo las cuenta de más | 3 | No |
 | **B** | **Ciclo evitado** — decisión correcta y ya documentada | 1 | No |
-| **C** | **Decisión explícita**: «FK lógica, para no acoplar» | 10 | **Revisarla: tiene coste medido** |
+| **C** | **Decisión explícita**: «FK lógica, para no acoplar» | 10 (+1) | ✅ Revisada y revertida (`TD7-c3`, 2026-08-24) |
 | **D** | **Descuido de tipo** — no pueden llevar FK porque el tipo no casa | 2 | Sí → `TD7-d` |
 | **E** | **Descuido dentro del propio dominio** | 2 | ✅ Hecho (`TD7-c2`, 2026-08-24) |
 
@@ -57,23 +57,35 @@ El esquema lo declara sin ambigüedad:
 | `chat_notifications` | `recipient_person_id` |
 | `dossiers` | `person_id` — su comentario también dice «FK lógica a persons» |
 
-### El coste, medido y no supuesto
+### El coste, medido — y la premisa, falsa
 
-La decisión es defendible **como postura arquitectónica** —el chat vino de EMQX y podría volver a
-salir de la base—, pero no es gratis, y esto es lo que se comprobó ejecutándolo:
+La decisión parecía defendible como postura: el chat vino de EMQX y podría volver a salir de la
+base. Al medirla para `TD7-c3` resultó que **su premisa ya no se sostiene**:
 
-1. **`persons` está en `sqlTables.js`**, así que el CRUD genérico del admin puede borrar filas suyas.
-2. **`SqlAdminService.remove()` hace `DELETE FROM <tabla>` sin restricción por tabla.**
-3. **Una persona sin otros datos se borra y nada lo impide** — verificado en una transacción con
-   `ROLLBACK`: `INSERT` + `DELETE` sin un solo error.
-4. **`chat_messages` tiene 2 claves foráneas, y ninguna a `persons`.**
+> `ChatAuthorizationService` resuelve **quién puede ver una conversación** con `INNER JOIN` contra
+> `process_definition_versions`, `processes`, `units` y `position_assignments`.
 
-O sea: una persona que sólo haya chateado **se puede borrar dejando sus mensajes huérfanos**, y la
-base no dirá nada. No es un escenario retorcido en un despliegue nuevo.
+El chat **no puede funcionar sin el núcleo**: lee el organigrama y las definiciones de proceso para
+decidir permisos. La atadura ya existía y sostenía peso; lo único que faltaba era que la base la
+conociera. Declararla no acopla nada nuevo.
 
-**No se toca sin decisión del dueño.** Es su postura, no un descuido, y revertirla acopla el chat al
-núcleo a propósito. Lo que sí corresponde es que la decisión se tome **sabiendo el coste**, que hasta
-hoy no estaba medido.
+Y el precio de no declararla estaba medido, ejecutándolo: `persons` está en el CRUD genérico,
+`SqlAdminService.remove()` hace `DELETE FROM <tabla>` sin restricción, y **una persona sin otros
+datos se borraba sin que nada lo impidiera**. Peor que los mensajes huérfanos era el ámbito: como el
+permiso se resuelve con `INNER JOIN`, borrar la unidad de una conversación **la volvía invisible para
+todos**, sin error y sin que nadie supiera por qué.
+
+**Decisión del dueño (2026-08-24): que el sistema lo impida.** Las once columnas llevan ya su
+restricción, con la política por defecto —la de las otras 18 claves a `persons`—, salvo
+`dossiers.person_id`, que va con `CASCADE`: un expediente es el CV de esa persona y no significa nada
+sin ella, igual que `person_certificates`. Los mensajes de chat **no** llevan `CASCADE`, y es
+deliberado: borrar a alguien no puede llevarse la conversación de los demás.
+
+### ⚠️ Once, no diez: el censo tenía un punto ciego
+
+`chat_conversations.created_by` es una persona y **el censo no la vio**, porque buscaba columnas
+acabadas en `_id`. La convención de nombres escondía una referencia. Si este censo se repite, hay que
+buscar por lo que la columna *significa*, no por cómo se llama.
 
 ## D · Descuido de tipo (2) → `TD7-d`
 

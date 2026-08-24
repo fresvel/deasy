@@ -109,6 +109,7 @@ Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relati
 Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   units -> chat_conversations   [chat]
 //   unit_positions -> contracts   [empleo]
 //   unit_positions -> fill_flow_steps   [plantillas]
 //   relation_unit_types -> fill_flow_steps   [plantillas]

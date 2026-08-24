@@ -1087,12 +1087,22 @@ Ref "fk_applications_vacancy":"vacancies"."id" <? "aplications"."vacancy_id"
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
+Ref "fk_chat_participants_person":"persons"."id" <? "chat_conversation_participants"."person_id"
+Ref "fk_chat_conv_created_by":"persons"."id" <? "chat_conversations"."created_by"
+Ref "fk_chat_conv_process":"processes"."id" ?<? "chat_conversations"."process_id"
+Ref "fk_chat_conv_scope_current_definition":"process_definition_versions"."id" ?<? "chat_conversations"."scope_current_definition_id"
+Ref "fk_chat_conv_scope_origin_definition":"process_definition_versions"."id" ?<? "chat_conversations"."scope_origin_definition_id"
+Ref "fk_chat_conv_scope_process":"processes"."id" ?<? "chat_conversations"."scope_process_id"
+Ref "fk_chat_conv_scope_unit":"units"."id" ?<? "chat_conversations"."scope_unit_id"
 Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachments"."message_id" [delete: cascade]
 Ref "fk_chat_reads_message":"chat_messages"."id" <? "chat_message_reads"."message_id" [delete: cascade]
+Ref "fk_chat_reads_person":"persons"."id" <? "chat_message_reads"."person_id"
 Ref "fk_chat_messages_conversation":"chat_conversations"."id" <? "chat_messages"."conversation_id" [delete: cascade]
 Ref "fk_chat_messages_reply":"chat_messages"."id" ?<? "chat_messages"."reply_to_message_id" [delete: set null]
+Ref "fk_chat_messages_sender":"persons"."id" <? "chat_messages"."sender_person_id"
 Ref "fk_chat_notif_conversation":"chat_conversations"."id" ?<? "chat_notifications"."conversation_id" [delete: cascade]
 Ref "fk_chat_notif_message":"chat_messages"."id" ?<? "chat_notifications"."message_id" [delete: cascade]
+Ref "fk_chat_notif_recipient":"persons"."id" <? "chat_notifications"."recipient_person_id"
 Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
 Ref "fk_contract_origin_recruitment_offer":"offers"."id" <? "contract_origin_recruitment"."offer_id"
 Ref "fk_contract_origin_recruitment_vacancy":"vacancies"."id" <? "contract_origin_recruitment"."vacancy_id"
@@ -1123,6 +1133,7 @@ Ref "fk_document_workflow_observations_resolver":"persons"."id" ?<? "document_wo
 Ref "fk_document_workflow_observations_signature_request":"signature_requests"."id" ?<? "document_workflow_observations"."signature_request_id"
 Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
 Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]
+Ref "fk_dossiers_person":"persons"."id" <? "dossiers"."person_id" [delete: cascade]
 Ref "fk_email_verification_person":"persons"."id" <? "email_verification_codes"."person_id" [delete: cascade]
 Ref "fk_fill_flow_steps_cargo":"cargos"."id" ?<? "fill_flow_steps"."cargo_id"
 Ref "fk_fill_flow_steps_person":"persons"."id" ?<? "fill_flow_steps"."assigned_person_id"

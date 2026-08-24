@@ -212,11 +212,12 @@ dueño). Cada columna se declara **una sola vez**, en su `CREATE TABLE`; una bas
 idempotentes, todas no-op sobre una base nueva, y el precio fue `persons.token` declarada dos veces
 y en contradicción. Lo vigila `postgres_schema.test.js` con seis patrones a techo cero.
 
-**FKs lógicas sin constraint, por decisión explícita** (`:1134-1137` y `:1229-1232`): en `chat_*` y
-`dossiers`, los `person_id` / `process_id` / `unit_id` no llevan constraint para no acoplar los
-módulos ex-documentales al núcleo relacional. **El censo completo, clasificado, está en
-[`censo-fks-ausentes.md`](./censo-fks-ausentes.md)** (`TD7-c`): son 18, y hicieron falta **cinco**
-categorías, no tres — tres de ellas ni siquiera son referencias.
+**Ya no hay «FKs lógicas» al núcleo** (`TD7-c3`, 2026-08-24, decisión del dueño). Las 11 columnas del
+chat y el dossier que apuntaban a `persons`/`units`/`processes`/`process_definition_versions` sin
+comprobar llevan ya su restricción. La premisa que las justificaba —«no acoplar el chat»— era falsa:
+`ChatAuthorizationService` ya resolvía los permisos con `INNER JOIN` contra esas mismas tablas.
+Política por defecto en las diez del chat; `CASCADE` sólo en `dossiers.person_id`. Lo único que sigue
+sin constraint a propósito es `chat_conversations.last_message_id`, que evita un ciclo.
 
 Los dos que sí eran descuido **ya están corregidos** (`TD7-d`, 2026-08-24): `signature_batch_jobs.user_id`
 y `task_item_tenures.performed_by_person_id` eran `BIGINT` contra `persons.id INT`, así que la FK no

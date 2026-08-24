@@ -168,6 +168,10 @@ Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   processes -> chat_conversations   [chat]
+//   process_definition_versions -> chat_conversations   [chat]
+//   process_definition_versions -> chat_conversations   [chat]
+//   processes -> chat_conversations   [chat]
 //   processes -> deliverables   [plantillas]
 //   process_definition_templates -> fill_flow_templates   [plantillas]
 //   cargos -> process_definition_series   [identidad]
