@@ -34,7 +34,7 @@ export const supervisorHandoverTaskItem = async (req, res) => {
     const result = await service.handoverTaskItem(req.params.taskItemId, {
       toPersonId: req.body?.to_person_id,
       reason: req.body?.reason || "Reasignado por la jefatura de la unidad",
-      performedByUserId: personId,
+      performedByPersonId: personId,
     });
     res.json(result);
   } catch (error) {

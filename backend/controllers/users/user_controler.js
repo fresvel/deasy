@@ -1039,7 +1039,7 @@ export const listDeliverableHandovers = async (req, res) => {
         ORDER BY te.id DESC`,
       [Number(target.task_item_id)]
     );
-    // `performed_by_user_id` NO se expone: a un responsable le importa el qué y el porqué, no qué
+    // `performed_by_person_id` NO se expone: a un responsable le importa el qué y el porqué, no qué
     // administrador lo ejecutó. Sigue en la tabla para la consulta forense.
     return res.json(rows);
   } catch (error) {

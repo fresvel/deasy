@@ -225,7 +225,7 @@ export default class TaskAssignmentService {
   // NUNCA se cumplía: el documento nace en la misma transacción que el entregable, así que este backfill
   // devolvía 0 siempre. `user_started_at` lo sella el `start` de un paso de entrega, que es de verdad el
   // momento en que alguien empieza.
-  async reconcileOpenTaskItemAssignments({ positionId = null, performedByUserId = null } = {}, connection = this.pool) {
+  async reconcileOpenTaskItemAssignments({ positionId = null, performedByPersonId = null } = {}, connection = this.pool) {
     const pid = normalizeNumericId(positionId);
     const params = [];
     let posFilter = "";
@@ -273,11 +273,11 @@ export default class TaskAssignmentService {
     // El `RETURNING id` se conserva a proposito aunque no se lea: sin el, el adaptador le añade uno
     // suyo dentro de un SAVEPOINT para adivinar el `insertId`.
     //
-    // Aqui `performed_by_user_id` SI se rellena —a diferencia de los relevos por trigger— porque
+    // Aqui `performed_by_person_id` SI se rellena —a diferencia de los relevos por trigger— porque
     // este camino lo dispara alguien a proposito.
     const [result] = await connection.query(
       `INSERT INTO task_item_tenures
-         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id, work_started)
+         (task_item_id, person_id, position_id, opened_by, reason, performed_by_person_id, work_started)
        SELECT ti.id, pa.person_id, ti.responsible_position_id,
               'reconcile', 'Reconciliacion de responsables', ?,
               CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
@@ -294,7 +294,7 @@ export default class TaskAssignmentService {
           )
           ${posFilter}
        RETURNING id`,
-      [normalizeNumericId(performedByUserId) || null, ...params]
+      [normalizeNumericId(performedByPersonId) || null, ...params]
     );
     // El conteo sale del RETURNING y NO de `affectedRows`, y no es un capricho: el adaptador decide
     // si una consulta es de escritura con `/^\s*(insert|update|delete|replace)\b/` sobre el texto
@@ -309,7 +309,7 @@ export default class TaskAssignmentService {
   // F-C (handover): traspasa el MISMO entregable a otra persona (NO duplica). Mueve el responsable del task_item
   // y, si ya está iniciado, el dueño del documento; deja asiento de auditoría. Conserva versiones/firmas/historial.
   // No traspasa entregables cerrados (trazabilidad intacta).
-  async handoverTaskItem(taskItemId, { toPersonId, reason = null, triggerKind = "manual", performedByUserId = null } = {}, connection = this.pool) {
+  async handoverTaskItem(taskItemId, { toPersonId, reason = null, triggerKind = "manual", performedByPersonId = null } = {}, connection = this.pool) {
     const tiId = normalizeNumericId(taskItemId);
     const toId = normalizeNumericId(toPersonId);
     if (!tiId) throw new Error("Entregable (task_item) inválido.");
@@ -355,7 +355,7 @@ export default class TaskAssignmentService {
     // si no, responde solo por el traspaso y queda `NULL`. Es el dato que el asiento viejo no tenia.
     await connection.query(
       `INSERT INTO task_item_tenures
-         (task_item_id, person_id, position_id, opened_by, reason, performed_by_user_id, work_started)
+         (task_item_id, person_id, position_id, opened_by, reason, performed_by_person_id, work_started)
        SELECT ti.id, ?,
               (SELECT pa.position_id
                  FROM position_assignments pa
@@ -367,7 +367,7 @@ export default class TaskAssignmentService {
               CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
          FROM task_items ti
         WHERE ti.id = ?`,
-      [toId, toId, reason || null, normalizeNumericId(performedByUserId) || null, tiId]
+      [toId, toId, reason || null, normalizeNumericId(performedByPersonId) || null, tiId]
     );
     // El `UPDATE documents SET owner_person_id` que habia aqui se retiro con la columna. Era el
     // UNICO de los cuatro caminos de relevo que la movia — los dos triggers y el backfill no la
@@ -411,13 +411,13 @@ export default class TaskAssignmentService {
               te.person_id AS to_person_id,
               te.reason,
               te.opened_by AS trigger_kind,
-              te.performed_by_user_id,
+              te.performed_by_person_id,
               te.started_at AS created_at,
               CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
               CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
          FROM (
            SELECT t.id, t.task_item_id, t.person_id, t.reason, t.opened_by,
-                  t.performed_by_user_id, t.started_at,
+                  t.performed_by_person_id, t.started_at,
                   LAG(t.person_id) OVER (PARTITION BY t.task_item_id ORDER BY t.started_at, t.id)
                     AS from_person_id
              FROM task_item_tenures t

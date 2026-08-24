@@ -221,7 +221,7 @@ decidir.
 Dónde se escribe el asiento no es indiferente:
 
 - **En el trigger plpgsql**: captura los relevos automáticos *pase lo que pase*, incluso los que
-  vengan de un `UPDATE` a mano. Pero el trigger no sabe *quién* lo provocó (`performed_by_user_id`
+  vengan de un `UPDATE` a mano. Pero el trigger no sabe *quién* lo provocó (`performed_by_person_id`
   quedaría `NULL`) y meter lógica de auditoría en plpgsql aumenta la superficie de lo que el esquema
   hace en silencio.
 - **En la capa de servicio**: sabe el usuario y es depurable, pero **el camino 2 no pasa por ella** —

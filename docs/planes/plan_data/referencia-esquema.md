@@ -208,9 +208,14 @@ evitó a propósito: `chat_conversations.last_message_id` **se dejó sin FK** (c
 
 **FKs lógicas sin constraint, por decisión explícita** (`:1134-1137` y `:1229-1232`): en `chat_*` y
 `dossiers`, los `person_id` / `process_id` / `unit_id` no llevan constraint para no acoplar los
-módulos ex-documentales al núcleo relacional. Dos casos que **no** son decisión sino descuido:
-`signature_batch_jobs.user_id` y `task_item_tenures.performed_by_user_id` son `BIGINT`
-contra `persons.id INT`.
+módulos ex-documentales al núcleo relacional. **El censo completo, clasificado, está en
+[`censo-fks-ausentes.md`](./censo-fks-ausentes.md)** (`TD7-c`): son 18, y hicieron falta **cinco**
+categorías, no tres — tres de ellas ni siquiera son referencias.
+
+Los dos que sí eran descuido **ya están corregidos** (`TD7-d`, 2026-08-24): `signature_batch_jobs.user_id`
+y `task_item_tenures.performed_by_person_id` eran `BIGINT` contra `persons.id INT`, así que la FK no
+se podía declarar. Hoy son `INT` con su `REFERENCES persons(id)` —política por defecto, como las otras
+18—, y el segundo perdió de paso el `user` del nombre: es un fósil de la tabla `users`, que ya no existe.
 
 ---
 

@@ -337,7 +337,7 @@ export const SQL_TABLES = [
       { name: "ended_at", label: "Hasta (vacio = vigente)", type: "datetime", readOnly: true },
       { name: "opened_by", label: "Causa", type: "text", readOnly: true },
       { name: "reason", label: "Motivo", type: "text" },
-      { name: "performed_by_user_id", label: "Ejecutado por", type: "number", readOnly: true },
+      { name: "performed_by_person_id", label: "Ejecutado por", type: "number", readOnly: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["reason"]

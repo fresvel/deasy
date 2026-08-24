@@ -18,7 +18,7 @@ Project firmas {
 
 Table "signature_batch_jobs" {
   "job_id" bpchar(36) [pk, not null]
-  "user_id" int8
+  "user_id" int4
   "sign_mode" varchar(40)
   "status" varchar(20) [not null, default: 'queued']
   "total" int4 [not null, default: 0]
@@ -148,3 +148,4 @@ Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_reque
 //   process_definition_templates -> signature_flow_templates   [procesos]
 //   task_items -> signature_flow_templates   [tareas]
 //   persons -> signature_requests   [identidad]
+//   persons -> signature_batch_jobs   [identidad]

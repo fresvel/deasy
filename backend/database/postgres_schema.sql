@@ -907,7 +907,11 @@ CREATE TABLE IF NOT EXISTS task_item_tenures (
   reason VARCHAR(255) NULL,
   -- Solo lo rellena el traspaso a proposito. En un relevo automatico no lo hizo nadie, y
   -- `opened_by` ya dice la causa.
-  performed_by_user_id BIGINT NULL,
+  --
+  -- Nacio `performed_by_user_id BIGINT` y las dos cosas estaban mal (TD7-d, 2026-08-24): `user` es
+  -- un fosil de la tabla `users`, que ya no existe —la identidad es `persons`—, y el BIGINT contra
+  -- `persons.id INT` hacia la FK IMPOSIBLE. No es que se decidiera no ponerla: no se podia.
+  performed_by_person_id INT NULL REFERENCES persons(id),
 
   -- Unicidad parcial con el MISMO idiom que `uq_position_current` (:172), que hace esto mismo un
   -- piso mas abajo con la ocupacion de un puesto.
@@ -1630,7 +1634,10 @@ FROM org_tree;
 -- backend (antes vivía en un Map en memoria). `results` guarda el detalle por archivo como JSON.
 CREATE TABLE IF NOT EXISTS signature_batch_jobs (
   job_id CHAR(36) PRIMARY KEY,
-  user_id BIGINT NULL,
+  -- Es `persons.id` (sale de `req.user.uid`). Era BIGINT contra un INT, asi que la FK no se podia
+  -- poner (TD7-d, 2026-08-24). El nombre `user_id` SI se queda: asoma como `userId` en el contrato
+  -- HTTP y en `sign_batch.json`, y renombrarlo moveria un golden a cambio de nada.
+  user_id INT NULL REFERENCES persons(id),
   sign_mode VARCHAR(40) NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'queued',
   total INT NOT NULL DEFAULT 0,

@@ -59,8 +59,10 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 |---|---|---|---|---|---|
 | `TD7-a` | D7 | **Decisión escrita**: si un vínculo puede apuntar a una edición `retired`, y si publicar una edición debe arrastrar sus vínculos | ⬜ | — | — |
 | `TD7-b` | D7 | **La invariante de `published`, verificada**: hoy descansa en que un `draft` no tenga instancias, y `launch.js` **no mira `lifecycle_state`**. Decisión + prueba que la congele | ⬜ | — | — |
-| `TD7-c` | D7 | **Censo de columnas `*_id` sin FK**, clasificadas en las tres categorías: decisión explícita · ciclo evitado · **descuido** | ⬜ | **Remedido 2026-08-23: son 18** — 8 de ellas del dominio `chat`, que es donde se concentra el descuido | — |
-| `TD7-d` | D7 | Los dos `BIGINT` contra `persons.id INT` corregidos, con su FK. **Necesita D3 si hay datos que preservar** | ⬜ | — | — |
+| `TD7-c` | D7 | **Censo de columnas `*_id` sin FK**, clasificadas | ✅ | [`censo-fks-ausentes.md`](./censo-fks-ausentes.md) · **18**, y hicieron falta CINCO categorías, no tres: 3 **no son referencias** (una generada, un UUID, un id polimórfico), 1 ciclo evitado, 10 decisión explícita **con su coste medido**, 2 descuido de tipo (→`TD7-d`) y 2 descuido dentro del propio chat | 2026-08-23 |
+| `TD7-c2` | D7 | `chat_notifications` gana sus dos FKs internas (`conversation_id`, `message_id`) | ⬜ | Es la única tabla del chat **sin ninguna** FK, y el argumento de «no acoplar» no aplica: apunta a sus propias hermanas | — |
+| `TD7-c3` | D7 | **Decisión del dueño**: ¿las «FKs lógicas» del chat y el dossier al núcleo se quedan así? | ⬜ | Medido: una persona sin otros datos **se borra y nada lo impide**, y `chat_messages` no tiene FK a `persons` — sus mensajes quedarían huérfanos. Es una postura defendible, pero ahora se conoce su precio | — |
+| `TD7-d` | D7 | Los dos `BIGINT` contra `persons.id INT` corregidos, con su FK | ✅ | `INT` + `REFERENCES persons(id)` (política por defecto, como las otras 18). **Probado por mutación**: un `person_id` inexistente es rechazado por la base en las DOS tablas. `performed_by_user_id` → `performed_by_person_id` de paso: `user` era fósil de la tabla `users`, que ya no existe. Golden movido: **una línea** de `admin_crud.json`, que es la prueba | 2026-08-24 |
 | `TD7-e` | D7 | **Decisión escrita**: cuáles de las columnas de estado sin `CHECK` bajan su dominio a la base. **Va detrás de D2** | ⬜ | **Remedido 2026-08-23: son 4, no 8** (`tasks.status`, `task_items.document_status`, `document_versions.status`, `signature_batch_jobs.status`) | — |
 | `TD7-f` | D7 | **El diseño del acceso al entregable**, con las dos decisiones del dueño escritas y su evidencia | ✅ | [`acceso-al-entregable.md`](./acceso-al-entregable.md) · 2 decisiones · 4 defectos nuevos | 2026-08-22 |
 | `TD7-g` | D7 | **P1** · La función única de participantes, con las fuentes que ya existen. Ningún guard cambia todavía | ✅ | `DeliverableAccessService.js` · 642/642 unit · 291/291 char sin mover goldens · 2 mutaciones en rojo | 2026-08-22 |
@@ -235,7 +237,7 @@ las tres. Lo que hoy hay es una muestra, no un censo.
 
 ### `TD7-d` · Dos columnas que no pueden llevar FK aunque se quiera
 
-`signature_batch_jobs.user_id` y `task_item_handovers.performed_by_user_id` son **`BIGINT`** contra
+`signature_batch_jobs.user_id` y `task_item_tenures.performed_by_person_id` son **`BIGINT`** contra
 `persons.id INT` (verificado el 2026-08-14 en `postgres_schema.sql`). No es que les falte la
 restricción: **con ese tipo no se puede declarar**.
 

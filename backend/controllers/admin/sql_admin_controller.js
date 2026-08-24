@@ -368,7 +368,7 @@ export const reconcileTaskItemAssignments = async (req, res) => {
   try {
     const result = await service.reconcileOpenTaskItemAssignments({
       positionId: req.body?.position_id || req.query?.position_id || null,
-      performedByUserId: req.user?.uid ?? null
+      performedByPersonId: req.user?.uid ?? null
     });
     res.json(result);
   } catch (error) {
@@ -393,7 +393,7 @@ export const handoverTaskItem = async (req, res) => {
       toPersonId: req.body?.to_person_id ?? null,
       reason: req.body?.reason ?? null,
       triggerKind: req.body?.trigger_kind ?? "manual",
-      performedByUserId: req.user?.uid ?? null
+      performedByPersonId: req.user?.uid ?? null
     });
     res.json(result);
   } catch (error) {

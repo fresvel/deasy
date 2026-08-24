@@ -123,7 +123,7 @@ Table "task_item_tenures" {
   "opened_by" text [not null, check: `opened_by = ANY (ARRAY['original'::text, 'occupancy_start'::text, 'occupancy_end'::text, 'position_deactivated'::text, 'reconcile'::text, 'manual'::text])`, default: 'original']
   "work_started" int2 [not null, default: 0]
   "reason" varchar(255)
-  "performed_by_user_id" int8
+  "performed_by_person_id" int4
   "current_flag" int2 [note: "columna generada (STORED)"]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -231,3 +231,4 @@ Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade
 //   process_runs -> tasks   [procesos]
 //   units -> tasks   [organizacion]
 //   terms -> tasks   [procesos]
+//   persons -> task_item_tenures   [identidad]

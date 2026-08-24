@@ -224,7 +224,7 @@ se cumple si el código no se equivoca**. Con estancias es un **índice**.
 
 Así que «plegarse dentro» = `task_item_handovers` **deja de existir como tabla aparte** y sus datos
 pasan a ser columnas de la tenencia (`handover_kind` es su `trigger_kind`, `reason` es su `reason`,
-`performed_by_user_id` el mismo). Gana además el `position_id`, que hoy no tiene.
+`performed_by_person_id` el mismo). Gana además el `position_id`, que hoy no tiene.
 
 ## 8 · Auditoría: las tres piezas YA existen — y dos están mal puestas
 
@@ -452,7 +452,7 @@ CREATE TABLE IF NOT EXISTS task_item_tenures (
   )) NOT NULL,
 
   reason VARCHAR(255) NULL,
-  performed_by_user_id INT NULL,   -- solo lo rellena el traspaso a proposito
+  performed_by_person_id INT NULL,   -- solo lo rellena el traspaso a proposito
 
   -- Unicidad parcial con el MISMO idiom que `uq_position_current` (`postgres_schema.sql:172`).
   current_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN ended_at IS NULL THEN 1 ELSE NULL END) STORED,
@@ -500,7 +500,7 @@ Y no es un patrón nuevo en este repo: `position_assignments.is_current` + `uq_p
 hacen exactamente lo mismo un piso más abajo.
 
 **4 · `task_item_handovers` desaparece.** Sus seis columnas están todas aquí
-(`trigger_kind`→`opened_by`, `reason`, `performed_by_user_id`, `created_at`, y el par
+(`trigger_kind`→`opened_by`, `reason`, `performed_by_person_id`, `created_at`, y el par
 `from`/`to` que ahora son dos filas consecutivas). Gana el `position_id` y el `original`, que no
 tenía. No hay que migrar nada: **no hay datos en producción** y la semilla se reescribe.
 

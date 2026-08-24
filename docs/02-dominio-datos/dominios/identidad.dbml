@@ -261,3 +261,5 @@ Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
 //   persons -> task_items   [tareas]
 //   cargos -> unit_positions   [organizacion]
 //   roles -> vacancy_visibility   [empleo]
+//   persons -> signature_batch_jobs   [firmas]
+//   persons -> task_item_tenures   [tareas]

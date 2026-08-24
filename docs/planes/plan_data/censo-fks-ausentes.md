@@ -1,0 +1,100 @@
+# Censo de columnas `*_id` sin clave foránea (`TD7-c`)
+
+> **Medido el 2026-08-23** sobre `backend/database/postgres_schema.sql`, y **verificado ejecutando**
+> lo que se afirma. Son **18**, y la mitad no son lo que parecen.
+>
+> El plan pedía clasificarlas en tres categorías —decisión explícita · ciclo evitado · descuido—.
+> Hicieron falta **cinco**: el censo cuenta de más, y hay dos descuidos de naturaleza distinta.
+
+## Resumen
+
+| | Categoría | Cuántas | ¿Hay que hacer algo? |
+|---|---|---:|---|
+| **A** | **No son referencias** — el censo las cuenta de más | 3 | No |
+| **B** | **Ciclo evitado** — decisión correcta y ya documentada | 1 | No |
+| **C** | **Decisión explícita**: «FK lógica, para no acoplar» | 10 | **Revisarla: tiene coste medido** |
+| **D** | **Descuido de tipo** — no pueden llevar FK porque el tipo no casa | 2 | Sí → `TD7-d` |
+| **E** | **Descuido dentro del propio dominio** | 2 | Sí |
+
+---
+
+## A · No son referencias (3)
+
+Una columna que acaba en `_id` no es necesariamente una clave foránea. Estas tres no apuntan a
+ninguna fila de ninguna tabla:
+
+| Columna | Qué es |
+|---|---|
+| `tasks.normalized_scope_unit_id` | Columna **generada**. Normaliza `NULL` a `0` para emular unicidad parcial en `uq_tasks_definition_term_scope`. No apunta a nada |
+| `signature_batch_jobs.job_id` | `CHAR(36)` — el **UUID del trabajo** de firma por lotes. Es su identificador, no una referencia |
+| `chat_notifications.entity_id` | `VARCHAR(64)` — id **polimórfico**: a qué tabla apunta lo dice `entity_type`. Una FK es **imposible por definición**, no una omisión |
+
+**Nada que hacer.** Y conviene que quede escrito, porque el censo se va a repetir.
+
+## B · Ciclo evitado (1)
+
+| Columna | Por qué |
+|---|---|
+| `chat_conversations.last_message_id` | Apunta a `chat_messages.id`, que a su vez apunta a la conversación. Poner la FK crearía un ciclo que complica el borrado y el orden de inserción |
+
+**El propio esquema ya lo documenta** (`postgres_schema.sql`, cabecera del bloque de chat). Decisión
+correcta y explicada: nada que hacer.
+
+## C · Decisión explícita, y con coste medido (10)
+
+El esquema lo declara sin ambigüedad:
+
+> *«Los `person_id` / `process_id` / `unit_id` / `definition_id` son FKs lógicas al núcleo relacional
+> (`persons`/`processes`/`units`/`process_definition_versions`); **no se ponen constraints para no
+> acoplar**.»*
+
+| Tabla | Columnas |
+|---|---|
+| `chat_conversations` | `process_id`, `scope_process_id`, `scope_unit_id`, `scope_current_definition_id`, `scope_origin_definition_id` |
+| `chat_conversation_participants` | `person_id` |
+| `chat_messages` | `sender_person_id` |
+| `chat_message_reads` | `person_id` |
+| `chat_notifications` | `recipient_person_id` |
+| `dossiers` | `person_id` — su comentario también dice «FK lógica a persons» |
+
+### El coste, medido y no supuesto
+
+La decisión es defendible **como postura arquitectónica** —el chat vino de EMQX y podría volver a
+salir de la base—, pero no es gratis, y esto es lo que se comprobó ejecutándolo:
+
+1. **`persons` está en `sqlTables.js`**, así que el CRUD genérico del admin puede borrar filas suyas.
+2. **`SqlAdminService.remove()` hace `DELETE FROM <tabla>` sin restricción por tabla.**
+3. **Una persona sin otros datos se borra y nada lo impide** — verificado en una transacción con
+   `ROLLBACK`: `INSERT` + `DELETE` sin un solo error.
+4. **`chat_messages` tiene 2 claves foráneas, y ninguna a `persons`.**
+
+O sea: una persona que sólo haya chateado **se puede borrar dejando sus mensajes huérfanos**, y la
+base no dirá nada. No es un escenario retorcido en un despliegue nuevo.
+
+**No se toca sin decisión del dueño.** Es su postura, no un descuido, y revertirla acopla el chat al
+núcleo a propósito. Lo que sí corresponde es que la decisión se tome **sabiendo el coste**, que hasta
+hoy no estaba medido.
+
+## D · Descuido de tipo (2) → `TD7-d`
+
+| Columna | Tipo | Contra |
+|---|---|---|
+| `task_item_tenures.performed_by_user_id` | `BIGINT` | `persons.id` es `INT` |
+| `signature_batch_jobs.user_id` | `BIGINT` | `persons.id` es `INT` |
+
+**No pueden llevar FK aunque se quiera: el tipo no casa.** Y ése es exactamente el descuido — no es
+que se decidiera no ponerla, es que no se podía. Se arreglan en `TD7-d`.
+
+## E · Descuido dentro del propio dominio (2)
+
+| Columna | Apunta a |
+|---|---|
+| `chat_notifications.conversation_id` | `chat_conversations.id` |
+| `chat_notifications.message_id` | `chat_messages.id` |
+
+**Aquí el argumento de «no acoplar» no aplica**: las tres tablas son del **mismo dominio**, y sus
+hermanas sí llevan FK — `chat_conversation_participants`, `chat_messages`, `chat_message_attachments`
+y `chat_message_reads` las tienen todas. `chat_notifications` es la única del chat **sin ninguna**.
+
+Es una omisión, no una postura. Pero **arreglarla toca la tabla de notificaciones**, que no es de esta
+fase: queda anotada como tarea propia.

@@ -25,7 +25,7 @@
 <polygon fill="#e7e2dd" stroke="transparent" points="166.03,-691.95 166.03,-751.95 616.03,-751.95 616.03,-691.95 166.03,-691.95"/>
 <polygon fill="none" stroke="#29235c" points="166.03,-691.95 166.03,-751.95 616.03,-751.95 616.03,-691.95 166.03,-691.95"/>
 <text text-anchor="start" x="177.03" y="-712.15" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">user_id &#160;&#160;&#160;</text>
-<text text-anchor="start" x="553.46" y="-713.15" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int8</text>
+<text text-anchor="start" x="553.46" y="-713.15" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int4</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="166.03,-631.95 166.03,-691.95 616.03,-691.95 616.03,-631.95 166.03,-631.95"/>
 <polygon fill="none" stroke="#29235c" points="166.03,-631.95 166.03,-691.95 616.03,-691.95 616.03,-631.95 166.03,-631.95"/>
 <text text-anchor="start" x="177.03" y="-652.15" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">sign_mode &#160;&#160;&#160;</text>

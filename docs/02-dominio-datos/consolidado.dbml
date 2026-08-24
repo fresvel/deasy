@@ -725,7 +725,7 @@ Table "roles" {
 
 Table "signature_batch_jobs" {
   "job_id" bpchar(36) [pk, not null]
-  "user_id" int8
+  "user_id" int4
   "sign_mode" varchar(40)
   "status" varchar(20) [not null, default: 'queued']
   "total" int4 [not null, default: 0]
@@ -844,7 +844,7 @@ Table "task_item_tenures" {
   "opened_by" text [not null, check: `opened_by = ANY (ARRAY['original'::text, 'occupancy_start'::text, 'occupancy_end'::text, 'position_deactivated'::text, 'reconcile'::text, 'manual'::text])`, default: 'original']
   "work_started" int2 [not null, default: 0]
   "reason" varchar(255)
-  "performed_by_user_id" int8
+  "performed_by_person_id" int4
   "current_flag" int2 [note: "columna generada (STORED)"]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -1170,6 +1170,7 @@ Ref "fk_role_assignments_role":"roles"."id" <? "role_assignments"."role_id"
 Ref "fk_role_assignments_unit":"units"."id" <? "role_assignments"."unit_id"
 Ref "fk_role_permissions_permission":"permissions"."id" <? "role_permissions"."permission_id"
 Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
+Ref "signature_batch_jobs_user_id_fkey":"persons"."id" ?<? "signature_batch_jobs"."user_id"
 Ref "fk_signature_flow_instances_document":"document_versions"."id" <? "signature_flow_instances"."document_version_id"
 Ref "fk_signature_flow_instances_status":"signature_request_statuses"."id" <? "signature_flow_instances"."status_id"
 Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
@@ -1189,6 +1190,7 @@ Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_reque
 Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_item_tenures_person":"persons"."id" ?<? "task_item_tenures"."person_id"
 Ref "fk_task_item_tenures_position":"unit_positions"."id" ?<? "task_item_tenures"."position_id"
+Ref "task_item_tenures_performed_by_person_id_fkey":"persons"."id" ?<? "task_item_tenures"."performed_by_person_id"
 Ref "fk_task_items_assigned_person":"persons"."id" ?<? "task_items"."assigned_person_id"
 Ref "fk_task_items_created_by":"persons"."id" ?<? "task_items"."created_by_person_id"
 Ref "fk_task_items_origin_unit":"units"."id" ?<? "task_items"."origin_unit_id"

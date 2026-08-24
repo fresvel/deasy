@@ -173,16 +173,16 @@ test("sin positionId no hay filtro de puesto; el único parámetro es el actor",
 test("positionId acota el backfill, y en la apertura viaja DESPUES del actor", async () => {
   // El orden importa y cambio el 2026-08-23: en la apertura el `?` del actor esta en el SELECT y el
   // del filtro en su WHERE, asi que va detras. En el cierre no hay actor y viaja solo.
-  const { cierre, apertura } = await reconciliar({ positionId: 25, performedByUserId: 7 });
+  const { cierre, apertura } = await reconciliar({ positionId: 25, performedByPersonId: 7 });
   assert.ok(apertura.sql.includes("AND ti.responsible_position_id = ?"));
   assert.deepEqual(apertura.params, [7, 25], "actor primero, filtro despues");
   assert.deepEqual(cierre.params, [25], "el cierre solo lleva el filtro");
 });
 
 test("el backfill SÍ registra quién lo lanzó, a diferencia de los relevos por trigger", async () => {
-  // Este camino lo dispara alguien a propósito, así que `performed_by_user_id` tiene dueño. Los
+  // Este camino lo dispara alguien a propósito, así que `performed_by_person_id` tiene dueño. Los
   // relevos automáticos lo dejan en NULL porque no lo hizo nadie.
-  const { params } = await reconciliar({ performedByUserId: 42 });
+  const { params } = await reconciliar({ performedByPersonId: 42 });
   assert.deepEqual(params, [42]);
 });
 
