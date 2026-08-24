@@ -43,9 +43,7 @@
             <span class="text-xs font-medium text-muted">Estado: {{ item.status }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <AppTag :variant="item.reason === 'sin_responsable' ? 'warning' : 'danger'">
-              {{ item.reason === 'sin_responsable' ? 'Sin responsable' : 'Titular se fue' }}
-            </AppTag>
+            <AppTag :variant="tonoAtasco(item.reason)">{{ etiquetaAtasco(item.reason) }}</AppTag>
             <AppTag v-if="item.started" variant="primary">Iniciado</AppTag>
 
             <!-- Reasignar. Se ofrece la gente de la unidad y no un buscador a propósito: un jefe
@@ -94,6 +92,9 @@ import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
+// El motivo del atasco se nombra en `estadoTono.js`, no aqui: el valor -> tono vive en un solo
+// sitio y el techo de `check:state-tone` lo vigila.
+import { tonoAtasco, etiquetaAtasco } from "@/shared/utils/estadoTono";
 
 const isSupervisor = ref(false);
 const items = ref([]);

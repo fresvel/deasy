@@ -621,7 +621,8 @@ export default class TaskAssignmentService {
                 LIMIT 1) AS occupant_person_id,
               -- El estado del DOCUMENTO, que desde el 2026-08-23 vive en el propio entregable.
               ti.document_status AS status,
-              up.unit_id, u.name AS unit_name, c.name AS cargo_name,
+              up.unit_id, up.is_active AS position_is_active,
+              u.name AS unit_name, c.name AS cargo_name,
               EXISTS (SELECT 1 FROM document_versions dv WHERE dv.task_item_id = ti.id) AS started
          FROM task_items ti
          INNER JOIN unit_positions up ON up.id = ti.responsible_position_id
@@ -636,6 +637,12 @@ export default class TaskAssignmentService {
                  AND pa2.is_current = 1
                  AND pa2.person_id = ti.assigned_person_id
             )
+            -- EL PUESTO SE DESACTIVO (D2). Hace falta como termino propio porque desactivar un
+            -- puesto NO cierra su ocupacion: la persona sigue figurando como titular vigente de un
+            -- puesto que ya no existe, asi que los dos terminos de arriba lo dan por sano. Sin esto,
+            -- un entregable EN FASE DE FIRMA anclado a un puesto desactivado no aparecia en ninguna
+            -- parte — y es justo el que necesita que lo mire alguien, porque el trigger no lo toca.
+            OR up.is_active = 0
           )
         ORDER BY up.unit_id ASC, ti.id ASC
         LIMIT 500`,
@@ -652,7 +659,13 @@ export default class TaskAssignmentService {
       unit_name: r.unit_name || null,
       cargo_name: r.cargo_name || null,
       started: Number(r.started) > 0,
-      reason: r.assigned_person_id ? "titular_se_fue" : "sin_responsable"
+      position_is_active: Number(r.position_is_active) === 1,
+      // El motivo se ordena de MAS a MENOS especifico. Un puesto desactivado manda sobre los otros
+      // dos: describe por que no va a llegar nadie, mientras que «sin responsable» solo dice que
+      // ahora mismo no hay quien lo lleve.
+      reason: Number(r.position_is_active) === 0
+        ? "puesto_desactivado"
+        : (r.assigned_person_id ? "titular_se_fue" : "sin_responsable")
     }));
 
     // La plantilla de las unidades implicadas viaja CON el listado: el panel necesita ofrecer a

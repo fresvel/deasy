@@ -161,6 +161,30 @@ const AMBITO = Object.freeze({
 
 export const tonoAmbito = (valor) => AMBITO[valor] ?? TONOS.NEUTRAL;
 
+/* ── POR QUÉ SE ATASCÓ UN ENTREGABLE (`SupervisorStuckPanel`) ──────────────────────────
+ *
+ * Los tres motivos que el panel del jefe muestra, y el orden importa: los dos primeros son
+ * ROJOS porque nadie va a llegar por su cuenta, y el tercero es ÁMBAR porque la silla existe y
+ * puede ocuparse mañana.
+ *
+ * `puesto_desactivado` es el más grave y el más silencioso: desactivar un puesto NO cierra su
+ * ocupación, así que hasta el 2026-08-23 el entregable ni siquiera aparecía como atascado. */
+const ATASCO = Object.freeze({
+  puesto_desactivado: TONOS.DANGER,
+  titular_se_fue: TONOS.DANGER,
+  sin_responsable: TONOS.WARNING
+});
+
+export const tonoAtasco = (valor) => ATASCO[valor] ?? TONOS.NEUTRAL;
+
+const ETIQUETA_ATASCO = Object.freeze({
+  puesto_desactivado: "Puesto desactivado",
+  titular_se_fue: "Titular se fue",
+  sin_responsable: "Sin responsable"
+});
+
+export const etiquetaAtasco = (valor) => ETIQUETA_ATASCO[valor] ?? "Atascado";
+
 /* ══════════════════════════════════════════════════════════════════════════════════════════
    LOS EJES QUE SEGUÍAN FUERA — añadidos el 2026-08-20 (F9-bis)
    ══════════════════════════════════════════════════════════════════════════════════════════

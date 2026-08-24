@@ -1828,6 +1828,56 @@ AFTER INSERT OR UPDATE ON task_item_tenures
 FOR EACH ROW EXECUTE FUNCTION trg_task_item_tenures_sync_fn();
 
 
+-- SE DESACTIVA UN PUESTO: sus entregables dejan de tener a quien esperar (decision D2 del dueño,
+-- 2026-08-23).
+--
+-- POR QUE HACE FALTA. Desactivar un puesto NO es quedarse sin ocupante, y la diferencia hace daño:
+-- un entregable huerfano por vacante espera a alguien que VA A VENIR; uno anclado a un puesto
+-- desactivado espera a alguien que NO EXISTE. Y hasta hoy no pasaba absolutamente nada — medido:
+-- ningun trigger tocaba `unit_positions`, y la ocupacion NI SIQUIERA SE CIERRA, asi que la persona
+-- seguia figurando como titular vigente de un puesto que la institucion ya no reconoce. El trabajo
+-- se quedaba en el limbo sin aparecer en ninguna parte.
+--
+-- Estrena `position_deactivated`, que llevaba en el vocabulario de causas desde su creacion SIN UN
+-- SOLO EMISOR: un nombre reservado para un camino que no existia.
+--
+-- ⚠️ NO ALCANZA A TODO, y es por coherencia con D1: un entregable ya EN FASE DE FIRMA no puede
+-- quedarse sin responsable —hay gente convocada con solicitudes a su nombre—, asi que solo se
+-- LISTA para el jefe de la unidad, que decide. Los cerrados no se tocan: no queda trabajo.
+--
+-- ⚠️ Y NO REASIGNA NADA. El modelo no dice que sustituye a un puesto desactivado —no hay «se
+-- fusiono con» ni «sus funciones pasan a»—, asi que elegir sucesor seria adivinar. Lo decide una
+-- persona, desde el panel de supervision.
+CREATE OR REPLACE FUNCTION trg_unit_positions_after_update_fn() RETURNS trigger AS $$
+BEGIN
+  IF OLD.is_active = 1 AND NEW.is_active = 0 THEN
+    UPDATE task_item_tenures t
+       SET ended_at = now()
+      FROM task_items ti
+     WHERE ti.id = t.task_item_id
+       AND t.ended_at IS NULL
+       AND ti.responsible_position_id = NEW.id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma');
+
+    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+    SELECT ti.id, NULL, NEW.id, 'position_deactivated', 'El puesto responsable se desactivo',
+           CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
+      FROM task_items ti
+     WHERE ti.responsible_position_id = NEW.id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       AND NOT EXISTS (
+         SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
+       );
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_unit_positions_after_update
+AFTER UPDATE ON unit_positions
+FOR EACH ROW EXECUTE FUNCTION trg_unit_positions_after_update_fn();
+
+
 CREATE OR REPLACE FUNCTION trg_position_assignments_after_insert_fn() RETURNS trigger AS $$
 BEGIN
   IF NEW.is_current = 1 THEN
