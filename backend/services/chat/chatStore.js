@@ -75,8 +75,6 @@ export const mapNotification = (row) => ({
   type: row.type,
   title: row.title,
   body: row.body,
-  entity_type: row.entity_type,
-  entity_id: row.entity_id,
   conversation_id: sid(row.conversation_id),
   message_id: sid(row.message_id),
   channel: row.channel,

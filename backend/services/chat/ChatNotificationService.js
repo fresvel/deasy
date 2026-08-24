@@ -35,8 +35,6 @@ export default class ChatNotificationService {
         type: "chat.message.created",
         title: this.buildMessageNotificationTitle(conversation),
         body: this.buildMessageNotificationBody(message),
-        entity_type: "conversation",
-        entity_id: String(conversation.id),
         conversation_id: Number(conversation.id),
         message_id: Number(message.id),
         channel: "in_app",

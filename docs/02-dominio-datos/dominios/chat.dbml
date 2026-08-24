@@ -101,8 +101,6 @@ Table "chat_notifications" {
   "type" varchar(80) [not null]
   "title" text [not null]
   "body" text [not null]
-  "entity_type" varchar(40)
-  "entity_id" varchar(64)
   "conversation_id" int8
   "message_id" int8
   "channel" varchar(20) [not null, default: 'in_app']

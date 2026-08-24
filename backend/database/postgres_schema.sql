@@ -1622,10 +1622,20 @@ CREATE TABLE IF NOT EXISTS chat_notifications (
   type VARCHAR(80) NOT NULL,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
-  entity_type VARCHAR(40),
-  entity_id VARCHAR(64),
-  -- NULABLES a proposito: el par polimorfico `entity_type`/`entity_id` de arriba existe para
-  -- notificaciones que no son de chat, y esas no tienen ni conversacion ni mensaje.
+  -- SIN el par polimorfico `entity_type`/`entity_id` (`TD7-c4`, 2026-08-24). Guardaba EL MISMO
+  -- HECHO que `conversation_id`, y peor: su unico escritor lo llenaba con constantes
+  -- (`'conversation'` + `String(conversation.id)`), nadie consultaba por el, el frontend no lo leia,
+  -- y al ser `VARCHAR(64)` polimorfico no podia llevar clave ajena.
+  --
+  -- Sobrevive la pareja tipada, y no es arbitrario: se consulta (`chatStore.js`, las notificaciones
+  -- de UNA conversacion), tiene integridad referencial desde `TD7-c2`, y `message_id` guarda un
+  -- hecho que el par NO PODIA guardar — un par polimorfico apunta a UNA entidad, y una notificacion
+  -- de chat apunta a dos.
+  --
+  -- Si algun dia hacen falta notificaciones que no sean de chat, la pregunta es si esta tabla se
+  -- generaliza o nace otra. No es motivo para conservar hoy dos columnas que nadie lee.
+  --
+  -- NULABLES a proposito: no toda notificacion tiene por que colgar de un mensaje concreto.
   conversation_id BIGINT,
   message_id BIGINT,
   channel VARCHAR(20) NOT NULL DEFAULT 'in_app',
