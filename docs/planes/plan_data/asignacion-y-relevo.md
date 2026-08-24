@@ -523,3 +523,67 @@ tenía. No hay que migrar nada: **no hay datos en producción** y la semilla se 
 | ¿Qué entregables están abandonados y desde cuándo? | sólo «sin persona», sin fecha | fila abierta sin persona, con su `started_at` |
 | ¿Puede haber dos responsables a la vez? | nada lo impide | **índice único** |
 | ¿En calidad de qué respondía? | no se guarda | `position_id` de la tenencia |
+
+---
+
+# Decisiones del dueño (2026-08-23)
+
+## D1 · Qué pasa con lo EMPEZADO cuando su persona deja el puesto
+
+### Los cuatro estados, y son los que ya existen
+
+El dueño los planteó y se verificaron contra el código: **están diseñados así**.
+
+| Estado | Cómo se representa | Relevo automático |
+|---|---|---|
+| Sin empezar | `user_started_at IS NULL` | **Sí** (ya funciona) |
+| Empezado, aún sin fase de firma | fecha sellada, documento antes de «Pendiente de firma» | **Sí** ⬜ *por hacer* |
+| En fase de firma, incompleta | «Pendiente de firma» / «Firmado parcial» | **No** |
+| Cerrado | **«Final»** | **No** |
+
+Dos precisiones que salieron al medir:
+
+1. **El cierre es automático.** Cuando entra la última firma, el documento pasa a «Firmado completo» y
+   **en la misma operación** se sella el fichero definitivo y salta a «Final»
+   (`finalizeDocumentVersionIfComplete`). «Final» es uno de los tres estados terminales. Nadie tiene
+   que declarar el cierre.
+2. **Hoy los estados 3 y 4 se protegen POR ACCIDENTE.** No se relevan porque tienen `user_started_at`
+   sellado, no porque tengan firmas ni porque estén cerrados. En cuanto se abra el estado 2, **esa
+   protección desaparece para los otros dos** y hay que ponerles su guard explícito. Es la mitad del
+   trabajo, y no se ve leyendo el diseño.
+
+### Decisión 1.a — dónde corta
+
+**Al ENTRAR en fase de firma**, no al estamparse la primera firma. A partir de «Pendiente de firma»
+hay gente convocada con solicitudes abiertas a su nombre, y cambiarles el responsable del documento
+por debajo es confuso. Además se lee de `task_items.document_status`, que el entregable ya tiene.
+
+### Decisión 1.b — quién desatasca
+
+**El jefe de la unidad**, desde el panel que ya existe.
+
+El hueco que lo motiva: el reset exige ser **el titular del paso actual**, y lo comprueba contra
+**quien hace la llamada** (`userId: authenticatedUserId`), no contra el usuario de la ruta. La ruta
+admite roles elevados pero el servicio los rechaza igual. Así que **si la persona que se fue es quien
+tiene el paso, no puede desatascar nadie**: ni el relevo lo mueve (tiene firmas) ni el reset lo abre.
+
+El sitio ya está pensado: `SupervisorStuckPanel` lista los atascados de las unidades que uno encabeza
+y dice literalmente *«La reasignación (traspaso) se habilitará desde aquí en el siguiente paso»*.
+Nunca se construyó el botón.
+
+### Lo que hay que hacer
+
+| | Tarea |
+|---|---|
+| 1 | El relevo automático deja de filtrar por `user_started_at` y pasa a filtrar por `document_status`: alcanza hasta antes de «Pendiente de firma» |
+| 2 | Guard explícito para el estado cerrado, que hoy sólo se protege de rebote |
+| 3 | El jefe de unidad puede traspasar y reiniciar los atascados de su unidad — el botón que falta en el panel |
+| 4 | Asiento propio para el relevo de algo empezado, distinto del de lo no empezado |
+
+### ⚠️ D1 y D3 están acopladas
+
+El hueco de 1.b existe **porque la solicitud sigue a nombre de quien se fue**, que es justo lo que
+decide D3. Si las solicitudes siguieran al relevo, el sucesor sería el titular del paso y podría
+desatascar solo. Se resuelve por la vía del jefe **a propósito**: una solicitud de FIRMA no debería
+heredarse —le pediría al sucesor que dé conformidad a algo que él no elaboró—, así que el acoplamiento
+no se rompe automatizando, se rompe con una decisión humana.
