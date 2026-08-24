@@ -45,8 +45,8 @@
   "tareas": {
     "titulo": "Tareas, entregables instanciados y documentos",
     "descripcion": "Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos producidos.",
-    "tablas": ["tasks", "task_items", "task_assignments", "task_item_handovers",
-               "documents", "document_versions", "document_attachments",
+    "tablas": ["tasks", "task_items", "task_item_tenures",
+               "document_versions", "document_version_uploads", "document_attachments",
                "document_signatures", "document_workflow_observations"]
   },
 

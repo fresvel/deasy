@@ -75,8 +75,17 @@ el modelo quedó como quedó:
 
 - `process_definition_templates.item_mode` — el modo por plantilla ligada.
 - Réplicas/instancias routed = `task_items` con `origin_kind='user_added'`.
-- `task_items.target_person_id` — el **destinatario principal** ("Para:"). `resolveOwnerPersonIdForTaskItem`
-  lo usa para fijar `documents.owner_person_id`; ya **no** alimenta ningún resolutor de flujo.
+- **EL «Para:» NO EXISTE** desde el **2026-08-23**. `task_items.target_person_id` y
+  `target_position_id` se retiraron: el destinatario **se deriva del flujo de firma** —quien firma al
+  final es a quien va dirigido— y desde esa misma fecha un envío **exige su flujo**, así que el dato
+  siempre está. Guardarlo aparte era mantener a mano un resumen del flujo que además podía mentir.
+  Con ellas cayó `documents.owner_person_id`, que era una copia del responsable, y la tabla
+  `documents` entera.
+- `task_items.responsible_position_id` — el **ancla**: el PUESTO que produce el entregable.
+  Obligatorio. Es lo durable, y el punto por el que enganchan los relevos.
+- `task_item_tenures` — **quién responde y desde cuándo**. Una fila por turno.
+- `document_versions` — la **RONDA** (llenar → firmar), numerada con enteros.
+  `document_version_uploads` guarda cada **corrección** del archivo, con su autor.
 
 ---
 
@@ -138,7 +147,8 @@ La búsqueda "activa por link" (`getActiveFillFlowTemplateForDefinitionTemplate`
    `ensureFillFlowForDocumentVersion` que prefiera el flujo por `task_item_id` si existe.
 4. **Retirar el atajo**: dejar de sembrar `document_owner` en el proceso por defecto
    (`SystemBootstrapService`); su flujo también se define en runtime. Revisar el uso de
-   `target_person_id` (puede quedar como metadato "destinatario principal" para "Para:").
+   `target_person_id`. **Resuelto el 2026-08-23**: la columna se retiró, no quedó como metadato — el
+   destinatario vive en el flujo de firma y el envío sin flujo dejó de existir.
 
 ### Frontend (fases)
 1. **Componente flow‑builder runtime** (reutilizable): extraído de los sub‑forms

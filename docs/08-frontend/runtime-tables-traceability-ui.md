@@ -59,7 +59,7 @@ La interfaz debe priorizar acciones de negocio como:
 Estas tablas son principalmente registros runtime materializados o actualizados por los flujos del sistema:
 
 - `task_items`
-- `task_assignments`
+- `task_item_tenures`
 - `document_versions`
 - `document_fill_flows`
 - `fill_requests`

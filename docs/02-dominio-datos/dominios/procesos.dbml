@@ -106,7 +106,7 @@ Table "process_target_rules" {
   "unit_type_id" int4
   "cargo_id" int4
   "position_id" int4
-  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'one_per_unit'::text, 'exact_position'::text])`, default: 'all_matches']
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text, 'exact_position'::text])`, default: 'all_matches']
   "priority" int4 [not null, default: 1]
   "is_active" int2 [not null, default: 1]
   "effective_from" date

@@ -10,7 +10,13 @@
 
 ## 1. Lo que hay
 
-**67 tablas · 1 vista · 137 FKs · 121 índices · 23 triggers · 6 funciones · 0 `CREATE TYPE`.**
+**67 tablas · 1 vista · 134 FKs · 122 índices · 26 triggers · 9 funciones · 0 `CREATE TYPE`.**
+
+> **Remedido el 2026-08-23** tras la reordenación del modelo del entregable. Eran **68** tablas —el
+> recuento anterior decía 67 y ya iba una corta—. Salieron **tres** (`documents`, `task_assignments`,
+> `task_item_handovers`) y entraron **dos** (`task_item_tenures`, `document_version_uploads`).
+> Los números de línea de las tablas de abajo **cambiaron todos** con esa edición; los que quedan son
+> los medidos hoy.
 
 No hay migraciones: `backend/database/postgres_initializer.js:25` aplica el fichero entero en cada
 arranque. `docs/docs-md-antiguos/02-dominio-datos/MER_SQL.sql` es DDL MySQL heredado y **no lo
@@ -31,8 +37,8 @@ sobre `dossiers` + `dossier_items`. Los binarios viven en MinIO, no en la base.
 | Procesos (definición) | 7 | `processes`:409, `process_definition_series`:420, `process_definition_versions`:435, `process_target_rules`:456, `process_definition_templates`:540, `process_definition_period_types`:581, `process_runs`:607 |
 | Calendario | 2 | `term_types`:553, `terms`:595 |
 | Plantillas / entregables | 3 | `template_seeds`:480, `deliverables`:497, `template_artifacts`:519 |
-| Ejecución de tareas | 4 | `tasks`:628, `task_items`:656, `task_assignments`:704, `task_item_handovers`:901 |
-| Documentos | 4 | `documents`:720, `document_versions`:741, `document_attachments`:763, `document_workflow_observations`:1001 |
+| Ejecución de tareas | 3 | `tasks`:728, `task_items`:765, `task_item_tenures`:873 |
+| Documentos | 4 | `document_versions`:966, `document_version_uploads`:1024, `document_attachments`, `document_workflow_observations` |
 | Flujo de llenado | 4 | `fill_flow_templates`:825, `fill_flow_steps`:839, `document_fill_flows`:866, `fill_requests`:881 |
 | Firmas | 8 | `signature_statuses`:782, `signature_request_statuses`:792, `signature_flow_templates`:919, `signature_flow_steps`:933, `signature_flow_instances`:969, `signature_requests`:982, `document_signatures`:1031, `signature_batch_jobs`:1090 |
 | Chat / notificaciones | 6 | `chat_conversations`:1139, `chat_conversation_participants`:1161, `chat_messages`:1173, `chat_message_attachments`:1190, `chat_message_reads`:1202, `chat_notifications`:1210 |
@@ -57,12 +63,12 @@ tabla»** ([plan §1](./plan-datos-2026-08.md#1--la-decisión-de-fondo-por-qué-
 
 **(c) Entidad con comportamiento — 24 (36 %).** `persons`, `person_certificates`, `units`,
 `unit_positions`, `position_assignments`, `vacancies`, `aplications`, `offers`, `contracts`,
-`role_assignments`, `process_runs`, `tasks`, `task_items`, `task_assignments`, `documents`,
+`role_assignments`, `process_runs`, `tasks`, `task_items`,
 `document_versions`, `document_fill_flows`, `fill_requests`, `signature_flow_instances`,
 `signature_requests`, `signature_batch_jobs`, `dossiers`, `chat_conversations`, `chat_messages`.
 
 **(d) Log append-only — 9 (13 %).** `email_verification_codes`, `password_reset_codes`,
-`task_item_handovers` (el comentario de `:899` lo llama «asiento de auditoría»),
+`document_version_uploads` (cada subida del archivo, con su autor),
 `document_workflow_observations`, `document_signatures`, `document_attachments`, `chat_notifications`,
 `chat_message_attachments`, `dossier_items`. **Ninguna tiene `updated_at`**, que es la señal.
 
@@ -125,7 +131,6 @@ importan para el dominio:
 |---|---|---|
 | `tasks`:641 | `status` | `config/sqlTables.js:269` |
 | `task_items`:677 | `status` | `sqlTables.js:313` — **y en otros cuatro sitios que no coinciden**, ver abajo |
-| `task_assignments`:709 | `status` | `sqlTables.js:334` |
 | `documents`:727 | `status` | `services/documents/DocumentStateService.js:1-13` — 11 estados **+ matriz de transiciones** `:30-42` |
 | `document_versions`:752 | `status` | `DocumentStateService.js:15-28` — 12 estados + transiciones `:44-57` |
 | `signature_batch_jobs`:1094 | `status` | ningún catálogo |
@@ -168,7 +173,7 @@ clases**:
 | `RbacRepository` | `roles` | `roles`, `permissions`, `role_permissions`, `role_assignments`, `cargo_role_map`, `role_assignment_relation_types` |
 | `ProcessDefinitionRepository` | `processes` | `processes`, `process_definition_series`, `process_definition_versions`, `process_target_rules`, `process_definition_templates`, `process_definition_period_types` |
 | `ProcessRunRepository` | `process_runs` | `process_runs` |
-| `TaskRepository` | `tasks` | `tasks`, `task_items`, `task_assignments`, `task_item_handovers` |
+| `TaskRepository` | `tasks` | `tasks`, `task_items`, `task_item_tenures` |
 | `DocumentRepository` | `documents` | `documents`, `document_versions`, `document_attachments`, `document_workflow_observations` |
 | `SignatureRepository` | `signature_flow_instances` | `signature_flow_*`, `signature_requests`, `document_signatures`, `signature_batch_jobs` |
 | `FillFlowRepository` | `document_fill_flows` | `fill_flow_templates`, `fill_flow_steps`, `document_fill_flows`, `fill_requests` |
@@ -204,7 +209,7 @@ evitó a propósito: `chat_conversations.last_message_id` **se dejó sin FK** (c
 **FKs lógicas sin constraint, por decisión explícita** (`:1134-1137` y `:1229-1232`): en `chat_*` y
 `dossiers`, los `person_id` / `process_id` / `unit_id` no llevan constraint para no acoplar los
 módulos ex-documentales al núcleo relacional. Dos casos que **no** son decisión sino descuido:
-`signature_batch_jobs.user_id`:1092 y `task_item_handovers.performed_by_user_id`:908 son `BIGINT`
+`signature_batch_jobs.user_id` y `task_item_tenures.performed_by_user_id` son `BIGINT`
 contra `persons.id INT`.
 
 ---
@@ -227,14 +232,18 @@ contra `persons.id INT`.
 `group_unit_id`. La hace válida el índice `uq_unit_relations_child_type`:126, que fuerza ≤1 padre por
 tipo de relación.
 
-**Dos huecos conocidos:**
+**Los dos huecos que había aquí están CERRADOS (2026-08-23):**
 
-- `documents` declara `updated_at`:730 pero es **la única tabla con `updated_at` sin trigger que lo
-  mantenga**.
-- `trg_position_assignments_after_update_fn` reasigna `task_items` **sin escribir en
-  `task_item_handovers`**. En todo el backend hay **un solo INSERT** a esa tabla
-  (`services/admin/org/taskAssignment.js:254`, el camino manual), así que **dos de los tres valores de
-  su `CHECK` son inalcanzables**. Ya está registrado como defecto **1.10** del plan maestro.
+- ~~`documents` declara `updated_at` sin trigger que lo mantenga~~ — la tabla **se retiró entera**: era
+  una cáscara 1:1 sobre `task_items` sin ni una columna propia.
+- ~~Los triggers reasignan `task_items` sin dejar asiento~~ — con `task_item_tenures`, **el asiento ES
+  la reasignación**: no hay dos cosas que puedan desincronizarse, porque abrir la tenencia es a la
+  vez cambiar de responsable y dejar constancia. Y el vocabulario de causas ya no tiene valores
+  inalcanzables: `position_deactivated`, que llevaba años sin un solo emisor, lo estrenó el trigger
+  de desactivación de puestos.
+
+**El hueco que SÍ sigue abierto**, y es de la misma familia: `signature_flow_steps.signers` es un
+JSONB que **no valida nadie** y que manda sobre la columna que sí. Registrado como defecto **1.19**.
 
 ---
 
@@ -249,7 +258,8 @@ tipo de relación.
   `active` por proceso + variación).
 - **Unicidad con NULL normalizado a 0**: `uq_tasks_definition_term_scope`:650 y
   `uq_task_items_defined_target`:690 (tres columnas generadas a la vez).
-- **Relaciones 1:1 impuestas por índice**: `uq_documents_task_item`:735 (un documento por entregable),
+- **Relaciones 1:1 impuestas por índice**: `uq_task_item_tenure_current` (una tenencia VIGENTE por
+  entregable — la invariante que sostiene el relevo),
   `uq_document_fill_flows_document`:877, `uq_signature_flow_instances_document`:979,
   `uq_dossiers_person`:1241.
 - **Doble unicidad redundante** en `permissions`: `uq_permissions_resource_action`:317 y
@@ -266,7 +276,7 @@ El detalle y las tareas están en el plan; aquí solo las cifras de referencia:
 | Llamadas `.query()`/`.execute()` | **531** en 46 ficheros |
 | Reparto por capa | services 37 · **controllers 5** · config 1 · utils 1 · scripts 2 |
 | `getConnection()` / `beginTransaction` | **32** / **20**, en 11 ficheros |
-| Tablas cubiertas por `sqlTables.js` | **44** de 67 (66 %) |
+| Tablas cubiertas por `sqlTables.js` | **44** de 67 (66 %) · remedido 2026-08-23 |
 | Tablas con *hook* en `crud/tableHooks.js` | 23 |
 | Dependencias de datos en `package.json` | **una:** `pg ^8.22.0` |
 | ORM / query builder / validador de esquema / migrador | **ninguno** |

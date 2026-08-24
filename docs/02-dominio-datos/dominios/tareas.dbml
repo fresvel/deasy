@@ -47,10 +47,32 @@ Table "document_signatures" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table "document_version_uploads" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "minor" int4 [not null]
+  "file_path" varchar(255) [not null]
+  "file_name" varchar(255)
+  "mime_type" varchar(120)
+  "size_bytes" int8
+  "uploaded_by_person_id" int4
+  "note" varchar(255)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (document_version_id, minor) [type: btree, unique, name: "uq_document_version_uploads"]
+    uploaded_by_person_id [type: btree, name: "idx_document_version_uploads_person"]
+  }
+
+  Note: '''Cada SUBIDA del archivo de un entregable: la version MENOR. Guarda quien lo subio, que fichero y cuando. Antes no constaba en ninguna parte quien elaboro un documento — `working_file_path` se sobrescribe— mientras que un ANEXO si guardaba su autor. Ojo: en MinIO nunca se perdio un fichero (el nombre lleva sello de tiempo y UUID); lo que se perdia era el PUNTERO.'''
+}
+
 Table "document_versions" {
   "id" int4 [pk, not null, increment]
-  "document_id" int4 [not null]
-  "version" numeric(4,1) [not null, default: 0.1]
+  "task_item_id" int4 [not null, note: '''Cuelga del ENTREGABLE. Hasta el 2026-08-23 habia una tabla `documents` en medio, en relacion 1:1 estricta y sin una sola columna propia.''']
+  "version" int4 [not null, default: 1, note: '''La RONDA: un intento completo del flujo (llenar -> firmar). Entero desde el 2026-08-23; antes era decimal y el numero mentia, porque 0.1 y 0.2 parecian correcciones del mismo documento y eran dos rondas, la primera cancelada entera. Las CORRECCIONES son el segundo digito y viven en `document_version_uploads`.''']
+  "version_minor" int4 [not null, default: 0]
+  "version_label" text [note: "columna generada (STORED)"]
   "template_artifact_id" int4
   "payload_hash" varchar(64)
   "payload_object_path" varchar(255)
@@ -62,8 +84,9 @@ Table "document_versions" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (document_id, version) [type: btree, unique, name: "uq_document_versions"]
+    (task_item_id, version) [type: btree, unique, name: "uq_document_versions"]
     template_artifact_id [type: btree, name: "idx_document_versions_artifact"]
+    task_item_id [type: btree, name: "idx_document_versions_item"]
   }
 }
 
@@ -77,7 +100,6 @@ Table "document_workflow_observations" {
   "kind" text [not null, check: `kind = ANY (ARRAY['observation'::text, 'return_reason'::text, 'rejection_reason'::text, 'internal_note'::text])`, default: 'observation']
   "message" text [not null]
   "author_person_id" int4 [not null]
-  "target_person_id" int4
   "resolved_by_person_id" int4
   "resolved_at" timestamp
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
@@ -87,56 +109,31 @@ Table "document_workflow_observations" {
     fill_request_id [type: btree, name: "idx_document_workflow_observations_fill_request"]
     (task_item_id, created_at) [type: btree, name: "idx_document_workflow_observations_item"]
     signature_request_id [type: btree, name: "idx_document_workflow_observations_signature_request"]
-    target_person_id [type: btree, name: "idx_document_workflow_observations_target"]
     (document_version_id, created_at) [type: btree, name: "idx_document_workflow_observations_version"]
   }
 }
 
-Table "documents" {
-  "id" int4 [pk, not null, increment]
-  "task_item_id" int4 [unique]
-  "owner_person_id" int4
-  "origin_unit_id" int4
-  "title" varchar(180)
-  "status" varchar(30) [not null, default: 'Inicial']
-  "comments_thread_ref" varchar(64)
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "updated_at" timestamp
-
-  Indexes {
-    origin_unit_id [type: btree, name: "idx_documents_origin_unit"]
-    owner_person_id [type: btree, name: "idx_documents_owner_person"]
-  }
-}
-
-Table "task_assignments" {
-  "id" int4 [pk, not null, increment]
-  "task_id" int4 [not null]
-  "position_id" int4 [not null]
-  "assigned_person_id" int4
-  "status" varchar(30) [not null, default: 'pendiente']
-  "assigned_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "unassigned_at" timestamp
-
-  Indexes {
-    (task_id, position_id) [type: btree, unique, name: "uq_task_assignment_position"]
-    assigned_person_id [type: btree, name: "idx_task_assignments_person"]
-  }
-}
-
-Table "task_item_handovers" {
+Table "task_item_tenures" {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [not null]
-  "from_person_id" int4
-  "to_person_id" int4
+  "person_id" int4
+  "position_id" int4
+  "started_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "ended_at" timestamp
+  "opened_by" text [not null, check: `opened_by = ANY (ARRAY['original'::text, 'occupancy_start'::text, 'occupancy_end'::text, 'position_deactivated'::text, 'reconcile'::text, 'manual'::text])`, default: 'original']
+  "work_started" int2 [not null, default: 0]
   "reason" varchar(255)
-  "trigger_kind" text [not null, check: `trigger_kind = ANY (ARRAY['occupancy_end'::text, 'position_deactivated'::text, 'manual'::text])`, default: 'manual']
   "performed_by_user_id" int8
+  "current_flag" int2 [note: "columna generada (STORED)"]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    task_item_id [type: btree, name: "idx_task_item_handovers_item"]
+    (task_item_id, current_flag) [type: btree, unique, name: "uq_task_item_tenure_current"]
+    person_id [type: btree, name: "idx_task_item_tenures_person"]
+    position_id [type: btree, name: "idx_task_item_tenures_position"]
   }
+
+  Note: '''QUIEN responde de un entregable, desde cuando y en calidad de que puesto. Una fila por TURNO: el relevo cierra la vigente y abre otra, asi que la sucesion completa queda escrita. Nacio el 2026-08-23 al medir que «quien lo lleva» vivia en TRES copias y dos se pudrian. Sustituye a `task_assignments` (una foto del reparto que ningun relevo refrescaba) y a `task_item_handovers` (los mismos hechos como eventos; periodos y eventos son isomorfos, pero con periodos «un solo responsable vigente» es un INDICE y no una convencion).'''
 }
 
 Table "task_items" {
@@ -150,29 +147,25 @@ Table "task_items" {
   "created_by_person_id" int4
   "source_task_item_id" int4
   "target_unit_id" int4
-  "target_position_id" int4
-  "target_person_id" int4
   "process_definition_template_key" int4 [note: "columna generada (STORED)"]
-  "target_position_key" int4 [note: "columna generada (STORED)"]
-  "target_person_key" int4 [note: "columna generada (STORED)"]
-  "responsible_position_id" int4
-  "assigned_person_id" int4
+  "responsible_position_id" int4 [not null, note: '''EL ANCLA del entregable: el PUESTO que responde de el. Obligatoria desde el 2026-08-23. Es lo durable —un puesto sobrevive a quien lo ocupa— y el punto por el que enganchan los cuatro caminos de relevo.''']
+  "responsible_position_key" int4 [note: "columna generada (STORED)"]
+  "assigned_person_id" int4 [note: '''QUIEN lo lleva ahora. Es una CACHE de la tenencia vigente, con UN SOLO escritor: el trigger `trg_task_item_tenures_sync`. De solo lectura en el editor generico.''']
+  "document_status" varchar(30) [not null, default: 'Inicial', note: '''El estado del DOCUMENTO, mudado aqui desde `documents` el 2026-08-23. Se llama asi y no `status` a proposito: `task_items.status` vivio ahi y se retiro por no tener escritores.''']
+  "origin_unit_id" int4
   "start_date" date [not null]
   "end_date" date
   "user_started_at" timestamp
-  "status" varchar(30) [not null, default: 'pendiente']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (task_id, process_definition_template_key, target_position_key, target_person_key) [type: btree, unique, name: "uq_task_items_defined_target"]
+    (task_id, process_definition_template_key, responsible_position_key) [type: btree, unique, name: "uq_task_items_defined_target"]
     template_artifact_id [type: btree, name: "idx_task_items_artifact"]
     created_by_person_id [type: btree, name: "idx_task_items_created_by"]
     (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
     process_definition_template_id [type: btree, name: "idx_task_items_definition_template"]
     origin_kind [type: btree, name: "idx_task_items_origin"]
     source_task_item_id [type: btree, name: "idx_task_items_source"]
-    target_person_id [type: btree, name: "idx_task_items_target_person"]
-    target_position_id [type: btree, name: "idx_task_items_target_position"]
     target_unit_id [type: btree, name: "idx_task_items_target_unit"]
     (task_id, sort_order) [type: btree, name: "idx_task_items_task"]
     user_started_at [type: btree, name: "idx_task_items_user_started"]
@@ -184,12 +177,9 @@ Table "tasks" {
   "process_definition_id" int4 [not null]
   "process_run_id" int4
   "term_id" int4 [not null]
-  "scope_unit_id" int4
+  "scope_unit_id" int4 [not null]
   "normalized_scope_unit_id" int4 [note: "columna generada (STORED)"]
-  "created_by_user_id" int4
-  "responsible_position_id" int4
   "description" text
-  "comments_thread_ref" varchar(64)
   "start_date" date [not null]
   "end_date" date
   "status" varchar(30) [not null, default: 'pendiente']
@@ -205,12 +195,11 @@ Table "tasks" {
 
 Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
 Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
-Ref "fk_document_versions_document":"documents"."id" <? "document_versions"."document_id"
+Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
+Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: cascade]
 Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
 Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
-Ref "fk_documents_task_item":"task_items"."id" ?<? "documents"."task_item_id"
-Ref "fk_task_assignments_task":"tasks"."id" <? "task_assignments"."task_id"
-Ref "fk_task_item_handovers_item":"task_items"."id" <? "task_item_handovers"."task_item_id"
+Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
 Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
 
@@ -220,32 +209,25 @@ Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade
 //   signature_requests -> document_signatures   [firmas]
 //   persons -> document_signatures   [identidad]
 //   signature_statuses -> document_signatures   [firmas]
+//   persons -> document_version_uploads   [identidad]
 //   template_artifacts -> document_versions   [plantillas]
 //   persons -> document_workflow_observations   [identidad]
 //   fill_requests -> document_workflow_observations   [plantillas]
 //   persons -> document_workflow_observations   [identidad]
 //   signature_requests -> document_workflow_observations   [firmas]
-//   persons -> document_workflow_observations   [identidad]
-//   units -> documents   [organizacion]
-//   persons -> documents   [identidad]
 //   task_items -> fill_flow_templates   [plantillas]
 //   document_versions -> signature_flow_instances   [firmas]
 //   task_items -> signature_flow_templates   [firmas]
-//   persons -> task_assignments   [identidad]
-//   unit_positions -> task_assignments   [organizacion]
-//   persons -> task_item_handovers   [identidad]
-//   persons -> task_item_handovers   [identidad]
+//   persons -> task_item_tenures   [identidad]
+//   unit_positions -> task_item_tenures   [organizacion]
 //   persons -> task_items   [identidad]
 //   persons -> task_items   [identidad]
+//   units -> task_items   [organizacion]
 //   process_definition_templates -> task_items   [procesos]
-//   unit_positions -> task_items   [organizacion]
-//   persons -> task_items   [identidad]
 //   unit_positions -> task_items   [organizacion]
 //   units -> task_items   [organizacion]
 //   template_artifacts -> task_items   [plantillas]
-//   persons -> tasks   [identidad]
 //   process_definition_versions -> tasks   [procesos]
 //   process_runs -> tasks   [procesos]
-//   unit_positions -> tasks   [organizacion]
 //   units -> tasks   [organizacion]
 //   terms -> tasks   [procesos]

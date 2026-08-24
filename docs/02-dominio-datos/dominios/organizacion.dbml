@@ -110,7 +110,6 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   unit_positions -> contracts   [empleo]
-//   units -> documents   [tareas]
 //   unit_positions -> fill_flow_steps   [plantillas]
 //   relation_unit_types -> fill_flow_steps   [plantillas]
 //   unit_types -> fill_flow_steps   [plantillas]
@@ -126,11 +125,10 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 //   unit_positions -> signature_flow_steps   [firmas]
 //   unit_types -> signature_flow_steps   [firmas]
 //   units -> signature_flow_steps   [firmas]
-//   unit_positions -> task_assignments   [tareas]
-//   unit_positions -> task_items   [tareas]
+//   unit_positions -> task_item_tenures   [tareas]
+//   units -> task_items   [tareas]
 //   unit_positions -> task_items   [tareas]
 //   units -> task_items   [tareas]
-//   unit_positions -> tasks   [tareas]
 //   units -> tasks   [tareas]
 //   cargos -> unit_positions   [identidad]
 //   unit_positions -> vacancies   [empleo]

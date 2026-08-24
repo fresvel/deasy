@@ -40,7 +40,8 @@ Las siguientes tablas están definidas en la configuración:
 - `process_definition_triggers`: Disparadores de definiciones
 - `tasks`: Tareas
 - `task_items`: Items de tareas
-- `task_assignments`: Asignaciones de tareas
+- `task_item_tenures`: Tenencias de entregables (quién responde de cada uno, desde cuándo y en calidad de qué puesto)
+- `document_version_uploads`: Subidas del entregable (cada corrección del archivo, con su autor)
 
 #### Variaciones de procesos
 

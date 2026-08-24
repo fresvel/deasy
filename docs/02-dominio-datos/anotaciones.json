@@ -14,7 +14,6 @@
     "Si nombras una tabla o columna que no existe, el generador FALLA a propósito: una",
     "anotación huérfana es documentación que ya no describe nada."
   ],
-
   "tablas": {
     "processes": "Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.",
     "process_target_rules": "El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.",
@@ -23,13 +22,19 @@
     "template_artifacts": "Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.",
     "fill_flow_templates": "Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).",
     "dossiers": "El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.",
-    "template_artifact_fields": "Los CAMPOS que el usuario rellenara en la web, uno por fila, colgados de la EDICION. Vivian solo como `schema.json` en MinIO, y eso costaba tres cosas: se copiaban en binario al versionar (el mismo tubo del `document_owner` que abrio el frente 0), no se podian unir con nada —`field_code` contra `signature_flow_steps.slot` es lo que el generador de Jinja necesita— y el orden era el de las claves de un objeto JS, que coloca las claves enteras primero. `field_order` es la columna que arregla lo tercero."
+    "template_artifact_fields": "Los CAMPOS que el usuario rellenara en la web, uno por fila, colgados de la EDICION. Vivian solo como `schema.json` en MinIO, y eso costaba tres cosas: se copiaban en binario al versionar (el mismo tubo del `document_owner` que abrio el frente 0), no se podian unir con nada —`field_code` contra `signature_flow_steps.slot` es lo que el generador de Jinja necesita— y el orden era el de las claves de un objeto JS, que coloca las claves enteras primero. `field_order` es la columna que arregla lo tercero.",
+    "task_item_tenures": "QUIEN responde de un entregable, desde cuando y en calidad de que puesto. Una fila por TURNO: el relevo cierra la vigente y abre otra, asi que la sucesion completa queda escrita. Nacio el 2026-08-23 al medir que «quien lo lleva» vivia en TRES copias y dos se pudrian. Sustituye a `task_assignments` (una foto del reparto que ningun relevo refrescaba) y a `task_item_handovers` (los mismos hechos como eventos; periodos y eventos son isomorfos, pero con periodos «un solo responsable vigente» es un INDICE y no una convencion).",
+    "document_version_uploads": "Cada SUBIDA del archivo de un entregable: la version MENOR. Guarda quien lo subio, que fichero y cuando. Antes no constaba en ninguna parte quien elaboro un documento — `working_file_path` se sobrescribe— mientras que un ANEXO si guardaba su autor. Ojo: en MinIO nunca se perdio un fichero (el nombre lleva sello de tiempo y UUID); lo que se perdia era el PUNTERO."
   },
-
   "columnas": {
     "process_definition_templates.item_mode": "Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).",
     "fill_flow_templates.template_artifact_id": "El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.",
     "template_artifact_fields.field_code": "La referencia externa del campo (`x-deasy-field-code`). Es la que el generador tendra que contrastar con `signature_flow_steps.slot` para colocar el token de firma sin que el usuario ponga la ubicacion a mano.",
-    "template_artifact_fields.field_order": "El orden AUTORADO, 1..N. No se deriva de nada: es el indice del array que mando el formulario. El `schema.json` no puede llevarlo porque su orden es el de las claves de un objeto."
+    "template_artifact_fields.field_order": "El orden AUTORADO, 1..N. No se deriva de nada: es el indice del array que mando el formulario. El `schema.json` no puede llevarlo porque su orden es el de las claves de un objeto.",
+    "task_items.responsible_position_id": "EL ANCLA del entregable: el PUESTO que responde de el. Obligatoria desde el 2026-08-23. Es lo durable —un puesto sobrevive a quien lo ocupa— y el punto por el que enganchan los cuatro caminos de relevo.",
+    "task_items.assigned_person_id": "QUIEN lo lleva ahora. Es una CACHE de la tenencia vigente, con UN SOLO escritor: el trigger `trg_task_item_tenures_sync`. De solo lectura en el editor generico.",
+    "task_items.document_status": "El estado del DOCUMENTO, mudado aqui desde `documents` el 2026-08-23. Se llama asi y no `status` a proposito: `task_items.status` vivio ahi y se retiro por no tener escritores.",
+    "document_versions.version": "La RONDA: un intento completo del flujo (llenar -> firmar). Entero desde el 2026-08-23; antes era decimal y el numero mentia, porque 0.1 y 0.2 parecian correcciones del mismo documento y eran dos rondas, la primera cancelada entera. Las CORRECCIONES son el segundo digito y viven en `document_version_uploads`.",
+    "document_versions.task_item_id": "Cuelga del ENTREGABLE. Hasta el 2026-08-23 habia una tabla `documents` en medio, en relacion 1:1 estricta y sin una sola columna propia."
   }
 }

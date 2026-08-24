@@ -495,12 +495,49 @@ El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenec
 
 Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **RETIRADOS (la base los rechaza):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. Ya no es deprecación blanda: el `CHECK` de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type` admite **solo esos tres valores**, y el `ALTER` valida las filas existentes, así que un arranque contra una base con un valor retirado **falla**. Lo mismo con los ámbitos `context_subtree` y `context_ancestor_type`. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`).
 
-⚠️ **Lo que sí queda vivo del `document_owner`: sus `case` en el camino de ejecución.**
-`admin/generation/assignees.js:147`, `users/user_controler.primitives.js:181` y
-`DocumentSignatureWorkflowService.js:518` siguen teniendo su rama. Son **ramas muertas por el `CHECK`**
-—ninguna fila puede llevar ese valor— pero no las des por retiradas al leer el código: el censo de
-fósiles es el §0.6 del frente 0 de `docs/planes/plan-maestro-2026-08.md`. El criterio que las mató
-sigue vigente y vale para lo próximo: **lo que la web no autora, no existe**.
+⚠️ **Lo que sí queda vivo del `document_owner`: sus `case` en el camino de ejecución.** No los des
+por retirados al leer el código. Y ojo, porque **NO son ramas muertas del todo**: el `CHECK` cubre la
+columna `resolver_type`, pero el JSONB `signature_flow_steps.signers` **no lo valida nadie** y manda
+sobre ella, así que un paso legado puede traer ese valor por ahí. Borrar los `case` dejaría el paso
+resolviéndose por el `default` sin cargo: **no firmaría nadie, y en silencio**. Está registrado como
+**defecto 1.19** con su plan de cierre —filtrar Y migrar, en ese orden—. El criterio que los mató
+sigue vigente: **lo que la web no autora, no existe**.
+
+## El entregable: qué se debe, quién lo debe, qué se produjo
+
+**Reordenado el 2026-08-23** (frente 9, fase D7). Si vas a tocar entregables, tareas o documentos,
+esto es lo que hay — y lo que ya **no** hay:
+
+| Pregunta | Dónde vive |
+|---|---|
+| **Qué se debe** | `task_items`. Su identidad es *(tarea, plantilla, **puesto que lo produce**)* |
+| **Quién lo debe** | `task_item_tenures` — una fila por turno, con quién, en calidad de qué puesto, desde y hasta cuándo |
+| **Qué se produjo** | `document_versions` (la **ronda**: llenar → firmar) + `document_version_uploads` (cada **corrección** del archivo, con su autor) |
+
+**Tres tablas murieron y no vuelven:** `task_assignments` (una foto del reparto que ningún relevo
+refrescaba), `task_item_handovers` (los mismos hechos como eventos; ahora son periodos) y `documents`
+(una cáscara 1:1 sobre `task_items` **sin ni una columna propia**).
+
+Cinco cosas que no son evidentes y que cuestan si se ignoran:
+
+1. **`task_items.assigned_person_id` es una CACHÉ**, no el dato. Su único escritor es el trigger
+   `trg_task_item_tenures_sync`, y en el editor genérico es de solo lectura. Para mover el
+   responsable está el traspaso, no un `UPDATE`.
+2. **`responsible_position_id` es obligatorio.** Es el ancla —el puesto, no la persona— y el punto
+   por el que enganchan los cuatro caminos de relevo. Si el lanzamiento no encuentra a nadie, **no
+   crea el entregable**: antes lo creaba huérfano y avisaba en la misma respuesta de que no había
+   nadie.
+3. **El relevo automático llega hasta ANTES de la fase de firma**, y esa lista de estados está
+   **duplicada** en JavaScript (`DOCUMENT_RELAYABLE_STATUSES`) y en el SQL de los triggers. La
+   vigila `DocumentStateService.test.js`, que **lee el fichero del esquema** y compara.
+4. **Las solicitudes pendientes siguen al responsable**, pero sólo las resueltas por `task_assignee`.
+   La regla es *alinear al vigente*, no *mover de X a Y*: un relevo pasa por un estado intermedio sin
+   persona, y con la segunda formulación la solicitud se quedaba huérfana.
+5. **El «Para:» no existe.** El destinatario se deriva del flujo de firma. Un envío sin flujo se
+   rechaza, así que el dato siempre está.
+
+El diseño y las decisiones del dueño, con sus mediciones, en
+[`docs/planes/plan_data/asignacion-y-relevo.md`](docs/planes/plan_data/asignacion-y-relevo.md).
 
 ## Environments & ports
 `dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.

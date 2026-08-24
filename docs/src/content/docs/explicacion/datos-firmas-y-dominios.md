@@ -76,7 +76,7 @@ Como subdominio propio esta la **contratación**: `vacancies`, `aplications`, `o
 
 ### Entregables, tareas y documentos
 
-`tasks`, `task_items`, `task_assignments`, `task_item_handovers` (bitacora de traspaso de responsable), `documents` (1:1 con `task_items`), `document_versions` (con `version` de tipo `DECIMAL(4,1)`), `document_attachments` y `document_workflow_observations` (observaciones, devoluciones y rechazos).
+`tasks`, `task_items`, `task_item_tenures` (quien responde de cada entregable, desde cuando y en calidad de que puesto: una fila por turno), `document_versions` (que cuelgan del entregable y llevan la RONDA como entero), `document_version_uploads` (cada subida del archivo: la version menor, con su autor), `document_attachments` y `document_workflow_observations` (observaciones, devoluciones y rechazos).
 
 ### Chat y notificaciones
 
@@ -90,4 +90,4 @@ En el dominio de chat, `person_id`, `process_id` y `unit_id` son **claves forane
 
 ### Auditoria
 
-**No existe una tabla de auditoria general** (nada de `audit_log` o `bitacora`). La trazabilidad es **especifica por dominio**: `task_item_handovers` para los traspasos, `document_workflow_observations` para devoluciones, `role_assignments.revoked_at` y `revoked_reason` para revocaciones, `signature_batch_jobs.results` para el resultado por fichero, y `created_at` / `updated_at` con trigger `set_updated_at()` en la mayoria de tablas.
+**No existe una tabla de auditoria general** (nada de `audit_log` o `bitacora`). La trazabilidad es **especifica por dominio**: `task_item_tenures` para los traspasos (una fila por turno: cerrar una y abrir otra ES el asiento), `document_workflow_observations` para devoluciones, `role_assignments.revoked_at` y `revoked_reason` para revocaciones, `signature_batch_jobs.results` para el resultado por fichero, y `created_at` / `updated_at` con trigger `set_updated_at()` en la mayoria de tablas.
