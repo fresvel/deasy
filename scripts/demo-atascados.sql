@@ -65,6 +65,9 @@ COMMIT;
 
 \echo ''
 \echo '=== Entregables atascados en la unidad 8 ==='
+-- El MISMO predicado que usa el panel del jefe. La version anterior de esta consulta etiquetaba
+-- «titular_se_fue» a todo lo que tuviera responsable, sin comprobar si esa persona OCUPA el puesto,
+-- asi que enseñaba como atascados entregables perfectamente sanos.
 SELECT ti.id, ti.responsible_position_id AS puesto, up.is_active AS puesto_activo,
        ti.assigned_person_id AS responde, ti.document_status,
        CASE WHEN up.is_active = 0 THEN 'puesto_desactivado'
@@ -73,4 +76,11 @@ SELECT ti.id, ti.responsible_position_id AS puesto, up.is_active AS puesto_activ
   FROM task_items ti
   JOIN unit_positions up ON up.id = ti.responsible_position_id
  WHERE up.unit_id = 8
+   AND (
+     ti.assigned_person_id IS NULL
+     OR NOT EXISTS (SELECT 1 FROM position_assignments pa
+                     WHERE pa.position_id = ti.responsible_position_id
+                       AND pa.is_current = 1 AND pa.person_id = ti.assigned_person_id)
+     OR up.is_active = 0
+   )
  ORDER BY ti.id;
