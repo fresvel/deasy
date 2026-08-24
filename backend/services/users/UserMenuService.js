@@ -153,14 +153,13 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
        INNER JOIN document_versions dv ON dv.id = dff.document_version_id
        INNER JOIN (
-         SELECT document_id, MAX(version) AS max_version
+         SELECT task_item_id, MAX(version) AS max_version
          FROM document_versions
-         GROUP BY document_id
+         GROUP BY task_item_id
        ) latest_fill_dv
-         ON latest_fill_dv.document_id = dv.document_id
+         ON latest_fill_dv.task_item_id = dv.task_item_id
         AND latest_fill_dv.max_version = dv.version
-       INNER JOIN documents d ON d.id = dv.document_id
-       INNER JOIN task_items ti ON ti.id = d.task_item_id
+       INNER JOIN task_items ti ON ti.id = dv.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        INNER JOIN processes p ON p.id = pdv.process_id
@@ -212,14 +211,13 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
        INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
        INNER JOIN (
-         SELECT document_id, MAX(version) AS max_version
+         SELECT task_item_id, MAX(version) AS max_version
          FROM document_versions
-         GROUP BY document_id
+         GROUP BY task_item_id
        ) latest_signature_dv
-         ON latest_signature_dv.document_id = dv.document_id
+         ON latest_signature_dv.task_item_id = dv.task_item_id
         AND latest_signature_dv.max_version = dv.version
-       INNER JOIN documents d ON d.id = dv.document_id
-       INNER JOIN task_items ti ON ti.id = d.task_item_id
+       INNER JOIN task_items ti ON ti.id = dv.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        INNER JOIN processes p ON p.id = pdv.process_id

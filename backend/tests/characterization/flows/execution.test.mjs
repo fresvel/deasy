@@ -40,7 +40,7 @@ before(async () => {
 // --- Contrato de columnas de las tablas de ejecución (admin sql CRUD) ---
 // Cada una debe estar poblada (count>=1) tras el setup.
 const EXEC_TABLES = [
-  "tasks", "task_items", "documents", "document_versions",
+  "tasks", "task_items", "document_versions",
   "signature_flow_templates", "signature_flow_steps",
 ];
 

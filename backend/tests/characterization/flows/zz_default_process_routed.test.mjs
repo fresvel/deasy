@@ -206,19 +206,16 @@ async function readEntregable(taskItemId) {
        FROM task_items WHERE id = $1`,
     [taskItemId],
   );
-  // `documents` se quedo en una fila de union 1:1 (2026-08-23): `status` y `origin_unit_id` se
-  // mudaron al entregable, y `title` se retiro sin sucesor —se escribia y no la leia nadie—. Se
-  // sigue consultando porque las versiones todavia cuelgan de ella; el paso 6b la retira.
-  const [document] = await query(
-    `SELECT id, task_item_id
-       FROM documents WHERE task_item_id = $1`,
-    [taskItemId],
-  );
+  // `documents` DESAPARECIO (2026-08-23): era una cascara 1:1 sobre el entregable sin ni una
+  // columna propia, y las versiones cuelgan ya directamente de el. Se conserva la forma
+  // `{ document: ... }` del resultado —lo leen media docena de asserts— con el propio entregable
+  // haciendo de documento, que es exactamente lo que el modelo dice ahora.
+  const document = item ? { id: item.id, task_item_id: item.id } : null;
   const versions = document
     ? await query(
-        `SELECT id, document_id, version, template_artifact_id, payload_object_path, working_file_path,
+        `SELECT id, task_item_id, version, template_artifact_id, payload_object_path, working_file_path,
                 final_file_path, format, status
-           FROM document_versions WHERE document_id = $1 ORDER BY version, id`,
+           FROM document_versions WHERE task_item_id = $1 ORDER BY version, id`,
         [document.id],
       )
     : [];
@@ -249,17 +246,11 @@ async function readEntregable(taskItemId) {
 // comportamiento. Se colapsa aquí, justo antes de fotografiar, y la forma del título —genérico o
 // no— se comprueba aparte con una aserción, que es donde ese hecho SÍ significa algo.
 const TITULO_GENERICO = /^Documento \d+$/;
-const sinAutoincrementalEnElTitulo = (resultado) => ({
-  ...resultado,
-  document: resultado.document
-    ? {
-        ...resultado.document,
-        title: TITULO_GENERICO.test(String(resultado.document.title ?? ""))
-          ? "Documento <normalized>"
-          : resultado.document.title,
-      }
-    : null,
-});
+// `sinAutoincrementalEnElTitulo` VIVIO AQUI hasta el 2026-08-23. Normalizaba el «Documento <id>»
+// con el que nacia el documento de una tarea LIBRE, porque el id es autoincremental y el golden
+// habria caducado en cuanto otro flow moviera la secuencia. Con `documents` retirada no hay titulo
+// de documento que normalizar: el titulo es el del ENTREGABLE, y ese lo pone quien lo crea.
+const sinAutoincrementalEnElTitulo = (resultado) => resultado;
 
 // El COMPETIDOR: el flujo que colgaba del vínculo del Proceso por defecto, sembrado por el sync
 // desde `BASE_META_YAML`. Era el que ganaría si el escalonado se rompiera, y el que el sub-paso 7

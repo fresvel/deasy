@@ -1185,8 +1185,7 @@ export const deleteDeliverableAttachment = async (req, res) => {
       `SELECT da.id, da.file_path
        FROM document_attachments da
        INNER JOIN document_versions dv ON dv.id = da.document_version_id
-       INNER JOIN documents d ON d.id = dv.document_id
-       WHERE da.id = ? AND d.task_item_id = ?
+       WHERE da.id = ? AND dv.task_item_id = ?
        LIMIT 1`,
       [attachmentId, Number(target.task_item_id)]
     );
@@ -1238,8 +1237,7 @@ export const downloadDeliverableAttachment = async (req, res) => {
       `SELECT da.file_path, da.file_name, da.mime_type
        FROM document_attachments da
        INNER JOIN document_versions dv ON dv.id = da.document_version_id
-       INNER JOIN documents d ON d.id = dv.document_id
-       WHERE da.id = ? AND d.task_item_id = ?
+       WHERE da.id = ? AND dv.task_item_id = ?
        LIMIT 1`,
       [attachmentId, Number(target.task_item_id)]
     );
@@ -1436,7 +1434,6 @@ export const listMySends = async (req, res) => {
        JOIN tasks t ON t.id = ti.task_id
        JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        JOIN processes p ON p.id = pdv.process_id
-       LEFT JOIN documents d ON d.task_item_id = ti.id
        WHERE ti.created_by_person_id = ?
        ORDER BY ti.created_at DESC, ti.id DESC
        LIMIT 200`,
@@ -1470,15 +1467,13 @@ export const listMyReceived = async (req, res) => {
     SELECT 1 FROM fill_requests fr
       JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
       JOIN document_versions dv ON dv.id = dff.document_version_id
-      JOIN documents dd ON dd.id = dv.document_id
-     WHERE dd.task_item_id = ti.id AND fr.assigned_person_id = ?
+     WHERE dv.task_item_id = ti.id AND fr.assigned_person_id = ?
   )`;
   const SIGN_EXISTS = `EXISTS (
     SELECT 1 FROM signature_requests sr
       JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
       JOIN document_versions dv ON dv.id = sfi.document_version_id
-      JOIN documents dd ON dd.id = dv.document_id
-     WHERE dd.task_item_id = ti.id AND sr.assigned_person_id = ?
+     WHERE dv.task_item_id = ti.id AND sr.assigned_person_id = ?
   )`;
   const connection = await pool.getConnection();
   try {
@@ -1502,7 +1497,6 @@ export const listMyReceived = async (req, res) => {
        JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        JOIN processes p ON p.id = pdv.process_id
        LEFT JOIN persons sender ON sender.id = ti.created_by_person_id
-       LEFT JOIN documents d ON d.task_item_id = ti.id
        WHERE (ti.created_by_person_id IS NULL OR ti.created_by_person_id <> ?)
          -- Un documento es «recibido» si participas en su ENTREGA o en su FIRMA. El tercer
          -- termino era ti.target_person_id = ? —el «Para:»—, retirado el 2026-08-23: quien

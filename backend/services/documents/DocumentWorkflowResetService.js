@@ -9,11 +9,9 @@ import { resolveCurrentSignatureStep } from "./DocumentSignatureWorkflowService.
 const RESET_NOTE = "Reset manual del flujo";
 
 const getLatestDocumentVersionForTaskItem = async (connection, definitionId, taskItemId, documentId = null) => {
+  // El filtro por documento se retiro con la tabla (2026-08-23): era `AND d.id = ?` sobre una
+  // relacion 1:1, o sea que no podia recortar nada. El parametro se acepta y se ignora.
   const params = [taskItemId, definitionId];
-  const documentFilter = documentId ? "AND d.id = ?" : "";
-  if (documentId) {
-    params.push(Number(documentId));
-  }
   const [rows] = await connection.query(
     `SELECT
        ti.id AS task_item_id,
@@ -23,7 +21,7 @@ const getLatestDocumentVersionForTaskItem = async (connection, definitionId, tas
        trm.term_type_id,
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
-       d.id AS document_id,
+       ti.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version,
        dv.status AS document_version_status,
@@ -38,18 +36,17 @@ const getLatestDocumentVersionForTaskItem = async (connection, definitionId, tas
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN terms trm ON trm.id = t.term_id
-     INNER JOIN documents d ON d.task_item_id = ti.id
-     INNER JOIN document_versions dv ON dv.document_id = d.id
+     INNER JOIN document_versions dv ON dv.task_item_id = ti.id
      INNER JOIN (
-       SELECT document_id, MAX(version) AS max_version
+       SELECT task_item_id, MAX(version) AS max_version
        FROM document_versions
-       GROUP BY document_id
+       GROUP BY task_item_id
      ) latest
-       ON latest.document_id = dv.document_id
+       ON latest.task_item_id = dv.task_item_id
       AND latest.max_version = dv.version
      WHERE ti.id = ?
        AND t.process_definition_id = ?
-       ${documentFilter}
+
      LIMIT 1`,
     params
   );
@@ -200,7 +197,7 @@ const createResetDocumentVersion = async (connection, currentVersion) => {
        status
      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      Number(currentVersion.document_id),
+      Number(currentVersion.task_item_id),
       nextVersion,
       currentVersion.template_artifact_id ?? null,
       currentVersion.payload_hash ?? null,
@@ -252,7 +249,7 @@ export const resetDocumentWorkflowForTaskItem = async ({
   await ensureFillFlowForDocumentVersion(connection, nextVersion.id);
 
   return {
-    documentId: Number(currentVersion.document_id),
+    documentId: Number(currentVersion.task_item_id),
     previousDocumentVersionId: documentVersionId,
     previousDocumentVersion: Number(currentVersion.document_version || 0),
     newDocumentVersionId: nextVersion.id,

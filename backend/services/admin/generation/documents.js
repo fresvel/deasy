@@ -281,17 +281,15 @@ export const materializeRuntimeFlowForTaskItem = async (
 export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, taskItem?.assigned_person_id ?? null);
 
-  const [existingRows] = await connection.query(
-    `SELECT id
-     FROM documents
-     WHERE task_item_id = ?
-     LIMIT 1`,
-    [taskItem.id]
-  );
-
-  // La UNIDAD DE ORIGEN se escribe en el entregable, no en el documento: se mudo alli el
-  // 2026-08-23 (`documents` es una cascara 1:1). Se conserva el `COALESCE` —una vez resuelta no se
-  // recalcula— porque materializar es idempotente y se llama en cada lanzamiento.
+  // LA MESA DE EN MEDIO DESAPARECIO (2026-08-23). Aqui se buscaba —y si no, se creaba— una fila en
+  // `documents` de la que colgar las versiones. Esa tabla era 1:1 estricta con el entregable y no
+  // tenia ni un hecho propio, asi que las versiones cuelgan ya del entregable y esta funcion hace
+  // dos cosas en vez de cuatro: sellar la unidad de origen y asegurar la version inicial.
+  //
+  // El nombre se conserva —lo llaman cinco sitios— pero lo que asegura es la PRIMERA VERSION.
+  //
+  // La unidad de origen lleva `COALESCE` porque materializar es idempotente: se llama en cada
+  // lanzamiento y una vez resuelta no se recalcula.
   if (originUnitId) {
     await connection.query(
       `UPDATE task_items
@@ -301,39 +299,25 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
     );
   }
 
-  // El `title` del documento se retiro con la mudanza: se escribia aqui —`template_artifact_name`
-  // o «Documento <id>» de relleno— y NO lo leia nadie. El titulo que se enseña es el del
-  // entregable. De paso muere la asimetria que la caracterizacion tenia congelada: la tarea LIBRE
-  // titulaba «Documento <id>» y la derivada usaba el nombre de la plantilla, porque una de las dos
-  // consultas no traia `template_artifact_name`.
-  let documentId = Number(existingRows?.[0]?.id || 0);
-  if (!documentId) {
-    const [insertResult] = await connection.query(
-      `INSERT INTO documents (task_item_id) VALUES (?)`,
-      [taskItem.id]
-    );
-    documentId = Number(insertResult.insertId);
-  }
-
   const [versionRows] = await connection.query(
     `SELECT id
      FROM document_versions
-     WHERE document_id = ?
+     WHERE task_item_id = ?
      ORDER BY version ASC, id ASC
      LIMIT 1`,
-    [documentId]
+    [taskItem.id]
   );
 
   if (!versionRows?.length) {
     const [insertResult] = await connection.query(
       `INSERT INTO document_versions (
-         document_id,
+         task_item_id,
          version,
          template_artifact_id,
          status
        ) VALUES (?, ?, ?, ?)`,
       [
-        documentId,
+        taskItem.id,
         0.1,
         taskItem.template_artifact_id ?? null,
         "Borrador"
@@ -344,7 +328,9 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
     await ensureFillFlowForDocumentVersion(connection, Number(versionRows[0].id));
   }
 
-  return documentId;
+  // Devuelve el ENTREGABLE, que es lo que ahora identifica al documento. Antes devolvia el id de la
+  // fila de `documents`, y ningun llamador lo usaba para otra cosa que saber que hubo documento.
+  return taskItem.id;
 };
 export const ensureDocumentsForTask = async (connection, taskId) => {
   const taskItems = await getTaskItemsForDocumentMaterialization(connection, taskId);

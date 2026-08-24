@@ -64,7 +64,6 @@ const CREATE_ERROR_CASES = [
   ["version_sin_serie", "process_definition_versions", {}],
   ["regla_sin_configuracion", "process_target_rules", {}],
   ["tarea_sin_configuracion", "tasks", {}],
-  ["documento_sin_item", "documents", {}],
 ];
 
 for (const [key, table, body] of CREATE_ERROR_CASES) {
@@ -206,7 +205,7 @@ const LIST_TABLES = [
   "processes", "process_definition_series", "process_definition_versions",
   "process_target_rules", "process_definition_templates",
   "template_seeds", "template_artifacts",
-  "tasks", "task_items", "task_item_tenures", "documents", "document_versions",
+  "tasks", "task_items", "task_item_tenures", "document_versions",
   "roles", "permissions", "role_permissions", "cargo_role_map",
 ];
 
@@ -920,35 +919,12 @@ test("POST /admin/sql/template_artifacts -> graft: creación prohibida por CRUD 
 // único que queda por caracterizar del graft de create es su guard. Los dos casos siguientes usan
 // el documento que trae la fixture, y NINGUNO escribe: así no mueven los conteos de las suites de
 // ejecución, que comparten base con esta.
-test("POST /admin/sql/documents -> graft: el item de tarea del documento debe existir", async () => {
-  const token = await tokenFor("admin");
-  const rechazado = await post("/admin/sql/documents", {
-    token,
-    body: { task_item_id: 999999, title: "Documento caracterización" },
-  });
-  matchSnapshot(SUITE, "graft_documents_create_item_inexistente", {
-    status: rechazado.status,
-    body: normalize(rechazado.body, { maskIdKeys: true }),
-  });
-});
-
-// El guard de update de `documents` es de INMUTABILIDAD: el item de tarea asociado no se cambia.
-test("PUT /admin/sql/documents -> graft: el item de tarea asociado es inmutable", async () => {
-  const token = await tokenFor("admin");
-  const documentos = (await get("/admin/sql/documents", { token })).body || [];
-  const documentId = documentos[0]?.id;
-  assert.ok(documentId, "la fixture debe traer al menos un documento");
-
-  const rechazado = await put("/admin/sql/documents", {
-    token,
-    body: { keys: { id: documentId }, data: { task_item_id: 999999 } },
-  });
-  matchSnapshot(SUITE, "graft_documents_update_task_item_inmutable", {
-    status: rechazado.status,
-    body: normalize(rechazado.body, { maskIdKeys: true }),
-  });
-});
-
+// Aqui vivian los dos casos de INJERTO de `documents` —que el item de tarea exista al crear, y que
+// sea inmutable al editar—. La tabla se retiro el 2026-08-23: era una cascara 1:1 sobre el
+// entregable sin ni una columna propia, y las versiones cuelgan ya de el. Sin tabla no hay injerto
+// que probar, y la regla que protegian —«un documento pertenece a un entregable y no cambia de
+// dueño»— la garantiza ahora la propia forma del modelo: no hay documento sin entregable porque
+// el documento ES el entregable.
 test("PUT /admin/sql/processes -> graft: renombrar refresca los nombres de configuraciones", async () => {
   const token = await tokenFor("admin");
   const created = await post("/admin/sql/processes", {

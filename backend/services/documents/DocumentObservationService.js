@@ -7,9 +7,8 @@ const VALID_KINDS = new Set(["observation", "return_reason", "rejection_reason",
 export const getCurrentDocumentVersionId = async (connection, taskItemId) => {
   const [rows] = await connection.query(
     `SELECT dv.id
-     FROM documents d
-     INNER JOIN document_versions dv ON dv.document_id = d.id
-     WHERE d.task_item_id = ?
+     FROM document_versions dv
+     WHERE dv.task_item_id = ?
      ORDER BY dv.version DESC, dv.id DESC
      LIMIT 1`,
     [taskItemId]
@@ -42,9 +41,8 @@ export const addDocumentObservation = async (connection, {
   let resolvedTaskItemId = taskItemId ? Number(taskItemId) : null;
   if (!resolvedTaskItemId && documentVersionId) {
     const [rows] = await connection.query(
-      `SELECT d.task_item_id
+      `SELECT dv.task_item_id
        FROM document_versions dv
-       INNER JOIN documents d ON d.id = dv.document_id
        WHERE dv.id = ?
        LIMIT 1`,
       [Number(documentVersionId)]

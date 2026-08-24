@@ -795,7 +795,6 @@ export default class SystemBootstrapService {
              IF(
                EXISTS(SELECT 1 FROM process_runs LIMIT 1)
                OR EXISTS(SELECT 1 FROM tasks LIMIT 1)
-               OR EXISTS(SELECT 1 FROM documents LIMIT 1)
                OR EXISTS(SELECT 1 FROM document_versions LIMIT 1)
                OR EXISTS(SELECT 1 FROM signature_requests LIMIT 1)
                OR EXISTS(SELECT 1 FROM position_assignments LIMIT 1),

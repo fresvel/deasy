@@ -149,10 +149,10 @@ export async function cleanupDraftArtifactByCode(code) {
 //
 // Lo usa `flows/zzzzzzzz_default_process_routed.test.mjs`, que ejercita el camino de usuario
 // `POST /users/:id/general-tasks`. Ese endpoint escribe en NUEVE tablas dentro de una sola
-// transacción (terms, tasks, task_items, las cuatro de flujo de runtime, documents,
+// transacción (terms, tasks, task_items, las cuatro de flujo de runtime,
 // document_versions, document_fill_flows, fill_requests) y **no existe ninguna ruta HTTP que
 // deshaga nada de eso**: el CRUD de admin no expone `terms` ni `document_fill_flows`, y el borrado
-// de un `task_item` chocaría con las FK de `documents` (todas NO ACTION salvo dos).
+// de un `task_item` chocaría con las FK de sus versiones (todas NO ACTION salvo dos).
 //
 // Se entra por el TÍTULO del entregable en vez de por ids, para que el limpiador valga también como
 // guardia de idempotencia en el `before`: si una corrida anterior murió a medias, los restos se
@@ -175,13 +175,10 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
   const itemRows = await query("SELECT id FROM task_items WHERE task_id = ANY($1::int[])", [taskIds]);
   const itemIds = itemRows.map((row) => Number(row.id));
 
-  const documentRows = itemIds.length
-    ? await query("SELECT id FROM documents WHERE task_item_id = ANY($1::int[])", [itemIds])
-    : [];
-  const documentIds = documentRows.map((row) => Number(row.id));
-
-  const versionRows = documentIds.length
-    ? await query("SELECT id FROM document_versions WHERE document_id = ANY($1::int[])", [documentIds])
+  // `documents` desaparecio el 2026-08-23: las versiones cuelgan del ENTREGABLE. Antes habia que
+  // dar el rodeo por ella para llegar a las versiones; ahora se leen directas.
+  const versionRows = itemIds.length
+    ? await query("SELECT id FROM document_versions WHERE task_item_id = ANY($1::int[])", [itemIds])
     : [];
   const versionIds = versionRows.map((row) => Number(row.id));
 
@@ -209,10 +206,6 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
     await query("DELETE FROM document_attachments WHERE document_version_id = ANY($1::int[])", [versionIds]);
     await query("DELETE FROM document_versions WHERE id = ANY($1::int[])", [versionIds]);
   }
-  if (documentIds.length) {
-    await query("DELETE FROM documents WHERE id = ANY($1::int[])", [documentIds]);
-  }
-
   if (itemIds.length) {
     await query(
       `DELETE FROM fill_flow_steps

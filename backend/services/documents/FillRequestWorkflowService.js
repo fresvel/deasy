@@ -57,8 +57,7 @@ export const getFillRequestContext = async (connection, fillRequestId) => {
      INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
      INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
      INNER JOIN document_versions dv ON dv.id = dff.document_version_id
-     INNER JOIN documents d ON d.id = dv.document_id
-     LEFT JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      WHERE fr.id = ?
      LIMIT 1`,
     [fillRequestId]

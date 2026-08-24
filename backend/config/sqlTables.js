@@ -598,22 +598,10 @@ export const SQL_TABLES = [
     ],
     searchFields: []
   },
-  {
-    table: "documents",
-    label: "Documentos",
-    category: "Documentos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      // `title`, `status`, `origin_unit_id` y `comments_thread_ref` salieron de aqui el 2026-08-23:
-      // las dos primeras se mudaron al entregable y las otras dos eran letra muerta. Lo que queda es
-      // una fila de union 1:1, y el paso 6b la retira.
-      { name: "task_item_id", label: "Item de tarea", type: "number" },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
-      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["title", "status"]
-  },
+  // `documents` VIVIO AQUI hasta el 2026-08-23. Era una cascara 1:1 sobre `task_items` sin ni una
+  // columna propia: `status` y `origin_unit_id` se mudaron al entregable, y `owner_person_id`,
+  // `title` y `comments_thread_ref` se retiraron por ser copia, letra muerta y fosil. Las versiones
+  // cuelgan ahora del entregable.
   {
     table: "document_versions",
     label: "Versiones de documento",
@@ -621,7 +609,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "document_id", label: "Documento", type: "number", required: true },
+      { name: "task_item_id", label: "Entregable", type: "number", required: true },
       { name: "version", label: "Version", type: "number", defaultValue: "0.1", required: true },
       { name: "template_artifact_id", label: "Artifact", type: "number" },
       { name: "payload_hash", label: "Hash payload", type: "text", readOnly: true },

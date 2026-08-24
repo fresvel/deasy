@@ -202,8 +202,7 @@ export const ACCESS_SOURCES = Object.freeze([
           FROM fill_requests fr
           INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
           INNER JOIN document_versions dv ON dv.id = dff.document_version_id
-          INNER JOIN documents d ON d.id = dv.document_id
-          INNER JOIN alcance a ON a.task_item_id = d.task_item_id
+          INNER JOIN alcance a ON a.task_item_id = dv.task_item_id
           WHERE fr.assigned_person_id IS NOT NULL`,
   },
   {
@@ -214,8 +213,7 @@ export const ACCESS_SOURCES = Object.freeze([
           FROM signature_requests sr
           INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
           INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
-          INNER JOIN documents d ON d.id = dv.document_id
-          INNER JOIN alcance a ON a.task_item_id = d.task_item_id
+          INNER JOIN alcance a ON a.task_item_id = dv.task_item_id
           WHERE sr.assigned_person_id IS NOT NULL`,
   },
   // ── LAS DOS FUENTES DE OBSERVACION SE RETIRARON el 2026-08-23 ─────────────────────────

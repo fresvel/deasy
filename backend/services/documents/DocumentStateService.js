@@ -165,7 +165,7 @@ export const deriveDocumentStatusFromVersionStatus = (versionStatus) => {
 export const transitionDocumentVersionState = async (connection, documentVersionId, nextStatus) => {
   const targetStatus = assertDocumentVersionStatusValue(nextStatus);
   const [rows] = await connection.query(
-    `SELECT id, document_id, status
+    `SELECT id, task_item_id, status
      FROM document_versions
      WHERE id = ?
      LIMIT 1`,
@@ -188,13 +188,13 @@ export const transitionDocumentVersionState = async (connection, documentVersion
   );
 
   const documentStatus = deriveDocumentStatusFromVersionStatus(targetStatus);
-  await transitionDocumentState(connection, Number(current.document_id), documentStatus, { allowDirect: true });
+  await transitionDocumentState(connection, Number(current.task_item_id), documentStatus, { allowDirect: true });
 
   return {
     documentVersionId: Number(documentVersionId),
     previousStatus: currentStatus,
     nextStatus: targetStatus,
-    documentId: Number(current.document_id),
+    documentId: Number(current.task_item_id),
     documentStatus,
   };
 };
@@ -206,14 +206,13 @@ export const transitionDocumentState = async (
   { allowDirect = false } = {},
 ) => {
   const targetStatus = assertDocumentStatusValue(nextStatus);
-  // El estado del documento vive en su ENTREGABLE desde el 2026-08-23: `documents` era una cascara
-  // 1:1 y esta columna era la unica suya con escritores. El parametro se sigue llamando
-  // `documentId` porque la relacion es 1:1 y el paso 6b los va a colapsar del todo.
+  // ⚠️ `documentId` ES EL ID DEL ENTREGABLE desde el 2026-08-23. La tabla `documents` se retiro —era
+  // una cascara 1:1 sin ni una columna propia— y el nombre del parametro se conserva porque lo
+  // usan cinco llamadores; lo que identifica a un documento es su entregable.
   const [rows] = await connection.query(
     `SELECT ti.id, ti.document_status AS status
-     FROM documents d
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
-     WHERE d.id = ?
+     FROM task_items ti
+     WHERE ti.id = ?
      LIMIT 1`,
     [documentId]
   );
@@ -227,10 +226,9 @@ export const transitionDocumentState = async (
   }
 
   await connection.query(
-    `UPDATE task_items ti
+    `UPDATE task_items
      SET document_status = ?
-     FROM documents d
-     WHERE d.id = ? AND ti.id = d.task_item_id`,
+     WHERE id = ?`,
     [targetStatus, documentId]
   );
 

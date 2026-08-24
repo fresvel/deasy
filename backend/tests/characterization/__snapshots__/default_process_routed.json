@@ -45,12 +45,12 @@
     },
     "versions": [
       {
-        "document_id": "<normalized>",
         "final_file_path": null,
         "format": null,
         "id": "<normalized>",
         "payload_object_path": null,
         "status": "Pendiente de llenado",
+        "task_item_id": "<normalized>",
         "template_artifact_id": "<normalized>",
         "version": "0.1",
         "working_file_path": null
@@ -219,12 +219,12 @@
     },
     "versions": [
       {
-        "document_id": "<normalized>",
         "final_file_path": null,
         "format": null,
         "id": "<normalized>",
         "payload_object_path": null,
         "status": "Pendiente de llenado",
+        "task_item_id": "<normalized>",
         "template_artifact_id": "<normalized>",
         "version": "0.1",
         "working_file_path": null

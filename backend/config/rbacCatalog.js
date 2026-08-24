@@ -183,7 +183,6 @@ export const TABLE_RESOURCE_MAP = {
   document_fill_flows: "fill_flows",
   document_signatures: "signature_flows",
   document_versions: "documents",
-  documents: "documents",
   fill_flow_steps: "fill_flows",
   fill_flow_templates: "fill_flows",
   fill_requests: "fill_flows",

@@ -46,8 +46,8 @@ export const getActiveUserPositions = async (pool, userId) => {
 export const getUserDocumentCenterRows = async (pool, userId) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT
-       d.id AS document_id,
-       d.task_item_id,
+       ti.id AS document_id,
+       ti.id AS task_item_id,
        ti.document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
@@ -73,19 +73,18 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
        COALESCE(fill_stats.pending_fill_count, 0) AS pending_fill_count,
        COALESCE(signature_stats.pending_signature_count, 0) AS pending_signature_count,
        COALESCE(trm.start_date, t.created_at) AS sort_date
-     FROM documents d
+     FROM task_items ti
      INNER JOIN (
        SELECT dv1.*
        FROM document_versions dv1
        INNER JOIN (
-         SELECT document_id, MAX(version) AS max_version
+         SELECT task_item_id, MAX(version) AS max_version
          FROM document_versions
-         GROUP BY document_id
+         GROUP BY task_item_id
        ) latest
-         ON latest.document_id = dv1.document_id
+         ON latest.task_item_id = dv1.task_item_id
         AND latest.max_version = dv1.version
-     ) dv ON dv.document_id = d.id
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     ) dv ON dv.task_item_id = ti.id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN processes p ON p.id = pdv.process_id
@@ -119,7 +118,7 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
        FROM (${accessSubqueryCorrelated("ti")}) participantes
        WHERE participantes.person_id = ?
      )
-     ORDER BY sort_date DESC, p.name ASC, d.id DESC`,
+     ORDER BY sort_date DESC, p.name ASC, ti.id DESC`,
     // Seis `userId` en uno.
     [userId]
   );
@@ -135,8 +134,8 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        srs.name AS signature_request_status_name,
        sfs.step_order,
        sfs.name AS step_name,
-       d.id AS document_id,
-       d.task_item_id,
+       ti.id AS document_id,
+       ti.id AS task_item_id,
        ti.document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
@@ -161,14 +160,13 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
      INNER JOIN (
-       SELECT document_id, MAX(version) AS max_version
+       SELECT task_item_id, MAX(version) AS max_version
        FROM document_versions
-       GROUP BY document_id
+       GROUP BY task_item_id
      ) latest
-       ON latest.document_id = dv.document_id
+       ON latest.task_item_id = dv.task_item_id
       AND latest.max_version = dv.version
-     INNER JOIN documents d ON d.id = dv.document_id
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN processes p ON p.id = pdv.process_id
@@ -425,8 +423,7 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
          OR EXISTS (
            SELECT 1
            FROM task_items ti
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN document_versions dv ON dv.task_item_id = ti.id
            INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
            INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
            WHERE ti.task_id = t.id
@@ -435,8 +432,7 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
          OR EXISTS (
            SELECT 1
            FROM task_items ti
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
+           INNER JOIN document_versions dv ON dv.task_item_id = ti.id
            INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
            INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
            WHERE ti.task_id = t.id
@@ -511,8 +507,8 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
   const placeholders = taskItemIds.map(() => "?").join(", ");
   const [rows] = await pool.query(
     `SELECT
-       d.id AS document_id,
-       d.task_item_id,
+       ti.id AS document_id,
+       ti.id AS task_item_id,
        ti.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
        ti.document_status,
@@ -522,23 +518,19 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
        dv.final_file_path,
        COALESCE(sig.total_signature_count, 0) AS total_signature_count,
        COALESCE(sig.pending_signature_count, 0) AS pending_signature_count
-     FROM documents d
-     -- El JOIN con el entregable es nuevo (2026-08-23): origin_unit_id y document_status se
-     -- mudaron alli desde documents, que es una cascara 1:1. En el paso 6b desaparece la vuelta:
-     -- estas consultas arrancaran directamente del entregable.
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     FROM task_items ti
      LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
      LEFT JOIN (
        SELECT dv1.*
        FROM document_versions dv1
        INNER JOIN (
-         SELECT document_id, MAX(version) AS max_version
+         SELECT task_item_id, MAX(version) AS max_version
          FROM document_versions
-         GROUP BY document_id
+         GROUP BY task_item_id
        ) latest
-         ON latest.document_id = dv1.document_id
+         ON latest.task_item_id = dv1.task_item_id
         AND latest.max_version = dv1.version
-     ) dv ON dv.document_id = d.id
+     ) dv ON dv.task_item_id = ti.id
      LEFT JOIN (
        SELECT
          sfi.document_version_id,
@@ -556,8 +548,8 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
        )
        GROUP BY sfi.document_version_id
      ) sig ON sig.document_version_id = dv.id
-     WHERE d.task_item_id IN (${placeholders})
-     ORDER BY d.task_item_id ASC, d.id DESC`,
+     WHERE ti.id IN (${placeholders})
+     ORDER BY dv.task_item_id ASC, dv.id DESC`,
     taskItemIds
   );
   return rows;
@@ -575,27 +567,25 @@ export const getUserTaskItemParticipationSummary = async (pool, userId, taskItem
        MAX(participation.has_past_signature) AS has_past_signature
      FROM (
        SELECT
-         d.task_item_id,
+         dv.task_item_id,
          CASE WHEN fr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_fill,
          0 AS has_past_signature
-       FROM documents d
-       INNER JOIN document_versions dv ON dv.document_id = d.id
+       FROM document_versions dv
        INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
        INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-       WHERE d.task_item_id IN (${placeholders})
+       WHERE dv.task_item_id IN (${placeholders})
          AND fr.assigned_person_id = ?
 
        UNION ALL
 
        SELECT
-         d.task_item_id,
+         dv.task_item_id,
          0 AS has_past_fill,
          CASE WHEN sr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_signature
-       FROM documents d
-       INNER JOIN document_versions dv ON dv.document_id = d.id
+       FROM document_versions dv
        INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
        INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-       WHERE d.task_item_id IN (${placeholders})
+       WHERE dv.task_item_id IN (${placeholders})
          AND sr.assigned_person_id = ?
      ) participation
      GROUP BY participation.task_item_id`,
@@ -670,16 +660,20 @@ export const getAccessibleTaskItemDocumentForUser = async (
     return null;
   }
 
+  // EL FILTRO POR DOCUMENTO SE RETIRO (2026-08-23), y llevaba tiempo sin filtrar nada. Era
+  // `AND d.id = ?` sobre una relacion 1:1 impuesta por indice: un entregable tenia como mucho un
+  // documento, asi que el filtro solo podia devolver la MISMA fila o ninguna, y esto ultimo unicamente
+  // si el cliente mandaba un id que no era el suyo. Con la tabla retirada, el documento ES el
+  // entregable, y el entregable ya viene en la ruta.
+  //
+  // El parametro se sigue aceptando y se ignora: cinco endpoints lo reciben del cliente y romper
+  // su firma no aporta nada.
   const params = [taskItemId];
-  const documentFilter = documentId ? "AND d.id = ?" : "";
-  if (documentId) {
-    params.push(Number(documentId));
-  }
 
   const [rows] = await pool.query(
     `SELECT
-       d.id AS document_id,
-       d.task_item_id,
+       ti.id AS document_id,
+       ti.id AS task_item_id,
        ti.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
        ti.document_status,
@@ -691,26 +685,21 @@ export const getAccessibleTaskItemDocumentForUser = async (
        (
          SELECT COUNT(*)
          FROM document_versions dv_seq
-         WHERE dv_seq.document_id = d.id
+         WHERE dv_seq.task_item_id = ti.id
            AND dv_seq.id <= dv.id
        ) AS document_version_sequence
-     FROM documents d
-     -- El JOIN con el entregable es nuevo (2026-08-23): origin_unit_id y document_status se
-     -- mudaron alli desde documents, que es una cascara 1:1. En el paso 6b desaparece la vuelta:
-     -- estas consultas arrancaran directamente del entregable.
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     FROM task_items ti
      LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
-     INNER JOIN document_versions dv ON dv.document_id = d.id
+     INNER JOIN document_versions dv ON dv.task_item_id = ti.id
      INNER JOIN (
-       SELECT document_id, MAX(version) AS max_version
+       SELECT task_item_id, MAX(version) AS max_version
        FROM document_versions
-       GROUP BY document_id
+       GROUP BY task_item_id
      ) latest
-       ON latest.document_id = dv.document_id
+       ON latest.task_item_id = dv.task_item_id
       AND latest.max_version = dv.version
-     WHERE d.task_item_id = ?
-       ${documentFilter}
-     ORDER BY d.id DESC`,
+     WHERE ti.id = ?
+     ORDER BY dv.id DESC`,
     params
   );
 
@@ -740,14 +729,13 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
        sr.responded_at,
        srs.name AS status_name,
        sfs.step_order,       tar_dl.display_name AS template_artifact_name,
-       d.id AS document_id,
+       ti.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version
      FROM signature_requests sr
      INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
-     INNER JOIN documents d ON d.id = dv.document_id
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
@@ -785,14 +773,13 @@ export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, docu
        srs.name AS status_name,
        sfs.step_order,       c.name AS cargo_name,
        tar_dl.display_name AS template_artifact_name,
-       d.id AS document_id,
+       ti.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version,
        TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name
      FROM signature_flow_instances sfi
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
-     INNER JOIN documents d ON d.id = dv.document_id
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
@@ -834,12 +821,11 @@ export const getSignatureWorkflowStepsForDocumentVersions = async (pool, documen
          COALESCE(
            (
              SELECT sft.id
-             FROM documents d2
-             INNER JOIN task_items ti2 ON ti2.id = d2.task_item_id
+             FROM task_items ti2
              INNER JOIN signature_flow_templates sft
                ON sft.process_definition_template_id = ti2.process_definition_template_id
               AND sft.is_active = 1
-             WHERE d2.id = dv.document_id
+             WHERE ti2.id = dv.task_item_id
              ORDER BY sft.id DESC
              LIMIT 1
            ),
@@ -870,15 +856,14 @@ export const getUserPendingFillRequestsForDefinition = async (pool, userId, defi
        fr.status AS status_name,
        ffs.step_order,
        tar_dl.display_name AS template_artifact_name,
-       d.id AS document_id,
+       ti.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version
      FROM fill_requests fr
      INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
      INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
      INNER JOIN document_versions dv ON dv.id = dff.document_version_id
-     INNER JOIN documents d ON d.id = dv.document_id
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id

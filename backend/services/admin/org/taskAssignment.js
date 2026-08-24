@@ -444,7 +444,7 @@ export default class TaskAssignmentService {
     const [rows] = await connection.query(
       `SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id,
               up.unit_id, c.name AS cargo_name, u.name AS unit_name,
-              EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id) AS started
+              EXISTS (SELECT 1 FROM document_versions dv WHERE dv.task_item_id = ti.id) AS started
          FROM task_items ti
          LEFT JOIN unit_positions up ON up.id = ti.responsible_position_id
          LEFT JOIN units u ON u.id = up.unit_id
@@ -549,7 +549,7 @@ export default class TaskAssignmentService {
               -- El estado del DOCUMENTO, que desde el 2026-08-23 vive en el propio entregable.
               ti.document_status AS status,
               up.unit_id, u.name AS unit_name, c.name AS cargo_name,
-              EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id) AS started
+              EXISTS (SELECT 1 FROM document_versions dv WHERE dv.task_item_id = ti.id) AS started
          FROM task_items ti
          INNER JOIN unit_positions up ON up.id = ti.responsible_position_id
          INNER JOIN units u ON u.id = up.unit_id

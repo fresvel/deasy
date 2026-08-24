@@ -420,9 +420,9 @@ export const persistSignatureWorkflowResult = async ({ context, result }) => {
 // una copia del primero que sólo refrescaba uno de los cuatro caminos de relevo. La consulta vivía
 // en el controller.
 //
-// `documents d` se conserva en el JOIN aunque ya no se lea ninguna de sus columnas: es el eslabón
-// que une la versión con su entregable (`dv.document_id` -> `d.task_item_id`), y sin él no hay
-// forma de llegar a `task_items`.
+// La versión cuelga DIRECTAMENTE del entregable desde el 2026-08-23: la tabla `documents` que había
+// en medio era una cascara 1:1 sin ni una columna propia, y se retiró con ella el JOIN que hacía
+// falta para saltarla.
 export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => {
   if (!pool) {
     throw new Error("La conexión a PostgreSQL no está disponible.");
@@ -430,8 +430,7 @@ export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => 
   const [rows] = await pool.query(
     `SELECT dv.id
      FROM document_versions dv
-     INNER JOIN documents d ON d.id = dv.document_id
-     LEFT JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
      LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id

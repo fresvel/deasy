@@ -10,7 +10,6 @@ const ADMIN_TABLE_RESOURCE_MAP = {
   document_fill_flows: "fill_flows",
   document_signatures: "signature_flows",
   document_versions: "documents",
-  documents: "documents",
   fill_flow_steps: "fill_flows",
   fill_flow_templates: "fill_flows",
   fill_requests: "fill_flows",
@@ -63,7 +62,6 @@ const MANAGEMENT_RESOURCES = [
   "process_definitions",
   "process_execution",
   "templates",
-  "documents",
   "fill_flows",
   "signature_flows",
   "contracts"

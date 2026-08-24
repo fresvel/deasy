@@ -124,8 +124,18 @@ test("el documento se materializa SIN columna de propietario", async () => {
   });
   const [fila] = await getTaskItemsForDocumentMaterialization(connection, 10);
   await ensureDocumentForTaskItem(connection, fila).catch(() => {});
-  const escrituras = connection.queries.filter((q) => /INSERT INTO documents|UPDATE documents/i.test(q.sql));
-  assert.ok(escrituras.length, "la materialización debe escribir el documento");
+  // La tabla `documents` desapareció el 2026-08-23 (paso 6b): materializar escribe ahora la unidad
+  // de origen en el ENTREGABLE y crea la primera VERSIÓN, que cuelga de él directamente.
+  const escrituras = connection.queries.filter((q) => /INSERT INTO|UPDATE /i.test(q.sql));
+  assert.ok(escrituras.length, "la materialización debe escribir algo");
+  assert.ok(
+    escrituras.some((q) => /INSERT INTO document_versions/i.test(q.sql)),
+    "debe crear la versión inicial",
+  );
+  assert.ok(
+    !connection.queries.some((q) => /\bdocuments\b/i.test(q.sql)),
+    "ha vuelto la tabla intermedia `documents`",
+  );
   for (const q of escrituras) {
     assert.ok(
       !/owner_person_id/i.test(q.sql),

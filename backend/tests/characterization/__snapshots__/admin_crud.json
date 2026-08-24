@@ -29,12 +29,6 @@
       "message": "Datos incompletos: Nombre"
     }
   },
-  "create_error_documento_sin_item": {
-    "status": 400,
-    "body": {
-      "message": "Selecciona el item de tarea del documento."
-    }
-  },
   "create_error_regla_sin_configuracion": {
     "status": 400,
     "body": {
@@ -76,18 +70,6 @@
     "body": {
       "id": "<normalized>",
       "name": "Cargo caracterización (renombrado)"
-    }
-  },
-  "graft_documents_create_item_inexistente": {
-    "status": 400,
-    "body": {
-      "message": "El item de tarea seleccionado no existe."
-    }
-  },
-  "graft_documents_update_task_item_inmutable": {
-    "status": 400,
-    "body": {
-      "message": "No se puede cambiar el item de tarea asociado de un documento."
     }
   },
   "graft_pdv_create_activa_rechazada": {
@@ -300,7 +282,6 @@
     "count": 1,
     "itemKeys": [
       "created_at",
-      "document_id",
       "final_file_path",
       "format",
       "id",
@@ -308,20 +289,10 @@
       "payload_object_path",
       "render_engine",
       "status",
+      "task_item_id",
       "template_artifact_id",
       "version",
       "working_file_path"
-    ]
-  },
-  "list_documents": {
-    "status": 200,
-    "isArray": true,
-    "count": 1,
-    "itemKeys": [
-      "created_at",
-      "id",
-      "task_item_id",
-      "updated_at"
     ]
   },
   "list_permissions": {

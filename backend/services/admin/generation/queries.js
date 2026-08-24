@@ -158,10 +158,9 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
   const [rows] = await connection.query(
     `SELECT
        dv.id AS document_version_id,
-       dv.document_id,
+       dv.task_item_id,
        dv.status AS document_version_status,
        ti.document_status,
-       d.task_item_id,
        ti.process_definition_template_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
        ti.responsible_position_id AS task_item_responsible_position_id,
@@ -169,8 +168,7 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
        COALESCE(ti.target_unit_id, up_item.unit_id, t.scope_unit_id) AS scope_unit_id,
        COALESCE(u_target.unit_type_id, u_item.unit_type_id, u_task_scope.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
-     INNER JOIN documents d ON d.id = dv.document_id
-     LEFT JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN unit_positions up_item ON up_item.id = ti.responsible_position_id
      LEFT JOIN units u_item ON u_item.id = up_item.unit_id

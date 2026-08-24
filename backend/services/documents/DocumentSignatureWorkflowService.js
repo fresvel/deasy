@@ -25,7 +25,7 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        dv.id AS document_version_id,
        dv.status AS document_version_status,
        dv.working_file_path,
-       d.task_item_id,
+       dv.task_item_id,
        ti.task_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
        ti.process_definition_template_id,
@@ -35,8 +35,7 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        COALESCE(up_item.unit_id, t.scope_unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task_scope.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
-     INNER JOIN documents d ON d.id = dv.document_id
-     LEFT JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      LEFT JOIN template_artifacts tar ON tar.id = dv.template_artifact_id
