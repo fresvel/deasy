@@ -3,9 +3,12 @@
 // solo usa this.pool + una lectura generica del motor (getByKeys), inyectada. SqlAdminService
 // mantiene delegadores finos con la misma firma, asi el controller y los grafts de create()/update()
 // (que llaman this.wouldCreateUnitCycle / this.assertUnitHeadAllowed) no se tocan.
-import { isUniqueViolation, isForeignKeyViolation } from "../../../errors/sqlErrors.js";
-import { conflict } from "../../../errors/HttpError.js";
-import { slugify } from "../kernel/primitives.js";
+// `isForeignKeyViolation` se importaba para traducir el fallo del borrado de un puesto a un mensaje
+// amable. Ya no hace falta: desde el 2026-08-23 se PREGUNTA antes en vez de intentar y traducir, asi
+// que el mensaje puede decir cuantos y de que en vez de «esta referenciado».
+import { isUniqueViolation } from "../../../errors/sqlErrors.js";
+import { conflict, notFound } from "../../../errors/HttpError.js";
+import { slugify, normalizeNumericId } from "../kernel/primitives.js";
 
 export default class OrgStructureService {
   constructor(pool, { getByKeys } = {}) {
@@ -305,39 +308,82 @@ export default class OrgStructureService {
   }
 
 
-  // Elimina un puesto y sus ocupaciones (transacción). Antes limpia los role_assignments derivados de esas
-  // ocupaciones (FK derived_from_assignment_id) y sus relation_types. Si el puesto está referenciado por
-  // vacantes/contratos/reglas, se rechaza con mensaje claro (mejor desactivarlo).
+  // LAS OCHO COSAS QUE PUEDEN DEPENDER DE UN PUESTO. La lista se escribe una vez y se usa para
+  // decidir Y para explicar, que es lo que impide que se queden desincronizadas: el mensaje que ve
+  // el usuario sale de la misma consulta que toma la decision.
+  //
+  // Eran TRES cuando se escribio el mensaje viejo («vacantes, contratos o reglas»), y hoy son ocho:
+  // dos las añadio la reordenacion del entregable del 2026-08-23 —`task_items.responsible_position_id`,
+  // que ademas es obligatorio, y `task_item_tenures.position_id`— y otras tres estaban desde antes
+  // sin nombrarse.
+  static DEPENDENCIAS_DE_UN_PUESTO = [
+    ["position_assignments", "position_id", "ocupacion", "ocupaciones"],
+    ["task_items", "responsible_position_id", "entregable", "entregables"],
+    ["task_item_tenures", "position_id", "tenencia", "tenencias"],
+    ["vacancies", "position_id", "vacante", "vacantes"],
+    ["contracts", "position_id", "contrato", "contratos"],
+    ["process_target_rules", "position_id", "regla de proceso", "reglas de proceso"],
+    ["fill_flow_steps", "position_id", "paso de entrega", "pasos de entrega"],
+    ["signature_flow_steps", "position_id", "paso de firma", "pasos de firma"],
+  ];
+
+  // Elimina un puesto SOLO si esta virgen. Si algo depende de el, se rechaza nombrando QUE.
+  //
+  // ⚠️ ESTE METODO ESTUVO MUERTO AL 100%, y conviene saber por que antes de tocarlo. Empezaba con un
+  // `DELETE rart FROM ... INNER JOIN ...`, sintaxis multi-tabla de MySQL que PostgreSQL rechaza, asi
+  // que **cualquier** llamada respondia con un error de sintaxis — incluso la de un puesto
+  // inexistente—. Es la regla 5 del metodo: el SQL no lo valida nadie hasta que se ejecuta esa rama,
+  // y este endpoint no tenia contrato HTTP que lo ejecutara.
+  //
+  // Daño colateral que eso tapaba: habia un `catch` que traducia la violacion de clave foranea al
+  // mensaje amable «desactivalo en su lugar». Como el error de sintaxis saltaba ANTES, ese mensaje
+  // no lo vio nunca nadie.
+  //
+  // Y BORRABA HISTORIA: arrastraba `position_assignments` y los roles derivados. Eso contradice la
+  // decision escrita en `docs/planes/plan_data/acceso-al-entregable.md` §F-2 — «un puesto no debe
+  // poder borrarse si tiene historia: se desactiva, y `position_assignments` no se borra nunca en
+  // ese camino»—. Los tres DELETE en cascada se retiraron: un puesto virgen no tiene ocupaciones, y
+  // sin ocupaciones no hay roles derivados que limpiar (cuelgan de `derived_from_assignment_id`).
+  //
+  // El camino para un puesto EN USO es desactivarlo: `PUT /admin/sql/units/positions/:id` con
+  // `is_active`, que ya existe y funciona.
   async removeUnitPosition(positionId) {
     this.ensurePool();
-    const pid = Number(positionId);
-    const connection = await this.pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      await connection.query(
-        `DELETE rart FROM role_assignment_relation_types rart
-           INNER JOIN role_assignments ra ON ra.id = rart.role_assignment_id
-          WHERE ra.derived_from_assignment_id IN (SELECT id FROM position_assignments WHERE position_id = ?)`,
-        [pid]
-      );
-      await connection.query(
-        `DELETE FROM role_assignments
-          WHERE derived_from_assignment_id IN (SELECT id FROM position_assignments WHERE position_id = ?)`,
-        [pid]
-      );
-      await connection.query("DELETE FROM position_assignments WHERE position_id = ?", [pid]);
-      await connection.query("DELETE FROM unit_positions WHERE id = ?", [pid]);
-      await connection.commit();
-      return { id: pid };
-    } catch (error) {
-      await connection.rollback();
-      if (isForeignKeyViolation(error)) {
-        throw conflict("No se puede eliminar: el puesto está referenciado (vacantes, contratos o reglas). Desactívalo en su lugar.");
-      }
-      throw error;
-    } finally {
-      connection.release();
+    const pid = normalizeNumericId(positionId);
+    if (!pid) {
+      throw new Error("Puesto invalido.");
     }
+
+    const [existe] = await this.pool.query("SELECT id FROM unit_positions WHERE id = ? LIMIT 1", [pid]);
+    if (!existe.length) {
+      throw notFound("El puesto no existe.");
+    }
+
+    // Se pregunta ANTES en vez de intentar y traducir el fallo: asi el mensaje puede decir CUANTOS y
+    // DE QUE, que es lo unico accionable. «Esta referenciado» no le dice a nadie que hacer.
+    const bloqueos = [];
+    let total = 0;
+    for (const [tabla, columna, singular, plural] of OrgStructureService.DEPENDENCIAS_DE_UN_PUESTO) {
+      const [filas] = await this.pool.query(
+        `SELECT COUNT(*) AS n FROM ${tabla} WHERE ${columna} = ?`,
+        [pid]
+      );
+      const n = Number(filas?.[0]?.n || 0);
+      if (n > 0) {
+        bloqueos.push(`${n} ${n === 1 ? singular : plural}`);
+        total += n;
+      }
+    }
+
+    if (bloqueos.length) {
+      throw conflict(
+        `No se puede eliminar: ${bloqueos.join(", ")} ${total === 1 ? "depende" : "dependen"} ` +
+        "de este puesto. Desactivalo en su lugar."
+      );
+    }
+
+    await this.pool.query("DELETE FROM unit_positions WHERE id = ?", [pid]);
+    return { id: pid };
   }
 
 

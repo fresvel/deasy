@@ -692,7 +692,7 @@ antes del frente 10**: sin compilador, la pieza que da el valor no existe.
 
 ---
 
-## Frente 9 · La capa de datos — 🟡 · **D7 a 25 de 32** · vive en [`plan_data/`](./plan_data/)
+## Frente 9 · La capa de datos — 🟡 · **D7 a 26 de 33** · vive en [`plan_data/`](./plan_data/)
 
 **Tiene carpeta propia** —como el 1 y el 4— porque trae su propia referencia medida del esquema, y desde
 el 2026-08-14 **también su `§0 · Control de ejecución`**. Nació el
@@ -702,7 +702,7 @@ problemas que ningún frente de aquí cubría. **Las tareas están allí**, no e
 
 | | Fase | Por qué |
 |---|---|---|
-| **D7** 🟡 | **Auditoría funcional del modelo** — **25 de 32** (2026-08-23) | Lo que el **frente 0 inventarió y no llegó a validar**, recogido aquí el 2026-08-14 al archivarlo: la edición `retired` que sigue enlazada, la invariante de `published` que descansa en un razonamiento —`launch.js` **no mira `lifecycle_state`**—, y las columnas `*_id` sin FK, dos de ellas por **descuido de tipo** (`BIGINT` contra `persons.id INT`). **Va la primera pese al número**: es la única fase que no es refactor, y sus dos primeras tareas son decisiones del dueño |
+| **D7** 🟡 | **Auditoría funcional del modelo** — **26 de 33** (2026-08-23) | Lo que el **frente 0 inventarió y no llegó a validar**, recogido aquí el 2026-08-14 al archivarlo: la edición `retired` que sigue enlazada, la invariante de `published` que descansa en un razonamiento —`launch.js` **no mira `lifecycle_state`**—, y las columnas `*_id` sin FK, dos de ellas por **descuido de tipo** (`BIGINT` contra `persons.id INT`). **Va la primera pese al número**: es la única fase que no es refactor, y sus dos primeras tareas son decisiones del dueño |
 | **D1** | Un solo `withTransaction` | **20 `beginTransaction` a mano en 11 ficheros**, cada uno con su ciclo. El helper correcto ya existe (`crud/tableHooks.js:65-92`) y solo lo usa el CRUD admin |
 | **D2** 🟡 | Un vocabulario de estados — **remedida el 2026-08-23 y muy encogida** | Era «5 sitios con 3 alfabetos» y **su efecto peligroso ya está cerrado**: `task_items.status` se retiró y el relevo dejó de mirarlo. Queda **un** vocabulario (`tasks.status`) repetido en **3 sitios** y sin `CHECK` en la base — que es lo mismo que pide `TD7-e`. Las dos se han convertido en una |
 | **D3** | Migraciones versionadas | El esquema se reaplica entero en cada arranque (`postgres_initializer.js:23-40`). Idempotente para crear, **incapaz de alterar**. Es el mayor riesgo operativo de la capa |
