@@ -587,3 +587,79 @@ decide D3. Si las solicitudes siguieran al relevo, el sucesor sería el titular 
 desatascar solo. Se resuelve por la vía del jefe **a propósito**: una solicitud de FIRMA no debería
 heredarse —le pediría al sucesor que dé conformidad a algo que él no elaboró—, así que el acoplamiento
 no se rompe automatizando, se rompe con una decisión humana.
+
+## D2 · Qué pasa cuando se DESACTIVA un puesto
+
+### Lo que pasa hoy: nada
+
+Verificado ejecutandolo: se desactiva el puesto y sus entregables siguen igual —mismo puesto, mismo
+responsable, ninguna tenencia se mueve—. **No hay ningun trigger sobre `unit_positions`.** Y queda la
+huella de que se penso: el vocabulario de causas incluye **`position_deactivated`** y **nadie lo
+escribe jamas**. Un nombre reservado para un camino que no existe.
+
+Borrar es otra cosa: **la base lo rechaza** si el puesto tiene entregables o gente. Bien —evita
+entregables apuntando al vacio— pero es un «no» seco de PostgreSQL, no una explicacion.
+
+### Por que importa mas de lo que parece
+
+Desactivar un puesto NO es quedarse sin ocupante:
+
+| | Que significa | Que hace el modelo |
+|---|---|---|
+| Sin ocupante | la silla sigue, vacia | ✅ el entregable queda huerfano CON FECHA, y quien llegue lo recoge |
+| Silla desactivada | la silla deja de existir | ❌ nada — **y no va a llegar nadie nunca** |
+
+Un entregable huerfano por vacante espera a alguien que va a venir. Uno anclado a un puesto
+desactivado **espera a alguien que no existe**. Y desde el 2026-08-23 el puesto responsable es
+obligatorio, asi que el ancla apunta a algo que la institucion ya no reconoce.
+
+El modelo **no dice que sustituye a un puesto desactivado** —no hay «se fusiono con» ni «sus
+funciones pasan a»—, asi que reasignar solo seria adivinar.
+
+### Decisión
+
+**Se permite desactivar, y se avisa al jefe de la unidad.** Ni se bloquea la reorganizacion ni se
+adivina un sucesor.
+
+Y una consecuencia que se deriva de D1: **el marcado no alcanza a todo**.
+
+| Estado del entregable | Que le pasa al desactivar su puesto |
+|---|---|
+| Antes de la fase de firma | queda huerfano con causa `position_deactivated` — el nombre que llevaba años sin emisor |
+| En fase de firma | **no se toca la tenencia** (contradiria D1); solo se LISTA para el jefe |
+| Cerrado | nada: no queda trabajo |
+
+## D3 · Que pasa con las SOLICITUDES pendientes en un relevo
+
+### Lo que pasa hoy: el sucesor no puede trabajar
+
+El guard es literal: *«No puedes operar una solicitud de entrega asignada a otro usuario.»*
+(`assertFillActionAllowed`). Asi que tras un relevo el entregable es de Maria, la solicitud sigue a
+nombre de Juan, y **Maria recibe un 403**. El entregable cambia de manos pero el trabajo no.
+
+### ⚠️ Correccion de lo que se dijo en D1
+
+Se afirmo que «una solicitud de FIRMA no deberia heredarse porque le pediria al sucesor que de
+conformidad a algo que el no elaboro». **Es falso en el caso general.** Una plantilla *official* solo
+puede autorar el firmante de DOS maneras, y las dos son POSICIONALES:
+
+| Resolutor | ¿Heredar es correcto? |
+|---|---|
+| `cargo_in_scope` | **Si** — firma quien ocupe el cargo |
+| `task_assignee` | **Si** — y tras el relevo ese ES el sucesor |
+| `specific_person` | **No** — pero solo lo autoran plantillas *ad_hoc* |
+
+La obligacion de firmar es del PUESTO. Lo que no se hereda es una firma **ya estampada**, y eso no
+esta en juego: una solicitud pendiente no ha estampado nada.
+
+### Decisión
+
+**Las solicitudes SIGUEN al nuevo responsable**, con dos acotaciones:
+
+1. **Excepcion `specific_person`**: un paso definido para una persona concreta no se toca.
+2. **Alcance**: solo se mueve lo que estaba a nombre de quien se fue POR SER EL RESPONSABLE del
+   entregable. Un paso de firma definido para un cargo DISTINTO no tiene nada que ver con el relevo.
+
+Nota: ya existe el mecanismo alternativo —una solicitud sin dueño y marcada `is_manual` la reclama
+el primero que la toma, y esta probado en la suite—. Se descarta a proposito: deja el trabajo sin
+bandeja mientras nadie lo reclame.
