@@ -53,7 +53,16 @@ dueño, y si esperan detrás de D1–D6 esperan meses mientras el efecto sigue v
 >
 > `⬜` sin empezar · `🟡` a medias · `⛔` bloqueada (con la causa escrita) · `✅` cerrada (con evidencia y fecha)
 
-**Estado: 0 de 7 fases · 12 de 22 tareas de D7.**
+**Estado (2026-08-24): 0 de 7 fases cerradas · D7 a 33 de 37 tareas.**
+
+D7 no está cerrada porque **sus cuatro tareas restantes son decisiones del dueño**, no trabajo
+técnico: `TD7-a`, `TD7-b`, `TD7-e` y `TD7-k2`. Ninguna se puede avanzar sin respuesta. Todo lo
+mecánico de D7 está hecho y verificado sobre `develop`.
+
+**El modelo completo, explicado sin jerga y verificado contra la base en ejecución**, está en
+[esta página](https://claude.ai/code/artifact/b51be421-a80f-4dac-b6a6-d28d9b2d5f2e) — 38 tablas con
+todos sus campos, 14 diagramas y los cinco puntos abiertos. Es el documento con el que auditar el
+modelo tabla por tabla.
 
 | Tarea | Fase | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|---|---|---|---|

@@ -34,7 +34,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | Frente | Qué entrega | Estado | Control detallado | Evidencia · fecha |
 |---|---|---|---|---|
 | **0** · Modelo de dominio | El modelo deja de contradecirse: cero `document_owner`, la base manda y el YAML se fue | ✅ **9 de 9** | [archivado](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) | `30654db` · medido en base · **2026-08-13** |
-| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **3 abiertos** · 15 cerrados | [`defectos-conocidos/`](./defectos-conocidos/) — **15 de 25 tareas** | 1.17 cerrado · **2026-08-14** |
+| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **3 abiertos** (1.3, 1.7, 1.19) · **1.10 SUPERSEDIDO** por el modelo de tenencias | [`defectos-conocidos/`](./defectos-conocidos/) — **22 ✅ · 8 ⬜ · 2 ⛔ de 32 tareas** (recontado 2026-08-24) | 1.17 cerrado · **2026-08-14** |
 | **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ 8 vulnerabilidades | aquí, §Frente 2 | Sonar `:9002` · 2026-08-09 |
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
 | **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 · **el estado está en el sub-plan** (esta columna citaba los «pasos 1-6», numeración muerta que el propio §Frente 4 declara obsoleta) | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
@@ -42,9 +42,88 @@ aquí**; la columna «Control detallado» dice dónde.
 | **6** · Signer | Cerrar los riesgos de la auditoría del microservicio de firma | 🟡 **8 de 12 abiertos** | [`referencia/signer.md`](./referencia/signer.md) | — |
 | **7** · Método e infraestructura | Lo que evita que el resto se degrade: Sonar en CI, barreras de lint, contenedores vacíos | ⬜ | aquí, §Frente 7 | — |
 | **8** · Deuda de volumen | Los ficheros que el plan no registraba, medidos el 2026-08-09 | ⬜ | aquí, §Frente 8 | remedido · 2026-08-13 |
-| **9** · Capa de datos | **Siete fases** sobre el esquema y `config/postgres.js` — y **D7 audita el modelo**, lo que el frente 0 dejó abierto | ⬜ **0 de 7** | [`plan_data/`](./plan_data/) — D7 con **5 tareas** | D7 medido · 2026-08-14 |
+| **9** · Capa de datos | **Siete fases** sobre el esquema y `config/postgres.js` — y **D7 audita el modelo**, lo que el frente 0 dejó abierto | 🟡 **D7 a 33 de 37**; las otras 6 fases ⬜ | [`plan_data/`](./plan_data/) | **2026-08-24** · lo que queda de D7 son **4 decisiones del dueño** |
 | **10** · Compilador documental | Auditar la rama que ya existe, y **heredó el generador de Jinja** (S8) | ⬜ | aquí, §Frente 10 | — |
 | **11** · Editor web de plantillas | **Son dos productos, no uno** | ⬜ | aquí, §Frente 11 | — |
+
+---
+
+## §0.1 · Punto de entrega — 2026-08-24
+
+> **Si eres un agente que acaba de llegar, empieza por aquí.** Esta sección dice dónde está todo hoy,
+> qué se puede tocar en paralelo sin chocar, y qué está esperando una decisión del dueño.
+
+### El árbol, hoy
+
+`develop` está en `bca2fc11`, con **siete commits del frente 9 recién fusionados** por avance rápido
+(sin conflicto posible: la rama iba 0 commits por detrás). Verificado **después** de fusionar, sobre
+la pila A:
+
+`check:imports` **129** · `check:sql-aliases` **438 consultas / 199 ficheros** ·
+`check:sql-comments` **199** · `test:unit` **650/650** · `test:char:run` **301/301** ·
+`gen-dbml --check` **exit 0**.
+
+| Worktree | Rama | Estado |
+|---|---|---|
+| `deasy` | `develop` | Al día. **Es el árbol principal: no se escribe aquí** (regla de entrada del `CLAUDE.md` raíz) |
+| `deasy-puestos` | `fix/puesto-borrado` | **Ya fusionado, 0 pendiente.** Retirable |
+| `develop-frente4` | `feat/frente4` | **0 commits por delante** de `develop` y limpio. No tiene nada que converger |
+
+**Ramas sin worktree que conviene conocer:**
+
+- `feat/nginx-reverse-proxy` figura **+23 por delante**, y **NO se debe fusionar**: es anterior a la
+  migración a PostgreSQL y su diff reintroduce `mariadb_schema.sql`. Comprobado que **su trabajo ya
+  está en `develop` por otra vía** — `nginx/nginx.conf` y `nginx/scripts/generate-self-signed.sh`
+  existen, y el multifirmador con sus zonas de arrastre vive en `MultiSignerPanel.vue` y
+  `FirmarPdf.vue`. Es un fósil: archivarla o borrarla, no integrarla.
+- `develop-fronted`, `develop-frontend`, `merge/nginx-reverse-proxy`, `refactor/auditoria-sonar` y
+  `main` van **0 por delante**: están contenidas en `develop`.
+
+**Pilas de Docker levantadas:** A monta `deasy`, B monta `develop-frente4`, C monta `deasy-puestos`,
+D libre. Recuerda que **la pila vive con su worktree**, no con la sesión.
+
+### Qué se puede tocar en paralelo, y qué no
+
+Dos agentes que trabajen a la vez chocan por una sola cosa: **el modelo de datos**. Todo lo demás es
+separable. Este es el reparto que no colisiona:
+
+| Se puede trabajar en paralelo | Por qué no choca |
+|---|---|
+| **Frente 3** · partir `HomeView.vue` (5 130 L) y `FirmarPdf.vue` | Componentes Vue. No tocan esquema ni servicios de datos |
+| **Frente 4** · sistema de diseño, 3.ª vuelta | Sólo CSS y plantillas Vue |
+| **Frente 2** · las 8 vulnerabilidades de Sonar | Puntuales y localizadas |
+| **Frente 6** · el microservicio de firma (8 de 12 abiertos) | Es Python, otro repo lógico |
+| **Frente 8** · deuda de volumen | Extracciones mecánicas |
+| **Defectos 1.3 y 1.7** | Uno es un servicio, el otro un bug visual |
+
+| NO se toca en paralelo | Por qué |
+|---|---|
+| **Frente 9 · D7** | Es el modelo. Cuatro decisiones del dueño pendientes, y cada una cambia el esquema |
+| **Frente 9 · D1…D6** | `withTransaction`, vocabulario de estados, migraciones, repositorios, dialecto, validación. Todas tocan la capa que D7 está definiendo |
+| **Defecto 1.19** (`signers`) | Es esquema de firma. Sus tareas `-c` y `-e` están ⛔ |
+| **Frentes 10 y 11** | Compilador y editor de plantillas. Dependen de cómo queden las ediciones (`TD7-a`, `TD7-b`) |
+
+**La regla operativa que se deduce:** quien trabaje el modelo va solo; quien trabaje presentación,
+complejidad o el firmante puede ir en paralelo sin coordinación, cada uno **en su worktree y su pila**.
+
+### Lo que está esperando una decisión del dueño
+
+Son **cuatro de D7** más una del frente 4. Ninguna es trabajo técnico pendiente; son preguntas:
+
+| | Pregunta |
+|---|---|
+| `TD7-a` | Al publicar una edición nueva se retira la anterior y **las configuraciones activas se quedan apuntando a la retirada, en silencio**. ¿Avisar, impedir publicar, o dejarlo? *(Reproducido y medido; el análisis está en la página del modelo.)* |
+| `TD7-b` | Un proceso puede lanzarse con una edición todavía en borrador, y `launch.js` **no mira `lifecycle_state`**. ¿Lo rechaza, o la invariante se sostiene por otro sitio? |
+| `TD7-e` | Los estados de documento, ronda y tarea **no están declarados en la base**. ¿Cuáles bajan, y qué estados de `tasks` son terminales? |
+| `TD7-k2` | Desactivar un puesto **no cierra su ocupación**. ¿Debe cerrarla? |
+
+### El instrumento para auditar el modelo
+
+**[La página del modelo proceso→documento](https://claude.ai/code/artifact/b51be421-a80f-4dac-b6a6-d28d9b2d5f2e)**
+recorre las 38 tablas de la cadena con todos sus campos, en 14 diagramas, y termina con los cinco
+puntos abiertos. Sus campos y relaciones salen del **catálogo de PostgreSQL en ejecución** (382
+columnas, 147 referencias), no del código ni de esta documentación — así que sirve para contrastar
+**este** plan, no sólo el esquema.
 
 > **Un `—` en la última columna no es un descuido: es que ese frente no se ha medido desde que se
 > escribió.** Antes de empezarlo, remídelo — el frente 1 se remidió al abrirlo y **una de sus cinco
@@ -692,7 +771,7 @@ antes del frente 10**: sin compilador, la pieza que da el valor no existe.
 
 ---
 
-## Frente 9 · La capa de datos — 🟡 · **D7 a 26 de 33** · vive en [`plan_data/`](./plan_data/)
+## Frente 9 · La capa de datos — 🟡 · **D7 a 33 de 37** · vive en [`plan_data/`](./plan_data/)
 
 **Tiene carpeta propia** —como el 1 y el 4— porque trae su propia referencia medida del esquema, y desde
 el 2026-08-14 **también su `§0 · Control de ejecución`**. Nació el
@@ -722,6 +801,33 @@ quedó en tres piezas sin copias: **qué se debe** (`task_items`), **quién lo d
 tres tablas (`task_assignments`, `task_item_handovers`, `documents`) y seis columnas. Nacieron dos
 gates —`check:sql-comments` y `check:sql-aliases`— porque el SQL de este backend **no lo valida nadie
 hasta que se ejecuta esa rama**, y los dos cazaron defectos reales durante la propia sesión.
+
+**Estado del 2026-08-24 — D7 a 33 de 37, y lo que queda NO es trabajo técnico.** Se cerró la rama
+entera del censo de referencias y la limpieza del esquema:
+
+| | Qué se cerró | Lo que no se esperaba |
+|---|---|---|
+| `TD7-k` | Eliminar un puesto deja de borrar su historia | El endpoint estaba **muerto al 100 %**: sintaxis multi-tabla de MySQL, cualquier llamada daba 400 |
+| `TD7-c` | Censo de columnas sin comprobar, clasificado | Hicieron falta **cinco** categorías, no tres: **3 de las 18 no son referencias** (una generada, un UUID, un id polimórfico) |
+| `TD7-d` | Los dos `BIGINT` contra `persons.id INT` | No es que faltara la restricción: **con ese tipo no se podía declarar**. `performed_by_user_id` → `performed_by_person_id`, fósil de la tabla `users` |
+| `TD7-s` | El esquema DESCRIBE la forma y deja de migrar | Eran **20 operaciones en 11 sentencias**, todas no-op sobre una base nueva, y su precio era `persons.token` declarada **dos veces y en contradicción**. Prueba de que la forma no cambia: `gen-dbml --check` en **exit 0** |
+| `TD7-c2` | `chat_notifications` gana sus dos FKs internas | Era la **única tabla del chat sin ninguna** |
+| `TD7-c4` | El hecho duplicado en `chat_notifications` | El par polimórfico se llenaba con **constantes** y nadie lo leía |
+| `TD7-c3` | **Decisión del dueño**: las «FKs lógicas» al núcleo se comprueban | La premisa era **falsa**: `ChatAuthorizationService` ya resolvía permisos con `INNER JOIN` contra `units`/`processes`/`process_definition_versions`. Y son **once**, no diez — el censo no vio `created_by` por no acabar en `_id` |
+| `TD7-c5` | `dossiers.cedula` retirada | **No era redundante: MENTÍA.** Con la ficha en `0000000001`, el expediente seguía devolviendo `1122334455` |
+
+Medido sobre `develop` tras fusionar: `check:imports` **129** · `check:sql-aliases` **438/199** ·
+`check:sql-comments` **199** · `test:unit` **650/650** · `test:char:run` **301/301** ·
+`gen-dbml --check` **exit 0**.
+
+**Lo que queda de D7 son cuatro decisiones tuyas**, no tareas: `TD7-a` (edición retirada enlazada),
+`TD7-b` (la invariante de `published`), `TD7-e` (qué estados bajan a la base) y `TD7-k2` (si
+desactivar un puesto cierra su ocupación). Ninguna se puede avanzar sin respuesta.
+
+**El modelo entero, explicado y verificado**, está en
+[esta página](https://claude.ai/code/artifact/b51be421-a80f-4dac-b6a6-d28d9b2d5f2e): las 38 tablas de
+la cadena proceso→documento con todos sus campos, 14 diagramas, y los cinco puntos abiertos. Los
+campos salen del catálogo de PostgreSQL en ejecución (382 columnas, 147 referencias), no del código.
 
 ---
 

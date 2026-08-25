@@ -177,10 +177,26 @@ retirarlo dejaba no conforme a la única implementación correcta del backend.
 
 ---
 
-## §5 · Defecto 1.10 — la única bitácora de auditoría la puentea el camino automático
+## §5 · Defecto 1.10 — ✅ **SUPERSEDIDO por el modelo de tenencias** (2026-08-24)
 
-**El más grande de los cinco, y el que peor está descrito en el maestro**: son **tres** caminos, no
-uno. Todo lo de abajo se remidió el **2026-08-14**.
+> ⚠️ **TODO LO QUE SIGUE DESCRIBE UNA TABLA QUE YA NO EXISTE.** `task_item_handovers` se retiró el
+> **2026-08-23** (tarea `TD7-n` del frente 9) y su columna `trigger_kind` se convirtió en
+> `task_item_tenures.opened_by`. Las seis tareas `T1.10-a…f` están cerradas.
+>
+> **Por qué el defecto muere en vez de arreglarse.** El 1.10 decía que la única bitácora de auditoría
+> la puenteaban los caminos automáticos, y que **nadie la leía** (un `INSERT`, cero `SELECT`). La
+> corrección no fue tapar los puentes: fue cambiar el modelo. Los relevos dejaron de ser **eventos
+> sueltos** que alguien podía olvidarse de registrar y pasaron a ser **periodos con principio y fin**
+> —una fila por turno—, de modo que el registro **no es un efecto secundario del relevo: ES el
+> relevo**. No se puede puentear porque no hay nada que puentear.
+>
+> Y ahora sí se lee: la responsabilidad vigente sale de ahí, y `task_items.assigned_person_id` es
+> una caché que escribe un trigger a partir de esas filas.
+>
+> **Se conserva el texto de abajo** porque documenta los tres caminos de reasignación, que siguen
+> siendo tres y siguen siendo los mismos. Léelo con los nombres nuevos.
+
+**El diagnóstico original, del 2026-08-14** (nombres viejos): son **tres** caminos, no uno.
 
 ### La tabla, y su `CHECK` con dos valores inalcanzables
 
