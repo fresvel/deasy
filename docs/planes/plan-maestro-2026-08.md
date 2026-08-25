@@ -39,12 +39,18 @@ aquí**; la columna «Control detallado» dice dónde.
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
 | **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 · **el estado está en el sub-plan** (esta columna citaba los «pasos 1-6», numeración muerta que el propio §Frente 4 declara obsoleta) | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
 | **5** · Cobertura | El gate no pide 80 % global: pide 80 % **de lo nuevo** | 🟡 F0 ✅ · F1 y F2 ⬜ | [`referencia/cobertura.md`](./referencia/cobertura.md) | — |
-| **6** · Signer | Cerrar los riesgos de la auditoría del microservicio de firma | 🟡 **8 de 12 abiertos** | [`referencia/signer.md`](./referencia/signer.md) | — |
+| **6** · Signer | Cerrar los riesgos de la auditoría del microservicio de firma | 🟡 **3 hechas · 3 planificadas · 1 bloqueada** (recontado 2026-08-24 contra su propio plan; decía «8 de 12») | [`referencia/signer.md`](./referencia/signer.md) | — |
 | **7** · Método e infraestructura | Lo que evita que el resto se degrade: Sonar en CI, barreras de lint, contenedores vacíos | ⬜ | aquí, §Frente 7 | — |
 | **8** · Deuda de volumen | Los ficheros que el plan no registraba, medidos el 2026-08-09 | ⬜ | aquí, §Frente 8 | remedido · 2026-08-13 |
 | **9** · Capa de datos | **Siete fases** sobre el esquema y `config/postgres.js` — y **D7 audita el modelo**, lo que el frente 0 dejó abierto | 🟡 **D7 a 33 de 37**; las otras 6 fases ⬜ | [`plan_data/`](./plan_data/) | **2026-08-24** · lo que queda de D7 son **4 decisiones del dueño** |
-| **10** · Compilador documental | Auditar la rama que ya existe, y **heredó el generador de Jinja** (S8) | ⬜ | aquí, §Frente 10 | — |
+| **10** · Compilador documental | Auditar la rama que ya existe, y **heredó el generador de Jinja** (S8) | ⬜ **el coste subió**: la rama va **1 017 commits por detrás** y toca **57 ficheros**, no 21 | aquí, §Frente 10 | remedido **2026-08-24** |
 | **11** · Editor web de plantillas | **Son dos productos, no uno** | ⬜ | aquí, §Frente 11 | — |
+
+> ⚠️ **Esta tabla se auditó contra el repositorio el 2026-08-24** y cuatro filas eran falsas.
+> Lo medido, fila por fila, está en
+> [`auditoria-repo-2026-08-24.md`](./auditoria-repo-2026-08-24.md). Dos frentes —el **2** y el
+> **5**— **no se pueden verificar hoy** porque su medición caducó: Sonar no está levantado y no hay
+> informes de cobertura generados. Sus filas describen el 2026-08-09, no el presente.
 
 ---
 
@@ -324,7 +330,7 @@ sitio donde hoy hay un color escrito a mano. Y la sesión del 2026-08-09 le aña
 | # | Paso | Estado | Evidencia medida el 2026-08-11 |
 |---|---|---|---|
 | 1 | Fusionar los dos `@layer components` en conflicto | ✅ `63b901e` | Ya no existe `tailwind.css`. Los `@layer components` que quedan son **uno por módulo de familia** y no se solapan; las marcas del corte siguen anotadas en `buttons.css:36` y `auth.css:60` |
-| 2 | Eliminar los componentes muertos y su CSS | ✅ `9ebe307` + `331322d` | CSS total 3 997 → **2 054 L**; `AdminTableManager.css` borrado entero |
+| 2 | Eliminar los componentes muertos y su CSS | ✅ `9ebe307` + `331322d` | CSS total 3 997 → **2 054 L** *(cifra del 2026-08-13, como registro de aquel paso)*. ⚠️ **Remedido el 2026-08-24: hoy son 5 845 L en 18 módulos** — el sistema creció casi al triple desde entonces |
 | 3 | Colapsar los tokens `--deasy-*` / `--brand-*` | ✅ `6e60d74` | **Cero `--deasy-*` vivos.** Las 4 apariciones que quedan en el árbol son **comentarios** de `tokens.css` (`:44`, `:51`, `:52`, `:92`) que explican el colapso. Un solo juego, y `@theme` (`tokens.css:23-40`) registra 16 colores en Tailwind — **hoy son 22**, tras el colapso del 08-12 |
 | 4 | Cerrar el fork `AdminButton.vue` | ✅ **cerrado el 2026-08-14** (tarea F1.3a de la 3.ª vuelta) | El fichero **ya no existe**: 88 L y 11 modificadores fuera. Llevaba 2 regresiones de contraste (3.65:1) y el bug de la variante desconocida. La única mención que queda en el árbol es un comentario en `DossierDocumentActions.vue:94`, que era **su único importador** ~~El fichero **sigue vivo**: `frontend/src/modules/admin/components/ui/AdminButton.vue`. Ver abajo: el alcance es más pequeño de lo que decía el plan, y la razón que daba era falsa |
 | 5 | Migrar los colores hardcodeados | ✅ **cerrado el 2026-08-13** | `647030a` + `2f1a158` dejaron `lint:css` en **0 errores**. Pero el contador ve el CSS, no la app. Ver el desglose abajo |

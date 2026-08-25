@@ -578,7 +578,11 @@ Tres cosas que hay que saber y no son evidentes:
    `overflow-x-auto` heredado basta. Los dos problemas se parecen y no tienen nada que ver; subir el
    número no arregla el segundo.
 
-El gate `check:z-index` lo sostiene con tres señales a techo cero — utilidad numérica en plantilla,
+⚠️ **CORRECCIÓN (2026-08-24): el gate `check:z-index` NO EXISTE.** Se documentó aquí y en el
+`CLAUDE.md` raíz como si estuviera activo, y no está en `frontend/package.json`. La regla es
+correcta y sigue vigente; lo que falta es el gate que la sostenga. Lo que SÍ existen son 17 gates
+del frontend, listados con `pnpm run`. El texto original decía: el gate lo sostiene con tres
+señales a techo cero — utilidad numérica en plantilla,
 `z-index` literal en el CSS propio y `zIndex` literal en JavaScript — y una única excepción
 declarada, que es el fichero que reparte (ver §6.2).
 
@@ -611,7 +615,7 @@ binding es un estilo estático con disfraz de cálculo.
 
 **La única excepción viva es `modalController.js`**, que escribe la altura en línea a propósito
 —porque una altura en línea gana a cualquier clase, y así puede colocar un modal sobre lo que ya
-haya abierto—. Es EL mecanismo, no un parche: ver §5.5. `check:z-index` exime **ese fichero**, no ese
+haya abierto—. Es EL mecanismo, no un parche: ver §5.5. El gate que eximiría **ese fichero**, no ese
 patrón: si aparece un segundo repartidor, salta.
 
 ### 6.3 `<style scoped>`: no queda ninguno, y no vuelvas a meter uno

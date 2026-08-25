@@ -247,7 +247,9 @@ Seis cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba c
    nada**: `AppModalShell` se coloca solo al abrirse y se libera al cerrarse. Hubo cinco niveles
    declarados y duraron dos días — `openProcessWizard()` se llama desde siete sitios a dos
    profundidades, así que cualquier número fijo está mal en algún camino. Lo sostiene
-   `check:z-index` con tres señales a techo cero. Detalle en `frontend/CLAUDE.md` §5.5.
+   ⚠️ **NO hay gate que lo vigile.** `check:z-index` se documentó tres veces y **nunca existió**
+   (auditoría del 2026-08-24). La regla sigue siendo la buena; lo que no hay es quien la haga
+   cumplir. Detalle en `frontend/CLAUDE.md` §5.5. Escribirlo es tarea del frente 7.
 
 **Las reglas completas están en `frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. El plan,
 la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. La primera vuelta
