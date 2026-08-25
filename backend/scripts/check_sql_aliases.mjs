@@ -108,6 +108,16 @@ const declarados = (sql) => {
   for (const m of sql.matchAll(/\)\s*(?:AS\s+)?([a-z_][\w]*)/gi)) {
     if (!NO_SON_ALIAS.has(m[1].toLowerCase())) nombres.add(m[1].toLowerCase());
   }
+  // `unnest(...) WITH ORDINALITY AS alias(col, col)`. El alias va DESPUES de ORDINALITY, asi que el
+  // patron de `) alias` de arriba NO lo ve: se topa con `WITH` y se para ahi. Sin esta linea, una
+  // consulta perfectamente valida se reporta como alias sin declarar (paso el 2026-08-24 con
+  // `backend/scripts/docs/gen-campos-md.mjs`, que desdobla `conkey`/`confkey` en pares).
+  //
+  // Probado por mutacion: con esta linea puesta, un alias huerfano de verdad (`zz.inventado`) SIGUE
+  // reportandose. No ensancha la puerta, le enseña una sintaxis que no conocia.
+  for (const m of sql.matchAll(/\bWITH\s+ORDINALITY\s+(?:AS\s+)?([a-z_][\w]*)/gi)) {
+    nombres.add(m[1].toLowerCase());
+  }
   // CTEs: `WITH x AS (` y `, y AS (`
   for (const m of sql.matchAll(/(?:\bWITH\b|,)\s*([a-z_][\w]*)\s+AS\s*\(/gi)) {
     nombres.add(m[1].toLowerCase());
