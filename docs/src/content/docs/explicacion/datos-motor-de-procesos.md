@@ -19,9 +19,10 @@ flowchart TD
     PDT["process_definition_templates<br/>que documentos produce (+ item_mode)"]
     RUNS["process_runs<br/>EL LANZAMIENTO en un periodo concreto"]
     TSK["tasks<br/>una por (definicion x periodo x unidad)"]
-    ITM["task_items<br/>LOS ENTREGABLES concretos"]
-    DOC["documents"]
-    DVER["document_versions"]
+    ITM["task_items<br/>LOS ENTREGABLES concretos (que se debe)"]
+    TEN["task_item_tenures<br/>QUIEN lo debe: un turno por relevo"]
+    DVER["document_versions<br/>LA RONDA (llenar + firmar)"]
+    DVU["document_version_uploads<br/>cada CORRECCION, con su autor"]
     FILL["document_fill_flows / fill_requests<br/>(entrega)"]
     SIG["signature_flow_instances / signature_requests<br/>(firma)"]
 
@@ -33,10 +34,11 @@ flowchart TD
     PDV --> RUNS
     RUNS --> TSK
     TSK --> ITM
-    ITM --> DOC
-    DOC --> DVER
-    DOC --> FILL
-    DOC --> SIG
+    ITM --> TEN
+    ITM --> DVER
+    DVER --> DVU
+    DVER --> FILL
+    DVER --> SIG
 ```
 
 ## Tabla por tabla
@@ -65,7 +67,7 @@ Es poco habitual y merece la pena entender el porque: si la regla “no se puede
 
 ### `process_target_rules` — la regla.
 
-Reparte el alcance con tres piezas: `unit_scope_type` (`unit_exact`, `unit_subtree`, `unit_type`, `all_units`), el `cargo_id` o `position_id` dentro de la unidad, y una `recipient_policy` (`all_matches`, `one_per_unit`, `exact_position`). Además `priority` y vigencia.
+Reparte el alcance con tres piezas: `unit_scope_type` (`unit_exact`, `unit_subtree`, `unit_type`, `all_units`), el `cargo_id` o `position_id` dentro de la unidad, y una `recipient_policy` (`all_matches`, `unit_head`, `exact_position`). Además `priority` y vigencia.
 
 ### `process_definition_templates` — el paquete de entregables.
 
@@ -74,6 +76,31 @@ Vincula configuración con plantilla: `process_definition_id` + `template_artifa
 ### `process_runs` — la corrida.
 
 `run_mode` (`automatic` o `manual`), `source_run_id` autorreferencial para relanzamientos, `created_by_user_id`, `reason` y `status`. Relanzar es **una corrida nueva**, no sobrescribir la anterior.
+
+### `task_items` — el entregable concreto.
+
+Su identidad son **tres** cosas: la tarea, la edicion de plantilla y **el puesto que lo produce**
+(`responsible_position_id`, obligatorio). Si al lanzar no hay a quien dirigirse, **el entregable no se
+crea** — antes nacia huerfano. `assigned_person_id` es una **cache** que escribe un trigger a partir
+de las tenencias: no se edita a mano.
+
+### `task_item_tenures` — quien lo debe, turno a turno.
+
+Una fila por relevo, con quien, en calidad de que puesto, desde y hasta cuando. **Un solo turno
+abierto por entregable**, garantizado por un indice unico parcial. Su `opened_by` guarda la causa
+(`original`, `occupancy_start`, `occupancy_end`, `position_deactivated`, `reconcile`, `manual`) y su
+`work_started` sella si el documento **ya llevaba trabajo** al abrirse el turno — que es lo que
+distingue «releve algo intacto» de «releve algo a medias».
+
+Sustituyo a `task_assignments` y `task_item_handovers`, retiradas el 2026-08-23: una era una foto del
+reparto que ningun relevo refrescaba y la otra los mismos hechos como eventos sueltos.
+
+### `document_versions` y `document_version_uploads` — la ronda y sus correcciones.
+
+`document_versions.version` es la **ronda** (un intento completo de llenar y firmar), y cada subida
+del archivo dentro de esa ronda es una fila de `document_version_uploads` con su **autor**. La
+etiqueta legible (`version_label`) la calcula la base. Antes «version» significaba las dos cosas a la
+vez y no se sabia quien habia producido el documento — solo quien habia adjuntado las evidencias.
 
 ### `tasks`.
 
