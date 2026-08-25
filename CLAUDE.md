@@ -246,8 +246,8 @@ Seis cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba c
    cifras es toda la página, con la banda 1000-1999 reservada a librerías. **Un modal no declara
    nada**: `AppModalShell` se coloca solo al abrirse y se libera al cerrarse. Hubo cinco niveles
    declarados y duraron dos días — `openProcessWizard()` se llama desde siete sitios a dos
-   profundidades, así que cualquier número fijo está mal en algún camino. Lo sostiene
-   ⚠️ **NO hay gate que lo vigile.** `check:z-index` se documentó tres veces y **nunca existió**
+   profundidades, así que cualquier número fijo está mal en algún camino.
+   ⚠️ **Pero NO hay gate que lo vigile.** `check:z-index` se documentó tres veces y **nunca existió**
    (auditoría del 2026-08-24). La regla sigue siendo la buena; lo que no hay es quien la haga
    cumplir. Detalle en `frontend/CLAUDE.md` §5.5. Escribirlo es tarea del frente 7.
 
