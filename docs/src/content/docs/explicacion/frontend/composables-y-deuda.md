@@ -2,7 +2,7 @@
 title: "El frontend: composables, tiempo real y deuda"
 description: "Los composables que sostienen la app, Socket.IO en el cliente y los God Objects que quedan."
 sidebar:
-  order: 14
+  order: 1
 ---
 El patron comun: una función `useXxx({ deps })` que **declara y devuelve sus propios `ref`**, con dependencias inyectadas de solo lectura. Nada de `provide`/`inject`, nada de singletons reactivos.
 

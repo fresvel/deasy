@@ -2,7 +2,7 @@
 title: "Errores e integraciones externas"
 description: "El contrato de errores de la API, y las cinco integraciones: RabbitMQ, MinIO, Socket.IO, correo y WhatsApp."
 sidebar:
-  order: 7
+  order: 5
 ---
 :::note[Esta página describe cómo funciona hoy, no cómo debe hacerse]
 La **norma** sobre qué forma tiene una respuesta de error vive en el plan de trabajo del repositorio

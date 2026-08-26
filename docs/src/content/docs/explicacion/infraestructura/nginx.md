@@ -2,7 +2,7 @@
 title: "nginx: dos configuraciones distintas"
 description: "Desarrollo y producción no comparten configuración, y las rutas efectivas no son las que parecen."
 sidebar:
-  order: 17
+  order: 1
 ---
 ## Mecanica de plantillas
 

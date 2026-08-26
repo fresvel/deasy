@@ -2,7 +2,7 @@
 title: "El microservicio signer"
 description: "Por qué hay Node dentro de un servicio Python, la cadena de confianza y los OIDs ecuatorianos."
 sidebar:
-  order: 15
+  order: 7
 ---
 Es la pieza mas especializada del sistema: Python 3.14 mas **pyHanko**, la biblioteca de firma de PDF.
 

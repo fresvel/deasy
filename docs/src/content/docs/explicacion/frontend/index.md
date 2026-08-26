@@ -2,7 +2,7 @@
 title: "El frontend: estructura, estado y HTTP"
 description: "Modular por dominio, sin Pinia ni Vuex, y cómo se habla con la API."
 sidebar:
-  order: 13
+  order: 0
 ---
 **Vue 3 + Vite 8 + vue-router 5 + Tailwind v4 + Vitest**, sin TypeScript. 216 ficheros en `src/`: 126 `.vue`, 87 `.js` y **18 `.css`** — el CSS no es un fichero, es un sistema de diseño repartido en 18 modulos por familia dentro de `shared/styles/`, encadenados por `index.css`, que es lo unico que importa `main.js`. **El orden de esos `@import` es parte del diseno y no es alfabetico**: en CSS dos reglas de la misma especificidad se resuelven por orden de aparicion, asi que `overrides.css` va el ultimo a proposito.
 

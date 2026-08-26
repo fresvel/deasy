@@ -2,7 +2,7 @@
 title: "El adaptador de acceso a datos"
 description: "Por qué el backend traduce SQL de MySQL a PostgreSQL al vuelo, y qué se paga por ello."
 sidebar:
-  order: 4
+  order: 2
 ---
 Aquí hay algo que confunde si no se explica. El fichero `backend/config/postgres.js` (512 líneas) **no es un cliente de PostgreSQL normal**. Es un **adaptador que finge ser `mysql2/promise`**.
 

@@ -2,7 +2,7 @@
 title: "Cosas que te van a confundir"
 description: "Lo que parece un fallo y no lo es. La página que ahorra más tiempo del repositorio."
 sidebar:
-  order: 20
+  order: 10
 ---
 Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 

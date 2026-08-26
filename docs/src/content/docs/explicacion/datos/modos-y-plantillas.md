@@ -2,7 +2,7 @@
 title: "Modos de emisión y plantillas"
 description: "`single`, `replicated` y `routed`, y el modelo «libro y ediciones» de las plantillas."
 sidebar:
-  order: 11
+  order: 2
 ---
 Vive en `process_definition_templates.item_mode`, es decir, **en el vinculo plantilla-proceso**, no en la plantilla. Es un matiz importante. Define *cuando* nace el entregable y *de donde sale su flujo*:
 

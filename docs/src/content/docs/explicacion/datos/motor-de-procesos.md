@@ -2,7 +2,7 @@
 title: "El motor de procesos: serie, regla y flujo"
 description: "La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. Tabla por tabla."
 sidebar:
-  order: 10
+  order: 1
 ---
 Esta es **la parte central del dominio** y la que mas cuesta al principio. La frase mnemotecnica del proyecto:
 

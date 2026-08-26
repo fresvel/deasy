@@ -2,7 +2,7 @@
 title: "Testing: dos niveles que no se mezclan"
 description: "Unitarios junto al módulo y caracterización contra goldens. Dónde va cada uno y por qué importa."
 sidebar:
-  order: 19
+  order: 9
 ---
 Esta es una regla dura del proyecto, y la ubicación de los ficheros **no es estetica**: `sonar-project.properties` distingue tests de código de producción **por patron**, y un fichero mal colocado o mal nombrado se analiza **como código de producción**. Así es como las contrasenas de fixture acabaron contando como vulnerabilidades del sistema.
 

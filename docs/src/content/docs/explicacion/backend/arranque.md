@@ -2,7 +2,7 @@
 title: "El arranque del backend"
 description: "Qué hace `index.js` al levantarse, en qué orden, y por qué el orden importa."
 sidebar:
-  order: 3
+  order: 1
 ---
 Monta los middlewares en este orden exacto:
 

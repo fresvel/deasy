@@ -2,7 +2,7 @@
 title: "El backend: capas y routers"
 description: "La regla no negociable —los controllers son transporte, no lógica— y el inventario de los catorce routers."
 sidebar:
-  order: 2
+  order: 0
 ---
 Es la pieza mas grande: unas 30.000 líneas de JavaScript **ESM** (`import` y `export`, no `require`), Express 5, sin ORM.
 

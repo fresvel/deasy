@@ -2,7 +2,7 @@
 title: "Qué arquitectura tiene Deasy"
 description: "Monorepo no es monolito. Los seis estilos que conviven aquí, los patrones que ya usas sin nombrarlos, y con qué criterio se decide una carpeta."
 sidebar:
-  order: 21
+  order: 2
 ---
 
 :::note[Página escrita a mano]

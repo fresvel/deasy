@@ -2,7 +2,7 @@
 title: "Autenticación y autorización"
 description: "Dos cosas que se confunden constantemente: quién eres (JWT) y qué puedes hacer (RBAC)."
 sidebar:
-  order: 6
+  order: 4
 ---
 Son **dos cosas distintas** y conviene no confundirlas nunca:
 

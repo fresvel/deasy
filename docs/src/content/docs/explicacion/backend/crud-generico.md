@@ -2,7 +2,7 @@
 title: "El CRUD genérico de administración"
 description: "Añadir una tabla al panel es añadir una entrada al catálogo. Con su contrapartida."
 sidebar:
-  order: 5
+  order: 3
 ---
 Esta es una de las piezas mas ingeniosas del backend. En vez de escribir un controlador para cada una de las 44 tablas administrables, hay tres ficheros que colaboran:
 

@@ -2,7 +2,7 @@
 title: "El modelo de datos: vocabulario"
 description: "Los términos del dominio que hay que tener claros antes de mirar una sola tabla."
 sidebar:
-  order: 9
+  order: 0
 ---
 **67 tablas** y una vista, en un único fichero: `backend/database/postgres_schema.sql` (1998 líneas).
 

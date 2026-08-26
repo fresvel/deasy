@@ -2,7 +2,7 @@
 title: "Firmas, dossier y el resto del esquema"
 description: "La cadena de firma, el dossier heredado de MongoDB y los dominios de tablas que faltaban."
 sidebar:
-  order: 12
+  order: 3
 ---
 ```mermaid
 %% diagrama 10 — la cadena de firma, de la plantilla de flujo a la firma persistida

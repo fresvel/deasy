@@ -2,7 +2,7 @@
 title: "CI/CD y SonarQube"
 description: "Los ocho jobs de `cd-multienv.yml`, los dos modos de entrega, y cómo está montado Sonar."
 sidebar:
-  order: 18
+  order: 2
 ---
 ### `cd-multienv.yml`: ocho jobs
 

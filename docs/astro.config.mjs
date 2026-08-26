@@ -55,7 +55,26 @@ export default defineConfig({
 			sidebar: [
 				{ label: 'Guías', autogenerate: { directory: 'guias' } },
 				{ label: 'Referencia', autogenerate: { directory: 'referencia' } },
-				{ label: 'Explicación', autogenerate: { directory: 'explicacion' } },
+				// Explicación va EXPLÍCITA, no `autogenerate`, y es a propósito: reproduce la
+				// jerarquía del documento original (capítulo → sección), que `autogenerate` no
+				// puede ordenar entre grupos. Dentro de cada grupo sí se autogenera, así que
+				// añadir una página sigue siendo crear el fichero.
+				{
+					label: 'Explicación',
+					items: [
+						{ slug: 'explicacion' },
+						{ slug: 'explicacion/panorama' },
+						{ slug: 'explicacion/arquitectura-y-patrones' },
+						{ label: 'El modelo, de punta a punta', autogenerate: { directory: 'explicacion/modelo' } },
+						{ label: 'La base de datos', autogenerate: { directory: 'explicacion/datos' } },
+						{ label: 'El backend', autogenerate: { directory: 'explicacion/backend' } },
+						{ label: 'El frontend', autogenerate: { directory: 'explicacion/frontend' } },
+						{ slug: 'explicacion/signer' },
+						{ label: 'Infraestructura', autogenerate: { directory: 'explicacion/infraestructura' } },
+						{ slug: 'explicacion/testing' },
+						{ slug: 'explicacion/confusiones' },
+					],
+				},
 			],
 			customCss: ['./src/styles/global.css'],
 		}),
