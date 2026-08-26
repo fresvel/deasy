@@ -131,6 +131,49 @@ const codeMask = (src) => {
   return mask;
 };
 
+// Devuelve una copia del fuente con los COMENTARIOS sustituidos por espacios, respetando la
+// longitud y los saltos de línea para que los números de línea sigan siendo los mismos.
+//
+// POR QUE HACE FALTA. `codeMask` ya entiende comentarios, pero solo se usa para localizar el
+// `.query(`: los argumentos se cortaban del fuente CRUDO. Y entonces una coma dentro de un
+// comentario cuenta como separador de parámetros. Falso positivo medido en
+// `services/admin/generation/documents.js:312` — «4 placeholders / 5 parámetros» cuando son
+// cuatro: lo que sobraba era un comentario de tres líneas dentro del array, con comas dentro.
+//
+// ⚠️ Solo se vacían COMENTARIOS. Las cadenas y las plantillas se copian tal cual: ahí es donde
+// vive el SQL, y vaciarlas dejaría el auditor sin nada que contar.
+const blankComments = (src) => {
+  const out = src.split("");
+  let i = 0;
+  let prev = "";
+  const vaciar = (desde, hasta) => {
+    for (let k = desde; k < hasta; k++) if (out[k] !== "\n") out[k] = " ";
+  };
+  while (i < src.length) {
+    const c = src[i];
+    if (c === "/" && src[i + 1] === "/") {
+      const end = src.indexOf("\n", i);
+      const hasta = end === -1 ? src.length : end;
+      vaciar(i, hasta);
+      i = hasta;
+      continue;
+    }
+    if (c === "/" && src[i + 1] === "*") {
+      const end = src.indexOf("*/", i + 2);
+      const hasta = end === -1 ? src.length : end + 2;
+      vaciar(i, hasta);
+      i = hasta;
+      continue;
+    }
+    if (c === "'" || c === '"') { i = skipQuoted(src, i); prev = c; continue; }
+    if (c === "`") { i = skipTemplate(src, i); prev = "`"; continue; }
+    if (c === "/" && REGEX_MAY_FOLLOW.has(prev)) { i = skipRegex(src, i); prev = "/"; continue; }
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+  return out.join("");
+};
+
 // Avanza desde `(` hasta su `)` pareja, saltando literales. Devuelve el índice del `)`.
 const matchParen = (src, open) => {
   let i = open + 1;
@@ -192,16 +235,34 @@ const findSpanEnd = (sql, start, span) => {
   return sql.length;
 };
 
+// Cuenta los huecos de las DOS formas, porque en el repo conviven dos dialectos:
+//
+//   ?    el del adaptador de `config/postgres.js`, que es el 99 % del codigo.
+//   $N   el NATIVO de `pg`, que aparece cuando alguien coge el pool crudo
+//        (`getPostgresPool()._pool`) para hablar con el catalogo de PostgreSQL.
+//
+// Contar solo `?` daba tres FALSOS POSITIVOS en `scripts/docs/gen-campos-md.mjs`, que usa el pool
+// crudo con `$1` legitimamente: el gate veia «0 placeholders / 1 parametro». Y un gate con falsos
+// positivos es peor que no tener gate, porque enseña a ignorarlo.
+//
+// Ojo con `$N`: NO se cuentan las apariciones, se toma el INDICE MAYOR. `pg` numera desde 1 y un
+// mismo `$1` puede repetirse en la consulta; lo que tiene que cuadrar con el array es el maximo.
 const countPlaceholders = (sql) => {
-  let count = 0;
+  let qmark = 0;
+  let maxDollar = 0;
   let i = 0;
   while (i < sql.length) {
     const span = PROTECTED_SPANS.find((s) => sql.startsWith(s.open, i));
     if (span) { i = findSpanEnd(sql, i, span); continue; }
-    if (sql[i] === "?") count++;
+    if (sql[i] === "?") qmark++;
+    if (sql[i] === "$" && /\d/.test(sql[i + 1] || "")) {
+      const m = /^\$(\d+)/.exec(sql.slice(i));
+      if (m) { maxDollar = Math.max(maxDollar, Number(m[1])); i += m[0].length; continue; }
+    }
     i++;
   }
-  return count;
+  // Una consulta usa un dialecto o el otro, nunca los dos. Si trae `$N`, ese manda.
+  return maxDollar > 0 && qmark === 0 ? maxDollar : qmark;
 };
 
 // ── Clasificación de una llamada ──────────────────────────────────────────────────────────────
@@ -256,9 +317,13 @@ const indecidibles = [];
 for (const file of collectFiles(BACKEND_ROOT)) {
   const rel = path.relative(BACKEND_ROOT, file);
   if (ADAPTER_FILES.has(rel)) continue;
-  const src = fs.readFileSync(file, "utf8");
-  if (!src.includes(".query(")) continue;
+  const bruto = fs.readFileSync(file, "utf8");
+  if (!bruto.includes(".query(")) continue;
   stats.archivos++;
+  // A partir de aqui se trabaja SIEMPRE sobre el fuente sin comentarios: `matchParen` y
+  // `splitTopLevel` cortan de aqui, asi que una coma comentada ya no separa parametros.
+  // Conserva longitud y saltos de linea, de modo que `lineOf` sigue dando la linea real.
+  const src = blankComments(bruto);
   const mask = codeMask(src);
 
   for (let i = 0; i < src.length; i++) {
