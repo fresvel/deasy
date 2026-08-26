@@ -53,15 +53,25 @@ llano.
 
 Para que puedas juzgar cuánto fiarte de cada afirmación, aquí está de dónde sale cada cosa.
 
-Los **campos, los tipos y las relaciones** están extraídos de la base en ejecución, no del código
-ni de la documentación: **382 columnas y 147 referencias** leídas del catálogo interno de
-PostgreSQL. Si un campo aparece en un diagrama, existe con ese nombre y ese tipo.
+Los **campos, los tipos y las relaciones** están leídos del catálogo de PostgreSQL en ejecución, no
+del código ni de la documentación. Si un campo aparece en un diagrama, existe con ese nombre y ese
+tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
+
+| | |
+|---|---|
+| Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **38** |
+| Columnas de esas 38 | **375** |
+| Claves foráneas entre esas 38 | **97** |
+| Tablas del esquema entero (con chat, empleo y dossier) | **67** |
+| Claves foráneas del esquema entero | **147** |
+| Restricciones `CHECK` del esquema entero | **33** |
 
 Los **comportamientos** —qué pasa al publicar, qué mira el lanzamiento, hasta dónde llega el
 relevo— se comprobaron ejecutándolos, no leyéndolos.
 
-Las **listas de estados protegidas** salen de las **33 restricciones** declaradas en la base. Las
-no protegidas salen de leer el código que las define, y por eso están marcadas como tales.
+Las **listas de estados protegidas** salen de esas 33 restricciones `CHECK`. Las no protegidas salen
+de leer el código que las define, y por eso están marcadas como tales en
+[Vocabularios de estado](/modelo/vocabularios-de-estado/).
 
 Lo que **es interpretación** son las metáforas: el libro y sus ediciones, la silla y quien se
 sienta en ella. No están en el código; son la forma de contarlo sin tecnicismos. Si alguna no
