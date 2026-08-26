@@ -15,6 +15,28 @@ export default defineConfig({
 			theme: "forest",
 			autoTheme: true,
 			mermaidConfig: {
+				// ── El motor de trazado ────────────────────────────────────────────────
+				// `elk` estaba en `package.json` desde el principio y NO se usaba: la
+				// integracion lo registra sola si encuentra el paquete, pero mermaid
+				// sigue con `dagre` mientras nadie pida lo contrario.
+				//
+				// Medido el 2026-08-26 sobre los 14 diagramas de `/modelo/`, a la letra
+				// efectiva que sale en una columna de 1317 px. Mejora SIETE y no empeora
+				// NINGUNO (los que ya estaban a 16 px siguen a 16, y ademas mas estrechos):
+				//
+				//   mapa-completo       3538x1191 ->  1731x1607     6,0 px -> 12,2 px
+				//   flujo-de-firma      2362x2599 ->  1558x2639     8,9 px -> 13,5 px
+				//   proceso             1920x1600 ->  1468x1600    11,0 px -> 14,4 px
+				//   entregable-concreto 1597x1385 ->  1233x1324    13,2 px -> 16,0 px
+				//   organizacion        1864x2371 ->  1620x2371    11,3 px -> 13,0 px
+				//   flujo-de-entrega    1467x1985 ->  1267x1985    14,4 px -> 16,0 px
+				//   vocabularios        1754x 222 ->  1593x 178    12,0 px -> 13,2 px
+				//
+				// El caso que lo destapo es el mapa: `flowchart TB` con dagre colocaba los
+				// seis subgrafos EN FILA (proporcion 2,97:1) y lo dejaba al 37 % de su
+				// tamaño. Con elk queda casi cuadrado (1,08:1). Se probo tambien `LR`, con
+				// dagre y con elk, y las dos son PEORES que esto: 6,9 px y 5,6 px.
+				layout: "elk",
 				flowchart: {
 					curve: "basis",
 				},
@@ -38,6 +60,15 @@ export default defineConfig({
 			defaultLocale: 'root',
 			locales: { root: { label: 'Español', lang: 'es' } },
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/fresvel/deasy' }],
+			// El visor de diagramas (zoom, arrastre y pantalla completa). Va como fichero
+			// de `public/` y no como componente de Astro a proposito: `astro-mermaid`
+			// pinta los SVG en el CLIENTE y no emite ningun evento al terminar, asi que
+			// lo unico que sirve es un script que observe el documento. Uno suelto no
+			// necesita hidratacion ni entra en el grafo de islas.
+			// El porque, con las cifras que lo motivaron, esta en el propio fichero.
+			head: [
+				{ tag: 'script', attrs: { src: '/visor-diagramas.js', defer: true } },
+			],
 			// La carpeta ES la URL: `src/content/docs/guias/entorno-dev.md` -> `/guias/entorno-dev`.
 			// Con `autogenerate` no hay que registrar cada pagina aqui: crear el fichero en la
 			// carpeta lo mete en el menu. El orden dentro de un grupo se controla con
