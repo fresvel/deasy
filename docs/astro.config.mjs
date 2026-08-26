@@ -56,25 +56,29 @@ export default defineConfig({
 				{ label: 'Guías', autogenerate: { directory: 'guias' } },
 				{ label: 'Referencia', autogenerate: { directory: 'referencia' } },
 				// Explicación va EXPLÍCITA, no `autogenerate`, y es a propósito: reproduce la
-				// jerarquía del documento original (capítulo → sección), que `autogenerate` no
-				// puede ordenar entre grupos. Dentro de cada grupo sí se autogenera, así que
-				// añadir una página sigue siendo crear el fichero.
-				{
-					label: 'Explicación',
-					items: [
-						{ slug: 'explicacion' },
-						{ slug: 'explicacion/panorama' },
-						{ slug: 'explicacion/arquitectura-y-patrones' },
-						{ label: 'El modelo, de punta a punta', autogenerate: { directory: 'explicacion/modelo' } },
-						{ label: 'La base de datos', autogenerate: { directory: 'explicacion/datos' } },
-						{ label: 'El backend', autogenerate: { directory: 'explicacion/backend' } },
-						{ label: 'El frontend', autogenerate: { directory: 'explicacion/frontend' } },
-						{ slug: 'explicacion/signer' },
-						{ label: 'Infraestructura', autogenerate: { directory: 'explicacion/infraestructura' } },
-						{ slug: 'explicacion/testing' },
-						{ slug: 'explicacion/confusiones' },
-					],
-				},
+				// jerarquía del documento original, que `autogenerate` no puede ordenar entre
+				// grupos. Dentro de cada grupo sí se autogenera, así que añadir una página
+				// sigue siendo crear el fichero.
+				//
+				// ⚠️ Y va SIN envoltorio «Explicación», también a propósito. El índice del
+				// `.tex` tiene DOS niveles —`\chapter` → `\section`—, y las `\subsection` son
+				// encabezados dentro de la sección, no entradas del índice. Al meter los
+				// capítulos dentro de un grupo «Explicación» el menú salía a TRES niveles
+				// (Explicación › El backend › Acceso a datos), que es un nivel más de los que
+				// tiene el original. Los capítulos son de primer nivel, como en el LaTeX; la
+				// carpeta `explicacion/` sigue existiendo en la URL porque es el cajón de
+				// Diátaxis, pero no se dibuja como padre.
+				{ slug: 'explicacion' },
+				{ slug: 'explicacion/panorama' },
+				{ slug: 'explicacion/arquitectura-y-patrones' },
+				{ label: 'El modelo, de punta a punta', autogenerate: { directory: 'explicacion/modelo' } },
+				{ label: 'La base de datos', autogenerate: { directory: 'explicacion/datos' } },
+				{ label: 'El backend', autogenerate: { directory: 'explicacion/backend' } },
+				{ label: 'El frontend', autogenerate: { directory: 'explicacion/frontend' } },
+				{ slug: 'explicacion/signer' },
+				{ label: 'Infraestructura', autogenerate: { directory: 'explicacion/infraestructura' } },
+				{ slug: 'explicacion/testing' },
+				{ slug: 'explicacion/confusiones' },
 			],
 			customCss: ['./src/styles/global.css'],
 		}),

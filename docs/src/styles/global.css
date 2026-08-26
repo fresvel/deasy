@@ -15,3 +15,60 @@
 Add additional Tailwind styles to this file:
 https://tailwindcss.com/docs/adding-custom-styles#using-custom-css
 */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANCHOS DE LA MAQUETA
+   ─────────────────────────────────────────────────────────────────────────────
+   Starlight reparte la fila en tres columnas y las dos decisiones que trae de
+   fabrica no le sientan bien a una documentacion con diagramas:
+
+     1. `--sl-content-width: 45rem` (720 px). Un Mermaid con 946 px de `viewBox`
+        se dibuja a 688 px, o sea al 73 % de su tamaño natural. Medido el
+        2026-08-26 en /explicacion/modelo/entregable-y-ediciones/.
+
+     2. El TOC de la derecha NO tiene ancho propio: `TwoColumnContent.astro:24`
+        lo calcula como `--sl-sidebar-width + (100% - content - sidebar) / 2`,
+        es decir hereda el ancho del NAV IZQUIERDO (18,75rem). A 1600 px eso son
+        440 px para diez enlaces de una linea.
+
+   La correccion separa dos cosas que Starlight junta: el ancho de LECTURA
+   (parrafos, listas, avisos) y el ancho de la COLUMNA (diagramas y tablas).
+   El texto se queda donde se lee comodo; lo ancho usa todo el hueco.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+	--sl-content-width: 58rem; /* la COLUMNA: 928 px, suficiente para los Mermaid */
+	--deasy-lectura: 46rem; /* el TEXTO: ~85 caracteres, que es lo comodo */
+}
+
+/* Lo que se lee seguido se queda estrecho aunque la columna sea ancha. */
+.sl-markdown-content :is(p, ul, ol, dl, blockquote, .starlight-aside) {
+	max-width: var(--deasy-lectura);
+}
+
+/* Los diagramas, en cambio, ocupan la columna entera y se centran. */
+.sl-markdown-content :is(.mermaid, pre.mermaid) {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+}
+.sl-markdown-content :is(.mermaid, pre.mermaid) svg {
+	max-width: 100%;
+	height: auto;
+}
+
+@media (min-width: 72rem) {
+	/* El TOC deja de heredar el ancho del nav izquierdo y pide solo lo suyo. */
+	.right-sidebar-container {
+		width: 15rem;
+	}
+	/* Y el panel principal se queda con lo que sobra, en vez de con una formula
+	   que ya no cuadra al haber cambiado el ancho del TOC.
+	   Ojo: NADA de `:global(...)` aqui. Eso es sintaxis de los `<style>` de Astro;
+	   en un `.css` plano es un selector invalido y, por ir en lista separada por
+	   comas, tumbaria la regla ENTERA sin decir nada. */
+	[data-has-sidebar][data-has-toc] .main-pane {
+		width: auto;
+		flex: 1;
+	}
+}

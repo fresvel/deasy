@@ -28,7 +28,7 @@ primero que hay que tener claro, así que va explícita.
 | Solicitud y resultado de firma | `signature_request_statuses` · `signature_statuses` | catálogos de 5 y 4 códigos | **Son tablas**, consultables y ampliables sin tocar el esquema |
 | **Documento** | `task_items.document_status` | **11 valores** | **No.** Solo en el código |
 | **Ronda** | `document_versions.status` | **12 valores** | **No.** Solo en el código |
-| **Tarea** | `tasks.status` | `pendiente` · `en_proceso` · `completada` · `cancelada` | **No.** Solo en el código, y repetido en tres sitios |
+| **Tarea** | `tasks.status` | `pendiente` · `en_proceso` · `completada` · `cancelada` | **No.** Una sola lista, en `config/sqlTables.js` |
 | **Lote de firma** | `signature_batch_jobs.status` | por defecto `queued` | **No** |
 
 Esas cuatro últimas son las que se siguen como `TD7-e`: **cuatro columnas de estado sin `CHECK`**, no
@@ -36,15 +36,25 @@ las ocho que se contaron en su día. La decisión pendiente es cuáles bajan su 
 
 :::note[La tarea sí tiene vocabulario conocido, aunque la base no lo imponga]
 
-Conviene no exagerar el caso de `tasks.status`. Su lista existe y es **una sola**
-—`pendiente · en_proceso · completada · cancelada`—; lo que pasa es que está escrita en tres sitios
-del código en vez de en el esquema.
+Conviene no exagerar el caso de `tasks.status`. Su lista existe, es **una sola** y está **escrita una
+sola vez**: `backend/config/sqlTables.js:266` la declara como las `options` del `select` del editor
+genérico, con `pendiente` de valor por defecto. Lo que falta no es unificarla — es **bajarla al
+esquema**, donde la columna es un `VARCHAR(30)` sin `CHECK`.
+
+El frontend no la repite: `shared/utils/estadoTono.js` tiene un mapa de **presentación** —qué tono y
+qué etiqueta en castellano le toca a cada código—, no una segunda declaración del dominio. Y lo pinza
+un test (`estadoTono.test.js:177`), así que si la lista cambiara en el backend y no allí, salta.
 
 Y lo peligroso de esta zona ya está cerrado: hasta el 2026-08-23 había además una
 `task_items.status` con **cero escritores** —se quedaba en `pendiente` para siempre— que siete sitios
 leían con dos vocabularios que no compartían ni un literal. El filtro del relevo **no excluía nada**,
 así que todo entregable era reasignable para siempre, firmado incluido. Se retiró, y lo pendiente se
 lee ahora del documento.
+
+De ese retiro **queda un fósil**: `estadoTono.js:504` sigue registrando `"task_items.status"` en el
+mapa de columnas, y `estadoTono.test.js:178` lo pinza. Es inofensivo —esa columna ya no llega nunca
+del backend, así que la entrada no se consulta— pero es exactamente el tipo de resto que conviene
+barrer al pasar por esta tabla.
 
 :::
 
