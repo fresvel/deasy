@@ -5,7 +5,7 @@
 > registro de lo que se ha mirado, con qué método y qué salió.
 >
 > El modelo explicado está en el sitio de documentación:
-> [Del proceso al documento firmado](../../src/content/docs/explicacion/modelo-proceso-documento.md)
+> [El modelo, de punta a punta](../../src/content/docs/modelo/) —17 páginas; era un solo fichero hasta el 2026-08-26—
 > y [Campos de la cadena](../../src/content/docs/referencia/campos-proceso-documento.md).
 
 ## ⚠️ Antes de auditar nada: recrea la base

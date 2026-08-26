@@ -45,6 +45,7 @@ aquí**; la columna «Control detallado» dice dónde.
 | **9** · Capa de datos | **Siete fases** sobre el esquema y `config/postgres.js` — y **D7 audita el modelo**, lo que el frente 0 dejó abierto | 🟡 **D7 a 33 de 37**; las otras 6 fases ⬜ | [`plan_data/`](./plan_data/) | **2026-08-24** · lo que queda de D7 son **4 decisiones del dueño** |
 | **10** · Compilador documental | Auditar la rama que ya existe, y **heredó el generador de Jinja** (S8) | ⬜ **el coste subió**: la rama va **1 017 commits por detrás** y toca **57 ficheros**, no 21 | aquí, §Frente 10 | remedido **2026-08-24** |
 | **11** · Editor web de plantillas | **Son dos productos, no uno** | ⬜ | aquí, §Frente 11 | — |
+| **12** · Auditoría del modelo **dirigida por el dueño** | Que el modelo de negocio haga lo que la universidad quiere, no solo lo que el esquema declara. Se recorre la sección `/modelo/` del sitio página por página, y el cambio se decide **en la documentación** y baja al código | ⬜ **0 de 17** | [`auditoria-modelo-negocio-2026-08.md`](./auditoria-modelo-negocio-2026-08.md) | — |
 
 > ⚠️ **Esta tabla se auditó contra el repositorio el 2026-08-24** y cuatro filas eran falsas.
 > Lo medido, fila por fila, está en

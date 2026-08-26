@@ -130,7 +130,7 @@ publicada**:
 |---|---|
 | `referencia/contrato-errores-api.md` §4 | `{ message, code }` — la norma |
 | `backend/errors/HttpError.js:20` | `res.json({ error: error.message })` — **el defecto** |
-| `docs/src/content/docs/explicacion/backend-errores-e-integraciones.md:7-13` | `res.json({ message: error.message })` — **tercera forma, en el sitio público** |
+| `docs/src/content/docs/backend/errores-e-integraciones.md:7-13` | `res.json({ message: error.message })` — **tercera forma, en el sitio público** |
 | `backend/middlewares/uploadError.js:10-12` | Citaba el contrato por su ruta y lo implementaba |
 | `frontend/src/shared/utils/apiError.js:4-20` | Describía dos formas vivas y su precedencia |
 
