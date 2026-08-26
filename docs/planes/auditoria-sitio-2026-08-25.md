@@ -71,10 +71,12 @@ Sale con código 1. Pero:
 
 **Un gate con falsos positivos es peor que no tener gate**: enseña a ignorarlo.
 
-### Dos gates obligatorios no corren en CI
+### ~~Dos gates obligatorios no corren en CI~~ — CERRADO el 2026-08-26
 
 `CLAUDE.md` declara `check:sql-comments` y `check:sql-aliases` como OBLIGATORIOS, pero
-`cd-multienv.yml` solo ejecuta `check:imports` en el job `backend-checks`.
+`cd-multienv.yml` solo ejecutaba `check:imports` en el job `backend-checks`. **Ya están los
+tres**: se añadieron `check:sql-comments` y `check:sql-aliases` como pasos propios, y el job
+corre en `push` y en `pull_request` a `develop`, `qa` y `main`, así que bloquean.
 
 ---
 

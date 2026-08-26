@@ -384,6 +384,11 @@ bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov
 ```
 El backend **no tiene lint**, pero **sí tiene tests** — ejecútalos, no valides "a mano".
 
+**Los tres `check:` marcados OBLIGATORIO corren desde el 2026-08-26 en CI**, en el job
+`backend-checks` de `cd-multienv.yml`, y en `pull_request` además de en `push`: si te los saltas en
+local, te para el PR. Antes solo corría `check:imports`, y las otras dos dependían de que alguien se
+acordara. `check:params` **no** está en CI: es una decisión pendiente, no un olvido.
+
 ⚠️ **Nunca escribas un backtick dentro de un comentario `--` de SQL**: el SQL vive en plantillas de
 JavaScript y el backtick las **cierra**. Citar la columna que estás documentando es lo natural y por
 eso muerde — seis veces en una sola tanda. Con suerte lo caza `node --check`, apuntando a la primera

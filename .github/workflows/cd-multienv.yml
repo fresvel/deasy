@@ -132,9 +132,16 @@ jobs:
         working-directory: frontend
         run: pnpm run lint
 
-  # El backend no tiene lint, pero sí tiene dos puertas que hasta ahora dependían de que
-  # alguien se acordara de correrlas a mano — que es justo el modo de fallo que dejó vivos
-  # cuatro ReferenceError durante semanas.
+  # El backend no tiene lint, pero sí tiene TRES puertas que `CLAUDE.md` declara OBLIGATORIAS.
+  # Hasta el 2026-08-26 solo corría una aquí, y las otras dos dependían de que alguien se
+  # acordara de lanzarlas a mano — que es exactamente el modo de fallo que dejó vivos cuatro
+  # ReferenceError durante semanas, y el que dejó `POST /sign/fill-requests/:id/return` roto
+  # para todo el mundo durante meses.
+  #
+  # Las tres comparten una propiedad que es la razón de que tengan que estar aquí: **ninguna
+  # de las tres roturas que detectan impide arrancar el backend**. El SQL es una cadena de
+  # texto hasta que se ejecuta esa rama concreta, y un símbolo sin importar es sintaxis
+  # válida. Sin estas puertas, la señal llega en producción y en tiempo de llamada.
   backend-checks:
     runs-on: ubuntu-latest
     steps:
@@ -152,6 +159,20 @@ jobs:
       - name: Check backend imports
         working-directory: backend
         run: npm run check:imports
+      # Un backtick dentro de un comentario `--` de SQL CIERRA la plantilla de JavaScript que lo
+      # contiene. Con suerte lo caza `node --check`, apuntando a la línea equivocada; sin suerte
+      # el fichero compila y el SQL sale truncado en ejecución. A techo cero.
+      - name: Check SQL comments
+        working-directory: backend
+        run: npm run check:sql-comments
+      # Un alias cuyo JOIN ya no está —un `ti.id` huérfano— es sintaxis perfecta para todo el
+      # mundo menos para PostgreSQL, que responde `missing FROM-clause entry` en tiempo de
+      # llamada. Muerde sobre todo al reemplazar en bloque: al retirar la tabla `documents` un
+      # reemplazo global se llevó tres joins legítimos en consultas que no venían al caso, y el
+      # diff era de 91 sitios, así que leerlo no servía. A techo cero.
+      - name: Check SQL aliases
+        working-directory: backend
+        run: npm run check:sql-aliases
       - name: Backend unit tests
         working-directory: backend
         run: npm run test:unit

@@ -11,7 +11,7 @@ sidebar:
 flowchart TD
   prepare["prepare (rama → entorno)"]
   lint["frontend-lint<br/>(pnpm run lint)"]
-  checks["backend-checks<br/>(npm run check:imports + npm run test:unit)"]
+  checks["backend-checks<br/>(los 3 gates obligatorios + test:unit)"]
   validate["compose-validate<br/>(docker-env.sh #lt;env#gt; config, para los 4 entornos)"]
   publish["publish-images<br/>(matriz de 4 imagenes → GHCR)"]
   deploy["deploy-app-push / deploy-app-manual / deploy-ingress<br/>(rsync de docker/ y nginx/ + SSH,<br/>solo si DEPLOY_DELIVERY_MODE == 'gh-actions')"]
@@ -30,6 +30,26 @@ flowchart TD
 Mapeo de ramas: `develop` → dev (pública imagenes, **no despliega**); `qa` → qa; `main` → prod. El trabajo se hace en `develop`; `main` es la rama de producción.
 
 El `rsync` solo sube `docker/`, `nginx/` (excluyendo `certs/`) y cuatro scripts. El fichero de variables reales llega como secreto de GitHub y se vuelca en `docker/.env.<env>.runtime` en el servidor.
+
+### Las tres puertas del backend
+
+El backend **no tiene lint**, pero `CLAUDE.md` declara tres comprobaciones **obligatorias**, y desde
+el **2026-08-26** las tres corren en el job `backend-checks` —en `push` y en `pull_request` a
+`develop`, `qa` y `main`, así que bloquean—. Antes solo corría la primera.
+
+| Gate | Qué rotura caza |
+|---|---|
+| `check:imports` | Un símbolo movido sin su `import`. `node --check` **no lo ve** —es sintaxis válida— y el módulo carga; revienta en tiempo de llamada. Así estuvieron rotos tres semanas cuatro `ReferenceError` |
+| `check:sql-comments` | Un backtick dentro de un comentario `--` de SQL. El SQL vive en plantillas de JavaScript, así que el backtick **cierra la plantilla**: con suerte lo caza `node --check` señalando la línea equivocada; sin suerte el fichero compila y el SQL sale **truncado en ejecución** |
+| `check:sql-aliases` | Un alias cuyo `JOIN` ya no está. `ti.id` huérfano es sintaxis perfecta para todos menos para PostgreSQL, que responde `missing FROM-clause entry` **en tiempo de llamada** |
+
+⚠️ **Las tres comparten la propiedad que las hace imprescindibles: ninguna de las roturas que
+detectan impide arrancar el backend.** El SQL es una cadena de texto hasta que se ejecuta esa rama
+concreta. Sin estas puertas, la señal llega en producción — y llegó: cuatro `UPDATE … INNER JOIN …
+SET` (sintaxis de MySQL que PostgreSQL rechaza) dejaron `POST /sign/fill-requests/:id/return` roto
+**para todo el mundo durante meses**.
+
+Los dos de SQL están **a techo cero**: `check:sql-aliases` mira 442 consultas en 200 ficheros.
 
 ### Dos modos de entrega
 
