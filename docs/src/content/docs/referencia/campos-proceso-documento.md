@@ -23,7 +23,7 @@ y esta página saldría mintiendo. `npm run test:char:run` la recrea.
 :::
 
 Son **39 tablas**. El recorrido narrado, con sus diagramas, está en
-[Del proceso al documento firmado](/explicacion/modelo-proceso-documento). Esta página es el
+[Del proceso al documento firmado](/modelo/). Esta página es el
 detalle: **cada columna de cada tabla**, en el orden de la cadena y no en orden alfabético.
 
 Cómo leer las columnas: **Obligatorio** dice si la base exige un valor; **Apunta a** es la referencia

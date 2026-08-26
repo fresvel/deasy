@@ -60,25 +60,25 @@ gana el esquema.
 
 | # | Página | Qué responde |
 |---|---|---|
-| 1 | [La siembra](/explicacion/modelo/siembra/) | De qué parte un sistema vacío |
-| 2 | [La organización](/explicacion/modelo/organizacion/) | Quién existe y dónde está sentado |
-| 3 | [El proceso](/explicacion/modelo/proceso/) | Qué se hace, y en qué versión de sus reglas |
-| 4 | [El reparto](/explicacion/modelo/reparto/) | A quién le toca cuando esto se dispare |
-| 5 | [El entregable y sus ediciones](/explicacion/modelo/entregable-y-ediciones/) | El libro y sus impresiones |
-| 6 | [El vínculo](/explicacion/modelo/vinculo/) | Qué edición usa cada configuración, y en qué modo |
-| 7 | [El disparo](/explicacion/modelo/disparo/) | Cuándo la declaración se convierte en trabajo |
-| 8 | [El entregable concreto](/explicacion/modelo/entregable-concreto/) | La unidad de trabajo real |
-| 9 | [Las tenencias y el relevo](/explicacion/modelo/tenencias-y-relevo/) | Quién lo debe, y qué pasa cuando cambia |
-| 10 | [El documento](/explicacion/modelo/documento/) | Rondas y correcciones |
-| 11 | [El flujo de entrega](/explicacion/modelo/flujo-de-entrega/) | Quién lo rellena y quién lo revisa |
-| 12 | [El flujo de firma](/explicacion/modelo/flujo-de-firma/) | Quién firma, en qué orden y en qué sitio del papel |
-| 13 | [El cierre](/explicacion/modelo/cierre/) | El documento final y lo que se dijo por el camino |
-| 14 | [Los vocabularios de estado](/explicacion/modelo/vocabularios-de-estado/) | Qué estados existen y cuáles protege la base |
-| 15 | [El mapa completo](/explicacion/modelo/mapa-completo/) | Todo junto, de un vistazo |
-| 16 | [Lo que hoy no cierra](/explicacion/modelo/lo-que-no-cierra/) | Las deudas conocidas del modelo |
+| 1 | [La siembra](/modelo/siembra/) | De qué parte un sistema vacío |
+| 2 | [La organización](/modelo/organizacion/) | Quién existe y dónde está sentado |
+| 3 | [El proceso](/modelo/proceso/) | Qué se hace, y en qué versión de sus reglas |
+| 4 | [El reparto](/modelo/reparto/) | A quién le toca cuando esto se dispare |
+| 5 | [El entregable y sus ediciones](/modelo/entregable-y-ediciones/) | El libro y sus impresiones |
+| 6 | [El vínculo](/modelo/vinculo/) | Qué edición usa cada configuración, y en qué modo |
+| 7 | [El disparo](/modelo/disparo/) | Cuándo la declaración se convierte en trabajo |
+| 8 | [El entregable concreto](/modelo/entregable-concreto/) | La unidad de trabajo real |
+| 9 | [Las tenencias y el relevo](/modelo/tenencias-y-relevo/) | Quién lo debe, y qué pasa cuando cambia |
+| 10 | [El documento](/modelo/documento/) | Rondas y correcciones |
+| 11 | [El flujo de entrega](/modelo/flujo-de-entrega/) | Quién lo rellena y quién lo revisa |
+| 12 | [El flujo de firma](/modelo/flujo-de-firma/) | Quién firma, en qué orden y en qué sitio del papel |
+| 13 | [El cierre](/modelo/cierre/) | El documento final y lo que se dijo por el camino |
+| 14 | [Los vocabularios de estado](/modelo/vocabularios-de-estado/) | Qué estados existen y cuáles protege la base |
+| 15 | [El mapa completo](/modelo/mapa-completo/) | Todo junto, de un vistazo |
+| 16 | [Lo que hoy no cierra](/modelo/lo-que-no-cierra/) | Las deudas conocidas del modelo |
 
 :::tip[Si vienes a auditar el modelo]
-Empieza por [El mapa completo](/explicacion/modelo/mapa-completo/) para situarte, y luego baja a la
+Empieza por [El mapa completo](/modelo/mapa-completo/) para situarte, y luego baja a la
 página del eslabón que te interese. Cada una nombra sus tablas, así que sirve de índice para ir al
 esquema.
 :::

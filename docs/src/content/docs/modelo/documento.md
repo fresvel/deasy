@@ -91,7 +91,7 @@ ficheros anteriores quedaban huérfanos, no borrados.
 
 Se descartó guardar el historial como JSON dentro de `document_versions`, y no por motivos teóricos:
 este repositorio ya tiene un JSONB de ese tipo —`signature_flow_steps.signers`— y es un agujero
-abierto y documentado. Ver [El flujo de firma](/explicacion/modelo/flujo-de-firma).
+abierto y documentado. Ver [El flujo de firma](/modelo/flujo-de-firma).
 
 :::
 
@@ -149,4 +149,4 @@ erDiagram
 
 El estado de la ronda tiene **su propio vocabulario**, distinto del estado del documento, y el
 segundo se deriva del primero. Está en
-[Los vocabularios de estado](/explicacion/modelo/vocabularios-de-estado).
+[Los vocabularios de estado](/modelo/vocabularios-de-estado).

@@ -24,10 +24,10 @@ name: docs-links
 
 on:
   pull_request:
-    paths: ['**/*.md', '.lycheeignore', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/check-enlaces-internos.mjs', '.github/workflows/docs-links.yml']
   push:
     branches: [develop, main]
-    paths: ['**/*.md', '.lycheeignore', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/check-enlaces-internos.mjs', '.github/workflows/docs-links.yml']
   schedule:
     # Lunes 06:00 UTC — solo para el job de enlaces externos.
     - cron: '0 6 * * 1'
@@ -55,8 +55,13 @@ jobs:
           #                             él sería ruido puro y empujaría a "arreglar" historia.
           #   docs/src/**               el contenido del sitio Astro. Sus enlaces son RUTAS DE
           #                             PÁGINA (`/guias/entorno-dev/`), no ficheros, así que
-          #                             lychee los daría por rotos. El build de Astro ya los
-          #                             valida; cuando aterrice la F2 esto se revisa con --base.
+          #                             lychee los daría por rotos. Lo cubre el job
+          #                             `enlaces-del-sitio` de más abajo.
+          #
+          # ⚠️ Aquí ponía «el build de Astro ya los valida». Era FALSO y costó un enlace roto
+          # que vivió del 2026-08-24 al 26 sin que nadie lo viera: el build de Astro valida
+          # los `slug` del `sidebar` de `astro.config.mjs`, y NADA más. Un `[x](/no/existe/)`
+          # dentro de un `.md` construye en verde y da 404 al hacer clic.
           args: >-
             --offline
             --no-progress
@@ -66,6 +71,19 @@ jobs:
             --exclude-path node_modules
             "**/*.md"
           fail: true
+
+  # ── Bloqueante: enlaces internos DEL SITIO (rutas de página, no ficheros) ───────────────
+  # Lo que lychee no puede mirar. No necesita instalar nada: es Node puro sobre el árbol.
+  enlaces-del-sitio:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Comprobar rutas de página del sitio
+        run: node scripts/docs/check-enlaces-internos.mjs
 
   # ── No bloqueante: URLs externas ────────────────────────────────────────────────────────
   enlaces-externos:

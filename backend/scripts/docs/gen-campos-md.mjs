@@ -103,7 +103,7 @@ const main = async () => {
   L.push(":::");
   L.push("");
   L.push(`Son **${nTablas} tablas**. El recorrido narrado, con sus diagramas, está en`);
-  L.push("[Del proceso al documento firmado](/explicacion/modelo-proceso-documento). Esta página es el");
+  L.push("[Del proceso al documento firmado](/modelo/). Esta página es el");
   L.push("detalle: **cada columna de cada tabla**, en el orden de la cadena y no en orden alfabético.");
   L.push("");
   L.push("Cómo leer las columnas: **Obligatorio** dice si la base exige un valor; **Apunta a** es la referencia");

@@ -154,5 +154,5 @@ erDiagram
   }
 ```
 
-El [flujo de firma](/explicacion/modelo/flujo-de-firma) tiene esta misma estructura, con dos añadidos
+El [flujo de firma](/modelo/flujo-de-firma) tiene esta misma estructura, con dos añadidos
 propios.

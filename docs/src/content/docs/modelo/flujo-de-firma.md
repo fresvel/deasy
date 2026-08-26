@@ -7,7 +7,7 @@ sidebar:
 
 El flujo de firma tiene **la misma estructura que el de entrega** —cabecera colgada de tres
 portadores, pasos ordenados, instancia pegada a la ronda y solicitudes— y las mismas tres formas de
-encontrar a quien le toca. Si leíste [la página anterior](/explicacion/modelo/flujo-de-entrega), esta
+encontrar a quien le toca. Si leíste [la página anterior](/modelo/flujo-de-entrega), esta
 es la misma película con dos añadidos importantes.
 
 Los tres escalones de resolución son idénticos: `task_item_id` (runtime), luego
@@ -92,7 +92,7 @@ traer por ahí una forma de resolución ya retirada, y si el código dejara de c
 Por eso hay dos `case` legados —`document_owner` y `position`— que **no se pueden borrar todavía**:
 hacerlo dejaría el paso resolviéndose por el `default` sin cargo. Está registrado como **defecto
 1.19**, y el orden de cierre es filtrar **y** migrar, en ese orden. Ver
-[Lo que hoy no cierra](/explicacion/modelo/lo-que-no-cierra).
+[Lo que hoy no cierra](/modelo/lo-que-no-cierra).
 
 Hay un tercer JSONB en la tabla, `anchor_refs`, que es un contrato **sin productor ni consumidor**.
 

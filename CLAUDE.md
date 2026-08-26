@@ -273,15 +273,24 @@ navegador se recarga solo — el contenedor monta `../docs`, no hay que reconstr
 frontend, el volumen de `node_modules` **sombrea** el de la imagen: una dependencia nueva se instala
 dentro del contenedor o no se ve.
 
-Tres cosas que ya costaron un arranque fallido:
+Cuatro cosas que ya costaron un arranque fallido:
 
 1. **`lang` no es clave de primer nivel de Starlight.** Va dentro de `locales`; suelto, el contenedor
    arranca y muere con `Invalid config passed to starlight integration`.
 2. **Un grupo de `sidebar` cuyo directorio no existe rompe el build.** Los grupos se añaden según se
-   crean las carpetas, no antes. Hoy existen `guias/`, `referencia/` y `explicacion/` — los tres con
-   su grupo en `astro.config.mjs`; el cuarto de Diátaxis (`empezar/`) todavía no.
+   crean las carpetas, no antes. Hoy existen `guias/` y `referencia/`; el cuarto cajón de Diátaxis
+   (`empezar/`) todavía no.
+   La **explicación no es una carpeta**: sus once capítulos cuelgan de la raíz (`/backend/auth/`,
+   `/modelo/vinculo/`, `/panorama/`…). Se quitó el segmento `explicacion/` el **2026-08-26** porque
+   metía un nivel de menú y un segmento de ruta que el índice del `.tex` no tiene — el original va
+   `\chapter` → `\section` y ya está. Diátaxis clasifica el contenido; no obliga a que la
+   clasificación sea una carpeta.
 3. **`site` está sin poner a propósito** — fija canónicas y sitemap, y el dominio de publicación aún
    no está decidido. El aviso del build es esperado.
+4. **Los enlaces internos del sitio no los valida el build.** Astro solo comprueba los `slug` del
+   `sidebar`; un `[x](/no/existe/)` dentro de un `.md` construye **en verde** y da 404 al hacer clic.
+   Y lychee excluye `docs/src/**` a propósito (sus enlaces son rutas de página, no ficheros). Lo
+   cubre **`node scripts/docs/check-enlaces-internos.mjs`**, que corre en `docs-links.yml`.
 
 El servicio vive **solo en `compose.dev.yml`**: qa y prod todavía no despliegan documentación.
 Existía desde marzo en el `docker-compose.yml` monolítico y se perdió al partirlo en base+overlays;

@@ -15,7 +15,7 @@ por lo literal que es:
    `task_items.document_status` se escribe a partir del estado de la ronda, no aparte.
 
 Esa derivación es la regla general del sistema y está explicada en
-[Los vocabularios de estado](/explicacion/modelo/vocabularios-de-estado): **el estado del documento no
+[Los vocabularios de estado](/modelo/vocabularios-de-estado): **el estado del documento no
 se escribe a mano, se deriva del de la ronda**.
 
 ## Lo que se dijo por el camino

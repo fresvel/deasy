@@ -65,7 +65,7 @@ explícitamente. Si añades una columna de datos a esta tabla, añádela tambié
 
 El vínculo no desaparece al dispararse el proceso: cada entregable concreto guarda de qué vínculo
 nació (`task_items.process_definition_template_id`), y esa referencia forma parte de su identidad.
-El detalle está en [El entregable concreto](/explicacion/modelo/entregable-concreto/).
+El detalle está en [El entregable concreto](/modelo/entregable-concreto/).
 
 ```mermaid
 erDiagram
