@@ -2,6 +2,7 @@
 title: "Quién lo debe: las tenencias y el relevo"
 description: "Quién responde de un entregable no es un dato fijo sino una sucesión de turnos: cómo se abren, por qué causas, hasta dónde llega el relevo automático y qué pasa con las solicitudes pendientes."
 sidebar:
+  label: "9 · Quién lo debe"
   order: 9
 ---
 

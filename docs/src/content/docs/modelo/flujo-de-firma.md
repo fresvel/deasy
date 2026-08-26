@@ -2,6 +2,7 @@
 title: "El flujo de firma: quién firma, en qué orden y en qué sitio del papel"
 description: "La misma estructura que la entrega, con dos añadidos: un paso puede tener varios firmantes y decidir qué basta, y cada paso tiene un hueco físico en el papel."
 sidebar:
+  label: "12 · El flujo de firma"
   order: 12
 ---
 

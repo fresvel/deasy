@@ -2,6 +2,7 @@
 title: "El entregable concreto: la unidad de trabajo real"
 description: "La tabla central del sistema: qué documento se debe, con identidad de tarea, plantilla y puesto que lo produce, y las columnas generadas que sostienen su idempotencia."
 sidebar:
+  label: "8 · El entregable concreto"
   order: 8
 ---
 

@@ -2,6 +2,7 @@
 title: "Lo que hoy no cierra"
 description: "Los puntos abiertos del modelo, cuáles esperan una decisión y cuáles esperan trabajo — y lo que se cerró en la última tanda, para no volver a plantearlo."
 sidebar:
+  label: "Lo que no cierra"
   order: 16
 ---
 

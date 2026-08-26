@@ -2,6 +2,7 @@
 title: "El documento final, y lo que se dijo por el camino"
 description: "Qué pasa exactamente cuando se completa la última firma, y por qué las observaciones son una tabla con fase, origen y cierre en vez de un hilo de comentarios."
 sidebar:
+  label: "13 · El documento final"
   order: 13
 ---
 

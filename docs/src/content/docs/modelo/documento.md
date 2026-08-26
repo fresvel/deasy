@@ -2,6 +2,7 @@
 title: "El documento: rondas y correcciones"
 description: "«Versión» significaba dos cosas y mezclarlas costaba caro. Hoy son dos niveles: la ronda, que es un intento completo del ciclo, y la corrección, que es cada subida del archivo — con su autor."
 sidebar:
+  label: "10 · Rondas y correcciones"
   order: 10
 ---
 

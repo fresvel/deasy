@@ -2,6 +2,7 @@
 title: "El entregable y sus ediciones: el libro y sus impresiones"
 description: "La distinción que más confusión causa en el modelo documental: el entregable es la identidad de lo que hay que producir, y la edición es la impresión concreta que trae la maqueta, los formatos y los campos."
 sidebar:
+  label: "5 · Entregable y ediciones"
   order: 5
 ---
 

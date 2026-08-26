@@ -2,6 +2,7 @@
 title: "El disparo: cuando la declaración se convierte en trabajo"
 description: "El instante en que una configuración se cruza con un periodo, aplica sus reglas de reparto y materializa corridas, tareas y entregables con nombre y apellido."
 sidebar:
+  label: "7 · El disparo"
   order: 7
 ---
 

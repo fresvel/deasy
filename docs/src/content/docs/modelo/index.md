@@ -1,51 +1,71 @@
 ---
 title: "El modelo, de punta a punta"
-description: "Cómo se recorre esta sección: la cadena completa desde que alguien declara un proceso hasta que hay un documento firmado, tabla por tabla y en el orden en que ocurren las cosas."
+description: "Cómo Deasy pasa de «esta universidad tiene un proceso» a «este documento existe, lo hizo esta persona y lo firmaron estas otras». Treinta y ocho tablas, contadas en orden y sin tecnicismos."
 sidebar:
+  label: "Cómo leer esto"
   order: 0
 ---
 
-Esta sección explica **la cadena entera del dominio**: qué se declara, qué se dispara, quién debe
-qué, y cómo un entregable acaba siendo un archivo firmado. Es la parte del sistema que más cuesta
-al principio, y la que más tiempo hace perder cuando se entiende a medias.
+Cómo Deasy pasa de «esta universidad tiene un proceso» a «este documento existe, lo hizo esta
+persona y lo firmaron estas otras». **Treinta y ocho tablas**, contadas en orden y sin
+tecnicismos, con el detalle completo de cada una.
 
-Se lee **en orden**. Cada página es un eslabón, y cada eslabón deja el siguiente preparado:
+## Cómo leer esto
 
-```mermaid
-%% la cadena del dominio, de la declaracion al archivo firmado
-flowchart LR
-  A["proceso"] --> B["configuración"]
-  B --> C["regla de reparto"]
-  B --> D["plantilla vinculada"]
-  C --> E["corrida"]
-  D --> E
-  E --> F["tarea"]
-  F --> G["entregable"]
-  G --> H["ronda"]
-  H --> I["entrega"]
-  I --> J["firma"]
-  J --> K["archivo final"]
-```
+El modelo tiene **dos mitades**, y confundirlas es lo que hace que parezca más complicado de lo
+que es.
 
-## Las dos mitades, y por qué confundirlas cuesta
+**La primera mitad es lo que se declara**: la universidad dice qué procesos existen, quién debe
+participar, qué documentos hay que producir y con qué plantilla. Es una descripción, no ha pasado
+nada todavía.
 
-La cadena tiene un corte en medio que conviene ver antes que nada.
+**La segunda es lo que ocurre**: llega un periodo, el proceso se dispara, aparecen tareas con
+nombre y apellido, alguien rellena un documento, otros lo firman.
 
-**La primera mitad se declara.** Alguien configura un proceso: a quién alcanza, en qué periodos
-corre, qué entregables produce. Nada de eso existe todavía como trabajo de nadie — son reglas
-esperando.
+La frontera entre las dos es exacta y conviene tenerla presente: **declarar no crea trabajo**. El
+trabajo aparece en un momento concreto —el disparo— y a partir de ahí todo lo que ocurre queda
+anclado a la versión de la declaración que estaba vigente entonces. Por eso las declaraciones se
+versionan y no se editan: si se pudieran cambiar, un documento a medio firmar cambiaría de reglas
+mientras lo firman.
 
-**La segunda mitad se ejecuta.** Al disparar el proceso, esas reglas se materializan en tareas y
-entregables concretos, con una persona detrás y una fecha encima.
+<div class="cadena">
 
-El corte importa porque **las reglas no se editan una vez disparadas**. Si se pudieran cambiar, un
-documento a medio firmar cambiaría de reglas mientras lo firman.
+<p class="cadena-mitad cadena-declara"><span class="cadena-eti">Lo que se declara</span>
+<code>proceso</code> → <code>configuración</code> → <code>regla de reparto</code> → <code>plantilla vinculada</code></p>
+
+<p class="cadena-frontera">↓ &nbsp;el disparo</p>
+
+<p class="cadena-mitad cadena-ocurre"><span class="cadena-eti">Lo que ocurre</span>
+<code>corrida</code> → <code>tarea</code> → <code>entregable</code> → <code>ronda</code> → <code>entrega</code> → <code>firma</code> → <code>archivo final</code></p>
+
+</div>
+
+Si esos pasos te resultan claros, el resto de la sección es el detalle de cada uno.
 
 ## Una palabra sobre los nombres
 
-Los nombres en letra de máquina son los de las **tablas y columnas reales**. No se traducen, porque
-son los que verás si abres la base de datos, y la idea es que puedas contrastar cada afirmación de
-estas páginas con lo que hay dentro. Al lado de cada uno va siempre qué significa en castellano.
+Los nombres en `letra de máquina` son los de las **tablas y columnas reales**. No se traducen
+porque son los que verás si abres la base, y la idea es que puedas contrastar cada afirmación de
+estas páginas con lo que hay dentro. Al lado de cada uno va siempre qué significa en castellano
+llano.
+
+## De dónde sale cada cosa
+
+Para que puedas juzgar cuánto fiarte de cada afirmación, aquí está de dónde sale cada cosa.
+
+Los **campos, los tipos y las relaciones** están extraídos de la base en ejecución, no del código
+ni de la documentación: **382 columnas y 147 referencias** leídas del catálogo interno de
+PostgreSQL. Si un campo aparece en un diagrama, existe con ese nombre y ese tipo.
+
+Los **comportamientos** —qué pasa al publicar, qué mira el lanzamiento, hasta dónde llega el
+relevo— se comprobaron ejecutándolos, no leyéndolos.
+
+Las **listas de estados protegidas** salen de las **33 restricciones** declaradas en la base. Las
+no protegidas salen de leer el código que las define, y por eso están marcadas como tales.
+
+Lo que **es interpretación** son las metáforas: el libro y sus ediciones, la silla y quien se
+sienta en ella. No están en el código; son la forma de contarlo sin tecnicismos. Si alguna no
+encaja con cómo lo piensas tú, la metáfora es lo que sobra, no el modelo.
 
 :::note[Cómo verificar lo que lees aquí]
 El esquema vigente está en `backend/database/postgres_schema.sql`, y el modelo generado desde él
@@ -64,21 +84,15 @@ gana el esquema.
 | 2 | [La organización](/modelo/organizacion/) | Quién existe y dónde está sentado |
 | 3 | [El proceso](/modelo/proceso/) | Qué se hace, y en qué versión de sus reglas |
 | 4 | [El reparto](/modelo/reparto/) | A quién le toca cuando esto se dispare |
-| 5 | [El entregable y sus ediciones](/modelo/entregable-y-ediciones/) | El libro y sus impresiones |
-| 6 | [El vínculo](/modelo/vinculo/) | Qué edición usa cada configuración, y en qué modo |
+| 5 | [Entregable y ediciones](/modelo/entregable-y-ediciones/) | El libro y sus impresiones |
+| 6 | [El vínculo y los modos](/modelo/vinculo/) | Qué edición usa cada configuración, y en qué modo |
 | 7 | [El disparo](/modelo/disparo/) | Cuándo la declaración se convierte en trabajo |
 | 8 | [El entregable concreto](/modelo/entregable-concreto/) | La unidad de trabajo real |
-| 9 | [Las tenencias y el relevo](/modelo/tenencias-y-relevo/) | Quién lo debe, y qué pasa cuando cambia |
-| 10 | [El documento](/modelo/documento/) | Rondas y correcciones |
+| 9 | [Quién lo debe](/modelo/tenencias-y-relevo/) | Las tenencias y el relevo |
+| 10 | [Rondas y correcciones](/modelo/documento/) | Qué se produjo, y quién subió cada archivo |
 | 11 | [El flujo de entrega](/modelo/flujo-de-entrega/) | Quién lo rellena y quién lo revisa |
 | 12 | [El flujo de firma](/modelo/flujo-de-firma/) | Quién firma, en qué orden y en qué sitio del papel |
-| 13 | [El cierre](/modelo/cierre/) | El documento final y lo que se dijo por el camino |
-| 14 | [Los vocabularios de estado](/modelo/vocabularios-de-estado/) | Qué estados existen y cuáles protege la base |
-| 15 | [El mapa completo](/modelo/mapa-completo/) | Todo junto, de un vistazo |
-| 16 | [Lo que hoy no cierra](/modelo/lo-que-no-cierra/) | Las deudas conocidas del modelo |
-
-:::tip[Si vienes a auditar el modelo]
-Empieza por [El mapa completo](/modelo/mapa-completo/) para situarte, y luego baja a la
-página del eslabón que te interese. Cada una nombra sus tablas, así que sirve de índice para ir al
-esquema.
-:::
+| 13 | [El documento final](/modelo/cierre/) | El archivo sellado y lo que se dijo por el camino |
+| · | [Vocabularios de estado](/modelo/vocabularios-de-estado/) | Qué estados existen y cuáles protege la base |
+| · | [Mapa completo](/modelo/mapa-completo/) | Todo junto, de un vistazo |
+| · | [Lo que no cierra](/modelo/lo-que-no-cierra/) | Las deudas conocidas del modelo |

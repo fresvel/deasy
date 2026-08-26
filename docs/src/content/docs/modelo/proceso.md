@@ -2,6 +2,7 @@
 title: "El proceso: qué se hace, y en qué versión de sus reglas"
 description: "Un proceso es solo un nombre. Las reglas viven en la configuración, que no se edita: se versiona. Y todo ocurre dentro de un periodo."
 sidebar:
+  label: "3 · El proceso"
   order: 3
 ---
 

@@ -2,6 +2,7 @@
 title: "El mapa completo, de un vistazo"
 description: "Las 38 tablas de la cadena proceso → documento sin sus campos, agrupadas por lo que declaran, lo que ocurre y los dos flujos."
 sidebar:
+  label: "Mapa completo"
   order: 15
 ---
 

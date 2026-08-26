@@ -2,6 +2,7 @@
 title: "La siembra: de qué parte un sistema vacío"
 description: "Qué construye el arranque de una instalación virgen: siete eslabones que son, en miniatura, la cadena entera del modelo."
 sidebar:
+  label: "1 · La siembra"
   order: 1
 ---
 

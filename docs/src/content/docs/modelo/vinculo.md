@@ -2,6 +2,7 @@
 title: "El vínculo: qué edición usa cada configuración, y en qué modo"
 description: "La tabla pequeña que cierra la mitad declarativa del modelo: une una configuración de proceso con una edición de plantilla y declara en qué modo se emitirá el entregable."
 sidebar:
+  label: "6 · El vínculo y los modos"
   order: 6
 ---
 

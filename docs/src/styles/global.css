@@ -37,8 +37,16 @@ https://tailwindcss.com/docs/adding-custom-styles#using-custom-css
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
-	--sl-content-width: 58rem; /* la COLUMNA: 928 px, suficiente para los Mermaid */
-	--deasy-lectura: 46rem; /* el TEXTO: ~85 caracteres, que es lo comodo */
+	/* La COLUMNA. `100%` = todo el hueco que deja el nav izquierdo y el TOC; el
+	   `min()` es el unico techo, y esta alto a proposito para que los diagramas
+	   grandes salgan a tamaño natural en una pantalla ancha.
+	   Ojo: `--sl-content-width` NO puede ser `100%` a secas, porque
+	   `TwoColumnContent.astro` la mete en un `calc()` junto a `--sl-sidebar-width`
+	   para repartir la fila, y un porcentaje ahi da un ancho negativo. Por eso el
+	   reparto se hace abajo con flex y esta variable solo gobierna el `max-width`
+	   de `ContentPanel`. */
+	--sl-content-width: min(100%, 92rem);
+	--deasy-lectura: 56rem; /* el TEXTO: ~100 caracteres */
 }
 
 /* Lo que se lee seguido se queda estrecho aunque la columna sea ancha. */
@@ -46,15 +54,77 @@ https://tailwindcss.com/docs/adding-custom-styles#using-custom-css
 	max-width: var(--deasy-lectura);
 }
 
-/* Los diagramas, en cambio, ocupan la columna entera y se centran. */
+/* Los diagramas, en cambio, ocupan la columna entera y se centran.
+   ⚠️ `width: 100%` en el SVG NO es opcional. Mermaid le pone en linea un
+   `max-width` igual a su tamaño natural, pero NO un `width`; dentro de un
+   contenedor `flex` un SVG sin `width` colapsa a su `min-content` — medido:
+   un diagrama de 11 nodos se quedo en 272 px. Con `width: 100%` el ancho
+   efectivo es `min(hueco disponible, tamaño natural)`, que es lo que se quiere:
+   nunca mas grande de lo que da de si, nunca mas pequeño de lo que cabe. */
 .sl-markdown-content :is(.mermaid, pre.mermaid) {
 	display: flex;
 	justify-content: center;
 	width: 100%;
+	overflow-x: auto;
 }
 .sl-markdown-content :is(.mermaid, pre.mermaid) svg {
-	max-width: 100%;
+	width: 100%;
 	height: auto;
+}
+
+/* ── La cadena del dominio ────────────────────────────────────────────────────
+   Se escribe, NO se dibuja, y es a proposito. Como diagrama Mermaid son once
+   nodos en fila: 1722 px de ancho natural, o sea el 38 % en una columna normal
+   —ilegible—. Y partirlo en subgraphs con `direction LR` no vale: Mermaid
+   IGNORA la direccion de un subgraph cuando hay aristas que cruzan su frontera,
+   asi que apila los once en vertical (medido: 272 × 1284 px).
+   Escrito, en cambio, se relaja a cualquier ancho y siempre se lee. Es ademas
+   como lo presenta el documento original.
+   Azul = lo declarado; violeta = lo ocurrido. Los mismos dos colores que usan
+   los diagramas del resto de la seccion. */
+.cadena {
+	margin: 1.5rem 0;
+	border-inline-start: 3px solid var(--sl-color-gray-5);
+	padding-inline-start: 1rem;
+}
+.cadena-mitad {
+	max-width: none; /* gana al tope de lectura: es un esquema, no un parrafo */
+	margin: 0.35rem 0;
+	line-height: 2;
+}
+.cadena-eti {
+	display: block;
+	font-size: var(--sl-text-xs);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--sl-color-gray-3);
+}
+.cadena-mitad code {
+	border: 1px solid;
+	border-radius: 0.35rem;
+	padding: 0.1rem 0.45rem;
+}
+.cadena-declara code {
+	background: color-mix(in srgb, var(--sl-color-accent-low) 70%, transparent);
+	border-color: var(--sl-color-accent);
+}
+.cadena-ocurre code {
+	background: color-mix(in srgb, var(--sl-color-purple-low, var(--sl-color-accent-low)) 70%, transparent);
+	border-color: var(--sl-color-purple, var(--sl-color-accent-high));
+}
+.cadena-frontera {
+	margin: 0.35rem 0;
+	font-size: var(--sl-text-sm);
+	color: var(--sl-color-gray-3);
+	font-style: italic;
+}
+
+/* Las tablas anchas tampoco tienen por que caber en el ancho de lectura. */
+.sl-markdown-content table {
+	display: block;
+	width: fit-content;
+	max-width: 100%;
+	overflow-x: auto;
 }
 
 @media (min-width: 72rem) {

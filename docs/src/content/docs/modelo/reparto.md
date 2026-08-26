@@ -2,6 +2,7 @@
 title: "El reparto: a quién le toca cuando esto se dispare"
 description: "La regla de alcance responde dos preguntas por separado —hasta dónde llega y a quién de ahí dentro— y su resultado son sillas, no personas."
 sidebar:
+  label: "4 · El reparto"
   order: 4
 ---
 

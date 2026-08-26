@@ -2,6 +2,7 @@
 title: "El flujo de entrega: quién lo rellena y quién lo revisa"
 description: "Una cabecera que puede colgar de tres sitios, pasos ordenados que nombran una forma de encontrar a la persona en vez de a la persona, y una instancia pegada a la ronda."
 sidebar:
+  label: "11 · El flujo de entrega"
   order: 11
 ---
 

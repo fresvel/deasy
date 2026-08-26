@@ -2,6 +2,7 @@
 title: "Los vocabularios de estado"
 description: "Qué listas de estados protege la base y cuáles viven solo en el código, y por qué la ronda y el documento tienen vocabularios distintos aunque se parezcan."
 sidebar:
+  label: "Vocabularios de estado"
   order: 14
 ---
 

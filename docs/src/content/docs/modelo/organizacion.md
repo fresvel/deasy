@@ -2,6 +2,7 @@
 title: "La organización: quién existe y dónde está sentado"
 description: "Unidad, cargo, puesto y ocupación. La silla y su ocupante son cosas distintas, y de esa separación cuelga todo el sistema de responsabilidades."
 sidebar:
+  label: "2 · La organización"
   order: 2
 ---
 
