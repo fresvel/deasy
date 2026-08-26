@@ -50,12 +50,16 @@ bash scripts/stack.sh c stop                              # te vas por hoy, el w
 bash scripts/stack.sh c down                              # al RETIRAR el worktree que monta
 ```
 
-| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | docs |
-|---|---|---|---|---|---|---|---|---|
-| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 | 4321 |
-| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 | 4421 |
-| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 4200 | 5872 | 4521 |
-| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 | 4621 |
+| Pila | Proyecto | proxy | https | postgres | minio | consola minio | signer | rabbit | rabbit-ui | docs | azimutt |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 9001 | 4000 | 5672 | 15672 | 4321 | 4700 |
+| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 9101 | 4100 | 5772 | 15772 | 4421 | 4800 |
+| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 9201 | 4200 | 5872 | 15872 | 4521 | 4900 |
+| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 9301 | 4300 | 5972 | 15972 | 4621 | 5000 |
+
+La tabla tenía ocho columnas y una pila publica **nueve** puertos; faltaban la consola de MinIO y la
+interfaz de RabbitMQ. **Azimutt es la décima y no arranca por defecto**: vive tras el perfil
+`explorer` (`bash scripts/stack.sh c --profile explorer up -d azimutt`).
 
 Detalles que cuestan tiempo si no se saben:
 
@@ -68,7 +72,7 @@ Detalles que cuestan tiempo si no se saben:
   el worktree que monta, no al terminar una tanda de trabajo: el primer `up --build` cuesta
   un `npm install` completo y volver a pagarlo cada mañana no compensa. Si te vas y tu
   worktree sigue, **`stop`** — libera la RAM y conserva base, volúmenes y `node_modules`.
-  Cuatro pilas son 28 contenedores, así que dejar corriendo la que no usas sigue sin tener
+  Cuatro pilas son **32 contenedores** —ocho servicios cada una—, así que dejar corriendo la que no usas sigue sin tener
   sentido; pero `stop` no es `down`.
 - El primer `up --build` de cada pila cuesta un `npm install` completo, porque el volumen de
   `node_modules` es suyo. A partir de ahí es rápido.

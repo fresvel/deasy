@@ -76,7 +76,7 @@ El comentario del compose explica el motivo: la interfaz de gestion de RabbitMQ 
 
 ## `scripts/docker-env.sh`: la interfaz comun
 
-Es **la única forma correcta** de tocar el stack. Todo lo que va después del entorno se reenvia literalmente a `docker compose`:
+Todo lo que va después del entorno se reenvía literalmente a `docker compose`:
 
 ``` bash
 bash scripts/docker-env.sh dev up -d --build
@@ -85,6 +85,14 @@ bash scripts/docker-env.sh dev ps
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit
 bash scripts/docker-env.sh dev down
 ```
+
+:::caution[Pero ya no es la única, y para B/C/D es la equivocada]
+Aquí ponía que `docker-env.sh` es «la única forma correcta» de tocar el stack. **Dejó de serlo el 2026-08-14**, cuando aparecieron las pilas paralelas: `bash scripts/stack.sh <a|b|c|d> …`.
+
+El motivo es que los montajes de código son **relativos** (`../backend:/app/backend`), así que levantar `dev` desde otro worktree **no crea una pila nueva: recrea los mismos contenedores apuntando a otro código**. Pasó tres veces, y dos de ellas se midieron pruebas contra código ajeno sin que nadie se enterara.
+
+**La pila A ES la `dev` de siempre** —`docker-env.sh dev` y `stack.sh a` son la misma—; B, C y D desplazan los puertos +100, +200 y +300 y tienen base, MinIO, RabbitMQ y `node_modules` propios. `stack.sh` **se niega** si la pila que vas a usar monta otro worktree.
+:::
 
 Resuelve el fichero `.env` correcto (con `DEASY_ENV_FILE` como gancho para apuntar al `.runtime` en despliegues), válida que existan todos los ficheros antes de invocar nada, exporta `DEASY_CONTAINER_ENV_FILE` y hasta convierte rutas si detecta `cygpath` en Windows.
 

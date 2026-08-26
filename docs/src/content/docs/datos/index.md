@@ -4,7 +4,7 @@ description: "Los términos del dominio que hay que tener claros antes de mirar 
 sidebar:
   order: 0
 ---
-**67 tablas** y una vista, en un único fichero: `backend/database/postgres_schema.sql` (1998 líneas).
+**67 tablas** y una vista, en un único fichero: `backend/database/postgres_schema.sql` (**2 068 líneas**).
 
 :::caution[El esquema describe la forma; no migra]
 
@@ -43,12 +43,26 @@ Esta es la confusion que mas tiempo cuesta en este repositorio, y **no es sinoni
 
 Y un quinto eslabon antes de todos, la `template_seed`: la plantilla de fabrica de la que nace el entregable. La cadena completa, de molde a documento firmado:
 
-`seed` → `deliverable` → `template_artifact` → (vinculo) → `task_item` → `document` → `document_version`
+`seed` → `deliverable` → `template_artifact` → (vinculo) → `task_item` → `document_version` → `document_version_upload`
 
 :::caution[Y “documento” tampoco es lo que parece]
 
-La tabla `documents` **no guarda ningun fichero**: no tiene una sola columna de ruta. Es el **expediente** del entregable, y nace vacia al lanzar el proceso. El PDF vive en la fila hija, `document_versions`, en `working_file_path` (el que se esta trabajando) y `final_file_path` (el firmado).
+**La tabla `documents` ya no existe.** Se retiró el **2026-08-23**: era una cáscara 1:1 sobre
+`task_items` **sin ni una columna propia**, y `postgres_schema.sql` le deja epitafio en el sitio
+donde estaba. Lo que se produce cuelga hoy **directamente del entregable**, en dos niveles:
 
-Esa distincion importa mas de lo que parece: “tiene documento” significa *se lanzo el proceso*, no *alguien empezo a trabajar*. Confundir las dos cosas dejo los tres relevos automaticos de responsable sin ejecutarse durante meses. La senal correcta es `task_items.user_started_at`.
+| Nivel | Tabla | Qué es |
+|---|---|---|
+| **Ronda** | `document_versions` | Un intento completo del ciclo llenar → firmar. Lleva `working_file_path` (el que se está trabajando) y `final_file_path` (el firmado) |
+| **Corrección** | `document_version_uploads` | Cada vez que se sube el archivo dentro de la misma ronda, **con su autor** |
+
+`document_versions.task_item_id` es la clave: la ronda cuelga del entregable, no de un documento
+intermedio.
+
+⚠️ **Y con la tabla se cayó la frase que había aquí.** Decía que «"tiene documento" significa *se
+lanzó el proceso*, no *alguien empezó a trabajar*», y que eso dejó **tres** relevos automáticos sin
+ejecutarse. Hoy los caminos de relevo son **cuatro**, y la señal de trabajo empezado sigue siendo
+`task_items.user_started_at`. El detalle, en
+[Quién lo debe](/modelo/tenencias-y-relevo/) y en [El documento](/modelo/documento/).
 
 :::

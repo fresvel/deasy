@@ -6,11 +6,11 @@ sidebar:
 ---
 Esta es una de las piezas mas ingeniosas del backend. En vez de escribir un controlador para cada una de las 44 tablas administrables, hay tres ficheros que colaboran:
 
-- **`backend/config/sqlTables.js`** (1.001 líneas): un **catalogo declarativo** de metadatos. Para cada tabla describe sus campos, etiquetas humanas, tipos, cuales son obligatorios y cuales de solo lectura.
+- **`backend/config/sqlTables.js`** (**1 022 líneas**): un **catalogo declarativo** de metadatos. Para cada tabla describe sus campos, etiquetas humanas, tipos, cuales son obligatorios y cuales de solo lectura.
 
-- **`backend/services/admin/SqlAdminService.js`** (901 líneas): lee ese catalogo y **construye los SELECT, INSERT, UPDATE y DELETE dinamicamente**.
+- **`backend/services/admin/SqlAdminService.js`** (**908 líneas**): lee ese catalogo y **construye los SELECT, INSERT, UPDATE y DELETE dinamicamente**.
 
-- **`backend/services/admin/crud/tableHooks.js`** (1.120 líneas): los “injertos” — la lógica especial que necesita cada tabla concreta.
+- **`backend/services/admin/crud/tableHooks.js`** (**1 093 líneas**): los “injertos” — la lógica especial que necesita cada tabla concreta.
 
 Una entrada del catalogo tiene esta forma:
 

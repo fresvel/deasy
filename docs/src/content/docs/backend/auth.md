@@ -90,4 +90,10 @@ Por un **IDOR** real y cerrado. IDOR (*Insecure Direct Object Reference*) es el 
 
 :::
 
-El catalogo canonico esta en `backend/config/rbacCatalog.js` (229 líneas) y es también la **fuente de siembra**: `SystemBootstrapService.js` lo importa para poblar roles y permisos en la base de datos, borrando y reescribiendo `role_permissions` en cada arranque. O sea que **el catalogo del código es la fuente de verdad**, no la base de datos.
+El catalogo canonico esta en `backend/config/rbacCatalog.js` (229 líneas) y es también la **fuente de siembra**: `SystemBootstrapService.js` lo importa para poblar roles y permisos, borrando y reescribiendo `role_permissions`. O sea que **el catálogo del código es la fuente de verdad**, no la base.
+
+:::caution[Pero NO se resiembra en cada arranque]
+Aquí ponía «en cada arranque», y es falso: `backend/index.js` solo importa `publishBaseSeedAssets`, no `initializeSystem`. La resiembra ocurre **únicamente** desde `POST /system/bootstrap/initialize` —que responde `409` si el sistema ya está instalado— y desde `npm run recover:admin`.
+
+**Consecuencia práctica:** editar `rbacCatalog.js` y reiniciar el backend **no propaga nada**. Los permisos nuevos no llegan a la base hasta que se reinstala o se recupera el admin.
+:::

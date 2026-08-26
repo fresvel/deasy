@@ -1,6 +1,6 @@
 ---
 title: "CI/CD y SonarQube"
-description: "Los ocho jobs de `cd-multienv.yml`, los dos modos de entrega, y cómo está montado Sonar."
+description: "Los ocho jobs de `cd-multienv.yml`, los dos modos de entrega, los dos workflows de documentación, y cómo está montado Sonar."
 sidebar:
   order: 2
 ---
@@ -38,6 +38,20 @@ El `rsync` solo sube `docker/`, `nginx/` (excluyendo `certs/`) y cuatro scripts.
 - **Pull**: unidades systemd en el servidor (`deploy/systemd/deasy-server-pull@.timer`) que cada **15 minutos** hacen `git pull` y redespliegan (`OnBootSec=5m`, `OnUnitActiveSec=15m`, `Persistent=true`).
 
 El segundo modo existe para servidores **sin IP pública estable**, donde GitHub no puede iniciar la conexion.
+
+### Los dos workflows de documentación
+
+Hay **cuatro** workflows, no dos. Los otros dos vigilan la documentación, que hasta el 2026-08-11
+era la única capa del repositorio **sin ninguna puerta**:
+
+| Workflow | Qué bloquea |
+|---|---|
+| `docs-dbml.yml` | Regenera el DBML y los ocho diagramas desde el esquema y falla si hay deriva (`gen-dbml.sh --check`). Es lo que impide que `postgres_schema.sql` y el modelo publicado se separen |
+| `docs-links.yml` | Tres jobs: enlaces a **ficheros** del repo con lychee `--offline`; enlaces a **rutas de página** del sitio con `check-enlaces-internos.mjs`; y las URLs externas, semanal y sin bloquear |
+
+⚠️ Los dos son necesarios porque miran cosas distintas y **ninguno cubre lo del otro**: lychee
+excluye `docs/src/**` a propósito —sus enlaces son rutas, no ficheros— y el build de Astro solo
+valida los `slug` del `sidebar`, así que un enlace a una ruta que no existe construye **en verde**.
 
 ### `sonar.yml`: solo manual, y en verde si falta configuración
 

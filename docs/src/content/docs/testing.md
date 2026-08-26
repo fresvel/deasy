@@ -31,7 +31,7 @@ Vitest marca *Failed Suite* con 0 casos cuando el error ocurre **al importar** �
 
 ## Los tests unitarios
 
-**Backend**: 32 ficheros, **523 casos**, con `node --test` — el runner nativo de Node, sin Jest ni Vitest. Los mas nutridos:
+**Backend**: **38 ficheros**, **650 casos**, con `node --test` — el runner nativo de Node, sin Jest ni Vitest. Los mas nutridos:
 
 | **Fichero**                                             | **Casos** |
 |:--------------------------------------------------------|:----------|
@@ -46,7 +46,7 @@ Vitest marca *Failed Suite* con 0 casos cuando el error ocurre **al importar** �
 | `services/sign/BatchSigningService.test.js`             | 21        |
 | `controllers/users/user_controler.primitives.test.js`   | 21        |
 
-**Frontend**: 18 ficheros, **304 casos** con Vitest y `@vue/test-utils`. La configuración vive en el bloque `test:` de `vite.config.js` (no hay `vitest.config.js`). El entorno por defecto es `node`; los once tests que montan componentes ponen la pragma `// @vitest-environment jsdom` en la primera línea. **No hay pruebas E2E** (ni Playwright ni Cypress).
+**Frontend**: **23 ficheros**, **402 casos** con Vitest y `@vue/test-utils`. La configuración vive en el bloque `test:` de `vite.config.js` (no hay `vitest.config.js`). El entorno por defecto es `node`; los once tests que montan componentes ponen la pragma `// @vitest-environment jsdom` en la primera línea. **No hay pruebas E2E** (ni Playwright ni Cypress).
 
 ## Los characterization tests (golden master)
 
@@ -58,7 +58,7 @@ Sirve para **blindar refactors** en código que no entiendes del todo: no docume
 
 :::
 
-En Deasy son **19 suites, 204 tests y 281 claves de snapshot**, sin dependencias externas: `fetch` nativo mas `node:test` y `node:assert/strict`.
+En Deasy son **25 suites, 228 tests y 281 claves de snapshot** (en 21 ficheros `.json`), sin dependencias externas: `fetch` nativo mas `node:test` y `node:assert/strict`.
 
 ### Anatomia del harness
 
@@ -84,7 +84,7 @@ test:char:capture  = test:char:fixture && SNAPSHOT_MODE=update npm run test:char
 test:char          = node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs
 ```
 
-Los prefijos de `z` en los nombres de fichero **fuerzan el orden alfabetico** de ejecución (el runner corre con `--test-concurrency=1`), poniendo al final las suites que *escriben* datos. Hoy son **nueve**, y la escalera llega hasta siete `z`: `zz_default_process_routed`, `zz_task_generation`, `zz_template_lifecycle`, `zzz_artifact_draft`, `zzzz_sign_batch`, `zzzz_sign_workflow`, `zzzzz_task_item_relay`, `zzzzzz_flow_steps_db` y `zzzzzzz_schema_flow_reread`.
+Los prefijos de `z` en los nombres de fichero **fuerzan el orden alfabetico** de ejecución (el runner corre con `--test-concurrency=1`), poniendo al final las suites que *escriben* datos. Hoy son **quince**, y la escalera llega hasta **doce** `z`: `zz_default_process_routed`, `zz_task_generation`, `zz_template_lifecycle`, `zzz_artifact_draft`, `zzzz_sign_batch`, `zzzz_sign_workflow`, `zzzzz_task_item_relay`, `zzzzzz_deliverable_access`, `zzzzzz_flow_steps_db`, `zzzzzzz_schema_flow_reread`, `zzzzzzzz_schema_fields_db`, `zzzzzzzzz_reset_workflow`, `zzzzzzzzzz_position_deactivated`, `zzzzzzzzzzz_upload_log` y `zzzzzzzzzzzz_position_delete`.
 
 :::caution[test:char:run RESETEA la base de dev]
 
@@ -110,7 +110,9 @@ bash scripts/docker-env.sh dev exec -T frontend pnpm run build
 # Backend: no tiene lint, pero SI tiene tests
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit
 bash scripts/docker-env.sh dev exec -T backend npm run test:char:run
-bash scripts/docker-env.sh dev exec -T backend npm run check:imports   # OBLIGATORIO tras mover codigo
+bash scripts/docker-env.sh dev exec -T backend npm run check:imports        # OBLIGATORIO tras mover codigo
+bash scripts/docker-env.sh dev exec -T backend npm run check:sql-comments   # OBLIGATORIO tras tocar SQL
+bash scripts/docker-env.sh dev exec -T backend npm run check:sql-aliases    # OBLIGATORIO tras tocar SQL
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage
 ```
 

@@ -4,7 +4,7 @@ description: "Modular por dominio, sin Pinia ni Vuex, y cómo se habla con la AP
 sidebar:
   order: 0
 ---
-**Vue 3 + Vite 8 + vue-router 5 + Tailwind v4 + Vitest**, sin TypeScript. 216 ficheros en `src/`: 126 `.vue`, 87 `.js` y **18 `.css`** — el CSS no es un fichero, es un sistema de diseño repartido en 18 modulos por familia dentro de `shared/styles/`, encadenados por `index.css`, que es lo unico que importa `main.js`. **El orden de esos `@import` es parte del diseno y no es alfabetico**: en CSS dos reglas de la misma especificidad se resuelven por orden de aparicion, asi que `overrides.css` va el ultimo a proposito.
+**Vue 3 + Vite 8 + vue-router 5 + Tailwind v4 + Vitest**, sin TypeScript. **240 ficheros** en `src/`: 129 `.vue`, 93 `.js` —23 de ellos tests— y **18 `.css`** — el CSS no es un fichero, es un sistema de diseño repartido en 18 modulos por familia dentro de `shared/styles/`, encadenados por `index.css`, que es lo unico que importa `main.js`. **El orden de esos `@import` es parte del diseno y no es alfabetico**: en CSS dos reglas de la misma especificidad se resuelven por orden de aparicion, asi que el orden importa. (Aqui ponia que «`overrides.css` va el ultimo»: **ese fichero no existe**, comprobado el 2026-08-26. Los 18 modulos son otros; el que va al final hoy es `misc.css`.)
 
 ## Organización: modular por dominio
 
@@ -35,7 +35,7 @@ No hay carpeta `src/assets/` (los estaticos viven en `frontend/public/`), ni `sr
 
 ## El arranque
 
-`src/main.js` tiene 569 bytes y hace lo mínimo: crea la app, registra globalmente un único componente (`font-awesome-icon`), importa los dos CSS globales, marca el entorno local en un atributo del DOM, y monta el router.
+`src/main.js` tiene **317 bytes** y hace lo mínimo: crea la app, registra globalmente un único componente (`font-awesome-icon`), importa los dos CSS globales, marca el entorno local en un atributo del DOM, y monta el router.
 
 `App.vue` solo tiene dos cosas: un `<router-view :key="route.fullPath">` y un `SessionExpiryModal` global gobernado por `useSessionMonitor`.
 
@@ -78,7 +78,7 @@ export const API_PREFIX = `${NORMALIZED_API_BASE_URL}/deasy/v1`;   // -> "/api/d
 
 Regla documentada en el propio fichero: *“en `frontend/src` no se importa `axios` a pelo”*. Y no se fija `baseURL` a propósito: todas las llamadas pasan la URL completa construida desde `apiConfig`.
 
-Hay 17 ficheros de servicio, todos clases con métodos asincronos sobre `httpClient`. El mas grande es `core/services/ProcessDefinitionPanelService.js` (16,5 KB).
+Hay **24 ficheros** que hablan con `httpClient`, casi todos clases con métodos asincronos sobre `httpClient`. El mas grande es `core/services/ProcessDefinitionPanelService.js` (16,5 KB).
 
 ## El router y sus guards
 

@@ -8,7 +8,7 @@ El patron comun: una función `useXxx({ deps })` que **declara y devuelve sus pr
 
 `useFlowBuilder.js` (modulo `home`) es el constructor del *flujo routed*: quien elabora (`flowEntrega`) y quien firma (`flowFirma`, con pasos ordenados que llevan `signers`, `approval_mode` y `required_min`). Fue extraido de `HomeView.vue` durante la fase B del refactor del God Object.
 
-Otros: `useProcessPanels.js`, `useDeliverableView.js` (41 KB, el mayor), `useDocumentCenter.js`, `useGeneralTask.js`, `useRecipientSearch.js`, `useWorkspaceChrome.js` (estado del *chrome* compartido por las cuatro vistas que montan `AppWorkspaceShell`), y 24 composables en el modulo admin repartidos en seis subcarpetas (`data/`, `fk/`, `forms/`, `modals/`, `processes/`, `ui/`).
+Otros: `useProcessPanels.js`, `useDeliverableView.js` (38 KB, el mayor), `useDocumentCenter.js`, `useGeneralTask.js`, `useRecipientSearch.js`, `useWorkspaceChrome.js` (estado del *chrome* compartido por las cuatro vistas que montan `AppWorkspaceShell`), y 24 composables en el modulo admin repartidos en seis subcarpetas (`data/`, `fk/`, `forms/`, `modals/`, `processes/`, `ui/`).
 
 ## Tiempo real en el cliente
 
@@ -32,9 +32,9 @@ Su único consumidor es `WorkspaceChatLauncher.vue`, que escucha `chat.message.c
 
 Se usan **solo** en el modulo admin, para dos grafos interactivos:
 
-- **Organigrama de unidades** — `modules/admin/components/units/UnitGraphView.vue` (57 KB), con nodos y aristas propios (`UnitNode.vue`, `UnitEdge.vue`).
+- **Organigrama de unidades** — `modules/admin/components/units/UnitGraphView.vue` (55 KB), con nodos y aristas propios (`UnitNode.vue`, `UnitEdge.vue`).
 
-- **Mapa de procesos** — `ProcessGraphView.vue` (55 KB), con `ProcessNode.vue`, `ProcessConfigNode.vue` y `ProcessTemplateNode.vue`.
+- **Mapa de procesos** — `ProcessGraphView.vue` (52 KB), con `ProcessNode.vue`, `ProcessConfigNode.vue` y `ProcessTemplateNode.vue`.
 
 `dagre` calcula el layout jerarquico de arriba a abajo automáticamente, así no hay que posicionar nodos a mano. Ambos se cargan con `defineAsyncComponent(() => import(...))`, de modo que Vue Flow y dagre **quedan fuera del bundle inicial** y solo se descargan al abrir esas dos pantallas.
 
@@ -50,15 +50,15 @@ Se alcanzan por URL: `/admin/academia/unidades/organigrama` y `/admin/gestiones/
 
 | **Fichero**                                                   | **Tamano**                     |
 |:--------------------------------------------------------------|:-------------------------------|
-| `modules/home/views/HomeView.vue`                             | **236 KB** (unas 5.600 líneas) |
-| `modules/admin/components/tables/AdminTableManager.vue`       | 158 KB                         |
-| `modules/firmas/components/FirmarPdf.vue`                     | 120 KB                         |
-| `modules/admin/components/modals/AdminDraftArtifactModal.vue` | 77 KB                          |
-| `modules/admin/components/units/UnitGraphView.vue`            | 58 KB                          |
-| `modules/admin/components/units/ProcessGraphView.vue`         | 56 KB                          |
-| `modules/firmas/components/MultiSignerPanel.vue`              | 52 KB                          |
-| `modules/admin/views/AdminView.vue`                           | 46 KB                          |
-| `modules/home/composables/useDeliverableView.js`              | 41 KB                          |
+| `modules/home/views/HomeView.vue`                              | **215 KB** (5 129 líneas)  |
+| `modules/admin/components/tables/AdminTableManager.vue`        | 162 KB                     |
+| `modules/firmas/components/FirmarPdf.vue`                      | 109 KB                     |
+| `modules/admin/components/modals/AdminDraftArtifactModal.vue`  | 71 KB                      |
+| `modules/admin/components/units/UnitGraphView.vue`             | 55 KB                      |
+| `modules/admin/components/units/ProcessGraphView.vue`          | 52 KB                      |
+| `modules/firmas/components/MultiSignerPanel.vue`               | 46 KB                      |
+| `modules/admin/views/AdminView.vue`                            | 42 KB                      |
+| `modules/home/composables/useDeliverableView.js`               | 38 KB                      |
 
 Están en el plan de calidad y se están troceando extrayendo composables — así nacio `useFlowBuilder.js`.
 

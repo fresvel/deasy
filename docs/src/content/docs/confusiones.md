@@ -28,7 +28,7 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 11. **No hay tabla de auditoria transversal.** Solo bitacoras especificas por dominio.
 
-12. **`docker/docs/Dockerfile` es una imagen huerfana**: no la referencia ningun compose ni el workflow.
+12. ~~**`docker/docs/Dockerfile` es una imagen huerfana**~~ — **RESUELTO.** Hoy `docs` es un servicio de primera clase en `docker/compose.dev.yml`, y este sitio se sirve desde ahi.
 
 13. **`docker/README.md` documenta puertos de RabbitMQ en qa y prod que los overlays ya no publican.**
 
@@ -36,7 +36,7 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 15. **`backend/public/` esta vacia** pese a montarse con `express.static`.
 
-16. **Coexisten dos configuraciones de ESLint en el frontend**: `eslint.config.cjs` (flat config, la efectiva con ESLint 10) y `.eslintrc.js` (legacy, residual e inerte).
+16. ~~**Coexisten dos configuraciones de ESLint en el frontend**~~ — **RESUELTO**, `.eslintrc.js` ya no existe. Lo que sigue describe el problema de entonces:: `eslint.config.cjs` (flat config, la efectiva con ESLint 10) y `.eslintrc.js` (legacy, residual e inerte).
 
 17. **No hay `.env` dentro de `frontend/` ni de `backend/`**: viven en `docker/`, y el modelo de referencia es `docker/.env_model`.
 

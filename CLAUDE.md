@@ -167,7 +167,7 @@ bash scripts/stack.sh b down                              # SOLO al retirar el w
   protegía —medir contra código ajeno— ya lo impide el guard**, que se niega si la pila monta otro
   worktree.
   Si te vas y tu worktree sigue vivo: **`stack.sh <letra> stop`**. Libera la RAM y conserva volúmenes,
-  base y `node_modules`; `start` la devuelve en segundos. Cuatro pilas son 28 contenedores, así que
+  base y `node_modules`; `start` la devuelve en segundos. Cuatro pilas son 32 contenedores, así que
   dejar corriendo la que no estás usando sigue sin tener sentido — pero **`stop` no es `down`**.
 - El primer `up --build` de cada pila cuesta un `npm install` completo, porque el volumen de
   `node_modules` es suyo. A partir de ahí es rápido — y ése es justo el motivo de la regla anterior.
@@ -205,8 +205,13 @@ son **18 módulos por familia**. `main.js` importa **sólo `index.css`**, que lo
 | `base.css` | Reset, tipografía, `html`/`body`/`#app` |
 | `layout.css` · `nav.css` · `surfaces.css` | Armazón, navegación, tarjetas |
 | `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` · `graph.css` · `deliverables.css` · `signatures.css` | Un fichero por familia de componente |
+| `titles.css` | Los encabezados de página y de sección |
 | `misc.css` | Lo que aún no tiene familia. **Si crece, es que falta un módulo** |
-| `overrides.css` | El repintado de utilidades de Tailwind a la marca. **Va el último a propósito** |
+
+⚠️ **Aquí ponía `overrides.css`, y ese fichero NO EXISTE** (comprobado el 2026-08-26: son estos 18,
+ni uno más). Sigue habiendo un `frontend/scripts/check-overrides.mjs`, que es lo que despistaba: ese
+gate vigila que no se repinten utilidades de Tailwind, no un módulo que se llame así. Si vas a
+«mover el import de `overrides.css`», no hay nada que mover.
 
 ⚠️ **El orden de los `@import` de `index.css` es parte del diseño, no es alfabético.** En CSS dos
 reglas de la misma especificidad se resuelven por orden de aparición. Está explicado en el propio
@@ -247,9 +252,13 @@ Seis cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba c
    nada**: `AppModalShell` se coloca solo al abrirse y se libera al cerrarse. Hubo cinco niveles
    declarados y duraron dos días — `openProcessWizard()` se llama desde siete sitios a dos
    profundidades, así que cualquier número fijo está mal en algún camino.
-   ⚠️ **Pero NO hay gate que lo vigile.** `check:z-index` se documentó tres veces y **nunca existió**
-   (auditoría del 2026-08-24). La regla sigue siendo la buena; lo que no hay es quien la haga
-   cumplir. Detalle en `frontend/CLAUDE.md` §5.5. Escribirlo es tarea del frente 7.
+   **Y sí hay gate que lo vigila**: `frontend/scripts/check-z-index.mjs`, que corre dentro de
+   `pnpm run lint` — el eslabón 25 de los 27 que encadena. Lo único que no tiene es alias propio en
+   `package.json`, así que `pnpm run check:z-index` no existe: se ejecuta con `pnpm run lint` o con
+   `node scripts/check-z-index.mjs`.
+   ⚠️ La auditoría del 2026-08-24 dijo que «se documentó tres veces y nunca existió». **Se
+   equivocaba**, y de la peor manera: por buscar el alias de npm en vez del fichero. Comprobado el
+   2026-08-26. Detalle en `frontend/CLAUDE.md` §5.5.
 
 **Las reglas completas están en `frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. El plan,
 la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. La primera vuelta
@@ -387,8 +396,8 @@ responde `missing FROM-clause entry for table "ti"` **en tiempo de llamada**. No
 --check`, no lo ve `check:imports`, y el backend arranca igual. Muerde sobre todo al reemplazar en
 bloque: retirando la tabla `documents` (2026-08-23) un reemplazo global de una línea de `JOIN` se
 llevó **tres joins legítimos** a `task_items` en consultas que no tenían nada que ver, y el diff era
-de 91 sitios — leerlo no servía. Lo vigila **`npm run check:sql-aliases`**, a techo cero (428
-consultas). Sólo mira sentencias completas y, en las que se componen con `${…}`, sólo los usos
+de 91 sitios — leerlo no servía. Lo vigila **`npm run check:sql-aliases`**, a techo cero (**442
+consultas en 200 ficheros**, medido el 2026-08-26; decía 428). Sólo mira sentencias completas y, en las que se componen con `${…}`, sólo los usos
 anteriores al primer hueco: lo de después puede apoyarse en tablas que trae el fragmento.
 `npm run start` (`node index.js`) sirve la API en `/deasy/v1`, Swagger en `/deasy/docs`.
 
@@ -504,7 +513,9 @@ Cada plantilla ligada declara su modo en `process_definition_templates.item_mode
 
 El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenecen a ningún proceso** (cualquier usuario, en cualquier momento; p. ej. "haz el informe de este evento"). **NO es "memorandums".**
 
-Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **RETIRADOS (la base los rechaza):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. Ya no es deprecación blanda: el `CHECK` de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type` admite **solo esos tres valores**, y el `ALTER` valida las filas existentes, así que un arranque contra una base con un valor retirado **falla**. Lo mismo con los ámbitos `context_subtree` y `context_ancestor_type`. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`).
+Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **RETIRADOS (la base los rechaza):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. Ya no es deprecación blanda: el `CHECK` de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type` admite **solo esos tres valores** (`task_assignee`, `specific_person`, `cargo_in_scope`). Lo mismo con los ámbitos `context_subtree` y `context_ancestor_type`, retirados de `unit_scope_type`, que hoy admite cinco: `unit_exact`, `unit_subtree`, `unit_type`, `all_units` y `context_exact`.
+
+⚠️ **Aquí ponía «y el `ALTER` valida las filas existentes, así que un arranque contra una base con un valor retirado falla». Ya no es verdad**: desde TD7-s (2026-08-24) **no queda ni un `ALTER TABLE` en `postgres_schema.sql`** — comprobado el 2026-08-26, son cero. Todo es `CREATE TABLE IF NOT EXISTS` con los `CHECK` en línea, así que sobre una base que ya existe **el `CHECK` nuevo ni se aplica ni falla**: la fila con el valor retirado sigue ahí, en silencio. Un esquema recreado desde cero sí lo rechaza; uno vivo, no. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`).
 
 ⚠️ **Lo que sí queda vivo del `document_owner`: sus `case` en el camino de ejecución.** No los des
 por retirados al leer el código. Y ojo, porque **NO son ramas muertas del todo**: el `CHECK` cubre la

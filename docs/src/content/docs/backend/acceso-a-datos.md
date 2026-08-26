@@ -24,7 +24,7 @@ Y es cuidadoso: no toca los `?` que están dentro de comentarios (`--`, `/* */`)
 
 Y lo más importante: **falla ruidosamente si el número de parámetros no coincide con el de `?`, en cualquiera de las dos direcciones**. Si faltan, antes mandaba `NULL` en silencio, que es peor porque el fallo aparece lejos de su causa. Si sobran, antes se ignoraban — también en silencio. Son el mismo fallo (el SQL y su lista de argumentos se han desincronizado) y ahora se comportan igual; que no lo hicieran es lo que mantenía uno de los dos invisible.
 
-Antes de endurecerlo se comprobó que **ninguna consulta del repositorio dependía de la tolerancia**: las 484 llamadas están equilibradas. Hay un comando que lo vuelve a comprobar sobre todo el árbol, `npm run check:params`.
+Antes de endurecerlo se comprobó que **ninguna consulta del repositorio dependía de la tolerancia**: las **525 llamadas** están equilibradas. Hay un comando que lo vuelve a comprobar sobre todo el árbol, `npm run check:params`.
 
 El mensaje de error, a propósito, *no* incluye el SQL: varios controllers responden `error.message` directamente al cliente, y llevarlo ahí filtraría el esquema.
 

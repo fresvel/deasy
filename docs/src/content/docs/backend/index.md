@@ -4,7 +4,7 @@ description: "La regla no negociable —los controllers son transporte, no lógi
 sidebar:
   order: 0
 ---
-Es la pieza mas grande: unas 30.000 líneas de JavaScript **ESM** (`import` y `export`, no `require`), Express 5, sin ORM.
+Es la pieza mas grande: unas **34.400 líneas** de JavaScript **ESM** (`import` y `export`, no `require`), Express 5, sin ORM.
 
 ## Las capas y la regla no negociable del proyecto
 
@@ -29,7 +29,7 @@ El fichero `CLAUDE.md` del repositorio lo dice sin rodeos: **“Los controllers 
 
 - **`controllers/`**: 8 subcarpetas por dominio (`users/`, `admin/`, `sign/`, `chat/`, `tareas/`, `system/`, `whatsapp/`, `empresa/`), 27 ficheros en total.
 
-- **`services/`**: 18 subcarpetas, unos 66 ficheros. Aquí están los dominios reales: `admin/` (con sub-subcarpetas `kernel/`, `crud/`, `templates/`, `processes/`, `org/`, `generation/`), `auth/`, `chat/`, `documents/`, `sign/`, `system/`, `tasks/`, `users/`, `mail/`, `storage/`, `realtime/`, `infrastructure/`, `whatsapp/`, `external/`.
+- **`services/`**: **15 subcarpetas, 67 ficheros** (20 787 líneas). Aquí están los dominios reales: `admin/` (con sub-subcarpetas `kernel/`, `crud/`, `templates/`, `processes/`, `org/`, `generation/`), `auth/`, `chat/`, `documents/`, `sign/`, `system/`, `tasks/`, `users/`, `mail/`, `storage/`, `realtime/`, `infrastructure/`, `whatsapp/`, `external/`.
 
 - **`database/`**: solo dos ficheros — `postgres_initializer.js` y `postgres_schema.sql`. No es una capa de repositorios, es el arranque del esquema.
 

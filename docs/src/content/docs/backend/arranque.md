@@ -44,6 +44,6 @@ Los reintentos se parametrizan con `DB_INIT_MAX_ATTEMPTS` (20), `DB_INIT_RETRY_D
 
 :::note[Que NO se conecta al arrancar]
 
-RabbitMQ no abre conexion (se usa su API HTTP bajo demanda). MinIO construye el cliente al importar el modulo, pero no crea buckets al arrancar. El bot de WhatsApp solo se inicializa por petición explícita. Y Swagger se configura con `apis: []`, o sea que **no** escanea anotaciones JSDoc: todo el spec es un objeto estático en `backend/config/swagger/definition.js` (581 líneas).
+RabbitMQ no abre conexion (se usa su API HTTP bajo demanda). MinIO **sí toca el almacenamiento al arrancar**: `initializeDatabaseWithRetry()` llama a `publishSeedsOnBoot()` (`backend/index.js:221`) justo después de aplicar el esquema, y ésa invoca `publishBaseSeedAssets()`, que usa `ensureBucketExists` y sube la semilla base con `putObject`. Si falla, **avisa y sigue**: el backend no se cae, pero las plantillas nuevas heredarían la semilla anterior. (Aquí ponía «no crea buckets al arrancar»; era falso.) El bot de WhatsApp solo se inicializa por petición explícita. Y Swagger se configura con `apis: []`, o sea que **no** escanea anotaciones JSDoc: todo el spec es un objeto estático en `backend/config/swagger/definition.js` (581 líneas).
 
 :::
