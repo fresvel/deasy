@@ -13,7 +13,43 @@
 
 Project organizacion {
   database_type: 'PostgreSQL'
-  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.'''
+  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → ciudad, y las operadoras móviles.'''
+}
+
+Table "ciudades" {
+  "id" int4 [pk, not null, increment]
+  "provincia_id" int4 [not null]
+  "dpa_code" varchar(4)
+  "name" varchar(140) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (provincia_id, name) [type: btree, unique, name: "uq_ciudades_provincia_name"]
+    provincia_id [type: btree, name: "idx_ciudades_provincia"]
+  }
+}
+
+Table "operadoras" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(120) [not null]
+  "pais_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "paises" {
+  "id" int4 [pk, not null, increment]
+  "iso_alpha2" bpchar(2) [unique, not null]
+  "name" varchar(120) [not null]
+  "name_en" varchar(120) [not null]
+  "phone_code" varchar(10)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table "position_assignments" {
@@ -30,6 +66,21 @@ Table "position_assignments" {
   Indexes {
     (position_id, current_flag) [type: btree, unique, name: "uq_position_current"]
     (person_id, is_current) [type: btree, name: "idx_assignments_person_current"]
+  }
+}
+
+Table "provincias" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "dpa_code" varchar(2)
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, name) [type: btree, unique, name: "uq_provincias_pais_name"]
+    pais_id [type: btree, name: "idx_provincias_pais"]
   }
 }
 
@@ -104,7 +155,10 @@ Table "units" {
   }
 }
 
+Ref "fk_ciudades_provincia":"provincias"."id" <? "ciudades"."provincia_id"
+Ref "fk_operadoras_pais":"paises"."id" ?<? "operadoras"."pais_id"
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
+Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
 Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
 Ref "fk_unit_relations_parent":"units"."id" <? "unit_relations"."parent_unit_id"

@@ -4,6 +4,75 @@ import {
 } from "../services/documents/DocumentStateService.js";
 
 export const SQL_TABLES = [
+  // ── Geografia ──────────────────────────────────────────────────────────────────────────────────
+  // Los siembra el bootstrap (seedGeographyCatalog) desde config/geografiaCatalog.js, que a su vez
+  // es GENERADO. Se exponen aqui para consultarlos y para corregir un caso puntual, no para
+  // mantenerlos a mano: una regeneracion vuelve a poner los valores de la fuente oficial.
+  {
+    table: "paises",
+    label: "Paises",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "iso_alpha2", label: "ISO", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "name_en", label: "Nombre (ingles)", type: "text", required: true },
+      { name: "phone_code", label: "Prefijo telefonico", type: "text" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["iso_alpha2", "name", "name_en"]
+  },
+  {
+    table: "provincias",
+    label: "Provincias",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "dpa_code", label: "Codigo DPA", type: "text" },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name", "dpa_code"]
+  },
+  {
+    table: "ciudades",
+    label: "Ciudades",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "provincia_id", label: "Provincia", type: "number", required: true },
+      { name: "dpa_code", label: "Codigo DPA", type: "text" },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name", "dpa_code"]
+  },
+  {
+    table: "operadoras",
+    label: "Operadoras",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "pais_id", label: "Pais", type: "number" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
   {
     table: "unit_types",
     label: "Tipos de unidad",

@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 67 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 71 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "actions" {
@@ -158,6 +158,21 @@ Table "chat_notifications" {
   Indexes {
     (recipient_person_id, created_at) [type: btree, name: "idx_chat_notif_recipient_created"]
     (recipient_person_id, read_at) [type: btree, name: "idx_chat_notif_recipient_read"]
+  }
+}
+
+Table "ciudades" {
+  "id" int4 [pk, not null, increment]
+  "provincia_id" int4 [not null]
+  "dpa_code" varchar(4)
+  "name" varchar(140) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (provincia_id, name) [type: btree, unique, name: "uq_ciudades_provincia_name"]
+    provincia_id [type: btree, name: "idx_ciudades_provincia"]
   }
 }
 
@@ -439,6 +454,27 @@ Table "offers" {
   }
 }
 
+Table "operadoras" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(120) [not null]
+  "pais_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "paises" {
+  "id" int4 [pk, not null, increment]
+  "iso_alpha2" bpchar(2) [unique, not null]
+  "name" varchar(120) [not null]
+  "name_en" varchar(120) [not null]
+  "phone_code" varchar(10)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
 Table "password_reset_codes" {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [not null]
@@ -644,6 +680,21 @@ Table "processes" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
+}
+
+Table "provincias" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "dpa_code" varchar(2)
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, name) [type: btree, unique, name: "uq_provincias_pais_name"]
+    pais_id [type: btree, name: "idx_provincias_pais"]
+  }
 }
 
 Table "relation_unit_types" {
@@ -1101,6 +1152,7 @@ Ref "fk_chat_messages_sender":"persons"."id" <? "chat_messages"."sender_person_i
 Ref "fk_chat_notif_conversation":"chat_conversations"."id" ?<? "chat_notifications"."conversation_id" [delete: cascade]
 Ref "fk_chat_notif_message":"chat_messages"."id" ?<? "chat_notifications"."message_id" [delete: cascade]
 Ref "fk_chat_notif_recipient":"persons"."id" <? "chat_notifications"."recipient_person_id"
+Ref "fk_ciudades_provincia":"provincias"."id" <? "ciudades"."provincia_id"
 Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
 Ref "fk_contract_origin_recruitment_offer":"offers"."id" <? "contract_origin_recruitment"."offer_id"
 Ref "fk_contract_origin_recruitment_vacancy":"vacancies"."id" <? "contract_origin_recruitment"."vacancy_id"
@@ -1147,6 +1199,7 @@ Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."d
 Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
 Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
 Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
+Ref "fk_operadoras_pais":"paises"."id" ?<? "operadoras"."pais_id"
 Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
 Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"
@@ -1171,6 +1224,7 @@ Ref "fk_process_target_rules_position":"unit_positions"."id" ?<? "process_target
 Ref "fk_process_target_rules_unit":"units"."id" ?<? "process_target_rules"."unit_id"
 Ref "fk_process_target_rules_unit_type":"unit_types"."id" ?<? "process_target_rules"."unit_type_id"
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
+Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_role_assignment_relation_types_relation_type":"relation_unit_types"."id" <? "role_assignment_relation_types"."relation_type_id"
 Ref "fk_role_assignment_relation_types_role_assignment":"role_assignments"."id" <? "role_assignment_relation_types"."role_assignment_id"
 Ref "fk_role_assignments_person":"persons"."id" <? "role_assignments"."person_id"

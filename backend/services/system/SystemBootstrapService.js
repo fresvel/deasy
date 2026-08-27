@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
+import { PAISES, PROVINCIAS_EC, CANTONES_EC, OPERADORAS } from "../../config/geografiaCatalog.js";
 import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
@@ -206,6 +207,85 @@ const seedBaseRbacCatalog = async (connection) => {
   }
 
   return roleIds;
+};
+
+// La geografia: pais -> provincia -> ciudad, mas las operadoras. Va aqui y no en
+// `postgres_schema.sql` porque ahi solo hay cuatro INSERT, todos vocabularios de ocho filas o menos
+// de los que depende el codigo; esto son 482 filas. Es la misma decision, y el mismo sitio, que el
+// catalogo base de RBAC de arriba.
+//
+// Va en el arranque OBLIGATORIO, no en "usar datos de ejemplo": sin paises el formulario de registro
+// no puede pedir una direccion.
+//
+// Idempotente por `ON DUPLICATE KEY UPDATE` sobre la clave natural de cada tabla, que para las
+// ciudades es (provincia, nombre) y NUNCA el nombre: en Ecuador hay un canton "Bolivar" en Carchi y
+// otro en Manabi, y un "Olmedo" en Loja y otro en Manabi.
+const seedGeographyCatalog = async (connection) => {
+  for (const pais of PAISES) {
+    await connection.query(
+      `INSERT INTO paises (iso_alpha2, name, name_en, phone_code, is_active)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         name_en = VALUES(name_en),
+         phone_code = VALUES(phone_code),
+         is_active = VALUES(is_active)`,
+      [pais.iso, pais.nombre, pais.nombre_en, pais.prefijo, pais.activo]
+    );
+  }
+
+  const ecuador = await fetchOne(connection, "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1", ["EC"]);
+  if (!ecuador) {
+    throw new Error("No se pudo sembrar la geografia: falta Ecuador en el catalogo de paises.");
+  }
+  const ecuadorId = Number(ecuador.id);
+
+  for (const provincia of PROVINCIAS_EC) {
+    await connection.query(
+      `INSERT INTO provincias (pais_id, dpa_code, name, is_active)
+       VALUES (?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         dpa_code = VALUES(dpa_code),
+         is_active = 1`,
+      [ecuadorId, provincia.dpa, provincia.nombre]
+    );
+  }
+
+  // Un solo SELECT para el mapa de provincias: 221 consultas sueltas dentro del bucle de cantones
+  // seria el mismo trabajo hecho 221 veces.
+  const [provinciaRows] = await connection.query(
+    "SELECT id, dpa_code FROM provincias WHERE pais_id = ?",
+    [ecuadorId]
+  );
+  const provinciaPorDpa = new Map((provinciaRows ?? []).map((row) => [String(row.dpa_code), Number(row.id)]));
+
+  for (const canton of CANTONES_EC) {
+    const provinciaId = provinciaPorDpa.get(canton.provincia_dpa);
+    if (!provinciaId) continue;
+    await connection.query(
+      `INSERT INTO ciudades (provincia_id, dpa_code, name, is_active)
+       VALUES (?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         dpa_code = VALUES(dpa_code),
+         is_active = 1`,
+      [provinciaId, canton.dpa, canton.nombre]
+    );
+  }
+
+  for (const operadora of OPERADORAS) {
+    const paisId = operadora.pais_iso
+      ? (await fetchOne(connection, "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1", [operadora.pais_iso]))?.id ?? null
+      : null;
+    await connection.query(
+      `INSERT INTO operadoras (code, name, pais_id, is_active)
+       VALUES (?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         pais_id = VALUES(pais_id),
+         is_active = 1`,
+      [operadora.codigo, operadora.nombre, paisId]
+    );
+  }
 };
 
 const ensureBootstrapUnit = async (connection) => {
@@ -854,6 +934,7 @@ export default class SystemBootstrapService {
     try {
       await connection.beginTransaction();
       const roleIds = await seedBaseRbacCatalog(connection);
+      await seedGeographyCatalog(connection);
       const unitId = await ensureBootstrapUnit(connection);
       const admin = await upsertAdminPerson(connection, adminPayload);
       await ensureAdminRoleAssignment(connection, {
@@ -934,6 +1015,7 @@ export default class SystemBootstrapService {
     try {
       await connection.beginTransaction();
       const roleIds = await seedBaseRbacCatalog(connection);
+      await seedGeographyCatalog(connection);
       const unitId = await ensureBootstrapUnit(connection);
       const admin = await upsertAdminPerson(connection, adminPayload);
       await ensureAdminRoleAssignment(connection, {
