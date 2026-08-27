@@ -12,8 +12,12 @@ export const sendResetCodeService = async (email) => {
   const pool = getPostgresPool();
 
   const [[user]] = await pool.query(
-    "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
-    [email]
+    `SELECT p.id
+       FROM persons p
+       JOIN emails e ON e.person_id = p.id AND e.is_active = 1
+      WHERE e.direccion = ? AND p.is_active = 1
+      LIMIT 1`,
+    [String(email ?? "").trim().toLowerCase()]
   );
 
   if (!user) return;
@@ -57,8 +61,12 @@ export const verifyResetCodeService = async (email, code) => {
   const pool = getPostgresPool();
 
   const [[user]] = await pool.query(
-    "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
-    [email]
+    `SELECT p.id
+       FROM persons p
+       JOIN emails e ON e.person_id = p.id AND e.is_active = 1
+      WHERE e.direccion = ? AND p.is_active = 1
+      LIMIT 1`,
+    [String(email ?? "").trim().toLowerCase()]
   );
 
   if (!user) return false;
@@ -92,8 +100,12 @@ export const resetPasswordService = async (email, code, password) => {
 
   // 1️⃣ Buscar usuario
   const [[user]] = await pool.query(
-    "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
-    [email]
+    `SELECT p.id
+       FROM persons p
+       JOIN emails e ON e.person_id = p.id AND e.is_active = 1
+      WHERE e.direccion = ? AND p.is_active = 1
+      LIMIT 1`,
+    [String(email ?? "").trim().toLowerCase()]
   );
   if (!user) throw new Error("Usuario no encontrado");
 

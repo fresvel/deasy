@@ -60,11 +60,11 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 | | |
 |---|---|
 | Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **38** |
-| Columnas de esas 38 | **368** |
+| Columnas de esas 38 | **366** |
 | Claves foráneas entre esas 38 | **97** |
-| Tablas del esquema entero (con chat, empleo y dossier) | **74** |
-| Claves foráneas del esquema entero | **158** |
-| Restricciones `CHECK` del esquema entero | **35** |
+| Tablas del esquema entero (con chat, empleo y dossier) | **75** |
+| Claves foráneas del esquema entero | **159** |
+| Restricciones `CHECK` del esquema entero | **36** |
 
 Los **comportamientos** —qué pasa al publicar, qué mira el lanzamiento, hasta dónde llega el
 relevo— se comprobaron ejecutándolos, no leyéndolos.

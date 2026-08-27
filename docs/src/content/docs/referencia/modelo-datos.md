@@ -1,6 +1,6 @@
 ---
 title: Modelo de datos
-description: Las 74 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
+description: Las 75 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
 sidebar:
   order: 1
 ---
@@ -9,7 +9,7 @@ Esta página **no se escribe: se genera.** Los diagramas salen de
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **74 tablas y 158 relaciones**. Repartidas en ocho dominios porque un diagrama de 74 tablas
+Son **75 tablas y 159 relaciones**. Repartidas en ocho dominios porque un diagrama de 75 tablas
 impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]

@@ -1,6 +1,7 @@
 import { getPostgresPool } from "../../config/postgres.js";
 import DireccionService from "../users/DireccionService.js";
 import TelefonoService from "../users/TelefonoService.js";
+import EmailService from "../users/EmailService.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
@@ -9,6 +10,7 @@ export default class UserRepository {
     this.pool = pool;
     this.direcciones = new DireccionService(pool);
     this.telefonos = new TelefonoService(pool);
+    this.emails = new EmailService(pool);
   }
 
   ensurePool() {
@@ -47,15 +49,17 @@ export default class UserRepository {
   async conDirecciones(userRow) {
     if (!userRow) return userRow;
     const personId = userRow.id ?? userRow._id;
-    const [direcciones, telefonos] = await Promise.all([
+    const [direcciones, telefonos, emails] = await Promise.all([
       this.direcciones.listarPorPersona(personId),
-      this.telefonos.listarPorPersona(personId)
+      this.telefonos.listarPorPersona(personId),
+      this.emails.listarPorPersona(personId)
     ]);
     return {
       ...userRow,
       direcciones,
       direccion: direcciones.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null,
-      telefonos
+      telefonos,
+      emails
     };
   }
 
@@ -63,9 +67,11 @@ export default class UserRepository {
     this.ensurePool();
 
     const [rows] = await this.pool.query(
-      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
        WHERE p.id = ? LIMIT 1`,
       [id]
     );
@@ -85,8 +91,11 @@ export default class UserRepository {
     }
 
     if (email) {
-      conditions.push("p.email = ?");
-      params.push(email);
+      // El correo ya no es columna de `persons`: se entra por CUALQUIERA de los de la tabla, no
+      // solo el principal. Quien se registro con el personal y luego declara el institucional debe
+      // poder seguir entrando con los dos.
+      conditions.push("EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ? AND e.is_active = 1)");
+      params.push(String(email).trim().toLowerCase());
     }
 
     if (!conditions.length) {
@@ -94,9 +103,11 @@ export default class UserRepository {
     }
 
     const [rows] = await this.pool.query(
-      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
        WHERE ${conditions.join(" OR ")} LIMIT 1`,
       params
     );
@@ -108,9 +119,11 @@ export default class UserRepository {
     this.ensurePool();
 
     const [rows] = await this.pool.query(
-      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
        ORDER BY p.created_at DESC`
     );
 
@@ -284,13 +297,11 @@ export default class UserRepository {
 
     const payload = {
       cedula: userData.cedula,
-      email: userData.email ?? null,
       password_hash: userData.password_hash ?? userData.password,
       first_name: userData.first_name ?? userData.nombre,
       last_name: userData.last_name ?? userData.apellido,
       nacionalidad_pais_id: await this.resolveNacionalidadPaisId(userData),
       status: userData.status ?? DEFAULT_STATUS,
-      verify_email: Number(userData.verify_email ?? userData.verify?.email ?? 0),
       photo_url: userData.photo_url ?? userData.photoUrl ?? null,
       is_active: userData.is_active ?? 1,
       token: userData.token
@@ -329,6 +340,9 @@ export default class UserRepository {
     }
     if (userData.telefono) {
       await this.telefonos.guardarPrincipal(result.insertId, userData.telefono);
+    }
+    if (userData.email) {
+      await this.emails.guardarPrincipal(result.insertId, userData.email);
     }
 
     return {
@@ -371,7 +385,11 @@ export default class UserRepository {
       cedula: userRow.cedula,
       first_name: userRow.first_name,
       last_name: userRow.last_name,
-      email: userRow.email,
+      // `email` YA NO ES UNA COLUMNA de `persons`: es el principal de la tabla `emails`, colgado
+      // por JOIN en las tres lecturas. Se conserva en el objeto publico porque es el identificador
+      // de acceso y medio frontend lo lee.
+      email: userRow.email ?? null,
+      emails: userRow.emails ?? [],
       // `whatsapp` YA NO ES UNA COLUMNA: se deriva del telefono principal que tiene ese canal. Se
       // conserva en el objeto publico porque el bot de bienvenida y el frontend lo leen, pero es
       // una proyeccion, no un dato: no hay dos sitios donde el numero pueda discrepar.
@@ -398,7 +416,7 @@ export default class UserRepository {
       unit_name: unitNames[0] ?? "",
       cargo_name: cargoNames[0] ?? "",
       verify: {
-        email: Boolean(userRow.verify_email),
+        email: Boolean(userRow.email_verificado),
         // Verificado EN WHATSAPP, que es lo que la bandera vieja no sabia decir.
         whatsapp: Boolean(canalWhatsapp?.verificado)
       },
@@ -453,6 +471,11 @@ export default class UserRepository {
     delete payload.telefono;
     delete payload.telefonos;
     delete payload.whatsapp;
+    const email = payload.email;
+    delete payload.email;
+    delete payload.emails;
+    delete payload.email_verificado;
+    delete payload.email_id;
 
     if (payload.nacionalidad !== undefined) {
       const resuelto = await this.resolveNacionalidadPaisId(payload);
@@ -472,9 +495,10 @@ export default class UserRepository {
     });
 
     if (!fields.length) {
-      if (direccion || telefono) {
+      if (direccion || telefono || email) {
         if (direccion) await this.direcciones.guardarPrincipal(userId, direccion);
         if (telefono) await this.telefonos.guardarPrincipal(userId, telefono);
+        if (email) await this.emails.guardarPrincipal(userId, email);
         return this.toPublicUser(await this.findById(userId));
       }
       return null;
@@ -492,6 +516,9 @@ export default class UserRepository {
     }
     if (telefono) {
       await this.telefonos.guardarPrincipal(userId, telefono);
+    }
+    if (email) {
+      await this.emails.guardarPrincipal(userId, email);
     }
 
     const updated = await this.findById(userId);

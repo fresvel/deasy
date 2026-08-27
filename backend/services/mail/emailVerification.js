@@ -4,16 +4,28 @@ import { getPostgresPool } from "../../config/postgres.js";
 export const verifyEmailCode = async (personId, code) => {
   const pool = getPostgresPool();
 
+  // 0️⃣ El código ya no cuelga de la persona sino de SU CORREO, porque desde que hay varios,
+  // "verificar a la persona" no dice cuál. La firma sigue tomando `personId` a propósito: quien
+  // llama tiene el id de la persona, no el del correo, y el que se verifica es el principal.
+  const [correos] = await pool.query(
+    "SELECT id FROM emails WHERE person_id = ? AND principal = 1 AND is_active = 1 LIMIT 1",
+    [personId]
+  );
+  if (!correos.length) {
+    throw new Error("NO_CODE");
+  }
+  const emailId = Number(correos[0].id);
+
   // 1️⃣ Buscar código activo
   const [rows] = await pool.query(
     `
     SELECT id, code_hash, expires_at
     FROM email_verification_codes
-    WHERE person_id = ?
+    WHERE email_id = ?
     ORDER BY created_at DESC
     LIMIT 1
     `,
-    [personId]
+    [emailId]
   );
 
   if (!rows.length) {
@@ -39,12 +51,17 @@ export const verifyEmailCode = async (personId, code) => {
     throw new Error("INVALID_CODE");
   }
 
-  // 4️⃣ Marcar a la persona como verificada
+  // 4️⃣ Marcar EL CORREO como verificado, y a la persona como verificada. Son dos cosas
+  // distintas desde el paso 5: el correo lleva su propia marca y su fecha; el estado de la persona
+  // sigue siendo el de siempre.
+  await pool.query(
+    "UPDATE emails SET verificado = 1, verificado_at = CURRENT_TIMESTAMP WHERE id = ?",
+    [emailId]
+  );
   await pool.query(
     `
     UPDATE persons
-    SET verify_email = 1,
-        status = 'Verificado'
+    SET status = 'Verificado'
     WHERE id = ?
     `,
     [personId]

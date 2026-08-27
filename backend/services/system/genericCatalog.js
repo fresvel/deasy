@@ -320,18 +320,29 @@ const seedExampleUsers = async (connection, roleIds = new Map()) => {
     // Persona (idempotente por cédula/email).
     const cedula = String(u.cedula);
     const email = u.email || `${cedula}@demo.deasy.local`;
+    // El correo ya no es columna de `persons`: la busqueda idempotente mira la cedula O la tabla
+    // `emails`, y el alta crea las dos filas.
     const [exP] = await connection.query(
-      "SELECT id FROM persons WHERE cedula = ? OR email = ? LIMIT 1",
-      [cedula, email]
+      `SELECT p.id
+         FROM persons p
+        WHERE p.cedula = ?
+           OR EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ?)
+        LIMIT 1`,
+      [cedula, email.toLowerCase()]
     );
     let personId = exP?.[0]?.id;
     if (!personId) {
       const [insP] = await connection.query(
-        `INSERT INTO persons (cedula, first_name, last_name, email, password_hash, token, status, verify_email, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, 'Activo', 1, 1)`,
-        [cedula, u.first_name, u.last_name, email, passwordHash, cedula]
+        `INSERT INTO persons (cedula, first_name, last_name, password_hash, token, status, is_active)
+         VALUES (?, ?, ?, ?, ?, 'Activo', 1)`,
+        [cedula, u.first_name, u.last_name, passwordHash, cedula]
       );
       personId = insP.insertId;
+      await connection.query(
+        `INSERT INTO emails (person_id, tipo, direccion, verificado, verificado_at, principal)
+         VALUES (?, 'institucional', ?, 1, CURRENT_TIMESTAMP, 1)`,
+        [personId, email.toLowerCase()]
+      );
     }
 
     // Ocupación del puesto.

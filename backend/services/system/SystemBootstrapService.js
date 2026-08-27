@@ -8,6 +8,7 @@ import { minioClient, ensureBucketExists, statMinioObject } from "../storage/min
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
 import { PAISES, PROVINCIAS_EC, CANTONES_EC } from "../../config/geografiaCatalog.js";
 import TelefonoService from "../users/TelefonoService.js";
+import EmailService from "../users/EmailService.js";
 import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
@@ -726,6 +727,16 @@ export const ensureDefaultProcess = async (connection) => {
   return { processId, definitionId, artifactId };
 };
 
+// El correo del administrador ya no es una columna de `persons`: es su fila principal en `emails`,
+// dada por verificada igual que antes lo daba `verify_email = 1`. Va aqui y no en `EmailService`
+// porque el bootstrap corre en su propia transaccion y tiene que compartirla.
+const guardarCorreoDelAdmin = async (connection, personId, email) => {
+  if (!email) return;
+  const emails = new EmailService(connection);
+  const emailId = await emails.guardarPrincipal(personId, { tipo: "institucional", direccion: email }, connection);
+  await emails.marcarVerificado(emailId, connection);
+};
+
 // El WhatsApp del administrador ya no es una columna de `persons`: es una fila de `telefonos` con su
 // canal declarado y verificado. Se hace aqui, y no en `TelefonoService`, porque el bootstrap corre
 // dentro de su propia transaccion y tiene que compartirla.
@@ -745,11 +756,12 @@ const guardarTelefonoDelAdmin = async (connection, personId, whatsapp) => {
 const upsertAdminPerson = async (connection, payload) => {
   const existingPerson = await fetchOne(
     connection,
-    `SELECT id, cedula, email, token
-     FROM persons
-     WHERE cedula = ? OR email = ?
-     LIMIT 1`,
-    [payload.cedula, payload.email]
+    `SELECT p.id, p.cedula, p.token
+       FROM persons p
+      WHERE p.cedula = ?
+         OR EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ?)
+      LIMIT 1`,
+    [payload.cedula, String(payload.email ?? "").trim().toLowerCase()]
   );
 
   const passwordHash = await bcrypt.hash(payload.password, 10);
@@ -761,10 +773,8 @@ const upsertAdminPerson = async (connection, payload) => {
        SET cedula = ?,
            first_name = ?,
            last_name = ?,
-           email = ?,
            password_hash = ?,
            status = 'Activo',
-           verify_email = 1,
            is_active = 1,
            token = ?
        WHERE id = ?`,
@@ -772,12 +782,12 @@ const upsertAdminPerson = async (connection, payload) => {
         payload.cedula,
         payload.first_name,
         payload.last_name,
-        payload.email,
         passwordHash,
         token,
         existingPerson.id
       ]
     );
+    await guardarCorreoDelAdmin(connection, Number(existingPerson.id), payload.email);
     await guardarTelefonoDelAdmin(connection, Number(existingPerson.id), payload.whatsapp);
     return { id: Number(existingPerson.id), token };
   }
@@ -787,24 +797,22 @@ const upsertAdminPerson = async (connection, payload) => {
        cedula,
        first_name,
        last_name,
-       email,
        password_hash,
        status,
-       verify_email,
        is_active,
        token
      )
-     VALUES (?, ?, ?, ?, ?, 'Activo', 1, 1, ?)`,
+     VALUES (?, ?, ?, ?, 'Activo', 1, ?)`,
     [
       payload.cedula,
       payload.first_name,
       payload.last_name,
-      payload.email,
       passwordHash,
       token
     ]
   );
 
+  await guardarCorreoDelAdmin(connection, Number(result.insertId), payload.email);
   await guardarTelefonoDelAdmin(connection, Number(result.insertId), payload.whatsapp);
   return { id: Number(result.insertId), token };
 };

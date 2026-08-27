@@ -77,12 +77,13 @@ const listTargetPeople = async ({ force, person }) => {
             p.cedula,
             p.first_name,
             p.last_name,
-            p.email,
+            e.direccion AS email,
             COUNT(pc.id) AS certificate_count
        FROM persons p
+       LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
        LEFT JOIN person_certificates pc ON pc.person_id = p.id
       ${filter}
-      GROUP BY p.id, p.cedula, p.first_name, p.last_name, p.email
+      GROUP BY p.id, p.cedula, p.first_name, p.last_name, e.direccion
       ${force ? "" : "HAVING COUNT(pc.id) = 0"}
       ORDER BY p.id`,
     params

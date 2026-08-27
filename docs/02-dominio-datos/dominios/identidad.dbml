@@ -103,14 +103,33 @@ Table "dossiers" {
 
 Table "email_verification_codes" {
   "id" int8 [pk, not null, increment]
-  "person_id" int4 [not null]
+  "email_id" int4 [not null]
   "code_hash" varchar(255) [not null]
   "expires_at" timestamp [not null]
   "created_at" timestamp [default: `CURRENT_TIMESTAMP`]
 
   Indexes {
+    email_id [type: btree, name: "idx_evc_email_id"]
     expires_at [type: btree, name: "idx_evc_expires_at"]
-    person_id [type: btree, name: "idx_evc_person_id"]
+  }
+}
+
+Table "emails" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['personal'::text, 'institucional'::text])`]
+  "direccion" varchar(180) [unique, not null]
+  "verificado" int2 [not null, default: 0]
+  "verificado_at" timestamp
+  "principal" int2 [not null, default: 0]
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, principal_flag) [type: btree, unique, name: "uq_emails_principal"]
+    person_id [type: btree, name: "idx_emails_person"]
   }
 }
 
@@ -167,11 +186,9 @@ Table "persons" {
   "cedula" varchar(20) [unique]
   "first_name" varchar(120) [not null]
   "last_name" varchar(120) [not null]
-  "email" varchar(180) [unique]
   "nacionalidad_pais_id" int4
   "password_hash" varchar(255) [not null]
   "status" text [check: `status = ANY (ARRAY['Inactivo'::text, 'Activo'::text, 'Verificado'::text, 'Reportado'::text])`, default: 'Inactivo']
-  "verify_email" int2 [default: 0]
   "photo_url" text
   "is_active" int2 [not null, default: 1]
   "token" varchar(10) [unique, not null]
@@ -281,7 +298,8 @@ Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
 Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]
 Ref "fk_dossiers_person":"persons"."id" <? "dossiers"."person_id" [delete: cascade]
-Ref "fk_email_verification_person":"persons"."id" <? "email_verification_codes"."person_id" [delete: cascade]
+Ref "fk_email_verification_codes_email":"emails"."id" <? "email_verification_codes"."email_id" [delete: cascade]
+Ref "fk_emails_person":"persons"."id" <? "emails"."person_id" [delete: cascade]
 Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
 Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"

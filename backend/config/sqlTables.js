@@ -485,7 +485,10 @@ export const SQL_TABLES = [
       { name: "cedula", label: "Cedula", type: "text" },
       { name: "first_name", label: "Nombre", type: "text", required: true },
       { name: "last_name", label: "Apellido", type: "text", required: true },
-      { name: "email", label: "Email", type: "email" },
+      // Campo VIRTUAL: no es columna de `persons`, vive en `emails`. `virtual: true` es lo que
+      // hace que el motor lo saque del SELECT (SqlAdminService:249) y lo deje solo en el formulario;
+      // el hook de `persons` lo desvia a su tabla al crear.
+      { name: "email", label: "Email", type: "email", virtual: true },
       { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
       { name: "password_hash", label: "Password Hash", type: "text", required: true },
       {
@@ -495,13 +498,12 @@ export const SQL_TABLES = [
         options: ["Inactivo", "Activo", "Verificado", "Reportado"],
         defaultValue: "Inactivo"
       },
-      { name: "verify_email", label: "Email verificado", type: "boolean", defaultValue: 0 },
       { name: "photo_url", label: "Foto", type: "text" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["cedula", "first_name", "last_name", "email"]
+    searchFields: ["cedula", "first_name", "last_name"]
   },
   {
     table: "direcciones",
@@ -575,6 +577,25 @@ export const SQL_TABLES = [
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: []
+  },
+  {
+    table: "emails",
+    label: "Correos",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "tipo", label: "Tipo", type: "select", options: ["personal", "institucional"], defaultValue: "institucional" },
+      { name: "direccion", label: "Direccion", type: "email", required: true },
+      { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
+      { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["direccion"]
   },
   {
     table: "roles",

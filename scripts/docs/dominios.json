@@ -30,7 +30,8 @@
       "direcciones",
       "telefonos",
       "canales_mensajeria",
-      "telefono_canales"
+      "telefono_canales",
+      "emails"
     ]
   },
   "organizacion": {

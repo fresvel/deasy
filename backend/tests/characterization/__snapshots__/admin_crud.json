@@ -129,7 +129,6 @@
     "status": 200,
     "body": {
       "cedula": "9999999999",
-      "email": "caract-grafts@test.local",
       "first_name": "Caracterizacion",
       "id": "<normalized>",
       "last_name": "Grafts",
@@ -314,7 +313,6 @@
     "itemKeys": [
       "cedula",
       "created_at",
-      "email",
       "first_name",
       "id",
       "is_active",
@@ -322,8 +320,7 @@
       "nacionalidad_pais_id",
       "photo_url",
       "status",
-      "updated_at",
-      "verify_email"
+      "updated_at"
     ]
   },
   "list_position_assignments": {

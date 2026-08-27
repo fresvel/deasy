@@ -60,6 +60,7 @@ import {
   syncDocumentProgressFromFillRequest,
   syncDocumentProgressFromSignatureRequest,
 } from "../../documents/DocumentProgressService.js";
+import EmailService from "../../users/EmailService.js";
 
 /** Ejecuta una escritura dentro de una transacción, con hooks antes y después. */
 export async function runInTransaction(pool, ctx, { before, after }, execute) {
@@ -224,6 +225,20 @@ export const TABLE_HOOKS = {
       } else {
         throw new Error("Ingresa el password del usuario.");
       }
+
+      // `email` es un campo VIRTUAL del request desde el paso 5: ya no es columna de `persons`,
+      // vive en `emails`. Se aparta aqui —igual que hace `process_definition_versions` con
+      // `source_process_definition_id`— y la fila se crea en `afterInsertTx`, en la MISMA
+      // transaccion. Sin esto el editor generico creaba personas SIN correo, que es un usuario
+      // roto: no puede entrar por correo ni recibir la verificacion.
+      ctx.state.emailPrincipal = typeof ctx.data?.email === "string" ? ctx.data.email.trim() : "";
+      delete ctx.payload.email;
+    },
+
+    async afterInsertTx(ctx) {
+      if (!ctx.state.emailPrincipal) return;
+      const emails = new EmailService(ctx.connection);
+      await emails.guardarPrincipal(ctx.insertId, { direccion: ctx.state.emailPrincipal }, ctx.connection);
     },
 
     async beforeUpdate(ctx) {

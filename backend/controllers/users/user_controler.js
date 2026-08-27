@@ -918,9 +918,13 @@ export const updateMyProfile = async (req, res) => {
   try {
     const userId = req.user.uid;
 
+    // ⚠️ ESTA LISTA SE HA OLVIDADO TRES VECES en el desmontaje de `persons` (nacionalidad, y ahora
+    // el correo): `updateMyProfile` NO pasa por `updateMe`, llama a `update()` directamente, asi que
+    // lo que no este aqui se descarta EN SILENCIO. Un campo nuevo se añade en LOS DOS sitios.
     const payload = {
       first_name: req.body.first_name,
       last_name: req.body.last_name,
+      email: req.body.email,
       nacionalidad: req.body.nacionalidad,
       // El telefono es UN objeto con sus canales: { tipo, pais, numero, canales: ["whatsapp"] }.
       telefono: req.body.telefono,
@@ -1399,13 +1403,14 @@ export const searchTaskRecipients = async (req, res) => {
     if (q) {
       const like = `%${q}%`;
       where +=
-        " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.cedula LIKE ? OR p.email LIKE ? OR CONCAT(p.first_name, ' ', p.last_name) LIKE ?)";
+        " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.cedula LIKE ? OR e.direccion LIKE ? OR CONCAT(p.first_name, ' ', p.last_name) LIKE ?)";
       params.push(like, like, like, like, like);
     }
     const [rows] = await connection.query(
-      `SELECT p.id, p.cedula, p.first_name, p.last_name, p.email,
+      `SELECT p.id, p.cedula, p.first_name, p.last_name, e.direccion AS email,
               CONCAT(p.first_name, ' ', p.last_name) AS full_name
        FROM persons p
+       LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
        WHERE ${where}
        ORDER BY p.first_name ASC, p.last_name ASC
        LIMIT 25`,
