@@ -137,7 +137,7 @@ Table "persons" {
   "email" varchar(180) [unique]
   "whatsapp" varchar(30)
   "direccion" varchar(255)
-  "pais" varchar(80)
+  "nacionalidad_pais_id" int4
   "pais_residencia" varchar(80)
   "provincia_residencia" varchar(120)
   "ciudad_residencia" varchar(120)
@@ -153,6 +153,10 @@ Table "persons" {
   "token" varchar(10) [unique, not null]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    nacionalidad_pais_id [type: btree, name: "idx_persons_nacionalidad"]
+  }
 }
 
 Table "resources" {
@@ -247,6 +251,7 @@ Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
 //   cargos -> fill_flow_steps   [plantillas]
 //   persons -> fill_flow_steps   [plantillas]
 //   persons -> fill_requests   [plantillas]
+//   paises -> persons   [organizacion]
 //   persons -> position_assignments   [organizacion]
 //   cargos -> process_definition_series   [procesos]
 //   persons -> process_runs   [procesos]

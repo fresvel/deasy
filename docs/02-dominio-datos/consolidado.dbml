@@ -521,7 +521,7 @@ Table "persons" {
   "email" varchar(180) [unique]
   "whatsapp" varchar(30)
   "direccion" varchar(255)
-  "pais" varchar(80)
+  "nacionalidad_pais_id" int4
   "pais_residencia" varchar(80)
   "provincia_residencia" varchar(120)
   "ciudad_residencia" varchar(120)
@@ -537,6 +537,10 @@ Table "persons" {
   "token" varchar(10) [unique, not null]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    nacionalidad_pais_id [type: btree, name: "idx_persons_nacionalidad"]
+  }
 }
 
 Table "position_assignments" {
@@ -1193,6 +1197,7 @@ Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
 Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"
 Ref "fk_person_certificates_person":"persons"."id" <? "person_certificates"."person_id" [delete: cascade]
+Ref "fk_persons_nacionalidad":"paises"."id" ?<? "persons"."nacionalidad_pais_id"
 Ref "fk_position_assignments_person":"persons"."id" <? "position_assignments"."person_id"
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]

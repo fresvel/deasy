@@ -63,7 +63,7 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 | Columnas de esas 38 | **377** |
 | Claves foráneas entre esas 38 | **97** |
 | Tablas del esquema entero (con chat, empleo y dossier) | **70** |
-| Claves foráneas del esquema entero | **149** |
+| Claves foráneas del esquema entero | **150** |
 | Restricciones `CHECK` del esquema entero | **33** |
 
 Los **comportamientos** —qué pasa al publicar, qué mira el lanzamiento, hasta dónde llega el

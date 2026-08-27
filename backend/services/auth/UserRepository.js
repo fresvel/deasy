@@ -13,11 +13,39 @@ export default class UserRepository {
     }
   }
 
+  // La nacionalidad entra por la API como codigo ISO-3166 alfa-2 ("EC"), que es lo que un cliente
+  // puede escribir, y se guarda como clave ajena a `paises`. Se admite tambien el id ya resuelto,
+  // que es lo que manda el editor generico de /admin.
+  async resolveNacionalidadPaisId(userData) {
+    if (userData.nacionalidad_pais_id !== undefined && userData.nacionalidad_pais_id !== null && userData.nacionalidad_pais_id !== "") {
+      return Number(userData.nacionalidad_pais_id);
+    }
+    const iso = String(userData.nacionalidad ?? "").trim().toUpperCase();
+    if (!iso) {
+      return null;
+    }
+    const [rows] = await this.pool.query(
+      "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1",
+      [iso]
+    );
+    if (!rows?.length) {
+      const error = new Error(`La nacionalidad '${iso}' no corresponde a ningun pais del catalogo.`);
+      // Marca para que el transporte lo traduzca a 400 y no a 500: es dato mal enviado por el
+      // cliente, no una averia. Antes `pais` era texto libre y no habia nada que validar.
+      error.status = 400;
+      throw error;
+    }
+    return Number(rows[0].id);
+  }
+
   async findById(id) {
     this.ensurePool();
 
     const [rows] = await this.pool.query(
-      "SELECT * FROM persons WHERE id = ? LIMIT 1",
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre
+       FROM persons p
+       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       WHERE p.id = ? LIMIT 1`,
       [id]
     );
 
@@ -31,12 +59,12 @@ export default class UserRepository {
     const params = [];
 
     if (cedula) {
-      conditions.push("cedula = ?");
+      conditions.push("p.cedula = ?");
       params.push(cedula);
     }
 
     if (email) {
-      conditions.push("email = ?");
+      conditions.push("p.email = ?");
       params.push(email);
     }
 
@@ -45,7 +73,10 @@ export default class UserRepository {
     }
 
     const [rows] = await this.pool.query(
-      `SELECT * FROM persons WHERE ${conditions.join(" OR ")} LIMIT 1`,
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre
+       FROM persons p
+       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       WHERE ${conditions.join(" OR ")} LIMIT 1`,
       params
     );
 
@@ -56,7 +87,10 @@ export default class UserRepository {
     this.ensurePool();
 
     const [rows] = await this.pool.query(
-      "SELECT * FROM persons ORDER BY created_at DESC"
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre
+       FROM persons p
+       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       ORDER BY p.created_at DESC`
     );
 
     return rows;
@@ -157,7 +191,7 @@ export default class UserRepository {
       last_name: userData.last_name ?? userData.apellido,
       whatsapp: userData.whatsapp ?? null,
       direccion: userData.direccion ?? null,
-      pais: userData.pais ?? null,
+      nacionalidad_pais_id: await this.resolveNacionalidadPaisId(userData),
       pais_residencia: userData.pais_residencia ?? null,
       provincia_residencia: userData.provincia_residencia ?? null,
       ciudad_residencia: userData.ciudad_residencia ?? null,
@@ -234,7 +268,8 @@ export default class UserRepository {
       email: userRow.email,
       whatsapp: userRow.whatsapp,
       direccion: userRow.direccion,
-      pais: userRow.pais,
+      nacionalidad: userRow.nacionalidad ?? null,
+      nacionalidad_nombre: userRow.nacionalidad_nombre ?? null,
       pais_residencia: userRow.pais_residencia,
       provincia_residencia: userRow.provincia_residencia,
       ciudad_residencia: userRow.ciudad_residencia,
@@ -294,10 +329,23 @@ export default class UserRepository {
   async update(userId, data) {
     this.ensurePool();
 
+    // La nacionalidad se traduce AQUI, en el unico sitio por el que pasan todas las escrituras, y no
+    // en cada llamador: hay al menos dos caminos (`updateMe` y el PATCH de perfil, que llama directo)
+    // y parchear cada uno es exactamente como se olvida uno. Sin esto, `nacionalidad` viajaba como
+    // nombre de columna y PostgreSQL respondia 42703 en tiempo de LLAMADA -- que ninguna prueba de
+    // caracterizacion veia, porque ningun fixture manda nacionalidad.
+    const payload = { ...data };
+    if (payload.nacionalidad !== undefined) {
+      const resuelto = await this.resolveNacionalidadPaisId(payload);
+      delete payload.nacionalidad;
+      payload.nacionalidad_pais_id = resuelto;
+    }
+    delete payload.nacionalidad_nombre;
+
     const fields = [];
     const values = [];
 
-    Object.entries(data).forEach(([key, value]) => {
+    Object.entries(payload).forEach(([key, value]) => {
       if (value !== undefined) {
         fields.push(`${key} = ?`);
         values.push(value);
@@ -325,7 +373,8 @@ export default class UserRepository {
       "email",
       "whatsapp",
       "direccion",
-      "pais",
+      "nacionalidad",
+      "nacionalidad_pais_id",
       "pais_residencia",
       "provincia_residencia",
       "ciudad_residencia",

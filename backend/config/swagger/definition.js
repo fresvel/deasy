@@ -89,10 +89,10 @@ export const swaggerDefinition = {
             description: "Número de WhatsApp con prefijo de país",
             example: "+593987654321"
           },
-          pais: {
+          nacionalidad: {
             type: "string",
-            description: "País de residencia",
-            example: "Ecuador"
+            description: "Nacionalidad, en código ISO-3166 alfa-2. Antes era `pais`, y esta misma descripción decía «País de residencia»: era el campo confundido con `pais_residencia`",
+            example: "EC"
           },
           pais_residencia: {
             type: "string",
@@ -172,7 +172,7 @@ export const swaggerDefinition = {
           email: { type: "string", format: "email", example: "maria.garcia@pucese.edu.ec" },
           whatsapp: { type: "string", example: "+593987654321" },
           direccion: { type: "string", example: "Esmeraldas, Ecuador" },
-          pais: { type: "string", example: "Ecuador" },
+          nacionalidad: { type: "string", example: "EC", description: "Codigo ISO-3166 alfa-2" },
           pais_residencia: { type: "string", example: "Ecuador" },
           provincia_residencia: { type: "string", example: "Esmeraldas" },
           ciudad_residencia: { type: "string", example: "Esmeraldas" },
@@ -224,7 +224,7 @@ export const swaggerDefinition = {
             enum: ["Presencial", "Semipresencial", "Virtual", "Híbrido"],
             example: "Presencial"
           },
-          pais: { type: "string", default: "Ecuador", example: "Ecuador" },
+          nacionalidad: { type: "string", default: "EC", example: "EC", description: "Codigo ISO-3166 alfa-2" },
           sera: {
             type: "string",
             enum: ["Enviado", "Revisado", "Aprobado"],
@@ -289,7 +289,7 @@ export const swaggerDefinition = {
             enum: ["Asistencia", "Instructor", "Aprobación"],
             example: "Asistencia"
           },
-          pais: { type: "string", default: "Ecuador", example: "Ecuador" },
+          nacionalidad: { type: "string", default: "EC", example: "EC", description: "Codigo ISO-3166 alfa-2" },
           sera: {
             type: "string",
             enum: ["Enviado", "Revisado", "Aprobado"],
@@ -522,7 +522,7 @@ export const swaggerDefinition = {
                   last_name: { type: "string" },
                   whatsapp: { type: "string" },
                   direccion: { type: "string" },
-                  pais: { type: "string" }
+                  nacionalidad: { type: "string" }
                 }
               }
             }

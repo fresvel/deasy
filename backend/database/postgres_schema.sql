@@ -131,7 +131,10 @@ CREATE TABLE IF NOT EXISTS persons (
   email VARCHAR(180) UNIQUE,
   whatsapp VARCHAR(30),
   direccion VARCHAR(255),
-  pais VARCHAR(80),
+  -- La NACIONALIDAD. Antes era `pais VARCHAR(80)` y convivia con `pais_residencia`, que es lo que
+  -- escribe el registro y lo que su formulario etiqueta simplemente "Pais". Dos campos que se
+  -- llamaban pais, y el que veia /admin estaba vacio en las 43 filas de la semilla.
+  nacionalidad_pais_id INT NULL,
   pais_residencia VARCHAR(80),
   provincia_residencia VARCHAR(120),
   ciudad_residencia VARCHAR(120),
@@ -146,8 +149,10 @@ CREATE TABLE IF NOT EXISTS persons (
   is_active SMALLINT NOT NULL DEFAULT 1,
   token VARCHAR(10) NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_persons_nacionalidad FOREIGN KEY (nacionalidad_pais_id) REFERENCES paises(id)
 );
+CREATE INDEX IF NOT EXISTS idx_persons_nacionalidad ON persons (nacionalidad_pais_id);
 CREATE OR REPLACE TRIGGER trg_persons_set_updated_at BEFORE UPDATE ON persons FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE IF NOT EXISTS person_certificates (

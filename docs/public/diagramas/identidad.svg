@@ -527,8 +527,8 @@
 <text text-anchor="start" x="1061.84" y="-1282.26" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">varchar(255)</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="724.18,-1201.06 724.18,-1261.06 1254.18,-1261.06 1254.18,-1201.06 724.18,-1201.06"/>
 <polygon fill="none" stroke="#29235c" points="724.18,-1201.06 724.18,-1261.06 1254.18,-1261.06 1254.18,-1201.06 724.18,-1201.06"/>
-<text text-anchor="start" x="735.18" y="-1221.26" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">pais &#160;&#160;&#160;</text>
-<text text-anchor="start" x="1079.62" y="-1222.26" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">varchar(80)</text>
+<text text-anchor="start" x="735.18" y="-1221.26" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">nacionalidad_pais_id &#160;&#160;&#160;</text>
+<text text-anchor="start" x="1191.61" y="-1222.26" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int4</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="724.18,-1141.06 724.18,-1201.06 1254.18,-1201.06 1254.18,-1141.06 724.18,-1141.06"/>
 <polygon fill="none" stroke="#29235c" points="724.18,-1141.06 724.18,-1201.06 1254.18,-1201.06 1254.18,-1141.06 724.18,-1141.06"/>
 <text text-anchor="start" x="735.18" y="-1161.26" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">pais_residencia &#160;&#160;&#160;</text>

@@ -320,7 +320,7 @@
       "id",
       "is_active",
       "last_name",
-      "pais",
+      "nacionalidad_pais_id",
       "photo_url",
       "status",
       "updated_at",

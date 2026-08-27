@@ -488,7 +488,7 @@ export const SQL_TABLES = [
       { name: "email", label: "Email", type: "email" },
       { name: "whatsapp", label: "Whatsapp", type: "text" },
       { name: "direccion", label: "Direccion", type: "text" },
-      { name: "pais", label: "Pais", type: "text" },
+      { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
       { name: "password_hash", label: "Password Hash", type: "text", required: true },
       {
         name: "status",

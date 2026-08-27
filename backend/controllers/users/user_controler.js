@@ -81,7 +81,7 @@ export const createUser = async (req, res) => {
       last_name: req.body.last_name ?? req.body.apellido,
       whatsapp: req.body.whatsapp,
       direccion: req.body.direccion,
-      pais: req.body.pais,
+      nacionalidad: req.body.nacionalidad,
       pais_residencia: req.body.pais_residencia,
       provincia_residencia: req.body.provincia_residencia,
       ciudad_residencia: req.body.ciudad_residencia,
@@ -921,7 +921,7 @@ export const updateMyProfile = async (req, res) => {
       last_name: req.body.last_name,
       whatsapp: req.body.whatsapp,
       direccion: req.body.direccion,
-      pais: req.body.pais
+      nacionalidad: req.body.nacionalidad
     };
 
     const updatedUser = await userRepository.update(userId, payload);
@@ -939,6 +939,11 @@ export const updateMyProfile = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    if (error?.status === 400) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
 
     res.status(500).json({
       message: "Error actualizando perfil"
