@@ -493,10 +493,3 @@ export const CANTONES_EC = [
   {"dpa":"2403","provincia_dpa":"24","nombre":"Salinas"},
 ];
 
-export const OPERADORAS = [
-  {"codigo":"CLARO","nombre":"Claro","pais_iso":"EC"},
-  {"codigo":"MOVISTAR","nombre":"Movistar","pais_iso":"EC"},
-  {"codigo":"CNT","nombre":"CNT","pais_iso":"EC"},
-  {"codigo":"TUENTI","nombre":"Tuenti","pais_iso":"EC"},
-  {"codigo":"OTRA","nombre":"Otra","pais_iso":null},
-];

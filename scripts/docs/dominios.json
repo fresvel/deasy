@@ -31,7 +31,7 @@
   },
   "organizacion": {
     "titulo": "Unidades, puestos y ocupación",
-    "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → ciudad, y las operadoras móviles.",
+    "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → ciudad.",
     "tablas": [
       "units",
       "unit_types",
@@ -41,8 +41,7 @@
       "position_assignments",
       "paises",
       "provincias",
-      "ciudades",
-      "operadoras"
+      "ciudades"
     ]
   },
   "procesos": {

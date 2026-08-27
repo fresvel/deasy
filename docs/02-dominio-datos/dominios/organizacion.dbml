@@ -13,7 +13,7 @@
 
 Project organizacion {
   database_type: 'PostgreSQL'
-  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → ciudad, y las operadoras móviles.'''
+  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → ciudad.'''
 }
 
 Table "ciudades" {
@@ -29,16 +29,6 @@ Table "ciudades" {
     (provincia_id, name) [type: btree, unique, name: "uq_ciudades_provincia_name"]
     provincia_id [type: btree, name: "idx_ciudades_provincia"]
   }
-}
-
-Table "operadoras" {
-  "id" int4 [pk, not null, increment]
-  "code" varchar(40) [unique, not null]
-  "name" varchar(120) [not null]
-  "pais_id" int4
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table "paises" {
@@ -156,7 +146,6 @@ Table "units" {
 }
 
 Ref "fk_ciudades_provincia":"provincias"."id" <? "ciudades"."provincia_id"
-Ref "fk_operadoras_pais":"paises"."id" ?<? "operadoras"."pais_id"
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"

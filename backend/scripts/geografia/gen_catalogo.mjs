@@ -16,12 +16,6 @@
 //   provincias  del Clasificador Geografico Estadistico del INEC. Ver
 //   cantones    `extraer_dpa.py`, que documenta la fuente, la forma y la trampa de las
 //               jurisdicciones historicas.
-//
-//   operadoras  las cuatro operadoras moviles del Ecuador. OJO: se guardan como dato
-//               DECLARADO por la persona, nunca autoritativo. Con portabilidad numerica
-//               la operadora de un numero cambia sin que nadie avise, asi que este
-//               campo se pudre solo. Si alguna vez hace falta de verdad, se consulta en
-//               el momento de usarlo; no se confia en lo guardado.
 
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -88,13 +82,6 @@ const leerPaises = () => {
   return paises;
 };
 
-const OPERADORAS = [
-  { codigo: "CLARO", nombre: "Claro", pais_iso: "EC" },
-  { codigo: "MOVISTAR", nombre: "Movistar", pais_iso: "EC" },
-  { codigo: "CNT", nombre: "CNT", pais_iso: "EC" },
-  { codigo: "TUENTI", nombre: "Tuenti", pais_iso: "EC" },
-  { codigo: "OTRA", nombre: "Otra", pais_iso: null },
-];
 
 const dpa = JSON.parse(readFileSync(process.argv[2], "utf8"));
 const paises = leerPaises();
@@ -123,10 +110,7 @@ export const CANTONES_EC = [
 ${filas(dpa.cantones)}
 ];
 
-export const OPERADORAS = [
-${filas(OPERADORAS)}
-];
 `;
 
 writeFileSync(`${RAIZ}backend/config/geografiaCatalog.js`, salida);
-console.log(`✓ paises ${paises.length} · provincias ${dpa.provincias.length} · cantones ${dpa.cantones.length} · operadoras ${OPERADORAS.length}`);
+console.log(`✓ paises ${paises.length} · provincias ${dpa.provincias.length} · cantones ${dpa.cantones.length}`);

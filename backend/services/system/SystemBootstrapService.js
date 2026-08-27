@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
-import { PAISES, PROVINCIAS_EC, CANTONES_EC, OPERADORAS } from "../../config/geografiaCatalog.js";
+import { PAISES, PROVINCIAS_EC, CANTONES_EC } from "../../config/geografiaCatalog.js";
 import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
@@ -209,9 +209,9 @@ const seedBaseRbacCatalog = async (connection) => {
   return roleIds;
 };
 
-// La geografia: pais -> provincia -> ciudad, mas las operadoras. Va aqui y no en
+// La geografia: pais -> provincia -> ciudad. Va aqui y no en
 // `postgres_schema.sql` porque ahi solo hay cuatro INSERT, todos vocabularios de ocho filas o menos
-// de los que depende el codigo; esto son 482 filas. Es la misma decision, y el mismo sitio, que el
+// de los que depende el codigo; esto son 477 filas. Es la misma decision, y el mismo sitio, que el
 // catalogo base de RBAC de arriba.
 //
 // Va en el arranque OBLIGATORIO, no en "usar datos de ejemplo": sin paises el formulario de registro
@@ -272,20 +272,6 @@ const seedGeographyCatalog = async (connection) => {
     );
   }
 
-  for (const operadora of OPERADORAS) {
-    const paisId = operadora.pais_iso
-      ? (await fetchOne(connection, "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1", [operadora.pais_iso]))?.id ?? null
-      : null;
-    await connection.query(
-      `INSERT INTO operadoras (code, name, pais_id, is_active)
-       VALUES (?, ?, ?, 1)
-       ON DUPLICATE KEY UPDATE
-         name = VALUES(name),
-         pais_id = VALUES(pais_id),
-         is_active = 1`,
-      [operadora.codigo, operadora.nombre, paisId]
-    );
-  }
 };
 
 const ensureBootstrapUnit = async (connection) => {

@@ -58,22 +58,6 @@ export const SQL_TABLES = [
     searchFields: ["name", "dpa_code"]
   },
   {
-    table: "operadoras",
-    label: "Operadoras",
-    category: "Estructura",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "code", label: "Codigo", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "pais_id", label: "Pais", type: "number" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
-      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["code", "name"]
-  },
-  {
     table: "unit_types",
     label: "Tipos de unidad",
     category: "Estructura",
