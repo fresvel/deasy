@@ -53,7 +53,7 @@ El cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en MinIO, 
 
 **No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto de MinIO que el bootstrap escribe copiando `defaults.yaml` al prefijo del artifact (`publishBaseSeedAssets`).
 
-La **propiedad** se expresa por el prefijo dentro de MinIO, en `base_object_prefix`: `System/...` para las plantillas curadas por el administrador, `Users/{cedula}/...` para las subidas por un gestor. El pipeline de maduración documentado es:
+La **propiedad** se expresa por el prefijo dentro de MinIO, en `base_object_prefix`: `System/...` para las plantillas curadas por el administrador, `Users/{id_de_persona}/...` para las subidas por un gestor —el id y no la cédula, porque un documento de identidad puede cambiar y la ruta de los ficheros no debe—. El pipeline de maduración documentado es:
 
 `office` (Word/Excel/PDF subido por el gestor) ⟶ `jinja2` (curado por el administrador)
 

@@ -14,10 +14,10 @@ MySQL usa `?`; PostgreSQL usa `$1`, `$2`:
 
 ``` javascript
 // Lo que escribe el programador:
-pool.query("SELECT * FROM persons WHERE cedula = ? AND status = ?", [ced, "Activo"])
+pool.query("SELECT * FROM persons WHERE token = ? AND status = ?", [tok, "Activo"])
 
 // Lo que llega a PostgreSQL:
-"SELECT * FROM persons WHERE cedula = $1 AND status = $2"
+"SELECT * FROM persons WHERE token = $1 AND status = $2"
 ```
 
 Y es cuidadoso: no toca los `?` que están dentro de comentarios (`--`, `/* */`) o de literales de texto, porque mantiene una tabla de “tramos protegidos”. Además expande parámetros de tipo array igual que hacía mysql2: un escalar da `$n`; un array vacio da `NULL`; `[1,2,3]` da `$1, $2, $3`; y `[[1,2],[3,4]]` da `($1,$2), ($3,$4)`.

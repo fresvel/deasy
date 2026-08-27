@@ -46,7 +46,7 @@ Además del PDF, cada documento del lote lleva metadatos de contexto (`signature
 
 El dossier es el CV o expediente personal: titulos, experiencia, publicaciones. Antes vivia en MongoDB; ahora son **dos tablas**:
 
-- `dossiers`: la raiz, UNIQUE por `person_id`, con la `cedula` desnormalizada e indexada.
+- `dossiers`: la raíz, UNIQUE por `person_id`. **Ya no guarda copia de la cédula**: se escribía una vez y no se refrescaba nunca, así que un cambio la dejaba mintiendo.
 
 - `dossier_items`: `dossier_id` (con borrado en cascada) + `section` + **`data` JSONB** + `url_documento`.
 
@@ -60,7 +60,7 @@ Por compatibilidad, los `_id` se exponen como **String** para preservar el contr
 
 ### Identidad y personas
 
-`persons` (con `cedula`, `email` y `token` únicos, `password_hash`, `status`), `person_certificates` (los `.p12` en MinIO, con `is_default`), `email_verification_codes`, `password_reset_codes`.
+`persons` (con `token` único —la marca de firma—, `password_hash` y `status`) y sus **satélites de identidad**: `documentos_identidad`, `emails` y `telefonos`, cada uno con su propio principal y su propia verificación. Más `person_certificates` (los `.p12` en MinIO, con `is_default`), `email_verification_codes` —que desde el 2026-08-27 cuelga del **correo**, no de la persona— y `password_reset_codes`.
 
 ### Organización, unidades y puestos
 

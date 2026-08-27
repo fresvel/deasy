@@ -61,10 +61,17 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 |---|---|
 | Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **38** |
 | Columnas de esas 38 | **365** |
-| Claves foráneas entre esas 38 | **97** |
+| Claves foráneas **entre** esas 38 | **95** |
+| Claves foráneas **declaradas en** esas 38 | **98** |
 | Tablas del esquema entero (con chat, empleo y dossier) | **77** |
 | Claves foráneas del esquema entero | **162** |
 | Restricciones `CHECK` del esquema entero | **36** |
+
+Las dos cifras de claves foráneas no son la misma, y la diferencia explica una pregunta que sale
+sola: **tres** de las declaradas en esas 38 apuntan **fuera del mapa** —`persons` a `paises` para la
+nacionalidad, y `unit_relations` y `fill_flow_steps` a `relation_unit_types`—. Por eso la referencia
+generada de [Campos de la cadena](/referencia/campos-proceso-documento/) habla de **39** tablas: sin
+`relation_unit_types` las suyas quedarían colgando.
 
 Los **comportamientos** —qué pasa al publicar, qué mira el lanzamiento, hasta dónde llega el
 relevo— se comprobaron ejecutándolos, no leyéndolos.
