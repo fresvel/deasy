@@ -487,7 +487,6 @@ export const SQL_TABLES = [
       { name: "last_name", label: "Apellido", type: "text", required: true },
       { name: "email", label: "Email", type: "email" },
       { name: "whatsapp", label: "Whatsapp", type: "text" },
-      { name: "direccion", label: "Direccion", type: "text" },
       { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
       { name: "password_hash", label: "Password Hash", type: "text", required: true },
       {
@@ -505,6 +504,30 @@ export const SQL_TABLES = [
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["cedula", "first_name", "last_name", "email"]
+  },
+  {
+    table: "direcciones",
+    label: "Direcciones",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "tipo", label: "Tipo", type: "select", options: ["residencia", "trabajo"], defaultValue: "residencia" },
+      { name: "pais_id", label: "Pais", type: "number" },
+      { name: "provincia_id", label: "Provincia", type: "number" },
+      { name: "ciudad_id", label: "Ciudad", type: "number" },
+      { name: "calle_primaria", label: "Calle primaria", type: "text" },
+      { name: "calle_secundaria", label: "Calle secundaria", type: "text" },
+      { name: "referencia", label: "Referencia", type: "text" },
+      { name: "latitud", label: "Latitud", type: "number" },
+      { name: "longitud", label: "Longitud", type: "number" },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["calle_primaria", "referencia"]
   },
   {
     table: "roles",

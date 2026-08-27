@@ -157,6 +157,9 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   units -> chat_conversations   [chat]
 //   unit_positions -> contracts   [empleo]
+//   ciudades -> direcciones   [identidad]
+//   paises -> direcciones   [identidad]
+//   provincias -> direcciones   [identidad]
 //   unit_positions -> fill_flow_steps   [plantillas]
 //   relation_unit_types -> fill_flow_steps   [plantillas]
 //   unit_types -> fill_flow_steps   [plantillas]

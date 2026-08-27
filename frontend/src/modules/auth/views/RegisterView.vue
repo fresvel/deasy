@@ -117,38 +117,50 @@
               <div class="deasy-form-grid--three">
                 <div>
                   <label :for="fieldId('pais-residencia')" class="deasy-form-label">País</label>
-                  <select :id="fieldId('pais-residencia')" v-model="newuser.pais_residencia" required class="deasy-control">
+                  <select :id="fieldId('pais-residencia')" v-model="direccion.pais" required class="deasy-control">
                     <option value="" disabled>Selecciona un país</option>
-                    <option v-for="c in countriesData" :key="c.es_name" :value="c.es_name">{{ c.es_name }}</option>
+                    <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
                   </select>
                 </div>
 
                 <div>
                   <label :for="fieldId('provincia-residencia')" class="deasy-form-label">Provincia / Estado</label>
-                  <input :id="fieldId('provincia-residencia')"
-                    v-model="newuser.provincia_residencia"
-                    type="text"
-                    required
+                  <!-- Encadenado: las provincias salen del catálogo del país elegido. Antes era un
+                       texto libre, y por eso `provincia_residencia` guardaba lo que cada quien
+                       escribiera. Si el país no tiene provincias sembradas (hoy solo Ecuador), se
+                       deshabilita en vez de mentir con una lista vacía que parece un fallo. -->
+                  <select :id="fieldId('provincia-residencia')"
+                    v-model="direccion.provincia"
+                    :disabled="!provincias.length"
+                    :required="provincias.length > 0"
                     class="deasy-control"
-                    placeholder="Ej. Pichincha"
-                  />
+                  >
+                    <option value="" disabled>
+                      {{ provincias.length ? 'Selecciona una provincia' : 'Sin provincias en el catálogo' }}
+                    </option>
+                    <option v-for="p in provincias" :key="p.id" :value="p.name">{{ p.name }}</option>
+                  </select>
                 </div>
 
                 <div>
                   <label :for="fieldId('ciudad-residencia')" class="deasy-form-label">Ciudad</label>
-                  <input :id="fieldId('ciudad-residencia')"
-                    v-model="newuser.ciudad_residencia"
-                    type="text"
-                    required
+                  <select :id="fieldId('ciudad-residencia')"
+                    v-model="direccion.ciudad"
+                    :disabled="!ciudades.length"
+                    :required="ciudades.length > 0"
                     class="deasy-control"
-                    placeholder="Ej. Quito"
-                  />
+                  >
+                    <option value="" disabled>
+                      {{ ciudades.length ? 'Selecciona una ciudad' : 'Elige antes la provincia' }}
+                    </option>
+                    <option v-for="c in ciudades" :key="c.id" :value="c.name">{{ c.name }}</option>
+                  </select>
                 </div>
 
                 <div>
                   <label :for="fieldId('calle-primaria')" class="deasy-form-label">Calle primaria</label>
                   <input :id="fieldId('calle-primaria')"
-                    v-model="newuser.calle_primaria"
+                    v-model="direccion.calle_primaria"
                     type="text"
                     required
                     class="deasy-control"
@@ -159,7 +171,7 @@
                 <div>
                   <label :for="fieldId('calle-secundaria')" class="deasy-form-label">Calle secundaria</label>
                   <input :id="fieldId('calle-secundaria')"
-                    v-model="newuser.calle_secundaria"
+                    v-model="direccion.calle_secundaria"
                     type="text"
                     required
                     class="deasy-control"
@@ -168,13 +180,12 @@
                 </div>
 
                 <div>
-                  <label :for="fieldId('codigo-postal')" class="deasy-form-label">Código postal</label>
-                  <input :id="fieldId('codigo-postal')"
-                    v-model="newuser.codigo_postal"
+                  <label :for="fieldId('referencia')" class="deasy-form-label">Referencia</label>
+                  <input :id="fieldId('referencia')"
+                    v-model="direccion.referencia"
                     type="text"
-                    required
                     class="deasy-control"
-                    placeholder="Ej. 080150"
+                    placeholder="Frente al parque"
                   />
                 </div>
               </div>
@@ -198,7 +209,7 @@
                        existe y trae ademas su `:hover` y su foco. -->
                   <AppButton
                     type="button"
-                    :variant="newuser.direccion ? 'neutral-outline' : 'danger-outline'"
+                    :variant="coordenadas ? 'neutral-outline' : 'danger-outline'"
                     class-name="w-full sm:w-auto"
                     @click="toggleMap"
                   >
@@ -206,11 +217,11 @@
                     {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
                   </AppButton>
 
-                  <AppTag v-if="newuser.direccion" variant="success">
+                  <AppTag v-if="coordenadas" variant="success">
                     <template #icon>
                       <IconCheck class="deasy-tag__icon" />
                     </template>
-                    Coordenadas: {{ newuser.direccion }}
+                    Coordenadas: {{ coordenadas }}
                   </AppTag>
                   <AppTag v-else variant="danger">
                     <template #icon>
@@ -426,15 +437,82 @@ const newuser = ref({
   first_name: "",
   last_name: "",
   email: "",
-  whatsapp: "",
-  pais_residencia: "Ecuador",
-  provincia_residencia: "",
-  ciudad_residencia: "",
+  whatsapp: ""
+});
+
+// La dirección es UN objeto y viaja como tal. Antes eran seis campos sueltos en `persons`
+// —`pais_residencia`, `provincia_residencia`, `ciudad_residencia`, las dos calles y el código
+// postal— que además convivían con otra columna `direccion` que NO era una dirección: guardaba las
+// COORDENADAS como la cadena "lat, lng". Ahora latitud y longitud son dos columnas numéricas.
+//
+// `codigo_postal` no sobrevive: nadie lo leía fuera de este formulario.
+const direccion = ref({
+  tipo: "residencia",
+  pais: "EC",
+  provincia: "",
+  ciudad: "",
   calle_primaria: "",
   calle_secundaria: "",
-  codigo_postal: "",
-  direccion: ""
+  referencia: "",
+  latitud: null,
+  longitud: null
 });
+
+// El catálogo ya no es una constante del frontend: se pide a la API, que es donde vive desde que
+// `paises`/`provincias`/`ciudades` existen como tablas.
+const paises = ref([]);
+const provincias = ref([]);
+const ciudades = ref([]);
+
+const cargarPaises = async () => {
+  try {
+    paises.value = await AuthService.listarPaises();
+  } catch (error) {
+    console.error("No se pudo cargar el catálogo de países:", error);
+  }
+};
+
+const cargarProvincias = async (paisIso) => {
+  provincias.value = [];
+  ciudades.value = [];
+  if (!paisIso) return;
+  try {
+    provincias.value = await AuthService.listarProvincias(paisIso);
+  } catch (error) {
+    console.error("No se pudieron cargar las provincias:", error);
+  }
+};
+
+const cargarCiudades = async (provinciaNombre) => {
+  ciudades.value = [];
+  if (!provinciaNombre) return;
+  const provincia = provincias.value.find((p) => p.name === provinciaNombre);
+  if (!provincia) return;
+  try {
+    ciudades.value = await AuthService.listarCiudades(provincia.id);
+  } catch (error) {
+    console.error("No se pudieron cargar las ciudades:", error);
+  }
+};
+
+watch(() => direccion.value.pais, async (iso) => {
+  direccion.value.provincia = "";
+  direccion.value.ciudad = "";
+  await cargarProvincias(iso);
+});
+
+watch(() => direccion.value.provincia, async (nombre) => {
+  direccion.value.ciudad = "";
+  await cargarCiudades(nombre);
+});
+
+// Las coordenadas, para el mapa y para el aviso de "falta la ubicación". Antes esto era
+// `newuser.direccion`, una cadena "lat, lng" guardada en una columna llamada `direccion`.
+const coordenadas = computed(() =>
+  direccion.value.latitud !== null && direccion.value.longitud !== null
+    ? `${Number(direccion.value.latitud).toFixed(6)}, ${Number(direccion.value.longitud).toFixed(6)}`
+    : ""
+);
 
 const errorMessage = ref("");
 const showSuccessModal = ref(false);
@@ -508,14 +586,11 @@ const initMap = () => {
     maxZoom: 19
   }).addTo(mapInstance);
 
-  if (newuser.value.direccion) {
-    const coords = newuser.value.direccion.split(",");
-    if (coords.length === 2) {
-      const lat = parseFloat(coords[0].trim());
-      const lng = parseFloat(coords[1].trim());
-      marker = L.marker([lat, lng]).addTo(mapInstance);
-      mapInstance.setView([lat, lng], 15);
-    }
+  if (direccion.value.latitud !== null && direccion.value.longitud !== null) {
+    const lat = Number(direccion.value.latitud);
+    const lng = Number(direccion.value.longitud);
+    marker = L.marker([lat, lng]).addTo(mapInstance);
+    mapInstance.setView([lat, lng], 15);
   }
 
   mapInstance.on("click", (e) => {
@@ -526,10 +601,11 @@ const initMap = () => {
     }
 
     marker = L.marker([lat, lng]).addTo(mapInstance);
-    newuser.value.direccion = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    direccion.value.latitud = Number(lat.toFixed(6));
+    direccion.value.longitud = Number(lng.toFixed(6));
   });
 
-  if (navigator.geolocation && !newuser.value.direccion) {
+  if (navigator.geolocation && direccion.value.latitud === null) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
@@ -537,7 +613,8 @@ const initMap = () => {
         mapInstance.setView([lat, lng], 15);
 
         marker = L.marker([lat, lng]).addTo(mapInstance);
-        newuser.value.direccion = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        direccion.value.latitud = Number(lat.toFixed(6));
+        direccion.value.longitud = Number(lng.toFixed(6));
       },
       (error) => {
         console.log("Error obteniendo ubicación:", error);
@@ -616,6 +693,7 @@ const validatePasswordMatch = () => {
 const saveDraft = () => {
   const draft = {
     newuser: newuser.value,
+    direccion: direccion.value,
     phoneNumber: phoneNumber.value,
     selectedCountryCode: selectedCountryCode.value
   };
@@ -623,6 +701,7 @@ const saveDraft = () => {
 };
 
 watch(() => newuser.value, saveDraft, { deep: true });
+watch(() => direccion.value, saveDraft, { deep: true });
 watch(phoneNumber, saveDraft);
 watch(selectedCountryCode, saveDraft);
 
@@ -645,7 +724,7 @@ const createnewUser = async () => {
     errorMessage.value = "El número telefónico debe tener 10 dígitos.";
     return;
   }
-  if (!newuser.value.direccion) {
+  if (!coordenadas.value) {
     errorMessage.value = "La ubicación exacta es obligatoria. Da click en 'Seleccionar ubicación en el mapa' para poner un punto que te identifique geográficamente.";
     return;
   }
@@ -655,9 +734,12 @@ const createnewUser = async () => {
   }
 
   try {
+    // `pais: newuser.pais_residencia` estaba MAL y era la confusión hecha código: mandaba el país
+    // de RESIDENCIA en el campo que la base guardaba como nacionalidad. Hoy son dos cosas
+    // distintas y el registro no declara nacionalidad.
     const payload = {
       ...newuser.value,
-      pais: newuser.value.pais_residencia
+      direccion: { ...direccion.value }
     };
 
     await AuthService.register(payload);
@@ -675,12 +757,24 @@ const goToLogin = () => {
   router.push("/");
 };
 
-onMounted(() => {
+onMounted(async () => {
+  // El catálogo primero: sin países el selector sale vacío y parece roto. Y las provincias del
+  // país que ya viene elegido, porque el `watch` de `direccion.pais` solo dispara al CAMBIARLO.
+  await cargarPaises();
+  await cargarProvincias(direccion.value.pais);
+
   const draftVal = sessionStorage.getItem("register_draft");
   if (draftVal) {
     try {
       const draft = JSON.parse(draftVal);
       if (draft.newuser) newuser.value = draft.newuser;
+      if (draft.direccion) {
+        direccion.value = { ...direccion.value, ...draft.direccion };
+        // Rehidratar en cascada, y en orden: sin las provincias cargadas, el `select` de provincia
+        // no puede mostrar la que traía el borrador.
+        await cargarProvincias(direccion.value.pais);
+        await cargarCiudades(direccion.value.provincia);
+      }
       if (draft.phoneNumber) phoneNumber.value = draft.phoneNumber;
       if (draft.selectedCountryCode) {
         const found = countriesData.value.find(c => c.es_name === draft.selectedCountryCode.es_name);

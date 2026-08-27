@@ -104,5 +104,5 @@ firma añade el `slot` y el `approval_mode`, y sus estados son **tablas de catá
 de entrega no hay equivalentes.
 
 **Lo que el mapa no dibuja** es todo lo que queda fuera de la cadena documental: la rama de vacantes y
-contratación, el chat, los expedientes y el RBAC. El esquema completo tiene 70 tablas; estas 38 son las
+contratación, el chat, los expedientes y el RBAC. El esquema completo tiene 71 tablas; estas 38 son las
 que van del proceso al documento firmado.

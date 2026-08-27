@@ -314,7 +314,6 @@
     "itemKeys": [
       "cedula",
       "created_at",
-      "direccion",
       "email",
       "first_name",
       "id",

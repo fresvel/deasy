@@ -48,6 +48,24 @@ class AuthService {
     return response.data;
   }
 
+  // El catálogo geográfico, PÚBLICO: lo pide el formulario de registro, que por definición usa
+  // quien todavía no tiene cuenta. Sustituye a `core/constants/countries.js` para la dirección
+  // (el selector de prefijo telefónico sigue usándolo hasta que se rehagan los teléfonos).
+  async listarPaises() {
+    const response = await axios.get(API_ROUTES.SYSTEM_GEO_PAISES);
+    return response.data?.data ?? [];
+  }
+
+  async listarProvincias(paisIso) {
+    const response = await axios.get(API_ROUTES.SYSTEM_GEO_PROVINCIAS(paisIso));
+    return response.data?.data ?? [];
+  }
+
+  async listarCiudades(provinciaId) {
+    const response = await axios.get(API_ROUTES.SYSTEM_GEO_CIUDADES(provinciaId));
+    return response.data?.data ?? [];
+  }
+
   async recoverPassword(email) {
     const response = await axios.post(API_ROUTES.USERS_RECOVER_PASSWORD, {
       email,

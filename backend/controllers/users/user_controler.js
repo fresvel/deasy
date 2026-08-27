@@ -80,14 +80,10 @@ export const createUser = async (req, res) => {
       first_name: req.body.first_name ?? req.body.nombre,
       last_name: req.body.last_name ?? req.body.apellido,
       whatsapp: req.body.whatsapp,
-      direccion: req.body.direccion,
       nacionalidad: req.body.nacionalidad,
-      pais_residencia: req.body.pais_residencia,
-      provincia_residencia: req.body.provincia_residencia,
-      ciudad_residencia: req.body.ciudad_residencia,
-      calle_primaria: req.body.calle_primaria,
-      calle_secundaria: req.body.calle_secundaria,
-      codigo_postal: req.body.codigo_postal,
+      // La direccion es UN objeto, no siete campos sueltos: { tipo, pais, provincia, ciudad,
+      // calle_primaria, calle_secundaria, referencia, latitud, longitud }.
+      direccion: req.body.direccion,
       status: req.body.status,
       verify_email: req.body.verify?.email,
       verify_whatsapp: req.body.verify?.whatsapp,
@@ -920,8 +916,8 @@ export const updateMyProfile = async (req, res) => {
       first_name: req.body.first_name,
       last_name: req.body.last_name,
       whatsapp: req.body.whatsapp,
-      direccion: req.body.direccion,
-      nacionalidad: req.body.nacionalidad
+      nacionalidad: req.body.nacionalidad,
+      direccion: req.body.direccion
     };
 
     const updatedUser = await userRepository.update(userId, payload);

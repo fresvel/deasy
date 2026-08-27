@@ -1,10 +1,12 @@
 import { getPostgresPool } from "../../config/postgres.js";
+import DireccionService from "../users/DireccionService.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
 export default class UserRepository {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;
+    this.direcciones = new DireccionService(pool);
   }
 
   ensurePool() {
@@ -38,6 +40,18 @@ export default class UserRepository {
     return Number(rows[0].id);
   }
 
+  // Las direcciones viven en su tabla desde el paso 3, asi que hay que colgarlas de la fila antes de
+  // mapearla. `direccion` (singular) es LA principal de residencia, que es lo que enseña el perfil.
+  async conDirecciones(userRow) {
+    if (!userRow) return userRow;
+    const direcciones = await this.direcciones.listarPorPersona(userRow.id ?? userRow._id);
+    return {
+      ...userRow,
+      direcciones,
+      direccion: direcciones.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null
+    };
+  }
+
   async findById(id) {
     this.ensurePool();
 
@@ -49,7 +63,7 @@ export default class UserRepository {
       [id]
     );
 
-    return rows?.[0] ?? null;
+    return this.conDirecciones(rows?.[0] ?? null);
   }
 
   async findByCedulaOrEmail({ cedula, email }) {
@@ -80,7 +94,7 @@ export default class UserRepository {
       params
     );
 
-    return rows?.[0] ?? null;
+    return this.conDirecciones(rows?.[0] ?? null);
   }
 
   async findAll() {
@@ -93,7 +107,42 @@ export default class UserRepository {
        ORDER BY p.created_at DESC`
     );
 
-    return rows;
+    // Una sola consulta para TODAS las direcciones, no una por persona: en una lista de 43
+    // usuarios eso serian 43 viajes a la base para pintar una tabla.
+    return this.adjuntarDireccionesEnLote(rows ?? []);
+  }
+
+  async adjuntarDireccionesEnLote(rows) {
+    if (!rows.length) return rows;
+    const ids = rows.map((r) => Number(r.id)).filter(Boolean);
+    if (!ids.length) return rows;
+    const [filas] = await this.pool.query(
+      `SELECT d.person_id, d.id, d.tipo, d.principal,
+              pa.iso_alpha2 AS pais_iso, pa.name AS pais,
+              pr.name AS provincia, ci.name AS ciudad,
+              d.calle_primaria, d.calle_secundaria, d.referencia, d.latitud, d.longitud
+         FROM direcciones d
+         LEFT JOIN paises pa ON pa.id = d.pais_id
+         LEFT JOIN provincias pr ON pr.id = d.provincia_id
+         LEFT JOIN ciudades ci ON ci.id = d.ciudad_id
+        WHERE d.person_id IN (${ids.map(() => "?").join(", ")}) AND d.is_active = 1
+        ORDER BY d.principal DESC, d.id ASC`,
+      ids
+    );
+    const porPersona = new Map();
+    for (const fila of filas ?? []) {
+      const lista = porPersona.get(Number(fila.person_id)) ?? [];
+      lista.push(fila);
+      porPersona.set(Number(fila.person_id), lista);
+    }
+    return rows.map((row) => {
+      const lista = porPersona.get(Number(row.id)) ?? [];
+      return {
+        ...row,
+        direcciones: lista,
+        direccion: lista.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null
+      };
+    });
   }
 
   async search(term = "", limit = 20, status = null, filters = {}) {
@@ -190,14 +239,7 @@ export default class UserRepository {
       first_name: userData.first_name ?? userData.nombre,
       last_name: userData.last_name ?? userData.apellido,
       whatsapp: userData.whatsapp ?? null,
-      direccion: userData.direccion ?? null,
       nacionalidad_pais_id: await this.resolveNacionalidadPaisId(userData),
-      pais_residencia: userData.pais_residencia ?? null,
-      provincia_residencia: userData.provincia_residencia ?? null,
-      ciudad_residencia: userData.ciudad_residencia ?? null,
-      calle_primaria: userData.calle_primaria ?? null,
-      calle_secundaria: userData.calle_secundaria ?? null,
-      codigo_postal: userData.codigo_postal ?? null,
       status: userData.status ?? DEFAULT_STATUS,
       verify_email: Number(userData.verify_email ?? userData.verify?.email ?? 0),
       verify_whatsapp: Number(userData.verify_whatsapp ?? userData.verify?.whatsapp ?? 0),
@@ -229,6 +271,14 @@ export default class UserRepository {
       `INSERT INTO persons (${columns.join(", ")}) VALUES (${placeholders})`,
       values
     );
+
+    // La direccion va DESPUES, porque necesita el id de la persona. Si viene mal (una provincia que
+    // no esta en el catalogo) el servicio lanza con status 400 y la persona ya esta creada: es lo
+    // mismo que pasaba antes con las siete columnas sueltas, solo que antes se guardaba basura en
+    // silencio en vez de avisar.
+    if (userData.direccion) {
+      await this.direcciones.guardarPrincipal(result.insertId, userData.direccion);
+    }
 
     return {
       id: result.insertId,
@@ -267,15 +317,11 @@ export default class UserRepository {
       last_name: userRow.last_name,
       email: userRow.email,
       whatsapp: userRow.whatsapp,
-      direccion: userRow.direccion,
       nacionalidad: userRow.nacionalidad ?? null,
       nacionalidad_nombre: userRow.nacionalidad_nombre ?? null,
-      pais_residencia: userRow.pais_residencia,
-      provincia_residencia: userRow.provincia_residencia,
-      ciudad_residencia: userRow.ciudad_residencia,
-      calle_primaria: userRow.calle_primaria,
-      calle_secundaria: userRow.calle_secundaria,
-      codigo_postal: userRow.codigo_postal,
+      // Las direcciones ya no son columnas de `persons`: las cuelga quien lee (ver `conDirecciones`).
+      direcciones: userRow.direcciones ?? [],
+      direccion: userRow.direccion ?? null,
       signatureToken: userRow.token ?? null,
       signatureMarker: userRow.token ? `!-${userRow.token}-!` : null,
       photoUrl: userRow.photo_url ?? userRow.photoUrl ?? null,
@@ -335,6 +381,14 @@ export default class UserRepository {
     // nombre de columna y PostgreSQL respondia 42703 en tiempo de LLAMADA -- que ninguna prueba de
     // caracterizacion veia, porque ningun fixture manda nacionalidad.
     const payload = { ...data };
+
+    // `direccion` NO es una columna de `persons` desde el paso 3. Se aparta ANTES de componer el
+    // UPDATE o PostgreSQL responde 42703 en tiempo de llamada, que es exactamente como se rompio
+    // `nacionalidad` en el paso anterior.
+    const direccion = payload.direccion;
+    delete payload.direccion;
+    delete payload.direcciones;
+
     if (payload.nacionalidad !== undefined) {
       const resuelto = await this.resolveNacionalidadPaisId(payload);
       delete payload.nacionalidad;
@@ -352,7 +406,13 @@ export default class UserRepository {
       }
     });
 
-    if (!fields.length) return null;
+    if (!fields.length) {
+      if (direccion) {
+        await this.direcciones.guardarPrincipal(userId, direccion);
+        return this.toPublicUser(await this.findById(userId));
+      }
+      return null;
+    }
 
     values.push(userId);
 
@@ -360,6 +420,10 @@ export default class UserRepository {
       `UPDATE persons SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
       values
     );
+
+    if (direccion) {
+      await this.direcciones.guardarPrincipal(userId, direccion);
+    }
 
     const updated = await this.findById(userId);
 
@@ -372,15 +436,9 @@ export default class UserRepository {
       "last_name",
       "email",
       "whatsapp",
-      "direccion",
       "nacionalidad",
       "nacionalidad_pais_id",
-      "pais_residencia",
-      "provincia_residencia",
-      "ciudad_residencia",
-      "calle_primaria",
-      "calle_secundaria",
-      "codigo_postal"
+      "direccion"
     ];
 
     const filtered = {};

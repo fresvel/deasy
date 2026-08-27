@@ -26,7 +26,8 @@
       "cargos",
       "cargo_role_map",
       "email_verification_codes",
-      "password_reset_codes"
+      "password_reset_codes",
+      "direcciones"
     ]
   },
   "organizacion": {

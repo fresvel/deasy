@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 70 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 71 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "actions" {
@@ -234,6 +234,30 @@ Table "deliverables" {
   }
 
   Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
+}
+
+Table "direcciones" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['residencia'::text, 'trabajo'::text])`]
+  "pais_id" int4
+  "provincia_id" int4
+  "ciudad_id" int4
+  "calle_primaria" varchar(180)
+  "calle_secundaria" varchar(180)
+  "referencia" varchar(255)
+  "latitud" numeric(9,6)
+  "longitud" numeric(9,6)
+  "principal" int2 [not null, default: 0]
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, tipo, principal_flag) [type: btree, unique, name: "uq_direcciones_principal"]
+    person_id [type: btree, name: "idx_direcciones_person"]
+  }
 }
 
 Table "document_attachments" {
@@ -520,14 +544,7 @@ Table "persons" {
   "last_name" varchar(120) [not null]
   "email" varchar(180) [unique]
   "whatsapp" varchar(30)
-  "direccion" varchar(255)
   "nacionalidad_pais_id" int4
-  "pais_residencia" varchar(80)
-  "provincia_residencia" varchar(120)
-  "ciudad_residencia" varchar(120)
-  "calle_primaria" varchar(180)
-  "calle_secundaria" varchar(180)
-  "codigo_postal" varchar(30)
   "password_hash" varchar(255) [not null]
   "status" text [check: `status = ANY (ARRAY['Inactivo'::text, 'Activo'::text, 'Verificado'::text, 'Reportado'::text])`, default: 'Inactivo']
   "verify_email" int2 [default: 0]
@@ -1158,6 +1175,10 @@ Ref "fk_contracts_position":"unit_positions"."id" <? "contracts"."position_id"
 Ref "fk_deliverables_owner_person":"persons"."id" ?<? "deliverables"."owner_person_id"
 Ref "fk_deliverables_owner_process":"processes"."id" ?<? "deliverables"."owner_process_id"
 Ref "fk_deliverables_seed":"template_seeds"."id" ?<? "deliverables"."template_seed_id"
+Ref "fk_direcciones_ciudad":"ciudades"."id" ?<? "direcciones"."ciudad_id"
+Ref "fk_direcciones_pais":"paises"."id" ?<? "direcciones"."pais_id"
+Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
+Ref "fk_direcciones_provincia":"provincias"."id" ?<? "direcciones"."provincia_id"
 Ref "fk_document_attachments_uploader":"persons"."id" ?<? "document_attachments"."uploaded_by_person_id"
 Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
 Ref "fk_document_fill_flows_document":"document_versions"."id" <? "document_fill_flows"."document_version_id"
