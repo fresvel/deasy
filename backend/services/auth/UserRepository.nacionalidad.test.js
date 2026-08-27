@@ -96,3 +96,44 @@ describe("UserRepository · update", () => {
     assert.doesNotMatch(update.sql, /nacionalidad_nombre/);
   });
 });
+
+// La lista blanca del perfil, que se olvidó CINCO veces.
+//
+// Historia, porque explica por qué este test existe: `updateMyProfile` componía su propio payload y
+// llamaba a `update()` saltándose `updateMe()`. Cada campo nuevo del desmontaje de `persons` —la
+// nacionalidad, el correo, el documento— había que añadirlo en DOS sitios, y se olvidó uno cada vez:
+// el PATCH respondía 200 y no cambiaba nada. La cuarta vez se puso un aviso en el código pidiendo
+// mantener las dos listas; la quinta ocurrió igual, con el aviso delante.
+//
+// La solución no fue otro aviso: fue borrar la segunda lista. Este test fija que `updateMe` acepta
+// todo lo que el perfil sabe editar, para que quitar un campo de aquí rompa algo.
+describe("UserRepository · updateMe · la lista blanca del perfil", () => {
+  it("acepta TODOS los campos que el perfil edita hoy", async () => {
+    const recibido = [];
+    const repo = new UserRepository({ query: async () => [[]] });
+    repo.update = async (_id, data) => { recibido.push(...Object.keys(data)); return {}; };
+
+    await repo.updateMe(1, {
+      first_name: "Ana", last_name: "Pérez", email: "ana@x.com",
+      nacionalidad: "EC", direccion: { pais: "EC" }, telefono: { numero: "0999999999" },
+      documento: { tipo: "cedula_ec", numero: "1710034065" }
+    });
+
+    for (const campo of ["first_name", "last_name", "email", "nacionalidad", "direccion", "telefono", "documento"]) {
+      assert.ok(recibido.includes(campo), `'${campo}' deberia llegar a update(); se descarta en silencio`);
+    }
+  });
+
+  it("descarta lo que NO esta en la lista, que es para lo que existe", async () => {
+    const recibido = [];
+    const repo = new UserRepository({ query: async () => [[]] });
+    repo.update = async (_id, data) => { recibido.push(...Object.keys(data)); return {}; };
+
+    await repo.updateMe(1, { first_name: "Ana", is_active: 0, password_hash: "pwned", status: "Verificado" });
+
+    assert.ok(recibido.includes("first_name"));
+    for (const campo of ["is_active", "password_hash", "status"]) {
+      assert.ok(!recibido.includes(campo), `'${campo}' NO deberia poder cambiarse desde el perfil`);
+    }
+  });
+});

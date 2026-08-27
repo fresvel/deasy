@@ -239,6 +239,18 @@ CREATE TABLE IF NOT EXISTS documentos_identidad (
   verificado_at TIMESTAMP NULL,
   emitido_el DATE NULL,
   expira_el DATE NULL,
+  -- El PDF del documento escaneado, como referencia `minio://<bucket>/<objeto>` y NUNCA como URL:
+  -- una URL publica lleva dentro el endpoint del entorno, asi que mover la pila o cambiar de
+  -- dominio invalidaria todas las filas. La URL, si hace falta, se compone al leer. El expediente
+  -- si guarda URL completa (`dossier_items.url_documento`) y es justo el ejemplo a no repetir.
+  --
+  -- El objeto cuelga del ID de la persona y del documento —`users/<person_id>/documentos/<id>.pdf`—,
+  -- por lo mismo que las demas rutas desde el paso D: un numero de documento puede cambiar.
+  --
+  -- NULA significa "sin escaneo subido". Es el dato: saberlo sin preguntarle a MinIO es la razon de
+  -- guardar la referencia en vez de derivarla, porque la ruta si es derivable pero su EXISTENCIA no.
+  escaneo_ref VARCHAR(255) NULL,
+  escaneo_subido_at TIMESTAMP NULL,
   principal SMALLINT NOT NULL DEFAULT 0,
   principal_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN principal = 1 THEN 1 ELSE NULL END) STORED,
   is_active SMALLINT NOT NULL DEFAULT 1,

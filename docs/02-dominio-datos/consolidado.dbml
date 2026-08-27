@@ -386,6 +386,8 @@ Table "documentos_identidad" {
   "verificado_at" timestamp
   "emitido_el" date
   "expira_el" date
+  "escaneo_ref" varchar(255)
+  "escaneo_subido_at" timestamp
   "principal" int2 [not null, default: 0]
   "principal_flag" int2 [note: "columna generada (STORED)"]
   "is_active" int2 [not null, default: 1]

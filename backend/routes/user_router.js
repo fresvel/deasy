@@ -32,9 +32,11 @@ import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { refreshToken } from "../controllers/users/refresh_token.js";
 import { getUserPhoto, updateUserPhoto } from "../controllers/users/user_photo_controller.js";
+import { descargarEscaneoDocumento, subirEscaneoDocumento } from "../controllers/users/documento_escaneo_controller.js";
 import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validation_controller.js";
 import { validatePassword } from "../middlewares/val_password.js";
 import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";
+import { uploadEscaneoDocumento } from "../middlewares/uploadEscaneoDocumento.js";
 import { handleUploadError } from "../middlewares/uploadError.js";
 import { badRequest } from "../errors/HttpError.js";
 import { authMiddleware } from "../middlewares/auth.js";
@@ -315,6 +317,35 @@ router.put(
     });
   },
   updateUserPhoto
+);
+
+// El PDF del documento de identidad escaneado.
+//
+// ⚠️ MAS RESTRINGIDO QUE LA FOTO, y a proposito: el avatar lo ve cualquier companero con sesion
+// porque sale en listados, chat y firmas; un documento de identidad escaneado NO. Las DOS
+// operaciones —leer y subir— exigen ser el dueno o tener rol elevado.
+router.get(
+  '/:cedula/documento/escaneo',
+  authMiddleware,
+  loadAccessContext,
+  requireCedulaAccess({ resource: "account", action: "read", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
+  descargarEscaneoDocumento
+);
+
+router.put(
+  '/:cedula/documento/escaneo',
+  authMiddleware,
+  loadAccessContext,
+  requireCedulaAccess({ resource: "account", action: "update", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
+  (req, res, next) => {
+    uploadEscaneoDocumento.single('escaneo')(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message || "No se pudo subir el escaneo." });
+      }
+      next();
+    });
+  },
+  subirEscaneoDocumento
 );
 
 router.get('/validate/cedula/:cedula', verifyCedulaEc);

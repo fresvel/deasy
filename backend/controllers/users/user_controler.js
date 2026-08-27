@@ -924,20 +924,15 @@ export const updateMyProfile = async (req, res) => {
   try {
     const userId = req.user.uid;
 
-    // ⚠️ ESTA LISTA SE HA OLVIDADO TRES VECES en el desmontaje de `persons` (nacionalidad, y ahora
-    // el correo): `updateMyProfile` NO pasa por `updateMe`, llama a `update()` directamente, asi que
-    // lo que no este aqui se descarta EN SILENCIO. Un campo nuevo se añade en LOS DOS sitios.
-    const payload = {
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      email: req.body.email,
-      nacionalidad: req.body.nacionalidad,
-      // El telefono es UN objeto con sus canales: { tipo, pais, numero, canales: ["whatsapp"] }.
-      telefono: req.body.telefono,
-      direccion: req.body.direccion
-    };
-
-    const updatedUser = await userRepository.update(userId, payload);
+    // ⚠️ AQUI HABIA UNA SEGUNDA LISTA DE CAMPOS, Y SE OLVIDO CINCO VECES: la nacionalidad, el
+    // correo y el documento se descartaban EN SILENCIO —el PATCH respondia 200 y no cambiaba nada—
+    // porque este handler componia su propio payload y llamaba a `update()` saltandose `updateMe()`,
+    // que ya tenia su lista blanca.
+    //
+    // La cuarta vez se escribio un aviso justo aqui pidiendo mantener las dos listas a la vez. NO
+    // SIRVIO: la quinta ocurrio con el aviso delante. Asi que ya no hay dos listas. `updateMe` es
+    // la unica, y este handler solo transporta.
+    const updatedUser = await userRepository.updateMe(userId, req.body ?? {});
     const access = await rbacService.getUserAccess(userId);
 
     res.json({

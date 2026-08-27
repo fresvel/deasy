@@ -630,6 +630,8 @@ export const SQL_TABLES = [
       { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
       { name: "emitido_el", label: "Emitido el", type: "date" },
       { name: "expira_el", label: "Expira el", type: "date" },
+      { name: "escaneo_ref", label: "Escaneo (referencia MinIO)", type: "text", readOnly: true },
+      { name: "escaneo_subido_at", label: "Escaneo subido el", type: "datetime", readOnly: true },
       { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },

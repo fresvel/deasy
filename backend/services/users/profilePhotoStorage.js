@@ -15,9 +15,9 @@ import {
   statMinioObject,
   uploadFileToMinio
 } from "../storage/minio_service.js";
+import { buildMinioReference, parseMinioReference } from "../storage/minioReference.js";
 
 export const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
-const MINIO_SCHEME = "minio://";
 
 const CONTENT_TYPE_BY_EXTENSION = {
   ".png": "image/png",
@@ -29,30 +29,11 @@ const CONTENT_TYPE_BY_EXTENSION = {
 export const contentTypeForExtension = (extension) =>
   CONTENT_TYPE_BY_EXTENSION[String(extension || "").toLowerCase()] || "application/octet-stream";
 
-export const buildMinioReference = (bucket, objectName) =>
-  `${MINIO_SCHEME}${bucket}/${String(objectName || "").replace(/^\/+/, "")}`;
-
-// Devuelve { bucket, objectName } o null si la columna esta vacia o trae algo que no
-// es una referencia valida (una foto ilegible acaba en 404, no en una excepcion).
-export const parsePhotoReference = (rawValue) => {
-  const value = String(rawValue ?? "").trim();
-  if (!value.startsWith(MINIO_SCHEME)) {
-    return null;
-  }
-  // Sin normalizar barras iniciales: "minio:///obj" no tiene bucket y no debe
-  // reinterpretarse como si el primer segmento del objeto lo fuera.
-  const withoutScheme = value.slice(MINIO_SCHEME.length);
-  const separatorIndex = withoutScheme.indexOf("/");
-  if (separatorIndex <= 0) {
-    return null;
-  }
-  const bucket = withoutScheme.slice(0, separatorIndex);
-  const objectName = withoutScheme.slice(separatorIndex + 1).replace(/^\/+/, "");
-  if (!bucket || !objectName) {
-    return null;
-  }
-  return { bucket, objectName };
-};
+// La convencion `minio://<bucket>/<objeto>` se movio a `storage/minioReference.js` cuando el
+// escaneo del documento de identidad necesito la misma. Se reexporta `parsePhotoReference` como
+// alias para no tocar a sus llamadores.
+export { buildMinioReference };
+export const parsePhotoReference = parseMinioReference;
 
 const MINIO_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
 

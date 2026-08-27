@@ -158,7 +158,7 @@ export default class DocumentoIdentidadService {
     }
 
     const [existentes] = await connection.query(
-      "SELECT id, numero, verificado FROM documentos_identidad WHERE person_id = ? AND principal = 1 LIMIT 1",
+      "SELECT id, numero, verificado, escaneo_ref FROM documentos_identidad WHERE person_id = ? AND principal = 1 LIMIT 1",
       [personId]
     );
 
@@ -167,12 +167,17 @@ export default class DocumentoIdentidadService {
       // Cambiar de documento DESVERIFICA, por el mismo motivo que con el correo: si la verificación
       // sobreviviera al cambio, bastaría verificar un documento propio y luego sustituirlo.
       const cambia = normalizarNumero(actual.numero) !== numero;
+      // Cambiar de documento DESVERIFICA y ademas SUELTA EL ESCANEO: ese PDF es del documento
+      // viejo. Dejarlo colgando del nuevo seria peor que no tenerlo — parece que hay respaldo y no
+      // lo hay. Quien llama recibe la referencia huerfana para poder borrar el objeto.
+      const escaneoSoltado = cambia ? actual.escaneo_ref : null;
       await connection.query(
         `UPDATE documentos_identidad
-            SET tipo_id = ?, pais_id = ?, numero = ?${cambia ? ", verificado = 0, verificado_at = NULL" : ""}
+            SET tipo_id = ?, pais_id = ?, numero = ?${cambia ? ", verificado = 0, verificado_at = NULL, escaneo_ref = NULL, escaneo_subido_at = NULL" : ""}
           WHERE id = ?`,
         [tipo.id, paisId, numero, Number(actual.id)]
       );
+      this.ultimoEscaneoSoltado = escaneoSoltado;
       return Number(actual.id);
     }
 
@@ -183,12 +188,50 @@ export default class DocumentoIdentidadService {
     return resultado?.insertId ?? null;
   }
 
+  // Deja registrada la referencia del escaneo. Devuelve la anterior para que quien llama borre el
+  // objeto viejo: aqui no se toca MinIO, esto es la capa de datos.
+  async registrarEscaneo(documentoId, referencia, connection = this.pool) {
+    const [previas] = await connection.query(
+      "SELECT escaneo_ref FROM documentos_identidad WHERE id = ? LIMIT 1",
+      [Number(documentoId)]
+    );
+    await connection.query(
+      "UPDATE documentos_identidad SET escaneo_ref = ?, escaneo_subido_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [referencia, Number(documentoId)]
+    );
+    return previas?.[0]?.escaneo_ref ?? null;
+  }
+
+  // La referencia cruda, para el handler que hace el stream. No sale por la API.
+  async referenciaEscaneo(documentoId, connection = this.pool) {
+    const [filas] = await connection.query(
+      "SELECT id, person_id, escaneo_ref FROM documentos_identidad WHERE id = ? AND is_active = 1 LIMIT 1",
+      [Number(documentoId)]
+    );
+    return filas?.[0] ?? null;
+  }
+
+  async principalDe(personId, connection = this.pool) {
+    this.ensurePool();
+    const [filas] = await connection.query(
+      `SELECT id, person_id, numero, escaneo_ref
+         FROM documentos_identidad
+        WHERE person_id = ? AND principal = 1 AND is_active = 1
+        LIMIT 1`,
+      [personId]
+    );
+    return filas?.[0] ?? null;
+  }
+
   async listarPorPersona(personId, connection = this.pool) {
     this.ensurePool();
     const [filas] = await connection.query(
       `SELECT d.id, td.code AS tipo, td.name AS tipo_nombre, d.numero, d.principal,
               d.pais_id, pa.iso_alpha2 AS pais_iso, pa.name AS pais,
-              d.verificado, d.verificado_at, d.emitido_el, d.expira_el
+              d.verificado, d.verificado_at, d.emitido_el, d.expira_el,
+              -- La referencia minio:// NO sale al cliente: es interna y no le sirve a nadie fuera
+              -- del backend. Lo que necesita quien pinta la pantalla es si HAY escaneo.
+              (d.escaneo_ref IS NOT NULL) AS tiene_escaneo, d.escaneo_subido_at
          FROM documentos_identidad d
          JOIN tipos_documento td ON td.id = d.tipo_id
          LEFT JOIN paises pa ON pa.id = d.pais_id
