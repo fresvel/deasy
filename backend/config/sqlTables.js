@@ -13,7 +13,8 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name"]
   },
@@ -29,7 +30,8 @@ export const SQL_TABLES = [
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "is_inheritance_allowed", label: "Herencia", type: "boolean", defaultValue: 0 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["code", "name"]
   },
@@ -60,7 +62,8 @@ export const SQL_TABLES = [
       { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
       { name: "parent_unit_id", label: "Unidad padre", type: "number", required: true },
       { name: "child_unit_id", label: "Unidad hija", type: "number", required: true },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: []
   },

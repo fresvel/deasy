@@ -60,7 +60,7 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 | | |
 |---|---|
 | Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **38** |
-| Columnas de esas 38 | **375** |
+| Columnas de esas 38 | **377** |
 | Claves foráneas entre esas 38 | **97** |
 | Tablas del esquema entero (con chat, empleo y dossier) | **67** |
 | Claves foráneas del esquema entero | **147** |

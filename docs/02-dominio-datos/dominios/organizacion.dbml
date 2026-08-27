@@ -41,6 +41,7 @@ Table "relation_unit_types" {
   "is_inheritance_allowed" int2 [not null, default: 0]
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table "unit_positions" {
@@ -70,6 +71,7 @@ Table "unit_relations" {
   "parent_unit_id" int4 [not null]
   "child_unit_id" int4 [not null]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
     (parent_unit_id, child_unit_id, relation_type_id) [type: btree, unique, name: "unit_relations_uq"]
@@ -84,6 +86,7 @@ Table "unit_types" {
   "name" varchar(120) [not null]
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table "units" {

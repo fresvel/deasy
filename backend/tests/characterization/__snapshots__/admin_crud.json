@@ -436,7 +436,8 @@
       "id",
       "is_active",
       "is_inheritance_allowed",
-      "name"
+      "name",
+      "updated_at"
     ]
   },
   "list_role_permissions": {
@@ -612,7 +613,8 @@
       "created_at",
       "id",
       "parent_unit_id",
-      "relation_type_id"
+      "relation_type_id",
+      "updated_at"
     ]
   },
   "list_unit_types": {
@@ -623,7 +625,8 @@
       "created_at",
       "id",
       "is_active",
-      "name"
+      "name",
+      "updated_at"
     ]
   },
   "list_units": {

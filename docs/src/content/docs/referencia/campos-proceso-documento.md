@@ -39,6 +39,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `name` | varchar(120) | sí | — | — |
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
+| `updated_at` | timestamp | sí | — | — |
 
 ### `units`
 
@@ -64,6 +65,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `is_inheritance_allowed` | smallint | sí | — | — |
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
+| `updated_at` | timestamp | sí | — | — |
 
 ### `unit_relations`
 
@@ -74,6 +76,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `parent_unit_id` | int | sí | `units.id` · impide borrar | — |
 | `child_unit_id` | int | sí | `units.id` · impide borrar | — |
 | `created_at` | timestamp | sí | — | — |
+| `updated_at` | timestamp | sí | — | — |
 
 ### `cargos`
 
@@ -622,4 +625,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**39 tablas · 382 columnas · 97 referencias.** Leídas del catálogo de PostgreSQL.
+**39 tablas · 385 columnas · 97 referencias.** Leídas del catálogo de PostgreSQL.

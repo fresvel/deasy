@@ -128,7 +128,7 @@ Son **cuatro de D7** más una del frente 4. Ninguna es trabajo técnico pendient
 
 **[La página del modelo proceso→documento](https://claude.ai/code/artifact/b51be421-a80f-4dac-b6a6-d28d9b2d5f2e)**
 recorre las 38 tablas de la cadena con todos sus campos, en 14 diagramas, y termina con los cinco
-puntos abiertos. Sus campos y relaciones salen del **catálogo de PostgreSQL en ejecución** (382
+puntos abiertos. Sus campos y relaciones salen del **catálogo de PostgreSQL en ejecución** (385
 columnas, 147 referencias), no del código ni de esta documentación — así que sirve para contrastar
 **este** plan, no sólo el esquema.
 
@@ -834,7 +834,7 @@ desactivar un puesto cierra su ocupación). Ninguna se puede avanzar sin respues
 **El modelo entero, explicado y verificado**, está en
 [esta página](https://claude.ai/code/artifact/b51be421-a80f-4dac-b6a6-d28d9b2d5f2e): las 38 tablas de
 la cadena proceso→documento con todos sus campos, 14 diagramas, y los cinco puntos abiertos. Los
-campos salen del catálogo de PostgreSQL en ejecución (382 columnas, 147 referencias), no del código.
+campos salen del catálogo de PostgreSQL en ejecución (385 columnas, 147 referencias), no del código.
 
 ---
 
