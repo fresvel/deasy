@@ -8,7 +8,7 @@
   "constraint_persons_cedula_duplicada": {
     "status": 409,
     "body": {
-      "message": "Ya existe otro registro con ese valor en «Cedula»."
+      "message": "Ese documento de identidad ya está registrado por otra persona."
     }
   },
   "constraint_segunda_jefatura": {
@@ -128,7 +128,6 @@
   "graft_persons_create": {
     "status": 200,
     "body": {
-      "cedula": "9999999999",
       "first_name": "Caracterizacion",
       "id": "<normalized>",
       "last_name": "Grafts",
@@ -311,7 +310,6 @@
     "isArray": true,
     "count": 43,
     "itemKeys": [
-      "cedula",
       "created_at",
       "first_name",
       "id",

@@ -11,7 +11,8 @@ export const getuserTarea = async (req, res) => {
     if (!pool) {
       return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
-    const [persons] = await pool.query("SELECT id FROM persons WHERE cedula = ? LIMIT 1", [cedula]);
+    const [persons] = await pool.query(`SELECT d.person_id AS id FROM documentos_identidad d WHERE d.numero = ? AND d.is_active = 1 LIMIT 1`,
+      [String(cedula ?? "").trim().toUpperCase().replace(/[\s.-]/g, "")]);
     const personId = persons?.[0]?.id;
     if (!personId) {
       return res.status(404).json({ message: "Usuario no encontrado" });

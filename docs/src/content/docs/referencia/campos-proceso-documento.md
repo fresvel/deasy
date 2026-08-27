@@ -112,7 +112,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `cedula` | varchar(20) | no | — | — |
 | `first_name` | varchar(120) | sí | — | — |
 | `last_name` | varchar(120) | sí | — | — |
 | `nacionalidad_pais_id` | int | no | `paises.id` · impide borrar | — |
@@ -614,4 +613,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**39 tablas · 374 columnas · 98 referencias.** Leídas del catálogo de PostgreSQL.
+**39 tablas · 373 columnas · 98 referencias.** Leídas del catálogo de PostgreSQL.

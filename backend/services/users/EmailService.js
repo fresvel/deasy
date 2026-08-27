@@ -16,9 +16,21 @@ import { getPostgresPool } from "../../config/postgres.js";
 const TIPOS = ["personal", "institucional"];
 const TIPO_POR_DEFECTO = "institucional";
 
+// 400 = el cliente mando mal el dato. Se ponen los DOS nombres a proposito: el transporte de
+// usuarios lee `error.status` y el motor generico de /admin lee `error.statusCode`.
 const errorDeCliente = (mensaje) => {
   const error = new Error(mensaje);
   error.status = 400;
+  error.statusCode = 400;
+  return error;
+};
+
+// 409 = el dato esta bien formado pero YA ESTA COGIDO. Es otra cosa que un 400, y el editor
+// generico ya distinguia las dos: sus violaciones de unicidad son 409 desde `errors/sqlErrors.js`.
+const errorDeConflicto = (mensaje) => {
+  const error = new Error(mensaje);
+  error.status = 409;
+  error.statusCode = 409;
   return error;
 };
 
@@ -65,7 +77,7 @@ export default class EmailService {
       [direccion, personId]
     );
     if (ajenos?.length) {
-      throw errorDeCliente("Ese correo ya está registrado por otra persona.");
+      throw errorDeConflicto("Ese correo ya está registrado por otra persona.");
     }
 
     const [existentes] = await connection.query(

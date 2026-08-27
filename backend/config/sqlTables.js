@@ -482,7 +482,9 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "cedula", label: "Cedula", type: "text" },
+      // Campo VIRTUAL: no es columna de `persons`, vive en `documentos_identidad`. `virtual: true`
+      // lo saca del SELECT y lo deja en el formulario; el hook lo desvia a su tabla al crear.
+      { name: "cedula", label: "Cedula", type: "text", virtual: true },
       { name: "first_name", label: "Nombre", type: "text", required: true },
       { name: "last_name", label: "Apellido", type: "text", required: true },
       // Campo VIRTUAL: no es columna de `persons`, vive en `emails`. `virtual: true` es lo que
@@ -503,7 +505,7 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["cedula", "first_name", "last_name"]
+    searchFields: ["first_name", "last_name"]
   },
   {
     table: "direcciones",
@@ -596,6 +598,44 @@ export const SQL_TABLES = [
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["direccion"]
+  },
+  {
+    table: "tipos_documento",
+    label: "Tipos de documento",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "validacion", label: "Validacion", type: "select", options: ["cedula_ec", "alfanumerico", "libre"], defaultValue: "libre" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "documentos_identidad",
+    label: "Documentos de identidad",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "tipo_id", label: "Tipo", type: "number", required: true },
+      { name: "pais_id", label: "Pais emisor", type: "number" },
+      { name: "numero", label: "Numero", type: "text", required: true },
+      { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
+      { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
+      { name: "emitido_el", label: "Emitido el", type: "date" },
+      { name: "expira_el", label: "Expira el", type: "date" },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["numero"]
   },
   {
     table: "roles",

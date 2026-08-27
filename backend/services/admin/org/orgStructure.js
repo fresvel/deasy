@@ -104,12 +104,13 @@ export default class OrgStructureService {
       `SELECT p.id, p.slot_no, p.title, p.is_unit_head, p.is_active, p.position_type, p.cargo_id, p.profile,
               c.name AS cargo_name, c.code AS cargo_code,
               pa.id AS assignment_id, pa.start_date,
-              pers.id AS person_id, pers.cedula,
+              pers.id AS person_id, pdoc.numero AS cedula,
               CONCAT(COALESCE(pers.first_name, ''), ' ', COALESCE(pers.last_name, '')) AS person_name
        FROM unit_positions p
        LEFT JOIN cargos c ON c.id = p.cargo_id
        LEFT JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
        LEFT JOIN persons pers ON pers.id = pa.person_id
+       LEFT JOIN documentos_identidad pdoc ON pdoc.person_id = pers.id AND pdoc.principal = 1 AND pdoc.is_active = 1
        WHERE p.unit_id = ?
        ORDER BY p.is_unit_head DESC, c.name ASC, p.slot_no ASC`,
       [id]

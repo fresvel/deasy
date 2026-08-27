@@ -31,7 +31,7 @@
         <div class="grid gap-4 md:grid-cols-2">
           <div>
             <label :for="fieldId('cedula-1')" class="deasy-form-label">Cédula</label>
-            <input :id="fieldId('cedula-1')" v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-control" placeholder="1234567890" />
+            <input :id="fieldId('cedula-1')" v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-control" placeholder="1234567897" />
           </div>
           <div>
             <label :for="fieldId('email-1')" class="deasy-form-label">Correo electrónico</label>
@@ -79,7 +79,7 @@
           <div class="grid gap-4 md:grid-cols-2">
             <div>
               <label :for="fieldId('cedula-2')" class="deasy-form-label">Cédula</label>
-              <input :id="fieldId('cedula-2')" v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-control" placeholder="0987654321" />
+              <input :id="fieldId('cedula-2')" v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-control" placeholder="0927654327" />
             </div>
             <div>
               <label :for="fieldId('email-2')" class="deasy-form-label">Correo electrónico</label>
@@ -121,7 +121,7 @@
           <div class="grid gap-4 md:grid-cols-2">
             <div>
               <label :for="fieldId('cedula-3')" class="deasy-form-label">Cédula</label>
-              <input :id="fieldId('cedula-3')" v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-control" placeholder="1122334455" />
+              <input :id="fieldId('cedula-3')" v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-control" placeholder="1122334459" />
             </div>
             <div>
               <label :for="fieldId('email-3')" class="deasy-form-label">Correo electrónico</label>
@@ -297,7 +297,7 @@
             class="m-0 overflow-x-auto rounded bg-white/80 p-3 text-theme-xs leading-relaxed"
           ><code>bash scripts/docker-env.sh &lt;env&gt; exec -T backend \
   npm run recover:admin -- \
-    --cedula 1234567890 \
+    --cedula 1234567897 \
     --first-name Nombre --last-name Apellido \
     --email admin@tu-dominio \
     --password 'TuClaveSegura1!'</code></pre>
@@ -377,15 +377,15 @@ const blankPerson = () => ({
 });
 
 const EXAMPLE_ADMIN = {
-  cedula: "1234567890", first_name: "Administrador", last_name: "Principal",
+  cedula: "1234567897", first_name: "Administrador", last_name: "Principal",
   email: "admin@institucion.edu.ec", whatsapp: "0990000000", password: "Demo1234!", confirm_password: "Demo1234!"
 };
 const EXAMPLE_GESTOR = {
-  cedula: "0987654321", first_name: "Gestor", last_name: "Procesos",
+  cedula: "0927654327", first_name: "Gestor", last_name: "Procesos",
   email: "gestor@institucion.edu.ec", whatsapp: "", password: "Gestor1234!", confirm_password: "Gestor1234!"
 };
 const EXAMPLE_USUARIO = {
-  cedula: "1122334455", first_name: "Usuario", last_name: "Prueba",
+  cedula: "1122334459", first_name: "Usuario", last_name: "Prueba",
   email: "usuario@institucion.edu.ec", whatsapp: "", password: "Demo1234!", confirm_password: "Demo1234!"
 };
 

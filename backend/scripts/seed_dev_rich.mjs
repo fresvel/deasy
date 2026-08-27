@@ -15,7 +15,7 @@
 // propio y copia sus objetos en MinIO. No hace falta subir nada a mano.
 //
 // RESULTADO
-// La persona 3 ("usuario", cédula 1122334455) pasa a ver DOS procesos en /home:
+// La persona 3 ("usuario", cédula 1122334459) pasa a ver DOS procesos en /home:
 //   - "Proceso por defecto"  (routed)  -> se muestra como "Tareas"
 //   - "Informe de Gestión Docente" (single) -> con entregable, flujo de entrega y de firma
 //

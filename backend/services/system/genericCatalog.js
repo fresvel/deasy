@@ -15,10 +15,32 @@ const docenteSlots = (unitSlug, positionType, count) =>
     slot_no: i + 1
   }));
 
+// Las cedulas de la semilla son ECUATORIANAS VALIDAS, con su digito verificador correcto.
+//
+// Antes eran secuencias inventadas (`9000000001`...) y ninguna cuadraba. Desde que
+// `DocumentoIdentidadService` comprueba el verificador —el 2026-08-27, al abrir el modelo a
+// pasaportes— una cedula falsa NO SE PUEDE INSERTAR, ni aqui ni por la API. Y esta bien que sea
+// asi: si dev no ejercita la misma regla que produccion, la regla no esta probada.
+//
+// La provincia 17 es Pichincha y el tercer digito, menor que 6, marca persona natural.
+const cedulaDemo = (secuencia) => {
+  const base = "17" + String(secuencia).padStart(7, "0");
+  let suma = 0;
+  for (let i = 0; i < 9; i += 1) {
+    let valor = Number(base[i]);
+    if (i % 2 === 0) {
+      valor *= 2;
+      if (valor > 9) valor -= 9;
+    }
+    suma += valor;
+  }
+  return base + String((10 - (suma % 10)) % 10);
+};
+
 // Genera N usuarios Docente de ejemplo para una unidad (cédulas correlativas desde baseCedula, uno por slot).
 const docenteUsers = (unitSlug, count, baseCedula) =>
   Array.from({ length: count }, (_, i) => ({
-    cedula: String(baseCedula + i),
+    cedula: cedulaDemo(baseCedula + i),
     first_name: "Docente",
     last_name: `${unitSlug}${i > 0 ? ` ${i + 1}` : ""}`,
     unit_slug: unitSlug,
@@ -113,32 +135,32 @@ export const GENERIC_CATALOG = {
   // recibir tarjetas; el rol propio del cargo lo deriva la ocupación. cédulas 90xxxxxxxx (no colisionan con las
   // cuentas demo); editable como las unidades/puestos. Opt-in: requiere e incluye los puestos de ejemplo.
   example_users: [
-    { cedula: "9000000001", first_name: "Prorrector", last_name: "PREC", unit_slug: "PREC", cargo_code: "PRORRECTOR", slot_no: 1 },
-    { cedula: "9000000002", first_name: "Asistente", last_name: "PREC", unit_slug: "PREC", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000003", first_name: "Director", last_name: "DDE", unit_slug: "DDE", cargo_code: "DIRECTOR", slot_no: 1 },
-    { cedula: "9000000004", first_name: "Asistente", last_name: "DDE", unit_slug: "DDE", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000005", first_name: "Director", last_name: "DIVI", unit_slug: "DIVI", cargo_code: "DIRECTOR", slot_no: 1 },
-    { cedula: "9000000006", first_name: "Asistente", last_name: "DIVI", unit_slug: "DIVI", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000007", first_name: "Jefe", last_name: "TTHH", unit_slug: "TTHH", cargo_code: "JEFE", slot_no: 1 },
-    { cedula: "9000000008", first_name: "Asistente", last_name: "TTHH", unit_slug: "TTHH", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000009", first_name: "Coordinador", last_name: "CAE", unit_slug: "CAE", cargo_code: "COORDINADOR", slot_no: 1 },
-    { cedula: "9000000010", first_name: "Asistente", last_name: "CAE", unit_slug: "CAE", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000011", first_name: "Director", last_name: "EHIC", unit_slug: "EHIC", cargo_code: "DIRECTOR", slot_no: 1 },
-    { cedula: "9000000012", first_name: "Asistente", last_name: "EHIC", unit_slug: "EHIC", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000013", first_name: "Director", last_name: "salud-y-bienestar", unit_slug: "salud-y-bienestar", cargo_code: "DIRECTOR", slot_no: 1 },
-    { cedula: "9000000014", first_name: "Asistente", last_name: "salud-y-bienestar", unit_slug: "salud-y-bienestar", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000015", first_name: "Director", last_name: "derecho-educacion-y-sociedad", unit_slug: "derecho-educacion-y-sociedad", cargo_code: "DIRECTOR", slot_no: 1 },
-    { cedula: "9000000016", first_name: "Asistente", last_name: "derecho-educacion-y-sociedad", unit_slug: "derecho-educacion-y-sociedad", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000017", first_name: "Director", last_name: "formacion-tecnica-y-tecnologica", unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "DIRECTOR", slot_no: 1 },
-    { cedula: "9000000018", first_name: "Asistente", last_name: "formacion-tecnica-y-tecnologica", unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000019", first_name: "Director", last_name: "negocios-y-empresas", unit_slug: "negocios-y-empresas", cargo_code: "DIRECTOR", slot_no: 1 },
-    { cedula: "9000000020", first_name: "Asistente", last_name: "negocios-y-empresas", unit_slug: "negocios-y-empresas", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000021", first_name: "Coordinador", last_name: "E055", unit_slug: "E055", cargo_code: "COORDINADOR", slot_no: 1 },
-    { cedula: "9000000022", first_name: "Asistente", last_name: "E055", unit_slug: "E055", cargo_code: "ASISTENTE", slot_no: 1 },
-    { cedula: "9000000023", first_name: "Coordinador", last_name: "E140", unit_slug: "E140", cargo_code: "COORDINADOR", slot_no: 1 },
-    { cedula: "9000000024", first_name: "Asistente", last_name: "E140", unit_slug: "E140", cargo_code: "ASISTENTE", slot_no: 1 },
-    ...docenteUsers("E055", 8, 9000000025),
-    ...docenteUsers("E140", 8, 9000000033)
+    { cedula: cedulaDemo(1), first_name: "Prorrector", last_name: "PREC", unit_slug: "PREC", cargo_code: "PRORRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(2), first_name: "Asistente", last_name: "PREC", unit_slug: "PREC", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(3), first_name: "Director", last_name: "DDE", unit_slug: "DDE", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(4), first_name: "Asistente", last_name: "DDE", unit_slug: "DDE", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(5), first_name: "Director", last_name: "DIVI", unit_slug: "DIVI", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(6), first_name: "Asistente", last_name: "DIVI", unit_slug: "DIVI", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(7), first_name: "Jefe", last_name: "TTHH", unit_slug: "TTHH", cargo_code: "JEFE", slot_no: 1 },
+    { cedula: cedulaDemo(8), first_name: "Asistente", last_name: "TTHH", unit_slug: "TTHH", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(9), first_name: "Coordinador", last_name: "CAE", unit_slug: "CAE", cargo_code: "COORDINADOR", slot_no: 1 },
+    { cedula: cedulaDemo(10), first_name: "Asistente", last_name: "CAE", unit_slug: "CAE", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(11), first_name: "Director", last_name: "EHIC", unit_slug: "EHIC", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(12), first_name: "Asistente", last_name: "EHIC", unit_slug: "EHIC", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(13), first_name: "Director", last_name: "salud-y-bienestar", unit_slug: "salud-y-bienestar", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(14), first_name: "Asistente", last_name: "salud-y-bienestar", unit_slug: "salud-y-bienestar", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(15), first_name: "Director", last_name: "derecho-educacion-y-sociedad", unit_slug: "derecho-educacion-y-sociedad", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(16), first_name: "Asistente", last_name: "derecho-educacion-y-sociedad", unit_slug: "derecho-educacion-y-sociedad", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(17), first_name: "Director", last_name: "formacion-tecnica-y-tecnologica", unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(18), first_name: "Asistente", last_name: "formacion-tecnica-y-tecnologica", unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(19), first_name: "Director", last_name: "negocios-y-empresas", unit_slug: "negocios-y-empresas", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: cedulaDemo(20), first_name: "Asistente", last_name: "negocios-y-empresas", unit_slug: "negocios-y-empresas", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(21), first_name: "Coordinador", last_name: "E055", unit_slug: "E055", cargo_code: "COORDINADOR", slot_no: 1 },
+    { cedula: cedulaDemo(22), first_name: "Asistente", last_name: "E055", unit_slug: "E055", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: cedulaDemo(23), first_name: "Coordinador", last_name: "E140", unit_slug: "E140", cargo_code: "COORDINADOR", slot_no: 1 },
+    { cedula: cedulaDemo(24), first_name: "Asistente", last_name: "E140", unit_slug: "E140", cargo_code: "ASISTENTE", slot_no: 1 },
+    ...docenteUsers("E055", 8, 25),
+    ...docenteUsers("E140", 8, 33)
   ]
 };
 
@@ -322,10 +344,12 @@ const seedExampleUsers = async (connection, roleIds = new Map()) => {
     const email = u.email || `${cedula}@demo.deasy.local`;
     // El correo ya no es columna de `persons`: la busqueda idempotente mira la cedula O la tabla
     // `emails`, y el alta crea las dos filas.
+    // Ni el documento ni el correo son columnas de `persons`: la busqueda idempotente mira las dos
+    // tablas y el alta crea las tres filas.
     const [exP] = await connection.query(
       `SELECT p.id
          FROM persons p
-        WHERE p.cedula = ?
+        WHERE EXISTS (SELECT 1 FROM documentos_identidad d WHERE d.person_id = p.id AND d.numero = ?)
            OR EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ?)
         LIMIT 1`,
       [cedula, email.toLowerCase()]
@@ -333,15 +357,23 @@ const seedExampleUsers = async (connection, roleIds = new Map()) => {
     let personId = exP?.[0]?.id;
     if (!personId) {
       const [insP] = await connection.query(
-        `INSERT INTO persons (cedula, first_name, last_name, password_hash, token, status, is_active)
-         VALUES (?, ?, ?, ?, ?, 'Activo', 1)`,
-        [cedula, u.first_name, u.last_name, passwordHash, cedula]
+        `INSERT INTO persons (first_name, last_name, password_hash, token, status, is_active)
+         VALUES (?, ?, ?, ?, 'Activo', 1)`,
+        [u.first_name, u.last_name, passwordHash, cedula]
       );
       personId = insP.insertId;
       await connection.query(
         `INSERT INTO emails (person_id, tipo, direccion, verificado, verificado_at, principal)
          VALUES (?, 'institucional', ?, 1, CURRENT_TIMESTAMP, 1)`,
         [personId, email.toLowerCase()]
+      );
+      await connection.query(
+        `INSERT INTO documentos_identidad (person_id, tipo_id, pais_id, numero, verificado, verificado_at, principal)
+         SELECT ?, td.id, pais.id, ?, 1, CURRENT_TIMESTAMP, 1
+           FROM tipos_documento td
+           CROSS JOIN paises pais
+          WHERE td.code = 'cedula_ec' AND pais.iso_alpha2 = 'EC'`,
+        [personId, cedula]
       );
     }
 

@@ -4,7 +4,7 @@
 //
 //   node scripts/generate_demo_certificates.mjs                 # solo a quien no tenga ninguno
 //   node scripts/generate_demo_certificates.mjs --force         # reemite a todo el mundo
-//   node scripts/generate_demo_certificates.mjs --person 1122334455   # una persona (cédula o id)
+//   node scripts/generate_demo_certificates.mjs --person 1122334459   # una persona (cédula o id)
 //
 // POR QUÉ EXISTE --force. `reset.mjs storage` vacía el bucket `deasy-certificates` pero NO
 // borra las filas de `person_certificates`. Sin --force, el filtro por defecto
@@ -69,21 +69,22 @@ const listTargetPeople = async ({ force, person }) => {
   if (person) {
     // La cédula es varchar y el id int: se acepta cualquiera de los dos como referencia.
     const asId = Number(person);
-    filter = "WHERE p.cedula = ? OR p.id = ?";
+    filter = "WHERE d.numero = ? OR p.id = ?";
     params.push(String(person), Number.isSafeInteger(asId) && asId <= 2147483647 ? asId : 0);
   }
   const [rows] = await pool.query(
     `SELECT p.id,
-            p.cedula,
+            d.numero AS cedula,
             p.first_name,
             p.last_name,
             e.direccion AS email,
             COUNT(pc.id) AS certificate_count
        FROM persons p
        LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
+       LEFT JOIN documentos_identidad d ON d.person_id = p.id AND d.principal = 1 AND d.is_active = 1
        LEFT JOIN person_certificates pc ON pc.person_id = p.id
       ${filter}
-      GROUP BY p.id, p.cedula, p.first_name, p.last_name, e.direccion
+      GROUP BY p.id, d.numero, p.first_name, p.last_name, e.direccion
       ${force ? "" : "HAVING COUNT(pc.id) = 0"}
       ORDER BY p.id`,
     params

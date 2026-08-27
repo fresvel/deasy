@@ -73,7 +73,13 @@ export const createUser = async (req, res) => {
   try {
     const token = await generateUniqueToken(); // ← aquí, dentro del try
 
+    // ⚠️ ESTA LISTA Y LA DE `updateMyProfile` SE HAN OLVIDADO CUATRO VECES en el desmontaje de
+    // `persons` (nacionalidad, correo y ahora el documento). Lo que no este aqui se descarta EN
+    // SILENCIO: el alta responde 200 y la persona sale a medias. Un campo nuevo se añade en LAS DOS.
     const userPayload = {
+      // El documento es UN objeto {tipo, pais, numero}; `cedula` es la forma corta que sigue
+      // aceptandose y significa "cedula ecuatoriana".
+      documento: req.body.documento,
       cedula: req.body.cedula,
       email: req.body.email,
       password: req.body.password,
@@ -947,8 +953,8 @@ export const updateMyProfile = async (req, res) => {
   } catch (error) {
     console.error(error);
 
-    if (error?.status === 400) {
-      res.status(400).json({ message: error.message });
+    if (error?.status === 400 || error?.status === 409) {
+      res.status(error.status).json({ message: error.message });
       return;
     }
 
@@ -1403,14 +1409,15 @@ export const searchTaskRecipients = async (req, res) => {
     if (q) {
       const like = `%${q}%`;
       where +=
-        " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.cedula LIKE ? OR e.direccion LIKE ? OR CONCAT(p.first_name, ' ', p.last_name) LIKE ?)";
+        " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR d.numero LIKE ? OR e.direccion LIKE ? OR CONCAT(p.first_name, ' ', p.last_name) LIKE ?)";
       params.push(like, like, like, like, like);
     }
     const [rows] = await connection.query(
-      `SELECT p.id, p.cedula, p.first_name, p.last_name, e.direccion AS email,
+      `SELECT p.id, d.numero AS cedula, p.first_name, p.last_name, e.direccion AS email,
               CONCAT(p.first_name, ' ', p.last_name) AS full_name
        FROM persons p
        LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
+       LEFT JOIN documentos_identidad d ON d.person_id = p.id AND d.principal = 1 AND d.is_active = 1
        WHERE ${where}
        ORDER BY p.first_name ASC, p.last_name ASC
        LIMIT 25`,

@@ -9,6 +9,7 @@ import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.j
 import { PAISES, PROVINCIAS_EC, CANTONES_EC } from "../../config/geografiaCatalog.js";
 import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
+import DocumentoIdentidadService from "../users/DocumentoIdentidadService.js";
 import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
@@ -727,6 +728,21 @@ export const ensureDefaultProcess = async (connection) => {
   return { processId, definitionId, artifactId };
 };
 
+// La cedula del administrador ya no es una columna de `persons`: es su documento principal, dado por
+// verificado igual que lo estaban el correo y el telefono. Ojo: pasa por el MISMO validador que la
+// API, asi que una cedula con el verificador malo hace fallar el arranque — y esta bien: si el
+// bootstrap pudiera saltarse la regla, la regla no seria una garantia.
+const guardarDocumentoDelAdmin = async (connection, personId, cedula) => {
+  if (!cedula) return;
+  const documentos = new DocumentoIdentidadService(connection);
+  const documentoId = await documentos.guardarPrincipal(
+    personId,
+    { tipo: "cedula_ec", numero: cedula },
+    connection
+  );
+  await documentos.marcarVerificado(documentoId, connection);
+};
+
 // El correo del administrador ya no es una columna de `persons`: es su fila principal en `emails`,
 // dada por verificada igual que antes lo daba `verify_email = 1`. Va aqui y no en `EmailService`
 // porque el bootstrap corre en su propia transaccion y tiene que compartirla.
@@ -756,9 +772,9 @@ const guardarTelefonoDelAdmin = async (connection, personId, whatsapp) => {
 const upsertAdminPerson = async (connection, payload) => {
   const existingPerson = await fetchOne(
     connection,
-    `SELECT p.id, p.cedula, p.token
+    `SELECT p.id, p.token
        FROM persons p
-      WHERE p.cedula = ?
+      WHERE EXISTS (SELECT 1 FROM documentos_identidad d WHERE d.person_id = p.id AND d.numero = ?)
          OR EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ?)
       LIMIT 1`,
     [payload.cedula, String(payload.email ?? "").trim().toLowerCase()]
@@ -770,8 +786,7 @@ const upsertAdminPerson = async (connection, payload) => {
   if (existingPerson) {
     await connection.query(
       `UPDATE persons
-       SET cedula = ?,
-           first_name = ?,
+       SET first_name = ?,
            last_name = ?,
            password_hash = ?,
            status = 'Activo',
@@ -779,7 +794,6 @@ const upsertAdminPerson = async (connection, payload) => {
            token = ?
        WHERE id = ?`,
       [
-        payload.cedula,
         payload.first_name,
         payload.last_name,
         passwordHash,
@@ -787,6 +801,7 @@ const upsertAdminPerson = async (connection, payload) => {
         existingPerson.id
       ]
     );
+    await guardarDocumentoDelAdmin(connection, Number(existingPerson.id), payload.cedula);
     await guardarCorreoDelAdmin(connection, Number(existingPerson.id), payload.email);
     await guardarTelefonoDelAdmin(connection, Number(existingPerson.id), payload.whatsapp);
     return { id: Number(existingPerson.id), token };
@@ -794,7 +809,6 @@ const upsertAdminPerson = async (connection, payload) => {
 
   const [result] = await connection.query(
     `INSERT INTO persons (
-       cedula,
        first_name,
        last_name,
        password_hash,
@@ -802,9 +816,8 @@ const upsertAdminPerson = async (connection, payload) => {
        is_active,
        token
      )
-     VALUES (?, ?, ?, ?, 'Activo', 1, ?)`,
+     VALUES (?, ?, ?, 'Activo', 1, ?)`,
     [
-      payload.cedula,
       payload.first_name,
       payload.last_name,
       passwordHash,
@@ -812,6 +825,7 @@ const upsertAdminPerson = async (connection, payload) => {
     ]
   );
 
+  await guardarDocumentoDelAdmin(connection, Number(result.insertId), payload.cedula);
   await guardarCorreoDelAdmin(connection, Number(result.insertId), payload.email);
   await guardarTelefonoDelAdmin(connection, Number(result.insertId), payload.whatsapp);
   return { id: Number(result.insertId), token };

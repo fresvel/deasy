@@ -61,6 +61,7 @@ import {
   syncDocumentProgressFromSignatureRequest,
 } from "../../documents/DocumentProgressService.js";
 import EmailService from "../../users/EmailService.js";
+import DocumentoIdentidadService from "../../users/DocumentoIdentidadService.js";
 
 /** Ejecuta una escritura dentro de una transacción, con hooks antes y después. */
 export async function runInTransaction(pool, ctx, { before, after }, execute) {
@@ -233,12 +234,20 @@ export const TABLE_HOOKS = {
       // roto: no puede entrar por correo ni recibir la verificacion.
       ctx.state.emailPrincipal = typeof ctx.data?.email === "string" ? ctx.data.email.trim() : "";
       delete ctx.payload.email;
+      // Y la cedula, por el mismo motivo: vive en `documentos_identidad` desde el 2026-08-27.
+      ctx.state.documentoPrincipal = typeof ctx.data?.cedula === "string" ? ctx.data.cedula.trim() : "";
+      delete ctx.payload.cedula;
     },
 
     async afterInsertTx(ctx) {
-      if (!ctx.state.emailPrincipal) return;
-      const emails = new EmailService(ctx.connection);
-      await emails.guardarPrincipal(ctx.insertId, { direccion: ctx.state.emailPrincipal }, ctx.connection);
+      if (ctx.state.emailPrincipal) {
+        const emails = new EmailService(ctx.connection);
+        await emails.guardarPrincipal(ctx.insertId, { direccion: ctx.state.emailPrincipal }, ctx.connection);
+      }
+      if (ctx.state.documentoPrincipal) {
+        const documentos = new DocumentoIdentidadService(ctx.connection);
+        await documentos.guardarPrincipal(ctx.insertId, { tipo: "cedula_ec", numero: ctx.state.documentoPrincipal }, ctx.connection);
+      }
     },
 
     async beforeUpdate(ctx) {

@@ -217,7 +217,7 @@ export const swaggerDefinition = {
             enum: ["Técnico", "Tecnólogo", "Grado", "Maestría", "Maestría Tecnológica", "Diplomado", "Doctorado", "Posdoctorado"],
             example: "Grado"
           },
-          sreg: { type: "string", description: "Número de registro en SENESCYT", example: "1234567890" },
+          sreg: { type: "string", description: "Número de registro en SENESCYT", example: "1234567897" },
           campo_amplio: { type: "string", example: "Ingeniería, Industria y Construcción" },
           tipo: {
             type: "string",

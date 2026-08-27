@@ -2,6 +2,7 @@ import { getPostgresPool } from "../../config/postgres.js";
 import DireccionService from "../users/DireccionService.js";
 import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
+import DocumentoIdentidadService from "../users/DocumentoIdentidadService.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
@@ -11,6 +12,7 @@ export default class UserRepository {
     this.direcciones = new DireccionService(pool);
     this.telefonos = new TelefonoService(pool);
     this.emails = new EmailService(pool);
+    this.documentos = new DocumentoIdentidadService(pool);
   }
 
   ensurePool() {
@@ -49,17 +51,19 @@ export default class UserRepository {
   async conDirecciones(userRow) {
     if (!userRow) return userRow;
     const personId = userRow.id ?? userRow._id;
-    const [direcciones, telefonos, emails] = await Promise.all([
+    const [direcciones, telefonos, emails, documentos] = await Promise.all([
       this.direcciones.listarPorPersona(personId),
       this.telefonos.listarPorPersona(personId),
-      this.emails.listarPorPersona(personId)
+      this.emails.listarPorPersona(personId),
+      this.documentos.listarPorPersona(personId)
     ]);
     return {
       ...userRow,
       direcciones,
       direccion: direcciones.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null,
       telefonos,
-      emails
+      emails,
+      documentos
     };
   }
 
@@ -68,10 +72,13 @@ export default class UserRepository {
 
     const [rows] = await this.pool.query(
       `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
-              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
+              di.numero AS cedula, di.verificado AS documento_verificado, dt.code AS documento_tipo
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
        LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
+       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
+       LEFT JOIN tipos_documento dt ON dt.id = di.tipo_id
        WHERE p.id = ? LIMIT 1`,
       [id]
     );
@@ -86,8 +93,11 @@ export default class UserRepository {
     const params = [];
 
     if (cedula) {
-      conditions.push("p.cedula = ?");
-      params.push(cedula);
+      // El documento ya no es columna de `persons`: se entra por CUALQUIERA de los de la persona,
+      // no solo el principal. Quien se registro con pasaporte y luego declara su cedula debe poder
+      // entrar con los dos.
+      conditions.push("EXISTS (SELECT 1 FROM documentos_identidad d WHERE d.person_id = p.id AND d.numero = ? AND d.is_active = 1)");
+      params.push(String(cedula).trim().toUpperCase().replace(/[\s.-]/g, ""));
     }
 
     if (email) {
@@ -104,10 +114,13 @@ export default class UserRepository {
 
     const [rows] = await this.pool.query(
       `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
-              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
+              di.numero AS cedula, di.verificado AS documento_verificado, dt.code AS documento_tipo
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
        LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
+       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
+       LEFT JOIN tipos_documento dt ON dt.id = di.tipo_id
        WHERE ${conditions.join(" OR ")} LIMIT 1`,
       params
     );
@@ -120,10 +133,13 @@ export default class UserRepository {
 
     const [rows] = await this.pool.query(
       `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
-              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
+              di.numero AS cedula, di.verificado AS documento_verificado, dt.code AS documento_tipo
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
        LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
+       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
+       LEFT JOIN tipos_documento dt ON dt.id = di.tipo_id
        ORDER BY p.created_at DESC`
     );
 
@@ -227,15 +243,20 @@ export default class UserRepository {
     if (normalized) {
       const like = `%${normalized}%`;
 
+      // Ni la cedula ni el correo son columnas de `persons`: se filtra por sus tablas. Se busca en
+      // TODOS los documentos y correos de la persona, no solo en el principal, que es lo que espera
+      // quien teclea un numero en el buscador.
       conditions.push(
-        "(cedula LIKE ? OR email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)"
+        `(EXISTS (SELECT 1 FROM documentos_identidad sd WHERE sd.person_id = p.id AND sd.numero LIKE ?)
+          OR EXISTS (SELECT 1 FROM emails se WHERE se.person_id = p.id AND se.direccion LIKE ?)
+          OR p.first_name LIKE ? OR p.last_name LIKE ?)`
       );
 
       params.push(like, like, like, like);
     }
 
     if (statusFilter) {
-      conditions.push("status = ?");
+      conditions.push("p.status = ?");
       params.push(statusFilter);
     }
 
@@ -261,6 +282,8 @@ export default class UserRepository {
     const [rows] = await this.pool.query(
       `SELECT
          p.*,
+         sdoc.numero AS cedula,
+         semail.direccion AS email,
          GROUP_CONCAT(DISTINCT ut.id ORDER BY ut.name SEPARATOR ',') AS unit_type_ids,
          GROUP_CONCAT(DISTINCT ut.name ORDER BY ut.name SEPARATOR ' | ') AS unit_type_names,
          GROUP_CONCAT(DISTINCT u.id ORDER BY COALESCE(u.label, u.name) SEPARATOR ',') AS unit_ids,
@@ -268,6 +291,10 @@ export default class UserRepository {
          GROUP_CONCAT(DISTINCT c.id ORDER BY c.name SEPARATOR ',') AS cargo_ids,
          GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ' | ') AS cargo_names
        FROM persons p
+       LEFT JOIN documentos_identidad sdoc
+         ON sdoc.person_id = p.id AND sdoc.principal = 1 AND sdoc.is_active = 1
+       LEFT JOIN emails semail
+         ON semail.person_id = p.id AND semail.principal = 1 AND semail.is_active = 1
        LEFT JOIN position_assignments pa
          ON pa.person_id = p.id
         AND pa.is_current = 1
@@ -283,7 +310,7 @@ export default class UserRepository {
          ON c.id = up.cargo_id
         AND c.is_active = 1
         ${whereClause}
-       GROUP BY p.id
+       GROUP BY p.id, sdoc.numero, semail.direccion
         ORDER BY p.created_at DESC
         LIMIT ?`,
       [...params, safeLimit]
@@ -296,7 +323,6 @@ export default class UserRepository {
     this.ensurePool();
 
     const payload = {
-      cedula: userData.cedula,
       password_hash: userData.password_hash ?? userData.password,
       first_name: userData.first_name ?? userData.nombre,
       last_name: userData.last_name ?? userData.apellido,
@@ -310,7 +336,7 @@ export default class UserRepository {
     if (!payload.token) {
       throw new Error("Token no generado");
     }
-    const requiredFields = ["cedula", "password_hash", "first_name", "last_name"];
+    const requiredFields = ["password_hash", "first_name", "last_name"];
 
     const missingFields = requiredFields.filter(
       (field) => !payload[field]
@@ -343,6 +369,12 @@ export default class UserRepository {
     }
     if (userData.email) {
       await this.emails.guardarPrincipal(result.insertId, userData.email);
+    }
+    // El documento de identidad: `documento` es el objeto {tipo, pais, numero}; `cedula` es la
+    // forma corta que sigue aceptandose y significa "cedula ecuatoriana".
+    const documento = userData.documento ?? (userData.cedula ? { tipo: "cedula_ec", numero: userData.cedula } : null);
+    if (documento) {
+      await this.documentos.guardarPrincipal(result.insertId, documento);
     }
 
     return {
@@ -382,7 +414,11 @@ export default class UserRepository {
     const publicUser = {
       id: userRow.id ?? userRow._id,
       _id: (userRow.id ?? userRow._id)?.toString(),
-      cedula: userRow.cedula,
+      // `cedula` YA NO ES UNA COLUMNA: es el numero del documento principal, colgado por JOIN. Se
+      // conserva en el objeto publico porque es identificador de acceso y medio frontend lo lee.
+      cedula: userRow.cedula ?? null,
+      documento_tipo: userRow.documento_tipo ?? null,
+      documentos: userRow.documentos ?? [],
       first_name: userRow.first_name,
       last_name: userRow.last_name,
       // `email` YA NO ES UNA COLUMNA de `persons`: es el principal de la tabla `emails`, colgado
@@ -442,7 +478,8 @@ export default class UserRepository {
     }
 
     await this.pool.query(
-      "UPDATE persons SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE cedula = ?",
+      `UPDATE persons SET photo_url = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id IN (SELECT d.person_id FROM documentos_identidad d WHERE d.numero = ? AND d.is_active = 1)`,
       [photoUrl, cedula]
     );
 
@@ -471,6 +508,12 @@ export default class UserRepository {
     delete payload.telefono;
     delete payload.telefonos;
     delete payload.whatsapp;
+    const documento = payload.documento ?? (payload.cedula ? { tipo: "cedula_ec", numero: payload.cedula } : null);
+    delete payload.documento;
+    delete payload.documentos;
+    delete payload.cedula;
+    delete payload.documento_tipo;
+    delete payload.documento_verificado;
     const email = payload.email;
     delete payload.email;
     delete payload.emails;
@@ -495,10 +538,11 @@ export default class UserRepository {
     });
 
     if (!fields.length) {
-      if (direccion || telefono || email) {
+      if (direccion || telefono || email || documento) {
         if (direccion) await this.direcciones.guardarPrincipal(userId, direccion);
         if (telefono) await this.telefonos.guardarPrincipal(userId, telefono);
         if (email) await this.emails.guardarPrincipal(userId, email);
+        if (documento) await this.documentos.guardarPrincipal(userId, documento);
         return this.toPublicUser(await this.findById(userId));
       }
       return null;
@@ -520,6 +564,9 @@ export default class UserRepository {
     if (email) {
       await this.emails.guardarPrincipal(userId, email);
     }
+    if (documento) {
+      await this.documentos.guardarPrincipal(userId, documento);
+    }
 
     const updated = await this.findById(userId);
 
@@ -534,7 +581,8 @@ export default class UserRepository {
       "nacionalidad",
       "nacionalidad_pais_id",
       "direccion",
-      "telefono"
+      "telefono",
+      "documento"
     ];
 
     const filtered = {};

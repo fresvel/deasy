@@ -51,15 +51,33 @@
                 </div>
 
                 <div>
-                  <label :for="fieldId('cedula')" class="deasy-form-label">Cédula o Pasaporte</label>
+                  <label :for="fieldId('documento-tipo')" class="deasy-form-label">Tipo de documento</label>
+                  <select :id="fieldId('documento-tipo')" v-model="documento.tipo" required class="deasy-control">
+                    <option v-for="t in tiposDocumento" :key="t.code" :value="t.code">{{ t.name }}</option>
+                  </select>
+                </div>
+
+                <!-- El país emisor sólo aparece cuando importa: una cédula ecuatoriana ya lo lleva
+                     en el tipo, y pedirlo sería ruido. Un pasaporte SÍ lo necesita, porque su
+                     número sólo es único dentro del país que lo emite. -->
+                <div v-if="documento.tipo !== 'cedula_ec'">
+                  <label :for="fieldId('documento-pais')" class="deasy-form-label">País emisor</label>
+                  <select :id="fieldId('documento-pais')" v-model="documento.pais" required class="deasy-control">
+                    <option value="" disabled>Selecciona un país</option>
+                    <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label :for="fieldId('cedula')" class="deasy-form-label">{{ etiquetaDocumento }}</label>
                   <input :id="fieldId('cedula')"
-                    v-model="newuser.cedula"
+                    v-model="documento.numero"
                     type="text"
                     required
-                    maxlength="10"
+                    :maxlength="documento.tipo === 'cedula_ec' ? 10 : 20"
                     class="deasy-control"
                     :class="{ 'deasy-control--error': cedulaError }"
-                    placeholder="Número de identificación"
+                    :placeholder="documento.tipo === 'cedula_ec' ? '10 dígitos' : 'Número de documento'"
                   />
                   <span v-if="cedulaError" class="deasy-field-message deasy-field-message--error">{{ cedulaError }}</span>
                 </div>
@@ -429,7 +447,6 @@ const router = useRouter();
 const route = useRoute();
 
 const newuser = ref({
-  cedula: "",
   password: "",
   repassword: "",
   first_name: "",
@@ -533,6 +550,58 @@ const phonePrefix = computed(() =>
 );
 const cedulaError = ref("");
 
+// El documento de identidad es UN objeto. Antes era `newuser.cedula`, un texto del que se BORRABA
+// todo lo que no fuera dígito y que se exigía de 10: la etiqueta decía "Cédula o Pasaporte" y un
+// pasaporte era literalmente imposible de escribir.
+const documento = ref({ tipo: "cedula_ec", pais: "", numero: "" });
+
+const tiposDocumento = ref([
+  { code: "cedula_ec", name: "Cédula (Ecuador)" },
+  { code: "pasaporte", name: "Pasaporte" },
+  { code: "documento_extranjero", name: "Documento de identidad extranjero" }
+]);
+
+const etiquetaDocumento = computed(() =>
+  documento.value.tipo === "cedula_ec" ? "Cédula" : "Número de documento"
+);
+
+// El dígito verificador de la cédula ecuatoriana, el MISMO que aplica el backend. Se comprueba aquí
+// para avisar mientras se teclea; la garantía la da el servidor, no esto.
+const cedulaEcValida = (numero) => {
+  const d = String(numero || "").replace(/\D/g, "");
+  if (!/^\d{10}$/.test(d)) return false;
+  const prov = Number(d.slice(0, 2));
+  if (!((prov >= 1 && prov <= 24) || prov === 30)) return false;
+  if (Number(d[2]) >= 6) return false;
+  let suma = 0;
+  for (let i = 0; i < 9; i += 1) {
+    let v = Number(d[i]);
+    if (i % 2 === 0) { v *= 2; if (v > 9) v -= 9; }
+    suma += v;
+  }
+  return (10 - (suma % 10)) % 10 === Number(d[9]);
+};
+
+const validarDocumento = () => {
+  const numero = String(documento.value.numero || "").trim();
+  if (!numero) { cedulaError.value = ""; return; }
+  if (documento.value.tipo === "cedula_ec") {
+    if (!/^\d{10}$/.test(numero)) { cedulaError.value = "La cédula debe tener 10 dígitos."; return; }
+    cedulaError.value = cedulaEcValida(numero) ? "" : "La cédula no es válida: el dígito verificador no cuadra.";
+    return;
+  }
+  cedulaError.value = /^[A-Za-z0-9\s.-]{5,20}$/.test(numero)
+    ? ""
+    : "El documento debe tener entre 5 y 20 caracteres, sólo letras y números.";
+};
+
+watch(() => documento.value.numero, validarDocumento);
+watch(() => documento.value.tipo, () => {
+  // Al cambiar de tipo el país deja de tener sentido si es una cédula, y las reglas cambian.
+  if (documento.value.tipo === "cedula_ec") documento.value.pais = "";
+  validarDocumento();
+});
+
 const passwordStrengthScore = ref(0);
 const passwordStrengthText = ref("No segura");
 /* ⚠️ AQUI VIVIAN CINCO ANCHURAS QUE NO PINTABAN — `w-1/5` … `w-full`, una por escalon.
@@ -628,14 +697,7 @@ const initMap = () => {
   }
 };
 
-watch(() => newuser.value.cedula, (value) => {
-  const digits = (value || "").replace(/\D/g, "").slice(0, 10);
-  if (digits !== value) {
-    newuser.value.cedula = digits;
-    return;
-  }
-  cedulaError.value = (digits.length === 0 || digits.length === 10) ? "" : "La cédula debe tener 10 dígitos";
-});
+
 
 watch(phoneNumber, (value) => {
   const digits = (value || "").replace(/\D/g, "").slice(0, 10);
@@ -689,6 +751,7 @@ const saveDraft = () => {
     newuser: newuser.value,
     direccion: direccion.value,
     telefono: telefono.value,
+    documento: documento.value,
     phoneNumber: phoneNumber.value
   };
   sessionStorage.setItem("register_draft", JSON.stringify(draft));
@@ -698,6 +761,7 @@ watch(() => newuser.value, saveDraft, { deep: true });
 watch(() => direccion.value, saveDraft, { deep: true });
 watch(phoneNumber, saveDraft);
 watch(() => telefono.value, saveDraft, { deep: true });
+watch(() => documento.value, saveDraft, { deep: true });
 
 const createnewUser = async () => {
   errorMessage.value = "";
@@ -710,8 +774,13 @@ const createnewUser = async () => {
     errorMessage.value = "Debe aceptar los términos y condiciones.";
     return;
   }
-  if (newuser.value.cedula.length !== 10) {
-    errorMessage.value = "La cédula debe tener 10 dígitos.";
+  validarDocumento();
+  if (!documento.value.numero || cedulaError.value) {
+    errorMessage.value = cedulaError.value || "Falta el número de documento.";
+    return;
+  }
+  if (documento.value.tipo !== "cedula_ec" && !documento.value.pais) {
+    errorMessage.value = "Un documento que no es cédula ecuatoriana necesita su país emisor.";
     return;
   }
   if (phoneNumber.value.length !== 10) {
@@ -734,7 +803,8 @@ const createnewUser = async () => {
     const payload = {
       ...newuser.value,
       direccion: { ...direccion.value },
-      telefono: { ...telefono.value }
+      telefono: { ...telefono.value },
+      documento: { ...documento.value }
     };
 
     await AuthService.register(payload);
@@ -771,6 +841,7 @@ onMounted(async () => {
         await cargarCiudades(direccion.value.provincia);
       }
       if (draft.telefono) telefono.value = { ...telefono.value, ...draft.telefono };
+      if (draft.documento) documento.value = { ...documento.value, ...draft.documento };
       if (draft.phoneNumber) phoneNumber.value = draft.phoneNumber;
 
       if (newuser.value.password) validatePassword(newuser.value.password);

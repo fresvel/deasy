@@ -16,7 +16,7 @@ import { matchSnapshot } from "../lib/snapshot.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
 
 const SUITE = "dossier";
-const CEDULA = "1122334455";
+const CEDULA = "1122334459";
 const DOSSIER_OPTS = { maskIdKeys: true, drop: ["usuario", "__v"] };
 
 before(async () => {

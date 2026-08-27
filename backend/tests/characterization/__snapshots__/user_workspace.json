@@ -922,7 +922,7 @@
     "body": {
       "recipients": [
         {
-          "cedula": "1234567890",
+          "cedula": "1234567897",
           "email": "admin@institucion.edu.ec",
           "first_name": "Administrador",
           "full_name": "Administrador Principal",
@@ -930,192 +930,192 @@
           "last_name": "Principal"
         },
         {
-          "cedula": "9000000010",
-          "email": "9000000010@demo.deasy.local",
+          "cedula": "1700000100",
+          "email": "1700000100@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente CAE",
           "id": "<normalized>",
           "last_name": "CAE"
         },
         {
-          "cedula": "9000000004",
-          "email": "9000000004@demo.deasy.local",
+          "cedula": "1700000043",
+          "email": "1700000043@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente DDE",
           "id": "<normalized>",
           "last_name": "DDE"
         },
         {
-          "cedula": "9000000016",
-          "email": "9000000016@demo.deasy.local",
+          "cedula": "1700000167",
+          "email": "1700000167@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente derecho-educacion-y-sociedad",
           "id": "<normalized>",
           "last_name": "derecho-educacion-y-sociedad"
         },
         {
-          "cedula": "9000000006",
-          "email": "9000000006@demo.deasy.local",
+          "cedula": "1700000068",
+          "email": "1700000068@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente DIVI",
           "id": "<normalized>",
           "last_name": "DIVI"
         },
         {
-          "cedula": "9000000022",
-          "email": "9000000022@demo.deasy.local",
+          "cedula": "1700000225",
+          "email": "1700000225@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente E055",
           "id": "<normalized>",
           "last_name": "E055"
         },
         {
-          "cedula": "9000000024",
-          "email": "9000000024@demo.deasy.local",
+          "cedula": "1700000241",
+          "email": "1700000241@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente E140",
           "id": "<normalized>",
           "last_name": "E140"
         },
         {
-          "cedula": "9000000012",
-          "email": "9000000012@demo.deasy.local",
+          "cedula": "1700000126",
+          "email": "1700000126@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente EHIC",
           "id": "<normalized>",
           "last_name": "EHIC"
         },
         {
-          "cedula": "9000000018",
-          "email": "9000000018@demo.deasy.local",
+          "cedula": "1700000183",
+          "email": "1700000183@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente formacion-tecnica-y-tecnologica",
           "id": "<normalized>",
           "last_name": "formacion-tecnica-y-tecnologica"
         },
         {
-          "cedula": "9000000020",
-          "email": "9000000020@demo.deasy.local",
+          "cedula": "1700000209",
+          "email": "1700000209@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente negocios-y-empresas",
           "id": "<normalized>",
           "last_name": "negocios-y-empresas"
         },
         {
-          "cedula": "9000000002",
-          "email": "9000000002@demo.deasy.local",
+          "cedula": "1700000027",
+          "email": "1700000027@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente PREC",
           "id": "<normalized>",
           "last_name": "PREC"
         },
         {
-          "cedula": "9000000014",
-          "email": "9000000014@demo.deasy.local",
+          "cedula": "1700000142",
+          "email": "1700000142@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente salud-y-bienestar",
           "id": "<normalized>",
           "last_name": "salud-y-bienestar"
         },
         {
-          "cedula": "9000000008",
-          "email": "9000000008@demo.deasy.local",
+          "cedula": "1700000084",
+          "email": "1700000084@demo.deasy.local",
           "first_name": "Asistente",
           "full_name": "Asistente TTHH",
           "id": "<normalized>",
           "last_name": "TTHH"
         },
         {
-          "cedula": "9000000009",
-          "email": "9000000009@demo.deasy.local",
+          "cedula": "1700000092",
+          "email": "1700000092@demo.deasy.local",
           "first_name": "Coordinador",
           "full_name": "Coordinador CAE",
           "id": "<normalized>",
           "last_name": "CAE"
         },
         {
-          "cedula": "9000000021",
-          "email": "9000000021@demo.deasy.local",
+          "cedula": "1700000217",
+          "email": "1700000217@demo.deasy.local",
           "first_name": "Coordinador",
           "full_name": "Coordinador E055",
           "id": "<normalized>",
           "last_name": "E055"
         },
         {
-          "cedula": "9000000023",
-          "email": "9000000023@demo.deasy.local",
+          "cedula": "1700000233",
+          "email": "1700000233@demo.deasy.local",
           "first_name": "Coordinador",
           "full_name": "Coordinador E140",
           "id": "<normalized>",
           "last_name": "E140"
         },
         {
-          "cedula": "9000000003",
-          "email": "9000000003@demo.deasy.local",
+          "cedula": "1700000035",
+          "email": "1700000035@demo.deasy.local",
           "first_name": "Director",
           "full_name": "Director DDE",
           "id": "<normalized>",
           "last_name": "DDE"
         },
         {
-          "cedula": "9000000015",
-          "email": "9000000015@demo.deasy.local",
+          "cedula": "1700000159",
+          "email": "1700000159@demo.deasy.local",
           "first_name": "Director",
           "full_name": "Director derecho-educacion-y-sociedad",
           "id": "<normalized>",
           "last_name": "derecho-educacion-y-sociedad"
         },
         {
-          "cedula": "9000000005",
-          "email": "9000000005@demo.deasy.local",
+          "cedula": "1700000050",
+          "email": "1700000050@demo.deasy.local",
           "first_name": "Director",
           "full_name": "Director DIVI",
           "id": "<normalized>",
           "last_name": "DIVI"
         },
         {
-          "cedula": "9000000011",
-          "email": "9000000011@demo.deasy.local",
+          "cedula": "1700000118",
+          "email": "1700000118@demo.deasy.local",
           "first_name": "Director",
           "full_name": "Director EHIC",
           "id": "<normalized>",
           "last_name": "EHIC"
         },
         {
-          "cedula": "9000000017",
-          "email": "9000000017@demo.deasy.local",
+          "cedula": "1700000175",
+          "email": "1700000175@demo.deasy.local",
           "first_name": "Director",
           "full_name": "Director formacion-tecnica-y-tecnologica",
           "id": "<normalized>",
           "last_name": "formacion-tecnica-y-tecnologica"
         },
         {
-          "cedula": "9000000019",
-          "email": "9000000019@demo.deasy.local",
+          "cedula": "1700000191",
+          "email": "1700000191@demo.deasy.local",
           "first_name": "Director",
           "full_name": "Director negocios-y-empresas",
           "id": "<normalized>",
           "last_name": "negocios-y-empresas"
         },
         {
-          "cedula": "9000000013",
-          "email": "9000000013@demo.deasy.local",
+          "cedula": "1700000134",
+          "email": "1700000134@demo.deasy.local",
           "first_name": "Director",
           "full_name": "Director salud-y-bienestar",
           "id": "<normalized>",
           "last_name": "salud-y-bienestar"
         },
         {
-          "cedula": "9000000025",
-          "email": "9000000025@demo.deasy.local",
+          "cedula": "1700000258",
+          "email": "1700000258@demo.deasy.local",
           "first_name": "Docente",
           "full_name": "Docente E055",
           "id": "<normalized>",
           "last_name": "E055"
         },
         {
-          "cedula": "9000000026",
-          "email": "9000000026@demo.deasy.local",
+          "cedula": "1700000266",
+          "email": "1700000266@demo.deasy.local",
           "first_name": "Docente",
           "full_name": "Docente E055 2",
           "id": "<normalized>",

@@ -274,7 +274,7 @@ test("POST /admin/sql/persons -> graft: hashea la contraseña (no la devuelve) y
   const created = await post("/admin/sql/persons", {
     token,
     body: {
-      cedula: "9999999999",
+      cedula: "1739999991",
       first_name: "Caracterizacion",
       last_name: "Grafts",
       email: "caract-grafts@test.local",
@@ -372,7 +372,7 @@ test("PUT /admin/sql/persons -> graft: rehashea la contraseña y no la devuelve"
   const created = await post("/admin/sql/persons", {
     token,
     body: {
-      cedula: "9999999998",
+      cedula: "1739999983",
       first_name: "Caracterizacion",
       last_name: "GraftsUpdate",
       email: "caract-grafts-upd@test.local",
@@ -533,7 +533,7 @@ test("POST /admin/sql/persons con cédula duplicada -> violación de unicidad", 
   const res = await post("/admin/sql/persons", {
     token,
     body: {
-      cedula: "1234567890",
+      cedula: "1234567897",
       first_name: "Duplicada",
       last_name: "Caracterizacion",
       email: "dup-caract@test.local",

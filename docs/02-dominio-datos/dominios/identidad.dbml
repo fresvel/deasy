@@ -79,6 +79,30 @@ Table "direcciones" {
   }
 }
 
+Table "documentos_identidad" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo_id" int4 [not null]
+  "pais_id" int4
+  "numero" varchar(40) [not null]
+  "verificado" int2 [not null, default: 0]
+  "verificado_at" timestamp
+  "emitido_el" date
+  "expira_el" date
+  "principal" int2 [not null, default: 0]
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (tipo_id, numero, `COALESCE(pais_id`, ` 0)`) [type: btree, unique, name: "uq_documentos_numero"]
+    (person_id, principal_flag) [type: btree, unique, name: "uq_documentos_principal"]
+    numero [type: btree, name: "idx_documentos_numero"]
+    person_id [type: btree, name: "idx_documentos_person"]
+  }
+}
+
 Table "dossier_items" {
   "id" int8 [pk, not null, increment]
   "dossier_id" int8 [not null]
@@ -183,7 +207,6 @@ Table "person_certificates" {
 
 Table "persons" {
   "id" int4 [pk, not null, increment]
-  "cedula" varchar(20) [unique]
   "first_name" varchar(120) [not null]
   "last_name" varchar(120) [not null]
   "nacionalidad_pais_id" int4
@@ -293,9 +316,21 @@ Table "telefonos" {
   }
 }
 
+Table "tipos_documento" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "validacion" varchar(40) [not null, default: 'libre']
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
+Ref "fk_documentos_person":"persons"."id" <? "documentos_identidad"."person_id" [delete: cascade]
+Ref "fk_documentos_tipo":"tipos_documento"."id" <? "documentos_identidad"."tipo_id"
 Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]
 Ref "fk_dossiers_person":"persons"."id" <? "dossiers"."person_id" [delete: cascade]
 Ref "fk_email_verification_codes_email":"emails"."id" <? "email_verification_codes"."email_id" [delete: cascade]
@@ -330,6 +365,7 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 //   persons -> document_version_uploads   [tareas]
 //   persons -> document_workflow_observations   [tareas]
 //   persons -> document_workflow_observations   [tareas]
+//   paises -> documentos_identidad   [organizacion]
 //   cargos -> fill_flow_steps   [plantillas]
 //   persons -> fill_flow_steps   [plantillas]
 //   persons -> fill_requests   [plantillas]

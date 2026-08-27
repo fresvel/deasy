@@ -31,7 +31,9 @@
       "telefonos",
       "canales_mensajeria",
       "telefono_canales",
-      "emails"
+      "emails",
+      "tipos_documento",
+      "documentos_identidad"
     ]
   },
   "organizacion": {

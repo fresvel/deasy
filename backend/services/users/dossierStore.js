@@ -57,7 +57,12 @@ const splitBody = (body = {}) => {
 // --- Raíz ---
 
 export async function resolvePersonId(cedula) {
-  const [rows] = await pool().query(`SELECT id FROM persons WHERE cedula = ? LIMIT 1`, [String(cedula)]);
+  // El documento ya no es columna de `persons`: se resuelve por la tabla, y por CUALQUIERA de los
+  // documentos de la persona, no solo el principal.
+  const [rows] = await pool().query(
+    `SELECT d.person_id AS id FROM documentos_identidad d WHERE d.numero = ? AND d.is_active = 1 LIMIT 1`,
+    [String(cedula ?? "").trim().toUpperCase().replace(/[\s.-]/g, "")]
+  );
   return rows[0]?.id ?? null;
 }
 
@@ -80,9 +85,10 @@ export async function findDossierByCedula(cedula) {
 // dejaba mintiendo. El `INNER JOIN` es seguro desde `TD7-c3`, que ato el expediente a su persona.
 async function findDossierByPersonId(personId) {
   const [rows] = await pool().query(
-    `SELECT d.*, p.cedula
+    `SELECT d.*, di.numero AS cedula
        FROM dossiers d
        INNER JOIN persons p ON p.id = d.person_id
+       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
       WHERE d.person_id = ? LIMIT 1`,
     [personId]
   );

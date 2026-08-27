@@ -102,9 +102,10 @@ export default class RbacService {
     }
 
     const [userRows] = await this.pool.query(
-      `SELECT p.id, p.cedula, e.direccion AS email, p.first_name, p.last_name, p.is_active, p.status
+      `SELECT p.id, d.numero AS cedula, e.direccion AS email, p.first_name, p.last_name, p.is_active, p.status
        FROM persons p
        LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
+       LEFT JOIN documentos_identidad d ON d.person_id = p.id AND d.principal = 1 AND d.is_active = 1
        WHERE p.id = ?
        LIMIT 1`,
       [numericUserId]

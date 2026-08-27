@@ -1097,9 +1097,9 @@ export default class TemplateLifecycleService {
 
     if (!ownerPersonId && cedulaBuscada) {
       const [ownerRows] = await this.pool.query(
-        `SELECT id
-         FROM persons
-         WHERE cedula = ?
+        `SELECT d.person_id AS id
+         FROM documentos_identidad d
+         WHERE d.numero = ? AND d.is_active = 1
          LIMIT 1`,
         [cedulaBuscada]
       );

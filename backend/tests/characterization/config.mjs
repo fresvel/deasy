@@ -9,8 +9,8 @@
 //   API_PREFIX Prefijo montado por el backend. Confirmado en config/apiPaths.js.
 //
 // Credenciales de los usuarios sembrados en dev (ver CLAUDE.md):
-//   admin  -> cédula 1234567890
-//   gestor -> cédula 0987654321
+//   admin  -> cédula 1234567897
+//   gestor -> cédula 0927654327
 //   password para todos: Demo1234!
 
 const stripTrailingSlash = (value) => value.replace(/\/+$/, "");
@@ -39,18 +39,18 @@ export const SNAPSHOT_MODE = process.env.SNAPSHOT_MODE === "update" ? "update" :
 export const USERS = {
   admin: {
     label: "admin",
-    identifier: process.env.TEST_ADMIN_ID ?? "1234567890",
+    identifier: process.env.TEST_ADMIN_ID ?? "1234567897",
     password: process.env.TEST_ADMIN_PASSWORD ?? "Demo1234!",
   },
   gestor: {
     label: "gestor",
-    identifier: process.env.TEST_GESTOR_ID ?? "0987654321",
+    identifier: process.env.TEST_GESTOR_ID ?? "0927654327",
     password: process.env.TEST_GESTOR_PASSWORD ?? "Gestor1234!",
   },
   // Usuario de baja privilegia — objetivo del test de 403.
   usuario: {
     label: "usuario",
-    identifier: process.env.TEST_USUARIO_ID ?? "1122334455",
+    identifier: process.env.TEST_USUARIO_ID ?? "1122334459",
     password: process.env.TEST_USUARIO_PASSWORD ?? "Demo1234!",
   },
 };

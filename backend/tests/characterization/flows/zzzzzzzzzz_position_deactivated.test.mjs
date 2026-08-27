@@ -28,7 +28,7 @@ import { query } from "../lib/db.mjs";
 const PUESTO = 25;
 
 const jefeToken = async () => {
-  const res = await post("/users/login", { body: { cedula: "9000000021", password: "Demo1234!" } });
+  const res = await post("/users/login", { body: { cedula: "1700000217", password: "Demo1234!" } });
   assert.equal(res.status, 200, "el jefe de la unidad debe poder entrar");
   return res.body.token;
 };
