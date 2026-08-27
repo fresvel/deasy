@@ -39,31 +39,39 @@ test("una ruta sin prefijo lo recibe, y la barra inicial se descarta", () => {
 
 // --- rutas del espacio personal -----------------------------------------------------------------
 
-test("la ruta de validación cuelga de la cédula y la sesión, y siempre acaba en .pdf", () => {
-  const ruta = buildValidationSpoolPath({ cedula: "1122334455" }, "sesion-1", "mi informe.txt");
-  assert.equal(ruta, "users/1122334455/validation/sesion-1/mi_informe.txt.pdf");
+// La ruta cuelga del ID de la persona, NO de su cédula: un documento de identidad puede cambiar
+// (un pasaporte se renueva, un extranjero se nacionaliza) y usarlo de dirección le perdería los
+// ficheros. Este test es el que lo fija.
+test("la ruta de validación cuelga del id de la persona y la sesión, y siempre acaba en .pdf", () => {
+  const ruta = buildValidationSpoolPath({ id: 42, cedula: "1122334455" }, "sesion-1", "mi informe.txt");
+  assert.equal(ruta, "users/42/validation/sesion-1/mi_informe.txt.pdf");
+});
+
+test("la ruta NO usa la cédula aunque venga en el objeto", () => {
+  assert.ok(!buildValidationSpoolPath({ id: 7, cedula: "1122334455" }, "s", "x.pdf").includes("1122334455"));
+  assert.ok(!buildStandaloneUserSignedPath({ id: 7, cedula: "1122334455" }, "s", "x.pdf").includes("1122334455"));
 });
 
 test("no se puede salir del directorio: las barras se vuelven '_' y el nombre queda plano", () => {
   // Los ".." que sobreviven son inocuos justamente porque ya no hay separadores que los separen.
   assert.equal(
-    buildValidationSpoolPath({ cedula: "1" }, "s", "../../etc/passwd.pdf"),
+    buildValidationSpoolPath({ id: 1 }, "s", "../../etc/passwd.pdf"),
     "users/1/validation/s/_.._etc_passwd.pdf",
   );
 });
 
 test("un nombre que ya es .pdf no se duplica la extensión, sin importar mayúsculas", () => {
-  assert.ok(buildValidationSpoolPath({ cedula: "1" }, "s", "informe.PDF").endsWith("informe.PDF"));
-  assert.ok(buildValidationSpoolPath({ cedula: "1" }, "s", "informe.pdf").endsWith("informe.pdf"));
+  assert.ok(buildValidationSpoolPath({ id: 1 }, "s", "informe.PDF").endsWith("informe.PDF"));
+  assert.ok(buildValidationSpoolPath({ id: 1 }, "s", "informe.pdf").endsWith("informe.pdf"));
 });
 
 test("la ruta de firma personal sanea el nombre y garantiza el .pdf", () => {
   assert.equal(
-    buildStandaloneUserSignedPath({ cedula: "9" }, "s", "acta de grado.docx"),
+    buildStandaloneUserSignedPath({ id: 9 }, "s", "acta de grado.docx"),
     "users/9/signed/s/acta_de_grado.docx.pdf",
   );
   assert.equal(
-    buildStandaloneUserSignedPath({ cedula: "9" }, "s", undefined),
+    buildStandaloneUserSignedPath({ id: 9 }, "s", undefined),
     "users/9/signed/s/documento.pdf",
   );
 });
@@ -232,7 +240,7 @@ test("sin versión documental, el plan es 'standalone' y apunta al espacio perso
   });
   assert.equal(plan.mode, "standalone");
   assert.equal(plan.documentVersionId, null);
-  assert.match(plan.objectPath, /^users\/1122334455\/signed\/[0-9a-f-]{36}\/acta\.pdf$/);
+  assert.match(plan.objectPath, /^users\/7\/signed\/[0-9a-f-]{36}\/acta\.pdf$/);
   assert.equal(plan.storedPath, plan.objectPath);
   assert.equal(plan.downloadPath, plan.objectPath);
 });

@@ -1071,45 +1071,44 @@ export default class TemplateLifecycleService {
     return this.saveTemplateArtifactDraft(artifactId, data, files, actor);
   }
 
-  // Resuelve el propietario del borrador: su cedula (ownerRef) y su id de persona.
+  // Resuelve el propietario del borrador: su id de persona, y `ownerRef`, que es el SEGMENTO DE RUTA.
   //
-  // La cedula ya NO se persiste como columna: se usa solo para construir la ruta MinIO ad_hoc al
-  // crear (Users/<cedula>/...) y para resolver owner_person_id. En edicion se reutiliza el
-  // base_object_prefix ya almacenado, asi que no hace falta.
+  // ⚠️ `ownerRef` ES EL ID DE LA PERSONA desde el 2026-08-27, no su cedula. Cambio al abrir el modelo
+  // a pasaportes: un documento de identidad puede cambiar -un pasaporte se renueva, un extranjero se
+  // nacionaliza- y usarlo de direccion de los ficheros le pierde los borradores a su dueño. En
+  // EDICION se reutiliza el `base_object_prefix` ya almacenado, asi que los prefijos viejos siguen
+  // resolviendo; solo los nuevos cuelgan del id.
+  //
+  // La cedula sigue sirviendo para ENCONTRAR a la persona (`ownerCedula`), que es otra cosa.
   //
   // Precedencia: la persona pedida explicitamente gana; si no, la del artifact existente; y como
   // ultimo recurso se busca por cedula.
   async _resolveDraftOwner({ ownerCedula = "", requestedOwnerPersonId = null, existingArtifact = null } = {}) {
-    let ownerRef = String(ownerCedula || "").slice(0, 180);
+    const cedulaBuscada = String(ownerCedula || "").trim();
     let ownerPersonId = normalizeNumericId(existingArtifact?.owner_person_id);
-
-    if (!ownerRef && ownerPersonId) {
-      const ownerPersonRow = await this._getByKeys("persons", { id: ownerPersonId });
-      ownerRef = String(ownerPersonRow?.cedula || "").slice(0, 180);
-    }
 
     if (requestedOwnerPersonId) {
       const ownerPerson = await this._getByKeys("persons", { id: requestedOwnerPersonId });
       if (!ownerPerson) {
         throw new Error("La persona propietaria indicada no existe.");
       }
-      return { ownerRef, ownerPersonId: requestedOwnerPersonId };
+      return { ownerRef: String(requestedOwnerPersonId), ownerPersonId: requestedOwnerPersonId };
     }
 
-    if (!ownerPersonId && ownerRef) {
+    if (!ownerPersonId && cedulaBuscada) {
       const [ownerRows] = await this.pool.query(
         `SELECT id
          FROM persons
          WHERE cedula = ?
          LIMIT 1`,
-        [ownerRef]
+        [cedulaBuscada]
       );
       if (ownerRows?.length) {
         ownerPersonId = ownerRows[0].id;
       }
     }
 
-    return { ownerRef, ownerPersonId };
+    return { ownerRef: ownerPersonId ? String(ownerPersonId) : "", ownerPersonId };
   }
 
   // Valida el contrato del flujo AUTORADO, antes de subir el meta.yaml, en vez de degradar en

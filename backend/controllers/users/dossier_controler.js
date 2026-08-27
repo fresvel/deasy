@@ -49,8 +49,15 @@ const ensureBucketExists = (bucket) =>
     })
   );
 
-const buildDossierObjectName = (cedula, tipoDocumento, registroId) =>
-  `${MINIO_DOSSIER_PREFIX}/users/${cedula}/${tipoDocumento}/${registroId}.pdf`;
+// LA RUTA CUELGA DEL ID DE LA PERSONA, NO DE SU CEDULA. Cambiado el 2026-08-27 al abrir el modelo a
+// pasaportes: un documento de identidad puede cambiar y usarlo de direccion le pierde los ficheros a
+// la persona. Ojo: la URL de la API SIGUE llevando la cedula (`/:cedula/...`) — eso es como se
+// DIRECCIONA el expediente, no donde se GUARDA, y cambiarlo es otra decision.
+//
+// Los ficheros escritos antes bajo la cedula se siguen encontrando para borrarlos, porque
+// `removeDossierDocument` cae en `resolveDossierObjectNameFromUrl` cuando no se le da la terna.
+const buildDossierObjectName = (personId, tipoDocumento, registroId) =>
+  `${MINIO_DOSSIER_PREFIX}/users/${personId}/${tipoDocumento}/${registroId}.pdf`;
 const buildDossierFileUrl = (objectName) => `${MINIO_PUBLIC_ENDPOINT}/${MINIO_DOSSIER_BUCKET}/${objectName}`;
 
 function resolveDossierObjectNameFromUrl(fileUrl) {
@@ -65,9 +72,9 @@ function resolveDossierObjectNameFromUrl(fileUrl) {
 
 const NOT_FOUND_CODES = ["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"];
 
-async function removeDossierDocument({ cedula, tipoDocumento, registroId, fileUrl }) {
-  const objectName = cedula && tipoDocumento && registroId
-    ? buildDossierObjectName(cedula, tipoDocumento, registroId)
+async function removeDossierDocument({ personId, tipoDocumento, registroId, fileUrl }) {
+  const objectName = personId && tipoDocumento && registroId
+    ? buildDossierObjectName(personId, tipoDocumento, registroId)
     : resolveDossierObjectNameFromUrl(fileUrl);
   if (!objectName) return false;
   try {
@@ -91,7 +98,7 @@ async function objectExists(bucket, objectName) {
 }
 
 // Rehidrata url_documento faltantes consultando MinIO por convención de nombre
-// ({cedula}/{tipoDoc}/{id}.pdf) y persiste la url encontrada. Opera sobre el árbol.
+// ({personId}/{tipoDoc}/{id}.pdf) y persiste la url encontrada. Opera sobre el árbol.
 async function hydrateTree(tree, dossier) {
   const groups = [
     ["titulos", tree.titulos], ["experiencia", tree.experiencia], ["referencias", tree.referencias],
@@ -104,7 +111,7 @@ async function hydrateTree(tree, dossier) {
     const tipo = SECTION_TO_TIPO[section];
     for (const item of items) {
       if (item.url_documento) continue;
-      const objectName = buildDossierObjectName(tree.cedula, tipo, item._id);
+      const objectName = buildDossierObjectName(tree.person_id, tipo, item._id);
       if (await objectExists(MINIO_DOSSIER_BUCKET, objectName)) {
         const url = buildDossierFileUrl(objectName);
         item.url_documento = url;
@@ -175,7 +182,7 @@ const makeDelete = (section, idParam, okMsg, notFoundMsg, errMsg) => async (req,
     const item = await store.findItem(req.params[idParam], dossier.id, section);
     if (!item) return fail(res, 404, notFoundMsg);
     if (item.url_documento) {
-      await removeDossierDocument({ cedula: req.params.cedula, tipoDocumento: SECTION_TO_TIPO[section], registroId: item.id, fileUrl: item.url_documento });
+      await removeDossierDocument({ personId: dossier.person_id, tipoDocumento: SECTION_TO_TIPO[section], registroId: item.id, fileUrl: item.url_documento });
     }
     await store.deleteItem(req.params[idParam], dossier.id, section);
     res.json({ success: true, message: okMsg, data: await loadTreeHydrated(dossier) });
@@ -257,7 +264,7 @@ export const deleteInvestigacionItem = async (req, res) => {
     const item = await store.findItem(itemId, dossier.id, tipo);
     if (!item) return fail(res, 404, "Item de investigación no encontrado");
     if (item.url_documento) {
-      await removeDossierDocument({ cedula: req.params.cedula, tipoDocumento: SECTION_TO_TIPO[tipo], registroId: item.id, fileUrl: item.url_documento });
+      await removeDossierDocument({ personId: dossier.person_id, tipoDocumento: SECTION_TO_TIPO[tipo], registroId: item.id, fileUrl: item.url_documento });
     }
     await store.deleteItem(itemId, dossier.id, tipo);
     res.json({ success: true, message: "Item de investigación eliminado", data: await loadTreeHydrated(dossier) });
@@ -282,7 +289,7 @@ export const uploadDossierDocument = async (req, res) => {
     const item = await store.findItem(registroId, dossier.id, section);
     if (!item) { fs.unlink(req.file.path, () => {}); return fail(res, 404, `Registro con ID ${registroId} no encontrado en ${tipoDocumento}`); }
 
-    const objectName = buildDossierObjectName(cedula, tipoDocumento, registroId);
+    const objectName = buildDossierObjectName(dossier.person_id, tipoDocumento, registroId);
     await ensureBucketExists(MINIO_DOSSIER_BUCKET);
     await uploadFileToMinIO(MINIO_DOSSIER_BUCKET, objectName, req.file.path);
     const fileUrl = buildDossierFileUrl(objectName);
@@ -302,7 +309,11 @@ export const getDossierDocumentUrl = async (req, res) => {
     const { cedula, tipoDocumento, registroId } = req.params;
     if (!cedula || !tipoDocumento || !registroId) return fail(res, 400, "Faltan parámetros requeridos: cedula, tipoDocumento, registroId");
     if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) return fail(res, 400, `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`);
-    const objectName = buildDossierObjectName(cedula, tipoDocumento, registroId);
+    // Hay que resolver el expediente para tener el id de la persona: la ruta cuelga de él, no de la
+    // cédula, aunque la cédula siga siendo lo que direcciona la URL.
+    const dossier = await store.findDossierByCedula(cedula);
+    if (!dossier) return fail(res, 404, "Dossier no encontrado para esta cédula");
+    const objectName = buildDossierObjectName(dossier.person_id, tipoDocumento, registroId);
     try {
       await new Promise((resolve, reject) => {
         minioClient.getObject(MINIO_DOSSIER_BUCKET, objectName, (err, dataStream) => {

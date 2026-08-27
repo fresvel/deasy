@@ -83,11 +83,15 @@ export const resolveSigningUser = async (rawUserId) => {
   return user;
 };
 
+// LA RUTA CUELGA DEL ID DE LA PERSONA, NO DE SU CEDULA. Cambiado el 2026-08-27 al abrir el modelo a
+// pasaportes: un documento de identidad PUEDE CAMBIAR -un pasaporte se renueva con numero nuevo, un
+// extranjero se nacionaliza y obtiene cedula- y usarlo como direccion de los ficheros significa que
+// cambiar de documento le pierde los archivos a la persona. `persons.id` no cambia nunca.
 export const buildValidationSpoolPath = (user, sessionId, fileName = "documento.pdf") => {
   const safeName = String(fileName || "documento.pdf")
     .replace(/[^\w.\-]+/g, "_")
     .replace(/^\.+/, "") || "documento.pdf";
-  return `users/${user.cedula}/validation/${sessionId}/${safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`}`;
+  return `users/${user.id}/validation/${sessionId}/${safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`}`;
 };
 
 // El segundo argumento existe para las pruebas: en producción nadie lo pasa.
@@ -206,7 +210,7 @@ const getDocumentVersionStorageContext = async (documentVersionId) => {
 export const buildStandaloneUserSignedPath = (user, sessionId, originalName = "documento.pdf") => {
   const safeName = sanitizeStorageSegment(originalName, "documento.pdf");
   const fileName = safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`;
-  return `users/${user.cedula}/signed/${sessionId}/${fileName}`;
+  return `users/${user.id}/signed/${sessionId}/${fileName}`;
 };
 
 export const resolveSigningStoragePlan = async ({ context, file }) => {
