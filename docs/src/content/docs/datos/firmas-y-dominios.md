@@ -72,7 +72,7 @@ Por compatibilidad, los `_id` se exponen como **String** para preservar el contr
 
 Y una vista, `unit_org_levels`, que con una CTE recursiva sobre `unit_relations` calcula el nivel organizativo, la unidad raiz y las unidades de nivel 2 y 3 de cada unidad.
 
-Como subdominio propio esta la **contratación**: `vacancies`, `aplications`, `offers`, `contracts`, `contract_origins` (con herencia por tabla) y `vacancy_visibility`.
+Como subdominio propio esta la **contratación** —`vacancies`, `aplications`, `offers`, `contracts`, `contract_origins` (con herencia por tabla) y `vacancy_visibility`—, del que hay que saber que **cinco de sus ocho tablas no las toca ninguna línea de código**. Se cuenta entero en [Empleo y contratación](/complemento/empleo/).
 
 ### Entregables, tareas y documentos
 
@@ -84,7 +84,9 @@ Como subdominio propio esta la **contratación**: `vacancies`, `aplications`, `o
 
 :::note[Decisión de diseno explícita]
 
-En el dominio de chat, `person_id`, `process_id` y `unit_id` son **claves foraneas logicas sin constraint**, “para no acoplar”. Y `last_message_id` tampoco lleva FK, para evitar un ciclo de dependencias entre tablas.
+**`chat_conversations.last_message_id` no lleva clave foránea**, y es a propósito: `chat_conversations` → `chat_messages` → `chat_conversations` sería un ciclo a nivel de tabla, y el esquema no tiene ninguno. Es una caché para ordenar la lista de conversaciones sin tocar los mensajes.
+
+⚠️ **Aquí ponía que `person_id`, `process_id` y `unit_id` del chat eran «claves foráneas lógicas sin constraint, para no acoplar». Dejó de ser cierto en `TD7-c3` (2026-08-24)**: hoy el catálogo devuelve **once claves foráneas reales** de `chat_*` y `dossiers` hacia `persons`, `units`, `processes` y `process_definition_versions`. Y la premisa que las justificaba era falsa desde antes: `ChatAuthorizationService` ya resolvía los permisos con `INNER JOIN` contra esas mismas tablas.
 
 :::
 

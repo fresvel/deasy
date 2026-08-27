@@ -112,6 +112,14 @@ export default defineConfig({
 				{ slug: 'panorama' },
 				{ slug: 'arquitectura-y-patrones' },
 				{ label: 'El modelo, de punta a punta', autogenerate: { directory: 'modelo' } },
+				// El COMPLEMENTO: las 39 tablas que no estan en la cadena proceso -> documento.
+				// Va como seccion hermana y no como paginas dentro de `modelo/` porque aquello es
+				// una cadena que se lee EN ORDEN y esto son familias independientes; meterlas en el
+				// mismo cajon romperia el recorrido numerado, que es lo que lo hace legible.
+				// Dos de las seis familias -identidad y RBAC- NO tienen pagina aqui: ya estaban
+				// escritas en `modelo/organizacion` y en `backend/auth`, y la entrada las enruta en
+				// vez de repetirlas.
+				{ label: 'El complemento del modelo', autogenerate: { directory: 'complemento' } },
 				{ label: 'La base de datos', autogenerate: { directory: 'datos' } },
 				{ label: 'El backend', autogenerate: { directory: 'backend' } },
 				{ label: 'El frontend', autogenerate: { directory: 'frontend' } },
