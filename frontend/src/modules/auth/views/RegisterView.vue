@@ -79,12 +79,11 @@
                   <label :for="fieldId('telefono')" class="deasy-form-label">Número de teléfono</label>
                   <div class="grid grid-cols-[minmax(7rem,0.45fr)_minmax(0,1fr)] gap-2 sm:grid-cols-[minmax(9rem,0.32fr)_minmax(0,1fr)]">
                     <select
-                      v-model="selectedCountryCode"
+                      v-model="telefono.pais"
                       aria-label="País del número de teléfono"
                       class="deasy-control px-3"
-                      @change="updatePhonePrefix"
                     >
-                      <option v-for="c in countriesData" :key="c.es_name" :value="c">{{ c.es_name }}</option>
+                      <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
                     </select>
                     <div class="relative">
                       <span class="pointer-events-none absolute inset-y-0 left-3 z-(--z-capa-base) flex items-center text-sm font-semibold text-muted">
@@ -96,12 +95,12 @@
                         type="tel"
                         maxlength="10"
                         class="deasy-control pl-14"
-                        :class="{ 'deasy-control--error': whatsappError }"
+                        :class="{ 'deasy-control--error': telefonoError }"
                         placeholder="991234567"
                       />
                     </div>
                   </div>
-                  <span v-if="whatsappError" class="deasy-field-message deasy-field-message--error">{{ whatsappError }}</span>
+                  <span v-if="telefonoError" class="deasy-field-message deasy-field-message--error">{{ telefonoError }}</span>
                 </div>
               </div>
             </section>
@@ -397,7 +396,6 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import { countries, getPhoneCodeByCountry } from "@/core/constants/countries";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
@@ -436,8 +434,7 @@ const newuser = ref({
   repassword: "",
   first_name: "",
   last_name: "",
-  email: "",
-  whatsapp: ""
+  email: ""
 });
 
 // La dirección es UN objeto y viaja como tal. Antes eran seis campos sueltos en `persons`
@@ -521,11 +518,19 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const passwordsMatch = ref(false);
 
-const countriesData = ref(countries);
-const selectedCountryCode = ref(countries.find(c => c.es_name === "Ecuador") || countries[0]);
-const phonePrefix = ref("+593");
+// El teléfono es UN objeto con sus canales. Antes eran `persons.whatsapp` (un número) y
+// `persons.verify_whatsapp` (una bandera): un solo canal, y "verificado" sin decir en qué.
+const telefono = ref({
+  tipo: "personal",
+  pais: "EC",
+  numero: "",
+  canales: ["whatsapp"]
+});
 const phoneNumber = ref("");
-const whatsappError = ref("");
+const telefonoError = ref("");
+const phonePrefix = computed(() =>
+  paises.value.find((p) => p.iso_alpha2 === telefono.value.pais)?.phone_code ?? ""
+);
 const cedulaError = ref("");
 
 const passwordStrengthScore = ref(0);
@@ -623,17 +628,6 @@ const initMap = () => {
   }
 };
 
-const updatePhonePrefix = () => {
-  if (selectedCountryCode.value) {
-    phonePrefix.value = getPhoneCodeByCountry(selectedCountryCode.value.es_name);
-    updateWhatsappField();
-  }
-};
-
-const updateWhatsappField = () => {
-  newuser.value.whatsapp = phoneNumber.value ? phonePrefix.value + phoneNumber.value : "";
-};
-
 watch(() => newuser.value.cedula, (value) => {
   const digits = (value || "").replace(/\D/g, "").slice(0, 10);
   if (digits !== value) {
@@ -649,8 +643,8 @@ watch(phoneNumber, (value) => {
     phoneNumber.value = digits;
     return;
   }
-  whatsappError.value = (digits.length === 0 || digits.length === 10) ? "" : "El número debe tener 10 dígitos";
-  updateWhatsappField();
+  telefonoError.value = (digits.length === 0 || digits.length === 10) ? "" : "El número debe tener 10 dígitos";
+  telefono.value.numero = digits;
 });
 
 const validatePassword = (password) => {
@@ -694,8 +688,8 @@ const saveDraft = () => {
   const draft = {
     newuser: newuser.value,
     direccion: direccion.value,
-    phoneNumber: phoneNumber.value,
-    selectedCountryCode: selectedCountryCode.value
+    telefono: telefono.value,
+    phoneNumber: phoneNumber.value
   };
   sessionStorage.setItem("register_draft", JSON.stringify(draft));
 };
@@ -703,7 +697,7 @@ const saveDraft = () => {
 watch(() => newuser.value, saveDraft, { deep: true });
 watch(() => direccion.value, saveDraft, { deep: true });
 watch(phoneNumber, saveDraft);
-watch(selectedCountryCode, saveDraft);
+watch(() => telefono.value, saveDraft, { deep: true });
 
 const createnewUser = async () => {
   errorMessage.value = "";
@@ -739,7 +733,8 @@ const createnewUser = async () => {
     // distintas y el registro no declara nacionalidad.
     const payload = {
       ...newuser.value,
-      direccion: { ...direccion.value }
+      direccion: { ...direccion.value },
+      telefono: { ...telefono.value }
     };
 
     await AuthService.register(payload);
@@ -775,19 +770,14 @@ onMounted(async () => {
         await cargarProvincias(direccion.value.pais);
         await cargarCiudades(direccion.value.provincia);
       }
+      if (draft.telefono) telefono.value = { ...telefono.value, ...draft.telefono };
       if (draft.phoneNumber) phoneNumber.value = draft.phoneNumber;
-      if (draft.selectedCountryCode) {
-        const found = countriesData.value.find(c => c.es_name === draft.selectedCountryCode.es_name);
-        if (found) selectedCountryCode.value = found;
-      }
 
       if (newuser.value.password) validatePassword(newuser.value.password);
     } catch {
       // Ignore malformed drafts and continue with an empty form.
     }
   }
-
-  updatePhonePrefix();
 
   if (route.query.terms === "accepted") {
     termsAccepted.value = true;

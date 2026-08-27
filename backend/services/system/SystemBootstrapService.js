@@ -7,6 +7,7 @@ import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
 import { PAISES, PROVINCIAS_EC, CANTONES_EC } from "../../config/geografiaCatalog.js";
+import TelefonoService from "../users/TelefonoService.js";
 import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
@@ -725,6 +726,22 @@ export const ensureDefaultProcess = async (connection) => {
   return { processId, definitionId, artifactId };
 };
 
+// El WhatsApp del administrador ya no es una columna de `persons`: es una fila de `telefonos` con su
+// canal declarado y verificado. Se hace aqui, y no en `TelefonoService`, porque el bootstrap corre
+// dentro de su propia transaccion y tiene que compartirla.
+const guardarTelefonoDelAdmin = async (connection, personId, whatsapp) => {
+  const numero = String(whatsapp ?? "").replace(/\D/g, "");
+  if (!numero) return;
+  const telefonos = new TelefonoService(connection);
+  const telefonoId = await telefonos.guardarPrincipal(
+    personId,
+    { tipo: "personal", numero, canales: ["whatsapp"] },
+    connection
+  );
+  // El bootstrap da el numero por bueno, igual que daba `verify_whatsapp = 1`.
+  await telefonos.marcarCanalVerificado(telefonoId, "whatsapp", connection);
+};
+
 const upsertAdminPerson = async (connection, payload) => {
   const existingPerson = await fetchOne(
     connection,
@@ -745,11 +762,9 @@ const upsertAdminPerson = async (connection, payload) => {
            first_name = ?,
            last_name = ?,
            email = ?,
-           whatsapp = ?,
            password_hash = ?,
            status = 'Activo',
            verify_email = 1,
-           verify_whatsapp = 1,
            is_active = 1,
            token = ?
        WHERE id = ?`,
@@ -758,12 +773,12 @@ const upsertAdminPerson = async (connection, payload) => {
         payload.first_name,
         payload.last_name,
         payload.email,
-        payload.whatsapp,
         passwordHash,
         token,
         existingPerson.id
       ]
     );
+    await guardarTelefonoDelAdmin(connection, Number(existingPerson.id), payload.whatsapp);
     return { id: Number(existingPerson.id), token };
   }
 
@@ -773,26 +788,24 @@ const upsertAdminPerson = async (connection, payload) => {
        first_name,
        last_name,
        email,
-       whatsapp,
        password_hash,
        status,
        verify_email,
-       verify_whatsapp,
        is_active,
        token
      )
-     VALUES (?, ?, ?, ?, ?, ?, 'Activo', 1, 1, 1, ?)`,
+     VALUES (?, ?, ?, ?, ?, 'Activo', 1, 1, ?)`,
     [
       payload.cedula,
       payload.first_name,
       payload.last_name,
       payload.email,
-      payload.whatsapp,
       passwordHash,
       token
     ]
   );
 
+  await guardarTelefonoDelAdmin(connection, Number(result.insertId), payload.whatsapp);
   return { id: Number(result.insertId), token };
 };
 

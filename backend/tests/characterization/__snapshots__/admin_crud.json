@@ -323,9 +323,7 @@
       "photo_url",
       "status",
       "updated_at",
-      "verify_email",
-      "verify_whatsapp",
-      "whatsapp"
+      "verify_email"
     ]
   },
   "list_position_assignments": {

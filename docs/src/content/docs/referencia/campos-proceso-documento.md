@@ -116,12 +116,10 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `first_name` | varchar(120) | sí | — | — |
 | `last_name` | varchar(120) | sí | — | — |
 | `email` | varchar(180) | no | — | — |
-| `whatsapp` | varchar(30) | no | — | — |
 | `nacionalidad_pais_id` | int | no | `paises.id` · impide borrar | — |
 | `password_hash` | varchar(255) | sí | — | — |
 | `status` | text | no | — | `Inactivo` · `Activo` · `Verificado` · `Reportado` |
 | `verify_email` | smallint | no | — | — |
-| `verify_whatsapp` | smallint | no | — | — |
 | `photo_url` | text | no | — | — |
 | `is_active` | smallint | sí | — | — |
 | `token` | varchar(10) | sí | — | — |
@@ -618,4 +616,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**39 tablas · 378 columnas · 98 referencias.** Leídas del catálogo de PostgreSQL.
+**39 tablas · 376 columnas · 98 referencias.** Leídas del catálogo de PostgreSQL.

@@ -79,14 +79,14 @@ export const createUser = async (req, res) => {
       password: req.body.password,
       first_name: req.body.first_name ?? req.body.nombre,
       last_name: req.body.last_name ?? req.body.apellido,
-      whatsapp: req.body.whatsapp,
       nacionalidad: req.body.nacionalidad,
+      // El telefono es UN objeto con sus canales: { tipo, pais, numero, canales: ["whatsapp"] }.
+      telefono: req.body.telefono,
       // La direccion es UN objeto, no siete campos sueltos: { tipo, pais, provincia, ciudad,
       // calle_primaria, calle_secundaria, referencia, latitud, longitud }.
       direccion: req.body.direccion,
       status: req.body.status,
       verify_email: req.body.verify?.email,
-      verify_whatsapp: req.body.verify?.whatsapp,
       photo_url: req.body.photoUrl ?? req.body.photo_url ?? null,
       token
     };
@@ -105,17 +105,23 @@ export const createUser = async (req, res) => {
       console.error("No se pudo enviar el correo de verificación:", error.message);
     }
 
-    if (whatsappBot.isReady && createdUser.whatsapp) {
+    // Se RELEE la persona antes de responder. `create()` devuelve lo que inserto en `persons`, y
+    // desde el paso 4 el telefono NO esta ahi: vive en `telefonos` con sus canales. Sin esta
+    // relectura el bot no encontraria el numero y la respuesta saldria sin telefono ni direccion.
+    const usuarioCompleto = (await userRepository.findById(createdUser.id)) ?? createdUser;
+    const usuarioPublico = userRepository.toPublicUser(usuarioCompleto);
+
+    if (whatsappBot.isReady && usuarioPublico.whatsapp) {
       try {
         const userName = `${createdUser.first_name ?? createdUser.nombre} ${createdUser.last_name ?? createdUser.apellido}`.trim();
-        await whatsappBot.sendWelcomeMessage(createdUser.whatsapp, userName);
-        console.log(`Mensaje de bienvenida enviado a ${createdUser.whatsapp}`);
+        await whatsappBot.sendWelcomeMessage(usuarioPublico.whatsapp, userName);
+        console.log(`Mensaje de bienvenida enviado a ${usuarioPublico.whatsapp}`);
       } catch (error) {
         console.log(`No se pudo enviar mensaje de WhatsApp: ${error.message}`);
       }
     }
 
-    res.json({ result: "ok", user: userRepository.toPublicUser(createdUser) });
+    res.json({ result: "ok", user: usuarioPublico });
   } catch (error) {
     console.log("Error Creating User");
     console.error(error);
@@ -915,8 +921,9 @@ export const updateMyProfile = async (req, res) => {
     const payload = {
       first_name: req.body.first_name,
       last_name: req.body.last_name,
-      whatsapp: req.body.whatsapp,
       nacionalidad: req.body.nacionalidad,
+      // El telefono es UN objeto con sus canales: { tipo, pais, numero, canales: ["whatsapp"] }.
+      telefono: req.body.telefono,
       direccion: req.body.direccion
     };
 

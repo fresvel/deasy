@@ -1,5 +1,6 @@
 import { getPostgresPool } from "../../config/postgres.js";
 import DireccionService from "../users/DireccionService.js";
+import TelefonoService from "../users/TelefonoService.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
@@ -7,6 +8,7 @@ export default class UserRepository {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;
     this.direcciones = new DireccionService(pool);
+    this.telefonos = new TelefonoService(pool);
   }
 
   ensurePool() {
@@ -44,11 +46,16 @@ export default class UserRepository {
   // mapearla. `direccion` (singular) es LA principal de residencia, que es lo que enseña el perfil.
   async conDirecciones(userRow) {
     if (!userRow) return userRow;
-    const direcciones = await this.direcciones.listarPorPersona(userRow.id ?? userRow._id);
+    const personId = userRow.id ?? userRow._id;
+    const [direcciones, telefonos] = await Promise.all([
+      this.direcciones.listarPorPersona(personId),
+      this.telefonos.listarPorPersona(personId)
+    ]);
     return {
       ...userRow,
       direcciones,
-      direccion: direcciones.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null
+      direccion: direcciones.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null,
+      telefonos
     };
   }
 
@@ -135,12 +142,55 @@ export default class UserRepository {
       lista.push(fila);
       porPersona.set(Number(fila.person_id), lista);
     }
+    // Los telefonos, tambien en lote y por el mismo motivo. Devolver `telefonos: []` aqui seria
+    // MENTIR: `whatsapp` se deriva de esa lista, asi que una lista vacia lo dejaria en null para
+    // todo el mundo y pareceria que nadie tiene numero.
+    const [tels] = await this.pool.query(
+      `SELECT t.person_id, t.id, t.tipo, t.principal, t.numero,
+              pa.iso_alpha2 AS pais_iso, pa.phone_code AS prefijo,
+              COALESCE(pa.phone_code, '') || t.numero AS numero_completo
+         FROM telefonos t
+         LEFT JOIN paises pa ON pa.id = t.pais_id
+        WHERE t.person_id IN (${ids.map(() => "?").join(", ")}) AND t.is_active = 1
+        ORDER BY t.principal DESC, t.id ASC`,
+      ids
+    );
+    const telefonosPorPersona = new Map();
+    const telefonoIds = [];
+    for (const tel of tels ?? []) {
+      telefonoIds.push(Number(tel.id));
+      const lista = telefonosPorPersona.get(Number(tel.person_id)) ?? [];
+      lista.push({ ...tel, canales: [] });
+      telefonosPorPersona.set(Number(tel.person_id), lista);
+    }
+    if (telefonoIds.length) {
+      const [canales] = await this.pool.query(
+        `SELECT tc.telefono_id, cm.code, cm.name, tc.verificado, tc.verificado_at
+           FROM telefono_canales tc
+           JOIN canales_mensajeria cm ON cm.id = tc.canal_id
+          WHERE tc.telefono_id IN (${telefonoIds.map(() => "?").join(", ")})`,
+        telefonoIds
+      );
+      const porTelefono = new Map();
+      for (const canal of canales ?? []) {
+        const lista = porTelefono.get(Number(canal.telefono_id)) ?? [];
+        lista.push({ code: canal.code, name: canal.name, verificado: Number(canal.verificado) === 1, verificado_at: canal.verificado_at });
+        porTelefono.set(Number(canal.telefono_id), lista);
+      }
+      for (const lista of telefonosPorPersona.values()) {
+        for (const tel of lista) {
+          tel.canales = porTelefono.get(Number(tel.id)) ?? [];
+        }
+      }
+    }
+
     return rows.map((row) => {
       const lista = porPersona.get(Number(row.id)) ?? [];
       return {
         ...row,
         direcciones: lista,
-        direccion: lista.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null
+        direccion: lista.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null,
+        telefonos: telefonosPorPersona.get(Number(row.id)) ?? []
       };
     });
   }
@@ -238,11 +288,9 @@ export default class UserRepository {
       password_hash: userData.password_hash ?? userData.password,
       first_name: userData.first_name ?? userData.nombre,
       last_name: userData.last_name ?? userData.apellido,
-      whatsapp: userData.whatsapp ?? null,
       nacionalidad_pais_id: await this.resolveNacionalidadPaisId(userData),
       status: userData.status ?? DEFAULT_STATUS,
       verify_email: Number(userData.verify_email ?? userData.verify?.email ?? 0),
-      verify_whatsapp: Number(userData.verify_whatsapp ?? userData.verify?.whatsapp ?? 0),
       photo_url: userData.photo_url ?? userData.photoUrl ?? null,
       is_active: userData.is_active ?? 1,
       token: userData.token
@@ -279,6 +327,9 @@ export default class UserRepository {
     if (userData.direccion) {
       await this.direcciones.guardarPrincipal(result.insertId, userData.direccion);
     }
+    if (userData.telefono) {
+      await this.telefonos.guardarPrincipal(result.insertId, userData.telefono);
+    }
 
     return {
       id: result.insertId,
@@ -287,6 +338,11 @@ export default class UserRepository {
   }
 
   toPublicUser(userRow, access = null) {
+    // El telefono principal que declara canal WhatsApp. Si no hay ninguno, no hay whatsapp.
+    const telefonos = userRow?.telefonos ?? [];
+    const telefonoDeCanal = telefonos.find((t) => (t.canales ?? []).some((c) => c.code === "whatsapp"));
+    const canalWhatsapp = (telefonoDeCanal?.canales ?? []).find((c) => c.code === "whatsapp");
+
     if (!userRow) return null;
 
     const toNumericArray = (value) => {
@@ -316,7 +372,11 @@ export default class UserRepository {
       first_name: userRow.first_name,
       last_name: userRow.last_name,
       email: userRow.email,
-      whatsapp: userRow.whatsapp,
+      // `whatsapp` YA NO ES UNA COLUMNA: se deriva del telefono principal que tiene ese canal. Se
+      // conserva en el objeto publico porque el bot de bienvenida y el frontend lo leen, pero es
+      // una proyeccion, no un dato: no hay dos sitios donde el numero pueda discrepar.
+      whatsapp: telefonoDeCanal?.numero_completo ?? null,
+      telefonos: userRow.telefonos ?? [],
       nacionalidad: userRow.nacionalidad ?? null,
       nacionalidad_nombre: userRow.nacionalidad_nombre ?? null,
       // Las direcciones ya no son columnas de `persons`: las cuelga quien lee (ver `conDirecciones`).
@@ -339,7 +399,8 @@ export default class UserRepository {
       cargo_name: cargoNames[0] ?? "",
       verify: {
         email: Boolean(userRow.verify_email),
-        whatsapp: Boolean(userRow.verify_whatsapp)
+        // Verificado EN WHATSAPP, que es lo que la bandera vieja no sabia decir.
+        whatsapp: Boolean(canalWhatsapp?.verificado)
       },
       createdAt: userRow.created_at ?? userRow.createdAt ?? null,
       updatedAt: userRow.updated_at ?? userRow.updatedAt ?? null
@@ -388,6 +449,10 @@ export default class UserRepository {
     const direccion = payload.direccion;
     delete payload.direccion;
     delete payload.direcciones;
+    const telefono = payload.telefono;
+    delete payload.telefono;
+    delete payload.telefonos;
+    delete payload.whatsapp;
 
     if (payload.nacionalidad !== undefined) {
       const resuelto = await this.resolveNacionalidadPaisId(payload);
@@ -407,8 +472,9 @@ export default class UserRepository {
     });
 
     if (!fields.length) {
-      if (direccion) {
-        await this.direcciones.guardarPrincipal(userId, direccion);
+      if (direccion || telefono) {
+        if (direccion) await this.direcciones.guardarPrincipal(userId, direccion);
+        if (telefono) await this.telefonos.guardarPrincipal(userId, telefono);
         return this.toPublicUser(await this.findById(userId));
       }
       return null;
@@ -424,6 +490,9 @@ export default class UserRepository {
     if (direccion) {
       await this.direcciones.guardarPrincipal(userId, direccion);
     }
+    if (telefono) {
+      await this.telefonos.guardarPrincipal(userId, telefono);
+    }
 
     const updated = await this.findById(userId);
 
@@ -435,10 +504,10 @@ export default class UserRepository {
       "first_name",
       "last_name",
       "email",
-      "whatsapp",
       "nacionalidad",
       "nacionalidad_pais_id",
-      "direccion"
+      "direccion",
+      "telefono"
     ];
 
     const filtered = {};

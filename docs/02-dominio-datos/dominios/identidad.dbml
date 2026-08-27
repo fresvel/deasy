@@ -26,6 +26,15 @@ Table "actions" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table "canales_mensajeria" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
 Table "cargo_role_map" {
   "id" int4 [pk, not null, increment]
   "role_id" int4 [not null]
@@ -159,12 +168,10 @@ Table "persons" {
   "first_name" varchar(120) [not null]
   "last_name" varchar(120) [not null]
   "email" varchar(180) [unique]
-  "whatsapp" varchar(30)
   "nacionalidad_pais_id" int4
   "password_hash" varchar(255) [not null]
   "status" text [check: `status = ANY (ARRAY['Inactivo'::text, 'Activo'::text, 'Verificado'::text, 'Reportado'::text])`, default: 'Inactivo']
   "verify_email" int2 [default: 0]
-  "verify_whatsapp" int2 [default: 0]
   "photo_url" text
   "is_active" int2 [not null, default: 1]
   "token" varchar(10) [unique, not null]
@@ -236,6 +243,39 @@ Table "roles" {
   "is_active" int2 [not null, default: 1]
 }
 
+Table "telefono_canales" {
+  "id" int4 [pk, not null, increment]
+  "telefono_id" int4 [not null]
+  "canal_id" int4 [not null]
+  "verificado" int2 [not null, default: 0]
+  "verificado_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (telefono_id, canal_id) [type: btree, unique, name: "uq_telefono_canales"]
+  }
+}
+
+Table "telefonos" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['personal'::text, 'trabajo'::text])`]
+  "pais_id" int4
+  "numero" varchar(30) [not null]
+  "principal" int2 [not null, default: 0]
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, numero) [type: btree, unique, name: "uq_telefonos_numero"]
+    (person_id, tipo, principal_flag) [type: btree, unique, name: "uq_telefonos_principal"]
+    person_id [type: btree, name: "idx_telefonos_person"]
+  }
+}
+
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
@@ -251,6 +291,9 @@ Ref "fk_role_assignments_person":"persons"."id" <? "role_assignments"."person_id
 Ref "fk_role_assignments_role":"roles"."id" <? "role_assignments"."role_id"
 Ref "fk_role_permissions_permission":"permissions"."id" <? "role_permissions"."permission_id"
 Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
+Ref "fk_telefono_canales_canal":"canales_mensajeria"."id" <? "telefono_canales"."canal_id"
+Ref "fk_telefono_canales_telefono":"telefonos"."id" <? "telefono_canales"."telefono_id" [delete: cascade]
+Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> aplications   [empleo]
@@ -286,6 +329,7 @@ Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
 //   persons -> task_item_tenures   [tareas]
 //   persons -> task_items   [tareas]
 //   persons -> task_items   [tareas]
+//   paises -> telefonos   [organizacion]
 //   cargos -> unit_positions   [organizacion]
 //   roles -> vacancy_visibility   [empleo]
 //   persons -> signature_batch_jobs   [firmas]

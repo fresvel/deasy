@@ -486,7 +486,6 @@ export const SQL_TABLES = [
       { name: "first_name", label: "Nombre", type: "text", required: true },
       { name: "last_name", label: "Apellido", type: "text", required: true },
       { name: "email", label: "Email", type: "email" },
-      { name: "whatsapp", label: "Whatsapp", type: "text" },
       { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
       { name: "password_hash", label: "Password Hash", type: "text", required: true },
       {
@@ -497,7 +496,6 @@ export const SQL_TABLES = [
         defaultValue: "Inactivo"
       },
       { name: "verify_email", label: "Email verificado", type: "boolean", defaultValue: 0 },
-      { name: "verify_whatsapp", label: "Whatsapp verificado", type: "boolean", defaultValue: 0 },
       { name: "photo_url", label: "Foto", type: "text" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
@@ -528,6 +526,55 @@ export const SQL_TABLES = [
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["calle_primaria", "referencia"]
+  },
+  {
+    table: "telefonos",
+    label: "Telefonos",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "tipo", label: "Tipo", type: "select", options: ["personal", "trabajo"], defaultValue: "personal" },
+      { name: "pais_id", label: "Pais", type: "number" },
+      { name: "numero", label: "Numero", type: "text", required: true },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["numero"]
+  },
+  {
+    table: "canales_mensajeria",
+    label: "Canales de mensajeria",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "telefono_canales",
+    label: "Canales por telefono",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "telefono_id", label: "Telefono", type: "number", required: true },
+      { name: "canal_id", label: "Canal", type: "number", required: true },
+      { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
+      { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
   },
   {
     table: "roles",

@@ -181,6 +181,7 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 //   unit_positions -> task_items   [tareas]
 //   units -> task_items   [tareas]
 //   units -> tasks   [tareas]
+//   paises -> telefonos   [identidad]
 //   cargos -> unit_positions   [identidad]
 //   unit_positions -> vacancies   [empleo]
 //   units -> vacancy_visibility   [empleo]

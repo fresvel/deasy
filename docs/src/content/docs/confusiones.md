@@ -8,7 +8,7 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 1.  **`backend/README.md` esta obsoleto.** Habla de MongoDB (`URI_MONGO`), MariaDB y puerto 3000. El código usa PostgreSQL y el puerto 3030. **El `CLAUDE.md` es la fuente fiable**, no los README.
 
-2.  **El `README.md` raiz enlaza documentos que ya no existen** (`docs/02-dominio-datos/modelo-datos.md`, `MER_SQL.sql`, `docs/01-arquitectura/`). Están en `docs/docs-md-antiguos/`. Hoy `docs/02-dominio-datos/` tiene `consolidado.dbml` (60 KB, 71 tablas y 154 relaciones), la carpeta `dominios/` con los ocho DBML por dominio, y `anotaciones.json`. Los dos primeros son **artefactos generados** por `scripts/docs/gen-dbml.sh`; el único que se escribe a mano es `anotaciones.json`.
+2.  **El `README.md` raiz enlaza documentos que ya no existen** (`docs/02-dominio-datos/modelo-datos.md`, `MER_SQL.sql`, `docs/01-arquitectura/`). Están en `docs/docs-md-antiguos/`. Hoy `docs/02-dominio-datos/` tiene `consolidado.dbml` (60 KB, 74 tablas y 158 relaciones), la carpeta `dominios/` con los ocho DBML por dominio, y `anotaciones.json`. Los dos primeros son **artefactos generados** por `scripts/docs/gen-dbml.sh`; el único que se escribe a mano es `anotaciones.json`.
 
 3.  **`amqplib` esta en `package.json` pero no se importa en ningun sitio.** Es una dependencia muerta: la integración real con RabbitMQ es por su API HTTP de gestion.
 

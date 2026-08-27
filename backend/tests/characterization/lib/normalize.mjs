@@ -19,6 +19,10 @@ const VOLATILE_KEYS = new Set([
   "deletedAt", "deleted_at",
   "last_message_at", "lastMessageAt",
   "joined_at", "left_at", "read_at", "edited_at", "archived_at",
+  // `verificado_at` (canal de mensajeria) entro con los telefonos el 2026-08-27. Sin
+  // enmascarar, el golden de login y el de /users/me cambiaban EN CADA captura: el bootstrap
+  // marca el canal verificado con CURRENT_TIMESTAMP.
+  "verificado_at", "verified_at",
   "iat", "exp",
   "token", "accessToken", "access_token", "refreshToken", "refresh_token",
   "expiresIn", "expires_in", "expiresAt", "expires_at",
