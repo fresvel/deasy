@@ -14,7 +14,7 @@
 |---|---|:--:|---|---|
 | **F1** | El menú se deriva de `category`: se borran las TRES listas de tablas a mano | ✅ | 12 categorías · 7 grupos · Usuarios de 1 a 8 pestañas · char 301/301 | 2026-08-28 |
 | **F2** | Las claves ajenas nuevas se ven como nombre y no como número en el editor genérico | ✅ | `Pais = Ecuador`, `Canal = Telegram`, `Telefono = 0991112233` en pantalla | 2026-08-28 |
-| **F3** | El modal de alta de usuario crea persona **completa**: documento, correo y teléfono | ⬜ | | |
+| **F3** | El modal de alta de usuario crea persona **completa**: documento, correo y teléfono | ✅ | Alta de un extranjero por pantalla: pasaporte ES + correo + teléfono en una transacción; los 3 rechazos revierten entera | 2026-08-28 |
 | **F4** | Las pestañas de Usuarios operan las tablas nuevas con su lógica (principal, verificado, escaneo) | ⬜ | | |
 | **F5** | `/perfil/datos` — el usuario edita sus propios datos personales | ⬜ | | |
 | **F6** | Decisión del dueño sobre la dirección en el registro, y su ejecución | ⬜ | | |

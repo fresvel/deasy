@@ -135,6 +135,12 @@ export const FK_TABLE_MAP = {
   tipo_id: "tipos_documento",
   canal_id: "canales_mensajeria",
   telefono_id: "telefonos",
+  // Los virtuales del alta de persona y la nacionalidad. Sin esto el formulario pide un NÚMERO
+  // («pais_id») en vez de ofrecer el catálogo, y quien da de alta tiene que saberse los ids.
+  nacionalidad_pais_id: "paises",
+  documento_pais_id: "paises",
+  telefono_pais_id: "paises",
+  documento_tipo_id: "tipos_documento",
   template_id: "signature_flow_templates",
   template_artifact_id: "template_artifacts",
   task_item_id: "task_items",

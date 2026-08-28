@@ -90,17 +90,22 @@ export default class DocumentoIdentidadService {
     }
   }
 
-  async resolveTipo(codigo, connection = this.pool) {
-    const clave = String(codigo ?? "").trim().toLowerCase();
-    if (!clave) {
+  // Acepta el CÓDIGO ("pasaporte") o el ID. El código es lo que manda una API; el id es lo que manda
+  // el editor genérico de /admin, que elige del catálogo vivo — así un tipo nuevo aparece en el
+  // formulario sin tocar código.
+  async resolveTipo(codigoOId, connection = this.pool) {
+    const bruto = String(codigoOId ?? "").trim();
+    if (!bruto) {
       throw errorDeCliente("Hace falta el tipo de documento.");
     }
+    const porId = /^\d+$/.test(bruto);
     const [filas] = await connection.query(
-      "SELECT id, code, name, validacion FROM tipos_documento WHERE code = ? AND is_active = 1 LIMIT 1",
-      [clave]
+      `SELECT id, code, name, validacion FROM tipos_documento
+        WHERE ${porId ? "id = ?" : "code = ?"} AND is_active = 1 LIMIT 1`,
+      [porId ? Number(bruto) : bruto.toLowerCase()]
     );
     if (!filas?.length) {
-      throw errorDeCliente(`El tipo de documento '${clave}' no está en el catálogo.`);
+      throw errorDeCliente(`El tipo de documento '${bruto}' no está en el catálogo.`);
     }
     return filas[0];
   }
@@ -128,7 +133,7 @@ export default class DocumentoIdentidadService {
   async guardarPrincipal(personId, documento, connection = this.pool) {
     this.ensurePool();
     const datos = typeof documento === "string" ? { numero: documento } : (documento ?? {});
-    const tipo = await this.resolveTipo(datos.tipo ?? "cedula_ec", connection);
+    const tipo = await this.resolveTipo(datos.tipo_id ?? datos.tipo ?? "cedula_ec", connection);
     const numero = normalizarNumero(datos.numero);
     if (!numero) {
       throw errorDeCliente("El documento de identidad necesita un número.");

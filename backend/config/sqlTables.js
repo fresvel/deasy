@@ -497,17 +497,30 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      // Campo VIRTUAL: no es columna de `persons`, vive en `documentos_identidad`. `virtual: true`
-      // lo saca del SELECT y lo deja en el formulario; el hook lo desvia a su tabla al crear.
-      { name: "cedula", label: "Cedula", type: "text", virtual: true },
       { name: "first_name", label: "Nombre", type: "text", required: true },
       { name: "last_name", label: "Apellido", type: "text", required: true },
-      // Campo VIRTUAL: no es columna de `persons`, vive en `emails`. `virtual: true` es lo que
-      // hace que el motor lo saque del SELECT (SqlAdminService:249) y lo deje solo en el formulario;
-      // el hook de `persons` lo desvia a su tabla al crear.
-      { name: "email", label: "Email", type: "email", virtual: true },
       { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
-      { name: "password_hash", label: "Password Hash", type: "text", required: true },
+
+      // ── CAMPOS VIRTUALES ────────────────────────────────────────────────────────────────────
+      // Ninguno es columna de `persons`: el documento vive en `documentos_identidad`, el correo en
+      // `emails` y el teléfono en `telefonos`. `virtual: true` los saca del SELECT
+      // (`SqlAdminService:249`) y los deja SOLO en el formulario; el hook de `persons` los desvía a
+      // su tabla dentro de la MISMA transacción del alta.
+      //
+      // Están aquí porque una persona sin documento, sin correo y sin teléfono es un usuario roto:
+      // no puede entrar, no puede recibir la verificación y no hay forma de contactarla. El alta
+      // tiene que poder crearla ENTERA de una vez.
+      { name: "documento_tipo_id", label: "Tipo de documento", type: "number", virtual: true },
+      // ⚠️ Se llama `cedula` por compatibilidad —la API y el arnés de caracterización lo mandan
+      // así—, pero la ETIQUETA ya no miente: aquí cabe un pasaporte. El tipo lo decide el campo de
+      // arriba, y el país emisor es OBLIGATORIO cuando no es cédula ecuatoriana.
+      { name: "cedula", label: "Documento (número)", type: "text", virtual: true },
+      { name: "documento_pais_id", label: "País emisor del documento", type: "number", virtual: true },
+      { name: "email", label: "Email", type: "email", virtual: true },
+      { name: "telefono_numero", label: "Teléfono", type: "text", virtual: true },
+      { name: "telefono_pais_id", label: "País del teléfono", type: "number", virtual: true },
+
+      { name: "password_hash", label: "Contraseña", type: "text", required: true },
       {
         name: "status",
         label: "Estado",

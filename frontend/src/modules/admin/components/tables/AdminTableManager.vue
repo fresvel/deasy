@@ -1608,7 +1608,7 @@ const formFields = computed(() => {
         ...editableFields.value,
         {
           name: "password",
-          label: "Password",
+          label: "Contraseña",
           type: "password",
           required: true
         }
@@ -1653,7 +1653,12 @@ const tableListFields = computed(() => {
   if (!props.table) {
     return [];
   }
-  const fields = props.table.fields.filter((field) => !(isPersonTable.value && field.name === "password_hash"));
+  // Los campos VIRTUALES no son columnas: no están en el SELECT, así que la lista los pintaría
+  // vacíos. Son de FORMULARIO —el hook los desvía a su tabla al crear— y su valor se consulta en la
+  // pestaña de esa tabla. Sin este filtro, `persons` salía con seis columnas de guiones.
+  const fields = props.table.fields.filter((field) =>
+    !field.virtual && !(isPersonTable.value && field.name === "password_hash")
+  );
   let normalizedFields = fields;
   if (props.table.table === "process_definition_versions") {
     normalizedFields = normalizedFields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));

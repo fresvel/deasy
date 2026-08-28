@@ -69,7 +69,10 @@ test("saca las columnas implicadas del detail", () => {
 test("el mensaje de duplicado usa la etiqueta del formulario, no el nombre de columna", () => {
   assert.equal(
     uniqueViolationMessage(uniqueError, "persons"),
-    "Ya existe otro registro con ese valor en «Cedula»."
+    // La etiqueta viene de `sqlTables.js`, y cambió el 2026-08-28: el campo dejó de llamarse
+    // "Cedula" cuando el formulario pasó a admitir pasaportes. Lo que este test fija es que el
+    // mensaje use LA ETIQUETA y no el nombre de columna — eso sigue igual.
+    "Ya existe otro registro con ese valor en «Documento (número)»."
   );
   assert.match(uniqueViolationMessage(compositeUniqueError, "unit_positions"), /combinación de «Unidad», «Plaza»/);
   // Sin `detail` no se inventa nada.
