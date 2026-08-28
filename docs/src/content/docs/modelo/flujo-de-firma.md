@@ -134,6 +134,16 @@ erDiagram
   persons ||--o{ document_signatures : "firmada por"
   signature_statuses ||--o{ document_signatures : "resultado"
 
+  signature_flow_templates {
+    int id PK "LA CABECERA"
+    int process_definition_template_id FK "portador 1: el vinculo"
+    int task_item_id FK "portador 2: el entregable (runtime)"
+    int template_artifact_id FK "portador 3: la edicion de plantilla"
+    varchar name
+    varchar description
+    smallint is_active
+    timestamp created_at
+  }
   signature_flow_steps {
     int id PK "UN PASO"
     int template_id FK

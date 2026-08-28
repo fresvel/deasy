@@ -104,8 +104,9 @@ flowchart TB
 ⚠️ **La mitad de abajo está dibujada y no existe.** Las ocho de «a quién se contrata» tienen tablas,
 claves ajenas y vocabularios cerrados, y **cinco no las toca ninguna línea de código**. Se dibujan
 porque están en el esquema y porque hay un rol que las promete. El aviso completo, en
-[Empleo y contratación](/complemento/empleo/); el permiso, en
-[Autenticación y autorización](/backend/auth/#autorización-rbac).
+[Empleo y contratación](/complemento/empleo/); el permiso, campo a campo, en
+[Permisos](/complemento/permisos/) — que además trae dos avisos propios: la unidad del rol no
+gobierna nada y `max_depth` no lo lee nadie.
 
 ## 3 · Lo que se dice por el camino
 
@@ -129,8 +130,8 @@ flowchart TB
 ```
 
 `relation_unit_types` es del organigrama —dice de qué **tipo** es el vínculo entre dos unidades— y se
-cuenta en [La organización](/modelo/organizacion/). `signature_batch_jobs` es de la firma en lote, y
-en [Firmas y resto del esquema](/datos/firmas-y-dominios/).
+cuenta en [La organización](/modelo/organizacion/). `signature_batch_jobs` tiene página propia:
+[La firma en lote](/complemento/firma-en-lote/).
 
 Las flechas que el dibujo **no** enseña son las que salen de la conversación hacia la cadena:
 `chat_conversations` apunta a `processes`, a `units` y **dos veces** a

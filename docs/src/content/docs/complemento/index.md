@@ -40,12 +40,16 @@ Duplicar una cifra garantiza que en dos semanas haya dos versiones distintas de 
 | Familia | Tablas | Dónde se lee |
 |---|:--:|---|
 | **Quién eres** — el documento, los correos, los teléfonos, las direcciones y el catálogo geográfico | 10 | [La organización](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima) |
-| **Qué puedes hacer** — recursos × acciones, permisos, roles y los derivados del cargo | 8 | [Autenticación y autorización](/backend/auth/#autorización-rbac) |
 | **Que eres tú quien firma** — el certificado y los códigos | 3 | [Credenciales](/complemento/credenciales/) |
 | **A quién se contrata** — vacante → postulación → oferta → contrato | 8 | [Empleo y contratación](/complemento/empleo/) |
 | **Cómo se habla** — conversaciones, mensajes y avisos | 6 | [La conversación](/complemento/conversacion/) |
 | **Qué has hecho antes** — el expediente académico | 2 | [El expediente](/complemento/expediente/) |
-| Y dos sueltas: `relation_unit_types` y `signature_batch_jobs` | 2 | [La organización](/modelo/organizacion/) · [Firmas y resto del esquema](/datos/firmas-y-dominios/) |
+| **Qué puedes hacer** — recursos × acciones, permisos, roles y los derivados del cargo | 8 | [Permisos](/complemento/permisos/) |
+| **Firmar en tanda** — el progreso de un lote | 1 | [La firma en lote](/complemento/firma-en-lote/) |
+| Y una suelta: `relation_unit_types`, el tipo de vínculo entre unidades | 1 | [La organización](/modelo/organizacion/) |
+
+**Las 39 tienen sus campos y sus relaciones dibujados**, salvo las diez de identidad, cuyo detalle
+está en la página de la organización porque se cuentan junto a `persons`, de la que salieron.
 
 Todas juntas, sin campos, en el [mapa del complemento](/complemento/mapa-completo/).
 
