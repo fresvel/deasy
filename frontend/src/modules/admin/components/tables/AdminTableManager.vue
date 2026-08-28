@@ -429,8 +429,6 @@
       :modal-error="modalError"
       :visible-form-fields="visibleFormFields"
       :fk-display="fkDisplay"
-      :inline-fk-loading="inlineFkLoading"
-      :inline-fk-suggestions="inlineFkSuggestions"
       :form-data="formData"
       :process-definition-checklist-loading="processDefinitionChecklistLoading"
       :process-definition-checklist="processDefinitionChecklist"
@@ -445,18 +443,13 @@
       :is-foreign-key-field="isForeignKeyField"
       :is-field-locked="isFieldLocked"
       :input-type="inputType"
-      :should-show-inline-fk-suggestions="shouldShowInlineFkSuggestions"
-      :format-inline-fk-option="formatInlineFkOption"
+      :build-fk-suggest-provider="buildFkSuggestProvider"
       :format-select-option-label="formatSelectOptionLabel"
       :format-process-configuration-cell="formatProcessEditorConfigurationCell"
       :can-delete-process-configuration-row="canDeleteProcessConfigurationRow"
       @update:form-data="formData = $event"
-      @update-inline-fk-display="updateInlineFkDisplay"
-      @open-inline-fk-suggestions="openInlineFkSuggestions"
-      @schedule-inline-fk-close="scheduleInlineFkClose"
-      @clear-inline-fk-selection="clearInlineFkSelection"
-      @open-fk-search="openFkSearch"
-      @select-inline-fk-suggestion="selectInlineFkSuggestion"
+      @select-fk-option="selectFkOption"
+      @clear-fk-selection="clearFkSelection"
       @handle-select-change="handleSelectChange"
       @add-process-configuration="openProcessConfigurationFromEditor"
       @delete-process-configuration="deleteProcessEditorConfiguration"
@@ -1158,7 +1151,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, defineEmits, defineProps, defineExpose, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
+import { computed, defineAsyncComponent, defineEmits, defineProps, defineExpose, onMounted, ref, useId, watch } from "vue";
 import { useAdminFkManager } from "@/modules/admin/composables/fk/useAdminFkManager";
 import { useAdminFkCrud } from "@/modules/admin/composables/fk/useAdminFkCrud";
 import { useAdminFkSearch } from "@/modules/admin/composables/fk/useAdminFkSearch";
@@ -2219,10 +2212,6 @@ const allTablesMap = computed(() =>
 const fkLabelCache = ref({});
 const processIdByDefinitionId = ref({});
 const processDefinitionMetaById = ref({});
-const inlineFkSuggestions = ref({});
-const inlineFkLoading = ref({});
-const inlineFkTouched = ref({});
-const inlineFkActiveField = ref("");
 
 const formatDateOnly = (value) => adminPresentationService.formatDateOnly(value);
 const formatDateTimeHour = (value) => adminPresentationService.formatDateTimeHour(value);
@@ -2430,8 +2419,7 @@ const {
   isPersonTable,
   isForeignKeyField: (...args) => isForeignKeyField(...args),
   toDateInputValue,
-  toDateTimeInputValue,
-  resetInlineFkState: (...args) => resetInlineFkState(...args)
+  toDateTimeInputValue
 });
 
 const isForeignKeyField = (field) => FK_TABLE_MAP[field.name] !== undefined;
@@ -2532,27 +2520,12 @@ const getFkTableField = (fieldName) => {
 
 const getFkTableFieldOptions = (fieldName) => getFkTableField(fieldName)?.options || [];
 const {
-  resetInlineFkState,
-  cancelInlineFkClose,
-  scheduleInlineFkClose,
-  shouldShowInlineFkSuggestions,
-  formatInlineFkOption,
-  clearInlineFkSelection,
-  applyInlineFkSelection,
-  fetchInlineFkSuggestions,
-  openInlineFkSuggestions,
-  handleInlineFkInput,
-  updateInlineFkDisplay,
-  selectInlineFkSuggestion
+  buildFkSuggestProvider,
+  selectFkOption,
+  clearFkSelection
 } = useAdminFkManager({
   formData,
   fkDisplay,
-  inlineFkSuggestions,
-  inlineFkLoading,
-  inlineFkTouched,
-  inlineFkActiveField,
-  visibleFormFields,
-  isFieldLocked: (...args) => isFieldLocked(...args),
   resolveFkTable,
   formatFkOptionLabel
 });
@@ -4201,7 +4174,6 @@ const {
   isTemplateArtifactsTable,
   isProcessDefinitionFilterTable,
   isProcessDefinitionTemplatesTable,
-  resetInlineFkState,
   closeProcessDefinitionVersioningModal: (...args) => closeProcessDefinitionVersioningModal(...args),
   resetForm,
   applyUnitRelationDefaults,
@@ -4386,10 +4358,6 @@ onMounted(async () => {
     await loadProcessDefinitionSeriesOptions();
   }
   await fetchRows();
-});
-
-onBeforeUnmount(() => {
-  resetInlineFkState();
 });
 
 defineExpose({

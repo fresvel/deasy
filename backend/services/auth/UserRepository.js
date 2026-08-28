@@ -247,9 +247,9 @@ export default class UserRepository {
       // TODOS los documentos y correos de la persona, no solo en el principal, que es lo que espera
       // quien teclea un numero en el buscador.
       conditions.push(
-        `(EXISTS (SELECT 1 FROM documentos_identidad sd WHERE sd.person_id = p.id AND sd.numero LIKE ?)
-          OR EXISTS (SELECT 1 FROM emails se WHERE se.person_id = p.id AND se.direccion LIKE ?)
-          OR p.first_name LIKE ? OR p.last_name LIKE ?)`
+        `(EXISTS (SELECT 1 FROM documentos_identidad sd WHERE sd.person_id = p.id AND sd.numero ILIKE ?)
+          OR EXISTS (SELECT 1 FROM emails se WHERE se.person_id = p.id AND se.direccion ILIKE ?)
+          OR p.first_name ILIKE ? OR p.last_name ILIKE ?)`
       );
 
       params.push(like, like, like, like);

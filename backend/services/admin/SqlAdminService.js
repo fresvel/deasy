@@ -336,9 +336,12 @@ export default class SqlAdminService {
       }
     }
 
+    // ILIKE, no LIKE: en PostgreSQL `LIKE` distingue mayúsculas y en MySQL la colación por
+    // defecto no lo hacía, así que la migración se llevó por delante toda búsqueda escrita en
+    // minúsculas sin que nadie lo notara — «Ecu» encontraba Ecuador y «ecu» no encontraba nada.
     if (q && config.searchFields?.length) {
       const like = `%${q}%`;
-      const searchClauses = config.searchFields.map((field) => `${qualifyField(field)} LIKE ?`);
+      const searchClauses = config.searchFields.map((field) => `${qualifyField(field)} ILIKE ?`);
       conditions.push(`(${searchClauses.join(" OR ")})`);
       params.push(...config.searchFields.map(() => like));
     }
@@ -353,7 +356,7 @@ export default class SqlAdminService {
       const fieldMeta = config.fields.find((meta) => meta.name === field);
       const columnName = qualifyField(field);
       if (["text", "email", "textarea"].includes(fieldMeta?.type)) {
-        conditions.push(`${columnName} LIKE ?`);
+        conditions.push(`${columnName} ILIKE ?`);
         params.push(`%${value}%`);
       } else {
         conditions.push(`${columnName} = ?`);

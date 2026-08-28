@@ -15,43 +15,25 @@
           {{ field.label || field.name }}
           <span v-if="field.required" class="text-danger">*</span>
         </label>
-        <div v-if="isInputField(field) && isForeignKeyField(field)" class="relative">
-          <AdminLookupField
-            :id="fieldId(field.name)"
-            :model-value="fkDisplay[field.name]"
-            :placeholder="field.placeholder || ''"
-            :disabled="isFieldLocked(field)"
-            prevent-button-mouse-down
-            @update:model-value="$emit('update-inline-fk-display', field.name, $event)"
-            @focus="$emit('open-inline-fk-suggestions', field)"
-            @blur="$emit('schedule-inline-fk-close', field.name)"
-            @clear="$emit('clear-inline-fk-selection', field.name)"
-            @search="$emit('open-fk-search', field)"
-          />
-          <div
-            v-if="shouldShowInlineFkSuggestions(field.name)"
-            class="deasy-card overflow-hidden"
-            @mousedown.prevent
-          >
-            <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-muted">
-              Buscando...
-            </div>
-            <template v-else-if="(inlineFkSuggestions[field.name] || []).length">
-              <AdminButton
-                v-for="option in inlineFkSuggestions[field.name]"
-                :key="`${field.name}-${option.id}`"
-                variant="plain"
-                class-name="deasy-option deasy-option--stacked"
-                @mousedown.prevent="$emit('select-inline-fk-suggestion', field, option)"
-              >
-                {{ formatInlineFkOption(field, option) }}
-              </AdminButton>
-            </template>
-            <AppEmpty v-else :icon="false">
-              Sin coincidencias. Usa Buscar.
-            </AppEmpty>
-          </div>
-        </div>
+        <!-- Una columna ajena se elige escribiendo: el desplegable filtra según se teclea. Sin
+             botones al lado — el de buscar abría un modal de tabla que ya no hace falta cuando la
+             lista está debajo del campo, y el de limpiar se sustituye por vaciar la caja
+             (`clear-on-empty-query`). El desplegable, el debounce y el teclado los pone
+             `AdminLookupField`; aquí sólo se dice de dónde salen las opciones y qué hacer con la
+             elegida. -->
+        <AdminLookupField
+          v-if="isInputField(field) && isForeignKeyField(field)"
+          :id="fieldId(field.name)"
+          :model-value="fkDisplay[field.name]"
+          :placeholder="field.placeholder || 'Escribe para buscar…'"
+          :disabled="isFieldLocked(field)"
+          :suggest-provider="buildFkSuggestProvider(field)"
+          :show-clear="false"
+          :show-search="false"
+          clear-on-empty-query
+          @select="$emit('select-fk-option', field, $event)"
+          @clear="$emit('clear-fk-selection', field.name)"
+        />
         <AdminInputField
           v-else-if="isInputField(field)"
           :id="fieldId(field.name)"
@@ -234,7 +216,6 @@
 </template>
 
 <script setup>
-import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, ref, useId } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
@@ -260,8 +241,6 @@ const props = defineProps({
   modalError: { type: String, default: "" },
   visibleFormFields: { type: Array, default: () => [] },
   fkDisplay: { type: Object, default: () => ({}) },
-  inlineFkLoading: { type: Object, default: () => ({}) },
-  inlineFkSuggestions: { type: Object, default: () => ({}) },
   formData: { type: Object, default: () => ({}) },
   processDefinitionChecklistLoading: { type: Boolean, default: false },
   processDefinitionChecklist: { type: Object, default: () => ({}) },
@@ -274,10 +253,11 @@ const props = defineProps({
   selectedRow: { type: Object, default: null },
   isInputField: { type: Function, required: true },
   isForeignKeyField: { type: Function, required: true },
+  // Devuelve el `suggestProvider` de una columna ajena. Lo construye el gestor de FK,
+  // que es quien sabe a qué tabla apunta cada columna.
+  buildFkSuggestProvider: { type: Function, required: true },
   isFieldLocked: { type: Function, required: true },
   inputType: { type: Function, required: true },
-  shouldShowInlineFkSuggestions: { type: Function, required: true },
-  formatInlineFkOption: { type: Function, required: true },
   formatSelectOptionLabel: { type: Function, required: true },
   formatProcessConfigurationCell: { type: Function, required: true },
   canDeleteProcessConfigurationRow: { type: Function, required: true }
@@ -285,12 +265,8 @@ const props = defineProps({
 
 const emit = defineEmits([
   "update:form-data",
-  "update-inline-fk-display",
-  "open-inline-fk-suggestions",
-  "schedule-inline-fk-close",
-  "clear-inline-fk-selection",
-  "open-fk-search",
-  "select-inline-fk-suggestion",
+  "select-fk-option",
+  "clear-fk-selection",
   "handle-select-change",
   "add-process-configuration",
   "delete-process-configuration",

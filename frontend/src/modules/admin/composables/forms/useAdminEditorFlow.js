@@ -11,7 +11,6 @@ export function useAdminEditorFlow({
   isTemplateArtifactsTable,
   isProcessDefinitionFilterTable,
   isProcessDefinitionTemplatesTable,
-  resetInlineFkState,
   closeProcessDefinitionVersioningModal,
   resetForm,
   applyUnitRelationDefaults,
@@ -33,7 +32,6 @@ export function useAdminEditorFlow({
     if (!props.table) {
       return;
     }
-    resetInlineFkState();
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = "";
     editorMode.value = "create";
@@ -85,7 +83,6 @@ export function useAdminEditorFlow({
       return { redirected: true };
     }
     if (props.table?.table === "process_definition_versions" && typeof openProcessDefinitionWizard === "function") {
-      resetInlineFkState();
       closeProcessDefinitionVersioningModal();
       processDefinitionCloneSourceId.value = "";
       editorMode.value = "edit";
@@ -97,7 +94,6 @@ export function useAdminEditorFlow({
       await openProcessDefinitionWizard(row, { step: "definition", readonly: false });
       return { redirected: true };
     }
-    resetInlineFkState();
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = "";
     editorMode.value = "edit";
@@ -117,7 +113,6 @@ export function useAdminEditorFlow({
     if (!row || !isProcessDefinitionTemplatesTable.value) {
       return;
     }
-    resetInlineFkState();
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = "";
     editorMode.value = "create";
@@ -148,13 +143,11 @@ export function useAdminEditorFlow({
       return;
     }
     if (props.table?.table === "process_definition_versions" && typeof openProcessDefinitionVersionWizard === "function") {
-      resetInlineFkState();
       closeProcessDefinitionVersioningModal();
       modalError.value = "";
       await openProcessDefinitionVersionWizard(row);
       return { redirected: true };
     }
-    resetInlineFkState();
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = row.id ? String(row.id) : "";
     editorMode.value = "create";

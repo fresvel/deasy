@@ -15,11 +15,9 @@ export function useAdminFormState({
   isPersonTable,
   isForeignKeyField,
   toDateInputValue,
-  toDateTimeInputValue,
-  resetInlineFkState
+  toDateTimeInputValue
 }) {
   const resetForm = () => {
-    resetInlineFkState();
     const payload = {};
     formFields.value.forEach((field) => {
       if (field.type === "boolean") {

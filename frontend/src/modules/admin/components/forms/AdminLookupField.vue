@@ -179,6 +179,13 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
+  // Vaciar la caja y salir equivale a quitar la selección. Es opt-in porque cambia lo que hace el
+  // blur: sin esto se revierte a la etiqueta comprometida, que es lo que quiere quien SÍ tiene un
+  // botón de limpiar al lado.
+  clearOnEmptyQuery: {
+    type: Boolean,
+    default: false
+  },
   loadingText: {
     type: String,
     default: "Buscando…"
@@ -293,10 +300,18 @@ const handleClick = () => {
 
 const handleBlur = (event) => {
   emit("blur", event);
-  if (suggestEnabled.value) {
-    closeDropdown();
-    revertQuery();
+  if (!suggestEnabled.value) {
+    return;
   }
+  closeDropdown();
+  // Donde no hay botón de limpiar, vaciar la caja ES la forma de quitar la selección: sin esta
+  // salida el `revertQuery` de abajo devolvería la etiqueta anterior y una columna ajena OPCIONAL,
+  // una vez puesta, no se podría dejar en blanco nunca.
+  if (props.clearOnEmptyQuery && !query.value.trim() && props.modelValue) {
+    emit("clear");
+    return;
+  }
+  revertQuery();
 };
 
 const handleInput = (event) => {

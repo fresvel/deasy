@@ -1,237 +1,66 @@
 import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
-export function useAdminFkManager({
-  formData,
-  fkDisplay,
-  inlineFkSuggestions,
-  inlineFkLoading,
-  inlineFkTouched,
-  inlineFkActiveField,
-  visibleFormFields,
-  isFieldLocked,
-  resolveFkTable,
-  formatFkOptionLabel
-}) {
-  const inlineFkCloseTimers = {};
-  const inlineFkQueryTimers = {};
+// Esto tenía 237 líneas y era una SEGUNDA implementación de combobox, para el editor genérico.
+// Llevaba dos mapas de datos (`inlineFkSuggestions`, `inlineFkLoading`), dos de control
+// (`inlineFkTouched`, `inlineFkActiveField`), dos juegos de temporizadores —uno para el debounce y
+// otro para cerrar el desplegable tras el blur— y la lista se dibujaba a mano en
+// `AdminEditorModal`, debajo del campo.
+//
+// `AdminLookupField` ya hacía todo eso desde dentro cuando se le pasa un `suggestProvider`, que es
+// como lo consumen los otros tres paneles del admin. Y lo hacía MEJOR en tres cosas que la versión
+// paralela no tenía: navegación con teclado, el `role="combobox"` con su `aria-activedescendant`, y
+// un contador de secuencia que descarta las respuestas que llegan tarde — escribir deprisa podía
+// dejar en pantalla el resultado de una búsqueda anterior.
+//
+// Lo que queda aquí es lo único que el componente no puede saber por sí mismo: de qué tabla sale
+// cada columna, y cómo se etiqueta una fila de esa tabla.
+export function useAdminFkManager({ formData, fkDisplay, resolveFkTable, formatFkOptionLabel }) {
+  // Un proveedor por columna, memorizado: si se construyera en la plantilla, cada render daría una
+  // función nueva y el `prop` cambiaría de identidad en cada pulsación.
+  const proveedores = new Map();
 
-  const resetInlineFkState = () => {
-    inlineFkSuggestions.value = {};
-    inlineFkLoading.value = {};
-    inlineFkTouched.value = {};
-    inlineFkActiveField.value = "";
-    Object.values(inlineFkCloseTimers).forEach((timerId) => {
-      clearTimeout(timerId);
-    });
-    Object.keys(inlineFkCloseTimers).forEach((key) => {
-      delete inlineFkCloseTimers[key];
-    });
-    Object.values(inlineFkQueryTimers).forEach((timerId) => {
-      clearTimeout(timerId);
-    });
-    Object.keys(inlineFkQueryTimers).forEach((key) => {
-      delete inlineFkQueryTimers[key];
-    });
-  };
-
-  const cancelInlineFkClose = (fieldName) => {
-    if (!fieldName || !inlineFkCloseTimers[fieldName]) {
-      return;
-    }
-    clearTimeout(inlineFkCloseTimers[fieldName]);
-    delete inlineFkCloseTimers[fieldName];
-  };
-
-  const scheduleInlineFkClose = (fieldName) => {
+  const buildFkSuggestProvider = (field) => {
+    const fieldName = field?.name || "";
     if (!fieldName) {
-      return;
+      return null;
     }
-    cancelInlineFkClose(fieldName);
-    inlineFkCloseTimers[fieldName] = setTimeout(() => {
-      if (inlineFkActiveField.value === fieldName) {
-        inlineFkActiveField.value = "";
-      }
-      delete inlineFkCloseTimers[fieldName];
-    }, 150);
+    if (!proveedores.has(fieldName)) {
+      proveedores.set(fieldName, async (searchText) => {
+        const tableName = resolveFkTable(fieldName);
+        if (!tableName) {
+          return [];
+        }
+        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(tableName), {
+          params: { q: searchText, limit: 8 }
+        });
+        return (response.data || []).map((row) => ({
+          id: row?.id ?? "",
+          label: formatFkOptionLabel(tableName, row),
+          row
+        }));
+      });
+    }
+    return proveedores.get(fieldName);
   };
 
-  const shouldShowInlineFkSuggestions = (fieldName) => (
-    inlineFkActiveField.value === fieldName
-    && (inlineFkLoading.value[fieldName] || inlineFkTouched.value[fieldName])
-  );
-
-  const formatInlineFkOption = (field, row) => {
-    const tableName = resolveFkTable(field?.name);
-    if (!tableName) {
-      return row?.id ?? "—";
-    }
-    return formatFkOptionLabel(tableName, row);
-  };
-
-  const clearInlineFkSelection = (fieldName) => {
-    if (!fieldName) {
-      return;
-    }
-    cancelInlineFkClose(fieldName);
-    formData.value = {
-      ...formData.value,
-      [fieldName]: ""
-    };
-    fkDisplay.value = {
-      ...fkDisplay.value,
-      [fieldName]: ""
-    };
-    inlineFkSuggestions.value = {
-      ...inlineFkSuggestions.value,
-      [fieldName]: []
-    };
-    inlineFkTouched.value = {
-      ...inlineFkTouched.value,
-      [fieldName]: false
-    };
-    inlineFkActiveField.value = fieldName;
-  };
-
-  const applyInlineFkSelection = (field, row) => {
-    if (!field?.name || !row) {
-      return;
-    }
-    cancelInlineFkClose(field.name);
-    const tableName = resolveFkTable(field.name);
-    const labelValue = formatFkOptionLabel(tableName, row);
-    formData.value = {
-      ...formData.value,
-      [field.name]: row.id ?? ""
-    };
-    fkDisplay.value = {
-      ...fkDisplay.value,
-      [field.name]: labelValue
-    };
-    inlineFkSuggestions.value = {
-      ...inlineFkSuggestions.value,
-      [field.name]: []
-    };
-    inlineFkTouched.value = {
-      ...inlineFkTouched.value,
-      [field.name]: false
-    };
-    inlineFkActiveField.value = "";
-  };
-
-  const fetchInlineFkSuggestions = async (field) => {
+  // El formulario guarda DOS cosas por columna ajena: el id, que es lo que viaja al servidor, y la
+  // etiqueta, que es lo que se lee. Elegir una opción escribe las dos; vaciar el campo borra las dos.
+  const selectFkOption = (field, option) => {
     if (!field?.name) {
       return;
     }
-    const tableName = resolveFkTable(field.name);
-    if (!tableName) {
-      return;
-    }
-    const query = String(fkDisplay.value[field.name] ?? "").trim();
-    if (!query) {
-      inlineFkSuggestions.value = {
-        ...inlineFkSuggestions.value,
-        [field.name]: []
-      };
-      inlineFkTouched.value = {
-        ...inlineFkTouched.value,
-        [field.name]: false
-      };
-      return;
-    }
-
-    inlineFkLoading.value = {
-      ...inlineFkLoading.value,
-      [field.name]: true
-    };
-    inlineFkTouched.value = {
-      ...inlineFkTouched.value,
-      [field.name]: true
-    };
-
-    try {
-      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(tableName), {
-        params: {
-          q: query,
-          limit: 8
-        }
-      });
-      inlineFkSuggestions.value = {
-        ...inlineFkSuggestions.value,
-        [field.name]: response.data || []
-      };
-    } catch {
-      inlineFkSuggestions.value = {
-        ...inlineFkSuggestions.value,
-        [field.name]: []
-      };
-    } finally {
-      inlineFkLoading.value = {
-        ...inlineFkLoading.value,
-        [field.name]: false
-      };
-    }
+    formData.value = { ...formData.value, [field.name]: option?.id ?? "" };
+    fkDisplay.value = { ...fkDisplay.value, [field.name]: option?.label ?? "" };
   };
 
-  const openInlineFkSuggestions = (field) => {
-    if (!field?.name || isFieldLocked(field)) {
-      return;
-    }
-    cancelInlineFkClose(field.name);
-    inlineFkActiveField.value = field.name;
-    if (fkDisplay.value[field.name]) {
-      fetchInlineFkSuggestions(field);
-    }
-  };
-
-  const handleInlineFkInput = async (field) => {
-    if (!field?.name || isFieldLocked(field)) {
-      return;
-    }
-    formData.value = {
-      ...formData.value,
-      [field.name]: ""
-    };
-    inlineFkActiveField.value = field.name;
-    if (inlineFkQueryTimers[field.name]) {
-      clearTimeout(inlineFkQueryTimers[field.name]);
-    }
-    inlineFkQueryTimers[field.name] = setTimeout(() => {
-      fetchInlineFkSuggestions(field);
-      delete inlineFkQueryTimers[field.name];
-    }, 220);
-  };
-
-  const updateInlineFkDisplay = (fieldName, value) => {
+  const clearFkSelection = (fieldName) => {
     if (!fieldName) {
       return;
     }
-    fkDisplay.value = {
-      ...fkDisplay.value,
-      [fieldName]: value
-    };
-    const field = visibleFormFields.value.find((entry) => entry.name === fieldName);
-    if (field) {
-      handleInlineFkInput(field);
-    }
+    formData.value = { ...formData.value, [fieldName]: "" };
+    fkDisplay.value = { ...fkDisplay.value, [fieldName]: "" };
   };
 
-  const selectInlineFkSuggestion = (field, row) => {
-    applyInlineFkSelection(field, row);
-  };
-
-  return {
-    resetInlineFkState,
-    cancelInlineFkClose,
-    scheduleInlineFkClose,
-    shouldShowInlineFkSuggestions,
-    formatInlineFkOption,
-    clearInlineFkSelection,
-    applyInlineFkSelection,
-    fetchInlineFkSuggestions,
-    openInlineFkSuggestions,
-    handleInlineFkInput,
-    updateInlineFkDisplay,
-    selectInlineFkSuggestion
-  };
+  return { buildFkSuggestProvider, selectFkOption, clearFkSelection };
 }

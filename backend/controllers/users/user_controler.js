@@ -1404,7 +1404,7 @@ export const searchTaskRecipients = async (req, res) => {
     if (q) {
       const like = `%${q}%`;
       where +=
-        " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR d.numero LIKE ? OR e.direccion LIKE ? OR CONCAT(p.first_name, ' ', p.last_name) LIKE ?)";
+        " AND (p.first_name ILIKE ? OR p.last_name ILIKE ? OR d.numero ILIKE ? OR e.direccion ILIKE ? OR CONCAT(p.first_name, ' ', p.last_name) ILIKE ?)";
       params.push(like, like, like, like, like);
     }
     const [rows] = await connection.query(
