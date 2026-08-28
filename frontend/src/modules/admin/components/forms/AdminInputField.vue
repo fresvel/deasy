@@ -9,6 +9,7 @@
     :disabled="disabled"
     :readonly="readonly"
     :autocomplete="resolvedAutocomplete"
+    :form="form || undefined"
     :rows="tagName === 'textarea' ? rows : undefined"
     :min="min"
     :max="max"
@@ -33,6 +34,12 @@ const props = defineProps({
     default: "text"
   },
   autocomplete: {
+    type: String,
+    default: ""
+  },
+  // Reasocia el control a OTRO formulario, esté donde esté en el DOM. Es HTML estándar y aquí no
+  // es cosmética: ver `AdminEditorModal`.
+  form: {
     type: String,
     default: ""
   },

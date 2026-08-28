@@ -9,6 +9,21 @@
     <AppAlert v-if="modalError">
       {{ modalError }}
     </AppAlert>
+    <!-- ⚠️ Este formulario vacío existe para que Chrome NO ofrezca las credenciales guardadas en el
+         campo de nacionalidad.
+         El gestor de contraseñas ignora `autocomplete="off"` a propósito, y clasifica como
+         «usuario» el campo de texto que precede a una contraseña DENTRO DEL MISMO FORMULARIO
+         —saltándose los `select` y las casillas—. En el alta de persona ese campo es el combobox de
+         nacionalidad, que por eso sugería el correo del administrador.
+         Marcar la contraseña como `new-password` no bastó: eso dice que no es un inicio de sesión,
+         pero el candidato a usuario se sigue eligiendo igual.
+         El atributo `form` de HTML reasocia un control a otro formulario ESTÉ DONDE ESTÉ en el DOM,
+         así que la contraseña se queda donde está en la rejilla y a la vez sale del formulario que
+         contiene los demás campos. El de aquí abajo no tiene ningún campo de texto, así que no hay
+         a quién clasificar como usuario.
+         El `<form>` de los campos no envía nada —el botón Guardar está fuera y emite un evento—,
+         de modo que reasociar un control no cambia el envío. -->
+    <form :id="secretFormId" class="hidden"></form>
     <form class="grid gap-3 md:grid-cols-12">
       <div v-for="field in visibleFormFields" :key="field.name" class="md:col-span-6">
         <label :for="fieldId(field.name)" class="deasy-form-label deasy-form-label--inline">
@@ -52,6 +67,7 @@
           :type="inputType(field)"
           :placeholder="field.placeholder || ''"
           :disabled="isFieldLocked(field)"
+          :form="inputType(field) === 'password' ? secretFormId : ''"
           @update:model-value="updateFormField(field.name, $event)"
         />
         <AdminInputField
@@ -291,6 +307,8 @@ const emit = defineEmits([
 ]);
 
 const modalRef = ref(null);
+// Un id por instancia: puede haber más de un editor montado (el de la tabla y el de una clave ajena).
+const secretFormId = `deasy-editor-secreto-${useId()}`;
 
 const showProcessConfigurations = computed(() =>
   props.table?.table === "processes"
