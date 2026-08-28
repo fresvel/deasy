@@ -124,6 +124,17 @@ export const FK_TABLE_MAP = {
   parent_unit_id: "units",
   child_unit_id: "units",
   relation_type_id: "relation_unit_types",
+  // Identidad y geografía (2026-08-28). Sin esto, el editor pinta el número crudo: un
+  // `pais_id: 60` en vez de "Ecuador".
+  pais_id: "paises",
+  provincia_id: "provincias",
+  ciudad_id: "ciudades",
+  // ⚠️ `tipo_id` es hoy inequívoco —solo `documentos_identidad` lo usa— pero es un nombre genérico:
+  // si otra tabla lo estrena para otra cosa, este mapa por NOMBRE DE COLUMNA se queda corto y habrá
+  // que resolver por (tabla, columna).
+  tipo_id: "tipos_documento",
+  canal_id: "canales_mensajeria",
+  telefono_id: "telefonos",
   template_id: "signature_flow_templates",
   template_artifact_id: "template_artifacts",
   task_item_id: "task_items",

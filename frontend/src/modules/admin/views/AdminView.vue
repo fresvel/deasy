@@ -53,74 +53,16 @@
               </button>
 
               <div v-show="openCategories[group.label]" class="deasy-nav-tree">
-                <template v-if="isAcademiaGroup(group)">
+                <!-- Una sola rama para los siete grupos: los ítems son las categorías del grupo, que
+                     salen del backend. Antes había CINCO ramas calcadas, una por sección. -->
+                <template v-if="menuItemsDe(group.key).length">
                   <button
-                    v-for="item in academyMenuItems"
+                    v-for="item in menuItemsDe(group.key)"
                     :key="item.key"
                     class="deasy-nav-item"
-                    :class="[isAcademyItemActive(item) ? 'deasy-nav-item--active' : '']"
+                    :class="[isSectionItemActive(group.key, item) ? 'deasy-nav-item--active' : '']"
                     type="button"
-                    @click="openAcademyItem(item)"
-                  >
-                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
-                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
-                    </span>
-                    <span>{{ item.label }}</span>
-                  </button>
-                </template>
-                <template v-else-if="isGestionGroup(group)">
-                  <button
-                    v-for="item in gestionMenuItems"
-                    :key="item.key"
-                    class="deasy-nav-item"
-                    :class="[isGestionItemActive(item) ? 'deasy-nav-item--active' : '']"
-                    type="button"
-                    @click="openGestionItem(item)"
-                  >
-                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
-                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
-                    </span>
-                    <span>{{ item.label }}</span>
-                  </button>
-                </template>
-                <template v-else-if="isUsuariosGroup(group)">
-                  <button
-                    v-for="item in usersMenuItems"
-                    :key="item.key"
-                    class="deasy-nav-item"
-                    :class="[isUsersItemActive(item) ? 'deasy-nav-item--active' : '']"
-                    type="button"
-                    @click="openUsersItem(item)"
-                  >
-                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
-                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
-                    </span>
-                    <span>{{ item.label }}</span>
-                  </button>
-                </template>
-                <template v-else-if="isContratosGroup(group)">
-                  <button
-                    v-for="item in contractsMenuItems"
-                    :key="item.key"
-                    class="deasy-nav-item"
-                    :class="[isContractsItemActive(item) ? 'deasy-nav-item--active' : '']"
-                    type="button"
-                    @click="openContractsItem(item)"
-                  >
-                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
-                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
-                    </span>
-                    <span>{{ item.label }}</span>
-                  </button>
-                </template>
-                <template v-else-if="isSeguridadGroup(group)">
-                  <button
-                    v-for="item in securityMenuItems"
-                    :key="item.key"
-                    class="deasy-nav-item"
-                    :class="[isSecurityItemActive(item) ? 'deasy-nav-item--active' : '']"
-                    type="button"
-                    @click="openSecurityItem(item)"
+                    @click="openGroupItem(group, item)"
                   >
                     <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
                       <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
@@ -190,27 +132,16 @@
                </AppPageHeader>
                
                <div class="deasy-tile-grid">
-                 <template v-if="showAcademiaIndex">
+                 <!-- Un solo índice para los siete grupos. Antes eran cinco bloques calcados. -->
+                 <template v-if="showSectionIndex">
                     <AppNavCard
-                      v-for="item in academyMenuItems"
+                      v-for="item in currentSectionItems"
                       :key="item.key"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
                       :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
-                      @click="openAcademyItem(item)"
-                    />
-                 </template>
-
-                 <template v-else-if="showGestionesIndex">
-                    <AppNavCard
-                      v-for="item in gestionMenuItems"
-                      :key="item.key"
-                      :title="item.label"
-                      :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIconMeta(item.icon, item.label).icon"
-                      show-arrow
-                      @click="openGestionItem(item)"
+                      @click="openItem(item)"
                     />
                     <div v-if="traceabilityTables.length" class="col-span-full mt-2">
                       <button
@@ -238,43 +169,6 @@
                       </div>
                     </div>
                  </template>
-
-                 <template v-else-if="showUsersIndex">
-                    <AppNavCard
-                      v-for="item in usersMenuItems"
-                      :key="item.key"
-                      :title="item.label"
-                      :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIconMeta(item.icon, item.label).icon"
-                      show-arrow
-                      @click="openUsersItem(item)"
-                    />
-                 </template>
-
-                 <template v-else-if="showContractsIndex">
-                    <AppNavCard
-                      v-for="item in contractsMenuItems"
-                      :key="item.key"
-                      :title="item.label"
-                      :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIconMeta(item.icon, item.label).icon"
-                      show-arrow
-                      @click="openContractsItem(item)"
-                    />
-                 </template>
-
-                 <template v-else-if="showSecurityIndex">
-                    <AppNavCard
-                      v-for="item in securityMenuItems"
-                      :key="item.key"
-                      :title="item.label"
-                      :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIconMeta(item.icon, item.label).icon"
-                      show-arrow
-                      @click="openSecurityItem(item)"
-                    />
-                 </template>
-
                  <template v-else>
                     <AppNavCard
                       v-for="group in homeGroups"
@@ -379,66 +273,58 @@ const userFullName = computed(() => {
   return "Administrador";
 });
 
+// ── EL MENÚ SE DERIVA DE LA CATEGORÍA DEL BACKEND ────────────────────────────────────────────────
+//
+// Aquí NO se nombra ni una tabla. Antes había TRES listas de nombres de tabla escritas a mano en
+// este mismo fichero —`GROUP_DEFS.main`, `GROUP_DEFS.support` y cinco `*_INDEX_ITEMS`— y el
+// `category` que el backend ya enviaba en `/admin/sql/meta` se recibía y se tiraba.
+//
+// Lo que costó, medido el 2026-08-28: **11 tablas** nuevas cayeron en un cajón «Otros», **19 no eran
+// alcanzables navegando** porque ningún ítem las listaba, y el ítem «Documentos» apuntaba a
+// `documents`, borrada el 2026-08-23. Una lista a mano se pudre en las dos direcciones.
+//
+// Ahora la PERTENENCIA la pone el backend (`sqlTables.js`, campo `category`) y aquí sólo queda la
+// PRESENTACIÓN: cómo se llama cada categoría en pantalla, con qué icono, y en qué grupo del aside
+// cae. Una tabla nueva aparece sola.
+
+// Cómo se enseña cada categoría. La clave es EXACTAMENTE el valor de `category` del backend.
+const CATEGORIA_UI = {
+  Estructura: { label: "Unidades y cargos", icon: "id-card", description: "Unidades, sus relaciones, cargos, puestos y ocupaciones." },
+  Geografia:  { label: "Geografía", icon: "map-marked-alt", description: "Países, provincias y ciudades." },
+  Calendario: { label: "Periodos", icon: "square-check", description: "Tipos de periodo y periodos académicos." },
+  Personas:   { label: "Personas", icon: "user", description: "Personas y sus documentos, correos, teléfonos y direcciones." },
+  Procesos:   { label: "Procesos", icon: "check-double", description: "Procesos y sus configuraciones versionadas." },
+  Plantillas: { label: "Entregables", icon: "file", description: "Semillas, plantillas y su vínculo con cada configuración." },
+  Tareas:     { label: "Tareas", icon: "square-check", description: "Corridas, tareas y los entregables instanciados." },
+  Documentos: { label: "Documentos", icon: "file", description: "Rondas del documento, sus correcciones y sus firmas." },
+  Entrega:    { label: "Entrega", icon: "file", description: "Flujos de llenado y sus solicitudes." },
+  Firmas:     { label: "Firmas", icon: "certificate", description: "Flujos de firma, sus instancias y sus solicitudes." },
+  Seguridad:  { label: "Roles y permisos", icon: "lock", description: "Roles, permisos y sus asignaciones." },
+  Contratos:  { label: "Vacantes y contratos", icon: "certificate", description: "Vacantes, su visibilidad y los contratos." }
+};
+
+// Los grupos del aside. `main` y `support` llevan CATEGORÍAS, no tablas: lo de `support` se pinta
+// bajo el separador de apoyo, que es donde va la fontanería de los flujos.
+//
+// «Gestiones» se disolvió el 2026-08-28: eran 25 de las 54 tablas, casi la mitad, en un cajón cuyo
+// nombre no decía nada. Se parte siguiendo la frontera que el propio modelo documenta en /modelo/
+// —«declarar no crea trabajo»—: Procesos es lo que se DECLARA, Tareas lo que se DISPARA y
+// Documentos lo que se PRODUCE y se firma.
 const GROUP_DEFS = [
-  {
-    key: "estructura_academico",
-    label: "Academia",
-    main: ["unit_types", "units", "relation_unit_types", "unit_relations", "cargos", "unit_positions", "position_assignments", "term_types", "terms"],
-    support: []
-  },
-  {
-    key: "procesos",
-    label: "Gestiones",
-    main: [
-      "processes",
-      "process_definition_series",
-      "process_definition_period_types",
-      "process_definition_versions",
-      "process_target_rules",
-      "process_runs",
-      "tasks",
-      "task_items",
-      "task_item_tenures",
-      "template_seeds",
-      "template_artifacts",
-      "process_definition_templates",
-      "documents",
-      "document_versions"
-    ],
-    support: ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests", "document_signatures", "signature_statuses", "signature_request_statuses"]
-      .concat(["fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests"])
-  },
-  {
-    key: "usuarios",
-    label: "Usuarios",
-    main: ["persons"],
-    support: []
-  },
-  {
-    key: "contratacion",
-    label: "Contratos",
-    main: ["vacancies", "vacancy_visibility", "contracts"],
-    support: []
-  },
-  {
-    key: "seguridad",
-    label: "Seguridad",
-    main: [
-      "roles",
-      "role_assignments",
-      "cargo_role_map",
-      "role_assignment_relation_types",
-      "permissions",
-      "role_permissions"
-    ],
-    support: []
-  },
+  { key: "institucion", label: "Institución", main: ["Estructura", "Geografia", "Calendario"], support: [] },
+  { key: "procesos",    label: "Procesos",    main: ["Procesos", "Plantillas"], support: [] },
+  { key: "tareas",      label: "Tareas",      main: ["Tareas"], support: [] },
+  { key: "documentos",  label: "Documentos",  main: ["Documentos"], support: ["Entrega", "Firmas"] },
+  { key: "usuarios",    label: "Usuarios",    main: ["Personas"], support: [] },
+  { key: "contratos",   label: "Contratos",   main: ["Contratos"], support: [] },
+  { key: "seguridad",   label: "Seguridad",   main: ["Seguridad"], support: [] }
 ];
 
-// Slugs de URL para la seccion (3.5b): la URL usa el nombre humano en vez de la clave interna, para
-// no exponer "estructura_academico" ni chocar con la ruta /procesos (la seccion "Gestiones" tiene
-// key="procesos"). Se derivan de la etiqueta para no mantener un mapa a mano. item y table ya son
-// legibles y se quedan como estan.
+// El grupo que abre el organigrama por defecto al entrar en su ítem de unidades.
+const INSTITUCION_GROUP_KEY = "institucion";
+
+// Slugs de URL: la ruta usa el nombre humano en vez de la clave interna. Se derivan de la etiqueta
+// para no mantener un mapa a mano — y por eso vale igual para los grupos y para los ítems.
 const slugifySection = (value) =>
   String(value || "")
     .toLowerCase()
@@ -448,139 +334,6 @@ const slugifySection = (value) =>
     .replace(/(^-|-$)/g, "");
 const SECTION_SLUG_BY_KEY = Object.fromEntries(GROUP_DEFS.map((group) => [group.key, slugifySection(group.label)]));
 const SECTION_KEY_BY_SLUG = Object.fromEntries(GROUP_DEFS.map((group) => [slugifySection(group.label), group.key]));
-
-const ACADEMY_GROUP_KEY = "estructura_academico";
-const ACADEMY_INDEX_ITEMS = [
-  {
-    key: "unidades",
-    label: "Unidades",
-    icon: "id-card",
-    description: "Gestiona el CRUD de catálogos y relaciones de unidades.",
-    tables: ["unit_types", "units", "relation_unit_types", "unit_relations"]
-  },
-  {
-    key: "cargos",
-    label: "Cargos",
-    icon: "user",
-    description: "Gestiona el catálogo de cargos, puestos y ocupaciones.",
-    tables: ["cargos", "unit_positions", "position_assignments"]
-  },
-  {
-    key: "periodos",
-    label: "Periodos",
-    icon: "square-check",
-    description: "Gestiona catálogos y periodos académicos.",
-    tables: ["term_types", "terms"]
-  }
-];
-const GESTION_GROUP_KEY = "procesos";
-const GESTION_INDEX_ITEMS = [
-  {
-    key: "procesos",
-    label: "Procesos",
-    icon: "check-double",
-    description: "Gestiona procesos base, configuraciones y reglas de alcance.",
-    tables: ["processes", "process_definition_series", "process_definition_versions", "process_definition_period_types", "process_target_rules"]
-  },
-  {
-    key: "plantillas",
-    label: "Entregables",
-    icon: "certificate",
-    description: "Gestiona semillas, plantillas y su asignación a procesos.",
-    tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
-  },
-  {
-    key: "tareas",
-    label: "Tareas",
-    icon: "square-check",
-    description: "Administra corridas y tareas del proceso.",
-    tables: ["process_runs", "tasks"]
-  },
-  {
-    key: "documentos",
-    label: "Documentos",
-    icon: "info-circle",
-    description: "Consulta y administra documentos.",
-    tables: ["documents"]
-  },
-  {
-    key: "entrega",
-    label: "Entrega",
-    icon: "check-double",
-    description: "Configura flujos y pasos de entrega documental.",
-    tables: [
-      "fill_flow_templates",
-      "fill_flow_steps"
-    ]
-  },
-  {
-    key: "firmas",
-    label: "Firmas",
-    icon: "check",
-    description: "Configura flujos de firma y sus catálogos de estados.",
-    tables: [
-      "signature_flow_templates",
-      "signature_flow_steps",
-      "signature_statuses",
-      "signature_request_statuses"
-    ]
-  }
-];
-const USERS_GROUP_KEY = "usuarios";
-const USERS_INDEX_ITEMS = [
-  {
-    key: "personas",
-    label: "Personas",
-    icon: "user",
-    description: "Gestiona personas registradas en el sistema.",
-    tables: ["persons"]
-  }
-];
-const CONTRACT_GROUP_KEY = "contratacion";
-const CONTRACT_INDEX_ITEMS = [
-  {
-    key: "vacantes",
-    label: "Vacantes",
-    icon: "id-card",
-    description: "Gestiona vacantes y su visibilidad.",
-    tables: ["vacancies", "vacancy_visibility"]
-  },
-  {
-    key: "contratos",
-    label: "Contratos",
-    icon: "certificate",
-    description: "Gestiona contratos del sistema.",
-    tables: ["contracts"]
-  }
-];
-const SECURITY_GROUP_KEY = "seguridad";
-const SECURITY_INDEX_ITEMS = [
-  {
-    key: "roles",
-    label: "Roles",
-    icon: "lock",
-    description: "Gestiona roles y asignaciones de rol.",
-    tables: ["roles", "role_assignments", "cargo_role_map", "role_assignment_relation_types"]
-  },
-  {
-    key: "permisos",
-    label: "Permisos",
-    icon: "square-check",
-    description: "Gestiona permisos y su asignación a roles.",
-    tables: ["permissions", "role_permissions"]
-  }
-];
-
-// Índices de sección indexados por su clave de grupo. Sustituye a las cinco copias de cada
-// resolver / opener / flag "por sección": el orden de las claves ES el orden de resolución que
-// tenía la cadena if/else de selectTable (academia → gestiones → usuarios → contratos → seguridad).
-const SECTION_INDEX_ITEMS = {
-  [ACADEMY_GROUP_KEY]: ACADEMY_INDEX_ITEMS,
-  [GESTION_GROUP_KEY]: GESTION_INDEX_ITEMS,
-  [USERS_GROUP_KEY]: USERS_INDEX_ITEMS,
-  [CONTRACT_GROUP_KEY]: CONTRACT_INDEX_ITEMS,
-  [SECURITY_GROUP_KEY]: SECURITY_INDEX_ITEMS,
-};
 
 const TABLE_TAB_LABEL_OVERRIDES = {
   template_seeds: "Semillas",
@@ -598,56 +351,57 @@ const tableMap = computed(() =>
   Object.fromEntries(visibleTables.value.map((table) => [table.table, table]))
 );
 
+const tablasDeCategorias = (categorias) =>
+  visibleTables.value.filter((table) => categorias.includes(table.category));
+
 const groupedTables = computed(() => {
-  const knownTables = new Set();
+  const conocidas = new Set();
   const groups = GROUP_DEFS.map((group) => {
-    const mainTables = group.main.map((name) => tableMap.value[name]).filter(Boolean);
-    const supportTables = group.support.map((name) => tableMap.value[name]).filter(Boolean);
-    mainTables.forEach((table) => knownTables.add(table.table));
-    supportTables.forEach((table) => knownTables.add(table.table));
-    return {
-      ...group,
-      mainTables,
-      supportTables
-    };
+    const mainTables = tablasDeCategorias(group.main);
+    const supportTables = tablasDeCategorias(group.support);
+    [...mainTables, ...supportTables].forEach((table) => conocidas.add(table.table));
+    return { ...group, mainTables, supportTables };
   });
 
-  const orphanTables = visibleTables.value.filter((table) => !knownTables.has(table.table));
-  if (orphanTables.length) {
-    groups.push({
-      key: "otros",
-      label: "Otros",
-      mainTables: orphanTables,
-      supportTables: []
-    });
+  // El cajón «Otros» se conserva como RED, no como destino: si una tabla declara una categoría que
+  // ningún grupo recoge, tiene que verse en pantalla en vez de desaparecer. Con la taxonomía al día
+  // está vacío, y que aparezca es la señal de que falta declarar algo.
+  const huerfanas = visibleTables.value.filter((table) => !conocidas.has(table.table));
+  if (huerfanas.length) {
+    groups.push({ key: "otros", label: "Otros", main: [], support: [], mainTables: huerfanas, supportTables: [] });
   }
 
   return groups;
 });
 
+// El nivel ÍTEM de la navegación (`/admin/:seccion/:item/:tabla`) ES la categoría. Antes eran cinco
+// arrays escritos a mano; ahora se derivan, así que no pueden quedarse cortos.
+const sectionIndexItems = computed(() => {
+  const porSeccion = {};
+  for (const group of GROUP_DEFS) {
+    porSeccion[group.key] = [...group.main, ...group.support]
+      .map((categoria) => {
+        const ui = CATEGORIA_UI[categoria] || { label: categoria, icon: "circle", description: "" };
+        const availableTables = tablasDeCategorias([categoria]);
+        return { key: slugifySection(ui.label), categoria, ...ui, tables: availableTables.map((t) => t.table), availableTables, tableCount: availableTables.length };
+      })
+      // Una tarjeta sin tablas visibles no tiene a dónde navegar: se oculta, como antes.
+      .filter((item) => item.tableCount > 0);
+  }
+  return porSeccion;
+});
+
+
 const homeGroups = computed(() =>
   groupedTables.value.filter((group) => (group.mainTables.length + group.supportTables.length) > 0)
 );
 
-// Una tarjeta solo se muestra si el backend expone al menos una de sus tablas: sin ninguna no tiene a dónde
-// navegar y el clic no haría nada. El filtro va aquí, no en el template, para cubrir los dos v-for de cada grupo.
-const buildIndexMenuItems = (indexItems) =>
-  indexItems
-    .map((item) => {
-      const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
-      return {
-        ...item,
-        availableTables,
-        tableCount: availableTables.length
-      };
-    })
-    .filter((item) => item.tableCount > 0);
+// Los ítems de la sección abierta. Antes eran cinco computeds idénticos —uno por sección— y cinco
+// bloques de plantilla calcados; el propio fichero ya se quejaba de "repetir el mismo bloque cinco
+// veces, una por sección".
+const menuItemsDe = (sectionKey) => sectionIndexItems.value[sectionKey] || [];
+const currentSectionItems = computed(() => menuItemsDe(selectedSection.value));
 
-const academyMenuItems = computed(() => buildIndexMenuItems(ACADEMY_INDEX_ITEMS));
-const gestionMenuItems = computed(() => buildIndexMenuItems(GESTION_INDEX_ITEMS));
-const usersMenuItems = computed(() => buildIndexMenuItems(USERS_INDEX_ITEMS));
-const contractsMenuItems = computed(() => buildIndexMenuItems(CONTRACT_INDEX_ITEMS));
-const securityMenuItems = computed(() => buildIndexMenuItems(SECURITY_INDEX_ITEMS));
 
 // --- Estado derivado de la URL (fase 3.5, cierre) -----------------------------------------------
 // /admin/:section?/:item?/:table? ES el estado de navegación: no hay copia local que sincronizar.
@@ -674,7 +428,7 @@ const findTableByName = (name) => {
 
 // A qué sección/ítem pertenece una tabla. Es la cadena if/else de la antigua selectTable, sin repetir.
 const resolveSectionByTable = (tableName) => {
-  for (const [sectionKey, items] of Object.entries(SECTION_INDEX_ITEMS)) {
+  for (const [sectionKey, items] of Object.entries(sectionIndexItems.value)) {
     if (items.some((item) => item.tables.includes(tableName))) return sectionKey;
   }
   const group = groupedTables.value.find((candidate) =>
@@ -684,7 +438,7 @@ const resolveSectionByTable = (tableName) => {
 };
 
 const resolveItemByTable = (tableName) => {
-  for (const items of Object.values(SECTION_INDEX_ITEMS)) {
+  for (const items of Object.values(sectionIndexItems.value)) {
     const match = items.find((item) => item.tables.includes(tableName));
     if (match) return match.key;
   }
@@ -728,13 +482,10 @@ const currentSiblingSourceItem = computed(() => {
     return null;
   }
 
-  return [
-    ...academyMenuItems.value,
-    ...gestionMenuItems.value,
-    ...usersMenuItems.value,
-    ...contractsMenuItems.value,
-    ...securityMenuItems.value
-  ].find((item) => item.availableTables.some((table) => table.table === tableName)) || null;
+  // Las pestañas hermanas salen del ítem que contiene la tabla abierta, sea del grupo que sea.
+  return Object.values(sectionIndexItems.value)
+    .flat()
+    .find((item) => item.availableTables.some((table) => table.table === tableName)) || null;
 });
 
 const currentSiblingTabs = computed(() => {
@@ -762,55 +513,38 @@ const currentSiblingTabs = computed(() => {
   return tabs;
 });
 
-// Índices de sección (landing por grupo con sus ítems). El antiguo "índice CRUD por ítem" se eliminó porque
-// duplicaba las pestañas hermanas (los ítems van directo a la primera tabla con sus pestañas).
-const showAcademiaIndex = computed(
-  () => selectedSection.value === ACADEMY_GROUP_KEY && !selectedTable.value
-);
-const showGestionesIndex = computed(
-  () => selectedSection.value === GESTION_GROUP_KEY && !selectedTable.value
-);
+// El índice de sección: la portada de un grupo, con una tarjeta por ítem. Antes eran CINCO
+// computeds idénticos y cinco bloques de plantilla calcados, uno por sección.
+const showSectionIndex = computed(() => Boolean(selectedSection.value) && !selectedTable.value);
+const currentGroup = computed(() => GROUP_DEFS.find((g) => g.key === selectedSection.value) || null);
+
 // Tablas runtime (registros materializados por los flujos). Se muestran aparte, en el bloque colapsable
 // "Trazabilidad y soporte", ya filtradas por permiso de lectura (visibleTables).
 const traceabilityOpen = ref(false);
 const traceabilityTables = computed(() =>
   visibleTables.value.filter((table) => isTraceabilityTable(table.table))
 );
-const showUsersIndex = computed(
-  () => selectedSection.value === USERS_GROUP_KEY && !selectedTable.value
-);
-const showContractsIndex = computed(
-  () => selectedSection.value === CONTRACT_GROUP_KEY && !selectedTable.value
-);
-const showSecurityIndex = computed(
-  () => selectedSection.value === SECURITY_GROUP_KEY && !selectedTable.value
-);
 
-const adminHeroIcon = computed(() =>
-  showAcademiaIndex.value ? resolveIconMeta('map-marked-alt', 'Academia').icon
-  : showGestionesIndex.value ? resolveIconMeta('check-double', 'Gestiones').icon
-  : showUsersIndex.value ? resolveIconMeta('user', 'Usuarios').icon
-  : showContractsIndex.value ? resolveIconMeta('certificate', 'Contratos').icon
-  : showSecurityIndex.value ? resolveIconMeta('lock', 'Seguridad').icon
-  : IconLock
-);
+const HERO_POR_GRUPO = {
+  institucion: { icon: "map-marked-alt", description: "Unidades, cargos, geografía y periodos: cómo se describe la institución." },
+  procesos:    { icon: "check-double", description: "Lo que se DECLARA: procesos, sus configuraciones y las plantillas que producen." },
+  tareas:      { icon: "square-check", description: "Lo que se DISPARA: corridas, tareas y los entregables instanciados." },
+  documentos:  { icon: "file", description: "Lo que se PRODUCE: rondas del documento, y los flujos de entrega y firma." },
+  usuarios:    { icon: "user", description: "Personas y sus datos: documentos, correos, teléfonos y direcciones." },
+  contratos:   { icon: "certificate", description: "Vacantes, su visibilidad y los contratos." },
+  seguridad:   { icon: "lock", description: "Roles, permisos y sus asignaciones." }
+};
 
-const adminHeroTitle = computed(() =>
-  showAcademiaIndex.value ? 'Academia'
-  : showGestionesIndex.value ? 'Gestiones'
-  : showUsersIndex.value ? 'Usuarios'
-  : showContractsIndex.value ? 'Contratos'
-  : showSecurityIndex.value ? 'Seguridad'
-  : 'Panel de administración'
-);
+const adminHeroIcon = computed(() => {
+  const hero = HERO_POR_GRUPO[selectedSection.value];
+  return hero ? resolveIconMeta(hero.icon, currentGroup.value?.label || "").icon : IconLock;
+});
+
+const adminHeroTitle = computed(() => currentGroup.value?.label || "Panel de administración");
 
 const adminHeroDescription = computed(() =>
-  showAcademiaIndex.value ? 'Accesos principales para administrar unidades, periodos y cargos institucionales.'
-  : showGestionesIndex.value ? 'Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.'
-  : showUsersIndex.value ? 'Accesos por subgrupo para administrar personas del sistema.'
-  : showContractsIndex.value ? 'Accesos por subgrupo para administrar vacantes y contratos.'
-  : showSecurityIndex.value ? 'Accesos por subgrupo para administrar roles y permisos.'
-  : 'Accesos organizados para crear, editar, leer y eliminar datos del sistema.'
+  HERO_POR_GRUPO[selectedSection.value]?.description
+  || "Accesos organizados para crear, editar, leer y eliminar datos del sistema."
 );
 
 const adminHeroKicker = computed(() =>
@@ -855,10 +589,12 @@ const handleHeroBack = () => {
 };
 
 const groupIconMap = {
-  estructura_academico: "map-marked-alt",
+  institucion: "map-marked-alt",
   procesos: "check-double",
+  tareas: "square-check",
+  documentos: "file",
   usuarios: "user",
-  contratacion: "id-card",
+  contratos: "id-card",
   seguridad: "lock",
   otros: "circle"
 };
@@ -893,22 +629,15 @@ const resolveIconMeta = (iconName, label = "") => {
 const groupIconMeta = (group) => resolveWorkspaceAdminGroupIcon(group?.key || "");
 const tableIconMeta = (tableName = "") => resolveWorkspaceAdminTableIcon(tableName);
 
-const groupDescMap = {
-  'estructura_academico': 'Administración de facultades, carreras, currículos y periodos académicos.',
-  'procesos': 'Configuración y control de flujos de trabajo, tareas complejas y plantillas doc.',
-  'usuarios': 'Gestión de personas, perfiles, autenticación y cuenta de ingreso.',
-  'contratacion': 'Manejo de requerimientos de vacantes, contratos y registros de origen.',
-  'seguridad': 'Auditoría de roles, asignaciones de permisos, recursos y control de acceso.'
-};
+// La descripción de cada grupo en la portada. Se mantiene junto a HERO_POR_GRUPO a propósito: una
+// es la tarjeta y otra la cabecera, y decir lo mismo dos veces con palabras distintas confunde.
+const groupDescMap = Object.fromEntries(
+  Object.entries(HERO_POR_GRUPO).map(([key, hero]) => [key, hero.description])
+);
 const descriptionForGroup = (group) => groupDescMap[group?.key] || 'Gestión segura de módulos del sistema.';
 
 
 
-const isAcademiaGroup = (group) => group?.key === ACADEMY_GROUP_KEY;
-const isGestionGroup = (group) => group?.key === GESTION_GROUP_KEY;
-const isUsuariosGroup = (group) => group?.key === USERS_GROUP_KEY;
-const isContratosGroup = (group) => group?.key === CONTRACT_GROUP_KEY;
-const isSeguridadGroup = (group) => group?.key === SECURITY_GROUP_KEY;
 
 // Un ítem del índice está activo si es el de la URL dentro de su sección, o si contiene la tabla
 // abierta. Las cinco funciones que el template llama por nombre son ya un alias de esta.
@@ -921,17 +650,12 @@ const isSectionItemActive = (sectionKey, item) => {
   }
   return item.tables.includes(selectedTable.value?.table || "");
 };
-const isAcademyItemActive = (item) => isSectionItemActive(ACADEMY_GROUP_KEY, item);
-const isGestionItemActive = (item) => isSectionItemActive(GESTION_GROUP_KEY, item);
-const isUsersItemActive = (item) => isSectionItemActive(USERS_GROUP_KEY, item);
-const isContractsItemActive = (item) => isSectionItemActive(CONTRACT_GROUP_KEY, item);
-const isSecurityItemActive = (item) => isSectionItemActive(SECURITY_GROUP_KEY, item);
 
 const openGroupIndex = (group) => {
   if (!group) {
     return;
   }
-  if (SECTION_INDEX_ITEMS[group.key]) {
+  if (sectionIndexItems.value[group.key]?.length) {
     navigateAdmin({ section: group.key });
     return;
   }
@@ -1011,21 +735,26 @@ const openSectionItem = (sectionKey, item) => {
   });
 };
 
-const openAcademyItem = (item) => {
+// Desde el aside se puede abrir el ítem de un grupo que NO es el abierto, así que el grupo va
+// explícito; desde el índice siempre es el de la sección en curso.
+const openGroupItem = (group, item) => {
+  if (!group || !item) {
+    return;
+  }
+  if (group.key === INSTITUCION_GROUP_KEY && item.availableTables?.some((table) => table.table === "units")) {
+    navigateAdmin({ section: group.key, item: item.key, table: UNIT_GRAPH_SLUG });
+    return;
+  }
+  openSectionItem(group.key, item);
+};
+
+// Abrir un ítem: el mismo camino para los siete grupos. Antes eran cinco funciones calcadas.
+const openItem = (item) => {
   if (!item) {
     return;
   }
-  // Unico desvio del camino generico: si el subgrupo tiene unidades, abre el Organigrama por defecto.
-  if (item.availableTables?.some((table) => table.table === "units")) {
-    navigateAdmin({ section: ACADEMY_GROUP_KEY, item: item.key, table: UNIT_GRAPH_SLUG });
-    return;
-  }
-  openSectionItem(ACADEMY_GROUP_KEY, item);
+  openGroupItem(currentGroup.value, item);
 };
-const openGestionItem = (item) => openSectionItem(GESTION_GROUP_KEY, item);
-const openUsersItem = (item) => openSectionItem(USERS_GROUP_KEY, item);
-const openContractsItem = (item) => openSectionItem(CONTRACT_GROUP_KEY, item);
-const openSecurityItem = (item) => openSectionItem(SECURITY_GROUP_KEY, item);
 
 const openGroupFromHome = (group) => {
   if (!group) {

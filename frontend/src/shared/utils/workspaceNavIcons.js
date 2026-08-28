@@ -104,9 +104,14 @@ export const resolveWorkspaceProfileMenuIcon = (iconName = '', label = '') => {
 
 export const resolveWorkspaceAdminGroupIcon = (groupKey = '') => {
   const normalized = String(groupKey).toLowerCase();
-  if (normalized.includes('academ')) return createIconMeta(IconSchool, 'sky');
-  if (normalized.includes('proceso')) return createIconMeta(IconChecklist, 'sky');
-  if (normalized.includes('usuario')) return createIconMeta(IconUser, 'sky');
+  // Los siete grupos del panel, cada uno con icono propio. `institucion` sustituye a `academ` y
+  // `tareas`/`documentos` entraron el 2026-08-28 al disolver «Gestiones»; sin su rama caían las tres
+  // al icono por defecto y el aside enseñaba el mismo dibujo tres veces.
+  if (normalized.includes('institucion') || normalized.includes('academ')) return createIconMeta(IconSchool, 'sky');
+  if (normalized.includes('documento')) return createIconMeta(IconSignature, 'sky');
+  if (normalized.includes('tarea')) return createIconMeta(IconChecklist, 'sky');
+  if (normalized.includes('proceso')) return createIconMeta(IconBuildingMonument, 'sky');
+  if (normalized.includes('usuario') || normalized.includes('persona')) return createIconMeta(IconUser, 'sky');
   if (normalized.includes('contrat')) return createIconMeta(IconFileDescription, 'sky');
   if (normalized.includes('seguridad')) return createIconMeta(IconLock, 'slate');
   return createIconMeta(IconInbox, 'sky');

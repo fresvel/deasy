@@ -3,6 +3,21 @@ import {
   DOCUMENT_VERSION_STATUSES,
 } from "../services/documents/DocumentStateService.js";
 
+// ⚠️ `category` ES LA TAXONOMÍA DEL MODELO, y desde el 2026-08-28 MANDA SOBRE EL MENÚ DE /admin.
+//
+// Hasta esa fecha el frontend la recibía y la tiraba: `AdminView.vue` mantenía DOS listas de nombres
+// de tabla escritas a mano —`GROUP_DEFS` y cinco `*_INDEX_ITEMS`— y agrupaba con ellas. El resultado
+// medido: 11 tablas nuevas cayeron en un cajón «Otros», 19 no eran alcanzables navegando, y una
+// entrada apuntaba a `documents`, borrada meses antes. Una lista a mano se pudre en las dos
+// direcciones: olvida lo nuevo y conserva lo muerto.
+//
+// Ahora una tabla aparece en su sitio SÓLO por declarar aquí su categoría. El frontend ya no nombra
+// tablas: sólo decide en qué grupo del aside cae cada categoría, con qué icono y en qué orden.
+//
+// Las doce son homogéneas a propósito —territorio, organigrama, calendario, persona…— y se
+// corresponden con los dominios de `scripts/docs/dominios.json`, que es de donde sale la
+// documentación del modelo. Antes eran once con arrugas: una categoría de UNA tabla («Usuarios»),
+// un cajón que mezclaba tres cosas, y `cargos` clasificado como dato personal.
 export const SQL_TABLES = [
   // ── Geografia ──────────────────────────────────────────────────────────────────────────────────
   // Los siembra el bootstrap (seedGeographyCatalog) desde config/geografiaCatalog.js, que a su vez
@@ -11,7 +26,7 @@ export const SQL_TABLES = [
   {
     table: "paises",
     label: "Paises",
-    category: "Estructura",
+    category: "Geografia",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -28,7 +43,7 @@ export const SQL_TABLES = [
   {
     table: "provincias",
     label: "Provincias",
-    category: "Estructura",
+    category: "Geografia",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -44,7 +59,7 @@ export const SQL_TABLES = [
   {
     table: "ciudades",
     label: "Ciudades",
-    category: "Estructura",
+    category: "Geografia",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -223,7 +238,7 @@ export const SQL_TABLES = [
   {
     table: "term_types",
     label: "Tipos de periodo",
-    category: "Academico",
+    category: "Calendario",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -239,7 +254,7 @@ export const SQL_TABLES = [
   {
     table: "terms",
     label: "Periodos",
-    category: "Academico",
+    category: "Calendario",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -268,7 +283,7 @@ export const SQL_TABLES = [
   {
     table: "process_runs",
     label: "Corridas de proceso",
-    category: "Procesos",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -299,7 +314,7 @@ export const SQL_TABLES = [
   {
     table: "tasks",
     label: "Tareas",
-    category: "Procesos",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -329,7 +344,7 @@ export const SQL_TABLES = [
   {
     table: "task_items",
     label: "Entregables",
-    category: "Procesos",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -382,7 +397,7 @@ export const SQL_TABLES = [
     // triggers y por el traspaso, nunca a mano.
     table: "task_item_tenures",
     label: "Tenencias de entregables",
-    category: "Procesos",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -478,7 +493,7 @@ export const SQL_TABLES = [
   {
     table: "persons",
     label: "Usuarios",
-    category: "Usuarios",
+    category: "Personas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -732,7 +747,7 @@ export const SQL_TABLES = [
   {
     table: "cargos",
     label: "Cargos",
-    category: "Personas",
+    category: "Estructura",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },

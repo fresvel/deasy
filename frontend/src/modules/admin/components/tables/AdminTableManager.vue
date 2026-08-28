@@ -2443,7 +2443,10 @@ const resolveDisplayField = (tableMeta) => {
   if (tableMeta.table === "template_seeds") {
     return "display_name";
   }
-  const preferred = ["name", "title", "email", "label", "code", "slug"];
+  // `numero` y `direccion` entran el 2026-08-28: son el valor legible de `telefonos`,
+  // `documentos_identidad` y `emails`. Sin ellos el editor caía al primer campo que no fuera `id`
+  // —una clave ajena— y pintaba un número donde debía ir el teléfono o el correo.
+  const preferred = ["name", "title", "email", "direccion", "numero", "label", "code", "slug"];
   const match = preferred.find((field) => tableMeta.fields.some((meta) => meta.name === field));
   return match || tableMeta.fields.find((meta) => meta.name !== "id")?.name || "id";
 };
