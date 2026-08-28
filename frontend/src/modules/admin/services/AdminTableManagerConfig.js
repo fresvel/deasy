@@ -135,12 +135,13 @@ export const FK_TABLE_MAP = {
   tipo_id: "tipos_documento",
   canal_id: "canales_mensajeria",
   telefono_id: "telefonos",
-  // Los virtuales del alta de persona y la nacionalidad. Sin esto el formulario pide un NÚMERO
+  // La nacionalidad es una columna REAL de `persons`. Sin esta entrada el formulario pide un NÚMERO
   // («pais_id») en vez de ofrecer el catálogo, y quien da de alta tiene que saberse los ids.
+  //
+  // Aquí hubo tres entradas más —`documento_pais_id`, `telefono_pais_id`, `documento_tipo_id`— para
+  // los campos virtuales del alta de persona. Se fueron con ellos el 2026-08-28: no son columnas de
+  // ninguna tabla, así que sin el formulario que las inventaba no las pedía nadie.
   nacionalidad_pais_id: "paises",
-  documento_pais_id: "paises",
-  telefono_pais_id: "paises",
-  documento_tipo_id: "tipos_documento",
   template_id: "signature_flow_templates",
   template_artifact_id: "template_artifacts",
   task_item_id: "task_items",

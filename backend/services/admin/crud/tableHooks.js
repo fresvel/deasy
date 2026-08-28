@@ -60,9 +60,6 @@ import {
   syncDocumentProgressFromFillRequest,
   syncDocumentProgressFromSignatureRequest,
 } from "../../documents/DocumentProgressService.js";
-import EmailService from "../../users/EmailService.js";
-import DocumentoIdentidadService from "../../users/DocumentoIdentidadService.js";
-import TelefonoService from "../../users/TelefonoService.js";
 
 /** Ejecuta una escritura dentro de una transacción, con hooks antes y después. */
 export async function runInTransaction(pool, ctx, { before, after }, execute) {
@@ -228,53 +225,11 @@ export const TABLE_HOOKS = {
         throw new Error("Ingresa el password del usuario.");
       }
 
-      // Los campos VIRTUALES del alta. Ninguno es columna de `persons`: el documento vive en
-      // `documentos_identidad`, el correo en `emails` y el telefono en `telefonos`. Se apartan aqui
-      // —igual que hace `process_definition_versions` con `source_process_definition_id`— y sus
-      // filas se crean en `afterInsertTx`, dentro de la MISMA transaccion: o se crea la persona
-      // entera o no se crea nada.
-      //
-      // Se recogen en UN SITIO y con UNA lista, no campo a campo. Es la leccion del backend: la
-      // lista de campos del perfil se olvido CINCO veces por estar escrita dos veces.
-      const texto = (valor) => (typeof valor === "string" ? valor.trim() : valor ? String(valor).trim() : "");
-      ctx.state.virtuales = {
-        email: texto(ctx.data?.email),
-        documentoNumero: texto(ctx.data?.documento_numero) || texto(ctx.data?.cedula),
-        documentoTipoId: texto(ctx.data?.documento_tipo_id),
-        documentoPaisId: texto(ctx.data?.documento_pais_id),
-        telefonoNumero: texto(ctx.data?.telefono_numero),
-        telefonoPaisId: texto(ctx.data?.telefono_pais_id)
-      };
-      for (const campo of ["email", "cedula", "documento_numero", "documento_tipo_id", "documento_pais_id", "telefono_numero", "telefono_pais_id"]) {
-        delete ctx.payload[campo];
-      }
-    },
-
-    async afterInsertTx(ctx) {
-      const v = ctx.state.virtuales ?? {};
-      if (v.email) {
-        const emails = new EmailService(ctx.connection);
-        await emails.guardarPrincipal(ctx.insertId, { direccion: v.email }, ctx.connection);
-      }
-      if (v.documentoNumero) {
-        const documentos = new DocumentoIdentidadService(ctx.connection);
-        await documentos.guardarPrincipal(ctx.insertId, {
-          // Sin tipo elegido se asume cedula ecuatoriana, que es el caso mayoritario. ANTES ESTABA
-          // FIJADO A ESO Y NO SE PODIA CAMBIAR: por el editor generico no habia forma de dar de alta
-          // a un extranjero, justo lo que el modelo acababa de habilitar.
-          tipo_id: v.documentoTipoId || undefined,
-          tipo: v.documentoTipoId ? undefined : "cedula_ec",
-          pais_id: v.documentoPaisId || undefined,
-          numero: v.documentoNumero
-        }, ctx.connection);
-      }
-      if (v.telefonoNumero) {
-        const telefonos = new TelefonoService(ctx.connection);
-        await telefonos.guardarPrincipal(ctx.insertId, {
-          pais_id: v.telefonoPaisId || undefined,
-          numero: v.telefonoNumero
-        }, ctx.connection);
-      }
+      // ⚠️ AQUÍ SE DESVIABAN SEIS CAMPOS VIRTUALES —documento, correo y teléfono— a sus tablas.
+      // Retirado el 2026-08-28, el mismo día que se puso: `beforeCreate` los trataba y
+      // `beforeUpdate` NO, así que al EDITAR una persona el formulario los mostraba y los
+      // DESCARTABA EN SILENCIO. Y de fondo rompían la premisa del editor genérico: una tabla, sus
+      // columnas. Los satélites se gestionan en sus propias pestañas.
     },
 
     async beforeUpdate(ctx) {

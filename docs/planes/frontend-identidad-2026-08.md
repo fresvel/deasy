@@ -14,13 +14,33 @@
 |---|---|:--:|---|---|
 | **F1** | El menú se deriva de `category`: se borran las TRES listas de tablas a mano | ✅ | 12 categorías · 7 grupos · Usuarios de 1 a 8 pestañas · char 301/301 | 2026-08-28 |
 | **F2** | Las claves ajenas nuevas se ven como nombre y no como número en el editor genérico | ✅ | `Pais = Ecuador`, `Canal = Telegram`, `Telefono = 0991112233` en pantalla | 2026-08-28 |
-| **F3** | El modal de alta de usuario crea persona **completa**: documento, correo y teléfono | ✅ | Alta de un extranjero por pantalla: pasaporte ES + correo + teléfono en una transacción; los 3 rechazos revierten entera | 2026-08-28 |
+| **F3** | El modal de alta de usuario crea persona **completa**: documento, correo y teléfono | ↩️ | **Revertida el mismo día.** Ver abajo | 2026-08-28 |
+| **F3b** | El editor genérico de `persons` sólo muestra **sus propias columnas** | ✅ | 10 campos, todos de la tabla; char 301/301; el golden del duplicado se mudó a `documentos_identidad` | 2026-08-28 |
+| **F3c** | Un duplicado dice **qué** está repetido, también con índices de expresión | ✅ | «…combinación de «Tipo», «Pais emisor», «Numero»» donde antes decía «…con esos datos.»; mutación del patrón cazada por 2 tests | 2026-08-28 |
 | **F4** | Las pestañas de Usuarios operan las tablas nuevas con su lógica (principal, verificado, escaneo) | ⬜ | | |
 | **F5** | `/perfil/datos` — el usuario edita sus propios datos personales | ⬜ | | |
 | **F6** | Decisión del dueño sobre la dirección en el registro, y su ejecución | ⬜ | | |
+| **F7** | El panel de la persona: documentos, correos, teléfonos, direcciones y foto en un sitio | ⬜ | | |
 
-**6 tareas.** `F1` y `F2` son la base: sin ellas, `F3` y `F4` se construyen sobre un editor que
-enseña números.
+**7 tareas vivas** (`F3` no cuenta: está revertida). `F1` y `F2` son la base: sin ellas, lo demás se
+construye sobre un editor que enseña números.
+
+### Por qué se revirtió `F3` el mismo día que se cerró
+
+`F3` metió seis **campos virtuales** en el formulario de `persons` —documento, tipo, país emisor,
+correo, teléfono, país del teléfono— y un hook que al **crear** los desviaba a su tabla. Funcionaba
+al crear. Al **editar** no: `beforeUpdate` nunca los tocó, así que el formulario los mostraba
+rellenos y **descartaba en silencio** lo que se escribiera en ellos. Un campo que se ve, se edita y
+no guarda es peor que un campo que no está.
+
+Y por debajo había un problema de forma que el defecto sólo hizo visible: **el editor genérico de
+una tabla es de esa tabla**. Meterle columnas de otras cinco lo convierte en un formulario especial
+disfrazado de genérico — el mismo olor que hizo God a `AdminTableManager` (regla 3 de «al mover
+código»).
+
+**Lo que F3 quería sigue haciendo falta** —dar de alta a un extranjero de una vez— pero es trabajo
+del **panel de la persona** (`F7`), no del CRUD genérico. Ahí sí caben secciones, campos
+condicionales y una transacción propia.
 
 ---
 

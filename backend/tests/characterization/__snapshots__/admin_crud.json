@@ -5,10 +5,10 @@
       "message": "No se puede eliminar: hay registros en «Puestos» que dependen de este."
     }
   },
-  "constraint_persons_cedula_duplicada": {
+  "constraint_documentos_numero_duplicado": {
     "status": 409,
     "body": {
-      "message": "Ese documento de identidad ya está registrado por otra persona."
+      "message": "Ya existe otro registro con esa combinación de «Tipo», «Pais emisor», «Numero»."
     }
   },
   "constraint_segunda_jefatura": {

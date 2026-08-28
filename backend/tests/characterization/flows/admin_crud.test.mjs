@@ -274,10 +274,8 @@ test("POST /admin/sql/persons -> graft: hashea la contraseña (no la devuelve) y
   const created = await post("/admin/sql/persons", {
     token,
     body: {
-      cedula: "1739999991",
       first_name: "Caracterizacion",
       last_name: "Grafts",
-      email: "caract-grafts@test.local",
       password: "Demo1234!",
       cargo_id: 1,
       role_id: 1,
@@ -372,10 +370,8 @@ test("PUT /admin/sql/persons -> graft: rehashea la contraseña y no la devuelve"
   const created = await post("/admin/sql/persons", {
     token,
     body: {
-      cedula: "1739999983",
       first_name: "Caracterizacion",
       last_name: "GraftsUpdate",
-      email: "caract-grafts-upd@test.local",
       password: "Demo1234!",
       cargo_id: 1,
       role_id: 1,
@@ -528,21 +524,29 @@ test("PUT /admin/sql/cargos -> graft: renombrar refresca los nombres de configur
 // usuario recibe el mensaje crudo del constraint. Estos goldens fijan qué ve hoy, para que el
 // arreglo se vea como un cambio DELIBERADO del golden y no se pueda colar una regresión después.
 
-test("POST /admin/sql/persons con cédula duplicada -> violación de unicidad", async () => {
+// La unicidad del documento SE MUDÓ DE TABLA. Hasta el 2026-08-27 la cédula era una columna de
+// `persons` con su UNIQUE, y este test creaba una persona repetida para provocar el choque. Desde
+// que el modelo admite pasaportes vive en `documentos_identidad`, con unicidad sobre
+// (tipo, país, número) — porque un número de pasaporte sólo es único dentro del país que lo emite.
+//
+// El test se muda con ella: lo que protege sigue siendo lo mismo —que un duplicado responda con un
+// error legible y no con el mensaje crudo de PostgreSQL—, sólo que contra la tabla que hoy tiene la
+// restricción. Dejarlo apuntando a `persons` lo habría dejado en verde sin comprobar nada.
+test("POST /admin/sql/documentos_identidad con número duplicado -> violación de unicidad", async () => {
   const token = await tokenFor("admin");
-  const res = await post("/admin/sql/persons", {
+  const existente = await get("/admin/sql/documentos_identidad?limit=1", { token });
+  const fila = Array.isArray(existente.body) ? existente.body[0] : null;
+  assert.ok(fila?.numero, "hace falta un documento sembrado para poder duplicarlo");
+  const res = await post("/admin/sql/documentos_identidad", {
     token,
     body: {
-      cedula: "1234567897",
-      first_name: "Duplicada",
-      last_name: "Caracterizacion",
-      email: "dup-caract@test.local",
-      password: "Demo1234!",
-      cargo_id: 1,
-      role_id: 1,
+      person_id: fila.person_id,
+      tipo_id: fila.tipo_id,
+      pais_id: fila.pais_id,
+      numero: fila.numero,
     },
   });
-  matchSnapshot(SUITE, "constraint_persons_cedula_duplicada", {
+  matchSnapshot(SUITE, "constraint_documentos_numero_duplicado", {
     status: res.status,
     body: normalize(res.body),
   });

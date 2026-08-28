@@ -34,8 +34,47 @@ export const isForeignKeyViolation = (error) => error?.code === PG_FOREIGN_KEY_V
 /** Nombre de la restricción violada, "" si el error no es de restricción. */
 export const violatedConstraint = (error) => String(error?.constraint || "");
 
-const KEY_COLUMNS_RE = /^Key \(([^)]+)\)=/;
+// El `detail` de PostgreSQL no siempre lista columnas a secas: cuando el índice es de EXPRESIÓN
+// escribe la expresión entera. `uq_documentos_numero` es (tipo_id, COALESCE(pais_id, 0), numero) y
+// llega como `Key (tipo_id, COALESCE(pais_id, 0), numero)=(1, 60, "…")`.
+//
+// Por eso el patrón se ancla en `)=(` y no en «lo que no sea un paréntesis»: con `[^)]+` el primer
+// `)` de la COALESCE cortaba la captura, el patrón no casaba, y el mensaje caía al genérico
+// «Ya existe otro registro con esos datos.» — sin decir QUÉ estaba repetido. Medido el 2026-08-28,
+// justo cuando el documento de identidad salió de `persons` y estrenó ese índice.
+const KEY_COLUMNS_RE = /^Key \((.+)\)=\(/;
 const REFERENCED_TABLE_RE = /is not present in table "([^"]+)"/;
+
+/** Parte una lista de columnas por comas, sin partir dentro de los paréntesis de una expresión. */
+const splitTopLevel = (texto) => {
+  const partes = [];
+  let actual = "";
+  let profundidad = 0;
+  for (const caracter of texto) {
+    if (caracter === "(") profundidad += 1;
+    else if (caracter === ")") profundidad -= 1;
+    if (caracter === "," && profundidad === 0) {
+      partes.push(actual);
+      actual = "";
+      continue;
+    }
+    actual += caracter;
+  }
+  partes.push(actual);
+  return partes;
+};
+
+// De una expresión se queda con la columna: `COALESCE(pais_id, 0)` -> `pais_id`. Es el primer
+// identificador que va DENTRO del paréntesis; el de fuera es el nombre de la función.
+const IDENTIFICADOR_EN_EXPRESION = /\(\s*"?([a-z_][a-z0-9_]*)"?/i;
+
+const columnaDe = (parte) => {
+  const limpia = parte.trim().replace(/^"|"$/g, "");
+  if (/^[a-z_][a-z0-9_]*$/i.test(limpia)) {
+    return limpia;
+  }
+  return IDENTIFICADOR_EN_EXPRESION.exec(limpia)?.[1] || "";
+};
 
 /** Columnas implicadas en la violación, sacadas del `detail`. `[]` si no se pueden determinar. */
 export const violatedColumns = (error) => {
@@ -43,10 +82,7 @@ export const violatedColumns = (error) => {
   if (!match) {
     return [];
   }
-  return match[1]
-    .split(",")
-    .map((column) => column.trim().replace(/^"|"$/g, ""))
-    .filter(Boolean);
+  return splitTopLevel(match[1]).map(columnaDe).filter(Boolean);
 };
 
 // Las etiquetas humanas ya están declaradas en `sqlTables.js` (es lo que ve el usuario en el

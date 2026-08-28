@@ -16,12 +16,26 @@ import {
   translateConstraintError,
 } from "./sqlErrors.js";
 
+// `persons_cedula_key` fue la fixture de este fichero hasta el 2026-08-28 y era la REAL. Dejó de
+// serlo el día que el documento salió de `persons`: hoy no existe esa restricción, así que un error
+// con ese nombre sería inventado — justo lo que la cabecera de este fichero promete no hacer.
+// Ésta se capturó contra la base de dev provocando el duplicado.
 const uniqueError = {
   code: "23505",
-  constraint: "persons_cedula_key",
-  table: "persons",
-  detail: "Key (cedula)=(1234567890) already exists.",
-  message: 'duplicate key value violates unique constraint "persons_cedula_key"',
+  constraint: "uq_emails_direccion",
+  table: "emails",
+  detail: "Key (direccion)=(admin@institucion.edu.ec) already exists.",
+  message: 'duplicate key value violates unique constraint "uq_emails_direccion"',
+};
+
+// El caso que el parser NO sabía leer: un índice de EXPRESIÓN. PostgreSQL escribe la expresión
+// entera en el `detail`, paréntesis incluidos.
+const expressionUniqueError = {
+  code: "23505",
+  constraint: "uq_documentos_numero",
+  table: "documentos_identidad",
+  detail: "Key (tipo_id, COALESCE(pais_id, 0), numero)=(1, 60, 1234567897) already exists.",
+  message: 'duplicate key value violates unique constraint "uq_documentos_numero"',
 };
 
 const compositeUniqueError = {
@@ -56,34 +70,40 @@ test("reconoce los SQLSTATE de PostgreSQL, no los códigos de MySQL", () => {
 });
 
 test("expone el nombre exacto de la restricción (en vez de buscar subcadenas en el mensaje)", () => {
-  assert.equal(violatedConstraint(uniqueError), "persons_cedula_key");
+  assert.equal(violatedConstraint(uniqueError), "uq_emails_direccion");
   assert.equal(violatedConstraint(new Error("boom")), "");
 });
 
 test("saca las columnas implicadas del detail", () => {
-  assert.deepEqual(violatedColumns(uniqueError), ["cedula"]);
+  assert.deepEqual(violatedColumns(uniqueError), ["direccion"]);
   assert.deepEqual(violatedColumns(compositeUniqueError), ["unit_id", "slot_no"]);
   assert.deepEqual(violatedColumns({ code: "23505" }), []);
+  // Un índice de expresión: se queda con la COLUMNA de dentro, no con la función de fuera.
+  assert.deepEqual(violatedColumns(expressionUniqueError), ["tipo_id", "pais_id", "numero"]);
 });
 
 test("el mensaje de duplicado usa la etiqueta del formulario, no el nombre de columna", () => {
   assert.equal(
-    uniqueViolationMessage(uniqueError, "persons"),
-    // La etiqueta viene de `sqlTables.js`, y cambió el 2026-08-28: el campo dejó de llamarse
-    // "Cedula" cuando el formulario pasó a admitir pasaportes. Lo que este test fija es que el
-    // mensaje use LA ETIQUETA y no el nombre de columna — eso sigue igual.
-    "Ya existe otro registro con ese valor en «Documento (número)»."
+    uniqueViolationMessage(uniqueError, "emails"),
+    // La etiqueta viene de `sqlTables.js`: el usuario lee «Direccion», no `direccion`.
+    "Ya existe otro registro con ese valor en «Direccion»."
   );
   assert.match(uniqueViolationMessage(compositeUniqueError, "unit_positions"), /combinación de «Unidad», «Plaza»/);
+  // La regresión que este caso fija: hasta el 2026-08-28 un índice de expresión caía al mensaje
+  // genérico y el usuario no sabía QUÉ estaba repetido.
+  assert.equal(
+    uniqueViolationMessage(expressionUniqueError, "documentos_identidad"),
+    "Ya existe otro registro con esa combinación de «Tipo», «Pais emisor», «Numero»."
+  );
   // Sin `detail` no se inventa nada.
   assert.equal(
-    uniqueViolationMessage({ code: "23505" }, "persons"),
+    uniqueViolationMessage({ code: "23505" }, "emails"),
     "Ya existe otro registro con esos datos."
   );
   // Una tabla desconocida no revienta: cae al nombre crudo de la columna.
   assert.equal(
     uniqueViolationMessage(uniqueError, "tabla_inexistente"),
-    "Ya existe otro registro con ese valor en «cedula»."
+    "Ya existe otro registro con ese valor en «direccion»."
   );
 });
 

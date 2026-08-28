@@ -501,25 +501,19 @@ export const SQL_TABLES = [
       { name: "last_name", label: "Apellido", type: "text", required: true },
       { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
 
-      // ── CAMPOS VIRTUALES ────────────────────────────────────────────────────────────────────
-      // Ninguno es columna de `persons`: el documento vive en `documentos_identidad`, el correo en
-      // `emails` y el teléfono en `telefonos`. `virtual: true` los saca del SELECT
-      // (`SqlAdminService:249`) y los deja SOLO en el formulario; el hook de `persons` los desvía a
-      // su tabla dentro de la MISMA transacción del alta.
-      //
-      // Están aquí porque una persona sin documento, sin correo y sin teléfono es un usuario roto:
-      // no puede entrar, no puede recibir la verificación y no hay forma de contactarla. El alta
-      // tiene que poder crearla ENTERA de una vez.
-      { name: "documento_tipo_id", label: "Tipo de documento", type: "number", virtual: true },
-      // ⚠️ Se llama `cedula` por compatibilidad —la API y el arnés de caracterización lo mandan
-      // así—, pero la ETIQUETA ya no miente: aquí cabe un pasaporte. El tipo lo decide el campo de
-      // arriba, y el país emisor es OBLIGATORIO cuando no es cédula ecuatoriana.
-      { name: "cedula", label: "Documento (número)", type: "text", virtual: true },
-      { name: "documento_pais_id", label: "País emisor del documento", type: "number", virtual: true },
-      { name: "email", label: "Email", type: "email", virtual: true },
-      { name: "telefono_numero", label: "Teléfono", type: "text", virtual: true },
-      { name: "telefono_pais_id", label: "País del teléfono", type: "number", virtual: true },
 
+      // ⚠️ AQUÍ HUBO SEIS CAMPOS VIRTUALES —documento, correo y teléfono— y se retiraron el
+      // 2026-08-28, el mismo día que se pusieron.
+      //
+      // Rompían la premisa del editor genérico: UNA TABLA, UN FORMULARIO, SUS COLUMNAS. Y no había
+      // dónde parar: si caben el correo y el teléfono, ¿por qué no las direcciones?
+      //
+      // Pero lo que los mató fue un defecto concreto: `beforeCreate` los desviaba a su tabla y
+      // `beforeUpdate` NO. Al EDITAR una persona el formulario los mostraba y los DESCARTABA EN
+      // SILENCIO — el mismo fallo que este repositorio lleva cinco veces persiguiendo.
+      //
+      // Los satélites se gestionan en sus propias pestañas de Usuarios, que existen desde que el
+      // menú se deriva de `category`.
       { name: "password_hash", label: "Contraseña", type: "text", required: true },
       {
         name: "status",
@@ -528,7 +522,10 @@ export const SQL_TABLES = [
         options: ["Inactivo", "Activo", "Verificado", "Reportado"],
         defaultValue: "Inactivo"
       },
-      { name: "photo_url", label: "Foto", type: "text" },
+      // De SÓLO LECTURA: guarda una referencia `minio://<bucket>/<objeto>`, no una ruta ni una URL.
+      // Como caja de texto editable, un admin podía escribir cualquier cosa y dejar la foto rota.
+      // Se sube por `PUT /users/:cedula/photo`, que la almacena y compone la referencia.
+      { name: "photo_url", label: "Foto", type: "text", readOnly: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
