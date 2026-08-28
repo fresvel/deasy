@@ -450,6 +450,7 @@
       @update:form-data="formData = $event"
       @select-fk-option="selectFkOption"
       @clear-fk-selection="clearFkSelection"
+      @update-geopoint="updateGeopoint"
       @handle-select-change="handleSelectChange"
       @add-process-configuration="openProcessConfigurationFromEditor"
       @delete-process-configuration="deleteProcessEditorConfiguration"
@@ -1153,6 +1154,7 @@
 <script setup>
 import { computed, defineAsyncComponent, defineEmits, defineProps, defineExpose, onMounted, ref, useId, watch } from "vue";
 import { useAdminFkManager } from "@/modules/admin/composables/fk/useAdminFkManager";
+import { isFieldVisible, isPairedAway } from "@/modules/admin/services/adminFieldRules";
 import { useAdminFkCrud } from "@/modules/admin/composables/fk/useAdminFkCrud";
 import { useAdminFkSearch } from "@/modules/admin/composables/fk/useAdminFkSearch";
 import { useAdminEditorFlow } from "@/modules/admin/composables/forms/useAdminEditorFlow";
@@ -1612,45 +1614,40 @@ const formFields = computed(() => {
   return editableFields.value;
 });
 const visibleFormFields = computed(() => {
-  if (props.table?.table === "process_definition_series") {
-    const sourceType = String(formData.value?.source_type || "").trim();
-    const showUnitType = sourceType === "unit_type";
-    const showCargo = sourceType === "cargo";
-
-    return formFields.value
-      .filter((field) => {
-        if (field.name === "unit_type_id") {
-          return showUnitType;
-        }
-        if (field.name === "cargo_id") {
-          return showCargo;
-        }
-        return true;
-      })
-      .map((field) => (
-        ["unit_type_id", "cargo_id"].includes(field.name)
-          ? { ...field, required: true }
-          : field
-      ));
+  // Aquí había un caso especial escrito a mano para `process_definition_series`: un `if` por nombre
+  // de tabla que enseñaba `unit_type_id` o `cargo_id` según `source_type` y además les forzaba
+  // `required`. Era el ÚNICO campo condicional del admin y por eso vivía como excepción. Desde el
+  // 2026-08-28 lo declara el backend (`showWhen` en `sqlTables.js`) y la excepción desaparece —
+  // que es justo lo que pide la regla de no injertar casos especiales en el camino genérico.
+  let campos = formFields.value;
+  if (isProcessesTable.value) {
+    campos = campos.filter((field) => !PROCESS_INLINE_HIDDEN_FIELDS.has(field.name));
+  } else if (props.table?.table === "process_definition_versions") {
+    campos = campos.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
   }
-  if (!isProcessesTable.value) {
-    if (props.table?.table === "process_definition_versions") {
-      return formFields.value.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
-    }
-    return formFields.value;
-  }
-  return formFields.value.filter((field) => !PROCESS_INLINE_HIDDEN_FIELDS.has(field.name));
+  // `pairedWith`: la longitud la pinta el mapa de la latitud, no un input suyo.
+  // `showWhen`: el campo no aplica todavía, así que no se pregunta.
+  return campos.filter((field) => !isPairedAway(field) && isFieldVisible(field, formData.value));
 });
 
 const tableListFields = computed(() => {
   if (!props.table) {
     return [];
   }
-  // Los campos VIRTUALES no son columnas: no están en el SELECT, así que la lista los pintaría
-  // vacíos. Son de FORMULARIO —el hook los desvía a su tabla al crear— y su valor se consulta en la
-  // pestaña de esa tabla. Sin este filtro, `persons` salía con seis columnas de guiones.
+  // ⚠️ Aquí hubo un `!field.virtual` durante dos commits, y ESCONDÍA COLUMNAS BUENAS.
+  //
+  // Se puso para tapar seis campos virtuales de FORMULARIO que `persons` estrenó y perdió el mismo
+  // día: no estaban en el SELECT, así que la lista los pintaba como seis columnas de guiones. Pero
+  // `virtual` no quiere decir «no viene en la fila»: quiere decir «no es una columna física». Las
+  // otras dos virtuales del modelo —`active_definition_version` y `active_definition_status` de
+  // `processes`— SÍ vienen, calculadas en el SELECT de `SqlAdminService`, y el filtro se las llevó
+  // por delante sin que nadie lo notara: la tabla de procesos perdió dos columnas en silencio.
+  //
+  // Hoy las TRES virtuales del modelo son calculadas y las tres se ven. Si algún día vuelve una
+  // virtual que sólo exista en el formulario, no basta con volver a poner este filtro: hará falta
+  // distinguirlas, porque son dos cosas distintas con el mismo nombre.
   const fields = props.table.fields.filter((field) =>
-    !field.virtual && !(isPersonTable.value && field.name === "password_hash")
+    !(isPersonTable.value && field.name === "password_hash")
   );
   let normalizedFields = fields;
   if (props.table.table === "process_definition_versions") {
@@ -2526,9 +2523,22 @@ const {
 } = useAdminFkManager({
   formData,
   fkDisplay,
+  formFields,
   resolveFkTable,
   formatFkOptionLabel
 });
+
+// Un `geopoint` escribe DOS columnas de una vez. Los nombres los trae el propio campo (`pair`), no
+// se dan por supuestos: otra tabla puede llamarlas de otra forma.
+const updateGeopoint = (field, punto) => {
+  const nombreLat = field?.pair?.lat ?? "latitud";
+  const nombreLng = field?.pair?.lng ?? "longitud";
+  formData.value = {
+    ...formData.value,
+    [nombreLat]: punto?.lat ?? "",
+    [nombreLng]: punto?.lng ?? ""
+  };
+};
 
 const resetFkUnitPositionFilters = () => {
   fkPositionFilters.value = {

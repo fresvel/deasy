@@ -8,6 +8,7 @@
     :placeholder="placeholder"
     :disabled="disabled"
     :readonly="readonly"
+    :autocomplete="resolvedAutocomplete"
     :rows="tagName === 'textarea' ? rows : undefined"
     :min="min"
     :max="max"
@@ -30,6 +31,10 @@ const props = defineProps({
   type: {
     type: String,
     default: "text"
+  },
+  autocomplete: {
+    type: String,
+    default: ""
   },
   as: {
     type: String,
@@ -72,6 +77,19 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "input", "change", "focus", "blur"]);
 
 const tagName = computed(() => (props.as === "textarea" ? "textarea" : "input"));
+
+// Una contraseña en el ADMIN nunca es un inicio de sesión: se está creando o cambiando la de otra
+// persona. Decirlo importa porque el gestor de contraseñas de Chrome **ignora `autocomplete="off"`
+// a propósito** desde 2018, y ofrece las credenciales guardadas en el campo de texto que precede a
+// uno de contraseña —lo toma por el usuario—. Por eso el combobox de nacionalidad sugería el correo
+// del administrador y el mismo combobox en «Direcciones», que no tiene contraseña al lado, no lo
+// hacía. `new-password` sí lo respeta, y además es lo que el campo ES.
+const resolvedAutocomplete = computed(() => {
+  if (props.autocomplete) {
+    return props.autocomplete;
+  }
+  return props.type === "password" ? "new-password" : undefined;
+});
 /* ⚠️ AQUI HABIA UN `h-10 py-2` QUE PISABA LA RECETA, con un comentario que decia «altura uniforme
    para que inputs, selects y lookups queden alineados en los grids». Conseguia lo contrario:
    `AdminSelectField` NO lo llevaba, asi que en el mismo formulario el input media **40 px y el

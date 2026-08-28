@@ -199,6 +199,14 @@
                   <span v-else>—</span>
                 </div>
               </template>
+              <!-- Una columna que AVISA, no que informa: el back la marca con `signal` y aquí sólo
+                   se pinta con ese tono. Va antes que las familias de vocabulario cerrado porque su
+                   contenido es texto libre calculado, no un valor de una lista. Vacía no pinta
+                   nada: la mayoría de las filas están completas y una tabla llena de guiones
+                   esconde justo las que no lo están. -->
+              <template v-else-if="field.signal && row[field.name]">
+                <AppTag :variant="field.signal">{{ row[field.name] }}</AppTag>
+              </template>
               <!-- Las TRES familias de celda con vocabulario cerrado. El orden importa: una
                    columna de estado que ademas fuera `select` caeria en la tercera rama. -->
               <template v-else-if="esColumnaDeEstado(table?.table, field.name) && row[field.name]">

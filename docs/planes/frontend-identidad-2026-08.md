@@ -19,12 +19,17 @@
 | **F3c** | Un duplicado dice **qué** está repetido, también con índices de expresión | ✅ | «…combinación de «Tipo», «Pais emisor», «Numero»» donde antes decía «…con esos datos.»; mutación del patrón cazada por 2 tests | 2026-08-28 |
 | **F3d** | Las claves ajenas del editor genérico se eligen escribiendo, con una sola implementación de combobox | ✅ | `useAdminFkManager` de 237 a 66 líneas · alta de persona con nacionalidad verificada en la base (`nacionalidad_pais_id=60 → EC`) · 10 tests nuevos, 3 mutaciones cazadas | 2026-08-28 |
 | **F3e** | Buscar en el admin deja de distinguir mayúsculas | ✅ | «ecu» pasa de 0 a 2 países; 6 `LIKE` a `ILIKE` | 2026-08-28 |
+| **F3f** | La contraseña del admin deja de disparar el gestor de credenciales de Chrome | ✅ | `autocomplete="new-password"` medido en el campo; el combobox de al lado ya no sugiere el correo del admin | 2026-08-28 |
+| **F3g** | Campos que dependen de campos: `filterBy` + `showWhen`, declarados por el backend | ✅ | Cadena País→Provincia→Ciudad: «port» ofrece sólo Portoviejo, no Portovelo; cambiar a España vacía las dos en cascada; el caso especial de `process_definition_series` migrado y con idéntico comportamiento | 2026-08-28 |
+| **F3h** | El punto se marca en un mapa, no se teclea: `AppMapPicker` extraído de `register` | ✅ | Dirección creada con lat/lng del clic (`-0.180673, -78.467875`); `RegisterView` de 864 a 776 líneas | 2026-08-28 |
+| **F3i** | La lista de personas avisa de qué le falta a una cuenta | ✅ | Columna calculada `datos_faltantes`; etiqueta `deasy-tag--danger` con «Sin documento · Sin correo»; golden de `list_persons` movido | 2026-08-28 |
+| **F3j** | Vuelven las dos columnas calculadas que `processes` perdió en silencio | ✅ | «Configuracion activa» = 1.1.0 y «Estado configuracion» = Activa otra vez en pantalla | 2026-08-28 |
 | **F4** | Las pestañas de Usuarios operan las tablas nuevas con su lógica (principal, verificado, escaneo) | ⬜ | | |
 | **F5** | `/perfil/datos` — el usuario edita sus propios datos personales | ⬜ | | |
 | **F6** | Decisión del dueño sobre la dirección en el registro, y su ejecución | ⬜ | | |
 | **F7** | El panel de la persona: documentos, correos, teléfonos, direcciones y foto en un sitio | ⬜ | | |
 
-**9 tareas vivas** (`F3` no cuenta: está revertida). `F1` y `F2` son la base: sin ellas, lo demás se
+**14 tareas vivas** (`F3` no cuenta: está revertida). `F1` y `F2` son la base: sin ellas, lo demás se
 construye sobre un editor que enseña números.
 
 ### Por qué se revirtió `F3` el mismo día que se cerró

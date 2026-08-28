@@ -311,6 +311,7 @@
     "count": 43,
     "itemKeys": [
       "created_at",
+      "datos_faltantes",
       "first_name",
       "id",
       "is_active",

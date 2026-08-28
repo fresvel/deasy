@@ -18,6 +18,33 @@ import {
 // corresponden con los dominios de `scripts/docs/dominios.json`, que es de donde sale la
 // documentación del modelo. Antes eran once con arrugas: una categoría de UNA tabla («Usuarios»),
 // un cajón que mezclaba tres cosas, y `cargos` clasificado como dato personal.
+//
+// ── El formulario también se declara aquí ──────────────────────────────────────────────────────
+//
+// Tres claves opcionales por campo. Las lee el editor genérico del admin; **ninguna de ellas
+// necesita código en el frontend**, que es justo el punto: una pantalla nueva no se escribe, se
+// declara. Igual que `category`, la fuente de verdad es ésta.
+//
+//   filterBy: { <parámetro>: <campo del formulario> }
+//     Acota el catálogo de una columna ajena por el valor de OTRA columna del mismo formulario. Se
+//     traduce a `filter_<parámetro>` en la consulta, que el CRUD ya entendía. Y cuando el campo
+//     padre cambia, el editor VACÍA al hijo: sin eso se queda una ciudad que ya no pertenece a la
+//     provincia elegida, y nadie lo ve hasta que revienta la clave ajena.
+//
+//   showWhen: { field: <campo>, isSet | equals | anyOf | not }
+//     El campo no se pinta hasta que se cumple. `isSet: true` es «cuando el otro tenga valor».
+//     No es cosmética: un campo que no aplica y aun así se pregunta es una invitación a rellenarlo
+//     mal. Un campo oculto NO se envía.
+//
+//   signal: "danger" | "warning" | "success"
+//     La celda se pinta como etiqueta de ese tono cuando trae valor, y no se pinta cuando está
+//     vacía. Es para columnas CALCULADAS que avisan de algo —qué le falta a una cuenta— y no para
+//     datos: un dato se lee, un aviso se ve. El tono es presentación, pero el back es quien sabe
+//     si una columna avisa o informa.
+//
+//   type: "geopoint" con pair: { lat, lng }
+//     UN control —un mapa— para DOS columnas. Se declara en el primero de los dos y el segundo se
+//     omite de la lista de campos.
 export const SQL_TABLES = [
   // ── Geografia ──────────────────────────────────────────────────────────────────────────────────
   // Los siembra el bootstrap (seedGeographyCatalog) desde config/geografiaCatalog.js, que a su vez
@@ -193,8 +220,13 @@ export const SQL_TABLES = [
         defaultValue: "",
         required: true
       },
-      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
-      { name: "cargo_id", label: "Cargo", type: "number" },
+      // Éstos eran el ÚNICO caso condicional del admin y estaban escritos a mano en
+      // `AdminTableManager.vue`: un `if (table === "process_definition_series")` dentro de
+      // `visibleFormFields` que además les forzaba `required`. Se declaran aquí desde el
+      // 2026-08-28 y el caso especial del frontend desaparece — que es el motivo de que el
+      // mecanismo sea declarativo y no un `if` más.
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number", required: true, showWhen: { field: "source_type", equals: "unit_type" } },
+      { name: "cargo_id", label: "Cargo", type: "number", required: true, showWhen: { field: "source_type", equals: "cargo" } },
       { name: "code", label: "Codigo", type: "text", readOnly: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
@@ -526,6 +558,12 @@ export const SQL_TABLES = [
       // Como caja de texto editable, un admin podía escribir cualquier cosa y dejar la foto rota.
       // Se sube por `PUT /users/:cedula/photo`, que la almacena y compone la referencia.
       { name: "photo_url", label: "Foto", type: "text", readOnly: true },
+      // Columna CALCULADA (no existe en la tabla). Dice qué le falta a la cuenta para poder usarse:
+      // sin documento no hay con qué iniciar sesión, y sin correo no hay a dónde escribirle. Se
+      // resuelve en el SELECT de `SqlAdminService`, igual que `active_definition_version` en
+      // `processes`. Va como `virtual` para que el formulario no la ofrezca: no se edita, se
+      // arregla dando de alta el documento o el correo en su pestaña.
+      { name: "datos_faltantes", label: "Faltan", type: "text", readOnly: true, virtual: true, signal: "danger" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
@@ -542,13 +580,20 @@ export const SQL_TABLES = [
       { name: "person_id", label: "Persona", type: "number", required: true },
       { name: "tipo", label: "Tipo", type: "select", options: ["residencia", "trabajo"], defaultValue: "residencia" },
       { name: "pais_id", label: "Pais", type: "number" },
-      { name: "provincia_id", label: "Provincia", type: "number" },
-      { name: "ciudad_id", label: "Ciudad", type: "number" },
+      // La cadena territorial. `filterBy` acota el catálogo al nivel de arriba y `showWhen` no
+      // enseña el de abajo hasta que hay por dónde empezar: sin esto «Portoviejo» aparecía al
+      // teclear «port» aunque el país fuera España, y también «Portovelo», que es de El Oro.
+      { name: "provincia_id", label: "Provincia", type: "number", filterBy: { pais_id: "pais_id" }, showWhen: { field: "pais_id", isSet: true } },
+      { name: "ciudad_id", label: "Ciudad", type: "number", filterBy: { provincia_id: "provincia_id" }, showWhen: { field: "provincia_id", isSet: true } },
       { name: "calle_primaria", label: "Calle primaria", type: "text" },
       { name: "calle_secundaria", label: "Calle secundaria", type: "text" },
       { name: "referencia", label: "Referencia", type: "text" },
-      { name: "latitud", label: "Latitud", type: "number" },
-      { name: "longitud", label: "Longitud", type: "number" },
+      // Un punto no son dos números: se marca en el mapa. `geopoint` declara UN control para DOS
+      // columnas. Las dos siguen declaradas —`buildPayload` recorre los campos, así que quitar
+      // `longitud` de aquí dejaría la columna sin escribirse nunca—; la segunda sólo se marca como
+      // `pairedWith` para que el formulario no la pinte por su cuenta.
+      { name: "latitud", label: "Ubicacion", type: "geopoint", pair: { lat: "latitud", lng: "longitud" } },
+      { name: "longitud", label: "Longitud", type: "number", pairedWith: "latitud" },
       { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
@@ -649,7 +694,9 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "person_id", label: "Persona", type: "number", required: true },
       { name: "tipo_id", label: "Tipo", type: "number", required: true },
-      { name: "pais_id", label: "Pais emisor", type: "number" },
+      // El país emisor sólo se pregunta cuando hay tipo elegido: para una cédula ecuatoriana lo
+      // fija el propio tipo, y preguntarlo invita a poner otro.
+      { name: "pais_id", label: "Pais emisor", type: "number", showWhen: { field: "tipo_id", isSet: true } },
       { name: "numero", label: "Numero", type: "text", required: true },
       { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
       { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },

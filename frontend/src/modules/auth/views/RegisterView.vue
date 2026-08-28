@@ -218,39 +218,12 @@
                   </span>
                 </div>
 
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <!-- ⚠️ La variante se ELIGE, no se pinta encima. Antes era `--neutral-outline`
-                       con `border-red-300 text-danger hover:bg-red-50` estampado por ternario
-                       cuando faltaba la direccion: un boton en rojo reinventado sobre el neutro,
-                       que es lo que `check:overrides` tenia como grupo E. `danger-outline` ya
-                       existe y trae ademas su `:hover` y su foco. -->
-                  <AppButton
-                    type="button"
-                    :variant="coordenadas ? 'neutral-outline' : 'danger-outline'"
-                    class-name="w-full sm:w-auto"
-                    @click="toggleMap"
-                  >
-                    <IconMap class="h-4 w-4" />
-                    {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
-                  </AppButton>
-
-                  <AppTag v-if="coordenadas" variant="success">
-                    <template #icon>
-                      <IconCheck class="deasy-tag__icon" />
-                    </template>
-                    Coordenadas: {{ coordenadas }}
-                  </AppTag>
-                  <AppTag v-else variant="danger">
-                    <template #icon>
-                      <IconAlertCircle class="deasy-tag__icon" />
-                    </template>
-                    Requerido
-                  </AppTag>
-                </div>
-
-                <div v-show="showMap" class="mt-4">
-                  <div ref="mapElement" class="isolate h-75 w-full rounded-xl border border-line shadow-inner"></div>
-                </div>
+                <AppMapPicker
+                  :lat="direccion.latitud"
+                  :lng="direccion.longitud"
+                  required
+                  @update:point="aplicarPunto"
+                />
               </div>
             </section>
 
@@ -411,11 +384,10 @@ import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppMapPicker from "@/shared/components/inputs/AppMapPicker.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
@@ -432,16 +404,9 @@ import {
   IconArrowRight,
   IconCheck,
   IconMapPin,
-  IconHelp,
-  IconMap
+  IconHelp
 } from "@tabler/icons-vue";
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png"
-});
 
 const router = useRouter();
 const route = useRoute();
@@ -629,72 +594,11 @@ const CLASE_TEXTO_FUERZA = {
 };
 const tonoFuerzaActual = computed(() => tonoFuerza(passwordStrengthScore.value));
 
-const showMap = ref(false);
-const mapElement = ref(null);
-let mapInstance = null;
-let marker = null;
-
-const toggleMap = async () => {
-  showMap.value = !showMap.value;
-
-  if (showMap.value) {
-    setTimeout(() => {
-      initMap();
-    }, 100);
-  } else if (mapInstance) {
-    mapInstance.remove();
-    mapInstance = null;
-  }
-};
-
-const initMap = () => {
-  if (!mapElement.value || mapInstance) return;
-
-  const defaultLat = -0.1807;
-  const defaultLng = -78.4678;
-
-  mapInstance = L.map(mapElement.value).setView([defaultLat, defaultLng], 13);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19
-  }).addTo(mapInstance);
-
-  if (direccion.value.latitud !== null && direccion.value.longitud !== null) {
-    const lat = Number(direccion.value.latitud);
-    const lng = Number(direccion.value.longitud);
-    marker = L.marker([lat, lng]).addTo(mapInstance);
-    mapInstance.setView([lat, lng], 15);
-  }
-
-  mapInstance.on("click", (e) => {
-    const { lat, lng } = e.latlng;
-
-    if (marker) {
-      mapInstance.removeLayer(marker);
-    }
-
-    marker = L.marker([lat, lng]).addTo(mapInstance);
-    direccion.value.latitud = Number(lat.toFixed(6));
-    direccion.value.longitud = Number(lng.toFixed(6));
-  });
-
-  if (navigator.geolocation && direccion.value.latitud === null) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        mapInstance.setView([lat, lng], 15);
-
-        marker = L.marker([lat, lng]).addTo(mapInstance);
-        direccion.value.latitud = Number(lat.toFixed(6));
-        direccion.value.longitud = Number(lng.toFixed(6));
-      },
-      (error) => {
-        console.log("Error obteniendo ubicación:", error);
-      }
-    );
-  }
+// El mapa vive ahora en `AppMapPicker` (shared/components/inputs). Aquí quedaban 90 líneas —el
+// botón, las etiquetas, la instancia de Leaflet y sus escuchas— que el admin no podía reutilizar.
+const aplicarPunto = ({ lat, lng }) => {
+  direccion.value.latitud = lat;
+  direccion.value.longitud = lng;
 };
 
 

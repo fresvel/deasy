@@ -271,6 +271,22 @@ export default class SqlAdminService {
       return columnPrefix ? `${columnPrefix}${field}` : field;
     };
 
+    if (tableName === "persons" && availableFields.includes("datos_faltantes")) {
+      // Qué le falta a la cuenta para servir. CONCAT_WS descarta los NULL, asi que una cuenta
+      // completa devuelve cadena vacia y la lista no pinta nada.
+      columnPrefix = "persons.";
+      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      selectFields.push(`CONCAT_WS(' · ',
+        CASE WHEN NOT EXISTS (
+          SELECT 1 FROM documentos_identidad di WHERE di.person_id = persons.id AND di.is_active = 1
+        ) THEN 'Sin documento' END,
+        CASE WHEN NOT EXISTS (
+          SELECT 1 FROM emails em WHERE em.person_id = persons.id AND em.is_active = 1
+        ) THEN 'Sin correo' END
+      ) AS datos_faltantes`);
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+    }
+
     if (tableName === "processes") {
       joinClause = `LEFT JOIN (
         SELECT process_id, definition_version, status

@@ -34,6 +34,17 @@
           @select="$emit('select-fk-option', field, $event)"
           @clear="$emit('clear-fk-selection', field.name)"
         />
+        <!-- Un punto no son dos números. `geopoint` declara UN control para DOS columnas
+             (`pair: { lat, lng }`), y la segunda va marcada con `pairedWith` para que el
+             formulario no la pinte también por su cuenta. -->
+        <AppMapPicker
+          v-else-if="field.type === 'geopoint'"
+          :lat="formData[field.pair?.lat ?? 'latitud']"
+          :lng="formData[field.pair?.lng ?? 'longitud']"
+          :disabled="isFieldLocked(field)"
+          :required="Boolean(field.required)"
+          @update:point="$emit('update-geopoint', field, $event)"
+        />
         <AdminInputField
           v-else-if="isInputField(field)"
           :id="fieldId(field.name)"
@@ -222,6 +233,7 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
+import AppMapPicker from "@/shared/components/inputs/AppMapPicker.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
@@ -266,6 +278,7 @@ const props = defineProps({
 const emit = defineEmits([
   "update:form-data",
   "select-fk-option",
+  "update-geopoint",
   "clear-fk-selection",
   "handle-select-change",
   "add-process-configuration",
