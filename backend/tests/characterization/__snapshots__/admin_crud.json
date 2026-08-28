@@ -637,6 +637,23 @@
       "updated_at"
     ]
   },
+  "principal_emails_degrada_anterior": {
+    "status": 200,
+    "body": {
+      "direccion": "principal-caract@test.local",
+      "id": "<normalized>",
+      "person_id": "<normalized>",
+      "principal": 1,
+      "tipo": "personal"
+    }
+  },
+  "principal_telefonos_por_tipo": {
+    "status": 200,
+    "principalesPorTipo": [
+      "personal",
+      "trabajo"
+    ]
+  },
   "process_detail": {
     "status": 200,
     "topLevelKeys": [

@@ -532,6 +532,84 @@ test("PUT /admin/sql/cargos -> graft: renombrar refresca los nombres de configur
 // El test se muda con ella: lo que protege sigue siendo lo mismo —que un duplicado responda con un
 // error legible y no con el mensaje crudo de PostgreSQL—, sólo que contra la tabla que hoy tiene la
 // restricción. Dejarlo apuntando a `persons` lo habría dejado en verde sin comprobar nada.
+// Marcar un principal DESMARCA al anterior. La regla vive en un trigger de la base
+// (`trg_principal_unico_fn`), no en el CRUD, para que la cumpla todo el que escriba; este test fija
+// el efecto observable por HTTP, que es lo que el admin ve.
+//
+// Antes de eso el indice unico solo sabia prohibir: un segundo correo principal devolvia un 409 que
+// ademas filtraba `principal_flag`, una columna generada que no existe en ninguna pantalla.
+test("POST /admin/sql/emails con principal=1 -> degrada al principal anterior", async () => {
+  const token = await tokenFor("admin");
+  const existentes = await get("/admin/sql/emails?limit=1", { token });
+  const anterior = Array.isArray(existentes.body) ? existentes.body[0] : null;
+  assert.ok(anterior?.person_id, "hace falta un correo sembrado");
+
+  const creado = await post("/admin/sql/emails", {
+    token,
+    body: {
+      person_id: anterior.person_id,
+      tipo: "personal",
+      // Fija, no con `Date.now()`: el golden guarda el cuerpo de la respuesta, y una direccion con
+      // marca de tiempo lo movia en CADA captura. El test la borra al terminar y `test:char:run`
+      // resetea la base, asi que no colisiona con `uq_emails_direccion`.
+      direccion: "principal-caract@test.local",
+      principal: 1
+    }
+  });
+  matchSnapshot(SUITE, "principal_emails_degrada_anterior", {
+    status: creado.status,
+    body: normalize(creado.body, { maskIdKeys: true })
+  });
+
+  const despues = await get(`/admin/sql/emails?filter_person_id=${anterior.person_id}`, { token });
+  const filas = Array.isArray(despues.body) ? despues.body : [];
+  const principales = filas.filter((fila) => Number(fila.principal) === 1);
+  assert.equal(principales.length, 1, "la persona debe quedar con UN solo correo principal");
+  assert.equal(principales[0].id, creado.body?.id, "el principal debe ser el recien creado");
+
+  await del("/admin/sql/emails", { token, body: { keys: { id: creado.body.id } } });
+  await put("/admin/sql/emails", { token, body: { keys: { id: anterior.id }, data: { principal: 1 } } });
+});
+
+// El AMBITO de la regla no es el mismo en las cuatro tablas, y esta es la mitad que se rompe: de
+// correo y documento hay uno principal POR PERSONA, pero de telefono y direccion hay uno por persona
+// Y TIPO — el de casa y el del trabajo son los dos principales, cada uno en lo suyo.
+//
+// Sin este caso, quitarle `tipo` al ambito del trigger pasaba desapercibido: el test de correos
+// seguia en verde porque su ambito SI es solo la persona. Comprobado mutando el trigger.
+test("POST /admin/sql/telefonos con principal=1 -> degrada sólo dentro de su tipo", async () => {
+  const token = await tokenFor("admin");
+  const personas = await get("/admin/sql/persons?limit=1", { token });
+  const personId = (Array.isArray(personas.body) ? personas.body[0] : null)?.id;
+  assert.ok(personId, "hace falta una persona sembrada");
+
+  const crear = (tipo, numero) => post("/admin/sql/telefonos", {
+    token,
+    body: { person_id: personId, tipo, pais_id: 60, numero, principal: 1 }
+  });
+
+  const personal = await crear("personal", "0999777001");
+  const trabajo = await crear("trabajo", "0999777002");
+  const segundoPersonal = await crear("personal", "0999777003");
+
+  const listado = await get(`/admin/sql/telefonos?filter_person_id=${personId}`, { token });
+  const filas = (Array.isArray(listado.body) ? listado.body : []).filter((f) => Number(f.principal) === 1);
+  const principalPorTipo = Object.fromEntries(filas.map((f) => [f.tipo, f.id]));
+
+  matchSnapshot(SUITE, "principal_telefonos_por_tipo", {
+    status: segundoPersonal.status,
+    principalesPorTipo: Object.keys(principalPorTipo).sort()
+  });
+
+  assert.equal(filas.length, 2, "debe quedar UN principal por tipo, no uno en total");
+  assert.equal(principalPorTipo.personal, segundoPersonal.body?.id, "el personal principal es el último creado");
+  assert.equal(principalPorTipo.trabajo, trabajo.body?.id, "el de trabajo NO lo toca un cambio en personal");
+
+  for (const creado of [personal, trabajo, segundoPersonal]) {
+    await del("/admin/sql/telefonos", { token, body: { keys: { id: creado.body.id } } });
+  }
+});
+
 test("POST /admin/sql/documentos_identidad con número duplicado -> violación de unicidad", async () => {
   const token = await tokenFor("admin");
   const existente = await get("/admin/sql/documentos_identidad?limit=1", { token });

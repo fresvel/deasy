@@ -24,12 +24,15 @@
 | **F3h** | El punto se marca en un mapa, no se teclea: `AppMapPicker` extraído de `register` | ✅ | Dirección creada con lat/lng del clic (`-0.180673, -78.467875`); `RegisterView` de 864 a 776 líneas | 2026-08-28 |
 | **F3i** | La lista de personas avisa de qué le falta a una cuenta | ✅ | Columna calculada `datos_faltantes`; etiqueta `deasy-tag--danger` con «Sin documento · Sin correo»; golden de `list_persons` movido | 2026-08-28 |
 | **F3j** | Vuelven las dos columnas calculadas que `processes` perdió en silencio | ✅ | «Configuracion activa» = 1.1.0 y «Estado configuracion» = Activa otra vez en pantalla | 2026-08-28 |
-| **F4** | Las pestañas de Usuarios operan las tablas nuevas con su lógica (principal, verificado, escaneo) | ⬜ | | |
+| **F4a** | Marcar un principal desmarca al anterior, en las CUATRO tablas | ✅ | Trigger `trg_principal_unico_fn` con el ámbito por argumentos (persona / persona+tipo); 2 goldens nuevos, y las 2 mutaciones del esquema cazadas por su prueba | 2026-08-28 |
+| **F4b** | El escaneo del documento se sube y se ve desde la pestaña | ⬜ | | |
+| **F4c** | Los canales de un teléfono se eligen desde el teléfono | ⬜ | | |
+| **F4d** | `verificado`: decidir si se construye el flujo o se deja a mano | ⛔ | **Bloqueada por una decisión del dueño.** `marcarVerificado` existe en los tres servicios y su ÚNICO llamador es el bootstrap: no hay flujo. Ponerlo de sólo lectura lo dejaría inalcanzable para siempre | |
 | **F5** | `/perfil/datos` — el usuario edita sus propios datos personales | ⬜ | | |
 | **F6** | Decisión del dueño sobre la dirección en el registro, y su ejecución | ⬜ | | |
 | **F7** | El panel de la persona: documentos, correos, teléfonos, direcciones y foto en un sitio | ⬜ | | |
 
-**15 tareas vivas** (`F3` no cuenta: está revertida). `F1` y `F2` son la base: sin ellas, lo demás se
+**18 tareas vivas** (`F3` no cuenta: está revertida). `F1` y `F2` son la base: sin ellas, lo demás se
 construye sobre un editor que enseña números.
 
 ### Por qué `F3f` estuvo en ✅ sin estarlo

@@ -2391,3 +2391,71 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_units_after_update
 AFTER UPDATE ON units
 FOR EACH ROW EXECUTE FUNCTION trg_units_after_update_fn();
+
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────
+-- Un solo principal por persona: marcar uno DESMARCA al anterior.
+--
+-- Cuatro tablas tienen "el principal" (correo, telefono, direccion, documento) y un indice unico
+-- parcial que lo impone via `principal_flag`, una columna GENERADA que vale 1 cuando principal = 1
+-- y NULL en el resto -- NULL no colisiona en un indice unico, asi que puede haber muchos secundarios
+-- y como mucho un principal.
+--
+-- El indice solo sabia PROHIBIR. Marcar un segundo correo como principal respondia
+--   Ya existe otro registro con esa combinacion de Persona, principal_flag
+-- que ademas filtra el nombre de una columna generada que nadie ve en pantalla. Lo que quiere
+-- cualquiera al marcar un principal nuevo es que el viejo deje de serlo.
+--
+-- POR QUE AQUI Y NO EN EL CRUD DEL ADMIN: la regla es un invariante del dato, no una comodidad de
+-- una pantalla. Puesta en la base la cumple todo el que escriba -- el editor generico, el perfil,
+-- el bootstrap y cualquier script futuro -- y vive junto al indice que la obliga. Es el mismo
+-- criterio de los otros nueve triggers del fichero.
+--
+-- EL AMBITO CAMBIA SEGUN LA TABLA y por eso va por argumentos en vez de cuatro funciones calcadas:
+-- un correo o un documento principal es UNO POR PERSONA, pero de telefono y direccion hay uno por
+-- persona Y TIPO (el de casa y el del trabajo son los dos principales, cada uno en lo suyo).
+--
+-- Va BEFORE y no AFTER a proposito: el desmarcado tiene que estar hecho antes de que el indice mire
+-- la fila nueva. Es la misma cautela que documenta `trg_position_assignments_after_insert_fn` al
+-- cerrar y abrir tenencias en dos sentencias.
+--
+-- No hay recursion infinita aunque el UPDATE vuelva a disparar este mismo trigger: las filas que
+-- toca quedan con principal = 0 y la primera guarda las devuelve intactas.
+CREATE OR REPLACE FUNCTION trg_principal_unico_fn() RETURNS trigger AS $$
+DECLARE
+  filtro text := '';
+  i int;
+BEGIN
+  IF NEW.principal IS DISTINCT FROM 1 THEN
+    RETURN NEW;
+  END IF;
+
+  FOR i IN 0 .. TG_NARGS - 1 LOOP
+    -- IS NOT DISTINCT FROM y no `=`: una columna de ambito NULL (un telefono sin tipo) tiene que
+    -- agrupar con los demas NULL, y `=` los dejaria a todos fuera.
+    filtro := filtro || format(' AND %I IS NOT DISTINCT FROM ($1).%I', TG_ARGV[i], TG_ARGV[i]);
+  END LOOP;
+
+  EXECUTE format(
+    'UPDATE %I SET principal = 0 WHERE principal = 1 AND id <> ($1).id%s',
+    TG_TABLE_NAME, filtro
+  ) USING NEW;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_emails_principal_unico
+BEFORE INSERT OR UPDATE ON emails
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id');
+
+CREATE OR REPLACE TRIGGER trg_documentos_principal_unico
+BEFORE INSERT OR UPDATE ON documentos_identidad
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id');
+
+CREATE OR REPLACE TRIGGER trg_telefonos_principal_unico
+BEFORE INSERT OR UPDATE ON telefonos
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id', 'tipo');
+
+CREATE OR REPLACE TRIGGER trg_direcciones_principal_unico
+BEFORE INSERT OR UPDATE ON direcciones
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id', 'tipo');
