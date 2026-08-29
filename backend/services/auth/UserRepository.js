@@ -2,7 +2,7 @@ import { getPostgresPool } from "../../config/postgres.js";
 import DireccionService from "../users/DireccionService.js";
 import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
-import DocumentoIdentidadService from "../users/DocumentoIdentidadService.js";
+import DocumentoIdentidadService, { TIPO_NACIONAL } from "../users/DocumentoIdentidadService.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
@@ -73,12 +73,11 @@ export default class UserRepository {
     const [rows] = await this.pool.query(
       `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
               em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
-              di.numero AS cedula, di.verificado AS documento_verificado, dt.code AS documento_tipo
+              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
        LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
        LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
-       LEFT JOIN tipos_documento dt ON dt.id = di.tipo_id
        WHERE p.id = ? LIMIT 1`,
       [id]
     );
@@ -115,12 +114,11 @@ export default class UserRepository {
     const [rows] = await this.pool.query(
       `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
               em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
-              di.numero AS cedula, di.verificado AS documento_verificado, dt.code AS documento_tipo
+              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
        LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
        LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
-       LEFT JOIN tipos_documento dt ON dt.id = di.tipo_id
        WHERE ${conditions.join(" OR ")} LIMIT 1`,
       params
     );
@@ -134,12 +132,11 @@ export default class UserRepository {
     const [rows] = await this.pool.query(
       `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
               em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
-              di.numero AS cedula, di.verificado AS documento_verificado, dt.code AS documento_tipo
+              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
        FROM persons p
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
        LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
        LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
-       LEFT JOIN tipos_documento dt ON dt.id = di.tipo_id
        ORDER BY p.created_at DESC`
     );
 
@@ -372,7 +369,7 @@ export default class UserRepository {
     }
     // El documento de identidad: `documento` es el objeto {tipo, pais, numero}; `cedula` es la
     // forma corta que sigue aceptandose y significa "cedula ecuatoriana".
-    const documento = userData.documento ?? (userData.cedula ? { tipo: "cedula_ec", numero: userData.cedula } : null);
+    const documento = userData.documento ?? (userData.cedula ? { tipo: TIPO_NACIONAL, numero: userData.cedula } : null);
     if (documento) {
       await this.documentos.guardarPrincipal(result.insertId, documento);
     }
@@ -508,7 +505,7 @@ export default class UserRepository {
     delete payload.telefono;
     delete payload.telefonos;
     delete payload.whatsapp;
-    const documento = payload.documento ?? (payload.cedula ? { tipo: "cedula_ec", numero: payload.cedula } : null);
+    const documento = payload.documento ?? (payload.cedula ? { tipo: TIPO_NACIONAL, numero: payload.cedula } : null);
     delete payload.documento;
     delete payload.documentos;
     delete payload.cedula;

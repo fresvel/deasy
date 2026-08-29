@@ -51,6 +51,13 @@ class AuthService {
   // El catálogo geográfico, PÚBLICO: lo pide el formulario de registro, que por definición usa
   // quien todavía no tiene cuenta. Sustituye a `core/constants/countries.js` para la dirección
   // (el selector de prefijo telefónico sigue usándolo hasta que se rehagan los teléfonos).
+  // La institución de este despliegue. La pantalla de registro la necesita para saber cómo llamar al
+  // documento nacional: hasta el 2026-08-29 llevaba «Cédula (Ecuador)» escrito en una lista.
+  async institucion() {
+    const response = await axios.get(API_ROUTES.SYSTEM_INSTITUCION);
+    return response.data ?? null;
+  }
+
   async listarPaises() {
     const response = await axios.get(API_ROUTES.SYSTEM_GEO_PAISES);
     return response.data?.data ?? [];

@@ -17,6 +17,17 @@ before(async () => {
   await waitForReady();
 });
 
+// PUBLICO A PROPOSITO, como el catalogo geografico: lo consume el REGISTRO, que por definicion usa
+// quien todavia no tiene cuenta. Se congela SIN token para que quede fijado que no lo pide.
+//
+// Este golden nacio de un fallo: el endpoint se estreno el 2026-08-29 y devolvia 500 —el servicio no
+// tenia pool por defecto— con las 303 pruebas EN VERDE, porque ninguna lo miraba. Estrenar una ruta
+// sin prueba es estrenarla sin red.
+test("GET /system/institucion sin token -> el país del despliegue y el nombre local del documento", async () => {
+  const res = await get("/system/institucion");
+  matchSnapshot(SUITE, "institucion_publica", snapshotShape(res));
+});
+
 test("login admin OK -> { token, expiresIn, user }", async () => {
   const res = await post("/users/login", {
     body: { cedula: USERS.admin.identifier, password: USERS.admin.password },

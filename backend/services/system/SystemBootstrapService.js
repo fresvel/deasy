@@ -768,7 +768,7 @@ const guardarDocumentoDelAdmin = async (connection, personId, cedula) => {
   const documentos = new DocumentoIdentidadService(connection);
   const documentoId = await documentos.guardarPrincipal(
     personId,
-    { tipo: "cedula_ec", numero: cedula },
+    { tipo: "documento_nacional", numero: cedula },
     connection
   );
   await documentos.marcarVerificado(documentoId, connection);

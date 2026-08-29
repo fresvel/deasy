@@ -11,6 +11,8 @@
 // Y es la COSTURA del multi-inquilino: el día que haya varias instituciones, la resolución entra
 // por aquí y no hay que buscarla por el código.
 
+import { getPostgresPool } from "../../config/postgres.js";
+
 const errorDeConfiguracion = (mensaje) => {
   const error = new Error(mensaje);
   error.status = 500;
@@ -19,7 +21,10 @@ const errorDeConfiguracion = (mensaje) => {
 };
 
 export default class InstitucionService {
-  constructor(pool) {
+  // El pool por defecto, como en el resto de servicios. Sin el, un controlador que instancie
+  // `new InstitucionService()` revienta con "Cannot read properties of undefined (reading 'query')",
+  // que es exactamente lo que paso al estrenar el endpoint publico.
+  constructor(pool = getPostgresPool()) {
     this.pool = pool;
   }
 

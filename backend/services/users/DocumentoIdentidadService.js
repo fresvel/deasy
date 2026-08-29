@@ -1,6 +1,6 @@
 import { getPostgresPool } from "../../config/postgres.js";
 import InstitucionService from "../system/InstitucionService.js";
-import { validadorPara, cedulaEcuatorianaValida } from "./documentosPorPais.js";
+import { validadorPara, cedulaEcuatorianaValida, nombreDeTipo } from "./documentosPorPais.js";
 
 // Los documentos de identidad de una persona. Sustituye a `persons.cedula`.
 //
@@ -27,9 +27,14 @@ const errorDeConflicto = (mensaje) => {
   return error;
 };
 
-// El codigo del tipo nacional. Hoy sigue siendo `cedula_ec` porque el catalogo aun no ha cambiado;
-// I3 lo renombra a `documento_nacional` y este es el UNICO sitio donde hay que tocarlo.
-const TIPO_NACIONAL = "cedula_ec";
+// Las TRES clases de documento. Son las mismas en cualquier pais: `documento_nacional` no dice de
+// cual, eso lo dice `pais_id`, y de quien es "el nacional" lo dice `instituciones.pais_id`.
+//
+// Hasta el 2026-08-29 esto era una tabla de tres filas con clave ajena, y la nacional se llamaba
+// `cedula_ec` — Ecuador metido en el vocabulario del sistema. Ahora es un CHECK, como en las tres
+// tablas hermanas (`emails`, `telefonos`, `direcciones`).
+export const TIPO_NACIONAL = "documento_nacional";
+export const TIPOS_DOCUMENTO = [TIPO_NACIONAL, "documento_extranjero", "pasaporte"];
 
 const esVacio = (valor) => valor === undefined || valor === null || String(valor).trim() === "";
 
@@ -65,24 +70,20 @@ export default class DocumentoIdentidadService {
     }
   }
 
-  // Acepta el CÓDIGO ("pasaporte") o el ID. El código es lo que manda una API; el id es lo que manda
-  // el editor genérico de /admin, que elige del catálogo vivo — así un tipo nuevo aparece en el
-  // formulario sin tocar código.
-  async resolveTipo(codigoOId, connection = this.pool) {
-    const bruto = String(codigoOId ?? "").trim();
+  // Antes esto era una CONSULTA: el tipo vivia en una tabla y habia que resolver el codigo o el id
+  // contra ella. Con el vocabulario cerrado en un CHECK, validar es comparar contra tres cadenas —
+  // sin red, sin base y sin poder equivocarse de catalogo.
+  normalizarTipo(valor) {
+    const bruto = String(valor ?? "").trim().toLowerCase();
     if (!bruto) {
       throw errorDeCliente("Hace falta el tipo de documento.");
     }
-    const porId = /^\d+$/.test(bruto);
-    const [filas] = await connection.query(
-      `SELECT id, code, name, validacion FROM tipos_documento
-        WHERE ${porId ? "id = ?" : "code = ?"} AND is_active = 1 LIMIT 1`,
-      [porId ? Number(bruto) : bruto.toLowerCase()]
-    );
-    if (!filas?.length) {
-      throw errorDeCliente(`El tipo de documento '${bruto}' no está en el catálogo.`);
+    if (!TIPOS_DOCUMENTO.includes(bruto)) {
+      throw errorDeCliente(
+        `El tipo de documento '${valor}' no existe. Los válidos son: ${TIPOS_DOCUMENTO.join(", ")}.`
+      );
     }
-    return filas[0];
+    return bruto;
   }
 
   async resolvePaisId(documento, connection = this.pool) {
@@ -100,7 +101,7 @@ export default class DocumentoIdentidadService {
 
   // El pais es un argumento y no se saca del tipo: es de lo que de verdad depende el formato.
   validarNumero(tipo, numero, paisIso) {
-    const problema = validadorPara({ tipoCode: tipo?.code, paisIso })(numero);
+    const problema = validadorPara({ tipoCode: tipo, paisIso })(numero);
     if (problema) throw errorDeCliente(problema);
   }
 
@@ -108,7 +109,7 @@ export default class DocumentoIdentidadService {
   async guardarPrincipal(personId, documento, connection = this.pool) {
     this.ensurePool();
     const datos = typeof documento === "string" ? { numero: documento } : (documento ?? {});
-    const tipo = await this.resolveTipo(datos.tipo_id ?? datos.tipo ?? "cedula_ec", connection);
+    const tipo = this.normalizarTipo(datos.tipo ?? TIPO_NACIONAL);
     const numero = normalizarNumero(datos.numero);
     if (!numero) {
       throw errorDeCliente("El documento de identidad necesita un número.");
@@ -123,14 +124,14 @@ export default class DocumentoIdentidadService {
     let paisId = await this.resolvePaisId(datos, connection);
     let paisIso = datos?.pais ? String(datos.pais).trim().toUpperCase() : null;
 
-    if (tipo.code === TIPO_NACIONAL && paisId === null) {
+    if (tipo === TIPO_NACIONAL && paisId === null) {
       // Aqui habia un SELECT con 'EC' escrito a mano. Ahora sale de la institucion, que es donde el
       // dueño lo puede cambiar sin tocar codigo.
       const pais = await this.instituciones.paisActual(connection);
       paisId = pais.id;
       paisIso = pais.iso;
     }
-    if (tipo.code !== TIPO_NACIONAL && paisId === null) {
+    if (tipo !== TIPO_NACIONAL && paisId === null) {
       throw errorDeCliente("Un documento que no es el nacional necesita su país emisor.");
     }
     if (!paisIso && paisId !== null) {
@@ -141,9 +142,9 @@ export default class DocumentoIdentidadService {
 
     const [ajenos] = await connection.query(
       `SELECT d.id FROM documentos_identidad d
-        WHERE d.tipo_id = ? AND COALESCE(d.pais_id, 0) = COALESCE(?, 0) AND d.numero = ?
+        WHERE d.tipo = ? AND COALESCE(d.pais_id, 0) = COALESCE(?, 0) AND d.numero = ?
           AND d.person_id <> ? LIMIT 1`,
-      [tipo.id, paisId, numero, personId]
+      [tipo, paisId, numero, personId]
     );
     if (ajenos?.length) {
       throw errorDeConflicto("Ese documento de identidad ya está registrado por otra persona.");
@@ -165,17 +166,17 @@ export default class DocumentoIdentidadService {
       const escaneoSoltado = cambia ? actual.escaneo_ref : null;
       await connection.query(
         `UPDATE documentos_identidad
-            SET tipo_id = ?, pais_id = ?, numero = ?${cambia ? ", verificado = 0, verificado_at = NULL, escaneo_ref = NULL, escaneo_subido_at = NULL" : ""}
+            SET tipo = ?, pais_id = ?, numero = ?${cambia ? ", verificado = 0, verificado_at = NULL, escaneo_ref = NULL, escaneo_subido_at = NULL" : ""}
           WHERE id = ?`,
-        [tipo.id, paisId, numero, Number(actual.id)]
+        [tipo, paisId, numero, Number(actual.id)]
       );
       this.ultimoEscaneoSoltado = escaneoSoltado;
       return Number(actual.id);
     }
 
     const [resultado] = await connection.query(
-      "INSERT INTO documentos_identidad (person_id, tipo_id, pais_id, numero, principal) VALUES (?, ?, ?, ?, 1)",
-      [personId, tipo.id, paisId, numero]
+      "INSERT INTO documentos_identidad (person_id, tipo, pais_id, numero, principal) VALUES (?, ?, ?, ?, 1)",
+      [personId, tipo, paisId, numero]
     );
     return resultado?.insertId ?? null;
   }
@@ -218,20 +219,21 @@ export default class DocumentoIdentidadService {
   async listarPorPersona(personId, connection = this.pool) {
     this.ensurePool();
     const [filas] = await connection.query(
-      `SELECT d.id, td.code AS tipo, td.name AS tipo_nombre, d.numero, d.principal,
+      `SELECT d.id, d.tipo, d.numero, d.principal,
               d.pais_id, pa.iso_alpha2 AS pais_iso, pa.name AS pais,
               d.verificado, d.verificado_at, d.emitido_el, d.expira_el,
               -- La referencia minio:// NO sale al cliente: es interna y no le sirve a nadie fuera
               -- del backend. Lo que necesita quien pinta la pantalla es si HAY escaneo.
               (d.escaneo_ref IS NOT NULL) AS tiene_escaneo, d.escaneo_subido_at
          FROM documentos_identidad d
-         JOIN tipos_documento td ON td.id = d.tipo_id
          LEFT JOIN paises pa ON pa.id = d.pais_id
         WHERE d.person_id = ? AND d.is_active = 1
         ORDER BY d.principal DESC, d.id ASC`,
       [personId]
     );
-    return filas ?? [];
+    // El nombre se COMPONE del pais, no se guarda: aqui habia un JOIN a `tipos_documento` para leer
+    // una columna `name` que decia "Cedula (Ecuador)" en todos los despliegues del mundo.
+    return (filas ?? []).map((fila) => ({ ...fila, tipo_nombre: nombreDeTipo(fila.tipo, fila.pais_iso, fila.pais) }));
   }
 
   // Por aqui entra el login. Busca por CUALQUIERA de los documentos, no solo el principal: quien se

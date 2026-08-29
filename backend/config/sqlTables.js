@@ -689,22 +689,6 @@ export const SQL_TABLES = [
     searchFields: ["direccion"]
   },
   {
-    table: "tipos_documento",
-    label: "Tipos de documento",
-    category: "Personas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "code", label: "Codigo", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "validacion", label: "Validacion", type: "select", options: ["cedula_ec", "alfanumerico", "libre"], defaultValue: "libre" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
-      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["code", "name"]
-  },
-  {
     table: "documentos_identidad",
     label: "Documentos de identidad",
     category: "Personas",
@@ -712,10 +696,19 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "person_id", label: "Persona", type: "number", required: true },
-      { name: "tipo_id", label: "Tipo", type: "number", required: true },
-      // El país emisor sólo se pregunta cuando hay tipo elegido: para una cédula ecuatoriana lo
-      // fija el propio tipo, y preguntarlo invita a poner otro.
-      { name: "pais_id", label: "Pais emisor", type: "number", showWhen: { field: "tipo_id", isSet: true } },
+      // Las tres clases, como en `emails`/`telefonos`/`direcciones`: un `select` cerrado y no una
+      // clave ajena a un catalogo de tres filas.
+      {
+        name: "tipo",
+        label: "Tipo",
+        type: "select",
+        options: ["documento_nacional", "documento_extranjero", "pasaporte"],
+        defaultValue: "documento_nacional",
+        required: true
+      },
+      // El país emisor se pregunta para todo MENOS el nacional, que lo hereda de la institución.
+      // Preguntarlo ahí invitaría a poner otro y a romper la unicidad (tipo, país, número).
+      { name: "pais_id", label: "Pais emisor", type: "number", showWhen: { field: "tipo", not: "documento_nacional" } },
       { name: "numero", label: "Numero", type: "text", required: true },
       { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
       { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },

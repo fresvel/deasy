@@ -129,10 +129,6 @@ export const FK_TABLE_MAP = {
   pais_id: "paises",
   provincia_id: "provincias",
   ciudad_id: "ciudades",
-  // ⚠️ `tipo_id` es hoy inequívoco —solo `documentos_identidad` lo usa— pero es un nombre genérico:
-  // si otra tabla lo estrena para otra cosa, este mapa por NOMBRE DE COLUMNA se queda corto y habrá
-  // que resolver por (tabla, columna).
-  tipo_id: "tipos_documento",
   canal_id: "canales_mensajeria",
   telefono_id: "telefonos",
   // La nacionalidad es una columna REAL de `persons`. Sin esta entrada el formulario pide un NÚMERO

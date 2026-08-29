@@ -55,10 +55,9 @@ describe("normalizarNumero", () => {
 // resolver el validador por pais: dos pruebas de FORMATO empezaron a fallar quejandose de la
 // institucion, que no era su asunto. Un falso que se rompe por donde no mira la prueba no protege,
 // estorba.
-const servicioCon = ({ tipo = [], pais = [], institucion = [], documentos = [], principal = [] } = {}) => {
+const servicioCon = ({ pais = [], institucion = [], documentos = [], principal = [] } = {}) => {
   const consultas = [];
   const responde = (sql) => {
-    if (/FROM tipos_documento/i.test(sql)) return tipo;
     if (/FROM instituciones/i.test(sql)) return institucion;
     if (/FROM paises/i.test(sql)) return pais;
     if (/FROM documentos_identidad d\s/i.test(sql)) return documentos;
@@ -81,9 +80,9 @@ const INSTITUCION_EC = [{ id: 1, nombre: "Institución", pais_id: 60, pais_iso: 
 
 describe("DocumentoIdentidadService · validación por tipo", () => {
   it("una cédula con el verificador malo se RECHAZA con 400", async () => {
-    const { servicio } = servicioCon({ tipo: [{ id: 1, code: "cedula_ec", name: "Cedula" }], institucion: INSTITUCION_EC, pais: [ECUADOR] });
+    const { servicio } = servicioCon({ institucion: INSTITUCION_EC, pais: [ECUADOR] });
     await assert.rejects(
-      () => servicio.guardarPrincipal(1, { tipo: "cedula_ec", numero: "1710034066" }),
+      () => servicio.guardarPrincipal(1, { tipo: "documento_nacional", numero: "1710034066" }),
       (error) => {
         assert.match(error.message, /dígito verificador/);
         assert.equal(error.status, 400);
@@ -93,7 +92,7 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
   });
 
   it("un pasaporte SIN país emisor se rechaza: sin él la unicidad no se sostiene", async () => {
-    const { servicio } = servicioCon({ tipo: [{ id: 2, code: "pasaporte", name: "Pasaporte" }], pais: [ECUADOR] });
+    const { servicio } = servicioCon({ pais: [ECUADOR] });
     await assert.rejects(
       () => servicio.guardarPrincipal(1, { tipo: "pasaporte", numero: "AB123456" }),
       (error) => {
@@ -105,7 +104,7 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
   });
 
   it("un pasaporte con caracteres raros se rechaza", async () => {
-    const { servicio } = servicioCon({ tipo: [{ id: 2, code: "pasaporte", name: "Pasaporte" }], pais: [ECUADOR] });
+    const { servicio } = servicioCon({ pais: [ECUADOR] });
     await assert.rejects(
       () => servicio.guardarPrincipal(1, { tipo: "pasaporte", pais: "ES", numero: "AB/12*3456" }),
       (error) => {
@@ -120,12 +119,10 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
   // guardado las cedulas de sus usuarios como ecuatorianas.
   it("el documento nacional hereda el país de la institución, no de un 'EC' a mano", async () => {
     const { servicio, consultas } = servicioCon({
-      tipo: [{ id: 1, code: "cedula_ec", name: "Cedula" }],
-      institucion: [{ id: 1, nombre: "Institución", pais_id: 604, pais_iso: "PE", pais_nombre: "Perú" }],
-      principal: []
+      institucion: [{ id: 1, nombre: "Institución", pais_id: 604, pais_iso: "PE", pais_nombre: "Perú" }]
     });
     // Con la institucion en Peru, un numero de 8 digitos NO se valida como cedula ecuatoriana.
-    await servicio.guardarPrincipal(1, { tipo: "cedula_ec", numero: "12345678" });
+    await servicio.guardarPrincipal(1, { tipo: "documento_nacional", numero: "12345678" });
 
     const insert = consultas.find((c) => /INSERT INTO documentos_identidad/i.test(c.sql));
     assert.ok(insert, "tiene que haber insertado el documento");
@@ -137,12 +134,9 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
   });
 
   it("y con la institución en Ecuador, ese mismo número se RECHAZA", async () => {
-    const { servicio } = servicioCon({
-      tipo: [{ id: 1, code: "cedula_ec", name: "Cedula" }],
-      institucion: INSTITUCION_EC
-    });
+    const { servicio } = servicioCon({ institucion: INSTITUCION_EC });
     await assert.rejects(
-      () => servicio.guardarPrincipal(1, { tipo: "cedula_ec", numero: "12345678" }),
+      () => servicio.guardarPrincipal(1, { tipo: "documento_nacional", numero: "12345678" }),
       (error) => {
         assert.match(error.message, /10 dígitos/);
         return true;
@@ -151,11 +145,14 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
   });
 
   it("un tipo que no está en el catálogo se rechaza", async () => {
-    const { servicio } = servicioCon({ tipo: [] });
+    const { servicio } = servicioCon({});
     await assert.rejects(
       () => servicio.guardarPrincipal(1, { tipo: "carne_conducir", numero: "123456" }),
       (error) => {
-        assert.match(error.message, /no está en el catálogo/);
+        // El mensaje cambió el 2026-08-29 y a mejor: con el vocabulario cerrado en un CHECK se pueden
+        // enumerar los válidos, cosa que con un catálogo vivo no tendría sentido.
+        assert.match(error.message, /no existe/);
+        assert.match(error.message, /documento_nacional, documento_extranjero, pasaporte/);
         assert.equal(error.status, 400);
         return true;
       }

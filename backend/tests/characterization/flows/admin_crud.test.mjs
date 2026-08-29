@@ -619,7 +619,7 @@ test("POST /admin/sql/documentos_identidad con número duplicado -> violación d
     token,
     body: {
       person_id: fila.person_id,
-      tipo_id: fila.tipo_id,
+      tipo: fila.tipo,
       pais_id: fila.pais_id,
       numero: fila.numero,
     },

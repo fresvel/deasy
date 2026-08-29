@@ -367,12 +367,15 @@ const seedExampleUsers = async (connection, roleIds = new Map()) => {
          VALUES (?, 'institucional', ?, 1, CURRENT_TIMESTAMP, 1)`,
         [personId, email.toLowerCase()]
       );
+      // El pais sale de la INSTITUCION, no de un 'EC' escrito aqui: el seed de demostracion tiene
+      // que seguir al despliegue igual que todo lo demas.
       await connection.query(
-        `INSERT INTO documentos_identidad (person_id, tipo_id, pais_id, numero, verificado, verificado_at, principal)
-         SELECT ?, td.id, pais.id, ?, 1, CURRENT_TIMESTAMP, 1
-           FROM tipos_documento td
-           CROSS JOIN paises pais
-          WHERE td.code = 'cedula_ec' AND pais.iso_alpha2 = 'EC'`,
+        `INSERT INTO documentos_identidad (person_id, tipo, pais_id, numero, verificado, verificado_at, principal)
+         SELECT ?, 'documento_nacional', i.pais_id, ?, 1, CURRENT_TIMESTAMP, 1
+           FROM instituciones i
+          WHERE i.is_active = 1
+          ORDER BY i.id ASC
+          LIMIT 1`,
         [personId, cedula]
       );
     }

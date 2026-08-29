@@ -18,7 +18,7 @@
 |---|---|:--:|---|---|
 | **I1** | `instituciones` existe con su país, y el bootstrap la siembra | ✅ | Fila sembrada (`Institución` · EC · Ecuador) tras un reset limpio; aparece sola en `/admin/institucion/unidades-y-cargos/instituciones` sin escribir pantalla, con el país como combobox que ya ofrece «Perú»; 5 tests y su mutación cazada | 2026-08-29 |
 | **I2** | El validador y el nombre local del documento se resuelven **por país**, no por tipo | ✅ | **Probado moviendo la institución a Perú sin tocar código**: el número `12345678` que Ecuador rechaza («tiene exactamente 10 dígitos») queda aceptado y guardado con `pais=PE`. 8 tests del registro + 2 del servicio; 2 mutaciones cazadas | 2026-08-29 |
-| **I3** | `documentos_identidad.tipo` es un `CHECK` de tres; `tipos_documento` desaparece | ⬜ | | |
+| **I3** | `documentos_identidad.tipo` es un `CHECK` de tres; `tipos_documento` desaparece | ✅ | **La pantalla de registro entera sigue al país**: con la institución en Perú dice «Documento (Perú)» y el número pasa de `maxlength` 10 a 20; con Ecuador, «Cédula (Ecuador)». El admin pierde la pestaña de tipos (8→7) y el «Pais emisor» sólo aparece si el tipo no es el nacional. 77 tablas, las mismas: entró `instituciones`, salió `tipos_documento` | 2026-08-29 |
 | **I4** | `documentos_identidad.pais_id` es obligatorio y el índice pierde el `COALESCE` | ⬜ | | |
 | **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ⬜ | | |
 | **I6** | 💥 El login **sólo acepta correo**. Cambian las credenciales de referencia | ⬜ | | |
@@ -218,6 +218,21 @@ y `tipos_documento` se borra. Es la única tabla que la referencia (comprobado c
 | `sqlTables.js` | 3 |
 | `AdminTableManagerConfig.js` | 3 |
 | `genericCatalog.js` | 2 |
+
+**Lo hecho (2026-08-29):**
+
+- **Un endpoint público nuevo**, `GET /system/institucion`, sin autenticar como el catálogo
+  geográfico: lo consume el REGISTRO, que por definición usa quien todavía no tiene cuenta. Sin él,
+  la pantalla tendría que saberse el país — llevaba «Cédula (Ecuador)» escrito en una lista.
+- **La validación en cliente es AYUDA, no autoridad.** El algoritmo de la cédula ecuatoriana sigue
+  en `RegisterView` pero sólo se aplica si el despliegue es ecuatoriano. En otro país el usuario
+  recibe la comprobación genérica mientras escribe y el mensaje exacto del servidor al enviar — que
+  es preferible a aplicarle el dígito verificador de otro país y rechazarle un documento válido.
+- `resolveTipo` era una CONSULTA; ahora validar el tipo es comparar contra tres cadenas.
+
+⚠️ **Se estrenó el endpoint devolviendo 500 con las 303 pruebas en verde**, porque ninguna lo
+miraba: `InstitucionService` no tenía pool por defecto. Tiene su golden desde entonces. Estrenar una
+ruta sin prueba es estrenarla sin red.
 
 Se lleva por delante, gratis:
 

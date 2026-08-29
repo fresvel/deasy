@@ -60,7 +60,7 @@
                 <!-- El país emisor sólo aparece cuando importa: una cédula ecuatoriana ya lo lleva
                      en el tipo, y pedirlo sería ruido. Un pasaporte SÍ lo necesita, porque su
                      número sólo es único dentro del país que lo emite. -->
-                <div v-if="documento.tipo !== 'cedula_ec'">
+                <div v-if="documento.tipo !== 'documento_nacional'">
                   <label :for="fieldId('documento-pais')" class="deasy-form-label">País emisor</label>
                   <select :id="fieldId('documento-pais')" v-model="documento.pais" required class="deasy-control">
                     <option value="" disabled>Selecciona un país</option>
@@ -74,10 +74,10 @@
                     v-model="documento.numero"
                     type="text"
                     required
-                    :maxlength="documento.tipo === 'cedula_ec' ? 10 : 20"
+                    :maxlength="documento.tipo === 'documento_nacional' && paisInstitucion === 'EC' ? 10 : 20"
                     class="deasy-control"
                     :class="{ 'deasy-control--error': cedulaError }"
-                    :placeholder="documento.tipo === 'cedula_ec' ? '10 dígitos' : 'Número de documento'"
+                    :placeholder="documento.tipo === 'documento_nacional' && paisInstitucion === 'EC' ? '10 dígitos' : 'Número de documento'"
                   />
                   <span v-if="cedulaError" class="deasy-field-message deasy-field-message--error">{{ cedulaError }}</span>
                 </div>
@@ -446,6 +446,12 @@ const ciudades = ref([]);
 const cargarPaises = async () => {
   try {
     paises.value = await AuthService.listarPaises();
+    // Sin esto la pantalla no sabe cómo llamar al documento nacional. Si falla, cae al genérico.
+    try {
+      institucion.value = await AuthService.institucion();
+    } catch {
+      institucion.value = null;
+    }
   } catch (error) {
     console.error("No se pudo cargar el catálogo de países:", error);
   }
@@ -518,16 +524,24 @@ const cedulaError = ref("");
 // El documento de identidad es UN objeto. Antes era `newuser.cedula`, un texto del que se BORRABA
 // todo lo que no fuera dígito y que se exigía de 10: la etiqueta decía "Cédula o Pasaporte" y un
 // pasaporte era literalmente imposible de escribir.
-const documento = ref({ tipo: "cedula_ec", pais: "", numero: "" });
+const documento = ref({ tipo: "documento_nacional", pais: "", numero: "" });
 
-const tiposDocumento = ref([
-  { code: "cedula_ec", name: "Cédula (Ecuador)" },
+// La institución de este despliegue. De aquí sale cómo se llama el documento nacional: la lista
+// decía «Cédula (Ecuador)» escrita a mano, así que un despliegue peruano se lo habría enseñado a sus
+// usuarios peruanos. Si la llamada falla, la pantalla sigue funcionando con un nombre genérico.
+const institucion = ref(null);
+const paisInstitucion = computed(() => institucion.value?.pais?.iso ?? "");
+
+const tiposDocumento = computed(() => [
+  { code: "documento_nacional", name: institucion.value?.documento_nacional?.etiqueta ?? "Documento nacional" },
   { code: "pasaporte", name: "Pasaporte" },
   { code: "documento_extranjero", name: "Documento de identidad extranjero" }
 ]);
 
 const etiquetaDocumento = computed(() =>
-  documento.value.tipo === "cedula_ec" ? "Cédula" : "Número de documento"
+  documento.value.tipo === "documento_nacional"
+    ? (institucion.value?.documento_nacional?.nombre ?? "Documento")
+    : "Número de documento"
 );
 
 // El dígito verificador de la cédula ecuatoriana, el MISMO que aplica el backend. Se comprueba aquí
@@ -550,7 +564,12 @@ const cedulaEcValida = (numero) => {
 const validarDocumento = () => {
   const numero = String(documento.value.numero || "").trim();
   if (!numero) { cedulaError.value = ""; return; }
-  if (documento.value.tipo === "cedula_ec") {
+  // ⚠️ Esto es AYUDA EN VIVO, no la autoridad: quien valida de verdad es el backend, que resuelve el
+  // algoritmo por país. Aquí sólo está el de Ecuador, y se aplica únicamente si el despliegue es
+  // ecuatoriano. En cualquier otro país el usuario recibe la comprobación genérica mientras escribe
+  // y el mensaje exacto del servidor al enviar — que es preferible a aplicarle el dígito verificador
+  // de otro país y rechazarle un documento válido.
+  if (documento.value.tipo === "documento_nacional" && paisInstitucion.value === "EC") {
     if (!/^\d{10}$/.test(numero)) { cedulaError.value = "La cédula debe tener 10 dígitos."; return; }
     cedulaError.value = cedulaEcValida(numero) ? "" : "La cédula no es válida: el dígito verificador no cuadra.";
     return;
@@ -563,7 +582,7 @@ const validarDocumento = () => {
 watch(() => documento.value.numero, validarDocumento);
 watch(() => documento.value.tipo, () => {
   // Al cambiar de tipo el país deja de tener sentido si es una cédula, y las reglas cambian.
-  if (documento.value.tipo === "cedula_ec") documento.value.pais = "";
+  if (documento.value.tipo === "documento_nacional") documento.value.pais = "";
   validarDocumento();
 });
 
@@ -683,7 +702,7 @@ const createnewUser = async () => {
     errorMessage.value = cedulaError.value || "Falta el número de documento.";
     return;
   }
-  if (documento.value.tipo !== "cedula_ec" && !documento.value.pais) {
+  if (documento.value.tipo !== "documento_nacional" && !documento.value.pais) {
     errorMessage.value = "Un documento que no es cédula ecuatoriana necesita su país emisor.";
     return;
   }

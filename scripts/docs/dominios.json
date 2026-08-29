@@ -32,7 +32,6 @@
       "canales_mensajeria",
       "telefono_canales",
       "emails",
-      "tipos_documento",
       "documentos_identidad"
     ]
   },

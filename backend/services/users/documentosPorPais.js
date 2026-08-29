@@ -94,3 +94,18 @@ export const nombreLocal = (paisIso) => {
  */
 export const etiquetaNacional = (paisIso, paisNombre) =>
   paisNombre ? `${nombreLocal(paisIso)} (${paisNombre})` : nombreLocal(paisIso);
+
+/**
+ * Cómo se le enseña al usuario cualquiera de las tres clases de documento.
+ *
+ * El nacional lleva el nombre que ese país le da; los otros dos llevan el suyo, con el país emisor
+ * entre paréntesis cuando se conoce — «Pasaporte (España)» dice más que «Pasaporte».
+ */
+export const nombreDeTipo = (tipo, paisIso, paisNombre) => {
+  const clase = String(tipo ?? "").toLowerCase();
+  if (clase === "documento_nacional") {
+    return etiquetaNacional(paisIso, paisNombre);
+  }
+  const base = clase === PASAPORTE ? "Pasaporte" : "Documento extranjero";
+  return paisNombre ? `${base} (${paisNombre})` : base;
+};

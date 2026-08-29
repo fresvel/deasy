@@ -130,6 +130,9 @@ export const API_ROUTES = {
   // El catálogo geográfico es PÚBLICO: lo consume el formulario de registro, que por definición
   // usa quien todavía no tiene cuenta. Sustituye a `core/constants/countries.js`, que era una copia
   // en el frontend y no tenía ni provincias ni ciudades.
+  // La institución de este despliegue: su país y cómo llama ese país al documento de identidad.
+  // Público, como la geografía: lo consume el registro.
+  SYSTEM_INSTITUCION: `${API_PREFIX}/system/institucion`,
   SYSTEM_GEO_PAISES: `${API_PREFIX}/system/geografia/paises`,
   SYSTEM_GEO_PROVINCIAS: (paisIso) => `${API_PREFIX}/system/geografia/provincias?pais=${encodeURIComponent(paisIso)}`,
   SYSTEM_GEO_CIUDADES: (provinciaId) => `${API_PREFIX}/system/geografia/ciudades?provincia_id=${encodeURIComponent(provinciaId)}`

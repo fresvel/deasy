@@ -34,7 +34,9 @@ const expressionUniqueError = {
   code: "23505",
   constraint: "uq_documentos_numero",
   table: "documentos_identidad",
-  detail: "Key (tipo_id, COALESCE(pais_id, 0), numero)=(1, 60, 1234567897) already exists.",
+  // Capturado el 2026-08-29, despues de que el tipo dejara de ser una clave ajena y pasara a ser un
+  // CHECK: el `detail` nombra ahora la columna `tipo`, no `tipo_id`.
+  detail: "Key (tipo, COALESCE(pais_id, 0), numero)=(documento_nacional, 60, 1234567897) already exists.",
   message: 'duplicate key value violates unique constraint "uq_documentos_numero"',
 };
 
@@ -79,7 +81,7 @@ test("saca las columnas implicadas del detail", () => {
   assert.deepEqual(violatedColumns(compositeUniqueError), ["unit_id", "slot_no"]);
   assert.deepEqual(violatedColumns({ code: "23505" }), []);
   // Un índice de expresión: se queda con la COLUMNA de dentro, no con la función de fuera.
-  assert.deepEqual(violatedColumns(expressionUniqueError), ["tipo_id", "pais_id", "numero"]);
+  assert.deepEqual(violatedColumns(expressionUniqueError), ["tipo", "pais_id", "numero"]);
 });
 
 test("el mensaje de duplicado usa la etiqueta del formulario, no el nombre de columna", () => {
