@@ -23,9 +23,10 @@
 | **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ✅ | Foto subida por `PUT /users/2/photo` y guardada en `users/**2**/profile/…`; el frontend la pide por id y el avatar renderiza. Guard nuevo `requirePersonAccess`: ajeno 403, cédula 403, propio 404. 3 goldens de acceso, y abrir el guard cae por dos | 2026-08-29 |
 | **I6** | 💥 El login **sólo acepta correo**. Cambian las credenciales de referencia | ⬜ | | |
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ⬜ | | |
+| **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ⬜ | | |
 | **I8** | Recuperación «olvidé mi correo» por documento + país | ⛔ | **Aplazada por el dueño** al 2026-08-28: se trata en otra sesión | |
 
-**8 tareas.** `I8` está aparcada a propósito y no cuenta como pendiente de este frente.
+**9 tareas.** `I8` está aparcada a propósito y no cuenta como pendiente de este frente.
 
 💥 marca **la única tarea que rompe algo de cara al usuario**. Está aislada a propósito: se puede
 aprobar, ejecutar y revertir sola.
@@ -35,16 +36,23 @@ aprobar, ejecutar y revertir sola.
 ```
 I1 ─┬─> I3 ──> I4
     └─> I2
-I5 ──> I7          (I7 no se puede hacer antes: I5 le quita los últimos tres llamadores)
-I6                 (independiente — se puede hacer en cualquier momento)
+I5 ──> I6+I7       (son el MISMO cambio, ver abajo)
+I9                 (independiente de todo — no toca el login)
 ```
 
 - **`I3` necesita `I1`**: el bootstrap tiene que saber de qué país es la institución para componer
   el nombre y elegir el validador de la fila nacional.
-- **`I7` necesita `I5`**, y esto es lo que más se olvida: `findByCedulaOrEmail` tiene **cuatro**
-  llamadores y sólo uno es el login. Borrar su rama de documento antes de migrar las rutas deja sin
-  foto y sin escaneo a todo el mundo.
-- **`I6` es independiente**: quitar la cédula del login no exige haber borrado nada por dentro.
+- **`I6` e `I7` necesitan `I5`**: `findByCedulaOrEmail` tenía **cuatro** llamadores. Borrar su rama
+  de documento antes de migrar las rutas dejaba sin foto y sin escaneo a todo el mundo.
+
+⚠️ **`I6` e `I7` son el MISMO commit, y esta tabla decía lo contrario.** Escrito el 2026-08-28, el
+grafo ponía `I6` como independiente y `I7` colgando sólo de `I5`. Al llegar a ejecutarlas se midió:
+después de `I5`, a `findByCedulaOrEmail` le queda **exactamente un llamador — el login**. Quitarle la
+rama del documento *es* cambiar el login a sólo correo. No hay forma de hacer `I7` sin tocar las
+credenciales, y se llegó a ofrecer como si la hubiera.
+
+**Es el precedente que justifica la regla de este repositorio:** el grafo se lee, pero se MIDE antes
+de ejecutar.
 
 ---
 
@@ -319,6 +327,27 @@ Lo que deja de existir es entrar con él.
 
 Con `I5` hecha, `findByCedulaOrEmail` se queda con un solo llamador y un solo criterio.
 Pasa a `findByEmail`, y **la colisión del §1.1 desaparece porque desaparece la consulta**.
+
+### I9 · Las otras cinco búsquedas por número
+
+**Aparecieron al medir `I7`, no estaban en ninguna ficha**, y todas tienen el defecto del §1.1 —
+`d.numero = ?` a secas, sin el ámbito que hace único al documento:
+
+| Dónde | Para qué resuelve la persona |
+|---|---|
+| `dossierStore.js:63` | El **expediente** |
+| `tareas_controler.js:14` | Las **tareas** |
+| `templateLifecycle.js:1102` | Las **plantillas** |
+| `genericCatalog.js:352` · `SystemBootstrapService.js:808` | La siembra |
+
+Sacar la del login (`I6`+`I7`) **no arregla éstas**: sólo quita el defecto del camino de
+autenticación, que es donde más duele. Aquí el daño es otro —resolver la persona equivocada al
+abrir un expediente o una tarea— y no es menor.
+
+**Es independiente de `I6`** y no toca el login: se puede hacer en cualquier momento.
+
+⚠️ Y **`DocumentoIdentidadService.buscarPersonaPorNumero` no la llama nadie** (comprobado el
+2026-08-29). Se borra con `I6`+`I7`, que es donde caen sus vecinas.
 
 ### I8 · ⛔ La recuperación — aplazada
 
