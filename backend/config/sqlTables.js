@@ -708,6 +708,15 @@ export const SQL_TABLES = [
       },
       // El país emisor se pregunta para todo MENOS el nacional, que lo hereda de la institución.
       // Preguntarlo ahí invitaría a poner otro y a romper la unicidad (tipo, país, número).
+      // ⚠️ NO lleva `required`, aunque en la base sea NOT NULL, y no es un descuido.
+      //
+      // La validación de `required` del CRUD no mira el `showWhen`: exigiria un campo que el
+      // formulario NO ENSEÑA para el documento nacional, y ese es justo el caso en el que lo pone
+      // el trigger `trg_documentos_pais_nacional`. Marcarlo obligatorio hacia imposible dar de alta
+      // un documento nacional desde /admin.
+      //
+      // Quien lo exige es la base, que es quien sabe cuando falta de verdad — despues de que los
+      // triggers hayan puesto lo suyo. El mensaje lo traduce `errors/sqlErrors.js`.
       { name: "pais_id", label: "Pais emisor", type: "number", showWhen: { field: "tipo", not: "documento_nacional" } },
       { name: "numero", label: "Numero", type: "text", required: true },
       { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },

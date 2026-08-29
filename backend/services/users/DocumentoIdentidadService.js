@@ -142,7 +142,7 @@ export default class DocumentoIdentidadService {
 
     const [ajenos] = await connection.query(
       `SELECT d.id FROM documentos_identidad d
-        WHERE d.tipo = ? AND COALESCE(d.pais_id, 0) = COALESCE(?, 0) AND d.numero = ?
+        WHERE d.tipo = ? AND d.pais_id = ? AND d.numero = ?
           AND d.person_id <> ? LIMIT 1`,
       [tipo, paisId, numero, personId]
     );

@@ -83,7 +83,7 @@ Table "documentos_identidad" {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
   "tipo" text [not null, check: `tipo = ANY (ARRAY['documento_nacional'::text, 'documento_extranjero'::text, 'pasaporte'::text])`]
-  "pais_id" int4
+  "pais_id" int4 [not null]
   "numero" varchar(40) [not null]
   "verificado" int2 [not null, default: 0]
   "verificado_at" timestamp
@@ -98,7 +98,7 @@ Table "documentos_identidad" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (tipo, numero, `COALESCE(pais_id`, ` 0)`) [type: btree, unique, name: "uq_documentos_numero"]
+    (tipo, pais_id, numero) [type: btree, unique, name: "uq_documentos_numero"]
     (person_id, principal_flag) [type: btree, unique, name: "uq_documentos_principal"]
     numero [type: btree, name: "idx_documentos_numero"]
     person_id [type: btree, name: "idx_documentos_person"]

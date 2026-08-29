@@ -19,7 +19,7 @@
 | **I1** | `instituciones` existe con su país, y el bootstrap la siembra | ✅ | Fila sembrada (`Institución` · EC · Ecuador) tras un reset limpio; aparece sola en `/admin/institucion/unidades-y-cargos/instituciones` sin escribir pantalla, con el país como combobox que ya ofrece «Perú»; 5 tests y su mutación cazada | 2026-08-29 |
 | **I2** | El validador y el nombre local del documento se resuelven **por país**, no por tipo | ✅ | **Probado moviendo la institución a Perú sin tocar código**: el número `12345678` que Ecuador rechaza («tiene exactamente 10 dígitos») queda aceptado y guardado con `pais=PE`. 8 tests del registro + 2 del servicio; 2 mutaciones cazadas | 2026-08-29 |
 | **I3** | `documentos_identidad.tipo` es un `CHECK` de tres; `tipos_documento` desaparece | ✅ | **La pantalla de registro entera sigue al país**: con la institución en Perú dice «Documento (Perú)» y el número pasa de `maxlength` 10 a 20; con Ecuador, «Cédula (Ecuador)». El admin pierde la pestaña de tipos (8→7) y el «Pais emisor» sólo aparece si el tipo no es el nacional. 77 tablas, las mismas: entró `instituciones`, salió `tipos_documento` | 2026-08-29 |
-| **I4** | `documentos_identidad.pais_id` es obligatorio y el índice pierde el `COALESCE` | ⬜ | | |
+| **I4** | `documentos_identidad.pais_id` es obligatorio y el índice pierde el `COALESCE` | ✅ | Índice `(tipo, pais_id, numero)` sin el cero inventado; alta de un documento nacional **sin país desde /admin** que lo hereda de la institución, y pasaporte sin país que responde «Falta «Pais emisor».» en vez del mensaje crudo. 2 goldens nuevos, 2 mutaciones del esquema cazadas | 2026-08-29 |
 | **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ⬜ | | |
 | **I6** | 💥 El login **sólo acepta correo**. Cambian las credenciales de referencia | ⬜ | | |
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ⬜ | | |
@@ -246,10 +246,26 @@ Se lleva por delante, gratis:
 
 `NOT NULL` en la instancia, e índice `(tipo, pais_id, numero)`.
 
-⚠️ **Y aquí hay que decidir algo.** El esquema **no tiene ni un `ALTER`**: es todo
-`CREATE ... IF NOT EXISTS`. Un `NOT NULL` o un `CHECK` nuevos **no se aplican sobre una base que ya
-existe** — ni fallan, simplemente no están. En dev da igual (`test:char:run` la recrea); para
-cualquier otro despliegue hace falta decidir si esto pide migración o si basta con recrear.
+✅ **Decidido por el dueño el 2026-08-29: no hay producción, así que se recrea la base y no se usa
+`ALTER`.** El esquema sigue siendo `CREATE ... IF NOT EXISTS` de principio a fin.
+
+**Lo que apareció al hacerla, y no estaba previsto.** `pais_id` es obligatorio en la base pero el
+formulario **no lo pregunta** para el documento nacional (`showWhen`), y el CRUD del admin escribe
+**directo a la tabla**: marcarlo `required` hacía imposible dar de alta un documento nacional, y no
+marcarlo lo mataba con un `NOT NULL` crudo. Se resolvió en dos piezas, ninguna en el formulario:
+
+- **`trg_documentos_pais_nacional`** rellena el país del nacional desde `instituciones`. Va en la
+  base y no en un hook por lo mismo que `trg_principal_unico_fn`: es un invariante del dato. Y va
+  `BEFORE` porque PostgreSQL evalúa el `NOT NULL` sobre la fila **ya modificada** por los triggers.
+- **`sqlErrors.js` traduce el `23502`**: «Falta «Pais emisor».» en vez de
+  `null value in column "pais_id" of relation "documentos_identidad"…`. No es un lujo — cuando un
+  campo lo rellena un trigger, la base es el **único** que sabe si de verdad falta, porque lo
+  comprueba después.
+
+⚠️ **La fixture de índice de expresión de `sqlErrors.test.js` quedó HISTÓRICA**: se capturó de
+verdad, pero de este índice, que ya no lleva `COALESCE`. Hoy el esquema no tiene **ninguno**
+(comprobado: cero). Se conserva etiquetada como tal, porque borrarla dejaría ese camino del parser
+sin una sola prueba esperando al día que alguien vuelva a declarar uno.
 
 ### I5 · `:cedula` → `:personId`
 

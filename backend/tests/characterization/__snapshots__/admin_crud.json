@@ -65,6 +65,21 @@
       "message": "Selecciona una serie valida para la configuracion."
     }
   },
+  "documento_nacional_hereda_pais": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "numero": "1710034065",
+      "person_id": "<normalized>",
+      "tipo": "documento_nacional"
+    }
+  },
+  "documento_sin_pais_obligatorio": {
+    "status": 400,
+    "body": {
+      "message": "Falta «Pais emisor»."
+    }
+  },
   "graft_cargos_update": {
     "status": 200,
     "body": {

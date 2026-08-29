@@ -610,6 +610,53 @@ test("POST /admin/sql/telefonos con principal=1 -> degrada sólo dentro de su ti
   }
 });
 
+// El camino que el trigger `trg_documentos_pais_nacional` existe para cubrir, y que ninguna prueba
+// tocaba: el CRUD generico escribe DIRECTO a la tabla, y el formulario NO ENSEÑA el pais cuando el
+// tipo es el nacional (`showWhen`). Sin el trigger, dar de alta un documento nacional desde /admin
+// muere con un NOT NULL. Comprobado quitandolo del esquema: sin este caso, las 304 seguian en verde.
+test("POST /admin/sql/documentos_identidad nacional SIN país -> lo hereda de la institución", async () => {
+  const token = await tokenFor("admin");
+  const personas = await get("/admin/sql/persons?limit=1", { token });
+  const personId = (Array.isArray(personas.body) ? personas.body[0] : null)?.id;
+  assert.ok(personId, "hace falta una persona sembrada");
+
+  const institucion = await get("/system/institucion");
+  const paisEsperado = institucion.body?.pais?.id;
+  assert.ok(paisEsperado, "hace falta la institución sembrada");
+
+  const creado = await post("/admin/sql/documentos_identidad", {
+    token,
+    body: { person_id: personId, tipo: "documento_nacional", numero: "1710034065" }
+  });
+  matchSnapshot(SUITE, "documento_nacional_hereda_pais", {
+    status: creado.status,
+    body: normalize(creado.body, { maskIdKeys: true })
+  });
+  assert.equal(creado.status, 200, "el alta no puede fallar por un país que el formulario no pide");
+
+  const leido = await get(`/admin/sql/documentos_identidad?filter_numero=1710034065`, { token });
+  const fila = (Array.isArray(leido.body) ? leido.body : [])[0];
+  assert.equal(Number(fila?.pais_id), Number(paisEsperado), "el país es el de la institución");
+
+  await del("/admin/sql/documentos_identidad", { token, body: { keys: { id: creado.body.id } } });
+});
+
+// Y el otro lado de la misma regla: lo que la base SI exige de verdad tiene que decirse legible.
+test("POST /admin/sql/documentos_identidad pasaporte sin país -> «Falta «Pais emisor».»", async () => {
+  const token = await tokenFor("admin");
+  const personas = await get("/admin/sql/persons?limit=1", { token });
+  const personId = (Array.isArray(personas.body) ? personas.body[0] : null)?.id;
+
+  const res = await post("/admin/sql/documentos_identidad", {
+    token,
+    body: { person_id: personId, tipo: "pasaporte", numero: "ZZ998877" }
+  });
+  matchSnapshot(SUITE, "documento_sin_pais_obligatorio", {
+    status: res.status,
+    body: normalize(res.body)
+  });
+});
+
 test("POST /admin/sql/documentos_identidad con número duplicado -> violación de unicidad", async () => {
   const token = await tokenFor("admin");
   const existente = await get("/admin/sql/documentos_identidad?limit=1", { token });

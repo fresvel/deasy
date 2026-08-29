@@ -11,6 +11,8 @@ import {
   isForeignKeyViolation,
   violatedConstraint,
   violatedColumns,
+  isNotNullViolation,
+  notNullViolationMessage,
   uniqueViolationMessage,
   foreignKeyViolationMessage,
   translateConstraintError,
@@ -30,6 +32,16 @@ const uniqueError = {
 
 // El caso que el parser NO sabía leer: un índice de EXPRESIÓN. PostgreSQL escribe la expresión
 // entera en el `detail`, paréntesis incluidos.
+//
+// ⚠️ ESTA FIXTURE ES HISTÓRICA, y se dice para no engañar a quien lea la cabecera del fichero: se
+// capturó de verdad contra la base, pero de un índice que YA NO EXISTE — `uq_documentos_numero` era
+// (tipo, COALESCE(pais_id,0), numero) hasta que `pais_id` pasó a NOT NULL el 2026-08-29 y el
+// COALESCE sobró. Hoy el esquema no tiene NINGÚN índice de expresión (comprobado contra el
+// catálogo: cero).
+//
+// Se conserva a propósito. El parser sabe leerlos y borrar el caso dejaría ese camino sin una sola
+// prueba, esperando al día que alguien vuelva a declarar uno — que es exactamente cuando el fallo
+// costaría caro: el usuario leería «Ya existe otro registro con esos datos» sin saber cuáles.
 const expressionUniqueError = {
   code: "23505",
   constraint: "uq_documentos_numero",
@@ -107,6 +119,35 @@ test("el mensaje de duplicado usa la etiqueta del formulario, no el nombre de co
     uniqueViolationMessage(uniqueError, "tabla_inexistente"),
     "Ya existe otro registro con ese valor en «direccion»."
   );
+});
+
+// Capturado el 2026-08-29 contra la base: `pais_id` es NOT NULL en `documentos_identidad`.
+const notNullError = {
+  code: "23502",
+  column: "pais_id",
+  table: "documentos_identidad",
+  message: 'null value in column "pais_id" of relation "documentos_identidad" violates not-null constraint'
+};
+
+test("un campo obligatorio que falta se dice por su ETIQUETA, no por su columna", () => {
+  assert.equal(isNotNullViolation(notNullError), true);
+  assert.equal(isNotNullViolation(uniqueError), false);
+  assert.equal(
+    notNullViolationMessage(notNullError, "documentos_identidad"),
+    "Falta «Pais emisor»."
+  );
+  // Tabla desconocida: el nombre crudo antes que un mensaje vacío.
+  assert.equal(notNullViolationMessage(notNullError, "tabla_inexistente"), "Falta «pais_id».");
+  // Sin columna no se inventa cuál.
+  assert.equal(notNullViolationMessage({ code: "23502" }, "documentos_identidad"), "Falta un dato obligatorio.");
+});
+
+// Es un 400 y NO un 409: no hay nada cogido, falta algo. La distinción importa porque el editor
+// genérico pinta los dos casos distinto.
+test("el que falta un dato es 400, no 409", () => {
+  const traducido = translateConstraintError(notNullError, "documentos_identidad");
+  assert.equal(traducido.statusCode ?? traducido.status, 400);
+  assert.match(traducido.message, /Falta «Pais emisor»/);
 });
 
 test("la clave foránea distingue escribir de borrar", () => {

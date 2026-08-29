@@ -247,7 +247,11 @@ CREATE TABLE IF NOT EXISTS documentos_identidad (
   -- dice `instituciones.pais_id`. Antes esta fila se llamaba `cedula_ec` y por eso Ecuador estaba
   -- metido en el vocabulario del sistema.
   tipo TEXT NOT NULL CHECK (tipo IN ('documento_nacional','documento_extranjero','pasaporte')),
-  pais_id INT NULL,
+  -- OBLIGATORIO. La unicidad de un documento es (tipo, pais, numero) y sin pais no se sostiene: el
+  -- indice usaba `COALESCE(pais_id, 0)` para que las filas sin pais agruparan entre si, y ese cero
+  -- era un pais inventado. Al documento NACIONAL no se le pregunta -- se lo pone el trigger de mas
+  -- abajo desde `instituciones` -- pero se GUARDA, que es lo que mantiene el modelo uniforme.
+  pais_id INT NOT NULL,
   numero VARCHAR(40) NOT NULL,
   verificado SMALLINT NOT NULL DEFAULT 0,
   verificado_at TIMESTAMP NULL,
@@ -276,7 +280,7 @@ CREATE TABLE IF NOT EXISTS documentos_identidad (
 -- (tipo, pais, numero) y NO el numero suelto: ver el punto 3 de arriba. `normalized_pais_id` existe
 -- porque un NULL no compara igual a otro NULL en un indice unico, y un documento sin pais emisor
 -- declarado tiene que seguir siendo unico dentro de su tipo.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_documentos_numero ON documentos_identidad (tipo, COALESCE(pais_id, 0), numero);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_documentos_numero ON documentos_identidad (tipo, pais_id, numero);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_documentos_principal ON documentos_identidad (person_id, principal_flag);
 CREATE INDEX IF NOT EXISTS idx_documentos_person ON documentos_identidad (person_id);
 CREATE INDEX IF NOT EXISTS idx_documentos_numero ON documentos_identidad (numero);
@@ -2472,3 +2476,33 @@ FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id', 'tipo');
 CREATE OR REPLACE TRIGGER trg_direcciones_principal_unico
 BEFORE INSERT OR UPDATE ON direcciones
 FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id', 'tipo');
+
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────
+-- El pais del documento NACIONAL lo pone la institucion.
+--
+-- `documentos_identidad.pais_id` es obligatorio, pero al documento nacional no se le pregunta: por
+-- definicion lo emite el pais de la institucion, y preguntarlo invita a poner otro y a romper la
+-- unicidad (tipo, pais, numero). El servicio ya lo rellenaba, pero el CRUD generico de /admin
+-- escribe DIRECTO a la tabla y ahi el campo va oculto: sin este trigger, dar de alta un documento
+-- nacional desde el admin fallaria con un error de columna nula que no le dice nada a nadie.
+--
+-- Va en la base y no en un hook por el mismo motivo que `trg_principal_unico_fn`: es un invariante
+-- del dato, asi que lo cumple todo el que escriba. Y va BEFORE porque PostgreSQL evalua el NOT NULL
+-- sobre la fila YA modificada por los triggers BEFORE -- si fuera AFTER, la insercion habria muerto
+-- antes de llegar aqui.
+CREATE OR REPLACE FUNCTION trg_documentos_pais_nacional_fn() RETURNS trigger AS $$
+BEGIN
+  IF NEW.tipo = 'documento_nacional' AND NEW.pais_id IS NULL THEN
+    SELECT i.pais_id INTO NEW.pais_id
+      FROM instituciones i
+     WHERE i.is_active = 1
+     ORDER BY i.id ASC
+     LIMIT 1;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_documentos_pais_nacional
+BEFORE INSERT OR UPDATE ON documentos_identidad
+FOR EACH ROW EXECUTE FUNCTION trg_documentos_pais_nacional_fn();

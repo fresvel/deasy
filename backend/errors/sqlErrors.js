@@ -28,15 +28,23 @@ export const PG_UNIQUE_VIOLATION = "23505";
 /** Violación de clave foránea (referencia inexistente, o fila referenciada al borrar). */
 export const PG_FOREIGN_KEY_VIOLATION = "23503";
 
+/** Columna obligatoria que llego nula. */
+export const PG_NOT_NULL_VIOLATION = "23502";
+
 export const isUniqueViolation = (error) => error?.code === PG_UNIQUE_VIOLATION;
+export const isNotNullViolation = (error) => error?.code === PG_NOT_NULL_VIOLATION;
 export const isForeignKeyViolation = (error) => error?.code === PG_FOREIGN_KEY_VIOLATION;
 
 /** Nombre de la restricción violada, "" si el error no es de restricción. */
 export const violatedConstraint = (error) => String(error?.constraint || "");
 
 // El `detail` de PostgreSQL no siempre lista columnas a secas: cuando el índice es de EXPRESIÓN
-// escribe la expresión entera. `uq_documentos_numero` es (tipo_id, COALESCE(pais_id, 0), numero) y
-// llega como `Key (tipo_id, COALESCE(pais_id, 0), numero)=(1, 60, "…")`.
+// escribe la expresión entera: un índice sobre (a, COALESCE(b, 0), c) llega como
+// `Key (a, COALESCE(b, 0), c)=(…)`.
+//
+// El que lo destapó fue `uq_documentos_numero`, que era (tipo, COALESCE(pais_id,0), numero). Ya no
+// lo es —`pais_id` pasó a NOT NULL y el COALESCE sobró—, así que hoy el esquema no tiene ninguno.
+// Esto se queda: es una forma que PostgreSQL produce, no una peculiaridad de aquella tabla.
 //
 // Por eso el patrón se ancla en `)=(` y no en «lo que no sea un paréntesis»: con `[^)]+` el primer
 // `)` de la COALESCE cortaba la captura, el patrón no casaba, y el mensaje caía al genérico
@@ -105,6 +113,27 @@ export function uniqueViolationMessage(error, tableName) {
     : `Ya existe otro registro con esa combinación de ${labels}.`;
 }
 
+/**
+ * «Falta «Pais emisor».» en vez del mensaje crudo de PostgreSQL.
+ *
+ * Hasta el 2026-08-29 el `23502` no se traducia y el usuario del admin leia
+ * `null value in column "pais_id" of relation "documentos_identidad" violates not-null constraint`,
+ * que nombra una columna que no aparece en ninguna pantalla.
+ *
+ * Y NO es un caso raro reservado a los descuidos: hay campos que la base exige y el formulario NO
+ * PREGUNTA a proposito, porque los rellena un trigger segun el resto de la fila —el pais del
+ * documento nacional es justo eso—. Ahi la base es el unico que sabe si de verdad falta algo,
+ * porque lo comprueba DESPUES de que los triggers hayan puesto lo suyo. Este mensaje es la unica
+ * forma de que ese "de verdad falta" llegue legible.
+ */
+export function notNullViolationMessage(error, tableName) {
+  const columna = String(error?.column || "");
+  if (!columna) {
+    return "Falta un dato obligatorio.";
+  }
+  return `Falta «${fieldLabel(tableName, columna)}».`;
+}
+
 export function foreignKeyViolationMessage(error, tableName, { deleting = false } = {}) {
   if (deleting) {
     // Al BORRAR, `error.table` es la tabla que REFERENCIA (la que impide el borrado), no la que
@@ -145,6 +174,10 @@ export function translateConstraintError(error, tableName, { deleting = false } 
     return deleting
       ? conflict(foreignKeyViolationMessage(error, tableName, { deleting: true }))
       : badRequest(foreignKeyViolationMessage(error, tableName));
+  }
+  // 400: el cliente no mando un dato obligatorio. No es 409 — nada esta cogido, falta algo.
+  if (isNotNullViolation(error)) {
+    return badRequest(notNullViolationMessage(error, tableName));
   }
   return null;
 }
