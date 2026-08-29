@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 77 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 78 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "actions" {
@@ -513,6 +513,17 @@ Table "fill_requests" {
     (document_fill_flow_id, fill_flow_step_id, assigned_person_id) [type: btree, unique, name: "uq_fill_requests"]
     (document_fill_flow_id, fill_flow_step_id) [type: btree, name: "idx_fill_requests_step"]
   }
+}
+
+Table "instituciones" {
+  "id" int4 [pk, not null, increment]
+  "nombre" varchar(180) [not null]
+  "pais_id" int4 [not null, note: '''El país del despliegue, y el único motivo por el que esta tabla existe hoy. No lleva restricción de fila única a propósito: `InstitucionService.actual()` falla si hay cero o más de una en vez de elegir en silencio, y es la costura por la que entraría un modelo multi-inquilino.''']
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''La institución que usa esta instalación, y la primera tabla de CONFIGURACIÓN del sistema: hasta el 2026-08-28 no había ninguna. De su país salen el validador del documento nacional, el nombre local de ese documento («Cédula» en Ecuador, «DNI» en Perú) y el valor que el formulario precarga. Antes eso vivía en el código como un tipo llamado `cedula_ec`.'''
 }
 
 Table "offers" {
@@ -1309,6 +1320,7 @@ Ref "fk_fill_flow_templates_task_item":"task_items"."id" ?<? "fill_flow_template
 Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
 Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
 Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
+Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
 Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
 Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"

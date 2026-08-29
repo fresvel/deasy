@@ -46,6 +46,25 @@ import {
 //     UN control —un mapa— para DOS columnas. Se declara en el primero de los dos y el segundo se
 //     omite de la lista de campos.
 export const SQL_TABLES = [
+  // ── La instalacion ─────────────────────────────────────────────────────────────────────────────
+  // La primera tabla de configuracion del sistema. Se edita aqui, no en un fichero: cambiar el pais
+  // cambia el validador del documento nacional, su nombre local y lo que el formulario precarga.
+  {
+    table: "instituciones",
+    label: "Institucion",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "nombre", label: "Nombre", type: "text", required: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["nombre"]
+  },
+
   // ── Geografia ──────────────────────────────────────────────────────────────────────────────────
   // Los siembra el bootstrap (seedGeographyCatalog) desde config/geografiaCatalog.js, que a su vez
   // es GENERADO. Se exponen aqui para consultarlos y para corregir un caso puntual, no para

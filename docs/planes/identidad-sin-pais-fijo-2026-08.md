@@ -16,7 +16,7 @@
 
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
-| **I1** | `instituciones` existe con su país, y el bootstrap la siembra | ⬜ | | |
+| **I1** | `instituciones` existe con su país, y el bootstrap la siembra | ✅ | Fila sembrada (`Institución` · EC · Ecuador) tras un reset limpio; aparece sola en `/admin/institucion/unidades-y-cargos/instituciones` sin escribir pantalla, con el país como combobox que ya ofrece «Perú»; 5 tests y su mutación cazada | 2026-08-29 |
 | **I2** | El validador y el nombre local del documento se resuelven **por país**, no por tipo | ⬜ | | |
 | **I3** | `documentos_identidad.tipo` es un `CHECK` de tres; `tipos_documento` desaparece | ⬜ | | |
 | **I4** | `documentos_identidad.pais_id` es obligatorio y el índice pierde el `COALESCE` | ⬜ | | |
@@ -164,6 +164,20 @@ La tabla y su fila única, sembrada por el bootstrap. Empieza con lo mínimo que
 en el esquema (comprobado el 2026-08-28), y el membrete de los documentos generados va a pedirla.
 
 ⚠️ **No inventar campos «por si acaso».** Nombre y país. Lo demás, cuando algo lo necesite.
+
+**Lo que se decidió al construirla (2026-08-29):**
+
+- **Sin restricción de fila única.** Un `CHECK` de singleton habría que quitarlo el día del
+  multi-inquilino, y este esquema **no tiene ni un `ALTER`**, así que quitarlo no sería gratis.
+  Quien resuelve «cuál es la mía» es `InstitucionService.actual()`, que **falla si hay cero o más de
+  una** en vez de elegir en silencio — elegir «la primera» ante dos daría un país equivocado y con
+  él un validador equivocado, sin que nadie entendiera por qué se rechaza un número. Ese método es
+  la costura por la que entraría la resolución del inquilino.
+- **El país por defecto es Ecuador, y eso NO es lo que se acaba de quitar.** Antes Ecuador estaba en
+  una **rama del programa** (un tipo llamado `cedula_ec`); ahora es el **valor inicial de una fila**
+  que se edita en `/admin`. Un despliegue peruano cambia esa fila y lo demás le sigue.
+- **Va después de `paises` en el esquema**, no donde la puse primero: la clave ajena lo exige y
+  PostgreSQL lo rechaza de plano.
 
 ### I2 · El registro por país
 

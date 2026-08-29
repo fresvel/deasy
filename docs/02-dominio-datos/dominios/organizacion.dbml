@@ -31,6 +31,17 @@ Table "ciudades" {
   }
 }
 
+Table "instituciones" {
+  "id" int4 [pk, not null, increment]
+  "nombre" varchar(180) [not null]
+  "pais_id" int4 [not null, note: '''El país del despliegue, y el único motivo por el que esta tabla existe hoy. No lleva restricción de fila única a propósito: `InstitucionService.actual()` falla si hay cero o más de una en vez de elegir en silencio, y es la costura por la que entraría un modelo multi-inquilino.''']
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''La institución que usa esta instalación, y la primera tabla de CONFIGURACIÓN del sistema: hasta el 2026-08-28 no había ninguna. De su país salen el validador del documento nacional, el nombre local de ese documento («Cédula» en Ecuador, «DNI» en Perú) y el valor que el formulario precarga. Antes eso vivía en el código como un tipo llamado `cedula_ec`.'''
+}
+
 Table "paises" {
   "id" int4 [pk, not null, increment]
   "iso_alpha2" bpchar(2) [unique, not null]
@@ -146,6 +157,7 @@ Table "units" {
 }
 
 Ref "fk_ciudades_provincia":"provincias"."id" <? "ciudades"."provincia_id"
+Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"

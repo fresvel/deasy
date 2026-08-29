@@ -277,6 +277,37 @@ const seedGeographyCatalog = async (connection) => {
 
 };
 
+// La institución de esta instalación. Se siembra ANTES que nada porque de su país sale el validador
+// del documento nacional, y sin ella el alta del admin no sabria como validar su numero.
+//
+// EL PAIS POR DEFECTO ES ECUADOR, y eso NO es lo mismo que el codigo que se acaba de quitar. Antes
+// habia un TIPO llamado `cedula_ec`: Ecuador estaba en una rama del programa. Ahora es el valor
+// inicial de una fila que se edita en /admin, y el codigo no lo menciona. Un despliegue peruano
+// cambia esa fila y todo lo demas le sigue.
+const INSTITUCION_NOMBRE_POR_DEFECTO = "Institución";
+const INSTITUCION_PAIS_POR_DEFECTO = "EC";
+
+const seedInstitucion = async (connection) => {
+  const existente = await fetchOne(connection, "SELECT id FROM instituciones WHERE is_active = 1 ORDER BY id ASC LIMIT 1");
+  if (existente) {
+    return Number(existente.id);
+  }
+
+  const pais = await fetchOne(connection, "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1", [INSTITUCION_PAIS_POR_DEFECTO]);
+  if (!pais) {
+    throw new Error(
+      `No se pudo sembrar la institucion: falta ${INSTITUCION_PAIS_POR_DEFECTO} en el catalogo de paises. ` +
+      "seedGeographyCatalog tiene que correr antes."
+    );
+  }
+
+  const [result] = await connection.query(
+    "INSERT INTO instituciones (nombre, pais_id, is_active) VALUES (?, ?, 1)",
+    [INSTITUCION_NOMBRE_POR_DEFECTO, Number(pais.id)]
+  );
+  return Number(result.insertId);
+};
+
 const ensureBootstrapUnit = async (connection) => {
   const existingUnit = await fetchOne(
     connection,
@@ -956,6 +987,7 @@ export default class SystemBootstrapService {
       await connection.beginTransaction();
       const roleIds = await seedBaseRbacCatalog(connection);
       await seedGeographyCatalog(connection);
+      await seedInstitucion(connection);
       const unitId = await ensureBootstrapUnit(connection);
       const admin = await upsertAdminPerson(connection, adminPayload);
       await ensureAdminRoleAssignment(connection, {
@@ -1037,6 +1069,7 @@ export default class SystemBootstrapService {
       await connection.beginTransaction();
       const roleIds = await seedBaseRbacCatalog(connection);
       await seedGeographyCatalog(connection);
+      await seedInstitucion(connection);
       const unitId = await ensureBootstrapUnit(connection);
       const admin = await upsertAdminPerson(connection, adminPayload);
       await ensureAdminRoleAssignment(connection, {
