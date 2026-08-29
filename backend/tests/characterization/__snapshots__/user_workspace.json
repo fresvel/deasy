@@ -33,6 +33,15 @@
       "message"
     ]
   },
+  "escaneo_ajeno_denegado": {
+    "status": 403
+  },
+  "escaneo_por_cedula_denegado": {
+    "status": 403
+  },
+  "escaneo_propio_sin_pdf": {
+    "status": 404
+  },
   "flow_catalog_usuario": {
     "status": 200,
     "body": {

@@ -2,7 +2,7 @@
 //
 // ⚠️ POLITICA MAS ESTRICTA QUE LA DE LA FOTO. El avatar lo puede ver cualquier compañero con sesion
 // —aparece en listados, chat y firmas—; un documento de identidad escaneado NO. Aqui la lectura
-// exige ser el dueño o tener rol elevado, y lo impone la ruta con `requireCedulaAccess`.
+// exige ser el dueño o tener rol elevado, y lo impone la ruta con `requirePersonAccess`.
 //
 // El fichero nunca se expone por URL directa: se transmite por este handler, igual que la foto.
 import UserRepository from "../../services/auth/UserRepository.js";
@@ -17,10 +17,12 @@ import {
 const userRepository = new UserRepository();
 const documentos = new DocumentoIdentidadService();
 
-// Resuelve el documento PRINCIPAL de la persona identificada por su cedula en la ruta. Se usa el
-// principal y no un id suelto para que la URL no permita apuntar al documento de otro.
-const resolverDocumento = async (cedula) => {
-  const persona = await userRepository.findByCedulaOrEmail({ cedula });
+// Resuelve el documento PRINCIPAL de la persona identificada en la ruta por su ID. Se usa el
+// principal y no un id de documento suelto para que la URL no permita apuntar al documento de otro.
+const resolverDocumento = async (personId) => {
+  const id = Number(personId);
+  if (!Number.isInteger(id) || id <= 0) return { error: 400, message: "Se requiere el id de la persona." };
+  const persona = await userRepository.findById(id);
   if (!persona) return { error: 404, message: "Usuario no encontrado." };
   const documento = await documentos.principalDe(persona.id ?? persona._id);
   if (!documento) return { error: 404, message: "La persona no tiene un documento de identidad registrado." };
@@ -33,7 +35,7 @@ export const subirEscaneoDocumento = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "Debe adjuntar el PDF en el campo 'escaneo'." });
     }
-    const { documento, error, message } = await resolverDocumento(String(req.params?.cedula || "").trim());
+    const { documento, error, message } = await resolverDocumento(req.params?.personId);
     if (error) return res.status(error).json({ message });
 
     const { reference } = await storeEscaneo({
@@ -63,7 +65,7 @@ export const subirEscaneoDocumento = async (req, res) => {
 
 export const descargarEscaneoDocumento = async (req, res) => {
   try {
-    const { documento, error, message } = await resolverDocumento(String(req.params?.cedula || "").trim());
+    const { documento, error, message } = await resolverDocumento(req.params?.personId);
     if (error) return res.status(error).json({ message });
 
     const abierto = await openEscaneo(documento.escaneo_ref);

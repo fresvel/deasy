@@ -7,16 +7,20 @@ import { API_ROUTES } from "@/core/config/apiConfig";
 
 export const DEFAULT_USER_PHOTO = "/images/avatar.png";
 
-// cedula -> { key, objectUrl }. La clave incluye la referencia y el updatedAt para
+// personId -> { key, objectUrl }. La clave incluye la referencia y el updatedAt para
 // que una foto nueva invalide la anterior sin recargar la aplicacion.
+//
+// Antes la cache y la URL iban por CEDULA. El endpoint pasó a `/users/:personId/photo` el
+// 2026-08-29: lo que la ruta resolvia era el numero del documento principal, y un pasaporte cambia
+// de numero al renovarse — la direccion de la foto de una persona cambiaba con su documento.
 const photoCache = new Map();
 
 const photoValueOf = (user) => user?.photoUrl ?? user?.photo_url ?? user?.photo ?? null;
 
 const cacheKeyOf = (user) => `${photoValueOf(user) ?? ""}|${user?.updatedAt ?? user?.updated_at ?? ""}`;
 
-export const invalidateUserPhoto = (cedula) => {
-  const key = String(cedula ?? "").trim();
+export const invalidateUserPhoto = (personId) => {
+  const key = String(personId ?? "").trim();
   const cached = photoCache.get(key);
   if (cached?.objectUrl) {
     URL.revokeObjectURL(cached.objectUrl);
@@ -29,26 +33,27 @@ export const resolveUserPhotoUrl = async (user) => {
     return DEFAULT_USER_PHOTO;
   }
 
-  const cedula = String(user?.cedula ?? "").trim();
-  if (!cedula) {
+  // `id` en el objeto publico del backend, `_id` en el que devuelve el login.
+  const personId = String(user?.id ?? user?._id ?? "").trim();
+  if (!personId) {
     return DEFAULT_USER_PHOTO;
   }
 
   const key = cacheKeyOf(user);
-  const cached = photoCache.get(cedula);
+  const cached = photoCache.get(personId);
   if (cached?.key === key) {
     return cached.objectUrl;
   }
 
   try {
-    const { data } = await axios.get(`${API_ROUTES.USERS}/${encodeURIComponent(cedula)}/photo`, {
+    const { data } = await axios.get(`${API_ROUTES.USERS}/${encodeURIComponent(personId)}/photo`, {
       responseType: "blob"
     });
     const objectUrl = URL.createObjectURL(data);
     if (cached?.objectUrl) {
       URL.revokeObjectURL(cached.objectUrl);
     }
-    photoCache.set(cedula, { key, objectUrl });
+    photoCache.set(personId, { key, objectUrl });
     return objectUrl;
   } catch (error) {
     // 404 = el usuario no tiene foto o la referencia quedo colgada: avatar por defecto.

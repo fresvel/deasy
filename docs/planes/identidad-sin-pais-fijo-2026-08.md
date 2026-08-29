@@ -20,7 +20,7 @@
 | **I2** | El validador y el nombre local del documento se resuelven **por país**, no por tipo | ✅ | **Probado moviendo la institución a Perú sin tocar código**: el número `12345678` que Ecuador rechaza («tiene exactamente 10 dígitos») queda aceptado y guardado con `pais=PE`. 8 tests del registro + 2 del servicio; 2 mutaciones cazadas | 2026-08-29 |
 | **I3** | `documentos_identidad.tipo` es un `CHECK` de tres; `tipos_documento` desaparece | ✅ | **La pantalla de registro entera sigue al país**: con la institución en Perú dice «Documento (Perú)» y el número pasa de `maxlength` 10 a 20; con Ecuador, «Cédula (Ecuador)». El admin pierde la pestaña de tipos (8→7) y el «Pais emisor» sólo aparece si el tipo no es el nacional. 77 tablas, las mismas: entró `instituciones`, salió `tipos_documento` | 2026-08-29 |
 | **I4** | `documentos_identidad.pais_id` es obligatorio y el índice pierde el `COALESCE` | ✅ | Índice `(tipo, pais_id, numero)` sin el cero inventado; alta de un documento nacional **sin país desde /admin** que lo hereda de la institución, y pasaporte sin país que responde «Falta «Pais emisor».» en vez del mensaje crudo. 2 goldens nuevos, 2 mutaciones del esquema cazadas | 2026-08-29 |
-| **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ⬜ | | |
+| **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ✅ | Foto subida por `PUT /users/2/photo` y guardada en `users/**2**/profile/…`; el frontend la pide por id y el avatar renderiza. Guard nuevo `requirePersonAccess`: ajeno 403, cédula 403, propio 404. 3 goldens de acceso, y abrir el guard cae por dos | 2026-08-29 |
 | **I6** | 💥 El login **sólo acepta correo**. Cambian las credenciales de referencia | ⬜ | | |
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ⬜ | | |
 | **I8** | Recuperación «olvidé mi correo» por documento + país | ⛔ | **Aplazada por el dueño** al 2026-08-28: se trata en otra sesión | |
@@ -276,8 +276,21 @@ GET|PUT /users/:cedula/photo
 GET|PUT /users/:cedula/documento/escaneo
 ```
 
-Y `requireCedulaAccess` con ellas. Las **28 rutas** con `:cedula` no se migran todas en esta tarea:
-el resto (el expediente, sobre todo) es un frente propio y se anota, no se arrastra.
+Con un guard nuevo, **`requirePersonAccess`**, que compara **como número**: `"7"` y `7` son la misma
+persona, y una comparación de cadenas los habría dado por distintos — dejando al dueño fuera de su
+propia foto.
+
+**Y la clave del objeto en MinIO también.** La foto se guardaba en `users/{cédula}/profile/…`, atada
+a un dato que cambia; ahora es `users/{personId}/…`, que es el criterio que el escaneo ya seguía.
+
+**Lo que NO se migra, y por qué.** Quedan **24** rutas con `:cedula`: **22 del expediente**, que son
+un frente propio y se anotan sin arrastrarse, y **una que se queda para siempre** —
+`GET /users/validate/cedula/:cedula`, que no identifica a nadie: valida **un número** contra el
+registro civil. Ahí el parámetro *es* el dato.
+
+⚠️ **Las cuatro rutas se migraron con las 306 pruebas EN VERDE**: ningún golden las tocaba. Los tres
+casos nuevos fijan el **contrato de acceso**, que es la parte que duele — el escaneo de un documento
+de identidad no lo puede leer un compañero cualquiera.
 
 ### I6 · 💥 El login sólo correo
 

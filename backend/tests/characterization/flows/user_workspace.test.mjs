@@ -56,6 +56,47 @@ before(async () => {
 
 // --- El panel: la lectura más pesada del controller (M4 + la mayoría de M3) ---
 
+// LA FOTO Y EL ESCANEO ENTRAN POR EL ID DE LA PERSONA, no por su documento.
+//
+// Hasta el 2026-08-29 la ruta era `/users/:cedula/...`, y lo que resolvia era el NUMERO DEL
+// DOCUMENTO PRINCIPAL — sea cedula o pasaporte. Un pasaporte cambia de numero al renovarse, asi que
+// la direccion de la foto de una persona cambiaba con su documento.
+//
+// Estos casos existen porque al migrar las cuatro rutas las 306 pruebas siguieron EN VERDE: ningun
+// golden las tocaba. Lo que fijan es el CONTRATO DE ACCESO, que es la parte que duele si se rompe:
+// el escaneo de un documento de identidad no lo puede leer un compañero cualquiera.
+test("GET /users/:personId/documento/escaneo -> el dueño pasa el guard (404 si no hay PDF, no 403)", async () => {
+  const token = await tokenFor("gestor");
+  const yo = await get("/users/me", { token });
+  const personId = yo.body?.user?.id;
+  assert.ok(personId, "hace falta el id del gestor");
+
+  const res = await get(`/users/${personId}/documento/escaneo`, { token });
+  matchSnapshot(SUITE, "escaneo_propio_sin_pdf", { status: res.status });
+  assert.notEqual(res.status, 403, "el dueño NO puede recibir un 403 sobre su propio documento");
+});
+
+test("GET /users/:personId/documento/escaneo de OTRA persona -> 403", async () => {
+  const token = await tokenFor("gestor");
+  const admin = await get("/admin/sql/persons?limit=1", { token: await tokenFor("admin") });
+  const otroId = (Array.isArray(admin.body) ? admin.body : [])[0]?.id;
+  const yo = await get("/users/me", { token });
+  assert.ok(otroId && Number(otroId) !== Number(yo.body?.user?.id), "hace falta una persona distinta");
+
+  const res = await get(`/users/${otroId}/documento/escaneo`, { token });
+  matchSnapshot(SUITE, "escaneo_ajeno_denegado", { status: res.status });
+  assert.equal(res.status, 403);
+});
+
+// La cedula era la llave de esta ruta y ya no lo es. Si algun dia alguien "arregla" el guard
+// haciendolo aceptar tambien el numero de documento, este caso lo caza.
+test("GET /users/<cédula>/documento/escaneo -> la cédula ya no abre esta puerta", async () => {
+  const token = await tokenFor("gestor");
+  const res = await get("/users/0927654327/documento/escaneo", { token });
+  matchSnapshot(SUITE, "escaneo_por_cedula_denegado", { status: res.status });
+  assert.equal(res.status, 403);
+});
+
 test("GET /users/:id/process-definitions/:definitionId/panel -> panel operativo", async () => {
   const token = await tokenFor("usuario");
   const res = await get(

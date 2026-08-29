@@ -467,20 +467,22 @@ export default class UserRepository {
     return publicUser;
   }
 
-  async updatePhotoByCedula(cedula, photoUrl) {
+  // Por ID y no por numero de documento: era una subconsulta a `documentos_identidad` para llegar a
+  // la persona que ya venia identificada en la ruta, y ataba la foto a un dato que cambia.
+  async updatePhotoByPersonId(personId, photoUrl) {
     this.ensurePool();
 
-    if (!cedula) {
-      throw new Error("La cédula es requerida");
+    const id = Number(personId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error("El id de la persona es requerido");
     }
 
     await this.pool.query(
-      `UPDATE persons SET photo_url = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id IN (SELECT d.person_id FROM documentos_identidad d WHERE d.numero = ? AND d.is_active = 1)`,
-      [photoUrl, cedula]
+      "UPDATE persons SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [photoUrl, id]
     );
 
-    const updated = await this.findByCedulaOrEmail({ cedula });
+    const updated = await this.findById(id);
 
     return this.toPublicUser(updated);
   }

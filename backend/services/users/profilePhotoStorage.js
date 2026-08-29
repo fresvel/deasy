@@ -103,9 +103,13 @@ export class UnsupportedImageError extends Error {
   }
 }
 
-// deasy-users ya organiza sus objetos como users/{cedula}/... (ver sign_controller.js).
-export const buildProfilePhotoObjectName = (cedula, extension, timestamp) => {
-  const safeCedula = String(cedula ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
+// deasy-users organiza sus objetos como users/{personId}/...
+//
+// Antes la clave era el NUMERO DEL DOCUMENTO, y eso ataba el fichero a un dato que cambia: un
+// pasaporte se renueva con numero nuevo. El id de la persona no cambia nunca. Es el mismo criterio
+// que ya seguia el escaneo del documento.
+export const buildProfilePhotoObjectName = (personId, extension, timestamp) => {
+  const safeCedula = String(personId ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
   if (!safeCedula) {
     throw new Error("La cédula es requerida para guardar la foto de perfil.");
   }
@@ -125,13 +129,13 @@ const readSignature = async (filePath) => {
 
 // Sube el temporal de multer a MinIO y devuelve la referencia que va en photo_url.
 // El borrado del temporal es responsabilidad de quien llama (bloque finally).
-export const storeProfilePhoto = async ({ cedula, filePath, timestamp = Date.now() }) => {
+export const storeProfilePhoto = async ({ personId, filePath, timestamp = Date.now() }) => {
   const format = detectImageFormat(await readSignature(filePath));
   if (!format) {
     throw new UnsupportedImageError();
   }
 
-  const objectName = buildProfilePhotoObjectName(cedula, format.extension, timestamp);
+  const objectName = buildProfilePhotoObjectName(personId, format.extension, timestamp);
   await ensureBucketExists(MINIO_USERS_BUCKET);
   await uploadFileToMinio(MINIO_USERS_BUCKET, objectName, filePath, {
     "Content-Type": format.contentType

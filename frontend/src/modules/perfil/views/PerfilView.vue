@@ -331,7 +331,7 @@ const profileContextSubtitle = computed(() =>
             formData.append('photo', file);
 
             const { data } = await axios.put(
-                `${API_PREFIX}/users/${currentUser.value.cedula}/photo`,
+                `${API_PREFIX}/users/${currentUser.value.id ?? currentUser.value._id}/photo`,
                 formData,
                 {
                     headers: {
@@ -343,7 +343,7 @@ const profileContextSubtitle = computed(() =>
             if (data?.user?.photoUrl) {
                 currentUser.value.photoUrl = data.user.photoUrl;
                 // La foto anterior sigue cacheada bajo la misma cedula: hay que tirarla.
-                invalidateUserPhoto(currentUser.value.cedula);
+                invalidateUserPhoto(currentUser.value.id ?? currentUser.value._id);
                 userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
             }
             localStorage.setItem('user', JSON.stringify(currentUser.value));

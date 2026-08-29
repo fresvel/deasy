@@ -42,7 +42,7 @@ import { badRequest } from "../errors/HttpError.js";
 import { authMiddleware } from "../middlewares/auth.js";
 import {
   loadAccessContext,
-  requireCedulaAccess,
+  requirePersonAccess,
   requirePermissions,
   requireRouteUserAccess
 } from "../middlewares/rbac.js";
@@ -301,13 +301,13 @@ router.delete('/me/certificates/:certificateId', authMiddleware, loadAccessConte
 
 // Lectura autenticada de la foto. Basta con tener sesion activa: los avatares se
 // muestran entre companeros, lo que se corta es el acceso anonimo por /uploads.
-router.get('/:cedula/photo', authMiddleware, loadAccessContext, getUserPhoto);
+router.get('/:personId/photo', authMiddleware, loadAccessContext, getUserPhoto);
 
 router.put(
-  '/:cedula/photo',
+  '/:personId/photo',
   authMiddleware,
   loadAccessContext,
-  requireCedulaAccess({ resource: "account", action: "update", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
+  requirePersonAccess({ resource: "account", action: "update", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
   (req, res, next) => {
     uploadProfilePhoto.single('photo')(req, res, (err) => {
       if (err) {
@@ -325,18 +325,18 @@ router.put(
 // porque sale en listados, chat y firmas; un documento de identidad escaneado NO. Las DOS
 // operaciones —leer y subir— exigen ser el dueno o tener rol elevado.
 router.get(
-  '/:cedula/documento/escaneo',
+  '/:personId/documento/escaneo',
   authMiddleware,
   loadAccessContext,
-  requireCedulaAccess({ resource: "account", action: "read", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
+  requirePersonAccess({ resource: "account", action: "read", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
   descargarEscaneoDocumento
 );
 
 router.put(
-  '/:cedula/documento/escaneo',
+  '/:personId/documento/escaneo',
   authMiddleware,
   loadAccessContext,
-  requireCedulaAccess({ resource: "account", action: "update", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
+  requirePersonAccess({ resource: "account", action: "update", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
   (req, res, next) => {
     uploadEscaneoDocumento.single('escaneo')(req, res, (err) => {
       if (err) {
@@ -348,11 +348,13 @@ router.put(
   subirEscaneoDocumento
 );
 
+// ESTA SI lleva `:cedula`, y es la unica que debe: no identifica a una persona, valida UN NUMERO
+// de cedula contra el registro civil. El parametro es el dato, no una llave.
 router.get('/validate/cedula/:cedula', verifyCedulaEc);
 router.get('/validate/whatsapp/:phone', verifyWhatsappEc);
 
 // Va al final a proposito: recoge lo que multer rechaza en CUALQUIERA de las rutas de arriba.
-// La foto de perfil NO pasa por aqui: `PUT /:cedula/photo` envuelve su propio multer y ya
+// La foto de perfil NO pasa por aqui: `PUT /:personId/photo` envuelve su propio multer y ya
 // responde JSON por su cuenta.
 router.use(handleUploadError);
 

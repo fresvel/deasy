@@ -25,14 +25,14 @@ export const updateUserPhoto = async (req, res) => {
       return res.status(400).send({ message: "Debe adjuntar la foto en el campo 'photo'." });
     }
 
-    const cedula = String(req.params?.cedula || "").trim();
-    const existingUser = await userRepository.findByCedulaOrEmail({ cedula });
+    const personId = Number(req.params?.personId);
+    const existingUser = await userRepository.findById(personId);
     if (!existingUser) {
       return res.status(404).send({ message: "Usuario no encontrado" });
     }
 
-    const stored = await storeProfilePhoto({ cedula, filePath: req.file.path });
-    const updatedUser = await userRepository.updatePhotoByCedula(cedula, stored.reference);
+    const stored = await storeProfilePhoto({ personId, filePath: req.file.path });
+    const updatedUser = await userRepository.updatePhotoByPersonId(personId, stored.reference);
     await removeStoredPhoto(existingUser.photo_url);
 
     res.json({ result: "ok", user: updatedUser });
@@ -50,13 +50,13 @@ export const updateUserPhoto = async (req, res) => {
 };
 
 export const getUserPhoto = async (req, res) => {
-  const cedula = String(req.params?.cedula || "").trim();
-  if (!cedula) {
-    return res.status(400).json({ message: "Se requiere la cédula del usuario." });
+  const personId = Number(req.params?.personId);
+  if (!Number.isInteger(personId) || personId <= 0) {
+    return res.status(400).json({ message: "Se requiere el id de la persona." });
   }
 
   try {
-    const user = await userRepository.findByCedulaOrEmail({ cedula });
+    const user = await userRepository.findById(personId);
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
