@@ -48,25 +48,40 @@ describe("normalizarNumero", () => {
   });
 });
 
-const servicioCon = (filasPorConsulta) => {
+// El falso responde POR CONTENIDO de la consulta, no por orden de llamada.
+//
+// Antes iba por orden —un array y un contador— y eso lo hacia romperse con cualquier consulta nueva
+// del servicio, aunque no tuviera nada que ver con lo que la prueba comprueba. Paso el 2026-08-29 al
+// resolver el validador por pais: dos pruebas de FORMATO empezaron a fallar quejandose de la
+// institucion, que no era su asunto. Un falso que se rompe por donde no mira la prueba no protege,
+// estorba.
+const servicioCon = ({ tipo = [], pais = [], institucion = [], documentos = [], principal = [] } = {}) => {
   const consultas = [];
-  let n = 0;
+  const responde = (sql) => {
+    if (/FROM tipos_documento/i.test(sql)) return tipo;
+    if (/FROM instituciones/i.test(sql)) return institucion;
+    if (/FROM paises/i.test(sql)) return pais;
+    if (/FROM documentos_identidad d\s/i.test(sql)) return documentos;
+    if (/FROM documentos_identidad WHERE person_id/i.test(sql)) return principal;
+    return [];
+  };
   return {
     consultas,
     servicio: new DocumentoIdentidadService({
       query: async (sql, params) => {
         consultas.push({ sql, params });
-        const filas = filasPorConsulta[n] ?? [];
-        n += 1;
-        return [filas];
+        return [responde(sql)];
       }
     })
   };
 };
 
+const ECUADOR = { id: 60, iso_alpha2: "EC", name: "Ecuador" };
+const INSTITUCION_EC = [{ id: 1, nombre: "Institución", pais_id: 60, pais_iso: "EC", pais_nombre: "Ecuador" }];
+
 describe("DocumentoIdentidadService · validación por tipo", () => {
   it("una cédula con el verificador malo se RECHAZA con 400", async () => {
-    const { servicio } = servicioCon([[{ id: 1, code: "cedula_ec", name: "Cedula", validacion: "cedula_ec" }]]);
+    const { servicio } = servicioCon({ tipo: [{ id: 1, code: "cedula_ec", name: "Cedula" }], institucion: INSTITUCION_EC, pais: [ECUADOR] });
     await assert.rejects(
       () => servicio.guardarPrincipal(1, { tipo: "cedula_ec", numero: "1710034066" }),
       (error) => {
@@ -78,7 +93,7 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
   });
 
   it("un pasaporte SIN país emisor se rechaza: sin él la unicidad no se sostiene", async () => {
-    const { servicio } = servicioCon([[{ id: 2, code: "pasaporte", name: "Pasaporte", validacion: "alfanumerico" }]]);
+    const { servicio } = servicioCon({ tipo: [{ id: 2, code: "pasaporte", name: "Pasaporte" }], pais: [ECUADOR] });
     await assert.rejects(
       () => servicio.guardarPrincipal(1, { tipo: "pasaporte", numero: "AB123456" }),
       (error) => {
@@ -90,7 +105,7 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
   });
 
   it("un pasaporte con caracteres raros se rechaza", async () => {
-    const { servicio } = servicioCon([[{ id: 2, code: "pasaporte", name: "Pasaporte", validacion: "alfanumerico" }]]);
+    const { servicio } = servicioCon({ tipo: [{ id: 2, code: "pasaporte", name: "Pasaporte" }], pais: [ECUADOR] });
     await assert.rejects(
       () => servicio.guardarPrincipal(1, { tipo: "pasaporte", pais: "ES", numero: "AB/12*3456" }),
       (error) => {
@@ -100,8 +115,43 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
     );
   });
 
+  // Lo que I2 entrega: el pais del documento nacional sale de la INSTITUCION. Antes habia un
+  // `SELECT ... WHERE iso_alpha2 = 'EC'` escrito a mano, asi que un despliegue peruano habria
+  // guardado las cedulas de sus usuarios como ecuatorianas.
+  it("el documento nacional hereda el país de la institución, no de un 'EC' a mano", async () => {
+    const { servicio, consultas } = servicioCon({
+      tipo: [{ id: 1, code: "cedula_ec", name: "Cedula" }],
+      institucion: [{ id: 1, nombre: "Institución", pais_id: 604, pais_iso: "PE", pais_nombre: "Perú" }],
+      principal: []
+    });
+    // Con la institucion en Peru, un numero de 8 digitos NO se valida como cedula ecuatoriana.
+    await servicio.guardarPrincipal(1, { tipo: "cedula_ec", numero: "12345678" });
+
+    const insert = consultas.find((c) => /INSERT INTO documentos_identidad/i.test(c.sql));
+    assert.ok(insert, "tiene que haber insertado el documento");
+    assert.ok(insert.params.includes(604), "el país guardado es el de la institución");
+    assert.ok(
+      !consultas.some((c) => /iso_alpha2 = 'EC'/.test(c.sql)),
+      "no puede quedar ni un SELECT con Ecuador escrito a mano"
+    );
+  });
+
+  it("y con la institución en Ecuador, ese mismo número se RECHAZA", async () => {
+    const { servicio } = servicioCon({
+      tipo: [{ id: 1, code: "cedula_ec", name: "Cedula" }],
+      institucion: INSTITUCION_EC
+    });
+    await assert.rejects(
+      () => servicio.guardarPrincipal(1, { tipo: "cedula_ec", numero: "12345678" }),
+      (error) => {
+        assert.match(error.message, /10 dígitos/);
+        return true;
+      }
+    );
+  });
+
   it("un tipo que no está en el catálogo se rechaza", async () => {
-    const { servicio } = servicioCon([[]]);
+    const { servicio } = servicioCon({ tipo: [] });
     await assert.rejects(
       () => servicio.guardarPrincipal(1, { tipo: "carne_conducir", numero: "123456" }),
       (error) => {

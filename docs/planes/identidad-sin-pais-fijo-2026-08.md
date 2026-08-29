@@ -17,7 +17,7 @@
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
 | **I1** | `instituciones` existe con su país, y el bootstrap la siembra | ✅ | Fila sembrada (`Institución` · EC · Ecuador) tras un reset limpio; aparece sola en `/admin/institucion/unidades-y-cargos/instituciones` sin escribir pantalla, con el país como combobox que ya ofrece «Perú»; 5 tests y su mutación cazada | 2026-08-29 |
-| **I2** | El validador y el nombre local del documento se resuelven **por país**, no por tipo | ⬜ | | |
+| **I2** | El validador y el nombre local del documento se resuelven **por país**, no por tipo | ✅ | **Probado moviendo la institución a Perú sin tocar código**: el número `12345678` que Ecuador rechaza («tiene exactamente 10 dígitos») queda aceptado y guardado con `pais=PE`. 8 tests del registro + 2 del servicio; 2 mutaciones cazadas | 2026-08-29 |
 | **I3** | `documentos_identidad.tipo` es un `CHECK` de tres; `tipos_documento` desaparece | ⬜ | | |
 | **I4** | `documentos_identidad.pais_id` es obligatorio y el índice pierde el `COALESCE` | ⬜ | | |
 | **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ⬜ | | |
@@ -186,6 +186,22 @@ en el esquema (comprobado el 2026-08-28), y el membrete de los documentos genera
 
 Se puede hacer sin `I3`: mientras `tipos_documento` siga existiendo, el servicio resuelve por país y
 deja de mirar la columna `validacion`.
+
+**Lo hecho (2026-08-29):**
+
+- `documentosPorPais.js` — el registro. `validadorPara({ tipoCode, paisIso })` y `nombreLocal(iso)`.
+- **El orden cambió y era necesario:** el país se resuelve **antes** de validar. No se puede saber si
+  un número está bien formado sin saber de qué país es; antes se validaba primero porque el validador
+  colgaba del tipo. Ningún golden se movió, así que no cambió ningún contrato observable.
+- **El `SELECT ... WHERE iso_alpha2 = 'EC'` escrito a mano desapareció**: el país del documento
+  nacional sale de `InstitucionService.paisActual()`.
+- `TIPO_NACIONAL` queda como constante en un solo sitio, para que `I3` sólo tenga que tocar ahí.
+
+⚠️ **El falso de las pruebas de `DocumentoIdentidadService` iba POR ORDEN de llamada** —un array y un
+contador—, así que cualquier consulta nueva del servicio lo descolocaba aunque no tuviera nada que ver
+con lo que la prueba comprueba: dos pruebas de FORMATO empezaron a fallar quejándose de la institución.
+Se reescribió para responder **por contenido de la consulta**. Un falso que se rompe por donde la
+prueba no mira no protege: estorba.
 
 ### I3 · El `CHECK` 💣 la tabla
 

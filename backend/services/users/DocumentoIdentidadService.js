@@ -1,4 +1,6 @@
 import { getPostgresPool } from "../../config/postgres.js";
+import InstitucionService from "../system/InstitucionService.js";
+import { validadorPara, cedulaEcuatorianaValida } from "./documentosPorPais.js";
 
 // Los documentos de identidad de una persona. Sustituye a `persons.cedula`.
 //
@@ -25,6 +27,10 @@ const errorDeConflicto = (mensaje) => {
   return error;
 };
 
+// El codigo del tipo nacional. Hoy sigue siendo `cedula_ec` porque el catalogo aun no ha cambiado;
+// I3 lo renombra a `documento_nacional` y este es el UNICO sitio donde hay que tocarlo.
+const TIPO_NACIONAL = "cedula_ec";
+
 const esVacio = (valor) => valor === undefined || valor === null || String(valor).trim() === "";
 
 // Se guarda en MAYUSCULAS y sin separadores. Los pasaportes se escriben con espacios y guiones de
@@ -32,56 +38,25 @@ const esVacio = (valor) => valor === undefined || valor === null || String(valor
 // documentos distintos que el indice unico dejaria pasar.
 export const normalizarNumero = (valor) => String(valor ?? "").trim().toUpperCase().replace(/[\s.-]/g, "");
 
-// El digito verificador de la cedula ecuatoriana: modulo 10 sobre los nueve primeros digitos, con
-// los de posicion impar duplicados (y restandoles 9 si pasan de 9).
-//
-// Se comprueba AQUI, gratis y sin red. El servicio externo `validateCedulaEc` sigue existiendo y
-// hace otra cosa: preguntarle al registro civil si esa persona existe. Esto caza la errata antes
-// de gastar la llamada, y funciona aunque ese servicio este caido o sin token.
-export const cedulaEcuatorianaValida = (numero) => {
-  const digitos = String(numero ?? "").replace(/\D/g, "");
-  if (!/^\d{10}$/.test(digitos)) return false;
-  // Los dos primeros son la provincia: 01..24, mas 30 para los emitidos en el exterior.
-  const provincia = Number(digitos.slice(0, 2));
-  if (!((provincia >= 1 && provincia <= 24) || provincia === 30)) return false;
-  // El tercero identifica el tipo: menor que 6 son personas naturales.
-  if (Number(digitos[2]) >= 6) return false;
-
-  let suma = 0;
-  for (let i = 0; i < 9; i += 1) {
-    let valor = Number(digitos[i]);
-    if (i % 2 === 0) {
-      valor *= 2;
-      if (valor > 9) valor -= 9;
-    }
-    suma += valor;
-  }
-  const verificador = (10 - (suma % 10)) % 10;
-  return verificador === Number(digitos[9]);
-};
-
-const VALIDADORES = {
-  cedula_ec: (numero) => {
-    if (!/^\d{10}$/.test(numero)) {
-      return "La cédula ecuatoriana tiene exactamente 10 dígitos.";
-    }
-    if (!cedulaEcuatorianaValida(numero)) {
-      return "La cédula ecuatoriana no es válida: el dígito verificador no cuadra.";
-    }
-    return null;
-  },
-  alfanumerico: (numero) => {
-    if (!/^[A-Z0-9]{5,20}$/.test(numero)) {
-      return "El documento debe tener entre 5 y 20 caracteres, sólo letras y números.";
-    }
-    return null;
-  },
-  libre: (numero) => (numero.length >= 3 ? null : "El documento es demasiado corto."),
-};
+// El validador vive en `documentosPorPais.js` desde el 2026-08-29, y se busca POR PAIS: colgado del
+// tipo, el dia que esto se despliegue en Peru el documento nacional seguiria validando como cedula
+// ecuatoriana. Se reexporta `cedulaEcuatorianaValida` porque su bateria de tests entra por aqui.
+export { cedulaEcuatorianaValida };
 
 export default class DocumentoIdentidadService {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;
+    this.instituciones = new InstitucionService(pool);
+  }
+
+  /** El ISO de un pais por su id. Se necesita para elegir el validador, que va por pais. */
+  async isoDelPais(paisId, connection = this.pool) {
+    if (paisId === null || paisId === undefined) return null;
+    const [filas] = await connection.query(
+      "SELECT iso_alpha2 FROM paises WHERE id = ? LIMIT 1",
+      [Number(paisId)]
+    );
+    return filas?.length ? filas[0].iso_alpha2 : null;
   }
 
   ensurePool() {
@@ -123,9 +98,9 @@ export default class DocumentoIdentidadService {
     return Number(filas[0].id);
   }
 
-  validarNumero(tipo, numero) {
-    const validador = VALIDADORES[tipo.validacion] ?? VALIDADORES.libre;
-    const problema = validador(numero);
+  // El pais es un argumento y no se saca del tipo: es de lo que de verdad depende el formato.
+  validarNumero(tipo, numero, paisIso) {
+    const problema = validadorPara({ tipoCode: tipo?.code, paisIso })(numero);
     if (problema) throw errorDeCliente(problema);
   }
 
@@ -138,19 +113,31 @@ export default class DocumentoIdentidadService {
     if (!numero) {
       throw errorDeCliente("El documento de identidad necesita un número.");
     }
-    this.validarNumero(tipo, numero);
-
-    // El pais emisor es OBLIGATORIO para un pasaporte y no para una cédula ecuatoriana, que ya lo
-    // lleva en el tipo. Sin esta regla, dos pasaportes con el mismo numero de paises distintos
-    // chocarian en el indice.
+    // EL PAIS SE RESUELVE ANTES DE VALIDAR, y el orden importa: no se puede saber si un numero esta
+    // bien formado sin saber de que pais es. Antes se validaba primero porque el validador colgaba
+    // del tipo.
+    //
+    // El pais emisor es OBLIGATORIO salvo para el documento nacional, que lo hereda de la
+    // institucion. Sin esta regla, dos pasaportes con el mismo numero de paises distintos chocarian
+    // en el indice.
     let paisId = await this.resolvePaisId(datos, connection);
-    if (tipo.code === "cedula_ec" && paisId === null) {
-      const [ec] = await connection.query("SELECT id FROM paises WHERE iso_alpha2 = 'EC' LIMIT 1");
-      paisId = ec?.length ? Number(ec[0].id) : null;
+    let paisIso = datos?.pais ? String(datos.pais).trim().toUpperCase() : null;
+
+    if (tipo.code === TIPO_NACIONAL && paisId === null) {
+      // Aqui habia un SELECT con 'EC' escrito a mano. Ahora sale de la institucion, que es donde el
+      // dueño lo puede cambiar sin tocar codigo.
+      const pais = await this.instituciones.paisActual(connection);
+      paisId = pais.id;
+      paisIso = pais.iso;
     }
-    if (tipo.code !== "cedula_ec" && paisId === null) {
-      throw errorDeCliente("Un documento que no es cédula ecuatoriana necesita su país emisor.");
+    if (tipo.code !== TIPO_NACIONAL && paisId === null) {
+      throw errorDeCliente("Un documento que no es el nacional necesita su país emisor.");
     }
+    if (!paisIso && paisId !== null) {
+      paisIso = await this.isoDelPais(paisId, connection);
+    }
+
+    this.validarNumero(tipo, numero, paisIso);
 
     const [ajenos] = await connection.query(
       `SELECT d.id FROM documentos_identidad d
