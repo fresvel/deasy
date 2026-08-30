@@ -30,6 +30,12 @@ services:
       dockerfile: docker/backend/Dockerfile.dev
     env_file:
       - .env.dev
+      # Los SECRETOS DE VERDAD van aqui, y no en `.env.dev`, que ESTA VERSIONADO. El token de un bot
+      # de Telegram no es una credencial de laboratorio: quien lo tiene lee todo lo que se le
+      # escriba al bot y puede hablar en su nombre. `.gitignore` ya excluye `docker/.env.*.runtime`.
+      # Es opcional: sin el fichero, la pila arranca igual y los canales quedan sin configurar.
+      - path: .env.dev.runtime
+        required: false
     volumes:
       - ../backend:/app/backend
       - backend_node_modules_v2:/app/backend/node_modules

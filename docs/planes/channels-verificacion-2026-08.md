@@ -156,6 +156,38 @@ ninguna prueba puede distinguirlos. Se queda por higiene, no porque esté cubier
 
 ### C3 · Telegram, de punta a punta
 
+#### Antes de tocar código: crear el bot (lo hace el dueño)
+
+En Telegram, hablando con **@BotFather** (el verificado, con la marca azul):
+
+| | |
+|---|---|
+| `/newbot` | arranca |
+| **Nombre** | lo que ve la gente, texto libre — p. ej. `Deasy Verificación` |
+| **Usuario** | tiene que **terminar en `bot`** y ser único en todo Telegram — p. ej. `deasy_verificacion_bot` |
+| → | BotFather devuelve el **token**: `123456789:AA…` |
+
+Y después, tres ajustes que **no** son cosméticos:
+
+- `/setjoingroups` → **Disable**. Este bot no tiene nada que hacer en grupos; deshabilitarlo quita
+  superficie de abuso.
+- `/setdescription` → lo que se lee **antes** de pulsar Empezar. La gente llega aquí desde un enlace
+  nuestro, y una pantalla en blanco es indistinguible de una estafa.
+- `/setabouttext` → la ficha del perfil.
+
+⚠️ **Un bot por entorno.** El sondeo de Telegram admite **un solo consumidor**: si dev y producción
+comparten bot, se roban los mensajes el uno al otro y los fallos son intermitentes e incomprensibles.
+
+⚠️ **El token ES el bot.** Quien lo tiene lee todo lo que se le escriba y puede hablar en su nombre.
+Por eso va en **`docker/.env.dev.runtime`** —ignorado por git, se crea copiando
+`docker/.env.dev.runtime.example`— y **nunca** en `docker/.env.dev`, que está versionado. Si se
+filtra: `/revoke` en BotFather y sale otro.
+
+⚠️ **No hace falta configurar el enlace profundo.** `t.me/<usuario>?start=<llave>` funciona solo. Lo
+único que condiciona es la llave: **64 caracteres y sólo `A-Z a-z 0-9 _ -`**, que ya se cumple.
+
+#### El resto de la tarea
+
 El QR y **también un enlace pulsable** — ⚠️ quien se registra **desde el móvil no puede
 escanear su propia pantalla**, así que las dos formas van desde el principio, no como parche.
 
