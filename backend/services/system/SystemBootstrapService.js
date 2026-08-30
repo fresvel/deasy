@@ -805,7 +805,13 @@ const upsertAdminPerson = async (connection, payload) => {
     connection,
     `SELECT p.id, p.token
        FROM persons p
-      WHERE EXISTS (SELECT 1 FROM documentos_identidad d WHERE d.person_id = p.id AND d.numero = ?)
+      WHERE EXISTS (
+               -- Acotado al tipo nacional: la unicidad es (tipo, pais, numero) y el numero
+               -- solo no es unico. AQUI acotar es exacto porque este seed CREA un documento
+               -- nacional, asi que buscarlo entre otros tipos era buscar donde nunca escribio.
+               SELECT 1 FROM documentos_identidad d
+                WHERE d.person_id = p.id AND d.numero = ? AND d.tipo = 'documento_nacional'
+             )
          OR EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ?)
       LIMIT 1`,
     [payload.cedula, String(payload.email ?? "").trim().toLowerCase()]

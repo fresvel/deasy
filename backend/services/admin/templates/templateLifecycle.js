@@ -31,6 +31,7 @@
 // tambien se deshace. Ver docs/planes/referencia/patrones-diseno.md §3.1.
 
 import fs from "node:fs";
+import { resolverPersonaPorNumero } from "../../users/DocumentoIdentidadService.js";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -1096,13 +1097,10 @@ export default class TemplateLifecycleService {
     }
 
     if (!ownerPersonId && cedulaBuscada) {
-      const [ownerRows] = await this.pool.query(
-        `SELECT d.person_id AS id
-         FROM documentos_identidad d
-         WHERE d.numero = ? AND d.is_active = 1
-         LIMIT 1`,
-        [cedulaBuscada]
-      );
+      // `LIMIT 1` sobre `numero` elegia en silencio ante dos coincidencias, y aqui el resultado es
+      // el DUENO de una plantilla. Ante ambiguedad no se resuelve nadie.
+      const { personId: duenoId } = await resolverPersonaPorNumero(this.pool, cedulaBuscada);
+      const ownerRows = duenoId ? [{ id: duenoId }] : [];
       if (ownerRows?.length) {
         ownerPersonId = ownerRows[0].id;
       }

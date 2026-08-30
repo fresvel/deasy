@@ -23,7 +23,7 @@
 | **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ✅ | Foto subida por `PUT /users/2/photo` y guardada en `users/**2**/profile/…`; el frontend la pide por id y el avatar renderiza. Guard nuevo `requirePersonAccess`: ajeno 403, cédula 403, propio 404. 3 goldens de acceso, y abrir el guard cae por dos | 2026-08-29 |
 | **I6** | 💥 El login **sólo acepta correo**. Cambian las credenciales de referencia | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
-| **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ⬜ | | |
+| **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ✅ | **Colisión creada en vivo** (dos personas con el número `1122334459`): `GET /tarea?usuario=…` pasa de **200 con las tareas de una de ellas** a **409 diciéndolo**. 7 tests del resolutor, mutación cazada | 2026-08-29 |
 | **I8** | Recuperación «olvidé mi correo» por documento + país | ⛔ | **Aplazada por el dueño** al 2026-08-28: se trata en otra sesión | |
 
 **9 tareas.** `I8` está aparcada a propósito y no cuenta como pendiente de este frente.
@@ -345,6 +345,25 @@ autenticación, que es donde más duele. Aquí el daño es otro —resolver la p
 abrir un expediente o una tarea— y no es menor.
 
 **Es independiente de `I6`** y no toca el login: se puede hacer en cualquier momento.
+
+**Lo hecho (2026-08-29).** No son un arreglo sino dos, porque las cinco no son lo mismo:
+
+**Las tres de tiempo de ejecución** reciben el número **de fuera** —una URL, un formulario— sin su
+tipo ni su país. Acotarlas a `documento_nacional` las haría únicas, sí, pero **dejaría inalcanzable a
+todo extranjero que sólo tenga pasaporte**: acotar ahí es cambiar quién existe para esas pantallas.
+Se resuelven con `resolverPersonaPorNumero`, que mira si hay **más de una** y **se niega** si la hay.
+Un `LIMIT 2` cuesta lo mismo que un `LIMIT 1` y convierte «acierta mal en silencio» en «no acierta y
+lo dice».
+
+**Las dos de siembra** sí se acotan, y ahí es exacto: el seed **crea** un documento nacional, así que
+buscarlo entre otros tipos era buscar donde nunca escribió.
+
+⚠️ **Queda una limitación conocida, y es del expediente.** `dossierStore.resolvePersonId` devuelve
+sólo el id, y sus dos llamadores internos convierten el `null` en un **404**. Con una colisión, el
+expediente responde «no encontrado» en vez de «ambiguo»: **seguro** —nunca devuelve el de otra
+persona— pero el mensaje engaña. Distinguirlo obliga a cambiar la firma y propagar por los
+controladores del expediente, que es su propio frente (las 22 rutas con `:cedula`). Se deja anotado,
+no estirado.
 
 ⚠️ Y **`DocumentoIdentidadService.buscarPersonaPorNumero` no la llama nadie** (comprobado el
 2026-08-29). Se borra con `I6`+`I7`, que es donde caen sus vecinas.

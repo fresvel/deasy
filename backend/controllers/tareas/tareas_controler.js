@@ -1,4 +1,5 @@
 import { getPostgresPool } from "../../config/postgres.js";
+import { resolverPersonaPorNumero, MENSAJE_DOCUMENTO_AMBIGUO } from "../../services/users/DocumentoIdentidadService.js";
 
 export const getuserTarea = async (req, res) => {
   console.log("Buscando Tareas por parámetros (SQL)");
@@ -11,9 +12,12 @@ export const getuserTarea = async (req, res) => {
     if (!pool) {
       return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
-    const [persons] = await pool.query(`SELECT d.person_id AS id FROM documentos_identidad d WHERE d.numero = ? AND d.is_active = 1 LIMIT 1`,
-      [String(cedula ?? "").trim().toUpperCase().replace(/[\s.-]/g, "")]);
-    const personId = persons?.[0]?.id;
+    // Aqui habia un `LIMIT 1` sobre `numero`: la unicidad de un documento es (tipo, pais, numero),
+    // asi que ante dos coincidencias devolvia LAS TAREAS de otra persona, sin avisar.
+    const { personId, ambiguo } = await resolverPersonaPorNumero(pool, cedula);
+    if (ambiguo) {
+      return res.status(409).json({ message: MENSAJE_DOCUMENTO_AMBIGUO });
+    }
     if (!personId) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }

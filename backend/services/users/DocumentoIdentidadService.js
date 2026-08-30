@@ -48,6 +48,48 @@ export const normalizarNumero = (valor) => String(valor ?? "").trim().toUpperCas
 // ecuatoriana. Se reexporta `cedulaEcuatorianaValida` porque su bateria de tests entra por aqui.
 export { cedulaEcuatorianaValida };
 
+/**
+ * La persona dueña de un número de documento — o NINGUNA si el número es ambiguo.
+ *
+ * EL PROBLEMA: la unicidad de un documento es `(tipo, país, número)`. El número SOLO no es único:
+ * dos pasaportes de países distintos con el mismo número son legales en el modelo. Media docena de
+ * sitios resolvían `WHERE numero = ? LIMIT 1`, que ante dos coincidencias **elige una en silencio**
+ * — y devuelve el expediente, las tareas o las plantillas de otra persona.
+ *
+ * POR QUE NO SE ACOTA A `documento_nacional`: seria unico, si, pero dejaria **inalcanzable a todo
+ * extranjero que solo tenga pasaporte**. El numero llega de una URL o de un formulario, sin su tipo
+ * ni su pais, asi que acotar es cambiar quien existe para esas pantallas.
+ *
+ * LO QUE SE HACE EN SU LUGAR: mirar si hay mas de una, y **negarse** si la hay. Un `LIMIT 2` cuesta
+ * lo mismo que un `LIMIT 1` y convierte "acierta mal en silencio" en "no acierta y lo dice". El
+ * arreglo de verdad es que estas rutas entren por el id de la persona, como ya hacen la foto y el
+ * escaneo; mientras tanto, esto es lo que impide el fallo grave.
+ *
+ * `DISTINCT` porque una misma persona puede tener dos documentos con el mismo numero (un pasaporte
+ * y un documento extranjero, pongamos): eso no es ambiguedad, es la misma respuesta dos veces.
+ */
+export async function resolverPersonaPorNumero(connection, numero) {
+  const limpio = normalizarNumero(numero);
+  if (!limpio) {
+    return { personId: null, ambiguo: false };
+  }
+  const [filas] = await connection.query(
+    "SELECT DISTINCT person_id FROM documentos_identidad WHERE numero = ? AND is_active = 1 LIMIT 2",
+    [limpio]
+  );
+  if (!filas?.length) {
+    return { personId: null, ambiguo: false };
+  }
+  if (filas.length > 1) {
+    return { personId: null, ambiguo: true };
+  }
+  return { personId: Number(filas[0].person_id), ambiguo: false };
+}
+
+/** El mensaje del caso ambiguo, en un solo sitio para que los tres lo digan igual. */
+export const MENSAJE_DOCUMENTO_AMBIGUO =
+  "Ese número corresponde a más de una persona. Hace falta identificarla de otra forma.";
+
 export default class DocumentoIdentidadService {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;

@@ -7,6 +7,7 @@
 // defaults por sección replican exactamente los del schema Mongoose.
 
 import { getPostgresPool } from "../../config/postgres.js";
+import { resolverPersonaPorNumero } from "./DocumentoIdentidadService.js";
 
 const pool = () => getPostgresPool();
 
@@ -59,11 +60,12 @@ const splitBody = (body = {}) => {
 export async function resolvePersonId(cedula) {
   // El documento ya no es columna de `persons`: se resuelve por la tabla, y por CUALQUIERA de los
   // documentos de la persona, no solo el principal.
-  const [rows] = await pool().query(
-    `SELECT d.person_id AS id FROM documentos_identidad d WHERE d.numero = ? AND d.is_active = 1 LIMIT 1`,
-    [String(cedula ?? "").trim().toUpperCase().replace(/[\s.-]/g, "")]
-  );
-  return rows[0]?.id ?? null;
+  //
+  // Y NO con `LIMIT 1`, que es lo que habia: el numero solo no es unico —la unicidad es
+  // (tipo, pais, numero)— asi que ante dos coincidencias elegia una en silencio y devolvia el
+  // EXPEDIENTE de otra persona. `resolverPersonaPorNumero` se niega en vez de acertar mal.
+  const { personId } = await resolverPersonaPorNumero(pool(), cedula);
+  return personId;
 }
 
 // getOrCreate: crea el dossier si la persona existe; null si no hay persona.
