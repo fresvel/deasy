@@ -85,29 +85,29 @@ export default class UserRepository {
     return this.conDirecciones(rows?.[0] ?? null);
   }
 
-  async findByCedulaOrEmail({ cedula, email }) {
+  /**
+   * Por AQUI ENTRA EL LOGIN, y sólo acepta correo.
+   *
+   * Hasta el 2026-08-29 se llamaba `findByCedulaOrEmail` y buscaba también por número de documento:
+   *
+   *     EXISTS (SELECT 1 FROM documentos_identidad d WHERE d.person_id = p.id AND d.numero = ?)
+   *
+   * **A SECAS**, cuando la unicidad de un documento es `(tipo, país, número)`. El número solo NO es
+   * único —dos pasaportes de países distintos con el mismo número son legales en el modelo—, así que
+   * la consulta podía emparejar a la persona equivocada. En autenticación.
+   *
+   * No se acotó: se quitó. El documento no es una llave con la que entrar, y no por la unicidad sino
+   * por la ESTABILIDAD: un pasaporte se renueva con número nuevo, y quien entrara con él perdería su
+   * acceso. El correo lo controla la persona y no caduca.
+   *
+   * El correo se busca por CUALQUIERA de los suyos, no sólo el principal: quien se registró con el
+   * personal y luego declara el institucional debe poder seguir entrando con los dos.
+   */
+  async findByEmail(email) {
     this.ensurePool();
 
-    const conditions = [];
-    const params = [];
-
-    if (cedula) {
-      // El documento ya no es columna de `persons`: se entra por CUALQUIERA de los de la persona,
-      // no solo el principal. Quien se registro con pasaporte y luego declara su cedula debe poder
-      // entrar con los dos.
-      conditions.push("EXISTS (SELECT 1 FROM documentos_identidad d WHERE d.person_id = p.id AND d.numero = ? AND d.is_active = 1)");
-      params.push(String(cedula).trim().toUpperCase().replace(/[\s.-]/g, ""));
-    }
-
-    if (email) {
-      // El correo ya no es columna de `persons`: se entra por CUALQUIERA de los de la tabla, no
-      // solo el principal. Quien se registro con el personal y luego declara el institucional debe
-      // poder seguir entrando con los dos.
-      conditions.push("EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ? AND e.is_active = 1)");
-      params.push(String(email).trim().toLowerCase());
-    }
-
-    if (!conditions.length) {
+    const correo = String(email ?? "").trim().toLowerCase();
+    if (!correo) {
       return null;
     }
 
@@ -119,8 +119,8 @@ export default class UserRepository {
        LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
        LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
        LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
-       WHERE ${conditions.join(" OR ")} LIMIT 1`,
-      params
+       WHERE EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ? AND e.is_active = 1) LIMIT 1`,
+      [correo]
     );
 
     return this.conDirecciones(rows?.[0] ?? null);

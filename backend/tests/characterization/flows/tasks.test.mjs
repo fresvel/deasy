@@ -18,7 +18,7 @@ before(async () => {
 });
 
 test("GET /tarea?usuario=<gestor> -> tareas del usuario (contrato)", async () => {
-  const res = await get(`/tarea?usuario=${USERS.gestor.identifier}`);
+  const res = await get(`/tarea?usuario=${USERS.gestor.cedula}`);
   matchSnapshot(SUITE, "tarea_gestor", listFingerprint(res));
 });
 

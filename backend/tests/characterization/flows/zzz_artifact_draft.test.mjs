@@ -80,7 +80,7 @@ const DRAFT_OPTS = { extraMask: ["id"] };
 
 const draftForm = (overrides = {}) => ({
   display_name: NAMES.happy,
-  owner_cedula: USERS.admin.identifier,
+  owner_cedula: USERS.admin.cedula,
   process_definition_id: String(FIXTURE.definitionId),
   fill_workflow: FILL_WORKFLOW,
   pdf_file: REFERENCE_PDF,

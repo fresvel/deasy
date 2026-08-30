@@ -22,7 +22,7 @@ import { waitForReady } from "../lib/readiness.mjs";
 import { FIXTURE, USERS } from "../config.mjs";
 
 const personPayload = (user, firstName, lastName, email, whatsapp = "") => ({
-  cedula: user.identifier,
+  cedula: user.cedula,
   first_name: firstName,
   last_name: lastName,
   email,

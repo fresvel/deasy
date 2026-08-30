@@ -136,7 +136,7 @@ test("relectura · POST draft con los dos flujos -> 200", async () => {
     token,
     form: {
       display_name: AUTHORED_NAME,
-      owner_cedula: USERS.admin.identifier,
+      owner_cedula: USERS.admin.cedula,
       process_definition_id: String(FIXTURE.definitionId),
       fill_workflow: JSON.stringify(estado.fill),
       signature_workflow: JSON.stringify(estado.signature),

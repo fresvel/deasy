@@ -118,7 +118,7 @@ async function main() {
   //      añade un título, una experiencia (con funcion_catedra array) y un
   //      artículo de investigación. Cubre arrays raíz + anidamiento de
   //      investigación + array-de-strings. Base para el golden del dossier.
-  const CEDULA = USERS.usuario.identifier;
+  const CEDULA = USERS.usuario.cedula;
   for (const t of ["dossier_items", "dossiers"]) {
     await pool.query(`DELETE FROM ${t}`);
   }

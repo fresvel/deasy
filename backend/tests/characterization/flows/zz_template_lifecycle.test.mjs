@@ -142,7 +142,7 @@ test("POST draft vinculado al borrador de configuración -> segundo entregable e
     token,
     form: {
       display_name: COLADO.name,
-      owner_cedula: USERS.admin.identifier,
+      owner_cedula: USERS.admin.cedula,
       process_definition_id: String(guided.configDraftId),
       fill_workflow: FILL_WORKFLOW,
       pdf_file: REFERENCE_PDF,

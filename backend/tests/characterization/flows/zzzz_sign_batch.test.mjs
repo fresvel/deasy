@@ -235,7 +235,7 @@ test("POST /sign con un no-PDF en el campo pdf -> 400 JSON, sin HTML ni stack tr
 
 test("POST /sign/validate sin fichero PDF -> 400", async () => {
   const token = await tokenFor("usuario");
-  const res = await post("/sign/validate", { token, form: { cedula: USERS.usuario.identifier } });
+  const res = await post("/sign/validate", { token, form: { cedula: USERS.usuario.cedula } });
   matchSnapshot(SUITE, "validate_sin_pdf", snapshotShape(res, OBJ_OPTS));
 });
 
@@ -358,7 +358,7 @@ test("GET /sign/download de una ruta documental ajena -> 403", async () => {
 test("GET /sign/download de una ruta propia inexistente -> 404 (el prefijo users/<cédula>/ salta el guard)", async () => {
   const token = await tokenFor("usuario");
   const res = await get(
-    `/sign/download?path=users/${USERS.usuario.identifier}/signed/no-existe/documento.pdf`,
+    `/sign/download?path=users/${USERS.usuario.cedula}/signed/no-existe/documento.pdf`,
     { token },
   );
   assert.equal(res.status, 404);

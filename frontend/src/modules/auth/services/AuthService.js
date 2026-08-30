@@ -7,28 +7,23 @@ class AuthService {
     this.USER_KEY = "user";
   }
 
-  async login(identifier, password) {
-    const body = {
-      password: password,
-    };
-
-    const trimmedIdentifier = identifier.trim();
-
-    if (trimmedIdentifier.includes("@")) {
-      body.email = trimmedIdentifier.toLowerCase();
-    } else {
-      body.cedula = trimmedIdentifier.replace(/\D/g, "");
+  /**
+   * SÓLO CORREO desde el 2026-08-29.
+   *
+   * Aquí había un `identifier.includes("@")` que decidía si lo escrito era un correo o una cédula, y
+   * en el segundo caso un `.replace(/\D/g, "")` que borraba TODO lo que no fuera dígito. Con eso el
+   * pasaporte `AB123456` salía como `123456` mientras el backend esperaba `AB123456`: el login por
+   * pasaporte estaba roto desde la pantalla, y no se notaba porque todos los documentos sembrados
+   * eran cédulas.
+   *
+   * Ya no hay nada que adivinar.
+   */
+  async login(email, password) {
+    const correo = String(email ?? "").trim().toLowerCase();
+    if (!correo) {
+      throw new Error("Ingresa tu correo electrónico");
     }
-
-    if (!body.email && !body.cedula) {
-      throw new Error("Ingresa tu cédula o correo electrónico");
-    }
-
-    if (body.cedula && body.cedula.length !== 10) {
-      throw new Error("La cédula debe contener 10 dígitos");
-    }
-
-    const response = await axios.post(API_ROUTES.USERS_LOGIN, body, {
+    const response = await axios.post(API_ROUTES.USERS_LOGIN, { email: correo, password }, {
       withCredentials: true,
     });
 
@@ -48,9 +43,6 @@ class AuthService {
     return response.data;
   }
 
-  // El catálogo geográfico, PÚBLICO: lo pide el formulario de registro, que por definición usa
-  // quien todavía no tiene cuenta. Sustituye a `core/constants/countries.js` para la dirección
-  // (el selector de prefijo telefónico sigue usándolo hasta que se rehagan los teléfonos).
   // La institución de este despliegue. La pantalla de registro la necesita para saber cómo llamar al
   // documento nacional: hasta el 2026-08-29 llevaba «Cédula (Ecuador)» escrito en una lista.
   async institucion() {
@@ -58,6 +50,9 @@ class AuthService {
     return response.data ?? null;
   }
 
+  // El catálogo geográfico, PÚBLICO: lo pide el formulario de registro, que por definición usa
+  // quien todavía no tiene cuenta. Sustituye a `core/constants/countries.js` para la dirección
+  // (el selector de prefijo telefónico sigue usándolo hasta que se rehagan los teléfonos).
   async listarPaises() {
     const response = await axios.get(API_ROUTES.SYSTEM_GEO_PAISES);
     return response.data?.data ?? [];

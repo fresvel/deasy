@@ -9,8 +9,8 @@
 //   API_PREFIX Prefijo montado por el backend. Confirmado en config/apiPaths.js.
 //
 // Credenciales de los usuarios sembrados en dev (ver CLAUDE.md):
-//   admin  -> cédula 1234567897
-//   gestor -> cédula 0927654327
+//   admin  -> admin@institucion.edu.ec  (cedula 1234567897)
+//   gestor -> gestor@institucion.edu.ec (cedula 0927654327)
 //   password para todos: Demo1234!
 
 const stripTrailingSlash = (value) => value.replace(/\/+$/, "");
@@ -33,24 +33,34 @@ export const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS ?? 20_00
 // y luego debe reproducirse idéntico tras migrar/refactorizar.
 export const SNAPSHOT_MODE = process.env.SNAPSHOT_MODE === "update" ? "update" : "compare";
 
-// Usuarios de prueba. La identificación es la CÉDULA (ver mapa de auth).
-// Son los que crea el BOOTSTRAP con datos de ejemplo (ver setup/bootstrap_system.mjs),
+// Usuarios de prueba. Los crea el BOOTSTRAP con datos de ejemplo (ver setup/bootstrap_system.mjs),
 // que es la fuente de verdad del sistema. Ojo: la contraseña del gestor NO es Demo1234!.
+//
+// ⚠️ SON DOS DATOS Y NO UNO. Hasta el 2026-08-29 habia un solo campo, `identifier`, que valia para
+// las dos cosas porque eran el mismo valor: se entraba con la cedula y se sembraba con la cedula.
+// Con el login pasado a correo dejaron de coincidir, y el campo unico se rompio de la peor forma —
+// el bootstrap intentaba crear al administrador con un correo en el campo de la cedula.
+//
+// Se llaman `email` y `cedula` a proposito, y `identifier` NO se conserva: un nombre ambiguo que
+// sobrevive a la separacion es un sitio donde volver a confundirlas.
 export const USERS = {
   admin: {
     label: "admin",
-    identifier: process.env.TEST_ADMIN_ID ?? "1234567897",
+    email: process.env.TEST_ADMIN_EMAIL ?? "admin@institucion.edu.ec",
+    cedula: process.env.TEST_ADMIN_ID ?? "1234567897",
     password: process.env.TEST_ADMIN_PASSWORD ?? "Demo1234!",
   },
   gestor: {
     label: "gestor",
-    identifier: process.env.TEST_GESTOR_ID ?? "0927654327",
+    email: process.env.TEST_GESTOR_EMAIL ?? "gestor@institucion.edu.ec",
+    cedula: process.env.TEST_GESTOR_ID ?? "0927654327",
     password: process.env.TEST_GESTOR_PASSWORD ?? "Gestor1234!",
   },
   // Usuario de baja privilegia — objetivo del test de 403.
   usuario: {
     label: "usuario",
-    identifier: process.env.TEST_USUARIO_ID ?? "1122334459",
+    email: process.env.TEST_USUARIO_EMAIL ?? "usuario@institucion.edu.ec",
+    cedula: process.env.TEST_USUARIO_ID ?? "1122334459",
     password: process.env.TEST_USUARIO_PASSWORD ?? "Demo1234!",
   },
 };

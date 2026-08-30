@@ -8,17 +8,21 @@
 
     <form @submit.prevent="loginFunction" class="space-y-6">
       <div>
-        <label for="identifier" class="deasy-form-label">Usuario</label>
+        <label for="identifier" class="deasy-form-label">Correo electrónico</label>
         <div class="relative">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
             <IconUser class="h-5 w-5 text-muted" />
           </div>
+          <!-- `type="email"` y `autocomplete="username"`: el navegador valida la forma antes de
+               enviar y el gestor de contraseñas sabe qué campo es. Antes era `text` porque aquí
+               cabían dos cosas distintas. -->
           <input
             id="identifier"
             v-model="identifier"
-            type="text"
+            type="email"
+            autocomplete="username"
             class="deasy-control deasy-control--icon-left"
-            placeholder="Cédula o correo electrónico"
+            placeholder="tucorreo@institucion.edu.ec"
             required
           />
         </div>

@@ -1,7 +1,7 @@
 // Helper de autenticación.
 //
 // Login real confirmado en el mapa de la API:
-//   POST /users/login  body { cedula, password }  -> 200 { token, expiresIn, user }
+//   POST /users/login  body { email, password }  -> 200 { token, expiresIn, user }
 // El token es un JWT Bearer que se pasa en Authorization.
 //
 // Cachea el token por usuario dentro de una ejecución para no re-loguear en cada
@@ -14,7 +14,7 @@ const cache = new Map();
 
 export async function login(user) {
   const res = await post("/users/login", {
-    body: { cedula: user.identifier, password: user.password },
+    body: { email: user.email, password: user.password },
   });
   return res; // forma cruda: el llamador decide qué fijar
 }
@@ -27,7 +27,7 @@ export async function tokenFor(userKey) {
   const res = await login(user);
   if (res.status !== 200 || !res.body?.token) {
     throw new Error(
-      `Login de "${userKey}" (cédula ${user.identifier}) falló: ` +
+      `Login de "${userKey}" (${user.email}) falló: ` +
         `status=${res.status} body=${JSON.stringify(res.body)}. ` +
         `¿Están sembrados los usuarios seed y es correcta la password?`,
     );

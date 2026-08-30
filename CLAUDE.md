@@ -8,20 +8,30 @@ Para realizar las pruebas debes considerar que todo el sistema está dockerizado
 Los usuarios de referencia los **crea el bootstrap** (`/setup` → "usar datos de
 ejemplo"); no hay ningún seed SQL alternativo. Ojo: la contraseña del gestor NO es `Demo1234!`.
 
-    admin   -> cédula 1234567897  /  Demo1234!
-    gestor  -> cédula 0927654327  /  Gestor1234!   (de momento tiene rol de usuario también)
-    usuario -> cédula 1122334459  /  Demo1234!
+    admin   -> admin@institucion.edu.ec    /  Demo1234!
+    gestor  -> gestor@institucion.edu.ec   /  Gestor1234!   (de momento tiene rol de usuario también)
+    usuario -> usuario@institucion.edu.ec  /  Demo1234!
 
-⚠️ **Las tres cambiaron el 2026-08-27** y no es capricho: desde que el modelo admite pasaportes,
-`DocumentoIdentidadService` comprueba el **dígito verificador** de la cédula ecuatoriana, y las tres
-de antes (`1234567890`, `0987654321`, `1122334455`) eran secuencias inventadas que no lo cumplían.
-Con el validador activo **no se pueden ni insertar**. Las nuevas son las más parecidas que sí valen:
-al admin y al usuario les cambia **el último dígito**; al gestor, además, el tercero — un `8` ahí
-marca sector público, no persona natural.
+⚠️ **SE ENTRA POR CORREO, no por cédula, desde el 2026-08-29.** El login aceptaba el número de
+documento y resolvía `d.numero = ?` **a secas**, cuando la unicidad de un documento es
+`(tipo, país, número)`: podía emparejar a la persona equivocada. Se quitó en vez de acotarse, y no
+por la unicidad sino por la **estabilidad** — un pasaporte se renueva **con número nuevo**, así que
+quien entrara con él perdería su acceso al renovarlo. El correo lo controla la persona y no caduca.
 
-La cédula ya **no es una columna de `persons`**: vive en `documentos_identidad`, con su tipo
-(`cedula_ec` · `pasaporte` · `documento_extranjero`) y su país emisor. Se entra por **cualquiera**
-de los documentos de la persona, no sólo el principal.
+Las contraseñas **no cambiaron**. Y la cédula sigue existiendo como dato de la persona: lo que dejó
+de ser es una llave.
+
+    admin  1234567897 · gestor 0927654327 · usuario 1122334459     ← su documento, para consultas SQL
+
+⚠️ **Esos tres números cambiaron el 2026-08-27** y no es capricho: desde que el modelo admite
+pasaportes se comprueba el **dígito verificador** de la cédula ecuatoriana, y los tres de antes
+(`1234567890`, `0987654321`, `1122334455`) eran secuencias inventadas que no lo cumplían — con el
+validador activo **no se pueden ni insertar**.
+
+El documento ya **no es una columna de `persons`**: vive en `documentos_identidad`, con su clase
+(`documento_nacional` · `pasaporte` · `documento_extranjero`) y su país emisor. **Y ya no dice
+«cédula ecuatoriana» en ninguna parte**: cuál es el nacional lo decide `instituciones.pais_id`, que
+se edita en `/admin`.
 
 El router bloquea el espacio de usuario para el admin con `meta: { blockedForAdmin: true }` (el
 guard lo redirige a `/admin`): `/home`, `/home/documentos`, `/home/firmas` y `/perfil` con todas

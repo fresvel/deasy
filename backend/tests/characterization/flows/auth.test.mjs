@@ -2,6 +2,7 @@
 // Fija el contrato observable del login y del "whoami" tal cual es hoy.
 
 import { test, before } from "node:test";
+import assert from "node:assert/strict";
 import { post, get } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { snapshotShape } from "../lib/normalize.mjs";
@@ -30,16 +31,35 @@ test("GET /system/institucion sin token -> el país del despliegue y el nombre l
 
 test("login admin OK -> { token, expiresIn, user }", async () => {
   const res = await post("/users/login", {
-    body: { cedula: USERS.admin.identifier, password: USERS.admin.password },
+    body: { email: USERS.admin.email, password: USERS.admin.password },
   });
   matchSnapshot(SUITE, "login_admin_ok", snapshotShape(res, { extraMask: USER_MASK }));
 });
 
 test("login password incorrecta -> 401", async () => {
   const res = await post("/users/login", {
-    body: { cedula: USERS.admin.identifier, password: "contraseña-incorrecta" },
+    body: { email: USERS.admin.email, password: "contraseña-incorrecta" },
   });
   matchSnapshot(SUITE, "login_bad_password", snapshotShape(res));
+});
+
+// LA CÉDULA YA NO ENTRA, y esto es lo que lo impide mañana.
+//
+// Hasta el 2026-08-29 el login aceptaba `{ cedula }` y resolvía `d.numero = ?` A SECAS, cuando la
+// unicidad de un documento es (tipo, país, número): podía emparejar a la persona equivocada. Se
+// quitó en vez de acotarse, porque el problema de fondo no era la unicidad sino la ESTABILIDAD —
+// un pasaporte se renueva con número nuevo y quien entrara con él perdería su acceso.
+//
+// Sin este caso, devolver la rama sería un cambio silencioso: mandar `{ cedula }` daría 400 por
+// "falta el correo" tanto si la rama existe como si no, y nadie se enteraría hasta que alguien
+// entrara con el documento de otro.
+test("POST /users/login con cédula -> ya no es una credencial", async () => {
+  const res = await post("/users/login", {
+    body: { cedula: USERS.admin.cedula, password: USERS.admin.password },
+  });
+  matchSnapshot(SUITE, "login_por_cedula_rechazado", snapshotShape(res));
+  assert.equal(res.status, 400, "la cédula no puede abrir sesión");
+  assert.equal(res.body?.token, undefined, "y desde luego no puede devolver un token");
 });
 
 test("login sin credenciales -> 400", async () => {

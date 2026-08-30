@@ -236,16 +236,6 @@ export default class DocumentoIdentidadService {
     return (filas ?? []).map((fila) => ({ ...fila, tipo_nombre: nombreDeTipo(fila.tipo, fila.pais_iso, fila.pais) }));
   }
 
-  // Por aqui entra el login. Busca por CUALQUIERA de los documentos, no solo el principal: quien se
-  // registro con pasaporte y luego declara su cedula debe poder entrar con los dos.
-  async buscarPersonaPorNumero(numero, connection = this.pool) {
-    this.ensurePool();
-    const [filas] = await connection.query(
-      "SELECT person_id FROM documentos_identidad WHERE numero = ? AND is_active = 1 LIMIT 1",
-      [normalizarNumero(numero)]
-    );
-    return filas?.length ? Number(filas[0].person_id) : null;
-  }
 
   async marcarVerificado(documentoId, connection = this.pool) {
     await connection.query(

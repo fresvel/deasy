@@ -18,13 +18,17 @@ export default class AuthService {
   }
 
   async login(credentials = {}, res) {
-    const { cedula, email, password } = credentials;
+    // SÓLO CORREO desde el 2026-08-29. El número de documento entraba aquí y no debía: su unicidad
+    // es (tipo, país, número), así que buscarlo suelto podía emparejar a la persona equivocada. Y
+    // aunque se acotara, un pasaporte se renueva CON NÚMERO NUEVO — quien entrara con él perdería
+    // su acceso al renovarlo. El correo lo controla la persona y no caduca.
+    const { email, password } = credentials;
 
-    if (!password || (!cedula && !email)) {
+    if (!password || !email) {
       throw new AuthenticationError("Nombre de usuario o contraseña incorrectos");
     }
 
-    const user = await this.userRepository.findByCedulaOrEmail({ cedula, email });
+    const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
       throw new AuthenticationError("El usuario no existe");

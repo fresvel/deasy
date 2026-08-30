@@ -6,14 +6,13 @@ const authService = new AuthService();
 export const loginUser = async (req, res) => {
   try {
     const credentials = {
-      cedula: req.body?.cedula,
       email: req.body?.email,
       password: req.body?.password
     };
 
-    if (!credentials.password || (!credentials.cedula && !credentials.email)) {
+    if (!credentials.password || !credentials.email) {
       return res.status(400).send({
-        message: "Debe proporcionar la contraseña y la cédula o el email",
+        message: "Debe proporcionar el correo electrónico y la contraseña",
         code: 400
       });
     }

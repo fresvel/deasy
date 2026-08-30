@@ -28,7 +28,10 @@ import { query } from "../lib/db.mjs";
 const PUESTO = 25;
 
 const jefeToken = async () => {
-  const res = await post("/users/login", { body: { cedula: "1700000217", password: "Demo1234!" } });
+  // El login pasó a SÓLO CORREO el 2026-08-29. El seed de demostración compone el correo de estas
+  // personas a partir de su cédula (`<cedula>@demo.deasy.local`), así que la identidad de la fila no
+  // cambia — sólo por dónde se entra.
+  const res = await post("/users/login", { body: { email: "1700000217@demo.deasy.local", password: "Demo1234!" } });
   assert.equal(res.status, 200, "el jefe de la unidad debe poder entrar");
   return res.body.token;
 };

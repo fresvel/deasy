@@ -169,7 +169,7 @@ test("campos db · POST draft con schema_fields -> 200", async () => {
     token,
     form: {
       display_name: AUTHORED_NAME,
-      owner_cedula: USERS.admin.identifier,
+      owner_cedula: USERS.admin.cedula,
       process_definition_id: String(FIXTURE.definitionId),
       fill_workflow: JSON.stringify(FILL_WORKFLOW),
       schema_fields: JSON.stringify(CAMPOS),
