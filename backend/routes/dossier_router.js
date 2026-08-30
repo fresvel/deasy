@@ -7,6 +7,8 @@ import { authMiddleware } from '../middlewares/auth.js';
 import { loadAccessContext, requireDossierAccess } from '../middlewares/rbac.js';
 import { handleUploadError } from '../middlewares/uploadError.js';
 import { badRequest } from '../errors/HttpError.js';
+import { getPostgresPool } from '../config/postgres.js';
+import { resolverPersonaPorNumero, MENSAJE_DOCUMENTO_AMBIGUO } from '../services/users/DocumentoIdentidadService.js';
 
 const router = express.Router();
 
@@ -36,6 +38,36 @@ const upload = multer({
 });
 
 router.use(authMiddleware, loadAccessContext);
+
+// LAS 22 RUTAS DE ESTE ROUTER ENTRAN POR `:cedula`, y un número de documento NO IDENTIFICA a nadie
+// por sí solo: la unicidad es (tipo, país, número). Dos pasaportes de países distintos con el mismo
+// número son legales en el modelo.
+//
+// `router.param` corre UNA VEZ por cada ruta que use el parámetro, así que es el único sitio donde
+// escribir esto una vez y que valga para las veintidós. Sin él, el store devolvía `null` ante una
+// colisión y los controladores lo traducían a **404 «no encontrado»** — seguro, porque nunca daba el
+// expediente de otra persona, pero el mensaje mentía: el expediente SÍ existe, lo que no se puede es
+// saber de quién.
+//
+// Sólo se pronuncia sobre la AMBIGÜEDAD. Que el documento no exista lo siguen resolviendo los
+// controladores con sus propios mensajes, que son más específicos que uno genérico aquí.
+//
+// ⚠️ Deja `req.personId` puesto pero HOY NADIE LO USA: los controladores vuelven a resolver por su
+// cuenta, así que hay una consulta de más por petición. Se acepta a sabiendas — quitarla es migrar
+// estas rutas a `:personId`, que es el frente propio del expediente. Cuando eso ocurra, este
+// `router.param` desaparece entero.
+router.param('cedula', async (req, res, next, valor) => {
+  try {
+    const { personId, ambiguo } = await resolverPersonaPorNumero(getPostgresPool(), valor);
+    if (ambiguo) {
+      return res.status(409).json({ success: false, message: MENSAJE_DOCUMENTO_AMBIGUO });
+    }
+    req.personId = personId;
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Obtener dossier completo del usuario
 router.get('/:cedula', requireDossierAccess('read'), dossierController.getDossierByUser);

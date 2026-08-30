@@ -16,6 +16,13 @@
       "message": "Token requerido"
     }
   },
+  "dossier_numero_ambiguo": {
+    "status": 409,
+    "body": {
+      "message": "Ese número corresponde a más de una persona. Hace falta identificarla de otra forma.",
+      "success": false
+    }
+  },
   "dossier_usuario": {
     "status": 200,
     "body": {

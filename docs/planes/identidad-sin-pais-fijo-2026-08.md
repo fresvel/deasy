@@ -23,7 +23,7 @@
 | **I5** | Las rutas de foto y escaneo entran por `:personId`, no por `:cedula` | ✅ | Foto subida por `PUT /users/2/photo` y guardada en `users/**2**/profile/…`; el frontend la pide por id y el avatar renderiza. Guard nuevo `requirePersonAccess`: ajeno 403, cédula 403, propio 404. 3 goldens de acceso, y abrir el guard cae por dos | 2026-08-29 |
 | **I6** | 💥 El login **sólo acepta correo**. Cambian las credenciales de referencia | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
-| **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ✅ | **Colisión creada en vivo** (dos personas con el número `1122334459`): `GET /tarea?usuario=…` pasa de **200 con las tareas de una de ellas** a **409 diciéndolo**. 7 tests del resolutor, mutación cazada | 2026-08-29 |
+| **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ✅ | **Colisión creada en vivo** (dos personas con el número `1122334459`): `GET /tarea?usuario=…` pasa de **200 con las tareas de una de ellas** a **409 diciéndolo**, y el expediente de **404 «no encontrado»** a **409**. 7 tests del resolutor + golden que fabrica la colisión y la retira; 2 mutaciones cazadas | 2026-08-29 |
 | **I8** | Recuperación «olvidé mi correo» por documento + país | ⛔ | **Aplazada por el dueño** al 2026-08-28: se trata en otra sesión | |
 
 **9 tareas.** `I8` está aparcada a propósito y no cuenta como pendiente de este frente.
@@ -358,12 +358,18 @@ lo dice».
 **Las dos de siembra** sí se acotan, y ahí es exacto: el seed **crea** un documento nacional, así que
 buscarlo entre otros tipos era buscar donde nunca escribió.
 
-⚠️ **Queda una limitación conocida, y es del expediente.** `dossierStore.resolvePersonId` devuelve
-sólo el id, y sus dos llamadores internos convierten el `null` en un **404**. Con una colisión, el
-expediente responde «no encontrado» en vez de «ambiguo»: **seguro** —nunca devuelve el de otra
-persona— pero el mensaje engaña. Distinguirlo obliga a cambiar la firma y propagar por los
-controladores del expediente, que es su propio frente (las 22 rutas con `:cedula`). Se deja anotado,
-no estirado.
+**El expediente también dice la verdad**, y no costó lo que dije que costaría. La primera versión de
+esta ficha afirmaba que distinguir «ambiguo» de «no encontrado» «obliga a propagar por los
+controladores, que es el frente de las 22 rutas». **Era falso, y por no medir**: son **siete**
+llamadores en **un** fichero, y ni siquiera hizo falta tocarlos.
+
+Las 22 rutas comparten el parámetro, así que el sitio es **`router.param('cedula')`** — corre una vez
+por cada ruta que lo use. Se pronuncia **sólo sobre la ambigüedad** (409); que el documento no exista
+lo siguen resolviendo los controladores, con sus mensajes, que son más específicos.
+
+⚠️ Deja `req.personId` puesto pero **hoy nadie lo usa**: los controladores vuelven a resolver por su
+cuenta, así que hay **una consulta de más por petición**. Se acepta a sabiendas — quitarla es migrar
+estas rutas a `:personId`, y cuando eso ocurra este `router.param` desaparece entero.
 
 ⚠️ Y **`DocumentoIdentidadService.buscarPersonaPorNumero` no la llama nadie** (comprobado el
 2026-08-29). Se borra con `I6`+`I7`, que es donde caen sus vecinas.
