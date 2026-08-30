@@ -85,13 +85,12 @@ Hasta el **2026-08-27**, `persons` tenía **23 columnas** y dentro cabía casi t
 correo, el WhatsApp, dos banderas de «verificado» y **siete** campos de dirección. Hoy tiene **once**,
 y todas son de la persona: cómo se llama, de qué país es, cómo entra y si está activa.
 
-Lo demás se fue a **seis tablas satélite**, y no por gusto de normalizar. Cada una resolvió un
+Lo demás se fue a **cinco tablas satélite**, y no por gusto de normalizar. Cada una resolvió un
 problema concreto que la columna no podía:
 
 | Tabla | Qué guarda | Qué arregla |
 |---|---|---|
-| `documentos_identidad` | El documento, con su **tipo** y su **país emisor** | `cedula` era una columna sola: no se sabía si «AB123456» era un pasaporte o una cédula mal tecleada, y **un extranjero no podía registrarse** |
-| `tipos_documento` | El catálogo: `cedula_ec` · `pasaporte` · `documento_extranjero` | Añadir un tipo es una fila, no un cambio de esquema |
+| `documentos_identidad` | El documento, con su **clase**, su **país emisor** y su número | `cedula` era una columna sola: no se sabía si «AB123456» era un pasaporte o una cédula mal tecleada, y **un extranjero no podía registrarse** |
 | `emails` | Los correos, con su tipo y su verificación | `email` era uno solo, y `verify_email` una bandera de la *persona* |
 | `telefonos` | Los números, con su país | Igual: `whatsapp` era un número y `verify_whatsapp` una bandera |
 | `canales_mensajeria` + `telefono_canales` | Qué canales tiene cada número, y **cuál está verificado** | La bandera vieja no decía verificado **en qué**: no distinguía «este número existe» de «este número tiene WhatsApp» |
@@ -100,6 +99,42 @@ problema concreto que la columna no podía:
 Y por debajo, un **catálogo geográfico encadenado**: `paises` → `provincias` → `ciudades`. Los países
 salen del CLDR que trae Node, con su código ISO-3166; las provincias y los cantones, del
 **Clasificador Geográfico Estadístico del INEC**.
+
+### El país no está en el código: está en una fila
+
+Hasta el **2026-08-29**, el documento nacional se llamaba `cedula_ec` y su validador colgaba del tipo.
+Ecuador estaba **dentro del programa**: en un despliegue peruano, el documento nacional habría seguido
+llamándose «cédula» y validándose con el dígito verificador ecuatoriano.
+
+Hoy son tres piezas, y ninguna nombra un país:
+
+**`instituciones`** es la primera tabla de **configuración** del sistema —antes no había ninguna— y
+guarda el país de esta instalación. Se edita en `/admin`, y se lee por `GET /system/institucion`, que
+es **público** como el catálogo geográfico: lo consume el **registro**, que por definición usa quien
+todavía no tiene cuenta y necesita saber cómo se llama aquí el documento nacional.
+
+No lleva restricción de fila única a propósito: es la puerta por la que entraría un modelo
+multi-inquilino, y `InstitucionService.actual()` **falla si hay cero o más de una** en vez de elegir
+en silencio — elegir «la primera» ante dos daría un país equivocado, y con él un validador
+equivocado, sin que nadie entendiera por qué se rechaza un número.
+
+**Las tres clases de documento son un `CHECK`**, como en `emails`, `telefonos` y `direcciones`:
+`documento_nacional` · `documento_extranjero` · `pasaporte`. Son fijas, el código se ramifica con
+ellas, y **un cuarto valor no debe poder crearse** porque nadie sabría qué hacer con él. Antes eran un
+catálogo de tres filas con clave ajena: la única del grupo que lo hacía así.
+
+**El validador y el nombre local se resuelven POR PAÍS**, en un registro de código
+(`documentosPorPais.js`). No hay una entrada por país del mundo: hay **una por país con regla**, y las
+demás caen a una comprobación genérica. «Cédula (Ecuador)» no se guarda — se **compone** del país; en
+un despliegue peruano la misma pantalla dice «DNI (Perú)» sin tocar una línea.
+
+:::note[El pasaporte es siempre alfanumérico]
+
+Mande el país lo que mande. Los números de pasaporte no llevan dígito verificador público —los que
+hay viven en la MRZ, no en el número—, y aplicarles el validador del país rechazaría pasaportes
+ecuatorianos perfectamente válidos por no tener diez dígitos.
+
+:::
 
 ### Cuatro reglas que no son de gusto
 
@@ -114,23 +149,25 @@ además **suelta su escaneo**, porque ese PDF es del documento viejo y dejarlo c
 respaldo que no existe.
 
 **La unicidad de un documento es `(tipo, país, número)`, no el número.** Un número de pasaporte es
-único **dentro del país que lo emite**: «AB123456» puede ser ecuatoriano *y* español. Por eso un
-documento que no sea cédula ecuatoriana **exige** su país emisor.
+único **dentro del país que lo emite**: «AB123456» puede ser ecuatoriano *y* español. Por eso el país
+emisor es **obligatorio** — al documento nacional no se le pregunta, se lo pone un trigger desde
+`instituciones`, pero se guarda igual.
 
-**Se entra por cualquiera de ellos.** El acceso resuelve contra la tabla, no contra el principal:
-quien se registró con pasaporte y luego declara su cédula sigue entrando con los dos. Y el número se
-normaliza —mayúsculas, sin espacios ni guiones—, así que `ab-123 456` y `AB123456` son el mismo
-documento.
+**El número se normaliza** —mayúsculas, sin espacios ni guiones—, así que `ab-123 456` y `AB123456`
+son el mismo documento.
 
-:::caution[Dónde NO está la cédula]
+:::caution[El documento NO es una llave]
 
-En `persons`. Se retiró como columna, y con ella la unicidad global que sostenía el acceso. Si buscas
-a alguien por su documento, la consulta va a `documentos_identidad`; y el organigrama, el expediente y
-las rutas de firma ya no la usan como identificador.
+En `persons` no está: se retiró como columna el 2026-08-27. Y desde el **2026-08-29 tampoco sirve
+para entrar** — el acceso es **sólo por correo**.
 
-Lo que sí valida ahora, y antes nadie: **el dígito verificador de la cédula ecuatoriana**. Es módulo
-10, local y sin red. El servicio externo sigue existiendo y hace otra cosa —preguntarle al registro
-civil si esa persona existe—; esto caza la errata antes de gastar la llamada.
+No se quitó por la unicidad, aunque la consulta del acceso la ignoraba —resolvía `numero = ?` a
+secas, así que podía emparejar a la persona equivocada—. Se quitó por la **estabilidad**: un
+pasaporte se renueva **con número nuevo**, y quien entrara con él perdería su acceso al renovarlo. El
+correo lo controla la persona y no caduca.
+
+El documento sigue siendo el dato legal de la identidad, y sirve para **recuperar el correo** si se
+acompaña de la contraseña (`POST /users/recuperar-correo`).
 
 :::
 
@@ -140,27 +177,27 @@ Van **tres**, y no es capricho: en uno solo median 2966 px de ancho y salían a 
 efectiva, por debajo del listón de legibilidad del sitio. Partidos por lo que uno busca —quién eres,
 cómo se te localiza y dónde vives— se leen, y además se corresponden con las tres preguntas.
 
-**Quién eres.** El documento, con su tipo y su país emisor:
+**Quién eres.** El documento, con su clase y su país emisor:
 
 ```mermaid
 erDiagram
   persons ||--o{ documentos_identidad : "se identifica con"
-  tipos_documento ||--o{ documentos_identidad : "de que tipo es"
   paises ||--o{ documentos_identidad : "quien lo emitio"
+  instituciones ||--|| paises : "de que pais es este despliegue"
 
   documentos_identidad {
     int person_id FK
-    int tipo_id FK
-    int pais_id FK "obligatorio si NO es cedula ecuatoriana"
+    text tipo "CHECK: nacional, extranjero, pasaporte"
+    int pais_id FK "OBLIGATORIO. Al nacional se lo pone un trigger"
     varchar numero "mayusculas, sin separadores"
     smallint verificado
     smallint principal_flag "generada, uno solo por persona"
     varchar escaneo_ref "minio del PDF escaneado"
     timestamp escaneo_subido_at
   }
-  tipos_documento {
-    varchar code "cedula_ec, pasaporte, documento_extranjero"
-    varchar validacion "cedula_ec activa el digito verificador"
+  instituciones {
+    varchar nombre
+    int pais_id FK "de aqui sale cual es el documento NACIONAL"
   }
 ```
 

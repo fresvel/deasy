@@ -54,6 +54,22 @@ Se conservo la flexibilidad de documento usando JSONB. La justificación esta en
 
 Las antiguas “colecciones” de Mongo son ahora valores de `section`: `titulos`, `experiencia`, `referencias`, `formacion`, `certificaciones`, `articulos`, `libros`, `ponencias`, `tesis`, `proyectos`.
 
+:::caution[Sus 22 rutas entran por `:cedula`, y eso tiene un límite]
+
+Un número de documento **no identifica a nadie por sí solo**: la unicidad es `(tipo, país, número)`, y
+dos pasaportes de países distintos con el mismo número son legales en el modelo.
+
+Hasta el **2026-08-29** la consulta hacía `WHERE numero = ? LIMIT 1` y ante dos coincidencias
+**elegía una en silencio**: devolvía el expediente de otra persona. Ahora lo corta un `router.param`
+—una vez, para las veintidós rutas— que responde **409** si el número corresponde a más de una
+persona. Sólo se pronuncia sobre la ambigüedad; que el documento no exista lo siguen resolviendo los
+controladores.
+
+El arreglo de fondo es que estas rutas entren por el **id de la persona**, como ya hacen la foto y el
+escaneo del documento. Está pendiente.
+
+:::
+
 Por compatibilidad, los `_id` se exponen como **String** para preservar el contrato que tenía Mongo, y los valores por defecto de cada sección replican exactamente los del antiguo esquema de Mongoose.
 
 ## Los demas dominios de tablas

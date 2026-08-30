@@ -153,6 +153,45 @@ de admin son segmentos de ruta, no estado interno. Si el cambio toca varias pant
 rutas de **todas**.
 → Ejemplos de lo que sí vale y trampas del instrumental: **§4 de [`frontend/CLAUDE.md`](frontend/CLAUDE.md)**.
 
+**3 · Cambiaste el comportamiento o el modelo → la DOCUMENTACIÓN PUBLICADA va en el MISMO commit.**
+No sólo el plan: **el sitio**, `docs/src/content/docs/`.
+
+Esta regla nace de un incumplimiento medido el **2026-08-29**. Un frente entero —nueve tareas: el
+login pasó a sólo correo, un catálogo murió, una tabla nació, cuatro rutas cambiaron de parámetro—
+se entregó con **los planes al día, `CLAUDE.md` al día y el modelo generado al día**, y **cuatro
+páginas del sitio describiendo el sistema anterior**. Se descubrió porque el dueño preguntó «¿dónde
+puedo verificarlo?».
+
+**Por qué se escapa, y por qué hace falta escribirlo:** todo lo demás tiene puerta y el sitio no.
+
+| Capa | Qué la vigila |
+|---|---|
+| El esquema | `gen-dbml.sh --check` — falla si hay deriva |
+| Los enlaces | `check-enlaces-internos.mjs` |
+| El código | 27 gates de lint, `check:imports`, `check:sql-*`, char, unitarios |
+| **La prosa del sitio** | **NADA** |
+
+El build de Astro pasa en verde con una página que miente: sólo comprueba que compile. Así que la
+única garantía es el hábito, y el hábito se cumple **antes de commitear**, no después.
+
+**Cómo se comprueba en treinta segundos**, y hazlo aunque creas que no aplica:
+
+```bash
+grep -rn "<lo que quitaste>" docs/src/content/docs/     # el nombre viejo de la tabla, del campo,
+                                                        # del endpoint, del parámetro de ruta
+```
+
+Si aparece, esa página miente. Y si el cambio **añadió** algo —una tabla, una ruta, una regla—,
+`grep` no lo encuentra: hay que preguntarse **qué página debería contarlo** y escribirlo.
+
+⚠️ **Un diagrama mermaid también es documentación.** Los `erDiagram` y los `flowchart` del sitio
+nombran tablas y columnas: si borras una, el diagrama queda mintiendo igual que el texto, y **ahí el
+`grep` sí te ayuda**.
+
+⚠️ **No confundas el modelo generado con la prosa.** `docs/02-dominio-datos/` y
+`docs/public/diagramas/` los regenera `gen-dbml.sh` y tienen su gate; las páginas de
+`docs/src/content/docs/` **se escriben a mano** y no lo tienen.
+
 ### Pilas paralelas: A, B, C y D — `scripts/stack.sh`
 
 **Si hay varias sesiones trabajando a la vez, cada una necesita su pila.** Los montajes de código son

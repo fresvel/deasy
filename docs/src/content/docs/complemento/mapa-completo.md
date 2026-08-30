@@ -32,13 +32,14 @@ flowchart TB
     direction TB
     PA["paises"] --> PV["provincias"]
     PV --> CI["ciudades"]
-    TD["tipos_documento"] --> DI["documentos_identidad"]
+    DI["documentos_identidad"]
     CI --> DIR["direcciones"]
     CM["canales_mensajeria"] --> TC["telefono_canales"]
     TE["telefonos"] --> TC
     EM["emails"]
     PA --> DI
     PA --> TE
+    PA --> IN["instituciones"]
   end
   subgraph CRED["Que eres tú quien firma"]
     direction TB

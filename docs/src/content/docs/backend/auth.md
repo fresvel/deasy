@@ -15,7 +15,7 @@ Son **dos cosas distintas** y conviene no confundirlas nunca:
 ```mermaid
 %% diagrama 05 — el login y los dos tokens que devuelve
 flowchart TD
-    LOGIN["POST /users/login { cedula, password }"]
+    LOGIN["POST /users/login { email, password }"]
     AUTH["AuthService.login()"]
     BCRYPT["bcrypt.compare(password, password_hash)"]
     TOKENS["Devuelve DOS tokens:"]
@@ -49,6 +49,43 @@ El payload del JWT es **solo `{ uid }`**. Nada de roles ni permisos dentro. Eso 
 
 La política de contrasenas vive en `backend/utils/passwordPolicy.js` (`evaluatePasswordPolicy`, exige 3 de 5 criterios) y la aplica `backend/middlewares/val_password.js`, que además *hashea en el sitio* `req.body.password` con bcrypt y salt 10 antes de llamar a `next()`.
 
+### Se entra SÓLO por correo
+
+Hasta el **2026-08-29** el login aceptaba también el número de documento, y la pantalla adivinaba
+cuál era por si llevaba una arroba. Se quitó, y conviene saber por qué **no** fue por la razón obvia.
+
+La consulta era incorrecta —resolvía `numero = ?` **a secas**, cuando la unicidad de un documento es
+`(tipo, país, número)`, así que podía emparejar a la persona equivocada—, pero eso se arreglaba
+acotándola. Lo que no se arregla es la **estabilidad**: un pasaporte se renueva **con número nuevo**,
+y quien entrara con él perdería su acceso al renovarlo. Un documento es un dato que caduca; el correo
+lo controla la persona y no.
+
+De paso se fue un defecto que llevaba tiempo y no se veía: el frontend borraba del identificador todo
+lo que no fuera dígito, así que el pasaporte `AB123456` viajaba como `123456` mientras el backend
+esperaba `AB123456`. **El acceso por pasaporte estaba roto desde la pantalla**, y no se notaba porque
+todos los documentos sembrados eran cédulas.
+
+### «Olvidé mi correo» — y por qué pide la contraseña
+
+`POST /users/recuperar-correo` es **público** y devuelve el correo de quien pruebe ser dueño de un
+documento **con su contraseña**.
+
+La contraseña no es un capricho: «recuérdame mi correo» y «no reveles quién está registrado» son
+**opuestos**. Sin ella, cualquiera con un número de cédula —semipúblico en Ecuador— podría averiguar
+si esa persona tiene cuenta. Con ella deja de ser un oráculo, y no hace falta ni limitador de
+intentos ni bitácora.
+
+:::caution[Los dos fallos son indistinguibles, también en el reloj]
+
+«Ese documento no existe» y «esa contraseña no es» devuelven **el mismo 401 con el mismo texto**. Y
+la contraseña **se compara siempre** —contra un hash señuelo si la persona no existe— porque si no,
+el tiempo de respuesta delataría lo que el mensaje calla. Medido: 67 ms contra 70 ms.
+
+:::
+
+Quien haya olvidado **las dos cosas** no tiene camino automático: el reinicio de contraseña también
+empieza pidiendo el correo. La pantalla lo dice y remite a una persona.
+
 ## Autorización (RBAC)
 
 RBAC son las siglas de *Role-Based Access Control*, control de acceso basado en roles. El modelo es:
@@ -80,7 +117,8 @@ Los middlewares están en `backend/middlewares/rbac.js`:
 | `requirePermissions(reqs, {all})` | Que tenga el permiso (OR por defecto, AND con `{all:true}`)                                      |
 | `requireAnyRole(roles)`           | Que tenga alguno de los roles indicados                                                          |
 | `requireRouteUserAccess({...})`   | Que sea **el dueno** del recurso **o** tenga rol elevado, *y* además el permiso                  |
-| `requireCedulaAccess({...})`      | Igual, pero comparando por cédula                                                                |
+| `requireCedulaAccess({...})`      | Igual, comparando por **número de documento**. Sólo lo usa el expediente                        |
+| `requirePersonAccess({...})`      | Igual, comparando por **id de persona**. La foto y el escaneo entran por aquí                   |
 | `requireDossierAccess(action)`    | Azucar sintáctico sobre el anterior con `resource: "dossier"`                                    |
 | `requireSqlAdminPermission(...)`  | Deduce el recurso desde `req.params.table` y la acción desde el método HTTP                      |
 
