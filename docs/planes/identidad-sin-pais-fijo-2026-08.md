@@ -25,7 +25,7 @@
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
 | **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ✅ | **Colisión creada en vivo** (dos personas con el número `1122334459`): `GET /tarea?usuario=…` pasa de **200 con las tareas de una de ellas** a **409 diciéndolo**, y el expediente de **404 «no encontrado»** a **409**. 7 tests del resolutor + golden que fabrica la colisión y la retira; 2 mutaciones cazadas | 2026-08-29 |
 | **I8** | Recuperación «olvidé mi correo» por documento + país | ✅ | `/recover-email` verificado en pantalla: con la contraseña devuelve el correo completo; con la contraseña mala y con un documento inexistente da **el mismo error** — y la misma latencia (67 ms contra 70 ms). 6 tests + 3 goldens | 2026-08-29 |
-| **I10** | Verificar el teléfono y recuperar el acceso de quien olvidó **las dos** cosas | ⛔ | **DEUDA TÉCNICA.** Analizada entera el 2026-08-29 y parada por una decisión del dueño: construir el limitador de intentos o comprarlo. Lo medido está abajo | |
+| **I10** | Verificar el teléfono y recuperar el acceso de quien olvidó **las dos** cosas | ⛔ | **DEUDA TÉCNICA, analizada entera el 2026-08-29.** La dirección la fijó el dueño —la app propia como dispositivo vinculado en el registro, validando el número por Telegram— y **depende de una app que todavía no existe**. Antes hace falta el limitador de intentos, que no hay. Todo lo medido está en su ficha | |
 
 **10 tareas.** `I10` nace del análisis de `I8` y es un frente pequeño en sí misma.
 
@@ -476,6 +476,27 @@ Sin él, un canal que cuesta dinero por mensaje se convierte en dos problemas:
 - **Comprarlo** — **Twilio Verify** no vende mensajes sino *verificaciones*: trae el limitador, la
   protección contra bombeo y el salto de canal. Se paga más por verificación y no se mantiene nada.
   Para un equipo que hoy no tiene ninguna de las tres piezas, puede salir más barato.
+
+#### 🎯 LA DIRECCIÓN QUE EL DUEÑO QUIERE (2026-08-29)
+
+No es «un canal de códigos» suelto. Es esto:
+
+> **Al registrarse, la persona instala la APP propia y la REGISTRA. El número se valida desde la
+> app, recibiendo el código por Telegram.**
+
+La app deja de ser un cliente más y pasa a ser **el dispositivo vinculado a la cuenta**. Telegram
+sólo interviene **una vez**, para validar el número en el alta.
+
+**Lo que esto arregla, y no es poco:** el hueco de los aspirantes externos desaparece. Antes la app
+no servía para recuperarlos porque no la tendrían vinculada; si la vinculación ocurre **en el
+registro**, la tienen todos —externos incluidos— desde el primer minuto. Y entonces **la app es el
+canal de recuperación** y Telegram deja de hacer falta después del alta.
+
+**Lo que esto mueve:** la fricción se traslada al registro, que pasa a exigir instalar una app. Esa
+es una decisión de producto —cuánta gente abandona un alta así— y **no la resuelve el código**.
+
+**De qué depende:** de que exista la app, que hoy no existe. Es el plan de llevar el chat a una
+aplicación propia. Hasta entonces, esta dirección no se puede empezar.
 
 #### Una decisión de arquitectura que cuesta poco ahora y mucho después
 
