@@ -46,6 +46,19 @@ server {
     return 301 /api/;
   }
 
+  # ⛔ Las rutas internas NO salen a internet.
+  #
+  # `location /api/` publica el backend ENTERO —la barra final del proxy_pass quita el prefijo— asi
+  # que sin esto `/api/internal/...` seria alcanzable desde fuera. Va ANTES que `/api/` porque nginx
+  # elige el prefijo mas largo, y `^~` para que no lo gane una expresion regular de mas abajo.
+  #
+  # Es UNA de las dos capas: el backend ademas exige una clave compartida. Esta regla se comprueba
+  # desde fuera con un curl; la clave protege si alguien copia mal esta configuracion en otro
+  # entorno.
+  location ^~ /api/internal/ {
+    return 404;
+  }
+
   location /api/ {
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;

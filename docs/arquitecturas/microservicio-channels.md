@@ -83,6 +83,45 @@ No es un detalle de implementación: **es lo que hace que todo esto sea posible 
 
 5. El servicio se lo cuenta al backend. **El backend** marca el teléfono como verificado.
 
+### La costura, ya construida (C2, 2026-08-30)
+
+Tres rutas y una tabla. Las dos internas **no las alcanza un navegador**:
+
+| Ruta | Quién la llama | Qué hace |
+|---|---|---|
+| `POST /users/me/telefonos/:id/verificacion` | el navegador, con sesión | Emite la llave y devuelve **los enlaces ya compuestos** |
+| `POST /internal/verificacion/resolver` | `channels` | De qué número es esta llave — o por qué no vale |
+| `POST /internal/verificacion/consumir` | `channels` | La gasta y marca el canal |
+
+**Dos capas protegen `/internal/`, y las dos hacen falta.** nginx devuelve **404** para
+`/api/internal/`, porque el proxy publica el backend entero bajo `/api/` — sin esa regla estas rutas
+estarían en internet. Y el backend exige una **clave compartida** (`INTERNAL_SERVICE_KEY`), por si
+esa regla se copia mal en otro entorno. El guard responde **404 y no 401**: un 401 confirmaría que la
+ruta existe. Y **503 si la clave no está puesta**, nunca 200 — un despliegue olvidadizo se queda
+cerrado, no abierto.
+
+**Lo que emite la pantalla depende del despliegue.** Un canal sin configurar **no aparece**; no viaja
+como `null`. Y con **cero** canales la petición responde **503 sin gastar una llave**: devolver un
+200 con tres enlaces nulos sería un fallo de despliegue disfrazado de éxito.
+
+**Cuatro estados, no dos.** `válida`, `desconocida`, `caducada` y `consumida` — porque al usuario le
+dicen cosas distintas: sólo las dos últimas significan «repite sin cambiar nada». Colapsarlas es un
+cambio silencioso, ya que las cuatro respuestas comparten código HTTP.
+
+⚠️ **Un 409 al consumir NO es una avería.** Significa que la llave dejó de valer entre resolver y
+confirmar —dos mensajes casi a la vez, o dos pulsaciones—, y al usuario hay que decirle «pide otra»,
+no «error interno». Es el único código que `ClienteDeDeasy` **no** convierte en excepción.
+
+⚠️ **De la llave se guarda sólo su huella SHA-256**, y eso es deliberado frente a bcrypt: aquí hay
+que **buscar por la llave** que llega, y una huella con sal no se puede buscar. No es una contraseña
+—dura quince minutos, un solo uso, 256 bits aleatorios—, así que lo que bcrypt protege no aplica.
+
+⚠️ **La ruta del navegador vive bajo `/me/`, y el dueño sale del token.** Al escribir sus pruebas se
+encontró que el servicio buscaba el teléfono **sólo por su id**: cualquiera con sesión pedía una
+llave para el teléfono de otro y la respuesta le devolvía su número. Es el IDOR de los entregables
+otra vez, por el mismo sitio. Un teléfono ajeno responde ahora **lo mismo que uno inexistente**, para
+no convertir la ruta en un oráculo.
+
 ### Telegram
 
 El QR codifica `t.me/<bot>?start=<llave>`. **Comprobado en la documentación: el parámetro

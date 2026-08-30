@@ -22,7 +22,7 @@
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
 | **C1** | El contrato del canal y la política de verificación, probadas **sin red** | ✅ | 15 pruebas · 4 mutaciones cazadas: comparar números tal cual, mirar el número antes de la llave, confundir «falta el número» con un rechazo, y confundir «el backend no contesta» con «llave mala» | 2026-08-29 |
-| **C2** | El backend sabe **crear, resolver y consumir** una llave; el servicio sabe preguntárselo | ⬜ | | |
+| **C2** | El backend sabe **crear, resolver y consumir** una llave; el servicio sabe preguntárselo | ✅ | `telefono_verification_keys` + 3 rutas · char **318/318** (4 casos nuevos) · unit **704** · channels **34** · **4 mutaciones cazadas**: quitar el filtro del dueño, colapsar «ya usada» con «no existe», que el guard confirme la ruta con un 401, y que pedir otra llave no invalide la anterior · `/api/internal/` da **404 desde fuera** (curl contra el proxy) · **IDOR encontrado y cerrado** al escribir las pruebas | 2026-08-30 |
 | **C3** | Un número real se verifica **por Telegram**, de punta a punta | ⬜ | | |
 | **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ⬜ | | |
 | **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ⬜ | | |
@@ -86,6 +86,28 @@ dirección, la clave compartida y qué hacer si no contesta.
 
 **Cómo se comprueba:** crear una llave, resolverla, consumirla, y que la segunda vez no
 valga. Y que una caducada tampoco.
+
+#### ✅ Hecho el 2026-08-30 — y tres cosas que no estaban previstas
+
+1. **Un IDOR, encontrado al escribir las pruebas.** La ruta vive bajo `/me/`, pero el servicio
+   buscaba el teléfono **sólo por su id**: cualquiera con sesión pedía una llave para el teléfono de
+   otro y se llevaba su número en la respuesta. Ahora el dueño sale del token y es **obligatorio**
+   —sin valor por defecto, para que un olvido rompa la prueba en vez de abrir la consulta—, y un
+   teléfono ajeno responde **igual que uno inexistente**.
+2. **La petición devolvía 200 con los tres enlaces a `null`** cuando el entorno no tenía ningún canal
+   configurado, quemando una llave que nadie podía usar. Ahora responde **503 antes de tocar la
+   base**, y un canal sin configurar **no aparece** en vez de viajar como `null`: «no lo ofrecemos» y
+   «falló» son cosas distintas.
+3. **El 409 al consumir dejó de ser una excepción.** Es la carrera entre resolver y confirmar —dos
+   mensajes casi a la vez—, y al usuario le toca «pide otra», no «error interno».
+
+La composición de enlaces salió del controlador a `services/users/canalesDeVerificacion.js`: es una
+regla de despliegue con tres consumidores previstos (esta ruta, la pestaña de `C7` y el registro de
+`C8`), es lógica pura y se prueba sin entorno — incluido el caso de **cero canales**, que desde el
+contenedor no se puede provocar.
+
+⚠️ **En dev, `TELEGRAM_BOT_USERNAME` es un MARCADOR**: el bot no existe todavía (lo crea `C3`). Basta
+para que el camino de composición se ejecute; el enlace no lleva a ninguna parte.
 
 ### C3 · Telegram, de punta a punta
 

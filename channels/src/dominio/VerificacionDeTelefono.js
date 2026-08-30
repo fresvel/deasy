@@ -18,10 +18,23 @@
 /** Por qué se rechazó. El canal decide cómo contárselo al usuario; aquí sólo se nombra. */
 export const MOTIVOS = Object.freeze({
   SIN_LLAVE: "sin_llave",
+  // Tres motivos y no uno, porque son tres mensajes distintos para el usuario: «este enlace no es
+  // valido», «caduco, pide otro» y «ya lo usaste, pide otro». Solo los dos ultimos le dicen que
+  // repita SIN cambiar nada de lo que hizo.
   LLAVE_DESCONOCIDA: "llave_desconocida",
+  LLAVE_CADUCADA: "llave_caducada",
+  LLAVE_CONSUMIDA: "llave_consumida",
   FALTA_NUMERO: "falta_numero",
   NUMERO_DISTINTO: "numero_distinto",
   BACKEND_CAIDO: "backend_caido",
+});
+
+// El backend nombra los estados; aqui se traducen a motivos. En un solo sitio, para que anadir un
+// estado no obligue a buscar donde se interpretaba.
+const MOTIVO_POR_ESTADO = Object.freeze({
+  desconocida: MOTIVOS.LLAVE_DESCONOCIDA,
+  caducada: MOTIVOS.LLAVE_CADUCADA,
+  consumida: MOTIVOS.LLAVE_CONSUMIDA,
 });
 
 export default class VerificacionDeTelefono {
@@ -51,8 +64,11 @@ export default class VerificacionDeTelefono {
       return { verificado: false, motivo: MOTIVOS.BACKEND_CAIDO };
     }
 
-    if (!peticion) {
-      return { verificado: false, motivo: MOTIVOS.LLAVE_DESCONOCIDA };
+    if (!peticion?.valida) {
+      return {
+        verificado: false,
+        motivo: MOTIVO_POR_ESTADO[peticion?.estado] ?? MOTIVOS.LLAVE_DESCONOCIDA,
+      };
     }
 
     // El canal no pudo probar el número todavía. NO es un rechazo: Telegram llega aquí en
@@ -66,11 +82,22 @@ export default class VerificacionDeTelefono {
       return { verificado: false, motivo: MOTIVOS.NUMERO_DISTINTO };
     }
 
-    await this.deasy.confirmarVerificacion({
+    // Se resolvió hace un instante, pero entre aquel instante y éste la llave puede haber dejado de
+    // valer: dos mensajes casi a la vez, o el usuario pulsando dos veces. Quien manda es la
+    // confirmación, no la resolución — y su rechazo se traduce al MISMO motivo que si hubiera
+    // llegado ya usada, porque para el usuario es exactamente lo mismo.
+    const confirmacion = await this.deasy.confirmarVerificacion({
       llave: mensaje.llave,
       numero: peticion.numero,
       canal: mensaje.canal,
     });
+
+    if (confirmacion?.confirmado === false) {
+      return {
+        verificado: false,
+        motivo: MOTIVO_POR_ESTADO[confirmacion.estado] ?? MOTIVOS.LLAVE_CONSUMIDA,
+      };
+    }
 
     return { verificado: true };
   }

@@ -32,7 +32,8 @@
       "canales_mensajeria",
       "telefono_canales",
       "emails",
-      "documentos_identidad"
+      "documentos_identidad",
+      "telefono_verification_keys"
     ]
   },
   "organizacion": {

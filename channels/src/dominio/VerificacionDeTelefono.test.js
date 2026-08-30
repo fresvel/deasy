@@ -5,15 +5,15 @@ import MensajeEntrante from "./MensajeEntrante.js";
 
 // Un backend de mentira. Toda esta batería corre SIN RED, sin Telegram y sin un módem: la
 // política es lógica pura, y es lo que el diseño manda probar antes de conectar nada real.
-const deasyCon = ({ peticion = null, falla = false } = {}) => {
+const deasyCon = ({ numero = null, estado = "desconocida", falla = false } = {}) => {
   const confirmaciones = [];
   return {
     confirmaciones,
     resolverLlave: async () => {
       if (falla) throw new Error("caído");
-      return peticion;
+      return numero ? { valida: true, numero } : { valida: false, estado };
     },
-    confirmarVerificacion: async (datos) => confirmaciones.push(datos),
+    confirmarVerificacion: async (datos) => { confirmaciones.push(datos); return { confirmado: true }; },
   };
 };
 
@@ -22,7 +22,7 @@ const mensaje = (extra = {}) =>
 
 describe("VerificacionDeTelefono · el camino que verifica", () => {
   it("con llave buena y número que coincide, verifica y se lo cuenta al backend", async () => {
-    const deasy = deasyCon({ peticion: { numero: "0991112233", personaId: 7 } });
+    const deasy = deasyCon({ numero: "0991112233" });
     const resultado = await new VerificacionDeTelefono(deasy)
       .procesar(mensaje({ numeroProbado: "0991112233" }));
 
@@ -32,7 +32,7 @@ describe("VerificacionDeTelefono · el camino que verifica", () => {
 
   // La política NO marca nada: se lo pide al backend, que es donde están los datos.
   it("no verifica por su cuenta: sólo avisa", async () => {
-    const deasy = deasyCon({ peticion: { numero: "0991112233" } });
+    const deasy = deasyCon({ numero: "0991112233" });
     const politica = new VerificacionDeTelefono(deasy);
     assert.equal(typeof politica.marcarVerificado, "undefined");
     await politica.procesar(mensaje({ numeroProbado: "0991112233" }));
@@ -43,14 +43,14 @@ describe("VerificacionDeTelefono · el camino que verifica", () => {
 describe("VerificacionDeTelefono · los rechazos, y por qué son distintos entre sí", () => {
   it("sin llave no se pregunta nada al backend", async () => {
     let preguntado = false;
-    const deasy = { resolverLlave: async () => { preguntado = true; }, confirmarVerificacion: async () => {} };
+    const deasy = { resolverLlave: async () => { preguntado = true; return { valida: false }; }, confirmarVerificacion: async () => ({ confirmado: true }) };
     const r = await new VerificacionDeTelefono(deasy).procesar(mensaje({ llave: "   " }));
     assert.equal(r.motivo, MOTIVOS.SIN_LLAVE);
     assert.equal(preguntado, false, "un mensaje cualquiera no debe costar una consulta");
   });
 
   it("una llave que el backend no reconoce se rechaza", async () => {
-    const deasy = deasyCon({ peticion: null });
+    const deasy = deasyCon({});
     const r = await new VerificacionDeTelefono(deasy).procesar(mensaje({ numeroProbado: "0991112233" }));
     assert.equal(r.motivo, MOTIVOS.LLAVE_DESCONOCIDA);
     assert.equal(deasy.confirmaciones.length, 0);
@@ -59,7 +59,7 @@ describe("VerificacionDeTelefono · los rechazos, y por qué son distintos entre
   // ESTE NO ES UN RECHAZO, y confundirlo rompería Telegram: su primer paso llega sin número
   // porque el bot NO lo recibe. Lo que toca entonces es pedir el contacto, no decir que no.
   it("«falta el número» devuelve el esperado, porque el canal aún tiene que pedirlo", async () => {
-    const deasy = deasyCon({ peticion: { numero: "0991112233" } });
+    const deasy = deasyCon({ numero: "0991112233" });
     const r = await new VerificacionDeTelefono(deasy).procesar(mensaje());
     assert.equal(r.motivo, MOTIVOS.FALTA_NUMERO);
     assert.equal(r.numeroEsperado, "0991112233", "el canal lo necesita para comparar después");
@@ -67,7 +67,7 @@ describe("VerificacionDeTelefono · los rechazos, y por qué son distintos entre
   });
 
   it("un número que no es el pedido se rechaza y NO se confirma nada", async () => {
-    const deasy = deasyCon({ peticion: { numero: "0991112233" } });
+    const deasy = deasyCon({ numero: "0991112233" });
     const r = await new VerificacionDeTelefono(deasy).procesar(mensaje({ numeroProbado: "0987654321" }));
     assert.equal(r.motivo, MOTIVOS.NUMERO_DISTINTO);
     assert.equal(deasy.confirmaciones.length, 0);
@@ -84,9 +84,33 @@ describe("VerificacionDeTelefono · los rechazos, y por qué son distintos entre
 
   it("se pregunta por la llave ANTES de mirar el número", async () => {
     // Si se comparara primero, se compararía contra un número que nadie ha pedido.
-    const deasy = deasyCon({ peticion: null });
+    const deasy = deasyCon({});
     const r = await new VerificacionDeTelefono(deasy).procesar(mensaje({ numeroProbado: "0000000000" }));
     assert.equal(r.motivo, MOTIVOS.LLAVE_DESCONOCIDA, "no puede rechazar por el número si la llave no vale");
+  });
+});
+
+describe("VerificacionDeTelefono · los tres estados de una llave, que son tres mensajes", () => {
+  // «No es válida», «caducó» y «ya la usaste» le dicen cosas distintas al usuario: sólo los dos
+  // últimos significan «repite SIN cambiar nada de lo que hiciste». Colapsarlos en uno le haría
+  // revisar un enlace que estaba bien.
+  const casos = [
+    ["desconocida", MOTIVOS.LLAVE_DESCONOCIDA],
+    ["caducada", MOTIVOS.LLAVE_CADUCADA],
+    ["consumida", MOTIVOS.LLAVE_CONSUMIDA],
+  ];
+  for (const [estado, motivo] of casos) {
+    it(`«${estado}» se traduce a «${motivo}»`, async () => {
+      const r = await new VerificacionDeTelefono(deasyCon({ estado }))
+        .procesar(mensaje({ numeroProbado: "0991112233" }));
+      assert.equal(r.motivo, motivo);
+    });
+  }
+
+  it("un estado que el backend estrene mañana no revienta: cae al genérico", async () => {
+    const r = await new VerificacionDeTelefono(deasyCon({ estado: "algo_nuevo" }))
+      .procesar(mensaje({ numeroProbado: "0991112233" }));
+    assert.equal(r.motivo, MOTIVOS.LLAVE_DESCONOCIDA);
   });
 });
 
@@ -132,4 +156,33 @@ describe("MensajeEntrante", () => {
     const m = new MensajeEntrante({ canal: "sms", llave: "K", numeroProbado: "0991112233" });
     assert.throws(() => { m.numeroProbado = "otro"; });
   });
+});
+
+// La carrera entre resolver y confirmar. NO es teórica: el usuario pulsa el enlace dos veces, o
+// llegan dos mensajes casi a la vez. Antes esto lanzaba, y el canal le decía «error interno» a
+// alguien que sólo tenía que pedir otra llave.
+it("si la llave se consume entre resolver y confirmar, se rechaza — no revienta", async () => {
+  const deasy = {
+    resolverLlave: async () => ({ valida: true, numero: "593991112233" }),
+    confirmarVerificacion: async () => ({ confirmado: false, estado: "consumida" }),
+  };
+  const politica = new VerificacionDeTelefono(deasy);
+
+  const salida = await politica.procesar(
+    new MensajeEntrante({ canal: "telegram", llave: "K1", numeroProbado: "+593 99 111 2233" })
+  );
+
+  assert.equal(salida.verificado, false);
+  assert.equal(salida.motivo, MOTIVOS.LLAVE_CONSUMIDA, "es lo mismo que llegar con una llave ya usada");
+});
+
+it("un rechazo de la confirmación sin motivo reconocible sigue siendo «ya usada»", async () => {
+  const deasy = {
+    resolverLlave: async () => ({ valida: true, numero: "593991112233" }),
+    confirmarVerificacion: async () => ({ confirmado: false }),
+  };
+  const salida = await new VerificacionDeTelefono(deasy).procesar(
+    new MensajeEntrante({ canal: "sms", llave: "K1", numeroProbado: "593991112233" })
+  );
+  assert.equal(salida.motivo, MOTIVOS.LLAVE_CONSUMIDA);
 });

@@ -2,6 +2,9 @@ export const API_PREFIX = "/deasy/v1";
 
 export const PATHS = {
   users: "/users",
+  // SOLO para los microservicios de Deasy. nginx devuelve 404 para `/api/internal/` y
+  // ademas exige la clave compartida: ver `middlewares/servicioInterno.js`.
+  internal: "/internal",
   usersLogin: "/users/login",
   admin: "/admin",
   units: "/units",

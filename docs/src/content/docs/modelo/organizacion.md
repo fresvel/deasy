@@ -209,6 +209,8 @@ erDiagram
   persons ||--o{ telefonos : "se le llama a"
   telefonos ||--o{ telefono_canales : "esta en"
   canales_mensajeria ||--o{ telefono_canales : "que canal"
+  telefonos ||--o{ telefono_verification_keys : "se prueba con"
+  canales_mensajeria ||--o{ telefono_verification_keys : "por que canal se probo"
 
   emails {
     int person_id FK
@@ -231,9 +233,48 @@ erDiagram
     timestamp verificado_at
   }
   canales_mensajeria {
-    varchar code "whatsapp, telegram, signal"
+    varchar code "whatsapp, telegram, sms, signal"
+    smallint is_active "signal esta en el catalogo pero apagado: no hay implementacion"
+  }
+  telefono_verification_keys {
+    int telefono_id FK
+    char llave_hash "SHA-256; la llave en claro NO se guarda"
+    timestamp expira_at "quince minutos"
+    timestamp consumida_at "un solo uso"
+    int canal_id FK "por cual se acabo probando"
   }
 ```
+
+### Cómo se prueba que un número es tuyo
+
+Un teléfono no se verifica solo, y **la verificación es por canal**: que un número tenga WhatsApp no
+dice que tenga Telegram. Por eso la bandera vive en `telefono_canales` y no en `telefonos`.
+
+El circuito tiene una regla que lo explica entero: **escribe siempre el usuario, nunca nosotros**.
+El sistema compone un enlace con una llave dentro —`t.me/<bot>?start=<llave>`, `wa.me/<numero>?text=<llave>`,
+o un número al que mandar un SMS con ese texto—, y espera. Cuando el mensaje llega, el transporte ya
+prueba de qué número viene.
+
+De ahí salen tres propiedades que no son casualidad:
+
+- **Ningún canal cuesta por mensaje.** No enviamos nada, así que no existe el ataque de coste que
+  sufre cualquier sistema que manda SMS a un número que le dicten.
+- **El SMS es el más limpio de los tres**: el número **viene en la cabecera**, no hay que pedírselo a
+  nadie. Y es el único que funciona sin aplicación, sin datos y en un teléfono básico.
+- **Telegram no da el número.** El bot lo pide con un botón, y hay que exigir que el contacto sea de
+  quien escribe — si no, cualquiera reenvía la tarjeta de otra persona.
+
+De la llave se guarda **sólo su huella SHA-256**, nunca el texto. Se elige SHA-256 y no bcrypt a
+propósito: aquí hace falta **buscar por la llave** que llega, y una huella con sal no se puede buscar.
+No es una contraseña —dura quince minutos, se usa una vez y es aleatoria de 256 bits—, así que lo que
+bcrypt protege (adivinar a fuerza bruta un secreto elegido por una persona) no aplica.
+
+**Pedir una llave nueva borra la anterior.** Si pides otra es porque la primera no te sirvió, y dejar
+dos vivas duplica lo que hay que adivinar sin darte nada.
+
+Y el estado de una llave **no es un sí o un no, son cuatro**: válida, desconocida, caducada y
+consumida. Se distinguen porque al usuario le dicen cosas distintas — «este enlace no vale» le hace
+revisar lo que hizo; «caducó» y «ya la usaste» le dicen que repita **sin cambiar nada**.
 
 **Dónde vives.** La dirección y el catálogo geográfico que la hace un dato y no una redacción:
 

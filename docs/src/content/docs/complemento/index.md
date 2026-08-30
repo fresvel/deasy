@@ -1,6 +1,6 @@
 ---
 title: "El complemento: lo que la cadena da por supuesto"
-description: "Las 39 tablas que no están en la cadena proceso → documento: quién eres, qué puedes hacer, a quién se contrata, cómo se habla y qué expediente tienes. 38 + 39 = 77, el esquema entero."
+description: "Las 40 tablas que no están en la cadena proceso → documento: quién eres, qué puedes hacer, a quién se contrata, cómo se habla y qué expediente tienes. 38 + 40 = 78, el esquema entero."
 sidebar:
   label: "Cómo leer esto"
   order: 0
@@ -10,11 +10,11 @@ sidebar:
 proceso» a «este documento existe y lo firmaron estas personas». Son **38 tablas** y se leen en
 orden, porque cada eslabón necesita el anterior.
 
-Esta sección es **el resto**: las **39 tablas** que la cadena da por supuestas. No forman una cadena
+Esta sección es **el resto**: las **40 tablas** que la cadena da por supuestas. No forman una cadena
 —son familias independientes que cuelgan casi todas de `persons`— y por eso no se leen en orden: se
 entra por la que te interese.
 
-38 + 39 = **77**. Entre las dos secciones está el esquema entero, y eso se puede comprobar, que es
+38 + 40 = **78**. Entre las dos secciones está el esquema entero, y eso se puede comprobar, que es
 justo la gracia de decirlo.
 
 ## Por qué esto no es «lo secundario»
@@ -48,7 +48,7 @@ Duplicar una cifra garantiza que en dos semanas haya dos versiones distintas de 
 | **Firmar en tanda** — el progreso de un lote | 1 | [La firma en lote](/complemento/firma-en-lote/) |
 | Y una suelta: `relation_unit_types`, el tipo de vínculo entre unidades | 1 | [La organización](/modelo/organizacion/) |
 
-**Las 39 tienen sus campos y sus relaciones dibujados**, salvo las diez de identidad, cuyo detalle
+**Las 40 tienen sus campos y sus relaciones dibujados**, salvo las once de identidad, cuyo detalle
 está en la página de la organización porque se cuentan junto a `persons`, de la que salieron.
 
 Todas juntas, sin campos, en el [mapa del complemento](/complemento/mapa-completo/).
@@ -60,12 +60,12 @@ recreada, no del fichero de esquema y no de otra página.
 
 | | |
 |---|---|
-| Tablas del complemento | **39** |
-| Columnas de esas 39 | **300** |
-| Claves foráneas declaradas en ellas | **64** — 37 entre ellas y **27 hacia la cadena** |
+| Tablas del complemento | **40** |
+| Columnas de esas 40 | **307** |
+| Claves foráneas declaradas en ellas | **66** — 39 entre ellas y **27 hacia la cadena** |
 | Tablas de la cadena | **38** |
-| Tablas del esquema entero | **77** |
-| Claves foráneas del esquema entero | **162** |
+| Tablas del esquema entero | **78** |
+| Claves foráneas del esquema entero | **164** |
 | Restricciones `CHECK` del esquema entero | **36** |
 
 ⚠️ **Contra el fichero no salen.** `grep FOREIGN KEY` sobre `postgres_schema.sql` se deja fuera las

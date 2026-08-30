@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 77 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 78 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "actions" {
@@ -1044,6 +1044,23 @@ Table "telefono_canales" {
   }
 }
 
+Table "telefono_verification_keys" {
+  "id" int8 [pk, not null, increment]
+  "telefono_id" int4 [not null]
+  "llave_hash" bpchar(64) [unique, not null]
+  "expira_at" timestamp [not null]
+  "consumida_at" timestamp [note: '''Se marca en vez de borrar la fila, para distinguir «esa llave no existe» de «esa llave ya se usó». Son dos mensajes distintos: sólo el segundo le dice al usuario que pida otra sin cambiar nada de lo que hizo.''']
+  "canal_id" int4 [note: '''Por dónde se consumió. Es clave ajena a `canales_mensajeria` y no un CHECK: verificar por Telegram demuestra que el número es suyo Y que tiene Telegram, que es el hecho que `telefono_canales` guarda. Con un vocabulario aparte habría dos listas para un solo suceso.''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    expira_at [type: btree, name: "idx_tvk_expira"]
+    telefono_id [type: btree, name: "idx_tvk_telefono"]
+  }
+
+  Note: '''La llave con la que alguien demuestra que un número de teléfono es suyo. La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp, un SMS que envía ella— y el microservicio `channels` la trae de vuelta. Se cifra con SHA-256 y no con bcrypt porque hay que BUSCAR por ella: el servicio sólo tiene la llave, y encontrar de qué teléfono es *es* la operación.'''
+}
+
 Table "telefonos" {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
@@ -1381,6 +1398,8 @@ Ref "fk_tasks_scope_unit":"units"."id" <? "tasks"."scope_unit_id"
 Ref "fk_tasks_term":"terms"."id" <? "tasks"."term_id"
 Ref "fk_telefono_canales_canal":"canales_mensajeria"."id" <? "telefono_canales"."canal_id"
 Ref "fk_telefono_canales_telefono":"telefonos"."id" <? "telefono_canales"."telefono_id" [delete: cascade]
+Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
+Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono_id" [delete: cascade]
 Ref "fk_telefonos_pais":"paises"."id" ?<? "telefonos"."pais_id"
 Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
 Ref "fk_template_artifact_fields_artifact":"template_artifacts"."id" <? "template_artifact_fields"."template_artifact_id" [delete: cascade]

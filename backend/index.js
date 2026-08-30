@@ -3,6 +3,7 @@ import http from "node:http";
 import express from "express";
 import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import user_router from "./routes/user_router.js";
+import internalRouter from "./routes/internal_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
 import { assertPostgresConnection } from "./config/postgres.js";
@@ -151,6 +152,8 @@ app.get(DOCS_JSON_PATH, (req, res) => {
 });
 
 app.use(ROUTES.users, user_router)
+// SOLO microservicios. Lleva su propia guarda; nginx ademas devuelve 404 desde fuera.
+app.use(ROUTES.internal, internalRouter)
 app.use(ROUTES.resetPassword, reset_password_router)
 app.use(ROUTES.email, email_router)
 

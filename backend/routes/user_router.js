@@ -30,6 +30,7 @@ import {
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { recuperarCorreo } from "../controllers/users/recuperar_correo_controller.js";
+import { pedirVerificacionDeTelefono } from "../controllers/users/telefono_verificacion_controller.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { refreshToken } from "../controllers/users/refresh_token.js";
 import { getUserPhoto, updateUserPhoto } from "../controllers/users/user_photo_controller.js";
@@ -124,6 +125,15 @@ router.get('/', authMiddleware, loadAccessContext, requirePermissions("people.re
 // PÚBLICA, como el login: la usa quien no puede entrar. Pide la contraseña, así que no es un
 // oráculo de existencia — ver `RecuperarCorreoService`.
 router.post('/recuperar-correo', recuperarCorreo)
+
+// Pedir una llave para verificar UN telefono propio. Devuelve ya compuestos el enlace de
+// Telegram, el de WhatsApp y el texto del SMS: la pantalla no tiene que saber armarlos.
+router.post(
+  '/me/telefonos/:id/verificacion',
+  authMiddleware,
+  loadAccessContext,
+  pedirVerificacionDeTelefono
+)
 
 router.post('/login', loginUser)
 router.post('/logout', logoutUser)

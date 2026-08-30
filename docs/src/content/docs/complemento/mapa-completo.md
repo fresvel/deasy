@@ -1,13 +1,13 @@
 ---
 title: "El mapa del complemento, de un vistazo"
-description: "Las 39 tablas que no están en la cadena proceso → documento, en tres diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
+description: "Las 40 tablas que no están en la cadena proceso → documento, en tres diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
 sidebar:
   label: "Mapa del complemento"
   order: 15
 ---
 
-Las **39 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
-[38 de la cadena](/modelo/mapa-completo/) suman las **77** del esquema: entre los dos mapas no queda
+Las **40 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
+[38 de la cadena](/modelo/mapa-completo/) suman las **78** del esquema: entre los dos mapas no queda
 ninguna fuera.
 
 `persons` aparece en los tres dibujos porque es de quien cuelga casi todo, pero **es de la cadena**,
@@ -23,7 +23,7 @@ debajo de los 12 px que este sitio se fija como mínimo. Se probaron `LR`, `dagr
 
 ## 1 · Lo que una persona *es*
 
-Quince tablas, y todas cuelgan de `persons`. Hasta el 2026-08-27 la mayoría eran **columnas** suyas.
+Dieciséis tablas, y todas cuelgan de `persons`. Hasta el 2026-08-27 la mayoría eran **columnas** suyas.
 
 ```mermaid
 flowchart TB
@@ -36,6 +36,8 @@ flowchart TB
     CI --> DIR["direcciones"]
     CM["canales_mensajeria"] --> TC["telefono_canales"]
     TE["telefonos"] --> TC
+    TE --> TVK["telefono_verification_keys"]
+    CM --> TVK
     EM["emails"]
     PA --> DI
     PA --> TE
@@ -144,12 +146,12 @@ que hace que versionar un proceso no parta su conversación en dos, y está cont
 
 | | |
 |---|---|
-| Tablas del complemento | **39** |
-| Columnas | **300** |
-| Claves foráneas declaradas en ellas | **64** — 37 entre ellas, **27** hacia la cadena |
+| Tablas del complemento | **40** |
+| Columnas | **307** |
+| Claves foráneas declaradas en ellas | **66** — 39 entre ellas, **27** hacia la cadena |
 | Restricciones `CHECK` | **11** |
 | Tablas de la cadena | **38** |
-| **Total del esquema** | **77** |
+| **Total del esquema** | **78** |
 
 Medidas contra el catálogo de PostgreSQL de una base recién recreada, no contra el fichero de
 esquema. La razón está en [cómo leer esto](/complemento/).
