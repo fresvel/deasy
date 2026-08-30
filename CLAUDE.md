@@ -162,27 +162,33 @@ se entregó con **los planes al día, `CLAUDE.md` al día y el modelo generado a
 páginas del sitio describiendo el sistema anterior**. Se descubrió porque el dueño preguntó «¿dónde
 puedo verificarlo?».
 
-**Por qué se escapa, y por qué hace falta escribirlo:** todo lo demás tiene puerta y el sitio no.
-
-| Capa | Qué la vigila |
-|---|---|
-| El esquema | `gen-dbml.sh --check` — falla si hay deriva |
-| Los enlaces | `check-enlaces-internos.mjs` |
-| El código | 27 gates de lint, `check:imports`, `check:sql-*`, char, unitarios |
-| **La prosa del sitio** | **NADA** |
-
-El build de Astro pasa en verde con una página que miente: sólo comprueba que compile. Así que la
-única garantía es el hábito, y el hábito se cumple **antes de commitear**, no después.
-
-**Cómo se comprueba en treinta segundos**, y hazlo aunque creas que no aplica:
+**Ya hay puerta**, y corre en CI (`docs-links.yml`), pero **no te fíes de que baste**:
 
 ```bash
-grep -rn "<lo que quitaste>" docs/src/content/docs/     # el nombre viejo de la tabla, del campo,
-                                                        # del endpoint, del parámetro de ruta
+node scripts/docs/check-doc-modelo.mjs            # comprueba
+node scripts/docs/check-doc-modelo.mjs --update   # re-graba las huellas, DESPUÉS de revisar
 ```
 
-Si aparece, esa página miente. Y si el cambio **añadió** algo —una tabla, una ruta, una regla—,
-`grep` no lo encuentra: hay que preguntarse **qué página debería contarlo** y escribirlo.
+Vigila tres cosas, y cada una caza una distinta:
+
+| | Qué caza | Ejemplo real |
+|---|---|---|
+| **A** | Una página **nombra algo que ya no existe** | `tipos_documento`, `tipo_id` |
+| **B** | Una tabla **que ninguna página cuenta** | `instituciones`, documentada a medias |
+| **C** | Una tabla **cambió** y su página no se revisó | te dice **qué páginas** mirar |
+
+**El C es el que responde a «¿y los cambios?»**, y su trato es el de un golden: **no dice que la
+página esté bien, dice que alguien la miró**. Se apaga leyéndola, corrigiéndola si hace falta, y
+re-grabando la huella — nunca al revés.
+
+⚠️ **Lo que el gate NO puede cazar, y por eso el hábito sigue haciendo falta:** una frase falsa que
+no nombre nada muerto. *«Se entra por cualquiera de ellos»* era **falsa** y no contiene un solo
+identificador retirado. Esto reduce el hueco; no lo cierra.
+
+⚠️ **La lista de excepciones (`doc-modelo-excepciones.json`) lleva el motivo de cada una, y está
+atada a las páginas donde vale.** Perdonar `tipos_documento` en la página que cuenta por qué murió es
+correcto; que aparezca en una página nueva, no — y el gate lo dice. **No añadas una excepción para
+callar el gate**: si no puedes escribir el motivo, la página está mal.
 
 ⚠️ **Un diagrama mermaid también es documentación.** Los `erDiagram` y los `flowchart` del sitio
 nombran tablas y columnas: si borras una, el diagrama queda mintiendo igual que el texto, y **ahí el

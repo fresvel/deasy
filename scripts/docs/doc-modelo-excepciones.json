@@ -1,0 +1,412 @@
+{
+  "_readme": [
+    "Nombres que `check-doc-modelo.mjs` encuentra en el sitio y que NO existen en el esquema,",
+    "y que aun asi son CORRECTOS. Cada uno lleva su motivo escrito, y eso es deliberado: una lista",
+    "de excepciones sin razones se convierte en el sitio donde se calla el gate en vez de arreglar",
+    "la pagina. Anadir uno tiene que costar explicarlo.",
+    "",
+    "Clasificados el 2026-08-29, la unica vez que hay que hacerlo entero."
+  ],
+  "nombres": {
+    "task_assignments": {
+      "motivo": "MEMORIA · tabla retirada el 2026-08-23. La doc la cita para contar por que murio.",
+      "paginas": [
+        "datos/motor-de-procesos.md",
+        "modelo/lo-que-no-cierra.md",
+        "modelo/tenencias-y-relevo.md"
+      ]
+    },
+    "task_item_handovers": {
+      "motivo": "MEMORIA · idem: los relevos pasaron de eventos a periodos.",
+      "paginas": [
+        "datos/motor-de-procesos.md",
+        "modelo/lo-que-no-cierra.md",
+        "modelo/tenencias-y-relevo.md"
+      ]
+    },
+    "documents": {
+      "motivo": "MEMORIA · cascara 1:1 sobre task_items, sin una sola columna propia.",
+      "paginas": [
+        "backend/acceso-a-datos.md",
+        "backend/auth.md",
+        "backend/errores-e-integraciones.md",
+        "backend/index.md",
+        "datos/index.md",
+        "modelo/documento.md",
+        "modelo/entregable-concreto.md",
+        "modelo/lo-que-no-cierra.md",
+        "modelo/mapa-completo.md",
+        "modelo/tenencias-y-relevo.md",
+        "por-donde-empezar.md",
+        "testing.md"
+      ]
+    },
+    "tipos_documento": {
+      "motivo": "MEMORIA · catalogo de tres filas retirado el 2026-08-29; hoy es un CHECK.",
+      "paginas": []
+    },
+    "cedula_ec": {
+      "motivo": "MEMORIA · asi se llamaba el tipo nacional hasta el 2026-08-29, con Ecuador dentro del vocabulario.",
+      "paginas": [
+        "modelo/organizacion.md"
+      ]
+    },
+    "document_owner": {
+      "motivo": "MEMORIA · resolver retirado. Sus `case` siguen vivos en ejecucion (defecto 1.19).",
+      "paginas": [
+        "datos/modos-y-plantillas.md",
+        "modelo/flujo-de-entrega.md",
+        "modelo/flujo-de-firma.md",
+        "modelo/lo-que-no-cierra.md"
+      ]
+    },
+    "manual_pick": {
+      "motivo": "MEMORIA · resolver retirado del CHECK.",
+      "paginas": [
+        "datos/modos-y-plantillas.md",
+        "modelo/flujo-de-entrega.md"
+      ]
+    },
+    "position": {
+      "motivo": "MEMORIA · resolver retirado del CHECK.",
+      "paginas": []
+    },
+    "context_subtree": {
+      "motivo": "MEMORIA · ambito retirado de unit_scope_type.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md"
+      ]
+    },
+    "context_ancestor_type": {
+      "motivo": "MEMORIA · ambito retirado de unit_scope_type.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md"
+      ]
+    },
+    "verify_whatsapp": {
+      "motivo": "MEMORIA · bandera de `persons` que murio al partir la identidad en satelites.",
+      "paginas": [
+        "modelo/organizacion.md"
+      ]
+    },
+    "task_item": {
+      "motivo": "PROSA · el singular del concepto, no la tabla `task_items`.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
+    "template_artifact": {
+      "motivo": "PROSA · singular de `template_artifacts`.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
+    "template_seed": {
+      "motivo": "PROSA · singular de `template_seeds`.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
+    "document_version": {
+      "motivo": "PROSA · singular de `document_versions`.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
+    "document_version_upload": {
+      "motivo": "PROSA · singular de `document_version_uploads`.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
+    "process_definitions": {
+      "motivo": "PROSA · plural del concepto; la tabla es `process_definition_versions`.",
+      "paginas": [
+        "backend/auth.md"
+      ]
+    },
+    "process_definition_template": {
+      "motivo": "PROSA · singular de `process_definition_templates`.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
+    "fill_flows": {
+      "motivo": "PROSA · la familia `fill_flow_*`, no una tabla.",
+      "paginas": [
+        "backend/auth.md"
+      ]
+    },
+    "signature_flows": {
+      "motivo": "PROSA · la familia `signature_flow_*`, no una tabla.",
+      "paginas": [
+        "backend/auth.md"
+      ]
+    },
+    "academic_terms": {
+      "motivo": "PROSA · el concepto; la tabla es `terms`.",
+      "paginas": [
+        "backend/auth.md"
+      ]
+    },
+    "audit_log": {
+      "motivo": "PROSA · el concepto de bitacora; hoy no hay tabla con ese nombre.",
+      "paginas": [
+        "datos/firmas-y-dominios.md"
+      ]
+    },
+    "id_de_persona": {
+      "motivo": "PROSA · texto explicativo, no un identificador.",
+      "paginas": [
+        "datos/modos-y-plantillas.md"
+      ]
+    },
+    "process_execution": {
+      "motivo": "RBAC · recurso de permisos (`process_execution.create`), no una tabla.",
+      "paginas": [
+        "backend/auth.md"
+      ]
+    },
+    "en_proceso": {
+      "motivo": "VALOR de dominio citado en prosa, fuera de un CHECK del esquema.",
+      "paginas": [
+        "modelo/vocabularios-de-estado.md"
+      ]
+    },
+    "no_assignees": {
+      "motivo": "VALOR de un diagnostico del lanzamiento.",
+      "paginas": [
+        "modelo/disparo.md",
+        "modelo/reparto.md"
+      ]
+    },
+    "has_assignees": {
+      "motivo": "VALOR de un diagnostico del lanzamiento.",
+      "paginas": [
+        "modelo/disparo.md",
+        "modelo/reparto.md"
+      ]
+    },
+    "artifact_stage": {
+      "motivo": "VALOR/eje del modelo de plantillas, citado en prosa.",
+      "paginas": [
+        "confusiones.md"
+      ]
+    },
+    "revocation_mode": {
+      "motivo": "OPCION del signer (pyhanko), no del esquema.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "allow_fetching": {
+      "motivo": "OPCION del signer (pyhanko).",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "other_certs": {
+      "motivo": "OPCION del signer (pyhanko).",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "field_refs": {
+      "motivo": "CLAVE de un JSON de plantilla, no una columna.",
+      "paginas": [
+        "datos/firmas-y-dominios.md"
+      ]
+    },
+    "comments_thread_ref": {
+      "motivo": "CLAVE de un JSON, no una columna.",
+      "paginas": [
+        "modelo/disparo.md",
+        "modelo/entregable-concreto.md"
+      ]
+    },
+    "template_code": {
+      "motivo": "CAMPO de un seed en JSON, no del esquema.",
+      "paginas": [
+        "confusiones.md"
+      ]
+    },
+    "final_path": {
+      "motivo": "CLAVE de un payload del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "stamp_png": {
+      "motivo": "CLAVE de un payload del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "stamp_text": {
+      "motivo": "CLAVE de un payload del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "logo_path": {
+      "motivo": "CLAVE de un payload del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "required_min": {
+      "motivo": "CLAVE de un payload de firma.",
+      "paginas": [
+        "frontend/composables-y-deuda.md"
+      ]
+    },
+    "firma_2": {
+      "motivo": "EJEMPLO de identificador de campo en una plantilla.",
+      "paginas": [
+        "modelo/flujo-de-firma.md"
+      ]
+    },
+    "program_id": {
+      "motivo": "PARAMETRO de una ruta del admin, no una columna.",
+      "paginas": [
+        "datos/motor-de-procesos.md"
+      ]
+    },
+    "target_person_id": {
+      "motivo": "PARAMETRO/concepto del reparto, no una columna del esquema.",
+      "paginas": [
+        "modelo/cierre.md",
+        "modelo/entregable-concreto.md"
+      ]
+    },
+    "target_position_id": {
+      "motivo": "PARAMETRO/concepto del reparto, no una columna del esquema.",
+      "paginas": [
+        "modelo/entregable-concreto.md"
+      ]
+    },
+    "string_agg": {
+      "motivo": "FUNCION de PostgreSQL.",
+      "paginas": [
+        "backend/acceso-a-datos.md"
+      ]
+    },
+    "pg_index": {
+      "motivo": "CATALOGO de PostgreSQL.",
+      "paginas": [
+        "backend/acceso-a-datos.md"
+      ]
+    },
+    "pg_isready": {
+      "motivo": "HERRAMIENTA de PostgreSQL.",
+      "paginas": [
+        "infraestructura/index.md"
+      ]
+    },
+    "proxy_pass": {
+      "motivo": "DIRECTIVA de nginx.",
+      "paginas": [
+        "infraestructura/nginx.md",
+        "panorama.md"
+      ]
+    },
+    "server_name": {
+      "motivo": "DIRECTIVA de nginx.",
+      "paginas": [
+        "infraestructura/nginx.md"
+      ]
+    },
+    "default_server": {
+      "motivo": "DIRECTIVA de nginx.",
+      "paginas": [
+        "infraestructura/nginx.md"
+      ]
+    },
+    "http_upgrade": {
+      "motivo": "CABECERA HTTP citada en la configuracion del proxy.",
+      "paginas": [
+        "infraestructura/nginx.md"
+      ]
+    },
+    "connection_upgrade": {
+      "motivo": "VARIABLE de nginx.",
+      "paginas": [
+        "infraestructura/nginx.md"
+      ]
+    },
+    "read_only": {
+      "motivo": "OPCION de un montaje de Docker.",
+      "paginas": [
+        "infraestructura/index.md"
+      ]
+    },
+    "pull_policy": {
+      "motivo": "CLAVE de docker compose.",
+      "paginas": [
+        "infraestructura/index.md"
+      ]
+    },
+    "env_model": {
+      "motivo": "FICHERO `.env_model`, escrito sin el punto.",
+      "paginas": [
+        "confusiones.md"
+      ]
+    },
+    "node_modules": {
+      "motivo": "DIRECTORIO.",
+      "paginas": [
+        "guias/entorno-dev.md",
+        "infraestructura/index.md"
+      ]
+    },
+    "plan_data": {
+      "motivo": "CARPETA `docs/planes/plan_data/`.",
+      "paginas": [
+        "modelo/lo-que-no-cierra.md"
+      ]
+    },
+    "pull_request": {
+      "motivo": "EVENTO de GitHub Actions.",
+      "paginas": [
+        "infraestructura/cicd-sonar.md"
+      ]
+    },
+    "workflow_dispatch": {
+      "motivo": "EVENTO de GitHub Actions.",
+      "paginas": [
+        "infraestructura/cicd-sonar.md"
+      ]
+    },
+    "prefetch_count": {
+      "motivo": "OPCION de RabbitMQ.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "rabbit_thread": {
+      "motivo": "HILO del worker del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "start_http_server": {
+      "motivo": "FUNCION del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "start_rabbit_worker": {
+      "motivo": "FUNCION del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    },
+    "redact_amqp_url": {
+      "motivo": "FUNCION del signer.",
+      "paginas": [
+        "signer.md"
+      ]
+    }
+  },
+  "tablas_sin_pagina": {}
+}

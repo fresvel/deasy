@@ -24,10 +24,10 @@ name: docs-links
 
 on:
   pull_request:
-    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/check-enlaces-internos.mjs', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
   push:
     branches: [develop, main]
-    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/check-enlaces-internos.mjs', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
   schedule:
     # Lunes 06:00 UTC — solo para el job de enlaces externos.
     - cron: '0 6 * * 1'
@@ -84,6 +84,12 @@ jobs:
           node-version: '22'
       - name: Comprobar rutas de página del sitio
         run: node scripts/docs/check-enlaces-internos.mjs
+
+      # Que las páginas sigan hablando del modelo que EXISTE: nombres muertos, tablas que no
+      # cuenta nadie, y tablas que cambiaron sin que su página se revisara. Es la única puerta
+      # que tiene la prosa del sitio — el build de Astro pasa en verde con una página que miente.
+      - name: Comprobar que la doc describe el modelo real
+        run: node scripts/docs/check-doc-modelo.mjs
 
   # ── No bloqueante: URLs externas ────────────────────────────────────────────────────────
   enlaces-externos:
