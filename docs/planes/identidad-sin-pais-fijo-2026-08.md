@@ -25,7 +25,7 @@
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
 | **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ✅ | **Colisión creada en vivo** (dos personas con el número `1122334459`): `GET /tarea?usuario=…` pasa de **200 con las tareas de una de ellas** a **409 diciéndolo**, y el expediente de **404 «no encontrado»** a **409**. 7 tests del resolutor + golden que fabrica la colisión y la retira; 2 mutaciones cazadas | 2026-08-29 |
 | **I8** | Recuperación «olvidé mi correo» por documento + país | ✅ | `/recover-email` verificado en pantalla: con la contraseña devuelve el correo completo; con la contraseña mala y con un documento inexistente da **el mismo error** — y la misma latencia (67 ms contra 70 ms). 6 tests + 3 goldens | 2026-08-29 |
-| **I10** | Solicitud de identidad con revisión humana, para quien olvidó **las dos** cosas | ⬜ | | |
+| **I10** | Verificar el teléfono y recuperar el acceso de quien olvidó **las dos** cosas | ⛔ | **DEUDA TÉCNICA.** Analizada entera el 2026-08-29 y parada por una decisión del dueño: construir el limitador de intentos o comprarlo. Lo medido está abajo | |
 
 **10 tareas.** `I10` nace del análisis de `I8` y es un frente pequeño en sí misma.
 
@@ -375,46 +375,125 @@ estas rutas a `:personId`, y cuando eso ocurra este `router.param` desaparece en
 ⚠️ Y **`DocumentoIdentidadService.buscarPersonaPorNumero` no la llama nadie** (comprobado el
 2026-08-29). Se borra con `I6`+`I7`, que es donde caen sus vecinas.
 
-### I10 · La solicitud de identidad, con revisión humana
+### I10 · ⛔ Verificar el teléfono y recuperar sin correo ni contraseña — DEUDA TÉCNICA
 
-**Qué resuelve:** el hueco que `I8` deja abierto a propósito — quien olvidó **el correo Y la
-contraseña** no tiene camino automático, porque el reset de contraseña también empieza pidiendo el
-correo. Hoy la pantalla lo manda a Talento Humano en un párrafo; esto lo convierte en un flujo.
+**Parada a propósito, no olvidada.** Se analizó entera el 2026-08-29 y se detuvo en la decisión que
+la ordena. Lo de aquí abajo es para que **nadie tenga que volver a medirlo**.
 
-**Y sirve para algo más, que es lo que la justifica.** El modelo ya tiene `verificado`,
-`verificado_at` y `escaneo_ref` en `documentos_identidad` **y ningún flujo que los ponga**:
-`marcarVerificado` existe en los tres servicios y su único llamador es el bootstrap. Es `F4d` del otro
-plan, bloqueada. Una solicitud con revisor por rol es **el flujo que falta a las dos**.
+#### Qué resuelve
 
-**Lo medido el 2026-08-29, para no repetirlo:**
+El hueco que `I8` deja abierto: quien olvidó **el correo Y la contraseña** no tiene camino
+automático, porque el reset de contraseña también empieza pidiendo el correo. Y de paso, `F4d` del
+otro plan: `verificado` y `verificado_at` existen en `emails`, `telefonos` y `documentos_identidad`
+**y ningún flujo los pone** — `marcarVerificado` sólo lo llama el bootstrap.
 
-| | |
-|---|---|
-| Rol natural | **`GestorTalentoHumano`** (existe) |
-| Escaneos con los que comparar | **CERO** — `escaneo_ref` es nulo en los 43 |
-| Endpoints públicos que aceptan ficheros | **ninguno**: todo lo que sube pasa por `authMiddleware` |
-| Limitador de intentos en el backend | **ninguno** |
+#### Lo que YA está construido y sólo espera configuración
 
-**Dos cosas que hay que separar** porque no son la misma: verificar un documento es de alguien **con
-sesión**; recuperar el correo es de alguien **que no puede entrar**. La segunda sería el primer
-endpoint público del sistema que acepta ficheros.
+**Verificar el CORREO cuesta cero.** `sendEmailVerification.js` existe y está cableado
+(`user_controler.js:104`), como el reset de contraseña. Lo único que falta es que
+**`SMTP_*` esté en el entorno** — no está ni en `.env.dev` ni en `.env_model`. Esto se puede hacer
+sin ninguna decisión comercial y cubre media `F4d`.
 
-**Tres barandillas, y no son opcionales:**
+#### El diseño al que se llegó
 
-1. **Los adjuntos se borran al resolver la solicitud.** Custodiar escaneos de documentos y fotos de
-   caras —de gente que puede que ni sea usuaria— cae bajo la **LOPDP**, con régimen sancionador
-   vigente desde 2023. Acotar la custodia a los días de revisión es la mitigación más barata.
-2. **Límite de tamaño y de intentos por IP.** No hay ninguno hoy, y es la primera vez que hace falta.
-3. **La decisión queda registrada**: quién resolvió, cuándo y con qué comprobó. Sin eso, un revisor
-   engañado no deja rastro.
+Tres capas. La 1 está hecha; la 2 es esta tarea; la 3 es el residuo.
 
-⚠️ **La foto de la cámara sube el listón, no lo cierra.** Un `getUserMedia` se engaña con una cámara
-virtual y una foto de redes sociales sirve de fuente. Quien revise no debe creer que es una prueba.
+| | Qué pide | Para quién |
+|---|---|---|
+| **1 · hecha (`I8`)** | documento + **contraseña** → el correo | cualquiera |
+| **2 · esta tarea** | documento + país + **teléfono** → código → correo y reinicio de clave | cualquiera |
+| **3 · el residuo** | una **persona** verifica y resuelve | quien cambió de teléfono |
 
-⚠️ **Las preguntas de seguridad se descartaron**, y no por la crítica genérica: aquí fallan porque
-**los hechos que el sistema sabe de ti los ve cualquiera con sesión** — tu cargo, tu unidad y tu jefe
-están en el organigrama. Serían un filtro contra un desconocido, no contra un compañero, que es el
-atacante más probable en una institución.
+**La capa 2 no pide ni un dato nuevo**: el registro ya guarda dirección, teléfono, correo y documento
+(los cuatro por `guardarPrincipal`, ver `UserRepository.create`). El teléfono se declara **en el
+alta**, antes de que exista ningún ataque, que es lo que le da valor como segundo factor.
+
+⚠️ Pero está **declarado, no verificado**. Por eso `F4d` deja de ser una tarea sin dueño: verificarlo
+en el alta convierte la capa 2 de «posesión de un canal declarado» en «posesión de un canal probado».
+
+#### Lo que se descartó, con su razón
+
+- **Foto por cámara.** Un `getUserMedia` se engaña con una cámara virtual y una foto de redes
+  sociales sirve de fuente. Da sensación de rigor sin darlo.
+- **Custodiar el escaneo del documento.** Guardar documentos de identidad y caras —de gente que puede
+  que ni sea usuaria— para devolver una dirección de correo es desproporcionado, y cae bajo la
+  **LOPDP** (régimen sancionador vigente desde 2023). Crea un riesgo mayor que el que resuelve.
+- **Preguntas de seguridad.** Los hechos que el sistema sabe de un interno —cargo, unidad, jefe—
+  **los ve cualquiera con sesión** en el organigrama. Y de un externo no sabe ninguno.
+- **Enrutar la solicitud a su jefe.** Sirve para internos y **no existe para los aspirantes
+  externos**, que se registran sin unidad, sin jefe y sin expediente. El sistema atiende a las dos
+  poblaciones.
+
+#### Los canales, evaluados por estabilidad y funcionalidad
+
+| | **SMS** | **WhatsApp Business** | **Telegram Gateway** |
+|---|---|---|---|
+| Madurez | décadas | años | **joven** (2024) |
+| Cómo falla | **en silencio** | **suspensión de número o plantilla** | no entrega, **y se sabe antes** |
+| Riesgo de proveedor | bajo, se cambia de operador | **alto** — un dueño que ya cambió su modelo de precios en 2025 | alto, pero API mínima |
+| Qué obliga a mantener | poco | verificación de empresa, calidad del número, plantillas, escalones de volumen | casi nada |
+| Alcance sin pedir nada | **total** | alto | bajo |
+| Tarifa orientativa | US$0,06–0,11 | US$0,02–0,04 | **~US$0,01** |
+
+⚠️ **Las tarifas son indicativas y hay que cotizarlas.** Cambian por corredor, volumen y año.
+
+**Dos cosas decidieron la evaluación, y ninguna es el precio:**
+
+1. **El Gateway permite PREGUNTAR ANTES si un número puede recibir**, sin gastar. Ni SMS ni WhatsApp
+   lo hacen limpiamente. Con eso, sólo se le pide instalar Telegram a quien no lo tiene, y el
+   respaldo a SMS se elige **sabiéndolo**, no descubriéndolo cuando el usuario se queja.
+2. **En Telegram no hay reparto de ingresos.** El *bombeo* de SMS —disparar códigos a números de
+   tarifa premium del propio atacante para cobrar parte de lo que tú pagas— **no tiene equivalente**.
+   El ataque pasa de negocio a vandalismo.
+
+**WhatsApp queda fuera:** su coste no es el dinero, es lo que obliga a mantener y su modo de fallo —
+puedes perder el canal por una decisión ajena, justo cuando alguien no puede entrar.
+
+**Un bot de Telegram NO sirve**: no puede escribir primero a quien no lo haya iniciado. El *Gateway*
+es otro producto y sí alcanza a un número sin contacto previo.
+
+#### 🚧 LO QUE BLOQUEA: no hay limitador de intentos, y no es sólo de aquí
+
+**El backend no tiene ninguno.** Medido el 2026-08-29: 18 dependencias, ni una de límite ni de caché,
+y **no hay Redis en ninguna pila**. Un limitador en memoria sirve para una instancia y deja de servir
+con dos.
+
+Sin él, un canal que cuesta dinero por mensaje se convierte en dos problemas:
+
+- alguien agota el saldo;
+- **o acosa a un tercero** llenándole el móvil de códigos que no pidió — lo que exige limitar **por
+  número de destino**, no sólo por IP.
+
+**Y hace falta igual sin ningún canal**: protege el login, el registro y el propio `/recover-email`.
+
+**LA DECISIÓN DEL DUEÑO, que es lo que para esta tarea:** construirlo o comprarlo.
+
+- **Construirlo** — sirve para todo el sistema, y entonces el proveedor de SMS puede ser crudo:
+  **Infobip** (presencia regional y conexión directa con operadoras) o **Twilio** (mejor documentado).
+  También valen **Vonage**, **Amazon SNS** (el más barato si ya hay AWS, con soporte de entrega
+  mínimo) y los **agregadores locales**, que conectan directo con Claro, Movistar y CNT — mejor
+  tarifa a volumen, pero exigen contrato y están peor documentados.
+- **Comprarlo** — **Twilio Verify** no vende mensajes sino *verificaciones*: trae el limitador, la
+  protección contra bombeo y el salto de canal. Se paga más por verificación y no se mantiene nada.
+  Para un equipo que hoy no tiene ninguna de las tres piezas, puede salir más barato.
+
+#### Una decisión de arquitectura que cuesta poco ahora y mucho después
+
+El envío, **detrás de una interfaz** con implementaciones intercambiables: un solo punto —«manda este
+código a este número»— y detrás Telegram, SMS o la app propia. Sin eso el canal se mete en los
+controladores y cambiarlo es un refactor.
+
+#### Y una regla del modelo que sale de aquí
+
+`emails.tipo` admite `personal` e `institucional`, **y una persona puede tener los dos**. Cuando un
+externo entra en plantilla y recibe su correo institucional, **el personal no se sustituye: se
+queda**. El institucional pasa a `principal` y el personal sigue como contacto de recuperación. No
+cuesta ni una tabla ni un campo: es **no borrar** lo que ya está.
+
+⚠️ **Y sobre la app propia como canal de recuperación:** sólo sirve si estaba instalada **y vinculada
+antes** de la emergencia. Instalarla estando bloqueado no vale — lo primero que pide es iniciar
+sesión, que es justo lo que no se puede. Vincularla **en el registro** lo arregla, y entonces también
+vale para externos; la pregunta pasa a ser cuánta gente abandona un alta que exige instalar una app.
 
 ### I8 · La recuperación «olvidé mi correo»
 
