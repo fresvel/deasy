@@ -498,6 +498,23 @@ es una decisión de producto —cuánta gente abandona un alta así— y **no la
 **De qué depende:** de que exista la app, que hoy no existe. Es el plan de llevar el chat a una
 aplicación propia. Hasta entonces, esta dirección no se puede empezar.
 
+#### 📐 El diseño del servicio, aprobado el 2026-08-29
+
+Está entero en **[`arquitecturas/microservicio-channels.md`](../arquitecturas/microservicio-channels.md)**
+y no se repite aquí. En una línea: un servicio aparte que **sostiene conexiones** con
+**Telegram, WhatsApp y un receptor de SMS**; el backend sigue decidiendo, y el correo se queda donde
+está.
+
+Tres cosas de ese diseño que cambian lo que esta ficha decía antes:
+
+- **El SMS vuelve, pero al revés.** No lo envía el sistema: **lo envía el usuario**. Con eso el
+  bombeo —el ataque que obligaba a un limitador antes de arrancar— **deja de existir**, porque vive
+  de que seas tú quien paga el envío.
+- **Coste por mensaje: cero, en los tres canales.** Toda la evaluación de tarifas de este documento
+  queda como historia: el usuario siempre empieza la conversación.
+- **Las multisesiones de WhatsApp se descartaron por sobrediseño.** Escribirle a alguien es **un
+  enlace** que abre el WhatsApp del propio usuario.
+
 #### Una decisión de arquitectura que cuesta poco ahora y mucho después
 
 El envío, **detrás de una interfaz** con implementaciones intercambiables: un solo punto —«manda este
