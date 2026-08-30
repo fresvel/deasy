@@ -24,9 +24,10 @@
 | **I6** | 💥 El login **sólo acepta correo**. Cambian las credenciales de referencia | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
 | **I7** | La búsqueda por documento sale de `UserRepository`: con ella, la colisión | ✅ | Entrada por `admin@institucion.edu.ec` verificada en pantalla, y la cédula la para el propio navegador (`type="email"`). `findByCedulaOrEmail` pasa a `findByEmail`; `buscarPersonaPorNumero` borrada por muerta. Golden nuevo que fija que la cédula NO es credencial, y devolver la rama lo hace caer | 2026-08-29 |
 | **I9** | Las OTRAS cinco búsquedas por número de documento dejan de ignorar su ámbito | ✅ | **Colisión creada en vivo** (dos personas con el número `1122334459`): `GET /tarea?usuario=…` pasa de **200 con las tareas de una de ellas** a **409 diciéndolo**, y el expediente de **404 «no encontrado»** a **409**. 7 tests del resolutor + golden que fabrica la colisión y la retira; 2 mutaciones cazadas | 2026-08-29 |
-| **I8** | Recuperación «olvidé mi correo» por documento + país | ⛔ | **Aplazada por el dueño** al 2026-08-28: se trata en otra sesión | |
+| **I8** | Recuperación «olvidé mi correo» por documento + país | ✅ | `/recover-email` verificado en pantalla: con la contraseña devuelve el correo completo; con la contraseña mala y con un documento inexistente da **el mismo error** — y la misma latencia (67 ms contra 70 ms). 6 tests + 3 goldens | 2026-08-29 |
+| **I10** | Solicitud de identidad con revisión humana, para quien olvidó **las dos** cosas | ⬜ | | |
 
-**9 tareas.** `I8` está aparcada a propósito y no cuenta como pendiente de este frente.
+**10 tareas.** `I10` nace del análisis de `I8` y es un frente pequeño en sí misma.
 
 💥 marca **la única tarea que rompe algo de cara al usuario**. Está aislada a propósito: se puede
 aprobar, ejecutar y revertir sola.
@@ -374,7 +375,48 @@ estas rutas a `:personId`, y cuando eso ocurra este `router.param` desaparece en
 ⚠️ Y **`DocumentoIdentidadService.buscarPersonaPorNumero` no la llama nadie** (comprobado el
 2026-08-29). Se borra con `I6`+`I7`, que es donde caen sus vecinas.
 
-### I8 · ⛔ La recuperación — aplazada
+### I10 · La solicitud de identidad, con revisión humana
+
+**Qué resuelve:** el hueco que `I8` deja abierto a propósito — quien olvidó **el correo Y la
+contraseña** no tiene camino automático, porque el reset de contraseña también empieza pidiendo el
+correo. Hoy la pantalla lo manda a Talento Humano en un párrafo; esto lo convierte en un flujo.
+
+**Y sirve para algo más, que es lo que la justifica.** El modelo ya tiene `verificado`,
+`verificado_at` y `escaneo_ref` en `documentos_identidad` **y ningún flujo que los ponga**:
+`marcarVerificado` existe en los tres servicios y su único llamador es el bootstrap. Es `F4d` del otro
+plan, bloqueada. Una solicitud con revisor por rol es **el flujo que falta a las dos**.
+
+**Lo medido el 2026-08-29, para no repetirlo:**
+
+| | |
+|---|---|
+| Rol natural | **`GestorTalentoHumano`** (existe) |
+| Escaneos con los que comparar | **CERO** — `escaneo_ref` es nulo en los 43 |
+| Endpoints públicos que aceptan ficheros | **ninguno**: todo lo que sube pasa por `authMiddleware` |
+| Limitador de intentos en el backend | **ninguno** |
+
+**Dos cosas que hay que separar** porque no son la misma: verificar un documento es de alguien **con
+sesión**; recuperar el correo es de alguien **que no puede entrar**. La segunda sería el primer
+endpoint público del sistema que acepta ficheros.
+
+**Tres barandillas, y no son opcionales:**
+
+1. **Los adjuntos se borran al resolver la solicitud.** Custodiar escaneos de documentos y fotos de
+   caras —de gente que puede que ni sea usuaria— cae bajo la **LOPDP**, con régimen sancionador
+   vigente desde 2023. Acotar la custodia a los días de revisión es la mitigación más barata.
+2. **Límite de tamaño y de intentos por IP.** No hay ninguno hoy, y es la primera vez que hace falta.
+3. **La decisión queda registrada**: quién resolvió, cuándo y con qué comprobó. Sin eso, un revisor
+   engañado no deja rastro.
+
+⚠️ **La foto de la cámara sube el listón, no lo cierra.** Un `getUserMedia` se engaña con una cámara
+virtual y una foto de redes sociales sirve de fuente. Quien revise no debe creer que es una prueba.
+
+⚠️ **Las preguntas de seguridad se descartaron**, y no por la crítica genérica: aquí fallan porque
+**los hechos que el sistema sabe de ti los ve cualquiera con sesión** — tu cargo, tu unidad y tu jefe
+están en el organigrama. Serían un filtro contra un desconocido, no contra un compañero, que es el
+atacante más probable en una institución.
+
+### I8 · La recuperación «olvidé mi correo»
 
 Documento + país, con el nacional preseleccionado. **Lo que ya se midió el 2026-08-28**, para que no
 haya que repetirlo:
@@ -385,12 +427,28 @@ haya que repetirlo:
 - **Telegram** y **Signal** son **sólo filas del catálogo**. Cero código.
 - **1 de 43 personas tiene teléfono.** Un canal que no alcanza a 42 de 43 no es recuperación.
 
-Y el hallazgo que cambia la forma de la tarea: **«olvidé mi correo» no necesita canal.** No se envía
-nada — se enseña una **pista enmascarada** (`a***n@institucion.edu.ec`), que es suficiente para
-reconocerlo y no revela la dirección.
+Y el hallazgo que cambió la forma de la tarea: **no necesita canal, y tampoco la pista enmascarada
+que se propuso primero.**
 
-⚠️ Con **límite de intentos y registro**: en Ecuador el número de cédula es semipúblico, y sin esa
-protección se estaría publicando un directorio de cédula → correo institucional.
+«Recuérdame mi correo» y «no reveles quién está registrado» son **opuestos**: cualquier cosa que le
+diga a alguien su correo se lo dice también a quien pruebe con una cédula ajena — y en Ecuador el
+número de cédula es **semipúblico**. Con documento + país solo, el endpoint es un **oráculo de
+existencia**, y protegerlo obligaba a construir un limitador de intentos y una bitácora que el
+backend **no tiene**.
+
+**La salida fue pedir la contraseña.** «Olvidé mi correo» no es «olvidé mi contraseña»: quien no
+recuerda con qué correo se registró **sigue sabiendo su clave**. Con eso deja de ser un oráculo, y no
+hace falta ni limitador ni bitácora.
+
+**Se devuelve el correo COMPLETO, no enmascarado**: si has probado tu identidad con la contraseña,
+`a***n@…` no te sirve para entrar y no protege de nada que la contraseña no proteja ya.
+
+**Los dos fallos son indistinguibles** —«no existe» y «contraseña incorrecta» dan el mismo 401 con el
+mismo texto— y la contraseña **se compara siempre**, contra un hash señuelo si la persona no existe:
+sin eso el tiempo de respuesta delataría lo que el mensaje calla. Medido: **67 ms contra 70 ms**.
+
+**Su límite, asumido y escrito en la pantalla:** quien olvidó las dos cosas se queda fuera, y el
+destino es una persona. Eso es `I10`.
 
 ---
 

@@ -43,6 +43,13 @@ class AuthService {
     return response.data;
   }
 
+  // «Olvidé mi correo». Pide la contraseña a propósito: sin ella el endpoint seria un directorio de
+  // cedulas. Ver `RecuperarCorreoService` en el backend.
+  async recuperarCorreo({ tipo, pais, numero, password }) {
+    const response = await axios.post(API_ROUTES.USERS_RECUPERAR_CORREO, { tipo, pais, numero, password });
+    return response.data ?? {};
+  }
+
   // La institución de este despliegue. La pantalla de registro la necesita para saber cómo llamar al
   // documento nacional: hasta el 2026-08-29 llevaba «Cédula (Ecuador)» escrito en una lista.
   async institucion() {

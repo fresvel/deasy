@@ -24,6 +24,7 @@ export const API_ROUTES = {
   USERS_VERIFY_RESET_CODE: `${API_PREFIX}/reset-password/verify`,
   USERS_RESET_PASSWORD: `${API_PREFIX}/reset-password/reset`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
+  USERS_RECUPERAR_CORREO: `${API_PREFIX}/users/recuperar-correo`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,
   USERS_ME: `${API_PREFIX}/users/me`,

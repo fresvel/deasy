@@ -53,6 +53,45 @@ test("login password incorrecta -> 401", async () => {
 // Sin este caso, devolver la rama sería un cambio silencioso: mandar `{ cedula }` daría 400 por
 // "falta el correo" tanto si la rama existe como si no, y nadie se enteraría hasta que alguien
 // entrara con el documento de otro.
+// «OLVIDÉ MI CORREO»: público, y NO es un directorio de cédulas.
+//
+// «Recuérdame mi correo» y «no reveles quién está registrado» son opuestos: cualquier cosa que le
+// diga a alguien su correo se lo dice también a quien pruebe con una cédula ajena — y en Ecuador el
+// número de cédula es semipúblico. Por eso se pide la CONTRASEÑA: quien olvidó cuál de sus correos
+// usó sigue sabiéndola, y quien tiene una cédula ajena no obtiene nada.
+//
+// Los dos goldens de abajo son el par que importa: el error de «no existe» y el de «contraseña
+// incorrecta» tienen que ser IDÉNTICOS. Si algún día alguien "mejora" los mensajes distinguiéndolos,
+// esto se cae — y con razón, porque reconstruiría el oráculo.
+test("POST /users/recuperar-correo con la contraseña -> devuelve el correo completo", async () => {
+  const res = await post("/users/recuperar-correo", {
+    body: { numero: USERS.admin.cedula, password: USERS.admin.password },
+  });
+  matchSnapshot(SUITE, "recuperar_correo_ok", snapshotShape(res));
+  assert.equal(res.body?.email, USERS.admin.email);
+});
+
+test("POST /users/recuperar-correo con la contraseña MAL -> error genérico", async () => {
+  const res = await post("/users/recuperar-correo", {
+    body: { numero: USERS.admin.cedula, password: "no-es-la-suya" },
+  });
+  matchSnapshot(SUITE, "recuperar_correo_clave_mala", snapshotShape(res));
+  assert.equal(res.status, 401);
+});
+
+test("POST /users/recuperar-correo con un documento que NO existe -> el MISMO error", async () => {
+  const res = await post("/users/recuperar-correo", {
+    body: { numero: "1710034065", password: USERS.admin.password },
+  });
+  matchSnapshot(SUITE, "recuperar_correo_documento_desconocido", snapshotShape(res));
+  // La comparación que da sentido a los tres casos: los dos fallos son indistinguibles.
+  const claveMala = await post("/users/recuperar-correo", {
+    body: { numero: USERS.admin.cedula, password: "no-es-la-suya" },
+  });
+  assert.equal(res.status, claveMala.status);
+  assert.equal(res.body?.message, claveMala.body?.message);
+});
+
 test("POST /users/login con cédula -> ya no es una credencial", async () => {
   const res = await post("/users/login", {
     body: { cedula: USERS.admin.cedula, password: USERS.admin.password },

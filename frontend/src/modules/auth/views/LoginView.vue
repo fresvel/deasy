@@ -56,6 +56,7 @@
 
       <div class="flex items-center justify-end">
         <router-link to="/recover-password" class="deasy-auth-link">¿Olvidaste tu contraseña?</router-link>
+        <router-link to="/recover-email" class="deasy-auth-link">¿Olvidaste tu correo?</router-link>
       </div>
 
       <button type="submit" class="deasy-btn deasy-btn--primary-outline deasy-btn--block">

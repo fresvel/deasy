@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/modules/auth/views/LoginView.vue";
 import Register from "@/modules/auth/views/RegisterView.vue";
 import RecoverPassword from "@/modules/auth/views/RecoverPasswordView.vue";
+import RecoverEmail from "@/modules/auth/views/RecoverEmailView.vue";
 import SystemBootstrapView from "@/modules/auth/views/SystemBootstrapView.vue";
 import TermsView from "@/modules/auth/views/TermsView.vue";
 import VerifyEmail from "@/modules/auth/views/VerifyEmail.vue";
@@ -56,6 +57,8 @@ const routes = [
   },
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },
+  // «Olvidé mi correo», que NO es «olvidé mi contraseña»: pide el documento y la contraseña.
+  { path: "/recover-email", name: "recover-email", component: RecoverEmail },
   { path: "/setup", name: "system-bootstrap", component: SystemBootstrapView },
   { path: "/terminos", name: "terminos", component: TermsView },
   { path: "/admin/:section?/:item?/:table?", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },

@@ -86,6 +86,32 @@ export async function resolverPersonaPorNumero(connection, numero) {
   return { personId: Number(filas[0].person_id), ambiguo: false };
 }
 
+/**
+ * La persona dueña de un documento identificado por su TERNA COMPLETA.
+ *
+ * Aqui la ambiguedad NO PUEDE existir: `uq_documentos_numero` es unico sobre (tipo, pais, numero),
+ * asi que o hay una fila o no hay ninguna. Es la diferencia con `resolverPersonaPorNumero`, que
+ * recibe el numero suelto —de una URL, de un formulario— y tiene que defenderse.
+ *
+ * Devuelve `null` sin distinguir por que: quien la llama no debe poder averiguar si el documento
+ * existe. Es lo que separa "recuperar mi correo" de un directorio de cedulas.
+ */
+export async function resolverPersonaPorDocumento(connection, { tipo, paisId, numero } = {}) {
+  const limpio = normalizarNumero(numero);
+  const clase = String(tipo ?? "").trim().toLowerCase();
+  const pais = Number(paisId);
+  if (!limpio || !clase || !Number.isInteger(pais) || pais <= 0) {
+    return null;
+  }
+  const [filas] = await connection.query(
+    `SELECT person_id FROM documentos_identidad
+      WHERE tipo = ? AND pais_id = ? AND numero = ? AND is_active = 1
+      LIMIT 1`,
+    [clase, pais, limpio]
+  );
+  return filas?.length ? Number(filas[0].person_id) : null;
+}
+
 /** El mensaje del caso ambiguo, en un solo sitio para que los tres lo digan igual. */
 export const MENSAJE_DOCUMENTO_AMBIGUO =
   "Ese número corresponde a más de una persona. Hace falta identificarla de otra forma.";
